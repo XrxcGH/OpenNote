@@ -142,11 +142,14 @@ function affineAt(view: DataView, at: number): number[] | null {
   return values.every((v) => v !== null) ? (values as number[]) : null;
 }
 
-/** Parses a record's body. `frameFlags` are the frame's flag and reserved bytes, which must be zero. */
-export function parseBody(kind: number, frameFlags: number, body: Uint8Array): Parsed {
+/**
+ * Parses a record's body. `frameFlags` are the frame's flag and reserved bytes, which must be zero. With
+ * `verify` false, a stroke's points are not decoded to check them, for records the core has already checked.
+ */
+export function parseBody(kind: number, frameFlags: number, body: Uint8Array, verify = true): Parsed {
   if (frameFlags !== 0) return { unknown: true };
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
-  if (kind === KIND_STROKE) return parseStroke(body, view);
+  if (kind === KIND_STROKE) return parseStroke(body, view, verify);
   if (kind === KIND_PROPS) return parseProps(body, view);
   if (kind === KIND_REMOVE) {
     return body.length === 16 ? { record: { kind: 'remove', id: idText(body, 0) } } : { bad: 'body' };
@@ -154,7 +157,7 @@ export function parseBody(kind: number, frameFlags: number, body: Uint8Array): P
   return { unknown: true };
 }
 
-function parseStroke(body: Uint8Array, view: DataView): Parsed {
+function parseStroke(body: Uint8Array, view: DataView, verify: boolean): Parsed {
   // The same order of checks as the Rust decoder, so both report the same for every body.
   if (body.length < 44) return { bad: 'body' };
   const flags = view.getUint16(42, true);
@@ -182,7 +185,7 @@ function parseStroke(body: Uint8Array, view: DataView): Parsed {
   const pointCount = view.getUint32(68, true);
   const points = body.subarray(at);
   const channels = flags & 7;
-  if (pointCount > MAX_POINTS || !pointsMatch(points, pointCount, channels, bbox)) return { bad: 'points' };
+  if (pointCount > MAX_POINTS || (verify && !pointsMatch(points, pointCount, channels, bbox))) return { bad: 'points' };
   const style: StrokeStyle = {
     tool: body[40],
     palette: body[41],

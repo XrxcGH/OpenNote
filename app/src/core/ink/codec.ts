@@ -123,7 +123,8 @@ function crcOk(bytes: Uint8Array, frame: Frame): boolean {
 
 /**
  * Decodes records without a header or footer. Every record must be intact and of a known kind. With
- * `verify: false`, the records' CRC-32 values are not checked, for blobs the core has already checked.
+ * `verify: false`, neither the records' CRC-32 values nor their points are checked, for blobs the core has
+ * already checked. The renderer decodes the points anyway.
  */
 export function decodeRecords(bytes: Uint8Array, options: { verify?: boolean } = {}): InkRecord[] {
   const verify = options.verify ?? true;
@@ -134,7 +135,7 @@ export function decodeRecords(bytes: Uint8Array, options: { verify?: boolean } =
     const frame = readFrame(bytes, view, pos, bytes.length);
     if (typeof frame === 'string') throw new SegmentError('truncated', `a damaged record at byte ${pos}: ${frame}`);
     if (verify && !crcOk(bytes, frame)) throw new SegmentError('checksum', `a damaged record at byte ${pos}`);
-    const parsed = parseBody(frame.kind, frame.flags, bytes.subarray(frame.bodyStart, frame.bodyEnd));
+    const parsed = parseBody(frame.kind, frame.flags, bytes.subarray(frame.bodyStart, frame.bodyEnd), verify);
     if ('unknown' in parsed) throw new SegmentError('unknownRecord', `a record from a newer version at byte ${pos}`);
     if ('bad' in parsed) throw new SegmentError('validation', `a damaged record at byte ${pos}: ${parsed.bad}`);
     records.push(parsed.record);

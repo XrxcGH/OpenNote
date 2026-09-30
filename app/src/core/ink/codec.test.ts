@@ -128,6 +128,16 @@ describe('record blobs', () => {
     expect(encodeRecords(decodeRecords(blob))).toEqual(blob);
   });
 
+  it('skip the point checks without verifying, for blobs the core has checked', () => {
+    const found = records.find((record) => record.kind === 'stroke');
+    if (found?.kind !== 'stroke') throw new Error('the fixture has no stroke');
+    const bbox = { ...found.stroke.bbox, maxX: found.stroke.bbox.maxX + 1 };
+    const wrong: InkRecord = { kind: 'stroke', stroke: { ...found.stroke, bbox } };
+    const blob = encodeRecords([wrong]);
+    expect(() => decodeRecords(blob)).toThrow(SegmentError);
+    expect(decodeRecords(blob, { verify: false })).toEqual([wrong]);
+  });
+
   it('are all or nothing', () => {
     const blob = encodeRecords(records);
     blob[20] ^= 1;
