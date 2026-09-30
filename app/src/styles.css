@@ -19,7 +19,7 @@ body {
   line-height: var(--type-body-line);
 }
 
-/* Switching themes crossfades the whole window (BRAND.md section 4). With reduced motion the base token is 100 ms.
+/* Switching themes crossfades the whole window (docs/BRAND.md section 4). With reduced motion the base token is 100 ms.
    Chromium sends clicks made during the fade to the root element, even with pointer-events: none on the overlay. */
 ::view-transition-group(root) {
   animation-duration: var(--motion-duration-base);
@@ -41,7 +41,7 @@ body {
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
-/* Any touchscreen gets the taller toolbar (BRAND.md section 6), even when a mouse is the primary pointer. */
+/* Any touchscreen gets the taller toolbar (docs/BRAND.md section 6), even when a mouse is the primary pointer. */
 @media (any-pointer: coarse) {
   .title-bar {
     height: var(--size-toolbar-touch);
@@ -66,7 +66,7 @@ body {
   cursor: pointer;
 }
 
-/* Keeps the 32 px look but gives every input the 44 px touch target from BRAND.md section 6. */
+/* Keeps the 32 px look but gives every input the 44 px touch target from docs/BRAND.md section 6. */
 .icon-button::before {
   content: '';
   position: absolute;

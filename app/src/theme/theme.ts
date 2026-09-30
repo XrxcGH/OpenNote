@@ -1,4 +1,4 @@
-// The dark mode setting from BRAND.md: Light, Dark, or Match Windows (the system setting).
+// The dark mode setting from docs/BRAND.md: Light, Dark, or Match Windows (the system setting).
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type Theme = 'light' | 'dark';

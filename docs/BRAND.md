@@ -1,6 +1,6 @@
 # OpenNote brand and interface guide
 
-This guide defines how OpenNote looks, moves, sounds, and behaves. Wireframes of each major screen are in [docs/design/SCREENS.md](docs/design/SCREENS.md). The exact values live in [`brand/tokens.json`](brand/tokens.json), and CHECKS verifies them (contrast, motion limits, theme parity). UI code must use the tokens, never raw values.
+This guide defines how OpenNote looks, moves, sounds, and behaves. The [screen wireframes](design/SCREENS.md) show each major screen. The exact values live in [`brand/tokens.json`](../brand/tokens.json), and CHECKS verifies them (contrast, motion limits, theme parity). UI code must use the tokens, never raw values.
 
 ## Contents
 
@@ -185,7 +185,7 @@ Depth comes from warm, soft shadows in three steps (`elevation.1` to `elevation.
 
 Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut.
 
-The logo is a folded page with a moss-green ink stroke ending in a clay pen tip: see [`brand/logo-mark.svg`](brand/logo-mark.svg) and [`brand/app-icon.svg`](brand/app-icon.svg). Keep clear space of half the mark's width around it, and don't recolor, stretch or add effects.
+The logo is a folded page with a moss-green ink stroke ending in a clay pen tip: see [`brand/logo-mark.svg`](../brand/logo-mark.svg) and [`brand/app-icon.svg`](../brand/app-icon.svg). Keep clear space of half the mark's width around it, and don't recolor, stretch or add effects.
 
 Illustrations appear only in empty states, onboarding and error screens. Draw them with OpenNote's own pen engine, so they look handwritten, in two or three token colors with plenty of empty paper. No 3D renders, gradient blobs, stock photos, or mascots.
 
@@ -232,7 +232,7 @@ Smoothness is part of the brand. A feature that breaks these budgets on the refe
 | Memory | Under 400 MB with a 1,000-page notebook open |
 | Crash safety | At most 1 second of work lost if the app or computer stops suddenly |
 
-Heavy work, such as handwriting recognition, transcription, search indexing, export, and sync, runs in the background, and never blocks drawing or typing. DEVELOPMENT.md explains how each budget is tested.
+Heavy work, such as handwriting recognition, transcription, search indexing, export, and sync, runs in the background, and never blocks drawing or typing. The [testing strategy](DEVELOPMENT.md#6-testing-strategy) explains how each budget is tested.
 
 ## 11. Components
 
@@ -264,7 +264,7 @@ OpenNote meets the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA (
 - **Motor:** targets meet the sizes in section 6. Left-handed mode is available. No action needs a timed or multi-finger gesture.
 - **Reading:** settings for letter spacing, line spacing and a dyslexia-friendly font. Plain language throughout.
 
-Every pull request that changes UI goes through automated accessibility tests and the keyboard checklist in DEVELOPMENT.md.
+Every pull request that changes UI goes through automated accessibility tests and the keyboard checklist in the [testing strategy](DEVELOPMENT.md#6-testing-strategy).
 
 ## 13. What to avoid
 

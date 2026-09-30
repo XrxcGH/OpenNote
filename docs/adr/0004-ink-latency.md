@@ -5,7 +5,7 @@
 
 ## Context
 
-The architecture decision record (ADR) [0001](0001-app-stack.md) chose Tauri 2 and WebView2, as long as ink passes the [Phase 1](../../DEVELOPMENT.md#phase-1-spikes) latency spike. [BRAND.md](../../BRAND.md#10-comfort-and-performance-budgets) sets the pen budget:
+The architecture decision record (ADR) [0001](0001-app-stack.md) chose Tauri 2 and WebView2, as long as ink passes the [Phase 1](../DEVELOPMENT.md#phase-1-spikes) latency spike. [BRAND.md](../BRAND.md#10-comfort-and-performance-budgets) sets the pen budget:
 
 > Stroke drawn in the next frame; 25 ms or less end to end on a 60 Hz screen
 
@@ -57,7 +57,7 @@ The status stays pending until the owner runs the camera check and reviews the b
 ## Consequences
 
 - Phase 5 builds ink on the chosen design. Its latency benchmark reuses this harness: `npm run spikes -- ink --auto`.
-- The owner should decide whether BRAND.md restates the pen budget in frames at p95, such as "ink within 2 frames of the input at p95".
+- The owner should decide whether [BRAND.md](../BRAND.md) restates the pen budget in frames at p95, such as "ink within 2 frames of the input at p95".
 - On an idle page, animation frames nearly stop during a fast stroke on a desynchronized canvas: 37 frames in 2 seconds instead of 257. Gaps reach 640 to 850 ms, breaking the rule of never two dropped frames in a row. The busy modes kept 257 frames. Work that runs on animation frames, such as tiles, scrolling, or a lasso, must wait for the pen to lift or move to a worker.
 - In every mode but the plain canvas drawn in the handler (99%), 4 to 8% of synthetic pen moves at 240 Hz never reached the page. That includes the plain canvas drawn in animation frames (93%). Moves sent through the Chrome DevTools Protocol (CDP) all arrived. So the loss may come from synthetic injection, not desynchronized canvases. Phase 5 should check it, and stroke shape, with a real pen.
 - A busy main thread, with 10 ms tasks every 16 ms, raised the p95 from 16.1 to 22.5 ms. Heavy work stays off the main thread while the pen draws.

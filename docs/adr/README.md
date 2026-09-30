@@ -4,7 +4,7 @@ An architecture decision record (ADR) is a short document about one important ch
 
 ## When to write one
 
-Write an ADR for anything hard to reverse, before the code that depends on it. This is one of the [working agreements](../../DEVELOPMENT.md#12-working-agreements) in the development plan. Typical examples:
+Write an ADR for anything hard to reverse, before the code that depends on it. This is one of the [working agreements](../DEVELOPMENT.md#12-working-agreements) in the development plan. Typical examples:
 
 - Choosing a framework, language, or core library
 - Changing the note file format, or where data is stored
