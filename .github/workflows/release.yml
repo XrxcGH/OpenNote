@@ -1,48 +1,112 @@
 name: release
 
-# Pushing a tag such as v0.1.0 builds OpenNote.exe, signs the update, and publishes a GitHub Release.
-# See docs/RELEASING.md.
+# Pushing a tag such as v0.1.0 runs CI, builds OpenNote.exe, signs the update, and publishes a GitHub Release.
+# See docs/RELEASING.md. Each job gets only the permissions it needs, and only the signing step sees the
+# signing secrets. The actions in this file are pinned to full commit SHAs, because they build and sign the update.
 on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write
+permissions: {}
+
+defaults:
+  run:
+    shell: pwsh
 
 jobs:
-  release:
-    runs-on: windows-latest
-    env:
-      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+  version:
+    # Fails in seconds when the tag doesn't match the version files, before CI and the build run.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Check that the tag matches the version files
+        run: node app/scripts/check-version.ts $env:GITHUB_REF_NAME
+
+  ci:
+    # The same checks a pull request gets, run on the tagged commit. No secrets are passed.
+    needs: version
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  build:
+    # Builds the exe with a read-only token and no secrets.
+    needs: ci
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      # No Rust build cache: the exe is always built from a clean target directory.
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
       - name: Install tools
         run: npm ci
-      - name: Quality gate
-        run: npm run checks:all && npm run typecheck && npm run lint && npm test
       - name: Build OpenNote.exe
         run: npx tauri build --no-bundle
-      - name: Collect the release files
-        shell: pwsh
+      - name: Collect the exe
         run: |
           New-Item -ItemType Directory -Force dist-release | Out-Null
           Copy-Item target/release/opennote.exe dist-release/OpenNote.exe
+      - name: Keep the exe for the publish job
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: opennote-exe
+          path: dist-release/OpenNote.exe
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    # The only job that can write releases. It builds nothing and runs no install scripts,
+    # so the only project dependency that runs next to the signing key is the Tauri CLI.
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install tools without install scripts
+        run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: opennote-exe
+          path: dist-release
       - name: Sign the update
-        if: env.TAURI_SIGNING_PRIVATE_KEY != ''
-        run: npx tauri signer sign dist-release/OpenNote.exe
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) {
+            Write-Output '::error::The TAURI_SIGNING_PRIVATE_KEY secret is not set. See docs/RELEASING.md.'
+            exit 1
+          }
+          # --app-version puts the version in the signed trusted comment, so it can't be changed later.
+          $version = $env:GITHUB_REF_NAME -replace '^v', ''
+          npx tauri signer sign --app-version $version dist-release/OpenNote.exe
       - name: Write the update manifest
-        run: node app/scripts/write-manifest.ts dist-release ${{ github.ref_name }}
+        run: node app/scripts/write-manifest.ts dist-release $env:GITHUB_REF_NAME
       - name: Publish the release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: dist-release/*
           prerelease: ${{ contains(github.ref_name, '-') }}

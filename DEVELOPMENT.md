@@ -372,7 +372,7 @@ On first launch, the app asks where to keep itself. It can stay where it was dow
 
 1. Developers merge tested changes into `main` on GitHub.
 2. To release, a maintainer updates the version number and pushes a tag such as `v0.4.0`.
-3. A GitHub Actions workflow builds `OpenNote.exe` on Windows, runs the full test set and signs the exe (see [Signing](#signing-and-security)).
+3. A GitHub Actions workflow runs the same checks and tests as CI on the tagged commit, builds `OpenNote.exe` on Windows, and signs it (see [Signing](#signing-and-security)). It stops if the tag doesn't match the app's version, and it never publishes an unsigned release.
 4. The workflow publishes a GitHub Release with the exe and a small manifest file, `latest.json`. The manifest lists the version, release notes, file size, SHA-256 hash, and signature.
 5. Running copies of OpenNote read the manifest and update themselves.
 
@@ -384,7 +384,7 @@ GitHub Releases hosts the files for free. The address `https://github.com/xrxcgh
 
 1. At start-up and every six hours, the app fetches the manifest, which is under 1 KB. The check runs in the background, so it never slows start-up, and it is skipped while offline.
 2. If a newer version exists, the app downloads the new exe at low priority to `%LOCALAPPDATA%\OpenNote\updates\`.
-3. It checks the file's SHA-256 hash, and its signature against a public key built into the app. A file that fails either check is deleted, and the next check tries again.
+3. It checks the file's SHA-256 hash, and its signature against a public key built into the app. The signature also covers the version number, which must match the manifest. A file that fails any check is deleted, and the next check tries again.
 4. A quiet "Update ready" notice appears in the title bar. Choosing "Restart to update", or simply closing the app, applies it.
 5. Before the swap, the app finishes saving and waits for any recording to stop. If the new version will convert files or settings, it backs them up first.
 6. Windows lets a running exe be renamed. The app renames itself to `OpenNote.previous.exe`, moves the new exe into its place and restarts. The person lands back on the page they were using, about two seconds later.
@@ -404,9 +404,9 @@ In settings, people choose to install updates automatically (the default), be as
 
 ### Signing and security
 
-- **Update signature:** a minisign key pair signs every release. The private key exists only as a GitHub Actions secret, and the public key is built into every exe. Without the private key, nobody can push an update, even from a fake server.
+- **Update signature:** a minisign key pair signs every release. The private key exists only as a GitHub Actions secret, and only the signing step of the release workflow receives it. The public key is built into every exe. Without the private key, nobody can push an update, even from a fake server.
 - **Code signing:** an Authenticode certificate, such as one from Azure Trusted Signing, identifies the publisher. Windows SmartScreen and antivirus tools then recognize the app instead of warning about an unknown file.
-- **Downgrades:** the app only downloads over HTTPS, and refuses to install an older version unless the person chooses to go back.
+- **Downgrades:** the app only downloads over HTTPS, and refuses to install an older version unless the person chooses to go back. Because the signature covers the version, a changed manifest can't pass off an older exe as a newer one.
 
 ### Later options
 
@@ -424,7 +424,7 @@ A build ships to beta or stable only when every item is checked:
 - [ ] Manual pen testing passes on at least two devices from the matrix.
 - [ ] Upgrading from the previous release keeps all notes and settings (tested with real notebooks).
 - [ ] File format changes include a tested migration and an updated specification.
-- [ ] `OpenNote.exe` is code-signed, and the update manifest is signed.
+- [ ] `OpenNote.exe` is code-signed, and the update signature covers the version in the manifest.
 - [ ] Updating from each of the last three versions keeps every note and setting, and going back to the previous version works.
 - [ ] Changelog and documentation are updated.
 
