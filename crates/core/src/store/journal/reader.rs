@@ -4,7 +4,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::error::{FormatError, FsError};
+use super::format::{decode_header, next_frame, Frame, RawRecord, RecordKind};
+use super::payload::decode_payload;
+use crate::error::{FormatError, FsError, FsErrorKind};
 use crate::id::{IntentId, NotebookId, PageId, RevisionId};
 use crate::limits::Limits;
 use crate::model::Stroke;
@@ -12,7 +14,7 @@ use crate::ops::Txn;
 use crate::seams::Codec;
 use crate::session::journal_thread::TreeIntent;
 use crate::store::fs::Fs;
-use crate::store::layout::NotebookKey;
+use crate::store::layout::{parse_journal_file_name, NotebookKey};
 use crate::time::Timestamp;
 
 /// The journal files of one notebook key.
@@ -100,6 +102,25 @@ pub enum JournalRecord {
     },
 }
 
+impl JournalRecord {
+    /// The record's sequence number.
+    pub fn seq(&self) -> u64 {
+        match self {
+            JournalRecord::Txn { seq, .. }
+            | JournalRecord::SaveBegin { seq, .. }
+            | JournalRecord::InkProgress { seq, .. }
+            | JournalRecord::TreeIntent { seq, .. }
+            | JournalRecord::TreeDone { seq, .. }
+            | JournalRecord::Closed { seq, .. } => *seq,
+        }
+    }
+
+    /// Whether the record is an edit of the page: a transaction or a stroke in progress.
+    pub fn is_edit(&self) -> bool {
+        matches!(self, JournalRecord::Txn { .. } | JournalRecord::InkProgress { .. })
+    }
+}
+
 /// Why reading a generation stopped (spec 20.6).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StopReason {
@@ -127,6 +148,34 @@ pub enum StopReason {
         /// The sequence number expected.
         expected: u64,
     },
+    /// A record passed its CRC-32 but can't be used: an unknown kind or flag, such as an encrypted payload, or
+    /// a payload that doesn't decode.
+    Unreadable {
+        /// Its byte offset.
+        offset: u64,
+    },
+}
+
+impl StopReason {
+    /// Whether the stop is the expected end of a file after a crash or a power cut, rather than damage.
+    pub fn is_clean(&self) -> bool {
+        matches!(
+            self,
+            StopReason::End | StopReason::Torn { .. } | StopReason::ZeroFilled { .. }
+        )
+    }
+
+    /// The offset where reading stopped, or `None` at a clean end.
+    pub fn offset(&self) -> Option<u64> {
+        match self {
+            StopReason::End => None,
+            StopReason::Torn { offset }
+            | StopReason::ZeroFilled { offset }
+            | StopReason::BadChecksum { offset }
+            | StopReason::SequenceGap { offset, .. }
+            | StopReason::Unreadable { offset } => Some(*offset),
+        }
+    }
 }
 
 /// A generation as read.
@@ -142,12 +191,89 @@ pub struct JournalGen {
     pub stop: StopReason,
 }
 
+impl JournalGen {
+    /// The highest sequence number in the file: the last record's, or the anchor without records.
+    pub fn last_seq(&self) -> u64 {
+        self.records.last().map_or(self.header.anchor, JournalRecord::seq)
+    }
+}
+
 /// Every notebook key's journal files under the device-local journal folder.
-pub fn list_journals(_fs: &dyn Fs, _root: &Path) -> Result<Vec<KeyJournals>, FsError> {
-    unimplemented!("WP4: list_journals")
+pub fn list_journals(fs: &dyn Fs, root: &Path) -> Result<Vec<KeyJournals>, FsError> {
+    let keys = match fs.read_dir(root) {
+        Ok(entries) => entries,
+        Err(err) if err.kind == FsErrorKind::NotFound => return Ok(Vec::new()),
+        Err(err) => return Err(err),
+    };
+    let mut found = Vec::new();
+    for entry in keys.into_iter().filter(|entry| entry.is_dir) {
+        let dir = root.join(&entry.name);
+        let mut journals = KeyJournals {
+            key: NotebookKey(entry.name),
+            pages: BTreeMap::new(),
+            tree: Vec::new(),
+        };
+        let mut numbered: Vec<(Option<PageId>, u64, PathBuf)> = fs
+            .read_dir(&dir)?
+            .into_iter()
+            .filter(|file| !file.is_dir)
+            .filter_map(|file| {
+                let (page, generation) = parse_journal_file_name(&file.name)?;
+                Some((page, generation, dir.join(&file.name)))
+            })
+            .collect();
+        numbered.sort_by_key(|(_, generation, _)| *generation);
+        for (page, _, path) in numbered {
+            match page {
+                Some(page) => journals.pages.entry(page).or_default().push(path),
+                None => journals.tree.push(path),
+            }
+        }
+        if !journals.pages.is_empty() || !journals.tree.is_empty() {
+            found.push(journals);
+        }
+    }
+    Ok(found)
 }
 
 /// Reads one generation, stopping at the first record that is incomplete, zero, damaged, or out of sequence.
-pub fn read_generation(_bytes: &[u8], _codec: &dyn Codec, _limits: &Limits) -> Result<JournalGen, FormatError> {
-    unimplemented!("WP4: read_generation")
+pub fn read_generation(bytes: &[u8], codec: &dyn Codec, limits: &Limits) -> Result<JournalGen, FormatError> {
+    let decoded = decode_header(bytes, limits.gunzip_bytes)?;
+    let mut records = Vec::new();
+    let mut at = decoded.len;
+    let mut expected = decoded.header.anchor.checked_add(1);
+    let stop = loop {
+        let offset = at as u64;
+        let raw = match next_frame(bytes, at, limits.journal_payload) {
+            Frame::Record(raw) => raw,
+            Frame::End => break StopReason::End,
+            Frame::Torn => break StopReason::Torn { offset },
+            Frame::ZeroFilled => break StopReason::ZeroFilled { offset },
+            Frame::BadChecksum => break StopReason::BadChecksum { offset },
+        };
+        let Some(want) = expected.filter(|&want| want == raw.seq) else {
+            let expected = expected.unwrap_or(u64::MAX);
+            break StopReason::SequenceGap { offset, expected };
+        };
+        match decode_raw(&raw, codec, limits) {
+            Some(record) => records.push(record),
+            None => break StopReason::Unreadable { offset },
+        }
+        expected = want.checked_add(1);
+        at = at.saturating_add(raw.bytes.len());
+    };
+    Ok(JournalGen {
+        header: decoded.header,
+        base: decoded.base,
+        records,
+        stop,
+    })
 }
+
+fn decode_raw(raw: &RawRecord<'_>, codec: &dyn Codec, limits: &Limits) -> Option<JournalRecord> {
+    let kind = RecordKind::from_byte(raw.kind).filter(|_| raw.flags == 0)?;
+    decode_payload(kind, raw.seq, (raw.json, raw.blob), codec, limits).ok()
+}
+
+#[cfg(test)]
+mod tests;
