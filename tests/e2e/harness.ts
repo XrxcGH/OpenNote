@@ -5,7 +5,7 @@
 //
 // These variables say where the tools are:
 //
-// - OPENNOTE_E2E_EXE names the app. Without it: target/e2e/opennote.exe, then target/debug/opennote.exe.
+// - OPENNOTE_E2E_EXE names the app. Without it: target/e2e, then target/ci, then target/debug.
 //
 // - TAURI_DRIVER names tauri-driver. Without it: the one `cargo install` puts in ~/.cargo/bin.
 //
@@ -55,6 +55,7 @@ export function tools(): { exe?: string; tauriDriver?: string; edgeDriver?: stri
     exe: first(
       process.env.OPENNOTE_E2E_EXE,
       join(ROOT, 'target', 'e2e', 'opennote.exe'),
+      join(ROOT, 'target', 'ci', 'opennote.exe'),
       join(ROOT, 'target', 'debug', 'opennote.exe'),
     ),
     tauriDriver: first(process.env.TAURI_DRIVER, join(homedir(), '.cargo', 'bin', `tauri-driver${exe}`)),

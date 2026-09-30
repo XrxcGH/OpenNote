@@ -29,17 +29,17 @@ jobs:
       - name: Install tools
         run: npm ci
       - name: Test build of the app
-        run: npx tauri build --debug --no-bundle --features test-endpoints
+        run: npx tauri build --no-bundle --features test-endpoints -- --profile ci
       - name: msedgedriver matching the WebView2 Runtime
         run: pwsh tests/e2e/scripts/edgedriver.ps1
       - name: tauri-driver
         run: pwsh tests/e2e/scripts/tauri-driver.ps1
       - name: Every E2E spec
         env:
-          OPENNOTE_E2E_EXE: target/debug/opennote.exe
+          OPENNOTE_E2E_EXE: target/ci/opennote.exe
         run: node --test "tests/e2e/**/*.spec.ts"
       - name: Start-up baseline for main
-        run: node tests/perf/startup.ts --runs 20 --exe target/debug/opennote.exe --record
+        run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs
         if: failure()
         uses: actions/upload-artifact@v4

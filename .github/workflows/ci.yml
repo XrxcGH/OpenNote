@@ -136,13 +136,13 @@ jobs:
         run: cargo test --workspace
       - name: Inter-process types match the Rust ones (bindings drift check)
         run: git diff --exit-code app/src/platform/bindings
-      - name: Test build of the app, with the test endpoints the E2E tests use
-        run: npx tauri build --debug --no-bundle --features test-endpoints
+      - name: Test build of the app (ci profile, with the test endpoints the E2E tests use)
+        run: npx tauri build --no-bundle --features test-endpoints -- --profile ci
       - name: Keep the test build
         uses: actions/upload-artifact@v4
         with:
           name: opennote-e2e-exe
-          path: target/debug/opennote.exe
+          path: target/ci/opennote.exe
           retention-days: 7
 
   e2e-smoke:
