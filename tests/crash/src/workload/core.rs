@@ -319,10 +319,10 @@ impl Scratch {
             }
             _ => {
                 let item = self.trash.swap_remove(rng.below(self.trash.len()));
-                // A purge cut short may still finish in recovery, so its page may go either way.
-                let purged = notebook.purge(item);
+                // Announced first: a purge that a kill or a held file cuts short may still finish in recovery,
+                // and one that finished may be killed before it could say so. Either way its page may be gone.
                 crate::workload::say(&format!("TREE purge {item}"));
-                purged?;
+                notebook.purge(item)?;
             }
         }
         Ok(())
