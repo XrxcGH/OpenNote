@@ -1,0 +1,260 @@
+/* PDF export spike: paper sheets on a desk (BRAND.md section 6), and print rules that turn each sheet into
+   exactly one PDF page. The @page size comes from pdf.ts, because it changes with the paper. */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+}
+
+.desk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8);
+}
+
+/* Automated runs pin the sheets to the left, so their position doesn't depend on the window width. */
+.desk.auto {
+  align-items: flex-start;
+}
+
+.sheet {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background: var(--color-surface-page);
+  box-shadow: var(--elevation-2);
+  print-color-adjust: exact;
+}
+
+.paper,
+.highlights,
+.ink {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.paper path {
+  fill: none;
+  stroke-width: 1;
+}
+
+.paper .rule {
+  stroke: var(--color-border-subtle);
+}
+
+.paper .margin-rule {
+  stroke: var(--color-accent-clay);
+  stroke-opacity: 0.35;
+}
+
+.paper .cornell-rule {
+  stroke: var(--color-border-control);
+}
+
+.paper .dot {
+  fill: var(--color-border-control);
+  stroke: none;
+}
+
+.content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow: hidden;
+}
+
+.content > *,
+.content h1,
+.content p,
+.content figure {
+  margin: 0;
+}
+
+.title {
+  font-size: var(--type-title1-size);
+  line-height: var(--type-title1-line);
+  font-weight: var(--font-weight-bold);
+  width: fit-content;
+}
+
+.meta {
+  color: var(--color-text-muted);
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+}
+
+.heading {
+  font-size: var(--type-title3-size);
+  line-height: var(--type-title3-line);
+  font-weight: var(--font-weight-semibold);
+  margin-top: var(--space-3);
+}
+
+.body,
+.list {
+  font-size: var(--type-note-size);
+  line-height: var(--type-note-line);
+}
+
+.reading {
+  font-family: var(--font-reading);
+}
+
+.list {
+  padding-left: var(--space-7);
+}
+
+.grid {
+  border-collapse: collapse;
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+}
+
+.grid th,
+.grid td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  text-align: left;
+}
+
+.grid th {
+  background: var(--color-accent-primary-subtle);
+  font-weight: var(--font-weight-semibold);
+}
+
+.grid tbody tr:nth-child(even) {
+  background: var(--color-surface-app);
+}
+
+/* The adjusted variant draws table rules with inset shadows, which never change layout. A 1px border
+   snaps to whole device pixels on screen (1 device pixel at 150%) but stays 1px in print, which moves
+   everything below the table. */
+.adjusted .grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  box-shadow: inset 1px 1px 0 var(--color-border-subtle);
+}
+
+.adjusted .grid th,
+.adjusted .grid td {
+  border: none;
+  box-shadow: inset -1px -1px 0 var(--color-border-subtle);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.photo {
+  border-radius: var(--radius-md);
+}
+
+.caption,
+.cue,
+.summary-text {
+  color: var(--color-text-secondary);
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+}
+
+.code {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-app);
+  font-family: var(--font-mono);
+  font-size: var(--type-small-size);
+  line-height: var(--type-small-line);
+}
+
+.keep-together {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cues,
+.summary {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.summary {
+  gap: var(--space-2);
+}
+
+.summary-label {
+  color: var(--color-text-muted);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.folio {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 48px;
+  color: var(--color-text-muted);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  text-align: center;
+}
+
+.panel {
+  position: fixed;
+  top: var(--space-5);
+  right: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  box-shadow: var(--elevation-2);
+  font-size: var(--type-body-size);
+}
+
+/* Printing drops the desk: no background, gaps, or shadows, so each sheet fills exactly one page. */
+@media print {
+  body {
+    background: var(--color-surface-page);
+  }
+
+  .desk {
+    display: block;
+    padding: 0;
+  }
+
+  .sheet {
+    box-shadow: none;
+    break-after: page;
+  }
+
+  .sheet:last-child {
+    break-after: auto;
+  }
+
+  .panel {
+    display: none;
+  }
+}

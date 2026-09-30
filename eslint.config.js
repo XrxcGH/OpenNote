@@ -5,7 +5,16 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', 'target/**', 'node_modules/**', 'app/src-tauri/gen/**', 'app/src/theme/tokens.ts'] },
+  {
+    ignores: [
+      '**/dist/**',
+      'target/**',
+      '.claude/**',
+      'node_modules/**',
+      'app/src-tauri/gen/**',
+      'app/src/theme/tokens.ts',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -15,7 +24,18 @@ export default tseslint.config(
     rules: reactHooks.configs.recommended.rules,
   },
   {
-    files: ['checks/**/*.ts', 'docs/**/*.ts', 'app/scripts/**/*.ts', 'app/vite.config.ts', 'eslint.config.js'],
+    files: ['spikes/web/**/*.ts'],
+    languageOptions: { globals: globals.browser },
+  },
+  {
+    files: [
+      'checks/**/*.ts',
+      'docs/**/*.ts',
+      'app/scripts/**/*.ts',
+      'app/vite.config.ts',
+      'spikes/web/vite.config.ts',
+      'eslint.config.js',
+    ],
     languageOptions: { globals: globals.node },
   },
   {

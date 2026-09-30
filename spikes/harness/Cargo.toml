@@ -1,0 +1,53 @@
+[package]
+name = "opennote-spikes"
+version = "0.0.0"
+description = "Phase 1 spikes: throwaway experiments that measure ink, text, PDF export, and audio on Windows"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# The spikes measure WebView2 and WASAPI, so they build on Windows only.
+# wry and tao are the window and WebView2 layers that Tauri uses, at the versions in Cargo.lock.
+[target.'cfg(windows)'.dependencies]
+tao = "0.37"
+wry = "0.57"
+webview2-com = "0.39"
+windows-core = "0.62"
+windows = { version = "0.62", features = [
+  "Data_Pdf",
+  "Foundation",
+  "Storage",
+  "Storage_Streams",
+  "Win32_Foundation",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_Graphics_Gdi",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Performance",
+  "Win32_System_Power",
+  "Win32_System_Registry",
+  "Win32_System_StationsAndDesktops",
+  "Win32_System_Threading",
+  "Win32_System_WinRT",
+  "Win32_UI_Controls",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Input_Pointer",
+  "Win32_UI_WindowsAndMessaging",
+] }
+cpal = "0.18"
+image = { version = "0.25", default-features = false, features = ["png"] }
+lopdf = "0.45"
+# libopus for the audio spike's encoder measurement. It builds with CMake, so it's optional.
+opus = { version = "0.4", optional = true }
+
+[features]
+# Off by default, so CI and other spikes never build libopus. Turn it on with --features opus.
+opus = ["dep:opus"]

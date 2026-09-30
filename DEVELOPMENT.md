@@ -181,7 +181,7 @@ Build:
 - Add paper backgrounds: plain, lined, dot grid, graph, and Cornell.
 - Add print and PDF export that match the paginated view exactly, with ink kept as vector graphics.
 
-Test: golden-image tests that render sample pages to PDF and compare them pixel by pixel with approved images. Also test page-break placement for text, tables, and images at each paper size.
+Test: golden-image tests that render sample pages to PDF and compare them with approved images, within the tolerances in [ADR 0006](docs/adr/0006-pdf-export.md). Also test page-break placement for text, tables, and images at each paper size.
 
 Done when: exported PDFs match the screen for every sample page, and switching views keeps the content under the pointer still.
 
@@ -454,7 +454,7 @@ A feature is done, and can leave its feature flag, when:
 
 | Risk | Impact | Plan |
 |---|---|---|
-| Pen latency in WebView2 is too high | Ink feels laggy, the core promise fails | Measured in Phase 1 spike; switch the interface to Flutter if the budget can't be met |
+| Pen latency in WebView2 is too high | Ink feels laggy, the core promise fails | Phase 1 measured ink about one compositor frame behind a native window ([ADR 0004](docs/adr/0004-ink-latency.md)). Phase 5 tries delegated ink trails with a real pen, and adds a native ink layer if the camera check fails. |
 | OneNote import is harder than expected | Switchers can't bring notes | Start with the Graph API, which returns HTML and ink; keep a test corpus; ship partial import clearly labeled |
 | Data loss from bugs or crashes | Loss of trust, which is hard to win back | Atomic saves, journal, version history, crash-safety tests every night |
 | An update breaks the app or damages files | People lose trust or work | Backups before migrations, read-only opening of newer files, automatic rollback after two failed starts, and update tests from the last three versions |
