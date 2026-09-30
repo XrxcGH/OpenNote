@@ -23,6 +23,9 @@ pub mod wire;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
 
+#[cfg(feature = "fuzzing")]
+pub mod fuzzing;
+
 pub use error::{ApplyError, CoreError, EditError, FormatError, FormatErrorKind, FsError, FsErrorKind, JournalError};
 pub use id::{
     AssetId, BlockId, ClientId, ColumnId, DeviceId, ElementId, GroupId, Id, IntentId, NotebookId, PageId, RevisionId,
