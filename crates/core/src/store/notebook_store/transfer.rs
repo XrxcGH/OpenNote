@@ -420,7 +420,7 @@ fn copy_assets(fs: &dyn Fs, src: &Path, dst: &Path, page: &Page) -> Result<(), C
 /// Copies a folder and everything in it, every file durably. Temporary files and partial folders are left
 /// out. A target that already holds a file with the same bytes counts as copied, so a retry after a crash
 /// works (spec 17.2).
-pub(crate) fn copy_tree(fs: &dyn Fs, src: &Path, dst: &Path) -> Result<(), CoreError> {
+pub fn copy_tree(fs: &dyn Fs, src: &Path, dst: &Path) -> Result<(), CoreError> {
     let mut pending = vec![(src.to_path_buf(), dst.to_path_buf())];
     while let Some((from, to)) = pending.pop() {
         match fs.create_dir_durable(&to) {
