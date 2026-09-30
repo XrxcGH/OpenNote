@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Finding, Rule, SourceFile } from '../types.ts';
 import { caseProblem } from '../text.ts';
+import { decodeHtmlEntities } from '../html.ts';
 import { reporter } from './helpers.ts';
 
 const AUDIT = readFileSync(join(import.meta.dirname, '..', 'layout', 'audit.js'), 'utf8');
@@ -60,13 +61,7 @@ function render(svg: string, exe: string): AuditResult[] {
     });
     const json = /<pre id="out">([\s\S]*?)<\/pre>/.exec(dom)?.[1] ?? '';
     if (!json) throw new Error('the audit script produced no result');
-    return JSON.parse(
-      json
-        .replace(/&quot;/g, '"')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>'),
-    );
+    return JSON.parse(decodeHtmlEntities(json));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

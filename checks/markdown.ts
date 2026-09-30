@@ -2,6 +2,7 @@
 
 import type { ProseBlock, ProseContext, ProseLine } from './types.ts';
 import { cleanInline } from './text.ts';
+import { stripHtmlComments } from './html.ts';
 
 interface ScanState {
   inFence: boolean;
@@ -29,26 +30,10 @@ function classifyLine(raw: string, index: number, state: ScanState): ProseLine |
     return undefined;
   }
   if (state.inFence) return undefined;
-  const withoutComments = stripHtmlComments(raw, state);
+  const { text: withoutComments, open } = stripHtmlComments(raw, state.inComment);
+  state.inComment = open;
   if (withoutComments.trim() === '') return undefined;
   return describeLine(raw, withoutComments, index + 1);
-}
-
-function stripHtmlComments(raw: string, state: ScanState): string {
-  let text = raw;
-  if (state.inComment) {
-    const end = text.indexOf('-->');
-    if (end === -1) return '';
-    state.inComment = false;
-    text = text.slice(end + 3);
-  }
-  text = text.replace(/<!--.*?-->/g, '');
-  const start = text.indexOf('<!--');
-  if (start !== -1) {
-    state.inComment = true;
-    text = text.slice(0, start);
-  }
-  return text;
 }
 
 function describeLine(raw: string, text: string, line: number): ProseLine | undefined {
