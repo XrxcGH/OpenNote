@@ -1,6 +1,8 @@
 //! Guards for measurements that inject input or read the screen.
 //!
-//! Only one such measurement may run at a time. Otherwise one spike's input and windows would spoil the//! numbers of another. The screen lock enforces that across processes. The desktop check refuses to//! measure while the session is locked, because injected input then goes nowhere and capture fails.
+//! Only one such measurement may run at a time. Otherwise one spike's input and windows would spoil the
+//! numbers of another. The screen lock enforces that across processes. The desktop check refuses to
+//! measure while the session is locked, because injected input then goes nowhere and capture fails.
 
 use std::fs;
 use std::path::PathBuf;
