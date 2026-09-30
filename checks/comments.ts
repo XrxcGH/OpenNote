@@ -2,6 +2,7 @@
 // A small scanner is enough here: it understands strings, line comments and block comments.
 
 import type { ProseLine } from './types.ts';
+import { URL } from './text.ts';
 
 interface Syntax {
   line: string[];
@@ -186,6 +187,6 @@ function cleanComment(comment: string): string {
     .replace(/^\s*[/*!#<>-]+\s?/, '')
     .replace(/\*\/\s*$/, '')
     .replace(/`[^`]*`/g, '§')
-    .replace(/https?:\/\/[^\s)]+/g, ' ')
+    .replace(URL, ' ')
     .trim();
 }

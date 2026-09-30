@@ -1,5 +1,8 @@
 // Small natural-language helpers shared by the prose rules.
 
+/** A URL, allowing balanced parentheses inside it (as in Wikipedia links). */
+export const URL = /https?:\/\/(?:[^\s()]|\([^\s()]*\))+/g;
+
 const WORD_PATTERN = /[A-Za-z][A-Za-z'’-]*/g;
 
 /** Words made of letters (with inner apostrophes or hyphens). Numbers and symbols are skipped. */
@@ -18,7 +21,7 @@ export function cleanInline(text: string): string {
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/<https?:[^>]*>/g, ' ')
-    .replace(/https?:\/\/[^\s)]+/g, ' ')
+    .replace(URL, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/(\*\*|__|\*|~~)/g, '')
     .replace(/\s+/g, ' ')

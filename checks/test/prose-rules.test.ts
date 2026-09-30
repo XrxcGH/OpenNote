@@ -12,6 +12,7 @@ import { length } from '../rules/length.ts';
 import { readability } from '../rules/readability.ts';
 import { githubSlug, usability } from '../rules/usability.ts';
 import { applyFixes } from '../fix.ts';
+import { cleanInline } from '../text.ts';
 
 test('spelling flags British forms and suggests American ones', async () => {
   const found = await run({ rule: spelling, path: 'a.md', text: '# T\n\nThe colour of the centre was organised.\n' });
@@ -42,6 +43,10 @@ test('spelling only reads comments in code', async () => {
 test('spelling fixes are applied as whole words', () => {
   const result = applyFixes('The colour and colours.\n', [{ line: 1, from: 'colour', to: 'color' }]);
   assert.equal(result.text, 'The color and colours.\n');
+});
+
+test('URLs are removed from prose, including ones with parentheses', () => {
+  assert.equal(cleanInline('See https://en.wikipedia.org/wiki/A_(b) now (or https://x.org).'), 'See now (or ).');
 });
 
 test('articles follow sound, including acronyms', () => {
