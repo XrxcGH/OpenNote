@@ -195,9 +195,10 @@ export function organize(): Screen {
     region({ x: 2, y: BODY_TOP + 40, w: WIDE.sidebar - 4, h: 28 }, ''),
     region({ x: 2, y: WIDE.height - 104, w: WIDE.sidebar - 4, h: 28 }, ''),
     tag(20, WIDE.height - 116, 'Auto-scroll strips (28) at both ends while dragging', NOTE.region),
-    region({ x: 4, y: rowY('Midterm') - 2, w: WIDE.sidebar - 8, h: 66 }, 'Rows 32 (44 on touch), indent 16 per level'),
+    region({ x: 4, y: rowY('Midterm') - 2, w: WIDE.sidebar - 8, h: 66 }, ''),
     tag(WIDE.sidebar + 180, BODY_TOP + 500, 'Right-click or long-press a page', NOTE.region),
-    tag(150, rowY('Final') + 96, 'Drop target fills with the accent', NOTE.region),
+    tag(20, BODY_TOP + 400, 'Drop target fills with the accent', NOTE.region),
+    tag(20, BODY_TOP + 424, 'Rows 32 (44 on touch), indent 16 per level', NOTE.region),
   ];
   return makeScreen({
     file: '04-organize.svg',

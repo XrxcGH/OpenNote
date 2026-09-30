@@ -96,7 +96,7 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
   for (const tool of tools) {
     const w = tool.label.length * 7 + 20;
     const fill = tool.active ? p.c('accent.primarySubtle') : 'none';
-    parts.push(rect({ x, y: y + 8, w, h: 28 }, { fill, r: 8 }));
+    parts.push('<g data-fit="6" data-center="both">', rect({ x, y: y + 8, w, h: 28 }, { fill, r: 8 }));
     parts.push(
       text(x + w / 2, y + 27, tool.label, {
         size: 13,
@@ -104,6 +104,7 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
         anchor: 'middle',
       }),
     );
+    parts.push('</g>');
     x += w + 6;
   }
   return parts.join('');

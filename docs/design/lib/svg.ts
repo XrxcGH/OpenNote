@@ -136,27 +136,29 @@ export function textLines(x: number, y: number, widths: number[], color: string,
 /** A hatched area where nothing interactive may be placed. */
 export function keepOut(b: Box, label: string, labelAt?: [number, number]): string {
   const [x, y] = labelAt ?? [b.x + 4, b.h >= 24 ? b.y + b.h / 2 + 4 : b.y + b.h + 13];
-  const area = rect(b, { fill: 'url(#hatch)', stroke: NOTE.keepOut, dash: '4 3' });
+  const area = `<g pointer-events="none">${rect(b, { fill: 'url(#hatch)', stroke: NOTE.keepOut, dash: '4 3' })}</g>`;
   return label ? area + tag(x, y, label, NOTE.keepOut) : area;
 }
 
 /** The window buttons at the top right of every desktop screen. */
 export function captionKeepOut(width: number): string {
-  return keepOut({ x: width - 138, y: 0, w: 138, h: 40 }, 'Window buttons 138×40', [width - 160, 58]);
+  return keepOut({ x: width - 138, y: 0, w: 138, h: 40 }, 'Window buttons 138×40', [width - 176, 58]);
 }
 
 /** A dashed outline naming a layout region and its size. */
 export function region(b: Box, label: string): string {
-  const outline = rect(b, { stroke: NOTE.region, dash: '6 4', width: 1.5 });
+  const outline = `<g pointer-events="none">${rect(b, { stroke: NOTE.region, dash: '6 4', width: 1.5 })}</g>`;
   return label ? outline + tag(b.x + 6, b.y + 16, label, NOTE.region) : outline;
 }
 
 /** A small annotation label on a white pill, readable over any background. */
 export function tag(x: number, y: number, label: string, color: string): string {
-  const width = label.length * 7 + 14;
+  const width = Math.ceil(label.length * 7.4 + 16);
   return [
+    '<g data-fit="4" pointer-events="none">',
     rect({ x, y: y - 12, w: width, h: 17 }, { fill: NOTE.paper, stroke: color, r: 8.5 }),
     text(x + 6, y, label, { size: 11, weight: 600, fill: color }),
+    '</g>',
   ].join('');
 }
 

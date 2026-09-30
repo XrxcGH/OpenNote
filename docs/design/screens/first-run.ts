@@ -26,8 +26,10 @@ function buttons(p: Palette, primary: string): string[] {
   const right = CARD.x + CARD.w - 36;
   return [
     text(CARD.x + 48, y + 26, 'Back', { size: 15, weight: 600, fill: p.c('text.link') }),
+    '<g data-fit="8" data-center="both">',
     rect({ x: right - 150, y, w: 150, h: 40 }, { fill: p.c('accent.primary'), r: 8 }),
     text(right - 75, y + 26, primary, { size: 15, weight: 600, fill: p.c('text.onAccent'), anchor: 'middle' }),
+    '</g>',
   ];
 }
 
@@ -144,7 +146,8 @@ export function firstRunStorage(): Screen {
     ...field(p, CARD.y + 410, 'Your first notebook', 'My notebook'),
     ...chips,
     ...buttons(p, 'Continue'),
-    region({ x: x - 8, y: CARD.y + 180, w: 648, h: 76 }, 'Full path, wraps instead of cutting'),
+    region({ x: x - 8, y: CARD.y + 180, w: 648, h: 76 }, ''),
+    tag(CARD.x + CARD.w + 16, CARD.y + 230, 'Full path, wraps instead of cutting', NOTE.region),
     captionKeepOut(WIDE.width),
     tag(CARD.x + CARD.w + 16, CARD.y + 330, 'Step 4 (optional): import from OneNote or Evernote', NOTE.region),
   ];

@@ -58,7 +58,13 @@ function sheet(p: Palette, y: number, number: number): string {
   return [
     rect({ x: PAGE_X, y, w: PAGE.w, h: PAGE.h }, { fill: p.c('surface.page'), shadow: true }),
     ...ruled,
-    text(PAGE_X + PAGE.w / 2, y + PAGE.h - 24, String(number), { size: 11, fill: p.c('text.muted'), anchor: 'middle' }),
+    y + PAGE.h - 24 < WIDE.height
+      ? text(PAGE_X + PAGE.w / 2, y + PAGE.h - 24, String(number), {
+          size: 11,
+          fill: p.c('text.muted'),
+          anchor: 'middle',
+        })
+      : '',
   ].join('');
 }
 

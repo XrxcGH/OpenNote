@@ -12,8 +12,10 @@ function pill(p: Palette, x: number, y: number, label: string, on = false): stri
   const fill = on ? p.c('accent.primarySubtle') : 'none';
   const color = p.c(on ? 'text.link' : 'text.primary');
   return (
+    '<g data-fit="6" data-center="both">' +
     rect({ x, y, w, h: 28 }, { fill, stroke: p.c('border.control'), r: 14 }) +
-    text(x + w / 2, y + 19, label, { size: 13, fill: color, anchor: 'middle' })
+    text(x + w / 2, y + 19, label, { size: 13, fill: color, anchor: 'middle' }) +
+    '</g>'
   );
 }
 
