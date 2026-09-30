@@ -29,8 +29,9 @@ pub struct VerifyState {
     seed: u64,
     /// The edited pages as the last check left them, which is where the next writer starts.
     start: Vec<Page>,
-    /// Scratch pages that must exist: `None` in the tree, or the Trash item they were deleted into.
-    expected: BTreeMap<String, Option<String>>,
+    /// Scratch pages that must exist: `None` in the tree, or the Trash item they were deleted into and the
+    /// iteration that deleted them.
+    expected: BTreeMap<String, Option<(String, u64)>>,
 }
 
 impl VerifyState {
@@ -61,7 +62,7 @@ impl VerifyState {
         self.check_pages(iteration, markers, &pages)?;
         let before = snapshot(&manifest.notebook);
         let (core, notebook) = recover(&self.paths.data, &manifest)?;
-        self.check_tree(&notebook, &manifest, markers)?;
+        self.check_tree(&notebook, &manifest, (iteration, markers))?;
         notebook.close().map_err(|e| format!("close: {e}"))?;
         drop(core);
         if snapshot(&manifest.notebook) != before {
@@ -101,16 +102,24 @@ impl VerifyState {
     }
 
     /// Scratch pages are neither lost nor duplicated, whether a tree change was cut short or not.
-    fn check_tree(&mut self, notebook: &NotebookHandle, manifest: &Manifest, markers: &Markers) -> Result<(), String> {
+    /// A page in a Trash item old enough to expire may be gone too, because each writer's Trash expiry purges it.
+    fn check_tree(
+        &mut self,
+        notebook: &NotebookHandle,
+        manifest: &Manifest,
+        (iteration, markers): (u64, &Markers),
+    ) -> Result<(), String> {
         for words in &markers.tree {
             match words.as_slice() {
                 [op, page] if op == "create" || op == "restore" => {
                     self.expected.insert(page.clone(), None);
                 }
                 [op, page, item] if op == "delete" => {
-                    self.expected.insert(page.clone(), Some(item.clone()));
+                    self.expected.insert(page.clone(), Some((item.clone(), iteration)));
                 }
-                [op, item] if op == "purge" => self.expected.retain(|_, trash| trash.as_ref() != Some(item)),
+                [op, item] if op == "purge" => self
+                    .expected
+                    .retain(|_, trash| trash.as_ref().is_none_or(|(i, _)| i != item)),
                 _ => return Err(format!("an unknown tree marker: {words:?}")),
             }
         }
@@ -128,16 +137,27 @@ impl VerifyState {
             .flat_map(|item| &item.contents)
             .map(|id| id.to_string())
             .collect();
-        let edited = manifest.pages.iter().map(|page| (page, true));
-        let scratch = self.expected.keys().map(|page| (page, false));
-        for (page, must_be_in_tree) in edited.chain(scratch) {
+        let edited = manifest.pages.iter().map(|page| (page, true, None));
+        let scratch = self.expected.iter().map(|(page, trash)| (page, false, trash.as_ref()));
+        for (page, must_be_in_tree, trash) in edited.chain(scratch) {
             let in_tree = counts.contains_key(page);
-            if !in_tree && (must_be_in_tree || !trashed.contains(page)) {
+            let expired = trash.is_some_and(|(_, deleted)| may_have_expired(*deleted, iteration));
+            if !in_tree && (must_be_in_tree || !(trashed.contains(page) || expired)) {
                 return Err(format!("page {page} is lost: it is in neither the tree nor Trash"));
             }
         }
         Ok(())
     }
+}
+
+/// Whether a Trash item made in iteration `deleted` may have expired by the end of iteration `now` (spec 12.4).
+/// Each iteration's clock starts an hour after the one before, so a long run passes the Trash's 30 days.
+fn may_have_expired(deleted: u64, now: u64) -> bool {
+    let start = |iteration| opennote_core::Clock::now(&script::clock_for(iteration)).unix_ms();
+    let script = STEP.saturating_mul(u32::try_from(script::STEPS).unwrap_or(u32::MAX));
+    let script_ms = i64::try_from(script.as_millis()).unwrap_or(i64::MAX);
+    let keep_ms = i64::from(Timings::for_crash_tests().trash_days).saturating_mul(86_400_000);
+    start(now).saturating_add(script_ms) >= start(deleted).saturating_add(keep_ms)
 }
 
 /// Starts a core, recovers the notebook, and opens it.
@@ -200,4 +220,15 @@ fn snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
         .filter(|path| path.extension().is_some_and(|ext| ext == "json" || ext == "onk"))
         .filter_map(|path| Some((path.clone(), std::fs::read(&path).ok()?)))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::may_have_expired;
+
+    #[test]
+    fn trash_items_may_expire_after_thirty_days_of_iterations() {
+        assert!(!may_have_expired(5, 5 + 719));
+        assert!(may_have_expired(5, 5 + 720));
+    }
 }
