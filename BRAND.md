@@ -99,6 +99,35 @@ Ink is content, not interface, so it has its own palette. Each pen has a light a
 
 Color is never the only signal. Pens show their name on hover and in screen reader labels, and status always pairs color with an icon or text.
 
+### Dark mode setting
+
+Dark mode is a setting people can switch at any moment, not something hidden in a menu. The app offers three choices:
+
+| Choice | What it does |
+|---|---|
+| Light | Always uses the Daylight theme |
+| Dark | Always uses the Evening theme |
+| Match Windows | Follows the Windows light or dark setting, and switches when Windows does |
+
+Ways to switch, all with the same result:
+
+- A sun and moon toggle in the title bar, always one click or tap away. It switches between Light and Dark. A long press or right-click opens all three choices.
+- The shortcut Ctrl+Shift+D, which people can change in settings.
+- "Toggle dark mode" in the command palette (Ctrl+K).
+- Settings, then Appearance, which shows all three choices with small previews.
+
+First-time setup asks once. The "Choose your look" step shows Light, Dark and Match Windows as three preview cards, and the whole screen changes as the person picks one. The card that matches the current Windows setting is selected in advance, so pressing Continue keeps what they already use. The choice is stored before the first page ever opens.
+
+The preference belongs to the person, not the device. If they later turn on an account for sync, the setup asks whether to keep this device's choice or use the one saved in their account. After that, each device can override it.
+
+Rules for the switch:
+
+- The saved theme is applied before the window first appears, so the app never flashes the wrong colors at start-up.
+- Switching crossfades every surface over 200 ms (the `base` token), or 100 ms with reduced motion. Content, scroll position and selection stay exactly where they were.
+- Notes don't change. Ink uses each pen's light or dark value, and pasted images keep their colors.
+- A separate "Page color" setting lets people keep paper-white pages inside the dark interface, for reading or printing previews. It defaults to matching the theme.
+- Windows contrast themes always take priority over this setting.
+
 ## 5. Typography
 
 | Role | Font | Why |
@@ -216,6 +245,7 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 | Navigation tree | Notebooks, sections and pages with color chips. Drag to reorder. Full keyboard support with arrow keys. |
 | Page canvas | Paper backgrounds (plain, lined, dot grid, graph, Cornell) drawn with `border.subtle`. Page breaks are dashed lines with the page number in `text.muted`. |
 | Recording bar | Pinned above the page, with a pulsing dot, elapsed time, and pause and stop buttons. Timestamps link to ink and text. |
+| Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch. |
 | Sync status | A small icon with a text tooltip in the title bar: saved, syncing, offline, or needs attention. Never a blocking dialog. |
 | Dialogs | Title, one-sentence explanation, then actions (primary on the right). Escape closes. Focus returns to where it was. |
 | Toasts | Bottom center, one at a time, with an Undo action for destructive changes. |

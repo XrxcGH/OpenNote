@@ -108,13 +108,13 @@ Done when: each spike has an ADR with measurements. If ink latency misses the 25
 Build:
 
 - Generate CSS custom properties and a typed module from `brand/tokens.json`.
-- Add light and dark themes that follow Windows, plus Windows contrast themes.
+- Add light and dark themes with the dark mode setting from BRAND.md: Light, Dark or Match Windows. Include the title bar toggle, Ctrl+Shift+D and the "Choose your look" onboarding step, plus support for Windows contrast themes.
 - Build the responsive layout from BRAND.md section 6: three panes on wide windows, down to one pane on narrow ones.
 - Add the notebook, section and page tree with create, rename, reorder, color and delete (to Trash).
 - Add the command bar, a command palette (Ctrl+K), keyboard navigation and a shortcut list (Ctrl+/).
 - Add a settings page and first-run onboarding.
 
-Test: component tests for every control, keyboard-only end-to-end (E2E) tests of navigation, automated accessibility checks, and screenshot tests at each size class in both themes.
+Test: component tests for every control, keyboard-only end-to-end (E2E) tests of navigation, automated accessibility checks, and screenshot tests at each size class in both themes. Theme tests confirm that first-run setup preselects the Windows setting, that switching keeps scroll position and selection, and that start-up never shows the wrong theme.
 
 Done when: the shell meets the start-up and feedback budgets, and passes the keyboard and screen reader checklist in [section 6](#6-testing-strategy).
 
