@@ -433,6 +433,7 @@ A build ships to beta or stable only when every item is checked:
 A feature is done, and can leave its feature flag, when:
 
 - [ ] It works with mouse, keyboard, touch, and pen, in every size class and both themes.
+- [ ] Every drag has a click or keyboard alternative, as the Web Content Accessibility Guidelines (WCAG) 2.2 require (success criterion 2.5.7).
 - [ ] It has unit tests, and an E2E test for its main task.
 - [ ] It meets the performance budgets, with a benchmark if it could affect them.
 - [ ] It passes automated accessibility checks and the relevant manual checklist items.
