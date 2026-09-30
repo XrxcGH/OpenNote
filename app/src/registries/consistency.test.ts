@@ -9,6 +9,7 @@ import type { KeyScope } from '../commands/types';
 import { FLAGS } from '../app/flags';
 import {
   beforeExit,
+  pageCreated,
   commandBar,
   commands,
   contextMenus,
@@ -52,6 +53,7 @@ describe('registrations', () => {
       titleBarItems,
       paletteProviders,
       beforeExit,
+      pageCreated,
     ]) {
       const ids = registry.list().map((item) => item.id);
       expect(new Set(ids).size).toBe(ids.length);
