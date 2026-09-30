@@ -1,8 +1,9 @@
 name: release
 
-# Pushing a tag such as v0.1.0 runs CI, builds OpenNote.exe, signs the update, and publishes a GitHub Release.
-# See docs/RELEASING.md. Each job gets only the permissions it needs, and only the signing step sees the
-# signing secrets. The actions in this file are pinned to full commit SHAs, because they build and sign the update.
+# Pushing a tag such as v0.1.0 runs CI, builds one exe per Windows architecture, signs the updates, and publishes
+# a GitHub Release. See docs/RELEASING.md. Each job gets only the permissions it needs, and only the signing step
+# sees the signing secrets. The actions in this file are pinned to full commit SHAs, because they build and sign
+# the updates.
 on:
   push:
     tags: ['v*']
@@ -37,11 +38,27 @@ jobs:
       contents: read
 
   build:
-    # Builds the exe with a read-only token and no secrets.
+    # Builds one exe per Windows architecture with a read-only token and no secrets. The x64 runner
+    # cross-compiles the 32-bit and ARM64 exes with the MSVC tools it has for those architectures.
     needs: ci
     runs-on: windows-latest
     permissions:
       contents: read
+    strategy:
+      # Let every architecture finish, so one run shows every failure. The publish job needs all three.
+      fail-fast: false
+      matrix:
+        # The same targets and file names as RELEASE_FILES in app/scripts/write-manifest.ts. Its tests check this.
+        include:
+          - target: x86_64-pc-windows-msvc
+            file: OpenNote_Windows64.exe
+          - target: i686-pc-windows-msvc
+            file: OpenNote_Windows32.exe
+          - target: aarch64-pc-windows-msvc
+            file: OpenNote_WindowsARM64.exe
+    env:
+      RELEASE_TARGET: ${{ matrix.target }}
+      RELEASE_FILE: ${{ matrix.file }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -51,23 +68,24 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # No Rust build cache: the exe is always built from a clean target directory.
+      # No Rust build cache: each exe is always built from a clean target directory.
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
           toolchain: stable
+          targets: ${{ matrix.target }}
       - name: Install tools
         run: npm ci
-      - name: Build OpenNote.exe
-        run: npx tauri build --no-bundle
+      - name: Build ${{ matrix.file }}
+        run: npx tauri build --no-bundle --target $env:RELEASE_TARGET
       - name: Collect the exe
         run: |
           New-Item -ItemType Directory -Force dist-release | Out-Null
-          Copy-Item target/release/opennote.exe dist-release/OpenNote.exe
+          Copy-Item "target/$env:RELEASE_TARGET/release/opennote.exe" "dist-release/$env:RELEASE_FILE"
       - name: Keep the exe for the publish job
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: opennote-exe
-          path: dist-release/OpenNote.exe
+          name: exe-${{ matrix.target }}
+          path: dist-release/${{ matrix.file }}
           if-no-files-found: error
           retention-days: 1
 
@@ -87,11 +105,13 @@ jobs:
           node-version: 22
       - name: Install tools without install scripts
         run: npm ci --ignore-scripts
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - name: Download the exes
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: opennote-exe
+          pattern: exe-*
           path: dist-release
-      - name: Sign the update
+          merge-multiple: true
+      - name: Sign the updates
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -102,8 +122,12 @@ jobs:
           }
           # --app-version puts the version in the signed trusted comment, so it can't be changed later.
           $version = $env:GITHUB_REF_NAME -replace '^v', ''
-          npx tauri signer sign --app-version $version dist-release/OpenNote.exe
+          foreach ($exe in Get-ChildItem dist-release -Filter *.exe) {
+            npx tauri signer sign --app-version $version $exe.FullName
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - name: Write the update manifest
+        # Stops unless every exe in RELEASE_FILES is here, with a signature for this version.
         run: node app/scripts/write-manifest.ts dist-release $env:GITHUB_REF_NAME
       - name: Publish the release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2

@@ -55,7 +55,8 @@ body:
     attributes:
       label: OpenNote version
       description: >-
-        Right-click OpenNote.exe, choose Properties, and read Product version on the Details tab.
+        Right-click the OpenNote exe, such as OpenNote_Windows64.exe, choose Properties, and read Product version on
+        the Details tab.
         If you built OpenNote from source, give the output of `git rev-parse --short HEAD` instead.
       placeholder: '0.1.0'
     validations:
