@@ -23,7 +23,9 @@ export async function pressChord(chord: string): Promise<void> {
     .reverse()
     .map((part) => `{/${part}}`)
     .join('');
-  await userEvent.keyboard(`${down}{${key}}${up}`);
+  // Punctuation is typed as itself: "{/}" would read as the end of a descriptor.
+  const pressed = /^[^A-Za-z0-9{[]$/.test(key) ? key : `{${key}}`;
+  await userEvent.keyboard(`${down}${pressed}${up}`);
 }
 
 /** Waits until focus is on the element. */
