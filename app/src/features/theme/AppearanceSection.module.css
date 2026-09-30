@@ -25,7 +25,17 @@
     line-height: var(--type-small-line);
   }
 
-  .group [role='radiogroup'] {
+  .group :where([role='radiogroup']) {
     gap: var(--space-3);
+  }
+}
+
+/* A selected choice keeps a visible mark when Windows replaces the colors. */
+@layer forced {
+  @media (forced-colors: active) {
+    .group [role='radio'][aria-checked='true'] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
   }
 }

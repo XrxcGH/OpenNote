@@ -18,12 +18,18 @@
   }
 }
 
-/* Under a contrast theme the switch keeps a visible edge, and "on" shows as the system highlight
-   (ARCHITECTURE.md section 9.6). */
+/* Under a contrast theme the switch keeps a visible edge. "On" shows as the system highlight, also when the switch
+   is disabled, so the state stays visible (ARCHITECTURE.md section 9.6). A disabled switch that is off is GrayText. */
 @layer forced {
   @media (forced-colors: active) {
     .toggle [role='switch'] {
       border: 1px solid ButtonBorder;
+    }
+
+    .toggle [role='switch'][aria-disabled='true'] {
+      border-color: GrayText;
+      background: Canvas;
+      color: GrayText;
     }
 
     .toggle [role='switch'][aria-checked='true'] {
@@ -31,12 +37,6 @@
       border-color: Highlight;
       background: Highlight;
       color: HighlightText;
-    }
-
-    .toggle [role='switch'][aria-disabled='true'] {
-      border-color: GrayText;
-      background: Canvas;
-      color: GrayText;
     }
   }
 }

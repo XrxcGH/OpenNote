@@ -5,10 +5,24 @@
     gap: var(--space-4);
   }
 
+  .cards [role='radiogroup'] {
+    gap: var(--space-7);
+  }
+
   .cards [role='radio'] {
     inline-size: var(--size-theme-card);
     min-block-size: var(--size-theme-card);
     align-content: start;
+  }
+
+  /* In compact the cards stack, and each fills the width. */
+  :global(:root[data-size-class='compact']) .cards [role='radiogroup'] {
+    flex-direction: column;
+  }
+
+  :global(:root[data-size-class='compact']) .cards [role='radio'] {
+    inline-size: auto;
+    min-block-size: 0;
   }
 
   .note {
@@ -98,7 +112,8 @@
   }
 }
 
-/* The previews show what Light and Dark look like, even under a Windows contrast theme. */
+/* The previews show what Light and Dark look like, even under a Windows contrast theme. The selected card keeps
+   a visible mark. */
 @layer forced {
   @media (forced-colors: active) {
     .mini,
@@ -108,6 +123,11 @@
 
     .mini {
       border-color: CanvasText;
+    }
+
+    .cards [role='radio'][aria-checked='true'] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
     }
   }
 }
