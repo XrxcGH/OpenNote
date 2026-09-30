@@ -175,7 +175,7 @@ fn expire_damaged(files: &PageFiles<'_>, now: Timestamp) -> Result<u64, CoreErro
 }
 
 /// Reads a time written by `layout::file_time`, such as `20260930T140740Z`.
-fn parse_file_time(text: &str) -> Option<Timestamp> {
+pub(crate) fn parse_file_time(text: &str) -> Option<Timestamp> {
     let (date, time) = text.strip_suffix('Z')?.split_once('T')?;
     let (year, rest) = date.split_at_checked(4)?;
     let (month, day) = rest.split_at_checked(2)?;
