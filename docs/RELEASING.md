@@ -7,6 +7,7 @@ This guide is for maintainers. It covers the one-time setup, version numbers, cu
 - [One-time setup](#one-time-setup)
 - [Versioning](#versioning)
 - [Cutting a release](#cutting-a-release)
+- [Release files](#release-files)
 - [What the release workflow does](#what-the-release-workflow-does)
 - [Verifying a release](#verifying-a-release)
 - [When the release workflow fails](#when-the-release-workflow-fails)
@@ -18,7 +19,7 @@ Do these steps once per repository, before the first release that people will up
 
 ### Create the update signing key
 
-The update key pair proves that an update came from OpenNote. The release workflow signs each `OpenNote.exe` with the private key. From Phase 2, the app checks that signature with the public key built into it.
+The update key pair proves that an update came from OpenNote. The release workflow signs each release exe with the private key. From Phase 2, the app checks that signature with the public key built into it.
 
 1. Install the project tools with `npm install`. The Tauri command-line tool comes with them.
 2. Generate the key pair:
@@ -51,7 +52,7 @@ Open the key file in Notepad, select all, and copy it. Paste it exactly, with no
 
 With the GitHub CLI, you can run `gh secret set TAURI_SIGNING_PRIVATE_KEY` instead, and paste the value when asked. Do the same for the password.
 
-Only the "Sign the update" step of the release workflow receives these secrets. Without `TAURI_SIGNING_PRIVATE_KEY`, that step fails and the release stops, so a release is never published unsigned.
+Only the "Sign the updates" step of the release workflow receives these secrets. Without `TAURI_SIGNING_PRIVATE_KEY`, that step fails and the release stops, so a release is never published unsigned.
 
 ### Add code signing later
 
@@ -59,7 +60,7 @@ Code signing is optional and isn't configured yet. An Authenticode certificate, 
 
 This is separate from the update key. The update key convinces the app, and the certificate convinces Windows. The release checklist requires both before the first beta or stable release.
 
-When you add it, sign the exe in a new step of the publish job, before "Sign the update". That keeps the certificate secrets out of the build job. Code signing changes the file, so the update signature and the hash must be made afterward.
+When you add it, sign the exes in a new step of the publish job, before "Sign the updates". That keeps the certificate secrets out of the build job. Code signing changes the files, so the update signatures and the hashes must be made afterward.
 
 ## Versioning
 
@@ -114,9 +115,25 @@ Avoid `git push --tags`. It pushes every local tag, and each new `v` tag can sta
 
 A tag with a hyphen, such as `v0.5.0-beta.1`, makes a prerelease. The workflow marks the GitHub Release as a prerelease, and writes `beta.json` instead of `latest.json`. Stable copies read only `latest.json`, so they never see beta builds. Put the same version, such as `0.5.0-beta.1`, in the three version files.
 
+## Release files
+
+Each release ships one exe for each Windows architecture: 64-bit x64, 32-bit x86, and 64-bit Arm (ARM64).
+
+| File | For | Rust target | Updater key |
+|---|---|---|---|
+| `OpenNote_Windows64.exe` | 64-bit Windows, on most PCs | `x86_64-pc-windows-msvc` | `windows-x86_64` |
+| `OpenNote_Windows32.exe` | 32-bit Windows | `i686-pc-windows-msvc` | `windows-i686` |
+| `OpenNote_WindowsARM64.exe` | Windows on ARM64 PCs, such as Snapdragon laptops | `aarch64-pc-windows-msvc` | `windows-aarch64` |
+
+Next to each exe is its update signature, with `.sig` added to the name, such as `OpenNote_Windows64.exe.sig`. The release also holds one manifest, `latest.json`, or `beta.json` for a prerelease.
+
+Each name starts with `OpenNote_`, followed by the operating system and, where needed, the architecture. Later, macOS and Linux builds will ship as `OpenNote_macOS.dmg` and `OpenNote_Linux.AppImage`.
+
+The table lives in `RELEASE_FILES`, in [write-manifest.ts](../app/scripts/write-manifest.ts). The build matrix in [release.yml](../.github/workflows/release.yml) lists the same targets and names, and a unit test fails if the two differ. To add a file, change both.
+
 ## What the release workflow does
 
-Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). It has four jobs: `version`, `ci`, `build`, and `publish`. Each job starts only when the one before it succeeds, and nothing is published until the last step of the publish job.
+Pushing a tag that starts with `v` runs [release.yml](../.github/workflows/release.yml). It has four jobs: `version`, `ci`, `build`, and `publish`. The build job runs three times side by side, once for each exe. Each job starts only when the one before it succeeds, and nothing is published until the last step of the publish job.
 
 Each job gets only the permissions it needs, and no checkout keeps a GitHub token on disk. The version, build, and publish jobs pin their actions to full commit SHAs, with the version in a comment. Change the SHA and its comment together when you update an action. The actions in `ci.yml` use version tags instead.
 
@@ -135,55 +152,69 @@ The job can only read the repository, and it gets no secrets.
 
 ### The build job
 
-This job runs on `windows-latest`. It can only read the repository, and it gets no secrets.
+This job runs three times on `windows-latest`, once for each row of the [release files](#release-files) table. It can only read the repository, and it gets no secrets. The x64 runner also builds the 32-bit and ARM64 exes, with the Microsoft Visual C++ tools it has for them.
 
 1. Check out the full history, and set up Node.js 22.
-2. Set up stable Rust, and install the project tools with `npm ci`. There is no Rust build cache, so every release builds from a clean start.
-3. Build with `npx tauri build --no-bundle`. This runs `npm run app:build` for the design tokens and the interface. It then compiles the Rust app in release mode into one exe, with no installer.
-4. Copy `target/release/opennote.exe` to `dist-release/OpenNote.exe`, and keep it as a workflow artifact for one day.
+2. Set up stable Rust with the Rust target for this exe, and install the project tools with `npm ci`. There is no Rust build cache, so every release builds from a clean start.
+3. Build with `npx tauri build --no-bundle --target`, followed by the Rust target, such as `aarch64-pc-windows-msvc`. This runs `npm run app:build` for the design tokens and the interface. It then compiles the Rust app in release mode into one exe, with no installer.
+4. Copy `target/<rust-target>/release/opennote.exe` to `dist-release`, under its release name, such as `OpenNote_WindowsARM64.exe`. Keep it as a workflow artifact for one day.
+
+If one exe fails to build, the other two still finish, so one run shows every failure. The publish job starts only when all three succeed.
 
 ### The publish job
 
 This job runs on `windows-latest`. It's the only job that can write to the repository, and the only one that gets the signing secrets. It builds nothing and runs no install scripts, so the Tauri command-line tool is the only project dependency that runs next to the key.
 
 1. Check out the repository, set up Node.js 22, and install the project tools with `npm ci --ignore-scripts`.
-2. Download `OpenNote.exe` into `dist-release`.
-3. Sign the update with `npx tauri signer sign --app-version`, followed by the tag without its `v`. This writes `OpenNote.exe.sig`. The version goes into the signature's trusted comment, which the signature covers, so nobody can change it without the private key. Only this step gets the two secrets. If `TAURI_SIGNING_PRIVATE_KEY` isn't set, it fails with an error.
-4. Write the update manifest with [write-manifest.ts](../app/scripts/write-manifest.ts). It writes `latest.json`, or `beta.json` for a tag with a hyphen. The script stops if `OpenNote.exe.sig` is missing or empty, or if the signed version differs from the tag.
+2. Download the three exes into `dist-release`.
+3. Sign each exe with `npx tauri signer sign --app-version`, followed by the tag without its `v`. This writes a signature next to each exe, such as `OpenNote_Windows64.exe.sig`. The version goes into each signature's trusted comment, which the signature covers, so nobody can change it without the private key. Only this step gets the two secrets. If `TAURI_SIGNING_PRIVATE_KEY` isn't set, it fails with an error.
+4. Write the update manifest with [write-manifest.ts](../app/scripts/write-manifest.ts). It writes `latest.json`, or `beta.json` for a tag with a hyphen. The script stops if any of the three exes or their `.sig` files is missing or empty, or if any signed version differs from the tag.
 5. Publish a GitHub Release named after the tag, with every file in `dist-release`. Tags with a hyphen become prereleases. GitHub generates the release notes from the merged pull requests.
 
 ### The update manifest
 
-The manifest holds these fields:
+The manifest uses the Tauri updater's format for more than one platform. Each copy of the app reads only the entry for its own updater key, such as `windows-aarch64`. The manifest holds these fields:
 
 | Field | Contents |
 |---|---|
 | `version` | The tag without the leading `v` |
-| `channel` | `stable`, or `beta` for a version with a hyphen |
 | `notes` | For now, "OpenNote v0.5.0". The script uses a `RELEASE_NOTES` environment variable instead when it's set, but the workflow doesn't set one yet. |
 | `pub_date` | When the manifest was written, just before the release was published |
-| `url` | The download link for `OpenNote.exe` in this release |
+| `channel` | `stable`, or `beta` for a version with a hyphen |
+| `platforms` | One entry for each exe, under its updater key from the [release files](#release-files) table |
+
+Each entry in `platforms` holds these fields:
+
+| Field | Contents |
+|---|---|
+| `url` | The download link for the exe in this release |
+| `signature` | The contents of the exe's `.sig` file. Its trusted comment names the same version as `version`. |
 | `size` | The size of the exe in bytes |
 | `sha256` | The SHA-256 hash of the exe, in lowercase hexadecimal |
-| `signature` | The contents of `OpenNote.exe.sig`. Its trusted comment names the same version as `version`. |
 
 ## Verifying a release
 
 The release and its manifest go live as soon as the workflow finishes, with no draft step. Check the result right away, before you announce it:
 
-1. Open the [releases page](https://github.com/XrxcGH/OpenNote/releases). The new release should list `OpenNote.exe`, `OpenNote.exe.sig`, and `latest.json` or `beta.json`. A beta should carry the Pre-release label.
-2. Open the manifest. Its `version` should match the tag.
-3. Download the release files into an empty folder with `gh release download v0.5.0`, or from the release page. In PowerShell, compare the hash, and show the signature's trusted comment:
+1. Open the [releases page](https://github.com/XrxcGH/OpenNote/releases). The new release should list the three exes from the [release files](#release-files) table, a `.sig` file for each, and `latest.json` or `beta.json`. A beta should carry the Pre-release label.
+2. Open the manifest. Its `version` should match the tag. Its `platforms` should list `windows-x86_64`, `windows-i686`, and `windows-aarch64`.
+3. Download the release files into an empty folder with `gh release download v0.5.0`, or from the release page. In PowerShell, check each exe's hash and size, and show its signature's trusted comment:
 
    ```powershell
    $manifest = Get-Content .\latest.json -Raw | ConvertFrom-Json
-   (Get-FileHash .\OpenNote.exe -Algorithm SHA256).Hash -eq $manifest.sha256
-   [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($manifest.signature))
+   foreach ($platform in $manifest.platforms.PSObject.Properties) {
+     $entry = $platform.Value
+     $file = Split-Path $entry.url -Leaf
+     $hashMatches = (Get-FileHash $file -Algorithm SHA256).Hash -eq $entry.sha256
+     $sizeMatches = (Get-Item $file).Length -eq $entry.size
+     $signature = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($entry.signature))
+     "$file hash: $hashMatches, size: $sizeMatches, $(($signature -split "`n") -match '^trusted comment')"
+   }
    ```
 
-   Use `beta.json` for a beta. The hash test should print `True`. The `-eq` test ignores letter case, so the uppercase hash from `Get-FileHash` still matches. The last command prints the signature, and its `trusted comment` line should end with `version:0.5.0`. On macOS or Linux, compare the output of `shasum -a 256 OpenNote.exe` by eye, and read the signature with `base64 --decode < OpenNote.exe.sig`.
+   Use `beta.json` for a beta. The loop prints one line for each exe. Each line should show `True` for the hash and the size, and end with `version:0.5.0`. The `-eq` test ignores letter case, so the uppercase hash from `Get-FileHash` still matches. On macOS or Linux, compare the output of `shasum -a 256 OpenNote_*.exe` with the manifest by eye. Read each signature with `base64 --decode`, such as `base64 --decode < OpenNote_Windows64.exe.sig`.
 4. For a stable release, open the [latest manifest](https://github.com/XrxcGH/OpenNote/releases/latest/download/latest.json). The app's updater reads this address, so it should show the new version.
-5. Run `OpenNote.exe` on Windows 10 or 11, ideally on a clean machine such as Windows Sandbox, which needs Windows Pro or Enterprise. The window should open and work. Until code signing is set up, Edge may warn that the file "isn't commonly downloaded", so choose Keep. SmartScreen may then show "Windows protected your PC". Select More info, then Run anyway.
+5. Run each exe on Windows 10 or 11, ideally on a clean machine such as Windows Sandbox, which needs Windows Pro or Enterprise. A 64-bit PC runs both `OpenNote_Windows64.exe` and `OpenNote_Windows32.exe`. Run `OpenNote_WindowsARM64.exe` on an ARM64 PC. The window should open and work. Until code signing is set up, Edge may warn that the file "isn't commonly downloaded", so choose Keep. SmartScreen may then show "Windows protected your PC". Select More info, then Run anyway.
 6. Edit the release notes on GitHub. The generated notes list pull requests, so rewrite them for people who use the app.
 
 ## When the release workflow fails
@@ -192,9 +223,9 @@ If anything fails before the "Publish the release" step, nothing is published. T
 
 - The `ci` job fails when a check or test fails on the tagged commit. Fix the code.
 - The `version` job fails when the tag doesn't match the three version files. Delete the tag, fix the files, and tag again.
-- The "Sign the update" step fails when `TAURI_SIGNING_PRIVATE_KEY` isn't set, or when the key or password is wrong. Correct the secret as described in [Add the repository secrets](#add-the-repository-secrets).
+- The "Sign the updates" step fails when `TAURI_SIGNING_PRIVATE_KEY` isn't set, or when the key or password is wrong. Correct the secret as described in [Add the repository secrets](#add-the-repository-secrets).
 
-For a one-off failure, such as a network error, or after you correct a secret, use "Re-run failed jobs" on the run's page. A re-run reads the secrets again. The publish job downloads the exe that the build job kept, and that copy expires after one day. If the download step fails, use "Re-run all jobs" instead.
+For a one-off failure, such as a network error, or after you correct a secret, use "Re-run failed jobs" on the run's page. A re-run reads the secrets again. When only one exe failed to build, it builds just that one again. The publish job downloads the exes that the build job kept, and those copies expire after one day. If the download step fails, use "Re-run all jobs" instead.
 
 If the code or the version files need a fix, merge the fix to `main` first. Then delete the tag, and tag the fixed commit with the same version:
 
