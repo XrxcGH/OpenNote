@@ -1,6 +1,6 @@
 # ADR 0001: App stack
 
-- Status: Accepted, pending the Phase 1 ink latency spike
+- Status: Accepted, pending the owner's camera check in [record 0004](0004-ink-latency.md)
 - Date: 2026-09-30
 
 ## Context

@@ -14,6 +14,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/dist-test/**',
       'target/**',
+      '.claude/**',
       'node_modules/**',
       'app/src-tauri/gen/**',
       'app/src/theme/tokens.ts',
@@ -70,6 +71,10 @@ export default tseslint.config(
     rules: { 'no-restricted-imports': 'off' },
   },
   {
+    files: ['spikes/web/**/*.ts'],
+    languageOptions: { globals: globals.browser },
+  },
+  {
     // Keyboard-only E2E specs must not pass by using the mouse.
     files: ['tests/e2e/keyboard/**/*.ts'],
     rules: {
@@ -89,6 +94,7 @@ export default tseslint.config(
       'app/scripts/**/*.ts',
       'app/vite.config.ts',
       'app/vitest.config.ts',
+      'spikes/web/vite.config.ts',
       'tests/**/*.ts',
       'eslint/**/*.{js,ts}',
       'eslint.config.js',
