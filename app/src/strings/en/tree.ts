@@ -8,6 +8,7 @@ export const tree = {
     noSection: 'Choose a section to see its pages.',
   },
   page: {
+    noneTitle: 'No page open',
     none: 'Choose a page to see it here.',
   },
   trash: {

@@ -24,6 +24,10 @@
     overflow: auto;
   }
 
+  :global(:root[data-size-class='compact']) .page {
+    overflow: visible;
+  }
+
   .titleBar {
     grid-area: title;
   }

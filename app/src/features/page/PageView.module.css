@@ -15,7 +15,7 @@
   }
 
   .page p {
-    margin: 0;
+    margin: var(--space-4) 0 0;
     color: var(--color-text-secondary);
     font-size: var(--type-note-size);
     line-height: var(--type-note-line);

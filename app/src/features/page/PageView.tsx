@@ -24,5 +24,10 @@ function usePage(pageId: string | null): NodeSummary | null {
 export function PageView() {
   const location = useLocation();
   const page = usePage(location.view === 'workspace' ? location.pageId : null);
-  return <article className={styles.page}>{page ? <h1>{page.title}</h1> : <p>{t('tree.page.none')}</p>}</article>;
+  return (
+    <article className={styles.page}>
+      <h1>{page ? page.title : t('tree.page.noneTitle')}</h1>
+      {!page && <p>{t('tree.page.none')}</p>}
+    </article>
+  );
 }
