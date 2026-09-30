@@ -1,0 +1,145 @@
+/* First-run setup (ARCHITECTURE.md section 17.2): a centered card on the app surface. In compact it fills the
+   window with 16 px margins, its cards stack, and Back and Continue stay in a footer that is always visible. */
+@layer components {
+  .screen {
+    display: grid;
+    place-items: center;
+    min-block-size: calc(100dvh - var(--size-title-bar));
+    padding: var(--space-5);
+    background: var(--color-surface-app);
+  }
+
+  .card {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    inline-size: min(var(--size-setup-card-width), 100%);
+    block-size: min(var(--size-setup-card-height), 100%);
+    max-block-size: calc(100dvh - var(--size-title-bar) - var(--space-8));
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+  }
+
+  .content {
+    overflow-y: auto;
+    padding: var(--space-8) var(--space-9) var(--space-5);
+  }
+
+  .step {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .header {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: center;
+    text-align: center;
+  }
+
+  .progress {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--type-display-size);
+    line-height: var(--type-display-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .subtitle {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-9);
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .footer > :first-child:not(:last-child) {
+    margin-inline-end: auto;
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .label {
+    margin: 0;
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .path {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    overflow-wrap: anywhere;
+  }
+
+  .chip {
+    display: block;
+    inline-size: var(--size-icon-lg);
+    block-size: var(--size-icon-lg);
+    border-radius: var(--radius-pill);
+  }
+
+  .step [role='radiogroup'] {
+    gap: var(--space-3);
+  }
+
+  .step [role='radiogroup'] [role='radio'] {
+    align-content: start;
+  }
+
+  :global(:root[data-size-class='compact']) .screen {
+    align-items: stretch;
+    min-block-size: 0;
+    block-size: calc(100dvh - var(--size-title-bar));
+  }
+
+  :global(:root[data-size-class='compact']) .card {
+    block-size: 100%;
+    max-block-size: none;
+  }
+
+  :global(:root[data-size-class='compact']) .content,
+  :global(:root[data-size-class='compact']) .footer {
+    padding-inline: var(--space-5);
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .card {
+      border-color: ButtonBorder;
+    }
+
+    .chip {
+      forced-color-adjust: none;
+      border: 1px solid CanvasText;
+    }
+  }
+}
