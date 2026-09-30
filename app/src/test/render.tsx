@@ -11,7 +11,7 @@ import { mergeBoot, defaultBootData } from '../boot/defaults';
 import type { WebPlatform } from '../platform/web';
 import type { Settings } from '../platform/types';
 import { NotesProvider } from '../services/notes';
-import { createStubNotesService } from '../services/notes/stub';
+import { createMemoryNotesService } from '../services/notes/memory';
 import type { NotesFixture } from '../services/notes/fixtures';
 import type { NotesService } from '../services/notes/types';
 import { setDensity, setSizeClass } from '../state/layout';
@@ -57,7 +57,7 @@ export async function renderApp(options: RenderAppOptions = {}): Promise<Rendere
   const platform = createTestPlatform({ boot, fixture: options.fixture });
   initFlagsFrom(boot);
   initStores(boot, platform);
-  const notes = createStubNotesService(options.fixture ?? 'sample');
+  const notes = createMemoryNotesService({ seed: options.fixture ?? 'sample' });
   disposers.push(installApp(platform, notes, { keepThemeInStorage: true }));
   if (options.sizeClass) setSizeClass(options.sizeClass);
   if (options.density) setDensity(options.density);
