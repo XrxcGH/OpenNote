@@ -45,7 +45,12 @@ fn export_times(runs: &[ExportRun], sheets: usize) -> Value {
 
 /// The visible page's longest frame gap and longest task during each run.
 fn frames(runs: &[ExportRun]) -> Value {
-    let values = |key: &str| -> Vec<f64> { runs.iter().filter_map(|run| run.frames[key].as_f64()).collect() };
+    let reports: Vec<Value> = runs.iter().map(|run| run.frames.clone()).collect();
+    frame_summary(&reports)
+}
+
+fn frame_summary(reports: &[Value]) -> Value {
+    let values = |key: &str| -> Vec<f64> { reports.iter().filter_map(|report| report[key].as_f64()).collect() };
     json!({
         "max_frame_gap_ms": summarize(&values("maxGapMs")),
         "longest_task_ms": summarize(&values("longestTaskMs")),
@@ -66,5 +71,6 @@ pub fn background(capture: &BackgroundCapture) -> Result<Value> {
         "pages": inspect::page_count(&cold.file)?,
         "export": export_times(samples, capture.sheets),
         "visible_page": frames(samples),
+        "visible_page_idle": frame_summary(capture.idle.get(1..).unwrap_or_default()),
     }))
 }

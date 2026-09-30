@@ -57,6 +57,8 @@ pub struct BackgroundCapture {
     pub sheets: usize,
     pub layout: Value,
     pub runs: Vec<ExportRun>,
+    /// The visible page's frames with nothing exporting, over the same time as each export: the baseline.
+    pub idle: Vec<Value>,
 }
 
 pub struct Captured {
@@ -178,7 +180,7 @@ fn background_export(controller: &Controller, plan: &Plan) -> Result<BackgroundC
     let arguments = json!({ "paper": Paper::Letter.name(), "sheets": BACKGROUND_SHEETS });
     let layout = hidden.call(controller, "setDocument", arguments, LAYOUT_TIMEOUT)?;
     let file = plan.out_dir.join(format!("background-letter-{BACKGROUND_SHEETS}.pdf"));
-    let mut runs = Vec::new();
+    let (mut runs, mut idle) = (Vec::new(), Vec::new());
     for _ in 0..=plan.samples {
         controller.call("watchFrames", Value::Null, CALL_TIMEOUT)?;
         let ms = export::print_to_pdf(controller, &file, Paper::Letter, View::Hidden)?;
@@ -189,6 +191,7 @@ fn background_export(controller: &Controller, plan: &Plan) -> Result<BackgroundC
             ms,
             frames,
         });
+        idle.push(idle_frames(controller, Duration::from_secs_f64(ms / 1000.0))?);
     }
     hidden.close(controller)?;
     println!("Timed exports of {BACKGROUND_SHEETS} sheets from a hidden WebView.");
@@ -196,5 +199,13 @@ fn background_export(controller: &Controller, plan: &Plan) -> Result<BackgroundC
         sheets: BACKGROUND_SHEETS,
         layout,
         runs,
+        idle,
     })
+}
+
+/// The visible page's frames while nothing exports, for `duration`.
+fn idle_frames(controller: &Controller, duration: Duration) -> Result<Value> {
+    controller.call("watchFrames", Value::Null, CALL_TIMEOUT)?;
+    std::thread::sleep(duration);
+    controller.call("frameReport", Value::Null, CALL_TIMEOUT)
 }
