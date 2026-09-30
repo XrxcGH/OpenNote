@@ -1,6 +1,7 @@
 {
   "startup": { "jsKb": 125, "cssKb": 15 },
   "lazyKb": {
+    "features/page": 150,
     "features/palette": 40,
     "features/settings": 40,
     "features/setup": 40,

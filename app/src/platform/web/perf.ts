@@ -3,8 +3,17 @@
 import type { PerfClient, PerfMark } from '../types';
 import { registerTestHook } from './testHooks';
 
-export function createWebPerf(): PerfClient & { readonly marks: PerfMark[] } {
+export function createWebPerf(): PerfClient & { readonly marks: PerfMark[]; readonly details: Map<PerfMark, string> } {
   const marks: PerfMark[] = [];
+  const details = new Map<PerfMark, string>();
   registerTestHook('perfMarks', () => marks);
-  return { marks, mark: (name) => void marks.push(name) };
+  registerTestHook('perfDetails', () => Object.fromEntries(details));
+  return {
+    marks,
+    details,
+    mark: (name, detail) => {
+      marks.push(name);
+      if (detail !== undefined) details.set(name, detail);
+    },
+  };
 }
