@@ -1,0 +1,32 @@
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install tools
+        run: npm ci
+      - name: Type-check and format-check the checker
+        run: npm run typecheck && npm run format:check
+      - name: Test the checker
+        run: npm run test:checks
+      - name: Check changed files (pull requests)
+        if: github.event_name == 'pull_request'
+        run: node checks/cli.ts --base origin/${{ github.base_ref }}
+      - name: Check all files (pushes)
+        if: github.event_name == 'push'
+        run: node checks/cli.ts --all

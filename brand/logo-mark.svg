@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="title">
+  <title id="title">OpenNote</title>
+  <path d="M16 6H40L54 20V52A6 6 0 0 1 48 58H16A6 6 0 0 1 10 52V12A6 6 0 0 1 16 6Z" fill="#FFFCF6" stroke="#2B2521" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M40 6V16A4 4 0 0 0 44 20H54" fill="#E3DACC" stroke="#2B2521" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M18 44C21 33 28 29 31 36S39 47 45 35" fill="none" stroke="#3B6A4D" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="45" cy="35" r="3" fill="#A9502F"/>
+</svg>

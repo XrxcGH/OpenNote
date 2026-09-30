@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="title" data-safe-margin="40">
+  <title id="title">OpenNote: writing, drawing, and recording in one open-source notebook</title>
+  <rect width="1280" height="640" fill="#F3EEE6"/>
+  <path d="M-20 600C240 520 440 640 660 580S1080 480 1300 560" fill="none" stroke="#EAE3D8" stroke-width="28" stroke-linecap="round"/>
+  <path d="M-20 560C220 470 420 600 640 540S1060 440 1300 520" fill="none" stroke="#DDE8DA" stroke-width="40" stroke-linecap="round"/>
+  <path d="M-20 530C200 465 380 552 600 522S1020 448 1300 492" fill="none" stroke="#EBD9CC" stroke-width="10" stroke-linecap="round"/>
+  <path d="M760 -20C880 60 1020 20 1120 70S1260 120 1300 90" fill="none" stroke="#DDE8DA" stroke-width="30" stroke-linecap="round"/>
+  <path d="M820 -10C940 50 1060 30 1160 90S1280 150 1310 130" fill="none" stroke="#EBD9CC" stroke-width="8" stroke-linecap="round"/>
+  <g transform="translate(120 160) scale(1.25)" data-important="app icon">
+    <rect width="256" height="256" rx="56" fill="#3B6A4D"/>
+    <path d="M80 44H160L204 88V200A16 16 0 0 1 188 216H80A16 16 0 0 1 64 200V60A16 16 0 0 1 80 44Z" fill="#FFFCF6"/>
+    <path d="M160 44V76A12 12 0 0 0 172 88H204Z" fill="#E3DACC"/>
+    <path d="M92 168C102 128 124 114 134 140S160 180 180 132" fill="none" stroke="#3B6A4D" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="180" cy="132" r="10" fill="#A9502F"/>
+  </g>
+  <g font-family="'Atkinson Hyperlegible Next', 'Segoe UI', 'DejaVu Sans', sans-serif">
+    <text x="500" y="272" font-size="104" font-weight="700" fill="#2B2521">OpenNote</text>
+    <text x="504" y="336" font-size="32" fill="#5C534A">Writing, drawing, and recording</text>
+    <text x="504" y="378" font-size="32" fill="#5C534A">in one open-source notebook.</text>
+    <text x="504" y="450" font-size="24" font-weight="700" fill="#3B6A4D">Local-first  ·  Works offline  ·  Free and open source</text>
+  </g>
+</svg>
