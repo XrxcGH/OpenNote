@@ -1,5 +1,7 @@
 # OpenNote
 
+![OpenNote: writing, drawing and recording in one open-source notebook](brand/social-preview.png)
+
 An open-source note-taking application for Windows combining your favorite writing, drawing and recording features for professional and personal applications. Windows comes first; macOS, Linux, iOS and Android follow.
 
 OpenNote is in the planning stage. No app code exists yet.
