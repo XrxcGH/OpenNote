@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest a new feature or an improvement to OpenNote.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Before you start, check whether it is already planned in
+        [FEATURES.md][features] or in the [development phases][phases].
+
+        [features]: https://github.com/XrxcGH/OpenNote/blob/main/FEATURES.md
+        [phases]: https://github.com/XrxcGH/OpenNote/blob/main/DEVELOPMENT.md#5-phases
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched the [open and closed issues](https://github.com/XrxcGH/OpenNote/issues?q=is%3Aissue), and none of them asks for this.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what makes it hard today? Describe the need, not the solution.
+      placeholder: When I take notes in a lecture, I can't ...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should OpenNote solve it? Sketches, screenshots, or examples from other apps help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What other solutions or workarounds did you consider, and why do they fall short?
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Audience
+      description: Who needs this? Pick all that apply.
+      multiple: true
+      options:
+        - Personal
+        - Education
+        - Business
+    validations:
+      required: true
