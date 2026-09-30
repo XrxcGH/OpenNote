@@ -14,6 +14,7 @@ These wireframes show the layout of each major screen, with sizes, keep-out zone
 - [Settings](#settings)
 - [Size classes](#size-classes)
 - [Phone](#phone)
+- [Study tools](#study-tools)
 - [Changing the drawings](#changing-the-drawings)
 
 ## Reading the drawings
@@ -43,6 +44,10 @@ Setup has five short steps in a centered 720 × 600 card:
 5. **Bring your notes (optional):** import from OneNote or Evernote, or skip.
 
 ![First run, step 3: notes folder, app location, and first notebook](images/02-first-run-storage.svg)
+
+![First run, step 4: smart features with Recommended, Custom, and Not now](images/02b-first-run-smart.svg)
+
+Step 4 lists each option as a full-width card, with model download sizes shown before anything downloads.
 
 Paths are shown in full and wrap onto a second line rather than being cut in the middle. Back never loses what was entered.
 
@@ -125,6 +130,15 @@ The layout follows the window width, as set out in BRAND.md section 6. Snapping 
 - The status bar (47), home indicator (34) and left-edge back gesture (20) are keep-out zones.
 - Freeform pages open in **Reading** view, where blocks flow in one column with 24 px margins. **Canvas** shows the original layout with pinch-zoom.
 - With the pen tool active, a finger scrolls, and only the pen draws.
+
+## Study tools
+
+![A review page with a flashcard, a quiz, and the card generation panel](images/11-study-tools.svg)
+
+- **Flashcard block (380 × 250):** shows the question, then the answer, then Again, Hard, Good, and Easy buttons that schedule the next review.
+- **Quiz block (340 × 250):** multiple choice with instant feedback, shown with a check mark on the right answer.
+- **Generate panel:** picks sources (this page, a recording, or a whole section) and card types, then makes editable cards on the device.
+- The page list shows how many cards are due, so review is one click away.
 
 ## Changing the drawings
 

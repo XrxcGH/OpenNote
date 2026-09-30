@@ -8,14 +8,14 @@ const CARD: Box = { x: 360, y: 130, w: 720, h: 600 };
 
 function setupCard(p: Palette, step: number, title: string, subtitle: string): string[] {
   const center = CARD.x + CARD.w / 2;
-  const dots = [1, 2, 3, 4].map((n) =>
-    circle(center - 36 + (n - 1) * 24, CARD.y + 40, 5, p.c(n <= step ? 'accent.primary' : 'border.subtle')),
+  const dots = [1, 2, 3, 4, 5].map((n) =>
+    circle(center - 48 + (n - 1) * 24, CARD.y + 40, 5, p.c(n <= step ? 'accent.primary' : 'border.subtle')),
   );
   return [
     titleBar(p, { minimal: true }),
     rect(CARD, { fill: p.c('surface.raised'), r: 16, shadow: true }),
     ...dots,
-    text(center, CARD.y + 70, `Step ${step} of 4`, { size: 13, fill: p.c('text.muted'), anchor: 'middle' }),
+    text(center, CARD.y + 70, `Step ${step} of 5`, { size: 13, fill: p.c('text.muted'), anchor: 'middle' }),
     text(center, CARD.y + 116, title, { size: 30, weight: 600, fill: p.c('text.primary'), anchor: 'middle' }),
     text(center, CARD.y + 146, subtitle, { size: 15, fill: p.c('text.secondary'), anchor: 'middle' }),
   ];
@@ -151,6 +151,54 @@ export function firstRunStorage(): Screen {
   return makeScreen({
     file: '02-first-run-storage.svg',
     title: 'First run, step 3: where to keep things',
+    background: p.c('surface.app'),
+    body,
+  });
+}
+
+interface SmartOption {
+  label: string;
+  detail: string;
+  on: boolean;
+}
+
+const SMART_OPTIONS: SmartOption[] = [
+  {
+    label: 'Recommended',
+    detail: 'Transcription, handwriting, text in images, and summaries. About 600 MB.',
+    on: true,
+  },
+  { label: 'Custom', detail: 'Choose each feature, and a local model or your own cloud key.', on: false },
+  { label: 'Not now', detail: 'Everything stays off. Turn features on later in Settings.', on: false },
+];
+
+function smartOption(p: Palette, y: number, option: SmartOption): string[] {
+  const box = { x: CARD.x + 34, y, w: CARD.w - 68, h: 84 };
+  const border = p.c(option.on ? 'accent.primary' : 'border.subtle');
+  return [
+    rect(box, { fill: p.c('surface.page'), stroke: border, r: 10, width: option.on ? 3 : 1 }),
+    ...radio(p, y + 34, option.label, option.detail, option.on),
+  ];
+}
+
+export function firstRunSmart(): Screen {
+  const p = palette('light');
+  const body = [
+    ...setupCard(p, 4, 'Smart features', 'Everything runs on this device. Nothing leaves it.'),
+    ...SMART_OPTIONS.flatMap((option, i) => smartOption(p, CARD.y + 180 + i * 100, option)),
+    text(CARD.x + 48, CARD.y + 500, 'Models download in the background. You can start taking notes right away.', {
+      size: 13,
+      fill: p.c('text.muted'),
+    }),
+    ...buttons(p, 'Continue'),
+    region({ x: CARD.x + 28, y: CARD.y + 174, w: CARD.w - 56, h: 296 }, ''),
+    tag(CARD.x + CARD.w + 16, CARD.y + 200, 'Option cards 652×84, whole card clickable', NOTE.region),
+    tag(CARD.x + CARD.w + 16, CARD.y + 224, 'Sizes shown before any download', NOTE.region),
+    captionKeepOut(WIDE.width),
+  ];
+  return makeScreen({
+    file: '02b-first-run-smart.svg',
+    title: 'First run, step 4: smart features',
     background: p.c('surface.app'),
     body,
   });

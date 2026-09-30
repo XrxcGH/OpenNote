@@ -10,11 +10,12 @@
 <rect x="0" y="0" width="1440" height="900" rx="0" fill="#F3EEE6"/>
 <rect x="0" y="0" width="1440" height="40" rx="0" fill="#F3EEE6"/><rect x="14" y="10" width="16" height="20" rx="3" fill="#FFFCF6" stroke="#2B2521" stroke-width="1.5"/><path d="M17 24c2-6 5-7 6-3s3 4 5-2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#3B6A4D" stroke-width="1.8"/><text x="40" y="25" font-size="13" font-weight="600" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">OpenNote</text><text x="1325" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">—</text><text x="1371" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">▢</text><text x="1417" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">✕</text>
 <rect x="360" y="130" width="720" height="600" rx="16" fill="#FFFDF9" filter="url(#shadow)"/>
-<circle cx="684" cy="170" r="5" fill="#3B6A4D"/>
-<circle cx="708" cy="170" r="5" fill="#3B6A4D"/>
-<circle cx="732" cy="170" r="5" fill="#E3DACC"/>
-<circle cx="756" cy="170" r="5" fill="#E3DACC"/>
-<text x="720" y="200" font-size="13" font-weight="400" fill="#6B6054" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Step 2 of 4</text>
+<circle cx="672" cy="170" r="5" fill="#3B6A4D"/>
+<circle cx="696" cy="170" r="5" fill="#3B6A4D"/>
+<circle cx="720" cy="170" r="5" fill="#E3DACC"/>
+<circle cx="744" cy="170" r="5" fill="#E3DACC"/>
+<circle cx="768" cy="170" r="5" fill="#E3DACC"/>
+<text x="720" y="200" font-size="13" font-weight="400" fill="#6B6054" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Step 2 of 5</text>
 <text x="720" y="246" font-size="30" font-weight="600" fill="#2B2521" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Choose your look</text>
 <text x="720" y="276" font-size="15" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Change it any time with the ☾ button or Ctrl+Shift+D.</text>
 <rect x="396" y="320" width="200" height="200" rx="12" fill="#FFFCF6" stroke="#E3DACC" stroke-width="1"/><rect x="408" y="332" width="176" height="116" rx="0" fill="#F3EEE6"/><rect x="457" y="342" width="117" height="106" rx="4" fill="#FFFCF6"/><rect x="416" y="348" width="29" height="7" rx="3.5" fill="#877B6C"/><rect x="416" y="362" width="23" height="7" rx="3.5" fill="#877B6C"/><rect x="416" y="376" width="27" height="7" rx="3.5" fill="#877B6C"/><rect x="469" y="356" width="70.4" height="7" rx="3.5" fill="#6B6054"/><rect x="469" y="370" width="88" height="7" rx="3.5" fill="#6B6054"/><rect x="469" y="384" width="59.84" height="7" rx="3.5" fill="#6B6054"/><circle cx="477" cy="426" r="6" fill="#3B6A4D"/><text x="412" y="476" font-size="16" font-weight="600" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Light</text><text x="412" y="498" font-size="13" font-weight="400" fill="#5C534A" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Always light</text>
