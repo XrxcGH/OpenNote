@@ -1,0 +1,100 @@
+name: Bug report
+description: Report something in OpenNote that is broken or doesn't work as expected.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Clear steps to reproduce it help us fix it sooner.
+
+        Please don't report security problems here. Report them privately, as
+        [SECURITY.md](https://github.com/XrxcGH/OpenNote/blob/main/SECURITY.md) explains.
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: Existing issues
+      options:
+        - label: I searched the [open and closed issues](https://github.com/XrxcGH/OpenNote/issues?q=is%3Aissue), and none of them reports this bug.
+          required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What went wrong? Say what you were working on, such as a typed note, a drawing, or a recording.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: >-
+        List the steps that cause the bug.
+        Attach a sample note as a .zip file if it helps, with personal data removed.
+      placeholder: |
+        1. Open a new page.
+        2. Draw a line with the pen.
+        3. Press Ctrl+Z.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Screenshots or a screen recording help.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenNote version
+      description: >-
+        Right-click OpenNote.exe, choose Properties, and read Product version on the Details tab.
+        If you built OpenNote from source, give the output of `git rev-parse --short HEAD` instead.
+      placeholder: '0.1.0'
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: >-
+        Press Windows+R, type winver, and press Enter to see your edition, version, and build.
+        Using macOS or Linux? Give that system and its version instead.
+      placeholder: 'Windows 11 Home, version 24H2, build 26100'
+    validations:
+      required: true
+  - type: dropdown
+    id: input-device
+    attributes:
+      label: Input device
+      description: Which input shows the bug? Pick all that apply.
+      multiple: true
+      options:
+        - Mouse
+        - Keyboard
+        - Touch
+        - Pen
+        - Not related to input
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Computer and pen model
+      description: Optional, but it helps with pen and touch bugs.
+      placeholder: 'Surface Pro 9 with Slim Pen 2'
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >-
+        Paste any error messages you saw, with personal data removed.
+        If you run OpenNote from source, include the terminal output of `npm start`. No backticks needed.
+      render: text

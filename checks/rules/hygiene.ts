@@ -13,6 +13,9 @@ const SECRET_PATTERNS: RegExp[] = [
   new RegExp('sk-' + 'ant-[A-Za-z0-9_-]{20,}'),
   new RegExp('xox' + '[baprs]-[A-Za-z0-9-]{10,}'),
   new RegExp('AI' + 'za[0-9A-Za-z_-]{35}'),
+  // Tauri updater private keys, both as the key file and as its base64 form in TAURI_SIGNING_PRIVATE_KEY.
+  new RegExp('untrusted comment: (?:rsign|minisign) ' + 'encrypted secret key'),
+  new RegExp('dW50cnVzdGVkIGNvbW1lbnQ6I' + '(?:HJzaWdu|G1pbmlzaWdu)IGVuY3J5cHRlZCBzZWNyZXQga2V5'),
 ];
 
 const MAX_BYTES = 1_000_000;

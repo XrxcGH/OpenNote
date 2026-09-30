@@ -169,3 +169,11 @@ test('suppressions need a known rule and a reason', async () => {
     ['suppression', 'spelling'],
   );
 });
+
+test('a suppression for a rule left out by --rules is not unknown', async () => {
+  const text = '# T\n\n<!-- checks-disable-next-line spelling: quoting a product name -->\nColour Pro.\n';
+  const alone = await run({ rule: grammar, path: 'a.md', text });
+  assert.match(alone[0]?.message ?? '', /Unknown rule "spelling"/);
+  const all = await run({ rule: grammar, path: 'a.md', text, knownRules: ['spelling', 'grammar'] });
+  assert.deepEqual(all, []);
+});

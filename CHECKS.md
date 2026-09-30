@@ -39,7 +39,7 @@ Other options: `--staged`, `--base <ref>`, `--rules spelling,grammar`, `--strict
 | `readability` | Reading grade per section (ease of learning); acronyms defined on first use | Docs |
 | `usability` | One title, no skipped heading levels, sentence-case headings, table of contents for long docs, working links, image alt text, basic UI accessibility | Docs and UI code |
 | `modifiability` | File and function length, nesting depth, parameter count, TODOs without an issue link, commented-out code, copy-pasted blocks | Code |
-| `brand-consistency` | UI code must use design tokens for colors, fonts, motion, layers, and font sizes | App UI code |
+| `brand-consistency` | UI code must use design tokens for colors (hex, color functions, and named colors such as `white`), fonts (including the `font` shorthand), motion, layers, and font sizes | App UI code in `app/src`, except the generated token files |
 | `layout` | Renders each SVG in a headless browser and checks overlapping text, padding inside containers, centering, alignment, edge spacing, minimum text size, safe margins, scaling, and sentence case | SVG graphics |
 | `brand-tokens` | `brand/tokens.json` themes match, colors are valid, text meets contrast targets, motion stays under 400 ms | Design tokens |
 
@@ -71,7 +71,7 @@ A suppression without a reason, or with an unknown rule, is itself an error and 
 
 `checks.config.json` sets limits and exceptions. Each rule accepts:
 
-- `severity`: `"error"`, `"warning"` or `"off"` to override every finding of that rule
+- `severity`: `"error"`, `"warning"`, or `"off"` to override every finding of that rule
 - `exclude`: glob patterns of files the rule skips
 - rule-specific limits, such as `length.sentenceWords` or `modifiability.functionLines`
 
@@ -80,7 +80,7 @@ Top-level `ignore` patterns skip files entirely. Change a limit only with a reas
 ## Where it runs
 
 - **Pre-commit hook:** `.githooks/pre-commit` checks staged files. Enable it with `npm run setup-hooks`.
-- **CI:** `.github/workflows/checks.yml` type-checks and tests the checker, then checks changed files on pull requests and all files on pushes. It runs on Ubuntu and Windows.
+- **CI:** `.github/workflows/ci.yml` type-checks, lints, and tests everything, then runs CHECKS on changed files for pull requests and on all files for pushes. It runs on Ubuntu and Windows.
 - **Releases:** the release checklist in `DEVELOPMENT.md` requires a clean `npm run checks:all`.
 
 ## Adding or changing a rule

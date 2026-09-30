@@ -4,7 +4,7 @@
 
 An open-source note-taking application for Windows combining your favorite writing, drawing, and recording features for professional and personal applications. Windows comes first; macOS, Linux, iOS, and Android follow.
 
-OpenNote is in the planning stage. No app code exists yet.
+OpenNote is in early development. Phase 0 (the project foundation) is complete; see [DEVELOPMENT.md](DEVELOPMENT.md) for the plan.
 
 ## Documents
 
@@ -17,14 +17,22 @@ OpenNote is in the planning stage. No app code exists yet.
 | [FEATURES.md](FEATURES.md) | Feature spec: Office and Google, handwriting, transcripts, study tools, and more |
 | [CHECKS.md](CHECKS.md) | The quality gate every file change must pass |
 
-## Contributing
+## Getting started
 
-You need Node.js 22.18 or newer.
+On Windows, install Node.js 22.18 or newer, Rust (through rustup), and the Microsoft C++ Build Tools. Then run:
 
 ```sh
-npm install
-npm run setup-hooks   # run CHECKS before every commit
-npm run checks        # check your changes
+npm install && npm start
 ```
 
-CHECKS also runs in continuous integration on every push and pull request.
+That opens the OpenNote window in development mode. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full setup, scripts, and workflow.
+
+## Contributing
+
+```sh
+npm run setup-hooks   # run CHECKS before every commit
+npm run checks        # check your changes
+npm test              # unit tests
+```
+
+CHECKS, lint, type-checks, tests, and a Windows build run in continuous integration on every push and pull request. OpenNote is licensed under the [Apache License 2.0](LICENSE).

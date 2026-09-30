@@ -1,5 +1,11 @@
 {
-  "ignore": [],
+  "ignore": [
+    "app/dist/**",
+    "app/src-tauri/gen/**",
+    "app/src/theme/tokens.css",
+    "app/src/theme/tokens.ts",
+    "target/**"
+  ],
   "rules": {
     "spelling": {
       "allow": []
@@ -62,14 +68,17 @@
       "duplicateBlockLines": 8
     },
     "usability": {
-      "tocMinWords": 1500
+      "tocMinWords": 1500,
+      "exclude": [
+        ".github/**"
+      ]
     },
     "brand-consistency": {
       "include": [
         "app/src/**/*.{ts,tsx,css,scss}"
       ],
       "tokenFiles": [
-        "app/src/theme/**",
+        "app/src/theme/tokens.{css,ts}",
         "brand/**"
       ],
       "maxDurationMs": 400

@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { run } from './helpers.ts';
+import { messages, run } from './helpers.ts';
 import { hygiene } from '../rules/hygiene.ts';
 import { modifiability } from '../rules/modifiability.ts';
 import { brandConsistency } from '../rules/brand-consistency.ts';
@@ -25,6 +25,16 @@ test('hygiene flags secrets without flagging itself', async () => {
   const fakeKey = 'AKIA' + 'ABCDEFGHIJKLMNOP';
   const found = await run({ rule: hygiene, path: 'a.ts', text: `const key = '${fakeKey}';\n` });
   assert.match(found[0].message, /secret/);
+});
+
+test('hygiene flags a Tauri updater private key', async () => {
+  const headers = ['rsign', 'minisign'].map((tool) => `untrusted comment: ${tool} ` + 'encrypted secret key');
+  for (const text of headers.flatMap((h) => [h, Buffer.from(h).toString('base64')])) {
+    const found = await run({ rule: hygiene, path: 'a.env', text: `KEY=${text}\n` });
+    assert.match(found[0].message, /secret/);
+  }
+  const publicKey = Buffer.from('untrusted comment: minisign public key').toString('base64');
+  assert.equal((await run({ rule: hygiene, path: 'a.json', text: `"${publicKey}"\n` })).length, 0);
 });
 
 test('comment scanner separates comments, strings and regex literals', () => {
@@ -75,6 +85,76 @@ test('brand-consistency requires tokens in UI code', async () => {
   assert.equal(found.filter((f) => f.severity === 'error').length, 3);
   const tokens = await run({ rule: brandConsistency, path: 'app/src/theme/tokens.ts', text });
   assert.equal(tokens.length, 0);
+  const handWritten = await run({ rule: brandConsistency, path: 'app/src/theme/theme.ts', text });
+  assert.equal(handWritten.filter((f) => f.severity === 'error').length, 3);
+});
+
+const RAW_COLOR = '1:error:Raw color value. Use a color token from brand/tokens.json.';
+const brandMessages = async (path: string, text: string) => messages(await run({ rule: brandConsistency, path, text }));
+
+test('brand-consistency flags raw colors and ignores named colors outside color values', async () => {
+  const flagged = [
+    ['a.css', '.desk { background: white; }'],
+    ['a.css', '.a { border: 1px solid Black !important; }'],
+    ['a.css', '.a { border-color: color-mix(in srgb, red 20%, transparent); }'],
+    ['a.css', '.a { background-color: hwb(0 100% 0%); }'],
+    ['a.css', '.a { color: color(display-p3 1 0 0); }'],
+    ['a.css', '.a { outline-color: RGB(0 0 0); }'],
+    ['a.tsx', "const s = { backgroundColor: 'white' };"],
+    ['a.tsx', "const s = { color: dark ? 'white' : 'black' };"],
+    ['a.tsx', '<path fill="white" d="M0 0h1" />'],
+    ['a.tsx', "ctx.fillStyle = 'white';"],
+    ['a.tsx', "element.style.backgroundColor = 'black';"],
+  ];
+  for (const [name, text] of flagged) assert.deepEqual(await brandMessages(`app/src/${name}`, text), [RAW_COLOR], text);
+  const allowed = [
+    ['a.css', '.a { color: currentColor; background: transparent; border-color: inherit; }'],
+    ['a.css', '.a { border-color: color-mix(in srgb, var(--color-accent) 20%, transparent); }'],
+    ['a.css', '.a { background: var(--color-white); outline: none; }'],
+    ['a.css', '@media (prefers-color-scheme: dark) {'],
+    ['a.tsx', "const pen = { id: 'red', color: tokens.ink.red, tone: 'blue' };"],
+    ['a.tsx', "const stroke = { color: 'Indigo', width: 2 };"],
+    ['a.tsx', '<path fill="currentColor" aria-label="red" />'],
+    ['a.tsx', '<button data-color="red" onClick={pick} />'],
+    ['a.tsx', "if (element.dataset.color === 'red') ctx.fillStyle = tokens.ink.red;"],
+  ];
+  for (const [name, text] of allowed) assert.deepEqual(await brandMessages(`app/src/${name}`, text), [], text);
+});
+
+test('brand-consistency flags raw fonts and layers', async () => {
+  const css = [
+    '.a { font: 14px Arial, sans-serif; }',
+    '.a { font: 600 var(--type-body-size) var(--font-ui); }',
+    '.a { font: inherit; }',
+    '.a { font: italic var(--type-body-size) / var(--type-body-line) var(--font-ui, var(--font-fallback)); }',
+    '.a { z-index: 9999; }',
+    '.a { z-index: auto; }',
+    '.a { z-index: var(--layer-dialog); }',
+  ];
+  assert.deepEqual(await brandMessages('app/src/a.css', css.join('\n')), [
+    '1:error:Raw font shorthand. Use font and type tokens.',
+    '2:error:Raw font shorthand. Use font and type tokens.',
+    '5:error:Raw z-index. Use a layer token.',
+  ]);
+  const tsx = [
+    "const s = { font: '14px Arial', zIndex: 9999 };",
+    "ctx.font = '14px Arial';",
+    'const s = { font: `${size}px Arial` };',
+    "const s = { fontFamily: 'Arial' };",
+    "const s = { font: 'inherit' };",
+    "function label(font: 'ui' | 'mono' = 'ui') {}",
+    "text({ size: 15, font: 'reading' });",
+    'ctx.font = `${size}px/${line}px ${fonts.ui}`;',
+    'const s = { fontFamily: tokens.font.ui, zIndex: tokens.layer.dialog };',
+    "const s = { fontFamily: 'var(--font-ui)' };",
+  ];
+  assert.deepEqual(await brandMessages('app/src/a.tsx', tsx.join('\n')), [
+    '1:error:Raw font shorthand. Use font and type tokens.',
+    '1:error:Raw z-index. Use a layer token.',
+    '2:error:Raw font shorthand. Use font and type tokens.',
+    '3:error:Raw font shorthand. Use font and type tokens.',
+    '4:error:Raw font family. Use a font token.',
+  ]);
 });
 
 test('contrast ratio matches WCAG reference values', () => {

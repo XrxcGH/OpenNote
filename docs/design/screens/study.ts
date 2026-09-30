@@ -1,7 +1,7 @@
 // Study tools: a flashcard and a quiz embedded in a page, and the panel that generates them.
 
 import { type Palette, line, palette, rect, region, tag, text, textLines, NOTE } from '../lib/svg.ts';
-import { BODY_TOP, EDITOR_X, WIDE, editorBackground, standardWindow, windowAnnotations } from '../lib/chrome.ts';
+import { BODY_TOP, EDITOR_X, editorBackground, standardWindow, windowAnnotations } from '../lib/chrome.ts';
 import { type Screen, makeScreen } from './screen.ts';
 
 const X = EDITOR_X + 64;

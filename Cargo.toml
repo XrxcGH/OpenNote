@@ -1,0 +1,11 @@
+[workspace]
+members = ["app/src-tauri"]
+resolver = "2"
+
+[profile.release]
+# A smaller, faster single OpenNote.exe.
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

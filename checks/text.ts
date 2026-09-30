@@ -47,9 +47,14 @@ export function sentences(text: string): string[] {
 }
 
 function restoreAbbreviations(text: string): string {
-  return text
-    .replace(/\u0001(\d+)\u0001/g, (_, i: string) => ABBREVIATIONS[Number(i)])
-    .replace(/\u0002(\d+)\u0002/g, (_, i: string) => capitalize(ABBREVIATIONS[Number(i)]));
+  return (
+    text
+      // \u0001 and \u0002 are sentinel characters that protect abbreviations while splitting.
+      // eslint-disable-next-line no-control-regex
+      .replace(/\u0001(\d+)\u0001/g, (_, i: string) => ABBREVIATIONS[Number(i)])
+      // eslint-disable-next-line no-control-regex
+      .replace(/\u0002(\d+)\u0002/g, (_, i: string) => capitalize(ABBREVIATIONS[Number(i)]))
+  );
 }
 
 function capitalize(text: string): string {
