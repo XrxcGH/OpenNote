@@ -6,6 +6,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 
 - [Office and Google Workspace](#office-and-google-workspace)
 - [Video and audio platforms](#video-and-audio-platforms)
+- [More integrations](#more-integrations)
 - [Handwriting to text](#handwriting-to-text)
 - [Shapes and lines](#shapes-and-lines)
 - [Transcripts and summaries](#transcripts-and-summaries)
@@ -41,6 +42,28 @@ Linked accounts (Phase 11):
 - Paste a YouTube, Vimeo, or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings.
 - Transcripts come from the platform's captions when available, or from on-device transcription of audio the person has the right to use.
 - Recordings can be exported as audio or as a narrated video of the page, and uploaded to a linked YouTube account as private or unlisted.
+
+## More integrations
+
+(Phase 11 unless noted)
+
+| Integration | What it does |
+|---|---|
+| Outlook and Google Calendar | Opens a meeting note from any event, filled in with the title, time, attendees, and agenda |
+| Teams, Zoom, and Google Meet | Records meeting audio without a bot (Phase 9) and links the note back to the calendar event |
+| Microsoft To Do and Google Tasks | Two-way sync of checkboxes, due dates, and reminders |
+| Outlook and Gmail | "Save to OpenNote" from an email keeps the text and attachments with a link back |
+| Web clipper for Edge, Chrome, and Firefox | Clips a full page, a region, or a clean article into any section |
+| Windows share target and Snipping Tool | "Share to OpenNote" from any app, and screenshots go straight to the current page |
+| Phone camera | Scan a QR code shown in OpenNote to send photos and document scans from a phone |
+| Zotero and BibTeX | Cite sources while writing and export a bibliography in any common style |
+| Canvas, Moodle, and Google Classroom | Import assignments into a section and submit a page as PDF |
+| Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline |
+| Kindle and Readwise | Import book highlights into a notebook |
+| Slack and Teams chat | Share a page as a link, PDF, or image |
+| Dropbox, OneDrive, iCloud Drive, Box, and WebDAV | Sync folders and "Send to" destinations |
+| Webhooks and a local API | Connect Zapier, Power Automate, or scripts to create pages and export files |
+| AI assistants (Model Context Protocol, MCP) | Lets an assistant the person chooses read or write notes, only with permission |
 
 ## Handwriting to text
 
@@ -123,3 +146,28 @@ These answer known complaints about other note apps:
 - **Snap tools:** a ruler, protractor, and snap-to-grid for neat diagrams.
 - **Offline:** everything works offline, and conflicts are shown side by side, never silently overwritten.
 - **Export:** a whole notebook exports in one step, so data is never locked in.
+
+More quality-of-life features:
+
+| Feature | What it does |
+|---|---|
+| Quick capture | A global shortcut opens a small note window from anywhere in Windows |
+| Daily note | One tap opens today's page, created from a template |
+| Focus mode | Hides panes and toolbars; the page stays centered |
+| Reading mode | Locks the page against accidental edits and ink |
+| Find and replace | Works on one page or a whole notebook, including handwriting that has been recognized |
+| Word count and reading time | Shown for the page or a selection |
+| Table of contents | Built from headings, pinned to the side of long pages |
+| Recently closed | Reopen closed pages and tabs with Ctrl+Shift+T |
+| Mini window | Keep a page on top of other apps while watching a lecture or a video |
+| Remember position | Each page reopens at the same scroll, zoom, and view |
+| Drag and drop | Drop files, images, PDFs, and links from anywhere |
+| Copy text from images | Select text inside any image or scanned PDF |
+| Reminders | Due dates on checkboxes, with Windows notifications |
+| Presentation mode | Full-screen pages with a laser pointer and ink that fades |
+| Print preview | Shows exactly what prints, with page breaks |
+| Spell check | Several languages at once, and a personal dictionary |
+| Pen settings sync | Pens, colors, and toolbars follow the person to every device |
+| Low-power mode | Reduces animations and background work on battery |
+| Shortcut cheat sheet | Ctrl+/ shows every shortcut, and each one can be changed |
+| Password-protected sections | Encrypted on disk, unlocked with Windows Hello |
