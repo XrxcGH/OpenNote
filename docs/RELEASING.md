@@ -35,7 +35,7 @@ Look after both files:
 
 - Never commit the private key. The `.gitignore` file skips `*.key` files, but keep the key outside the repository anyway.
 - Save the private key and its password in a password manager, with an offline backup. If either is lost, copies already installed can't accept any later update.
-- Keep the public key. Phase 2 adds it to the app's updater config. It isn't secret.
+- Keep the public key. It isn't secret. Commit it as `app/src-tauri/keys/update.pub`, and the build embeds it. Until it is there, every build keeps the updater off, and Settings, then Updates, says why.
 
 If the private key leaks, generate a new pair. Ship one last release signed with the old key that carries the new public key. Then replace both secrets, so later releases are signed with the new key.
 

@@ -52,4 +52,5 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0006](0006-pdf-export.md) | Export PDFs with WebView2 PrintToPdf from a hidden WebView, with print CSS and layout rules that keep the screen and paper in step | Accepted | 2026-09-30 |
 | [0007](0007-audio-capture.md) | Record the microphone and system audio with cpal on WASAPI, align both to the performance counter, and store Opus in 1-second Ogg pages | Accepted | 2026-09-30 |
 | [0010](0010-interface-components-and-state.md) | Build the interface from hand-written accessible components, a small external store, registries, and a platform seam | Proposed | 2026-09-30 |
+| [0011](0011-self-updater.md) | Update with a Tauri-free updater: per-architecture files, signature checks, a staged swap, and rollback; move the app to the user's Programs folder | Proposed | 2026-09-30 |
 | [0016](0016-phase-2-test-stack.md) | Test in layers: Vitest, Vitest browser mode, Playwright, and WebdriverIO with tauri-driver, on installed browsers | Proposed | 2026-09-30 |
