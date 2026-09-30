@@ -23,4 +23,8 @@ textScale: number,
 /**
  * The effective zoom Rust applied to the page (section 10.4).
  */
-zoom: number, };
+zoom: number, 
+/**
+ * A screen reader is running (`SPI_GETSCREENREADER`), so the page can mount for assistive technology.
+ */
+screenReader: boolean, };
