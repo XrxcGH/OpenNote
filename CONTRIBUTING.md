@@ -59,6 +59,9 @@ Also run `npm run setup-hooks` once, so CHECKS runs before each commit.
 | `npm run app:build` | Regenerates the design tokens and builds the UI into `app/dist`. |
 | `npm run app:test` | Runs the UI tests with Vitest. |
 | `npm run app:typecheck` | Type-checks the UI and its build scripts. |
+| `npm run test:components` | Runs the component tests in the installed Edge or Chrome. |
+| `npm run test:ui` | Builds the UI with the web platform and runs the Playwright screen and accessibility tests. |
+| `npm run test:e2e` | Runs the end-to-end specs against the built app, which need `tauri-driver` and `msedgedriver` (see `tests/e2e/harness.ts`). They skip when a tool is missing. |
 | `npm test` | Runs the CHECKS tests and the UI tests. |
 | `npm run lint` | Lints TypeScript and JavaScript with ESLint. |
 | `npm run typecheck` | Type-checks all TypeScript: CHECKS, the wireframe generator, and the app. |
@@ -74,6 +77,18 @@ Also run `npm run setup-hooks` once, so CHECKS runs before each commit.
 | `npm run tauri -- <command>` | Runs the Tauri command line, for example `npm run tauri -- info`. |
 
 The Rust checks use `cargo` directly, as the [quality gate](#quality-gate) shows.
+
+### Running the app with its own data
+
+The app keeps its files in `%APPDATA%\OpenNote` (settings) and `%LOCALAPPDATA%\OpenNote` (device state, logs, and the WebView2 data). These environment variables change how a run behaves, which is how the tests keep away from your real settings:
+
+| Variable | What it does |
+|---|---|
+| `OPENNOTE_PROFILE_DIR=<folder>` | Puts every file under `<folder>` (`roaming`, `local`, and `Documents`), and gives the run its own instance lock, so several runs can start side by side. |
+| `OPENNOTE_PERF_LOG=<file>` | Writes the start-up marks as JSON lines: `processCreated`, `mainEntered`, `settingsLoaded`, `windowCreated`, `windowShown` (with the window's color), `webviewCreated`, then the interface's `firstPaint` (with the theme it painted), `shellReady`, and `pageReady`. |
+| `OPENNOTE_FLAGS=<id>=1,<id>=0` | Turns feature flags on or off, in development and nightly builds only. |
+
+The log is `logs\opennote.log` in the local folder. It keeps five files of 1 MB and never holds note content.
 
 ## Branches and pull requests
 
