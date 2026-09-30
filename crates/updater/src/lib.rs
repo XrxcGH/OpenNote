@@ -2,6 +2,7 @@
 //! version that fails to start. It knows nothing about Tauri: the app drives it from a scheduler thread in
 //! `app/src-tauri/src/updater.rs`. See ARCHITECTURE.md section 18.
 
+mod apply;
 pub mod config;
 pub mod error;
 pub mod fetch;
@@ -20,6 +21,8 @@ pub mod verify;
 mod check_tests;
 #[cfg(test)]
 mod download_tests;
+#[cfg(test)]
+mod swap_tests;
 #[cfg(test)]
 mod test_support;
 
@@ -44,8 +47,6 @@ use state::UpdaterState;
 pub struct Updater<F: Fetch, R: Replacer, C: Clock> {
     config: Config,
     fetch: F,
-    // Used by apply and go_back.
-    #[allow(dead_code)]
     replacer: R,
     clock: C,
     /// Held while `updates\state.json` is read, changed, and written, so two threads never interleave.
@@ -270,25 +271,5 @@ impl<F: Fetch, R: Replacer, C: Clock> Updater<F, R, C> {
         if let Err(error) = self.change_state(|state| state.staged = None) {
             log::warn!("Couldn't clear the staged update: {error}");
         }
-    }
-
-    /// Swaps the staged update into place (section 18.7).
-    pub fn apply(&self, _relaunch: Relaunch) -> Result<Applied, UpdateError> {
-        Err(UpdateError::NotImplemented("apply"))
-    }
-
-    /// Clears the pending start count once the new version is healthy (section 18.8).
-    pub fn mark_healthy(&self) -> Result<(), UpdateError> {
-        Ok(())
-    }
-
-    /// Swaps the previous copy back into place and skips the current version (section 18.10).
-    pub fn go_back(&self) -> Result<Applied, UpdateError> {
-        Err(UpdateError::NotImplemented("go_back"))
-    }
-
-    /// The previous copy, when one exists and its hash still matches.
-    pub fn previous(&self) -> Option<PreviousVersion> {
-        None
     }
 }

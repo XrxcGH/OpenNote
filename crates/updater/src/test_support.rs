@@ -128,6 +128,10 @@ impl FolderReplacer {
             failure: Mutex::new(None),
         }
     }
+
+    pub fn fail(&self, failure: Option<Failure>) {
+        *self.failure.lock().expect("lock") = failure;
+    }
 }
 
 impl Replacer for FolderReplacer {

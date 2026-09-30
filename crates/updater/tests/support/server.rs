@@ -1,6 +1,9 @@
 //! A tiny HTTP server on 127.0.0.1 for the integration tests, which only `test-endpoints` builds may read. Each
 //! route answers with a status, optional headers, and a body. Requests are recorded by path.
 
+// Each test file uses a different part of it.
+#![allow(dead_code)]
+
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader, Write},
