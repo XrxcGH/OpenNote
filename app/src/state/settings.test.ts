@@ -40,8 +40,8 @@ describe('the settings slice', () => {
 
   it('follows changes the platform reports', async () => {
     const platform = start();
-    await platform.settings.update({ keyboard: { preset: 'onenote' } });
-    expect(getSettings().keyboard.preset).toBe('onenote');
+    await platform.settings.update({ keymap: { preset: 'onenote' } });
+    expect(getSettings().keymap.preset).toBe('onenote');
   });
 
   it('removes keys with null, as merge patches do', async () => {
@@ -56,12 +56,12 @@ describe('the settings slice', () => {
 describe('settings from an older shell', () => {
   it("fills fields the host doesn't send with defaults, and keeps what it sends", async () => {
     const platform = createWebPlatform();
-    const { keyboard: _keyboard, ...older } = DEFAULT_SETTINGS;
+    const { keymap: _keymap, ...older } = DEFAULT_SETTINGS;
     const partial = { ...older, appearance: { ...older.appearance, theme: 'dark', uiScale: undefined } };
     vi.spyOn(platform.settings, 'update').mockResolvedValue(partial as unknown as typeof DEFAULT_SETTINGS);
     initSettings(defaultBootData(), platform);
     await updateSettings({ appearance: { theme: 'dark' } });
-    expect(getSettings().keyboard.preset).toBe('default');
+    expect(getSettings().keymap.preset).toBe('default');
     expect(getSettings().appearance).toMatchObject({ theme: 'dark', uiScale: 100 });
     expect(getSettings().storage.notesFolder).toBeNull();
   });

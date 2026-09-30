@@ -40,7 +40,7 @@ describe('chords', () => {
 describe('keysFor', () => {
   it('uses the defaults, then the shortcut set, then overrides', () => {
     expect(keysFor('test.keymap')).toEqual(['Ctrl+Shift+D']);
-    withSettings({ keyboard: { preset: 'onenote' } });
+    withSettings({ keymap: { preset: 'onenote' } });
     expect(keysFor('test.keymap')).toEqual(['Ctrl+Alt+D']);
     withSettings({ shortcuts: { 'test.keymap': ['Ctrl+Alt+K', 'not a chord'] } });
     expect(keysFor('test.keymap')).toEqual(['Ctrl+Alt+K']);

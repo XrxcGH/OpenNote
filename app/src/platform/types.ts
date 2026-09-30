@@ -32,7 +32,9 @@ export type { ExternalTarget } from './bindings/ExternalTarget';
 export type { FolderCheck } from './bindings/FolderCheck';
 export type { InstallStatus } from './bindings/InstallStatus';
 export type { IpcError } from './bindings/IpcError';
-export type { KeymapPresetId } from './bindings/KeymapPresetId';
+export type { KeymapPreset } from './bindings/KeymapPreset';
+/** The shortcut set that settings.shortcuts overrides apply on top of. */
+export type { KeymapPreset as KeymapPresetId } from './bindings/KeymapPreset';
 export type { LogLevel } from './bindings/LogLevel';
 export type { Notice } from './bindings/Notice';
 export type { OsAppearance } from './bindings/OsAppearance';

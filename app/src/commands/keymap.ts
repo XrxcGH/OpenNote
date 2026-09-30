@@ -16,7 +16,7 @@ export function keysFor(id: CommandId): readonly Chord[] {
   const settings = getSettings();
   const override = settings.shortcuts[id];
   if (override) return override.filter(isChordText) as Chord[];
-  return def.presetKeys?.[settings.keyboard.preset] ?? def.keys ?? [];
+  return def.presetKeys?.[settings.keymap.preset] ?? def.keys ?? [];
 }
 
 /** keysFor as a hook: follows rebinding and newly registered commands. */

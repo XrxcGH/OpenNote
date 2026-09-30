@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   storage: { notesFolder: null },
   startup: { openLastPage: true },
   shortcuts: {},
-  keyboard: { preset: 'default' },
+  keymap: { preset: 'default' },
   updates: { install: 'auto', channel: 'stable', skippedVersion: null },
   setup: { completedSteps: [] },
   experimental: { flags: {} },

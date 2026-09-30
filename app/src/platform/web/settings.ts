@@ -12,7 +12,7 @@ const CHOICES: Record<string, readonly unknown[]> = {
   'appearance.textSize': [80, 90, 100, 110, 125, 150, 175, 200],
   'appearance.motion': ['system', 'reduce'],
   'appearance.density': ['auto', 'mouse', 'touch'],
-  'keyboard.preset': ['default', 'onenote'],
+  'keymap.preset': ['default', 'onenote'],
   'updates.install': ['auto', 'ask', 'manual'],
   'updates.channel': ['stable', 'beta'],
 };
