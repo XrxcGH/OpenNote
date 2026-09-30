@@ -19,14 +19,21 @@ import {
 } from '.';
 
 /** Scopes that can be active at the same time as the given one. */
+const PAGE: readonly KeyScope[] = ['page', 'editor', 'editor.table', 'editor.code', 'pageObject', 'zoomBox'];
 const OVERLAPS: Record<KeyScope, readonly KeyScope[]> = {
-  global: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree', 'palette', 'dialog'],
-  workspace: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree'],
+  global: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree', 'palette', 'dialog', ...PAGE],
+  workspace: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree', ...PAGE],
   tree: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree'],
   notebooksTree: ['global', 'workspace', 'tree', 'notebooksTree'],
   pagesTree: ['global', 'workspace', 'tree', 'pagesTree'],
   palette: ['global', 'palette'],
   dialog: ['global', 'dialog'],
+  page: ['global', 'workspace', ...PAGE],
+  editor: ['global', 'workspace', 'page', 'editor', 'editor.table', 'editor.code'],
+  'editor.table': ['global', 'workspace', 'page', 'editor', 'editor.table'],
+  'editor.code': ['global', 'workspace', 'page', 'editor', 'editor.code'],
+  pageObject: ['global', 'workspace', 'page', 'pageObject'],
+  zoomBox: ['global', 'workspace', 'page', 'zoomBox'],
 };
 
 /** Ctrl+1 to Ctrl+9 are kept for tags in Phase 8. */

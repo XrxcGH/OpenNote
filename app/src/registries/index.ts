@@ -9,6 +9,7 @@ import type {
   PaletteProvider,
   SettingsSectionDef,
   SetupStepDef,
+  ShortcutListSectionDef,
   TitleBarItemDef,
 } from './types';
 
@@ -26,3 +27,5 @@ export const setupSteps = createRegistry<SetupStepDef>('setup steps');
 export const titleBarItems = createRegistry<TitleBarItemDef>('title bar items');
 export const paletteProviders = createRegistry<PaletteProvider>('palette providers');
 export const beforeExit = createRegistry<BeforeExitHook>('before-exit hooks');
+/** Tables that later phases add to the keyboard shortcut list (AMENDMENTS.md, Phase 5 P2-5). */
+export const shortcutListSections = createRegistry<ShortcutListSectionDef>('shortcut list sections');
