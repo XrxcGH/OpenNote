@@ -58,7 +58,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
 }
 
 /// Shows the main window once its page has loaded, so start-up never shows WebView2's default white background
-/// (BRAND.md section 4). Showing a visible window does nothing.
+/// (docs/BRAND.md section 4). Showing a visible window does nothing.
 pub fn show_when_loaded<R: Runtime>(webview: &Webview<R>, payload: &PageLoadPayload<'_>) {
     let window = webview.window();
     if payload.event() == PageLoadEvent::Finished && window.label() == MAIN {

@@ -7,7 +7,7 @@
 
 Phase 2 builds the app shell that every later phase extends: the title bar, command bar, navigation tree, palette, settings, setup, and the overlays they use. DEVELOPMENT.md chose React and TypeScript in architecture decision record (ADR) 0001, but not how components, state, and structure work inside them. The forces:
 
-- **Accessibility:** BRAND.md section 12 requires the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA, the level most accessibility laws require. It also requires Narrator and NonVisual Desktop Access (NVDA) support, and full keyboard use. The navigation tree is the most-used control.
+- **Accessibility:** docs/BRAND.md section 12 requires the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA, the level most accessibility laws require. It also requires Narrator and NonVisual Desktop Access (NVDA) support, and full keyboard use. The navigation tree is the most-used control.
 - **Performance:** the window must appear within 1 s, and any input must show a response within 50 ms on the reference laptop, with a 1,000-page notebook. Start-up JavaScript grows with every phase.
 - **Brand:** every visual value comes from tokens, and the CHECKS `brand-consistency` rule enforces it.
 - **Contributors:** 14 phases, many contributors, and parallel work on separate branches.

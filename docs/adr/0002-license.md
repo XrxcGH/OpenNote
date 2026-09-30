@@ -5,7 +5,7 @@
 
 ## Context
 
-OpenNote needs a license before outside contributions arrive. Changing it later means asking past contributors to agree, so it's hard to reverse. The [development plan](../../DEVELOPMENT.md#13-risks) lists the license as a Phase 0 decision.
+OpenNote needs a license before outside contributions arrive. Changing it later means asking past contributors to agree, so it's hard to reverse. The [development plan](../DEVELOPMENT.md#13-risks) lists the license as a Phase 0 decision.
 
 The license should:
 

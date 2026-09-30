@@ -48,7 +48,7 @@
     cursor: pointer;
   }
 
-  /* Keeps the 32 px look but gives every input the 44 px touch target from BRAND.md section 6. */
+  /* Keeps the 32 px look but gives every input the 44 px touch target from docs/BRAND.md section 6. */
   .iconButton::before {
     content: '';
     position: absolute;

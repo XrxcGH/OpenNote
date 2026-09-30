@@ -1,6 +1,6 @@
 // Writes the update manifest (latest.json, or beta.json for prerelease tags) next to the release files.
 // Usage: node app/scripts/write-manifest.ts <release-dir> <tag>
-// The app reads this manifest to find, verify, and install the update for its platform (DEVELOPMENT.md section 9).
+// The app reads this manifest to find, verify, and install the update for its platform (docs/DEVELOPMENT.md section 9).
 
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';

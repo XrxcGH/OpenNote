@@ -1,6 +1,6 @@
 # OpenNote screens
 
-These wireframes show the layout of each major screen, with sizes, keep-out zones and the rules behind them. They follow [BRAND.md](../../BRAND.md) and use its exact colors from [`brand/tokens.json`](../../brand/tokens.json). They are layout guides, not pixel-perfect mockups: icons are placeholders, and gray bars stand in for text.
+These wireframes show the layout of each major screen, with sizes, keep-out zones and the rules behind them. They follow [BRAND.md](../BRAND.md) and use its exact colors from [`brand/tokens.json`](../../brand/tokens.json). They are layout guides, not pixel-perfect mockups: icons are placeholders, and gray bars stand in for text.
 
 ## Contents
 
@@ -41,7 +41,7 @@ Setup has five short steps in a centered 720 × 600 card:
 1. **Welcome:** what OpenNote is, in one sentence.
 2. **Choose your look:** Light, Dark, or Match Windows (shown above). The card matching the current Windows setting is selected in advance, and clicking a card repaints the whole screen at once.
 3. **Where to keep things:** the notes folder, where the app lives, and the first notebook (shown below).
-4. **Smart features:** choose on-device transcription, handwriting, and image text (see FEATURES.md).
+4. **Smart features:** choose on-device transcription, handwriting, and image text (see [FEATURES.md](../FEATURES.md)).
 5. **Bring your notes (optional):** import from OneNote or Evernote, or skip.
 
 ![First run, step 3: notes folder, app location, and first notebook](images/02-first-run-storage.svg)
@@ -121,7 +121,7 @@ The "Update ready" notice appears in the title bar only. It never pops up or int
 
 ![The four layouts from phone to wide desktop](images/09-size-classes.svg)
 
-The layout follows the window width, as set out in BRAND.md section 6. Snapping OpenNote to half of a laptop screen gives the medium layout, and a phone always gets the compact one.
+The layout follows the window width, as set out in [section 6 of the brand guide](../BRAND.md#6-space-size-and-layout). Snapping OpenNote to half of a laptop screen gives the medium layout, and a phone always gets the compact one.
 
 ## Phone
 

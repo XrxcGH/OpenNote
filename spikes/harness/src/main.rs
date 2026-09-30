@@ -1,4 +1,4 @@
-//! Phase 1 spikes (DEVELOPMENT.md, Phase 1): throwaway experiments that answer the riskiest questions
+//! Phase 1 spikes (docs/DEVELOPMENT.md, Phase 1): throwaway experiments that answer the riskiest questions
 //! before real code depends on them. Each spike measures one thing on Windows and writes its results to
 //! `spikes/results/<spike>.json`, which its architecture decision record (ADR) quotes.
 //!

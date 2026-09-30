@@ -1,6 +1,6 @@
 // Spike page: PDF export. See spikes/README.md.
 //
-// Shows lecture notes as paper sheets on a desk, like the paginated view in BRAND.md. The print styles in
+// Shows lecture notes as paper sheets on a desk, like the paginated view in docs/BRAND.md. The print styles in
 // pdf.css map each sheet to exactly one PDF page. The harness exports the page with WebView2's print to PDF and
 // compares each PDF page with a screenshot of the matching sheet.
 import '@fontsource-variable/atkinson-hyperlegible-next';

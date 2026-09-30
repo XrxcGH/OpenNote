@@ -1,4 +1,4 @@
-// The title bar's theme toggle (BRAND.md section 11) is a switch named "Dark mode" that shows the current theme.
+// The title bar's theme toggle (docs/BRAND.md section 11) is a switch named "Dark mode" that shows the current theme.
 // When it's on, the moon uses the Fill weight. Its shortcut shows in the tooltip and in aria-keyshortcuts.
 // WP3 adds the description, the theme menu, long press, and the contrast-theme behavior.
 

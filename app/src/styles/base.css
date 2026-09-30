@@ -19,7 +19,7 @@
     line-height: var(--type-body-line);
   }
 
-  /* Switching themes crossfades the whole window (BRAND.md section 4). With reduced motion the base token is
+  /* Switching themes crossfades the whole window (docs/BRAND.md section 4). With reduced motion the base token is
      100 ms. Chromium sends clicks made during the fade to the root element, even with pointer-events: none. */
   ::view-transition-group(root) {
     animation-duration: var(--motion-duration-base);
