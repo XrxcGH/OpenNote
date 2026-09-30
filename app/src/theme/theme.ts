@@ -17,6 +17,13 @@ export function toggledPreference(current: Theme): ThemePreference {
   return current === 'dark' ? 'light' : 'dark';
 }
 
+type ShortcutKeys = Pick<KeyboardEvent, 'code' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'metaKey' | 'repeat'>;
+
+/** Ctrl+Shift+D, the dark mode shortcut. A held key repeats, so repeats are ignored. */
+export function isToggleShortcut(event: ShortcutKeys): boolean {
+  return event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey && !event.repeat && event.code === 'KeyD';
+}
+
 export function isPreference(value: unknown): value is ThemePreference {
   return typeof value === 'string' && (ORDER as string[]).includes(value);
 }

@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Permissions for the main window. Grant new permissions here one at a time.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "core:window:allow-set-theme"]
 }

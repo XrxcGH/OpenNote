@@ -210,7 +210,7 @@ Hard rules:
 
 - Ink is never animated. A stroke appears under the pen in the same frame.
 - Nothing is slower than 400 ms. CHECKS enforces this in tokens and UI code.
-- Animations never block input. Clicking during a transition acts at once.
+- Animations never block input. Clicking during a transition acts at once. The one exception is the theme crossfade: for its 200 ms, clicks don't reach the page, though keyboard shortcuts still work.
 - Loading shows nothing for the first 300 ms, then a quiet progress bar. Skeleton screens don't shimmer.
 - The recording dot pulses slowly (2-second cycle). It is the only looping animation.
 
