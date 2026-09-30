@@ -9,7 +9,7 @@ use std::time::Duration;
 use crate::error::CoreError;
 use crate::id::{BlockId, ClientId, PageId, SectionId, StrokeId};
 use crate::limits::{Limits, Timings};
-use crate::model::{BlockData, Page, Stroke};
+use crate::model::{BlockData, InkRecord, Page, Stroke};
 use crate::ops::{Op, Origin, Txn};
 use crate::session::backend::mem::MemBackend;
 use crate::session::core::{Core, CoreConfig, CoreParts, MemoryCaps, WorkMode};
@@ -121,6 +121,17 @@ impl CoreKit {
     /// Creates a page whose `page.json` has a text block and a handwriting layer with one stroke, like the
     /// spec's example page. Returns the page and its handwriting layer.
     pub fn inked_page(&self, notebook: &NotebookHandle, section: SectionId) -> Result<(PageId, BlockId), CoreError> {
+        self.inked_page_with(notebook, section, 0)
+    }
+
+    /// Like [`CoreKit::inked_page`], with `extra` more strokes in the handwriting layer, for benchmarks that
+    /// need a heavy page.
+    pub fn inked_page_with(
+        &self,
+        notebook: &NotebookHandle,
+        section: SectionId,
+        extra: u64,
+    ) -> Result<(PageId, BlockId), CoreError> {
         let at = NodePlacement {
             parent: ParentRef::Section(section),
             before: None,
@@ -147,6 +158,11 @@ impl CoreKit {
         let all: Vec<BlockId> = page.blocks.iter().map(|b| b.id).collect();
         for block in all.into_iter().filter(|b| !keep.contains(b)) {
             page.blocks.remove(block);
+        }
+        for n in 0..extra {
+            let more = stroke(n);
+            page.ink.insert(more.clone());
+            page.ink.push_pending(InkRecord::Stroke(more));
         }
         write_page_dir(&self.fs, &self.codec, &dir, &page)?;
         Ok((id, sample::sample_ink_block()))
