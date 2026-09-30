@@ -41,7 +41,7 @@ const subscribe = (listener: () => void) => {
 export function Announcer() {
   const current = useSyncExternalStore(subscribe, () => regions);
   return (
-    <div className={styles.visuallyHidden}>
+    <div className={styles.visuallyHidden} data-modal-exempt="">
       <div aria-live="polite" aria-atomic="true">
         {current.polite}
       </div>
