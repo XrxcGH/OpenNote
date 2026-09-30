@@ -25,6 +25,7 @@ use crate::seams::Applier;
 use crate::time::Timestamp;
 
 use state::{Applying, Fail};
+pub(crate) use strokes::state_of;
 
 /// The production [`Applier`].
 #[derive(Clone, Copy, Debug, Default)]
