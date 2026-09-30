@@ -1,0 +1,31 @@
+/* The Appearance section: one group per setting, stacked, with the label above its choices. */
+@layer components {
+  .section {
+    display: grid;
+    gap: var(--space-8);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .label {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .group [role='radiogroup'] {
+    gap: var(--space-3);
+  }
+}

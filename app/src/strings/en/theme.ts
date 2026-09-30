@@ -44,6 +44,36 @@ export const theme = {
     leftWindowsLight: 'Light theme, no longer following Windows.',
     textSize: 'Text size {size}%',
   },
+  appearance: {
+    title: 'Appearance',
+    theme: 'Theme',
+    pageColor: {
+      label: 'Page color in dark mode',
+      matchTheme: 'Match the theme',
+      paper: 'Always paper white',
+    },
+    textSize: {
+      label: 'Text size',
+      help: 'Scales everything. Ctrl+= and Ctrl+- change it from anywhere, and Ctrl+0 resets it.',
+      option: '{size}%',
+    },
+    interfaceSize: {
+      label: 'Interface size',
+      help: 'Scales the sidebars, toolbars, and menus. Pages keep their own zoom.',
+    },
+    motion: {
+      label: 'Reduce motion',
+      system: 'Match Windows',
+      reduce: 'Always reduce motion',
+    },
+    density: {
+      label: 'Size of buttons and rows',
+      help: 'Automatic follows the pointer you used last. Large gives every pointer touch-size targets.',
+      auto: 'Automatic',
+      mouse: 'Standard',
+      touch: 'Large',
+    },
+  },
   contrastNote: 'A Windows contrast theme is on, so Windows sets the colors.',
   contrastNoteLater: "A Windows contrast theme is on, so Windows sets the colors. Your choice applies when it's off.",
 } as const;

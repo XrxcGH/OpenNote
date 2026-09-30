@@ -1,10 +1,10 @@
-// Registers the theme and text size commands, the theme menu's items, and the title bar toggle
-// (ARCHITECTURE.md sections 9.3 and 14.8).
+// Registers the theme and text size commands, the theme menu's items, the title bar toggle, and the Appearance
+// section of Settings (ARCHITECTURE.md sections 9.3, 14.8, and 16.1).
 
 import { chord, defineCommand } from '../../commands/registry';
 import type { CommandContext, CommandDef } from '../../commands/types';
 import type { ThemePreference } from '../../platform/types';
-import { commands, contextMenus, titleBarItems } from '../../registries';
+import { commands, contextMenus, settingsSections, titleBarItems } from '../../registries';
 import { osStore } from '../../state/os';
 import { getSettings } from '../../state/settings';
 import { t } from '../../strings/t';
@@ -94,6 +94,14 @@ for (const { id, title, key, run } of ZOOM) {
     }),
   );
 }
+
+settingsSections.register({
+  id: 'appearance',
+  title: 'theme.appearance.title',
+  icon: 'Palette',
+  order: 20,
+  load: () => import('./AppearanceSection'),
+});
 
 titleBarItems.register({
   id: 'theme.toggle',

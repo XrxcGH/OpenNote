@@ -735,6 +735,7 @@ export const tokens = {
     "treeIndent": 16,
     "rowPointer": 32,
     "rowTouch": 44,
+    "themeCard": 200,
     "pageRow": 56,
     "autoScrollStrip": 28,
     "palette": 680,
