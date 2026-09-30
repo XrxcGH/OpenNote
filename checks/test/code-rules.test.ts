@@ -9,6 +9,8 @@ import { modifiability } from '../rules/modifiability.ts';
 import { brandConsistency } from '../rules/brand-consistency.ts';
 import { brandTokens, contrastRatio } from '../rules/brand-tokens.ts';
 import { usability } from '../rules/usability.ts';
+import { findBrowser, layout } from '../rules/layout.ts';
+import { letterCase } from '../text.ts';
 import { splitCode } from '../comments.ts';
 import { globToRegExp } from '../glob.ts';
 
@@ -105,4 +107,29 @@ test('glob patterns match paths', () => {
   assert.ok(globToRegExp('app/src/**/*.{ts,tsx}').test('app/src/ui/a/B.tsx'));
   assert.ok(globToRegExp('**/*.lock').test('Cargo.lock'));
   assert.ok(!globToRegExp('brand/*').test('brand/a/b.json'));
+});
+
+test('letter case tells sentence case, Title Case, and UPPER CASE apart', () => {
+  assert.equal(letterCase('Page layout and print'), 'sentence');
+  assert.equal(letterCase('Page Layout And Print Settings'), 'title');
+  assert.equal(letterCase('PAGE LAYOUT'), 'upper');
+  assert.equal(letterCase('NOTEBOOKS'), 'sentence');
+  assert.equal(letterCase('Biology 101 › Lectures › Cell Structure Notes'), 'sentence');
+});
+
+test('layout finds overlap, off-center text, and edge crowding', { skip: !findBrowser() }, async () => {
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200">',
+    '<text x="20" y="40" font-size="16">Overlapping one</text>',
+    '<text x="30" y="44" font-size="16">Overlapping two</text>',
+    '<g data-center="both"><rect x="200" y="100" width="150" height="40"/>',
+    '<text x="210" y="125" font-size="14">Go</text></g>',
+    '<text x="1" y="190" font-size="9">Tiny text</text>',
+    '</svg>',
+  ].join('');
+  const messages = (await run({ rule: layout, path: 'a.svg', text: svg })).map((f) => f.message).join('\n');
+  assert.match(messages, /overlaps/);
+  assert.match(messages, /off horizontal center/);
+  assert.match(messages, /minimum is 11px/);
+  assert.match(messages, /closer than 4px to the edge/);
 });

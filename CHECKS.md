@@ -40,9 +40,12 @@ Other options: `--staged`, `--base <ref>`, `--rules spelling,grammar`, `--strict
 | `usability` | One title, no skipped heading levels, sentence-case headings, table of contents for long docs, working links, image alt text, basic UI accessibility | Docs and UI code |
 | `modifiability` | File and function length, nesting depth, parameter count, TODOs without an issue link, commented-out code, copy-pasted blocks | Code |
 | `brand-consistency` | UI code must use design tokens for colors, fonts, motion, layers, and font sizes | App UI code |
+| `layout` | Renders each SVG in a headless browser and checks overlapping text, padding inside containers, centering, alignment, edge spacing, minimum text size, safe margins, scaling, and sentence case | SVG graphics |
 | `brand-tokens` | `brand/tokens.json` themes match, colors are valid, text meets contrast targets, motion stays under 400 ms | Design tokens |
 
 The word lists live in `checks/data/` as JSON, so you can extend them without touching code.
+
+The `layout` rule needs a Chromium-based browser (Chrome, Edge, or Chromium). It finds one automatically, or you can set `CHECKS_BROWSER` to its path.
 
 For a full grammar check, run a LanguageTool server, and set `CHECKS_LANGUAGETOOL_URL` (for example `http://localhost:8081`). Its suggestions appear as warnings.
 

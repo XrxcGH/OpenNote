@@ -7,6 +7,7 @@ import { brandConsistency } from './brand-consistency.ts';
 import { brandTokens } from './brand-tokens.ts';
 import { grammar } from './grammar.ts';
 import { hygiene } from './hygiene.ts';
+import { layout } from './layout.ts';
 import { length } from './length.ts';
 import { modifiability } from './modifiability.ts';
 import { readability } from './readability.ts';
@@ -26,4 +27,5 @@ export const RULES: Rule[] = [
   modifiability,
   brandConsistency,
   brandTokens,
+  layout,
 ];

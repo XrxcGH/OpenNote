@@ -94,3 +94,50 @@ export function phrasePattern(phrase: string): RegExp {
   const end = /\w$/.test(phrase) ? '\\b' : '';
   return new RegExp(`${start}${body}${end}`, 'gi');
 }
+
+const SMALL_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'by',
+  'for',
+  'in',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+  'vs',
+  'with',
+]);
+
+export type LetterCase = 'sentence' | 'title' | 'upper' | 'other';
+
+/** Classifies a phrase as sentence case, Title Case, UPPER CASE, or other (lowercase or mixed). */
+export function letterCase(phrase: string): LetterCase {
+  const all = phrase.match(/[A-Za-z][A-Za-z'’-]*/g) ?? [];
+  if (all.length === 0) return 'other';
+  const letters = all.join('');
+  if (all.length >= 2 && letters.length >= 4 && letters === letters.toUpperCase()) return 'upper';
+  const significant = all.filter((w) => !SMALL_WORDS.has(w.toLowerCase()));
+  const rest = significant.slice(1);
+  const looksLikeName = /[0-9›·/]/.test(phrase);
+  if (
+    !looksLikeName &&
+    rest.length >= 3 &&
+    rest.every((w) => /^[A-Z]/.test(w)) &&
+    rest.some((w) => /^[A-Z][a-z]/.test(w))
+  )
+    return 'title';
+  return /^[^A-Za-z]*[A-Z]/.test(phrase) ? 'sentence' : 'other';
+}
+
+/** A message for phrases that should be in sentence case, or undefined if the phrase is fine. */
+export function caseProblem(phrase: string): string | undefined {
+  const found = letterCase(phrase);
+  if (found === 'title') return `Use sentence case, not Title Case: "${phrase.slice(0, 40)}".`;
+  if (found === 'upper') return `Use sentence case, not UPPER CASE: "${phrase.slice(0, 40)}".`;
+  return undefined;
+}

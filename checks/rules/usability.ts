@@ -4,27 +4,10 @@
 import { posix } from 'node:path';
 import type { Finding, ProseLine, Rule, RuleContext, SourceFile } from '../types.ts';
 import { numberSetting } from '../config.ts';
-import { wordCount } from '../text.ts';
+import { caseProblem, wordCount } from '../text.ts';
 import { reporter } from './helpers.ts';
 
 const UI_EXTENSIONS = ['tsx', 'jsx', 'html', 'vue', 'svelte', 'css', 'scss'];
-const SMALL_WORDS = new Set([
-  'a',
-  'an',
-  'and',
-  'as',
-  'at',
-  'by',
-  'for',
-  'in',
-  'of',
-  'on',
-  'or',
-  'the',
-  'to',
-  'vs',
-  'with',
-]);
 
 export const usability: Rule = {
   id: 'usability',
@@ -52,19 +35,11 @@ function headingFindings(file: SourceFile): Finding[] {
       findings.push(report(heading.line, `Heading jumps from level ${previous} to ${level}. Don't skip levels.`));
     if (wordCount(heading.text) > 12)
       findings.push(report(heading.line, 'Heading is longer than 12 words.', 'warning'));
-    if (isTitleCase(heading.text))
-      findings.push(
-        report(heading.line, 'Use sentence case for headings ("Page layout", not "Page Layout").', 'warning'),
-      );
+    const caseMessage = caseProblem(heading.text);
+    if (caseMessage) findings.push(report(heading.line, caseMessage, 'warning'));
     previous = level;
   }
   return findings;
-}
-
-function isTitleCase(text: string): boolean {
-  const words = (text.match(/[A-Za-z][A-Za-z'-]*/g) ?? []).filter((w) => !SMALL_WORDS.has(w.toLowerCase()));
-  if (words.length < 4) return false;
-  return words.slice(1).every((w) => /^[A-Z]/.test(w));
 }
 
 function tocFindings(file: SourceFile, ctx: RuleContext): Finding[] {
