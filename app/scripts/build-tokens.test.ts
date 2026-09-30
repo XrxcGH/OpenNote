@@ -1,10 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { buildRust, rustConstName, rustRgb, type Tokens } from './build-tokens.ts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { buildCss, buildRust, rustConstName, rustRgb, springEasing, type Tokens } from './build-tokens.ts';
 
 const color: Tokens['color'] = {
-  light: { surface: { app: '#F3EEE6' }, border: { subtle: '#e3dacc' } },
-  dark: { surface: { app: '#1C1916' }, border: { subtle: '#3A322B' } },
+  light: { surface: { app: '#F3EEE6' }, border: { subtle: '#e3dacc' }, text: { primary: '#2B2521' } },
+  dark: { surface: { app: '#1C1916' }, border: { subtle: '#3A322B' }, text: { primary: '#F0E9DE' } },
 };
 
 describe('rustConstName', () => {
@@ -44,5 +46,50 @@ describe('buildRust', () => {
   it('names the token when one is missing', () => {
     const missing = { light: { surface: {} }, dark: color.dark };
     expect(() => buildRust({ color: missing })).toThrow(/color\.light\.surface\.app/);
+  });
+});
+
+describe('buildCss', () => {
+  const file = join(import.meta.dirname, '..', '..', 'brand', 'tokens.json');
+  const css = buildCss(JSON.parse(readFileSync(file, 'utf8')) as Tokens);
+  const blockOf = (selector: string) => css.slice(css.indexOf(`${selector} {`)).split('\n}')[0];
+
+  it('maps each forced color to its system color, above every theme selector', () => {
+    const forced = css.slice(css.indexOf('@media (forced-colors: active)'));
+    expect(forced).toContain(':root[data-theme],\n  :root:not([data-theme="light"]) {');
+    expect(forced).toContain('--color-surface-selected: Highlight;');
+    expect(forced).toContain('--color-text-on-selected: HighlightText;');
+    expect(css.indexOf('@media (forced-colors: active)')).toBeGreaterThan(css.indexOf(':root[data-theme="dark"]'));
+  });
+
+  it('gives chips each pen in both themes and in the scoped blocks', () => {
+    expect(blockOf(':root')).toContain('--ink-amber: #B8620F;');
+    expect(blockOf(':root[data-theme="dark"]')).toContain('--ink-amber: #F0AE68;');
+    expect(blockOf('[data-theme-scope="dark"]')).toContain('--color-surface-app: #1C1916;');
+    expect(css).toContain('[data-theme-scope="light"],\n:root[data-page-color="paper"] [data-region="page"] {');
+  });
+
+  it('reduces motion for the in-app setting as for the system one', () => {
+    expect(blockOf(':root[data-motion="reduce"]')).toContain('--motion-duration-base: 100ms;');
+    expect(blockOf(':root[data-motion="reduce"]')).toContain('--motion-duration-spring: 100ms;');
+  });
+
+  it('writes the font for the caption glyphs', () => {
+    expect(blockOf(':root')).toContain('--font-symbol: "Segoe Fluent Icons", "Segoe MDL2 Assets";');
+  });
+});
+
+describe('springEasing', () => {
+  it('samples the spring from rest to rest, never past the target, within the motion limit', () => {
+    const { easing, ms } = springEasing({ stiffness: 420, damping: 42, mass: 1 });
+    const points = easing.slice('linear('.length, -1).split(', ').map(Number);
+    expect(points[0]).toBe(0);
+    expect(points.at(-1)).toBe(1);
+    expect(points.every((point, i) => i === 0 || point >= points[i - 1])).toBe(true);
+    expect(ms).toBeLessThanOrEqual(400);
+  });
+
+  it('refuses a spring slower than the motion limit', () => {
+    expect(() => springEasing({ stiffness: 40, damping: 12, mass: 1 })).toThrow(/settles in/);
   });
 });
