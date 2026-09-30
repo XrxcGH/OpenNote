@@ -20,7 +20,9 @@
   .tree {
     flex: 1;
     min-block-size: 0;
-    overflow: auto;
+    /* Titles truncate, so a tree never scrolls sideways; a button's hit area can reach a little past a row. */
+    overflow-x: hidden;
+    overflow-y: auto;
     scroll-padding-block-end: calc(var(--toast-height, 0px) + var(--bottom-bar-height, 0px) + var(--space-4));
   }
 
@@ -199,6 +201,7 @@
   }
 
   .rename {
+    position: relative;
     display: flex;
     flex-direction: column;
     min-inline-size: 0;
@@ -223,7 +226,16 @@
     border-color: var(--color-status-danger);
   }
 
+  /* Under the row, over the next one, because a row has one fixed height. */
   .renameError {
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline: 0;
+    z-index: var(--layer-dropdown);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
     color: var(--color-status-danger);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
@@ -263,13 +275,23 @@
     white-space: nowrap;
   }
 
-  .dragging {
+  .ghost {
+    position: fixed;
     z-index: var(--layer-overlay);
+    margin: 0;
     border-radius: var(--radius-sm);
     background: var(--color-surface-raised);
     box-shadow: var(--elevation-2);
     cursor: grabbing;
-    touch-action: none;
+    opacity: 0.85;
+    pointer-events: none;
+  }
+
+  /* The row the copy came from keeps its place, marked with a dashed outline. Its text stays at full contrast. */
+  .dragSource {
+    outline: 1px dashed var(--color-border-control);
+    outline-offset: -1px;
+    background: var(--color-surface-hover);
   }
 
   .dragLabel {

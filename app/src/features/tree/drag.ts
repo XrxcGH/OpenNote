@@ -49,6 +49,9 @@ interface Session {
   drop: Drop | null;
   shown: HTMLElement | null;
   label: HTMLElement | null;
+  /** A copy of the row that follows the pointer above both trees; the real row stays, dimmed, in its place. */
+  ghost: HTMLElement | null;
+  origin: DOMRect | null;
   expanding: { id: string; timer: ReturnType<typeof setTimeout> } | null;
   press: ReturnType<typeof setTimeout> | null;
   frame: number;
@@ -129,7 +132,7 @@ function schedule(session: Session): void {
   session.frame = requestAnimationFrame(() => {
     session.frame = 0;
     const { x, y } = offsetOf(session);
-    session.element.style.transform = `translate(${x}px, ${y}px)`;
+    if (session.ghost) session.ghost.style.transform = `translate(${x}px, ${y}px)`;
     if (session.label)
       session.label.style.transform = `translate(${session.pointer.x + 14}px, ${session.pointer.y + 14}px)`;
     const found = hitAt(session);
@@ -154,6 +157,28 @@ function teardown(session: Session): void {
   session.release();
 }
 
+/** A copy of a row for the pointer to carry: no ids, and hidden from assistive technology and from focus. */
+function makeGhost(element: HTMLElement, origin: DOMRect): HTMLElement {
+  const ghost = element.cloneNode(true) as HTMLElement;
+  for (const node of [ghost, ...ghost.querySelectorAll<HTMLElement>('[id], [data-node-id]')]) {
+    node.removeAttribute('id');
+    node.removeAttribute('data-node-id');
+  }
+  for (const name of ['role', 'aria-labelledby', 'aria-describedby', 'tabindex', 'data-windowed']) {
+    ghost.removeAttribute(name);
+  }
+  ghost.setAttribute('aria-hidden', 'true');
+  ghost.inert = true;
+  ghost.classList.add(styles.ghost);
+  Object.assign(ghost.style, {
+    left: `${origin.left}px`,
+    top: `${origin.top}px`,
+    width: `${origin.width}px`,
+    height: `${origin.height}px`,
+  });
+  return ghost;
+}
+
 function begin(session: Session): void {
   session.phase = 'dragging';
   try {
@@ -163,7 +188,9 @@ function begin(session: Session): void {
   }
   dragStore.set({ id: session.row.id });
   document.documentElement.dataset.dragging = '';
-  session.element.classList.add(styles.dragging);
+  session.origin = session.element.getBoundingClientRect();
+  session.ghost = document.body.appendChild(makeGhost(session.element, session.origin));
+  session.element.classList.add(styles.dragSource);
   const label = document.createElement('div');
   label.className = styles.dragLabel;
   label.setAttribute('aria-hidden', 'true');
@@ -184,29 +211,34 @@ function begin(session: Session): void {
   schedule(session);
 }
 
-/** The drop, or the cancel: the row settles into its new place, or back where it was, with the spring. */
+/** The drop, or the cancel: the copy settles into the row's new place, or back where it was, with the spring. */
 function finish(session: Session, commit: boolean): void {
-  const { element, drop } = session;
-  const visual = element.getBoundingClientRect();
+  const { element, drop, ghost } = session;
   const offset = offsetOf(session);
+  const visual = ghost?.getBoundingClientRect();
   teardown(session);
   justDragged = true;
   setTimeout(() => (justDragged = false), CLICK_GUARD_MS);
-  const lowered = (row: HTMLElement) => () => row.classList.remove(styles.dragging);
+  const done =
+    (...rows: HTMLElement[]) =>
+    () => {
+      ghost?.remove();
+      for (const row of rows) row.classList.remove(styles.dragSource);
+    };
+  if (!ghost || !visual) return done(element)();
   if (!commit || !drop) {
-    settle(element, offset, lowered(element));
+    settle(ghost, offset, done(element));
     return;
   }
-  element.style.transform = '';
   void dropNode(session.env.notes, session.row.node, drop);
   // The store has changed, and React renders at the end of this event, before the next paint.
   queueMicrotask(() => {
-    element.classList.remove(styles.dragging);
     const moved = findRowElement(session.row.id);
-    if (!moved) return;
-    moved.classList.add(styles.dragging);
+    if (!moved) return done(element)();
+    moved.classList.add(styles.dragSource);
     const now = moved.getBoundingClientRect();
-    settle(moved, { x: visual.left - now.left, y: visual.top - now.top }, lowered(moved));
+    Object.assign(ghost.style, { left: `${now.left}px`, top: `${now.top}px` });
+    settle(ghost, { x: visual.left - now.left, y: visual.top - now.top }, done(element, moved));
   });
 }
 
@@ -261,6 +293,8 @@ export function createDragHandlers(tree: TreeId) {
         drop: null,
         shown: null,
         label: null,
+        ghost: null,
+        origin: null,
         expanding: null,
         press: null,
         frame: 0,

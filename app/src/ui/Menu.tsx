@@ -127,6 +127,9 @@ function MenuPopup({
 export function openMenu(options: MenuOptions): Promise<string | null> {
   const returnTo = options.returnFocus ?? (document.activeElement as HTMLElement | null);
   const host = document.body.appendChild(document.createElement('div'));
+  // Content outside the workspace's landmarks fails axe's region rule, so the menu gets one while it is open.
+  host.setAttribute('role', 'region');
+  host.setAttribute('aria-label', options.label);
   const root = createRoot(host);
   return new Promise((resolve) => {
     const close = (id: string | null) => {
