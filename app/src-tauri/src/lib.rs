@@ -23,9 +23,10 @@ pub mod updater;
 pub mod window;
 pub mod zoom;
 
-use tauri::ipc::Invoke;
+use tauri::{ipc::Invoke, Manager};
 
 use early::EarlyContext;
+use instance::InstanceGuard;
 use settings::{schema::Settings, SettingsStore};
 
 /// Starts the app with what the early steps found. Doesn't return.
@@ -36,16 +37,19 @@ pub fn run(context: EarlyContext) {
         instance,
         guard,
     } = context;
-    // The instance guard holds the profile's lock, so it stays alive until the process exits.
-    let _instance = instance;
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
     tauri::Builder::default()
         .manage(SettingsStore::in_memory(&Settings::default()))
         .manage(hooks)
         .manage(boot::Launch { args, guard })
         .manage(paths)
+        // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
+        .manage(instance)
         .on_page_load(window::show_when_loaded)
         .setup(|app| {
+            let handle = app.handle().clone();
+            app.state::<InstanceGuard>()
+                .on_forwarded(move |forwarded| window::receive_forwarded(&handle, forwarded.args));
             window::caption::init(app.handle());
             window::create(app.handle())?;
             Ok(())

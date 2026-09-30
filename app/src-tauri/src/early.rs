@@ -53,7 +53,7 @@ impl Steps for System {
     }
 
     fn wait_for_exit(&self, pid: u32) {
-        args::wait_for_exit(pid, args::WAIT_PID_TIMEOUT);
+        let _ = args::wait_for_exit(pid, args::WAIT_PID_TIMEOUT);
     }
 
     fn resolve_paths(&self) -> std::io::Result<Paths> {
@@ -98,6 +98,7 @@ pub fn run_with(steps: &impl Steps) -> EarlyOutcome {
     let instance = match steps.acquire_instance(&paths, &args) {
         InstanceOutcome::Owner(guard) => guard,
         InstanceOutcome::Forwarded => return EarlyOutcome::Exit(0),
+        InstanceOutcome::Unavailable => return EarlyOutcome::Exit(EXIT_FAILURE),
     };
     let guard = steps.guard(&paths);
     if guard == GuardOutcome::Relaunched {

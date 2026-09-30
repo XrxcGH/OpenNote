@@ -15,11 +15,12 @@ use std::{thread, time::Duration};
 use serde::{Deserialize, Serialize};
 use tauri::{
     webview::{PageLoadEvent, PageLoadPayload},
-    AppHandle, Runtime, Webview, WebviewWindow, WebviewWindowBuilder,
+    AppHandle, Emitter, Manager, Runtime, Webview, WebviewWindow, WebviewWindowBuilder,
 };
 
 use crate::{
     appearance::ThemeName,
+    events,
     ipc::{IpcError, IpcResult},
     lifecycle::{self, ExitReason},
 };
@@ -63,6 +64,19 @@ pub fn show_when_loaded<R: Runtime>(webview: &Webview<R>, payload: &PageLoadPayl
     let window = webview.window();
     if payload.event() == PageLoadEvent::Finished && window.label() == MAIN {
         let _ = window.show();
+    }
+}
+
+/// Brings the main window forward for a second launch, and passes its arguments to the interface as
+/// `window://forwarded-args`.
+pub fn receive_forwarded(app: &AppHandle, args: Vec<String>) {
+    if let Some(window) = app.get_webview_window(MAIN) {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+    if let Err(error) = app.emit_to(MAIN, events::WINDOW_FORWARDED_ARGS, args) {
+        log::warn!("Couldn't pass a second launch's arguments on: {error}");
     }
 }
 
