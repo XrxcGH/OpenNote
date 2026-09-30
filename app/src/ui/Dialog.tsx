@@ -133,6 +133,7 @@ function DialogActions({ actions }: { actions: readonly DialogAction[] }) {
           key={action.id}
           variant={action.variant}
           data-least-destructive={action.leastDestructive ? 'true' : undefined}
+          data-fill={action.variant === 'danger' ? '' : undefined}
           onClick={() => void action.onPress()}
         >
           {action.label}

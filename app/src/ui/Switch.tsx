@@ -15,14 +15,12 @@ export interface SwitchProps {
   children?: ReactNode;
 }
 
-/** `title` comes from a wrapping Tooltip. */
-export function Switch(props: SwitchProps & { title?: string }) {
-  const { label, checked, onChange, describedBy, disabled, keyShortcuts, children, title } = props;
+export function Switch(props: SwitchProps) {
+  const { label, checked, onChange, describedBy, disabled, keyShortcuts, children } = props;
   return (
     <button
       type="button"
       role="switch"
-      title={title}
       className={children ? styles.iconButton : styles.button}
       aria-checked={checked}
       aria-label={children ? label : undefined}

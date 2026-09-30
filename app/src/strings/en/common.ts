@@ -11,4 +11,6 @@ export const common = {
   copy: 'Copy',
   paste: 'Paste',
   selectAll: 'Select all',
+  /** A tooltip: a control's name with its shortcut, such as "Dark mode (Ctrl+Shift+D)". */
+  tooltip: '{label} ({shortcut})',
 } as const;
