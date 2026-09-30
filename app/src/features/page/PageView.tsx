@@ -12,6 +12,7 @@ import { t } from '../../strings/t';
 import { ProgressBar, useDelayedFlag } from '../../ui';
 import { titleOf, useTreeNode } from '../tree';
 import styles from './PageView.module.css';
+import { usePageZoom } from './zoom';
 
 /** The page from the tree store, else from the service, which happens for a page the tree hasn't listed yet. */
 function usePage(pageId: NodeId | null): { page: NodeSummary | null; loading: boolean } {
@@ -35,9 +36,14 @@ export function PageView() {
   const { page, loading } = usePage(location.view === 'workspace' ? location.pageId : null);
   const heading = useRef<HTMLHeadingElement>(null);
   const showProgress = useDelayedFlag(loading);
+  const zoom = usePageZoom(page?.id ?? null);
   useEffect(() => registerRegionMain('page', () => heading.current), []);
   return (
-    <article className={styles.page} aria-busy={loading || undefined}>
+    <article
+      className={styles.page}
+      aria-busy={loading || undefined}
+      style={zoom === 100 ? undefined : { zoom: zoom / 100 }}
+    >
       {showProgress && <ProgressBar label={t('tree.loading.page')} />}
       <h1 ref={heading} tabIndex={-1}>
         {page ? titleOf(page) : t('tree.page.noneTitle')}

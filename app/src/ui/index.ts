@@ -2,7 +2,7 @@
 // state, services, features, or the shell, except the layer stack and the toast queue they manage.
 
 export { Announcer, announce, announcements, clearAnnouncements, recordAnnouncement } from './announce';
-export { editMenu, openAppContextMenu, registerAppMenu } from './appMenu';
+export { editMenu, installAppContextMenu, openAppContextMenu, registerAppMenu } from './appMenu';
 export type { AppMenuBuilder, AppMenuContext } from './appMenu';
 export { Button, IconButton, buttonClass, pressFrom } from './Button';
 export type { ButtonProps, IconButtonProps } from './Button';

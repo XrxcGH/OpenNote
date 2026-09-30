@@ -1,6 +1,7 @@
 // The app's own context menu in editors (amendment P2-7 from the Phase 4 design). Elements marked data-app-menu
 // get the app's menu instead of WebView2's default one. Plain text fields keep the default, with its spelling and
-// clipboard items. The page-wide contextmenu handler calls openAppContextMenu for every contextmenu event.
+// clipboard items. installAppContextMenu, which app/start.ts installs, calls openAppContextMenu for every contextmenu
+// event.
 // The attribute's value names a registered builder, so Phase 4 can add spelling suggestions from the app's
 // service; without one, the menu offers Cut, Copy, Paste, and Select all.
 
@@ -97,4 +98,14 @@ export function openAppContextMenu(event: MouseEvent): boolean {
   const menu = (builders.get(host.dataset.appMenu ?? '') ?? editMenu)({ target, host, anchor });
   if (menu?.items.length) void openMenu({ ...menu, anchor });
   return true;
+}
+
+/**
+ * Listens for contextmenu events on the document, so every element marked data-app-menu gets the app's menu. It
+ * runs after the components' own handlers, such as the tree's, which keep their events by preventing the default.
+ * Returns a function that stops listening.
+ */
+export function installAppContextMenu(doc: Document = document): () => void {
+  doc.addEventListener('contextmenu', openAppContextMenu);
+  return () => doc.removeEventListener('contextmenu', openAppContextMenu);
 }
