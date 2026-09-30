@@ -1,5 +1,7 @@
 [workspace]
-members = ["app/src-tauri"]
+members = ["app/src-tauri", "crates/core"]
+# The fuzz crate needs a nightly toolchain, so it stays out of the workspace.
+exclude = ["crates/core/fuzz"]
 resolver = "2"
 
 [profile.release]

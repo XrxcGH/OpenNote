@@ -234,7 +234,7 @@ Other naming rules:
 When a writer creates a notebook folder from a title, or names an exported file, it turns the title into a safe name with these steps:
 
 1. Normalize to Unicode Normalization Form C (NFC).
-2. Replace control characters (`U+0000` to `U+001F` and `U+007F` to `U+009F`) with a space. Replace `/`, `\`, `|`, and `:` with `-`. Remove `<`, `>`, `"`, `?`, and `*`. Remove the invisible format characters `U+200B` to `U+200F`, `U+202A` to `U+202E`, `U+2060` to `U+2069`, and `U+FEFF`.
+2. Replace control characters (`U+0000` to `U+001F` and `U+007F` to `U+009F`) with a space. Replace `/`, `\`, `|`, and `:` with `-`. Remove `<`, `>`, `"`, `?`, and `*`. Remove the invisible format characters `U+200B` to `U+200F`, `U+202A` to `U+202E`, `U+2060` to `U+2069`, and `U+FEFF`. Then normalize to NFC again, because a removed character can let its neighbors combine.
 3. Collapse each run of whitespace into one space.
 4. Trim spaces at both ends, remove leading `.` and `~` characters, and remove trailing `.` characters and spaces. Repeat this step until nothing changes.
 5. If the result is empty, use `Untitled`.
