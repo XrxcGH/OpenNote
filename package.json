@@ -22,11 +22,12 @@
     "checks:fix": "node checks/cli.ts --fix",
     "test:checks": "node --test \"checks/test/**/*.test.ts\"",
     "setup-hooks": "git config core.hooksPath .githooks",
-    "typecheck": "tsc -p checks/tsconfig.json && tsc -p docs/design/tsconfig.json && npm run app:typecheck",
-    "format": "prettier --write \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" eslint.config.js",
-    "format:check": "prettier --check \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" eslint.config.js",
+    "typecheck": "tsc -p checks/tsconfig.json && tsc -p docs/design/tsconfig.json && tsc -p eslint/tsconfig.json && npm run app:typecheck",
+    "format": "prettier --write \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"eslint/*.{js,ts}\" eslint.config.js",
+    "format:check": "prettier --check \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"tests/**/*.ts\" \"eslint/*.{js,ts}\" eslint.config.js",
     "design": "node docs/design/generate.ts",
-    "test": "npm run test:checks && npm run app:test"
+    "test": "npm run test:checks && npm run test:lint-rules && npm run app:test",
+    "test:lint-rules": "node --test eslint/rules.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

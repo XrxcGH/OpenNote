@@ -1,0 +1,3 @@
+// lint-as: app/src/features/theme/Bad.tsx
+// expect: opennote/no-literal-text
+export const Bad = () => <button aria-label="Close the menu">Close</button>;

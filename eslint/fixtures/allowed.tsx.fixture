@@ -1,0 +1,8 @@
+// lint-as: app/src/features/theme/Good.tsx
+// expect: none
+import { NotebooksPane } from '../tree';
+import { useLayer } from '../../ui';
+import { t } from '../../strings/t';
+
+export const Good = () => <nav aria-label={t('layout.regions.notebooks')} tabIndex={-1}><NotebooksPane /></nav>;
+export const hook = useLayer;
