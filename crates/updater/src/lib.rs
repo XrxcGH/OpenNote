@@ -37,6 +37,8 @@ pub use config::{Channel, ChannelUrls, Config, Limits, UpdaterDirs};
 pub use error::UpdateError;
 pub use fetch::{Fetch, FetchError, FetchOutcome, Url};
 pub use guard::{guard_on_start, GuardDecision};
+/// The public key type of `Config::trusted_keys`, so the app needn't depend on `minisign-verify` itself.
+pub use minisign_verify::PublicKey;
 pub use platform::PlatformKey;
 pub use schedule::{Clock, NetworkCost};
 pub use swap::Replacer;
@@ -88,6 +90,7 @@ pub struct Staged {
     pub version: Version,
     pub path: PathBuf,
     pub sha256: String,
+    pub notes: String,
 }
 
 /// What the app does after a swap.
@@ -242,6 +245,7 @@ impl<F: Fetch, R: Replacer, C: Clock> Updater<F, R, C> {
             version: offer.version.clone(),
             path: PathBuf::from(&record.path),
             sha256: record.sha256.clone(),
+            notes: record.notes.clone(),
         };
         self.change_state(|state| state.staged = Some(record))?;
         Ok(staged)
@@ -256,6 +260,7 @@ impl<F: Fetch, R: Replacer, C: Clock> Updater<F, R, C> {
                 version,
                 path,
                 sha256: record.sha256,
+                notes: record.notes,
             }),
             Err(error) => {
                 log::warn!("Deleted the staged update {}: {error}", record.version);

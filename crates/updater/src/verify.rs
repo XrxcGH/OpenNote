@@ -81,6 +81,18 @@ pub fn decode_signature(field: &str) -> Result<Signature, UpdateError> {
     Signature::decode(&text).map_err(|error| failed(format!("the signature can't be read: {error}")))
 }
 
+/// Reads a minisign public key. It takes a `.pub` file from `tauri signer generate`, which holds the key text in
+/// base64, or the key text itself: an untrusted comment line, then the key.
+pub fn decode_public_key(text: &str) -> Option<PublicKey> {
+    let text = text.trim();
+    let decoded = STANDARD
+        .decode(text)
+        .ok()
+        .and_then(|bytes| String::from_utf8(bytes).ok());
+    let key_text = decoded.as_deref().unwrap_or(text);
+    PublicKey::decode(key_text).ok()
+}
+
 /// The key a signature was made with, among the trusted ones. Legacy signatures are refused unless
 /// [`ALLOW_LEGACY`] is set; streaming verification only supports prehashed ones anyway.
 fn trusted_key<'a>(signature: &Signature, keys: &'a [PublicKey]) -> Result<&'a PublicKey, UpdateError> {
@@ -147,6 +159,25 @@ mod tests {
     use crate::test_support::{comment, sign, Signer};
 
     const FILE: &str = "OpenNote_Windows64.exe";
+
+    #[test]
+    fn reads_a_public_key_as_pub_file_or_key_text() {
+        let signer = Signer::new();
+        let text = signer.public_text();
+        let from_text = decode_public_key(&text).expect("the key text");
+        let from_file = decode_public_key(&format!(
+            "{}
+",
+            STANDARD.encode(&text)
+        ))
+        .expect("a .pub file");
+        let signed = case(&signer, "0.5.0", FILE);
+        for key in [from_text, from_file] {
+            assert!(check(&signed, &signed.data, &[key]).is_ok());
+        }
+        assert!(decode_public_key("RWQnot a key").is_none());
+        assert!(decode_public_key("").is_none());
+    }
 
     struct Case {
         data: Vec<u8>,

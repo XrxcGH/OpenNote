@@ -98,6 +98,9 @@ pub struct StagedRecord {
     /// The manifest's base64 `.sig` text.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub signature: String,
+    /// The manifest's release notes, so a later start shows them without the manifest.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub notes: String,
     #[serde(flatten)]
     pub unknown: Map<String, Value>,
 }
@@ -191,6 +194,7 @@ mod tests {
         newer["fromTheFuture"] = json!(1);
         newer["staged"]["size"] = json!(42);
         newer["staged"]["signature"] = json!("c2ln");
+        newer["staged"]["notes"] = json!("OpenNote v0.5.0");
         let state: UpdaterState = serde_json::from_value(newer.clone()).expect("parses");
         state.save(&updates).expect("saves");
         assert_eq!(UpdaterState::load(&updates), state);

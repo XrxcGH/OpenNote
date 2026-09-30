@@ -86,6 +86,7 @@ pub fn download<F: Fetch>(
         sha256: offer.sha256.clone(),
         size: offer.size,
         signature: offer.signature.clone(),
+        notes: offer.notes.clone(),
         unknown: Default::default(),
     })
 }
