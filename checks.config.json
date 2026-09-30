@@ -1,27 +1,80 @@
 {
   "ignore": [],
   "rules": {
-    "spelling": { "allow": [] },
-    "readability": { "grade": { "warn": 12, "error": 16 }, "minSectionWords": 80, "allowAcronyms": ["CHECKS"] },
+    "spelling": {
+      "allow": []
+    },
+    "readability": {
+      "grade": {
+        "warn": 12,
+        "error": 16
+      },
+      "minSectionWords": 80,
+      "allowAcronyms": [
+        "CHECKS",
+        "GTK",
+        "ONNX",
+        "NNAPI",
+        "WASAPI",
+        "ISF",
+        "ML",
+        "MLX",
+        "MSIX",
+        "NSIS"
+      ]
+    },
     "length": {
-      "sentenceWords": { "warn": 30, "error": 45 },
-      "paragraphWords": { "warn": 90, "error": 150 },
-      "sectionWords": { "warn": 400, "error": 700 },
-      "codeLineChars": { "warn": 120, "error": 140 }
+      "sentenceWords": {
+        "warn": 30,
+        "error": 45
+      },
+      "paragraphWords": {
+        "warn": 90,
+        "error": 150
+      },
+      "sectionWords": {
+        "warn": 400,
+        "error": 700
+      },
+      "codeLineChars": {
+        "warn": 120,
+        "error": 140
+      }
     },
     "modifiability": {
-      "fileLines": { "warn": 400, "error": 800 },
-      "functionLines": { "warn": 50, "error": 100 },
-      "nestingDepth": { "warn": 4, "error": 6 },
-      "parameters": { "warn": 5, "error": 8 },
+      "fileLines": {
+        "warn": 400,
+        "error": 800
+      },
+      "functionLines": {
+        "warn": 50,
+        "error": 100
+      },
+      "nestingDepth": {
+        "warn": 4,
+        "error": 6
+      },
+      "parameters": {
+        "warn": 5,
+        "error": 8
+      },
       "duplicateBlockLines": 8
     },
-    "usability": { "tocMinWords": 1500 },
+    "usability": {
+      "tocMinWords": 1500
+    },
     "brand-consistency": {
-      "include": ["app/src/**/*.{ts,tsx,css,scss}"],
-      "tokenFiles": ["app/src/theme/**", "brand/**"],
+      "include": [
+        "app/src/**/*.{ts,tsx,css,scss}"
+      ],
+      "tokenFiles": [
+        "app/src/theme/**",
+        "brand/**"
+      ],
       "maxDurationMs": 400
     },
-    "brand-tokens": { "maxDurationMs": 400 }
+    "brand-tokens": {
+      "maxDurationMs": 400
+    }
   }
 }

@@ -1,4 +1,4 @@
-# OpenNote — Market & Feature Research
+# OpenNote market and feature research
 
 > **Purpose:** A reference for designing OpenNote: an open-source note-taking app that combines writing, drawing and recording for personal, educational and business use.
 > **Platform strategy:** Build the first working prototype on Windows. The app must eventually run on macOS, Linux, iOS/iPadOS and Android, and work on every screen size from phone to large desktop monitor. Recommendations are made with that end state in mind.
@@ -20,7 +20,7 @@
 10. [Quality-of-life feature backlog](#10-quality-of-life-feature-backlog)
 11. [Cross-platform & multi-screen implications](#11-cross-platform--multi-screen-implications)
 12. [Windows-first specifics](#12-windows-first-specifics)
-13. [Suggested positioning & MVP](#13-suggested-positioning--mvp)
+13. [Suggested positioning & first prototype](#13-suggested-positioning--first-prototype)
 14. [Open questions / things to verify](#14-open-questions--things-to-verify)
 15. [Sources](#15-sources)
 
@@ -31,7 +31,7 @@
 - **How it was compiled.** About 120 web searches and page fetches in four parallel research passes: incumbent apps, best-loved features, rising apps, and gaps/pain points. The results were then combined into this document.
 - **Evidence quality varies.**
   - Microsoft Q&A threads, GitHub repos and issues, vendor docs and pricing pages, and TechCrunch/Bloomberg reporting are the strongest sources.
-  - Many "best note app" roundups are SEO or vendor-written and repeat each other.
+  - Many "best note app" roundups are written by vendors or for search engine optimization (SEO), and repeat each other.
   - Reddit could not be fetched directly in this environment, so there are no Reddit upvote counts.
   - Sentiment is paraphrased from reviews, support forums and roundups.
 - **User and revenue figures are rarely audited.** Anything marked **[uncertain]** comes from a vendor claim or an aggregator estimate. GitHub star counts were read live on 2026-09-30 and are reliable.
@@ -64,7 +64,7 @@
    8. PDF annotation.
 5. **Rising trends:**
    - Local-first storage and data ownership.
-   - Optional, private AI (local Whisper, Ollama, MCP).
+   - Optional, private AI (local Whisper, Ollama, Model Context Protocol (MCP) servers).
    - Spatial canvases (Excalidraw 133k★, tldraw 51k★, Heptabase).
    - Structured/typed notes (Tana, Capacities, Obsidian Bases).
    - Bot-free meeting capture. Granola is valued at $1.5B as of March 2026.
@@ -73,7 +73,7 @@
    - Evernote's free plan is capped at 50 notes.
    - Copilot features in OneNote are behind paid licenses.
    - Goodnotes and Notability remain Apple-first.
-7. **Proposed positioning** *(synthesis)*: *"The open, local-first notebook where typed text, ink, audio, math and charts live on the same page, with a real print layout, private AI and one-click import from OneNote and Evernote. Windows first, every platform eventually."*
+7. **Proposed positioning** *(synthesis)*: *"The open, local-first notebook where typed text, ink, audio, math and charts live on the same page. It has a real print layout, private AI and one-click import from OneNote and Evernote. Windows first, every platform eventually."*
 
 ---
 
@@ -133,7 +133,7 @@
   - Users are frustrated by the overlap between OneNote, Loop, Copilot Pages and Copilot Notebooks.
 
 #### Evernote
-- **Praised:** web clipper, OCR search inside images and PDFs, document scanning, templates and tasks.
+- **Praised:** web clipper, optical character recognition (OCR) search inside images and PDFs, document scanning, templates and tasks.
 - **Complaints:**
   - Bending Spoons acquired Evernote (closed January 2023), cut staff, capped the free plan at 50 notes and one notebook (December 2023), and raised prices sharply. Some long-time users saw renewals go from $60–80 to $250 or more.
   - Slow with large libraries.
@@ -200,7 +200,7 @@
 
 #### Joplin / Logseq / Standard Notes (open source or privacy-first)
 - **Joplin**
-  - Praised: E2EE sync to any backend, Evernote import, plugins, web clipper.
+  - Praised: end-to-end encrypted (E2EE) sync to any backend, Evernote import, plugins, web clipper.
   - Complaints: dated UI, clunky mobile app, OCR plugins unmaintained, ink limited to a sketch plugin.
 - **Logseq**
   - Praised: block references and journals.
@@ -281,12 +281,14 @@
 - Real-time collaboration (OneNote, Notion, Excalidraw).
 
 ### 4.7 Embedded content
-- **Databases, relations and filtered views** (Notion): loved for lightweight CRMs, trackers and roadmaps.
+- **Databases, relations and filtered views** (Notion): loved for lightweight customer relationship managers (CRMs), trackers and roadmaps.
 - **Diagrams:** Mermaid in Markdown, Excalidraw drawings, Nebo diagrams.
 - **Embedded files**, with a preview (OneNote).
 - **Charts:** almost no note app has a native chart block. Users paste images of Excel charts. This is an open slot *(synthesis)*.
 
-### 4.8 Top 20 most-loved features (ranked by how often and how strongly they come up)
+### 4.8 Top 20 most-loved features
+
+Ranked by how often and how strongly each one comes up.
 1. Notes synced to audio playback: tap to jump (Notability, OneNote Windows, Samsung Notes)
 2. Local-first storage in open formats with easy export (Obsidian, Joplin)
 3. Natural pen feel: pressure, low latency, vector ink, palm rejection
@@ -457,15 +459,15 @@ Ratings are qualitative, based on how often and how strongly each issue appears 
 Items marked ★ span all audiences and belong in the core product.
 
 ### 9.1 Core (all audiences)
-1. ★ **Page view toggle: Infinite ↔ Paginated.** The same page can be shown as an infinite canvas or as Letter/A4/custom pages with visible page boundaries, margins, manual page breaks, "keep together" for images and tables, and a default paper size per notebook. Printing and PDF match what you see on screen. *(A1–A4)*
+1. ★ **Page view toggle: Infinite ↔ Paginated.** The same page can be shown as an infinite canvas or as Letter/A4/custom pages. Paginated view shows page boundaries, margins and manual page breaks, keeps images and tables together, and uses a default paper size per notebook. Printing and PDF match what you see on screen. *(A1–A4)*
 2. ★ **Chart blocks.** Bar, line, pie and scatter charts built from a table, a CSV or pasted data. They update live when the data changes and export as vector images. *(B1)*
 3. ★ **Smart tables.** Column types, multi-column sort and filter, formulas and totals, and "make chart from this table." *(B2)*
 4. ★ **Ink and typed text on the same page.** Pressure, tilt, palm rejection, low latency, a lasso that selects ink *and* text, shape snapping, and ink-to-text. *(E1)*
 5. ★ **Open, documented storage.** Readable files (e.g. Markdown + JSON/SVG ink + assets). SQLite only as a rebuildable search index. Export to Markdown, PDF, DOCX and HTML. No account required. *(C3)*
-6. ★ **Importers.** OneNote (keeping the 2D layout and ink, which existing tools flatten), Evernote ENEX, Notion, Obsidian, Joplin, Goodnotes/PDF. *(C1, C3, C4)*
+6. ★ **Importers.** OneNote (keeping the 2D layout and ink, which existing tools flatten), Evernote export files (ENEX), Notion, Obsidian, Joplin, Goodnotes/PDF. *(C1, C3, C4)*
 7. ★ **Search everything.** Typed text, handwriting (OCR), images, PDFs and audio transcripts, with saved searches and filters. *(D3)*
 8. **Backlinks, `[[links]]`, graph view, nested tags**, all built in with no plugins needed. *(D2)*
-9. **Reliable, pluggable sync.** Folder-based sync (OneDrive, Dropbox, iCloud Drive, Syncthing), WebDAV or self-hosted, optional E2EE. CRDT or field-level merging so conflicts never corrupt pages. *(C2)*
+9. **Reliable, pluggable sync.** Folder-based sync (OneDrive, Dropbox, iCloud Drive, Syncthing), WebDAV or self-hosted, optional E2EE. Conflict-free replicated data types (CRDTs) or field-level merging so conflicts never corrupt pages. *(C2)*
 10. **Version history** with no short expiry, including a page timeline and restore.
 
 ### 9.2 Education
@@ -489,7 +491,8 @@ Items marked ★ span all audiences and belong in the core product.
 
 ### 9.4 AI (optional, off by default)
 - Summaries, "chat with this notebook" with citations, semantic search, auto-tagging, flashcard generation, handwriting cleanup, meeting enhancement.
-- Run on local models (Whisper, llama.cpp or Ollama, Windows NPU via Foundry Local / ONNX / DirectML, Apple Core ML, Android NNAPI), or a bring-your-own-key cloud endpoint.
+- Run on local models: Whisper, llama.cpp or Ollama, a Windows neural processing unit (NPU) via Foundry Local / ONNX / DirectML, Apple Core ML or Android NNAPI.
+- Or use a bring-your-own-key (BYOK) cloud endpoint.
 - Always show what data leaves the device.
 
 ---
@@ -539,7 +542,7 @@ Small features that together make a "one-stop shop." Many were inspired by the c
 2. **Share the core, keep the shells thin.** Put the document model, format read/write, search indexing, sync/merge (CRDT), import/export and the ink geometry engine into a **shared, portable core**. Rust or C++ compile everywhere; TypeScript works if the UI is web-based. Only UI, pen input, audio capture and OS integration should be platform-specific.
 3. **Use a platform-agnostic ink model.** Store raw input points (x, y, pressure, tilt, timestamp) and draw them with your own renderer. Don't depend on Windows Ink's `InkCanvas` / ISF format for storage, or mobile clients will not be able to read the notes. Use Windows Ink, Apple Pencil and Android stylus APIs only as *input sources*.
 4. **Timestamp everything.** Per-stroke and per-block timestamps make audio sync, ink replay, version history and CRDT merges possible on every platform.
-5. **Keep AI local, with abstractions.** Hide AI behind a provider interface: whisper.cpp/llama.cpp run on every OS; NPU backends differ by platform (DirectML / Foundry Local on Windows, Core ML on Apple, NNAPI on Android); cloud BYOK is the fallback.
+5. **Keep AI local, with abstractions.** Hide AI behind a provider interface. whisper.cpp and llama.cpp run on every OS. NPU backends differ by platform (DirectML / Foundry Local on Windows, Core ML on Apple, NNAPI on Android). Cloud BYOK is the fallback.
 
 ### 11.2 UI framework options
 
@@ -596,7 +599,7 @@ Mobile operating systems restrict background system-audio capture. On phones, me
   - OneNote for Windows 10 has been read-only since 2025-10-14.
   - A OneNote importer that **keeps the 2D layout and ink** would be a headline feature. Current tools (OneNote Md Exporter, Obsidian Importer) flatten pages to linear Markdown.
   - Import can go through the Microsoft Graph API (OneNote pages come back as HTML with ink data) or through local `.one` / `.onepkg` parsing.
-- **Copilot+ PC NPUs (40+ TOPS):**
+- **Copilot+ PC NPUs (40+ trillion operations per second (TOPS)):**
   - Local Whisper transcription, handwriting recognition, summaries and flashcard generation, without the Copilot license Microsoft charges for.
   - Foundry Local provides an OpenAI-compatible localhost endpoint. Use the NPU when present and fall back to CPU/GPU otherwise.
 - **Meeting capture:** WASAPI loopback records Teams, Zoom or Meet audio with no bot joining the call.
@@ -611,12 +614,12 @@ Mobile operating systems restrict background system-audio capture. On phones, me
 
 ---
 
-## 13. Suggested positioning & MVP
+## 13. Suggested positioning & first prototype
 
 ### Positioning *(synthesis)*
-> **OpenNote:** the open-source, local-first notebook where **typed text, handwriting, audio, math and charts live on the same page**, with a real **print layout**, **private on-device AI**, and **one-click import from OneNote and Evernote**. Windows first; every screen and OS next.
+> **OpenNote:** the open-source, local-first notebook where **typed text, handwriting, audio, math and charts live on the same page**. It has a real **print layout**, **private on-device AI** and **one-click import from OneNote and Evernote**. Windows first; every screen and OS next.
 
-### Suggested MVP sequence (Windows prototype)
+### Suggested prototype sequence (Windows)
 1. **Document model + open file format** (text blocks, ink strokes, images) and notebook › section › page navigation.
 2. **Freeform page with ink and typed text together.** Pen pressure, palm rejection, lasso, undo. Validate pen latency early.
 3. **Page view toggle** (infinite ↔ paginated with page breaks) + **PDF export that matches the screen**.
@@ -644,7 +647,7 @@ Items 1–4 answer your two stated complaints plus the largest white space (ink 
 - Obsidian, Goodnotes and NotebookLM user numbers (vendor or aggregator only).
 - Simplenote's status (maintenance mode vs. shut down).
 - Reddit / Microsoft Feedback Portal vote counts for page breaks, charts and table requests (not reachable during this research).
-- Licensing: is the OneNote `.one` format ([MS-ONESTORE]) documented well enough for an offline importer? Or is the Graph API the only practical route?
+- Licensing: is the OneNote `.one` format (`[MS-ONESTORE]`) documented well enough for an offline importer? Or is the Graph API the only practical route?
 - Legal: recording-consent rules for meeting capture differ by region (one-party vs two-party consent).
 
 ---
@@ -680,7 +683,7 @@ Items 1–4 answer your two stated complaints plus the largest white space (ink 
 - https://kompozy.io/news/logseq-2-0-db-version-beta · https://github.com/logseq/docs/blob/master/db-version.md
 - https://affine.pro/blog/affine-vs-appflowy-vs-anytype · https://openalternative.co/compare/anytype/vs/appflowy · https://gitnux.org/notebooklm-statistics/
 - https://www.clearpeople.com/blog/could-microsoft-loop-be-the-future-of-collaboration · https://hub.causo.ai/guides/granola-vs-otter-vs-fireflies-ai-notes-2026
-- GitHub repositories (★ read 2026-09-30): AppFlowy-IO/AppFlowy · toeverything/AFFiNE · siyuan-note/siyuan · logseq/logseq · laurent22/joplin · TriliumNext/Trilium · anyproto/anytype-ts · xournalpp/xournalpp · flxzt/rnote · saber-notes/saber · styluslabs/Write · OpenBoard-org/OpenBoard · excalidraw/excalidraw · tldraw/tldraw · usememos/memos · lfnovo/open-notebook · streetwriters/notesnook · zsviczian/obsidian-excalidraw-plugin
+- GitHub repositories (★ read 2026-09-30): `AppFlowy-IO/AppFlowy` · `toeverything/AFFiNE` · `siyuan-note/siyuan` · `logseq/logseq` · `laurent22/joplin` · `TriliumNext/Trilium` · `anyproto/anytype-ts` · `xournalpp/xournalpp` · `flxzt/rnote` · `saber-notes/saber` · `styluslabs/Write` · `OpenBoard-org/OpenBoard` · `excalidraw/excalidraw` · `tldraw/tldraw` · `usememos/memos` · `lfnovo/open-notebook` · `streetwriters/notesnook` · `zsviczian/obsidian-excalidraw-plugin`
 - Xournal++ Windows crash reports: https://github.com/xournalpp/xournalpp/issues/7744 · https://github.com/xournalpp/xournalpp/issues/7763
 
 ### Pain points and gaps
