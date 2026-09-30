@@ -172,7 +172,16 @@ impl NotebookStore {
             }
         }
         for item in items.difference(&waiting) {
-            self.forget_item(*item)?;
+            // A file held open inside the item folder keeps it from going away. The item stays in Trash, so
+            // its pages keep their marks, and the next pass retries (spec 17.6).
+            match self.forget_item(*item) {
+                Err(CoreError::Fs(e)) if e.kind == FsErrorKind::Busy => {
+                    let dir = self.layout.trash_item_dir(*item);
+                    self.notices
+                        .push(Warning::new("tree.folderBusy", format!("{}: {e}", dir.display())));
+                }
+                result => result?,
+            }
         }
         Ok(arrived)
     }
