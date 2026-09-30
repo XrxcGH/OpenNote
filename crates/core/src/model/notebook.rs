@@ -224,3 +224,6 @@ pub enum PageNodeState {
     /// Another folder holds the same page ID (spec 14.4).
     Duplicate,
 }
+
+#[cfg(test)]
+mod tests;

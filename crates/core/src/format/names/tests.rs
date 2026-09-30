@@ -1,5 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::indexing_slicing, clippy::arithmetic_side_effects)]
 
+use std::cell::RefCell;
 use std::collections::HashSet;
 
 use proptest::prelude::*;
@@ -84,6 +85,22 @@ fn numbers_clashes_within_the_limit() {
     let name = safe_folder_name(&long, &|n| n == long);
     assert_eq!(name, format!("{} (2)", "b".repeat(60)));
     assert_eq!(fold_name("Cafe\u{301}"), "caf\u{e9}");
+}
+
+/// Step 9: a clash that only the file system finds, such as a name that differs in normalization, is marked
+/// taken, and the next call picks the next number.
+#[test]
+fn retries_after_a_clash_only_the_file_system_finds() {
+    let on_disk = RefCell::new(vec!["BIOLOGY".to_owned()]);
+    let mut taken: HashSet<String> = HashSet::new();
+    let create = |name: &str| !on_disk.borrow().iter().any(|n| n.eq_ignore_ascii_case(name));
+    let mut name = safe_folder_name("Biology", &|n| taken.contains(&fold_name(n)));
+    while !create(&name) {
+        taken.insert(fold_name(&name));
+        name = safe_folder_name("Biology", &|n| taken.contains(&fold_name(n)));
+    }
+    assert_eq!(name, "Biology (2)");
+    on_disk.borrow_mut().push(name);
 }
 
 #[test]

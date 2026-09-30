@@ -151,7 +151,10 @@ pub enum RecoveryOutcome {
         recovery_file: PathBuf,
     },
     /// Recovery has to wait.
-    Deferred(DeferReason),
+    Deferred {
+        /// Why.
+        reason: DeferReason,
+    },
     /// Another running process owns the journal.
     OwnerAlive,
 }
@@ -214,3 +217,6 @@ pub trait IndexSink: Send + Sync + 'static {
     /// A page was saved.
     fn page_saved(&self, hint: &IndexHint);
 }
+
+#[cfg(test)]
+mod tests;
