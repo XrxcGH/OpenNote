@@ -262,4 +262,28 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
+
+  .dragging {
+    z-index: var(--layer-overlay);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+    cursor: grabbing;
+    touch-action: none;
+  }
+
+  .dragLabel {
+    position: fixed;
+    inset: 0 auto auto 0;
+    z-index: var(--layer-overlay);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+    color: var(--color-text-primary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    pointer-events: none;
+    white-space: nowrap;
+  }
 }

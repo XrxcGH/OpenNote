@@ -12,7 +12,6 @@ import type { NodeSummary } from '../../services/notes';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
 import { IconButton } from '../../ui';
-import type { PointerHandlers } from '../../ui';
 import { titleOf } from './actions';
 import { RenameField } from './RenameField';
 import type { Row } from './rows';
@@ -28,9 +27,6 @@ export interface TreeRowProps {
   readonly renaming: Renaming | null;
   /** The row's top when the tree windows its rows. */
   readonly top?: number;
-  /** A drop target shown on this row while dragging. */
-  readonly drop?: 'before' | 'after' | 'into' | null;
-  readonly pointer?: PointerHandlers;
   onPress(row: Row, event: MouseEvent): void;
   onToggle(row: Row): void;
   onRename(row: Row): void;
@@ -74,7 +70,7 @@ function Twisty({ row, onToggle }: { row: Row; onToggle(row: Row): void }) {
 }
 
 function TreeRowView(props: TreeRowProps) {
-  const { tree, row, selected, focused, renaming, top, drop, pointer } = props;
+  const { tree, row, selected, focused, renaming, top } = props;
   const { node } = row;
   const id = useId();
   const element = useRef<HTMLDivElement>(null);
@@ -87,7 +83,6 @@ function TreeRowView(props: TreeRowProps) {
       className={styles.row}
       data-kind={node.kind}
       data-node-id={node.id}
-      data-drop={drop ?? undefined}
       data-windowed={top === undefined ? undefined : ''}
       style={style}
       aria-level={row.level}
@@ -99,7 +94,6 @@ function TreeRowView(props: TreeRowProps) {
       aria-describedby={`${id}-description`}
       tabIndex={focused ? 0 : -1}
       onClick={(event) => props.onPress(row, event)}
-      {...pointer}
     >
       <Twisty row={row} onToggle={props.onToggle} />
       <Chip node={node} />

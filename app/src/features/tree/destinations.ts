@@ -51,17 +51,21 @@ function groupHeight(state: TreeState, id: NodeId): number {
   return 1 + Math.max(0, ...inner.map((child) => groupHeight(state, child)));
 }
 
-function accepts(state: TreeState, node: NodeSummary, place: Destination): boolean {
-  if (place.id === node.parentId || place.id === node.id) return false;
-  if (node.kind === 'page') return place.kind === 'section';
-  if (place.kind === 'section') return false;
-  if (node.kind === 'notebook') return false;
+/** Whether a node may be a child of `parent`, where null is the top level, which only notebooks use. */
+export function canHold(state: TreeState, node: NodeSummary, parent: Pick<NodeSummary, 'id' | 'kind'> | null): boolean {
+  if (!parent) return node.kind === 'notebook';
+  if (parent.id === node.id) return false;
+  if (node.kind === 'page') return parent.kind === 'section';
+  if (node.kind === 'notebook' || parent.kind === 'section' || parent.kind === 'page') return false;
   if (node.kind === 'sectionGroup') {
-    if (ancestors(state, place.id).some((above) => above.id === node.id)) return false;
-    const deepest = groupDepth(state, place.id) + groupHeight(state, node.id);
-    return deepest <= NOTES_LIMITS.groupDepth;
+    if (ancestors(state, parent.id).some((above) => above.id === node.id)) return false;
+    return groupDepth(state, parent.id) + groupHeight(state, node.id) <= NOTES_LIMITS.groupDepth;
   }
   return true;
+}
+
+function accepts(state: TreeState, node: NodeSummary, place: Destination): boolean {
+  return place.id !== node.parentId && canHold(state, node, place);
 }
 
 /** The places a node can move to, from every place in the library. */
@@ -69,7 +73,7 @@ export function destinationsFor(state: TreeState, node: NodeSummary, all: readon
   return all.filter((place) => accepts(state, node, place));
 }
 
-/** The places that match a filter, ignoring case, and accents. */
+/** The places whose path matches every word of a filter. */
 export function matchDestinations(places: readonly Destination[], filter: string): Destination[] {
   const words = foldText(filter).split(/\s+/).filter(Boolean);
   return places.filter((place) => words.every((word) => foldText(place.path).includes(word)));

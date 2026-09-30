@@ -4,12 +4,13 @@
 // rows it windows its rows, keeping the focused, selected, and renaming rows mounted.
 
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
-import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import type { KeyboardEvent, MouseEvent, ReactNode, RefObject } from 'react';
 import type { NodeId } from '../../services/notes';
 import { useStore } from '../../state/store';
 import { ProgressBar, typeaheadMatch, useDelayedFlag, useTypeahead } from '../../ui';
 import type { MenuAnchor } from '../../ui';
 import { titleOf } from './actions';
+import { dragStore } from './dragState';
 import { treeKeyAction } from './keys';
 import type { TreeKeyAction } from './keys';
 import { openRow, setOpen } from './navigation';
@@ -19,7 +20,7 @@ import { rowKey, setFocus, treeStore } from './store';
 import type { TreeId, TreeState } from './store';
 import styles from './Tree.module.css';
 import { TreeRow } from './TreeRow';
-import type { TreeRowProps } from './TreeRow';
+import { useDrag } from './useDrag';
 import { renderedIndexes, useViewport, WINDOW_THRESHOLD } from './windowing';
 import { startRename } from './rename';
 
@@ -36,8 +37,6 @@ export interface TreeViewProps {
   readonly rowHeight: number;
   /** Opens the row's context menu. */
   openMenu(row: Row, anchor: MenuAnchor, returnFocus: HTMLElement): void;
-  /** Pointer handlers and the drop target for each row, from the drag controller. */
-  readonly dragFor?: (row: Row) => Pick<TreeRowProps, 'pointer' | 'drop'>;
 }
 
 const SCOPES: Record<TreeId, string> = { notebooks: 'tree notebooksTree', pages: 'tree pagesTree' };
@@ -144,34 +143,67 @@ function useRowHandlers(props: TreeViewProps) {
   return { onPress, onToggle, onRename, onMore };
 }
 
-export function TreeView(props: TreeViewProps) {
-  const { tree, label, rows, selectedId, loading, rowHeight } = props;
-  const container = useRef<HTMLDivElement>(null);
-  const focusId = useStore(treeStore, (state) => state.focus[tree]);
-  const renaming = useStore(treeStore, pickRenaming);
-  const indexOf = useMemo(() => new Map(rows.map((row, i) => [row.id as string, i])), [rows]);
-  const focusIndex = indexOf.get(focusId ?? '') ?? indexOf.get(selectedId ?? '') ?? 0;
-  const windowed = rows.length > WINDOW_THRESHOLD;
-  const viewport = useViewport(container, windowed);
-  const pinned = [focusIndex, indexOf.get(selectedId ?? '') ?? -1, indexOf.get(renaming?.id ?? '') ?? -1];
-  const indexes = renderedIndexes(rows.length, rowHeight, viewport, pinned);
-  const showProgress = useDelayedFlag(loading);
-  const handlers = useRowHandlers(props);
-  const onKeyDown = useTreeKeys(props, focusIndex);
-  useFocusRequests(tree, rows);
-  const onContextMenu = (event: MouseEvent) => {
+/** Right-click, the Menu key, Shift+F10, and a long press without a drag all open the row's menu. */
+function useRowContextMenu(props: TreeViewProps, indexOf: ReadonlyMap<string, number>) {
+  const { rows, openMenu } = props;
+  return (event: MouseEvent) => {
     const element = (event.target as Element).closest<HTMLElement>('[role="treeitem"]');
     const row = element && rows[indexOf.get(element.dataset.nodeId ?? '') ?? -1];
     if (!element || !row || (event.target as Element).closest('input')) return;
     event.preventDefault();
     const keyboard = event.button !== 2 && event.clientX === 0 && event.clientY === 0;
-    props.openMenu(row, keyboard ? element : { x: event.clientX, y: event.clientY }, element);
+    openMenu(row, keyboard ? element : { x: event.clientX, y: event.clientY }, element);
   };
+}
+
+/** When the last row goes, focus moves to the empty message instead of being lost to the page. */
+function useEmptyFocus(count: number) {
+  const element = useRef<HTMLDivElement>(null);
+  const before = useRef(count);
+  useLayoutEffect(() => {
+    if (count === 0 && before.current > 0 && document.activeElement === document.body) element.current?.focus();
+    before.current = count;
+  }, [count]);
+  return element;
+}
+
+function useRowIndexes(props: TreeViewProps, container: RefObject<HTMLDivElement | null>) {
+  const { tree, rows, selectedId, rowHeight } = props;
+  const focusId = useStore(treeStore, (state) => state.focus[tree]);
+  const renaming = useStore(treeStore, pickRenaming);
+  const dragging = useStore(dragStore, (state) => state.id);
+  const indexOf = useMemo(() => new Map(rows.map((row, i) => [row.id as string, i])), [rows]);
+  const focusIndex = indexOf.get(focusId ?? '') ?? indexOf.get(selectedId ?? '') ?? 0;
+  const windowed = rows.length > WINDOW_THRESHOLD;
+  const viewport = useViewport(container, windowed);
+  const pinned = [focusIndex, ...[selectedId, renaming?.id, dragging].map((id) => indexOf.get(id ?? '') ?? -1)];
+  return {
+    indexOf,
+    focusIndex,
+    windowed,
+    renaming,
+    indexes: renderedIndexes(rows.length, rowHeight, viewport, pinned),
+  };
+}
+
+export function TreeView(props: TreeViewProps) {
+  const { tree, label, rows, selectedId, loading, rowHeight } = props;
+  const container = useRef<HTMLDivElement>(null);
+  const { indexOf, focusIndex, windowed, renaming, indexes } = useRowIndexes(props, container);
+  const showProgress = useDelayedFlag(loading);
+  const emptyRef = useEmptyFocus(rows.length);
+  const handlers = useRowHandlers(props);
+  const drag = useDrag(tree, container, rows, props.openMenu);
+  const onKeyDown = useTreeKeys(props, focusIndex);
+  const onContextMenu = useRowContextMenu(props, indexOf);
+  useFocusRequests(tree, rows);
   return (
     <div className={styles.treeArea}>
       {showProgress && <ProgressBar label={props.loadingLabel} />}
       {rows.length === 0 && !loading ? (
-        <div className={styles.empty}>{props.empty}</div>
+        <div ref={emptyRef} tabIndex={-1} className={styles.empty}>
+          {props.empty}
+        </div>
       ) : (
         <div
           ref={container}
@@ -187,24 +219,21 @@ export function TreeView(props: TreeViewProps) {
             const id = (event.target as HTMLElement).dataset.nodeId;
             if (id) setFocus(tree, id as NodeId);
           }}
+          {...drag}
         >
           <div className={styles.rows} style={windowed ? { blockSize: rows.length * rowHeight } : undefined}>
-            {indexes.map((index) => {
-              const row = rows[index];
-              return (
-                <TreeRow
-                  key={rowKey(row.id)}
-                  tree={tree}
-                  row={row}
-                  selected={row.id === selectedId}
-                  focused={index === focusIndex}
-                  renaming={renaming?.id === row.id ? renaming : null}
-                  top={windowed ? index * rowHeight : undefined}
-                  {...props.dragFor?.(row)}
-                  {...handlers}
-                />
-              );
-            })}
+            {indexes.map((index) => (
+              <TreeRow
+                key={rowKey(rows[index].id)}
+                tree={tree}
+                row={rows[index]}
+                selected={rows[index].id === selectedId}
+                focused={index === focusIndex}
+                renaming={renaming?.id === rows[index].id ? renaming : null}
+                top={windowed ? index * rowHeight : undefined}
+                {...handlers}
+              />
+            ))}
           </div>
         </div>
       )}

@@ -87,6 +87,8 @@ export const tree = {
     cantIndent: "{title} can't be a subpage here.",
     alreadyTop: '{title} is already a page, not a subpage.',
     moved: 'Moved "{title}" to {target}.',
+    movedPages: 'Moved {count, plural, one {# page} other {# pages}} to {target}.',
+    reordered: 'Moved "{title}".',
     undoHint: 'Press {shortcut} to undo.',
     dragPages: 'Move {count, plural, one {# page} other {# pages}} to {target}',
     dragItem: 'Move "{title}" to {target}',
@@ -146,6 +148,11 @@ export const tree = {
     none: 'Choose a page to see it here.',
     empty: 'This page is empty. Writing and drawing on pages arrive in a later version.',
     changed: 'Changed {date}',
+  },
+  snapshot: {
+    note:
+      "Notes in this test build are kept in a temporary file inside the app's data folder. " +
+      'Your notes folder is used once the file format arrives.',
   },
   save: {
     saved: 'Saved',

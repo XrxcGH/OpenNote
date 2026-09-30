@@ -7,8 +7,9 @@ import { shortcutHint } from '../../commands/keymap';
 import type { NodeId, NodeSummary, NotesService, Placement } from '../../services/notes';
 import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
-import { moveNodes, setLevel, titleOf } from './actions';
+import { blockOf, moveNodes, setLevel, titleOf } from './actions';
 import { destinationsFor, loadDestinations } from './destinations';
+import type { Drop } from './drop';
 import type { Destination } from './destinations';
 import { toastError } from './errors';
 import { focusTargetAfterRemoval } from './focus';
@@ -74,35 +75,56 @@ function leaveOpenPage(id: NodeId, next: NodeId | null): void {
   if (location.view === 'workspace' && location.pageId === id) showLocation({ ...location, pageId: next });
 }
 
-function movedToast(notes: NotesService, title: string, place: string): void {
+/** A toast that says what moved, with Undo, and the way back by keyboard in its announcement. */
+function movedToast(notes: NotesService, message: string): void {
   const entry = undoStore.get().past.at(-1);
+  const shortcut = shortcutHint('edit.undo');
   showToast({
-    message: t('tree.moves.moved', { title, target: place }),
-    announce: t('tree.moves.moved', { title, target: place }) + ' ' + undoHint(),
+    message,
+    announce: shortcut ? `${message} ${t('tree.moves.undoHint', { shortcut })}` : message,
     action: { label: t('tree.trash.undo'), run: () => void (entry && undoEntry(notes, entry)) },
   });
 }
 
-function undoHint(): string {
-  const shortcut = shortcutHint('edit.undo');
-  return shortcut ? t('tree.moves.undoHint', { shortcut }) : '';
+/** "Moved 1 page to Final." for a page and its subpages, else 'Moved "Labs" to Work.'. */
+function movedMessage(node: NodeSummary, pages: number, place: string): string {
+  return node.kind === 'page'
+    ? t('tree.moves.movedPages', { count: pages, target: place })
+    : t('tree.moves.moved', { title: titleOf(node), target: place });
 }
 
 /** Moves a node to a place that Move to or a drop chose. Resolves true when it moved. */
 export async function moveToPlace(notes: NotesService, node: NodeSummary, placement: Placement, place: string) {
   const before = focusTargetAfterRemoval(treeStore.get(), node);
-  const title = titleOf(node);
+  const pages = blockOf(treeStore.get(), node.id).length;
   try {
     await moveNodes(notes, [node.id], placement);
   } catch (error) {
-    toastError(error, title);
+    toastError(error, titleOf(node));
     requestFocus(treeOf(node), node.id);
     return false;
   }
   if (node.kind === 'page') leaveOpenPage(node.id, before?.tree === 'pages' ? before.id : null);
   syncNotebook();
   if (before) requestFocus(before.tree, before.id);
-  movedToast(notes, title, place);
+  movedToast(notes, movedMessage(node, pages, place));
+  return true;
+}
+
+/** After a drop: a move to another parent says where it went; a move among siblings just confirms. */
+export async function dropNode(notes: NotesService, node: NodeSummary, drop: Drop): Promise<boolean> {
+  if (drop.placement.parentId !== node.parentId) {
+    return moveToPlace(notes, node, drop.placement, titleOf(drop.target));
+  }
+  try {
+    await moveNodes(notes, [node.id], drop.placement);
+  } catch (error) {
+    toastError(error, titleOf(node));
+    return false;
+  } finally {
+    requestFocus(treeOf(node), node.id);
+  }
+  movedToast(notes, t('tree.moves.reordered', { title: titleOf(node) }));
   return true;
 }
 

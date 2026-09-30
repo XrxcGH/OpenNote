@@ -160,7 +160,7 @@ describe('moving', () => {
     await expect.poll(() => within(pagesTree()).queryByRole('treeitem', { name: 'Mitosis' })).toBeNull();
     await expectFocus(row(pagesTree(), 'Meiosis'));
     expect((await notes.get('p-mitosis' as NodeId))?.parentId).toBe('s-labs');
-    expect(screen.getByRole('status', { name: 'Notifications' }).textContent).toContain('Moved "Mitosis" to Labs.');
+    expect(screen.getByRole('status', { name: 'Notifications' }).textContent).toContain('Moved 1 page to Labs.');
   });
 
   it('leaves the row where it was when Move to is cancelled', async () => {
