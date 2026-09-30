@@ -23,7 +23,7 @@ pub mod updater;
 pub mod window;
 pub mod zoom;
 
-use tauri::{ipc::Invoke, Manager};
+use tauri::ipc::Invoke;
 
 use early::EarlyContext;
 use settings::{schema::Settings, SettingsStore};
@@ -47,9 +47,7 @@ pub fn run(context: EarlyContext) {
         .on_page_load(window::show_when_loaded)
         .setup(|app| {
             window::caption::init(app.handle());
-            if let Some(main) = app.get_webview_window(window::MAIN) {
-                window::show_after_fallback_delay(main);
-            }
+            window::create(app.handle())?;
             Ok(())
         })
         .invoke_handler(commands())

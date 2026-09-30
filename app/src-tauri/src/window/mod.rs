@@ -1,8 +1,9 @@
 //! The main window: creating it, its WebView2 settings, the frame, placement, and the Snap Layouts overlay
 //! (ARCHITECTURE.md sections 8.5 and 10), plus the window commands.
 //!
-//! The window keeps Phase 0's behavior for now: hidden until the themed page loads, with a fallback timer. The
-//! shell work package adds the placement, background color, and boot script.
+//! The main window's config has `"create": false`, so [`create`] builds the window from it. For now the window
+//! keeps Phase 0's behavior: hidden until the themed page loads, with a fallback timer. The shell work package
+//! adds what only code can set, such as the placement, background color, boot script, and zoom.
 
 pub mod caption;
 pub mod frame;
@@ -14,7 +15,7 @@ use std::{thread, time::Duration};
 use serde::{Deserialize, Serialize};
 use tauri::{
     webview::{PageLoadEvent, PageLoadPayload},
-    AppHandle, Runtime, Webview, WebviewWindow,
+    AppHandle, Runtime, Webview, WebviewWindow, WebviewWindowBuilder,
 };
 
 use crate::{
@@ -37,6 +38,23 @@ const SHOW_FALLBACK_DELAY: Duration = Duration::from_secs(3);
 pub struct Point {
     pub x: f64,
     pub y: f64,
+}
+
+/// Builds the main window from its config and starts the show fallback timer.
+///
+/// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Until those land,
+/// this keeps the native frame, so the window can still be moved, resized from the title bar, and closed.
+pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
+    let windows = &app.config().app.windows;
+    let config = windows
+        .iter()
+        .find(|window| window.label == MAIN)
+        .ok_or(tauri::Error::WindowNotFound)?;
+    let window = WebviewWindowBuilder::from_config(app, config)?
+        .decorations(true)
+        .build()?;
+    show_after_fallback_delay(window.clone());
+    Ok(window)
 }
 
 /// Shows the main window once its page has loaded, so start-up never shows WebView2's default white background
