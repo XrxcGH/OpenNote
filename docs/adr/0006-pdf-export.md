@@ -1,6 +1,6 @@
 # ADR 0006: PDF export
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-09-30
 
 ## Context
