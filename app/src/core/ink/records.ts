@@ -155,9 +155,11 @@ export function parseBody(kind: number, frameFlags: number, body: Uint8Array): P
 }
 
 function parseStroke(body: Uint8Array, view: DataView): Parsed {
-  if (body.length < STROKE_FIXED) return { bad: 'body' };
+  // The same order of checks as the Rust decoder, so both report the same for every body.
+  if (body.length < 44) return { bad: 'body' };
   const flags = view.getUint16(42, true);
   if (flags & ~KNOWN_STROKE_FLAGS) return { unknown: true };
+  if (body.length < STROKE_FIXED) return { bad: 'body' };
   const start = readI64(view, 32);
   const width = float32(view, 48);
   if (start < TIME_MIN || start > TIME_MAX || width === null) return { bad: 'body' };
@@ -219,10 +221,9 @@ function parseProps(body: Uint8Array, view: DataView): Parsed {
   const props: StrokeProps = { id: idText(body, 0), style: null, transform: null, block: null };
   let at = 20;
   if (mask & 1) {
-    if (body.length < at + 12) return { bad: 'body' };
-    if (view.getUint16(at + 2, true) !== 0) return { unknown: true };
-    const width = float32(view, at + 8);
+    const width = body.length >= at + 12 ? float32(view, at + 8) : null;
     if (width === null) return { bad: 'body' };
+    if (view.getUint16(at + 2, true) !== 0) return { unknown: true };
     const color: [number, number, number, number] = [body[at + 4], body[at + 5], body[at + 6], body[at + 7]];
     props.style = { tool: body[at], palette: body[at + 1], color, width };
     at += 12;

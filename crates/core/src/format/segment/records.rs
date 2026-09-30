@@ -197,6 +197,8 @@ fn stroke_fields(body: &[u8], flags: u16, limits: &Limits) -> Result<Stroke, &'s
     if !(Timestamp::MIN.unix_ms()..=Timestamp::MAX.unix_ms()).contains(&start) {
         return Err("body");
     }
+    // Every problem with the fixed fields comes before any with the points, as in the other decoders.
+    let width = field(f32_at(body, 48))?;
     let [tool, palette] = field(array_at::<2>(body, 40))?;
     let bbox = BBox {
         min_x: field(array_at(body, 52).map(i32::from_le_bytes))?,
@@ -221,7 +223,7 @@ fn stroke_fields(body: &[u8], flags: u16, limits: &Limits) -> Result<Stroke, &'s
             tool,
             palette,
             color: field(array_at(body, 44))?,
-            width: field(f32_at(body, 48))?,
+            width,
         },
         transform,
         origin,
