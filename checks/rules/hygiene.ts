@@ -1,4 +1,4 @@
-// File hygiene: whitespace, line endings, invisible characters, merge markers and leaked secrets.
+// File hygiene: whitespace, line endings, invisible characters, merge markers, and leaked secrets.
 
 import type { Finding, Rule, SourceFile } from '../types.ts';
 import { reporter } from './helpers.ts';

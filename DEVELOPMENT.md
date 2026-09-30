@@ -22,7 +22,7 @@ This plan takes OpenNote from an empty repository to a stable Windows release, o
 
 The work is split into phases. Each phase adds a small set of features and ends with an exit gate: a list of tests and measurements that must pass before the next phase starts. Short experiments (spikes) come first, so risky choices are proven before much code depends on them.
 
-Unfinished features stay behind feature flags. The main branch must always build, pass every test and run without crashing, even when a feature is half done. A feature leaves its flag only after it meets the [definition of done](#11-definition-of-done).
+Unfinished features stay behind feature flags. The main branch must always build, pass every test, and run without crashing, even when a feature is half done. A feature leaves its flag only after it meets the [definition of done](#11-definition-of-done).
 
 Every change, from a typo fix to a new feature, goes through the same path: branch, pull request, automated checks, review, merge. Nothing reaches users without passing the [release checklist](#10-release-checklist).
 
@@ -30,17 +30,17 @@ Every change, from a typo fix to a new feature, goes through the same path: bran
 
 | Layer | Choice | Why |
 |---|---|---|
-| App shell | Tauri 2 (Rust, with WebView2 on Windows) | Small installs and low memory. One codebase for Windows, macOS, Linux, iOS and Android. |
-| Core logic | Rust library crates | Fast, memory-safe code for storage, search, audio and import that runs on every platform |
-| Interface | TypeScript, React and Vite | The largest pool of contributors and components. Drawing bypasses React to stay fast. |
-| Rich text | ProseMirror through Tiptap | Proven editor with tables, Markdown shortcuts and collaboration support for later |
+| App shell | Tauri 2 (Rust, with WebView2 on Windows) | Small installs and low memory. One codebase for Windows, macOS, Linux, iOS, and Android. |
+| Core logic | Rust library crates | Fast, memory-safe code for storage, search, audio, and import that runs on every platform |
+| Interface | TypeScript, React, and Vite | The largest pool of contributors and components. Drawing bypasses React to stay fast. |
+| Rich text | ProseMirror through Tiptap | Proven editor with tables, Markdown shortcuts, and collaboration support for later |
 | Ink | Custom canvas renderer | Pointer Events with pressure and tilt, coalesced and predicted points, a low-latency canvas, and perfect-freehand for stroke shapes |
 | Charts | Observable Plot | Clear defaults, and vector (SVG) output stays sharp in PDFs |
 | Math | KaTeX to display, MathLive to edit | Fast rendering, and equation input that works with a pen or keyboard |
 | Code and diagrams | CodeMirror 6 and Mermaid | Loaded only when a page uses them, so start-up stays fast |
 | Search | SQLite full-text search (FTS5) through rusqlite | Instant local search that can be rebuilt from the note files at any time |
 | Audio | cpal for capture, Opus for storage | Microphone and Windows system audio (WASAPI loopback) with small files |
-| On-device intelligence | whisper.cpp for speech, Windows.Media.Ocr for images | Private, offline and free. Other platforms swap in their own engines behind the same interface. |
+| On-device intelligence | whisper.cpp for speech, Windows.Media.Ocr for images | Private, offline, and free. Other platforms swap in their own engines behind the same interface. |
 
 The rule of thumb is that anything platform-specific sits behind a small Rust or TypeScript interface. Pen input, audio capture, optical character recognition (OCR) and neural processing unit (NPU) acceleration each get one. Porting to a new platform means writing new adapters, not rewriting features.
 
@@ -72,7 +72,7 @@ The file format is the most important long-term decision, because every future p
 
 - A notebook is a folder. Sections are subfolders. Each page is a folder holding `page.json`, an `assets/` folder for images, PDFs and audio, and `page.md`.
 - `page.json` is the source of truth. It stores blocks (text, ink, tables, charts, math, images) with their positions and timestamps. Text inside blocks is stored as Markdown.
-- Ink strokes store raw points: position, pressure, tilt and time. Rendering can improve later without changing the data.
+- Ink strokes store raw points: position, pressure, tilt, and time. Rendering can improve later without changing the data.
 - `page.md` is a readable copy written on every save, so notes stay useful even without OpenNote.
 - Every file carries a `formatVersion`. Older versions are upgraded by tested migrations, never by hand.
 - Saves are atomic: write to a temporary file, flush it to disk, then rename. A crash can't leave half a page.
@@ -86,12 +86,12 @@ Each phase lists what to build, how to test it, and when it is done. Time estima
 
 Build:
 
-- Install the toolchains: Node.js 22 LTS, Rust stable and the Tauri prerequisites for Windows.
+- Install the toolchains: Node.js 22 LTS, Rust stable, and the Tauri prerequisites for Windows.
 - Scaffold the Tauri app with an empty window that uses the brand tokens.
-- Add linting and formatting: ESLint and Prettier for TypeScript, Clippy and rustfmt for Rust.
-- Set up continuous integration (CI) on `windows-latest`: CHECKS, lint, type-check, tests and a debug build.
+- Add linting and formatting: ESLint and Prettier for TypeScript, Clippy, and rustfmt for Rust.
+- Set up continuous integration (CI) on `windows-latest`: CHECKS, lint, type-check, tests, and a debug build.
 - Add the release workflow from [section 9](#9-distribution-and-updates): pushing a version tag builds `OpenNote.exe` and publishes a GitHub Release. Create the update signing key and store it as a GitHub secret.
-- Add issue and pull request templates, the ADR template and a code of conduct. Choose the license (see [Risks](#13-risks)).
+- Add issue and pull request templates, the ADR template, and a code of conduct. Choose the license (see [Risks](#13-risks)).
 
 Done when: a fresh clone builds and opens a window with one command on Windows, and CI passes.
 
@@ -111,9 +111,9 @@ Done when: each spike has an ADR with measurements. If ink latency misses the 25
 Build:
 
 - Generate CSS custom properties and a typed module from `brand/tokens.json`.
-- Add light and dark themes with the dark mode setting from BRAND.md: Light, Dark or Match Windows. Include the title bar toggle, Ctrl+Shift+D and the "Choose your look" onboarding step, plus support for Windows contrast themes.
+- Add light and dark themes with the dark mode setting from BRAND.md: Light, Dark, or Match Windows. Include the title bar toggle, Ctrl+Shift+D, and the "Choose your look" onboarding step, plus support for Windows contrast themes.
 - Build the responsive layout from BRAND.md section 6: three panes on wide windows, down to one pane on narrow ones.
-- Add the notebook, section and page tree with create, rename, reorder, color and delete (to Trash).
+- Add the notebook, section, and page tree with create, rename, reorder, color, and delete (to Trash).
 - Add the command bar, a command palette (Ctrl+K), keyboard navigation and a shortcut list (Ctrl+/).
 - Add a settings page and first-run onboarding, including where to keep the app.
 - Add the self-updater from [section 9](#9-distribution-and-updates), so every test build after this one updates itself.
@@ -127,9 +127,9 @@ Done when: the shell meets the start-up and feedback budgets, and passes the key
 Build:
 
 - Write the file format specification and implement it in `crates/core`.
-- Add reading, writing and atomic saves, with autosave one second after the last change.
+- Add reading, writing, and atomic saves, with autosave one second after the last change.
 - Add crash recovery from a small write-ahead journal.
-- Add undo and redo as commands on the document model, shared by text, ink and every later block type.
+- Add undo and redo as commands on the document model, shared by text, ink, and every later block type.
 - Add Trash with restore, and a page history of saved versions.
 
 Test:
@@ -145,13 +145,13 @@ Done when: all three test types pass, and a 1,000-page sample notebook opens wit
 Build:
 
 - Add text containers that can be placed anywhere on a page (the OneNote model), or stacked in a simple document flow.
-- Add headings, lists, checkboxes, bold and italic, links, quotes and callouts.
+- Add headings, lists, checkboxes, bold, and italic, links, quotes, and callouts.
 - Add Markdown shortcuts as you type (for example `# ` for a heading), and Markdown paste.
-- Add images by paste, drag or file picker, with resize and crop.
+- Add images by paste, drag, or file picker, with resize and crop.
 - Add basic tables and code blocks with syntax highlighting.
 - Add spell check using the Windows spelling service.
 
-Test: editor unit tests for every command, E2E tests for writing and formatting a page, a typing-latency benchmark, and paste tests from Word, OneNote, web pages and plain text.
+Test: editor unit tests for every command, E2E tests for writing and formatting a page, a typing-latency benchmark, and paste tests from Word, OneNote, web pages, and plain text.
 
 Done when: typing stays within 16 ms on the reference laptop with a 20-page-long note.
 
@@ -159,11 +159,11 @@ Done when: typing stays within 16 ms on the reference laptop with a 20-page-long
 
 Build:
 
-- Add pens, pencil and highlighter with pressure and tilt, using the pen colors from `brand/tokens.json`.
+- Add pens, pencil, and highlighter with pressure and tilt, using the pen colors from `brand/tokens.json`.
 - Add a stroke eraser and a partial eraser, and the pen's own eraser button.
 - Add palm rejection: while a pen is near the screen, touch never draws.
-- Add a lasso that selects ink and text together, to move, resize, recolor or delete them.
-- Add shape recognition for lines, rectangles, circles and arrows.
+- Add a lasso that selects ink and text together, to move, resize, recolor, or delete them.
+- Add shape recognition for lines, rectangles, circles, and arrows.
 - Render finished strokes into cached tiles so large pages stay smooth.
 
 Test: geometry unit tests, recorded pen sessions replayed in E2E tests, a latency benchmark, a 10,000-stroke page benchmark, and manual testing on every pen device in the [matrix](#7-device-test-matrix).
@@ -176,12 +176,12 @@ This phase delivers the owner's top request: seeing page breaks.
 
 Build:
 
-- Add a per-page switch between infinite canvas and paginated view (Letter, A4 or custom), with visible margins and page breaks.
+- Add a per-page switch between infinite canvas and paginated view (Letter, A4, or custom), with visible margins and page breaks.
 - Add manual page breaks, "keep together" for images and tables, and a default paper size per notebook.
-- Add paper backgrounds: plain, lined, dot grid, graph and Cornell.
+- Add paper backgrounds: plain, lined, dot grid, graph, and Cornell.
 - Add print and PDF export that match the paginated view exactly, with ink kept as vector graphics.
 
-Test: golden-image tests that render sample pages to PDF and compare them pixel by pixel with approved images. Also test page-break placement for text, tables and images at each paper size.
+Test: golden-image tests that render sample pages to PDF and compare them pixel by pixel with approved images. Also test page-break placement for text, tables, and images at each paper size.
 
 Done when: exported PDFs match the screen for every sample page, and switching views keeps the content under the pointer still.
 
@@ -191,9 +191,9 @@ This phase delivers the owner's second request: easy charts.
 
 Build:
 
-- Upgrade tables with column types, sorting on several columns, filters, formulas and a totals row.
+- Upgrade tables with column types, sorting on several columns, filters, formulas, and a totals row.
 - Add pasting from Excel or CSV into a smart table.
-- Add chart blocks (bar, line, area, pie and scatter) created from a table in two clicks, updating live when the table changes.
+- Add chart blocks (bar, line, area, pie, and scatter) created from a table in two clicks, updating live when the table changes.
 - Add chart styling from the brand palette, with patterns for color-blind readers.
 
 Test: formula engine unit tests, E2E tests for "paste data, make chart, edit data, chart updates", and chart images in the golden PDF tests.
@@ -220,7 +220,7 @@ Build:
 - Add recording from the microphone, and optionally system audio for meetings, with a clear on-screen recording indicator.
 - Add a timestamp on every stroke and text change made while recording.
 - Add playback: tap any word or stroke to hear that moment, with a moving highlight during playback.
-- Add pause, resume and several recordings per page.
+- Add pause, resume, and several recordings per page.
 
 Test: synchronization tests with recorded pen and typing sessions, a 3-hour recording soak test, and checks for recovery if recording stops unexpectedly.
 
@@ -242,9 +242,9 @@ Done when: all math renders on screen and in PDF identically.
 
 Build:
 
-- Add export to Markdown, HTML, DOCX and PDF, for a page, a section or a whole notebook.
+- Add export to Markdown, HTML, DOCX, and PDF, for a page, a section or a whole notebook.
 - Add import from Markdown folders (Obsidian and Joplin exports), and from Evernote export files (ENEX).
-- Add OneNote import through the Microsoft Graph API, keeping page layout, ink, images and attachments.
+- Add OneNote import through the Microsoft Graph API, keeping page layout, ink, images, and attachments.
 
 Test: round-trip tests (export then import gives the same content), plus a corpus of real exported notebooks donated by testers with permission.
 
@@ -268,7 +268,7 @@ Done when: all three features pass their accuracy targets, and the app stays smo
 
 Build:
 
-- Fix every issue found by the soak tests, fuzzing and performance runs.
+- Fix every issue found by the soak tests, fuzzing, and performance runs.
 - Complete a full accessibility audit with Narrator, NVDA (a free screen reader) and keyboard only.
 - Move all interface text into translation files, ready for other languages.
 - Add opt-in crash reports that never include note content.
@@ -287,7 +287,7 @@ The next steps, in rough order:
 1. Sync: folder-based first, then an optional self-hosted server.
 2. macOS and Linux builds.
 3. Android and iOS apps using the compact layout.
-4. PDF annotation, flashcards from notes and citation support.
+4. PDF annotation, flashcards from notes, and citation support.
 5. Meeting mode with speaker labels.
 6. Real-time collaboration.
 
@@ -299,23 +299,23 @@ The next steps, in rough order:
 | Property-based | proptest, fast-check | Random documents and edits; save and reload give identical results | Every pull request |
 | Component | Vitest with Testing Library, axe-core | Each interface control, including accessibility rules | Every pull request |
 | End-to-end | WebdriverIO with tauri-driver | Real app on Windows: key user tasks from start to finish | Every pull request (smoke set); nightly (full set) |
-| Golden image | Playwright screenshots, PDF rendering | Layout, pagination, PDF export, charts and math | Every pull request |
+| Golden image | Playwright screenshots, PDF rendering | Layout, pagination, PDF export, charts, and math | Every pull request |
 | Performance | Custom benchmarks in `tests/perf/` | Every budget in BRAND.md section 10 | Every pull request (quick); nightly on the reference laptop (full) |
 | Fuzzing | cargo-fuzz | File reader and importers never crash on bad input | Nightly, 30 minutes per target |
-| Soak | Scripted random editing | Memory leaks, slowdowns and crashes over time | Nightly, 2 hours |
+| Soak | Scripted random editing | Memory leaks, slowdowns, and crashes over time | Nightly, 2 hours |
 | Crash safety | Kill-during-save harness | No page is ever damaged or lost | Nightly |
 | Manual | Checklists | Pen feel, screen readers, real devices | Before each beta and release |
 
 Performance tests compare against the budgets in BRAND.md and fail the build if a result is more than 10% worse than the last release. Every bug fix adds a test that failed before the fix.
 
-The keyboard and screen reader checklist uses Narrator and NVDA with no mouse. It covers creating a notebook, writing and formatting a page, inserting a table and chart, searching, recording audio and exporting a PDF.
+The keyboard and screen reader checklist uses Narrator and NVDA with no mouse. It covers creating a notebook, writing, and formatting a page, inserting a table, and chart, searching, recording audio, and exporting a PDF.
 
 ## 7. Device test matrix
 
 | Device type | Examples | Why |
 |---|---|---|
 | Reference laptop | 4 cores, 8 GB memory, integrated graphics, 1080p at 125% | Every performance budget is measured here |
-| Pen tablet PC | Surface Pro, Surface Laptop Studio | Windows pen, touch and palm rejection |
+| Pen tablet PC | Surface Pro, Surface Laptop Studio | Windows pen, touch, and palm rejection |
 | Drawing tablet | Wacom Intuos or One | Pen without a touchscreen |
 | Touch laptop | Any touch-screen laptop | Finger input and scrolling |
 | High-resolution screen | 4K at 150% or 200% scaling | Sharp rendering and layout at high scaling |
@@ -327,14 +327,14 @@ The keyboard and screen reader checklist uses Narrator and NVDA with no mouse. I
 Every pull request runs, on Windows:
 
 1. CHECKS on changed files.
-2. Format, lint and type checks for TypeScript and Rust.
-3. Unit, property, component and golden-image tests.
+2. Format, lint, and type checks for TypeScript and Rust.
+3. Unit, property, component, and golden-image tests.
 4. A release build of the app.
 5. The E2E smoke set and quick performance tests on the built app.
 
 A pull request can merge only when all five pass and one reviewer approves.
 
-Every night, CI builds the main branch and runs the full E2E set, fuzzing, soak, crash-safety and full performance tests. A failure opens an issue automatically.
+Every night, CI builds the main branch and runs the full E2E set, fuzzing, soak, crash-safety, and full performance tests. A failure opens an issue automatically.
 
 Builds move through three channels:
 
@@ -352,7 +352,7 @@ OpenNote ships as one file, `OpenNote.exe`. People download it once. After that,
 
 ### What the exe holds
 
-The exe holds only the program: code, interface, fonts and icons. Tauri builds the whole interface into the exe, and uses Microsoft Edge WebView2 to display it. WebView2 is already part of Windows 10 and 11; if it's missing, the app offers Microsoft's small installer.
+The exe holds only the program: code, interface, fonts, and icons. Tauri builds the whole interface into the exe, and uses Microsoft Edge WebView2 to display it. WebView2 is already part of Windows 10 and 11; if it's missing, the app offers Microsoft's small installer.
 
 Everything personal lives outside the exe, in standard Windows folders:
 
@@ -361,7 +361,7 @@ Everything personal lives outside the exe, in standard Windows folders:
 | Notes | `Documents\OpenNote\`, or a folder the person picks |
 | Settings | `%APPDATA%\OpenNote\settings.json` |
 | Search index and caches (can be rebuilt) | `%LOCALAPPDATA%\OpenNote\cache\` |
-| Downloaded updates, the previous version and backups | `%LOCALAPPDATA%\OpenNote\` |
+| Downloaded updates, the previous version, and backups | `%LOCALAPPDATA%\OpenNote\` |
 | Speech and handwriting models (optional downloads) | `%LOCALAPPDATA%\OpenNote\models\` |
 
 Because the exe holds no personal data, replacing it can't delete anyone's work.
@@ -373,7 +373,7 @@ On first launch, the app asks where to keep itself. It can stay where it was dow
 1. Developers merge tested changes into `main` on GitHub.
 2. To release, a maintainer updates the version number and pushes a tag such as `v0.4.0`.
 3. A GitHub Actions workflow builds `OpenNote.exe` on Windows, runs the full test set and signs the exe (see [Signing](#signing-and-security)).
-4. The workflow publishes a GitHub Release with the exe and a small manifest file, `latest.json`. The manifest lists the version, release notes, file size, SHA-256 hash and signature.
+4. The workflow publishes a GitHub Release with the exe and a small manifest file, `latest.json`. The manifest lists the version, release notes, file size, SHA-256 hash, and signature.
 5. Running copies of OpenNote read the manifest and update themselves.
 
 Nobody builds or uploads anything by hand. The exe already on someone's computer keeps working, unchanged, until they restart into the new version.
@@ -432,12 +432,12 @@ A build ships to beta or stable only when every item is checked:
 
 A feature is done, and can leave its feature flag, when:
 
-- [ ] It works with mouse, keyboard, touch and pen, in every size class and both themes.
+- [ ] It works with mouse, keyboard, touch, and pen, in every size class and both themes.
 - [ ] It has unit tests, and an E2E test for its main task.
 - [ ] It meets the performance budgets, with a benchmark if it could affect them.
 - [ ] It passes automated accessibility checks and the relevant manual checklist items.
 - [ ] It uses only design tokens, and its text follows the BRAND.md voice.
-- [ ] Its data survives save, reload, crash, undo and export.
+- [ ] Its data survives save, reload, crash, undo, and export.
 - [ ] Documentation and the changelog are updated.
 - [ ] CHECKS passes on every changed file.
 
@@ -446,7 +446,7 @@ A feature is done, and can leave its feature flag, when:
 - **Branches:** short-lived branches off `main`, merged within a few days. The long-running `windows-prototype` branch holds the prototype until it can merge.
 - **Commits:** one logical change per commit, with a message that says what changed and why.
 - **Pull requests:** under about 400 changed lines where possible, with screenshots for visual changes.
-- **Reviews:** at least one approval. Reviewers check behavior, tests and readability as well as style.
+- **Reviews:** at least one approval. Reviewers check behavior, tests, and readability as well as style.
 - **Decisions:** anything hard to reverse gets an ADR before the code.
 - **Issues:** every bug gets steps to reproduce, and every TODO in code links to an issue (CHECKS enforces this).
 

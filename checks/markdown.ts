@@ -1,4 +1,4 @@
-// Turns a Markdown file into prose lines and blocks, skipping code, front matter and comments.
+// Turns a Markdown file into prose lines and blocks, skipping code, front matter, and comments.
 
 import type { ProseBlock, ProseContext, ProseLine } from './types.ts';
 import { cleanInline } from './text.ts';

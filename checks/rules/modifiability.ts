@@ -1,5 +1,5 @@
 // Modifiability: code that stays easy to change. Limits file and function size, nesting and
-// parameter counts, and flags untracked TODOs, commented-out code and copy-pasted blocks.
+// parameter counts, and flags untracked TODOs, commented-out code, and copy-pasted blocks.
 
 import type { Finding, Rule, SourceFile, Threshold } from '../types.ts';
 import { grade, numberSetting, threshold } from '../config.ts';

@@ -1,5 +1,5 @@
 // Splits source code into comments (checked as prose) and code (checked for structure).
-// A small scanner is enough here: it understands strings, line comments and block comments.
+// A small scanner is enough here: it understands strings, line comments, and block comments.
 
 import type { ProseLine } from './types.ts';
 import { URL } from './text.ts';

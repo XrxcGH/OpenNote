@@ -1,5 +1,5 @@
 // Tests for the rules that read natural language: spelling, grammar, AI markers, redundancy,
-// length, readability and document usability.
+// length, readability, and document usability.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -62,6 +62,18 @@ test('grammar catches articles, repeats and confusions', async () => {
   const text = '# T\n\nThis is a apple. We could of left left early. It is faster then that.\n';
   const found = messages(await run({ rule: grammar, path: 'a.md', text }));
   assert.equal(found.length, 4);
+});
+
+test('grammar requires the serial comma in lists', async () => {
+  const found = await run({
+    rule: grammar,
+    path: 'a.md',
+    text: '# T\n\nWe like red, green and blue. We like red, green, and blue.\n',
+  });
+  assert.deepEqual(
+    found.map((f) => f.fix?.to),
+    ['green, and'],
+  );
 });
 
 test('grammar leaves correct text alone', async () => {

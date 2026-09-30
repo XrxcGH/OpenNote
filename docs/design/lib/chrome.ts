@@ -229,7 +229,7 @@ export function standardWindow(p: Palette, o: ChromeOptions): string[] {
   ];
 }
 
-/** Annotations every wide window shares: window buttons, drag area and the three panes. */
+/** Annotations every wide window shares: window buttons, drag area, and the three panes. */
 export function windowAnnotations(): string[] {
   return [
     captionKeepOut(WIDE.width),

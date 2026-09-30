@@ -1,4 +1,4 @@
-// Tests for the rules that read code and data: hygiene, modifiability, brand consistency and tokens,
+// Tests for the rules that read code and data: hygiene, modifiability, brand consistency, and tokens,
 // plus the comment scanner and glob matching they rely on.
 
 import { test } from 'node:test';

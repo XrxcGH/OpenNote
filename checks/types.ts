@@ -16,7 +16,7 @@ export interface ProseLine {
   headingLevel?: number;
 }
 
-/** Consecutive prose lines that read as one unit: a paragraph, list item, heading or table row. */
+/** Consecutive prose lines that read as one unit: a paragraph, list item, heading, or table row. */
 export interface ProseBlock {
   line: number;
   text: string;

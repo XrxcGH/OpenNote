@@ -29,7 +29,7 @@ Import and export (Phase 11):
 Linked accounts (Phase 11):
 
 - People can link Google and Microsoft accounts in Settings. Sign-in uses the provider's own secure page (OAuth), and tokens are stored in Windows Credential Manager.
-- The "Send to" menu converts a page, section or selection to PDF, Word or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder. It all happens inside OpenNote.
+- The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder. It all happens inside OpenNote.
 - Favorite destinations are saved, so "Send to Drive: Biology/Lab reports" becomes one click.
 - A page can stay linked to its exported copy and offer "Update the Drive copy" after edits.
 - Linking is optional. Nothing is uploaded without an explicit action.
@@ -38,7 +38,7 @@ Linked accounts (Phase 11):
 
 (Phase 9)
 
-- Paste a YouTube, Vimeo or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings.
+- Paste a YouTube, Vimeo, or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings.
 - Transcripts come from the platform's captions when available, or from on-device transcription of audio the person has the right to use.
 - Recordings can be exported as audio or as a narrated video of the page, and uploaded to a linked YouTube account as private or unlisted.
 
@@ -47,7 +47,7 @@ Linked accounts (Phase 11):
 (Phase 5 and Phase 12)
 
 - A "Writing pen" converts handwriting to typed text as the person writes, with the original ink kept one tap away.
-- Math is recognized as math: subscripts, superscripts, fractions, roots, integrals, matrices and Greek letters become editable equations.
+- Math is recognized as math: subscripts, superscripts, fractions, roots, integrals, matrices, and Greek letters become editable equations.
 - Special characters (°, ±, →, ≤, µ) and chemistry notation such as H₂O are kept.
 - Unsure words are underlined; tapping one shows alternatives.
 - Any existing ink can be converted later with the lasso.
@@ -56,9 +56,9 @@ Linked accounts (Phase 11):
 
 (Phase 5)
 
-- Draw a rough shape and hold still for half a second. It snaps to a clean circle, ellipse, rectangle, triangle, polygon, star or arrow.
+- Draw a rough shape and hold still for half a second. It snaps to a clean circle, ellipse, rectangle, triangle, polygon, star, or arrow.
 - Keep holding and move to resize or rotate it before lifting the pen.
-- Straight lines, arcs, curved arrows and double arrows snap the same way. Lines snap to 15° steps near horizontal and vertical.
+- Straight lines, arcs, curved arrows, and double arrows snap the same way. Lines snap to 15° steps near horizontal and vertical.
 - Shapes keep editable handles, and connectors stay attached when shapes move.
 
 ## Transcripts and summaries
@@ -67,7 +67,7 @@ Linked accounts (Phase 11):
 
 - Every recording gets a transcript automatically, with a one-paragraph summary at the top.
 - Each line starts with a timestamp. Clicking a line or its time jumps playback to that moment.
-- Different voices are labeled Speaker 1, Speaker 2 and so on. Renaming a speaker once ("Dr. Patel") updates the whole transcript, and saved names are suggested in later recordings.
+- Different voices are labeled Speaker 1, Speaker 2, and so on. Renaming a speaker once ("Dr. Patel") updates the whole transcript, and saved names are suggested in later recordings.
 - Transcripts are searchable and can be edited to fix mistakes.
 
 ## Study tools
@@ -83,12 +83,12 @@ Linked accounts (Phase 11):
 
 (Phase 6)
 
-Presets, set per page or as a notebook default:
+Presets, set per page, or as a notebook default:
 
 - Plain (no lines), infinite or paginated.
 - Ruled: narrow (6 mm), college (7 mm), wide (8.7 mm) and custom.
-- Grid: 5 mm, 1/4 in, 1 cm and custom. Dot grid and isometric.
-- Cornell notes, lab notebook, music staff, planner and storyboard.
+- Grid: 5 mm, 1/4 in, 1 cm, and custom. Dot grid and isometric.
+- Cornell notes, lab notebook, music staff, planner, and storyboard.
 - Custom templates can be saved and shared.
 
 ## Export a selection
@@ -117,9 +117,9 @@ These answer known complaints about other note apps:
 - **Clean paste:** pasting from the web keeps structure but drops stray fonts and colors. Ctrl+Shift+V pastes plain text.
 - **Speed:** large notebooks open lazily, and nothing freezes while syncing.
 - **Content locks:** text boxes and images can be locked in place.
-- **Sections and pages:** can be pinned, colored, sorted and duplicated.
+- **Sections and pages:** can be pinned, colored, sorted, and duplicated.
 - **Links:** internal links survive renames and moves.
 - **Tabs and windows:** open several pages side by side in tabs or windows.
-- **Snap tools:** a ruler, protractor and snap-to-grid for neat diagrams.
+- **Snap tools:** a ruler, protractor, and snap-to-grid for neat diagrams.
 - **Offline:** everything works offline, and conflicts are shown side by side, never silently overwritten.
 - **Export:** a whole notebook exports in one step, so data is never locked in.

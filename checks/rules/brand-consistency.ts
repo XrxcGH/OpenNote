@@ -1,4 +1,4 @@
-// Brand consistency in UI code. Colors, fonts, motion and layering must come from design tokens
+// Brand consistency in UI code. Colors, fonts, motion, and layering must come from design tokens
 // (see BRAND.md and brand/tokens.json). That way the look can change in one place later.
 
 import type { Finding, Rule, SourceFile } from '../types.ts';

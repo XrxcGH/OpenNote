@@ -21,7 +21,25 @@ const CONFUSIONS: [RegExp, string][] = [
 const SILENT_H = /^(hour|honest|honor|heir)/i;
 const YOU_SOUND = /^(uni|use|usu|uti|ure|uri|uro|ura|ubi|eu|ewe|one\b|one-|onenote|once|u-)/i;
 const VOWEL_LETTER_NAMES = 'AEFHILMNORSX';
+function wordSet(...groups: string[]): Set<string> {
+  return new Set(groups.join(' ').split(' '));
+}
+
 const REPEAT_ALLOWED = new Set(['that', 'had', 'very']);
+const CLAUSE_STARTS = wordSet(
+  'while before after if when because since although though unless until once as in on at for with',
+  'without by during from to of where so but which that and or like including such unlike between',
+);
+const VERB_STARTS = wordSet(
+  'is are was were has have had can could will would should may might must',
+  'does do did it they we you he she this these people',
+);
+const INTRO_WORDS = wordSet(
+  'however also then first finally so yes no instead still now today',
+  'otherwise therefore thus again later meanwhile next here',
+);
+// "A, B and C": a list whose last item lacks the serial (Oxford) comma.
+const SERIAL_LIST = /((?:[\w'’/+-]+ ){0,2}[\w'’/+-]+), ((?:[\w'’/+-]+ ){0,3}[\w'’/+-]+) (and|or) (?=[\w`§"(])/g;
 const LOWERCASE_STARTS = /^(iOS|iPadOS|iPhone|iPad|macOS|npm|git|e\.g\.|i\.e\.|vs\.|§)/;
 
 export function expectedArticle(word: string): 'a' | 'an' | undefined {
@@ -60,7 +78,26 @@ function checkLine(file: SourceFile, prose: ProseLine): Finding[] {
   }
   if (/[A-Za-z)]\s+[,;](\s|$)/.test(text))
     findings.push(report(prose.line, 'Remove the space before the comma or semicolon.'));
+  findings.push(...serialCommaFindings(file, prose, text));
   if (/[a-z],[A-Za-z]/.test(text)) findings.push(report(prose.line, 'Add a space after the comma.', 'warning'));
+  return findings;
+}
+
+/** Lists of three or more items need a comma before the final "and" or "or". */
+export function serialCommaFindings(file: SourceFile, prose: ProseLine, text: string): Finding[] {
+  const report = reporter('grammar', file);
+  const findings: Finding[] = [];
+  for (const match of text.matchAll(SERIAL_LIST)) {
+    const [, first, last, conjunction] = match;
+    const firstWord = first.split(' ')[0].toLowerCase();
+    const lastWord = last.split(' ')[0].toLowerCase();
+    const rest = text.slice((match.index ?? 0) + match[0].length).split(/[.;:!?]/)[0];
+    const laterSerialComma = /, (and|or) /.test(rest);
+    if (INTRO_WORDS.has(first.toLowerCase()) || CLAUSE_STARTS.has(firstWord) || CLAUSE_STARTS.has(lastWord)) continue;
+    if (VERB_STARTS.has(lastWord) || laterSerialComma) continue;
+    const fix = { line: prose.line, from: `${last} ${conjunction}`, to: `${last}, ${conjunction}` };
+    findings.push(report(prose.line, `Add a serial comma: "${last}, ${conjunction}".`, 'error', fix));
+  }
   return findings;
 }
 

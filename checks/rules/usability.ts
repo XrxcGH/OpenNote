@@ -1,4 +1,4 @@
-// Ease of use. Documents need a clear structure, working links and a table of contents when long.
+// Ease of use. Documents need a clear structure, working links, and a table of contents when long.
 // UI code needs the basics that keep the app usable with a keyboard or screen reader.
 
 import { posix } from 'node:path';

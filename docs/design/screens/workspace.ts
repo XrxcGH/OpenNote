@@ -70,7 +70,7 @@ function window(p: Palette, pages: PageItem[], breadcrumb: string): string[] {
   });
 }
 
-/** Typed notes plus a hand-drawn diagram, used behind overlays and in the organize view. */
+/** Typed notes plus a hand-drawn diagram, used behind overlays, and in the organize view. */
 export function samplePage(p: Palette, x: number, y: number): string {
   const muted = p.c('text.muted');
   return [

@@ -1,6 +1,6 @@
 # OpenNote brand and interface guide
 
-This guide defines how OpenNote looks, moves, sounds and behaves. Wireframes of each major screen are in [docs/design/SCREENS.md](docs/design/SCREENS.md). The exact values live in [`brand/tokens.json`](brand/tokens.json), and CHECKS verifies them (contrast, motion limits, theme parity). UI code must use the tokens, never raw values.
+This guide defines how OpenNote looks, moves, sounds, and behaves. Wireframes of each major screen are in [docs/design/SCREENS.md](docs/design/SCREENS.md). The exact values live in [`brand/tokens.json`](brand/tokens.json), and CHECKS verifies them (contrast, motion limits, theme parity). UI code must use the tokens, never raw values.
 
 ## Contents
 
@@ -9,9 +9,9 @@ This guide defines how OpenNote looks, moves, sounds and behaves. Wireframes of 
 3. [Voice and tone](#3-voice-and-tone)
 4. [Color](#4-color)
 5. [Typography](#5-typography)
-6. [Space, size and layout](#6-space-size-and-layout)
+6. [Space, size, and layout](#6-space-size-and-layout)
 7. [Shape and depth](#7-shape-and-depth)
-8. [Icons, logo and illustration](#8-icons-logo-and-illustration)
+8. [Icons, logo, and illustration](#8-icons-logo-and-illustration)
 9. [Motion](#9-motion)
 10. [Comfort and performance budgets](#10-comfort-and-performance-budgets)
 11. [Components](#11-components)
@@ -26,9 +26,9 @@ OpenNote should feel like a good desk by a window: warm paper, a pen that writes
 | We are | We are not |
 |---|---|
 | Warm, like paper and wood | Cold, like a terminal or a trading screen |
-| Quiet and steady | Flashy, bouncy or loud |
-| Clear and plain-spoken | Clever, cute or full of jargon |
-| Trustworthy with your data | Pushy about accounts, upgrades or AI |
+| Quiet and steady | Flashy, bouncy, or loud |
+| Clear and plain-spoken | Clever, cute, or full of jargon |
+| Trustworthy with your data | Pushy about accounts, upgrades, or AI |
 | Fast and responsive | Decorated at the cost of speed |
 
 ## 2. Design principles
@@ -36,13 +36,13 @@ OpenNote should feel like a good desk by a window: warm paper, a pen that writes
 1. **The page is the hero.** Notes sit on the brightest surface. Tools and menus use quieter tones around it.
 2. **Comfort over novelty.** Soft contrast for surfaces, strong contrast for text. No effect ships if it costs smoothness.
 3. **One gesture, one result.** Pen draws, finger scrolls (by default), and a tap never does something hidden.
-4. **Familiar first.** People switching from OneNote should find notebooks, sections, pages and pens where they expect them.
-5. **Respect attention.** No badges, streaks, confetti or nagging. Notifications only for things the person asked for.
-6. **Every screen, every input.** Each feature works with mouse, keyboard, touch and pen, from a phone to a wide monitor.
+4. **Familiar first.** People switching from OneNote should find notebooks, sections, pages, and pens where they expect them.
+5. **Respect attention.** No badges, streaks, confetti, or nagging. Notifications only for things the person asked for.
+6. **Every screen, every input.** Each feature works with mouse, keyboard, touch, and pen, from a phone to a wide monitor.
 
 ## 3. Voice and tone
 
-Write the way a helpful colleague talks: short, plain and calm. Use American English and sentence case everywhere, including buttons and menus.
+Write the way a helpful colleague talks: short, plain, and calm. Use American English and sentence case everywhere, including buttons and menus.
 
 | Situation | Do | Don't |
 |---|---|---|
@@ -58,11 +58,11 @@ Rules of thumb:
 - Say what happened, why (if known), and what to do next. Never blame the person.
 - No exclamation marks, no "Oops", no emoji in interface text.
 - Numbers as digits ("3 pages"), times as "2:05 PM", dates as "Sep 30, 2026".
-- The CHECKS rules for spelling, AI phrasing and redundancy apply to interface text too.
+- The CHECKS rules for spelling, AI phrasing, and redundancy apply to interface text too.
 
 ## 4. Color
 
-The palette is warm paper, walnut ink, a moss green accent and a clay secondary accent. It deliberately avoids the light-blue-on-black look of developer tools. Every pairing below is checked by CHECKS: body text reaches at least 7:1 contrast and secondary text at least 4.5:1.
+The palette is warm paper, walnut ink, a moss green accent, and a clay secondary accent. It deliberately avoids the light-blue-on-black look of developer tools. Every pairing below is checked by CHECKS: body text reaches at least 7:1 contrast and secondary text at least 4.5:1.
 
 ### Surfaces and text
 
@@ -73,7 +73,7 @@ The palette is warm paper, walnut ink, a moss green accent and a clay secondary 
 | `surface.raised` | `#FFFDF9` | `#2C2722` | Menus, dialogs, popovers |
 | `surface.sunken` | `#EAE3D8` | `#171411` | Text fields, wells, the canvas behind paginated pages |
 | `surface.hover` | `#ECE5DA` | `#332C26` | Hovered rows and buttons |
-| `surface.selected` | `#DDE8DA` | `#2E3B30` | Selected page, section or tool |
+| `surface.selected` | `#DDE8DA` | `#2E3B30` | Selected page, section, or tool |
 | `text.primary` | `#2B2521` walnut ink | `#F0E9DE` | Body text and headings |
 | `text.secondary` | `#5C534A` | `#CFC5B7` | Labels, metadata |
 | `text.muted` | `#6B6054` | `#ABA093` | Placeholders, timestamps |
@@ -111,7 +111,7 @@ Dark mode is a setting people can switch at any moment, not something hidden in 
 
 Ways to switch, all with the same result:
 
-- A sun and moon toggle in the title bar, always one click or tap away. It switches between Light and Dark. A long press or right-click opens all three choices.
+- A sun and moon toggle in the title bar, always one click, or tap away. It switches between Light and Dark. A long press or right-click opens all three choices.
 - The shortcut Ctrl+Shift+D, which people can change in settings.
 - "Toggle dark mode" in the command palette (Ctrl+K).
 - Settings, then Appearance, which shows all three choices with small previews.
@@ -123,7 +123,7 @@ The preference belongs to the person, not the device. If they later turn on an a
 Rules for the switch:
 
 - The saved theme is applied before the window first appears, so the app never flashes the wrong colors at start-up.
-- Switching crossfades every surface over 200 ms (the `base` token), or 100 ms with reduced motion. Content, scroll position and selection stay exactly where they were.
+- Switching crossfades every surface over 200 ms (the `base` token), or 100 ms with reduced motion. Content, scroll position, and selection stay exactly where they were.
 - Notes don't change. Ink uses each pen's light or dark value, and pasted images keep their colors.
 - A separate "Page color" setting lets people keep paper-white pages inside the dark interface, for reading or printing previews. It defaults to matching the theme.
 - Windows contrast themes always take priority over this setting.
@@ -151,11 +151,11 @@ Type scale (pixels at 100% scaling):
 | `title3` / `title2` / `title1` | 20 / 28, 24 / 32, 30 / 38 | Note headings |
 | `display` | 36 / 44 | Onboarding only |
 
-Keep lines of reading text at 72 characters or fewer. Use weights 400, 500, 600 and 700 only. Sizes follow the Windows text-size setting and the in-app zoom.
+Keep lines of reading text at 72 characters or fewer. Use weights 400, 500, 600, and 700 only. Sizes follow the Windows text-size setting and the in-app zoom.
 
-## 6. Space, size and layout
+## 6. Space, size, and layout
 
-Spacing uses a 4-pixel grid: 2, 4, 8, 12, 16, 20, 24, 32, 40, 48 and 64. Use 8 inside controls, 12 to 16 between related items, and 24 or more between groups.
+Spacing uses a 4-pixel grid: 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, and 64. Use 8 inside controls, 12 to 16 between related items, and 24 or more between groups.
 
 Targets must be easy to hit:
 
@@ -177,21 +177,21 @@ Panes resize by dragging, and collapse with a button or keyboard shortcut. Pagin
 
 ## 7. Shape and depth
 
-Corners are gently rounded: 4 for small elements, 8 for buttons and inputs, 12 for cards and panels, 16 for dialogs. Pills use a full radius.
+Corners are gently rounded: 4 for small elements, 8 for buttons and inputs, 12 for cards, and panels, 16 for dialogs. Pills use a full radius.
 
 Depth comes from warm, soft shadows in three steps (`elevation.1` to `elevation.3`), never from glowing edges. Menus use step 2, dialogs step 3. Dark theme relies on lighter surfaces rather than shadows. Blur and frosted-glass effects are not used because they cost battery and frame time.
 
-## 8. Icons, logo and illustration
+## 8. Icons, logo, and illustration
 
 Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut.
 
 The logo is a folded page with a moss-green ink stroke ending in a clay pen tip: see [`brand/logo-mark.svg`](brand/logo-mark.svg) and [`brand/app-icon.svg`](brand/app-icon.svg). Keep clear space of half the mark's width around it, and don't recolor, stretch or add effects.
 
-Illustrations appear only in empty states, onboarding and error screens. Draw them with OpenNote's own pen engine, so they look handwritten, in two or three token colors with plenty of empty paper. No 3D renders, gradient blobs, stock photos or mascots.
+Illustrations appear only in empty states, onboarding and error screens. Draw them with OpenNote's own pen engine, so they look handwritten, in two or three token colors with plenty of empty paper. No 3D renders, gradient blobs, stock photos, or mascots.
 
 ## 9. Motion
 
-Motion explains what changed and where things went. It is quick, calm and never bouncy. It only animates opacity and transform, which the graphics card handles without slowing the page.
+Motion explains what changed and where things went. It is quick, calm, and never bouncy. It only animates opacity and transform, which the graphics card handles without slowing the page.
 
 | Interaction | Duration token | Easing | What moves |
 |---|---|---|---|
@@ -224,7 +224,7 @@ Smoothness is part of the brand. A feature that breaks these budgets on the refe
 |---|---|
 | Pen to screen | Stroke drawn in the next frame; 25 ms or less end to end on a 60 Hz screen |
 | Typing | A key press shows within 16 ms |
-| Feedback | Any tap, click or key shows a visible response within 50 ms |
+| Feedback | Any tap, click, or key shows a visible response within 50 ms |
 | Frame rate | 60 frames per second (120 on fast screens) for scrolling, zooming and animation; never two dropped frames in a row |
 | Page open | 150 ms for a typical page (500 blocks, 5,000 strokes); 500 ms for very large pages |
 | Search | Results update within 100 ms while typing, across 10,000 pages |
@@ -232,17 +232,17 @@ Smoothness is part of the brand. A feature that breaks these budgets on the refe
 | Memory | Under 400 MB with a 1,000-page notebook open |
 | Crash safety | At most 1 second of work lost if the app or computer stops suddenly |
 
-Heavy work, such as handwriting recognition, transcription, search indexing, export and sync, runs in the background and never blocks drawing or typing. DEVELOPMENT.md explains how each budget is tested.
+Heavy work, such as handwriting recognition, transcription, search indexing, export, and sync, runs in the background, and never blocks drawing or typing. DEVELOPMENT.md explains how each budget is tested.
 
 ## 11. Components
 
 | Component | Key rules |
 |---|---|
 | Buttons | Primary (moss fill), secondary (outline), quiet (text only), danger (clay-red text; fill only in confirmations). One primary button per view. |
-| Text fields | `surface.sunken` fill, `border.control` outline, label above, help or error text below. |
-| Command bar | Slim bar with Home, Insert, Draw and View tabs, familiar to OneNote users. It collapses into a "More" menu when narrow. |
-| Pen palette | Floating, draggable and collapsible. It shows the active pen, color and width. Left-handed mode mirrors it. |
-| Navigation tree | Notebooks, sections and pages with color chips. Drag to reorder. Full keyboard support with arrow keys. |
+| Text fields | `surface.sunken` fill, `border.control` outline, label above, help, or error text below. |
+| Command bar | Slim bar with Home, Insert, Draw, and View tabs, familiar to OneNote users. It collapses into a "More" menu when narrow. |
+| Pen palette | Floating, draggable, and collapsible. It shows the active pen, color, and width. Left-handed mode mirrors it. |
+| Navigation tree | Notebooks, sections, and pages with color chips. Drag to reorder. Full keyboard support with arrow keys. |
 | Page canvas | Paper backgrounds (plain, lined, dot grid, graph, Cornell) drawn with `border.subtle`. Page breaks are dashed lines with the page number in `text.muted`. |
 | Recording bar | Pinned above the page, with a pulsing dot, elapsed time, and pause and stop buttons. Timestamps link to ink and text. |
 | Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch. |
@@ -257,7 +257,7 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 OpenNote meets the Web Content Accessibility Guidelines (WCAG) 2.2 at level AA (the level most accessibility laws require). Body text goes further and meets the AAA (highest level) contrast of 7:1.
 
 - **Keyboard:** everything works without a mouse. Focus is always visible (a 2-pixel `focus.ring` with a 2-pixel gap). Tab order follows reading order. Shortcuts are listed with Ctrl+/ and can be changed.
-- **Screen readers:** every control has a name, role and state for Narrator and NVDA (a free screen reader). Ink regions are announced with their recognized text. Recording and sync changes are announced politely.
+- **Screen readers:** every control has a name, role, and state for Narrator and NVDA (a free screen reader). Ink regions are announced with their recognized text. Recording and sync changes are announced politely.
 - **Vision:** text scales to 200% without losing content. Windows contrast themes switch the app to system colors. Color is never the only signal.
 - **Motion:** the app follows the reduced-motion setting (see Motion).
 - **Hearing:** recordings can be transcribed on the device, and transcripts sync to the notes.
@@ -268,10 +268,10 @@ Every pull request that changes UI goes through automated accessibility tests an
 
 ## 13. What to avoid
 
-- Light blue on black, neon accents and "hacker" dark themes.
+- Light blue on black, neon accents, and "hacker" dark themes.
 - Pure black (`#000000`) or pure white (`#FFFFFF`) as large surfaces. CHECKS warns about both.
-- Purple-to-blue gradients, glowing edges, glassmorphism and heavy blur.
-- Bouncy or elastic easing, parallax, auto-playing media and confetti.
+- Purple-to-blue gradients, glowing edges, glassmorphism, and heavy blur.
+- Bouncy or elastic easing, parallax, auto-playing media, and confetti.
 - Spinners that appear instantly, skeleton shimmer and fake progress.
 - Icon-only toolbars without tooltips; gray text that fails contrast.
 - Dark patterns: pre-checked upsells, hidden "No thanks" links, nagging sign-in prompts.
@@ -279,7 +279,7 @@ Every pull request that changes UI goes through automated accessibility tests an
 
 ## 14. Using the tokens
 
-1. `brand/tokens.json` is the only place colors, fonts, sizes and motion values are defined.
+1. `brand/tokens.json` is the only place colors, fonts, sizes, and motion values are defined.
 2. The app build turns it into CSS custom properties (for example `--color-surface-page`) and a typed TypeScript module. Theme switching swaps the property set without reloading.
-3. UI code refers to tokens only. The CHECKS `brand-consistency` rule rejects raw colors, font names, durations over 400 ms and hard-coded layers in `app/src`.
-4. To change the look, edit the tokens and run `npm run checks`. The `brand-tokens` rule confirms both themes still define every token and meet every contrast target.
+3. UI code refers to tokens only. The CHECKS `brand-consistency` rule rejects raw colors, font names, durations over 400 ms, and hard-coded layers in `app/src`.
+4. To change the look, edit the tokens, and run `npm run checks`. The `brand-tokens` rule confirms both themes still define every token and meet every contrast target.
