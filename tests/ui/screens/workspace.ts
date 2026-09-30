@@ -44,7 +44,7 @@ export default defineScreens([
     sizes: ['expanded'],
     prepare: async (page) => {
       await page.getByRole('button', { name: 'Show pages' }).click();
-      await page.getByRole('button', { name: 'Mitosis' }).waitFor();
+      await page.getByRole('treeitem', { name: 'Mitosis' }).waitFor();
     },
   },
   {

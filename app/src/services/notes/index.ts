@@ -1,31 +1,72 @@
-// Chooses the notes service and makes it available to components (ARCHITECTURE.md section 12.5).
-// WP0: the read-only stub, seeded from the notes snapshot when there is one, else from the sample library.
-// WP6 replaces it with the in-memory service, and Phase 3's storage-backed service takes over behind storage.core.
+// Chooses the notes service and makes it available to components (ARCHITECTURE.md section 12.5). Phase 2 uses the
+// in-memory service, seeded from the notes snapshot when there is one, else from the sample library. Test builds
+// save the snapshot behind notes.memorySnapshot. Phase 3's storage-backed service takes over behind storage.core.
+//
+// The first loadInitial starts here, before React renders, so the tree and the last page arrive in one call.
 
-import { createContext, createElement, useContext } from 'react';
+import { createContext, createElement, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { isEnabled } from '../../app/flags';
+import { getLocation } from '../../app/location';
 import type { Platform } from '../../platform/types';
-import { parseFixture } from './fixtures';
-import type { NotesFixture } from './fixtures';
-import { createStubNotesService } from './stub';
-import type { NotesService } from './types';
+import { createMemoryNotesService } from './memory';
+import { parseSnapshot } from './snapshot';
+import type { SnapshotData } from './snapshot';
+import type { InitialTree, NodeId, NotesService } from './types';
 
 export type * from './types';
+export { CHIP_COLORS, NOTES_LIMITS } from './types';
 export { NotesError, isNotesError } from './errors';
+export type { InvalidNameReason, NotesErrorCode } from './errors';
 
-async function seedFrom(platform: Platform): Promise<NotesFixture> {
+async function seedFrom(platform: Platform): Promise<SnapshotData | 'sample'> {
   const json = await platform.notesSnapshot?.load().catch(() => null);
-  return (json && parseFixture(json)) || 'sample';
+  return (json && parseSnapshot(json)) || 'sample';
+}
+
+const initialLoads = new WeakMap<NotesService, Promise<InitialTree>>();
+let current: NotesService | null = null;
+
+/** The ids along a location, as loadInitial takes them. */
+export function pathOf(location: ReturnType<typeof getLocation>): NodeId[] {
+  if (location.view !== 'workspace') return [];
+  return [location.notebookId, location.sectionId, location.pageId].filter((id): id is NodeId => id !== null);
+}
+
+/** Starts the first loadInitial for a service, or returns the one already started. */
+export function initialTree(
+  notes: NotesService,
+  path: readonly NodeId[] = pathOf(getLocation()),
+): Promise<InitialTree> {
+  let load = initialLoads.get(notes);
+  if (!load) {
+    load = notes.loadInitial(path);
+    initialLoads.set(notes, load);
+  }
+  return load;
 }
 
 export async function createNotesService(platform: Platform): Promise<NotesService> {
-  return createStubNotesService(await seedFrom(platform));
+  const snapshot = isEnabled('notes.memorySnapshot') ? (platform.notesSnapshot ?? undefined) : undefined;
+  const service = createMemoryNotesService({ seed: await seedFrom(platform), snapshot });
+  void initialTree(service).catch(() => {});
+  current = service;
+  return service;
+}
+
+/** The service the app runs on, for code outside React such as the exit hooks. */
+export function currentNotesService(): NotesService | null {
+  return current;
 }
 
 const NotesContext = createContext<NotesService | null>(null);
 
 export function NotesProvider(props: { service: NotesService; children: ReactNode }) {
-  return createElement(NotesContext.Provider, { value: props.service }, props.children);
+  const { service } = props;
+  useEffect(() => {
+    current = service;
+  }, [service]);
+  return createElement(NotesContext.Provider, { value: service }, props.children);
 }
 
 export function useNotes(): NotesService {

@@ -3,9 +3,9 @@
 
 import type { ComponentType } from 'react';
 import type { FlagId } from '../app/flags';
-import type { Chord, CommandId } from '../commands/types';
+import type { Chord, CommandContext, CommandId } from '../commands/types';
 import type { ExitReason, ExitResult, OsAppearance, Platform, Settings, ThemePreference } from '../platform/types';
-import type { ChipColor, NotesService } from '../services/notes/types';
+import type { ChipColor, NodeId, NotesService } from '../services/notes/types';
 import type { MessageKey } from '../strings/t';
 import type { IconName } from '../ui/icons';
 
@@ -130,4 +130,15 @@ export interface BeforeExitHook {
   /** Lower orders run first. */
   order: number;
   run(reason: ExitReason): Promise<ExitResult>;
+}
+
+/**
+ * Runs after notes.newPage or notes.newSubpage creates a page, such as Phase 4's date and time line under the
+ * title. A hook that fails is logged and doesn't undo the page.
+ */
+export interface PageCreatedHook {
+  id: string;
+  /** Lower orders run first. */
+  order: number;
+  run(pageId: NodeId, ctx: CommandContext): Promise<void>;
 }

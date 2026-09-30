@@ -11,7 +11,7 @@
 // - A move that would leave the next page too deep rejects with invalid-move.
 
 import type { Placement, PageLevel } from '../types';
-import { canHold, fail, hasAncestorIn, keyOf, listOf, live, writable } from './model-state';
+import { canHold, fail, fitsDepth, groupHeight, hasAncestorIn, keyOf, listOf, live, writable } from './model-state';
 import type { ModelState, Rec } from './model-state';
 
 /** The page at `index` and the pages after it with a higher level. */
@@ -73,6 +73,7 @@ function checkTarget(state: ModelState, recs: readonly Rec[], placement: Placeme
     if (parent && (parent.id === rec.id || hasAncestorIn(state, parent.id, new Set([rec.id])))) {
       fail('invalid-move', 'A node cannot move into itself');
     }
+    if (!fitsDepth(state, placement.parentId, groupHeight(state, rec.id))) fail('invalid-move', 'Groups nest too deep');
   }
   if (placement.beforeId !== null) {
     live(state, placement.beforeId);

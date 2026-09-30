@@ -5,6 +5,7 @@
 
 import { NotesError } from '../errors';
 import type { InvalidNameReason, NotesErrorCode } from '../errors';
+import { CHIP_COLORS, NOTES_LIMITS } from '../types';
 import type { ChipColor, NodeId, NodeKind, NodeSummary, PageLevel } from '../types';
 
 export interface Rec {
@@ -27,6 +28,8 @@ export interface TrashEntry {
   /** The next sibling that stayed behind, so restore can put the root back before it. */
   readonly beforeId: string | null;
   readonly parentTitle: string;
+  /** The notebook the root was in, where restore falls back to; null for a notebook. */
+  readonly notebookId: string | null;
   readonly trashedAt: string;
   /** The root, then its subpages for a page. */
   readonly ids: readonly string[];
@@ -47,7 +50,7 @@ export interface ModelState {
 }
 
 export const ROOT = '';
-export const MAX_TITLE = 200;
+export const MAX_TITLE = NOTES_LIMITS.titleLength;
 export const DEFAULT_TITLES: Record<NodeKind, string> = {
   notebook: 'Untitled notebook',
   sectionGroup: 'Untitled section group',
@@ -123,6 +126,39 @@ export function summary(state: ModelState, rec: Rec): NodeSummary {
     modified: rec.modified,
     readOnly: rec.readOnly,
   };
+}
+
+/** A pen name stays; anything else is stored as no color. */
+export function penOrNull(color: ChipColor | null | undefined): ChipColor | null {
+  return color && CHIP_COLORS.includes(color) ? color : null;
+}
+
+/** How many section groups hold `parentId`, counting itself: 0 for a notebook, 1 for a top-level group. */
+export function groupDepth(state: ModelState, parentId: string | null): number {
+  let depth = 0;
+  for (let id = parentId; id !== null; id = state.nodes.get(id)?.parentId ?? null) {
+    if (state.nodes.get(id)?.kind === 'sectionGroup') depth += 1;
+  }
+  return depth;
+}
+
+/** How many levels of section groups a node adds: 0 for anything but a group, 1 for a group of sections. */
+export function groupHeight(state: ModelState, id: string): number {
+  if (state.nodes.get(id)?.kind !== 'sectionGroup') return 0;
+  return 1 + Math.max(0, ...(state.lists.get(id) ?? []).map((child) => groupHeight(state, child)));
+}
+
+/** True when a node of this height fits under the parent without nesting groups too deep. */
+export function fitsDepth(state: ModelState, parentId: string | null, height: number): boolean {
+  return groupDepth(state, parentId) + height <= NOTES_LIMITS.groupDepth;
+}
+
+/** The notebook that holds a node, or null for a notebook. */
+export function notebookOf(state: ModelState, id: string): string | null {
+  let parent = state.nodes.get(id)?.parentId ?? null;
+  while (parent !== null && state.nodes.get(parent)?.parentId != null)
+    parent = state.nodes.get(parent)?.parentId ?? null;
+  return parent;
 }
 
 /** True when an ancestor of `id` (following parent ids) is in `ids`. */

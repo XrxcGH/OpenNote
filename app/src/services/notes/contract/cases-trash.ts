@@ -4,7 +4,7 @@
 
 import { expect } from 'vitest';
 import type { NodeId, TrashReceiptId } from '../types';
-import { expectNotesError, kase, library, pageLevels, titles } from './helpers';
+import { add, expectNotesError, kase, library, pageLevels, titles } from './helpers';
 import type { ContractCase } from './helpers';
 
 const LECTURES = 'Cell:0, Membranes:1, Proteins:2, Mitosis:0, Meiosis:0';
@@ -62,28 +62,72 @@ export const trashCases: readonly ContractCase[] = [
     await s.restore(receipt.id);
     expect(await titles(s, lib.biology)).toEqual(['Lectures', 'Labs', 'Exam prep']);
   }),
-  kase('restore.parent-gone', 'restores into a new notebook named after the old parent', async (s) => {
+  kase('restore.parent-gone', 'restores a section whose group is gone to the end of its notebook', async (s) => {
     const lib = await library(s);
     const receipt = await s.trash([lib.midterm]);
     await s.trash([lib.exams]);
     const [restored] = await s.restore(receipt.id);
-    const notebook = await s.get(restored.parentId as NodeId);
-    expect(notebook).toMatchObject({ kind: 'notebook', title: 'Exam prep' });
-    expect(await titles(s, null)).toEqual(['Biology', 'Work', 'Exam prep']);
+    expect(restored.parentId).toBe(lib.biology);
+    expect(await titles(s, lib.biology)).toEqual(['Lectures', 'Labs', 'Midterm']);
+    expect(await titles(s, null)).toEqual(['Biology', 'Work']);
   }),
   kase(
     'restore.page-parent-gone',
-    'restores a page into a new notebook and section named after its section',
+    'restores a page whose section is gone into a new section at the end of its notebook',
     async (s) => {
       const lib = await library(s);
-      const receipt = await s.trash([lib.pages.Mitosis]);
+      const receipt = await s.trash([lib.pages.Mitosis, lib.pages.Meiosis]);
       await s.trash([lib.lectures]);
-      const [restored] = await s.restore(receipt.id);
-      const section = await s.get(restored.parentId as NodeId);
-      expect(section).toMatchObject({ kind: 'section', title: 'Lectures' });
-      expect(await s.get(section?.parentId as NodeId)).toMatchObject({ kind: 'notebook', title: 'Lectures' });
+      const restored = await s.restore(receipt.id);
+      const section = await s.get(restored[0].parentId as NodeId);
+      expect(section).toMatchObject({ kind: 'section', title: 'Lectures', parentId: lib.biology });
+      expect(section?.id).not.toBe(lib.lectures);
+      expect(await pageLevels(s, section?.id as NodeId)).toBe('Mitosis:0, Meiosis:0');
+      expect(await titles(s, lib.biology)).toEqual(['Labs', 'Exam prep', 'Lectures']);
     },
   ),
+  kase('restore.page-group-gone', 'restores a page whose section and group are gone into its notebook', async (s) => {
+    const lib = await library(s);
+    const receipt = await s.trash([lib.pages.Topics]);
+    await s.trash([lib.exams]);
+    const [restored] = await s.restore(receipt.id);
+    expect(await s.get(restored.parentId as NodeId)).toMatchObject({ title: 'Midterm', parentId: lib.biology });
+  }),
+  kase('restore.too-deep', 'restores a group that no longer fits its old parent to its notebook', async (s) => {
+    const lib = await library(s);
+    const inner = await add(s, lib.exams, 'sectionGroup', 'Inner');
+    const deepest = await add(s, inner.id, 'sectionGroup', 'Deepest');
+    const receipt = await s.trash([deepest.id]);
+    const outer = await add(s, lib.biology, 'sectionGroup', 'Outer');
+    const middle = await add(s, outer.id, 'sectionGroup', 'Middle');
+    await s.move([lib.exams], { parentId: middle.id, beforeId: null });
+    const [restored] = await s.restore(receipt.id);
+    expect(restored.parentId).toBe(lib.biology);
+    expect(await titles(s, lib.biology)).toEqual(['Lectures', 'Labs', 'Outer', 'Deepest']);
+  }),
+  kase('trash.notebook-keeps-its-items', 'keeps the items trashed inside a notebook with it', async (s) => {
+    const lib = await library(s);
+    const page = await s.trash([lib.pages.Cell]);
+    const notebook = await s.trash([lib.biology]);
+    expect((await s.listTrash()).map((item) => item.node.id)).toEqual([lib.biology]);
+    await expectNotesError(s.restore(page.id), 'not-found');
+    await expectNotesError(s.restoreFromTrash([lib.pages.Cell]), 'not-found');
+    await s.restore(notebook.id);
+    expect((await s.listTrash()).map((item) => item.node.id)).toEqual([lib.pages.Cell]);
+    await s.restore(page.id);
+    expect(await pageLevels(s, lib.lectures)).toBe(LECTURES);
+  }),
+  kase('restore.partly-restored', 'restores what is left of a receipt after some of it was restored', async (s) => {
+    const lib = await library(s);
+    const receipt = await s.trash([lib.labs, lib.meetings]);
+    const items = await s.listTrash();
+    expect(items.map((item) => item.receiptId)).toEqual([receipt.id, receipt.id]);
+    await s.restoreFromTrash([lib.labs]);
+    const restored = await s.restore(receipt.id);
+    expect(restored.map((node) => node.id)).toEqual([lib.meetings]);
+    expect(await titles(s, lib.work)).toEqual(['Meetings']);
+    await expectNotesError(s.restore(receipt.id), 'not-found');
+  }),
   kase('restore.notebook', 'restores a notebook with everything in it', async (s) => {
     const lib = await library(s);
     const receipt = await s.trash([lib.biology]);

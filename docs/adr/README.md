@@ -54,5 +54,6 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0010](0010-interface-components-and-state.md) | Build the interface from hand-written accessible components, a small external store, registries, and a platform seam | Proposed | 2026-09-30 |
 | [0012](0012-window-frame-and-appearance.md) | Keep the native window frame, with the app's title bar below it, and read the Windows appearance in Rust | Accepted | 2026-09-30 |
 | [0013](0013-settings-and-device-state.md) | Keep personal settings and device state in two Rust-owned files, changed by validated merge patches, with atomic writes and `minWriterSchema` for safe rollbacks | Proposed | 2026-09-30 |
+| [0014](0014-notes-service-contract.md) | Define a narrow notes service contract between the shell and storage, with a shared test suite, and the changes that let Phase 3's format serve it | Proposed, to be accepted jointly by the Phase 2 and Phase 3 owners | 2026-09-30 |
 | [0015](0015-app-lifecycle.md) | Hold one process per profile, start in a fixed order before Tauri, and send every close through one exit handshake | Proposed | 2026-09-30 |
 | [0016](0016-phase-2-test-stack.md) | Test in layers: Vitest, Vitest browser mode, Playwright, and WebdriverIO with tauri-driver, on installed browsers | Proposed | 2026-09-30 |

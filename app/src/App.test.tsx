@@ -132,7 +132,7 @@ describe('the workspace', () => {
   it('shows the sample notebooks and passes axe in both themes', async () => {
     const { container } = await renderApp(windows(false));
     expect(await screen.findByText('Biology 101')).toBeTruthy();
-    expect(await screen.findByRole('button', { name: 'Lectures' })).toBeTruthy();
+    expect(await screen.findByRole('treeitem', { name: 'Lectures' })).toBeTruthy();
     await expectNoAxeViolations(container);
     fireEvent.click(darkModeSwitch());
     await expect.poll(dataTheme).toBe('dark');
@@ -141,8 +141,8 @@ describe('the workspace', () => {
 
   it('opens a section and a page', async () => {
     await renderApp(windows(false));
-    fireEvent.click(await screen.findByRole('button', { name: 'Lectures' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Mitosis' }));
+    fireEvent.click(await screen.findByRole('treeitem', { name: 'Lectures' }));
+    fireEvent.click(await screen.findByRole('treeitem', { name: 'Mitosis' }));
     expect(await screen.findByRole('heading', { name: 'Mitosis', level: 1 })).toBeTruthy();
   });
 });
