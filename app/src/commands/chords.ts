@@ -231,11 +231,9 @@ interface LayoutNavigator {
 }
 
 /** Reads the printed keys of this keyboard where the browser offers them, as WebView2 does. */
-export async function loadKeyboardLayout(
-  nav: LayoutNavigator | undefined = globalThis.navigator as LayoutNavigator | undefined,
-): Promise<void> {
+export async function loadKeyboardLayout(nav: object | undefined = globalThis.navigator): Promise<void> {
   try {
-    const map = await nav?.keyboard?.getLayoutMap?.();
+    const map = await (nav as LayoutNavigator | undefined)?.keyboard?.getLayoutMap?.();
     if (map) setKeyboardLayout(new Map(map));
   } catch {
     // Some hosts refuse the layout map; the chord's own names still read correctly.
