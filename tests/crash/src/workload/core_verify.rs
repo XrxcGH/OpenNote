@@ -76,7 +76,11 @@ impl VerifyState {
 
     /// Every edited page equals the script's page at some step from its last acknowledgment on (I2).
     fn check_pages(&self, iteration: u64, markers: &Markers, pages: &[Page]) -> Result<(), String> {
-        let models = replay(self.seed, iteration, &self.start)?;
+        let models = replay(
+            crate::harness::writer_seed(self.seed, iteration),
+            iteration,
+            &self.start,
+        )?;
         for (index, (model, page)) in models.into_iter().zip(pages).enumerate() {
             let start = self.start.get(index).cloned().ok_or("no start page")?;
             let mut oracle = Oracle::new(start);

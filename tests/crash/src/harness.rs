@@ -192,6 +192,12 @@ fn tally(summary: &mut Summary, kill: &Kill, outcome: &Outcome) {
     summary.save_steps += outcome.markers.saves.len() as u64;
 }
 
+/// The seed an iteration's writer gets, from which it draws its script. The core verifier replays the same
+/// script, so it must use this seed too.
+pub fn writer_seed(seed: u64, iteration: u64) -> u64 {
+    Rng::derive(seed, &[iteration, 2]).next()
+}
+
 /// Starts one writer, stops it as `kill` says, and collects what it printed.
 fn run_writer(exe: &std::path::Path, config: &Config, iteration: u64, kill: &Kill) -> Result<Outcome, String> {
     let mut command = Command::new(exe);
@@ -202,7 +208,7 @@ fn run_writer(exe: &std::path::Path, config: &Config, iteration: u64, kill: &Kil
         .arg(&config.notebook)
         .arg("--data")
         .arg(&config.data)
-        .args(["--seed", &Rng::derive(config.seed, &[iteration, 2]).next().to_string()])
+        .args(["--seed", &writer_seed(config.seed, iteration).to_string()])
         .args(["--iteration", &iteration.to_string()])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
