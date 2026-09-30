@@ -20,7 +20,7 @@ This holds only with four rules, which the numbers below show are needed:
 3. During a zoom or pan gesture, the world gets `will-change: transform`, removed when the gesture ends so the text is drawn sharp again.
 4. Editors off screen stay mounted. We revisit this for pages with more than about 50 containers.
 
-Phase 4's typing benchmark should use this spike's in-page measure (95th percentile at most 16 ms) and Event Timing, until the screen measurement lands.
+Phase 4's typing benchmark should gate on this spike's in-page measure: 95th percentile at most 16 ms from keydown to the end of rendering. It should also report the screen measure. On screen, no setup met 16 ms at the 95th percentile, because the display adds 9 to 14 ms after rendering. The screen ranks the setups the same way, so the four rules still hold.
 
 ## Measurements
 
@@ -30,7 +30,7 @@ The machine is a Surface Laptop Studio 2 with 20 logical processors, Windows 11 
 
 The page holds eight notes and 5,000 handwriting-like strokes. The 20-page note has 9,138 words and is 22.4 letter pages tall. The harness sends keys through the Chrome DevTools Protocol (CDP) every 120 ms: 100 keys per condition, after 10 warm-up keys. Each condition starts from a freshly loaded page.
 
-The page times each key from keydown to the end of the next frame's rendering ("painted"). Event Timing times keydown to the next presented frame, in 8 ms steps. The DevTools Performance domain and a DevTools trace show where main-thread time goes. Each zoom or pan motion runs for 5 seconds, timed with `requestAnimationFrame`. A second full run agreed with every conclusion.
+The page times each key from keydown to the end of the next frame's rendering ("painted"). Event Timing times keydown to the next presented frame, in 8 ms steps. A separate run timed each key on screen. The DevTools Performance domain and a DevTools trace show where main-thread time goes. Each zoom or pan motion runs for 5 seconds, timed with `requestAnimationFrame`. A second full run agreed with every conclusion.
 
 ### Typing
 
@@ -46,12 +46,35 @@ Times are in milliseconds.
 | 20-page note, spell check off | 19.9 | 25.3 | 48.2 | 8% | 6% |
 | 20-page note, accessibility on | 19.8 | 24.1 | 26.5 | 7% | 6% |
 | 20-page note, `contain: paint` | 8.6 | 10.9 | 15.8 | 100% | 93% |
-| 20-page note, `content-visibility` | 7.8 | 10.9 | 15.7 | 100% | 99% |
+| 20-page note, `content-visibility`, caret off screen | 7.8 | 10.9 | 15.7 | 100% | 99% |
 | 20-page note, `contain: paint`, tiled ink | 6.8 | 9.8 | 14.0 | 100% | 99% |
 
 Script took under 2 ms per key, and layout at most 0.6 ms. Other editors made no consistent difference: the 20-page note alone was no faster than with seven others. In the 20-page note, the trace blames one browser step, `PaintArtifactCompositor::Update`, which turns painted content into compositor layers. It took 10.7 ms per key there, against 2.0 in a short note.
 
-With `contain: paint`, that step took 1.7 ms, because each block paints as its own piece. With `content-visibility`, it took 0.9 ms. Spell check and the accessibility tree made no difference. SVG ink also slowed presentation, since it shares the text's layer. The results file has seven more conditions, such as zoom 200% and a control run, which fit the same pattern.
+With `contain: paint`, that step took 1.7 ms, because each block paints as its own piece. With `content-visibility`, it took 0.9 ms, though with the caret off screen, as the next section explains. Spell check and the accessibility tree made no difference. By Event Timing, SVG ink also slowed presentation, since it shares the text's layer. The screen timing doesn't show that in a short note. The results file has seven more conditions, such as zoom 200% and a control run, which fit the same pattern.
+
+### Keystroke to screen
+
+A separate run timed each key on screen with Desktop Duplication, 100 keys per condition after 10 warm-up keys. The harness watches a small region at the caret. It times each key from the CDP call to the present time of the first desktop frame that changes that region. Frames arrive a few milliseconds after they're presented, so the region must stay unchanged for 30 ms before each key. No key was skipped or missed. Times are in milliseconds.
+
+| Condition | Median | p95 | Within 16 ms | Within 25 ms | Samples | Skipped |
+|---|---|---|---|---|---|---|
+| Short note, SVG ink | 21.2 | 24.5 | 24% | 97% | 100 | 0 |
+| Short note, SVG ink, zoom 50% | 22.3 | 29.8 | 11% | 87% | 100 | 0 |
+| Short note, one editor | 18.8 | 23.6 | 30% | 100% | 100 | 0 |
+| Short note, tiled ink | 21.8 | 25.9 | 30% | 94% | 100 | 0 |
+| 20-page note | 31.7 | 41.0 | 0% | 15% | 100 | 0 |
+| 20-page note, spell check off | 31.2 | 38.7 | 0% | 5% | 100 | 0 |
+| 20-page note, accessibility on | 31.0 | 38.8 | 0% | 21% | 100 | 0 |
+| 20-page note, `contain: paint` | 21.6 | 24.7 | 25% | 96% | 100 | 0 |
+| 20-page note, `content-visibility` | 21.5 | 25.7 | 24% | 94% | 100 | 0 |
+| 20-page note, `contain: paint`, tiled ink | 16.8 | 23.9 | 43% | 100% | 100 | 0 |
+
+Comparing medians from the same run, the screen adds 9 to 14 ms to the painted time. Times fall in steps of about 8 ms, one refresh at 120 Hz. So no setup reaches the screen within 16 ms at the 95th percentile. Even a short note with no ink took 18.4 ms at the median, with 38% of keys within 16 ms.
+
+The ranking matches the page's own measure. The plain 20-page note takes about 31 ms, and `contain: paint` brings it to 21.6 ms, about the same as a short note. Tiled ink didn't speed up the short note, but it did help the 20-page note with `contain: paint`.
+
+This run also found a flaw in the earlier `content-visibility` numbers. Blocks above the caret changed height after the page panned, so the caret ended up below the window. The page now pans again until the caret stays put. With the caret in view, painted took 9.2 ms at the median and 11.8 ms at the 95th percentile. That's still within budget, so the conclusion holds. The same run's other painted medians came within 2.5 ms of the typing table, except the plain 20-page note, at 22.0 ms.
 
 ### Zooming and panning
 
@@ -72,8 +95,10 @@ The worker drew each tile in 6 to 9 ms (median). The layer leaves text blurry wh
 ### Limitations
 
 - CDP key events skip the Windows keyboard stack, which adds a little time.
-- The screen measurement is pending, because this branch has only a stub of `common/capture.rs`. Once the ink spike's version merges, the integrator runs `--mode keys-screen`.
-- "Painted" stops at the main thread. The display adds at least one more refresh: in the fast setups, Event Timing puts most keys at 12 to 20 ms. On a 60 Hz screen, each refresh takes twice as long.
+- The screen measure ends at the desktop frame's present time. The panel's scan-out and pixel response come after it.
+- In 3 to 22 keys per condition, the changed frame combined several desktop updates, so those times may be up to one refresh late.
+- "Painted" stops at the main thread. On a 60 Hz screen, each refresh takes twice as long, so the screen times would grow.
+- The trace for `content-visibility` also ran with the caret off screen.
 - This machine is much faster than the reference laptop, so Phase 4 must repeat the benchmark there.
 - The text and ink are generated, and the tile renderer is a sketch with no memory limit.
 
@@ -92,5 +117,5 @@ The worker drew each tile in 6 to 9 ms (median). The layer leaves text blurry wh
 - `contain: paint` clips anything a block draws outside its box, so menus and handles must render in a layer above the world.
 - Phase 5's ink renderer needs tiles drawn off the main thread, a memory limit for them, and hit testing without SVG. Ink outlines must be stored or made in the background to meet the 150 ms page-open budget.
 - Undo and selection across containers belong to the shared document model from Phase 3.
-- The typing budget should say whether 16 ms means rendering or the screen. On a 60 Hz screen, a key that renders within one frame still reaches the screen a refresh later.
-- We revisit this if the screen measurement disagrees, if a WebView2 update changes these numbers, or if pages with many containers get slow.
+- The typing budget should say that 16 ms means rendering. Measured to the screen, no setup met it, even a short note with no ink. A screen budget would need about 25 ms at 120 Hz, which the fast setups met for 87 to 100% of keys.
+- We revisit this if a WebView2 update changes these numbers, or if pages with many containers get slow.
