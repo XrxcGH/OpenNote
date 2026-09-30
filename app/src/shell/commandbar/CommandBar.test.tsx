@@ -131,7 +131,6 @@ describe('the command bar overflow', () => {
 describe('the bottom bar', () => {
   it('shows in compact with the actions whose commands exist, and More holds the rest', async () => {
     const ran = vi.fn();
-    command('unused', 'commands.bar.search');
     stops.push(
       commands.register(
         defineCommand({ id: 'notes.newPage', title: 'commands.bar.newPage', category: 'notebooks', run: ran }),
@@ -155,7 +154,7 @@ describe('the bottom bar', () => {
       within(bar)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['New page', 'More']);
+    ).toEqual(['Search', 'New page', 'More']);
     await userEvent.click(within(bar).getByRole('button', { name: 'New page' }));
     const more = within(bar).getByRole('button', { name: 'More commands' });
     await userEvent.click(more);

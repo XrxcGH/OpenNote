@@ -134,6 +134,8 @@ export interface PaletteResult {
   detail?: string;
   keys?: readonly Chord[];
   checked?: boolean;
+  /** Shown, but not run: a command whose `enabled` is false. */
+  disabled?: boolean;
   icon?: IconName;
   score: number;
   run(): void | Promise<void>;

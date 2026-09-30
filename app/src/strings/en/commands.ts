@@ -2,6 +2,20 @@
 // Every interface string is a full sentence here, never joined from pieces (ARCHITECTURE.md section 19).
 
 export const commands = {
+  app: {
+    palette: 'Open command palette',
+    quickSwitcher: 'Go to a page',
+    shortcuts: 'Show keyboard shortcuts',
+    settings: 'Open settings',
+    settingsBack: 'Back to notes',
+  },
+  keywords: {
+    palette: 'search find run commands',
+    quickSwitcher: 'open find switch jump page search',
+    shortcuts: 'keys keyboard hotkeys cheat sheet',
+    settings: 'preferences options',
+    settingsBack: 'close settings leave',
+  },
   bar: {
     label: 'Commands',
     tabs: 'Command tabs',
