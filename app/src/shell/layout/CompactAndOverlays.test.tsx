@@ -96,10 +96,10 @@ describe('the expanded pages overlay', () => {
 describe('the compact stack', () => {
   it('shows one screen at a time, going down by choosing and up with Back and Alt+Left', async () => {
     const { container } = await renderApp({ sizeClass: 'compact' });
-    // The screen that shows is the main landmark, with its own heading, so each screen stands alone.
+    // The screen that shows is the main landmark, and the app bar's title is its heading, so each screen stands alone.
     const main = screen.getByRole('main');
     expect(within(main).getByRole('navigation', { name: 'Notebooks' })).toBeTruthy();
-    expect(within(main).getByRole('heading', { level: 1, name: 'Notebooks' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: 'Notebooks' })).toBeTruthy();
     expect(screen.queryByRole('navigation', { name: 'Pages' })).toBeNull();
     await expectNoAxeViolations(container);
 
