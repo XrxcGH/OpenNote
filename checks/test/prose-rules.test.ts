@@ -117,6 +117,11 @@ test('readability asks for acronyms to be defined once', async () => {
   assert.deepEqual(messages(found), ['3:warning:Define "NPU" on first use, e.g. "full name (NPU)".']);
 });
 
+test('readability ignores file names and long all-caps words', async () => {
+  const text = '# T\n\nSee DEVELOPMENT.md and the README file. IMPORTANTLY, nothing else.\n';
+  assert.deepEqual(messages(await run({ rule: readability, path: 'a.md', text })), []);
+});
+
 test('readability flags dense sections', async () => {
   const dense = 'Interoperability considerations necessitate comprehensive architectural documentation. ';
   const found = await run({ rule: readability, path: 'a.md', text: `# T\n\n${dense.repeat(20)}\n` });

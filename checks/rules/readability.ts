@@ -6,7 +6,8 @@ import { gradeLevel, sentences, stripQuotes, wordCount } from '../text.ts';
 import { isProseFile, loadData, reporter } from './helpers.ts';
 
 const DEFAULT_GRADE: Threshold = { warn: 12, error: 16 };
-const ACRONYM = /\b[A-Z][A-Z0-9]*[A-Z][A-Z0-9]*s?\b/g;
+// Two to seven capitals or digits (at least two capitals), not followed by a file extension such as .md.
+const ACRONYM = /\b(?=[A-Z0-9]*[A-Z][A-Z0-9]*[A-Z])[A-Z][A-Z0-9]{1,6}s?\b(?!\.[a-z])/g;
 
 let baseAllowList: string[] | undefined;
 
