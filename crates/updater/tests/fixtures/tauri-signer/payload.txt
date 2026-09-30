@@ -1,0 +1,1 @@
+OpenNote update signature format fixture.

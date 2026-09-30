@@ -2710,6 +2710,7 @@ dependencies = [
 name = "opennote-updater"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "log",
  "minisign",
  "minisign-verify",

@@ -1,6 +1,15 @@
 //! `updates\state.json`, the updater's own record (ARCHITECTURE.md section 18.6). Older versions must read files
 //! that newer ones wrote, so fields are only ever added, and unknown fields survive every write. The file is
-//! part of the upgrade contract.
+//! part of the upgrade contract. It's written atomically: a temporary file, `sync_all`, then a rename.
+//!
+//! Any program the person runs can write this folder, so nothing read from the file is trusted on its own. Paths
+//! are rebuilt from the updater's folders, and every file is hashed and verified before it's used.
+
+use std::{
+    fs,
+    io::{self, Write},
+    path::Path,
+};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -10,6 +19,38 @@ pub const FILE_NAME: &str = "state.json";
 
 /// The format version this build writes.
 pub const STATE_VERSION: u32 = 1;
+
+impl UpdaterState {
+    /// Reads `state.json` from the updates folder. A missing file is the default state. So is a damaged one,
+    /// which is logged; the next save replaces it.
+    pub fn load(updates: &Path) -> UpdaterState {
+        let path = updates.join(FILE_NAME);
+        match fs::read(&path) {
+            Ok(bytes) => serde_json::from_slice(&bytes).unwrap_or_else(|error| {
+                log::warn!("Ignored the damaged {}: {error}", path.display());
+                UpdaterState::default()
+            }),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => UpdaterState::default(),
+            Err(error) => {
+                log::warn!("Couldn't read {}: {error}", path.display());
+                UpdaterState::default()
+            }
+        }
+    }
+
+    /// Writes `state.json` atomically, creating the updates folder when needed.
+    pub fn save(&self, updates: &Path) -> io::Result<()> {
+        fs::create_dir_all(updates)?;
+        let path = updates.join(FILE_NAME);
+        let temporary = updates.join(format!("{FILE_NAME}.tmp"));
+        let json = serde_json::to_vec_pretty(self).map_err(io::Error::other)?;
+        let mut file = fs::File::create(&temporary)?;
+        file.write_all(&json)?;
+        file.sync_all()?;
+        drop(file);
+        fs::rename(&temporary, &path)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -43,7 +84,8 @@ impl Default for UpdaterState {
     }
 }
 
-/// The verified update waiting in `updates\`.
+/// The verified update waiting in `updates\`. `size` and `signature` let a later start verify it again without the
+/// manifest; a record without them never verifies, so the update downloads again.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StagedRecord {
     pub version: String,
@@ -51,8 +93,17 @@ pub struct StagedRecord {
     pub file: String,
     pub path: String,
     pub sha256: String,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub size: u64,
+    /// The manifest's base64 `.sig` text.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub signature: String,
     #[serde(flatten)]
     pub unknown: Map<String, Value>,
+}
+
+fn is_zero(value: &u64) -> bool {
+    *value == 0
 }
 
 /// A swapped-in version that hasn't had a healthy start yet, and how many starts it has had.
@@ -129,5 +180,31 @@ mod tests {
     fn an_empty_file_reads_as_the_default() {
         let state: UpdaterState = serde_json::from_str("{}").expect("parses");
         assert_eq!(state, UpdaterState::default());
+    }
+
+    #[test]
+    fn saves_and_loads_atomically_keeping_unknown_fields() {
+        let dir = tempfile::tempdir().expect("a folder");
+        let updates = dir.path().join("updates");
+        assert_eq!(UpdaterState::load(&updates), UpdaterState::default());
+        let mut newer = sample();
+        newer["fromTheFuture"] = json!(1);
+        newer["staged"]["size"] = json!(42);
+        newer["staged"]["signature"] = json!("c2ln");
+        let state: UpdaterState = serde_json::from_value(newer.clone()).expect("parses");
+        state.save(&updates).expect("saves");
+        assert_eq!(UpdaterState::load(&updates), state);
+        assert!(!updates.join("state.json.tmp").exists());
+        let written: Value = serde_json::from_slice(&fs::read(updates.join(FILE_NAME)).expect("reads")).expect("json");
+        assert_eq!(written, newer);
+    }
+
+    #[test]
+    fn a_damaged_file_loads_as_the_default() {
+        let dir = tempfile::tempdir().expect("a folder");
+        for text in ["not json", "[]", r#"{"pending": {"version": 1}}"#] {
+            fs::write(dir.path().join(FILE_NAME), text).expect("writes");
+            assert_eq!(UpdaterState::load(dir.path()), UpdaterState::default(), "{text}");
+        }
     }
 }
