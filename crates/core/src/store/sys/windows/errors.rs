@@ -81,6 +81,8 @@ fn kind_of(code: u32, op: FsOp) -> FsErrorKind {
             FsErrorKind::Blocked
         }
         ERROR_DISK_FULL | ERROR_HANDLE_DISK_FULL | ERROR_DISK_QUOTA_EXCEEDED => FsErrorKind::DiskFull,
+        // A folder isn't empty yet while a deleted file in it is still open (measurement M6).
+        ERROR_DIR_NOT_EMPTY if op == FsOp::Remove => FsErrorKind::Busy,
         ERROR_FILE_EXISTS | ERROR_ALREADY_EXISTS | ERROR_DIR_NOT_EMPTY => FsErrorKind::AlreadyExists,
         ERROR_CLOUD_FILE_PROVIDER_NOT_RUNNING
         | ERROR_CLOUD_FILE_NETWORK_UNAVAILABLE
@@ -117,6 +119,8 @@ mod tests {
             FsErrorKind::CloudPlaceholder
         );
         assert_eq!(kind(ERROR_FILE_EXISTS, FsOp::Rename), FsErrorKind::AlreadyExists);
+        assert_eq!(kind(ERROR_DIR_NOT_EMPTY, FsOp::Remove), FsErrorKind::Busy);
+        assert_eq!(kind(ERROR_DIR_NOT_EMPTY, FsOp::Rename), FsErrorKind::AlreadyExists);
         assert_eq!(kind(ERROR_NOT_SUPPORTED, FsOp::Rename), FsErrorKind::Unsupported);
         assert_eq!(kind(ERROR_FILE_NOT_FOUND, FsOp::Read), FsErrorKind::NotFound);
         assert_eq!(kind(ERROR_GEN_FAILURE, FsOp::Read), FsErrorKind::Io);
