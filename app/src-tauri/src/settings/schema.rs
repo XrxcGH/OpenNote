@@ -13,6 +13,9 @@ pub const SCHEMA_VERSION: u32 = 1;
 /// The text sizes the Appearance section offers, in percent.
 pub const TEXT_SIZES: [u16; 8] = [80, 90, 100, 110, 125, 150, 175, 200];
 
+/// The smallest and largest interface size, in percent.
+pub const UI_SCALE_RANGE: (u16, u16) = (90, 150);
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
@@ -24,6 +27,7 @@ pub struct Settings {
     pub startup: Startup,
     /// Command id to its chords, for overridden shortcuts only.
     pub shortcuts: BTreeMap<String, Vec<String>>,
+    pub keymap: Keymap,
     pub updates: Updates,
     pub setup: SetupRecord,
     pub experimental: Experimental,
@@ -38,6 +42,7 @@ impl Default for Settings {
             storage: Storage::default(),
             startup: Startup::default(),
             shortcuts: BTreeMap::new(),
+            keymap: Keymap::default(),
             updates: Updates::default(),
             setup: SetupRecord::default(),
             experimental: Experimental::default(),
@@ -46,8 +51,15 @@ impl Default for Settings {
 }
 
 impl Settings {
-    /// Checks what serde can't: that the text size is one the interface offers.
+    /// Checks what serde can't: that the text size and interface size are ones the interface offers.
     pub fn validate(&self) -> IpcResult<()> {
+        let (min, max) = UI_SCALE_RANGE;
+        if !(min..=max).contains(&self.appearance.ui_scale) {
+            return Err(IpcError::invalid(
+                "appearance.uiScale",
+                "The interface size is outside 90% to 150%.",
+            ));
+        }
         if !TEXT_SIZES.contains(&self.appearance.text_size) {
             return Err(IpcError::invalid(
                 "appearance.textSize",
@@ -63,8 +75,10 @@ impl Settings {
 pub struct Appearance {
     pub theme: ThemePreference,
     pub page_color: PageColor,
-    /// A percentage from [`TEXT_SIZES`].
+    /// Page zoom, as a percentage from [`TEXT_SIZES`].
     pub text_size: u16,
+    /// The size of sidebars, toolbars, and menus, as a percentage in [`UI_SCALE_RANGE`]. The page zoom stays.
+    pub ui_scale: u16,
     pub motion: Motion,
     pub density: Density,
 }
@@ -75,6 +89,7 @@ impl Default for Appearance {
             theme: ThemePreference::System,
             page_color: PageColor::MatchTheme,
             text_size: 100,
+            ui_scale: 100,
             motion: Motion::System,
             density: Density::Auto,
         }
@@ -138,6 +153,23 @@ impl Default for Startup {
     }
 }
 
+/// The shortcut set that the `shortcuts` overrides apply on top of.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Keymap {
+    pub preset: KeymapPreset,
+}
+
+/// OpenNote's own shortcuts, or the optional set that follows OneNote's.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum KeymapPreset {
+    #[default]
+    Default,
+    #[serde(rename = "onenote")]
+    OneNote,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Updates {
@@ -186,12 +218,25 @@ pub enum SettingsSectionKey {
     Storage,
     Startup,
     Shortcuts,
+    Keymap,
     Updates,
     Setup,
     Experimental,
 }
 
 impl SettingsSectionKey {
+    /// Every section, in the order of `settings.json`.
+    pub const ALL: [SettingsSectionKey; 8] = [
+        Self::Appearance,
+        Self::Storage,
+        Self::Startup,
+        Self::Shortcuts,
+        Self::Keymap,
+        Self::Updates,
+        Self::Setup,
+        Self::Experimental,
+    ];
+
     /// The section's key in `settings.json`.
     pub fn key(self) -> &'static str {
         match self {
@@ -199,6 +244,7 @@ impl SettingsSectionKey {
             Self::Storage => "storage",
             Self::Startup => "startup",
             Self::Shortcuts => "shortcuts",
+            Self::Keymap => "keymap",
             Self::Updates => "updates",
             Self::Setup => "setup",
             Self::Experimental => "experimental",
@@ -218,11 +264,13 @@ mod tests {
             "schemaVersion": 1,
             "minWriterSchema": 1,
             "appearance": {
-                "theme": "system", "pageColor": "matchTheme", "textSize": 100, "motion": "system", "density": "auto"
+                "theme": "system", "pageColor": "matchTheme", "textSize": 100, "uiScale": 100, "motion": "system",
+                "density": "auto"
             },
             "storage": { "notesFolder": null },
             "startup": { "openLastPage": true },
             "shortcuts": {},
+            "keymap": { "preset": "default" },
             "updates": { "install": "auto", "channel": "stable", "skippedVersion": null },
             "setup": { "completedSteps": [] },
             "experimental": { "flags": {} }
@@ -236,9 +284,10 @@ mod tests {
 
     #[test]
     fn section_keys_match_their_serialized_names() {
-        use SettingsSectionKey::*;
-        for section in [Appearance, Storage, Startup, Shortcuts, Updates, Setup, Experimental] {
+        let defaults = serde_json::to_value(Settings::default()).expect("serializes");
+        for section in SettingsSectionKey::ALL {
             assert_eq!(serde_json::to_value(section).expect("serializes"), json!(section.key()));
+            assert!(defaults.get(section.key()).is_some(), "{}", section.key());
         }
     }
 
@@ -251,6 +300,26 @@ mod tests {
         assert_eq!(
             settings.validate().map_err(|e| e.field),
             Err(Some("appearance.textSize".to_owned()))
+        );
+    }
+
+    #[test]
+    fn accepts_interface_sizes_from_90_to_150_percent() {
+        let mut settings = Settings::default();
+        for (ui_scale, valid) in [(90, true), (125, true), (150, true), (85, false), (175, false)] {
+            settings.appearance.ui_scale = ui_scale;
+            assert_eq!(settings.validate().is_ok(), valid, "{ui_scale}");
+        }
+    }
+
+    #[test]
+    fn names_the_onenote_shortcut_set() {
+        let keymap = Keymap {
+            preset: KeymapPreset::OneNote,
+        };
+        assert_eq!(
+            serde_json::to_value(keymap).expect("serializes"),
+            json!({ "preset": "onenote" })
         );
     }
 }

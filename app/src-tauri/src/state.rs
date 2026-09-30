@@ -25,6 +25,8 @@ pub struct DeviceState {
     pub expanded: Vec<String>,
     pub last_page_by_section: BTreeMap<String, String>,
     pub recent_commands: Vec<String>,
+    /// Page ids, most recent first, so the quick switcher (Ctrl+O) lists recent pages first.
+    pub recent_pages: Vec<String>,
     pub setup: DeviceSetup,
 }
 
@@ -38,6 +40,7 @@ impl Default for DeviceState {
             expanded: Vec::new(),
             last_page_by_section: BTreeMap::new(),
             recent_commands: Vec::new(),
+            recent_pages: Vec::new(),
             setup: DeviceSetup::default(),
         }
     }
@@ -162,6 +165,7 @@ mod tests {
             "expanded": [],
             "lastPageBySection": {},
             "recentCommands": [],
+            "recentPages": [],
             "setup": { "status": "notStarted", "step": null, "completedSteps": [], "draft": null }
         });
         assert_eq!(
