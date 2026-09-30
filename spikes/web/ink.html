@@ -4,6 +4,44 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spike: Ink latency</title>
+    <style>
+      /* Colors from brand/tokens.json, light theme: surface.page, surface.raised, border.subtle, text.primary. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #fffcf6;
+      }
+      .ink {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        touch-action: none;
+        cursor: crosshair;
+      }
+      .panel {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        max-width: 360px;
+        padding: 8px 12px;
+        border: 1px solid #e3dacc;
+        border-radius: 8px;
+        background: #fffdf9;
+        color: #2b2521;
+        font: 13px/1.4 system-ui, sans-serif;
+      }
+      .panel p {
+        margin: 6px 0;
+      }
+      .panel button {
+        margin-right: 6px;
+        font: inherit;
+      }
+    </style>
   </head>
   <body>
     <script type="module" src="./ink.ts"></script>
