@@ -7,8 +7,8 @@ export default defineScreens([
     id: 'workspace.sample',
     description: 'The workspace with the sample notebooks and a page open',
     prepare: async (page) => {
-      await page.getByRole('button', { name: 'Lectures' }).click();
-      await page.getByRole('button', { name: 'Mitosis' }).click();
+      await page.getByRole('treeitem', { name: 'Lectures' }).click();
+      await page.getByRole('treeitem', { name: 'Mitosis' }).click();
     },
   },
   {

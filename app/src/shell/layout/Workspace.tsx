@@ -24,7 +24,9 @@ export function Workspace(props: WorkspaceSlots) {
     <div className={styles.workspace}>
       <div className={styles.titleBar}>{props.titleBar}</div>
       {props.appBar}
-      <div className={styles.commandBar}>{props.commandBar}</div>
+      <div role="region" aria-label={t('layout.regions.commands')} className={styles.commandBar}>
+        {props.commandBar}
+      </div>
       <nav aria-label={t('layout.regions.notebooks')} className={styles.notebooks} {...notebooks}>
         {props.notebooks}
       </nav>
