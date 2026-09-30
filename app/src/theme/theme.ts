@@ -126,8 +126,15 @@ export function addThemeParticipant(participant: ThemeParticipant): () => void {
 
 const forcedColors = () => globalThis.matchMedia?.('(forced-colors: active)').matches ?? false;
 
+/** Restores the choice saved by Phase 0. With nothing saved, the boot payload's choice stays. */
 function restoreSavedPreference(): void {
-  const saved = loadPreference(storage());
+  let saved: unknown = null;
+  try {
+    saved = storage()?.getItem(STORAGE_KEY);
+  } catch {
+    // Unavailable storage means nothing was saved.
+  }
+  if (!isPreference(saved)) return;
   settingsStore.set((state) => ({
     ...state,
     settings: { ...state.settings, appearance: { ...state.settings.appearance, theme: saved } },

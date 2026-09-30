@@ -5,6 +5,7 @@ import { hasInjectedBoot, readBoot, readDevOptions } from '../boot/read';
 import { installDispatcher } from '../commands/dispatcher';
 import { configureCommands } from '../commands/registry';
 import '../features';
+import { installAppearance } from '../features/theme';
 import { createPlatform } from '../platform';
 import type { BootData, Platform } from '../platform/types';
 import { createNotesService } from '../services/notes';
@@ -32,7 +33,10 @@ export function initStores(boot: BootData, platform: Platform): void {
   initUpdater(boot, platform);
 }
 
-/** Wires the window-wide listeners: shortcuts, Escape for the layer stack, the size class, and the theme. */
+/**
+ * Wires the window-wide listeners: shortcuts, Escape for the layer stack, the size class, the theme, and the
+ * appearance controls (density and Ctrl+wheel text size).
+ */
 export function installApp(
   platform: Platform,
   notes: NotesService,
@@ -44,6 +48,7 @@ export function installApp(
     installDispatcher(),
     installLayerEscape(),
     initLayout(),
+    installAppearance(),
   ];
   return () => stops.forEach((stop) => stop());
 }
