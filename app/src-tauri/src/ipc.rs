@@ -76,6 +76,13 @@ impl From<tauri::Error> for IpcError {
     }
 }
 
+#[cfg(windows)]
+impl From<windows::core::Error> for IpcError {
+    fn from(error: windows::core::Error) -> Self {
+        Self::new(codes::INTERNAL, error.message())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;
