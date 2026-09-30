@@ -1,0 +1,24 @@
+{
+  "name": "opennote",
+  "private": true,
+  "type": "module",
+  "description": "Open-source note-taking app combining writing, drawing and recording.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "checks": "node checks/cli.ts",
+    "checks:all": "node checks/cli.ts --all",
+    "checks:fix": "node checks/cli.ts --fix",
+    "test:checks": "node --test \"checks/test/**/*.test.ts\"",
+    "setup-hooks": "git config core.hooksPath .githooks",
+    "typecheck": "tsc -p checks/tsconfig.json",
+    "format": "prettier --write \"checks/**/*.ts\"",
+    "format:check": "prettier --check \"checks/**/*.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "prettier": "^3.9.9",
+    "typescript": "^7.0.2"
+  }
+}

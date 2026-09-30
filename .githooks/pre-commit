@@ -1,0 +1,3 @@
+#!/bin/sh
+# Runs the CHECKS program on staged files. Enable with: npm run setup-hooks
+exec node checks/cli.ts --staged --quiet
