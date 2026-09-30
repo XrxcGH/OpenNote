@@ -1,5 +1,5 @@
 // Entry point: node checks/cli.ts [options] [paths...]
-// Run with --help for usage. See CHECKS.md for the rules and how to configure them.
+// Run with --help for usage. See docs/CHECKS.md for the rules and how to configure them.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

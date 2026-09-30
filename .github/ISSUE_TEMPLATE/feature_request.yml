@@ -8,8 +8,8 @@ body:
         Thanks for the idea. Before you start, check whether it is already planned in
         [FEATURES.md][features] or in the [development phases][phases].
 
-        [features]: https://github.com/XrxcGH/OpenNote/blob/main/FEATURES.md
-        [phases]: https://github.com/XrxcGH/OpenNote/blob/main/DEVELOPMENT.md#5-phases
+        [features]: https://github.com/XrxcGH/OpenNote/blob/main/docs/FEATURES.md
+        [phases]: https://github.com/XrxcGH/OpenNote/blob/main/docs/DEVELOPMENT.md#5-phases
   - type: checkboxes
     id: existing
     attributes:

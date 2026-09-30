@@ -1,5 +1,5 @@
 // The list of rules the CHECKS program runs. To add a rule, create a module in this folder that
-// exports a Rule, then add it here, and document it in CHECKS.md.
+// exports a Rule, then add it here, and document it in docs/CHECKS.md.
 
 import type { Rule } from '../types.ts';
 import { aiMarkers } from './ai-markers.ts';

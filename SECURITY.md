@@ -41,7 +41,7 @@ OpenNote is maintained by volunteers, so these times are goals rather than promi
 
 ## Scope
 
-In scope are the code in this repository, the release workflow, and the update process. That includes the update manifest and its signatures, described in [Signing and security](DEVELOPMENT.md#signing-and-security).
+In scope are the code in this repository, the release workflow, and the update process. That includes the update manifest and its signatures, described in [Signing and security](docs/DEVELOPMENT.md#signing-and-security).
 
 Out of scope are problems in Windows, Microsoft Edge WebView2, or a third-party library that aren't caused by how OpenNote uses them. Please report those to the vendor or project. Let us know too if OpenNote needs an urgent update because of one.
 

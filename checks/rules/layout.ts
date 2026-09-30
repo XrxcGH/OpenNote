@@ -78,7 +78,7 @@ function lineOf(file: SourceFile, text: string): number {
   return index === -1 ? 1 : index + 1;
 }
 
-/** Interface text in drawings follows BRAND.md: sentence case, with single-word overlines allowed. */
+/** Interface text in drawings follows docs/BRAND.md: sentence case, with single-word overlines allowed. */
 function caseFindings(file: SourceFile): Finding[] {
   const report = reporter('layout', file);
   const findings: Finding[] = [];

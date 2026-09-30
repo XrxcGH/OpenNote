@@ -6,7 +6,7 @@ use super::measure::{Outcome, Pacing, Sample};
 use super::page::PageEvent;
 use crate::common::stats;
 
-/// The budget from BRAND.md section 10, in milliseconds.
+/// The budget from docs/BRAND.md section 10, in milliseconds.
 pub const BUDGET_MS: f64 = 25.0;
 /// How many raw latencies each method keeps, as a modest sample of the distribution.
 const KEPT_LATENCIES: usize = 40;

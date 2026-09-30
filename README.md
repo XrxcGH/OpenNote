@@ -4,18 +4,18 @@
 
 An open-source note-taking application for Windows combining your favorite writing, drawing, and recording features for professional and personal applications. Windows comes first; macOS, Linux, iOS, and Android follow.
 
-OpenNote is in early development. Phase 0 (the project foundation) is complete; see [DEVELOPMENT.md](DEVELOPMENT.md) for the plan.
+OpenNote is in early development. Phase 0 (the project foundation) is complete; see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the plan.
 
 ## Documents
 
 | Document | What it covers |
 |---|---|
-| [RESEARCH.md](RESEARCH.md) | Popular and rising note apps, the features people love, and the gaps OpenNote can fill |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Step-by-step plan for the Windows prototype, with tests and release gates |
-| [BRAND.md](BRAND.md) | Colors, type, layout, motion, accessibility, and performance budgets |
+| [docs/RESEARCH.md](docs/RESEARCH.md) | Popular and rising note apps, the features people love, and the gaps OpenNote can fill |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Step-by-step plan for the Windows prototype, with tests and release gates |
+| [docs/BRAND.md](docs/BRAND.md) | Colors, type, layout, motion, accessibility, and performance budgets |
 | [Screens](docs/design/SCREENS.md) | Wireframes of each major screen, with sizes and keep-out zones |
-| [FEATURES.md](FEATURES.md) | Feature spec: Office and Google, handwriting, transcripts, study tools, and more |
-| [CHECKS.md](CHECKS.md) | The quality gate every file change must pass |
+| [docs/FEATURES.md](docs/FEATURES.md) | Feature spec: Office and Google, handwriting, transcripts, study tools, and more |
+| [docs/CHECKS.md](docs/CHECKS.md) | The quality gate every file change must pass |
 
 ## Getting started
 

@@ -1,5 +1,5 @@
 // Brand consistency in UI code. Colors, fonts, motion, and layering must come from design tokens
-// (see BRAND.md and brand/tokens.json). That way the look can change in one place later.
+// (see docs/BRAND.md and brand/tokens.json). That way the look can change in one place later.
 
 import type { Finding, Rule, SourceFile } from '../types.ts';
 import { numberSetting, stringList } from '../config.ts';
@@ -134,7 +134,8 @@ function durationFindings(file: SourceFile, raw: string, line: number, maxMs: nu
   const findings: Finding[] = [];
   for (const match of raw.matchAll(/\b(\d+(?:\.\d+)?)(ms|s)\b/g)) {
     const ms = Number(match[1]) * (match[2] === 's' ? 1000 : 1);
-    if (ms > maxMs) findings.push(report(line, `${match[0]} is slower than the ${maxMs}ms motion limit in BRAND.md.`));
+    if (ms > maxMs)
+      findings.push(report(line, `${match[0]} is slower than the ${maxMs}ms motion limit in docs/BRAND.md.`));
     else findings.push(report(line, `Raw duration ${match[0]}. Use a motion token.`, 'warning'));
   }
   return findings;

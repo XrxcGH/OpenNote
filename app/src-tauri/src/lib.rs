@@ -18,7 +18,7 @@ fn app_version() -> &'static str {
 pub fn run() {
     tauri::Builder::default()
         // The main window starts hidden and appears once the themed page has loaded, so start-up doesn't
-        // show WebView2's default white background (BRAND.md section 4). Showing a visible window does nothing.
+        // show WebView2's default white background (docs/BRAND.md section 4). Showing a visible window does nothing.
         .on_page_load(|webview, payload| {
             let window = webview.window();
             if payload.event() == PageLoadEvent::Finished && window.label() == "main" {

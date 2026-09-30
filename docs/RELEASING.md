@@ -1,6 +1,6 @@
 # Releasing OpenNote
 
-This guide is for maintainers. It covers the one-time setup, version numbers, cutting a release, checking it, and undoing a bad one. The reasons behind this process are in [section 9 of the development plan](../DEVELOPMENT.md#9-distribution-and-updates). A build ships to beta or stable only after it passes the [release checklist](../DEVELOPMENT.md#10-release-checklist).
+This guide is for maintainers. It covers the one-time setup, version numbers, cutting a release, checking it, and undoing a bad one. The reasons behind this process are in [section 9 of the development plan](DEVELOPMENT.md#9-distribution-and-updates). A build ships to beta or stable only after it passes the [release checklist](DEVELOPMENT.md#10-release-checklist).
 
 ## Contents
 
@@ -96,7 +96,7 @@ The release workflow prevents this with [check-version.ts](../app/scripts/check-
 
 ## Cutting a release
 
-1. Check the [release checklist](../DEVELOPMENT.md#10-release-checklist). Every item must pass for a beta or stable release. Until the beta channel opens in Phase 13, releases are test builds, and some items, such as code signing, can't pass yet.
+1. Check the [release checklist](DEVELOPMENT.md#10-release-checklist). Every item must pass for a beta or stable release. Until the beta channel opens in Phase 13, releases are test builds, and some items, such as code signing, can't pass yet.
 2. Bump the version on your branch, such as `phase-2`. Open a pull request to `main`. Merge it with a merge commit once CI passes and a reviewer approves.
 3. Tag the merge commit on `main`, and push only that tag:
 
@@ -253,4 +253,4 @@ A bad beta is already a prerelease, and stable copies never see it. Publish the 
 
 Never move the tag of a published release, and never publish a rebuilt exe under the same version. Copies that installed the bad build would never be offered the fix, because the version number didn't change.
 
-Once the updater from [section 9](../DEVELOPMENT.md#9-distribution-and-updates) ships, people can also go back to the previous version from Settings. The app does this by itself if a new version crashes twice in a row at start-up.
+Once the updater from [section 9](DEVELOPMENT.md#9-distribution-and-updates) ships, people can also go back to the previous version from Settings. The app does this by itself if a new version crashes twice in a row at start-up.
