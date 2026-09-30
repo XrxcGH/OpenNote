@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sa43ng000000000000rmsv",
+  "title": "Light reactions",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:07:40.412Z",
+  "view": {
+    "layout": "flow"
+  },
+  "blocks": [
+    {
+      "id": "01m3sa7e3r000000000001jzqy",
+      "type": "text",
+      "order": "a0",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "markdown": "The light reactions take place in the [thylakoid](opennote:page/01m3sa42p8000000000000rd2c) membranes. See also [the textbook](https://example.org/biology).\n\n1. Light excites chlorophyll.\n2. Water is split."
+      }
+    }
+  ],
+  "revision": {
+    "id": "01m3saa6zg0000000000028zfk",
+    "parents": [],
+    "ancestors": [],
+    "savedAt": "2026-09-30T14:07:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.4.0 (windows)"
+  }
+}

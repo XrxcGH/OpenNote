@@ -1,0 +1,12 @@
+{
+  "description": "Segment version 2, from a newer writer.",
+  "error": "newerVersion",
+  "expect": {
+    "bytes": 624,
+    "crc32": "fc79f7a2",
+    "id": "01m3sawfy8000000000006sqsc",
+    "records": 6
+  },
+  "file": "newer-version.onk",
+  "page": "01m3sa12426sg32pmtyffjaqcf"
+}
