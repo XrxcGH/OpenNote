@@ -27,6 +27,16 @@ test('hygiene flags secrets without flagging itself', async () => {
   assert.match(found[0].message, /secret/);
 });
 
+test('hygiene flags a Tauri updater private key', async () => {
+  const headers = ['rsign', 'minisign'].map((tool) => `untrusted comment: ${tool} ` + 'encrypted secret key');
+  for (const text of headers.flatMap((h) => [h, Buffer.from(h).toString('base64')])) {
+    const found = await run({ rule: hygiene, path: 'a.env', text: `KEY=${text}\n` });
+    assert.match(found[0].message, /secret/);
+  }
+  const publicKey = Buffer.from('untrusted comment: minisign public key').toString('base64');
+  assert.equal((await run({ rule: hygiene, path: 'a.json', text: `"${publicKey}"\n` })).length, 0);
+});
+
 test('comment scanner separates comments, strings and regex literals', () => {
   const lines = [
     "const url = 'http://x'; // real comment",
