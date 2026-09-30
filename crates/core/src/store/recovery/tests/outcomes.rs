@@ -93,6 +93,31 @@ fn a_crash_after_the_replace_replays_only_later_records() {
 }
 
 #[test]
+fn a_power_cut_that_loses_an_unflushed_rename_replays_from_either_revision() {
+    for lost in [false, true] {
+        let mut sim = Sim::new(fast());
+        sim.fs.set_confirmed(false);
+        let path = NotebookLayout::page_json(&page_dir());
+        let old = sim.fs.read(&path, u64::MAX).unwrap();
+        sim.retitle("One");
+        assert_eq!(sim.save().durability, Durability::Unconfirmed);
+        sim.draw(1);
+        sim.flush();
+        let (fs, codec, oracle) = sim.crash(MemCrash::PowerCut);
+        if lost {
+            fs.put(&path, &old);
+        }
+        let txns = if lost { 2 } else { 1 };
+        assert_eq!(
+            recover(&fs, &codec, Some(page_dir())),
+            RecoveryOutcome::Replayed { txns, strokes: 0 },
+            "lost: {lost}"
+        );
+        assert_eq!(step_of(&oracle, &on_disk(&fs, &codec, &page_dir()), 0), Some(2));
+    }
+}
+
+#[test]
 fn a_crash_after_a_save_with_nothing_later_keeps_or_deletes_by_boot() {
     let mut sim = Sim::new(fast());
     sim.retitle("One");
