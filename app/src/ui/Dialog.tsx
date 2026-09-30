@@ -81,8 +81,9 @@ function useModal(
       playExit(layer);
       restoreInert();
       if (!hadFocus) return;
-      const back = canFocus(opener) ? opener : latest.current.returnFocus?.();
-      back?.focus();
+      // A caller that knows better, such as the drawer after a choice, goes first. The opener is the default.
+      const preferred = latest.current.returnFocus?.();
+      (canFocus(preferred) ? preferred : canFocus(opener) ? opener : null)?.focus();
     };
   }, [layerRef, dialogRef]);
 }

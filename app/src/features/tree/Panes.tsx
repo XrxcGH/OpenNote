@@ -78,12 +78,14 @@ export function PagesPane() {
   const rows = usePageRows(sectionId);
   const status = useStore(treeStore, (state) => state.status);
   const loaded = useStore(treeStore, (state) => sectionId !== null && sectionId in state.children);
+  // A section opened from a link or a search result may reach the store after the location does.
+  const known = useStore(treeStore, (state) => sectionId !== null && sectionId in state.nodes);
   const openMenu = useOpenMenu();
   const selectedId = useSelected('pages');
   const rowHeight = useRowHeight('pages');
   useEffect(() => {
-    if (sectionId && status === 'ready') void ensureChildren(sectionId);
-  }, [sectionId, status]);
+    if (sectionId && known && status === 'ready') void ensureChildren(sectionId);
+  }, [sectionId, known, status]);
   if (!sectionId) {
     return (
       <div className={styles.pane}>

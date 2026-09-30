@@ -25,14 +25,16 @@ const REGIONS: readonly RegionId[] = ['titleBar', 'commandBar', 'notebooks', 'pa
 
 /**
  * Notes where focus is now. The returned function puts it back once Settings is gone and the window it replaced is
- * back on screen. It does nothing if focus already went somewhere on purpose.
+ * back on screen. It does nothing if focus already went somewhere outside the window's regions, such as a dialog.
  */
 export function rememberOpener(): () => void {
   const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const region = opener?.closest('[data-region]')?.getAttribute('data-region') as RegionId | undefined;
   return () => {
     const restore = () => {
-      if (document.activeElement && document.activeElement !== document.body) return;
+      // The workspace's own start-up focus may have landed in a region already; the opener beats that.
+      const now = document.activeElement;
+      if (now && now !== document.body && !now.closest('[data-region]')) return;
       if (opener?.isConnected && opener !== document.body) return opener.focus();
       const order =
         region && REGIONS.includes(region) ? [region, 'notebooks', 'page'] : (['notebooks', 'page'] as const);

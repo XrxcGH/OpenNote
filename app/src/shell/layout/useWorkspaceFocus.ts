@@ -20,19 +20,26 @@ function focusStart(): boolean {
   return focusRegion('pages', 'main') || focusRegion('notebooks', 'main');
 }
 
-/** Places focus at start-up, trying again as the panes fill in, until it lands or the person moves it. */
+/** Places focus at start-up, trying again as the panes fill in, until it lands or the person takes over. */
 function useStartupFocus() {
   useEffect(() => {
     if (focusStart()) return;
-    const observer = new MutationObserver(() => {
-      if (focusStart()) observer.disconnect();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    const timer = setTimeout(() => observer.disconnect(), STARTUP_WAIT_MS);
-    return () => {
+    const stop = () => {
       observer.disconnect();
       clearTimeout(timer);
+      window.removeEventListener('keydown', stop, true);
+      window.removeEventListener('pointerdown', stop, true);
     };
+    const observer = new MutationObserver(() => {
+      if (focusStart()) stop();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    const timer = setTimeout(stop, STARTUP_WAIT_MS);
+    // A key or a click means the person is steering, so the rows they move through may lose focus for a moment
+    // without start-up placing it back at the top.
+    window.addEventListener('keydown', stop, true);
+    window.addEventListener('pointerdown', stop, true);
+    return stop;
   }, []);
 }
 

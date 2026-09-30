@@ -94,8 +94,10 @@ export function themeAnnouncement(
   if (before === 'system' && choice !== 'system' && (source === 'toggle' || source === 'shortcut')) {
     return t(ANNOUNCEMENTS.leftWindows[theme]);
   }
+  // The toggle says its own change through aria-checked. A choice from its menu is new to the listener, and the
+  // menu has already given focus back to the toggle by the time the choice runs, so it is always announced.
   const onToggle = document.activeElement?.closest(`[${TOGGLE_ATTRIBUTE}]`) != null;
-  if (source === 'toggle' || onToggle) return null;
+  if (source === 'toggle' || (onToggle && source !== 'menu')) return null;
   return t(ANNOUNCEMENTS[choice === 'system' ? 'following' : 'changed'][theme]);
 }
 

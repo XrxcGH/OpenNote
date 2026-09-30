@@ -118,11 +118,13 @@ export function regionFocusTarget(id: RegionId, target: 'remembered' | 'main'): 
   const region = elements.get(id);
   if (!region || !isShown(region)) return null;
   const last = remembered.get(id);
+  // A tree that is still loading its rows has no row to focus yet. Wait for one, instead of taking a footer button.
+  const loading = region.querySelector('[aria-busy="true"]') !== null;
   const candidates = [
     target === 'remembered' && region.contains(last ?? null) ? last : null,
     mains.get(id)?.() ?? null,
     currentItem(region),
-    firstTabbable(region),
+    loading ? null : firstTabbable(region),
     // A region with nothing to Tab to, such as a page placeholder, can still take focus itself.
     region.getAttribute('tabindex') === '-1' ? region : null,
   ];

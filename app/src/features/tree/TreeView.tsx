@@ -16,7 +16,7 @@ import type { TreeKeyAction } from './keys';
 import { openRow, setOpen } from './navigation';
 import type { Row } from './rows';
 import { select } from './selection';
-import { rowKey, setFocus, treeStore } from './store';
+import { requestFocus, rowKey, setFocus, treeStore } from './store';
 import type { TreeId, TreeState } from './store';
 import styles from './Tree.module.css';
 import { TreeRow } from './TreeRow';
@@ -50,11 +50,16 @@ function follow(row: Row): void {
 
 function applyKey(tree: TreeId, action: TreeKeyAction, rows: readonly Row[]): void {
   switch (action.type) {
-    case 'focus':
-      setFocus(tree, rows[action.index].id);
+    case 'focus': {
+      const { id } = rows[action.index];
       follow(rows[action.index]);
-      focusRowElement(tree, rows[action.index].id);
+      // A windowed tree hasn't drawn a row far from the view, such as the last one for End. Ask for focus once it does.
+      if (rowElement(tree, id)) {
+        setFocus(tree, id);
+        focusRowElement(tree, id);
+      } else requestFocus(tree, id);
       return;
+    }
     case 'expand':
     case 'collapse':
       setOpen(tree, [rows[action.index].id], action.type === 'expand');
