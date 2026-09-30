@@ -15,6 +15,9 @@ export default defineConfig((env) =>
           test: {
             name: 'unit',
             environment: 'node',
+            // Worker threads start inside the test process. Forked workers are new processes, and under heavy
+            // load on Windows they can miss Vitest's fixed 60-second start timeout.
+            pool: 'threads',
             include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
           },
         },
