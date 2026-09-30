@@ -9,6 +9,8 @@ import { isSuppressed, readSuppressions } from './suppress.ts';
 export interface RunOptions {
   config: Config;
   rules: Rule[];
+  /** Every rule ID, so a suppression naming a rule left out by --rules isn't reported as unknown. */
+  knownRules?: string[];
   repoRoot: string;
   markdownFiles: () => string[];
   /** Overrides disk access, mainly for tests. */
@@ -16,7 +18,7 @@ export interface RunOptions {
 }
 
 export async function checkFile(file: SourceFile, options: RunOptions): Promise<Finding[]> {
-  const known = new Set([...options.rules.map((r) => r.id), 'suppression']);
+  const known = new Set([...(options.knownRules ?? options.rules.map((r) => r.id)), 'suppression']);
   const suppressions = readSuppressions(file, known);
   const findings: Finding[] = [...suppressions.problems];
   for (const rule of options.rules) {

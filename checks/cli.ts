@@ -89,6 +89,7 @@ async function run(args: Args): Promise<number> {
   const options = {
     config,
     rules: selectRules(args.rules),
+    knownRules: RULES.map((r) => r.id),
     repoRoot: root,
     markdownFiles: () => (markdown ??= repoMarkdown(root)),
   };

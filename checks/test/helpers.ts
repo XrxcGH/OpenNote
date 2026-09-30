@@ -11,6 +11,7 @@ export interface RunInput {
   text: string;
   settings?: RuleSettings;
   files?: Record<string, string>;
+  knownRules?: string[];
 }
 
 export async function run(input: RunInput): Promise<Finding[]> {
@@ -19,6 +20,7 @@ export async function run(input: RunInput): Promise<Finding[]> {
   return checkFile(createSourceFile(input.path, input.text), {
     config,
     rules: [input.rule],
+    knownRules: input.knownRules,
     repoRoot: '/nonexistent',
     markdownFiles: () => Object.keys(files).filter((p) => p.endsWith('.md')),
     readFile: (p) => files[p],
