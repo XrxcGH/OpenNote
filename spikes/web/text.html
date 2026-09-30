@@ -4,8 +4,129 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spike: Text on a freeform page</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #fffcf6;
+        --raised: #fffdf9;
+        --text: #2b2521;
+        --muted: #6b6054;
+        --border: #e3dacc;
+        --focus: #a9502f;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: clip;
+        background: var(--page);
+        color: var(--text);
+        font-family: 'Atkinson Hyperlegible Next Variable', 'Segoe UI Variable', sans-serif;
+      }
+      /* Fixed and clipped, so focusing or typing can never scroll the page: only the camera moves. */
+      #viewport {
+        position: fixed;
+        inset: 0;
+        overflow: clip;
+        touch-action: none;
+      }
+      #ink-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      #world {
+        position: absolute;
+        left: 0;
+        top: 0;
+        transform-origin: 0 0;
+      }
+      #world.layer {
+        will-change: transform;
+      }
+      .ink-svg {
+        position: absolute;
+        left: 0;
+        top: 0;
+        overflow: visible;
+        pointer-events: none;
+      }
+      .ink-tiles {
+        position: absolute;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+      }
+      .ink-tile,
+      .ink-overview {
+        position: absolute;
+      }
+      .note {
+        position: absolute;
+        box-sizing: border-box;
+        padding: 6px 12px;
+      }
+      /* The focus ring from BRAND.md: 2 pixels, with a 2-pixel gap. */
+      .ProseMirror:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+      }
+      .ProseMirror {
+        font-size: 16px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+      }
+      .hide-caret .ProseMirror {
+        caret-color: transparent;
+      }
+      .ProseMirror h1 {
+        font-size: 28px;
+        margin: 0 0 12px;
+      }
+      .ProseMirror h2 {
+        font-size: 22px;
+        margin: 24px 0 8px;
+      }
+      .ProseMirror h3 {
+        font-size: 18px;
+        margin: 4px 0 6px;
+      }
+      .ProseMirror p {
+        margin: 0 0 10px;
+      }
+      #panel {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 10;
+        max-width: 440px;
+        padding: 10px 14px;
+        background: var(--raised);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      #panel pre {
+        margin: 0 0 8px;
+        font: inherit;
+        white-space: pre-wrap;
+      }
+      #panel .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      #panel p {
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+    </style>
   </head>
   <body>
+    <div id="viewport"><div id="world"></div></div>
     <script type="module" src="./text.ts"></script>
   </body>
 </html>
