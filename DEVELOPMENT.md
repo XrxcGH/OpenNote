@@ -90,7 +90,7 @@ Build:
 - Scaffold the Tauri app with an empty window that uses the brand tokens.
 - Add linting and formatting: ESLint and Prettier for TypeScript, Clippy, and rustfmt for Rust.
 - Set up continuous integration (CI) on `windows-latest`: CHECKS, lint, type-check, tests, and a debug build.
-- Add the release workflow from [section 9](#9-distribution-and-updates): pushing a version tag builds `OpenNote.exe` and publishes a GitHub Release. Create the update signing key and store it as a GitHub secret.
+- Add the release workflow from [section 9](#9-distribution-and-updates): pushing a version tag builds the Windows exes and publishes a GitHub Release. Create the update signing key and store it as a GitHub secret.
 - Add issue and pull request templates, the ADR template, and a code of conduct. Choose the license (see [Risks](#13-risks)).
 
 Done when: a fresh clone builds and opens a window with one command on Windows, and CI passes.
@@ -278,7 +278,7 @@ Done when: a four-week public beta shows at least 99.5% of sessions ending witho
 
 ### Phase 14: Windows release
 
-Complete the [release checklist](#10-release-checklist), then tag version 1.0.0. The release workflow signs `OpenNote.exe` and publishes it on GitHub, and every beta copy updates itself to it.
+Complete the [release checklist](#10-release-checklist), then tag version 1.0.0. The release workflow signs the Windows exes and publishes them on GitHub, and every beta copy updates itself to the new version.
 
 ### After the Windows release
 
@@ -348,7 +348,7 @@ Versions follow semantic versioning (major.minor.patch). Every release has chang
 
 ## 9. Distribution and updates
 
-OpenNote ships as one file, `OpenNote.exe`. People download it once. After that, the app updates itself from inside, and updates never touch their notes or settings.
+OpenNote ships as one exe per Windows architecture: `OpenNote_Windows64.exe` for 64-bit PCs, `OpenNote_Windows32.exe` for 32-bit PCs, and `OpenNote_WindowsARM64.exe` for 64-bit Arm (ARM64) PCs. People download the one for their PC once. After that, the app updates itself from inside, and updates never touch their notes or settings. Later macOS and Linux builds will follow the same pattern, as `OpenNote_macOS.dmg` and `OpenNote_Linux.AppImage`.
 
 ### What the exe holds
 
@@ -372,9 +372,9 @@ On first launch, the app asks where to keep itself. It can stay where it was dow
 
 1. Developers merge tested changes into `main` on GitHub.
 2. To release, a maintainer updates the version number and pushes a tag such as `v0.4.0`.
-3. A GitHub Actions workflow runs the same checks and tests as CI on the tagged commit, builds `OpenNote.exe` on Windows, and signs it (see [Signing](#signing-and-security)). It stops if the tag doesn't match the app's version, and it never publishes an unsigned release.
-4. The workflow publishes a GitHub Release with the exe and a small manifest file, `latest.json`. The manifest lists the version, release notes, file size, SHA-256 hash, and signature.
-5. Running copies of OpenNote read the manifest and update themselves.
+3. A GitHub Actions workflow runs the same checks and tests as CI on the tagged commit, builds the three exes on Windows, and signs each one (see [Signing](#signing-and-security)). It stops if the tag doesn't match the app's version, and it never publishes an unsigned release.
+4. The workflow publishes a GitHub Release with the exes and a small manifest file, `latest.json`. The manifest lists the version and release notes. For each architecture, it lists the exe's download link, file size, SHA-256 hash, and signature.
+5. Running copies of OpenNote read the manifest, pick the exe for their own architecture, and update themselves.
 
 Nobody builds or uploads anything by hand. The exe already on someone's computer keeps working, unchanged, until they restart into the new version.
 
@@ -382,8 +382,8 @@ GitHub Releases hosts the files for free. The address `https://github.com/xrxcgh
 
 ### How the app updates itself
 
-1. At start-up and every six hours, the app fetches the manifest, which is under 1 KB. The check runs in the background, so it never slows start-up, and it is skipped while offline.
-2. If a newer version exists, the app downloads the new exe at low priority to `%LOCALAPPDATA%\OpenNote\updates\`.
+1. At start-up and every six hours, the app fetches the manifest, which is only a few kilobytes. The check runs in the background, so it never slows start-up, and it is skipped while offline.
+2. If a newer version exists, the app downloads the new exe for its own architecture at low priority to `%LOCALAPPDATA%\OpenNote\updates\`.
 3. It checks the file's SHA-256 hash, and its signature against a public key built into the app. The signature also covers the version number, which must match the manifest. A file that fails any check is deleted, and the next check tries again.
 4. A quiet "Update ready" notice appears in the title bar. Choosing "Restart to update", or simply closing the app, applies it.
 5. Before the swap, the app finishes saving and waits for any recording to stop. If the new version will convert files or settings, it backs them up first.
@@ -424,7 +424,7 @@ A build ships to beta or stable only when every item is checked:
 - [ ] Manual pen testing passes on at least two devices from the matrix.
 - [ ] Upgrading from the previous release keeps all notes and settings (tested with real notebooks).
 - [ ] File format changes include a tested migration and an updated specification.
-- [ ] `OpenNote.exe` is code-signed, and the update signature covers the version in the manifest.
+- [ ] Every release exe is code-signed, and each update signature covers the version in the manifest.
 - [ ] Updating from each of the last three versions keeps every note and setting, and going back to the previous version works.
 - [ ] Changelog and documentation are updated.
 

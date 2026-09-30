@@ -3,7 +3,7 @@ members = ["app/src-tauri", "spikes/harness"]
 resolver = "2"
 
 [profile.release]
-# A smaller, faster single OpenNote.exe.
+# A smaller, faster single-file exe for each release target.
 codegen-units = 1
 lto = true
 opt-level = "s"
