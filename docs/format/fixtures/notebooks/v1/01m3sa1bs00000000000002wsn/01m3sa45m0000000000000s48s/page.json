@@ -1,0 +1,190 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sa45m0000000000000s48s",
+  "title": "Cell structure",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:07:40.412Z",
+  "view": {
+    "layout": "flow"
+  },
+  "blocks": [
+    {
+      "id": "01m3sa81mr000000000001qtda",
+      "type": "text",
+      "order": "a0",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "markdown": "Cells have a membrane, a nucleus, and organelles. Compare [light reactions](opennote:page/01m3sa43ng000000000000rmsv).\n\n![Leaf, small](asset:01m3sapcm80000000000059d3m)"
+      }
+    },
+    {
+      "id": "01m3sa82m0000000000001r24s",
+      "type": "image",
+      "order": "a1",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "asset": "01m3sapcm80000000000059d3m",
+        "alt": "Cross-section of a leaf",
+        "crop": {
+          "x": 0.1,
+          "y": 0,
+          "w": 0.8,
+          "h": 1
+        }
+      }
+    },
+    {
+      "id": "01m3sa84jg000000000001rhkq",
+      "type": "file",
+      "order": "a3",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "asset": "01m3sapdkg0000000000059mv3",
+        "display": "preview",
+        "alt": "The handout for the lab"
+      }
+    },
+    {
+      "id": "01m3sa85hr000000000001rsb6",
+      "type": "table",
+      "order": "a4",
+      "lock": "position",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "header": true,
+        "columns": [
+          {
+            "id": "01m3sase980000000000061jeg",
+            "width": 200
+          },
+          {
+            "id": "01m3sasf8g0000000000061t5z"
+          }
+        ],
+        "rows": [
+          {
+            "id": "01m3sasr1r0000000000063zs6",
+            "cells": {
+              "01m3sase980000000000061jeg": {
+                "markdown": "Organelle"
+              },
+              "01m3sasf8g0000000000061t5z": {
+                "markdown": "Role"
+              }
+            }
+          },
+          {
+            "id": "01m3sass1000000000000647gn",
+            "cells": {
+              "01m3sase980000000000061jeg": {
+                "markdown": "Mitochondria"
+              },
+              "01m3sasf8g0000000000061t5z": {
+                "markdown": "Makes energy\\\nfor the cell"
+              }
+            }
+          },
+          {
+            "id": "01m3sast080000000000064f84",
+            "cells": {
+              "01m3sase980000000000061jeg": {
+                "markdown": "Nucleus \\| core"
+              },
+              "01m3sasf8g0000000000061t5z": {
+                "markdown": "Holds the **DNA**"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "01m3sa86h0000000000001s12n",
+      "type": "ink",
+      "order": "a5",
+      "frame": {
+        "w": 400,
+        "h": 200
+      },
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "role": "drawing",
+        "strokeCount": 2,
+        "alt": "Sketch of a plant cell"
+      }
+    },
+    {
+      "id": "01m3sa87g8000000000001s8t4",
+      "type": "ext:org.example/kanban",
+      "order": "a6",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "cards": 7,
+        "columns": ["To do", "Done"]
+      },
+      "fallback": {
+        "markdown": "**Kanban board**: 2 columns, 7 cards"
+      }
+    },
+    {
+      "id": "01m3sa88fg000000000001sghk",
+      "type": "ext:org.example/kanban",
+      "order": "a7",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "cards": 7,
+        "columns": ["To do", "Done"]
+      }
+    }
+  ],
+  "assets": {
+    "01m3sapcm80000000000059d3m": {
+      "file": "01m3sapcm80000000000059d3m-leaf-section.png",
+      "mime": "image/png",
+      "bytes": 67,
+      "sha256": "ebf4f635a17d10d6eb46ba680b70142419aa3220f228001a036d311a22ee9d2a",
+      "name": "Leaf section.png",
+      "width": 1,
+      "height": 1,
+      "created": "2026-09-30T14:05:02.305Z"
+    },
+    "01m3sapdkg0000000000059mv3": {
+      "file": "01m3sapdkg0000000000059mv3-lab-handout.pdf",
+      "mime": "application/pdf",
+      "bytes": 27,
+      "sha256": "97c962dc2043842c8d21bc8cb20332f509fcc8b6eb08217b824358bde37c7ec8",
+      "name": "Lab handout.pdf",
+      "created": "2026-09-30T14:05:02.305Z"
+    }
+  },
+  "ink": {
+    "segments": [
+      {
+        "id": "01m3sagk2r000000000003vfrj",
+        "bytes": 724,
+        "records": 2,
+        "crc32": "4ea7234c"
+      }
+    ]
+  },
+  "revision": {
+    "id": "01m3saa8y00000000000029eyh",
+    "parents": [],
+    "ancestors": [],
+    "savedAt": "2026-09-30T14:07:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.4.0 (windows)"
+  }
+}

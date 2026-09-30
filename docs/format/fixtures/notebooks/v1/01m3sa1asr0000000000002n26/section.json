@@ -1,0 +1,35 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.section",
+  "id": "01m3sa1asr0000000000002n26",
+  "title": "Lab reports",
+  "color": "indigo",
+  "group": "01m3sa1nhg0000000000005a4b",
+  "order": "a0",
+  "created": "2026-09-30T14:00:12.500Z",
+  "changed": "2026-09-30T14:20:05.300Z",
+  "pages": [
+    {
+      "id": "01m3sa42p8000000000000rd2c",
+      "title": "Photosynthesis",
+      "order": "a0",
+      "pinned": true,
+      "changed": "2026-09-30T14:20:05.300Z"
+    },
+    {
+      "id": "01m3sa43ng000000000000rmsv",
+      "title": "Light reactions",
+      "parent": "01m3sa42p8000000000000rd2c",
+      "order": "a0",
+      "changed": "2026-09-30T14:20:05.300Z"
+    },
+    {
+      "id": "01m3sa44mr000000000000rwha",
+      "title": "Calvin cycle #3 [draft]",
+      "parent": "01m3sa43ng000000000000rmsv",
+      "order": "a0",
+      "changed": "2026-09-30T14:20:05.300Z"
+    }
+  ]
+}
