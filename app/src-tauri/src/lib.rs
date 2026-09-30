@@ -1,12 +1,20 @@
 //! The OpenNote desktop shell: creates the window and exposes commands to the interface.
 
+pub mod args;
+pub mod early;
 pub mod events;
+pub mod instance;
 pub mod ipc;
+pub mod paths;
 pub mod theme_tokens;
+pub mod updater;
+pub mod window;
 
 use std::{thread, time::Duration};
 
 use tauri::{webview::PageLoadEvent, Manager};
+
+use early::EarlyContext;
 
 /// How long start-up waits for the page before showing the main window anyway.
 const SHOW_FALLBACK_DELAY: Duration = Duration::from_secs(3);
@@ -17,9 +25,10 @@ fn app_version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
-/// Starts the app. Shared by the desktop binary and, later, the mobile entry points.
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+/// Starts the app with what the early steps in `early.rs` found. Doesn't return.
+pub fn run(context: EarlyContext) {
+    // The instance guard holds the profile's lock, so it stays alive until the process exits.
+    let _instance = context.instance;
     tauri::Builder::default()
         // The main window starts hidden and appears once the themed page has loaded, so start-up doesn't
         // show WebView2's default white background (BRAND.md section 4). Showing a visible window does nothing.
