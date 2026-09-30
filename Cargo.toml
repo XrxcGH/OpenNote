@@ -1,5 +1,5 @@
 [workspace]
-members = ["app/src-tauri", "crates/core", "tests/crash", "tests/perf/core"]
+members = ["app/src-tauri", "crates/core", "spikes/harness", "tests/crash", "tests/perf/core"]
 # The fuzz crate needs a nightly toolchain, so it stays out of the workspace.
 exclude = ["crates/core/fuzz"]
 resolver = "2"
@@ -11,3 +11,11 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+# The Phase 1 spikes: optimized, but without the slow link-time optimization of a release build.
+[profile.spikes]
+inherits = "release"
+codegen-units = 16
+lto = false
+panic = "unwind"
+strip = false
