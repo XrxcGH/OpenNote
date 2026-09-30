@@ -5,6 +5,7 @@ pub mod budget;
 pub mod core;
 pub mod events;
 pub mod journal_thread;
+pub mod library;
 pub mod maintenance;
 pub mod notebook;
 pub mod page;
