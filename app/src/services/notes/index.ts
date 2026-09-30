@@ -33,23 +33,31 @@ export function pathOf(location: ReturnType<typeof getLocation>): NodeId[] {
   return [location.notebookId, location.sectionId, location.pageId].filter((id): id is NodeId => id !== null);
 }
 
-/** Starts the first loadInitial for a service, or returns the one already started. */
+/**
+ * The first loadInitial for a service, which createNotesService starts before React renders, so the tree and the
+ * last page arrive in one call. The tree takes it once. Anything the service changed meanwhile, such as the
+ * notebook that first-run setup makes, drops it, and the tree then asks the service again.
+ */
 export function initialTree(
   notes: NotesService,
   path: readonly NodeId[] = pathOf(getLocation()),
 ): Promise<InitialTree> {
-  let load = initialLoads.get(notes);
-  if (!load) {
-    load = notes.loadInitial(path);
-    initialLoads.set(notes, load);
-  }
-  return load;
+  const early = initialLoads.get(notes);
+  if (!early) return notes.loadInitial(path);
+  initialLoads.delete(notes);
+  return early;
 }
 
 export async function createNotesService(platform: Platform): Promise<NotesService> {
   const snapshot = isEnabled('notes.memorySnapshot') ? (platform.notesSnapshot ?? undefined) : undefined;
   const service = createMemoryNotesService({ seed: await seedFrom(platform), snapshot });
-  void initialTree(service).catch(() => {});
+  const early = service.loadInitial(pathOf(getLocation()));
+  initialLoads.set(service, early);
+  early.catch(() => initialLoads.delete(service));
+  const stop = service.watch(() => {
+    initialLoads.delete(service);
+    stop();
+  });
   current = service;
   return service;
 }
