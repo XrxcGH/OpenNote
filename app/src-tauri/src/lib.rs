@@ -25,8 +25,10 @@ pub mod zoom;
 
 use tauri::{ipc::Invoke, Manager};
 
+use boot::Startup;
 use early::EarlyContext;
 use instance::InstanceGuard;
+use lifecycle::ExitState;
 use settings::SettingsStore;
 use state::DeviceStateStore;
 
@@ -42,19 +44,40 @@ pub fn run(context: EarlyContext) {
         paths,
         instance,
         guard,
+        webview2_version,
     } = context;
-    let settings = SettingsStore::load(&paths);
-    let (state, _state_notice) = DeviceStateStore::load(&paths);
+    install::set_app_user_model_id();
+    let loaded = SettingsStore::load(&paths);
+    let (state, state_notice) = DeviceStateStore::load(&paths);
+    perf::mark("settingsLoaded", None);
+    let launch = boot::Launch { args, guard };
+    if let Some(old) = launch.args.moved_from.clone() {
+        install::delete_moved_from(old);
+    }
+    let settings = loaded.store.get();
+    let mut notices = loaded.notices;
+    notices.extend(state_notice);
+    notices.extend(launch.notices(env!("CARGO_PKG_VERSION")));
+    let startup = Startup {
+        first_run: loaded.first_run,
+        settings_read_only: loaded.store.read_only(),
+        notices,
+        webview2_version,
+        process_start_epoch_ms: boot::process_start_epoch_ms(),
+        updater: updater::initial_status(&paths, &settings),
+        flag_overrides: boot::flag_overrides(&std::env::var("OPENNOTE_FLAGS").unwrap_or_default()),
+    };
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
     let app = tauri::Builder::default()
-        .manage(settings.store)
+        .manage(loaded.store)
         .manage(state)
         .manage(hooks)
-        .manage(boot::Launch { args, guard })
+        .manage(startup)
+        .manage(launch)
         .manage(paths)
+        .manage(ExitState::default())
         // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
         .manage(instance)
-        .on_page_load(window::show_when_loaded)
         .setup(|app| {
             let handle = app.handle().clone();
             app.state::<InstanceGuard>()

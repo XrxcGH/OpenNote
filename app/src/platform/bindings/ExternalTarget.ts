@@ -3,4 +3,4 @@
 /**
  * Something to open, matching the interface's `ExternalTarget`.
  */
-export type ExternalTarget = { "kind": "releasePage", version: string, } | { "kind": "newIssue", template: "bug" | "rollback", } | { "kind": "webview2Download" } | { "kind": "folder", which: "notes" | "logs" | "data" | "app", };
+export type ExternalTarget = { "kind": "releasePage", version: string, } | { "kind": "newIssue", template: "bug" | "rollback", } | { "kind": "webview2Download" } | { "kind": "folder", which: "notes" | "logs" | "data" | "app", } | { "kind": "link", url: string, } | { "kind": "windowsSettings", page: "speech" | "language", };

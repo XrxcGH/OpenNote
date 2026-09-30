@@ -1,28 +1,38 @@
 //! The main window: creating it, its WebView2 settings, the frame, placement, and the Snap Layouts overlay
 //! (ARCHITECTURE.md sections 8.5 and 10), plus the window commands.
 //!
-//! The main window's config has `"create": false`, so [`create`] builds the window from it. For now the window
-//! keeps Phase 0's behavior: hidden until the themed page loads, with a fallback timer. The shell work package
-//! adds what only code can set, such as the placement, background color, boot script, and zoom.
+//! The main window's config has `"create": false`, so [`create`] builds the window from it. It then adds what only
+//! code can set: the background color, the boot script, the data folder, the zoom, the minimum size, the saved
+//! placement, and the WebView2 settings.
 
 pub mod caption;
 pub mod frame;
 pub mod placement;
 pub mod webview;
 
-use std::{thread, time::Duration};
-
-use serde::{Deserialize, Serialize};
-use tauri::{
-    webview::{PageLoadEvent, PageLoadPayload},
-    AppHandle, Emitter, Manager, Runtime, Webview, WebviewWindow, WebviewWindowBuilder,
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread,
 };
 
+use serde::{Deserialize, Serialize};
+use tauri::{window::Color, AppHandle, Emitter, Manager, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+
 use crate::{
-    appearance::ThemeName,
-    events,
+    appearance::{self, Current, ThemeName},
+    boot::{self, Startup},
+    events, install,
     ipc::{IpcError, IpcResult},
     lifecycle::{self, ExitReason},
+    paths::Paths,
+    perf,
+    settings::SettingsStore,
+    state::DeviceStateStore,
+    theme_tokens::Rgb,
+    zoom,
 };
 
 /// The main window's label, from tauri.conf.json.
@@ -30,9 +40,6 @@ pub const MAIN: &str = "main";
 
 /// The longest window title the interface may set, in characters.
 pub const MAX_TITLE_CHARS: usize = 200;
-
-/// How long start-up waits for the page before showing the main window anyway.
-const SHOW_FALLBACK_DELAY: Duration = Duration::from_secs(3);
 
 /// A point in physical pixels, relative to the client area.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -42,7 +49,11 @@ pub struct Point {
     pub y: f64,
 }
 
-/// Builds the main window from its config and starts the show fallback timer.
+/// The color the window was created with, for the perf log's `windowShown` mark.
+struct Background(Rgb);
+
+/// Builds the main window from its config, with its placement, colors, boot script, zoom, and WebView2 settings,
+/// and shows it (section 8.5).
 ///
 /// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Until those land,
 /// this keeps the native frame, so the window can still be moved, resized from the title bar, and closed.
@@ -52,19 +63,105 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .iter()
         .find(|window| window.label == MAIN)
         .ok_or(tauri::Error::WindowNotFound)?;
+    let settings = app.state::<SettingsStore>().get();
+    let state = app.state::<DeviceStateStore>().get();
+    let paths = app.state::<Paths>();
+
+    let raw = appearance::read_raw();
+    let text_scale = appearance::decode(raw, 1.0).text_scale;
+    let zoom = zoom::effective_zoom(
+        settings.appearance.text_size.percent(),
+        text_scale,
+        primary_work_width_dips(app),
+    );
+    let os = appearance::decode(raw, zoom);
+    let data = boot::payload(&app.state::<Startup>(), &settings, &state, &os, install::status(&paths));
+    let color = boot::window_color(settings.appearance.theme, &os, boot::system_window_color());
+    let Rgb(r, g, b) = color;
+    app.manage(Current::new(os));
+    app.manage(Background(color));
+
     let window = WebviewWindowBuilder::from_config(app, config)?
         .decorations(true)
+        .background_color(Color(r, g, b, 255))
+        .initialization_script(boot::initialization_script(&data))
+        .data_directory(paths.webview.clone())
+        .disable_drag_drop_handler()
+        .zoom_hotkeys_enabled(false)
         .build()?;
-    show_after_fallback_delay(window.clone());
+    perf::mark("windowCreated", None);
+    webview::configure(&window);
+    zoom::apply(&window, settings.appearance.text_size.percent(), os.text_scale);
+    if let Err(error) = frame::set_theme(&window, data.resolved_theme) {
+        log::warn!("Couldn't color the window frame: {error}");
+    }
+    if let Err(error) = frame::install_subclass(&window) {
+        log::warn!("Couldn't listen for Windows messages: {error}");
+    }
+    watch(&window);
+    perf::mark("webviewCreated", None);
+    if lifecycle::SHOW_EARLY {
+        let restored = state
+            .window
+            .placement
+            .as_ref()
+            .is_some_and(|saved| placement::restore(&window, saved));
+        if !restored {
+            let _ = window.center();
+        }
+        show(app);
+    } else {
+        show_after_fallback_delay(window.clone());
+    }
     Ok(window)
 }
 
-/// Shows the main window once its page has loaded, so start-up never shows WebView2's default white background
-/// (BRAND.md section 4). Showing a visible window does nothing.
-pub fn show_when_loaded<R: Runtime>(webview: &Webview<R>, payload: &PageLoadPayload<'_>) {
-    let window = webview.window();
-    if payload.event() == PageLoadEvent::Finished && window.label() == MAIN {
+/// The primary monitor's work area width in DIPs, for the first zoom before a window exists to ask.
+fn primary_work_width_dips(app: &AppHandle) -> f64 {
+    match app.primary_monitor() {
+        Ok(Some(monitor)) => f64::from(monitor.work_area().size.width) / monitor.scale_factor().max(1.0),
+        _ => f64::MAX,
+    }
+}
+
+/// Keeps the placement, the maximized state, and closing in step with the window.
+fn watch(window: &WebviewWindow) {
+    let app = window.app_handle().clone();
+    let saver = placement::Saver::default();
+    let maximized = Arc::new(AtomicBool::new(window.is_maximized().unwrap_or(false)));
+    let watched = window.clone();
+    window.on_window_event(move |event| match event {
+        WindowEvent::CloseRequested { api, .. } => {
+            api.prevent_close();
+            lifecycle::on_close_requested(&app);
+        }
+        WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
+            saver.schedule(&app);
+            let now = watched.is_maximized().unwrap_or(false);
+            if maximized.swap(now, Ordering::AcqRel) != now {
+                if let Err(error) = app.emit_to(MAIN, events::WINDOW_MAXIMIZED, now) {
+                    log::warn!("Couldn't send {}: {error}", events::WINDOW_MAXIMIZED);
+                }
+            }
+        }
+        _ => {}
+    });
+}
+
+/// Shows the main window if it's hidden, and notes the first time in the perf log with the color it was painted
+/// with. Restoring a saved placement can already have shown the window, so the note doesn't depend on that.
+pub fn show(app: &AppHandle) {
+    static NOTED: AtomicBool = AtomicBool::new(false);
+    let Some(window) = app.get_webview_window(MAIN) else {
+        return;
+    };
+    if !window.is_visible().unwrap_or(false) {
         let _ = window.show();
+        let _ = window.set_focus();
+    }
+    if !NOTED.swap(true, Ordering::AcqRel) {
+        let detail = app.try_state::<Background>().map(|color| perf::hex(color.0));
+        perf::mark("windowShown", detail.as_deref());
     }
 }
 
@@ -81,11 +178,11 @@ pub fn receive_forwarded(app: &AppHandle, args: Vec<String>) {
     }
 }
 
-/// Shows the main window after a delay, in case the page never finishes loading.
-pub fn show_after_fallback_delay(window: WebviewWindow) {
+/// Shows a hidden main window after the first-paint fallback, in case the page never paints.
+fn show_after_fallback_delay(window: WebviewWindow) {
     thread::spawn(move || {
-        thread::sleep(SHOW_FALLBACK_DELAY);
-        let _ = window.show();
+        thread::sleep(lifecycle::FIRST_PAINT_FALLBACK);
+        show(window.app_handle());
     });
 }
 
@@ -123,9 +220,8 @@ pub fn window_set_title(window: WebviewWindow, title: String) -> IpcResult<()> {
 
 /// Opens the real system menu at `at`, or at the title bar's start corner when `at` is `None` (section 10.7).
 #[tauri::command]
-pub fn window_show_system_menu(at: Option<Point>) -> IpcResult<()> {
-    let _ = at;
-    Err(IpcError::not_implemented("window_show_system_menu"))
+pub fn window_show_system_menu(window: WebviewWindow, at: Option<Point>) -> IpcResult<()> {
+    frame::show_system_menu(&window, at)
 }
 
 /// Sets the frame colors for the theme the page shows.
