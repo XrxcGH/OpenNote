@@ -88,6 +88,8 @@ export interface SetupStepDef {
   /** Person steps are recorded in settings (roaming); device steps in the device state (local). */
   scope: 'person' | 'device';
   isEnabled(ctx: SetupContext): boolean;
+  /** False while the draft can't go on, such as a folder that isn't writable. Default true. */
+  canContinue?(draft: SetupDraft): boolean;
   load: () => Promise<{ default: ComponentType<SetupStepProps> }>;
   commit(ctx: SetupContext, draft: SetupDraft): Promise<void>;
 }

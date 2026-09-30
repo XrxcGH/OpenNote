@@ -40,8 +40,10 @@ Other options: `--staged`, `--base <ref>`, `--rules spelling,grammar`, `--strict
 | `usability` | One title, no skipped heading levels, sentence-case headings, table of contents for long docs, working links, image alt text, basic UI accessibility | Docs and UI code |
 | `modifiability` | File and function length, nesting depth, parameter count, TODOs without an issue link, commented-out code, copy-pasted blocks | Code |
 | `brand-consistency` | UI code must use design tokens for colors (hex, color functions, and named colors such as `white`), fonts (including the `font` shorthand), motion, layers, and font sizes | App UI code in `app/src`, except the generated token files |
+| `logical-properties` | Warns about physical CSS properties and values, such as `left`, `margin-right`, `width`, and `text-align: left`, so a right-to-left language later needs only `dir="rtl"` | Style sheets and inline styles in `app/src` |
+| `ui-voice` | Interface text follows the voice in BRAND.md: sentence case, no exclamation marks, no "Oops", no emoji, digits for numbers, and shortcuts written as Ctrl+Shift+D. The spelling, grammar, and AI marker rules also run on each string. ICU messages are checked branch by branch | The string files in `app/src/strings/en` |
 | `layout` | Renders each SVG in a headless browser and checks overlapping text, padding inside containers, centering, alignment, edge spacing, minimum text size, safe margins, scaling, and sentence case | SVG graphics |
-| `brand-tokens` | `brand/tokens.json` themes match, colors are valid, text meets contrast targets, motion stays under 400 ms | Design tokens |
+| `brand-tokens` | `brand/tokens.json` themes match, colors are valid, text meets contrast targets, motion stays under 400 ms. The `forcedColors` map for Windows contrast themes must name existing color tokens and CSS system colors such as `Canvas` or `Highlight`. Contrast pairs can name pens and highlighters (`ink.pens.Fern`), checked with each theme's value, and `over` composites a translucent background, such as a highlighter, over a surface first | Design tokens |
 
 The word lists live in `checks/data/` as JSON, so you can extend them without touching code.
 
