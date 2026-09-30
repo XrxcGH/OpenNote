@@ -7,7 +7,6 @@ use crate::id::{GroupId, Id, PageId, SectionId, TrashItemId};
 use crate::model::{Moving, PageEntry, TrashItemFile, TrashOrigin};
 use crate::session::journal_thread::TreeOp;
 use crate::session::notebook::{NodePlacement, NodeRef, ParentRef};
-use crate::store::layout::ITEM_JSON;
 use crate::store::notebook_store::{invalid_move, not_found, NotebookStore};
 
 impl NotebookStore {
@@ -187,12 +186,15 @@ impl NotebookStore {
         if left {
             return Ok(());
         }
-        match self.env.fs.remove_file(&dir.join(ITEM_JSON)) {
-            Ok(()) => {}
+        // A rename is durable and a deletion is not, so the item goes away by renaming its folder, as a purge
+        // does. A power cut can then never bring `item.json` back after the marks that depend on it are gone.
+        let purge = self.layout.purge_dir(item);
+        match self.env.fs.rename_dir(&dir, &purge) {
+            Ok(_) => {}
             Err(e) if e.kind == FsErrorKind::NotFound => {}
             Err(e) => return Err(e.into()),
         }
-        let _ = self.env.fs.remove_dir_all(&dir);
+        let _ = self.env.fs.remove_dir_all(&purge);
         self.trash.remove(&item);
         Ok(())
     }

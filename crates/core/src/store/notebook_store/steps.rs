@@ -13,9 +13,7 @@ use super::template::template_page;
 use super::{write_page_files, NotebookStore};
 use crate::error::CoreError;
 use crate::id::{PageId, SectionId, TrashItemId};
-use crate::model::TrashReason;
 use crate::session::journal_thread::{TreeIntent, TreeOp};
-use crate::session::notebook::NodeRef;
 use crate::store::layout::{PartialFolder, ITEM_JSON, PAGE_JSON, SECTION_JSON};
 use crate::store::tree_log::{roll_forward_log, MemIntentLog, TreeSteps};
 use crate::store::PageFiles;
@@ -95,14 +93,10 @@ impl NotebookStore {
                 to_section,
             } => {
                 let target = to_notebook.join(to_section.to_string());
-                self.heal_transfer(&[page.0], &target, NodeRef::Page(*page))
+                self.heal_page_transfer(*page, &target)
             }
             TreeOp::MoveSectionToNotebook { sections, to_notebook } => {
-                let ids: Vec<_> = sections.iter().map(|s| s.0).collect();
-                let node = sections
-                    .first()
-                    .map_or(NodeRef::Section(SectionId::ZERO), |s| NodeRef::Section(*s));
-                self.heal_transfer(&ids, to_notebook, node)
+                self.heal_section_transfer(sections, to_notebook)
             }
             TreeOp::DeleteToTrash { item, .. } => self.heal_delete(*item),
             TreeOp::Restore { item } => self.heal_restore(*item),
@@ -157,31 +151,9 @@ impl NotebookStore {
         Ok(())
     }
 
-    /// A move to another notebook: if the folders arrived there, the originals go to Trash. Otherwise the
-    /// partial copies are deleted and the source stays untouched.
-    fn heal_transfer(&mut self, ids: &[crate::id::Id], target: &Path, node: NodeRef) -> Result<(), CoreError> {
-        let fs = self.env.fs.as_ref();
-        let arrived = ids.iter().all(|id| fs.metadata(&target.join(id.to_string())).is_ok());
-        if !arrived {
-            for id in ids {
-                let _ = fs.remove_dir_all(&target.join(PartialFolder::Moving(*id).name()));
-            }
-            return Ok(());
-        }
-        let present = match node {
-            NodeRef::Page(p) => self.section_of(p).is_some(),
-            NodeRef::Section(s) => self.sections.contains_key(&s),
-            NodeRef::Group(g) => self.group(g).is_ok(),
-        };
-        if present {
-            self.delete(&[node], TrashReason::Moved)?;
-        }
-        Ok(())
-    }
-
     /// A deletion: once `item.json` exists, the deletion is recorded, so it finishes. Before that, nothing
     /// changed but maybe an empty item folder.
-    fn heal_delete(&mut self, item: TrashItemId) -> Result<(), CoreError> {
+    pub(super) fn heal_delete(&mut self, item: TrashItemId) -> Result<(), CoreError> {
         let dir = self.layout.trash_item_dir(item);
         if self.env.fs.metadata(&dir.join(ITEM_JSON)).is_err() {
             self.remove_if_empty(&dir, ITEM_JSON);

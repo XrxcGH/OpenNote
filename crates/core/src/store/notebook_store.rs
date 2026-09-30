@@ -34,6 +34,7 @@ mod duplicates;
 mod edit;
 mod flat;
 mod formats;
+mod heal_moves;
 #[cfg(any(test, feature = "testing"))]
 pub mod kit;
 mod pages;
