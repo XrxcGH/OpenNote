@@ -13,6 +13,7 @@ pub mod page;
 pub mod section;
 pub mod stroke;
 pub mod trash;
+pub mod validate;
 pub mod view;
 
 use std::fmt;

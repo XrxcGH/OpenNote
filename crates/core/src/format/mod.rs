@@ -12,10 +12,25 @@
 )]
 
 pub mod gzip;
+pub mod history_json;
+pub mod json;
+pub mod markdown;
+pub mod migrate;
 pub mod names;
+pub mod page_json;
+pub mod points;
+pub mod readable;
+pub mod segment;
+pub mod trash_json;
+pub mod tree_json;
 
+use crate::error::FormatError;
 use crate::id::{PageId, RevisionId, SegmentId, StrokeId};
-use crate::model::{InkRecord, Page, Warning};
+use crate::limits::Limits;
+use crate::model::{
+    InkRecord, NotebookFile, NotebookTree, Page, SectionFile, SegmentRef, TrashItemFile, VersionsFile, Warning,
+};
+use crate::seams::{Codec, LinkResolver};
 use crate::time::Timestamp;
 
 /// The `kind` of each JSON file (spec 4, 5, 12, and 13).
@@ -94,6 +109,90 @@ pub enum ReadableState {
     },
     /// Edited by a person or another tool.
     Edited,
+}
+
+/// The production [`Codec`]: every format of the spec, through the functions of this module's submodules.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct CanonicalCodec;
+
+impl Codec for CanonicalCodec {
+    fn read_page(&self, bytes: &[u8], limits: &Limits) -> Result<ReadPage, FormatError> {
+        page_json::read_page(bytes, limits)
+    }
+
+    fn write_page(&self, page: &Page) -> Vec<u8> {
+        page_json::write_page(page)
+    }
+
+    fn read_section(&self, bytes: &[u8], limits: &Limits) -> Result<SectionFile, FormatError> {
+        tree_json::read_section(bytes, limits)
+    }
+
+    fn write_section(&self, file: &SectionFile) -> Vec<u8> {
+        tree_json::write_section(file)
+    }
+
+    fn read_notebook(&self, bytes: &[u8], limits: &Limits) -> Result<NotebookFile, FormatError> {
+        tree_json::read_notebook(bytes, limits)
+    }
+
+    fn write_notebook(&self, file: &NotebookFile) -> Vec<u8> {
+        tree_json::write_notebook(file)
+    }
+
+    fn read_trash_item(&self, bytes: &[u8], limits: &Limits) -> Result<TrashItemFile, FormatError> {
+        trash_json::read_trash_item(bytes, limits)
+    }
+
+    fn write_trash_item(&self, file: &TrashItemFile) -> Vec<u8> {
+        trash_json::write_trash_item(file)
+    }
+
+    fn read_versions(&self, bytes: &[u8], limits: &Limits) -> Result<VersionsFile, FormatError> {
+        history_json::read_versions(bytes, limits)
+    }
+
+    fn write_versions(&self, file: &VersionsFile) -> Vec<u8> {
+        history_json::write_versions(file)
+    }
+
+    fn encode_segment(&self, header: &SegmentHeader, records: &[InkRecord]) -> Vec<u8> {
+        segment::encode_segment(header, records)
+    }
+
+    fn decode_segment(
+        &self,
+        bytes: &[u8],
+        expect: &SegmentRef,
+        page: PageId,
+        limits: &Limits,
+    ) -> Result<DecodedSegment, FormatError> {
+        segment::decode_segment(bytes, expect, page, limits)
+    }
+
+    fn encode_records(&self, records: &[InkRecord]) -> Vec<u8> {
+        segment::encode_records(records)
+    }
+
+    fn decode_records(&self, bytes: &[u8], limits: &Limits) -> Result<Vec<InkRecord>, FormatError> {
+        segment::decode_records(bytes, limits)
+    }
+
+    fn render_page_md(&self, page: &Page, links: &dyn LinkResolver) -> Vec<u8> {
+        readable::render_page_md(page, links)
+    }
+
+    fn render_ink_svg(&self, page: &Page) -> Vec<u8> {
+        readable::render_ink_svg(page)
+    }
+
+    fn render_index_md(&self, tree: &NotebookTree) -> Vec<u8> {
+        readable::render_index_md(tree)
+    }
+
+    fn classify_readable(&self, bytes: &[u8]) -> ReadableState {
+        readable::classify_readable(bytes)
+    }
 }
 
 /// The CRC-32 stored in a segment's footer (spec 9.1), which `page.json` lists for the segment.

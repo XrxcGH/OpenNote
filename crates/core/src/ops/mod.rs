@@ -5,6 +5,12 @@
 //! and after, so undo restores timestamps exactly. This module defines the data. Applying, inverting,
 //! resolving, and undo live in the submodules.
 
+pub mod apply;
+pub mod merge_patch;
+pub mod resolve;
+pub mod text_diff;
+pub mod undo;
+
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};

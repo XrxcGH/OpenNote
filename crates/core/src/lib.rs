@@ -18,6 +18,7 @@ pub mod seams;
 pub mod session;
 pub mod store;
 pub mod time;
+pub mod wire;
 
 pub use error::{ApplyError, CoreError, EditError, FormatError, FormatErrorKind, FsError, FsErrorKind, JournalError};
 pub use id::{
