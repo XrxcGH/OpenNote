@@ -1,0 +1,5 @@
+# The corpus lives in the Actions cache. Fixed crashes go into regressions/, which is kept.
+corpus/
+artifacts/
+coverage/
+Cargo.lock

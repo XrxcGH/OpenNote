@@ -1,0 +1,22 @@
+[package]
+name = "opennote-perf"
+version = "0.1.0"
+description = "Benchmarks for crates/core against the budgets in BRAND.md, and the sample notebook generator"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "opennote_perf"
+path = "src/lib.rs"
+
+[[bin]]
+name = "opennote-perf"
+path = "src/main.rs"
+
+[dependencies]
+opennote-core = { path = "../../../crates/core", features = ["testing"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tempfile = "3.27.0"
