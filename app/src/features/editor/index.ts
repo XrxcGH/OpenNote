@@ -4,3 +4,5 @@
 export { textExtensions, textSchema } from './schema/schema';
 export * from './schema/specs';
 export * from './markdown';
+export * from './paste';
+export { isId, newId } from './ids';

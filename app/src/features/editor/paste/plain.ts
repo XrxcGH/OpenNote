@@ -1,0 +1,91 @@
+// Plain text and Markdown paste (Phase 4 design, 15.6). Text that looks like Markdown is parsed with GFM tables on,
+// and a table becomes a table block. Other text becomes one paragraph for each line.
+import type { Token } from 'markdown-it';
+import { Fragment } from '@tiptap/pm/model';
+import type { Node as PMNode } from '@tiptap/pm/model';
+import { TITLE } from '../markdown/escape';
+import { serializeInline } from '../markdown/inline';
+import { buildDoc, createMarkdown } from '../markdown/parse';
+import { inlineNodes } from '../markdown/parseInline';
+import { textSchema } from '../schema/schema';
+import { DEFAULT_COLUMN_WIDTH } from './types';
+import type { PastedPiece, TableData } from './types';
+
+const { nodes } = textSchema;
+const pasteMarkdown = createMarkdown(true);
+
+const MARKER_LINE = /^ {0,3}(?:#{1,6}(?:\s|$)|[-*+]\s|\d{1,9}[.)]\s|>|```|~~~)/m;
+const LINK = /\[[^\]\n]+\]\([^)\s]+\)/;
+const STRONG_PAIR = /\*\*[^*\n]+\*\*/;
+const ONLY_URL = /^\s*(?:https?|ftp):\/\/\S+\s*$/i;
+
+/**
+ * Text looks like Markdown when at least one line starts with a heading, list, quote, or fence marker, or the text
+ * has a Markdown link or a pair of `**`. A single line that holds only a web address is not Markdown.
+ */
+export function looksLikeMarkdown(text: string): boolean {
+  if (ONLY_URL.test(text)) return false;
+  return MARKER_LINE.test(text) || LINK.test(text) || STRONG_PAIR.test(text);
+}
+
+function cellMarkdownFrom(inline: Token | undefined): string {
+  const content = inlineNodes(inline?.children ?? []);
+  return serializeInline(nodes.paragraph.create(null, content), TITLE).trim();
+}
+
+/** Table data from the tokens between `table_open` and `table_close`. */
+function tableFromTokens(tokens: readonly Token[], newId: () => string): TableData {
+  const rows: Record<string, string>[] = [];
+  let header = false;
+  let current: string[] = [];
+  tokens.forEach((token, i) => {
+    if (token.type === 'thead_open') header = true;
+    if (token.type === 'tr_open') current = [];
+    if (token.type === 'th_open' || token.type === 'td_open') current.push(cellMarkdownFrom(tokens[i + 1]));
+    if (token.type === 'tr_close') rows.push(Object.fromEntries(current.map((markdown, at) => [String(at), markdown])));
+  });
+  const count = Math.max(1, ...rows.map((row) => Object.keys(row).length));
+  const columns = Array.from({ length: count }, () => ({ id: newId(), width: DEFAULT_COLUMN_WIDTH }));
+  return {
+    header,
+    columns,
+    rows: rows.map((row) => ({
+      id: newId(),
+      cells: Object.fromEntries(columns.map((column, at) => [column.id, { markdown: row[String(at)] ?? '' }])),
+    })),
+  };
+}
+
+function textPiece(tokens: readonly Token[]): PastedPiece[] {
+  return tokens.length === 0 ? [] : [{ kind: 'text', doc: buildDoc(tokens, pasteMarkdown) }];
+}
+
+/** Pasted Markdown as text pieces, with each GFM table as a table piece. */
+export function parsePastedMarkdown(text: string, newId: () => string): PastedPiece[] {
+  const tokens = pasteMarkdown.parse(text, {});
+  const pieces: PastedPiece[] = [];
+  let start = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].type !== 'table_open' || tokens[i].level !== 0) continue;
+    let end = i;
+    while (end < tokens.length && tokens[end].type !== 'table_close') end++;
+    pieces.push(...textPiece(tokens.slice(start, i)));
+    pieces.push({ kind: 'table', data: tableFromTokens(tokens.slice(i, end + 1), newId) });
+    start = end + 1;
+    i = end;
+  }
+  return [...pieces, ...textPiece(tokens.slice(start))];
+}
+
+/** Plain text that is not Markdown: each non-empty line is a paragraph. */
+export function plainTextPieces(text: string): PastedPiece[] {
+  const lines = text
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .filter((line) => line.trim() !== '');
+  if (lines.length === 0) return [];
+  const paragraphs: PMNode[] = lines.map((line) =>
+    nodes.paragraph.create(null, textSchema.text(line.replace(/\0/g, '\ufffd').trim().replace(/\t/g, ' '))),
+  );
+  return [{ kind: 'text', doc: nodes.doc.create(null, Fragment.from(paragraphs)) }];
+}
