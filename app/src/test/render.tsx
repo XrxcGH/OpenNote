@@ -14,6 +14,7 @@ import { NotesProvider } from '../services/notes';
 import { createStubNotesService } from '../services/notes/stub';
 import type { NotesFixture } from '../services/notes/fixtures';
 import type { NotesService } from '../services/notes/types';
+import { closeAllLayers } from '../state/layers';
 import { setDensity, setSizeClass } from '../state/layout';
 import type { Density, SizeClass } from '../state/layout';
 import { resetStores } from '../state/store';
@@ -40,8 +41,12 @@ export interface RenderedApp extends RenderResult {
 
 const disposers: (() => void)[] = [];
 
-/** Undoes renderApp's window listeners and resets every store. The component test setup calls it. */
+/**
+ * Closes open overlays, undoes renderApp's window listeners, and resets every store. The component test setup
+ * calls it. Menus and confirmations render in their own roots, which RTL's cleanup doesn't reach.
+ */
 export function disposeApp(): void {
+  closeAllLayers();
   disposers.splice(0).forEach((dispose) => dispose());
   resetStores();
   clearAnnouncements();

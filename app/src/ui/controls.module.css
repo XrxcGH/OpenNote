@@ -60,17 +60,14 @@
     block-size: var(--size-icon-md);
   }
 
-  .iconButton:hover,
-  .menuItem:hover,
-  .menuItem:focus {
+  .iconButton:hover {
     background: var(--color-surface-hover);
   }
 
   .button:focus-visible,
   .quiet:focus-visible,
   .iconButton:focus-visible,
-  .radioCard:focus-visible,
-  .menuItem:focus-visible {
+  .radioCard:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: var(--size-focus-ring-offset);
   }
@@ -126,7 +123,6 @@
     line-height: var(--type-small-line);
   }
 
-  .menu,
   .popover,
   .dialog {
     position: fixed;
@@ -136,31 +132,6 @@
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
     box-shadow: var(--elevation-2);
-  }
-
-  .menu {
-    display: grid;
-    min-inline-size: var(--size-menu-min-width);
-    padding: var(--space-2);
-  }
-
-  .menuItem {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-7);
-    min-block-size: var(--size-target-pointer);
-    padding-inline: var(--space-4);
-    border: none;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .separator {
-    border-block-start: 1px solid var(--color-border-subtle);
   }
 
   .popover {

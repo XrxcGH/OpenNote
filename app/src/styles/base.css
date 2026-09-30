@@ -39,6 +39,19 @@
     animation-duration: var(--motion-duration-base);
     animation-timing-function: var(--motion-easing-standard);
   }
+
+  /* Overlays close with a quick fade on a copy of themselves (ui/topLayer.ts playExit), so the real element can
+     leave at once and focus can move on. */
+  [data-exiting] {
+    animation: exit-fade var(--motion-duration-quick) var(--motion-easing-exit) forwards;
+    pointer-events: none;
+  }
+
+  @keyframes exit-fade {
+    to {
+      opacity: 0;
+    }
+  }
 }
 
 @layer states {
