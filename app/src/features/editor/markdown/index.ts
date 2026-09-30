@@ -5,3 +5,5 @@ export { serializeTextBlock } from './serialize';
 export { serializeInline } from './inline';
 export { PARAGRAPH, TITLE, escapeParagraphText } from './escape';
 export { joinAdjacentLists, joinListsDeep } from './normalize';
+export { applyElementData, countElements, emptyElementData, extractElementData } from './elements';
+export type { ElementData } from './elements';
