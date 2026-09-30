@@ -16,8 +16,8 @@ use std::path::{Path, PathBuf};
 
 use format_fixtures::{biology, ink};
 use opennote_core::format::gzip::gunzip;
-use opennote_core::format::json;
 use opennote_core::format::history_json::{read_versions, write_versions};
+use opennote_core::format::json;
 use opennote_core::format::markdown::escape_text;
 use opennote_core::format::migrate::{upgrade, FileKind};
 use opennote_core::format::page_json::{read_page, write_page};
