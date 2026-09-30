@@ -1,6 +1,6 @@
 // @vitest-environment node
 // What the tree decides before it calls the service: steps among siblings, page levels, where new items go, where
-// Move to can go, and what the palette finds. All on the sample library loaded into the store.
+// Move to can go. All on the sample library loaded into the store.
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createMemoryNotesService } from '../../services/notes/memory';
@@ -10,7 +10,6 @@ import { destinationsFor, loadDestinations, matchDestinations } from './destinat
 import { planNew } from './creation';
 import { ensureChildren, startTree, stopTree } from './load';
 import { levelAfter, siblingsOf, stepOf } from './moves';
-import { scoreTitle, searchNodes } from './palette';
 import { ROOT, treeStore } from './store';
 
 const id = (value: string) => value as NodeId;
@@ -146,25 +145,5 @@ describe('Move to', () => {
     const found = matchDestinations(all, 'EXAM mid');
     expect(found.map((place) => place.title)).toEqual(['Midterm']);
     expect(found[0].path).toBe('Biology 101 / Exam prep / Midterm');
-  });
-});
-
-describe('the palette', () => {
-  it('scores a whole title above a start, a word, and the inside', () => {
-    expect(scoreTitle('Mitosis', 'mitosis')).toBeGreaterThan(scoreTitle('Mitosis', 'mit'));
-    expect(scoreTitle('Cell membranes', 'mem')).toBeGreaterThan(scoreTitle('Cell membranes', 'bran'));
-    expect(scoreTitle('Mitosis', 'xyz')).toBe(0);
-    expect(scoreTitle('Café', 'cafe')).toBeGreaterThan(0);
-  });
-
-  it('finds notebooks, sections, and pages with where they are', () => {
-    const results = searchNodes(state(), 'mi');
-    const titles = results.map((result) => result.title);
-    expect(titles).toEqual(expect.arrayContaining(['Mitosis', 'Midterm']));
-    expect(results.find((result) => result.title === 'Mitosis')).toMatchObject({
-      group: 'pages',
-      detail: 'Biology 101 / Lectures',
-    });
-    expect(results.find((result) => result.title === 'Midterm')?.group).toBe('sections');
   });
 });

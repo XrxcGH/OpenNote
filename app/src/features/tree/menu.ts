@@ -65,24 +65,25 @@ export function colorItems(node: NodeSummary): MenuItemSpec[] {
     .map(afterClose);
 }
 
-function withColors(items: MenuItemSpec[], node: NodeSummary, anchor: MenuAnchor, returnFocus: HTMLElement) {
-  return items.map((item) => {
-    if (!item.id.endsWith(COLOR_ITEM) || item.submenu) return item;
-    const submenu = colorItems(node);
-    const label = t('tree.colors.menu');
-    return { ...item, submenu, onSelect: () => void openMenu({ label, items: submenu, anchor, returnFocus }) };
-  });
+/**
+ * Gives the Color item this row's submenu. The menu builder lists the colors for any item, but only here is the
+ * row's own color known, so its checked state and the swatches come from here.
+ */
+function withColors(items: MenuItemSpec[], node: NodeSummary) {
+  return items.map((item) =>
+    item.id.endsWith(COLOR_ITEM) ? { ...item, submenu: colorItems(node), onSelect: undefined } : item,
+  );
 }
 
 /** The menu for a row, or null when nothing applies. */
-export function rowMenu(node: NodeSummary, anchor: MenuAnchor, returnFocus: HTMLElement) {
+export function rowMenu(node: NodeSummary) {
   const ctx = commandContext('menu', { kind: 'node', id: node.id });
-  const items = withColors(menuItemsFor(ROW_MENUS[node.kind], ctx), node, anchor, returnFocus).map(afterClose);
+  const items = withColors(menuItemsFor(ROW_MENUS[node.kind], ctx), node).map(afterClose);
   return items.length ? { label: t('tree.menu.label', { title: titleOf(node) }), items } : null;
 }
 
 /** Opens a row's context menu at the pointer, or at the row for the keyboard and the "More actions" button. */
 export function openRowMenu(node: NodeSummary, anchor: MenuAnchor, returnFocus: HTMLElement): void {
-  const menu = rowMenu(node, anchor, returnFocus);
+  const menu = rowMenu(node);
   if (menu) void openMenu({ ...menu, anchor, returnFocus });
 }

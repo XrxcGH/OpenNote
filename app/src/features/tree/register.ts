@@ -1,13 +1,12 @@
 // Registers the tree's commands, its context menus (ARCHITECTURE.md section 13.8), the Home tab's tools, the save
-// status, the palette's "Go to" results, and the hook that saves the notes before the window closes.
+// status, and the hook that saves the notes before the window closes.
 
 import type { FlagId } from '../../app/flags';
 import type { CommandId } from '../../commands/types';
-import { beforeExit, commandBar, commands, contextMenus, paletteProviders, titleBarItems } from '../../registries';
+import { beforeExit, commandBar, commands, contextMenus, titleBarItems } from '../../registries';
 import type { MenuId } from '../../registries/types';
 import { currentNotesService } from '../../services/notes';
 import { treeCommands } from './commands';
-import { nodeProvider } from './palette';
 import { SaveStatus } from './SaveStatus';
 
 for (const def of treeCommands) commands.register(def);
@@ -98,8 +97,6 @@ titleBarItems.register({
   compact: 'hide',
   Component: SaveStatus,
 });
-
-paletteProviders.register(nodeProvider);
 
 beforeExit.register({
   id: 'notes.flush',
