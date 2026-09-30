@@ -1,170 +1,290 @@
 // Menus (APG menu pattern, ARCHITECTURE.md section 15.3). openMenu shows a menu at an element or a point and
-// resolves with the chosen item's id, or null. WP0's version handles arrow keys, Home, End, type-ahead, Enter,
-// and Escape; WP4 adds submenus, the top layer, anchor positioning, and motion.
+// resolves with the chosen item's id, or null. Up and Down move with wrapping, and Home and End jump to the ends.
+// Right opens a submenu, and Left closes it. Type-ahead picks by first letter, Enter and Space activate, and
+// Escape closes one level through the layer stack. Focus returns to where it was before the chosen item runs,
+// so a command that moves focus, such as Rename, keeps its focus.
 
-import { useEffect, useRef } from 'react';
-import type { ComponentType, KeyboardEvent, RefObject } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
+import type { KeyboardEvent, PointerEvent, RefObject } from 'react';
 import { createRoot } from 'react-dom/client';
-import styles from './controls.module.css';
 import { useLayer } from './hooks';
-import type { IconProps } from './icons';
+import styles from './Menu.module.css';
+import { MenuItem, hasSubmenu, menuColumns } from './MenuItem';
+import type { MenuItemSpec } from './MenuItem';
+import { placeAtPoint, placeBelow, placeBeside } from './position';
+import type { Point } from './position';
+import { anchorTo, hideFromTopLayer, playExit, showInTopLayer, supportsAnchors } from './topLayer';
 import { typeaheadMatch, useTypeahead } from './typeahead';
 
-export interface MenuItemSpec {
-  id: string;
-  label: string;
-  icon?: ComponentType<IconProps>;
-  shortcut?: string;
-  kind?: 'item' | 'checkbox' | 'radio';
-  checked?: boolean;
-  disabled?: boolean;
-  danger?: boolean;
-  separatorBefore?: boolean;
-  submenu?: readonly MenuItemSpec[];
-  onSelect?(): void;
-}
+export type { MenuItemSpec } from './MenuItem';
 
 export type MenuAnchor = HTMLElement | { x: number; y: number };
 
-interface MenuOptions {
+export interface MenuOptions {
   label: string;
   items: readonly MenuItemSpec[];
   anchor: MenuAnchor;
   returnFocus?: HTMLElement | null;
 }
 
-const ROLES = { item: 'menuitem', checkbox: 'menuitemcheckbox', radio: 'menuitemradio' } as const;
-
-function anchorPoint(anchor: MenuAnchor): { x: number; y: number } {
-  if (!(anchor instanceof HTMLElement)) return anchor;
-  const rect = anchor.getBoundingClientRect();
-  return { x: rect.left, y: rect.bottom };
+interface Session {
+  choose(item: MenuItemSpec): void;
+  close(): void;
 }
 
-function MenuEntry({ item, onClose }: { item: MenuItemSpec; onClose(id: string | null): void }) {
+/** How long the pointer rests on an item before a submenu opens or closes, so a diagonal move keeps it open. */
+const HOVER_INTENT_MS = 200;
+
+function itemsOf(menu: HTMLElement | null): HTMLElement[] {
+  return menu ? [...menu.querySelectorAll<HTMLElement>(':scope > [role^="menuitem"]')] : [];
+}
+
+function setPoint(menu: HTMLElement, point: Point, width: number): void {
+  const rtl = getComputedStyle(menu).direction === 'rtl';
+  menu.style.setProperty('--point-x', `${rtl ? window.innerWidth - point.x - width : point.x}px`);
+  menu.style.setProperty('--point-y', `${point.y}px`);
+}
+
+/** Places the menu with CSS anchor positioning when it has an element anchor, else at a clamped point. */
+function place(menu: HTMLElement, anchor: MenuAnchor, beside: boolean): () => void {
+  if (anchor instanceof HTMLElement && supportsAnchors()) {
+    menu.dataset.anchored = beside ? 'beside' : 'below';
+    return anchorTo(menu, anchor);
+  }
+  const { width, height } = menu.getBoundingClientRect();
+  const size = { width, height };
+  if (!(anchor instanceof HTMLElement)) setPoint(menu, placeAtPoint(anchor, size), width);
+  else setPoint(menu, (beside ? placeBeside : placeBelow)(anchor.getBoundingClientRect(), size), width);
+  return () => {};
+}
+
+function useHoverIntent() {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancel = () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+  };
+  const schedule = (run: () => void) => {
+    cancel();
+    timer.current = setTimeout(run, HOVER_INTENT_MS);
+  };
+  return { cancel, schedule };
+}
+
+interface KeyHandlers {
+  level: number;
+  activate(item: MenuItemSpec, element: HTMLElement): void;
+  openSubmenu(item: MenuItemSpec, element: HTMLElement, focusFirst: boolean): void;
+  closeSelf(): void;
+  session: Session;
+}
+
+const MOVES: Record<string, (index: number, count: number) => number> = {
+  ArrowDown: (index, count) => (index < 0 ? 0 : (index + 1) % count),
+  ArrowUp: (index, count) => (index < 0 ? count - 1 : (index - 1 + count) % count),
+  Home: () => 0,
+  End: (_, count) => count - 1,
+};
+
+function useMenuKeys(ref: RefObject<HTMLDivElement | null>, items: readonly MenuItemSpec[], handlers: KeyHandlers) {
+  const typeahead = useTypeahead((buffer) => {
+    const entries = itemsOf(ref.current);
+    const current = entries.indexOf(document.activeElement as HTMLElement);
+    entries[
+      typeaheadMatch(
+        items.map((item) => item.label),
+        current,
+        buffer,
+      )
+    ]?.focus();
+  });
+  return (event: KeyboardEvent<HTMLDivElement>) => {
+    const entries = itemsOf(ref.current);
+    const index = entries.indexOf(document.activeElement as HTMLElement);
+    const [item, element] = [items[index], entries[index]];
+    const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
+    const key = rtl ? ({ ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' }[event.key] ?? event.key) : event.key;
+    if (MOVES[key] && entries.length) entries[MOVES[key](index, entries.length)]?.focus();
+    else if (key === 'ArrowRight' && item && hasSubmenu(item) && !item.disabled)
+      handlers.openSubmenu(item, element, true);
+    else if (key === 'ArrowLeft' && handlers.level > 0) handlers.closeSelf();
+    else if ((key === 'Enter' || key === ' ') && item) handlers.activate(item, element);
+    else if (key === 'Tab') handlers.session.close();
+    else if (!typeahead(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+}
+
+interface MenuListProps {
+  label: string;
+  items: readonly MenuItemSpec[];
+  anchor: MenuAnchor;
+  level: number;
+  session: Session;
+  focusFirst: boolean;
+  onCloseSelf(): void;
+  onPointerEnter?(): void;
+}
+
+interface OpenSubmenu {
+  item: MenuItemSpec;
+  element: HTMLElement;
+  focusFirst: boolean;
+}
+
+function usePlacement(ref: RefObject<HTMLDivElement | null>, anchor: MenuAnchor, level: number, focus: boolean) {
+  useLayoutEffect(() => {
+    const menu = ref.current;
+    if (!menu) return;
+    showInTopLayer(menu);
+    const release = place(menu, anchor, level > 0);
+    if (focus) {
+      const entries = itemsOf(menu);
+      (entries.find((entry) => entry.getAttribute('aria-disabled') !== 'true') ?? entries[0])?.focus();
+    }
+    return () => {
+      release();
+      if (!menu.matches(':popover-open')) return;
+      playExit(menu);
+      hideFromTopLayer(menu);
+    };
+  }, [ref, anchor, level, focus]);
+}
+
+/** Which submenu is open, and how items respond to activation and to the resting pointer. */
+function useSubmenus(session: Session) {
+  const [open, setOpen] = useState<OpenSubmenu | null>(null);
+  const intent = useHoverIntent();
+  const openSubmenu = (item: MenuItemSpec, element: HTMLElement, focus: boolean) => {
+    intent.cancel();
+    setOpen({ item, element, focusFirst: focus });
+  };
+  const activate = (item: MenuItemSpec, element: HTMLElement) => {
+    if (item.disabled) return;
+    if (hasSubmenu(item)) openSubmenu(item, element, true);
+    else session.choose(item);
+  };
+  const onHover = (item: MenuItemSpec, event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType === 'touch') return;
+    const element = event.currentTarget;
+    if (document.activeElement !== element) element.focus({ preventScroll: true });
+    if (open?.item.id === item.id) return intent.cancel();
+    if (!open && !hasSubmenu(item)) return;
+    intent.schedule(() => (hasSubmenu(item) && !item.disabled ? openSubmenu(item, element, false) : setOpen(null)));
+  };
+  const closeSubmenu = () => {
+    setOpen(null);
+    open?.element.focus({ preventScroll: true });
+  };
+  return { open, openSubmenu, closeSubmenu, activate, onHover, cancelHover: intent.cancel };
+}
+
+function MenuList(props: MenuListProps) {
+  const { label, items, anchor, level, session, focusFirst, onCloseSelf } = props;
+  const ref = useRef<HTMLDivElement>(null);
+  const id = useId();
+  const { open, openSubmenu, closeSubmenu, activate, onHover, cancelHover } = useSubmenus(session);
+  useLayer({ kind: level === 0 ? 'menu' : 'submenu', modal: false, close: onCloseSelf }, true);
+  usePlacement(ref, anchor, level, focusFirst);
+  const onKeyDown = useMenuKeys(ref, items, { level, activate, openSubmenu, closeSelf: onCloseSelf, session });
+  const columns = menuColumns(items);
   return (
     <>
-      {item.separatorBefore && <div role="separator" className={styles.separator} />}
-      <button
-        type="button"
-        role={ROLES[item.kind ?? 'item']}
-        aria-checked={item.kind && item.kind !== 'item' ? Boolean(item.checked) : undefined}
-        aria-disabled={item.disabled || undefined}
-        tabIndex={-1}
-        className={[styles.menuItem, item.danger ? styles.danger : ''].join(' ')}
-        onClick={() => {
-          if (item.disabled) return;
-          onClose(item.id);
-          item.onSelect?.();
-        }}
+      <div
+        ref={ref}
+        role="menu"
+        aria-label={label}
+        popover="manual"
+        className={styles.menu}
+        onKeyDown={onKeyDown}
+        onContextMenu={(event) => event.preventDefault()}
+        onPointerEnter={props.onPointerEnter}
       >
-        <span>{item.label}</span>
-        {item.shortcut && <span className={styles.fieldNote}>{item.shortcut}</span>}
-      </button>
+        {items.map((item, index) => (
+          <MenuItem
+            key={item.id}
+            item={item}
+            id={`${id}-${index}`}
+            columns={columns}
+            expanded={open?.item.id === item.id}
+            onActivate={activate}
+            onHover={onHover}
+          />
+        ))}
+      </div>
+      {open && (
+        <MenuList
+          key={open.item.id}
+          label={open.item.label}
+          items={open.item.submenu ?? []}
+          anchor={open.element}
+          level={level + 1}
+          session={session}
+          focusFirst={open.focusFirst}
+          onPointerEnter={cancelHover}
+          onCloseSelf={closeSubmenu}
+        />
+      )}
     </>
   );
 }
 
-/** Arrow keys, Home, and End move focus with wrapping; Tab closes; printable keys pick by type-ahead. */
-function useMenuKeys(ref: RefObject<HTMLDivElement | null>, labels: readonly string[], onClose: () => void) {
-  const entries = () => [...(ref.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [])];
-  const current = () => entries().indexOf(document.activeElement as HTMLElement);
-  const typeahead = useTypeahead((buffer) => {
-    const index = typeaheadMatch(labels, current(), buffer);
-    if (index !== -1) entries()[index]?.focus();
-  });
-  return (event: KeyboardEvent) => {
-    const all = entries();
-    const moves: Record<string, number> = {
-      ArrowDown: current() + 1,
-      ArrowUp: current() - 1,
-      Home: 0,
-      End: all.length - 1,
-    };
-    if (event.key in moves) {
-      event.preventDefault();
-      all[(moves[event.key] + all.length) % all.length]?.focus();
-    } else if (event.key === 'Tab') {
-      onClose();
-    } else if (typeahead(event)) {
-      event.preventDefault();
-    }
+/** Closes the menu on a press outside it, when the window loses focus, and when the window resizes. */
+function dismissOnOutside(host: HTMLElement, close: () => void): () => void {
+  const onPointerDown = (event: Event) => {
+    if (!(event.target instanceof Node && host.contains(event.target))) close();
   };
-}
-
-function MenuPopup({
-  label,
-  items,
-  anchor,
-  onClose,
-}: Omit<MenuOptions, 'returnFocus'> & { onClose(id: string | null): void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useLayer({ kind: 'menu', modal: false, close: () => onClose(null) }, true);
-  useEffect(() => ref.current?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus(), []);
-  const onKeyDown = useMenuKeys(
-    ref,
-    items.map((item) => item.label),
-    () => onClose(null),
-  );
-  const { x, y } = anchorPoint(anchor);
-  return (
-    <div
-      role="menu"
-      aria-label={label}
-      ref={ref}
-      className={styles.menu}
-      style={{ left: x, top: y }}
-      onKeyDown={onKeyDown}
-    >
-      {items.map((item) => (
-        <MenuEntry key={item.id} item={item} onClose={onClose} />
-      ))}
-    </div>
-  );
+  document.addEventListener('pointerdown', onPointerDown, true);
+  window.addEventListener('blur', close);
+  window.addEventListener('resize', close);
+  return () => {
+    document.removeEventListener('pointerdown', onPointerDown, true);
+    window.removeEventListener('blur', close);
+    window.removeEventListener('resize', close);
+  };
 }
 
 /** Shows a menu and resolves with the chosen item's id, or null when it closes without a choice. */
 export function openMenu(options: MenuOptions): Promise<string | null> {
+  if (options.items.length === 0) return Promise.resolve(null);
   const returnTo = options.returnFocus ?? (document.activeElement as HTMLElement | null);
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
   return new Promise((resolve) => {
-    const close = (id: string | null) => {
+    let done = false;
+    const finish = (item: MenuItemSpec | null) => {
+      if (done) return;
+      done = true;
+      stop();
+      for (const menu of host.querySelectorAll<HTMLElement>('[role="menu"]')) {
+        playExit(menu);
+        hideFromTopLayer(menu);
+      }
+      if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
       queueMicrotask(() => {
         root.unmount();
         host.remove();
-        if (returnTo?.isConnected) returnTo.focus();
       });
-      resolve(id);
+      try {
+        item?.onSelect?.();
+      } finally {
+        resolve(item?.id ?? null);
+      }
     };
-    root.render(<MenuPopup label={options.label} items={options.items} anchor={options.anchor} onClose={close} />);
+    const session: Session = { choose: finish, close: () => finish(null) };
+    const stop = dismissOnOutside(host, session.close);
+    const { label, items, anchor } = options;
+    root.render(
+      <MenuList
+        label={label}
+        items={items}
+        anchor={anchor}
+        level={0}
+        session={session}
+        focusFirst
+        onCloseSelf={session.close}
+      />,
+    );
   });
-}
-
-/**
- * Opens the menu that `build` returns on right-click, press and hold, Shift+F10, and the Menu key, which
- * Chromium all report as a contextmenu event.
- */
-export function useContextMenu(
-  target: RefObject<HTMLElement | null>,
-  build: (anchor: MenuAnchor) => { label: string; items: readonly MenuItemSpec[] } | null,
-): void {
-  const latest = useRef(build);
-  useEffect(() => {
-    latest.current = build;
-  });
-  useEffect(() => {
-    const element = target.current;
-    if (!element) return;
-    const onContextMenu = (event: MouseEvent) => {
-      const fromKeyboard = event.button !== 2 && event.clientX === 0 && event.clientY === 0;
-      const anchor: MenuAnchor = fromKeyboard ? element : { x: event.clientX, y: event.clientY };
-      const menu = latest.current(anchor);
-      if (!menu) return;
-      event.preventDefault();
-      void openMenu({ ...menu, anchor, returnFocus: element });
-    };
-    element.addEventListener('contextmenu', onContextMenu);
-    return () => element.removeEventListener('contextmenu', onContextMenu);
-  }, [target]);
 }

@@ -1,4 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
+import { userEvent } from 'vitest/browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expectNoAxeViolations, pressChord, renderApp } from './test';
 
@@ -24,7 +25,9 @@ describe('dark mode switch', () => {
   it('is a switch named "Dark mode" with its shortcut in the tooltip', async () => {
     await renderApp(windows(false));
     expect(isOn()).toBe('false');
-    expect(darkModeSwitch().title).toBe('Dark mode (Ctrl+Shift+D)');
+    await userEvent.hover(darkModeSwitch());
+    const tooltip = await screen.findByRole('tooltip', {}, { timeout: 2000 });
+    expect(tooltip.textContent).toBe('Dark mode (Ctrl+Shift+D)');
     expect(darkModeSwitch().getAttribute('aria-keyshortcuts')).toBe('Control+Shift+D');
   });
 

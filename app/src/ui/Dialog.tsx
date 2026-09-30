@@ -1,16 +1,22 @@
 // Dialogs (ARCHITECTURE.md section 15.1): a title, one sentence, then actions with the primary on the right.
-// Tab stays inside, Escape closes through the layer stack, and focus returns to the opener. WP4 moves this to a
-// <dialog> with inert on everything except the caption buttons, the scrim, and motion.
+// The dialog is a <dialog> opened with show(), not showModal(), so the window's caption buttons stay usable:
+// everything else becomes inert instead. Tab wraps inside, Escape closes through the layer stack, and focus
+// returns to the opener, or to the fallback the opener gave when the opener is gone.
 
-import { useEffect, useId, useRef } from 'react';
+import { useId, useLayoutEffect, useRef } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { createRoot } from 'react-dom/client';
+import type { LayerKind } from '../state/layers';
 import { t } from '../strings/t';
 import { Button } from './Button';
-import styles from './controls.module.css';
-import { FocusScope, tabbables } from './FocusScope';
+import styles from './Dialog.module.css';
+import { FocusScope } from './FocusScope';
 import { useLayer } from './hooks';
+import { inertOutside } from './inert';
+import { tabbables } from './tabbable';
+import { playExit } from './topLayer';
+import { visuallyHiddenClass } from './VisuallyHidden';
 
 export interface DialogAction {
   id: string;
@@ -33,58 +39,107 @@ export interface DialogProps {
   returnFocus?: () => HTMLElement | null;
 }
 
-function focusInitial(root: HTMLElement, initial: DialogProps['initialFocus']): void {
-  if (initial && typeof initial === 'object') return initial.current?.focus();
-  const target =
-    initial === 'leastDestructive' ? root.querySelector<HTMLElement>('[data-least-destructive="true"]') : null;
-  (target ?? tabbables(root)[0])?.focus();
+function focusInitial(dialog: HTMLElement, initial: DialogProps['initialFocus']): void {
+  if (initial && typeof initial === 'object') {
+    (initial.current ?? dialog).focus();
+    return;
+  }
+  const least = initial === 'leastDestructive' ? dialog.querySelector<HTMLElement>('[data-least-destructive]') : null;
+  (least ?? tabbables(dialog)[0] ?? dialog).focus();
+}
+
+/** True when focus can go back to the element: it's still on the page, visible, and not inert. */
+function canFocus(element: HTMLElement | null | undefined): element is HTMLElement {
+  return Boolean(element?.isConnected && !element.closest('[inert]') && element.checkVisibility());
+}
+
+function layerKind(size: DialogProps['size'], placement: DialogProps['placement']): LayerKind {
+  if (size === 'palette') return 'palette';
+  return placement === 'start' ? 'drawer' : 'dialog';
+}
+
+/** Opens the dialog, makes the rest of the page inert, and puts focus back when it closes. */
+function useModal(
+  layerRef: RefObject<HTMLDivElement | null>,
+  dialogRef: RefObject<HTMLDialogElement | null>,
+  props: Pick<DialogProps, 'initialFocus' | 'returnFocus'>,
+) {
+  const latest = useRef(props);
+  useLayoutEffect(() => {
+    latest.current = props;
+  });
+  useLayoutEffect(() => {
+    const [layer, dialog] = [layerRef.current, dialogRef.current];
+    if (!layer || !dialog) return;
+    const opener = document.activeElement as HTMLElement | null;
+    dialog.show();
+    const restoreInert = inertOutside(layer);
+    focusInitial(dialog, latest.current.initialFocus);
+    return () => {
+      const active = document.activeElement;
+      const hadFocus = !active || active === document.body || layer.contains(active);
+      playExit(layer);
+      restoreInert();
+      if (!hadFocus) return;
+      const back = canFocus(opener) ? opener : latest.current.returnFocus?.();
+      back?.focus();
+    };
+  }, [layerRef, dialogRef]);
 }
 
 export function Dialog(props: DialogProps) {
-  const { title, description, children, actions = [], initialFocus = 'first', onDismiss, returnFocus } = props;
+  const { title, description, children, actions = [], onDismiss } = props;
+  const { size = 'small', placement = 'center', returnFocus } = props;
   const id = useId();
-  const ref = useRef<HTMLDivElement>(null);
-  useLayer({ kind: 'dialog', modal: true, close: onDismiss, returnFocus }, true);
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    if (ref.current) focusInitial(ref.current, initialFocus);
-    return () => {
-      const back = returnFocus?.() ?? opener;
-      if (back?.isConnected) back.focus();
-    };
-    // Focus moves once, when the dialog opens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useLayer({ kind: layerKind(size, placement), modal: true, close: onDismiss, returnFocus }, true);
+  useModal(layerRef, dialogRef, props);
   return createPortal(
-    <FocusScope contain>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`${id}-title`}
-        aria-describedby={description ? `${id}-description` : undefined}
-        className={styles.dialog}
-        ref={ref}
-      >
-        <h2 id={`${id}-title`}>{title}</h2>
-        {description && <p id={`${id}-description`}>{description}</p>}
-        {children}
-        {actions.length > 0 && (
-          <div className={styles.actions}>
-            {actions.map((action) => (
-              <Button
-                key={action.id}
-                variant={action.variant}
-                data-least-destructive={action.leastDestructive ? 'true' : undefined}
-                onClick={() => void action.onPress()}
-              >
-                {action.label}
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
-    </FocusScope>,
+    <div ref={layerRef} className={styles.layer} data-size={size} data-placement={placement}>
+      {/* checks-disable-next-line usability: a pointer shortcut only; the keyboard closes with Escape */}
+      <div className={styles.scrim} aria-hidden="true" onClick={onDismiss} />
+      <FocusScope contain>
+        <dialog
+          ref={dialogRef}
+          tabIndex={-1}
+          aria-modal="true"
+          aria-labelledby={`${id}-title`}
+          aria-describedby={description ? `${id}-description` : undefined}
+          className={styles.dialog}
+        >
+          <h2 id={`${id}-title`} className={size === 'palette' ? visuallyHiddenClass : styles.title}>
+            {title}
+          </h2>
+          {description && (
+            <p id={`${id}-description`} className={styles.description}>
+              {description}
+            </p>
+          )}
+          {children}
+          {actions.length > 0 && <DialogActions actions={actions} />}
+        </dialog>
+      </FocusScope>
+    </div>,
     document.body,
+  );
+}
+
+function DialogActions({ actions }: { actions: readonly DialogAction[] }) {
+  return (
+    <div className={styles.actions}>
+      {actions.map((action) => (
+        <Button
+          key={action.id}
+          variant={action.variant}
+          data-least-destructive={action.leastDestructive ? 'true' : undefined}
+          data-fill={action.variant === 'danger' ? '' : undefined}
+          onClick={() => void action.onPress()}
+        >
+          {action.label}
+        </Button>
+      ))}
+    </div>
   );
 }
 
@@ -99,7 +154,11 @@ export function confirm(options: {
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
   return new Promise((resolve) => {
+    let done = false;
     const finish = (answer: boolean) => {
+      if (done) return;
+      done = true;
+      // Unmounting first returns focus before the caller's code after `await confirm(...)` runs.
       queueMicrotask(() => {
         root.unmount();
         host.remove();
