@@ -1,77 +1,6 @@
-/* Styles for WP0's simple primitives. Every value is a design token, and every position a logical property.
-   WP4 replaces these with one module per component. */
+/* Styles for the primitives WP0 wrote and WP4's scope didn't reach: RadioGroup, RadioCard, and ProgressBar. Every
+   value is a design token, and every position a logical property. The focus ring comes from base.css. */
 @layer components {
-  .button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    min-block-size: var(--size-target-pointer);
-    padding-inline: var(--space-5);
-    border: 1px solid var(--color-border-control);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--color-text-primary);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .primary {
-    border-color: var(--color-accent-primary);
-    background: var(--color-accent-primary);
-    color: var(--color-text-on-accent);
-  }
-
-  .quiet {
-    border-color: transparent;
-    background: transparent;
-    color: var(--color-text-link);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .danger {
-    color: var(--color-status-danger);
-  }
-
-  .iconButton {
-    position: relative;
-    display: grid;
-    place-items: center;
-    inline-size: var(--size-target-pointer);
-    block-size: var(--size-target-pointer);
-    padding: 0;
-    border: none;
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--color-text-secondary);
-    cursor: pointer;
-  }
-
-  /* Keeps the 32 px look but gives every input the 44 px touch target from BRAND.md section 6. */
-  .iconButton::before {
-    content: '';
-    position: absolute;
-    inset: calc((var(--size-target-pointer) - var(--size-target-touch)) / 2);
-  }
-
-  .iconButton svg {
-    inline-size: var(--size-icon-md);
-    block-size: var(--size-icon-md);
-  }
-
-  .iconButton:hover {
-    background: var(--color-surface-hover);
-  }
-
-  .button:focus-visible,
-  .quiet:focus-visible,
-  .iconButton:focus-visible,
-  .radioCard:focus-visible {
-    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
-    outline-offset: var(--size-focus-ring-offset);
-  }
-
   .radioGroup {
     display: flex;
     flex-wrap: wrap;
@@ -96,68 +25,14 @@
     background: var(--color-accent-primary-subtle);
   }
 
-  .field {
-    display: grid;
-    gap: var(--space-2);
-  }
-
-  .field input {
-    min-block-size: var(--size-target-pointer);
-    padding-inline: var(--space-4);
-    border: 1px solid var(--color-border-control);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-sunken);
-    color: var(--color-text-primary);
-    font: inherit;
-  }
-
   .fieldNote {
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
   }
 
-  .fieldError {
-    color: var(--color-status-danger);
-    font-size: var(--type-small-size);
-    line-height: var(--type-small-line);
-  }
-
-  .toasts {
-    position: fixed;
-    inset-block-end: var(--space-7);
-    inset-inline: 0;
-    z-index: var(--layer-toast);
-    display: grid;
-    justify-items: center;
-    pointer-events: none;
-  }
-
-  .toast {
-    display: flex;
-    align-items: center;
-    gap: var(--space-5);
-    max-inline-size: min(var(--size-toast-max-width), calc(100vw - 2 * var(--space-5)));
-    padding: var(--space-4) var(--space-5);
-    border-radius: var(--radius-md);
-    background: var(--color-surface-raised);
-    box-shadow: var(--elevation-2);
-    pointer-events: auto;
-  }
-
   .progress {
     block-size: var(--space-1);
     background: var(--color-accent-primary-subtle);
-  }
-
-  .visuallyHidden {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline-start: 0;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 }

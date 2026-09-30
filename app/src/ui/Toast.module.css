@@ -1,0 +1,82 @@
+/* Toasts sit at the bottom center, 24 px above the bottom edge, or above the bottom bar in compact. They rise
+   12 px and fade in over 250 ms (BRAND.md section 9); with reduced motion they only fade. The region ignores the
+   pointer, so only the toast itself takes clicks. */
+@layer components {
+  .region {
+    position: fixed;
+    inset-block-end: var(--bottom-bar-height, 0px);
+    inset-inline: 0;
+    z-index: var(--layer-toast);
+    display: grid;
+    justify-items: center;
+    pointer-events: none;
+  }
+
+  /* The toast and the gap under it, which is what a scroll container has to keep clear (--toast-height). */
+  .stage {
+    padding-block-end: var(--space-7);
+    padding-inline: var(--space-5);
+    max-inline-size: 100%;
+    box-sizing: border-box;
+  }
+
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    max-inline-size: min(var(--size-toast-max-width), calc(100vw - 2 * var(--space-5)));
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    box-shadow: var(--elevation-2);
+    pointer-events: auto;
+    transition:
+      opacity var(--motion-duration-gentle) var(--motion-easing-enter),
+      translate var(--motion-duration-gentle) var(--motion-easing-enter);
+  }
+
+  @starting-style {
+    .toast {
+      opacity: 0;
+      translate: 0 var(--space-4);
+    }
+  }
+
+  .toast[data-tone='danger'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .message {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+  }
+}
+
+@layer states {
+  @media (prefers-reduced-motion: reduce) {
+    .toast {
+      transition-property: opacity;
+    }
+  }
+
+  :root[data-motion='reduce'] .toast {
+    transition-property: opacity;
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .toast {
+      border-color: ButtonBorder;
+    }
+  }
+}

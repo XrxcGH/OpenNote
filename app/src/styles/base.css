@@ -9,6 +9,13 @@
        or 44 px targets with touch density. Components use these rather than choosing a size themselves. */
     --target-size: var(--size-target-pointer);
     --toolbar-size: var(--size-toolbar-pointer);
+    /* What scroll containers keep clear at their bottom, so focus never lands under a toast or the bottom bar
+       (WCAG 2.4.11). Toaster keeps --toast-height current; scroll containers use this in scroll-padding. */
+    --toast-clearance: calc(var(--toast-height, 0px) + var(--bottom-bar-height, 0px) + var(--space-4));
+  }
+
+  html {
+    scroll-padding-block-end: var(--toast-clearance);
   }
 
   html,

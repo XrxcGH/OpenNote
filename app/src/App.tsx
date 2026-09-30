@@ -9,6 +9,7 @@ import { SetupView } from './features/setup';
 import { TrashView } from './features/trash';
 import { BottomBar, CommandBar } from './shell/commandbar';
 import { Workspace } from './shell/layout/Workspace';
+import { useRegion } from './shell/regions';
 import { AppBar, TitleBar } from './shell/titlebar';
 import { Announcer, Toaster } from './ui';
 
@@ -31,11 +32,12 @@ function View() {
 
 export function App() {
   const location = useLocation();
+  const notifications = useRegion('notifications');
   return (
     <>
       {location.view === 'workspace' || location.view === 'trash' ? null : <TitleBar />}
       <View />
-      <Toaster />
+      <Toaster region={notifications} />
       <Announcer />
     </>
   );
