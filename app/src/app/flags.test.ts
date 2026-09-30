@@ -1,0 +1,34 @@
+import { afterEach, describe, expect, it } from 'vitest';
+import { resetStores } from '../state/store';
+import { initFlags, isEnabled, withEnabledFlags } from './flags';
+
+afterEach(() => resetStores());
+
+describe('flags', () => {
+  it('follow the channel defaults', () => {
+    initFlags('dev');
+    expect(isEnabled('trash.view')).toBe(true);
+    initFlags('stable');
+    expect(isEnabled('trash.view')).toBe(false);
+    expect(isEnabled('notes.sectionGroups')).toBe(true);
+    expect(isEnabled('storage.core')).toBe(false);
+  });
+
+  it('take overrides in development and nightly builds only, the later ones winning', () => {
+    initFlags('nightly', { 'storage.core': true }, { 'storage.core': false, 'trash.view': false });
+    expect(isEnabled('storage.core')).toBe(false);
+    expect(isEnabled('trash.view')).toBe(false);
+    initFlags('beta', { 'storage.core': true });
+    expect(isEnabled('storage.core')).toBe(false);
+  });
+
+  it('filter registry items by their flag', () => {
+    initFlags('stable');
+    const items = [
+      { id: 'a' },
+      { id: 'b', flag: 'trash.view' as const },
+      { id: 'c', flag: 'notes.sectionGroups' as const },
+    ];
+    expect(withEnabledFlags(items).map((item) => item.id)).toEqual(['a', 'c']);
+  });
+});

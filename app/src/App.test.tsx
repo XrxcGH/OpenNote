@@ -1,97 +1,88 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { App } from './App';
+import { expectNoAxeViolations, pressChord, renderApp } from './test';
 
-// The real isTauri() runs, so these tests also cover the guard. Tauri sets window.isTauri inside the app.
-const tauri = vi.hoisted(() => ({
-  setTheme: vi.fn<(theme: 'light' | 'dark' | null) => Promise<void>>(() => Promise.resolve()),
-}));
-vi.mock('@tauri-apps/api/window', () => ({ getCurrentWindow: () => ({ setTheme: tauri.setTheme }) }));
-
-// jsdom has no matchMedia, so each test says whether Windows is set to dark.
-function stubSystemTheme(dark: boolean) {
-  vi.stubGlobal('matchMedia', (media: string) => ({
-    matches: dark && media === '(prefers-color-scheme: dark)',
-    media,
-    addEventListener() {},
-    removeEventListener() {},
-  }));
-}
-
+// In a real browser the switch crossfades through a view transition, which applies the new theme a frame later,
+// so checks after a switch wait for it.
 const darkModeSwitch = () => screen.getByRole('switch', { name: 'Dark mode' });
 const isOn = () => darkModeSwitch().getAttribute('aria-checked');
 const dataTheme = () => document.documentElement.getAttribute('data-theme');
 const pressShortcut = (keys: KeyboardEventInit = {}) =>
   fireEvent.keyDown(window, { key: 'D', code: 'KeyD', ctrlKey: true, shiftKey: true, ...keys });
+const windows = (dark: boolean) => ({ boot: { os: { dark } } });
 
 beforeEach(() => {
-  stubSystemTheme(false);
   localStorage.clear();
   document.documentElement.removeAttribute('data-theme');
-  tauri.setTheme.mockClear();
 });
 
 afterEach(() => {
-  cleanup();
-  vi.unstubAllGlobals();
   Reflect.deleteProperty(document, 'startViewTransition');
 });
 
 describe('dark mode switch', () => {
-  it('is a switch named "Dark mode" with its shortcut in the tooltip', () => {
-    render(<App />);
+  it('is a switch named "Dark mode" with its shortcut in the tooltip', async () => {
+    await renderApp(windows(false));
     expect(isOn()).toBe('false');
     expect(darkModeSwitch().title).toBe('Dark mode (Ctrl+Shift+D)');
     expect(darkModeSwitch().getAttribute('aria-keyshortcuts')).toBe('Control+Shift+D');
   });
 
-  it('follows Windows until the person chooses', () => {
-    stubSystemTheme(true);
-    render(<App />);
+  it('follows Windows until the person chooses', async () => {
+    await renderApp(windows(true));
     expect(isOn()).toBe('true');
     expect(dataTheme()).toBeNull();
 
     fireEvent.click(darkModeSwitch());
-    expect(isOn()).toBe('false');
+    await expect.poll(isOn).toBe('false');
     expect(dataTheme()).toBe('light');
   });
 
-  it('starts from the saved preference', () => {
+  it('starts from the saved preference', async () => {
     localStorage.setItem('opennote.theme', 'dark');
-    render(<App />);
+    await renderApp(windows(false));
     expect(isOn()).toBe('true');
     expect(dataTheme()).toBe('dark');
   });
 });
 
 describe('switching themes', () => {
-  it('switches and saves the theme on click', () => {
-    render(<App />);
+  it('switches and saves the theme on click', async () => {
+    const { platform } = await renderApp(windows(false));
+    const saved = vi.spyOn(platform.settings, 'update');
     fireEvent.click(darkModeSwitch());
-    expect(isOn()).toBe('true');
+    await expect.poll(isOn).toBe('true');
     expect(dataTheme()).toBe('dark');
     expect(localStorage.getItem('opennote.theme')).toBe('dark');
+    expect(saved).toHaveBeenLastCalledWith({ appearance: { theme: 'dark' } });
 
     fireEvent.click(darkModeSwitch());
-    expect(isOn()).toBe('false');
+    await expect.poll(isOn).toBe('false');
     expect(dataTheme()).toBe('light');
     expect(localStorage.getItem('opennote.theme')).toBe('light');
   });
 
-  it('switches with Ctrl+Shift+D every time it is pressed', () => {
-    render(<App />);
+  it('switches with Ctrl+Shift+D every time it is pressed', async () => {
+    await renderApp(windows(false));
     expect(pressShortcut()).toBe(false);
-    expect(isOn()).toBe('true');
+    await expect.poll(isOn).toBe('true');
     expect(dataTheme()).toBe('dark');
 
     pressShortcut();
-    expect(isOn()).toBe('false');
+    await expect.poll(isOn).toBe('false');
     expect(dataTheme()).toBe('light');
     expect(localStorage.getItem('opennote.theme')).toBe('light');
   });
 
-  it('ignores a held key and extra modifiers', () => {
-    render(<App />);
+  it('switches with a trusted Ctrl+Shift+D key press from the keyboard', async () => {
+    await renderApp(windows(false));
+    await pressChord('Ctrl+Shift+D');
+    await expect.poll(isOn).toBe('true');
+    expect(dataTheme()).toBe('dark');
+  });
+
+  it('ignores a held key and extra modifiers', async () => {
+    await renderApp(windows(false));
     pressShortcut({ repeat: true });
     pressShortcut({ altKey: true });
     pressShortcut({ metaKey: true });
@@ -99,10 +90,13 @@ describe('switching themes', () => {
     expect(dataTheme()).toBeNull();
   });
 
-  it('crossfades through a view transition when the engine has one', () => {
-    const startViewTransition = vi.fn((update: () => void) => update());
+  it('crossfades through a view transition when the engine has one', async () => {
+    const startViewTransition = vi.fn((update: () => void) => {
+      update();
+      return { ready: Promise.resolve() };
+    });
     Object.defineProperty(document, 'startViewTransition', { value: startViewTransition, configurable: true });
-    render(<App />);
+    await renderApp(windows(false));
     fireEvent.click(darkModeSwitch());
     expect(startViewTransition).toHaveBeenCalledTimes(1);
     expect(isOn()).toBe('true');
@@ -110,18 +104,37 @@ describe('switching themes', () => {
   });
 });
 
-describe('native window theme', () => {
-  it('leaves the native window alone outside Tauri', () => {
-    render(<App />);
+describe('window frame', () => {
+  it('sends the shown theme to the window frame, following Windows', async () => {
+    const { platform } = await renderApp(windows(true));
+    expect(platform.window.calls.frameTheme).toEqual(['dark']);
     fireEvent.click(darkModeSwitch());
-    expect(tauri.setTheme).not.toHaveBeenCalled();
+    await expect.poll(() => platform.window.calls.frameTheme).toEqual(['dark', 'light']);
   });
 
-  it('keeps the native window theme in step inside Tauri', () => {
-    vi.stubGlobal('isTauri', true);
-    render(<App />);
-    expect(tauri.setTheme).toHaveBeenLastCalledWith(null);
+  it('follows a change of the Windows setting under Match Windows', async () => {
+    const { platform } = await renderApp(windows(false));
+    platform.setOs({ dark: true });
+    await expect.poll(isOn).toBe('true');
+    expect(platform.window.calls.frameTheme).toEqual(['light', 'dark']);
+  });
+});
+
+describe('the workspace', () => {
+  it('shows the sample notebooks and passes axe in both themes', async () => {
+    const { container } = await renderApp(windows(false));
+    expect(await screen.findByText('Biology 101')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Lectures' })).toBeTruthy();
+    await expectNoAxeViolations(container);
     fireEvent.click(darkModeSwitch());
-    expect(tauri.setTheme).toHaveBeenLastCalledWith('dark');
+    await expect.poll(dataTheme).toBe('dark');
+    await expectNoAxeViolations(container);
+  });
+
+  it('opens a section and a page', async () => {
+    await renderApp(windows(false));
+    fireEvent.click(await screen.findByRole('button', { name: 'Lectures' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mitosis' }));
+    expect(await screen.findByRole('heading', { name: 'Mitosis', level: 1 })).toBeTruthy();
   });
 });

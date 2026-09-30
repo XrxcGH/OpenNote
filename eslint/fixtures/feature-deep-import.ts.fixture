@@ -1,0 +1,5 @@
+// lint-as: app/src/features/theme/Bad.ts
+// expect: opennote/feature-boundaries
+import { useNotesQuery } from '../tree/useNotesQuery';
+
+export const query = useNotesQuery;

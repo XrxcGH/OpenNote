@@ -385,13 +385,39 @@ export const tokens = {
     "editorMin": 480,
     "readingMeasure": "72ch",
     "focusRingWidth": 2,
-    "focusRingOffset": 2
+    "focusRingOffset": 2,
+    "titleBar": 40,
+    "titleBarTouch": 48,
+    "captionButton": 46,
+    "dragMin": 200,
+    "rail": 48,
+    "sidebarMin": 220,
+    "sidebarMax": 400,
+    "pageListMin": 240,
+    "pageListMax": 420,
+    "splitterHit": 8,
+    "splitterHitTouch": 24,
+    "treeIndent": 16,
+    "rowPointer": 32,
+    "rowTouch": 44,
+    "pageRow": 56,
+    "autoScrollStrip": 28,
+    "palette": 680,
+    "paletteTop": 90,
+    "setupCardWidth": 720,
+    "setupCardHeight": 600,
+    "settingsNav": 240,
+    "bottomBar": 64,
+    "menuMinWidth": 208,
+    "dialogWidth": 440,
+    "toastMaxWidth": 480,
+    "contentMin": 320,
+    "windowMin": 400
   },
   "breakpoint": {
-    "compact": 600,
-    "medium": 840,
-    "expanded": 1200,
-    "wide": 1600
+    "medium": 600,
+    "expanded": 840,
+    "wide": 1200
   },
   "elevation": {
     "1": "0 1px 2px rgba(43, 37, 33, 0.08)",
@@ -429,5 +455,14 @@ export const tokens = {
       "mass": 1
     },
     "reducedDuration": 100
+  },
+  "interaction": {
+    "longPressMs": 500,
+    "typeaheadMs": 700,
+    "tooltipDelayMs": 500,
+    "loadingDelayMs": 300,
+    "toastMs": 6000,
+    "themeApplyMinMs": 350,
+    "pageOpenDebounceMs": 100
   }
 } as const;

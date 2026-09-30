@@ -1,0 +1,65 @@
+name: nightly
+
+# The nightly run (ARCHITECTURE.md section 21.10). This skeleton builds the app with the test endpoints and runs
+# every E2E spec. WP1 grows it with the other architectures, 200% text, start-up baselines, and the frame probe;
+# WP2 adds the updater specs, and WP4 the NVDA canary. A failure opens an issue, as DEVELOPMENT.md section 8
+# requires.
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-full:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install tools
+        run: npm ci
+      - name: Test build of the app
+        run: npx tauri build --no-bundle --features test-endpoints -- --profile ci
+      - name: msedgedriver matching the WebView2 Runtime
+        run: pwsh tests/e2e/scripts/edgedriver.ps1
+      - name: tauri-driver
+        run: pwsh tests/e2e/scripts/tauri-driver.ps1
+      - name: Every E2E spec
+        env:
+          OPENNOTE_E2E_EXE: target/ci/opennote.exe
+        run: node --test "tests/e2e/**/*.spec.ts"
+      - name: Start-up baseline for main
+        run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
+      - name: Keep the E2E logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-e2e-logs
+          path: tests/e2e/logs
+          retention-days: 14
+
+  report-failure:
+    needs: [e2e-full]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Nightly run failed on $(date -u +%Y-%m-%d)" \
+            --body "The nightly run failed: $RUN_URL"

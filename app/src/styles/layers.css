@@ -1,0 +1,8 @@
+/* The cascade layer order for every style sheet (ARCHITECTURE.md section 4.6). A later layer wins over an earlier
+   one, whatever the selector's specificity. This file loads first, so the order is fixed before any rule.
+   - tokens: design values
+   - base: element defaults
+   - components: CSS modules
+   - states: app-wide modes that root attributes set
+   - forced: Windows contrast themes */
+@layer tokens, base, components, states, forced;

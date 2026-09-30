@@ -1,0 +1,5 @@
+// lint-as: app/src/ui/Bad.ts
+// expect: opennote/ui-boundaries
+import { settingsStore } from '../state/settings';
+
+export const store = settingsStore;

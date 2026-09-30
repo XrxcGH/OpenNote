@@ -8,6 +8,9 @@ on:
   # caller's event, so a release run is a push here and runs CHECKS on all files.
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   checks:
     # Quality gate and TypeScript checks on both operating systems.
@@ -40,8 +43,74 @@ jobs:
         if: github.event_name == 'push'
         run: node checks/cli.ts --all
 
+  components:
+    # Component tests in a real browser: the installed Edge on Windows, Google Chrome on Ubuntu (tests/browser.ts).
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Component tests (Vitest browser mode)
+        run: npm run test:components
+
+  ui-web:
+    # The production interface in Edge: the bundle budget, then Playwright against the test build.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      # Builds main with this branch's tools, so the summary shows each group's change without needing artifacts.
+      - name: Build main's interface, to compare bundle sizes with
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          git fetch --depth=1 origin main
+          git worktree add ../opennote-main FETCH_HEAD
+          New-Item -ItemType Junction -Path ../opennote-main/node_modules -Target (Resolve-Path node_modules) | Out-Null
+          Push-Location ../opennote-main
+          node app/scripts/build-tokens.ts
+          npx vite build --config app/vite.config.ts --manifest
+          Pop-Location
+          $env:GITHUB_STEP_SUMMARY = ''
+          node app/scripts/check-bundle.ts --dist ../opennote-main/app/dist --report bundle-main.json
+      - name: Build the production interface
+        run: npm run app:build
+      - name: Bundle budget
+        run: node app/scripts/check-bundle.ts --compare-with bundle-main.json
+      - name: Build the test interface (web platform)
+        run: npm run app:build:test
+      - name: Playwright
+        run: npx playwright test --config tests/ui/playwright.config.ts
+      - name: Keep the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            tests/ui/report
+            tests/ui/results
+          retention-days: 7
+
   windows-app:
-    # Rust checks and a debug build of the desktop app on Windows, the first target platform.
+    # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -65,11 +134,61 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Rust tests
         run: cargo test --workspace
-      - name: Debug build of the app
-        run: npx tauri build --debug --no-bundle
-      - name: Keep the debug build
+      - name: Inter-process types match the Rust ones (bindings drift check)
+        run: git diff --exit-code app/src/platform/bindings
+      - name: Test build of the app (ci profile, with the test endpoints the E2E tests use)
+        run: npx tauri build --no-bundle --features test-endpoints -- --profile ci
+      - name: Keep the test build
         uses: actions/upload-artifact@v4
         with:
-          name: opennote-debug-exe
-          path: target/debug/opennote.exe
+          name: opennote-e2e-exe
+          path: target/ci/opennote.exe
+          retention-days: 7
+
+  e2e-smoke:
+    # The E2E smoke set on the real app, driven by WebdriverIO through tauri-driver and msedgedriver.
+    needs: windows-app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install tools
+        run: npm ci
+      - name: Cache tauri-driver
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/tauri-driver.exe
+          key: tauri-driver-2.1.0-${{ runner.os }}-${{ runner.arch }}
+      - name: Cache msedgedriver
+        uses: actions/cache@v4
+        with:
+          path: tests/e2e/.drivers
+          key: msedgedriver-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}
+          restore-keys: msedgedriver-${{ runner.os }}-${{ runner.arch }}-
+      - uses: actions/download-artifact@v4
+        with:
+          name: opennote-e2e-exe
+          path: target/e2e
+      - name: msedgedriver matching the WebView2 Runtime
+        run: pwsh tests/e2e/scripts/edgedriver.ps1
+      - name: tauri-driver
+        run: pwsh tests/e2e/scripts/tauri-driver.ps1
+      - name: E2E smoke set
+        env:
+          OPENNOTE_E2E_EXE: target/e2e/opennote.exe
+        run: npm run test:e2e
+      - name: Start-up regression check
+        run: node tests/perf/startup.ts --runs 5 --exe target/e2e/opennote.exe --compare-with main
+      - name: Keep the E2E logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: tests/e2e/logs
           retention-days: 7

@@ -1,0 +1,59 @@
+/* WP0's static workspace grid: the title bar and command bar across the top, then the notebooks, pages, and
+   page columns at their default widths. Narrower windows share the width, and compact ones stack the panes, so
+   the app stays usable until WP5 builds the responsive layout. */
+@layer components {
+  .workspace {
+    display: grid;
+    block-size: 100%;
+    grid-template-columns: var(--size-sidebar) var(--size-page-list) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'title title title'
+      'commands commands commands'
+      'notebooks pages page';
+  }
+
+  :global(:root:not([data-size-class='wide'])) .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+  }
+
+  :global(:root[data-size-class='compact']) .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-areas: 'title' 'commands' 'notebooks' 'pages' 'page';
+    overflow: auto;
+  }
+
+  :global(:root[data-size-class='compact']) .page {
+    overflow: visible;
+  }
+
+  .titleBar {
+    grid-area: title;
+  }
+
+  .commandBar {
+    grid-area: commands;
+  }
+
+  .notebooks,
+  .pages {
+    overflow: auto;
+    padding: var(--space-4);
+    border-inline-end: 1px solid var(--color-border-subtle);
+  }
+
+  .notebooks {
+    grid-area: notebooks;
+  }
+
+  .pages {
+    grid-area: pages;
+  }
+
+  .page {
+    grid-area: page;
+    overflow: auto;
+    background: var(--color-surface-sunken);
+  }
+}

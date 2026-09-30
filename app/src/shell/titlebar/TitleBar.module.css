@@ -1,0 +1,22 @@
+@layer components {
+  .titleBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    block-size: var(--size-title-bar);
+    padding-inline: var(--space-4);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  :global(:root[data-density='touch']) .titleBar {
+    block-size: var(--size-title-bar-touch);
+  }
+
+  .appName {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .spacer {
+    flex: 1;
+  }
+}
