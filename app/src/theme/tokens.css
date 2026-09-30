@@ -26,8 +26,8 @@
   --color-status-recording: #A8342A;
   --color-focus-ring: #A9502F;
   --color-selection-highlight: #F4DE93;
-  --font-ui: "Atkinson Hyperlegible Next", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-reading: "Literata", "Cambria", Georgia, serif;
+  --font-ui: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-reading: "Literata Variable", "Literata", "Cambria", Georgia, serif;
   --font-mono: "Atkinson Hyperlegible Mono", "Cascadia Code", Consolas, monospace;
   --font-weight-regular: 400;
   --font-weight-medium: 500;

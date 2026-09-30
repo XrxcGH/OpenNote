@@ -302,8 +302,8 @@ export const tokens = {
     ]
   },
   "font": {
-    "ui": "\"Atkinson Hyperlegible Next\", \"Segoe UI Variable Text\", \"Segoe UI\", system-ui, sans-serif",
-    "reading": "\"Literata\", \"Cambria\", Georgia, serif",
+    "ui": "\"Atkinson Hyperlegible Next Variable\", \"Atkinson Hyperlegible Next\", \"Segoe UI Variable Text\", \"Segoe UI\", system-ui, sans-serif",
+    "reading": "\"Literata Variable\", \"Literata\", \"Cambria\", Georgia, serif",
     "mono": "\"Atkinson Hyperlegible Mono\", \"Cascadia Code\", Consolas, monospace",
     "weight": {
       "regular": 400,
