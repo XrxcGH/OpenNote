@@ -17,7 +17,7 @@ The license should:
 
 ## Decision
 
-We will license OpenNote under the Apache License 2.0. The full text is in the `LICENSE` file at the repository root. The manifests, `package.json` and `Cargo.toml`, declare `Apache-2.0`.
+We will license OpenNote under the Apache License 2.0. The full text is in the [`LICENSE`](../../LICENSE) file at the repository root. The root `package.json` and `app/src-tauri/Cargo.toml` declare `Apache-2.0`, and every new package or crate manifest must do the same.
 
 Under section 5 of the license, contributions are accepted under the same license unless the contributor says otherwise. We don't need a separate contributor agreement for now.
 
@@ -34,5 +34,6 @@ Under section 5 of the license, contributions are accepted under the same licens
 
 - Anyone can use, change, and sell OpenNote or parts of it, including in closed-source products. We accept that a company could ship a closed version, in return for a wider community.
 - Contributors grant a patent license for their contributions.
-- New dependencies need licenses that work with Apache 2.0, such as MIT, BSD, or Apache 2.0 itself. Adding a copyleft dependency, such as a GPL library, needs an architecture decision record (ADR) first.
-- The owner can revisit this choice before outside contributions arrive. After that, a change needs agreement from contributors, and a new ADR would supersede this one.
+- New dependencies need licenses that work with Apache 2.0, such as `MIT`, `BSD-3-Clause`, `ISC`, or `Apache-2.0`. Libraries under the Mozilla Public License 2.0 are fine when used unchanged. Tauri already pulls in a few, such as `cssparser`.
+- Adding a dependency under the GPL, Lesser GPL, or Affero GPL needs an architecture decision record (ADR) first.
+- The repository owner can revisit this choice before outside contributions arrive. After that, a change needs agreement from contributors, and a new ADR would supersede this one.

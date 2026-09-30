@@ -24,7 +24,7 @@ If a proposal is turned down, close the pull request with a comment that explain
 
 ## Numbering
 
-Records are numbered in order with four digits, starting at 0001. Number 0000 is the template. A number is never reused, even if its record is later replaced.
+Records are numbered in order with four digits, starting at 0001. Number 0000 is the template. A number is never reused, even if its record is later replaced. If two open pull requests pick the same number, the one that merges second takes the next free number.
 
 File names join the number and a short lowercase title with hyphens, for example `0002-license.md`. The title at the top of the file repeats the number, for example "ADR 0002: License".
 

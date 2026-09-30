@@ -31,12 +31,12 @@ Everyone is welcome here, whatever their identity, background, or level of skill
 
 If someone breaks this code, or you feel unsafe, report it privately. Please don't report conduct problems in a public issue or thread. You have two options:
 
-- **GitHub's "Report abuse":** use the "..." menu on the comment or issue and choose "Report content", or use "Block or report" on the person's profile. You can send the report to the maintainers, to GitHub, or to both.
+- **GitHub's "Report abuse":** use the "..." menu on the comment or issue and choose "Report content", or use "Block or report" on the person's profile. GitHub's staff review these reports. If GitHub also offers "Report to repository admins", choose it so the maintainers see the report too.
 - **A private message to the maintainers:** open a [private security advisory](https://github.com/XrxcGH/OpenNote/security/advisories/new). Only you and the maintainers can see it. Start the title with "Conduct report" so it isn't mistaken for a security issue.
 
 Include what happened, where and when, who was involved, and links or screenshots if you have them. You don't need proof to report. If you or someone else is in immediate danger, contact local emergency services first.
 
-The maintainers will reply within seven days. They keep the reporter's identity private and share details only with the people handling the report. If a report involves a maintainer, that person takes no part in handling it. Nobody will face retaliation for a report made in good faith.
+The maintainers aim to reply within seven days. They keep the reporter's identity private and share details only with the people handling the report. If a report involves a maintainer, that person takes no part in handling it. When no other maintainer can handle it, report it to GitHub as described above. Nobody will face retaliation for a report made in good faith.
 
 ## Enforcement
 
@@ -47,6 +47,6 @@ The maintainers decide whether this code was broken and what to do about it. The
 3. **Temporary ban:** no participation in any OpenNote space for a set time.
 4. **Permanent ban:** no participation in any OpenNote space from then on.
 
-Serious behavior, such as threats or sustained harassment, can go straight to a ban. The maintainers explain each decision to the person involved. That person can appeal once, through the same private channel, and a maintainer who wasn't involved reviews the appeal.
+Serious behavior, such as threats or sustained harassment, can go straight to a ban. The maintainers explain each decision to the person involved. That person can appeal once, through the same private channel. Where possible, a maintainer who wasn't involved reviews the appeal.
 
 These steps are inspired by the [Contributor Covenant](https://www.contributor-covenant.org/), but the text of this code is original to OpenNote.

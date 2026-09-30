@@ -1,6 +1,6 @@
 name: Bug report
 description: Report something in OpenNote that is broken or doesn't work as expected.
-labels: ["bug"]
+labels: ['bug']
 body:
   - type: markdown
     attributes:
@@ -27,7 +27,9 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: List the steps that cause the bug. Attach a sample note if it helps, with personal data removed.
+      description: >-
+        List the steps that cause the bug.
+        Attach a sample note as a .zip file if it helps, with personal data removed.
       placeholder: |
         1. Open a new page.
         2. Draw a line with the pen.
@@ -52,16 +54,20 @@ body:
     id: version
     attributes:
       label: OpenNote version
-      description: The release you are running. If you built OpenNote from source, give the commit hash instead.
-      placeholder: "0.1.0"
+      description: >-
+        Right-click OpenNote.exe, choose Properties, and read Product version on the Details tab.
+        If you built OpenNote from source, give the output of `git rev-parse --short HEAD` instead.
+      placeholder: '0.1.0'
     validations:
       required: true
   - type: input
     id: windows
     attributes:
       label: Windows version
-      description: Press Windows+R, and run winver to see your edition, version, and build.
-      placeholder: "Windows 11 Home, version 24H2, build 26100"
+      description: >-
+        Press Windows+R, type winver, and press Enter to see your edition, version, and build.
+        Using macOS or Linux? Give that system and its version instead.
+      placeholder: 'Windows 11 Home, version 24H2, build 26100'
     validations:
       required: true
   - type: dropdown
@@ -83,10 +89,12 @@ body:
     attributes:
       label: Computer and pen model
       description: Optional, but it helps with pen and touch bugs.
-      placeholder: "Surface Pro 9 with Slim Pen 2"
+      placeholder: 'Surface Pro 9 with Slim Pen 2'
   - type: textarea
     id: logs
     attributes:
       label: Logs
-      description: Paste any error messages or log output, with personal data removed. No backticks needed.
+      description: >-
+        Paste any error messages you saw, with personal data removed.
+        If you run OpenNote from source, include the terminal output of `npm start`. No backticks needed.
       render: text

@@ -41,12 +41,12 @@ The decision stands only if ink passes the Phase 1 latency spike. If ink in WebV
 
 - One Rust core and one interface serve every platform. Porting means writing new adapters for pen, audio, and OCR.
 - The exe stays small because it uses the WebView2 that ships with Windows 10 and 11, instead of bundling a browser.
-- Contributors need two toolchains: Node.js 22.18 or newer, and stable Rust.
+- Contributors need two toolchains, Node.js 22.18 or newer and stable Rust. On Windows, Rust also needs the Microsoft C++ Build Tools, as [CONTRIBUTING.md](../../CONTRIBUTING.md#set-up-on-windows) explains.
 - Ink is the main risk. The Phase 1 spike measures pen-to-screen time with a Surface Pen and a Wacom tablet, using a 240 frames per second camera.
 - Tauri uses WebKit on macOS and Linux, so later ports need their own ink and layout testing.
 
 ### Flutter fallback
 
-If the spike fails, only the interface moves to Flutter. The Rust core crates stay, and Flutter calls them through a bridge such as flutter_rust_bridge. The note file format, tests for the core, and CI setup carry over.
+If the spike fails, only the interface moves to Flutter. The plan for a Rust core stays, and Flutter would call it through a bridge such as flutter_rust_bridge. The design tokens in `brand/tokens.json`, the CHECKS gate, and the Rust lint and test steps in CI carry over. The token generator, the interface build, and the release workflow would need to change.
 
 The switch would happen before Phase 2, while the interface is still an empty window and throwaway spikes, so little work would be lost. A new ADR would supersede this one and record the measurements.

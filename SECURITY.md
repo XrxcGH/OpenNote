@@ -1,6 +1,6 @@
 # Security policy
 
-OpenNote keeps people's notes, recordings, and drawings on their own computers, and it updates itself from GitHub Releases. Security problems in either area matter to us. This page explains how to report one privately and what happens next.
+OpenNote keeps people's notes, recordings, and drawings on their own computers, and it gets its updates from GitHub Releases. Security problems in either area matter to us. This page explains how to report one privately and what happens next.
 
 ## Supported versions
 
@@ -18,7 +18,7 @@ Please don't open a public issue, pull request, or discussion about a vulnerabil
 1. Open the [new security advisory form](https://github.com/XrxcGH/OpenNote/security/advisories/new). You can also reach it from the repository's **Security** tab by choosing **Report a vulnerability**.
 2. Fill in the form, and submit it. Only you and the maintainers can see the report and the discussion that follows.
 
-If the form isn't available, open a public issue that asks for a private contact. Leave out every detail of the problem.
+If the form isn't available, open an issue titled "Private security contact needed". Leave out every detail of the problem, and write "Private" in each required field.
 
 ## What to include
 

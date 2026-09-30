@@ -26,15 +26,17 @@ For a small fix, you can open a pull request right away. For a new feature, open
 
 ## Set up on Windows
 
-Windows is the first platform OpenNote supports. Install these tools once:
+Windows is the first platform OpenNote supports. Install these tools once, in this order:
 
-1. **Node.js 22.18 or newer.** Get the long-term support release from [nodejs.org](https://nodejs.org/).
-2. **Rust stable, through rustup.** Install it from [rustup.rs](https://rustup.rs/), and keep the default `msvc` toolchain. Run `rustup update` now and then to stay current.
-3. **Microsoft C++ Build Tools.** Install the [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/), and select the "Desktop development with C++" workload. Rust needs it to link programs on Windows.
-4. **WebView2.** It ships with Windows 10 and 11, so there is usually nothing to install. If it's missing, install the Evergreen Runtime from [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/).
+1. **Microsoft C++ Build Tools.** Install the [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/), and select the "Desktop development with C++" workload. Rust needs it to link programs on Windows, so install it before Rust.
+2. **WebView2.** It ships with Windows 10 and 11, so there is usually nothing to install. If it's missing, install the Evergreen Runtime from [Microsoft](https://developer.microsoft.com/microsoft-edge/webview2/).
+3. **Rust stable, through rustup.** Install it from [rustup.rs](https://rustup.rs/), and keep the default `stable-msvc` toolchain. If you changed it, `rustup default stable-msvc` sets it back. Run `rustup update` now and then.
+4. **Node.js 22.18 or newer.** Get the long-term support release from [nodejs.org](https://nodejs.org/).
 5. **Git**, to clone the repository.
 
-Then clone the repository and start the app with one line:
+On macOS or Linux, install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your system in place of steps 1 and 2.
+
+Open a new terminal, so it finds the new tools. Then clone the repository and start the app with one line:
 
 ```sh
 git clone https://github.com/XrxcGH/OpenNote.git
@@ -42,9 +44,11 @@ cd OpenNote
 npm install && npm start
 ```
 
-The first start compiles the Rust dependencies, which takes several minutes. Later starts are much faster. The window reloads when you edit UI code, and the app rebuilds when you edit Rust code.
+Windows PowerShell 5.1, the version built into Windows, doesn't accept `&&`. There, run `npm install` and then `npm start`, or use PowerShell 7 or Command Prompt. If PowerShell says that running scripts is disabled, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
 
-Also run `npm run setup-hooks` once, so CHECKS runs before each commit. On macOS or Linux, install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your system instead of steps 3 and 4.
+The first start compiles the Rust dependencies, which takes several minutes. Later starts are much faster. The window updates when you edit UI code, and the app rebuilds and restarts when you edit Rust code.
+
+Also run `npm run setup-hooks` once, so CHECKS runs before each commit.
 
 ## npm scripts
 
@@ -69,13 +73,13 @@ Also run `npm run setup-hooks` once, so CHECKS runs before each commit. On macOS
 | `npm run setup-hooks` | Turns on the Git hook that runs CHECKS before each commit. |
 | `npm run tauri -- <command>` | Runs the Tauri command line, for example `npm run tauri -- info`. |
 
-For Rust code, run `cargo fmt --all`, `cargo clippy --workspace --all-targets`, and `cargo test --workspace` from the repository root. Run `npm run app:build` first, because the Rust app embeds the built UI.
+The Rust checks use `cargo` directly, as the [quality gate](#quality-gate) shows.
 
 ## Branches and pull requests
 
 Each phase in [DEVELOPMENT.md](DEVELOPMENT.md#5-phases) is developed on its own branch, named `phase-N`. For example, Phase 2 lives on `phase-2`. When the phase meets its exit gate, a pull request merges `phase-N` into `main` with a merge commit, so each commit stays in the history.
 
-For your own change, create a short-lived branch off the active phase branch, and open a pull request into it. A fix that isn't part of any phase, such as a typo or an urgent bug, branches off `main` and targets `main`.
+For your own change, create a short-lived branch off the phase branch in progress, usually the highest-numbered one. Then open a pull request into that phase branch. A fix that isn't part of any phase, such as a typo or an urgent bug, branches off `main` and targets `main`. If you can't push to the repository, fork it, push your branch to the fork, and open the pull request from there.
 
 A good pull request:
 
@@ -113,10 +117,24 @@ Continuous integration (CI) runs on every pull request, on Windows and Ubuntu. A
 Run the same checks locally before you push:
 
 ```sh
-npm run checks
-npm run typecheck && npm run lint && npm run format:check
+npm run tokens:check
+npm run typecheck
+npm run lint
+npm run format:check
 npm test
+npm run checks
 ```
+
+If you changed Rust code, also run the Rust checks from the repository root. Build the UI first, because the Rust app embeds it:
+
+```sh
+npm run app:build
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+```
+
+To fix formatting instead of reporting it, run `npm run format` or `cargo fmt --all`. CI treats every Clippy warning as an error.
 
 Every bug fix adds a test that fails without the fix. Every TODO in code links to an issue. A feature is finished only when it meets the [definition of done](DEVELOPMENT.md#11-definition-of-done).
 
@@ -128,13 +146,13 @@ To change how OpenNote looks, edit `brand/tokens.json`, and then run `npm run to
 
 ## Big changes and decision records
 
-Anything hard to reverse needs an architecture decision record (ADR) before the code. Examples include a new dependency or framework, a change to the note file format, and a new platform interface. An ADR records the choice, the options considered, and the reasons.
+Anything hard to reverse needs an architecture decision record (ADR) before the code. Examples include a new framework or core library, a change to the note file format, and a new platform interface. An ADR records the choice, the options considered, and the reasons.
 
 To propose one:
 
-1. Copy the template and pick the next number, as [docs/adr/README.md](docs/adr/README.md) explains.
-2. Open a pull request that contains only the ADR, with the status "Proposed".
-3. Discuss it in the review. If the maintainers accept it, set the status to "Accepted" before it merges.
+1. Copy the template to a new file with the next free number, as [docs/adr/README.md](docs/adr/README.md) explains.
+2. Set the status to "Proposed", and open a pull request with the ADR and no code.
+3. Discuss it in the review. If the maintainers accept it, set the status to "Accepted", and add it to the [list of decisions](docs/adr/README.md#decisions) before it merges.
 4. Open the pull requests that carry out the decision, and link the ADR from them.
 
 For a change that is large but easy to undo, an issue that describes the plan is enough.
