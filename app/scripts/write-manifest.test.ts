@@ -61,6 +61,16 @@ describe('RELEASE_FILES', () => {
       ['aarch64-pc-windows-msvc', 'windows-aarch64', 'OpenNote_WindowsARM64.exe'],
     ]);
   });
+
+  it('matches the build matrix in the release workflow', () => {
+    const workflow = readFileSync(join(import.meta.dirname, '..', '..', '.github', 'workflows', 'release.yml'), 'utf8');
+    const lines = workflow.split(/\r?\n/).map((line) => line.trim());
+    for (const { target, file } of RELEASE_FILES) {
+      const at = lines.indexOf(`- target: ${target}`);
+      expect(at, `release.yml builds ${target}`).toBeGreaterThan(-1);
+      expect(lines[at + 1]).toBe(`file: ${file}`);
+    }
+  });
 });
 
 describe('manifestFor', () => {
