@@ -11,6 +11,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
+use opennote_core::error::FsErrorKind;
 use opennote_core::format::CanonicalCodec;
 use opennote_core::id::{ClientId, DeviceId, PageId, SectionId, TrashItemId};
 use opennote_core::model::DeviceRef;
@@ -21,7 +22,7 @@ use opennote_core::session::page::{read_page_dir, PageHandle};
 use opennote_core::store::layout::NotebookLayout;
 use opennote_core::store::std_fs::StdFs;
 use opennote_core::testing::fakes::NullSink;
-use opennote_core::{Clock, Limits, Timings};
+use opennote_core::{Clock, CoreError, Limits, Timings};
 
 use super::core_script::{self as script, Action, Manifest, Model, SharedClock, CLIENT, PAGES, STEP};
 use super::Paths;
@@ -90,8 +91,14 @@ pub fn start_core(data: &Path, clock: Arc<dyn Clock>) -> Result<Core, String> {
     Core::start(config, Arc::new(NullSink), None).map_err(|e| format!("Core::start: {e}"))
 }
 
-fn err(context: &str) -> impl Fn(opennote_core::CoreError) -> String + '_ {
+fn err(context: &str) -> impl Fn(CoreError) -> String + '_ {
     move |e| format!("{context}: {e}")
+}
+
+/// Whether a call failed only because the hostile reader held a file open past the Busy retries, which the app
+/// reports and retries rather than treating as damage (spec 17.6).
+fn held(e: &CoreError) -> bool {
+    matches!(e, CoreError::Fs(f) if matches!(f.kind, FsErrorKind::Busy | FsErrorKind::Blocked))
 }
 
 /// The setup run: makes the notebook, a section, and the pages, and writes the manifest.
@@ -239,10 +246,13 @@ fn step(
                 session.applied += 1;
             }
         }
-        _ => {
-            session.handle.save_now().map_err(err("save_now"))?;
-            crate::workload::say(&format!("SAVE p{page} saved"));
-        }
+        _ => match session.handle.save_now() {
+            Ok(_) => crate::workload::say(&format!("SAVE p{page} saved")),
+            // The hostile reader outlasted the short Busy retries of the crash-test timings. The app's autosave
+            // tries again later (spec 17.6), and the page stays dirty until then.
+            Err(e) if held(&e) => crate::workload::say(&format!("HELD save p{page}: {e}")),
+            Err(e) => return Err(err("save_now")(e)),
+        },
     }
     Ok(())
 }
@@ -264,26 +274,35 @@ struct Scratch {
 }
 
 impl Scratch {
+    /// Runs one tree change. A change cut short by a held file is skipped, as the person would try again, and
+    /// the check after the iteration still finds each page exactly once.
     fn change(&mut self, notebook: &NotebookHandle, manifest: &Manifest, choice: u64) -> Result<(), String> {
+        match self.try_change(notebook, manifest.section_id()?, choice) {
+            Err(e) if held(&e) => {
+                crate::workload::say(&format!("HELD tree change: {e}"));
+                Ok(())
+            }
+            result => result.map_err(err("tree change")),
+        }
+    }
+
+    fn try_change(&mut self, notebook: &NotebookHandle, section: SectionId, choice: u64) -> Result<(), CoreError> {
         let mut rng = Rng::new(choice);
-        let section = manifest.section_id()?;
         match (rng.below(5), self.pages.is_empty(), self.trash.is_empty()) {
             (0, _, _) | (1 | 2, true, _) | (3 | 4, _, true) => {
-                let page = notebook
-                    .create_page(section, at_end(section))
-                    .map_err(err("create_page"))?;
+                let page = notebook.create_page(section, at_end(section))?;
                 self.pages.push(page);
                 crate::workload::say(&format!("TREE create {page}"));
             }
             (1, false, _) => {
                 let source = self.pages[rng.below(self.pages.len())];
-                let copy = notebook.duplicate(source).map_err(err("duplicate"))?;
+                let copy = notebook.duplicate(source)?;
                 self.pages.push(copy);
                 crate::workload::say(&format!("TREE create {copy}"));
             }
             (2, false, _) => {
                 let page = self.pages.swap_remove(rng.below(self.pages.len()));
-                let items = notebook.delete(&[NodeRef::Page(page)]).map_err(err("delete"))?;
+                let items = notebook.delete(&[NodeRef::Page(page)])?;
                 self.trash.extend(&items);
                 for item in &items {
                     crate::workload::say(&format!("TREE delete {page} {item}"));
@@ -291,7 +310,7 @@ impl Scratch {
             }
             (3, _, false) => {
                 let item = self.trash.swap_remove(rng.below(self.trash.len()));
-                for node in notebook.restore(item, None).map_err(err("restore"))? {
+                for node in notebook.restore(item, None)? {
                     if let NodeRef::Page(page) = node {
                         self.pages.push(page);
                         crate::workload::say(&format!("TREE restore {page}"));
@@ -300,8 +319,10 @@ impl Scratch {
             }
             _ => {
                 let item = self.trash.swap_remove(rng.below(self.trash.len()));
-                notebook.purge(item).map_err(err("purge"))?;
+                // A purge cut short may still finish in recovery, so its page may go either way.
+                let purged = notebook.purge(item);
                 crate::workload::say(&format!("TREE purge {item}"));
+                purged?;
             }
         }
         Ok(())
