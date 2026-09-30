@@ -163,7 +163,7 @@ describe('the bottom bar', () => {
       within(panel)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Keyboard shortcuts', 'Update ready', 'Trash']);
+    ).toEqual(['Settings', 'Keyboard shortcuts', 'Update ready', 'Trash']);
     await userEvent.keyboard('{Escape}');
     await expectFocus(more);
     await vi.waitFor(() => expect(ran).toHaveBeenCalledOnce());
