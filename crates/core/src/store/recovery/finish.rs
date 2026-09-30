@@ -5,13 +5,16 @@ use std::path::{Path, PathBuf};
 use super::RecoverCtx;
 use crate::error::{CoreError, FormatError, FormatErrorKind, FsErrorKind};
 use crate::fail_point;
+use crate::format::gzip::gzip;
 use crate::id::RevisionId;
 use crate::model::{Page, VersionReason};
 use crate::store::compact::CompactionPlan;
 use crate::store::fs::{Durability, FileStamp};
 use crate::store::history::write_version;
 use crate::store::journal::encode;
-use crate::store::journal::reader::JournalRecord;
+use crate::store::journal::format::encode_header;
+use crate::store::journal::reader::{JournalHeader, JournalRecord};
+use crate::store::layout::journal_file_name;
 use crate::store::page_store::{SaveError, SaveRequest};
 use crate::store::PageFiles;
 
@@ -21,13 +24,17 @@ pub struct Journals {
     pub paths: Vec<PathBuf>,
     /// The highest sequence number in any of them.
     pub last_seq: u64,
+    /// The newest generation's header when that generation ends in a torn or damaged tail. A reader stops at
+    /// the tail (spec 20.6), so records appended after it could never be read, and closing starts a new
+    /// generation instead.
+    pub torn: Option<JournalHeader>,
 }
 
 impl Journals {
     /// Appends a record to the newest generation, and flushes it. Best effort: a journal that can't be written
     /// only costs a spurious conflict if the power fails before the save is on disk.
     fn append(&mut self, ctx: &RecoverCtx<'_>, record: impl FnOnce(u64) -> JournalRecord) {
-        let Some(path) = self.paths.last() else {
+        let Some(path) = self.paths.last().filter(|_| self.torn.is_none()) else {
             return;
         };
         let seq = self.last_seq.saturating_add(1);
@@ -38,6 +45,39 @@ impl Journals {
         });
         if written.is_ok() {
             self.last_seq = seq;
+        }
+    }
+
+    /// Closes the generations after an unconfirmed save of `revision`, whose `page.json` bytes are `bytes`, with
+    /// a `Closed` record (spec 20.9). When the newest generation has a torn tail, the record goes into a new
+    /// generation whose base is the saved revision, so that a later recovery can read it. Best effort, as for
+    /// [`Journals::append`].
+    fn close(&mut self, ctx: &RecoverCtx<'_>, revision: RevisionId, bytes: &[u8]) {
+        let closed = |seq| JournalRecord::Closed {
+            seq,
+            revision,
+            boot: ctx.boot.to_owned(),
+        };
+        let (Some(torn), Some(last)) = (self.torn.as_ref(), self.paths.last()) else {
+            self.append(ctx, closed);
+            return;
+        };
+        let generation = torn.generation.saturating_add(1);
+        let header = JournalHeader {
+            base: revision,
+            generation,
+            anchor: self.last_seq,
+            created: ctx.clock.now(),
+            ..torn.clone()
+        };
+        let mut file = encode_header(&header, &gzip(bytes));
+        let seq = self.last_seq.saturating_add(1);
+        file.extend_from_slice(&encode(&closed(seq), ctx.codec));
+        let path = last.with_file_name(journal_file_name(Some(header.page), generation));
+        if ctx.fs.create_durable(&path, &file).is_ok() {
+            self.paths.push(path);
+            self.last_seq = seq;
+            self.torn = None;
         }
     }
 
@@ -104,11 +144,7 @@ pub fn save_recovered(
     let _ = write_version(&files, &outcome.bytes, &saved, VersionReason::Recovered, None);
     match outcome.durability {
         Durability::Confirmed => journals.delete(ctx)?,
-        Durability::Unconfirmed => journals.append(ctx, |seq| JournalRecord::Closed {
-            seq,
-            revision: outcome.revision.id,
-            boot: ctx.boot.to_owned(),
-        }),
+        Durability::Unconfirmed => journals.close(ctx, outcome.revision.id, &outcome.bytes),
     }
     Ok(outcome.revision.id)
 }

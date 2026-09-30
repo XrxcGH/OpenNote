@@ -97,6 +97,11 @@ impl Read {
         Journals {
             paths: self.generations.iter().map(|(path, _)| path.clone()).collect(),
             last_seq: self.generations.iter().map(|(_, g)| g.last_seq()).max().unwrap_or(0),
+            torn: self
+                .generations
+                .last()
+                .filter(|(_, g)| g.stop.offset().is_some())
+                .map(|(_, g)| g.header.clone()),
         }
     }
 

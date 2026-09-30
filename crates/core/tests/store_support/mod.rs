@@ -183,7 +183,7 @@ pub fn check_after_crash(
     oracle: &[Page],
     floor: usize,
 ) -> Result<usize, String> {
-    try_recover(fs, codec)?;
+    let first = try_recover(fs, codec)?;
     let report = verify_notebook(&**fs, codec, Path::new(ROOT), &Limits::default()).map_err(|e| e.to_string())?;
     if !report.is_clean() {
         return Err(format!("I1: {:?}", report.problems));
@@ -193,8 +193,11 @@ pub fn check_after_crash(
     let step = (floor..oracle.len())
         .find(|&step| same_content(&oracle[step], &page))
         .ok_or_else(|| format!("I2: the page matches no step from {floor} of {}", oracle.len() - 1))?;
-    if try_recover(fs, codec)? != RecoveryOutcome::Nothing {
-        return Err("a second recovery changed something".into());
+    let second = try_recover(fs, codec)?;
+    if second != RecoveryOutcome::Nothing {
+        return Err(format!(
+            "a second recovery changed something: first {first:?}, second {second:?}"
+        ));
     }
     Ok(step)
 }
