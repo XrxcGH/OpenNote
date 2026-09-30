@@ -1,0 +1,91 @@
+{
+  "machine": "Surface Laptop Studio 2, loopback SMB to the administrative share C$ on the same NVMe drive (not a remote server)",
+  "notes": [
+    "share_loopback: volume Ntfs, remote true",
+    "share_loopback: a durable write renames with ByHandle",
+    "share_loopback: flushing a folder handle: Unsupported (os error Some(1))",
+    "share_loopback: replace while held (rwd): Blocked (os error Some(5)); holder read \"old\"",
+    "share_loopback: delete while held (rwd): ok ()",
+    "share_loopback: rename the folder while held (rwd): Busy (os error Some(5))",
+    "share_loopback: delete the folder while held (rwd): Busy (os error Some(145))",
+    "share_loopback: replace while held (rw): Blocked (os error Some(5)); holder read \"old\"",
+    "share_loopback: delete while held (rw): Busy (os error Some(32))",
+    "share_loopback: rename the folder while held (rw): Busy (os error Some(5))",
+    "share_loopback: delete the folder while held (rw): Busy (os error Some(32))"
+  ],
+  "reference_laptop": false,
+  "results": [
+    {
+      "gate": null,
+      "name": "share_loopback.m6.probe.posix_by_handle",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.probe.flush_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rwd.replace_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rwd.holder_kept_old",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rwd.remove_ok",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rwd.rename_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rwd.remove_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rw.replace_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rw.holder_kept_old",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rw.remove_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rw.rename_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m6.held_rw.remove_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    }
+  ]
+}

@@ -1,0 +1,243 @@
+{
+  "machine": "Surface Laptop Studio 2, loopback SMB to the administrative share C$ on the same NVMe drive (not a remote server)",
+  "notes": [
+    "share_loopback: 100 of 100 saves were unconfirmed"
+  ],
+  "reference_laptop": false,
+  "results": [
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.1k.p50",
+      "unit": "ms",
+      "value": 34.2663
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.1k.p95",
+      "unit": "ms",
+      "value": 66.90820000000001
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.1k.p99",
+      "unit": "ms",
+      "value": 77.0121
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.200k.p50",
+      "unit": "ms",
+      "value": 58.7783
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.200k.p95",
+      "unit": "ms",
+      "value": 102.7778
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.200k.p99",
+      "unit": "ms",
+      "value": 118.2496
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.4m.p50",
+      "unit": "ms",
+      "value": 70.4361
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.4m.p95",
+      "unit": "ms",
+      "value": 95.6718
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.replace_durable.4m.p99",
+      "unit": "ms",
+      "value": 107.6313
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_durable.2k.p50",
+      "unit": "ms",
+      "value": 28.777
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_durable.2k.p95",
+      "unit": "ms",
+      "value": 44.1701
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_durable.2k.p99",
+      "unit": "ms",
+      "value": 54.9592
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_durable.1m.p50",
+      "unit": "ms",
+      "value": 56.2203
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_durable.1m.p95",
+      "unit": "ms",
+      "value": 87.9146
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_durable.1m.p99",
+      "unit": "ms",
+      "value": 111.8299
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.write_derived.100k.p50",
+      "unit": "ms",
+      "value": 51.4473
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.write_derived.100k.p95",
+      "unit": "ms",
+      "value": 72.4809
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.write_derived.100k.p99",
+      "unit": "ms",
+      "value": 103.4045
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_dir_durable.p50",
+      "unit": "ms",
+      "value": 7.6749
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_dir_durable.p95",
+      "unit": "ms",
+      "value": 11.3384
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.create_dir_durable.p99",
+      "unit": "ms",
+      "value": 18.0714
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.rename_dir.p50",
+      "unit": "ms",
+      "value": 31.2411
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.rename_dir.p95",
+      "unit": "ms",
+      "value": 53.5391
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.rename_dir.p99",
+      "unit": "ms",
+      "value": 94.388
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.journal.append_sync.200b.p50",
+      "unit": "ms",
+      "value": 1.7659
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.journal.append_sync.200b.p95",
+      "unit": "ms",
+      "value": 3.8754000000000004
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.journal.append_sync.200b.p99",
+      "unit": "ms",
+      "value": 4.7833
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.metadata.p50",
+      "unit": "ms",
+      "value": 3.8146
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.metadata.p95",
+      "unit": "ms",
+      "value": 8.213
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.metadata.p99",
+      "unit": "ms",
+      "value": 10.3889
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.read.200k.warm.p50",
+      "unit": "ms",
+      "value": 50.506
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.read.200k.warm.p95",
+      "unit": "ms",
+      "value": 325.6178
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.read.200k.warm.p99",
+      "unit": "ms",
+      "value": 631.6796999999999
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.save.one_stroke.commit.p50",
+      "unit": "ms",
+      "value": 120.3224
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.save.one_stroke.commit.p95",
+      "unit": "ms",
+      "value": 286.81170000000003
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.save.one_stroke.commit.p99",
+      "unit": "ms",
+      "value": 473.3308
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.save.one_stroke.full.p50",
+      "unit": "ms",
+      "value": 183.8185
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.save.one_stroke.full.p95",
+      "unit": "ms",
+      "value": 427.03639999999996
+    },
+    {
+      "gate": null,
+      "name": "share_loopback.m5.save.one_stroke.full.p99",
+      "unit": "ms",
+      "value": 708.7062
+    }
+  ]
+}
