@@ -3,7 +3,7 @@
 use std::fs::{File, Metadata};
 use std::os::windows::fs::MetadataExt;
 use std::os::windows::io::AsRawHandle;
-use std::path::Path;
+use std::path::{Component, Path, Prefix};
 
 use windows_sys::Wdk::System::SystemInformation::{NtQuerySystemInformation, SystemTimeOfDayInformation};
 use windows_sys::Win32::Storage::FileSystem::{
@@ -21,6 +21,12 @@ use crate::store::sys::{kind_from_name, FsOp};
 const PLACEHOLDER: u32 = FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | FILE_ATTRIBUTE_RECALL_ON_OPEN | FILE_ATTRIBUTE_OFFLINE;
 const ID_INFO_SIZE: u32 = size_of::<FILE_ID_INFO>() as u32;
 const REMOTE_INFO_SIZE: u32 = size_of::<FILE_REMOTE_PROTOCOL_INFO>() as u32;
+
+/// `FILE_REMOTE_PROTOCOL_INFO` on an 8-byte boundary. The struct itself only needs 4, but the query fails with
+/// `ERROR_NOACCESS` (a misaligned buffer) when the buffer isn't 8-byte aligned, and a share then looks local.
+#[repr(C, align(8))]
+#[derive(Default)]
+struct RemoteInfo(FILE_REMOTE_PROTOCOL_INFO);
 
 /// What a durable write needs to know about the volume a handle is on.
 pub(crate) struct Facts {
@@ -84,8 +90,8 @@ fn identity(file: &File) -> (u64, u128) {
     )
 }
 
-/// The file system and whether it is remote. Unknown file systems count as local.
-pub(crate) fn facts(file: &File) -> Facts {
+/// The file system of `file`, open at `path`, and whether it is remote. Unknown file systems count as local.
+pub(crate) fn facts(file: &File, path: &Path) -> Facts {
     let mut name = [0u16; 64];
     let mut serial = 0u32;
     let mut max_component = 0u32;
@@ -112,14 +118,24 @@ pub(crate) fn facts(file: &File) -> Facts {
     };
     Facts {
         kind,
-        remote: is_remote(file),
+        remote: is_unc(path) || is_remote(file),
+    }
+}
+
+/// Whether a path names a network share by its server, in either UNC form. A share behind a drive letter
+/// shows only in its handle.
+fn is_unc(path: &Path) -> bool {
+    match path.components().next() {
+        Some(Component::Prefix(prefix)) => matches!(prefix.kind(), Prefix::UNC(..) | Prefix::VerbatimUNC(..)),
+        _ => false,
     }
 }
 
 /// Whether a handle is to a file on a network share: only those have remote protocol information.
 fn is_remote(file: &File) -> bool {
-    let mut info = FILE_REMOTE_PROTOCOL_INFO::default();
-    // SAFETY: the handle is open for the call, and `info` is a FILE_REMOTE_PROTOCOL_INFO of the size passed.
+    let mut info = RemoteInfo::default();
+    // SAFETY: the handle is open for the call, and `info` starts with a FILE_REMOTE_PROTOCOL_INFO of the size
+    // passed, on an 8-byte boundary.
     let ok = unsafe {
         GetFileInformationByHandleEx(
             file.as_raw_handle(),
@@ -134,7 +150,7 @@ fn is_remote(file: &File) -> bool {
 /// The volume a path is on. `sync_root` is left for the caller, which knows the path as the person gave it.
 pub(crate) fn volume(path: &Path) -> Result<VolumeInfo, FsError> {
     let file = open_attributes(path)?;
-    let facts = facts(&file);
+    let facts = facts(&file, path);
     Ok(VolumeInfo {
         kind: facts.kind,
         remote: facts.remote,
@@ -188,4 +204,24 @@ pub(crate) fn boot_id() -> Result<String, FsError> {
     }
     let boot = info.boot_time.wrapping_sub_unsigned(info.boot_time_bias);
     Ok(format!("win-{}", boot.div_euclid(10_000_000)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_remote_query_gets_an_8_byte_aligned_buffer() {
+        assert_eq!(align_of::<RemoteInfo>(), 8);
+        assert!(size_of::<RemoteInfo>() >= size_of::<FILE_REMOTE_PROTOCOL_INFO>());
+    }
+
+    #[test]
+    fn paths_to_a_server_are_remote() {
+        assert!(is_unc(Path::new(r"\\server\share\Notes")));
+        assert!(is_unc(Path::new(r"\\?\UNC\server\share\Notes")));
+        assert!(!is_unc(Path::new(r"\\?\C:\Notes")));
+        assert!(!is_unc(Path::new(r"C:\Notes")));
+        assert!(!is_unc(Path::new("Notes")));
+    }
 }

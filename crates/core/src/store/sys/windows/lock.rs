@@ -43,7 +43,7 @@ pub(crate) fn open_append(path: &Path, create_new: bool) -> Result<File, FsError
     if !lock(&file, path)? {
         return Err(FsError::new(FsErrorKind::Busy, path));
     }
-    if create_new && is_fat(&info::facts(&file).kind) {
+    if create_new && is_fat(&info::facts(&file, path).kind) {
         if let Some(dir) = path.parent() {
             flush_dir(dir)?;
         }

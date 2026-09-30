@@ -147,7 +147,7 @@ pub(crate) fn commit_temp(
     }
     // Once the rename is done, a failed flush makes the save unconfirmed, not failed: the new file is in place.
     let flushed = method != RenameMethod::MoveFile && file.sync_all().is_ok();
-    let facts = info::facts(&file);
+    let facts = info::facts(&file, target);
     let folder_flushed = !is_fat(&facts.kind) || target.parent().is_some_and(|dir| flush_dir(dir).is_ok());
     let confirmed = flushed && folder_flushed && !facts.remote;
     Ok(Committed {
@@ -168,7 +168,7 @@ pub(crate) fn flush_existing(target: &Path) -> Result<Committed, FsError> {
         .open(target)
         .map_err(|err| classify(&err, FsOp::Write, target))?;
     let flushed = file.sync_all().is_ok();
-    let facts = info::facts(&file);
+    let facts = info::facts(&file, target);
     let folder_flushed = !is_fat(&facts.kind) || target.parent().is_some_and(|dir| flush_dir(dir).is_ok());
     Ok(Committed {
         durability: durability(flushed && folder_flushed && !facts.remote),
@@ -299,7 +299,7 @@ pub(crate) fn flush_dir(dir: &Path) -> Result<(), FsError> {
 /// file on the volume commits the metadata log that holds the new folder, so it needs no flush of its own.
 pub(crate) fn create_dir(path: &Path) -> Result<Durability, FsError> {
     std::fs::create_dir(path).map_err(|err| classify(&err, FsOp::Create, path))?;
-    let facts = info::facts(&open_attributes(path)?);
+    let facts = info::facts(&open_attributes(path)?, path);
     let folder_flushed = !is_fat(&facts.kind) || path.parent().is_some_and(|dir| flush_dir(dir).is_ok());
     Ok(durability(folder_flushed && !facts.remote))
 }
@@ -315,7 +315,7 @@ pub(crate) fn rename_dir(from: &Path, to: &Path, retries: &[Duration]) -> Result
         .map_err(|err| classify(&err, FsOp::Rename, from))?;
     let (dir, method) = rename_temp(dir, from, to, false, retries)?;
     let flushed = method != RenameMethod::MoveFile && dir.as_ref().is_some_and(|dir| dir.sync_all().is_ok());
-    let facts = info::facts(&open_attributes(to)?);
+    let facts = info::facts(&open_attributes(to)?, to);
     let parents_flushed = !is_fat(&facts.kind)
         || [from.parent(), to.parent()]
             .into_iter()

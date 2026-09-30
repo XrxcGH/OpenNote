@@ -1,6 +1,7 @@
 //! `StdFs` behaviors that only Windows has (plan 13.1): replacing a file another handle holds, with and without
 //! delete sharing, read-only targets, folders with open files, and renames by handle. Tests that need FAT32,
-//! exFAT, a network share, or a small full disk run when an environment variable names a folder there.
+//! exFAT, a network share, or a small full disk run when an environment variable names a folder there. The
+//! share test also runs through the loopback share where the machine allows it.
 
 #![cfg(windows)]
 
@@ -173,11 +174,27 @@ fn fat_volumes_flush_folders_and_confirm() {
     fs.remove_dir_all(&dir).unwrap();
 }
 
-/// `OPENNOTE_TEST_SHARE_DIR`: a folder on a network share, where nothing is confirmed (spec 17.5).
+/// A folder on a network share: `OPENNOTE_TEST_SHARE_DIR`, or else a temporary folder reached through the
+/// loopback administrative share, such as `\\localhost\C$\...`, where the machine allows it.
+fn share_dir() -> Option<PathBuf> {
+    env_dir("OPENNOTE_TEST_SHARE_DIR").or_else(|| {
+        let local = common::temp_dir().keep();
+        let text = local.to_str()?.to_owned();
+        let (drive, rest) = text.split_once(r":\")?;
+        let unc = PathBuf::from(format!(r"\\localhost\{drive}$\{rest}"));
+        let reachable = std::fs::metadata(&unc).is_ok_and(|meta| meta.is_dir());
+        if !reachable {
+            let _ = std::fs::remove_dir_all(&local);
+        }
+        reachable.then_some(unc)
+    })
+}
+
+/// A network share, where nothing is confirmed (spec 17.5).
 #[test]
 fn network_shares_are_never_confirmed() {
-    let Some(dir) = env_dir("OPENNOTE_TEST_SHARE_DIR") else {
-        eprintln!("skipped: OPENNOTE_TEST_SHARE_DIR is not set");
+    let Some(dir) = share_dir() else {
+        eprintln!("skipped: OPENNOTE_TEST_SHARE_DIR is not set, and no loopback share is reachable");
         return;
     };
     let fs = fs();
@@ -185,6 +202,13 @@ fn network_shares_are_never_confirmed() {
     let committed = fs.replace_durable(&dir.join("page.json"), b"remote").unwrap();
     assert_eq!(committed.durability, Durability::Unconfirmed);
     assert_eq!(fs.read(&dir.join("page.json"), 10).unwrap(), b"remote");
+    let created = fs.create_durable(&dir.join("0001.onk"), b"segment").unwrap();
+    assert_eq!(created.durability, Durability::Unconfirmed);
+    assert_eq!(fs.create_dir_durable(&dir.join("a")).unwrap(), Durability::Unconfirmed);
+    assert_eq!(
+        fs.rename_dir(&dir.join("a"), &dir.join("b")).unwrap(),
+        Durability::Unconfirmed
+    );
     fs.remove_dir_all(&dir).unwrap();
 }
 
