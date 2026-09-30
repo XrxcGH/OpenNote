@@ -52,7 +52,7 @@ describe('paper as SVG', () => {
     expect(svg).toContain('viewBox="0 0 816 1056"');
     expect(svg).toContain('aria-hidden="true"');
     expect(svg).toContain('stroke:var(--color-border-subtle);stroke-width:1"');
-    expect(svg).not.toMatch(/#[0-9a-f]{3,8}|rgb|hsl/i);
+    expect(svg).not.toMatch(/#[0-9a-f]{3,8}|rgb|hsl|border:|border-width/i);
     expect((svg.match(/<path/g) ?? []).length).toBe(1);
   });
 });

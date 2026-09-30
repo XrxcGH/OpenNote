@@ -184,6 +184,28 @@ describe('paginate manual page breaks', () => {
   });
 });
 
+describe('paginate options and keep together', () => {
+  it('moves a keep-together paragraph whole, and splits it by line when it is taller than a sheet', () => {
+    const fits = run(LETTER, [text('a', 30), text('b', 12, { together: true })]);
+    expect(fits.plan.breaks.map((b) => b.pos)).toEqual([{ kind: 'block', block: 'b' }]);
+    const tall = run(LETTER, [text('b', 60, { together: true })]);
+    expect(tall.plan.breaks[0].pos).toEqual({ kind: 'line', block: 'b', line: 38 });
+  });
+
+  it('allows a single line at the edge of a sheet when the minimum is 1', () => {
+    const { blocks, measure } = flow([text('a', 39)], 72);
+    const one = paginate(LETTER, blocks, measure, { minLines: 1 });
+    expect(one.breaks[0].pos).toEqual({ kind: 'line', block: 'a', line: 38 });
+    expect(paginate(LETTER, blocks, measure).breaks[0].pos).toEqual({ kind: 'line', block: 'a', line: 37 });
+  });
+
+  it('reports where the flow ends once every spacer is in', () => {
+    const { plan } = run(LETTER, [text('a', 40)]);
+    expect(plan.end).toBeCloseTo(contentTop(LETTER, 1) + 2 * LINE);
+    expect(run(LETTER, [text('a', 3)]).plan.end).toBeCloseTo(72 + 3 * LINE);
+  });
+});
+
 /** A small deterministic random generator, so a failing flow can be replayed. */
 function random(seed: number): () => number {
   let state = seed;
