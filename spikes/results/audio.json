@@ -1,0 +1,1174 @@
+{
+  "date": "2026-09-30",
+  "machine": {
+    "logical_processors": 20,
+    "model": "Surface Laptop Studio 2",
+    "refresh_hz": 120,
+    "scale_percent": 100,
+    "webview2": "154.0.4258.37",
+    "windows": "Windows 10 Pro 25H2 (build 26200.9550)"
+  },
+  "results": {
+    "capture": {
+      "results": {
+        "clocks": {
+          "drift_after_3_hours_ms": {
+            "loopback_vs_qpc": 17.364231604588554,
+            "microphone_vs_loopback": -37.53310630454365,
+            "microphone_vs_qpc": -20.168874699955097
+          },
+          "loopback_ppm": 1.6077992226470883,
+          "loopback_ppm_each_minute": null,
+          "microphone_minus_loopback_ppm": -3.475287620791079,
+          "microphone_ppm": -1.8674883981439905,
+          "microphone_ppm_each_minute": {
+            "count": 1,
+            "max": -1.9193634518410718,
+            "mean": -1.9193634518410718,
+            "min": -1.9193634518410718,
+            "p50": -1.9193634518410718,
+            "p90": -1.9193634518410718,
+            "p95": -1.9193634518410718,
+            "p99": -1.9193634518410718,
+            "stddev": 0.0
+          },
+          "ppm_that_uses_up_100_ms_in_3_hours": 9.25925925925926
+        },
+        "loopback": {
+          "breaks": {
+            "count": 2,
+            "largest": [
+              {
+                "at_s": 35.637214699999994,
+                "missing_ms": 5040.5617
+              },
+              {
+                "at_s": 10.5856584,
+                "missing_ms": 11.458
+              }
+            ],
+            "missing_ms": 5052.0197
+          },
+          "callback_interval_ms": {
+            "count": 3999,
+            "max": 16.5673,
+            "mean": 9.995093948487154,
+            "min": 0.0214,
+            "p50": 9.9966,
+            "p90": 10.40558,
+            "p95": 10.57636,
+            "p99": 10.881345999999999,
+            "stddev": 0.4398671138910691
+          },
+          "callback_minus_capture_ms": {
+            "count": 4002,
+            "max": 5041.7766,
+            "mean": -17.19492933533235,
+            "min": -26.5961,
+            "p50": -16.0,
+            "p90": -16.0,
+            "p95": -16.0,
+            "p99": -16.0,
+            "stddev": 138.3720952001427
+          },
+          "callback_work_us": {
+            "count": 4003,
+            "max": 92.2,
+            "mean": 11.963827129652758,
+            "min": 2.8,
+            "p50": 10.4,
+            "p90": 15.2,
+            "p95": 15.8,
+            "p99": 27.876000000000023,
+            "stddev": 4.502413435817852
+          },
+          "config": {
+            "buffer_frames": {
+              "max": 480,
+              "min": 480
+            },
+            "channels": 2,
+            "sample_format": "f32",
+            "sample_rate": 48000
+          },
+          "errors": {
+            "count": 3,
+            "first": [
+              {
+                "at_s": 10.570332700000002,
+                "kind": "Xrun",
+                "message": "A buffer underrun or overrun occurred."
+              },
+              {
+                "at_s": 35.632543299999995,
+                "kind": "Xrun",
+                "message": "A buffer underrun or overrun occurred."
+              },
+              {
+                "at_s": 35.6372036,
+                "kind": "Xrun",
+                "message": "A buffer underrun or overrun occurred."
+              }
+            ],
+            "kinds": {
+              "Xrun": 3
+            }
+          },
+          "first_frame_age_ms": {
+            "count": 4003,
+            "max": 5042.5197,
+            "mean": -11.112673344991261,
+            "min": -15.3214,
+            "p50": -14.9574,
+            "p90": -14.528659999999999,
+            "p95": -14.39629,
+            "p99": -13.720858,
+            "stddev": 138.11922568400547
+          },
+          "frames": 1921056,
+          "frames_per_packet": {
+            "count": 4003,
+            "max": 480.0,
+            "mean": 479.90407194604046,
+            "min": 96.0,
+            "p50": 480.0,
+            "p90": 480.0,
+            "p95": 480.0,
+            "p99": 480.0,
+            "stddev": 6.068539406556958
+          },
+          "late_callbacks": 0,
+          "levels": {
+            "peak_dbfs": -32.22389725258149,
+            "rms_dbfs": -49.10138775894125,
+            "silent_packets": 3663
+          },
+          "packets": 4003,
+          "packets_without_callback_time": 1,
+          "pauses": 3,
+          "period_frames": 480,
+          "phases": [
+            {
+              "levels": {
+                "peak_dbfs": null,
+                "rms_dbfs": null,
+                "silent_packets": 0
+              },
+              "packets": 0,
+              "phase": "quiet before",
+              "seconds": 10.0003108,
+              "start_s": 0.5096054
+            },
+            {
+              "first_packet_after_output_start_ms": 3.1133,
+              "last_packet_after_output_stop_ms": -9.8259,
+              "levels": {
+                "peak_dbfs": -32.2238979134869,
+                "rms_dbfs": -49.09813176523564,
+                "silent_packets": 1830
+              },
+              "packets": 2000,
+              "phase": "first tone",
+              "seconds": 20.0657662,
+              "start_s": 10.509928400000002
+            },
+            {
+              "levels": {
+                "peak_dbfs": null,
+                "rms_dbfs": null,
+                "silent_packets": 0
+              },
+              "packets": 0,
+              "phase": "quiet between",
+              "seconds": 5.0003693,
+              "start_s": 30.575697100000003
+            },
+            {
+              "first_packet_after_output_start_ms": 7.7219,
+              "last_packet_after_output_stop_ms": -13.0655,
+              "levels": {
+                "peak_dbfs": -32.22389725258149,
+                "rms_dbfs": -49.104641313399924,
+                "silent_packets": 1833
+              },
+              "packets": 2003,
+              "phase": "second tone",
+              "seconds": 20.064336599999997,
+              "start_s": 35.5760688
+            },
+            {
+              "levels": {
+                "peak_dbfs": null,
+                "rms_dbfs": null,
+                "silent_packets": 0
+              },
+              "packets": 0,
+              "phase": "quiet after",
+              "seconds": 5.0005573000000005,
+              "start_s": 55.6404081
+            }
+          ],
+          "rate": {
+            "by_arrival_time": {
+              "packets": 4003,
+              "ppm": 1.5473264247667373,
+              "rate_hz": 48000.07427166839,
+              "residual_ms": {
+                "count": 4003,
+                "max": 7.309688657325509,
+                "mean": 0.2400705332662601,
+                "min": 0.0,
+                "p50": 0.21038235174586362,
+                "p90": 0.44711804079824463,
+                "p95": 0.5508696304827198,
+                "p99": 0.8439946504221753,
+                "stddev": 0.26355024928031073
+              },
+              "span_s": 39.97038069998962
+            },
+            "by_capture_time": {
+              "packets": 4003,
+              "ppm": 1.6077992226470883,
+              "rate_hz": 48000.07717436269,
+              "residual_ms": {
+                "count": 4003,
+                "max": 0.7840541695802727,
+                "mean": 0.0817854879726115,
+                "min": 0.0,
+                "p50": 0.05114599865452263,
+                "p90": 0.16884800366518962,
+                "p95": 0.23661049316299188,
+                "p99": 0.7210374349999871,
+                "stddev": 0.11008695414562904
+              },
+              "span_s": 39.989928599999985
+            }
+          },
+          "started_s": 0.5096041,
+          "zero_fill": {
+            "drift_at_end_ms": -0.801533333328247,
+            "inserted_ms": 5052.020833333333,
+            "worst_ms": 1.4024333333320618
+          }
+        },
+        "microphone": {
+          "breaks": {
+            "count": 0,
+            "largest": [],
+            "missing_ms": -0.0
+          },
+          "callback_interval_ms": {
+            "count": 6014,
+            "max": 16.8453,
+            "mean": 9.999895294313289,
+            "min": 5.5872,
+            "p50": 10.0003,
+            "p90": 10.29055,
+            "p95": 10.428035000000001,
+            "p99": 10.624388999999999,
+            "stddev": 0.2833821159805326
+          },
+          "callback_minus_capture_ms": {
+            "count": 6014,
+            "max": 17.9167,
+            "mean": 11.916707100100552,
+            "min": 6.2983,
+            "p50": 12.2472,
+            "p90": 16.9167,
+            "p95": 16.9167,
+            "p99": 16.9167,
+            "stddev": 5.001134375321055
+          },
+          "callback_work_us": {
+            "count": 6015,
+            "max": 555.2,
+            "mean": 12.250955943474533,
+            "min": 8.6,
+            "p50": 10.6,
+            "p90": 15.299999999999999,
+            "p95": 15.8,
+            "p99": 24.285999999999966,
+            "stddev": 9.518501841533997
+          },
+          "config": {
+            "buffer_frames": {
+              "max": 480,
+              "min": 480
+            },
+            "channels": 2,
+            "sample_format": "f32",
+            "sample_rate": 48000
+          },
+          "errors": {
+            "count": 0,
+            "first": [],
+            "kinds": {}
+          },
+          "first_frame_age_ms": {
+            "count": 6015,
+            "max": 24.481,
+            "mean": 17.68587940149627,
+            "min": 17.3197,
+            "p50": 17.6248,
+            "p90": 17.979039999999998,
+            "p95": 18.08152,
+            "p99": 18.274192,
+            "stddev": 0.22340010716188344
+          },
+          "frames": 2887200,
+          "frames_per_packet": {
+            "count": 6015,
+            "max": 480.0,
+            "mean": 480.0,
+            "min": 480.0,
+            "p50": 480.0,
+            "p90": 480.0,
+            "p95": 480.0,
+            "p99": 480.0,
+            "stddev": 0.0
+          },
+          "late_callbacks": 0,
+          "levels": {
+            "peak_dbfs": -30.392049332914162,
+            "rms_dbfs": -59.19538129387071,
+            "silent_packets": 0
+          },
+          "packets": 6015,
+          "packets_without_callback_time": 1,
+          "pauses": 0,
+          "period_frames": 480,
+          "rate": {
+            "by_arrival_time": {
+              "packets": 6015,
+              "ppm": -1.120392713382934,
+              "rate_hz": 47999.94622114976,
+              "residual_ms": {
+                "count": 6015,
+                "max": 6.986009058840281,
+                "mean": 0.20716633998645975,
+                "min": 0.00012647355518424774,
+                "p50": 0.15942309318006664,
+                "p90": 0.42350873548997475,
+                "p95": 0.5187114519845437,
+                "p99": 0.7150845920952505,
+                "stddev": 0.20237422946294262
+              },
+              "span_s": 60.13937029999215
+            },
+            "by_capture_time": {
+              "packets": 6015,
+              "ppm": -1.8674883981439905,
+              "rate_hz": 47999.91036055689,
+              "residual_ms": {
+                "count": 6015,
+                "max": 0.5957250464129205,
+                "mean": 0.10840244557433373,
+                "min": 0.000037923443940712787,
+                "p50": 0.09487454281664753,
+                "p90": 0.21815168433292348,
+                "p95": 0.24340380287125044,
+                "p99": 0.3068997318151021,
+                "stddev": 0.07806448697226223
+              },
+              "span_s": 60.13978510000743
+            }
+          },
+          "started_s": 0.4703181,
+          "zero_fill": {
+            "drift_at_end_ms": -0.2149,
+            "inserted_ms": 0.0,
+            "worst_ms": 0.583
+          }
+        },
+        "output": [
+          {
+            "callback_interval_ms": {
+              "count": 1999,
+              "max": 11.8914,
+              "mean": 9.998480490245136,
+              "min": 6.7699,
+              "p50": 9.9963,
+              "p90": 10.43914,
+              "p95": 10.61639,
+              "p99": 10.917554,
+              "stddev": 0.35992373864247845
+            },
+            "callbacks": 2000,
+            "config": {
+              "buffer_frames": {
+                "max": 480,
+                "min": 480
+              },
+              "channels": 2,
+              "sample_format": "f32",
+              "sample_rate": 48000
+            },
+            "errors": {
+              "count": 0,
+              "first": [],
+              "kinds": {}
+            },
+            "period_frames": 480,
+            "phase": "first tone",
+            "playback_minus_callback_ms": {
+              "count": 2000,
+              "max": 31.291667,
+              "mean": 30.83642741600013,
+              "min": 0.0,
+              "p50": 30.895834,
+              "p90": 31.145834,
+              "p95": 31.1875,
+              "p99": 31.229167,
+              "stddev": 0.7824134321301239
+            },
+            "seconds": 20.008423599999997,
+            "started_s": 10.5672692,
+            "tone": {
+              "burst_ms": 150.0,
+              "bursts": 10,
+              "frequency_hz": 19000,
+              "peak_dbfs": -49.99993869021745,
+              "seconds_of_tone": 1.5
+            }
+          },
+          {
+            "callback_interval_ms": {
+              "count": 1999,
+              "max": 11.2002,
+              "mean": 9.997447623811896,
+              "min": 4.6844,
+              "p50": 10.0009,
+              "p90": 10.3489,
+              "p95": 10.49769,
+              "p99": 10.742859999999999,
+              "stddev": 0.31370856332663116
+            },
+            "callbacks": 2000,
+            "config": {
+              "buffer_frames": {
+                "max": 480,
+                "min": 480
+              },
+              "channels": 2,
+              "sample_format": "f32",
+              "sample_rate": 48000
+            },
+            "errors": {
+              "count": 0,
+              "first": [],
+              "kinds": {}
+            },
+            "period_frames": 480,
+            "phase": "second tone",
+            "playback_minus_callback_ms": {
+              "count": 2000,
+              "max": 31.333334,
+              "mean": 30.961989915000174,
+              "min": 0.0,
+              "p50": 31.041667,
+              "p90": 31.208334,
+              "p95": 31.229167,
+              "p99": 31.270834,
+              "stddev": 0.7556450556530648
+            },
+            "seconds": 20.0156189,
+            "started_s": 35.624784,
+            "tone": {
+              "burst_ms": 150.0,
+              "bursts": 10,
+              "frequency_hz": 19000,
+              "peak_dbfs": -49.99993869021745,
+              "seconds_of_tone": 1.5
+            }
+          }
+        ],
+        "tone": [
+          {
+            "edges_written": 20,
+            "loopback": {
+              "burst_dbfs": [
+                -41.344307772646374,
+                -39.16050766540494,
+                -37.20617898256024,
+                -35.91160778245331,
+                -34.811561020848856,
+                -34.00425884521584,
+                -33.55655726247531,
+                -33.31090527730246,
+                -32.89864312795436,
+                -32.81063314878238
+              ],
+              "capture_minus_playback_ms": {
+                "count": 18,
+                "max": 32.853116375,
+                "mean": 32.171003359375,
+                "min": 31.908862875,
+                "p50": 32.103968124999994,
+                "p90": 32.43403868125,
+                "p95": 32.5487102578125,
+                "p99": 32.7922351515625,
+                "stddev": 0.2158847061680492
+              },
+              "capture_minus_write_ms": {
+                "count": 18,
+                "max": 72.30409153125,
+                "mean": 70.95036658159722,
+                "min": 69.34822175,
+                "p50": 70.96323864062501,
+                "p90": 72.202744803125,
+                "p95": 72.27171694375001,
+                "p99": 72.29761661375,
+                "stddev": 1.1294266355814717
+              },
+              "delivery_minus_write_ms": {
+                "count": 18,
+                "max": 52.4884,
+                "mean": 50.102272222222226,
+                "min": 49.3823,
+                "p50": 50.08865,
+                "p90": 50.2736,
+                "p95": 50.618314999999996,
+                "p99": 52.114383,
+                "stddev": 0.6351592248366238
+              },
+              "edges": 20,
+              "first_burst_minus_playback_ms": [
+                32.95257059375,
+                32.98679425
+              ],
+              "found": 20,
+              "off_dbfs": null,
+              "on_dbfs": -32.91263811683277,
+              "snr_db": 107.08736188316723
+            },
+            "microphone": {
+              "burst_dbfs": [],
+              "capture_minus_playback_ms": null,
+              "capture_minus_write_ms": null,
+              "delivery_minus_write_ms": null,
+              "edges": 20,
+              "first_burst_minus_playback_ms": [
+                null,
+                null
+              ],
+              "found": 0,
+              "off_dbfs": -112.77942593859453,
+              "on_dbfs": -114.36497587399177,
+              "snr_db": -1.5855499353972247
+            },
+            "phase": "first tone"
+          },
+          {
+            "edges_written": 20,
+            "loopback": {
+              "burst_dbfs": [
+                -41.3443068283033,
+                -39.16050693099288,
+                -37.20617898256024,
+                -35.911606771980125,
+                -34.81156013057738,
+                -34.00425965647085,
+                -33.556556491975954,
+                -33.3109045282889,
+                -32.89864312795436,
+                -32.81063314878238
+              ],
+              "capture_minus_playback_ms": {
+                "count": 18,
+                "max": 32.5173575,
+                "mean": 32.13005509201388,
+                "min": 31.903077875,
+                "p50": 32.093418421875,
+                "p90": 32.326283053125,
+                "p95": 32.412950565625,
+                "p99": 32.496476113125,
+                "stddev": 0.1535109023407291
+              },
+              "capture_minus_write_ms": {
+                "count": 18,
+                "max": 72.41873615625,
+                "mean": 71.02119436979166,
+                "min": 69.35291571875,
+                "p50": 70.964739046875,
+                "p90": 72.24705879375,
+                "p95": 72.3241138640625,
+                "p99": 72.39981169781251,
+                "stddev": 1.079771890947139
+              },
+              "delivery_minus_write_ms": {
+                "count": 18,
+                "max": 50.7115,
+                "mean": 49.98109444444444,
+                "min": 49.1622,
+                "p50": 50.01845,
+                "p90": 50.50106,
+                "p95": 50.576775,
+                "p99": 50.684555,
+                "stddev": 0.3996488006462983
+              },
+              "edges": 20,
+              "first_burst_minus_playback_ms": [
+                32.29953759375,
+                32.18996090625
+              ],
+              "found": 20,
+              "off_dbfs": null,
+              "on_dbfs": -32.912637508704414,
+              "snr_db": 107.08736249129558
+            },
+            "microphone": {
+              "burst_dbfs": [],
+              "capture_minus_playback_ms": null,
+              "capture_minus_write_ms": null,
+              "delivery_minus_write_ms": null,
+              "edges": 20,
+              "first_burst_minus_playback_ms": [
+                null,
+                null
+              ],
+              "found": 0,
+              "off_dbfs": -106.1766883488061,
+              "on_dbfs": -105.06198585408464,
+              "snr_db": 1.1147024947214577
+            },
+            "phase": "second tone"
+          }
+        ]
+      },
+      "seconds": 60.0
+    },
+    "clock": {
+      "results": {
+        "clocks": {
+          "drift_after_3_hours_ms": {
+            "loopback_vs_qpc": -0.415072036741293,
+            "microphone_vs_loopback": -0.207510766569996,
+            "microphone_vs_qpc": -0.622582803311289
+          },
+          "loopback_ppm": -0.03843259599456417,
+          "loopback_ppm_each_minute": {
+            "count": 10,
+            "max": 0.6863025583392357,
+            "mean": -0.13415523595350365,
+            "min": -0.8633318626660724,
+            "p50": -0.07305182581074376,
+            "p90": 0.529545387295549,
+            "p95": 0.6079239728173922,
+            "p99": 0.670626841234867,
+            "stddev": 0.49048296737558106
+          },
+          "microphone_minus_loopback_ppm": -0.019213959867592223,
+          "microphone_ppm": -0.05764655586215639,
+          "microphone_ppm_each_minute": {
+            "count": 10,
+            "max": 1.1136800757149956,
+            "mean": 0.29296931635114376,
+            "min": -0.6127010854228843,
+            "p50": 0.18089898351503209,
+            "p90": 1.0606530415513404,
+            "p95": 1.087166558633168,
+            "p99": 1.10837737229863,
+            "stddev": 0.6264405744409031
+          },
+          "ppm_that_uses_up_100_ms_in_3_hours": 9.25925925925926
+        },
+        "loopback": {
+          "breaks": {
+            "count": 1,
+            "largest": [
+              {
+                "at_s": 0.5089481,
+                "missing_ms": 11.7714
+              }
+            ],
+            "missing_ms": 11.7714
+          },
+          "callback_interval_ms": {
+            "count": 59998,
+            "max": 15.342,
+            "mean": 9.999998819960501,
+            "min": 4.55,
+            "p50": 9.9991,
+            "p90": 10.4522,
+            "p95": 10.6163,
+            "p99": 10.8978,
+            "stddev": 0.3594481103067246
+          },
+          "callback_minus_capture_ms": {
+            "count": 59999,
+            "max": -15.0,
+            "mean": -20.935892066534397,
+            "min": -26.7074,
+            "p50": -16.0,
+            "p90": -16.0,
+            "p95": -16.0,
+            "p99": -15.0,
+            "stddev": 5.004396030810787
+          },
+          "callback_work_us": {
+            "count": 60000,
+            "max": 319.5,
+            "mean": 12.35240999999972,
+            "min": 2.4,
+            "p50": 10.9,
+            "p90": 16.1,
+            "p95": 16.8,
+            "p99": 24.5,
+            "stddev": 6.744840289082629
+          },
+          "config": {
+            "buffer_frames": {
+              "max": 480,
+              "min": 480
+            },
+            "channels": 2,
+            "sample_format": "f32",
+            "sample_rate": 48000
+          },
+          "errors": {
+            "count": 1,
+            "first": [
+              {
+                "at_s": 0.4941883,
+                "kind": "Xrun",
+                "message": "A buffer underrun or overrun occurred."
+              }
+            ],
+            "kinds": {
+              "Xrun": 1
+            }
+          },
+          "first_frame_age_ms": {
+            "count": 60000,
+            "max": -8.0968,
+            "mean": -14.847216396666555,
+            "min": -15.7687,
+            "p50": -14.9694,
+            "p90": -14.36209,
+            "p95": -13.928380000000002,
+            "p99": -13.466997,
+            "stddev": 0.41211171441105304
+          },
+          "frames": 28800000,
+          "frames_per_packet": {
+            "count": 60000,
+            "max": 480.0,
+            "mean": 480.0,
+            "min": 480.0,
+            "p50": 480.0,
+            "p90": 480.0,
+            "p95": 480.0,
+            "p99": 480.0,
+            "stddev": 0.0
+          },
+          "late_callbacks": 0,
+          "levels": {
+            "peak_dbfs": null,
+            "rms_dbfs": null,
+            "silent_packets": 60000
+          },
+          "packets": 60000,
+          "packets_without_callback_time": 1,
+          "pauses": 1,
+          "period_frames": 480,
+          "rate": {
+            "by_arrival_time": {
+              "packets": 60000,
+              "ppm": -0.31011526846480564,
+              "rate_hz": 47999.98511446711,
+              "residual_ms": {
+                "count": 60000,
+                "max": 5.427066880685061,
+                "mean": 0.28381918332538,
+                "min": 0.0,
+                "p50": 0.2451105420284705,
+                "p90": 0.5613929820270867,
+                "p95": 0.7057528177014653,
+                "p99": 0.9881779087697852,
+                "stddev": 0.21202441246754097
+              },
+              "span_s": 599.9799291999952
+            },
+            "by_capture_time": {
+              "packets": 60000,
+              "ppm": -0.03843259599456417,
+              "rate_hz": 47999.99815523539,
+              "residual_ms": {
+                "count": 60000,
+                "max": 0.7810908410021966,
+                "mean": 0.12849200619107237,
+                "min": 0.0,
+                "p50": 0.0781924332784456,
+                "p90": 0.24017182072695317,
+                "p95": 0.6380247466861276,
+                "p99": 0.7420130291899341,
+                "stddev": 0.16411361542746933
+              },
+              "span_s": 599.9800775999902
+            }
+          },
+          "started_s": 0.4289295,
+          "zero_fill": {
+            "drift_at_end_ms": 0.07816666674804687,
+            "inserted_ms": 11.770833333333332,
+            "worst_ms": 0.7819333333129883
+          }
+        },
+        "microphone": {
+          "breaks": {
+            "count": 0,
+            "largest": [],
+            "missing_ms": -0.0
+          },
+          "callback_interval_ms": {
+            "count": 60008,
+            "max": 13.0078,
+            "mean": 10.00000388614858,
+            "min": 7.042,
+            "p50": 10.0007,
+            "p90": 10.313730000000001,
+            "p95": 10.4399,
+            "p99": 10.651265,
+            "stddev": 0.25738968164205794
+          },
+          "callback_minus_capture_ms": {
+            "count": 60008,
+            "max": 17.9167,
+            "mean": 11.918165997856834,
+            "min": 6.2428,
+            "p50": 12.402899999999999,
+            "p90": 16.9167,
+            "p95": 16.9167,
+            "p99": 16.9167,
+            "stddev": 5.001065063315192
+          },
+          "callback_work_us": {
+            "count": 60009,
+            "max": 761.3,
+            "mean": 12.781606092420104,
+            "min": 2.6,
+            "p50": 11.2,
+            "p90": 16.400000000000002,
+            "p95": 17.0,
+            "p99": 25.3,
+            "stddev": 9.004648895143932
+          },
+          "config": {
+            "buffer_frames": {
+              "max": 480,
+              "min": 480
+            },
+            "channels": 2,
+            "sample_format": "f32",
+            "sample_rate": 48000
+          },
+          "errors": {
+            "count": 0,
+            "first": [],
+            "kinds": {}
+          },
+          "first_frame_age_ms": {
+            "count": 60009,
+            "max": 20.6832,
+            "mean": 17.706821170157802,
+            "min": 17.0988,
+            "p50": 17.6452,
+            "p90": 17.9867,
+            "p95": 18.0928,
+            "p99": 18.360776,
+            "stddev": 0.211440602473052
+          },
+          "frames": 28804320,
+          "frames_per_packet": {
+            "count": 60009,
+            "max": 480.0,
+            "mean": 480.0,
+            "min": 480.0,
+            "p50": 480.0,
+            "p90": 480.0,
+            "p95": 480.0,
+            "p99": 480.0,
+            "stddev": 0.0
+          },
+          "late_callbacks": 0,
+          "levels": {
+            "peak_dbfs": -26.770404629539534,
+            "rms_dbfs": -61.03491560673654,
+            "silent_packets": 0
+          },
+          "packets": 60009,
+          "packets_without_callback_time": 1,
+          "pauses": 0,
+          "period_frames": 480,
+          "rate": {
+            "by_arrival_time": {
+              "packets": 60009,
+              "ppm": -0.2972217786334497,
+              "rate_hz": 47999.985733354624,
+              "residual_ms": {
+                "count": 60009,
+                "max": 2.860857729899635,
+                "mean": 0.20143138735921365,
+                "min": 0.00001875031330200727,
+                "p50": 0.16829089875614045,
+                "p90": 0.40622983906359883,
+                "p95": 0.546669693289914,
+                "p99": 0.7616642199650413,
+                "stddev": 0.16385260258279333
+              },
+              "span_s": 600.0802331999876
+            },
+            "by_capture_time": {
+              "packets": 60009,
+              "ppm": -0.05764655586215639,
+              "rate_hz": 47999.99723296532,
+              "residual_ms": {
+                "count": 60009,
+                "max": 0.5149503448507176,
+                "mean": 0.07882378944837075,
+                "min": 1.7485035641584545e-7,
+                "p50": 0.06200709827908213,
+                "p90": 0.16672891800624262,
+                "p95": 0.2247094921656867,
+                "p99": 0.347054491869585,
+                "stddev": 0.07063735395958443
+              },
+              "span_s": 600.0803653000039
+            }
+          },
+          "started_s": 0.3963465,
+          "zero_fill": {
+            "drift_at_end_ms": 0.3653,
+            "inserted_ms": 0.0,
+            "worst_ms": 0.8542
+          }
+        },
+        "output": [
+          {
+            "callback_interval_ms": {
+              "count": 59999,
+              "max": 13.8013,
+              "mean": 9.999950212503514,
+              "min": 6.201,
+              "p50": 9.9997,
+              "p90": 10.45142,
+              "p95": 10.6151,
+              "p99": 10.893902,
+              "stddev": 0.3588811541791532
+            },
+            "callbacks": 60000,
+            "config": {
+              "buffer_frames": {
+                "max": 480,
+                "min": 480
+              },
+              "channels": 2,
+              "sample_format": "f32",
+              "sample_rate": 48000
+            },
+            "errors": {
+              "count": 0,
+              "first": [],
+              "kinds": {}
+            },
+            "period_frames": 480,
+            "phase": "silent output",
+            "playback_minus_callback_ms": {
+              "count": 60000,
+              "max": 31.770834,
+              "mean": 30.856761444485574,
+              "min": 0.0,
+              "p50": 30.979167,
+              "p90": 31.1875,
+              "p95": 31.229167,
+              "p99": 31.645834,
+              "stddev": 0.43094327516584857
+            },
+            "seconds": 600.0109312,
+            "started_s": 0.4896196,
+            "tone": {
+              "burst_ms": 150.0,
+              "bursts": 0,
+              "frequency_hz": 19000,
+              "peak_dbfs": -49.99993869021745,
+              "seconds_of_tone": 0.0
+            }
+          }
+        ]
+      },
+      "seconds": 600.0
+    },
+    "devices": {
+      "default_input": {
+        "default_config": {
+          "buffer_frames": {
+            "max": 480,
+            "min": 480
+          },
+          "channels": 2,
+          "sample_format": "f32",
+          "sample_rate": 48000
+        },
+        "device_type": "Microphone",
+        "interface": "Unknown",
+        "manufacturer": null,
+        "name": "Microphone Array (2- Realtek High Definition Audio(SST))",
+        "supported_configs": [
+          {
+            "channels": 2,
+            "period_ms": [
+              "10.0"
+            ],
+            "sample_formats": [
+              "f32",
+              "f64",
+              "i16",
+              "i24",
+              "i32",
+              "u8"
+            ],
+            "sample_rates": [
+              48000
+            ]
+          }
+        ]
+      },
+      "default_output": {
+        "default_config": {
+          "buffer_frames": {
+            "max": 480,
+            "min": 480
+          },
+          "channels": 2,
+          "sample_format": "f32",
+          "sample_rate": 48000
+        },
+        "device_type": "Speaker",
+        "interface": "S/PDIF",
+        "manufacturer": null,
+        "name": "Speakers (2- Realtek High Definition Audio(SST))",
+        "supported_configs": [
+          {
+            "channels": 2,
+            "period_ms": [
+              "10.0"
+            ],
+            "sample_formats": [
+              "f32",
+              "f64",
+              "i16",
+              "i24",
+              "i32",
+              "i64",
+              "u8"
+            ],
+            "sample_rates": [
+              8000,
+              11025,
+              12000,
+              16000,
+              22050,
+              24000,
+              32000,
+              44100,
+              48000,
+              64000,
+              88200,
+              96000,
+              176400,
+              192000,
+              352800,
+              384000
+            ]
+          }
+        ]
+      },
+      "host": "WASAPI",
+      "input_devices": 1,
+      "output_devices": 1
+    },
+    "flush": {
+      "chunk_bytes": 4096,
+      "chunks": 50,
+      "flush_ms": {
+        "count": 50,
+        "max": 2.7234,
+        "mean": 2.067644,
+        "min": 0.8562,
+        "p50": 2.20115,
+        "p90": 2.51405,
+        "p95": 2.640275,
+        "p99": 2.716148,
+        "stddev": 0.463825608245168
+      },
+      "folder": "the user's temporary folder",
+      "write_ms": {
+        "count": 50,
+        "max": 0.3579,
+        "mean": 0.11100599999999998,
+        "min": 0.0484,
+        "p50": 0.08504999999999999,
+        "p90": 0.20925,
+        "p95": 0.22315999999999997,
+        "p99": 0.3334979999999999,
+        "stddev": 0.06715752053195531
+      }
+    },
+    "opus": {
+      "application": "voip",
+      "built": true,
+      "channels": 1,
+      "crate": "opus 0.4 (opusic-sys, bundled libopus built with CMake)",
+      "frame_ms": 20,
+      "libopus": "libopus 1.6.1",
+      "sample_rate": 48000,
+      "signals": [
+        {
+          "audio_s": 300.0,
+          "bytes": 1215066,
+          "decode_real_time_factor": 0.005305596666666667,
+          "encode_frame_ms": {
+            "count": 15000,
+            "max": 2.8426,
+            "mean": 0.460382740000003,
+            "min": 0.3887,
+            "p50": 0.4202,
+            "p90": 0.5787100000000001,
+            "p95": 0.684,
+            "p99": 0.8732070000000002,
+            "stddev": 0.11258795228069045
+          },
+          "encode_real_time_factor": 0.023019137000000002,
+          "kbps": 32.401759999999996,
+          "megabytes_per_3_hours": 43.742376,
+          "packets": 15000,
+          "signal": "sine"
+        },
+        {
+          "audio_s": 300.0,
+          "bytes": 1200637,
+          "decode_real_time_factor": 0.009212765333333334,
+          "encode_frame_ms": {
+            "count": 15000,
+            "max": 4.0802,
+            "mean": 0.6865538266666672,
+            "min": 0.5201,
+            "p50": 0.5682,
+            "p90": 0.96072,
+            "p95": 1.52771,
+            "p99": 1.873405,
+            "stddev": 0.3107400698462036
+          },
+          "encode_real_time_factor": 0.034327691333333334,
+          "kbps": 32.01698666666667,
+          "megabytes_per_3_hours": 43.222932,
+          "packets": 15000,
+          "signal": "noise"
+        }
+      ],
+      "target_bitrate": 32000
+    },
+    "privacy": "Only statistics were kept. No microphone or loopback audio was stored."
+  },
+  "spike": "audio"
+}
