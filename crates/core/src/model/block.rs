@@ -1,6 +1,6 @@
 //! Blocks (spec 6): the common fields and the version 1 types.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -114,6 +114,8 @@ pub struct TextData {
     pub tags: BTreeMap<ElementId, Vec<String>>,
     /// Named styles of single elements.
     pub styles: BTreeMap<ElementId, String>,
+    /// Elements whose to-do tag is checked off.
+    pub checked: BTreeSet<ElementId>,
     /// Unknown keys of `data`.
     pub extra: JsonMap,
 }

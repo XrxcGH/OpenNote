@@ -309,6 +309,7 @@ Per-device view state, such as scroll position, zoom, the last open page, and co
 | `changed` | timestamp | required | When a field of this file last changed. Used only to merge sync copies (section 14.3) |
 | `defaults` | object | none | Defaults for new pages. Only `view` (section 5.4) is defined in version 1 |
 | `groups` | array | `[]` | Section groups (section 4.3) |
+| `styles` | object | none | Reserved for how this notebook shows each named style (section 5.6) |
 
 The list of sections is not stored here. Each section records its own group and order in its own `section.json`. Creating a section on one device and reordering sections on another then change different files.
 
@@ -650,6 +651,7 @@ Version 1 writers never write these fields. Version 1 readers must keep them unc
 | `recordings` | `page.json` | Audio recordings and their pauses (Phase 9) |
 | `marks` | `data` of text blocks | Ranges in the Markdown linked to moments in a recording (Phase 9) |
 | `parent` | Blocks | Blocks nested inside a group block |
+| `styles` | `notebook.json` | Each notebook's font, size, color, and spacing for the named styles of section 6.6 |
 | `encryption` | `section.json` and `page.json` | Password-protected sections (section 5.7) |
 
 A later version defines each field and raises `formatVersion`. Every stroke already stores its start time and per-point times (section 9.4), so handwriting needs no new field to link to audio.
@@ -768,10 +770,11 @@ A text block's elements are its headings, paragraphs, list items, code blocks, m
 | `ids` | `[]` | Element IDs, one for each element, in document order |
 | `tags` | `{}` | Tags of single elements: an object that maps an element ID to an array of tags, written like page tags |
 | `styles` | `{}` | Named styles: an object that maps an element ID to a style name |
+| `checked` | `[]` | Element IDs whose to-do tag is checked off, in ID order |
 
 Element IDs share the page's ID space with block IDs. When `ids` lists fewer IDs than the block has elements, the last elements have no ID yet, and writers add IDs for them. When it lists more, readers ignore the extra IDs, and writers drop them. A tool that edits the Markdown but can't track elements leaves `ids` alone, and IDs then match elements in order. Keys of `tags` and `styles` that are not in `ids` are ignored.
 
-A style name refers to a named style of the app, such as `title`, `subtitle`, `quote`, `citation`, or `code`, instead of formatting stored in the Markdown. Readers show an element with an unknown style as plain text. Named styles keep the Markdown and `page.md` clean, because neither carries styles.
+A style name refers to a named style of the app, such as `title`, `subtitle`, `quote`, `citation`, or `code`, instead of formatting stored in the Markdown. Readers show an element with an unknown style as plain text. Named styles keep the Markdown and `page.md` clean, because neither carries styles. A later version lets each notebook change how a style looks.
 
 ### 6.7 Descriptions for screen readers
 
@@ -1241,7 +1244,7 @@ Rules:
 - The front matter is YAML, with every string written as a JSON string, so any title is valid. Obsidian, Hugo, Pandoc, and other tools read `title` and `tags` from it. `tags` is left out when there are none.
 - The title follows as a level 1 heading, escaped as section 7.6 requires. A page with an empty title has no heading.
 - A page with at least one stroke gets the line `![Handwriting on this page](ink.svg)` after the title.
-- Blocks follow in reading order (section 6.2), with one blank line between them. Text blocks are copied as they are. Images become `![alt](assets/<file>)`, and files become `[name](assets/<file>)`. Tables become GFM tables, with a hard break in a cell written as `<br>`, and with an empty header row when the table has none. Ink blocks add nothing more. Blocks of unknown types use their fallback's Markdown, or the line `*This part of the page needs a newer version of OpenNote.*`
+- Blocks follow in reading order (section 6.2), with one blank line between them. Text blocks are copied as they are. Images become `![alt](assets/<file>)`, and files become `[name](assets/<file>)`. Tables become GFM tables, with a hard break in a cell written as `<br>`, and with an empty header row when the table has none. Ink blocks add nothing more, except that a drawing that has a description and is not decorative adds the description, escaped, as a line in italics. Blocks of unknown types use their fallback's Markdown, or the line `*This part of the page needs a newer version of OpenNote.*`
 - An image marked `decorative` gets an empty description: `![](assets/<file>)`.
 - Element IDs, tags, and styles (section 6.6) are left out, so the Markdown stays clean.
 - Links are rewritten so other tools can follow them. `opennote:page/<ID>` becomes a relative path to that page's `page.md` when the page is in the same notebook, and `asset:<ID>` becomes `assets/<file>`. Other links stay as they are.

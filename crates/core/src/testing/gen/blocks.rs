@@ -1,6 +1,6 @@
 //! Generated blocks: random parts first, then IDs and references assigned by position.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use super::*;
 use crate::id::{ColumnId, ElementId, RowId};
@@ -187,9 +187,13 @@ fn text_data(parts: &BlockParts, ctx: &mut BlockCtx<'_>) -> BlockData {
     let ids: Vec<ElementId> = (0..*count).map(|_| ElementId(ctx.next_id(1, parts.random))).collect();
     let mut tag_map = BTreeMap::new();
     let mut styles = BTreeMap::new();
+    let mut checked = BTreeSet::new();
     if let Some(first) = ids.first() {
         if !tags.is_empty() {
             tag_map.insert(*first, tags.clone());
+        }
+        if parts.alt.1 {
+            checked.insert(*first);
         }
         if let Some(style) = style {
             styles.insert(*first, style.clone());
@@ -200,6 +204,7 @@ fn text_data(parts: &BlockParts, ctx: &mut BlockCtx<'_>) -> BlockData {
         ids,
         tags: tag_map,
         styles,
+        checked,
         extra: parts.extra.0.clone(),
     })
 }
