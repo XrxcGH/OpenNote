@@ -1,22 +1,28 @@
 //! Text on a freeform page (spike 2): typing latency with eight Tiptap editors on a zoomable canvas mixed with
 //! about 5,000 ink strokes, and the smoothness of zooming and panning that page.
 //!
-//! Modes:
+//! Mode `keys` measures typing latency, with screen timing when capture is available.
 //!
-//! - `keys`: typing latency, with screen timing when capture is available.
-//! - `keys-screen`: the same, but screen timing is required. Use it to add screen timing to earlier results.
-//! - `zoom`: zoom and pan smoothness.
-//! - `sharpness`: whether a compositor layer leaves text blurry after zooming.
+//! Mode `keys-screen` does the same, but requires screen timing, to add it to earlier results.
 //!
-//! Without `--mode`, it runs `keys`, `zoom`, and `sharpness`.
+//! Mode `zoom` measures zoom and pan smoothness.
+//!
+//! Mode `sharpness` checks whether a compositor layer leaves text blurry after zooming.
+//!
+//! Mode `trace` shows where typing time goes on the page's main thread, from a DevTools trace.
+//!
+//! Without `--mode`, it runs all of them except `keys-screen`.
 
 mod analysis;
+mod conditions;
 mod input;
 mod keys;
+mod metrics;
 mod motion;
 mod report;
 mod screen_timing;
 mod sharpness;
+mod trace;
 
 use std::path::Path;
 use std::thread::sleep;
@@ -36,7 +42,16 @@ enum Mode {
     KeysScreen,
     Zoom,
     Sharpness,
+    Trace,
 }
+
+const MODES: &[(&str, Mode)] = &[
+    ("keys", Mode::Keys),
+    ("keys-screen", Mode::KeysScreen),
+    ("zoom", Mode::Zoom),
+    ("sharpness", Mode::Sharpness),
+    ("trace", Mode::Trace),
+];
 
 impl Mode {
     /// The results section the mode writes. Both typing modes write `keys`.
@@ -45,21 +60,23 @@ impl Mode {
             Mode::Keys | Mode::KeysScreen => "keys",
             Mode::Zoom => "zoom",
             Mode::Sharpness => "sharpness",
+            Mode::Trace => "trace",
         }
     }
 }
 
 fn modes(name: Option<&str>) -> std::result::Result<Vec<Mode>, String> {
-    match name {
-        None => Ok(vec![Mode::Keys, Mode::Zoom, Mode::Sharpness]),
-        Some("keys") => Ok(vec![Mode::Keys]),
-        Some("keys-screen") => Ok(vec![Mode::KeysScreen]),
-        Some("zoom") => Ok(vec![Mode::Zoom]),
-        Some("sharpness") => Ok(vec![Mode::Sharpness]),
-        Some(other) => Err(format!(
-            "The text spike has no mode \"{other}\". Use keys, keys-screen, zoom, or sharpness."
-        )),
-    }
+    let Some(name) = name else {
+        return Ok(vec![Mode::Keys, Mode::Zoom, Mode::Sharpness, Mode::Trace]);
+    };
+    let known = MODES.iter().find(|(known, _)| *known == name);
+    known.map(|(_, mode)| vec![*mode]).ok_or_else(|| {
+        let names: Vec<&str> = MODES.iter().map(|(known, _)| *known).collect();
+        format!(
+            "The text spike has no mode \"{name}\". Use one of: {}.",
+            names.join(", ")
+        )
+    })
 }
 
 /// How long to wait for another spike to finish with the screen.
@@ -117,12 +134,22 @@ fn drive(controller: &Controller, modes: &[Mode], samples: usize, path: &Path) -
             Mode::KeysScreen => keys::run(controller, samples, true),
             Mode::Zoom => motion::run(controller, machine().refresh_hz),
             Mode::Sharpness => sharpness::run(controller),
+            Mode::Trace => trace::run(controller),
         };
         let section = outcome.unwrap_or_else(|error| json!({ "status": format!("failed: {error}") }));
         sections.push((mode.section().to_string(), section));
     }
     controller.raise(false)?;
     report::write(path, sections)
+}
+
+/// Loads the page again and waits until it's ready, so each condition starts from the state a person gets when
+/// opening a page. Without this, one condition's changes to the page can linger and speed up the next ones.
+fn fresh_page(controller: &Controller) -> Result<()> {
+    controller.on_ui(|webview, _| webview.reload().map_err(|error| error.to_string()))??;
+    controller.wait_for("ready", Duration::from_secs(60))?;
+    sleep(Duration::from_millis(500));
+    Ok(())
 }
 
 /// What the page reported when it loaded (notes, strokes, words, and setup times), plus the window size.
@@ -161,7 +188,8 @@ mod tests {
 
     #[test]
     fn chooses_modes() {
-        assert_eq!(modes(None).unwrap(), vec![Mode::Keys, Mode::Zoom, Mode::Sharpness]);
+        assert_eq!(modes(None).unwrap().len(), 4);
+        assert_eq!(modes(Some("trace")).unwrap(), vec![Mode::Trace]);
         assert_eq!(modes(Some("keys-screen")).unwrap(), vec![Mode::KeysScreen]);
         assert_eq!(Mode::KeysScreen.section(), "keys");
         assert!(modes(Some("fast")).is_err());

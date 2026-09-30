@@ -48,6 +48,14 @@ function inkMode(value: unknown): InkMode {
   throw new Error(`Unknown ink mode ${String(value)}.`);
 }
 
+/** CSS for each top-level block of the notes: normal, `content-visibility: auto`, or `contain: paint`. */
+type Blocks = 'normal' | 'content-visibility' | 'contain-paint';
+
+function setBlocks(blocks: Blocks): void {
+  document.body.classList.toggle('lazy-blocks', blocks === 'content-visibility');
+  document.body.classList.toggle('contained-blocks', blocks === 'contain-paint');
+}
+
 interface Setup {
   zoom: number;
   ink: InkMode | boolean;
@@ -55,12 +63,16 @@ interface Setup {
   target: 'short' | 'long';
   hideCaret?: boolean;
   layer?: boolean;
+  spellcheck?: boolean;
+  blocks?: Blocks;
 }
 
 /** Sets up one typing condition: fresh content in the target note, then focus, zoom, and pan to its caret. */
 async function setup(args: Setup): Promise<Record<string, unknown>> {
   const index = args.target === 'long' ? LONG_NOTE : SHORT_NOTE;
   const place: CaretPlace = args.target === 'long' ? 'middle' : 'end';
+  notes.setSpellcheck(args.spellcheck ?? true);
+  setBlocks(args.blocks ?? 'normal');
   notes.setCount(args.editors, index);
   notes.create(index);
   ink.setMode(inkMode(args.ink), world.camera);
@@ -92,6 +104,7 @@ register('setInk', async ({ on, mode }: { on?: boolean; mode?: InkMode }) => {
   await ink.settled();
   return ink.mode;
 });
+register('setBlocks', ({ blocks }: { blocks: Blocks }) => setBlocks(blocks));
 register('setEditorCount', ({ n, keep }: { n: number; keep?: number }) => {
   notes.setCount(n, keep ?? SHORT_NOTE);
   return notes.count;

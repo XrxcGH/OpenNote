@@ -61,6 +61,14 @@ impl ScreenTimer {
         }
     }
 
+    /// A timer that doesn't watch the screen, for typing that only the page times.
+    pub fn off() -> ScreenTimer {
+        ScreenTimer {
+            watcher: None,
+            status: "not used".into(),
+        }
+    }
+
     pub fn active(&self) -> bool {
         self.watcher.is_some()
     }

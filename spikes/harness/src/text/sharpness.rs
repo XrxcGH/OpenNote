@@ -132,6 +132,7 @@ fn zoom_case(controller: &Controller, layer: bool) -> Result<ZoomCase> {
 /// Runs the cases and returns the `sharpness` section of the results. The blur is scored on text alone; the
 /// cost of removing the layer is also measured with the tiled ink, which is the heaviest content to redraw.
 pub fn run(controller: &Controller) -> Result<Value> {
+    super::fresh_page(controller)?;
     controller.call("setEditorCount", json!({ "n": 8 }), CALL_TIMEOUT)?;
     controller.call("setInk", json!({ "mode": "off" }), CALL_TIMEOUT)?;
     let plain = zoom_case(controller, false)?;

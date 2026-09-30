@@ -82,6 +82,15 @@
       .hide-caret .ProseMirror {
         caret-color: transparent;
       }
+      /* Blocks off screen skip style, layout, and paint. The browser remembers each block's last height. */
+      .lazy-blocks .ProseMirror > * {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 48px;
+      }
+      /* Each block paints as its own piece, so a change repaints and recomposites one block, not the note. */
+      .contained-blocks .ProseMirror > * {
+        contain: paint;
+      }
       .ProseMirror h1 {
         font-size: 28px;
         margin: 0 0 12px;

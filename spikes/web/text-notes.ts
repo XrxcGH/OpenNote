@@ -63,6 +63,16 @@ export class Notes {
     return editor;
   }
 
+  /** Whether the browser's spell check runs in the editors. Change it with `setSpellcheck`. */
+  private spellcheck = true;
+
+  /** Turns the browser's spell check on or off, recreating the editors that exist. */
+  setSpellcheck(on: boolean): void {
+    if (on === this.spellcheck) return;
+    this.spellcheck = on;
+    this.editors.forEach((editor, index) => editor && this.create(index));
+  }
+
   /** Creates the editor for note `index` with its starting content, replacing any editor already there. */
   create(index: number): Editor {
     this.destroy(index);
@@ -73,6 +83,7 @@ export class Notes {
       element,
       extensions: [StarterKit],
       content: this.specs[index].content,
+      editorProps: { attributes: { spellcheck: String(this.spellcheck) } },
       onTransaction: ({ transaction }) => this.onTransaction?.(transaction.docChanged),
     });
     this.editors[index] = editor;

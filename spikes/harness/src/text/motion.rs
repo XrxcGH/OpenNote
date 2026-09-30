@@ -17,14 +17,22 @@ pub struct Variant {
     pub ink: &'static str,
     /// Whether the world gets `will-change: transform`, so the compositor can scale it without repainting.
     pub layer: bool,
+    /// The CSS for each top-level block of the notes, as in the typing conditions: "normal" or "contain-paint".
+    pub blocks: &'static str,
 }
 
 const fn variant(name: &'static str, ink: &'static str, layer: bool) -> Variant {
-    Variant { name, ink, layer }
+    Variant {
+        name,
+        ink,
+        layer,
+        blocks: "normal",
+    }
 }
 
 /// No ink as the reference, then ink as SVG in the world, on a canvas redrawn each frame, or as tiles drawn once
-/// by a worker. Most run with and without a compositor layer for the world.
+/// by a worker. Most run with and without a compositor layer for the world. The last two add `contain: paint` on
+/// each block, which the typing measurements show the 20-page note needs.
 pub const VARIANTS: &[Variant] = &[
     variant("no-ink", "off", false),
     variant("no-ink-layer", "off", true),
@@ -33,13 +41,22 @@ pub const VARIANTS: &[Variant] = &[
     variant("canvas-ink", "canvas", false),
     variant("tiles-ink", "tiles", false),
     variant("tiles-ink-layer", "tiles", true),
+    Variant {
+        blocks: "contain-paint",
+        ..variant("tiles-ink-contained", "tiles", false)
+    },
+    Variant {
+        blocks: "contain-paint",
+        ..variant("tiles-ink-layer-contained", "tiles", true)
+    },
 ];
 
 pub const MOTIONS: &[&str] = &["zoom", "pan", "zoom-pan"];
 const MOTION_MS: u64 = 5000;
 const CALL_TIMEOUT: Duration = Duration::from_secs(60);
 
-pub const METHOD: &str = "Each motion runs for 5 seconds with all eight editors. Every requestAnimationFrame \
+pub const METHOD: &str = "Each variant starts from a freshly loaded page, and each motion runs for 5 seconds with \
+all eight editors. Every requestAnimationFrame \
 callback sets the world's CSS transform (and redraws the canvas ink, when used). Zoom breathes between 30% and \
 250% every 2 seconds; pan sweeps across the notes and ink at up to about 2,000 CSS pixels a second; zoom-pan does \
 both. Frame intervals come from requestAnimationFrame timestamps. Main-thread time runs from each frame's start to \
@@ -66,9 +83,11 @@ pub fn run(controller: &Controller, refresh_hz: u32) -> Result<Value> {
 }
 
 fn measure(controller: &Controller, variant: &Variant, refresh_hz: u32) -> Result<Value> {
+    super::fresh_page(controller)?;
     controller.call("setEditorCount", json!({ "n": 8 }), CALL_TIMEOUT)?;
     controller.call("setInk", json!({ "mode": variant.ink }), CALL_TIMEOUT)?;
     controller.call("setLayer", json!({ "on": variant.layer }), CALL_TIMEOUT)?;
+    controller.call("setBlocks", json!({ "blocks": variant.blocks }), CALL_TIMEOUT)?;
     sleep(Duration::from_millis(600));
     let mut motions = Vec::new();
     for motion in MOTIONS {
@@ -80,6 +99,7 @@ fn measure(controller: &Controller, variant: &Variant, refresh_hz: u32) -> Resul
         "name": variant.name,
         "ink": variant.ink,
         "layer": variant.layer,
+        "blocks": variant.blocks,
         "motions": motions,
     }))
 }

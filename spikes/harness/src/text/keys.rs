@@ -1,7 +1,6 @@
-//! Typing latency under each condition: zoom, ink, the number of editors, and a short note versus the
-//! 20-page note. Each key is timed three ways. The page times keydown to the end of the next frame's rendering.
-//! The browser's Event Timing API times keydown to the next presented frame, in 8 ms steps. Desktop Duplication
-//! times it on screen, when `common::capture` is available.
+//! Typing latency under each condition in `conditions.rs`. Each key is timed three ways. The page times keydown to
+//! the end of the next frame's rendering. The browser's Event Timing API times keydown to the next presented
+//! frame, in 8 ms steps. Desktop Duplication times it on screen, when `common::capture` is available.
 
 use std::thread::sleep;
 use std::time::{Duration, Instant};
@@ -9,78 +8,50 @@ use std::time::{Duration, Instant};
 use serde_json::{json, Value};
 
 use super::analysis::{event_summary, key_summary, rounded, summary_json, TYPING_BUDGET_MS};
+use super::conditions::{Condition, Tweak, CONDITIONS};
 use super::input::{key_events, send_key, typed_char};
+use super::metrics;
 use super::screen_timing::{caret_region, ScreenTimer};
 use crate::common::screen::check_desktop;
 use crate::common::stats::share_within;
 use crate::common::webview::{ClientArea, Controller};
 use crate::common::{clock, Result};
 
-/// One typing condition. `editors` counts the editors on the page, always including the one typed into.
-pub struct Condition {
-    pub name: &'static str,
-    pub zoom: f64,
-    /// "svg" draws the ink as SVG paths in the zoomed world, "canvas" on a window-sized canvas, and "tiles" as
-    /// tiles drawn by a worker. "off" hides it.
-    pub ink: &'static str,
-    pub editors: usize,
-    /// "short" types at the end of a short note; "long" types mid-paragraph halfway through the 20-page note.
-    pub target: &'static str,
-}
-
-const fn condition(
-    name: &'static str,
-    zoom: f64,
-    ink: &'static str,
-    editors: usize,
-    target: &'static str,
-) -> Condition {
-    Condition {
-        name,
-        zoom,
-        ink,
-        editors,
-        target,
-    }
-}
-
-/// The baseline, then one change at a time, then the heaviest combination with the long note.
-pub const CONDITIONS: &[Condition] = &[
-    condition("baseline", 1.0, "svg", 8, "short"),
-    condition("zoom-50", 0.5, "svg", 8, "short"),
-    condition("zoom-200", 2.0, "svg", 8, "short"),
-    condition("no-ink", 1.0, "off", 8, "short"),
-    condition("canvas-ink", 1.0, "canvas", 8, "short"),
-    condition("tiles-ink", 1.0, "tiles", 8, "short"),
-    condition("one-editor", 1.0, "svg", 1, "short"),
-    condition("long", 1.0, "svg", 8, "long"),
-    condition("long-zoom-50", 0.5, "svg", 8, "long"),
-    condition("long-alone", 1.0, "svg", 1, "long"),
-];
-
 /// Keys typed before measuring, so the editor, caches, and caret blink settle.
-const WARM_UP: usize = 10;
+pub(super) const WARM_UP: usize = 10;
 /// Time from one key press to the next: about 100 words a minute.
 const CADENCE: Duration = Duration::from_millis(120);
 const CALL_TIMEOUT: Duration = Duration::from_secs(30);
 
-pub const METHOD: &str = "Keys are sent with CDP Input.dispatchKeyEvent (keyDown with text, then keyUp) every 120 ms \
-after 10 warm-up keys. The page times each character from the keydown event's timestamp to the editor's document \
-change, the next requestAnimationFrame, and the end of that frame's rendering (a MessageChannel message posted from \
-requestAnimationFrame). Event Timing entries (durationThreshold 16, rounded to 8 ms) time keydown and input to the \
-next presented frame. Screen timing watches a region at the caret with Desktop Duplication and measures from the \
-CDP call to the first changed frame's present time.";
+pub const METHOD: &str = "Each condition starts from a freshly loaded page. Keys are sent with CDP \
+Input.dispatchKeyEvent (keyDown with text, then keyUp) every 120 ms after 10 warm-up keys. The page times each \
+character from the keydown event's timestamp to the editor's document change and to the end of the next frame's \
+rendering (a MessageChannel message posted from requestAnimationFrame). \
+Event Timing entries (durationThreshold 16, rounded to 8 ms) time keydown and input to the next presented frame. \
+The CDP Performance domain gives main-thread time per key. Screen timing watches a region at the caret with \
+Desktop Duplication and measures from the CDP call to the first changed frame's present time.";
 
 /// What the harness saw for one key.
-struct KeySample {
+pub(super) struct KeySample {
     acknowledged_ms: Option<f64>,
     screen_ms: Option<f64>,
     screen_missed: bool,
 }
 
+/// Everything one condition measured.
+struct Measured {
+    /// The page's event counts when logging started.
+    counts_before: Value,
+    /// The page's `stats()`: key records, Event Timing entries, and event counts.
+    stats: Value,
+    taken: Vec<KeySample>,
+    main_thread: Value,
+}
+
 /// Types into every condition and returns the `keys` section of the results.
 pub fn run(controller: &Controller, samples: usize, require_screen: bool) -> Result<Value> {
     let area = controller.client_area()?;
+    metrics::enable(controller)?;
     let mut screen: Option<ScreenTimer> = None;
     let mut conditions = Vec::new();
     let mut status = String::from("complete");
@@ -96,7 +67,11 @@ pub fn run(controller: &Controller, samples: usize, require_screen: bool) -> Res
             screen = Some(ScreenTimer::start(region, require_screen)?);
         }
         let timer = screen.as_mut().ok_or("No screen timer.")?;
-        conditions.push(measure(controller, condition, samples, timer, area)?);
+        let measured = measure(controller, condition, samples, timer, area)?;
+        if condition.tweak == Tweak::Accessibility {
+            controller.cdp("Accessibility.disable", json!({}))?;
+        }
+        conditions.push(condition_result(condition, &measured, timer));
     }
     Ok(json!({
         "status": status,
@@ -107,15 +82,13 @@ pub fn run(controller: &Controller, samples: usize, require_screen: bool) -> Res
     }))
 }
 
-/// Sets up a condition in the page and returns the caret rectangle.
-fn setup(controller: &Controller, condition: &Condition) -> Result<Value> {
-    let args = json!({
-        "zoom": condition.zoom,
-        "ink": condition.ink,
-        "editors": condition.editors,
-        "target": condition.target,
-    });
-    let reply = controller.call("setup", args, CALL_TIMEOUT)?;
+/// Sets up a condition in a freshly loaded page and returns the caret rectangle.
+pub(super) fn setup(controller: &Controller, condition: &Condition) -> Result<Value> {
+    super::fresh_page(controller)?;
+    if condition.tweak == Tweak::Accessibility {
+        controller.cdp("Accessibility.enable", json!({}))?;
+    }
+    let reply = controller.call("setup", condition.setup_args(), CALL_TIMEOUT)?;
     // Let garbage collection and raster work from the setup finish before typing.
     sleep(Duration::from_millis(600));
     Ok(reply["caret"].clone())
@@ -127,20 +100,27 @@ fn measure(
     samples: usize,
     screen: &mut ScreenTimer,
     area: ClientArea,
-) -> Result<Value> {
+) -> Result<Measured> {
     for n in 0..WARM_UP {
         type_key(controller, typed_char(n), screen, area, condition.zoom)?;
     }
-    let before = controller.call("startLog", json!({}), CALL_TIMEOUT)?;
+    let counts_before = controller.call("startLog", json!({}), CALL_TIMEOUT)?;
+    let totals_before = metrics::totals(controller)?;
     let taken: Vec<KeySample> = (0..samples)
         .map(|n| type_key(controller, typed_char(WARM_UP + n), screen, area, condition.zoom))
         .collect::<Result<_>>()?;
+    let main_thread = metrics::per_key(&totals_before, &metrics::totals(controller)?, samples);
     let stats = controller.call("stats", json!({}), CALL_TIMEOUT)?;
-    Ok(condition_result(condition, &before, &stats, &taken, screen))
+    Ok(Measured {
+        counts_before,
+        stats,
+        taken,
+        main_thread,
+    })
 }
 
 /// Presses and releases one key, watching the screen at the caret when capture is available.
-fn type_key(
+pub(super) fn type_key(
     controller: &Controller,
     ch: char,
     screen: &mut ScreenTimer,
@@ -175,32 +155,33 @@ fn dispatched(before: &Value, after: &Value, name: &str) -> u64 {
     count(after).saturating_sub(count(before))
 }
 
-fn condition_result(
-    condition: &Condition,
-    before: &Value,
-    stats: &Value,
-    taken: &[KeySample],
-    screen: &ScreenTimer,
-) -> Value {
+fn condition_result(condition: &Condition, measured: &Measured, screen: &ScreenTimer) -> Value {
+    let stats = &measured.stats;
     let records = stats["keys"].as_array().cloned().unwrap_or_default();
     let entries = stats["events"].as_array().cloned().unwrap_or_default();
-    let counts = &stats["counts"];
+    let (before, after) = (&measured.counts_before, &stats["counts"]);
     let event_timing = json!({
         "supported": stats["eventTiming"],
-        "keydown": event_summary(&entries, "keydown", dispatched(before, counts, "keydown")),
-        "input": event_summary(&entries, "input", dispatched(before, counts, "input")),
+        "keydown": event_summary(&entries, "keydown", dispatched(before, after, "keydown")),
+        "input": event_summary(&entries, "input", dispatched(before, after, "input")),
     });
-    let acknowledged: Vec<f64> = taken.iter().filter_map(|sample| sample.acknowledged_ms).collect();
+    let acknowledged: Vec<f64> = measured
+        .taken
+        .iter()
+        .filter_map(|sample| sample.acknowledged_ms)
+        .collect();
     json!({
         "name": condition.name,
         "zoom": condition.zoom,
         "ink": condition.ink,
         "editors": condition.editors,
         "target": condition.target,
+        "tweak": condition.tweak.name(),
         "page": key_summary(&records),
         "event_timing": event_timing,
+        "main_thread_per_key": measured.main_thread,
         "cdp_acknowledged_ms": summary_json(&acknowledged),
-        "screen": screen_result(taken, screen),
+        "screen": screen_result(&measured.taken, screen),
     })
 }
 
@@ -221,17 +202,6 @@ fn screen_result(taken: &[KeySample], screen: &ScreenTimer) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn conditions_cover_every_factor() {
-        let names: Vec<&str> = CONDITIONS.iter().map(|condition| condition.name).collect();
-        assert_eq!(names.len(), 10);
-        assert!(CONDITIONS.iter().any(|condition| condition.zoom == 0.5));
-        assert!(CONDITIONS.iter().any(|condition| condition.zoom == 2.0));
-        assert!(CONDITIONS.iter().any(|condition| condition.ink == "off"));
-        assert!(CONDITIONS.iter().any(|condition| condition.editors == 1));
-        assert!(CONDITIONS.iter().any(|condition| condition.target == "long"));
-    }
 
     #[test]
     fn counts_events_between_snapshots() {
