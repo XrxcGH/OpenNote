@@ -164,11 +164,29 @@ pub fn read_page_files(fs: &dyn Fs, codec: &dyn Codec, dir: &Path, limits: &Limi
     })?;
     let mut page = read.page;
     page.format.warnings.extend(read.warnings);
+    let (damaged, missing) = load_ink(&PageFiles { fs, codec, dir }, &mut page, limits).map_err(LoadError::Damaged)?;
+    set_access(&mut page, &damaged, &missing, meta.read_only);
+    Ok(LoadedPage {
+        page,
+        stamp: meta.stamp,
+        bytes,
+        damaged,
+        missing,
+    })
+}
+
+/// Reads the segments a page lists from its folder and replays them into its live ink. Returns the damaged
+/// records, and the segments and assets that are missing. Fails only for an asset name that breaks the rules.
+pub fn load_ink(
+    files: &PageFiles<'_>,
+    page: &mut Page,
+    limits: &Limits,
+) -> Result<(Vec<DamagedRecord>, Vec<PathBuf>), FormatError> {
     let segments = page.ink.segments().to_vec();
     let mut reader = SegmentReader {
-        fs,
-        codec,
-        dir,
+        fs: files.fs,
+        codec: files.codec,
+        dir: files.dir,
         page: page.id,
         limits,
         damaged: Vec::new(),
@@ -179,19 +197,12 @@ pub fn read_page_files(fs: &dyn Fs, codec: &dyn Codec, dir: &Path, limits: &Limi
     page.ink = ink;
     page.format.warnings.extend(warnings);
     for asset in page.assets.values() {
-        let asset_path = NotebookLayout::asset_path(dir, asset).map_err(LoadError::Damaged)?;
-        if fs.metadata(&asset_path).is_err() {
+        let asset_path = NotebookLayout::asset_path(files.dir, asset)?;
+        if files.fs.metadata(&asset_path).is_err() {
             reader.missing.push(asset_path);
         }
     }
-    set_access(&mut page, &reader.damaged, &reader.missing, meta.read_only);
-    Ok(LoadedPage {
-        page,
-        stamp: meta.stamp,
-        bytes,
-        damaged: reader.damaged,
-        missing: reader.missing,
-    })
+    Ok((reader.damaged, reader.missing))
 }
 
 /// Reads the segments of one page, collecting what is damaged or missing.

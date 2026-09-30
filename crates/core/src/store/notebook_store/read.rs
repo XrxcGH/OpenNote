@@ -10,6 +10,21 @@ use crate::model::{NotebookFile, PageNodeState, SectionFile, Warning};
 use crate::store::layout::{NotebookLayout, ITEM_JSON, SECTION_JSON};
 
 impl NotebookStore {
+    /// Reads the tree files again, so memory matches the disk, such as after a change failed halfway.
+    pub fn reload(&mut self) -> Result<(), CoreError> {
+        let notebook = read_notebook_file(&self.env, &self.layout)?;
+        if let crate::model::Access::ReadOnly(reason) = &notebook.format.access {
+            self.read_only = Some(reason.clone());
+        }
+        self.notebook = notebook;
+        self.sections.clear();
+        self.trash.clear();
+        self.read_sections()?;
+        self.read_trash_items();
+        self.mark_pending();
+        Ok(())
+    }
+
     /// Reads `section.json` from every folder of the notebook. Folders that start with `.` or `~` are skipped.
     pub(crate) fn read_sections(&mut self) -> Result<(), CoreError> {
         let entries = self.env.fs.read_dir(&self.layout.root)?;

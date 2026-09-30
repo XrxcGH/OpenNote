@@ -30,12 +30,14 @@ use crate::time::{Clock, Timestamp};
 
 mod arrange;
 mod create;
+mod duplicates;
 mod edit;
 mod flat;
 mod formats;
 #[cfg(any(test, feature = "testing"))]
 pub mod kit;
 mod pages;
+mod place;
 mod read;
 mod steps;
 mod template;
@@ -47,10 +49,11 @@ pub use create::create_notebook;
 #[cfg(any(test, feature = "testing"))]
 pub use formats::SimpleFormats;
 pub use formats::{CanonicalFormats, TreeFormats};
-pub use pages::{next_revision, read_page_files, write_page_files, WrittenPage};
+pub use pages::{load_ink, next_revision, read_page_files, write_page_files, WrittenPage};
 pub(crate) use read::{add_section, read_notebook_file, read_section_file, skipped_name};
 #[cfg(test)]
 pub(crate) use transfer::copy_tree;
+pub(crate) use transfer::load_failed;
 pub use transfer::Transfer;
 
 /// The error code of a move that breaks a rule of the tree, such as a loop or a fifth level of groups.

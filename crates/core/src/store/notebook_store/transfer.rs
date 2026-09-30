@@ -42,32 +42,55 @@ impl NotebookStore {
     /// The copy gets a new page ID and a first revision. Its live ink is written as one new segment instead of
     /// copying the segment files, because each segment's header names its page (spec 9.1). Assets are copied.
     pub fn duplicate(&mut self, page: PageId) -> Result<PageId, CoreError> {
-        let (section, _) = self.subtree(page)?;
-        self.check_section_writable(section)?;
         let src = self.page_dir(page).ok_or_else(|| not_found(format!("page {page}")))?;
+        let fs = self.env.fs.as_ref();
+        let loaded =
+            read_page_files(fs, self.env.codec.as_ref(), &src, &self.env.limits).map_err(|e| load_failed(page, e))?;
+        if let crate::model::Access::ReadOnly(reason) = &loaded.page.format.access {
+            return Err(CoreError::ReadOnly(reason.clone()));
+        }
+        self.add_copy(page, &loaded.page)
+    }
+
+    /// Adds a new page with `content` right after the page `after`, in the same section and under the same
+    /// parent, with a new page ID. `content` holds its live ink, and its assets are in `after`'s folder. This
+    /// serves duplicates, versions restored as copies, and conflicts kept as separate pages.
+    pub fn add_copy(&mut self, after: PageId, content: &Page) -> Result<PageId, CoreError> {
+        self.add_copy_from(after, content, None)
+    }
+
+    /// [`NotebookStore::add_copy`] with the assets taken from `assets`, such as a copied folder.
+    pub fn add_copy_from(&mut self, after: PageId, content: &Page, assets: Option<&Path>) -> Result<PageId, CoreError> {
+        let (section, _) = self.subtree(after)?;
+        self.check_section_writable(section)?;
+        let src = match assets {
+            Some(dir) => dir.to_path_buf(),
+            None => self.page_dir(after).ok_or_else(|| not_found(format!("page {after}")))?,
+        };
         let entry = self
             .section(section)?
-            .entry(page)
+            .entry(after)
             .cloned()
-            .ok_or_else(|| not_found(format!("page {page}")))?;
+            .ok_or_else(|| not_found(format!("page {after}")))?;
         let new = PageId::generate(self.env.clock.as_ref());
         let intent = self.begin(TreeOp::DuplicatePage {
-            from: page,
+            from: after,
             section,
             new,
         });
         let dir = self.section(section)?.dir.clone();
-        let written = self.write_copy(&src, &dir, new)?;
+        let written = self.write_copy(content, &src, (&dir, new))?;
         self.log.step_done(intent, 2);
         self.env.fs.rename_dir(
             &dir.join(PartialFolder::Copying(new.0).name()),
             &dir.join(new.to_string()),
         )?;
         self.log.step_done(intent, 3);
-        let before = self.next_sibling(section, page)?;
+        let before = self.next_sibling(section, after)?;
         let (order, rekeys) = self.page_slot(section, entry.parent, before)?;
         let copy = PageEntry {
             id: new,
+            title: content.title.clone(),
             order,
             changed: self.now(),
             moving: None,
@@ -82,24 +105,19 @@ impl NotebookStore {
         Ok(new)
     }
 
-    /// Writes a copy of the page at `src` with a new ID into `<dir>/~<new ID>.copying`.
-    fn write_copy(&self, src: &Path, dir: &Path, new: PageId) -> Result<CachedPage, CoreError> {
+    /// Writes a copy of `content` with a new ID into `<dir>/~<new ID>.copying`, with the assets from `src`.
+    fn write_copy(&self, content: &Page, src: &Path, (dir, new): (&Path, PageId)) -> Result<CachedPage, CoreError> {
         let fs = self.env.fs.as_ref();
-        let loaded =
-            read_page_files(fs, self.env.codec.as_ref(), src, &self.env.limits).map_err(|e| load_failed(new, e))?;
-        if let crate::model::Access::ReadOnly(reason) = &loaded.page.format.access {
-            return Err(CoreError::ReadOnly(reason.clone()));
-        }
         let partial = dir.join(PartialFolder::Copying(new.0).name());
         fs.create_dir_durable(&partial)?;
-        copy_assets(fs, src, &partial, &loaded.page)?;
+        copy_assets(fs, src, &partial, content)?;
         let revision = Revision::new(
             RevisionId::generate(self.env.clock.as_ref()),
             self.now(),
             self.env.device.clone(),
             self.env.writer.clone(),
         );
-        let copy = fresh_copy(&loaded.page, new, revision);
+        let copy = fresh_copy(content, new, revision);
         let files = PageFiles {
             fs,
             codec: self.env.codec.as_ref(),
