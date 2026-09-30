@@ -1,7 +1,7 @@
 //! Names and the changes to them: the tree of a [`FaultFs`](super::FaultFs), and how each change applies.
 
 use std::collections::BTreeMap;
-use std::path::{Component, Path};
+use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 use crate::error::{FsError, FsErrorKind};
@@ -156,4 +156,17 @@ pub(super) fn key_of(path: &Path) -> Result<Key, FsError> {
         }
     }
     Ok(key)
+}
+
+/// The path of a key: the inverse of [`key_of`], with a drive prefix such as `C:` kept first.
+pub(super) fn path_of(key: &[String]) -> PathBuf {
+    let mut path = PathBuf::from(std::path::MAIN_SEPARATOR_STR);
+    for (index, part) in key.iter().enumerate() {
+        if index == 0 && part.ends_with(':') {
+            path = PathBuf::from(format!("{part}{}", std::path::MAIN_SEPARATOR));
+        } else {
+            path.push(part);
+        }
+    }
+    path
 }

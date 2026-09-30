@@ -3,8 +3,8 @@
 use std::path::{Path, PathBuf};
 
 use super::sync::{self, SyncAction};
-use super::tree::{key_of, Entry, Inode};
-use super::{path_of, FaultFs};
+use super::tree::{key_of, path_of, Entry, Inode};
+use super::FaultFs;
 
 impl FaultFs {
     /// Creates a folder and its missing parents durably, without counting calls. For test setup.

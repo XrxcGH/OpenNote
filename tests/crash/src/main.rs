@@ -3,6 +3,7 @@
 //! ```text
 //! opennote-crashtest run --notebook <dir> --data <dir> --iterations <n> --seed <s>
 //!                        [--workload core|fs] [--failpoint <name>] [--sabotage] [--no-hostile] [--out <json>]
+//!
 //! opennote-crashtest measure <m3|m5|m6|all> --dir <dir> [--label <drive>] [--runs <n>] [--machine <name>]
 //!                            [--out <json>]
 //! ```

@@ -49,25 +49,45 @@ pub(crate) fn denied(err: &FsError) -> bool {
     err.os_code == i32::try_from(ERROR_ACCESS_DENIED).ok()
 }
 
+/// Codes of a drive, device, or share that has gone away.
+const OFFLINE: [u32; 15] = [
+    ERROR_NOT_READY,
+    ERROR_DEV_NOT_EXIST,
+    ERROR_BAD_NETPATH,
+    ERROR_NETNAME_DELETED,
+    ERROR_UNEXP_NET_ERR,
+    ERROR_NETWORK_UNREACHABLE,
+    ERROR_BAD_NET_NAME,
+    ERROR_DEVICE_NOT_CONNECTED,
+    ERROR_NOT_CONNECTED,
+    ERROR_NO_SUCH_DEVICE,
+    ERROR_DEVICE_REMOVED,
+    ERROR_SEM_TIMEOUT,
+    ERROR_CONNECTION_ABORTED,
+    ERROR_HOST_UNREACHABLE,
+    ERROR_REM_NOT_LIST,
+];
+
+/// Codes of a cloud file that its sync tool can't provide right now.
+const CLOUD: [u32; 11] = [
+    ERROR_CLOUD_FILE_PROVIDER_NOT_RUNNING,
+    ERROR_CLOUD_FILE_NETWORK_UNAVAILABLE,
+    ERROR_CLOUD_FILE_UNSUCCESSFUL,
+    ERROR_CLOUD_FILE_REQUEST_TIMEOUT,
+    ERROR_CLOUD_FILE_PROVIDER_TERMINATED,
+    ERROR_CLOUD_FILE_REQUEST_ABORTED,
+    ERROR_CLOUD_FILE_REQUEST_CANCELED,
+    ERROR_CLOUD_FILE_AUTHENTICATION_FAILED,
+    ERROR_CLOUD_FILE_NOT_IN_SYNC,
+    ERROR_CLOUD_FILE_ACCESS_DENIED,
+    ERROR_CLOUD_FILE_INSUFFICIENT_RESOURCES,
+];
+
 /// The kind of a Win32 error code for a call that was doing `op`.
 fn kind_of(code: u32, op: FsOp) -> FsErrorKind {
     match code {
         ERROR_FILE_NOT_FOUND | ERROR_PATH_NOT_FOUND | ERROR_INVALID_DRIVE | ERROR_INVALID_NAME => FsErrorKind::NotFound,
-        ERROR_NOT_READY
-        | ERROR_DEV_NOT_EXIST
-        | ERROR_BAD_NETPATH
-        | ERROR_NETNAME_DELETED
-        | ERROR_UNEXP_NET_ERR
-        | ERROR_NETWORK_UNREACHABLE
-        | ERROR_BAD_NET_NAME
-        | ERROR_DEVICE_NOT_CONNECTED
-        | ERROR_NOT_CONNECTED
-        | ERROR_NO_SUCH_DEVICE
-        | ERROR_DEVICE_REMOVED
-        | ERROR_SEM_TIMEOUT
-        | ERROR_CONNECTION_ABORTED
-        | ERROR_HOST_UNREACHABLE
-        | ERROR_REM_NOT_LIST => FsErrorKind::Offline,
+        code if OFFLINE.contains(&code) => FsErrorKind::Offline,
         ERROR_SHARING_VIOLATION
         | ERROR_LOCK_VIOLATION
         | ERROR_USER_MAPPED_FILE
@@ -84,17 +104,7 @@ fn kind_of(code: u32, op: FsOp) -> FsErrorKind {
         // A folder isn't empty yet while a deleted file in it is still open (measurement M6).
         ERROR_DIR_NOT_EMPTY if op == FsOp::Remove => FsErrorKind::Busy,
         ERROR_FILE_EXISTS | ERROR_ALREADY_EXISTS | ERROR_DIR_NOT_EMPTY => FsErrorKind::AlreadyExists,
-        ERROR_CLOUD_FILE_PROVIDER_NOT_RUNNING
-        | ERROR_CLOUD_FILE_NETWORK_UNAVAILABLE
-        | ERROR_CLOUD_FILE_UNSUCCESSFUL
-        | ERROR_CLOUD_FILE_REQUEST_TIMEOUT
-        | ERROR_CLOUD_FILE_PROVIDER_TERMINATED
-        | ERROR_CLOUD_FILE_REQUEST_ABORTED
-        | ERROR_CLOUD_FILE_REQUEST_CANCELED
-        | ERROR_CLOUD_FILE_AUTHENTICATION_FAILED
-        | ERROR_CLOUD_FILE_NOT_IN_SYNC
-        | ERROR_CLOUD_FILE_ACCESS_DENIED
-        | ERROR_CLOUD_FILE_INSUFFICIENT_RESOURCES => FsErrorKind::CloudPlaceholder,
+        code if CLOUD.contains(&code) => FsErrorKind::CloudPlaceholder,
         ERROR_INVALID_PARAMETER | ERROR_NOT_SUPPORTED | ERROR_INVALID_FUNCTION | ERROR_NOT_SAME_DEVICE => {
             FsErrorKind::Unsupported
         }

@@ -389,15 +389,3 @@ impl FaultFs {
         }
     }
 }
-
-pub(super) fn path_of(key: &[String]) -> PathBuf {
-    let mut path = PathBuf::from(std::path::MAIN_SEPARATOR_STR);
-    for (index, part) in key.iter().enumerate() {
-        if index == 0 && part.ends_with(':') {
-            path = PathBuf::from(format!("{part}{}", std::path::MAIN_SEPARATOR));
-        } else {
-            path.push(part);
-        }
-    }
-    path
-}

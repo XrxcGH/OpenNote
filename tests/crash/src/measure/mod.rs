@@ -1,8 +1,6 @@
-//! The week-one measurements of WP2 (plan 2):
-//!
-//! - M3: cold page opens with the planned number of files.
-//! - M5: the cost of each write primitive and of a full save.
-//! - M6: renames by handle while another process holds the target, and folder flushes.
+//! The week-one measurements of WP2 (plan 2). M3 times cold page opens with the planned number of files. M5
+//! times each write primitive and a full save. M6 checks renames by handle while another process holds the
+//! target, and flushes of folder handles.
 //!
 //! ```text
 //! opennote-crashtest measure <m3|m5|m6|all> --dir <folder> [--label <drive>] [--runs <n>]
