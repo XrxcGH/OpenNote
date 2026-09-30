@@ -31,11 +31,12 @@ describe('dark mode switch', () => {
   it('follows Windows until the person chooses', async () => {
     await renderApp(windows(true));
     expect(isOn()).toBe('true');
-    expect(dataTheme()).toBeNull();
+    // data-theme is always the resolved theme; the Windows setting comes from the platform.
+    expect(dataTheme()).toBe('dark');
 
     fireEvent.click(darkModeSwitch());
     await expect.poll(isOn).toBe('false');
-    expect(dataTheme()).toBe('light');
+    await expect.poll(dataTheme).toBe('light');
   });
 
   it('starts from the saved preference', async () => {
@@ -52,25 +53,27 @@ describe('switching themes', () => {
     const saved = vi.spyOn(platform.settings, 'update');
     fireEvent.click(darkModeSwitch());
     await expect.poll(isOn).toBe('true');
-    expect(dataTheme()).toBe('dark');
+    await expect.poll(dataTheme).toBe('dark');
     expect(localStorage.getItem('opennote.theme')).toBe('dark');
     expect(saved).toHaveBeenLastCalledWith({ appearance: { theme: 'dark' } });
 
     fireEvent.click(darkModeSwitch());
     await expect.poll(isOn).toBe('false');
-    expect(dataTheme()).toBe('light');
+    await expect.poll(dataTheme).toBe('light');
     expect(localStorage.getItem('opennote.theme')).toBe('light');
   });
+});
 
+describe('switching themes with the shortcut', () => {
   it('switches with Ctrl+Shift+D every time it is pressed', async () => {
     await renderApp(windows(false));
     expect(pressShortcut()).toBe(false);
     await expect.poll(isOn).toBe('true');
-    expect(dataTheme()).toBe('dark');
+    await expect.poll(dataTheme).toBe('dark');
 
     pressShortcut();
     await expect.poll(isOn).toBe('false');
-    expect(dataTheme()).toBe('light');
+    await expect.poll(dataTheme).toBe('light');
     expect(localStorage.getItem('opennote.theme')).toBe('light');
   });
 
@@ -78,7 +81,7 @@ describe('switching themes', () => {
     await renderApp(windows(false));
     await pressChord('Ctrl+Shift+D');
     await expect.poll(isOn).toBe('true');
-    expect(dataTheme()).toBe('dark');
+    await expect.poll(dataTheme).toBe('dark');
   });
 
   it('ignores a held key and extra modifiers', async () => {
@@ -87,9 +90,11 @@ describe('switching themes', () => {
     pressShortcut({ altKey: true });
     pressShortcut({ metaKey: true });
     expect(isOn()).toBe('false');
-    expect(dataTheme()).toBeNull();
+    expect(dataTheme()).toBe('light');
   });
+});
 
+describe('the crossfade', () => {
   it('crossfades through a view transition when the engine has one', async () => {
     const startViewTransition = vi.fn((update: () => void) => {
       update();
@@ -116,7 +121,7 @@ describe('window frame', () => {
     const { platform } = await renderApp(windows(false));
     platform.setOs({ dark: true });
     await expect.poll(isOn).toBe('true');
-    expect(platform.window.calls.frameTheme).toEqual(['light', 'dark']);
+    await expect.poll(() => platform.window.calls.frameTheme).toEqual(['light', 'dark']);
   });
 });
 
