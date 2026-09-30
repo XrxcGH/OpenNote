@@ -2,6 +2,7 @@
 
 pub mod events;
 pub mod ipc;
+pub mod theme_tokens;
 
 use std::{thread, time::Duration};
 
