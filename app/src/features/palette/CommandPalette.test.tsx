@@ -25,10 +25,13 @@ describe('the command palette', () => {
     await userEvent.keyboard('dark');
     const list = await screen.findByRole('listbox', { name: 'Results' });
     expect(box.getAttribute('aria-controls')).toBe(list.id);
-    const option = await within(list).findByRole('option', { name: /Toggle dark mode/ });
-    expect(option.textContent).toContain('Ctrl+Shift+D');
-    expect(box.getAttribute('aria-activedescendant')).toBe(option.id);
-    expect(option.getAttribute('aria-selected')).toBe('true');
+    // Each letter searches again, so the list settles after a moment. Check the option the list ends with.
+    await waitFor(() => {
+      const option = within(list).getByRole('option', { name: /Toggle dark mode/ });
+      expect(option.textContent).toContain('Ctrl+Shift+D');
+      expect(box.getAttribute('aria-activedescendant')).toBe(option.id);
+      expect(option.getAttribute('aria-selected')).toBe('true');
+    });
     await expectNoAxeViolations(document.body);
   });
 

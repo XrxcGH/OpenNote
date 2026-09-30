@@ -37,7 +37,7 @@ test.describe('what each size class shows', () => {
   test('medium: the notebooks behind their rail, and the pages pane', async ({ page }) => {
     await open(page, 'medium');
     await expect(page.getByRole('button', { name: 'Show notebooks' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Lectures' })).toHaveCount(0);
+    await expect(page.getByRole('treeitem', { name: 'Lectures' })).toHaveCount(0);
     await expect(page.getByRole('navigation', { name: 'Pages' })).toBeVisible();
   });
 
@@ -102,22 +102,22 @@ test.describe('without a pointer', () => {
     page,
   }) => {
     await open(page, 'wide');
-    await page.getByRole('button', { name: 'Lectures' }).click();
-    await expect(page.getByRole('button', { name: 'Mitosis' })).toBeVisible();
-    await page.getByRole('button', { name: 'Labs' }).focus();
+    await page.getByRole('treeitem', { name: 'Lectures' }).click();
+    await expect(page.getByRole('treeitem', { name: 'Mitosis' })).toBeVisible();
+    await page.getByRole('treeitem', { name: 'Labs' }).focus();
     const visited: string[] = [];
-    for (let step = 0; step < 4; step += 1) {
+    for (let step = 0; step < 5; step += 1) {
       await page.keyboard.press('F6');
       visited.push(await activeRegion(page));
     }
-    expect(visited).toEqual(['pages', 'page', 'titleBar', 'notebooks']);
+    expect(visited).toEqual(['pages', 'page', 'titleBar', 'commandBar', 'notebooks']);
   });
 
   test('focus stays on a control as the window moves through every size class', async ({ page }) => {
     await open(page, 'wide');
-    await page.getByRole('button', { name: 'Lectures' }).click();
-    await page.getByRole('button', { name: 'Mitosis' }).click();
-    await page.getByRole('button', { name: 'Labs' }).focus();
+    await page.getByRole('treeitem', { name: 'Lectures' }).click();
+    await page.getByRole('treeitem', { name: 'Mitosis' }).click();
+    await page.getByRole('treeitem', { name: 'Labs' }).focus();
     for (const size of ['expanded', 'medium', 'compact', 'wide'] as const) {
       await page.setViewportSize(VIEWPORTS[size]);
       await expect(page.locator('html')).toHaveAttribute('data-size-class', size);
