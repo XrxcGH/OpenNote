@@ -1,7 +1,7 @@
 // TreeView in the browser: the tree pattern's roles and states, the key table, type-ahead, windowing that keeps
 // focus, the "More actions" button, empty states, and axe in both themes and densities.
 
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { getLocation } from '../../app/location';
 import { expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
@@ -123,6 +123,27 @@ describe('keys', () => {
     await expectFocus(row(notebooksTree(), 'Exam prep'));
     await pressChord('Shift+M');
     await expectFocus(row(notebooksTree(), 'Exam prep'));
+  });
+});
+
+describe('holding an arrow key', () => {
+  it('opens only the page it stops on', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Lectures');
+    await pressChord('Space');
+    await findRow(pagesTree, 'Mitosis');
+    await focusRow(pagesTree, 'Cell structure');
+    const opened: string[] = [];
+    const stop = sessionStore.subscribe(() => {
+      const location = getLocation();
+      const pageId = location.view === 'workspace' ? location.pageId : null;
+      if (pageId && pageId !== opened[opened.length - 1]) opened.push(pageId);
+    });
+    // Key events that come faster than the 100 ms pause, as a held key's repeats do.
+    for (let i = 0; i < 4; i += 1) fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' });
+    await expect.poll(() => getLocation()).toMatchObject({ pageId: 'p-photosynthesis' });
+    stop();
+    expect(opened).toEqual(['p-photosynthesis']);
   });
 });
 

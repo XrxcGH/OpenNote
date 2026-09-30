@@ -117,6 +117,35 @@ describe('creating', () => {
   });
 });
 
+describe('renaming', () => {
+  it('keeps an empty name in the field with the message, then commits a good one', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Labs');
+    await pressChord('F2');
+    const field = await screen.findByRole('textbox', { name: 'Rename Labs' });
+    await userEvent.keyboard('{Control>}a{/Control}{Backspace}{Enter}');
+    await expect.poll(() => field.getAttribute('aria-invalid')).toBe('true');
+    const message = document.getElementById(field.getAttribute('aria-describedby') ?? '');
+    expect(message?.textContent).toBe("A name can't be empty.");
+    expect(announcements()).toContain("A name can't be empty.");
+    await expectFocus(field);
+    await userEvent.keyboard('Practicals{Enter}');
+    await findRow(notebooksTree, 'Practicals');
+    await expectFocus(row(notebooksTree(), 'Practicals'));
+  });
+
+  it('puts the old name back on Escape', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Labs');
+    await pressChord('F2');
+    await screen.findByRole('textbox', { name: 'Rename Labs' });
+    await userEvent.keyboard('Other');
+    await pressChord('Escape');
+    await expectFocus(row(notebooksTree(), 'Labs'));
+    expect(screen.queryByRole('textbox', { name: 'Rename Labs' })).toBeNull();
+  });
+});
+
 describe('moving', () => {
   it('moves a row with Ctrl+Shift+Down, says where it went, and keeps focus on it', async () => {
     await renderTree();
@@ -206,6 +235,35 @@ describe('delete and Undo', () => {
     await expect.poll(() => getLocation()).toMatchObject({ pageId: 'p-mitosis' });
     await pressChord('Delete');
     await expect.poll(() => getLocation()).toMatchObject({ pageId: 'p-meiosis' });
+  });
+
+  it('moves focus to the section when its only page is deleted', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Labs');
+    await pressChord('Space');
+    await findRow(pagesTree, 'Photosynthesis lab');
+    await focusRow(pagesTree, 'Photosynthesis lab');
+    await pressChord('Delete');
+    await expectFocus(row(notebooksTree(), 'Labs'));
+  });
+
+  it('keeps focus in the pane, on its message, when the last notebook goes', async () => {
+    const day = '2026-09-01T10:00:00.000Z';
+    const solo = {
+      id: 'n-solo',
+      kind: 'notebook',
+      title: 'Solo',
+      color: 'fern',
+      created: day,
+      modified: day,
+      children: [],
+    };
+    await renderApp({ fixture: { folder: 'C:/Notes', notebooks: [solo] } as never });
+    await findRow(notebooksTree, 'Solo');
+    await focusRow(notebooksTree, 'Solo');
+    await pressChord('Delete');
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete notebook' }));
+    await expect.poll(() => document.activeElement?.textContent).toContain('No notebooks yet');
   });
 
   it('asks before deleting a notebook, with focus on Cancel', async () => {
