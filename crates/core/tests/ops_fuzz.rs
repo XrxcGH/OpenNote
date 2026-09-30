@@ -97,7 +97,6 @@ fn the_seeds_apply_to_the_sample_page() {
 
 /// Pages stay valid by every rule of spec 16 after random edits.
 #[test]
-#[ignore = "needs WP1"]
 fn edited_pages_stay_valid() {
     let limits = Limits::default();
     let mut runner = proptest::test_runner::TestRunner::default();
@@ -117,7 +116,6 @@ fn edited_pages_stay_valid() {
 
 /// Binary strokes are decoded once, and their bounding box comes from their points.
 #[test]
-#[ignore = "needs WP1"]
 fn binary_strokes_are_checked_and_boxed() {
     let page = sample_page();
     let clock = test_clock();

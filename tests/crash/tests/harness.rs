@@ -1,5 +1,5 @@
 //! The kill harness end to end: writers killed during saves leave no damaged or lost page, and a writer that
-//! damages a page on purpose is caught (plan 14.3). The core workload's runs need WP5.
+//! damages a page on purpose is caught (plan 14.3).
 
 use std::path::Path;
 use std::process::Output;
@@ -70,7 +70,6 @@ fn fail_points_inside_the_save_primitives_are_reached() {
 }
 
 #[test]
-#[ignore = "needs WP5"]
 fn core_writers_killed_during_saves_lose_nothing() {
     let dir = tempfile::tempdir().unwrap();
     let (output, summary) = run(dir.path(), "core", 50, &[]);
@@ -78,7 +77,6 @@ fn core_writers_killed_during_saves_lose_nothing() {
 }
 
 #[test]
-#[ignore = "needs WP5"]
 fn the_harness_catches_a_core_writer_that_damages_pages() {
     let dir = tempfile::tempdir().unwrap();
     let (output, summary) = run(dir.path(), "core", 5, &["--sabotage", "--no-hostile"]);

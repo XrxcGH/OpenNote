@@ -85,7 +85,6 @@ proptest! {
 }
 
 #[test]
-#[ignore = "needs WP2"]
 fn a_power_cut_on_the_weakest_model_loses_nothing_that_was_flushed() {
     let mut runner = proptest::test_runner::TestRunner::new(common::cases(2_000));
     let strategy = (proptest::collection::vec(arb_step(), 1..20), 0u64..400, any::<u64>());

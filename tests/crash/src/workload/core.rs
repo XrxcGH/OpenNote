@@ -1,6 +1,6 @@
 //! The core workload (plan 13.6): the writer uses the real `Core`, `StdFs`, `CanonicalCodec`, and `OpsApplier`,
 //! with the shortened timings of `Timings::for_crash_tests`, so saves, rotations, and compactions happen all the
-//! time. It needs WP3, WP4, and WP5: until they land, the writer stops at the first stub.
+//! time.
 //!
 //! A setup run makes the notebook, one section, and the pages, and writes a manifest to the data folder. Each
 //! iteration then replays its script: edits from WP3's generator, undo and redo, saves, and tree changes on

@@ -321,7 +321,6 @@ fn expected_after_script(codec: &RegistryCodec) -> Vec<opennote_core::model::Pag
 }
 
 #[test]
-#[ignore = "needs WP2"]
 fn every_storage_operation_survives_a_crash_on_the_fault_injecting_file_system() {
     let models = [
         DurabilityModel::Ntfs,

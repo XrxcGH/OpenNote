@@ -2,7 +2,8 @@
 //!
 //! A budget page is a 200 KB `page.json` and about 3.6 MB of ink. The measurement reads the page file, parses it
 //! as JSON as a stand-in for the page reader, and reads every segment, with 1, 4, and 8 segments. That is the
-//! file system share of the core's page open. Decoding the ink needs WP1's codec, and is measured once it lands.
+//! file system share of the core's page open. Decoding the ink is the codec's share, which the format benchmark
+//! in `tests/perf/core` measures.
 //!
 //! A reboot can't be scripted here, so each file is evicted from the cache first, the way Chromium's
 //! `EvictFileFromSystemCache` does it: an unbuffered handle, and its times set to themselves. Folder metadata can

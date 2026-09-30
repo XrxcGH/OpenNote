@@ -91,7 +91,6 @@ fn the_budget_page_has_its_blocks_and_strokes() {
 }
 
 #[test]
-#[ignore = "needs WP1, WP2, and WP3"]
 fn the_quick_suite_runs_on_the_real_parts() {
     let dir = tempfile::tempdir().unwrap();
     let mut ctx = BenchCtx {

@@ -86,7 +86,6 @@ proptest! {
 }
 
 #[test]
-#[ignore = "needs WP1 and WP2"]
 fn p2_pages_round_trip_on_disk_with_the_canonical_codec() {
     let mut runner = proptest::test_runner::TestRunner::new(common::cases(256));
     runner

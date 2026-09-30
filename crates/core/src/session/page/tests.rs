@@ -483,7 +483,6 @@ fn out_of_order_edits_are_refused() {
 }
 
 #[test]
-#[ignore = "needs WP3"]
 fn requests_resolve_apply_and_undo() {
     let s = setup();
     let c = client("main-1");
@@ -511,7 +510,6 @@ fn requests_resolve_apply_and_undo() {
 }
 
 #[test]
-#[ignore = "needs WP3"]
 fn binary_strokes_resolve_into_one_transaction() {
     let s = setup();
     let c = client("main-1");

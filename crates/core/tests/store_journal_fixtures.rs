@@ -71,7 +71,6 @@ fn journal_fixture_text_edits_read_in_sequence() {
 }
 
 #[test]
-#[ignore = "needs WP1"]
 fn journal_fixture_ink_progress_holds_the_stroke_of_spec_9_7() {
     let bytes = read(&journal_fixtures().join("ink-progress").join(WAL));
     let generation = read_generation(&bytes, &CanonicalCodec, &Limits::default()).unwrap();
@@ -126,7 +125,6 @@ fn recover_fixture(folder: &str) -> (MemFs, RecoveryOutcome) {
 }
 
 #[test]
-#[ignore = "needs WP1 and WP3"]
 fn journal_fixture_text_edits_recover_to_the_expected_page() {
     let (fs, outcome) = recover_fixture("text-edits");
     assert_eq!(outcome, RecoveryOutcome::Replayed { txns: 2, strokes: 0 });
@@ -144,7 +142,6 @@ fn journal_fixture_text_edits_recover_to_the_expected_page() {
 }
 
 #[test]
-#[ignore = "needs WP1 and WP3"]
 fn journal_fixture_ink_progress_recovers_the_stroke() {
     let (fs, outcome) = recover_fixture("ink-progress");
     assert_eq!(outcome, RecoveryOutcome::Replayed { txns: 0, strokes: 1 });

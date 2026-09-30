@@ -5,8 +5,8 @@
 //! After each crash, recovery rolls tree intents forward and scans. Every page and section must then show
 //! exactly once, in a tree or in Trash, and recovering again must change no file.
 //!
-//! The in-memory file system runs these now, as an app crash and as a power cut that drops everything not
-//! flushed. WP2's fault-injecting file system runs them under each durability model once it lands.
+//! The in-memory file system runs them as an app crash and as a power cut that drops everything not flushed,
+//! and the fault-injecting file system runs them under each durability model.
 
 mod session_support;
 
@@ -65,7 +65,6 @@ fn rolling_intents_forward_survives_a_crash_during_recovery() {
 /// Plan 13.4 runs each crash once as an app crash and as up to 16 random power cuts under each durability
 /// model. `PROPTEST_CASES` above 1,000, as in the nightly run, uses all 16 seeds.
 #[test]
-#[ignore = "needs WP2"]
 fn tree_changes_survive_crashes_under_every_durability_model() {
     let seeds = if nightly() { 16 } else { 4 };
     let models = [
