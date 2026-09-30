@@ -15,6 +15,7 @@ use crate::ipc::IpcResult;
 /// Why the app is closing, matching the interface's `ExitReason`.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum ExitReason {
     Close,
     RestartToUpdate,
@@ -49,15 +50,18 @@ pub struct Hooks(pub Arc<dyn LifecycleHooks>);
 
 /// The interface's answer to `app://before-exit`: `{ ok: true }`, or `{ ok: false, reason }` with a message key.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct ExitResult {
     pub ok: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
     pub reason: Option<String>,
 }
 
 /// When the page first painted and when the last page was ready, as epoch milliseconds.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct ReadyTimings {
     pub first_paint_epoch_ms: f64,
     pub page_ready_epoch_ms: f64,

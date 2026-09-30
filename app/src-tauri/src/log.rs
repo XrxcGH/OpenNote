@@ -14,6 +14,7 @@ pub const MAX_MESSAGE_BYTES: usize = 2048;
 /// A level the interface may log at.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum LogLevel {
     Info,
     Warn,

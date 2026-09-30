@@ -12,6 +12,7 @@ use crate::settings::schema::ThemePreference;
 /// The Windows appearance, matching the interface's `OsAppearance`.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct OsAppearance {
     /// Windows' app mode is Dark.
     pub dark: bool,
@@ -40,6 +41,7 @@ impl Default for OsAppearance {
 /// A theme as shown: the preference resolved against Windows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum ThemeName {
     Light,
     Dark,

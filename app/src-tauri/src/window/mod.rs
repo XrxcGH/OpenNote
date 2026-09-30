@@ -36,6 +36,7 @@ const SHOW_FALLBACK_DELAY: Duration = Duration::from_secs(3);
 
 /// A point in physical pixels, relative to the client area.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct Point {
     pub x: f64,
     pub y: f64,

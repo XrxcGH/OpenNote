@@ -135,7 +135,11 @@ jobs:
       - name: Rust tests
         run: cargo test --workspace
       - name: Inter-process types match the Rust ones (bindings drift check)
-        run: git diff --exit-code app/src/platform/bindings
+        # Catches new files too, which git diff alone would miss.
+        shell: bash
+        run: |
+          git status --porcelain app/src/platform/bindings
+          test -z "$(git status --porcelain app/src/platform/bindings)"
       - name: Test build of the app (ci profile, with the test endpoints the E2E tests use)
         run: npx tauri build --no-bundle --features test-endpoints -- --profile ci
       - name: Keep the test build

@@ -14,6 +14,7 @@ use crate::ipc::{IpcError, IpcResult};
 /// Where the running exe is and what the app may do there, matching the interface's `InstallStatus`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct InstallStatus {
     pub exe_path: String,
     /// The exe is in `%LOCALAPPDATA%\Programs\OpenNote\`.
@@ -27,6 +28,7 @@ pub struct InstallStatus {
 /// What a proposed notes folder holds, matching the interface's `FolderCheck`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum FolderCheck {
     Ok,
     WillCreate,

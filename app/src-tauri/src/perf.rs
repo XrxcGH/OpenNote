@@ -12,6 +12,7 @@ pub const PERF_LOG_VAR: &str = "OPENNOTE_PERF_LOG";
 /// A mark the interface records, matching the interface's `PerfMark`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum PerfMark {
     FirstPaint,
     ShellReady,

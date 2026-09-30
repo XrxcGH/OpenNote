@@ -22,7 +22,9 @@ use crate::{
 /// The boot payload, matching the interface's `BootData`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct BootData {
+    #[cfg_attr(test, ts(type = "1"))]
     pub boot_version: u32,
     pub version: String,
     pub channel: Channel,
@@ -42,11 +44,13 @@ pub struct BootData {
     /// Feature flag overrides, in development and nightly builds only.
     pub flag_overrides: BTreeMap<String, bool>,
     pub notices: Vec<Notice>,
+    #[cfg_attr(test, ts(inline))]
     pub perf: BootPerf,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum Channel {
     Dev,
     Nightly,
@@ -56,6 +60,7 @@ pub enum Channel {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum Architecture {
     X64,
     X86,
@@ -78,6 +83,7 @@ impl Architecture {
 /// Something the interface tells the person once at start, such as a rollback or reset settings.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum Notice {
     SettingsReset { saved_as: String },
     SettingsReadOnly,
@@ -90,6 +96,7 @@ pub enum Notice {
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct BootPerf {
     pub process_start_epoch_ms: f64,
 }

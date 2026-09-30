@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 /// The parts of `WINDOWPLACEMENT` the app keeps, matching the interface's `WindowPlacement`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct WindowPlacement {
     /// The `SW_*` show state, such as `SW_SHOWNORMAL` (1).
     pub show_cmd: u32,

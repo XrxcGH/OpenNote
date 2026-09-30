@@ -27,7 +27,13 @@ use tauri::{ipc::Invoke, Manager};
 
 use early::EarlyContext;
 use instance::InstanceGuard;
-use settings::{schema::Settings, SettingsStore};
+use settings::SettingsStore;
+use state::DeviceStateStore;
+
+/// Where ts-rs writes the interface's copies of the shared types (ARCHITECTURE.md section 6.2), relative to its
+/// default `bindings` folder under this crate. `cargo test` writes them, and CI fails when they drift.
+#[cfg(test)]
+pub(crate) const BINDINGS: &str = "../../src/platform/bindings/";
 
 /// Starts the app with what the early steps found. Doesn't return.
 pub fn run(context: EarlyContext) {
@@ -37,9 +43,12 @@ pub fn run(context: EarlyContext) {
         instance,
         guard,
     } = context;
+    let settings = SettingsStore::load(&paths);
+    let (state, _state_notice) = DeviceStateStore::load(&paths);
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
-    tauri::Builder::default()
-        .manage(SettingsStore::in_memory(&Settings::default()))
+    let app = tauri::Builder::default()
+        .manage(settings.store)
+        .manage(state)
         .manage(hooks)
         .manage(boot::Launch { args, guard })
         .manage(paths)
@@ -55,8 +64,23 @@ pub fn run(context: EarlyContext) {
             Ok(())
         })
         .invoke_handler(commands())
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("OpenNote failed to start");
+    app.run(|app, event| {
+        if let tauri::RunEvent::Exit = event {
+            flush_files(app);
+        }
+    });
+}
+
+/// Saves the settings and the device state that are still waiting for their writers.
+pub fn flush_files(app: &tauri::AppHandle) {
+    if let Err(error) = app.state::<SettingsStore>().flush() {
+        ::log::error!("Couldn't save the settings: {error}");
+    }
+    if let Err(error) = app.state::<DeviceStateStore>().flush() {
+        ::log::error!("Couldn't save the device state: {error}");
+    }
 }
 
 /// Every command in `command_list::APP_COMMANDS`. A test keeps the two lists in step.
