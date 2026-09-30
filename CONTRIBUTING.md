@@ -21,6 +21,9 @@ These documents describe how OpenNote is planned and built:
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): the phases, technology choices, tests, and working agreements.
 - [docs/BRAND.md](docs/BRAND.md): colors, type, motion, voice, accessibility, and performance budgets.
 - [docs/CHECKS.md](docs/CHECKS.md): the quality gate every file change must pass.
+- [Project wiki](https://github.com/XrxcGH/OpenNote/wiki): the user guide, development updates, and the developer guide.
+
+The [documentation index](docs/README.md) lists every document in `docs/`. The [repository map](README.md#repository-map) shows where each part of the code lives.
 
 For a small fix, you can open a pull request right away. For a new feature, open an issue first, so we can agree that it fits the current phase before you write code.
 
