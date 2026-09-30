@@ -1,0 +1,69 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    # Quality gate and TypeScript checks on both operating systems.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Design tokens are up to date
+        run: npm run tokens:check
+      - name: Type-check, lint, and format-check
+        run: npm run typecheck && npm run lint && npm run format:check
+      - name: Unit tests
+        run: npm test
+      - name: CHECKS on changed files (pull requests)
+        if: github.event_name == 'pull_request'
+        run: node checks/cli.ts --base origin/${{ github.base_ref }}
+      - name: CHECKS on all files (pushes)
+        if: github.event_name == 'push'
+        run: node checks/cli.ts --all
+
+  windows-app:
+    # Rust checks and a debug build of the desktop app on Windows, the first target platform.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Install tools
+        run: npm ci
+      - name: Build the interface (the Rust app embeds it)
+        run: npm run app:build
+      - name: rustfmt
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Rust tests
+        run: cargo test --workspace
+      - name: Debug build of the app
+        run: npx tauri build --debug --no-bundle
+      - name: Keep the debug build
+        uses: actions/upload-artifact@v4
+        with:
+          name: opennote-debug-exe
+          path: target/debug/opennote.exe
+          retention-days: 7

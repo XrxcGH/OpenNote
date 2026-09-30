@@ -1,0 +1,49 @@
+name: release
+
+# Pushing a tag such as v0.1.0 builds OpenNote.exe, signs the update, and publishes a GitHub Release.
+# See docs/RELEASING.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install tools
+        run: npm ci
+      - name: Quality gate
+        run: npm run checks:all && npm run typecheck && npm run lint && npm test
+      - name: Build OpenNote.exe
+        run: npx tauri build --no-bundle
+      - name: Collect the release files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist-release | Out-Null
+          Copy-Item target/release/opennote.exe dist-release/OpenNote.exe
+      - name: Sign the update
+        if: env.TAURI_SIGNING_PRIVATE_KEY != ''
+        run: npx tauri signer sign dist-release/OpenNote.exe
+      - name: Write the update manifest
+        run: node app/scripts/write-manifest.ts dist-release ${{ github.ref_name }}
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-release/*
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true

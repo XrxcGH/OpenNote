@@ -80,7 +80,7 @@ Top-level `ignore` patterns skip files entirely. Change a limit only with a reas
 ## Where it runs
 
 - **Pre-commit hook:** `.githooks/pre-commit` checks staged files. Enable it with `npm run setup-hooks`.
-- **CI:** `.github/workflows/checks.yml` type-checks and tests the checker, then checks changed files on pull requests and all files on pushes. It runs on Ubuntu and Windows.
+- **CI:** `.github/workflows/ci.yml` type-checks, lints, and tests everything, then runs CHECKS on changed files for pull requests and on all files for pushes. It runs on Ubuntu and Windows.
 - **Releases:** the release checklist in `DEVELOPMENT.md` requires a clean `npm run checks:all`.
 
 ## Adding or changing a rule
