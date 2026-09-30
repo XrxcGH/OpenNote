@@ -52,6 +52,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0006](0006-pdf-export.md) | Export PDFs with WebView2 PrintToPdf from a hidden WebView, with print CSS and layout rules that keep the screen and paper in step | Accepted | 2026-09-30 |
 | [0007](0007-audio-capture.md) | Record the microphone and system audio with cpal on WASAPI, align both to the performance counter, and store Opus in 1-second Ogg pages | Accepted | 2026-09-30 |
 | [0010](0010-interface-components-and-state.md) | Build the interface from hand-written accessible components, a small external store, registries, and a platform seam | Proposed | 2026-09-30 |
+| [0011](0011-self-updater.md) | Update with a Tauri-free updater: per-architecture files, signature checks, a staged swap, and rollback; move the app to the user's Programs folder | Proposed | 2026-09-30 |
 | [0012](0012-window-frame-and-appearance.md) | Keep the native window frame, with the app's title bar below it, and read the Windows appearance in Rust | Accepted | 2026-09-30 |
 | [0013](0013-settings-and-device-state.md) | Keep personal settings and device state in two Rust-owned files, changed by validated merge patches, with atomic writes and `minWriterSchema` for safe rollbacks | Proposed | 2026-09-30 |
 | [0014](0014-notes-service-contract.md) | Define a narrow notes service contract between the shell and storage, with a shared test suite, and the changes that let Phase 3's format serve it | Proposed, to be accepted jointly by the Phase 2 and Phase 3 owners | 2026-09-30 |

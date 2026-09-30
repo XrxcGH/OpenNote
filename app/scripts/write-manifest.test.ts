@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   RELEASE_FILES,
-  checkSignedVersion,
+  checkSignedComment,
   manifestFile,
   manifestFor,
   platformEntry,
@@ -54,6 +54,14 @@ function releaseDir(version: string): string {
 }
 
 describe('RELEASE_FILES', () => {
+  it('comes from app/release-files.json, the table the updater crate also embeds', () => {
+    const table = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'release-files.json'), 'utf8'));
+    expect(RELEASE_FILES).toEqual(table);
+    for (const key of ['platform', 'target', 'file'] as const) {
+      expect(new Set(RELEASE_FILES.map((row) => row[key])).size, `each ${key} is unique`).toBe(RELEASE_FILES.length);
+    }
+  });
+
   it('names one exe per Windows architecture under its Tauri updater key', () => {
     expect(RELEASE_FILES.map(({ target, platform, file }) => [target, platform, file])).toEqual([
       ['x86_64-pc-windows-msvc', 'windows-x86_64', 'OpenNote_Windows64.exe'],
@@ -129,28 +137,38 @@ describe('readReleaseFile and readSignature', () => {
   });
 });
 
-describe('checkSignedVersion', () => {
+describe('checkSignedComment', () => {
   const file = 'OpenNote_Windows64.exe';
 
-  it('accepts a signature made with --app-version for the same version', () => {
-    expect(() => checkSignedVersion(signedFor(file, '0.1.0'), '0.1.0', file)).not.toThrow();
-    expect(() => checkSignedVersion(signedFor(file, '0.5.0-beta.1'), '0.5.0-beta.1', file)).not.toThrow();
+  it('accepts a signature made with --app-version for the same version and file', () => {
+    expect(() => checkSignedComment(signedFor(file, '0.1.0'), '0.1.0', file)).not.toThrow();
+    expect(() => checkSignedComment(signedFor(file, '0.5.0-beta.1'), '0.5.0-beta.1', file)).not.toThrow();
   });
 
   it('refuses a signature for another version, and names the file', () => {
     const signature = signedFor(file, '0.1.0');
     const expected = /OpenNote_Windows64\.exe names version 0\.1\.0, but the tag is for 0\.2\.0/;
-    expect(() => checkSignedVersion(signature, '0.2.0', file)).toThrow(expected);
-    expect(() => checkSignedVersion(signature, '0.1.0-beta.1', file)).toThrow(/names version 0\.1\.0/);
+    expect(() => checkSignedComment(signature, '0.2.0', file)).toThrow(expected);
+    expect(() => checkSignedComment(signature, '0.1.0-beta.1', file)).toThrow(/names version 0\.1\.0/);
   });
 
   it('refuses a signature made without --app-version', () => {
     const signature = sigFile(`timestamp:1790757747\tfile:${file}`);
-    expect(() => checkSignedVersion(signature, '0.1.0', file)).toThrow(/names no version/);
+    expect(() => checkSignedComment(signature, '0.1.0', file)).toThrow(/names no version/);
+  });
+
+  it('refuses a signature of another file, such as the exe before it was renamed or another architecture', () => {
+    expect(() => checkSignedComment(signedFor('opennote.exe', '0.1.0'), '0.1.0', file)).toThrow(
+      'The signature of OpenNote_Windows64.exe names the file opennote.exe. Rename the exe to',
+    );
+    const arm = signedFor('OpenNote_WindowsARM64.exe', '0.1.0');
+    expect(() => checkSignedComment(arm, '0.1.0', file)).toThrow(/names the file OpenNote_WindowsARM64\.exe/);
+    const noFile = sigFile('timestamp:1790757747\tversion:0.1.0');
+    expect(() => checkSignedComment(noFile, '0.1.0', file)).toThrow(/names no file/);
   });
 
   it('refuses text that is not a signature', () => {
-    expect(() => checkSignedVersion('not a signature', '0.1.0', file)).toThrow(/no trusted comment/);
+    expect(() => checkSignedComment('not a signature', '0.1.0', file)).toThrow(/no trusted comment/);
   });
 });
 
@@ -191,6 +209,15 @@ describe('writeManifest', () => {
     const dir = releaseDir('0.5.0');
     writeFileSync(join(dir, `${file}.sig`), signedFor(file, '0.4.1'));
     expect(() => writeManifest(dir, 'v0.5.0', 'notes', date)).toThrow(`The signature of ${file} names version 0.4.1`);
+    expect(existsSync(join(dir, 'latest.json'))).toBe(false);
+  });
+
+  it('stops when a signature belongs to another architecture', () => {
+    const dir = releaseDir('0.5.0');
+    writeFileSync(join(dir, 'OpenNote_Windows32.exe.sig'), signedFor('OpenNote_Windows64.exe', '0.5.0'));
+    expect(() => writeManifest(dir, 'v0.5.0', 'notes', date)).toThrow(
+      'The signature of OpenNote_Windows32.exe names the file OpenNote_Windows64.exe',
+    );
     expect(existsSync(join(dir, 'latest.json'))).toBe(false);
   });
 });
