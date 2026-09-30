@@ -4,23 +4,7 @@ import { joinListsDeep } from './normalize';
 import { parseTextBlock } from './parse';
 import { serializeTextBlock } from './serialize';
 import { textSchema } from '../schema/schema';
-
-/** A compact outline of a document: nodes by name, text in quotes, marks as wrappers. */
-function shape(node: PMNode): string {
-  if (node.isText) {
-    const names = node.marks.map(
-      (mark) => mark.type.name + (mark.attrs.color ?? mark.attrs.href ?? mark.attrs.size ?? ''),
-    );
-    return names.reduceRight((inner, name) => `${name}(${inner})`, JSON.stringify(node.text));
-  }
-  const parts: string[] = [];
-  node.forEach((child) => parts.push(shape(child)));
-  const attrs = ['level', 'checked', 'start', 'type', 'fold', 'language', 'src', 'source']
-    .filter((key) => node.attrs[key] !== undefined && node.attrs[key] !== null && node.attrs[key] !== '')
-    .map((key) => `${key}=${String(node.attrs[key])}`);
-  const label = node.type.name + (attrs.length > 0 ? `[${attrs.join(',')}]` : '');
-  return parts.length > 0 || !node.isLeaf ? `${label}(${parts.join(', ')})` : label;
-}
+import { shape } from '../shape';
 
 const read = (markdown: string) => shape(parseTextBlock(markdown));
 
@@ -101,7 +85,7 @@ describe('parsing OpenNote Markdown', () => {
 
   it('reads images with any source, and code fences with a language', () => {
     expect(read('![chart](asset:01m3sabc) ![](https://example.com/a.png)')).toBe(
-      'doc(paragraph(image[src=asset:01m3sabc], " ", image[src=https://example.com/a.png]))',
+      'doc(paragraph(image[src=asset:01m3sabc,alt=chart], " ", image[src=https://example.com/a.png]))',
     );
     expect(read('```js title="x"\nlet a;\n```')).toBe('doc(codeBlock[language=js]("let a;"))');
   });
