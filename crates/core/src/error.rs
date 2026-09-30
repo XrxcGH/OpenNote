@@ -36,9 +36,6 @@ pub enum CoreError {
     /// Another device or tool changed the same thing.
     #[error("conflict: {0}")]
     Conflict(String),
-    /// A stub that another work package hasn't implemented yet.
-    #[error("not implemented yet: {0}")]
-    NotImplemented(&'static str),
 }
 
 /// A file that failed to read, or a value that broke a rule of the format.
