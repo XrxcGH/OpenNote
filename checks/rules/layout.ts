@@ -48,7 +48,7 @@ function render(svg: string, exe: string): AuditResult[] {
   try {
     const page = join(dir, 'page.html');
     const html = [
-      '<!doctype html><html><body style="margin:0">',
+      '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">',
       svg,
       `<pre id="out"></pre><script>${AUDIT}</script></body></html>`,
     ].join('');

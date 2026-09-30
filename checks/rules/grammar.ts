@@ -29,6 +29,7 @@ const REPEAT_ALLOWED = new Set(['that', 'had', 'very']);
 const CLAUSE_STARTS = wordSet(
   'while before after if when because since although though unless until once as in on at for with',
   'without by during from to of where so but which that and or like including such unlike between',
+  'given using based plus except then',
 );
 const VERB_STARTS = wordSet(
   'is are was were has have had can could will would should may might must',
