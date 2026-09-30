@@ -5,8 +5,8 @@
 //! After each crash, recovery rolls tree intents forward and scans. Every page and section must then show
 //! exactly once, in a tree or in Trash, and recovering again must change no file.
 //!
-//! The in-memory file system runs them as an app crash and as a power cut that drops everything not flushed,
-//! and the fault-injecting file system runs them under each durability model.
+//! The in-memory file system runs them as an app crash and as a power cut that drops everything not flushed.
+//! The fault-injecting file system runs them under each durability model.
 
 mod session_support;
 
