@@ -1,0 +1,14 @@
+@layer components {
+  .commandBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    block-size: var(--size-toolbar-pointer);
+    padding-inline: var(--space-4);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  :global(:root[data-density='touch']) .commandBar {
+    block-size: var(--size-toolbar-touch);
+  }
+}

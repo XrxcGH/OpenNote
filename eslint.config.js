@@ -13,10 +13,14 @@ export default tseslint.config(
       'node_modules/**',
       'app/src-tauri/gen/**',
       'app/src/theme/tokens.ts',
+      'app/src/platform/bindings/**',
     ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    rules: { '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }] },
+  },
   {
     files: ['app/src/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },

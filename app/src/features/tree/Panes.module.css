@@ -1,0 +1,53 @@
+@layer components {
+  .list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .list .list {
+    padding-inline-start: var(--size-tree-indent);
+  }
+
+  .heading {
+    display: block;
+    padding-block: var(--space-3) var(--space-2);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .item {
+    inline-size: 100%;
+    min-block-size: var(--size-row-pointer);
+    padding-inline: var(--space-3);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .item {
+    min-block-size: var(--size-row-touch);
+  }
+
+  .item:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .item[aria-current='true'] {
+    background: var(--color-surface-selected);
+  }
+
+  .item:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .empty {
+    color: var(--color-text-secondary);
+  }
+}
