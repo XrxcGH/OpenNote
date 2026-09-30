@@ -41,6 +41,44 @@ describe('layout tokens', () => {
   });
 });
 
+describe('page and ink tokens for Phases 4 and 5', () => {
+  it('stacks ink above the page scroller and below the page chrome, the formatting bar, and menus', () => {
+    const { layer } = tokens;
+    const order = [
+      layer.base,
+      layer.inkTiles,
+      layer.inkSelection,
+      layer.inkLive,
+      layer.pageChrome,
+      layer.sticky,
+      layer.formattingBar,
+      layer.dropdown,
+    ];
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(new Set(order).size).toBe(order.length);
+  });
+
+  it('gives touch sizes to the pen palette and page chrome', () => {
+    const { size } = tokens;
+    expect(size.penPaletteTouch).toBe(size.targetTouch + 12);
+    expect(size.chromeHitTouch).toBe(size.targetTouch);
+    expect(size.chromeHit).toBe(size.targetPointer);
+  });
+
+  it('defines a syntax color for each kind of code in both themes, and forced colors for each', () => {
+    const kinds = Object.keys(tokens.color.light.code);
+    expect(kinds).toHaveLength(8);
+    expect(Object.keys(tokens.color.dark.code)).toEqual(kinds);
+    kinds.forEach((kind) => expect(tokens.forcedColors).toHaveProperty([`code.${kind}`], 'CanvasText'));
+  });
+
+  it('keeps palm rejection and shape timings in milliseconds for code', () => {
+    const { interaction } = tokens;
+    expect(interaction.palmWatchdogMs).toBeGreaterThan(interaction.palmGraceMs);
+    expect(interaction.shapeHoldMs).toBe(interaction.longPressMs);
+  });
+});
+
 describe('cascade layers', () => {
   it('declares the layer order once, lowest first', () => {
     const css = readFileSync(join(import.meta.dirname, '..', 'styles', 'layers.css'), 'utf8');

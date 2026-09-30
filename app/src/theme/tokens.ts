@@ -51,6 +51,16 @@ export const tokens = {
       "caption": {
         "closeHover": "#C42B1C",
         "closeHoverText": "#FFFCF6"
+      },
+      "code": {
+        "keyword": "#6A4A9C",
+        "string": "#2E6B45",
+        "number": "#9A4A1F",
+        "comment": "#6B6054",
+        "function": "#2F4F9A",
+        "type": "#7A5410",
+        "variable": "#6E4B2E",
+        "punctuation": "#5C534A"
       }
     },
     "dark": {
@@ -97,6 +107,16 @@ export const tokens = {
       "caption": {
         "closeHover": "#C42B1C",
         "closeHoverText": "#FFFCF6"
+      },
+      "code": {
+        "keyword": "#C2ABE8",
+        "string": "#8FC29D",
+        "number": "#F0AE68",
+        "comment": "#ABA093",
+        "function": "#9DB4EA",
+        "type": "#E7BA62",
+        "variable": "#D6AE86",
+        "punctuation": "#CFC5B7"
       }
     }
   },
@@ -127,7 +147,15 @@ export const tokens = {
     "focus.ring": "Highlight",
     "selection.highlight": "Highlight",
     "caption.closeHover": "Highlight",
-    "caption.closeHoverText": "HighlightText"
+    "caption.closeHoverText": "HighlightText",
+    "code.keyword": "CanvasText",
+    "code.string": "CanvasText",
+    "code.number": "CanvasText",
+    "code.comment": "CanvasText",
+    "code.function": "CanvasText",
+    "code.type": "CanvasText",
+    "code.variable": "CanvasText",
+    "code.punctuation": "CanvasText"
   },
   "contrast": [
     {
@@ -429,6 +457,116 @@ export const tokens = {
       "fg": "ink.pens.Walnut",
       "bg": "surface.hover",
       "min": 3
+    },
+    {
+      "fg": "code.keyword",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.keyword",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.string",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.string",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.number",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.number",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.comment",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.comment",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.function",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.function",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.type",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.type",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.variable",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.variable",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.punctuation",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.punctuation",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Honey",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Mint",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Rose",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Apricot",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Lilac",
+      "over": "surface.page",
+      "min": 7
     }
   ],
   "ink": {
@@ -473,7 +611,7 @@ export const tokens = {
       {
         "name": "Honey",
         "light": "#F2CF4A66",
-        "dark": "#C9A42F66"
+        "dark": "#A88A2C66"
       },
       {
         "name": "Mint",
@@ -609,7 +747,16 @@ export const tokens = {
     "dialogWidth": 440,
     "toastMaxWidth": 480,
     "contentMin": 320,
-    "windowMin": 400
+    "windowMin": 400,
+    "flowMargin": 48,
+    "textBoxMinWidth": 120,
+    "textBoxAutoMax": 600,
+    "keepBelowBand": 24,
+    "chromeHit": 32,
+    "chromeHitTouch": 44,
+    "penPalette": 44,
+    "penPaletteTouch": 56,
+    "shapeHandle": 12
   },
   "breakpoint": {
     "medium": 600,
@@ -623,7 +770,12 @@ export const tokens = {
   },
   "layer": {
     "base": 0,
+    "inkTiles": 2,
+    "inkSelection": 3,
+    "inkLive": 4,
+    "pageChrome": 6,
     "sticky": 10,
+    "formattingBar": 15,
     "dropdown": 20,
     "overlay": 30,
     "dialog": 40,
@@ -660,6 +812,9 @@ export const tokens = {
     "loadingDelayMs": 300,
     "toastMs": 6000,
     "themeApplyMinMs": 350,
-    "pageOpenDebounceMs": 100
+    "pageOpenDebounceMs": 100,
+    "shapeHoldMs": 500,
+    "palmGraceMs": 500,
+    "palmWatchdogMs": 2000
   }
 } as const;
