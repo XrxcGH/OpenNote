@@ -1,6 +1,6 @@
 # ADR 0005: Text containers on a freeform page
 
-- Status: Proposed
+- Status: Accepted, pending the owner's review of the typing budget
 - Date: 2026-09-30
 
 ## Context

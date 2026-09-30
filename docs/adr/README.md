@@ -48,6 +48,6 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0002](0002-license.md) | License OpenNote under Apache 2.0 | Accepted | 2026-09-30 |
 | [0003](0003-typescript-version.md) | Pin TypeScript to 6.0.x until typescript-eslint supports TypeScript 7 | Accepted | 2026-09-30 |
 | [0004](0004-ink-latency.md) | Keep WebView2 for ink: draw live strokes on a desynchronized canvas in the pointer handler, and try delegated ink trails and a native ink layer in Phase 5 | Accepted, pending the owner's camera check and budget review | 2026-09-30 |
-| [0005](0005-freeform-text.md) | Build each text container as its own Tiptap editor on one zoomable world, with contained blocks and ink in cached tiles | Proposed | 2026-09-30 |
+| [0005](0005-freeform-text.md) | Build each text container as its own Tiptap editor on one zoomable world, with contained blocks and ink in cached tiles | Accepted, pending the owner's review of the typing budget | 2026-09-30 |
 | [0006](0006-pdf-export.md) | Export PDFs with WebView2 PrintToPdf from a hidden WebView, with print CSS and layout rules that keep the screen and paper in step | Accepted | 2026-09-30 |
 | [0007](0007-audio-capture.md) | Record the microphone and system audio with cpal on WASAPI, align both to the performance counter, and store Opus in 1-second Ogg pages | Accepted | 2026-09-30 |
