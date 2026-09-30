@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   CHANNEL_PRESSURE,
+  CHANNEL_TILT,
   CHANNEL_TIME,
   crc32,
   decodePoints,
@@ -219,6 +220,35 @@ describe('points', () => {
     expect(() => decodePoints(new Uint8Array([0x80, 0x00, 0x00]), 1, 0)).toThrow();
     expect(() => decodePoints(new Uint8Array([0, 0, 10]), 1, CHANNEL_TIME)).toThrow();
     expect(() => encodePoints([], 0)).toThrow();
+  });
+});
+
+describe('point channels', () => {
+  it('round-trip every combination of channels, whose arrays share one buffer', () => {
+    const points = [
+      { x: 70_000, y: -300_000, pressure: 65_535, tiltX: -9_000, tiltY: 9_000, t: 9 },
+      { x: 5, y: 1, pressure: 0, tiltX: 12, tiltY: -3, t: 40_000 },
+      { x: -(2 ** 29), y: 2 ** 29, pressure: 300, tiltX: 0, tiltY: 1, t: 40_001 },
+    ];
+    for (let set = 0; set < 8; set++) {
+      const kept = points.map((p) => ({
+        x: p.x,
+        y: p.y,
+        pressure: set & CHANNEL_PRESSURE ? p.pressure : 0,
+        tiltX: set & CHANNEL_TILT ? p.tiltX : 0,
+        tiltY: set & CHANNEL_TILT ? p.tiltY : 0,
+        t: set & CHANNEL_TIME ? p.t : 0,
+      }));
+      const { bytes } = encodePoints(kept, set);
+      const decoded = decodePoints(bytes, kept.length, set);
+      expect(kept.map((_, i) => pointAt(decoded, i))).toEqual(kept);
+      expect([decoded.pressure, decoded.tiltX, decoded.tiltY, decoded.t].map((a) => a !== null)).toEqual([
+        (set & CHANNEL_PRESSURE) !== 0,
+        (set & CHANNEL_TILT) !== 0,
+        (set & CHANNEL_TILT) !== 0,
+        (set & CHANNEL_TIME) !== 0,
+      ]);
+    }
   });
 });
 

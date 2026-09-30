@@ -96,22 +96,36 @@ export function encodePoints(points: Point[], channels: number): { bytes: Uint8A
   return { bytes: Uint8Array.from(out), bbox };
 }
 
+/** What each of a varint's five bytes is worth, as 7 bits at a time: `2 ** (7 * i)`. */
+const VARINT_UNITS = [1, 128, 16_384, 2_097_152, 268_435_456];
+
 /** Reads varints from point data, checking that each is at most 5 bytes and in its shortest form. */
 class Reader {
   pos = 0;
   constructor(private readonly bytes: Uint8Array) {}
 
   varint(): number {
+    const bytes = this.bytes;
+    const first = this.pos < bytes.length ? bytes[this.pos] : 0x80;
+    if (first < 0x80) {
+      this.pos++;
+      return first;
+    }
+    return this.longVarint();
+  }
+
+  /** A varint that takes more than one byte, or that is cut off. */
+  private longVarint(): number {
     const start = this.pos;
     const bytes = this.bytes;
     let value = 0;
-    for (let shift = 0; shift <= 28; shift += 7) {
+    for (let i = 0; i < 5; i++) {
       if (this.pos >= bytes.length) throw new PointError('the point data ended early');
       const byte = bytes[this.pos++];
-      if (shift === 28 && byte > 0x0f) throw new PointError(`a malformed varint at byte ${start}`);
-      value += (byte & 0x7f) * 2 ** shift;
+      if (i === 4 && byte > 0x0f) throw new PointError(`a malformed varint at byte ${start}`);
+      value += (byte & 0x7f) * VARINT_UNITS[i];
       if ((byte & 0x80) === 0) {
-        if (byte === 0 && shift > 0) throw new PointError(`an overlong varint at byte ${start}`);
+        if (byte === 0 && i > 0) throw new PointError(`an overlong varint at byte ${start}`);
         return value;
       }
     }
@@ -134,41 +148,63 @@ function inRange(value: number, limit: number, index: number, channel: string): 
   return value;
 }
 
+/** The typed arrays for `total` points in one buffer, since a buffer for each array costs more than decoding. */
+function allocate(total: number, channels: number): PointArrays {
+  const pressure = (channels & CHANNEL_PRESSURE) !== 0;
+  const tilt = (channels & CHANNEL_TILT) !== 0;
+  const time = (channels & CHANNEL_TIME) !== 0;
+  const buffer = new ArrayBuffer(total * (8 + (time ? 4 : 0) + (pressure ? 2 : 0) + (tilt ? 4 : 0)));
+  const x = new Int32Array(buffer, 0, total);
+  const y = new Int32Array(buffer, total * 4, total);
+  let at = total * 8;
+  const t = time ? new Uint32Array(buffer, at, total) : null;
+  at += time ? total * 4 : 0;
+  const p = pressure ? new Uint16Array(buffer, at, total) : null;
+  at += pressure ? total * 2 : 0;
+  return {
+    x,
+    y,
+    pressure: p,
+    tiltX: tilt ? new Int16Array(buffer, at, total) : null,
+    tiltY: tilt ? new Int16Array(buffer, at + total * 2, total) : null,
+    t,
+  };
+}
+
 /** Decodes exactly `count` points that use up exactly `bytes`, into typed arrays. */
 export function decodePoints(bytes: Uint8Array, count: number, channels: number): PointArrays {
   checkCount(bytes, count);
-  const out: PointArrays = {
-    x: new Int32Array(count),
-    y: new Int32Array(count),
-    pressure: channels & CHANNEL_PRESSURE ? new Uint16Array(count) : null,
-    tiltX: channels & CHANNEL_TILT ? new Int16Array(count) : null,
-    tiltY: channels & CHANNEL_TILT ? new Int16Array(count) : null,
-    t: channels & CHANNEL_TIME ? new Uint32Array(count) : null,
-  };
+  const out = allocate(count, channels & 7);
+  const { x: xs, y: ys, pressure: ps, tiltX: txs, tiltY: tys, t: ts } = out;
   const reader = new Reader(bytes);
-  let [x, y, p, tx, ty, t] = [0, 0, 0, 0, 0, 0];
+  let x = 0;
+  let y = 0;
+  let p = 0;
+  let tx = 0;
+  let ty = 0;
+  let t = 0;
   for (let i = 0; i < count; i++) {
     const base = i === 0 ? 0 : 1;
     x = inRange(x * base + reader.zigzag(), MAX_COORD, i, 'x');
     y = inRange(y * base + reader.zigzag(), MAX_COORD, i, 'y');
-    out.x[i] = x;
-    out.y[i] = y;
-    if (out.pressure) {
+    xs[i] = x;
+    ys[i] = y;
+    if (ps) {
       p = i === 0 ? reader.varint() : p + reader.zigzag();
       if (p < 0 || p > 0xffff) throw new PointError(`point ${i} has pressure out of range`);
-      out.pressure[i] = p;
+      ps[i] = p;
     }
-    if (out.tiltX && out.tiltY) {
+    if (txs && tys) {
       tx = inRange(tx * base + reader.zigzag(), MAX_TILT, i, 'tilt');
       ty = inRange(ty * base + reader.zigzag(), MAX_TILT, i, 'tilt');
-      out.tiltX[i] = tx;
-      out.tiltY[i] = ty;
+      txs[i] = tx;
+      tys[i] = ty;
     }
-    if (out.t) {
+    if (ts) {
       const dt = reader.varint();
       t = i === 0 ? dt : t + dt;
       if (i === 0 ? t > MAX_FIRST_TIME : t > 0xffffffff) throw new PointError(`point ${i} has time out of range`);
-      out.t[i] = t;
+      ts[i] = t;
     }
   }
   if (reader.pos !== bytes.length) throw new PointError(`${bytes.length - reader.pos} bytes after the last point`);
