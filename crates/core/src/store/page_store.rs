@@ -3,7 +3,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::error::{CoreError, FormatError, FsError, JournalError};
+use crate::error::{CoreError, FormatError, FsError, FsErrorKind, JournalError};
+use crate::fail_point;
 use crate::format::DamagedRecord;
 use crate::id::{AssetId, RevisionId};
 use crate::limits::Limits;
@@ -12,6 +13,7 @@ use crate::seams::{Codec, LinkResolver};
 use crate::session::journal_thread::JournalHandle;
 use crate::store::compact::CompactionPlan;
 use crate::store::fs::{Durability, FileStamp, Fs};
+use crate::store::layout::{NotebookLayout, INK_SVG, PAGE_MD};
 use crate::time::Clock;
 
 /// What a page store needs.
@@ -129,62 +131,92 @@ pub enum ReadableOutcome {
 
 impl PageStore {
     /// A store with this configuration.
-    pub fn new(_config: PageStoreConfig) -> PageStore {
-        unimplemented!("WP4: PageStore::new")
+    pub fn new(config: PageStoreConfig) -> PageStore {
+        PageStore { config }
     }
 
     /// Loads `page.json` and every segment, and replays the ink. Never reads `page.md`.
-    pub fn load(&self, _dir: &Path) -> Result<LoadedPage, LoadError> {
-        unimplemented!("WP4: PageStore::load")
+    ///
+    /// Damaged records and missing files are reported, not errors: the page is then read-only, with the reason
+    /// in `page.format.access` (spec 9.6 and 14.5).
+    pub fn load(&self, dir: &Path) -> Result<LoadedPage, LoadError> {
+        self.load_page(dir)
     }
 
     /// Runs steps S2 to S9 of spec 17.7.
-    pub fn save(&self, _dir: &Path, _req: SaveRequest<'_>) -> Result<SaveOutcome, SaveError> {
-        unimplemented!("WP4: PageStore::save")
+    ///
+    /// A `base_stamp` of `None` skips the check of S7, for a writer that creates the page. A journal that
+    /// can't be written doesn't stop the save (spec 20.12).
+    pub fn save(&self, dir: &Path, req: SaveRequest<'_>) -> Result<SaveOutcome, SaveError> {
+        self.save_page(dir, req)
     }
 
     /// The fingerprint of `page.json`, or `None` if it is missing.
-    pub fn fingerprint(&self, _dir: &Path) -> Result<Option<FileStamp>, FsError> {
-        unimplemented!("WP4: PageStore::fingerprint")
+    pub fn fingerprint(&self, dir: &Path) -> Result<Option<FileStamp>, FsError> {
+        self.fingerprint_of(&NotebookLayout::page_json(dir))
     }
 
-    /// Writes `page.md` if it is stale, following spec 11.2.
-    pub fn write_page_md(
-        &self,
-        _dir: &Path,
-        _page: &Page,
-        _links: &dyn LinkResolver,
-    ) -> Result<ReadableOutcome, FsError> {
-        unimplemented!("WP4: PageStore::write_page_md")
+    fn fingerprint_of(&self, path: &Path) -> Result<Option<FileStamp>, FsError> {
+        match self.config.fs.metadata(path) {
+            Ok(meta) => Ok(Some(meta.stamp)),
+            Err(err) if err.kind == FsErrorKind::NotFound => Ok(None),
+            Err(err) => Err(err),
+        }
     }
 
-    /// Writes `ink.svg` if it is stale, following spec 11.2.
-    pub fn write_ink_svg(&self, _dir: &Path, _page: &Page) -> Result<ReadableOutcome, FsError> {
-        unimplemented!("WP4: PageStore::write_ink_svg")
+    /// Writes `page.md` if it is stale, following spec 11.2. Never for a page of an encrypted section.
+    pub fn write_page_md(&self, dir: &Path, page: &Page, links: &dyn LinkResolver) -> Result<ReadableOutcome, FsError> {
+        let outcome = self.write_readable(dir, PAGE_MD, page, || self.config.codec.render_page_md(page, links))?;
+        fail_point!("save.md.written");
+        Ok(outcome)
     }
 
-    /// Sync-tool conflict copies of `page.json` in the page folder (spec 14.2).
-    pub fn conflict_copies(&self, _dir: &Path) -> Result<Vec<PathBuf>, FsError> {
-        unimplemented!("WP4: PageStore::conflict_copies")
+    /// Writes `ink.svg` if it is stale, following spec 11.2. A page without strokes gets no new `ink.svg`.
+    pub fn write_ink_svg(&self, dir: &Path, page: &Page) -> Result<ReadableOutcome, FsError> {
+        if page.ink.is_empty() && self.fingerprint_of(&dir.join(INK_SVG))?.is_none() {
+            return Ok(ReadableOutcome::Unchanged);
+        }
+        self.write_readable(dir, INK_SVG, page, || self.config.codec.render_ink_svg(page))
     }
 
-    /// Moves a conflict copy into `.conflicts/`, returning its revision if it is a real divergence.
-    pub fn absorb_conflict_copy(&self, _dir: &Path, _copy: &Path) -> Result<Option<RevisionId>, CoreError> {
-        unimplemented!("WP4: PageStore::absorb_conflict_copy")
+    /// Sync-tool conflict copies of `page.json` in the page folder (spec 14.2), judged by name.
+    pub fn conflict_copies(&self, dir: &Path) -> Result<Vec<PathBuf>, FsError> {
+        self.list_conflict_copies(dir)
+    }
+
+    /// Absorbs a conflict copy (spec 14.2). A real divergence moves into `.conflicts/<revision>.json` and
+    /// returns its revision. An older or identical revision of this page goes into history as a version with
+    /// the reason `conflict`, and the copy is removed. A file that isn't a copy of this page is left alone.
+    pub fn absorb_conflict_copy(&self, dir: &Path, copy: &Path) -> Result<Option<RevisionId>, CoreError> {
+        self.absorb_copy(dir, copy)
     }
 
     /// Keeps another version of `page.json` in `.conflicts/`.
-    pub fn keep_conflict(&self, _dir: &Path, _theirs: &[u8]) -> Result<RevisionId, CoreError> {
-        unimplemented!("WP4: PageStore::keep_conflict")
+    pub fn keep_conflict(&self, dir: &Path, theirs: &[u8]) -> Result<RevisionId, CoreError> {
+        self.keep_other(dir, theirs)
     }
 
-    /// Moves a file that failed to read into `.damaged/`.
-    pub fn move_damaged(&self, _dir: &Path, _file_name: &str) -> Result<PathBuf, FsError> {
-        unimplemented!("WP4: PageStore::move_damaged")
+    /// Moves a file that failed to read into `.damaged/<time>-<name>`. `file_name` is relative to the page
+    /// folder, such as `page.json` or `ink/<ID>.onk`.
+    pub fn move_damaged(&self, dir: &Path, file_name: &str) -> Result<PathBuf, FsError> {
+        self.move_aside(dir, file_name)
     }
 
-    /// Repairs damaged ink from other segments and the journal (spec 9.6).
-    pub fn repair_ink(&self, _dir: &Path, _page: &Page, _from_journal: &[Arc<Stroke>]) -> Result<Page, CoreError> {
-        unimplemented!("WP4: PageStore::repair_ink")
+    /// Repairs damaged ink from other segments and the journal (spec 9.6), after keeping the damaged revision as
+    /// a version with the reason `beforeRepair`. The caller saves the result with `CompactionPlan::Major`, so
+    /// the damaged segment is no longer listed.
+    pub fn repair_ink(&self, dir: &Path, page: &Page, from_journal: &[Arc<Stroke>]) -> Result<Page, CoreError> {
+        self.repair(dir, page, from_journal)
     }
 }
+
+mod files;
+mod load;
+mod repair;
+mod save;
+
+pub use load::{ink_access, load_ink, missing_assets, InkLoad};
+pub(crate) use save::ensure_dir;
+
+#[cfg(test)]
+pub(crate) mod tests;
