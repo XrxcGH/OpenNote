@@ -34,10 +34,12 @@ pub enum GuardOutcome {
 /// The updater's state as the interface shows it, matching the interface's `UpdaterStatus`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct UpdaterStatus {
     pub phase: UpdaterPhase,
     pub last_check: Option<String>,
     pub skipped_version: Option<String>,
+    #[cfg_attr(test, ts(inline))]
     pub previous: Option<PreviousInfo>,
 }
 
@@ -55,6 +57,7 @@ impl UpdaterStatus {
 
 /// The version "Go back" returns to, and whether its copy is still there and intact.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct PreviousInfo {
     pub version: String,
     pub available: bool,
@@ -63,8 +66,10 @@ pub struct PreviousInfo {
 /// The updater's phase, matching the interface's `UpdaterPhase` (section 18.2).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum UpdaterPhase {
     Disabled {
+        #[cfg_attr(test, ts(inline))]
         reason: DisabledReason,
     },
     Idle,
@@ -73,12 +78,15 @@ pub enum UpdaterPhase {
     Available {
         version: String,
         notes: String,
+        #[cfg_attr(test, ts(type = "number"))]
         size: u64,
         waiting_for_unmetered: bool,
     },
     Downloading {
         version: String,
+        #[cfg_attr(test, ts(type = "number"))]
         received: u64,
+        #[cfg_attr(test, ts(type = "number"))]
         total: u64,
     },
     Verifying {
@@ -87,12 +95,14 @@ pub enum UpdaterPhase {
     Ready {
         version: String,
         notes: String,
+        #[cfg_attr(test, ts(inline))]
         blocked_by: Option<BlockedBy>,
     },
     Applying {
         version: String,
     },
     Error {
+        #[cfg_attr(test, ts(inline))]
         code: ErrorCode,
         retry_at: Option<String>,
     },
@@ -100,6 +110,7 @@ pub enum UpdaterPhase {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum DisabledReason {
     DevBuild,
     ManualMode,
@@ -109,6 +120,7 @@ pub enum DisabledReason {
 /// What keeps a ready update from applying.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum BlockedBy {
     UnsavedChanges,
     Recording,
@@ -116,6 +128,7 @@ pub enum BlockedBy {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum ErrorCode {
     Offline,
     Unreachable,

@@ -77,6 +77,12 @@ export interface Platform {
   readonly install: InstallClient;
   readonly updater: UpdaterClient;
   readonly shell: ShellClient;
+  /** Page content. The shell keeps pages in memory until Phase 3 stores them. */
+  readonly pages: PageService;
+  readonly spelling: SpellingClient;
+  readonly clipboard: ClipboardClient;
+  readonly images: ImageClient;
+  readonly speech: SpeechClient;
   /** Phase 2 only, behind notes.memorySnapshot. */
   readonly notesSnapshot: NotesSnapshotClient | null;
   readonly perf: PerfClient;
@@ -158,6 +164,42 @@ export interface NotesSnapshotClient {
 }
 
 export interface PerfClient {
-  /** Does nothing unless OPENNOTE_PERF_LOG is set. */
-  mark(name: PerfMark): void;
+  /** Does nothing unless OPENNOTE_PERF_LOG is set. `detail` says more, such as the theme the first frame painted. */
+  mark(name: PerfMark, detail?: string): void;
+}
+
+// The clients below are the seam for Phases 3 to 9. Phase 2 defines their shapes and their web fakes, and the
+// Tauri platform rejects each call with the code notImplemented until the phase that builds the host side.
+// A phase that needs more methods adds them here, with a fake and a stub, and keeps the existing ones.
+
+/** Page content as the page editor stores it, serialized. */
+export interface PageService {
+  /** The stored content, or null for a page with none yet. */
+  load(pageId: string): Promise<string | null>;
+  save(pageId: string, content: string): Promise<void>;
+}
+
+export interface SpellingClient {
+  /** The words that aren't in the dictionary for `language`, such as `en-US`. */
+  misspelled(words: readonly string[], language: string): Promise<string[]>;
+  suggest(word: string, language: string): Promise<string[]>;
+  addToDictionary(word: string): Promise<void>;
+}
+
+export interface ClipboardClient {
+  readText(): Promise<string>;
+  writeText(text: string): Promise<void>;
+}
+
+export interface ImageClient {
+  /** Stores an image from a file, a paste, or a drop, and returns the address the page shows it from. */
+  add(image: Blob): Promise<{ id: string; url: string }>;
+  remove(id: string): Promise<void>;
+}
+
+export interface SpeechClient {
+  /** Whether dictation can start for `language` on this device. */
+  available(language: string): Promise<boolean>;
+  /** Starts dictation. Text arrives through the listener until the returned function stops it. */
+  start(language: string, onText: (text: string, final: boolean) => void): Promise<() => void>;
 }

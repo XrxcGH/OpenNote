@@ -80,23 +80,9 @@ impl Paths {
             .collect()
     }
 
-    /// The default folders. The shell work package reads them with `SHGetKnownFolderPath`, so Documents follows
-    /// OneDrive folder redirection; until then they come from the environment.
+    /// The default folders, from Windows' known folders, so Documents follows OneDrive folder redirection.
     fn for_user() -> io::Result<Paths> {
-        let (roaming, local, documents) = if cfg!(windows) {
-            (
-                env_dir("APPDATA")?,
-                env_dir("LOCALAPPDATA")?,
-                env_dir("USERPROFILE")?.join("Documents"),
-            )
-        } else {
-            let home = env_dir("HOME")?;
-            (
-                home.join(".config"),
-                home.join(".local").join("share"),
-                home.join("Documents"),
-            )
-        };
+        let (roaming, local, documents) = user_roots()?;
         Ok(Self::from_roots(
             roaming.join(APP_FOLDER),
             local.join(APP_FOLDER),
@@ -105,6 +91,48 @@ impl Paths {
     }
 }
 
+/// The roaming and local application data folders and Documents.
+#[cfg(windows)]
+fn user_roots() -> io::Result<(PathBuf, PathBuf, PathBuf)> {
+    use windows::Win32::UI::Shell::{FOLDERID_Documents, FOLDERID_LocalAppData, FOLDERID_RoamingAppData};
+
+    Ok((
+        known_folder(&FOLDERID_RoamingAppData)?,
+        known_folder(&FOLDERID_LocalAppData)?,
+        known_folder(&FOLDERID_Documents)?,
+    ))
+}
+
+#[cfg(not(windows))]
+fn user_roots() -> io::Result<(PathBuf, PathBuf, PathBuf)> {
+    let home = env_dir("HOME")?;
+    Ok((
+        home.join(".config"),
+        home.join(".local").join("share"),
+        home.join("Documents"),
+    ))
+}
+
+/// A Windows known folder, such as `FOLDERID_Documents`, wherever the person or an administrator moved it.
+#[cfg(windows)]
+pub fn known_folder(id: &windows::core::GUID) -> io::Result<PathBuf> {
+    use std::{ffi::OsString, os::windows::ffi::OsStringExt};
+    use windows::Win32::{
+        System::Com::CoTaskMemFree,
+        UI::Shell::{SHGetKnownFolderPath, KF_FLAG_DEFAULT},
+    };
+
+    // SAFETY: `id` is a valid GUID. On success the returned string is a NUL-terminated buffer that Windows
+    // allocated; it is copied, then freed with CoTaskMemFree exactly once.
+    unsafe {
+        let path = SHGetKnownFolderPath(id, KF_FLAG_DEFAULT, None).map_err(io::Error::other)?;
+        let folder = PathBuf::from(OsString::from_wide(path.as_wide()));
+        CoTaskMemFree(Some(path.0.cast_const().cast()));
+        Ok(folder)
+    }
+}
+
+#[cfg(not(windows))]
 fn env_dir(name: &str) -> io::Result<PathBuf> {
     std::env::var_os(name)
         .filter(|value| !value.is_empty())
@@ -133,6 +161,17 @@ mod tests {
         for path in local {
             assert!(path.starts_with(dir.join("local")), "{}", path.display());
         }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn finds_this_users_known_folders() {
+        let paths = Paths::resolve(None).expect("known folders resolve");
+        assert!(paths.roaming.ends_with(APP_FOLDER) && paths.local.ends_with(APP_FOLDER));
+        assert!(paths.roaming.parent().is_some_and(Path::is_dir));
+        assert!(paths.local.parent().is_some_and(Path::is_dir));
+        assert!(paths.documents.is_absolute());
+        assert_ne!(paths.roaming, paths.local);
     }
 
     #[test]

@@ -45,7 +45,7 @@ export interface Commands {
   app_first_paint: { args: None; result: null };
   app_ready: { args: { timings: ReadyTimings }; result: null };
   app_exit_ready: { args: { result: ExitResult }; result: null };
-  perf_mark: { args: { name: PerfMark; epochMs: number }; result: null };
+  perf_mark: { args: { name: PerfMark; epochMs: number; detail?: string | null }; result: null };
   log_write: { args: { level: LogLevel; message: string }; result: null };
   install_status: { args: None; result: InstallStatus };
   install_pick_folder: { args: { initial: string | null }; result: string | null };

@@ -1,10 +1,17 @@
-// The Windows appearance: dark mode, contrast theme, animations, text scale, and the effective zoom. Rust reads
-// it and sends changes as events; the web platform fakes it (ARCHITECTURE.md section 5.2).
+// The Windows appearance: dark mode, contrast theme, animations, text scale, screen reader, and the effective
+// zoom. Rust reads it and sends changes as events; the web platform fakes it (ARCHITECTURE.md section 5.2).
 
 import type { BootData, OsAppearance, Platform } from '../platform/types';
 import { createStore, useStore } from './store';
 
-export const DEFAULT_OS: OsAppearance = { dark: false, contrast: false, animations: true, textScale: 1, zoom: 1 };
+export const DEFAULT_OS: OsAppearance = {
+  dark: false,
+  contrast: false,
+  animations: true,
+  textScale: 1,
+  zoom: 1,
+  screenReader: false,
+};
 
 export const osStore = createStore<OsAppearance>(DEFAULT_OS, 'os');
 

@@ -2,19 +2,23 @@
 //! window that made it.
 
 use serde_json::Value;
-use tauri::{Emitter, State, WebviewWindow};
+use tauri::{Emitter, Manager, State, WebviewWindow};
 
 use super::{
     schema::{Settings, SettingsSectionKey},
     SettingsChanged, SettingsStore,
 };
-use crate::{events, ipc::IpcResult};
+use crate::{appearance, events, ipc::IpcResult};
 
 /// Applies a merge patch from the interface and returns the new settings.
 #[tauri::command]
 pub fn settings_update(window: WebviewWindow, store: State<'_, SettingsStore>, patch: Value) -> IpcResult<Settings> {
+    let text_size = store.get().appearance.text_size;
     let settings = store.update(patch, window.label())?;
     announce(&window, &settings);
+    if settings.appearance.text_size != text_size {
+        appearance::refresh(window.app_handle());
+    }
     Ok(settings)
 }
 
@@ -25,8 +29,12 @@ pub fn settings_reset(
     store: State<'_, SettingsStore>,
     section: SettingsSectionKey,
 ) -> IpcResult<Settings> {
+    let text_size = store.get().appearance.text_size;
     let settings = store.reset(section, window.label())?;
     announce(&window, &settings);
+    if settings.appearance.text_size != text_size {
+        appearance::refresh(window.app_handle());
+    }
     Ok(settings)
 }
 

@@ -23,10 +23,19 @@ pub mod updater;
 pub mod window;
 pub mod zoom;
 
-use tauri::ipc::Invoke;
+use tauri::{ipc::Invoke, Manager};
 
+use boot::Startup;
 use early::EarlyContext;
-use settings::{schema::Settings, SettingsStore};
+use instance::InstanceGuard;
+use lifecycle::ExitState;
+use settings::SettingsStore;
+use state::DeviceStateStore;
+
+/// Where ts-rs writes the interface's copies of the shared types (ARCHITECTURE.md section 6.2), relative to its
+/// default `bindings` folder under this crate. `cargo test` writes them, and CI fails when they drift.
+#[cfg(test)]
+pub(crate) const BINDINGS: &str = "../../src/platform/bindings/";
 
 /// Starts the app with what the early steps found. Doesn't return.
 pub fn run(context: EarlyContext) {
@@ -35,24 +44,66 @@ pub fn run(context: EarlyContext) {
         paths,
         instance,
         guard,
+        webview2_version,
     } = context;
-    // The instance guard holds the profile's lock, so it stays alive until the process exits.
-    let _instance = instance;
+    install::set_app_user_model_id();
+    let loaded = SettingsStore::load(&paths);
+    let (state, state_notice) = DeviceStateStore::load(&paths);
+    perf::mark("settingsLoaded", None);
+    let launch = boot::Launch { args, guard };
+    if let Some(old) = launch.args.moved_from.clone() {
+        install::delete_moved_from(old);
+    }
+    let settings = loaded.store.get();
+    let mut notices = loaded.notices;
+    notices.extend(state_notice);
+    notices.extend(launch.notices(env!("CARGO_PKG_VERSION")));
+    let startup = Startup {
+        first_run: loaded.first_run,
+        settings_read_only: loaded.store.read_only(),
+        notices,
+        webview2_version,
+        process_start_epoch_ms: boot::process_start_epoch_ms(),
+        updater: updater::initial_status(&paths, &settings),
+        flag_overrides: boot::flag_overrides(&std::env::var("OPENNOTE_FLAGS").unwrap_or_default()),
+    };
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
-    tauri::Builder::default()
-        .manage(SettingsStore::in_memory(&Settings::default()))
+    let app = tauri::Builder::default()
+        .manage(loaded.store)
+        .manage(state)
         .manage(hooks)
-        .manage(boot::Launch { args, guard })
+        .manage(startup)
+        .manage(launch)
         .manage(paths)
-        .on_page_load(window::show_when_loaded)
+        .manage(ExitState::default())
+        // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
+        .manage(instance)
         .setup(|app| {
+            let handle = app.handle().clone();
+            app.state::<InstanceGuard>()
+                .on_forwarded(move |forwarded| window::receive_forwarded(&handle, forwarded.args));
             window::caption::init(app.handle());
             window::create(app.handle())?;
             Ok(())
         })
         .invoke_handler(commands())
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("OpenNote failed to start");
+    app.run(|app, event| {
+        if let tauri::RunEvent::Exit = event {
+            flush_files(app);
+        }
+    });
+}
+
+/// Saves the settings and the device state that are still waiting for their writers.
+pub fn flush_files(app: &tauri::AppHandle) {
+    if let Err(error) = app.state::<SettingsStore>().flush() {
+        ::log::error!("Couldn't save the settings: {error}");
+    }
+    if let Err(error) = app.state::<DeviceStateStore>().flush() {
+        ::log::error!("Couldn't save the device state: {error}");
+    }
 }
 
 /// Every command in `command_list::APP_COMMANDS`. A test keeps the two lists in step.

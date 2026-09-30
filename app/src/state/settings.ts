@@ -3,6 +3,7 @@
 
 import { applyMergePatch, fillDefaults } from '../platform/mergePatch';
 import type { BootData, IpcError, Platform, Settings, SettingsPatch } from '../platform/types';
+import { RUST_SETTINGS_DEFAULTS } from '../boot/rustDefaults';
 import { createStore, useStore } from './store';
 
 /** Settings schema version 1 (ARCHITECTURE.md section 16.3). A test compares it with Rust's defaults. */
@@ -24,6 +25,8 @@ export const DEFAULT_SETTINGS: Settings = {
   updates: { install: 'auto', channel: 'stable', skippedVersion: null },
   setup: { completedSteps: [] },
   experimental: { flags: {} },
+  editing: RUST_SETTINGS_DEFAULTS.editing,
+  ink: RUST_SETTINGS_DEFAULTS.ink,
 };
 
 export const settingsStore = createStore<{ settings: Settings; readOnly: boolean }>(

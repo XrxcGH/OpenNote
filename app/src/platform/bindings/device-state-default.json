@@ -1,0 +1,64 @@
+{
+  "stateVersion": 1,
+  "window": {
+    "placement": null,
+    "maximized": false
+  },
+  "panes": {
+    "notebooks": {
+      "width": 272.0,
+      "collapsed": false
+    },
+    "pages": {
+      "width": 300.0,
+      "collapsed": false
+    }
+  },
+  "location": {
+    "view": "workspace",
+    "notebookId": null,
+    "sectionId": null,
+    "pageId": null
+  },
+  "expanded": [],
+  "lastPageBySection": {},
+  "recentCommands": [],
+  "recentPages": [],
+  "setup": {
+    "status": "notStarted",
+    "step": null,
+    "completedSteps": [],
+    "draft": null
+  },
+  "pageViews": {},
+  "ink": {
+    "pens": {
+      "default": {
+        "curve": "normal",
+        "customCurve": null,
+        "minWidth": 0.2,
+        "steady": 0,
+        "barrel": "lasso",
+        "eraserEnd": "strokeEraser"
+      }
+    },
+    "palette": {
+      "wide": {
+        "dock": "float",
+        "x": 0.5,
+        "y": 1.0,
+        "collapsed": false
+      },
+      "compact": {
+        "dock": "bottomBar",
+        "collapsed": false
+      },
+      "shown": true,
+      "penSeen": false
+    },
+    "lastTool": "pen",
+    "lastPen": "p2",
+    "zoomBoxOpen": false,
+    "noHoverPen": false
+  }
+}
