@@ -1,52 +1,92 @@
-//! The OpenNote desktop shell: creates the window and exposes commands to the interface.
+//! The OpenNote desktop shell: the app's managed state, its commands, and the run loop (ARCHITECTURE.md section
+//! 8.1). `main.rs` runs the early start-up steps, then calls [`run`].
 
-use std::{thread, time::Duration};
+pub mod appearance;
+pub mod args;
+pub mod boot;
+pub mod command_list;
+pub mod early;
+pub mod events;
+pub mod install;
+pub mod instance;
+pub mod ipc;
+pub mod lifecycle;
+pub mod log;
+pub mod notes_snapshot;
+pub mod paths;
+pub mod perf;
+pub mod settings;
+pub mod shell;
+pub mod state;
+pub mod theme_tokens;
+pub mod updater;
+pub mod window;
+pub mod zoom;
 
-use tauri::{webview::PageLoadEvent, Manager};
+use tauri::ipc::Invoke;
 
-/// How long start-up waits for the page before showing the main window anyway.
-const SHOW_FALLBACK_DELAY: Duration = Duration::from_secs(3);
+use early::EarlyContext;
+use settings::{schema::Settings, SettingsStore};
 
-/// Returns the app version, for the About screen and update checks.
-#[tauri::command]
-fn app_version() -> &'static str {
-    env!("CARGO_PKG_VERSION")
-}
-
-/// Starts the app. Shared by the desktop binary and, later, the mobile entry points.
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+/// Starts the app with what the early steps found. Doesn't return.
+pub fn run(context: EarlyContext) {
+    let EarlyContext {
+        args,
+        paths,
+        instance,
+        guard,
+    } = context;
+    // The instance guard holds the profile's lock, so it stays alive until the process exits.
+    let _instance = instance;
+    let hooks = lifecycle::Hooks(updater::hooks(&paths));
     tauri::Builder::default()
-        // The main window starts hidden and appears once the themed page has loaded, so start-up doesn't
-        // show WebView2's default white background (BRAND.md section 4). Showing a visible window does nothing.
-        .on_page_load(|webview, payload| {
-            let window = webview.window();
-            if payload.event() == PageLoadEvent::Finished && window.label() == "main" {
-                let _ = window.show();
-            }
-        })
+        .manage(SettingsStore::in_memory(&Settings::default()))
+        .manage(hooks)
+        .manage(boot::Launch { args, guard })
+        .manage(paths)
+        .on_page_load(window::show_when_loaded)
         .setup(|app| {
-            // Shows the main window anyway if the page never finishes loading.
-            if let Some(window) = app.get_webview_window("main") {
-                thread::spawn(move || {
-                    thread::sleep(SHOW_FALLBACK_DELAY);
-                    let _ = window.show();
-                });
-            }
+            window::caption::init(app.handle());
+            window::create(app.handle())?;
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![app_version])
+        .invoke_handler(commands())
         .run(tauri::generate_context!())
         .expect("OpenNote failed to start");
 }
 
-#[cfg(test)]
-mod tests {
-    use super::app_version;
-
-    #[test]
-    fn version_matches_the_package() {
-        assert_eq!(app_version(), env!("CARGO_PKG_VERSION"));
-        assert!(!app_version().is_empty());
-    }
+/// Every command in `command_list::APP_COMMANDS`. A test keeps the two lists in step.
+fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
+    tauri::generate_handler![
+        settings::commands::settings_update,
+        settings::commands::settings_reset,
+        state::state_update,
+        state::state_flush,
+        window::window_minimize,
+        window::window_toggle_maximize,
+        window::window_close,
+        window::window_set_title,
+        window::caption::window_set_caption_layout,
+        window::window_show_system_menu,
+        window::window_set_frame_theme,
+        lifecycle::app_first_paint,
+        lifecycle::app_ready,
+        lifecycle::app_exit_ready,
+        perf::perf_mark,
+        crate::log::log_write,
+        install::install_status,
+        install::install_pick_folder,
+        install::install_check_folder,
+        install::install_move_to_user_programs,
+        shell::shell_open_external,
+        updater::updater_status,
+        updater::updater_check,
+        updater::updater_download,
+        updater::updater_restart_to_update,
+        updater::updater_skip,
+        updater::updater_unskip,
+        updater::updater_go_back,
+        notes_snapshot::notes_snapshot_load,
+        notes_snapshot::notes_snapshot_save,
+    ]
 }
