@@ -4,6 +4,11 @@
 //! odd byte reads the rest as a script of abstract edits, including drawing, undo, and redo. The edits apply to
 //! the sample page.
 //!
+//! The seeds in `fuzz/seeds/txn_request` hold JSON requests for every edit kind, and two scripts. Each JSON
+//! seed starts with a space, an even byte, so it is both a valid JSON file and an input in JSON mode. The corpus
+//! itself lives in the Actions cache, so pass the seeds as a second corpus folder:
+//! `cargo +nightly fuzz run txn_request fuzz/corpus/txn_request fuzz/seeds/txn_request`.
+//!
 //! After each step the page must still be consistent. Every stroke is in an existing ink block, and each
 //! `strokeCount` is right. Every asset a block names is in the table. The pending ink records rebuild the live
 //! strokes. Applying the transaction's inverse restores the page.

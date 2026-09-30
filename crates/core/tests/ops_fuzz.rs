@@ -1,13 +1,15 @@
-//! The `txn_request` fuzz entry on stable Rust: random bytes, scripts of abstract edits, and JSON requests made
-//! from them. Tests that need the real point decoder or page validation wait for WP1.
+//! The `txn_request` fuzz entry on stable Rust: random bytes, scripts of abstract edits, JSON requests made
+//! from them, and the seed corpus. Tests that need the real point decoder or page validation wait for WP1.
 
 mod common;
 
+use std::path::Path;
 use std::sync::Arc;
 
+use opennote_core::error::EditError;
 use opennote_core::fuzzing::ops::txn_request;
 use opennote_core::model::validate::validate_page;
-use opennote_core::ops::resolve::{resolve_add_strokes, StrokeTxnMeta};
+use opennote_core::ops::resolve::{resolve, resolve_add_strokes, ResolveCtx, StrokeTxnMeta, TxnRequest};
 use opennote_core::testing::edits::{arb_edits, to_request, EditRunner};
 use opennote_core::testing::gen::{arb_page, arb_stroke, PageGen};
 use opennote_core::testing::sample::{sample_ink_block, sample_page, test_clock};
@@ -51,6 +53,46 @@ fn a_known_script_runs() {
     txn_request(&[1, 0, 0, 0, b'h', b'i', 9, 3, 0, 1, 2, 3, 4, 5, 6, 7, 13, 14, 13]);
     txn_request(br#"{"page":"01m3sa12426sg32pmtyffjaqcf","client":"main-1","clientSeq":1,"edits":[]}"#);
     txn_request(b"");
+}
+
+/// Resolves and applies a JSON seed on the sample page. The seed's first byte picks the mode, so it is skipped.
+fn apply_seed(path: &Path) -> Result<usize, EditError> {
+    let bytes = std::fs::read(path).unwrap();
+    let (mode, json) = bytes.split_first().unwrap();
+    assert_eq!(mode % 2, 0, "{} must start with an even byte", path.display());
+    let request: TxnRequest = serde_json::from_slice(json).unwrap();
+    let mut page = sample_page();
+    let (clock, limits) = (test_clock(), Limits::default());
+    let ctx = ResolveCtx {
+        clock: &clock,
+        limits: &limits,
+        imported: &|_| None,
+    };
+    let txn = resolve(&page, &request, &ctx)?;
+    page.apply(&txn).map_err(EditError::Precondition)?;
+    Ok(txn.ops.len())
+}
+
+/// Each JSON seed is a request the sample page accepts, so the fuzzer starts from every edit kind. Seeds named
+/// `-rejected` must fail instead. Every seed, scripts included, also runs through the fuzz entry.
+#[test]
+fn the_seeds_apply_to_the_sample_page() {
+    let seeds = common::files_under(&common::fuzz_dir().join("seeds").join("txn_request"));
+    let json: Vec<_> = seeds
+        .iter()
+        .filter(|p| p.extension().is_some_and(|e| e == "json"))
+        .collect();
+    assert!(json.len() >= 12 && seeds.len() > json.len(), "{} seeds", seeds.len());
+    for path in json {
+        let rejected = path.file_stem().unwrap().to_string_lossy().ends_with("-rejected");
+        match apply_seed(path) {
+            Ok(ops) => assert!(!rejected && ops > 0, "{} gave {ops} operations", path.display()),
+            Err(error) => assert!(rejected, "{}: {error}", path.display()),
+        }
+    }
+    for path in &seeds {
+        txn_request(&std::fs::read(path).unwrap());
+    }
 }
 
 /// Pages stay valid by every rule of spec 16 after random edits.
