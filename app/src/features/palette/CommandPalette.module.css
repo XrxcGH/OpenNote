@@ -3,7 +3,7 @@
   .palette {
     display: grid;
     gap: var(--space-3);
-    inline-size: min(var(--size-palette), 100vw - 2 * var(--space-6));
+    min-inline-size: 0;
   }
 
   .input {
