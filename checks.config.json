@@ -20,7 +20,8 @@
         "ML",
         "MLX",
         "MSIX",
-        "NSIS"
+        "NSIS",
+        "SHA"
       ]
     },
     "length": {

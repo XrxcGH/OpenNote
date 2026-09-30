@@ -12,18 +12,19 @@ This plan takes OpenNote from an empty repository to a stable Windows release, o
 6. [Testing strategy](#6-testing-strategy)
 7. [Device test matrix](#7-device-test-matrix)
 8. [Continuous integration and releases](#8-continuous-integration-and-releases)
-9. [Release checklist](#9-release-checklist)
-10. [Definition of done](#10-definition-of-done)
-11. [Working agreements](#11-working-agreements)
-12. [Risks](#12-risks)
+9. [Distribution and updates](#9-distribution-and-updates)
+10. [Release checklist](#10-release-checklist)
+11. [Definition of done](#11-definition-of-done)
+12. [Working agreements](#12-working-agreements)
+13. [Risks](#13-risks)
 
 ## 1. How this plan works
 
 The work is split into phases. Each phase adds a small set of features and ends with an exit gate: a list of tests and measurements that must pass before the next phase starts. Short experiments (spikes) come first, so risky choices are proven before much code depends on them.
 
-Unfinished features stay behind feature flags. The main branch must always build, pass every test and run without crashing, even when a feature is half done. A feature leaves its flag only after it meets the [definition of done](#10-definition-of-done).
+Unfinished features stay behind feature flags. The main branch must always build, pass every test and run without crashing, even when a feature is half done. A feature leaves its flag only after it meets the [definition of done](#11-definition-of-done).
 
-Every change, from a typo fix to a new feature, goes through the same path: branch, pull request, automated checks, review, merge. Nothing reaches users without passing the [release checklist](#9-release-checklist).
+Every change, from a typo fix to a new feature, goes through the same path: branch, pull request, automated checks, review, merge. Nothing reaches users without passing the [release checklist](#10-release-checklist).
 
 ## 2. Technology choices
 
@@ -88,7 +89,8 @@ Build:
 - Scaffold the Tauri app with an empty window that uses the brand tokens.
 - Add linting and formatting: ESLint and Prettier for TypeScript, Clippy and rustfmt for Rust.
 - Set up continuous integration (CI) on `windows-latest`: CHECKS, lint, type-check, tests and a debug build.
-- Add issue and pull request templates, the ADR template and a code of conduct. Choose the license (see [Risks](#12-risks)).
+- Add the release workflow from [section 9](#9-distribution-and-updates): pushing a version tag builds `OpenNote.exe` and publishes a GitHub Release. Create the update signing key and store it as a GitHub secret.
+- Add issue and pull request templates, the ADR template and a code of conduct. Choose the license (see [Risks](#13-risks)).
 
 Done when: a fresh clone builds and opens a window with one command on Windows, and CI passes.
 
@@ -112,7 +114,8 @@ Build:
 - Build the responsive layout from BRAND.md section 6: three panes on wide windows, down to one pane on narrow ones.
 - Add the notebook, section and page tree with create, rename, reorder, color and delete (to Trash).
 - Add the command bar, a command palette (Ctrl+K), keyboard navigation and a shortcut list (Ctrl+/).
-- Add a settings page and first-run onboarding.
+- Add a settings page and first-run onboarding, including where to keep the app.
+- Add the self-updater from [section 9](#9-distribution-and-updates), so every test build after this one updates itself.
 
 Test: component tests for every control, keyboard-only end-to-end (E2E) tests of navigation, automated accessibility checks, and screenshot tests at each size class in both themes. Theme tests confirm that first-run setup preselects the Windows setting, that switching keeps scroll position and selection, and that start-up never shows the wrong theme.
 
@@ -268,13 +271,13 @@ Build:
 - Complete a full accessibility audit with Narrator, NVDA (a free screen reader) and keyboard only.
 - Move all interface text into translation files, ready for other languages.
 - Add opt-in crash reports that never include note content.
-- Add an installer, auto-update and a beta channel.
+- Open the beta update channel, and test updating from every earlier beta.
 
 Done when: a four-week public beta shows at least 99.5% of sessions ending without a crash, and no data-loss reports.
 
 ### Phase 14: Windows release
 
-Complete the [release checklist](#9-release-checklist), sign the installer, publish to the Microsoft Store and winget, and tag version 1.0.0.
+Complete the [release checklist](#10-release-checklist), then tag version 1.0.0. The release workflow signs `OpenNote.exe` and publishes it on GitHub, and every beta copy updates itself to it.
 
 ### After the Windows release
 
@@ -342,7 +345,73 @@ Builds move through three channels:
 
 Versions follow semantic versioning (major.minor.patch). Every release has changelog notes written for users, not developers.
 
-## 9. Release checklist
+## 9. Distribution and updates
+
+OpenNote ships as one file, `OpenNote.exe`. People download it once. After that, the app updates itself from inside, and updates never touch their notes or settings.
+
+### What the exe holds
+
+The exe holds only the program: code, interface, fonts and icons. Tauri builds the whole interface into the exe, and uses Microsoft Edge WebView2 to display it. WebView2 is already part of Windows 10 and 11; if it's missing, the app offers Microsoft's small installer.
+
+Everything personal lives outside the exe, in standard Windows folders:
+
+| What | Where |
+|---|---|
+| Notes | `Documents\OpenNote\`, or a folder the person picks |
+| Settings | `%APPDATA%\OpenNote\settings.json` |
+| Search index and caches (can be rebuilt) | `%LOCALAPPDATA%\OpenNote\cache\` |
+| Downloaded updates, the previous version and backups | `%LOCALAPPDATA%\OpenNote\` |
+| Speech and handwriting models (optional downloads) | `%LOCALAPPDATA%\OpenNote\models\` |
+
+Because the exe holds no personal data, replacing it can't delete anyone's work.
+
+On first launch, the app asks where to keep itself. It can stay where it was downloaded, or move to `%LOCALAPPDATA%\Programs\OpenNote\` and add a Start menu shortcut. Neither choice needs administrator rights, and both let the app replace its own exe later.
+
+### How a release reaches people
+
+1. Developers merge tested changes into `main` on GitHub.
+2. To release, a maintainer updates the version number and pushes a tag such as `v0.4.0`.
+3. A GitHub Actions workflow builds `OpenNote.exe` on Windows, runs the full test set and signs the exe (see [Signing](#signing-and-security)).
+4. The workflow publishes a GitHub Release with the exe and a small manifest file, `latest.json`. The manifest lists the version, release notes, file size, SHA-256 hash and signature.
+5. Running copies of OpenNote read the manifest and update themselves.
+
+Nobody builds or uploads anything by hand. The exe already on someone's computer keeps working, unchanged, until they restart into the new version.
+
+GitHub Releases hosts the files for free. The address `https://github.com/xrxcgh/opennote/releases/latest/download/latest.json` always points to the newest stable manifest. Beta releases publish a separate `beta.json`.
+
+### How the app updates itself
+
+1. At start-up and every six hours, the app fetches the manifest, which is under 1 KB. The check runs in the background, so it never slows start-up, and it is skipped while offline.
+2. If a newer version exists, the app downloads the new exe at low priority to `%LOCALAPPDATA%\OpenNote\updates\`.
+3. It checks the file's SHA-256 hash, and its signature against a public key built into the app. A file that fails either check is deleted, and the next check tries again.
+4. A quiet "Update ready" notice appears in the title bar. Choosing "Restart to update", or simply closing the app, applies it.
+5. Before the swap, the app finishes saving and waits for any recording to stop. If the new version will convert files or settings, it backs them up first.
+6. Windows lets a running exe be renamed. The app renames itself to `OpenNote.previous.exe`, moves the new exe into its place and restarts. The person lands back on the page they were using, about two seconds later.
+7. The new version reports a clean start. If it crashes twice in a row at start-up, the previous exe is put back automatically and the problem is reported.
+
+The official Tauri updater expects an installer rather than a single exe. OpenNote therefore uses a small custom updater in Rust, built on the `self-replace` crate and minisign signatures. It reads the same `latest.json` format as Tauri's updater, so switching to an installer later would be easy.
+
+In settings, people choose to install updates automatically (the default), be asked first, or check by hand. They can also skip a version or join the beta channel.
+
+### Keeping work safe during updates
+
+- Updates never apply while there are unsaved changes or an active recording.
+- Note files and settings carry format version numbers. A new version upgrades older files with tested migrations, after saving a backup in `%LOCALAPPDATA%\OpenNote\backups\`. The three most recent backups are kept.
+- An older version opens newer files read-only instead of changing them, so going back to a previous version is always safe.
+- The previous exe stays on disk until the next update. Settings, then About, offers "Go back to the previous version" in one click.
+- Before each release, CI updates from each of the last three versions using real sample notebooks, and confirms nothing changed or went missing.
+
+### Signing and security
+
+- **Update signature:** a minisign key pair signs every release. The private key exists only as a GitHub Actions secret, and the public key is built into every exe. Without the private key, nobody can push an update, even from a fake server.
+- **Code signing:** an Authenticode certificate, such as one from Azure Trusted Signing, identifies the publisher. Windows SmartScreen and antivirus tools then recognize the app instead of warning about an unknown file.
+- **Downgrades:** the app only downloads over HTTPS, and refuses to install an older version unless the person chooses to go back.
+
+### Later options
+
+A Microsoft Store listing and a winget package can be added later without changing any of this. The exe is expected to be 15 to 30 MB, which downloads in seconds on most connections. If it grows much larger, differential updates can download only the parts that changed.
+
+## 10. Release checklist
 
 A build ships to beta or stable only when every item is checked:
 
@@ -354,10 +423,11 @@ A build ships to beta or stable only when every item is checked:
 - [ ] Manual pen testing passes on at least two devices from the matrix.
 - [ ] Upgrading from the previous release keeps all notes and settings (tested with real notebooks).
 - [ ] File format changes include a tested migration and an updated specification.
-- [ ] The installer is signed, and auto-update from the previous version works.
+- [ ] `OpenNote.exe` is code-signed, and the update manifest is signed.
+- [ ] Updating from each of the last three versions keeps every note and setting, and going back to the previous version works.
 - [ ] Changelog and documentation are updated.
 
-## 10. Definition of done
+## 11. Definition of done
 
 A feature is done, and can leave its feature flag, when:
 
@@ -370,7 +440,7 @@ A feature is done, and can leave its feature flag, when:
 - [ ] Documentation and the changelog are updated.
 - [ ] CHECKS passes on every changed file.
 
-## 11. Working agreements
+## 12. Working agreements
 
 - **Branches:** short-lived branches off `main`, merged within a few days. The long-running `windows-prototype` branch holds the prototype until it can merge.
 - **Commits:** one logical change per commit, with a message that says what changed and why.
@@ -379,13 +449,15 @@ A feature is done, and can leave its feature flag, when:
 - **Decisions:** anything hard to reverse gets an ADR before the code.
 - **Issues:** every bug gets steps to reproduce, and every TODO in code links to an issue (CHECKS enforces this).
 
-## 12. Risks
+## 13. Risks
 
 | Risk | Impact | Plan |
 |---|---|---|
 | Pen latency in WebView2 is too high | Ink feels laggy, the core promise fails | Measured in Phase 1 spike; switch the interface to Flutter if the budget can't be met |
 | OneNote import is harder than expected | Switchers can't bring notes | Start with the Graph API, which returns HTML and ink; keep a test corpus; ship partial import clearly labeled |
 | Data loss from bugs or crashes | Loss of trust, which is hard to win back | Atomic saves, journal, version history, crash-safety tests every night |
+| An update breaks the app or damages files | People lose trust or work | Backups before migrations, read-only opening of newer files, automatic rollback after two failed starts, and update tests from the last three versions |
+| Windows warns about an unknown app | People are scared off at download | Code-sign every exe; build SmartScreen reputation through signed releases |
 | Speech models are large | Big downloads, slow on older laptops | Optional download, small model by default, NPU acceleration where present |
 | Scope grows faster than quality | Slow, buggy app | Phase gates, feature flags, and performance budgets that block releases |
 | License choice | Affects who can contribute and reuse the code | Decide in Phase 0. The Apache 2.0 license is a common choice for apps that welcome companies and individuals alike. |

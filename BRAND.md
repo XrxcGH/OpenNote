@@ -248,6 +248,7 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 | Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch. |
 | Sync status | A small icon with a text tooltip in the title bar: saved, syncing, offline, or needs attention. Never a blocking dialog. |
 | Dialogs | Title, one-sentence explanation, then actions (primary on the right). Escape closes. Focus returns to where it was. |
+| Update notice | A small "Update ready" chip in the title bar, with release notes on hover or tap. "Restart to update" applies it; otherwise it applies the next time the app closes. Never a pop-up, never mid-task. |
 | Toasts | Bottom center, one at a time, with an Undo action for destructive changes. |
 | Command palette | Ctrl+K opens a searchable list of every command, with shortcuts. |
 
