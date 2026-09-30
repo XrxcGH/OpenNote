@@ -1,11 +1,12 @@
 // The shortcut list's tables. Each is a real <table> with row headers, so screen readers' table navigation works.
 // Nothing is virtualized: the whole list is in the page.
 
-import { useId } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { resetShortcut } from '../../state/keymap';
 import { t } from '../../strings/t';
 import { Button, announce } from '../../ui';
 import { ChordList } from './ChordList';
+import { KeyCapture } from './KeyCapture';
 import { FIXED_KEYS } from './fixed';
 import type { ShortcutGroup, ShortcutRow } from './rows';
 import styles from './ShortcutList.module.css';
@@ -14,9 +15,19 @@ import styles from './ShortcutList.module.css';
 export type HeadingLevel = 2 | 3;
 
 function CommandRow({ row }: { row: ShortcutRow }) {
+  const [changing, setChanging] = useState(false);
+  const actions = useRef<HTMLTableCellElement>(null);
+  const afterChange = useRef(false);
   const reset = () => {
     void resetShortcut(row.id).then(() => announce(t('shortcuts.resetDone', { command: row.title })));
   };
+  // When the change ends, focus goes back to the row's Change button, which the field had replaced.
+  useEffect(() => {
+    if (!changing && afterChange.current) {
+      afterChange.current = false;
+      actions.current?.querySelector('button')?.focus();
+    }
+  }, [changing]);
   return (
     <tr>
       <th scope="row" className={styles.name}>
@@ -24,10 +35,29 @@ function CommandRow({ row }: { row: ShortcutRow }) {
         {row.moved && <span className={styles.note}>{row.moved}</span>}
       </th>
       <td>
-        <ChordList chords={row.keys} />
+        {changing ? (
+          <KeyCapture
+            row={row}
+            onDone={() => {
+              afterChange.current = true;
+              setChanging(false);
+            }}
+          />
+        ) : (
+          <ChordList chords={row.keys} />
+        )}
       </td>
-      <td className={styles.actions}>
-        {row.changed && (
+      <td ref={actions} className={styles.actions}>
+        {row.customizable && !changing && (
+          <Button
+            variant="quiet"
+            aria-label={t('shortcuts.changeLabel', { command: row.title })}
+            onClick={() => setChanging(true)}
+          >
+            {t('shortcuts.change')}
+          </Button>
+        )}
+        {row.changed && !changing && (
           <Button variant="quiet" aria-label={t('shortcuts.resetLabel', { command: row.title })} onClick={reset}>
             {t('shortcuts.reset')}
           </Button>

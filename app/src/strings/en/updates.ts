@@ -66,6 +66,7 @@ export const updates = {
   },
   section: {
     title: 'Updates',
+    heading: 'Version and status',
     version: 'OpenNote {version}',
     status: 'Update status',
     installLabel: 'How to install updates',

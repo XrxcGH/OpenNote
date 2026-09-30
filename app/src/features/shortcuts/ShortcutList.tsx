@@ -2,14 +2,16 @@
 // keys, the keys that always work, and any tables later phases add. It shows in the Ctrl+/ dialog and inline in
 // Settings. "Reset" puts one command back; "Reset all shortcuts" puts every command back.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { isEnabled } from '../../app/flags';
-import { hasOverride } from '../../commands/keymap';
+import { formatChord, hasOverride } from '../../commands/keymap';
 import { commands, shortcutListSections, useRegistry } from '../../registries';
 import { useSettings } from '../../state/settings';
 import { resetAllShortcuts } from '../../state/keymap';
 import { t } from '../../strings/t';
-import { Button, TextField, announce } from '../../ui';
+import { Button, Switch, TextField, announce } from '../../ui';
+import type { Chord } from '../../commands/types';
+import { FindByShortcut } from './FindByShortcut';
 import { shortcutGroups } from './rows';
 import styles from './ShortcutList.module.css';
 import { CommandTable, FixedKeysTable } from './Tables';
@@ -28,11 +30,20 @@ function LaterTables({ level }: { level: HeadingLevel }) {
 
 export function ShortcutList({ scrolls = false, level = 3 }: { scrolls?: boolean; level?: HeadingLevel }) {
   const [query, setQuery] = useState('');
+  const [finding, setFinding] = useState(false);
+  const [found, setFound] = useState<Chord | null>(null);
   const defs = useRegistry(commands);
   const preset = useSettings((settings) => settings.keymap.preset);
   // Reads the settings, so the list follows every rebinding.
   useSettings((settings) => settings.shortcuts);
-  const groups = shortcutGroups(query);
+  const groups = shortcutGroups(query, finding ? found : null);
+  const toolbar = useRef<HTMLDivElement>(null);
+  const stopFinding = () => {
+    setFinding(false);
+    setFound(null);
+    requestAnimationFrame(() => toolbar.current?.querySelector<HTMLElement>('[role="switch"]')?.focus());
+  };
+  const searching = finding ? found !== null : query.trim() !== '';
   const anyChanged = defs.some((def) => hasOverride(def.id));
   const resetAll = () => {
     const set = t(preset === 'onenote' ? 'shortcuts.set.onenote' : 'shortcuts.set.default');
@@ -40,13 +51,25 @@ export function ShortcutList({ scrolls = false, level = 3 }: { scrolls?: boolean
   };
   return (
     <div className={styles.list}>
-      <div className={styles.toolbar}>
-        <TextField
-          label={t('shortcuts.filter')}
-          help={t('shortcuts.filterHelp')}
-          value={query}
-          onChange={setQuery}
-          onCancel={query ? () => setQuery('') : undefined}
+      <div ref={toolbar} className={styles.toolbar}>
+        {finding ? (
+          <FindByShortcut chord={found} onChord={setFound} onStop={stopFinding} />
+        ) : (
+          <TextField
+            label={t('shortcuts.filter')}
+            help={t('shortcuts.filterHelp')}
+            value={query}
+            onChange={setQuery}
+            onCancel={query ? () => setQuery('') : undefined}
+          />
+        )}
+        <Switch
+          label={t('shortcuts.find.toggle')}
+          checked={finding}
+          onChange={(on) => {
+            setFound(null);
+            setFinding(on);
+          }}
         />
         {anyChanged && <Button onClick={resetAll}>{t('shortcuts.resetAll')}</Button>}
       </div>
@@ -61,11 +84,11 @@ export function ShortcutList({ scrolls = false, level = 3 }: { scrolls?: boolean
         ))}
         {groups.length === 0 && (
           <p role="status" className={styles.note}>
-            {t('shortcuts.noMatch', { query: query.trim() })}
+            {t('shortcuts.noMatch', { query: finding && found ? formatChord(found) : query.trim() })}
           </p>
         )}
-        {!query.trim() && <FixedKeysTable level={level} />}
-        {!query.trim() && <LaterTables level={level} />}
+        {!searching && <FixedKeysTable level={level} />}
+        {!searching && <LaterTables level={level} />}
       </div>
     </div>
   );

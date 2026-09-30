@@ -76,7 +76,7 @@
   }
 
   .actions {
-    inline-size: 8rem;
+    inline-size: 11rem;
     white-space: nowrap;
     text-align: end;
   }
@@ -103,6 +103,55 @@
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
     white-space: nowrap;
+  }
+
+  .capture {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .captureField {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .captureField[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .findLabel {
+    color: var(--color-text-primary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--type-small-line);
+  }
+
+  .problem {
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .prompt {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .prompt p {
+    margin: 0;
+  }
+
+  .promptActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
   }
 
   .visuallyHidden {

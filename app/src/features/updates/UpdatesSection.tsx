@@ -134,7 +134,7 @@ export default function UpdatesSection() {
   const titleId = useId();
   return (
     <section className={styles.section} aria-labelledby={titleId}>
-      <h2 id={titleId}>{t('updates.section.title')}</h2>
+      <h2 id={titleId}>{t('updates.section.heading')}</h2>
       <StatusCard status={status} />
       {!isOff(status) && <Choices />}
       <SkipAndGoBack status={status} />

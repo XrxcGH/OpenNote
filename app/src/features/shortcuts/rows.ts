@@ -16,6 +16,8 @@ export interface ShortcutRow {
   readonly keys: readonly Chord[];
   /** The person changed it, so Reset applies. */
   readonly changed: boolean;
+  /** The person may give it other keys. A few commands keep theirs. */
+  readonly customizable: boolean;
   /** Where the command went in the chosen shortcut set, when its keys moved. */
   readonly moved: string | null;
 }
@@ -62,6 +64,7 @@ function rowFor(def: AnyCommand): ShortcutRow {
     title: t(def.title),
     keys: keysFor(def.id),
     changed: hasOverride(def.id),
+    customizable: def.customizable !== false,
     moved: movedNote(def.id),
   };
 }
@@ -73,10 +76,15 @@ function matches(row: ShortcutRow, def: AnyCommand, query: string): boolean {
   return score(query, row.title) > 0 || score(query, keyText) > 0 || score(query, words) > 0;
 }
 
-/** Groups in a fixed order, rows by name, and only the rows that match what was typed. */
-export function shortcutGroups(query: string): ShortcutGroup[] {
+/**
+ * Groups in a fixed order, rows by name, and only the rows that match what was typed, or, when a chord is given,
+ * the rows that use exactly that chord.
+ */
+export function shortcutGroups(query: string, chord: Chord | null = null): ShortcutGroup[] {
   const defs = commands.list().filter((def) => !def.flag || isEnabled(def.flag));
-  const rows = defs.map((def) => ({ def, row: rowFor(def) })).filter(({ def, row }) => matches(row, def, query));
+  const rows = defs
+    .map((def) => ({ def, row: rowFor(def) }))
+    .filter(({ def, row }) => (chord ? row.keys.includes(chord) : matches(row, def, query)));
   return CATEGORIES.flatMap((category) => {
     const inGroup = rows
       .filter(({ def }) => def.category === category)
