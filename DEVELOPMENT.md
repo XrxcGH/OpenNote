@@ -443,7 +443,7 @@ A feature is done, and can leave its feature flag, when:
 
 ## 12. Working agreements
 
-- **Branches:** short-lived branches off `main`, merged within a few days. The long-running `windows-prototype` branch holds the prototype until it can merge.
+- **Branches:** short-lived branches off `main`, merged within a few days. Planning work lives on the `planning` branch until it merges.
 - **Commits:** one logical change per commit, with a message that says what changed and why.
 - **Pull requests:** under about 400 changed lines where possible, with screenshots for visual changes.
 - **Reviews:** at least one approval. Reviewers check behavior, tests, and readability as well as style.
