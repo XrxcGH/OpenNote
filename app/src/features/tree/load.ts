@@ -91,46 +91,61 @@ export function stopTree(): void {
   bound = null;
 }
 
-const inFlight = new Map<string, { again: boolean }>();
+const inFlight = new Map<string, { again: boolean; done: Promise<void> }>();
 
-/** Lists a parent's children from the service and merges them. Concurrent calls for one parent coalesce. */
-export async function relist(parentId: NodeId | null): Promise<void> {
-  const notes = bound;
-  const key = keyOf(parentId);
-  const running = inFlight.get(key);
-  if (!notes) return;
-  if (running) {
-    running.again = true;
-    return;
-  }
-  const entry = { again: true };
-  inFlight.set(key, entry);
-  try {
-    while (entry.again) {
-      entry.again = false;
-      await createsSettled(parentId);
-      const list = await (parentId === null ? notes.listNotebooks() : notes.listChildren(parentId)).catch(() => null);
-      if (bound !== notes) return;
-      if (list) treeStore.set((state) => withChildren(state, parentId, list));
-      else treeStore.set((state) => withoutNodes(state, parentId ? [parentId] : []));
-    }
-  } finally {
-    inFlight.delete(key);
+async function listUntilSettled(notes: NotesService, parentId: NodeId | null, entry: { again: boolean }) {
+  while (entry.again) {
+    entry.again = false;
+    await createsSettled(parentId);
+    const list = await (parentId === null ? notes.listNotebooks() : notes.listChildren(parentId)).catch(() => null);
+    if (bound !== notes) return;
+    if (list) treeStore.set((state) => withChildren(state, parentId, list));
+    else treeStore.set((state) => withoutNodes(state, parentId ? [parentId] : []));
   }
 }
 
-/** Loads a container's children once, marking it as loading meanwhile. */
-export async function ensureChildren(parentId: NodeId): Promise<void> {
+/**
+ * Lists a parent's children from the service and merges them. Calls for one parent coalesce: a call while a
+ * listing runs asks for one more listing and waits for it.
+ */
+export function relist(parentId: NodeId | null): Promise<void> {
+  const notes = bound;
+  const key = keyOf(parentId);
+  const running = inFlight.get(key);
+  if (!notes) return Promise.resolve();
+  if (running) {
+    running.again = true;
+    return running.done;
+  }
+  const entry = { again: true, done: Promise.resolve() };
+  entry.done = listUntilSettled(notes, parentId, entry).finally(() => inFlight.delete(key));
+  inFlight.set(key, entry);
+  return entry.done;
+}
+
+const loads = new Map<string, Promise<void>>();
+
+/**
+ * Loads a container's children once, marking it as loading meanwhile. A second call while it loads waits for the
+ * same load.
+ */
+export function ensureChildren(parentId: NodeId): Promise<void> {
   const state = treeStore.get();
   const node = state.nodes[parentId];
-  if (!node || node.kind === 'page' || parentId in state.children || parentId in state.loading) return;
+  const running = loads.get(parentId);
+  if (running) return running;
+  if (!node || node.kind === 'page' || parentId in state.children) return Promise.resolve();
   treeStore.set((current) => ({ ...current, loading: { ...current.loading, [parentId]: true } }));
-  await relist(parentId);
-  treeStore.set((current) => {
-    if (!(parentId in current.loading)) return current;
-    const { [parentId]: _gone, ...loading } = current.loading;
-    return { ...current, loading };
+  const load = relist(parentId).finally(() => {
+    loads.delete(parentId);
+    treeStore.set((current) => {
+      if (!(parentId in current.loading)) return current;
+      const { [parentId]: _gone, ...loading } = current.loading;
+      return { ...current, loading };
+    });
   });
+  loads.set(parentId, load);
+  return load;
 }
 
 async function reset(notes: NotesService): Promise<void> {

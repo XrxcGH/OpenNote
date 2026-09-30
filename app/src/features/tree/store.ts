@@ -35,6 +35,8 @@ export interface TreeState {
   readonly pending: Readonly<Record<TreeId, NodeId | null>>;
   readonly renaming: Renaming | null;
   readonly saveStatus: SaveStatus;
+  /** A row that should take DOM focus once it renders. `seq` changes with each request. */
+  readonly focusRequest: { readonly tree: TreeId; readonly id: NodeId; readonly seq: number } | null;
 }
 
 export const INITIAL_TREE: TreeState = {
@@ -48,6 +50,7 @@ export const INITIAL_TREE: TreeState = {
   pending: { notebooks: null, pages: null },
   renaming: null,
   saveStatus: 'saved',
+  focusRequest: null,
 };
 
 export const treeStore = createStore<TreeState>(INITIAL_TREE, 'tree');
@@ -174,6 +177,15 @@ export function rowKey(id: string): string {
 
 export function setFocus(tree: TreeId, id: NodeId | null): void {
   treeStore.set((state) => (state.focus[tree] === id ? state : { ...state, focus: { ...state.focus, [tree]: id } }));
+}
+
+/** Makes a row the tree's roving row and moves DOM focus to it once it renders. */
+export function requestFocus(tree: TreeId, id: NodeId): void {
+  treeStore.set((state) => ({
+    ...state,
+    focus: { ...state.focus, [tree]: id },
+    focusRequest: { tree, id, seq: (state.focusRequest?.seq ?? 0) + 1 },
+  }));
 }
 
 export function treeOf(node: NodeSummary | undefined): TreeId {

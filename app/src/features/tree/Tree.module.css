@@ -1,0 +1,243 @@
+/* The navigation tree (ARCHITECTURE.md section 13.2): 32 px rows with mouse density and 44 px with touch
+   density, 56 px page rows with a second line, 16 px of indent per level, and chips in the pen colors, which
+   follow the theme as ink does. Every value is a design token. */
+@layer components {
+  .pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  .treeArea {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .tree {
+    flex: 1;
+    min-block-size: 0;
+    overflow: auto;
+    scroll-padding-block-end: calc(var(--toast-height, 0px) + var(--bottom-bar-height, 0px) + var(--space-4));
+  }
+
+  .rows {
+    position: relative;
+  }
+
+  .row {
+    --row-height: var(--size-row-pointer);
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    block-size: var(--row-height);
+    padding-inline: calc(var(--level, 0) * var(--size-tree-indent)) var(--space-1);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    cursor: default;
+    user-select: none;
+    touch-action: pan-y;
+  }
+
+  :global(:root[data-density='touch']) .row {
+    --row-height: var(--size-row-touch);
+  }
+
+  .row[data-kind='page'] {
+    --row-height: var(--size-page-row);
+  }
+
+  .row[data-windowed] {
+    position: absolute;
+    inset-inline: 0;
+  }
+
+  .row:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .row[aria-selected='true'] {
+    background: var(--color-surface-selected);
+  }
+
+  .row:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .row[data-drop='into'] {
+    outline: var(--size-focus-ring-width) solid var(--color-accent-primary);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+    background: var(--color-accent-primary-subtle);
+  }
+
+  .row[data-drop='before']::after,
+  .row[data-drop='after']::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    block-size: var(--size-focus-ring-width);
+    background: var(--color-accent-primary);
+  }
+
+  .row[data-drop='before']::after {
+    inset-block-start: 0;
+  }
+
+  .row[data-drop='after']::after {
+    inset-block-end: 0;
+  }
+
+  .twisty {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+    color: var(--color-text-secondary);
+  }
+
+  .twisty svg {
+    inline-size: var(--size-icon-sm);
+    block-size: var(--size-icon-sm);
+  }
+
+  .chip {
+    flex: none;
+    border: 1px solid var(--color-border-control);
+    background: transparent;
+    forced-color-adjust: none;
+  }
+
+  .square {
+    inline-size: var(--space-4);
+    block-size: var(--space-4);
+    border-radius: var(--radius-sm);
+  }
+
+  .dot {
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+    border-radius: var(--radius-pill);
+  }
+
+  .chip[data-color='ink'] {
+    border-color: var(--ink-ink, var(--color-text-primary));
+    background: var(--ink-ink, var(--color-text-primary));
+  }
+
+  .chip[data-color='indigo'] {
+    border-color: var(--ink-indigo, var(--color-text-link));
+    background: var(--ink-indigo, var(--color-text-link));
+  }
+
+  .chip[data-color='brick'] {
+    border-color: var(--ink-brick, var(--color-status-danger));
+    background: var(--ink-brick, var(--color-status-danger));
+  }
+
+  .chip[data-color='fern'] {
+    border-color: var(--ink-fern, var(--color-status-success));
+    background: var(--ink-fern, var(--color-status-success));
+  }
+
+  .chip[data-color='plum'] {
+    border-color: var(--ink-plum, var(--color-accent-clay));
+    background: var(--ink-plum, var(--color-accent-clay));
+  }
+
+  .chip[data-color='amber'] {
+    border-color: var(--ink-amber, var(--color-status-warning));
+    background: var(--ink-amber, var(--color-status-warning));
+  }
+
+  .chip[data-color='walnut'] {
+    border-color: var(--ink-walnut, var(--color-text-secondary));
+    background: var(--ink-walnut, var(--color-text-secondary));
+  }
+
+  @media (forced-colors: active) {
+    .chip {
+      outline: 1px solid CanvasText;
+    }
+  }
+
+  .text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .title,
+  .meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meta {
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .more {
+    flex: none;
+    opacity: 0;
+  }
+
+  .row:hover .more,
+  .row:focus-within .more,
+  :global(:root[data-density='touch']) .more {
+    opacity: 1;
+  }
+
+  .rename {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .renameInput {
+    min-inline-size: 0;
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .renameInput:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .renameInput[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .renameError {
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    white-space: normal;
+  }
+
+  .empty {
+    color: var(--color-text-secondary);
+  }
+
+  .footer {
+    display: flex;
+    flex: none;
+    border-block-start: 1px solid var(--color-border-subtle);
+    padding-block-start: var(--space-2);
+  }
+}
