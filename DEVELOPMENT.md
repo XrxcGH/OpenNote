@@ -290,6 +290,12 @@ The next steps, in rough order:
 4. PDF annotation, flashcards from notes, and citation support.
 5. Meeting mode with speaker labels.
 6. Real-time collaboration.
+7. Plugins and scripts, with the same permissions and access log as the local API.
+8. Comments and mentions on shared pages, built on real-time collaboration.
+9. Publishing a page or notebook as a read-only site from the self-hosted server.
+10. PDF forms, signatures, and redaction, and page tools to merge, split, rotate, and reorder PDF pages.
+11. Widgets for quick capture and the Upcoming list, on Windows 11 and phones.
+12. Sending a page to a nearby device on the same network, with no account.
 
 ## 6. Testing strategy
 
