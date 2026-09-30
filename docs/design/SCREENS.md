@@ -15,6 +15,7 @@ These wireframes show the layout of each major screen, with sizes, keep-out zone
 - [Size classes](#size-classes)
 - [Phone](#phone)
 - [Study tools](#study-tools)
+- [Send to](#send-to)
 - [Changing the drawings](#changing-the-drawings)
 
 ## Reading the drawings
@@ -139,6 +140,15 @@ The layout follows the window width, as set out in BRAND.md section 6. Snapping 
 - **Quiz block (340 × 250):** multiple choice with instant feedback, shown with a check mark on the right answer.
 - **Generate panel:** picks sources (this page, a recording, or a whole section) and card types, then makes editable cards on the device.
 - The page list shows how many cards are due, so review is one click away.
+
+## Send to
+
+![The Send to dialog with Google Drive selected as the destination](images/12-send-to.svg)
+
+- Sends this page, the whole section, or a lassoed selection as PDF, Word, Google Docs, or a PNG image.
+- Destinations come from linked accounts (Google Drive, OneDrive) or this PC, with favorites listed first.
+- "Keep linked" lets OpenNote offer to update the uploaded copy after later edits.
+- The upload runs in the background, and a toast shows the link when it finishes.
 
 ## Changing the drawings
 

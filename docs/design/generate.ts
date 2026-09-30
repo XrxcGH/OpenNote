@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import type { Screen } from './screens/screen.ts';
 import { firstRunLook, firstRunSmart, firstRunStorage } from './screens/first-run.ts';
 import { studyTools } from './screens/study.ts';
+import { sendTo } from './screens/send-to.ts';
 import { newPage, organize, search } from './screens/workspace.ts';
 import { paginated, recording } from './screens/page-views.ts';
 import { settings } from './screens/settings.ts';
@@ -27,6 +28,7 @@ const screens: Screen[] = [
   sizeClasses(),
   phone(),
   studyTools(),
+  sendTo(),
 ];
 
 mkdirSync(OUT_DIR, { recursive: true });
