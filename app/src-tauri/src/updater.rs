@@ -16,6 +16,10 @@ use crate::{
     settings::schema::Settings,
 };
 
+// UPDATE_PUBLIC_KEYS, TEST_UPDATE_PUBLIC_KEY, and TEST_ENDPOINTS_MARKER, written by build.rs from keys/*.pub
+// and the test-endpoints feature (ARCHITECTURE.md section 18.12).
+include!(concat!(env!("OUT_DIR"), "/update_keys.rs"));
+
 /// What the start guard decided, in the terms the app needs.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GuardOutcome {
@@ -222,6 +226,27 @@ mod tests {
             serde_json::to_value(error).expect("serializes"),
             json!({ "kind": "error", "code": "verifyFailed", "retryAt": null })
         );
+    }
+
+    #[test]
+    fn embeds_only_minisign_public_keys() {
+        for key in UPDATE_PUBLIC_KEYS {
+            let key_line = key.lines().nth(1).unwrap_or_default();
+            assert!(key.starts_with("untrusted comment:") && key_line.starts_with("RW") && key_line.len() == 56);
+        }
+    }
+
+    #[test]
+    fn only_test_endpoint_builds_carry_the_marker_and_the_test_key() {
+        let test_build = cfg!(feature = "test-endpoints");
+        assert_eq!(TEST_ENDPOINTS_MARKER.is_some(), test_build);
+        assert_eq!(
+            TEST_ENDPOINTS_MARKER.map(|marker| marker.starts_with("OPENNOTE-TEST-")),
+            test_build.then_some(true)
+        );
+        if !test_build {
+            assert_eq!(TEST_UPDATE_PUBLIC_KEY, None);
+        }
     }
 
     #[test]

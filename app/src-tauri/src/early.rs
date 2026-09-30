@@ -75,6 +75,10 @@ impl Steps for System {
 
 /// Runs the early steps for this process.
 pub fn run() -> EarlyOutcome {
+    // Logging the marker also keeps it in test-endpoints exes, where the release build job looks for it.
+    if let Some(marker) = updater::TEST_ENDPOINTS_MARKER {
+        log::warn!("{marker}: this build accepts test update endpoints and a test key.");
+    }
     run_with(&System)
 }
 
