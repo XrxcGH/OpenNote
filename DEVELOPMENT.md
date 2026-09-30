@@ -252,7 +252,7 @@ Done when: the test corpus imports without errors, and the "OneNote user switchi
 
 ### Phase 12: On-device intelligence
 
-All of these are optional and off until the person turns them on. They run on the device, and nothing leaves it.
+These are set up during first-run setup (see FEATURES.md), not left off. They run on the device, and nothing leaves it.
 
 Build:
 

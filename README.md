@@ -14,6 +14,7 @@ OpenNote is in the planning stage. No app code exists yet.
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Step-by-step plan for the Windows prototype, with tests and release gates |
 | [BRAND.md](BRAND.md) | Colors, type, layout, motion, accessibility and performance budgets |
 | [Screens](docs/design/SCREENS.md) | Wireframes of each major screen, with sizes and keep-out zones |
+| [FEATURES.md](FEATURES.md) | Feature spec: Office and Google, handwriting, transcripts, study tools and more |
 | [CHECKS.md](CHECKS.md) | The quality gate every file change must pass |
 
 ## Contributing

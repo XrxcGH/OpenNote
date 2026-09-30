@@ -34,12 +34,13 @@ Keep-out zones that apply to every desktop screen:
 
 ![First run, step 2: three theme cards, with Match Windows selected](images/01-first-run-look.svg)
 
-Setup has four short steps in a centered 720 × 600 card:
+Setup has five short steps in a centered 720 × 600 card:
 
 1. **Welcome:** what OpenNote is, in one sentence.
 2. **Choose your look:** Light, Dark or Match Windows (shown above). The card matching the current Windows setting is selected in advance, and clicking a card repaints the whole screen at once.
 3. **Where to keep things:** the notes folder, where the app lives, and the first notebook (shown below).
-4. **Bring your notes (optional):** import from OneNote or Evernote, or skip.
+4. **Smart features:** choose on-device transcription, handwriting and image text (see FEATURES.md).
+5. **Bring your notes (optional):** import from OneNote or Evernote, or skip.
 
 ![First run, step 3: notes folder, app location and first notebook](images/02-first-run-storage.svg)
 
