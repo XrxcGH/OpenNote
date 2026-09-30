@@ -60,6 +60,7 @@ crates/
 brand/            Design tokens, logo and icon
 checks/           The CHECKS quality gate
 docs/adr/         Architecture decision records
+docs/design/      Screen wireframes, generated from the design tokens
 docs/format/      The note file format specification
 tests/e2e/        End-to-end tests that drive the real app
 tests/perf/       Performance benchmarks and large sample notebooks

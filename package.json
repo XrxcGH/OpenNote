@@ -12,9 +12,10 @@
     "checks:fix": "node checks/cli.ts --fix",
     "test:checks": "node --test \"checks/test/**/*.test.ts\"",
     "setup-hooks": "git config core.hooksPath .githooks",
-    "typecheck": "tsc -p checks/tsconfig.json",
-    "format": "prettier --write \"checks/**/*.ts\"",
-    "format:check": "prettier --check \"checks/**/*.ts\""
+    "typecheck": "tsc -p checks/tsconfig.json && tsc -p docs/design/tsconfig.json",
+    "format": "prettier --write \"checks/**/*.ts\" \"docs/design/**/*.ts\"",
+    "format:check": "prettier --check \"checks/**/*.ts\" \"docs/design/**/*.ts\"",
+    "design": "node docs/design/generate.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

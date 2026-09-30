@@ -1,6 +1,6 @@
 # OpenNote brand and interface guide
 
-This guide defines how OpenNote looks, moves, sounds and behaves. The exact values live in [`brand/tokens.json`](brand/tokens.json), and CHECKS verifies them (contrast, motion limits, theme parity). UI code must use the tokens, never raw values.
+This guide defines how OpenNote looks, moves, sounds and behaves. Wireframes of each major screen are in [docs/design/SCREENS.md](docs/design/SCREENS.md). The exact values live in [`brand/tokens.json`](brand/tokens.json), and CHECKS verifies them (contrast, motion limits, theme parity). UI code must use the tokens, never raw values.
 
 ## Contents
 

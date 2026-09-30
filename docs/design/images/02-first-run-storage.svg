@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 944" width="1440" height="944" role="img">
+<title>First run, step 3: where to keep things</title>
+<defs>
+<pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="8" height="8" fill="#C2185B" fill-opacity="0.08"/>
+<line x1="0" y1="0" x2="0" y2="8" stroke="#C2185B" stroke-opacity="0.45" stroke-width="2"/></pattern>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+<feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#2B2521" flood-opacity="0.16"/></filter>
+</defs>
+<rect x="0" y="0" width="1440" height="900" rx="0" fill="#F3EEE6"/>
+<rect x="0" y="0" width="1440" height="40" rx="0" fill="#F3EEE6"/><rect x="14" y="10" width="16" height="20" rx="3" fill="#FFFCF6" stroke="#2B2521" stroke-width="1.5"/><path d="M17 24c2-6 5-7 6-3s3 4 5-2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#3B6A4D" stroke-width="1.8"/><text x="40" y="25" font-size="13" font-weight="600" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">OpenNote</text><text x="1325" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">—</text><text x="1371" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">▢</text><text x="1417" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">✕</text>
+<rect x="360" y="130" width="720" height="600" rx="16" fill="#FFFDF9" filter="url(#shadow)"/>
+<circle cx="684" cy="170" r="5" fill="#3B6A4D"/>
+<circle cx="708" cy="170" r="5" fill="#3B6A4D"/>
+<circle cx="732" cy="170" r="5" fill="#3B6A4D"/>
+<circle cx="756" cy="170" r="5" fill="#E3DACC"/>
+<text x="720" y="200" font-size="13" font-weight="400" fill="#6B6054" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Step 3 of 4</text>
+<text x="720" y="246" font-size="30" font-weight="600" fill="#2B2521" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Where should OpenNote keep things?</text>
+<text x="720" y="276" font-size="15" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Your notes are plain files you own. Updates never touch them.</text>
+<text x="408" y="326" font-size="14" font-weight="600" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Your notes</text>
+<rect x="408" y="336" width="500" height="38" rx="8" fill="#EAE3D8" stroke="#877B6C" stroke-width="1"/>
+<text x="420" y="360" font-size="14" font-weight="400" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Mono', 'Cascadia Code', Consolas, monospace">C:\Users\you\Documents\OpenNote</text>
+<rect x="920" y="336" width="112" height="38" rx="8" fill="none" stroke="#877B6C" stroke-width="1"/>
+<text x="976" y="360" font-size="14" font-weight="400" fill="#2B2521" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Change…</text>
+<text x="408" y="420" font-size="14" font-weight="600" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">The app</text>
+<circle cx="417" cy="447" r="9" fill="none" stroke="#3B6A4D" stroke-width="2"/>
+<circle cx="417" cy="447" r="5" fill="#3B6A4D"/>
+<text x="436" y="452" font-size="14" font-weight="400" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Add OpenNote to the Start menu (recommended)</text>
+<text x="436" y="472" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Moves OpenNote.exe to your user folder. No administrator rights needed.</text>
+<circle cx="417" cy="493" r="9" fill="none" stroke="#877B6C" stroke-width="2"/>
+<text x="436" y="498" font-size="14" font-weight="400" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Keep it where it is</text>
+<text x="436" y="518" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Downloads\OpenNote.exe</text>
+<text x="408" y="540" font-size="14" font-weight="600" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Your first notebook</text>
+<rect x="408" y="550" width="500" height="38" rx="8" fill="#EAE3D8" stroke="#877B6C" stroke-width="1"/>
+<text x="420" y="574" font-size="14" font-weight="400" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">My notebook</text>
+<circle cx="420" cy="630" r="11" fill="#2E7048" stroke="#2B2521" stroke-width="2"/>
+<circle cx="454" cy="630" r="11" fill="#B0342A"/>
+<circle cx="488" cy="630" r="11" fill="#2F4F9A"/>
+<circle cx="522" cy="630" r="11" fill="#6A4A9C"/>
+<circle cx="556" cy="630" r="11" fill="#B8620F"/>
+<text x="408" y="684" font-size="15" font-weight="600" fill="#3B6A4D" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Back</text>
+<rect x="894" y="658" width="150" height="40" rx="8" fill="#3B6A4D"/>
+<text x="969" y="684" font-size="15" font-weight="600" fill="#FFFCF6" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Continue</text>
+<rect x="400" y="310" width="648" height="76" rx="0" fill="none" stroke="#6A3FB5" stroke-width="1.5" stroke-dasharray="6 4"/><rect x="406" y="314" width="259" height="17" rx="8.5" fill="#FFFFFF" stroke="#6A3FB5" stroke-width="1"/><text x="412" y="326" font-size="11" font-weight="600" fill="#6A3FB5" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Full path, wraps instead of cutting</text>
+<rect x="1302" y="0" width="138" height="40" rx="0" fill="url(#hatch)" stroke="#C2185B" stroke-width="1" stroke-dasharray="4 3"/><rect x="1280" y="46" width="161" height="17" rx="8.5" fill="#FFFFFF" stroke="#C2185B" stroke-width="1"/><text x="1286" y="58" font-size="11" font-weight="600" fill="#C2185B" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Window buttons 138×40</text>
+<rect x="1096" y="448" width="364" height="17" rx="8.5" fill="#FFFFFF" stroke="#6A3FB5" stroke-width="1"/><text x="1102" y="460" font-size="11" font-weight="600" fill="#6A3FB5" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Step 4 (optional): import from OneNote or Evernote</text>
+<rect x="0" y="900" width="1440" height="44" rx="0" fill="#FFFFFF"/><line x1="0" y1="900" x2="1440" y2="900" stroke="#D9D9D9"/><rect x="16" y="914" width="28" height="16" rx="0" fill="url(#hatch)" stroke="#C2185B" stroke-width="1" stroke-dasharray="4 3"/><text x="52" y="927" font-size="12" font-weight="400" fill="#333" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Keep-out zone: nothing interactive or important goes here</text><rect x="470" y="914" width="28" height="16" rx="0" fill="none" stroke="#6A3FB5" stroke-width="1.5" stroke-dasharray="6 4"/><text x="506" y="927" font-size="12" font-weight="400" fill="#333" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Layout region with its size in pixels (at 100% scaling)</text><text x="1424" y="927" font-size="12" font-weight="400" fill="#666" text-anchor="end" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">OpenNote wireframe · colors from brand/tokens.json</text>
+</svg>
