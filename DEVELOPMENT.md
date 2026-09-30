@@ -51,7 +51,7 @@ Large decisions are written down as architecture decision records (ADRs) in `doc
 ```text
 app/
   src/            TypeScript interface: shell, editor, ink, views
-  src/theme/      Generated from brand/tokens.json; the only place raw design values appear
+  src/theme/      Theme code; tokens.css and tokens.ts, built from brand/tokens.json, are the only files with raw design values
   src-tauri/      Rust shell: windows, menus, commands the interface calls
 crates/
   core/           Document model, file format, storage, undo history, search index

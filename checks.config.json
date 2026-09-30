@@ -78,7 +78,7 @@
         "app/src/**/*.{ts,tsx,css,scss}"
       ],
       "tokenFiles": [
-        "app/src/theme/**",
+        "app/src/theme/tokens.{css,ts}",
         "brand/**"
       ],
       "maxDurationMs": 400
