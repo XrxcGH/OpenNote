@@ -240,4 +240,26 @@
     border-block-start: 1px solid var(--color-border-subtle);
     padding-block-start: var(--space-2);
   }
+
+  .saveStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .saveStatus[data-status='error'] {
+    color: var(--color-status-danger);
+  }
+
+  .visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }

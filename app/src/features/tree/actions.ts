@@ -23,6 +23,11 @@ export interface ActionOptions {
   readonly record?: boolean;
 }
 
+export interface TrashOptions extends ActionOptions {
+  /** Runs after an undo has put the items back, for example to reselect what was open. */
+  readonly onRestored?: (restored: readonly NodeSummary[]) => void;
+}
+
 /** The title to show and speak: an empty page title reads as "Untitled page". */
 export function titleOf(node: Pick<NodeSummary, 'title' | 'kind'> | undefined): string {
   if (!node) return '';
@@ -207,7 +212,7 @@ export async function setLevel(notes: NotesService, id: NodeId, level: PageLevel
 }
 
 /** Moves nodes to Trash. Resolves with the receipt, which Undo passes to restoreReceipt. */
-export async function trashNodes(notes: NotesService, ids: readonly NodeId[], options: ActionOptions = {}) {
+export async function trashNodes(notes: NotesService, ids: readonly NodeId[], options: TrashOptions = {}) {
   const state = treeStore.get();
   const known = ids.filter((id) => state.nodes[id]);
   if (known.length === 0) return null;
@@ -218,16 +223,19 @@ export async function trashNodes(notes: NotesService, ids: readonly NodeId[], op
     (current) => withoutNodes(current, blocks),
     () => notes.trash(known),
   );
-  if (options.record !== false) recordTrash(known, receipt, titleOf(state.nodes[known[0]]));
+  if (options.record !== false) recordTrash(known, receipt, titleOf(state.nodes[known[0]]), options);
   return receipt;
 }
 
-function recordTrash(ids: readonly NodeId[], first: TrashReceipt, title: string): void {
+function recordTrash(ids: readonly NodeId[], first: TrashReceipt, title: string, options: TrashOptions): void {
   let receipt = first;
   recordUndo({
     undone: t('tree.undo.restored', { title }),
     redone: t('tree.undo.trashedAgain', { title }),
-    undo: async (service) => void (await restoreReceipt(service, receipt)),
+    undo: async (service) => {
+      const restored = await restoreReceipt(service, receipt);
+      options.onRestored?.(restored);
+    },
     redo: async (service) => {
       receipt = (await trashNodes(service, ids, { record: false })) ?? receipt;
     },

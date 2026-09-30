@@ -40,18 +40,29 @@ const SWATCHES = new Map<ChipColor | null, ComponentType<IconProps>>(
   [...CHIP_COLORS, null].map((color) => [color, swatch(color)]),
 );
 
+/**
+ * A menu puts focus back on its row as it closes. A command that moves focus itself, such as Rename, must run
+ * after that, or the row would take focus from its field.
+ */
+function afterClose(item: MenuItemSpec): MenuItemSpec {
+  const { onSelect } = item;
+  return onSelect ? { ...item, onSelect: () => void setTimeout(onSelect, 0) } : item;
+}
+
 /** The Color submenu for a row. */
 export function colorItems(node: NodeSummary): MenuItemSpec[] {
   const target = { kind: 'node', id: node.id } as const;
-  return [...CHIP_COLORS, null].map((color) => ({
-    id: `color.${color ?? 'none'}`,
-    label: t(`tree.colors.${color ?? 'none'}`),
-    icon: SWATCHES.get(color),
-    kind: 'radio' as const,
-    checked: node.color === color,
-    separatorBefore: color === null,
-    onSelect: () => void executeCommand('tree.color', { color }, 'menu', target),
-  }));
+  return [...CHIP_COLORS, null]
+    .map((color) => ({
+      id: `color.${color ?? 'none'}`,
+      label: t(`tree.colors.${color ?? 'none'}`),
+      icon: SWATCHES.get(color),
+      kind: 'radio' as const,
+      checked: node.color === color,
+      separatorBefore: color === null,
+      onSelect: () => void executeCommand('tree.color', { color }, 'menu', target),
+    }))
+    .map(afterClose);
 }
 
 function withColors(items: MenuItemSpec[], node: NodeSummary, anchor: MenuAnchor, returnFocus: HTMLElement) {
@@ -66,7 +77,7 @@ function withColors(items: MenuItemSpec[], node: NodeSummary, anchor: MenuAnchor
 /** The menu for a row, or null when nothing applies. */
 export function rowMenu(node: NodeSummary, anchor: MenuAnchor, returnFocus: HTMLElement) {
   const ctx = commandContext('menu', { kind: 'node', id: node.id });
-  const items = withColors(menuItemsFor(ROW_MENUS[node.kind], ctx), node, anchor, returnFocus);
+  const items = withColors(menuItemsFor(ROW_MENUS[node.kind], ctx), node, anchor, returnFocus).map(afterClose);
   return items.length ? { label: t('tree.menu.label', { title: titleOf(node) }), items } : null;
 }
 

@@ -1,0 +1,55 @@
+/* The Move to dialog (ARCHITECTURE.md section 13.6): a filter field above a list of destinations. */
+@layer components {
+  .filter {
+    inline-size: 100%;
+    min-block-size: var(--size-row-pointer);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    max-block-size: calc(var(--size-row-pointer) * 8);
+    margin-block: var(--space-2);
+    padding: 0;
+    overflow: auto;
+    list-style: none;
+  }
+
+  .option {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-block-size: var(--size-row-pointer);
+    padding-block: var(--space-1);
+    padding-inline: calc(var(--space-2) + var(--depth, 0) * var(--size-tree-indent)) var(--space-2);
+    border-radius: var(--radius-sm);
+    cursor: default;
+  }
+
+  .option:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .option[aria-selected='true'] {
+    background: var(--color-surface-selected);
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .path {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .message {
+    margin-block: var(--space-2);
+    color: var(--color-text-secondary);
+  }
+}

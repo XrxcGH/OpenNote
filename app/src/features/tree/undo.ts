@@ -22,8 +22,9 @@ export const undoStore = createStore<{ past: readonly UndoEntry[]; future: reado
   'tree undo',
 );
 
-export function recordUndo(entry: UndoEntry): void {
+export function recordUndo(entry: UndoEntry): UndoEntry {
   undoStore.set((state) => ({ past: [...state.past, entry].slice(-UNDO_LIMIT), future: [] }));
+  return entry;
 }
 
 export const canUndo = () => undoStore.get().past.length > 0;
@@ -31,13 +32,15 @@ export const canRedo = () => undoStore.get().future.length > 0;
 
 let busy = false;
 
-/** Undoes the last tree change. Resolves false when there was none, or when an undo or redo is still running. */
-export async function undo(notes: NotesService): Promise<boolean> {
-  const entry = undoStore.get().past.at(-1);
-  if (!entry || busy) return false;
+/**
+ * Undoes one entry of the stack, which is the last one unless a toast's Undo names an older change. Resolves
+ * false when the entry isn't on the stack, or when an undo or redo is still running.
+ */
+export async function undoEntry(notes: NotesService, entry: UndoEntry): Promise<boolean> {
+  if (busy || !undoStore.get().past.includes(entry)) return false;
   busy = true;
   const message = entry.undone;
-  undoStore.set((state) => ({ past: state.past.slice(0, -1), future: state.future }));
+  undoStore.set((state) => ({ past: state.past.filter((other) => other !== entry), future: state.future }));
   try {
     await entry.undo(notes);
     undoStore.set((state) => ({ past: state.past, future: [entry, ...state.future] }));
@@ -46,6 +49,12 @@ export async function undo(notes: NotesService): Promise<boolean> {
   } finally {
     busy = false;
   }
+}
+
+/** Undoes the last tree change. Resolves false when there was none. */
+export async function undo(notes: NotesService): Promise<boolean> {
+  const entry = undoStore.get().past.at(-1);
+  return entry ? undoEntry(notes, entry) : false;
 }
 
 export async function redo(notes: NotesService): Promise<boolean> {

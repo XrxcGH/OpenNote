@@ -67,6 +67,7 @@ export const tree = {
     notebooks: 'Loading notebooks',
     pages: 'Loading pages',
     page: 'Loading page',
+    trash: 'Loading Trash',
   },
   rename: {
     label: 'Rename {title}',
@@ -86,6 +87,7 @@ export const tree = {
     cantIndent: "{title} can't be a subpage here.",
     alreadyTop: '{title} is already a page, not a subpage.',
     moved: 'Moved "{title}" to {target}.',
+    undoHint: 'Press {shortcut} to undo.',
     dragPages: 'Move {count, plural, one {# page} other {# pages}} to {target}',
     dragItem: 'Move "{title}" to {target}',
   },
@@ -108,6 +110,7 @@ export const tree = {
     restore: 'Restore',
     restoreLabel: 'Restore {title}',
     restored: 'Restored "{title}".',
+    restoreFailed: "Couldn't restore that item. Try again.",
     moved: 'Moved "{title}" to Trash.',
     movedAnnounce: 'Moved "{title}" to Trash. Press {shortcut} to undo.',
     movedAnnounceNoShortcut: 'Moved "{title}" to Trash.',
