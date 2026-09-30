@@ -8,7 +8,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError, RwLock, Weak};
 
 use super::undo::TreeUndo;
 use crate::error::CoreError;
-use crate::id::{NotebookId, PageId};
+use crate::id::{NotebookId, PageId, SectionId};
 use crate::model::Page;
 use crate::session::core::CoreCtx;
 use crate::session::events::{CoreEvent, ExternalAction};
@@ -76,9 +76,9 @@ impl NotebookShared {
         Ok(())
     }
 
-    /// The key and header metadata of this notebook's journals (spec 20.5).
-    pub(crate) fn journal_meta(&self) -> (NotebookKey, JournalMeta) {
-        let meta = super::open::journal_meta(&self.ctx, self.id(), &self.root, self.identity);
+    /// The key and the header metadata of a page journal in this notebook (spec 20.5).
+    pub(crate) fn journal_meta(&self, section: Option<SectionId>) -> (NotebookKey, JournalMeta) {
+        let meta = super::open::journal_meta(&self.ctx, self.id(), &self.root, self.identity, section);
         (self.key(), meta)
     }
 

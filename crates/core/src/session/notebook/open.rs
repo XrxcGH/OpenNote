@@ -9,7 +9,7 @@ use super::shared::{NotebookShared, TreeState};
 use super::undo::TreeUndo;
 use super::NotebookHandle;
 use crate::error::CoreError;
-use crate::id::{ClientId, NotebookId, PageId};
+use crate::id::{ClientId, NotebookId, PageId, SectionId};
 use crate::model::{ReadOnlyReason, Warning};
 use crate::session::backend::RecoverInput;
 use crate::session::core::CoreCtx;
@@ -55,7 +55,7 @@ pub(crate) fn open_notebook(ctx: &Arc<CoreCtx>, dir: &Path, how: &OpenAs) -> Res
     let cache = PageCache::load(fs, &ctx.data, &key);
     let log = tree_log(
         ctx,
-        (&key, journal_meta(ctx, file.id, dir, identity)),
+        (&key, journal_meta(ctx, file.id, dir, identity, None)),
         read_only.is_none(),
     );
     let mut store = NotebookStore::open(env, dir, cache, log)?;
@@ -93,17 +93,20 @@ pub(crate) fn open_notebook(ctx: &Arc<CoreCtx>, dir: &Path, how: &OpenAs) -> Res
     Ok(NotebookHandle { inner: shared })
 }
 
-/// The header metadata of a notebook's journals (spec 20.5).
+/// The header metadata of a notebook's journals (spec 20.5). `section` is the page's section for a page
+/// journal, and `None` for the tree journal.
 pub(crate) fn journal_meta(
     ctx: &CoreCtx,
     notebook: NotebookId,
     root: &Path,
     identity: crate::store::fs::FolderIdentity,
+    section: Option<SectionId>,
 ) -> JournalMeta {
     JournalMeta {
         notebook,
         notebook_path: root.to_path_buf(),
         identity,
+        section,
         app: ctx.writer.clone(),
         device: ctx.device().id,
         boot: ctx.boot.clone(),
@@ -285,7 +288,7 @@ impl NotebookShared {
         *self.id.write().unwrap_or_else(PoisonError::into_inner) = id;
         *self.key.write().unwrap_or_else(PoisonError::into_inner) = key;
         let writable = tree.store.read_only.is_none();
-        let meta = journal_meta(&self.ctx, id, &self.root, self.identity);
+        let meta = journal_meta(&self.ctx, id, &self.root, self.identity, None);
         tree.store.log = tree_log(&self.ctx, (&self.key(), meta), writable);
         drop(tree);
         self.tree_changed();

@@ -281,7 +281,9 @@ impl PageSession {
         let Some(notebook) = self.notebook.upgrade() else {
             return;
         };
-        let (key, meta) = notebook.journal_meta();
+        // The page's folder is inside its section's folder, so recovery can create a lost page again there.
+        let section = st.dir.parent().and_then(|d| d.file_name()?.to_str()?.parse().ok());
+        let (key, meta) = notebook.journal_meta(section);
         let base = BaseSnapshot {
             revision: st.base,
             gzip: gzip(&st.bytes).into(),
