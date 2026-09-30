@@ -19,6 +19,8 @@ pub mod verify;
 #[cfg(test)]
 mod check_tests;
 #[cfg(test)]
+mod download_tests;
+#[cfg(test)]
 mod test_support;
 
 use std::{
@@ -231,14 +233,43 @@ impl<F: Fetch, R: Replacer, C: Clock> Updater<F, R, C> {
         manifest::parse(&bytes)
     }
 
-    /// Downloads and verifies an offer, reporting progress as (received, total) bytes.
-    pub fn download(&self, _offer: &Offer, _progress: &dyn Fn(u64, u64)) -> Result<Staged, UpdateError> {
-        Err(UpdateError::NotImplemented("download"))
+    /// Downloads and verifies an offer, reporting progress as (received, total) bytes. The verified file replaces
+    /// any earlier staged update, and `updates\state.json` records it.
+    pub fn download(&self, offer: &Offer, progress: &dyn Fn(u64, u64)) -> Result<Staged, UpdateError> {
+        let record = stage::download(&self.fetch, &self.config, offer, progress)?;
+        let staged = Staged {
+            version: offer.version.clone(),
+            path: PathBuf::from(&record.path),
+            sha256: record.sha256.clone(),
+        };
+        self.change_state(|state| state.staged = Some(record))?;
+        Ok(staged)
     }
 
-    /// The staged update, re-verified before it's returned, or `None` when there's none or it no longer verifies.
-    pub fn staged(&self) -> Option<Staged> {
-        None
+    /// The staged update, verified again before it's returned, or `None` when there's none or it no longer
+    /// verifies. A staged update that fails, or that `skipped` or a rollback now excludes, is deleted.
+    pub fn staged(&self, skipped: Option<&Version>) -> Option<Staged> {
+        let record = self.state().staged?;
+        match stage::verify_staged(&self.config, &record, skipped, &self.blocked_versions()) {
+            Ok((version, path)) => Some(Staged {
+                version,
+                path,
+                sha256: record.sha256,
+            }),
+            Err(error) => {
+                log::warn!("Deleted the staged update {}: {error}", record.version);
+                self.discard_staged();
+                None
+            }
+        }
+    }
+
+    /// Deletes any staged update and partial download, and its record.
+    pub fn discard_staged(&self) {
+        stage::remove_copies(&self.config.dirs.updates);
+        if let Err(error) = self.change_state(|state| state.staged = None) {
+            log::warn!("Couldn't clear the staged update: {error}");
+        }
     }
 
     /// Swaps the staged update into place (section 18.7).

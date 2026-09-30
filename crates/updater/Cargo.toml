@@ -25,5 +25,8 @@ ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no
 
 [dev-dependencies]
 minisign = "0.10.0"
+# The tests serve updates from http://127.0.0.1, which only test-endpoints builds accept. Naming the crate itself
+# here turns the feature on for its own tests and examples only. The app's builds don't get it from here.
+opennote-updater = { path = ".", features = ["test-endpoints"] }
 proptest.workspace = true
 tempfile.workspace = true
