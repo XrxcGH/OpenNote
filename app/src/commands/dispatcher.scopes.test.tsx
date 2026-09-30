@@ -37,13 +37,15 @@ function element(html: string, selector: string): Element {
   return found;
 }
 
-function press(target: Element | null, key: string, code: string, mods = '', repeat = false) {
+function press(target: Element | null, key: string, code: string, mods = '', repeat = false, altGraph = false) {
   const has = (name: string) => mods.includes(name);
   return {
     key,
     code,
-    ctrlKey: has('ctrl'),
-    altKey: has('alt'),
+    // Windows reports AltGr as Ctrl and Alt both down, with the AltGraph modifier state on.
+    ctrlKey: has('ctrl') || altGraph,
+    altKey: has('alt') || altGraph,
+    getModifierState: (name: string) => name === 'AltGraph' && altGraph,
     shiftKey: has('shift'),
     metaKey: false,
     isComposing: false,
@@ -131,6 +133,48 @@ describe('text fields, dialogs, repeats, and flags', () => {
     expect(run(document.body, 'b', 'KeyB', 'ctrl alt')).toBeNull();
     const capture = element('<div data-key-capture tabindex="0" id="k"></div>', '#k');
     expect(run(capture, 'D', 'KeyD', 'ctrl shift')).toBeNull();
+  });
+});
+
+describe('AltGr and layouts', () => {
+  it('Polish: AltGr text never runs a Ctrl+Alt command, including in text fields that allow commands', () => {
+    add('lines', { keys: [chord('Ctrl+Alt+L')], allowInTextInput: true });
+    add('sections', { keys: [chord('Ctrl+Alt+S')], allowInTextInput: true });
+    const field = element('<input id="f">', '#f');
+    expect(run(field, 'ł', 'KeyL', '', false, true)).toBeNull();
+    expect(run(field, 'ś', 'KeyS', '', false, true)).toBeNull();
+    expect(run(document.body, 'ł', 'KeyL', '', false, true)).toBeNull();
+    // The same chords with a real Ctrl+Alt still run.
+    expect(run(field, 'l', 'KeyL', 'ctrl alt')).toBe('test.lines');
+    expect(run(field, 's', 'KeyS', 'ctrl alt')).toBe('test.sections');
+  });
+
+  it('German: AltGr+7 types {, so Ctrl+Alt+7 stays quiet and a chord that names { runs', () => {
+    add('seven', { keys: [chord('Ctrl+Alt+7')], allowInTextInput: true });
+    add('brace', { keys: [chord('Ctrl+Alt+{')], allowInTextInput: true });
+    const field = element('<input id="f">', '#f');
+    expect(run(field, '{', 'Digit7', '', false, true)).toBe('test.brace');
+    expect(run(field, '7', 'Digit7', 'ctrl alt')).toBe('test.seven');
+    expect(run(field, '€', 'KeyE', '', false, true)).toBeNull();
+  });
+
+  it('French: AltGr+0 types @, so it never runs Ctrl+Alt+0, and the typed key beats the physical key', () => {
+    add('zero', { keys: [chord('Ctrl+Alt+0')], allowInTextInput: true });
+    add('at', { keys: [chord('Ctrl+Alt+@')], allowInTextInput: true });
+    add('ampersand', { keys: [chord('Ctrl+&')] });
+    add('one', { keys: [chord('Ctrl+1')] });
+    const field = element('<input id="f">', '#f');
+    expect(run(field, '@', 'Digit0', '', false, true)).toBe('test.at');
+    expect(run(field, 'à', 'Digit0', 'ctrl alt')).toBe('test.zero');
+    expect(run(document.body, '&', 'Digit1', 'ctrl')).toBe('test.ampersand');
+  });
+
+  it('German: / is Shift+7, and the typed / wins over the physical 7 when both chords are bound', () => {
+    add('list', { keys: [chord('Ctrl+Alt+/')] });
+    add('seven', { keys: [chord('Ctrl+Alt+Shift+7')] });
+    expect(run(document.body, '/', 'Digit7', 'ctrl alt shift')).toBe('test.list');
+    // Ctrl+- types - on the key a US keyboard calls Slash, and must not reach a chord for /.
+    expect(run(document.body, '-', 'Slash', 'ctrl alt')).toBeNull();
   });
 });
 

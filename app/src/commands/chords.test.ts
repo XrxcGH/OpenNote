@@ -129,6 +129,72 @@ describe('key presses on other layouts', () => {
   });
 });
 
+describe('AltGr on Polish, German, and French keyboards', () => {
+  // Windows reports AltGr as Ctrl+Alt with the AltGraph state on. The key is text, so no chord matches unless the
+  // chord names that typed character itself. The physical key never stands in for it.
+  const altGr = (key: string, code: string) => chords(press(key, code, '', true));
+
+  it('Polish: AltGr letters type ą, ć, ę, ł, ń, ó, ś, ź, and ż, and none of them is Ctrl+Alt+a letter', () => {
+    const polish = [
+      ['ą', 'KeyA'],
+      ['ć', 'KeyC'],
+      ['ę', 'KeyE'],
+      ['ł', 'KeyL'],
+      ['ń', 'KeyN'],
+      ['ó', 'KeyO'],
+      ['ś', 'KeyS'],
+      ['ź', 'KeyX'],
+      ['ż', 'KeyZ'],
+    ];
+    for (const [key, code] of polish) expect(altGr(key, code), key).toEqual([]);
+    // The same physical keys with a real Ctrl+Alt, where the layout types the letter itself, are chords.
+    expect(chords(press('l', 'KeyL', 'ctrl alt'))).toEqual(['Ctrl+Alt+L (key)']);
+  });
+
+  it('German: AltGr types @, €, {, [, ], }, \\, |, and ~, and a digit chord needs its own digit', () => {
+    expect(altGr('@', 'KeyQ')).toEqual(['Ctrl+Alt+@ (key)']);
+    expect(altGr('€', 'KeyE')).toEqual([]);
+    expect(altGr('{', 'Digit7')).toEqual(['Ctrl+Alt+{ (key)']);
+    expect(altGr('[', 'Digit8')).toEqual(['Ctrl+Alt+[ (key)']);
+    expect(altGr(']', 'Digit9')).toEqual(['Ctrl+Alt+] (key)']);
+    expect(altGr('}', 'Digit0')).toEqual(['Ctrl+Alt+} (key)']);
+    expect(altGr('\\', 'Minus')).toEqual(['Ctrl+Alt+\\ (key)']);
+    expect(altGr('|', 'IntlBackslash')).toEqual(['Ctrl+Alt+| (key)']);
+    expect(altGr('~', 'BracketRight')).toEqual(['Ctrl+Alt+~ (key)']);
+    expect(altGr('µ', 'KeyM')).toEqual([]);
+    // No AltGr chord comes out as Ctrl+Alt+7, Ctrl+Alt+8, Ctrl+Alt+9, or Ctrl+Alt+0.
+    for (const digit of ['7', '8', '9', '0']) {
+      expect(['{', '[', ']', '}'].flatMap((key) => altGr(key, `Digit${digit}`))).not.toContain(
+        `Ctrl+Alt+${digit} (code)`,
+      );
+    }
+  });
+
+  it('French (AZERTY): AltGr types @, ~, #, {, [, |, `, \\, ^, ], and }, and € and ¤ are no chord', () => {
+    expect(altGr('@', 'Digit0')).toEqual(['Ctrl+Alt+@ (key)']);
+    expect(altGr('~', 'Digit2')).toEqual(['Ctrl+Alt+~ (key)']);
+    expect(altGr('#', 'Digit3')).toEqual(['Ctrl+Alt+# (key)']);
+    expect(altGr('{', 'Digit4')).toEqual(['Ctrl+Alt+{ (key)']);
+    expect(altGr('[', 'Digit5')).toEqual(['Ctrl+Alt+[ (key)']);
+    expect(altGr('|', 'Digit6')).toEqual(['Ctrl+Alt+| (key)']);
+    expect(altGr('`', 'Digit7')).toEqual(['Ctrl+Alt+` (key)']);
+    expect(altGr('\\', 'Digit8')).toEqual(['Ctrl+Alt+\\ (key)']);
+    expect(altGr('^', 'Digit9')).toEqual(['Ctrl+Alt+^ (key)']);
+    expect(altGr(']', 'Minus')).toEqual(['Ctrl+Alt+] (key)']);
+    expect(altGr('}', 'Equal')).toEqual(['Ctrl+Alt+} (key)']);
+    expect(altGr('€', 'KeyE')).toEqual([]);
+    expect(altGr('¤', 'Equal')).toEqual([]);
+  });
+
+  it('puts the match by the typed key before the match by the physical key, on every layout', () => {
+    // French: & is the unshifted 1 key. German: / is Shift+7. Polish and US: a plain letter is both.
+    expect(chords(press('&', 'Digit1', 'ctrl'))).toEqual(['Ctrl+& (key)', 'Ctrl+1 (code)']);
+    expect(chords(press('/', 'Digit7', 'ctrl shift'))).toEqual(['Ctrl+/ (key)', 'Ctrl+Shift+7 (code)']);
+    expect(chords(press('é', 'Digit2', 'ctrl'))).toEqual(['Ctrl+2 (code)']);
+    expect(chords(press('k', 'KeyK', 'ctrl'))).toEqual(['Ctrl+K (key)']);
+  });
+});
+
 describe('reading chords', () => {
   it('formats chords for people and for aria-keyshortcuts', () => {
     expect(formatChord(chord('Ctrl+Shift+Up'))).toBe('Ctrl+Shift+Up');
