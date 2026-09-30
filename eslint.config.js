@@ -15,7 +15,18 @@ export default tseslint.config(
     rules: reactHooks.configs.recommended.rules,
   },
   {
-    files: ['checks/**/*.ts', 'docs/**/*.ts', 'app/scripts/**/*.ts', 'app/vite.config.ts', 'eslint.config.js'],
+    files: ['spikes/web/**/*.ts'],
+    languageOptions: { globals: globals.browser },
+  },
+  {
+    files: [
+      'checks/**/*.ts',
+      'docs/**/*.ts',
+      'app/scripts/**/*.ts',
+      'app/vite.config.ts',
+      'spikes/web/vite.config.ts',
+      'eslint.config.js',
+    ],
     languageOptions: { globals: globals.node },
   },
   {

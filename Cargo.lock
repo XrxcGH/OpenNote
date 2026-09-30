@@ -2096,6 +2096,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "opennote-spikes"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tao",
+ "webview2-com",
+ "windows",
+ "windows-core",
+ "wry",
+]
+
+[[package]]
 name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

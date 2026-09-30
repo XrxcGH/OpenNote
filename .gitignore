@@ -2,5 +2,6 @@ node_modules/
 target/
 app/dist/
 app/src-tauri/gen/
+spikes/web/dist/
 *.key
 dist-release/
