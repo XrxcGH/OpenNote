@@ -1,5 +1,7 @@
 // Composes the views from each feature's public face and switches on the location (ARCHITECTURE.md section 5.3).
-// WP5 owns it after WP0 and adds the responsive layout and window titles.
+// The workspace holds the title bar in its grid; Settings and setup get the title bar above them, so the window
+// can always be moved and closed. The window title follows the location, and the mouse's back and forward
+// buttons move through history.
 
 import { useLocation } from './app/location';
 import { NotebooksPane, PagesPane } from './features/tree';
@@ -8,14 +10,22 @@ import { SettingsView } from './features/settings';
 import { SetupView } from './features/setup';
 import { TrashView } from './features/trash';
 import { BottomBar, CommandBar } from './shell/commandbar';
+import { useHistoryMouseButtons, useWindowTitle } from './shell/layout/history';
 import { Workspace } from './shell/layout/Workspace';
 import { AppBar, TitleBar } from './shell/titlebar';
 import { Announcer, Toaster } from './ui';
+import styles from './App.module.css';
 
 function View() {
   const location = useLocation();
-  if (location.view === 'settings') return <SettingsView />;
-  if (location.view === 'setup') return <SetupView />;
+  if (location.view === 'settings' || location.view === 'setup') {
+    return (
+      <div className={styles.view}>
+        <TitleBar />
+        <div className={styles.body}>{location.view === 'settings' ? <SettingsView /> : <SetupView />}</div>
+      </div>
+    );
+  }
   return (
     <Workspace
       titleBar={<TitleBar />}
@@ -30,10 +40,10 @@ function View() {
 }
 
 export function App() {
-  const location = useLocation();
+  useWindowTitle();
+  useHistoryMouseButtons();
   return (
     <>
-      {location.view === 'workspace' || location.view === 'trash' ? null : <TitleBar />}
       <View />
       <Toaster />
       <Announcer />
