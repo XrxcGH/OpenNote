@@ -120,6 +120,15 @@ impl FaultRule {
     }
 }
 
+/// What a call does to a file or folder another program may hold open.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Blocks {
+    Replace,
+    Delete,
+    RenameFolder,
+    DeleteFolder,
+}
+
 /// A file held open by another program.
 #[derive(Clone, Debug)]
 struct Hold {
@@ -160,15 +169,23 @@ impl State {
         }
     }
 
-    /// Whether another program holds `key` open without delete sharing.
-    fn held(&self, key: &Key) -> bool {
-        self.holds.iter().any(|hold| &hold.key == key && !hold.share_delete)
-    }
-
-    /// Whether another program holds anything inside `dir` open, and whether any of those holds shares nothing.
-    fn held_inside(&self, dir: &Key) -> (bool, bool) {
-        let inside: Vec<&Hold> = self.holds.iter().filter(|hold| hold.key.starts_with(dir)).collect();
-        (!inside.is_empty(), inside.iter().any(|hold| !hold.share_delete))
+    /// Whether a hold makes a call Busy, by what the call does and the volume's model (measurement M6).
+    fn blocked(&self, key: &Key, call: Blocks) -> bool {
+        self.holds.iter().any(|hold| {
+            let (target, inside) = (&hold.key == key, hold.key.starts_with(key));
+            let model = self.disk.model_of(&hold.key);
+            let posix = model == DurabilityModel::Ntfs;
+            match (call, model) {
+                // Unix lets programs replace, delete, and rename files and folders others hold open.
+                (_, DurabilityModel::Ext4) => false,
+                // Only NTFS offers POSIX semantics, which replace a file held with delete sharing.
+                (Blocks::Replace, _) => target && (!hold.share_delete || !posix),
+                (Blocks::Delete, _) => target && !hold.share_delete,
+                (Blocks::RenameFolder, _) => inside,
+                // Elsewhere a deleted file keeps its name until it is closed, so its folder isn't empty.
+                (Blocks::DeleteFolder, _) => inside && (!hold.share_delete || !posix),
+            }
+        })
     }
 
     /// The fault that fails this call, if any. Using a fault counts one of its times.
@@ -319,9 +336,11 @@ impl FaultFs {
         self.lock().rules.push(rule);
     }
 
-    /// Holds a file open like a hostile reader for `calls` calls, with or without delete sharing. A hold that
-    /// doesn't share delete access makes replacing or deleting the file Busy, and deleting its folder too.
-    /// Renaming a folder with a held file inside is always Busy, as on Windows.
+    /// Holds a file open like a hostile reader for `calls` calls, with or without delete sharing. What a hold
+    /// blocks follows measurement M6. On NTFS, a hold without delete sharing makes replacing or deleting the
+    /// file Busy, and deleting its folder too. On FAT and network shares, which have no POSIX semantics, any hold
+    /// makes replacing the file and deleting its folder Busy. On Windows, renaming a folder with a held file
+    /// inside is always Busy. On ext4 a hold blocks nothing, as on Unix.
     pub fn hold_open(&self, path: &Path, share_delete: bool, calls: u32) {
         if let Ok(key) = key_of(path) {
             self.lock().holds.push(Hold {

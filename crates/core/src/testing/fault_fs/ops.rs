@@ -6,7 +6,7 @@ use std::path::Path;
 use super::call::Step;
 use super::checks::{after_rename, identical, FaultAppend, FaultLock};
 use super::tree::{key_of, parent, Entry};
-use super::{DurabilityModel, FaultFs};
+use super::{Blocks, DurabilityModel, FaultFs};
 use crate::error::{FsError, FsErrorKind};
 use crate::store::fs::{
     AppendFile, Committed, DirEntry, Durability, FileMeta, FolderIdentity, Fs, FsLock, VolumeInfo, VolumeKind,
@@ -166,7 +166,7 @@ impl Fs for FaultFs {
             return Err(call.fail(FsErrorKind::Unsupported));
         }
         let locked = state.locks.iter().any(|lock| lock.starts_with(&from_key));
-        if state.held_inside(&from_key).0 || locked {
+        if state.blocked(&from_key, Blocks::RenameFolder) || locked {
             return Err(call.fail(FsErrorKind::Busy));
         }
         let mut steps = vec![Step::RenameDir {
@@ -192,7 +192,9 @@ impl Fs for FaultFs {
             None => Some(FsErrorKind::NotFound),
             Some(Entry::Dir(_)) => Some(FsErrorKind::Io),
             Some(Entry::File(_)) if state.read_only(&key) => Some(FsErrorKind::ReadOnlyFile),
-            Some(Entry::File(_)) if state.locks.contains(&key) || state.held(&key) => Some(FsErrorKind::Busy),
+            Some(Entry::File(_)) if state.locks.contains(&key) || state.blocked(&key, Blocks::Delete) => {
+                Some(FsErrorKind::Busy)
+            }
             Some(Entry::File(_)) => None,
         };
         if let Some(kind) = error {
@@ -209,7 +211,7 @@ impl Fs for FaultFs {
             return Err(call.fail(FsErrorKind::NotFound));
         }
         let locked = state.locks.iter().any(|lock| lock.starts_with(&key));
-        if state.held_inside(&key).1 || locked {
+        if state.blocked(&key, Blocks::DeleteFolder) || locked {
             return Err(call.fail(FsErrorKind::Busy));
         }
         call.run(vec![Step::RemoveTree { key }])

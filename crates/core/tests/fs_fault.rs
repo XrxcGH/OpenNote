@@ -338,6 +338,35 @@ fn hostile_readers_block_replaces_deletes_and_folder_renames() {
 }
 
 #[test]
+fn holds_follow_each_models_sharing_rules() {
+    for (model, replace, delete_folder) in [
+        (DurabilityModel::Fat, true, true),
+        (DurabilityModel::Network, true, true),
+        (DurabilityModel::Ext4, false, false),
+    ] {
+        let fs = setup(model);
+        let page = p("/nb/a/page.json");
+        fs.put(&page, b"old");
+        fs.hold_open(&page, true, 100);
+        let busy = |result: Result<(), opennote_core::FsError>| result.is_err_and(|e| e.kind == FsErrorKind::Busy);
+        assert_eq!(
+            busy(fs.replace_durable(&page, b"new").map(|_| ())),
+            replace,
+            "{model:?}: replace"
+        );
+        assert_eq!(
+            busy(fs.rename_dir(&p("/nb/a"), &p("/nb/c")).map(|_| ())),
+            model != DurabilityModel::Ext4
+        );
+        assert_eq!(
+            busy(fs.remove_dir_all(&p("/nb/a"))),
+            delete_folder,
+            "{model:?}: delete the folder"
+        );
+    }
+}
+
+#[test]
 fn locks_and_appends_are_exclusive() {
     let fs = setup(DurabilityModel::Ext4);
     let path = p("/nb/j.onj");

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use super::call::{Call, Step};
 use super::tree::{parent, Entry, Key};
-use super::{DurabilityModel, FaultFs, State};
+use super::{Blocks, DurabilityModel, FaultFs, State};
 use crate::error::{FsError, FsErrorKind};
 use crate::store::fs::{AppendFile, Committed, Durability, FileStamp, FsLock};
 
@@ -67,7 +67,7 @@ impl State {
         match self.entry(key) {
             Some(Entry::Dir(_)) => Err(FsError::new(FsErrorKind::Io, path)),
             Some(Entry::File(_)) if self.read_only(key) => Err(FsError::new(FsErrorKind::ReadOnlyFile, path)),
-            Some(Entry::File(_)) if self.held(key) => Err(FsError::new(FsErrorKind::Busy, path)),
+            Some(Entry::File(_)) if self.blocked(key, Blocks::Replace) => Err(FsError::new(FsErrorKind::Busy, path)),
             _ => Ok(()),
         }
     }
