@@ -12,6 +12,7 @@
 )]
 
 pub mod gzip;
+pub mod header;
 pub mod history_json;
 pub mod json;
 pub mod markdown;
