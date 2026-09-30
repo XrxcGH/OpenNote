@@ -9,11 +9,15 @@
 //! DevTools Protocol, which skips Windows. The page records its own event timestamps, so the harness
 //! can split each latency into input, drawing, and presentation.
 //!
+//! Last, a native window that draws with GDI gets the same synthetic pen moves (see `native.rs`). It
+//! shows the floor that any windowed app meets, whatever its interface toolkit.
+//!
 //! Without `--auto`, the page opens for a person to draw on, with a panel to switch modes and save
 //! the page's own timings.
 
 mod cdp;
 mod measure;
+mod native;
 mod page;
 mod pen;
 mod plan;
@@ -50,12 +54,12 @@ pub const MODES: [&str; 10] = [
 const MANUAL_MODE: &str = "desync";
 const DEFAULT_SAMPLES: usize = 200;
 /// The window's inner size in logical pixels.
-const WINDOW_SIZE: (f64, f64) = (1200.0, 800.0);
+pub const WINDOW_SIZE: (f64, f64) = (1200.0, 800.0);
 /// Stop starting new modes after this long, so the screen lock is never held for much over 15 minutes.
 const RUN_BUDGET: Duration = Duration::from_secs(13 * 60);
 const LOCK_WAIT: Duration = Duration::from_secs(45 * 60);
 /// Seeds for the pseudo-random delays, so every run waits the same way.
-const SEED: u64 = 0x5EED_1A7E;
+pub const SEED: u64 = 0x5EED_1A7E;
 
 /// Sends pen input to the page, in CSS pixels.
 pub trait Injector {
@@ -68,20 +72,28 @@ pub fn run(options: &Options) -> Result<()> {
     let modes = selected_modes(options.mode.as_deref())?;
     if options.auto {
         run_auto(options, modes)
+    } else if modes == [native::MODE] {
+        Err("The native baseline runs only with --auto.".into())
     } else {
         run_manual(options, options.mode.as_deref().unwrap_or(MANUAL_MODE))
     }
 }
 
+/// Every mode the automated run measures: the page modes, then the native baseline.
+fn all_modes() -> Vec<&'static str> {
+    MODES.into_iter().chain([native::MODE]).collect()
+}
+
 fn selected_modes(mode: Option<&str>) -> Result<Vec<&'static str>> {
+    let all = all_modes();
     let Some(name) = mode else {
-        return Ok(MODES.to_vec());
+        return Ok(all);
     };
-    match MODES.iter().find(|candidate| **candidate == name) {
+    match all.iter().find(|candidate| **candidate == name) {
         Some(found) => Ok(vec![*found]),
         None => Err(format!(
             "There is no ink mode named \"{name}\". The modes are {}.",
-            MODES.join(", ")
+            all.join(", ")
         )
         .into()),
     }
@@ -137,7 +149,12 @@ fn run_auto(options: &Options, modes: Vec<&'static str>) -> Result<()> {
             continue;
         }
         println!("Measuring {mode}...");
-        match measure_in_window(mode, samples, nominal_hz) {
+        let measured = if mode == native::MODE {
+            native::measure(samples, nominal_hz).inspect(|result| print_summary(&result["latency"]))
+        } else {
+            measure_in_window(mode, samples, nominal_hz)
+        };
+        match measured {
             Ok(result) => done.push(result),
             Err(error) => {
                 outcome = Err(error);
@@ -179,8 +196,9 @@ fn measure_in_window(mode: &'static str, samples: usize, nominal_hz: u32) -> Res
         check_page(&ready, &target)?;
         let (x, y) = target.area.to_screen(WINDOW_SIZE.0 / 2.0, WINDOW_SIZE.1 / 2.0);
         let mut watcher = ChangeWatcher::new(Region::around(x, y, measure::REGION_PX))?;
+        let surface = page::PageSurface(&controller);
         let mut rig = Rig {
-            controller: &controller,
+            surface: &surface,
             watcher: &mut watcher,
             target,
             page: (
@@ -189,7 +207,7 @@ fn measure_in_window(mode: &'static str, samples: usize, nominal_hz: u32) -> Res
             ),
             frame_ms: 1000.0 / f64::from(nominal_hz.max(1)),
         };
-        let _ = send.send(measure_mode(&mut rig, &ready, samples, nominal_hz)?);
+        let _ = send.send(measure_mode(&mut rig, &controller, &ready, (samples, nominal_hz))?);
         Ok(())
     })?;
     receive
@@ -236,13 +254,14 @@ fn check_page(ready: &Value, target: &Target) -> Result<()> {
 }
 
 /// Runs one mode: clocks, frame pacing, then latency with the synthetic pen and with CDP.
-fn measure_mode(rig: &mut Rig, ready: &Value, samples: usize, nominal_hz: u32) -> Result<Value> {
-    let controller = rig.controller;
+fn measure_mode(rig: &mut Rig, controller: &Controller, ready: &Value, counts: (usize, u32)) -> Result<Value> {
+    let (samples, nominal_hz) = counts;
     let clock_start = page::clock_offset(controller)?;
     let idle_raf = page::frame_intervals(controller, 60)?;
     rig.frame_ms = report::refresh_ms(&idle_raf, nominal_hz);
-    let (pacing, pacing_events) = measure_pacing(rig)?;
-    let (latency, pen_state) = measure_latency(rig, samples, pacing_events, clock_start.offset_ms)?;
+    let (pacing, pacing_events) = measure_pacing(rig, controller)?;
+    let from = (pacing_events, clock_start.offset_ms);
+    let (latency, pen_state) = measure_latency(rig, controller, samples, from)?;
     let clock_end = page::clock_offset(controller)?;
     print_summary(&latency);
     Ok(json!({
@@ -270,11 +289,11 @@ fn measure_mode(rig: &mut Rig, ready: &Value, samples: usize, nominal_hz: u32) -
 
 /// Frame pacing during a continuous stroke from each input path. Returns the report and how many page
 /// events the strokes produced.
-fn measure_pacing(rig: &mut Rig) -> Result<(Value, usize)> {
-    let pen = measure::continuous_stroke(rig)?;
-    let pen_events = page::events(rig.controller, 0)?;
-    let cdp = measure::continuous_stroke_cdp(rig)?;
-    let cdp_events = page::events(rig.controller, pen_events.len())?;
+fn measure_pacing(rig: &mut Rig, controller: &Controller) -> Result<(Value, usize)> {
+    let pen = measure::continuous_stroke(rig, controller)?;
+    let pen_events = page::events(controller, 0)?;
+    let cdp = measure::continuous_stroke_cdp(rig, controller)?;
+    let cdp_events = page::events(controller, pen_events.len())?;
     let report = json!({
         "synthetic_pen": report::pacing_report(&pen, &pen_events, rig.frame_ms),
         "cdp_pen": report::pacing_report(&cdp, &cdp_events, rig.frame_ms),
@@ -282,18 +301,25 @@ fn measure_pacing(rig: &mut Rig) -> Result<(Value, usize)> {
     Ok((report, pen_events.len() + cdp_events.len()))
 }
 
-/// Latency samples from each input path, matched with the page events after index `from`. Also returns
-/// the last synthetic pen event the page saw, to show that pressure and tilt arrive.
-fn measure_latency(rig: &mut Rig, samples: usize, from: usize, offset_ms: f64) -> Result<(Value, Value)> {
+/// Latency samples from each input path, matched with the page events after index `from.0`, whose
+/// clock is `from.1` behind the performance counter. Also returns the last synthetic pen event the
+/// page saw, to show that pressure and tilt arrive.
+fn measure_latency(
+    rig: &mut Rig,
+    controller: &Controller,
+    samples: usize,
+    from: (usize, f64),
+) -> Result<(Value, Value)> {
+    let (first_event, offset_ms) = from;
     let pen_samples = {
         let mut pen = pen::Pen::new(rig.target)?;
         measure::latency_samples(rig, &mut pen, samples, SEED)?
     };
-    let pen_state = page::call(rig.controller, "lastPen", Value::Null)?;
-    let mut cdp = cdp::CdpPen::new(rig.controller);
+    let pen_state = page::call(controller, "lastPen", Value::Null)?;
+    let mut cdp = cdp::CdpPen::new(controller);
     let cdp_samples = measure::latency_samples(rig, &mut cdp, samples, SEED + 1)?;
     std::thread::sleep(Duration::from_millis(200));
-    let events = page::events(rig.controller, from)?;
+    let events = page::events(controller, first_event)?;
     let report = json!({
         "synthetic_pen": report::latency_report(&pen_samples, &events, offset_ms, rig.frame_ms),
         "cdp_pen": report::latency_report(&cdp_samples, &events, offset_ms, rig.frame_ms),
@@ -303,7 +329,10 @@ fn measure_latency(rig: &mut Rig, samples: usize, from: usize, offset_ms: f64) -
 
 /// Prints the median and 95th percentile latency of each input path, for the person running the spike.
 fn print_summary(latency: &Value) {
-    for method in ["synthetic_pen", "cdp_pen"] {
+    for method in ["synthetic_pen", "cdp_pen"]
+        .into_iter()
+        .filter(|method| latency.get(method).is_some())
+    {
         let ms = &latency[method]["latency_ms"];
         match (ms["p50"].as_f64(), ms["p95"].as_f64()) {
             (Some(p50), Some(p95)) => println!("  {method}: {p50:.1} ms median, {p95:.1} ms at p95"),
@@ -318,7 +347,8 @@ mod tests {
 
     #[test]
     fn selects_modes() {
-        assert_eq!(selected_modes(None).unwrap().len(), MODES.len());
+        assert_eq!(selected_modes(None).unwrap().len(), MODES.len() + 1);
+        assert_eq!(selected_modes(Some("native-gdi")).unwrap(), vec![native::MODE]);
         assert_eq!(selected_modes(Some("delegated")).unwrap(), vec!["delegated"]);
         assert!(selected_modes(Some("flutter")).is_err());
         assert_eq!(window_spec("raw", true).query, "mode=raw&auto=1");

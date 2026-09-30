@@ -28,9 +28,15 @@ const BLANK_TOLERANCE: u8 = 12;
 /// Stop a method after this many failures in a row at the start, or invalid samples in a row later.
 const GIVE_UP_AFTER: usize = 12;
 
-/// What a measurement needs: the page, the screen watcher, and where the spike window is.
+/// The drawing surface under test: the ink page, or the native baseline window.
+pub trait Surface {
+    /// Clears the ink and waits until the blank surface is on screen.
+    fn clear(&self) -> Result<()>;
+}
+
+/// What a latency measurement needs: the surface, the screen watcher, and where the window is.
 pub struct Rig<'a> {
-    pub controller: &'a Controller,
+    pub surface: &'a dyn Surface,
     pub watcher: &'a mut ChangeWatcher,
     pub target: Target,
     /// The page size in CSS pixels.
@@ -119,10 +125,9 @@ fn warm_up(rig: &mut Rig, injector: &mut dyn Injector, plan: &mut StrokePlan) ->
     clear_page(rig)
 }
 
-/// Clears the ink and waits a few frames, so the cleared page is on screen before the next baseline.
+/// Clears the ink and waits two more frames, so the blank surface is on screen before the next baseline.
 fn clear_page(rig: &mut Rig) -> Result<()> {
-    page::clear(rig.controller)?;
-    page::frame_intervals(rig.controller, 3)?;
+    rig.surface.clear()?;
     pause_ms(2.0 * rig.frame_ms);
     Ok(())
 }
@@ -195,16 +200,16 @@ pub struct Pacing {
 
 /// Draws a continuous stroke at 240 moves per second with the synthetic pen, while the page records
 /// its animation frames and the screen watcher records desktop presents.
-pub fn continuous_stroke(rig: &mut Rig) -> Result<Pacing> {
+pub fn continuous_stroke(rig: &mut Rig, controller: &Controller) -> Result<Pacing> {
     let points = pacing_stroke(rig.page.0, rig.page.1, PACING_MOVES);
-    page::clear(rig.controller)?;
-    page::call(rig.controller, "pacingStart", Value::Null)?;
+    page::clear(controller)?;
+    page::call(controller, "pacingStart", Value::Null)?;
     let target = rig.target;
     let pen = std::thread::spawn(move || draw_on_schedule(&mut Pen::new(target)?, &points));
     let watch = PACING_PERIOD * PACING_MOVES as u32 + Duration::from_millis(150);
     let frames = rig.watcher.collect_presents(watch);
     let injected = pen.join().map_err(|_| "The pen thread panicked.")??;
-    let raf_ms = serde_json::from_value(page::call(rig.controller, "pacingStop", Value::Null)?)?;
+    let raf_ms = serde_json::from_value(page::call(controller, "pacingStop", Value::Null)?)?;
     let frames = frames?;
     let present_ms = frames
         .windows(2)
@@ -220,13 +225,13 @@ pub fn continuous_stroke(rig: &mut Rig) -> Result<Pacing> {
 
 /// The same stroke sent through the DevTools Protocol, which skips the Windows pointer stack. Only the
 /// page's animation frames are recorded, because this thread sends the input.
-pub fn continuous_stroke_cdp(rig: &mut Rig) -> Result<Pacing> {
+pub fn continuous_stroke_cdp(rig: &mut Rig, controller: &Controller) -> Result<Pacing> {
     let points = pacing_stroke(rig.page.0, rig.page.1, PACING_MOVES);
-    page::clear(rig.controller)?;
-    page::call(rig.controller, "pacingStart", Value::Null)?;
-    let injected = draw_on_schedule(&mut CdpPen::new(rig.controller), &points)?;
+    page::clear(controller)?;
+    page::call(controller, "pacingStart", Value::Null)?;
+    let injected = draw_on_schedule(&mut CdpPen::new(controller), &points)?;
     pause_ms(150.0);
-    let raf_ms = serde_json::from_value(page::call(rig.controller, "pacingStop", Value::Null)?)?;
+    let raf_ms = serde_json::from_value(page::call(controller, "pacingStop", Value::Null)?)?;
     Ok(Pacing {
         raf_ms,
         present_ms: Vec::new(),

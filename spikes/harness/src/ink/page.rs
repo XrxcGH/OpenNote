@@ -6,6 +6,7 @@ use std::time::Duration;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+use super::measure::Surface;
 use crate::common::webview::Controller;
 use crate::common::{clock, Result};
 
@@ -64,6 +65,17 @@ pub fn frame_intervals(controller: &Controller, count: usize) -> Result<Vec<f64>
         "frames",
         json!({ "count": count }),
     )?)?)
+}
+
+/// The ink page as a surface that the latency samples can clear.
+pub struct PageSurface<'a>(pub &'a Controller);
+
+impl Surface for PageSurface<'_> {
+    fn clear(&self) -> Result<()> {
+        clear(self.0)?;
+        // Three animation frames later, the cleared canvas has reached the screen.
+        frame_intervals(self.0, 3).map(|_| ())
+    }
 }
 
 /// Adding `offset_ms` to a page time gives performance counter milliseconds, within `uncertainty_ms`.
