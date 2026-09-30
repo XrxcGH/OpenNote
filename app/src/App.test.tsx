@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { expectNoAxeViolations, renderApp } from './test';
+import { expectNoAxeViolations, pressChord, renderApp } from './test';
 
 // In a real browser the switch crossfades through a view transition, which applies the new theme a frame later,
 // so checks after a switch wait for it.
@@ -72,6 +72,13 @@ describe('switching themes', () => {
     await expect.poll(isOn).toBe('false');
     expect(dataTheme()).toBe('light');
     expect(localStorage.getItem('opennote.theme')).toBe('light');
+  });
+
+  it('switches with a trusted Ctrl+Shift+D key press from the keyboard', async () => {
+    await renderApp(windows(false));
+    await pressChord('Ctrl+Shift+D');
+    await expect.poll(isOn).toBe('true');
+    expect(dataTheme()).toBe('dark');
   });
 
   it('ignores a held key and extra modifiers', async () => {
