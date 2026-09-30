@@ -8,11 +8,13 @@ import { brandTokens } from './brand-tokens.ts';
 import { grammar } from './grammar.ts';
 import { hygiene } from './hygiene.ts';
 import { layout } from './layout.ts';
+import { logicalProperties } from './logical-properties.ts';
 import { length } from './length.ts';
 import { modifiability } from './modifiability.ts';
 import { readability } from './readability.ts';
 import { redundancy } from './redundancy.ts';
 import { spelling } from './spelling.ts';
+import { uiVoice } from './ui-voice.ts';
 import { usability } from './usability.ts';
 
 export const RULES: Rule[] = [
@@ -27,5 +29,7 @@ export const RULES: Rule[] = [
   modifiability,
   brandConsistency,
   brandTokens,
+  logicalProperties,
+  uiVoice,
   layout,
 ];
