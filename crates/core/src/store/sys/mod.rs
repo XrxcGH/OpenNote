@@ -111,6 +111,8 @@ pub(crate) fn renamed(target: &Path) {
 }
 
 /// The volume kind for a file system's name, as Windows or macOS reports it.
+// Linux names file systems by number instead.
+#[cfg_attr(not(any(windows, target_vendor = "apple")), allow(dead_code))]
 pub(crate) fn kind_from_name(name: &str) -> VolumeKind {
     match name.to_ascii_lowercase().as_str() {
         "ntfs" => VolumeKind::Ntfs,
@@ -125,6 +127,8 @@ pub(crate) fn kind_from_name(name: &str) -> VolumeKind {
 }
 
 /// Whether a volume kind keeps no metadata log, so a rename needs a flush of its folder too (spec 17.5).
+// Unix flushes the folder after every rename, whatever the file system.
+#[cfg_attr(not(windows), allow(dead_code))]
 pub(crate) fn is_fat(kind: &VolumeKind) -> bool {
     matches!(kind, VolumeKind::Fat32 | VolumeKind::ExFat | VolumeKind::Fat)
 }
