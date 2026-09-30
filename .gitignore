@@ -6,3 +6,7 @@ app/src-tauri/gen/
 dist-release/
 app/dist-test/
 app/.vitest/
+tests/e2e/.drivers/
+tests/e2e/logs/
+tests/ui/report/
+tests/ui/results/

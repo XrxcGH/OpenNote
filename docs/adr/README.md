@@ -48,3 +48,4 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0002](0002-license.md) | License OpenNote under Apache 2.0 | Accepted | 2026-09-30 |
 | [0003](0003-typescript-version.md) | Pin TypeScript to 6.0.x until typescript-eslint supports TypeScript 7 | Accepted | 2026-09-30 |
 | [0010](0010-interface-components-and-state.md) | Build the interface from hand-written accessible components, a small external store, registries, and a platform seam | Proposed | 2026-09-30 |
+| [0016](0016-phase-2-test-stack.md) | Test in layers: Vitest, Vitest browser mode, Playwright, and WebdriverIO with tauri-driver, on installed browsers | Proposed | 2026-09-30 |

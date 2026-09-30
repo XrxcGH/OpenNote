@@ -27,7 +27,7 @@ export function viteConfig(env: Pick<ConfigEnv, 'mode' | 'command'>): UserConfig
     define: { 'import.meta.env.VITE_PLATFORM': JSON.stringify(platform) },
     // Tauri expects a fixed dev server port and serves the built files from app/dist.
     server: { port: 1420, strictPort: true },
-    preview: { port: 4173, strictPort: true },
+    preview: { host: '127.0.0.1', port: 4173, strictPort: true },
     build: {
       // Test builds go to their own folder, so the app never embeds the web platform by accident.
       outDir: env.mode === 'test' ? 'dist-test' : 'dist',
