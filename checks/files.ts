@@ -1,7 +1,7 @@
 // Chooses which files to check, using git so results match what will be committed or pushed.
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 export type Selection =
@@ -30,8 +30,18 @@ export function listFiles(selection: Selection, root: string): string[] {
     case 'changed':
       return changedFiles(selection.base, root);
     case 'paths':
-      return selection.paths.map((p) => p.replace(/\\/g, '/').replace(/^\.\//, ''));
+      return expandPaths(selection.paths, root);
   }
+}
+
+/** Normalizes paths and replaces each folder with the tracked and untracked files inside it. */
+function expandPaths(paths: string[], root: string): string[] {
+  return paths.flatMap((raw) => {
+    const path = raw.replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/$/, '');
+    const full = join(root, path);
+    if (!existsSync(full) || !statSync(full).isDirectory()) return [path];
+    return splitNul(git(['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', path], root));
+  });
 }
 
 /** Files that differ from the merge base with `base`, including uncommitted and untracked files. */

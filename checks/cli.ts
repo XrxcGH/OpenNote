@@ -18,7 +18,7 @@ Selects files (default: changed since the merge base with origin/main):
   --all              Check every tracked and untracked (not ignored) file
   --staged           Check staged changes (used by the pre-commit hook)
   --base <ref>       Check files changed since <ref>
-  [paths...]         Check only these files
+  [paths...]         Check only these files or folders
 
 Options:
   --rules <a,b>      Run only these rules
