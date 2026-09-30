@@ -22,10 +22,12 @@ import {
   canHold,
   DEFAULT_TITLES,
   fail,
+  fitsDepth,
   isLive,
   listOf,
   live,
   newId,
+  penOrNull,
   ROOT,
   steppingClock,
   summary,
@@ -48,7 +50,7 @@ function seedNodes(state: ModelState, nodes: readonly FixtureNode[], parentId: s
       kind: node.kind,
       parentId,
       title: node.title,
-      color: node.kind === 'page' ? null : (node.color ?? null),
+      color: node.kind === 'page' ? null : penOrNull(node.color),
       pageLevel: node.kind === 'page' ? (node.pageLevel ?? 0) : 0,
       created,
       modified: node.modified ?? created,
@@ -119,13 +121,14 @@ export class NotesModel {
     const parent = parentId === null ? null : live(state, parentId);
     writable(state, parent ?? undefined);
     if (!canHold(parent?.kind ?? null, input.kind)) fail('invalid-move', `${input.kind} can't go there`);
+    if (input.kind === 'sectionGroup' && !fitsDepth(state, parentId, 1)) fail('invalid-move', 'Groups nest too deep');
     const list = listOf(state, parentId);
     if (beforeId !== null && !list.includes(live(state, beforeId).id)) fail('invalid-move', 'Not a sibling');
     const index = beforeId === null ? list.length : list.indexOf(beforeId);
     const pageLevel: PageLevel = input.kind === 'page' ? (input.pageLevel ?? 0) : 0;
     const id = newId(state, 'm');
     const now = state.now();
-    const color = input.kind === 'page' ? null : (input.color ?? null);
+    const color = input.kind === 'page' ? null : penOrNull(input.color);
     const rec = {
       id,
       kind: input.kind,
@@ -158,7 +161,7 @@ export class NotesModel {
     const rec = live(this.state, id);
     writable(this.state, rec);
     if (rec.kind !== 'page') {
-      rec.color = color;
+      rec.color = penOrNull(color);
       rec.modified = this.state.now();
     }
     return summary(this.state, rec);

@@ -4,7 +4,7 @@
 
 import { expect } from 'vitest';
 import { NotesError } from '../errors';
-import type { NodeId } from '../types';
+import type { ChipColor, NodeId } from '../types';
 import { add, expectNotesError, ISO_DATE, kase, library, pageLevels, titles } from './helpers';
 import type { ContractCase } from './helpers';
 
@@ -115,6 +115,14 @@ export const createCases: readonly ContractCase[] = [
     expect(page.color).toBeNull();
     expect((await add(s, lib.biology, 'section', 'Tinted', { color: 'walnut' })).color).toBe('walnut');
   }),
+  kase('create.group-depth', 'nests section groups 4 deep and rejects a fifth level with invalid-move', async (s) => {
+    const notebook = await add(s, null, 'notebook', 'Deep');
+    let parent = notebook.id;
+    for (const title of ['One', 'Two', 'Three', 'Four']) parent = (await add(s, parent, 'sectionGroup', title)).id;
+    await expectNotesError(add(s, parent, 'sectionGroup', 'Five'), 'invalid-move');
+    expect((await add(s, parent, 'section', 'Leaf')).parentId).toBe(parent);
+    expect(await titles(s, parent)).toEqual(['Leaf']);
+  }),
   kase('create.first-subpage', 'rejects a subpage as the first page of a section', async (s) => {
     const lib = await library(s);
     await expectNotesError(add(s, lib.meetings, 'page', 'Orphan', { pageLevel: 1 }), 'invalid-move');
@@ -156,5 +164,16 @@ export const renameCases: readonly ContractCase[] = [
   kase('color.page', 'keeps pages without a color', async (s) => {
     const lib = await library(s);
     expect((await s.setColor(lib.pages.Cell, 'fern')).color).toBeNull();
+  }),
+  kase('color.pen-names', 'stores anything but a pen name as no color', async (s) => {
+    const lib = await library(s);
+    // checks-disable-next-line brand-consistency: a color name the contract must refuse, not a style
+    const unknown = 'teal' as ChipColor;
+    expect((await add(s, lib.biology, 'section', 'Tinted', { color: unknown })).color).toBeNull();
+    await s.setColor(lib.labs, 'plum');
+    // checks-disable-next-line brand-consistency: a hexadecimal color the contract must refuse, not a style
+    const hex = '#00ff00' as ChipColor;
+    expect((await s.setColor(lib.labs, hex)).color).toBeNull();
+    expect((await s.get(lib.labs))?.color).toBeNull();
   }),
 ];

@@ -6,6 +6,10 @@
 export type NotesErrorCode =
   'not-found' | 'invalid-name' | 'invalid-move' | 'read-only' | 'conflict' | 'unavailable' | 'io';
 
+/**
+ * Phase 3's storage names folders by id or rewrites unsafe names, so it reports only 'empty' and 'too-long'. The
+ * other reasons stay for storage that names files after titles, and the shell has words for each.
+ */
 export type InvalidNameReason = 'empty' | 'too-long' | 'reserved' | 'characters' | 'trailing-dot-or-space';
 
 export class NotesError extends Error {
