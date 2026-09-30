@@ -1,5 +1,8 @@
 //! The OpenNote desktop shell: creates the window and exposes commands to the interface.
 
+pub mod events;
+pub mod ipc;
+
 use std::{thread, time::Duration};
 
 use tauri::{webview::PageLoadEvent, Manager};
