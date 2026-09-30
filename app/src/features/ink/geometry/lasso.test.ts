@@ -105,9 +105,12 @@ function exactShare(stroke: Stroke, polygon: readonly Vec[]): number {
     if (pointInPolygon(p, polygon)) inside++;
   };
   visit(points[0]);
+  let last = points[0];
   for (let i = 1; i < points.length; i++) {
-    const pieces = Math.max(1, Math.ceil(distance(points[i - 1], points[i]) / 2));
-    for (let k = 1; k <= pieces; k++) visit(k === pieces ? points[i] : lerp(points[i - 1], points[i], k / pieces));
+    if (distance(last, points[i]) < 2 && i < points.length - 1) continue;
+    const pieces = Math.max(1, Math.ceil(distance(last, points[i]) / 2));
+    for (let k = 1; k <= pieces; k++) visit(k === pieces ? points[i] : lerp(last, points[i], k / pieces));
+    last = points[i];
   }
   return inside / total;
 }

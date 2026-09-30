@@ -53,9 +53,18 @@ export function transformBounds(b: Bounds, m: Matrix): Bounds {
   ]);
 }
 
+// A finished stroke never changes (an edit makes a new stroke object), so its box is computed once.
+const strokeBoundsCache = new WeakMap<Stroke, Bounds>();
+
 /** The page-space box of a stroke: its transformed points grown by half its transformed width. */
 export function strokeBounds(stroke: Stroke): Bounds {
-  const raw = boundsOf(stroke.points);
-  if (!stroke.transform) return grow(raw, stroke.width / 2);
-  return grow(transformBounds(raw, stroke.transform), (stroke.width * widthScale(stroke.transform)) / 2);
+  let box = strokeBoundsCache.get(stroke);
+  if (!box) {
+    const raw = boundsOf(stroke.points);
+    box = stroke.transform
+      ? grow(transformBounds(raw, stroke.transform), (stroke.width * widthScale(stroke.transform)) / 2)
+      : grow(raw, stroke.width / 2);
+    strokeBoundsCache.set(stroke, box);
+  }
+  return box;
 }

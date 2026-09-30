@@ -4,21 +4,26 @@
 import { intersects } from './bounds';
 import type { Bounds } from './types';
 
-export interface SpatialIndex {
+/** What the index holds for one item: its id, its box, and the value the caller stored with it. */
+export interface SpatialEntry<T> {
+  readonly id: string;
+  readonly bounds: Bounds;
+  readonly value: T;
+}
+
+export interface SpatialIndex<T> {
   readonly size: number;
-  insert(id: string, bounds: Bounds): void;
+  insert(id: string, bounds: Bounds, value: T): void;
   /** Removes an item and returns whether it was there. */
   remove(id: string): boolean;
   /** Moves an item to new bounds, inserting it if it is new. */
-  update(id: string, bounds: Bounds): void;
+  update(id: string, bounds: Bounds, value: T): void;
   has(id: string): boolean;
-  /** The ids of every item whose box meets the query box. */
-  search(query: Bounds): string[];
+  /** Every item whose box meets the query box. */
+  search(query: Bounds): SpatialEntry<T>[];
 }
 
-interface Item {
-  readonly id: string;
-  readonly bounds: Bounds;
+interface Item<T> extends SpatialEntry<T> {
   /** The grid cells holding the item, or null for an item on the large list. */
   readonly cells: number[] | null;
   stamp: number;
@@ -42,10 +47,10 @@ const ROW_LIMIT = 1_000_000;
 const cellCount = (s: CellSpan) => (s.x1 - s.x0 + 1) * (s.y1 - s.y0 + 1);
 const cellKey = (x: number, y: number) => x * ROW_STRIDE + y;
 
-class GridIndex implements SpatialIndex {
-  private readonly items = new Map<string, Item>();
-  private readonly grid = new Map<number, Item[]>();
-  private readonly large = new Set<Item>();
+class GridIndex<T> implements SpatialIndex<T> {
+  private readonly items = new Map<string, Item<T>>();
+  private readonly grid = new Map<number, Item<T>[]>();
+  private readonly large = new Set<Item<T>>();
   private stamp = 0;
 
   constructor(private readonly cellSize: number) {}
@@ -58,21 +63,21 @@ class GridIndex implements SpatialIndex {
     return this.items.has(id);
   }
 
-  update(id: string, bounds: Bounds): void {
-    this.insert(id, bounds);
+  update(id: string, bounds: Bounds, value: T): void {
+    this.insert(id, bounds, value);
   }
 
-  insert(id: string, bounds: Bounds): void {
+  insert(id: string, bounds: Bounds, value: T): void {
     this.remove(id);
     const span = this.span(bounds);
     if (cellCount(span) > MAX_CELLS_PER_ITEM) {
-      const item: Item = { id, bounds, cells: null, stamp: 0 };
+      const item: Item<T> = { id, bounds, value, cells: null, stamp: 0 };
       this.items.set(id, item);
       this.large.add(item);
       return;
     }
     const cells: number[] = [];
-    const item: Item = { id, bounds, cells, stamp: 0 };
+    const item: Item<T> = { id, bounds, value, cells, stamp: 0 };
     for (let x = span.x0; x <= span.x1; x++) {
       for (let y = span.y0; y <= span.y1; y++) {
         const key = cellKey(x, y);
@@ -98,12 +103,12 @@ class GridIndex implements SpatialIndex {
     return true;
   }
 
-  search(query: Bounds): string[] {
-    const found: string[] = [];
-    const visit = (item: Item) => {
+  search(query: Bounds): SpatialEntry<T>[] {
+    const found: SpatialEntry<T>[] = [];
+    const visit = (item: Item<T>) => {
       if (item.stamp === this.stamp || !intersects(item.bounds, query)) return;
       item.stamp = this.stamp;
-      found.push(item.id);
+      found.push(item);
     };
     const span = this.span(query);
     this.stamp++;
@@ -129,6 +134,6 @@ class GridIndex implements SpatialIndex {
   }
 }
 
-export function createSpatialIndex(cellSize: number = DEFAULT_CELL_SIZE): SpatialIndex {
-  return new GridIndex(cellSize);
+export function createSpatialIndex<T>(cellSize: number = DEFAULT_CELL_SIZE): SpatialIndex<T> {
+  return new GridIndex<T>(cellSize);
 }

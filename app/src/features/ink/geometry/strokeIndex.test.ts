@@ -21,29 +21,39 @@ describe('the spatial index', () => {
   it('finds exactly the boxes a brute-force scan finds, after inserts, updates, and removals', () => {
     fc.assert(
       fc.property(fc.array(box, { maxLength: 60 }), box, fc.nat(), (boxes, query, cut) => {
-        const index = createSpatialIndex(64);
-        boxes.forEach((b, i) => index.insert(`b${i}`, b));
+        const index = createSpatialIndex<string>(64);
+        boxes.forEach((b, i) => index.insert(`b${i}`, b, `b${i}`));
         const dropped = boxes.length === 0 ? -1 : cut % boxes.length;
-        if (boxes.length > 1) index.update('b0', boxes[boxes.length - 1]);
+        if (boxes.length > 1) index.update('b0', boxes[boxes.length - 1], 'b0');
         index.remove(`b${dropped}`);
         const expected = boxes
           .map((b, i) => [`b${i}`, i === 0 && boxes.length > 1 ? boxes[boxes.length - 1] : b] as const)
           .filter(([id, b]) => id !== `b${dropped}` && intersects(b, query))
           .map(([id]) => id)
           .sort();
-        expect(index.search(query).sort()).toEqual(expected);
+        expect(
+          index
+            .search(query)
+            .map((e) => e.id)
+            .sort(),
+        ).toEqual(expected);
       }),
       { numRuns: 200 },
     );
   });
 
   it('keeps very large boxes findable and counts its items', () => {
-    const index = createSpatialIndex(64);
-    index.insert('huge', { minX: -1e6, minY: -1e6, maxX: 1e6, maxY: 1e6 });
-    index.insert('tiny', { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+    const index = createSpatialIndex<string>(64);
+    index.insert('huge', { minX: -1e6, minY: -1e6, maxX: 1e6, maxY: 1e6 }, 'huge');
+    index.insert('tiny', { minX: 0, minY: 0, maxX: 1, maxY: 1 }, 'tiny');
     expect(index.size).toBe(2);
-    expect(index.search({ minX: 500, minY: 500, maxX: 501, maxY: 501 })).toEqual(['huge']);
-    expect(index.search({ minX: 0, minY: 0, maxX: 0, maxY: 0 }).sort()).toEqual(['huge', 'tiny']);
+    expect(index.search({ minX: 500, minY: 500, maxX: 501, maxY: 501 }).map((e) => e.id)).toEqual(['huge']);
+    expect(
+      index
+        .search({ minX: 0, minY: 0, maxX: 0, maxY: 0 })
+        .map((e) => e.id)
+        .sort(),
+    ).toEqual(['huge', 'tiny']);
     expect(index.remove('huge')).toBe(true);
     expect(index.remove('huge')).toBe(false);
   });

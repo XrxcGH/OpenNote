@@ -3,6 +3,7 @@
 import { strokeBounds } from './bounds';
 import { applyToPoints, widthScale } from './matrix';
 import { createSpatialIndex } from './spatialIndex';
+import type { SpatialEntry } from './spatialIndex';
 import type { Bounds, Stroke, Vec } from './types';
 
 export interface StrokeIndex {
@@ -15,6 +16,8 @@ export interface StrokeIndex {
   all(): IterableIterator<Stroke>;
   /** The strokes whose boxes meet the query box. Their ink may still miss it. */
   query(bounds: Bounds): Stroke[];
+  /** The same strokes, each with its page-space box, which saves callers from working the box out again. */
+  find(bounds: Bounds): SpatialEntry<Stroke>[];
 }
 
 // Strokes never change once finished, so their page-space points are computed once.
@@ -38,7 +41,7 @@ export function halfWidth(stroke: Stroke): number {
 
 export function createStrokeIndex(strokes: Iterable<Stroke> = [], cellSize?: number): StrokeIndex {
   const table = new Map<string, Stroke>();
-  const spatial = createSpatialIndex(cellSize);
+  const spatial = createSpatialIndex<Stroke>(cellSize);
   const index: StrokeIndex = {
     get size() {
       return table.size;
@@ -47,14 +50,15 @@ export function createStrokeIndex(strokes: Iterable<Stroke> = [], cellSize?: num
     has: (id) => table.has(id),
     put(stroke) {
       table.set(stroke.id, stroke);
-      spatial.update(stroke.id, strokeBounds(stroke));
+      spatial.update(stroke.id, strokeBounds(stroke), stroke);
     },
     remove(id) {
       spatial.remove(id);
       return table.delete(id);
     },
     all: () => table.values(),
-    query: (bounds) => spatial.search(bounds).map((id) => table.get(id)!),
+    query: (bounds) => spatial.search(bounds).map((entry) => entry.value),
+    find: (bounds) => spatial.search(bounds),
   };
   for (const stroke of strokes) index.put(stroke);
   return index;

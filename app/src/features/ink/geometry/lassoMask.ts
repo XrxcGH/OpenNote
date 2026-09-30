@@ -10,7 +10,7 @@ export const INSIDE = 1;
 export const EDGE = 2;
 
 export interface MaskOptions {
-  /** The most cells along either side. Defaults to 256. */
+  /** The most cells along either side. Defaults to 128. */
   readonly maxCells?: number;
   /** The smallest cell, in page units. Callers pass one screen pixel. Defaults to 1. */
   readonly minCell?: number;
@@ -33,7 +33,7 @@ export type BoxClass = 'inside' | 'outside' | 'mixed';
 
 export function buildMask(polygon: readonly Vec[], options: MaskOptions = {}): LassoMask {
   const box = boundsOf(polygon);
-  const { maxCells = 256, minCell = 1 } = options;
+  const { maxCells = 128, minCell = 1 } = options;
   const cell = Math.max(minCell, Math.hypot(box.maxX - box.minX, box.maxY - box.minY) / maxCells);
   const cols = Math.ceil((box.maxX - box.minX) / cell) + 1;
   const rows = Math.ceil((box.maxY - box.minY) / cell) + 1;
@@ -168,9 +168,9 @@ export function classifyBox(mask: LassoMask, box: Bounds): BoxClass {
 }
 
 /** The cell state under a point: OUTSIDE, INSIDE, or EDGE, which needs an exact test. */
-export function stateAt(mask: LassoMask, p: Vec): number {
-  const c = Math.floor((p.x - mask.originX) / mask.cell);
-  const r = Math.floor((p.y - mask.originY) / mask.cell);
+export function stateAt(mask: LassoMask, x: number, y: number): number {
+  const c = Math.floor((x - mask.originX) / mask.cell);
+  const r = Math.floor((y - mask.originY) / mask.cell);
   if (c < 0 || r < 0 || c >= mask.cols || r >= mask.rows) return OUTSIDE;
   return mask.state[r * mask.cols + c];
 }

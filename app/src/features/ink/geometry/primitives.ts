@@ -6,7 +6,10 @@ import type { Capsule, Vec } from './types';
 export type Interval = readonly [number, number];
 
 export function distance(a: Vec, b: Vec): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
+  // Math.hypot is several times slower than this in V8, and distance sits in hot loops.
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 export function lerp(a: Vec, b: Vec, t: number): Vec {
