@@ -30,6 +30,9 @@ async function frames(count: number): Promise<void> {
   for (let index = 0; index < count; index++) await nextFrame();
 }
 
+/** Where the caret's line sits after panning, as a share of the window's height from the top. */
+const CARET_LINE = 0.45;
+
 /** Pans so the focused note is centered across and the caret's line sits a little above the middle, at `scale`.
  * The whole width of the note stays in view, so typed text never runs off the window. */
 function centerOnCaret(scale: number): CaretRect | null {
@@ -37,7 +40,23 @@ function centerOnCaret(scale: number): CaretRect | null {
   if (!caret) return null;
   const [, wy] = world.toWorld(caret.left, (caret.top + caret.bottom) / 2);
   const [width, height] = world.size;
-  world.centerOn(notes.centerX(notes.focused()), wy, width / 2, height * 0.45, scale);
+  world.centerOn(notes.centerX(notes.focused()), wy, width / 2, height * CARET_LINE, scale);
+  return notes.caret();
+}
+
+/** Pans to the caret again until it stays where the pan put it, and returns it. With `content-visibility`, blocks
+ * above the caret change height once they render or stop rendering, which moves the caret after the pan. Without
+ * this, the caret in the 20-page note ended up below the window. `force` pans once even if the caret hasn't moved. */
+async function settleOnCaret(scale: number, force = false): Promise<CaretRect | null> {
+  if (force) centerOnCaret(scale);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await frames(2);
+    const caret = notes.caret();
+    if (!caret) return null;
+    const offset = (caret.top + caret.bottom) / 2 - world.size[1] * CARET_LINE;
+    if (Math.abs(offset) < 2) return caret;
+    centerOnCaret(scale);
+  }
   return notes.caret();
 }
 
@@ -82,12 +101,21 @@ async function setup(args: Setup): Promise<Record<string, unknown>> {
   await frames(2);
   centerOnCaret(args.zoom);
   await document.fonts.ready;
+  await settleOnCaret(args.zoom);
   await ink.settled();
   await frames(3);
   return { caret: notes.caret(), editors: notes.count, ink: ink.mode, camera: world.camera };
 }
 
 register('setup', setup);
+/** Pans the caret's line back to a little above the middle, at the current zoom, for screen timing. The harness
+ * calls it when the caret nears the window's edge, and gets the caret back once the ink is drawn again. */
+register('revealCaret', async () => {
+  await settleOnCaret(world.camera.scale, true);
+  await ink.settled();
+  await frames(3);
+  return notes.caret();
+});
 register('focusEditor', async ({ index, place }: { index: number; place?: CaretPlace }) => {
   notes.focus(index, place ?? (index === LONG_NOTE ? 'middle' : 'end'));
   await frames(2);

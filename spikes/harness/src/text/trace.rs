@@ -90,15 +90,8 @@ fn read_stream(controller: &Controller, handle: &str) -> Result<String> {
 /// Records a trace while typing `KEYS` keys, and returns its events.
 fn record(controller: &Controller, complete: &Receiver<String>, condition: &Condition) -> Result<Vec<Value>> {
     let mut screen = ScreenTimer::off();
-    let area = controller.client_area()?;
     for n in 0..WARM_UP {
-        type_key(
-            controller,
-            super::input::typed_char(n),
-            &mut screen,
-            area,
-            condition.zoom,
-        )?;
+        type_key(controller, super::input::typed_char(n), &mut screen, condition.zoom)?;
     }
     let config = json!({ "recordMode": "recordAsMuchAsPossible", "includedCategories": CATEGORIES });
     controller.cdp(
@@ -110,7 +103,6 @@ fn record(controller: &Controller, complete: &Receiver<String>, condition: &Cond
             controller,
             super::input::typed_char(WARM_UP + n),
             &mut screen,
-            area,
             condition.zoom,
         )?;
     }

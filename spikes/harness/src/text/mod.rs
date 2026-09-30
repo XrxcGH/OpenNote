@@ -3,7 +3,8 @@
 //!
 //! Mode `keys` measures typing latency, with screen timing when capture is available.
 //!
-//! Mode `keys-screen` does the same, but requires screen timing, to add it to earlier results.
+//! Mode `keys-screen` does the same, but requires screen timing. It adds the screen numbers to each condition of
+//! the earlier results and keeps their in-page numbers.
 //!
 //! Mode `zoom` measures zoom and pan smoothness.
 //!
@@ -23,6 +24,7 @@ mod report;
 mod screen_timing;
 mod sharpness;
 mod trace;
+mod view;
 
 use std::path::Path;
 use std::thread::sleep;
@@ -30,11 +32,12 @@ use std::time::Duration;
 
 use serde_json::{json, Value};
 
-use crate::common::results::machine;
+use crate::common::results::{machine, today};
 use crate::common::screen::{check_desktop, ScreenLock};
 use crate::common::webview::{self, Controller, WindowSpec};
 use crate::common::Result;
 use crate::options::Options;
+use report::Section;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Mode {
@@ -125,9 +128,17 @@ fn wait_until_closed(controller: Controller) -> Result<()> {
 
 fn drive(controller: &Controller, modes: &[Mode], samples: usize, path: &Path) -> Result<()> {
     let page = controller.wait_for("ready", Duration::from_secs(60))?;
-    controller.raise(true)?;
+    let placement = view::place_window(controller)?;
+    println!(
+        "The window's client area is at {:?} on {:?}.",
+        placement.area, placement.monitor
+    );
     sleep(Duration::from_secs(1));
-    let mut sections = vec![("page".to_string(), page_section(controller, page)?)];
+    let mut sections = Vec::new();
+    // A keys-screen run only adds screen numbers, so the page details from the full run stay as they were.
+    if modes.iter().any(|mode| *mode != Mode::KeysScreen) {
+        sections.push(("page".to_string(), Section::Replace(page_section(controller, page)?)));
+    }
     for mode in modes {
         let outcome = match mode {
             Mode::Keys => keys::run(controller, samples, false),
@@ -136,11 +147,24 @@ fn drive(controller: &Controller, modes: &[Mode], samples: usize, path: &Path) -
             Mode::Sharpness => sharpness::run(controller),
             Mode::Trace => trace::run(controller),
         };
-        let section = outcome.unwrap_or_else(|error| json!({ "status": format!("failed: {error}") }));
-        sections.push((mode.section().to_string(), section));
+        sections.push((mode.section().to_string(), section(*mode, outcome)));
     }
     controller.raise(false)?;
     report::write(path, sections)
+}
+
+/// How a mode's outcome goes into the results. A failure never replaces earlier results: keys-screen notes it
+/// as the screen status, and other modes keep their earlier section with the failure noted.
+fn section(mode: Mode, outcome: Result<Value>) -> Section {
+    match (mode, outcome) {
+        (Mode::KeysScreen, Ok(run)) => Section::Screen(run),
+        (Mode::KeysScreen, Err(error)) => {
+            let status = format!("failed: {error}");
+            Section::Screen(json!({ "status": status, "screen_status": status, "date": today() }))
+        }
+        (_, Ok(section)) => Section::Replace(section),
+        (_, Err(error)) => Section::Failed(error.to_string()),
+    }
 }
 
 /// Loads the page again and waits until it's ready, so each condition starts from the state a person gets when
@@ -173,10 +197,8 @@ fn record_not_run(path: &Path, modes: &[Mode], reason: &str) -> Result<()> {
         .iter()
         .filter(|mode| !earlier.contains_key(mode.section()))
         .map(|mode| {
-            (
-                mode.section().to_string(),
-                json!({ "status": "not run", "reason": reason }),
-            )
+            let section = json!({ "status": "not run", "reason": reason });
+            (mode.section().to_string(), Section::Replace(section))
         })
         .collect();
     report::write(path, sections)
@@ -193,5 +215,18 @@ mod tests {
         assert_eq!(modes(Some("keys-screen")).unwrap(), vec![Mode::KeysScreen]);
         assert_eq!(Mode::KeysScreen.section(), "keys");
         assert!(modes(Some("fast")).is_err());
+    }
+
+    #[test]
+    fn a_failed_mode_never_replaces_earlier_results() {
+        let failed = || -> Result<Value> { Err("capture lost".into()) };
+        let Section::Screen(run) = section(Mode::KeysScreen, failed()) else {
+            panic!("A failed keys-screen run should still merge as screen timing.");
+        };
+        assert_eq!(run["screen_status"], "failed: capture lost");
+        assert!(run.get("conditions").is_none());
+        assert_eq!(section(Mode::Zoom, failed()), Section::Failed("capture lost".into()));
+        let keys = json!({ "status": "complete" });
+        assert_eq!(section(Mode::Keys, Ok(keys.clone())), Section::Replace(keys));
     }
 }
