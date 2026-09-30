@@ -11,30 +11,10 @@ import { recordRecentCommand } from '../state/session';
 import { t } from '../strings/t';
 import { announce } from '../ui/announce';
 import { showToast } from '../ui/toast';
-import type { Chord, CommandContext, CommandDef, CommandId, CommandTarget, FocusZone } from './types';
+import type { CommandContext, CommandDef, CommandId, CommandTarget, FocusZone } from './types';
 
-const MODIFIERS = ['Ctrl', 'Alt', 'Shift'] as const;
-export const NAMED_KEYS: readonly string[] =
-  'Up Down Left Right Home End PageUp PageDown Delete Backspace Enter Escape Space Tab Insert Menu'.split(' ');
-const PRINTABLE_KEY = /^(?:[A-Z0-9]|[/\\,.;'`=[\]-])$/;
-const FUNCTION_KEY = /^F(?:[1-9]|1\d|2[0-4])$/;
-
-/** Checks the canonical form: modifiers in the order Ctrl, Alt, Shift, each at most once, then one key. */
-export function isChordText(text: string): boolean {
-  const parts = text.split('+');
-  const key = parts.pop() ?? '';
-  const ordered = parts.every(
-    (part, i) => MODIFIERS.indexOf(part as 'Ctrl') > MODIFIERS.indexOf(parts[i - 1] as 'Ctrl'),
-  );
-  const validKey = PRINTABLE_KEY.test(key) || FUNCTION_KEY.test(key) || NAMED_KEYS.includes(key);
-  return ordered && parts.every((part) => MODIFIERS.includes(part as 'Ctrl')) && validKey;
-}
-
-/** A chord in the canonical form, such as 'Ctrl+Shift+D'. Throws on anything else. */
-export function chord(text: string): Chord {
-  if (!isChordText(text)) throw new Error(`"${text}" isn't a chord in the form Ctrl+Alt+Shift+Key.`);
-  return text as Chord;
-}
+// The canonical chord form lives in chords.ts, with the rest of the keyboard layout rules.
+export { NAMED_KEYS, chord, isChordText } from './chords';
 
 export function defineCommand<Args = void>(def: CommandDef<Args>): CommandDef<Args> {
   return def;

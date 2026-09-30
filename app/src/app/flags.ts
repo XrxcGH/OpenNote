@@ -25,7 +25,46 @@ export type FlagId =
   | 'settings.privacyAndAi'
   | 'bottomBar.recent'
   /** Phase 3's switch to the storage-backed notes service. */
-  | 'storage.core';
+  | 'storage.core'
+  | Phase4FlagId
+  | Phase5FlagId;
+
+/**
+ * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
+ * builds the feature; until then they are off everywhere.
+ */
+type Phase4FlagId =
+  | 'page.editor'
+  | 'page.images'
+  | 'page.tables'
+  | 'page.codeHighlight'
+  | 'page.slashMenu'
+  | 'page.styles'
+  | 'page.outline'
+  | 'page.typingHelpers'
+  | 'page.pasteExtras'
+  | 'page.formattingBar'
+  | 'page.readingOrder'
+  | 'page.history'
+  | 'page.imageRenditions'
+  | 'page.heicImport'
+  | 'editor.spelling'
+  | 'editor.readAloud';
+
+type Phase5FlagId =
+  | 'ink.core'
+  | 'ink.shapes'
+  | 'ink.anchoring'
+  | 'ink.insertSpace'
+  | 'ink.zoomBox'
+  | 'ink.gestures'
+  | 'ink.penButtons'
+  | 'ink.steadyPen'
+  | 'ink.describe'
+  | 'ink.delegatedTrail'
+  | 'ink.nativeTrail'
+  | 'ink.openSnapshot'
+  | 'dev.penRecorder';
 
 export interface FlagDef {
   id: FlagId;

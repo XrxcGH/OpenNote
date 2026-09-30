@@ -11,6 +11,7 @@ import type {
   PaletteProvider,
   SettingsSectionDef,
   SetupStepDef,
+  ShortcutListSectionDef,
   TitleBarItemDef,
 } from './types';
 
@@ -30,3 +31,5 @@ export const paletteProviders = createRegistry<PaletteProvider>('palette provide
 export const beforeExit = createRegistry<BeforeExitHook>('before-exit hooks');
 /** Phase 4 amendment P2-8: hooks that notes.newPage and notes.newSubpage run after creating a page. */
 export const pageCreated = createRegistry<PageCreatedHook>('page created hooks');
+/** Tables that later phases add to the keyboard shortcut list (AMENDMENTS.md, Phase 5 P2-5). */
+export const shortcutListSections = createRegistry<ShortcutListSectionDef>('shortcut list sections');

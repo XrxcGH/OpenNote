@@ -1,0 +1,121 @@
+/* The command palette (ARCHITECTURE.md section 14.6). The dialog sets its size and place; this lays out the rest. */
+@layer components {
+  .palette {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: 0;
+  }
+
+  .input {
+    inline-size: 100%;
+    min-block-size: var(--size-target-touch);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .input:focus-visible,
+  .chip:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .chip[aria-checked='true'] {
+    border-color: var(--color-accent-primary);
+    background: var(--color-accent-primary-subtle);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-3);
+    max-block-size: 60vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .group {
+    display: grid;
+  }
+
+  .groupLabel {
+    padding: var(--space-1) var(--space-4);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-caption-line);
+  }
+
+  .option {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: var(--space-4);
+    min-block-size: var(--size-row-pointer);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .option {
+    min-block-size: var(--size-row-touch);
+  }
+
+  /* The highlighted option. Forced colors keep the outline, which marks it without color. */
+  .option[aria-selected='true'] {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+    background: var(--color-surface-selected);
+  }
+
+  .option[aria-disabled='true'] {
+    color: var(--color-text-muted);
+    cursor: default;
+  }
+
+  .option[aria-checked='true'] .optionTitle {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .optionTitle {
+    overflow-wrap: anywhere;
+  }
+
+  .keys {
+    color: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    white-space: nowrap;
+  }
+
+  .detail {
+    grid-column: 1 / -1;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+}

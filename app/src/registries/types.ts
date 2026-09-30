@@ -9,7 +9,7 @@ import type { ChipColor, NodeId, NotesService } from '../services/notes/types';
 import type { MessageKey } from '../strings/t';
 import type { IconName } from '../ui/icons';
 
-/** Later phases extend this list. */
+/** Later phases extend this list: Phase 4's page and history menus and Phase 5's ink menus (AMENDMENTS.md P2-1). */
 export type MenuId =
   | 'tree.notebook'
   | 'tree.sectionGroup'
@@ -19,17 +19,39 @@ export type MenuId =
   | 'splitter.pages'
   | 'view.paneWidths'
   | 'theme.choices'
-  | 'trash.item';
+  | 'trash.item'
+  | 'page.text'
+  | 'page.link'
+  | 'page.object'
+  | 'page.image'
+  | 'page.table'
+  | 'page.canvas'
+  | 'history.version'
+  | 'history.change'
+  | 'page.ink'
+  | 'ink.penSlot'
+  | 'ink.palette';
+
+/**
+ * Props of a command bar item that draws itself, such as Phase 5's pen swatches (AMENDMENTS.md, Phase 5 P2-4).
+ * Spread `toolProps` on every focusable control inside, so the toolbar's arrow keys reach each one.
+ */
+export interface CommandBarComponentProps {
+  toolProps: { tabIndex: -1; 'data-tool': '' };
+}
 
 export interface CommandBarItem {
   id: string;
   tab: 'home' | 'insert' | 'draw' | 'view';
   group: string;
+  /** Also what the item runs from the More menu when the bar is too narrow to show it. */
   command: CommandId;
   /** Lower priorities move into More first when the bar is narrow. */
   priority: number;
-  presentation?: 'button' | 'toggle' | 'menu';
+  presentation?: 'button' | 'toggle' | 'menu' | 'component';
   menu?: MenuId;
+  /** With presentation 'component'. */
+  Component?: ComponentType<CommandBarComponentProps>;
   flag?: FlagId;
 }
 
@@ -114,6 +136,8 @@ export interface PaletteResult {
   detail?: string;
   keys?: readonly Chord[];
   checked?: boolean;
+  /** Shown, but not run: a command whose `enabled` is false. */
+  disabled?: boolean;
   icon?: IconName;
   score: number;
   run(): void | Promise<void>;
@@ -123,6 +147,19 @@ export interface PaletteProvider {
   id: string;
   filter: PaletteFilterId;
   search(query: string, signal: AbortSignal): readonly PaletteResult[] | Promise<readonly PaletteResult[]>;
+}
+
+/**
+ * A table of its own in the keyboard shortcut list (Ctrl+/), after the commands and the fixed keys, such as
+ * Phase 5's "Pen and touch gestures" (AMENDMENTS.md, Phase 5 P2-5). The component renders the table; the list
+ * renders the heading from `title`.
+ */
+export interface ShortcutListSectionDef {
+  id: string;
+  title: MessageKey;
+  order: number;
+  Component: ComponentType;
+  flag?: FlagId;
 }
 
 export interface BeforeExitHook {

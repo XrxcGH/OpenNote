@@ -15,12 +15,45 @@ export type { KeymapPresetId } from '../platform/types';
 export type CommandId = `${string}.${string}`;
 /** The canonical form, such as 'Ctrl+Shift+D': modifiers in the order Ctrl, Alt, Shift, then the key. */
 export type Chord = string & { readonly __brand: 'Chord' };
-export type KeyScope = 'global' | 'workspace' | 'tree' | 'notebooksTree' | 'pagesTree' | 'palette' | 'dialog';
-export type CommandCategory = 'general' | 'navigation' | 'notebooks' | 'view' | 'appearance' | 'updates' | 'help';
+/**
+ * Where a shortcut works. Elements name their scopes in data-scope, and the most specific active scope wins.
+ * Phase 4 adds the page, editor, and object scopes, and Phase 5 the zoom writing box (AMENDMENTS.md P2-1).
+ */
+export type KeyScope =
+  | 'global'
+  | 'workspace'
+  | 'tree'
+  | 'notebooksTree'
+  | 'pagesTree'
+  | 'palette'
+  | 'dialog'
+  | 'page'
+  | 'editor'
+  | 'editor.table'
+  | 'editor.code'
+  | 'pageObject'
+  | 'zoomBox';
+export type CommandCategory =
+  | 'general'
+  | 'navigation'
+  | 'notebooks'
+  | 'view'
+  | 'appearance'
+  | 'updates'
+  | 'help'
+  | 'editing'
+  | 'format'
+  | 'insert'
+  | 'table'
+  | 'object';
 export type FocusZone =
   'titleBar' | 'commandBar' | 'notebooks' | 'pages' | 'page' | 'textInput' | 'dialog' | 'palette' | 'none';
 export type CommandTarget =
-  { kind: 'node'; id: NodeId } | { kind: 'splitter'; pane: 'notebooks' | 'pages' } | { kind: 'trashItem'; id: NodeId };
+  | { kind: 'node'; id: NodeId }
+  | { kind: 'splitter'; pane: 'notebooks' | 'pages' }
+  | { kind: 'trashItem'; id: NodeId }
+  /** Page blocks selected as objects (Phase 4). */
+  | { kind: 'blocks'; ids: readonly string[] };
 
 export interface CommandDef<Args = void> {
   id: CommandId;
@@ -32,10 +65,19 @@ export interface CommandDef<Args = void> {
   icon?: IconName;
   /** The default chords. */
   keys?: readonly Chord[];
-  /** Default chords under another shortcut set, such as OneNote's. Missing sets use `keys`. */
+  /**
+   * Default chords under another shortcut set. `presetKeys.onenote` is the OneNote set, where a key keeps
+   * OneNote's meaning (AMENDMENTS.md P2-4). Missing sets use `keys`; an empty list means no shortcut there.
+   */
   presetKeys?: { readonly [P in KeymapPresetId]?: readonly Chord[] };
   /** Default 'global'. */
   scope?: KeyScope;
+  /**
+   * A less specific command that shares this one's chord on purpose (AMENDMENTS.md P2-2). This command wins in
+   * its scope; when its `when` or `enabled` is false, the key goes on to the other one. Ctrl+K adds a link with
+   * text selected and opens the palette otherwise.
+   */
+  refines?: CommandId;
   /** For chords such as Ctrl+K that work in text fields. */
   allowInTextInput?: boolean;
   /** The shortcut stays active while a dialog is open. */
