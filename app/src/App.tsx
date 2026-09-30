@@ -48,7 +48,8 @@ function useTheme() {
     const update = () =>
       flushSync(() => setPreference((current) => toggledPreference(resolveTheme(current, darkQuery().matches))));
     // Crossfades every surface; engines without view transitions (such as jsdom) switch at once.
-    if (typeof document.startViewTransition === 'function') document.startViewTransition(update);
+    // A switch during the crossfade skips the running transition, which rejects its ready promise.
+    if (typeof document.startViewTransition === 'function') document.startViewTransition(update).ready.catch(() => {});
     else update();
   }, []);
 

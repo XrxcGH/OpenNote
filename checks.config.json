@@ -1,6 +1,7 @@
 {
   "ignore": [
     "app/dist/**",
+    "app/dist-test/**",
     "app/src-tauri/gen/**",
     "app/src/theme/tokens.css",
     "app/src/theme/tokens.ts",
