@@ -52,3 +52,17 @@ describe('the settings slice', () => {
     expect(getSettings().shortcuts).toEqual({});
   });
 });
+
+describe('settings from an older shell', () => {
+  it("fills fields the host doesn't send with defaults, and keeps what it sends", async () => {
+    const platform = createWebPlatform();
+    const { keyboard: _keyboard, ...older } = DEFAULT_SETTINGS;
+    const partial = { ...older, appearance: { ...older.appearance, theme: 'dark', uiScale: undefined } };
+    vi.spyOn(platform.settings, 'update').mockResolvedValue(partial as unknown as typeof DEFAULT_SETTINGS);
+    initSettings(defaultBootData(), platform);
+    await updateSettings({ appearance: { theme: 'dark' } });
+    expect(getSettings().keyboard.preset).toBe('default');
+    expect(getSettings().appearance).toMatchObject({ theme: 'dark', uiScale: 100 });
+    expect(getSettings().storage.notesFolder).toBeNull();
+  });
+});

@@ -95,7 +95,8 @@ export function initSession(boot: BootData, platform: Platform): void {
     expanded: state.expanded,
     lastPageBySection: state.lastPageBySection as Record<string, string>,
     recentCommands: state.recentCommands as CommandId[],
-    recentPages: state.recentPages as NodeId[],
+    // An older shell's device state has no recent pages yet.
+    recentPages: (state.recentPages ?? []) as NodeId[],
   }));
   let previous = sessionStore.get();
   unsubscribe = sessionStore.subscribe(() => {
