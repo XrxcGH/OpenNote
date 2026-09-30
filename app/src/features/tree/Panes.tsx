@@ -71,7 +71,7 @@ export function PagesPane() {
   const sectionId = where.sectionId;
   const pages = useNotesQuery(sectionId, (notes) => notes.listChildren(sectionId as NodeId));
   if (!sectionId) return <p className={styles.empty}>{t('tree.empty.noSection')}</p>;
-  if (pages?.length === 0) return <p className={styles.empty}>{t('tree.empty.pages')}</p>;
+  if (pages?.length === 0) return <p className={styles.empty}>{t('tree.empty.pagesNoShortcut')}</p>;
   return (
     <ul className={styles.list}>
       {(pages ?? []).map((page) => (
