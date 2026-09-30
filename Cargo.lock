@@ -2676,8 +2676,11 @@ dependencies = [
 name = "opennote-crashtest"
 version = "0.1.0"
 dependencies = [
+ "crc32fast",
  "opennote-core",
+ "opennote-perf",
  "proptest",
+ "serde",
  "serde_json",
  "tempfile",
 ]
