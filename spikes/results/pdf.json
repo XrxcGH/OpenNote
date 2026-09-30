@@ -1,0 +1,5553 @@
+{
+  "date": "2026-09-30",
+  "machine": {
+    "logical_processors": 20,
+    "model": "Surface Laptop Studio 2",
+    "refresh_hz": 120,
+    "scale_percent": 150,
+    "webview2": "154.0.4258.37",
+    "windows": "Windows 10 Pro 25H2 (build 26200.9550)"
+  },
+  "results": {
+    "background_export": {
+      "cold_ms": 5803.7,
+      "description": "PrintToPdf from a hidden second WebView while the visible page shows the sample notes",
+      "export": {
+        "ms": {
+          "count": 5,
+          "max": 6810.4695,
+          "mean": 6412.4284,
+          "min": 6015.2608,
+          "p50": 6251.3904,
+          "p90": 6783.86106,
+          "p95": 6797.16528,
+          "p99": 6807.808656,
+          "stddev": 310.2838297440652
+        },
+        "ms_per_page_p50": 125.03
+      },
+      "layout": {
+        "carriedHeadings": 25,
+        "complete": false,
+        "devicePixelRatio": 1.5,
+        "fonts": {
+          "mono": true,
+          "reading": true,
+          "ui": true
+        },
+        "imageBytes": 127206,
+        "images": 18,
+        "keepTogether": [
+          {
+            "heightPx": 502.59375,
+            "movedFrom": 2,
+            "sheet": 3,
+            "spaceLeftPx": 292
+          }
+        ],
+        "layoutMs": 1326.5,
+        "manualBreaks": [
+          {
+            "afterSheet": 3,
+            "background": "cornell"
+          },
+          {
+            "afterSheet": 4,
+            "background": "dots"
+          }
+        ],
+        "oversized": 0,
+        "pageSizePx": {
+          "height": 1056,
+          "width": 816
+        },
+        "paper": "letter",
+        "sheets": 50,
+        "variant": "adjusted"
+      },
+      "pages": 50,
+      "paper": "letter",
+      "sheets": 50,
+      "visible_page": {
+        "frames_over_50ms": 0.0,
+        "longest_task_ms": {
+          "count": 5,
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "p50": 0.0,
+          "p90": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "stddev": 0.0
+        },
+        "max_frame_gap_ms": {
+          "count": 5,
+          "max": 8.635000000009313,
+          "mean": 8.609000000008383,
+          "min": 8.570000000006985,
+          "p50": 8.61500000001979,
+          "p90": 8.635000000009313,
+          "p95": 8.635000000009313,
+          "p99": 8.635000000009313,
+          "stddev": 0.025573423708193443
+        }
+      },
+      "visible_page_idle": {
+        "frames_over_50ms": 0.0,
+        "longest_task_ms": {
+          "count": 5,
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0,
+          "p50": 0.0,
+          "p90": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "stddev": 0.0
+        },
+        "max_frame_gap_ms": {
+          "count": 5,
+          "max": 9.11500000001979,
+          "mean": 8.772999999998138,
+          "min": 8.625,
+          "p50": 8.699999999982538,
+          "p90": 8.979000000009545,
+          "p95": 9.047000000014668,
+          "p99": 9.101400000018765,
+          "stddev": 0.1785105039024286
+        }
+      }
+    },
+    "fidelity": [
+      {
+        "exports": [
+          {
+            "export_ms": 321.5,
+            "file_bytes": 487400,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 40,
+              "gapsOver50Ms": 0,
+              "longTasks": 0,
+              "longestTaskMs": 0,
+              "maxGapMs": 8.430000000000064,
+              "printEvents": {
+                "after": 1,
+                "before": 1
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.117,
+                  "within_1px": 0.002
+                },
+                "offset_px": {
+                  "bottom": -0.01,
+                  "left": -0.02,
+                  "right": -0.05,
+                  "top": 0.03,
+                  "x": -0.02,
+                  "y": 0.02
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.115712010922148,
+                  "share_over_16": 0.04394526814726733,
+                  "share_over_64": 0.02260795874466864
+                },
+                "profile_correlation": {
+                  "columns": 0.9976,
+                  "rows": 0.992
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 88,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 93,
+                  "within_1px": 93,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.6241,
+                  "within_1px": 0.3433
+                },
+                "offset_px": {
+                  "bottom": 5.84,
+                  "left": 0.11,
+                  "right": 0.21,
+                  "top": 0.75,
+                  "x": 0.12,
+                  "y": 5.44
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 4.990726633883707,
+                  "share_over_16": 0.05355513441426265,
+                  "share_over_64": 0.031565468891283616
+                },
+                "profile_correlation": {
+                  "columns": 0.9789,
+                  "rows": 0.7425
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 5,
+                  "max_shift_px": 6,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 67,
+                  "within_1px": 16,
+                  "worst": [
+                    102,
+                    678,
+                    0,
+                    6
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.2067,
+                  "within_1px": 0.0673
+                },
+                "offset_px": {
+                  "bottom": 2.9,
+                  "left": 0.0,
+                  "right": 0.0,
+                  "top": 0.11,
+                  "x": 0.0,
+                  "y": 0.17
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.2115997588759657,
+                  "share_over_16": 0.03038565394572232,
+                  "share_over_64": 0.015781444184327763
+                },
+                "profile_correlation": {
+                  "columns": 0.9974,
+                  "rows": 0.8736
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 38,
+                  "max_shift_px": 3,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 45,
+                  "worst": [
+                    102,
+                    870,
+                    0,
+                    3
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1432,
+                  "within_1px": 0.0068
+                },
+                "offset_px": {
+                  "bottom": -0.03,
+                  "left": 0.0,
+                  "right": -0.07,
+                  "top": 0.01,
+                  "x": -0.0,
+                  "y": -0.01
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.938735468216907,
+                  "share_over_16": 0.02118041362681101,
+                  "share_over_64": 0.009870499052432091
+                },
+                "profile_correlation": {
+                  "columns": 0.996,
+                  "rows": 0.9934
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 51,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 51,
+                  "within_1px": 51,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.026,
+                  "within_1px": 0.0006
+                },
+                "offset_px": {
+                  "bottom": 0.01,
+                  "left": 0.03,
+                  "right": 0.03,
+                  "top": 0.0,
+                  "x": 0.03,
+                  "y": 0.01
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.35477059497905994,
+                  "share_over_16": 0.007339522458804537,
+                  "share_over_64": 0.002464915214348532
+                },
+                "profile_correlation": {
+                  "columns": 0.9993,
+                  "rows": 0.9989
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 50,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 50,
+                  "within_1px": 50,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 1373.4258,
+                "mean": 694.41172,
+                "min": 452.1608,
+                "p50": 545.8366,
+                "p90": 1073.55356,
+                "p95": 1223.4896799999997,
+                "p99": 1343.438576,
+                "stddev": 344.7113470932246
+              },
+              "windows_scale_factor": 1.4003
+            },
+            "producer": "Skia/PDF m154",
+            "route": "webview2_print_to_pdf",
+            "sheets": 5
+          },
+          {
+            "export_ms": 354.1,
+            "file_bytes": 519254,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 86,
+              "gapsOver50Ms": 0,
+              "longTasks": 0,
+              "longestTaskMs": 0,
+              "maxGapMs": 16.679999999999836,
+              "printEvents": {
+                "after": 2,
+                "before": 2
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.117,
+                  "within_1px": 0.002
+                },
+                "offset_px": {
+                  "bottom": -0.01,
+                  "left": -0.02,
+                  "right": -0.05,
+                  "top": 0.03,
+                  "x": -0.02,
+                  "y": 0.02
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.1158437896110223,
+                  "share_over_16": 0.04395817076040776,
+                  "share_over_64": 0.02260795874466864
+                },
+                "profile_correlation": {
+                  "columns": 0.9976,
+                  "rows": 0.992
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 88,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 93,
+                  "within_1px": 93,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.6242,
+                  "within_1px": 0.3433
+                },
+                "offset_px": {
+                  "bottom": 5.84,
+                  "left": 0.11,
+                  "right": 0.21,
+                  "top": 0.75,
+                  "x": 0.12,
+                  "y": 5.44
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 4.990922753603442,
+                  "share_over_16": 0.05355565051878827,
+                  "share_over_64": 0.03157527487727035
+                },
+                "profile_correlation": {
+                  "columns": 0.9789,
+                  "rows": 0.7425
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 5,
+                  "max_shift_px": 6,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 67,
+                  "within_1px": 16,
+                  "worst": [
+                    102,
+                    678,
+                    0,
+                    6
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.2067,
+                  "within_1px": 0.0673
+                },
+                "offset_px": {
+                  "bottom": 2.9,
+                  "left": 0.0,
+                  "right": 0.0,
+                  "top": 0.11,
+                  "x": 0.0,
+                  "y": 0.17
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.211585996088616,
+                  "share_over_16": 0.03038565394572232,
+                  "share_over_64": 0.015781444184327763
+                },
+                "profile_correlation": {
+                  "columns": 0.9974,
+                  "rows": 0.8736
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 38,
+                  "max_shift_px": 3,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 45,
+                  "worst": [
+                    102,
+                    870,
+                    0,
+                    3
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1432,
+                  "within_1px": 0.0068
+                },
+                "offset_px": {
+                  "bottom": -0.03,
+                  "left": 0.0,
+                  "right": -0.07,
+                  "top": 0.01,
+                  "x": -0.0,
+                  "y": -0.01
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.9386012810402465,
+                  "share_over_16": 0.021181445835862244,
+                  "share_over_64": 0.009877208411265116
+                },
+                "profile_correlation": {
+                  "columns": 0.996,
+                  "rows": 0.9934
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 51,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 51,
+                  "within_1px": 51,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.026,
+                  "within_1px": 0.0006
+                },
+                "offset_px": {
+                  "bottom": 0.01,
+                  "left": 0.03,
+                  "right": 0.03,
+                  "top": 0.0,
+                  "x": 0.03,
+                  "y": 0.01
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.3547662941080131,
+                  "share_over_16": 0.007339522458804537,
+                  "share_over_64": 0.002464915214348532
+                },
+                "profile_correlation": {
+                  "columns": 0.9993,
+                  "rows": 0.9989
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 50,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 50,
+                  "within_1px": 50,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 1277.4072,
+                "mean": 691.23712,
+                "min": 498.3298,
+                "p50": 567.5209,
+                "p90": 1000.8806800000002,
+                "p95": 1139.14394,
+                "p99": 1249.754548,
+                "stddev": 294.68542301385327
+              },
+              "windows_scale_factor": 1.4003
+            },
+            "producer": "Skia/PDF m154",
+            "route": "cdp_page_print_to_pdf",
+            "sheets": 5
+          }
+        ],
+        "layout": {
+          "carriedHeadings": 1,
+          "complete": true,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 1,
+          "keepTogether": [
+            {
+              "heightPx": 505.9270935058594,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 284
+            }
+          ],
+          "layoutMs": 12.58500000834465,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1056,
+            "width": 816
+          },
+          "paper": "letter",
+          "sheetDetails": [
+            {
+              "background": "lined",
+              "blocks": 7,
+              "boxHeightPx": 864,
+              "index": 1,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#6A4A9C": 2,
+                "#B0342A": 1,
+                "#B8620F": 1,
+                "#F2CF4A": 2
+              },
+              "usedPx": 736
+            },
+            {
+              "background": "lined",
+              "blocks": 5,
+              "boxHeightPx": 864,
+              "index": 2,
+              "strokes": {
+                "#2E7048": 2,
+                "#B0342A": 1
+              },
+              "usedPx": 580
+            },
+            {
+              "background": "lined",
+              "blocks": 2,
+              "boxHeightPx": 864,
+              "index": 3,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 8,
+                "#B8620F": 8
+              },
+              "usedPx": 595.9
+            },
+            {
+              "background": "cornell",
+              "blocks": 4,
+              "boxHeightPx": 744,
+              "index": 4,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#B8620F": 1
+              },
+              "usedPx": 306
+            },
+            {
+              "background": "dots",
+              "blocks": 3,
+              "boxHeightPx": 864,
+              "index": 5,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 9,
+                "#B8620F": 8
+              },
+              "usedPx": 694
+            }
+          ],
+          "sheets": 5,
+          "variant": "baseline"
+        },
+        "paper": "letter",
+        "screen_page_px": [
+          1224,
+          1584
+        ],
+        "variant": "baseline",
+        "webview2_vs_cdp": {
+          "pages": [
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.001
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0007
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0005
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0
+            }
+          ],
+          "pages_compared": 5
+        }
+      },
+      {
+        "exports": [
+          {
+            "export_ms": 356.0,
+            "file_bytes": 496351,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 44,
+              "gapsOver50Ms": 0,
+              "longTasks": 0,
+              "longestTaskMs": 0,
+              "maxGapMs": 8.455000000000155,
+              "printEvents": {
+                "after": 3,
+                "before": 3
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.1825,
+                  "within_1px": 0.0019
+                },
+                "offset_px": {
+                  "bottom": -0.7,
+                  "left": -0.09,
+                  "right": -0.37,
+                  "top": -0.12,
+                  "x": -0.13,
+                  "y": -0.27
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 3.187964336061222,
+                  "share_over_16": 0.06129760282009417,
+                  "share_over_64": 0.02675194855125651
+                },
+                "profile_correlation": {
+                  "columns": 0.9956,
+                  "rows": 0.9638
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 57,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 92,
+                  "within_1px": 92,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.5907,
+                  "within_1px": 0.3149
+                },
+                "offset_px": {
+                  "bottom": 5.21,
+                  "left": 0.04,
+                  "right": -0.06,
+                  "top": 0.75,
+                  "x": 0.03,
+                  "y": 4.87
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 5.124636877924075,
+                  "share_over_16": 0.06669712448259162,
+                  "share_over_64": 0.0296484369148729
+                },
+                "profile_correlation": {
+                  "columns": 0.9828,
+                  "rows": 0.7563
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 5,
+                  "max_shift_px": 6,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 63,
+                  "within_1px": 14,
+                  "worst": [
+                    102,
+                    678,
+                    0,
+                    6
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.3049,
+                  "within_1px": 0.0875
+                },
+                "offset_px": {
+                  "bottom": 3.38,
+                  "left": -0.06,
+                  "right": -0.36,
+                  "top": 0.12,
+                  "x": -0.11,
+                  "y": -0.13
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 3.4833948314917174,
+                  "share_over_16": 0.05088003115684776,
+                  "share_over_64": 0.02031985699805769
+                },
+                "profile_correlation": {
+                  "columns": 0.9937,
+                  "rows": 0.8258
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 10,
+                  "max_shift_px": 4,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 41,
+                  "worst": [
+                    774,
+                    870,
+                    0,
+                    4
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.2338,
+                  "within_1px": 0.0074
+                },
+                "offset_px": {
+                  "bottom": -0.71,
+                  "left": -0.13,
+                  "right": -0.39,
+                  "top": -0.13,
+                  "x": -0.13,
+                  "y": -0.4
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.825630168882764,
+                  "share_over_16": 0.03421611068669892,
+                  "share_over_64": 0.01355372808660006
+                },
+                "profile_correlation": {
+                  "columns": 0.9732,
+                  "rows": 0.9242
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 32,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 49,
+                  "within_1px": 49,
+                  "worst": [
+                    870,
+                    198,
+                    -1,
+                    0
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1237,
+                  "within_1px": 0.0007
+                },
+                "offset_px": {
+                  "bottom": -0.7,
+                  "left": -0.11,
+                  "right": -0.35,
+                  "top": -0.21,
+                  "x": -0.23,
+                  "y": -0.59
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.1134460438958709,
+                  "share_over_16": 0.02079020556529207,
+                  "share_over_64": 0.007846133105648677
+                },
+                "profile_correlation": {
+                  "columns": 0.9906,
+                  "rows": 0.984
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 35,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 48,
+                  "within_1px": 48,
+                  "worst": [
+                    870,
+                    582,
+                    0,
+                    -1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 742.4406,
+                "mean": 357.20216,
+                "min": 239.8341,
+                "p50": 271.5472,
+                "p90": 555.4887200000001,
+                "p95": 648.9646599999999,
+                "p99": 723.745412,
+                "stddev": 193.01953964741085
+              },
+              "windows_scale_factor": 1.4
+            },
+            "producer": "Skia/PDF m154",
+            "route": "webview2_print_to_pdf",
+            "sheets": 5
+          },
+          {
+            "export_ms": 329.8,
+            "file_bytes": 527990,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 82,
+              "gapsOver50Ms": 0,
+              "longTasks": 0,
+              "longestTaskMs": 0,
+              "maxGapMs": 8.4699999999998,
+              "printEvents": {
+                "after": 4,
+                "before": 4
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.1164,
+                  "within_1px": 0.0021
+                },
+                "offset_px": {
+                  "bottom": -0.02,
+                  "left": -0.02,
+                  "right": -0.07,
+                  "top": 0.04,
+                  "x": -0.03,
+                  "y": 0.02
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.048428759501424,
+                  "share_over_16": 0.04270036000139806,
+                  "share_over_64": 0.021824273381366808
+                },
+                "profile_correlation": {
+                  "columns": 0.9976,
+                  "rows": 0.9921
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 87,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 92,
+                  "within_1px": 92,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.6244,
+                  "within_1px": 0.3431
+                },
+                "offset_px": {
+                  "bottom": 5.87,
+                  "left": 0.11,
+                  "right": 0.22,
+                  "top": 0.91,
+                  "x": 0.12,
+                  "y": 5.45
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 4.836923028272509,
+                  "share_over_16": 0.051593542943023915,
+                  "share_over_64": 0.03060810777073753
+                },
+                "profile_correlation": {
+                  "columns": 0.9794,
+                  "rows": 0.7426
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 5,
+                  "max_shift_px": 6,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 63,
+                  "within_1px": 14,
+                  "worst": [
+                    102,
+                    678,
+                    0,
+                    6
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.317,
+                  "within_1px": 0.1065
+                },
+                "offset_px": {
+                  "bottom": 3.93,
+                  "left": 0.01,
+                  "right": 0.01,
+                  "top": 0.27,
+                  "x": 0.01,
+                  "y": 0.18
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.9902713075723457,
+                  "share_over_16": 0.03529911073163668,
+                  "share_over_64": 0.020685850097614804
+                },
+                "profile_correlation": {
+                  "columns": 0.9976,
+                  "rows": 0.8461
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 9,
+                  "max_shift_px": 4,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 39,
+                  "worst": [
+                    102,
+                    870,
+                    0,
+                    4
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1387,
+                  "within_1px": 0.0063
+                },
+                "offset_px": {
+                  "bottom": -0.01,
+                  "left": -0.0,
+                  "right": -0.02,
+                  "top": 0.02,
+                  "x": -0.0,
+                  "y": 0.0
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.8876008395039537,
+                  "share_over_16": 0.020284406097554886,
+                  "share_over_64": 0.009251187105858386
+                },
+                "profile_correlation": {
+                  "columns": 0.9966,
+                  "rows": 0.9952
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 49,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 49,
+                  "within_1px": 49,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.0263,
+                  "within_1px": 0.0008
+                },
+                "offset_px": {
+                  "bottom": 0.01,
+                  "left": 0.04,
+                  "right": 0.03,
+                  "top": 0.01,
+                  "x": 0.03,
+                  "y": 0.01
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.34861317075849946,
+                  "share_over_16": 0.007060720901551351,
+                  "share_over_64": 0.0024316321894176565
+                },
+                "profile_correlation": {
+                  "columns": 0.9993,
+                  "rows": 0.9988
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 48,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 48,
+                  "within_1px": 48,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 802.0904,
+                "mean": 375.43116,
+                "min": 249.9223,
+                "p50": 274.5427,
+                "p90": 600.2206800000001,
+                "p95": 701.15554,
+                "p99": 781.9034280000001,
+                "stddev": 214.00920856061873
+              },
+              "windows_scale_factor": 1.4
+            },
+            "producer": "Skia/PDF m154",
+            "route": "cdp_page_print_to_pdf",
+            "sheets": 5
+          }
+        ],
+        "layout": {
+          "carriedHeadings": 1,
+          "complete": true,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 1,
+          "keepTogether": [
+            {
+              "heightPx": 505.9270935058594,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 350.5196850393702
+            }
+          ],
+          "layoutMs": 10.729999989271164,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1122.5196850393702,
+            "width": 793.7007874015749
+          },
+          "paper": "a4",
+          "sheetDetails": [
+            {
+              "background": "lined",
+              "blocks": 7,
+              "boxHeightPx": 930.5,
+              "index": 1,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#6A4A9C": 2,
+                "#B0342A": 1,
+                "#B8620F": 1,
+                "#F2CF4A": 2
+              },
+              "usedPx": 736
+            },
+            {
+              "background": "lined",
+              "blocks": 5,
+              "boxHeightPx": 930.5,
+              "index": 2,
+              "strokes": {
+                "#2E7048": 2,
+                "#B0342A": 1
+              },
+              "usedPx": 580
+            },
+            {
+              "background": "lined",
+              "blocks": 2,
+              "boxHeightPx": 930.5,
+              "index": 3,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 8,
+                "#B8620F": 8
+              },
+              "usedPx": 595.9
+            },
+            {
+              "background": "cornell",
+              "blocks": 4,
+              "boxHeightPx": 810.5,
+              "index": 4,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#B8620F": 1
+              },
+              "usedPx": 306
+            },
+            {
+              "background": "dots",
+              "blocks": 3,
+              "boxHeightPx": 930.5,
+              "index": 5,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 9,
+                "#B8620F": 8
+              },
+              "usedPx": 694
+            }
+          ],
+          "sheets": 5,
+          "variant": "baseline"
+        },
+        "paper": "a4",
+        "screen_page_px": [
+          1190,
+          1683
+        ],
+        "variant": "baseline",
+        "webview2_vs_cdp": {
+          "pages": [
+            {
+              "ink_mismatch_exact": 0.1258,
+              "mean_abs_diff": 2.2092
+            },
+            {
+              "ink_mismatch_exact": 0.1908,
+              "mean_abs_diff": 1.7666
+            },
+            {
+              "ink_mismatch_exact": 0.1003,
+              "mean_abs_diff": 1.4417
+            },
+            {
+              "ink_mismatch_exact": 0.1763,
+              "mean_abs_diff": 1.4174
+            },
+            {
+              "ink_mismatch_exact": 0.1255,
+              "mean_abs_diff": 1.0709
+            }
+          ],
+          "pages_compared": 5
+        }
+      },
+      {
+        "exports": [
+          {
+            "export_ms": 831.4,
+            "file_bytes": 488887,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 99,
+              "gapsOver50Ms": 0,
+              "longTasks": 0,
+              "longestTaskMs": 0,
+              "maxGapMs": 41.70499999999993,
+              "printEvents": {
+                "after": 5,
+                "before": 5
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.117,
+                  "within_1px": 0.002
+                },
+                "offset_px": {
+                  "bottom": -0.01,
+                  "left": -0.02,
+                  "right": -0.05,
+                  "top": 0.03,
+                  "x": -0.02,
+                  "y": 0.02
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.115587801766316,
+                  "share_over_16": 0.04394113931106239,
+                  "share_over_64": 0.02261002316277111
+                },
+                "profile_correlation": {
+                  "columns": 0.9976,
+                  "rows": 0.992
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 88,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 93,
+                  "within_1px": 93,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.157,
+                  "within_1px": 0.0014
+                },
+                "offset_px": {
+                  "bottom": -0.0,
+                  "left": -0.01,
+                  "right": -0.0,
+                  "top": -0.1,
+                  "x": -0.01,
+                  "y": -0.05
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.36591157133872,
+                  "share_over_16": 0.028410521926184665,
+                  "share_over_64": 0.014555695935986523
+                },
+                "profile_correlation": {
+                  "columns": 0.9957,
+                  "rows": 0.9906
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 62,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 66,
+                  "within_1px": 66,
+                  "worst": [
+                    582,
+                    582,
+                    0,
+                    -1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.104,
+                  "within_1px": 0.0006
+                },
+                "offset_px": {
+                  "bottom": 0.18,
+                  "left": 0.0,
+                  "right": 0.01,
+                  "top": 0.09,
+                  "x": 0.0,
+                  "y": 0.15
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.1125173239085766,
+                  "share_over_16": 0.02258266962291339,
+                  "share_over_64": 0.010640527004653198
+                },
+                "profile_correlation": {
+                  "columns": 0.9981,
+                  "rows": 0.9835
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 61,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 64,
+                  "worst": [
+                    198,
+                    390,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1432,
+                  "within_1px": 0.0068
+                },
+                "offset_px": {
+                  "bottom": -0.03,
+                  "left": 0.0,
+                  "right": -0.07,
+                  "top": 0.01,
+                  "x": -0.0,
+                  "y": -0.01
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.9391289119002694,
+                  "share_over_16": 0.021185058567541565,
+                  "share_over_64": 0.009854499812137953
+                },
+                "profile_correlation": {
+                  "columns": 0.996,
+                  "rows": 0.9934
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 51,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 51,
+                  "within_1px": 51,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.026,
+                  "within_1px": 0.0006
+                },
+                "offset_px": {
+                  "bottom": 0.01,
+                  "left": 0.03,
+                  "right": 0.03,
+                  "top": 0.0,
+                  "x": 0.03,
+                  "y": 0.01
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.3547738636410555,
+                  "share_over_16": 0.007339522458804537,
+                  "share_over_64": 0.0024659474233997662
+                },
+                "profile_correlation": {
+                  "columns": 0.9993,
+                  "rows": 0.9989
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 50,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 50,
+                  "within_1px": 50,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 1216.1353,
+                "mean": 685.60358,
+                "min": 505.9338,
+                "p50": 554.8616,
+                "p90": 973.75298,
+                "p95": 1094.9441399999998,
+                "p99": 1191.8970679999998,
+                "stddev": 267.3814842649161
+              },
+              "windows_scale_factor": 1.4003
+            },
+            "producer": "Skia/PDF m154",
+            "route": "webview2_print_to_pdf",
+            "sheets": 5
+          },
+          {
+            "export_ms": 899.1,
+            "file_bytes": 522094,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 210,
+              "gapsOver50Ms": 1,
+              "longTasks": 1,
+              "longestTaskMs": 52,
+              "maxGapMs": 50.01499999999987,
+              "printEvents": {
+                "after": 6,
+                "before": 6
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.1169,
+                  "within_1px": 0.002
+                },
+                "offset_px": {
+                  "bottom": -0.01,
+                  "left": -0.02,
+                  "right": -0.05,
+                  "top": 0.03,
+                  "x": -0.02,
+                  "y": 0.02
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.1161228301245396,
+                  "share_over_16": 0.04395868686493338,
+                  "share_over_64": 0.022593507817951355
+                },
+                "profile_correlation": {
+                  "columns": 0.9976,
+                  "rows": 0.992
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 88,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 93,
+                  "within_1px": 93,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.157,
+                  "within_1px": 0.0014
+                },
+                "offset_px": {
+                  "bottom": -0.0,
+                  "left": -0.01,
+                  "right": -0.0,
+                  "top": -0.1,
+                  "x": -0.01,
+                  "y": -0.05
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.3657828892769994,
+                  "share_over_16": 0.028410521926184665,
+                  "share_over_64": 0.014570662967229427
+                },
+                "profile_correlation": {
+                  "columns": 0.9957,
+                  "rows": 0.9906
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 62,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 66,
+                  "within_1px": 66,
+                  "worst": [
+                    582,
+                    582,
+                    0,
+                    -1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.104,
+                  "within_1px": 0.0006
+                },
+                "offset_px": {
+                  "bottom": 0.18,
+                  "left": 0.0,
+                  "right": 0.01,
+                  "top": 0.09,
+                  "x": 0.0,
+                  "y": 0.15
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.1125173239085766,
+                  "share_over_16": 0.02258266962291339,
+                  "share_over_64": 0.010640527004653198
+                },
+                "profile_correlation": {
+                  "columns": 0.9981,
+                  "rows": 0.9835
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 61,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 64,
+                  "worst": [
+                    198,
+                    390,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1432,
+                  "within_1px": 0.0068
+                },
+                "offset_px": {
+                  "bottom": -0.03,
+                  "left": 0.0,
+                  "right": -0.07,
+                  "top": 0.01,
+                  "x": -0.0,
+                  "y": -0.01
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.9388479790034916,
+                  "share_over_16": 0.02118041362681101,
+                  "share_over_64": 0.009865854111701535
+                },
+                "profile_correlation": {
+                  "columns": 0.996,
+                  "rows": 0.9934
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 51,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 51,
+                  "within_1px": 51,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.026,
+                  "within_1px": 0.0006
+                },
+                "offset_px": {
+                  "bottom": 0.01,
+                  "left": 0.03,
+                  "right": 0.03,
+                  "top": 0.0,
+                  "x": 0.03,
+                  "y": 0.01
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1224,
+                  1583
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.35477059497905994,
+                  "share_over_16": 0.007339522458804537,
+                  "share_over_64": 0.002464915214348532
+                },
+                "profile_correlation": {
+                  "columns": 0.9993,
+                  "rows": 0.9989
+                },
+                "screen_px": [
+                  1224,
+                  1584
+                ],
+                "tiles": {
+                  "at_zero": 50,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 50,
+                  "within_1px": 50,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ],
+              [
+                612.0,
+                792.0
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 1282.8601,
+                "mean": 697.65428,
+                "min": 513.6242,
+                "p50": 529.3236,
+                "p90": 1023.8829400000002,
+                "p95": 1153.37152,
+                "p99": 1256.962384,
+                "stddev": 295.85424685224586
+              },
+              "windows_scale_factor": 1.4003
+            },
+            "producer": "Skia/PDF m154",
+            "route": "cdp_page_print_to_pdf",
+            "sheets": 5
+          }
+        ],
+        "layout": {
+          "carriedHeadings": 1,
+          "complete": true,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 1,
+          "keepTogether": [
+            {
+              "heightPx": 502.59375,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 292
+            }
+          ],
+          "layoutMs": 9.98999997973442,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1056,
+            "width": 816
+          },
+          "paper": "letter",
+          "sheetDetails": [
+            {
+              "background": "lined",
+              "blocks": 7,
+              "boxHeightPx": 864,
+              "index": 1,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#6A4A9C": 2,
+                "#B0342A": 1,
+                "#B8620F": 1,
+                "#F2CF4A": 2
+              },
+              "usedPx": 736
+            },
+            {
+              "background": "lined",
+              "blocks": 5,
+              "boxHeightPx": 864,
+              "index": 2,
+              "strokes": {
+                "#2E7048": 2,
+                "#B0342A": 1
+              },
+              "usedPx": 572
+            },
+            {
+              "background": "lined",
+              "blocks": 2,
+              "boxHeightPx": 864,
+              "index": 3,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 8,
+                "#B8620F": 8
+              },
+              "usedPx": 592.6
+            },
+            {
+              "background": "cornell",
+              "blocks": 4,
+              "boxHeightPx": 744,
+              "index": 4,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#B8620F": 1
+              },
+              "usedPx": 306
+            },
+            {
+              "background": "dots",
+              "blocks": 3,
+              "boxHeightPx": 864,
+              "index": 5,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 9,
+                "#B8620F": 8
+              },
+              "usedPx": 694
+            }
+          ],
+          "sheets": 5,
+          "variant": "adjusted"
+        },
+        "paper": "letter",
+        "screen_page_px": [
+          1224,
+          1584
+        ],
+        "variant": "adjusted",
+        "webview2_vs_cdp": {
+          "pages": [
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0023
+            },
+            {
+              "ink_mismatch_exact": 0.0001,
+              "mean_abs_diff": 0.0008
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0013
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0
+            }
+          ],
+          "pages_compared": 5
+        }
+      },
+      {
+        "exports": [
+          {
+            "export_ms": 863.2,
+            "file_bytes": 497839,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 102,
+              "gapsOver50Ms": 0,
+              "longTasks": 0,
+              "longestTaskMs": 0,
+              "maxGapMs": 8.599999999999454,
+              "printEvents": {
+                "after": 7,
+                "before": 7
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.115,
+                  "within_1px": 0.0021
+                },
+                "offset_px": {
+                  "bottom": -0.02,
+                  "left": -0.02,
+                  "right": -0.06,
+                  "top": 0.04,
+                  "x": -0.02,
+                  "y": 0.02
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.0368529586522666,
+                  "share_over_16": 0.04265392431482397,
+                  "share_over_64": 0.02177184599329928
+                },
+                "profile_correlation": {
+                  "columns": 0.9978,
+                  "rows": 0.9921
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 86,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 91,
+                  "within_1px": 91,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1503,
+                  "within_1px": 0.0015
+                },
+                "offset_px": {
+                  "bottom": 0.0,
+                  "left": -0.01,
+                  "right": -0.06,
+                  "top": -0.11,
+                  "x": -0.02,
+                  "y": -0.05
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.3171865299892982,
+                  "share_over_16": 0.027945795073822756,
+                  "share_over_64": 0.013926711504566177
+                },
+                "profile_correlation": {
+                  "columns": 0.9949,
+                  "rows": 0.9906
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 59,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 63,
+                  "within_1px": 63,
+                  "worst": [
+                    582,
+                    294,
+                    -1,
+                    0
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.2625,
+                  "within_1px": 0.0261
+                },
+                "offset_px": {
+                  "bottom": 0.79,
+                  "left": 0.01,
+                  "right": 0.01,
+                  "top": 0.28,
+                  "x": 0.01,
+                  "y": 0.53
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.4245528276670143,
+                  "share_over_16": 0.03252195708943114,
+                  "share_over_64": 0.018035520803686894
+                },
+                "profile_correlation": {
+                  "columns": 0.9981,
+                  "rows": 0.8995
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 9,
+                  "max_shift_px": 2,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 61,
+                  "worst": [
+                    198,
+                    390,
+                    0,
+                    2
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1332,
+                  "within_1px": 0.0061
+                },
+                "offset_px": {
+                  "bottom": -0.01,
+                  "left": -0.0,
+                  "right": -0.02,
+                  "top": 0.02,
+                  "x": -0.0,
+                  "y": 0.0
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.8914049042076724,
+                  "share_over_16": 0.020300383968204036,
+                  "share_over_64": 0.009277151145663257
+                },
+                "profile_correlation": {
+                  "columns": 0.9966,
+                  "rows": 0.9952
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 50,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 50,
+                  "within_1px": 50,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.0262,
+                  "within_1px": 0.0008
+                },
+                "offset_px": {
+                  "bottom": 0.01,
+                  "left": 0.04,
+                  "right": 0.03,
+                  "top": 0.01,
+                  "x": 0.04,
+                  "y": 0.01
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.3533228145684893,
+                  "share_over_16": 0.007128626851810243,
+                  "share_over_64": 0.002406167458070572
+                },
+                "profile_correlation": {
+                  "columns": 0.9993,
+                  "rows": 0.9988
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 48,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 48,
+                  "within_1px": 48,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 793.5066,
+                "mean": 377.8655,
+                "min": 255.6336,
+                "p50": 270.3553,
+                "p90": 597.3605200000001,
+                "p95": 695.4335599999999,
+                "p99": 773.8919920000001,
+                "stddev": 208.42272141092488
+              },
+              "windows_scale_factor": 1.4
+            },
+            "producer": "Skia/PDF m154",
+            "route": "webview2_print_to_pdf",
+            "sheets": 5
+          },
+          {
+            "export_ms": 918.4,
+            "file_bytes": 531044,
+            "fonts": [
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 14,
+                "name": "AAAAAA+Atkinson-Hyperlegible-Next-Bold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 61,
+                "name": "BAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 46,
+                "name": "CAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 29,
+                "name": "DAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 36,
+                "name": "EAAAAA+Literata",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 13,
+                "name": "FAAAAA+Atkinson-Hyperlegible-Next",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 22,
+                "name": "GAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              },
+              {
+                "embedding": "FontFile2",
+                "glyph_procedures": 0,
+                "name": "HAAAAA+AtkinsonHyperlegibleMonoExtraLight-Regular",
+                "subtype": "Type0",
+                "to_unicode": true
+              },
+              {
+                "embedding": "Type 3 glyph procedures",
+                "glyph_procedures": 7,
+                "name": "IAAAAA+Atkinson-Hyperlegible-Next-SemiBold",
+                "subtype": "Type3",
+                "to_unicode": true
+              }
+            ],
+            "frames_during_export": {
+              "frames": 216,
+              "gapsOver50Ms": 0,
+              "longTasks": 0,
+              "longestTaskMs": 0,
+              "maxGapMs": 41.8100000000004,
+              "printEvents": {
+                "after": 8,
+                "before": 8
+              }
+            },
+            "images_drawn": [
+              [
+                360,
+                240
+              ]
+            ],
+            "page_comparisons": [
+              {
+                "images": [
+                  [
+                    360,
+                    240
+                  ]
+                ],
+                "ink_mismatch": {
+                  "exact": 0.115,
+                  "within_1px": 0.0021
+                },
+                "offset_px": {
+                  "bottom": -0.02,
+                  "left": -0.02,
+                  "right": -0.06,
+                  "top": 0.04,
+                  "x": -0.02,
+                  "y": 0.02
+                },
+                "page": 1,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.036847299823078,
+                  "share_over_16": 0.04265392431482397,
+                  "share_over_64": 0.021772345301757066
+                },
+                "profile_correlation": {
+                  "columns": 0.9978,
+                  "rows": 0.9921
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 86,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 91,
+                  "within_1px": 91,
+                  "worst": [
+                    102,
+                    102,
+                    0,
+                    1
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#F2CF4A": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    }
+                  },
+                  "found_as_paths": 7,
+                  "strokes": 7
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1503,
+                  "within_1px": 0.0015
+                },
+                "offset_px": {
+                  "bottom": 0.0,
+                  "left": -0.01,
+                  "right": -0.06,
+                  "top": -0.11,
+                  "x": -0.02,
+                  "y": -0.05
+                },
+                "page": 2,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 1.317414048209896,
+                  "share_over_16": 0.027944796456907183,
+                  "share_over_64": 0.013917723952326029
+                },
+                "profile_correlation": {
+                  "columns": 0.9949,
+                  "rows": 0.9906
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 59,
+                  "max_shift_px": 1,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 63,
+                  "within_1px": 63,
+                  "worst": [
+                    582,
+                    294,
+                    -1,
+                    0
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 2,
+                      "strokes": 2
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 3,
+                  "strokes": 3
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.2625,
+                  "within_1px": 0.0261
+                },
+                "offset_px": {
+                  "bottom": 0.79,
+                  "left": 0.01,
+                  "right": 0.01,
+                  "top": 0.28,
+                  "x": 0.01,
+                  "y": 0.53
+                },
+                "page": 3,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 2.4245436736786217,
+                  "share_over_16": 0.03252195708943114,
+                  "share_over_64": 0.018035520803686894
+                },
+                "profile_correlation": {
+                  "columns": 0.9981,
+                  "rows": 0.8995
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 9,
+                  "max_shift_px": 2,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 64,
+                  "within_1px": 61,
+                  "worst": [
+                    198,
+                    390,
+                    0,
+                    2
+                  ]
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 35,
+                  "strokes": 35
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.1332,
+                  "within_1px": 0.0061
+                },
+                "offset_px": {
+                  "bottom": -0.01,
+                  "left": -0.0,
+                  "right": -0.02,
+                  "top": 0.02,
+                  "x": -0.0,
+                  "y": 0.0
+                },
+                "page": 4,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.8913999111230945,
+                  "share_over_16": 0.020300883276661824,
+                  "share_over_64": 0.00927665183720547
+                },
+                "profile_correlation": {
+                  "columns": 0.9966,
+                  "rows": 0.9952
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 50,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 50,
+                  "within_1px": 50,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2F4F9A": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 1,
+                      "strokes": 1
+                    }
+                  },
+                  "found_as_paths": 2,
+                  "strokes": 2
+                }
+              },
+              {
+                "images": [],
+                "ink_mismatch": {
+                  "exact": 0.0262,
+                  "within_1px": 0.0008
+                },
+                "offset_px": {
+                  "bottom": 0.01,
+                  "left": 0.04,
+                  "right": 0.03,
+                  "top": 0.01,
+                  "x": 0.04,
+                  "y": 0.01
+                },
+                "page": 5,
+                "paper_color": "#fffcf6",
+                "pdf_px": [
+                  1190,
+                  1684
+                ],
+                "pixels": {
+                  "mean_abs_diff": 0.35331965228159,
+                  "share_over_16": 0.007128626851810243,
+                  "share_over_64": 0.0024051688411550003
+                },
+                "profile_correlation": {
+                  "columns": 0.9993,
+                  "rows": 0.9988
+                },
+                "screen_px": [
+                  1190,
+                  1683
+                ],
+                "tiles": {
+                  "at_zero": 48,
+                  "max_shift_px": 0,
+                  "search_px": 6,
+                  "tile_px": 96,
+                  "with_ink": 48,
+                  "within_1px": 48,
+                  "worst": null
+                },
+                "vector_ink": {
+                  "by_color": {
+                    "#2E7048": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    },
+                    "#2F4F9A": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6A4A9C": {
+                      "pdf_paths": 4,
+                      "strokes": 4
+                    },
+                    "#6E4B2E": {
+                      "pdf_paths": 3,
+                      "strokes": 3
+                    },
+                    "#B0342A": {
+                      "pdf_paths": 9,
+                      "strokes": 9
+                    },
+                    "#B8620F": {
+                      "pdf_paths": 8,
+                      "strokes": 8
+                    }
+                  },
+                  "found_as_paths": 36,
+                  "strokes": 36
+                }
+              }
+            ],
+            "page_count_matches": true,
+            "page_size_matches": true,
+            "page_size_pt": [
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ],
+              [
+                594.9599609375,
+                841.9199829101562
+              ]
+            ],
+            "pages": 5,
+            "pdf_render": {
+              "ms_per_page": {
+                "count": 5,
+                "max": 765.788,
+                "mean": 361.05866000000003,
+                "min": 233.8365,
+                "p50": 259.5366,
+                "p90": 576.65184,
+                "p95": 671.21992,
+                "p99": 746.874384,
+                "stddev": 203.2604116072542
+              },
+              "windows_scale_factor": 1.4
+            },
+            "producer": "Skia/PDF m154",
+            "route": "cdp_page_print_to_pdf",
+            "sheets": 5
+          }
+        ],
+        "layout": {
+          "carriedHeadings": 1,
+          "complete": true,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 1,
+          "keepTogether": [
+            {
+              "heightPx": 502.59375,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 358.5196850393702
+            }
+          ],
+          "layoutMs": 33.935000002384186,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1122.5196850393702,
+            "width": 793.28
+          },
+          "paper": "a4",
+          "sheetDetails": [
+            {
+              "background": "lined",
+              "blocks": 7,
+              "boxHeightPx": 930.5,
+              "index": 1,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#6A4A9C": 2,
+                "#B0342A": 1,
+                "#B8620F": 1,
+                "#F2CF4A": 2
+              },
+              "usedPx": 736
+            },
+            {
+              "background": "lined",
+              "blocks": 5,
+              "boxHeightPx": 930.5,
+              "index": 2,
+              "strokes": {
+                "#2E7048": 2,
+                "#B0342A": 1
+              },
+              "usedPx": 572
+            },
+            {
+              "background": "lined",
+              "blocks": 2,
+              "boxHeightPx": 930.5,
+              "index": 3,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 8,
+                "#B8620F": 8
+              },
+              "usedPx": 592.6
+            },
+            {
+              "background": "cornell",
+              "blocks": 4,
+              "boxHeightPx": 810.5,
+              "index": 4,
+              "strokes": {
+                "#2F4F9A": 1,
+                "#B8620F": 1
+              },
+              "usedPx": 306
+            },
+            {
+              "background": "dots",
+              "blocks": 3,
+              "boxHeightPx": 930.5,
+              "index": 5,
+              "strokes": {
+                "#2E7048": 8,
+                "#2F4F9A": 4,
+                "#6A4A9C": 4,
+                "#6E4B2E": 3,
+                "#B0342A": 9,
+                "#B8620F": 8
+              },
+              "usedPx": 694
+            }
+          ],
+          "sheets": 5,
+          "variant": "adjusted"
+        },
+        "paper": "a4",
+        "screen_page_px": [
+          1190,
+          1683
+        ],
+        "variant": "adjusted",
+        "webview2_vs_cdp": {
+          "pages": [
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0002
+            },
+            {
+              "ink_mismatch_exact": 0.0001,
+              "mean_abs_diff": 0.0008
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0001
+            },
+            {
+              "ink_mismatch_exact": 0.0,
+              "mean_abs_diff": 0.0
+            }
+          ],
+          "pages_compared": 5
+        }
+      }
+    ],
+    "method": {
+      "dpi": 144.0,
+      "ink_threshold_darkness": 128.0,
+      "pdf_renderer": "Windows.Data.Pdf at the same resolution",
+      "profile_search_px": 20,
+      "screen": "CDP Page.captureScreenshot of each sheet, clipped to the sheet, with captureBeyondViewport",
+      "tile_px": 96,
+      "tile_search_px": 6,
+      "timing_samples": 5
+    },
+    "status": "measured",
+    "summary": [
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 5.84,
+        "max_tile_shift_px": 6.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          612.0,
+          792.0
+        ],
+        "pages": 5,
+        "paper": "letter",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "webview2_print_to_pdf",
+        "tiles_within_1px": 0.7846153846153846,
+        "variant": "baseline",
+        "worst_ink_mismatch_within_1px": 0.3433,
+        "worst_mean_abs_diff": 4.990726633883707
+      },
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 5.84,
+        "max_tile_shift_px": 6.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          612.0,
+          792.0
+        ],
+        "pages": 5,
+        "paper": "letter",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "cdp_page_print_to_pdf",
+        "tiles_within_1px": 0.7846153846153846,
+        "variant": "baseline",
+        "worst_ink_mismatch_within_1px": 0.3433,
+        "worst_mean_abs_diff": 4.990922753603442
+      },
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 5.21,
+        "max_tile_shift_px": 6.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          594.9599609375,
+          841.9199829101562
+        ],
+        "pages": 5,
+        "paper": "a4",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "webview2_print_to_pdf",
+        "tiles_within_1px": 0.7721518987341772,
+        "variant": "baseline",
+        "worst_ink_mismatch_within_1px": 0.3149,
+        "worst_mean_abs_diff": 5.124636877924075
+      },
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 5.87,
+        "max_tile_shift_px": 6.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          594.9599609375,
+          841.9199829101562
+        ],
+        "pages": 5,
+        "paper": "a4",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "cdp_page_print_to_pdf",
+        "tiles_within_1px": 0.7658227848101266,
+        "variant": "baseline",
+        "worst_ink_mismatch_within_1px": 0.3431,
+        "worst_mean_abs_diff": 4.836923028272509
+      },
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 0.18,
+        "max_tile_shift_px": 1.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          612.0,
+          792.0
+        ],
+        "pages": 5,
+        "paper": "letter",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "webview2_print_to_pdf",
+        "tiles_within_1px": 1.0,
+        "variant": "adjusted",
+        "worst_ink_mismatch_within_1px": 0.0068,
+        "worst_mean_abs_diff": 2.115587801766316
+      },
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 0.18,
+        "max_tile_shift_px": 1.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          612.0,
+          792.0
+        ],
+        "pages": 5,
+        "paper": "letter",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "cdp_page_print_to_pdf",
+        "tiles_within_1px": 1.0,
+        "variant": "adjusted",
+        "worst_ink_mismatch_within_1px": 0.0068,
+        "worst_mean_abs_diff": 2.1161228301245396
+      },
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 0.79,
+        "max_tile_shift_px": 2.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          594.9599609375,
+          841.9199829101562
+        ],
+        "pages": 5,
+        "paper": "a4",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "webview2_print_to_pdf",
+        "tiles_within_1px": 0.990506329113924,
+        "variant": "adjusted",
+        "worst_ink_mismatch_within_1px": 0.0261,
+        "worst_mean_abs_diff": 2.4245528276670143
+      },
+      {
+        "fonts_by_embedding": {
+          "FontFile2": 1,
+          "Type 3 glyph procedures": 8
+        },
+        "images_drawn": [
+          [
+            360,
+            240
+          ]
+        ],
+        "max_offset_px": 0.79,
+        "max_tile_shift_px": 2.0,
+        "page_count_matches": true,
+        "page_size_pt": [
+          594.9599609375,
+          841.9199829101562
+        ],
+        "pages": 5,
+        "paper": "a4",
+        "pen_strokes": 83.0,
+        "pen_strokes_as_paths": 83.0,
+        "route": "cdp_page_print_to_pdf",
+        "tiles_within_1px": 0.990506329113924,
+        "variant": "adjusted",
+        "worst_ink_mismatch_within_1px": 0.0261,
+        "worst_mean_abs_diff": 2.4245436736786217
+      }
+    ],
+    "timing": [
+      {
+        "layout": {
+          "carriedHeadings": 0,
+          "complete": false,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 1,
+          "keepTogether": [],
+          "layoutMs": 10.469999998807909,
+          "manualBreaks": [],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1056,
+            "width": 816
+          },
+          "paper": "letter",
+          "sheets": 1,
+          "variant": "adjusted"
+        },
+        "paper": "letter",
+        "routes": [
+          {
+            "cold_ms": 500.3,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 534.156,
+                "mean": 492.25958,
+                "min": 456.0093,
+                "p50": 485.6643,
+                "p90": 530.82168,
+                "p95": 532.48884,
+                "p99": 533.8225679999999,
+                "stddev": 32.56597724542592
+              },
+              "ms_per_page_p50": 485.66
+            },
+            "file_bytes": 143423,
+            "pages": 1,
+            "route": "webview2_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 0.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 0.0,
+                "mean": 0.0,
+                "min": 0.0,
+                "p50": 0.0,
+                "p90": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "stddev": 0.0
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 25.1200000000008,
+                "mean": 13.470000000000073,
+                "min": 8.494999999998981,
+                "p50": 8.610000000000582,
+                "p90": 21.70800000000054,
+                "p95": 23.41400000000067,
+                "p99": 24.77880000000077,
+                "stddev": 6.605775503300509
+              }
+            }
+          },
+          {
+            "cold_ms": 487.9,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 535.7953,
+                "mean": 491.83305999999993,
+                "min": 472.7614,
+                "p50": 481.7547,
+                "p90": 516.54366,
+                "p95": 526.16948,
+                "p99": 533.870136,
+                "stddev": 22.4885149045107
+              },
+              "ms_per_page_p50": 481.75
+            },
+            "file_bytes": 148307,
+            "pages": 1,
+            "route": "cdp_page_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 0.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 0.0,
+                "mean": 0.0,
+                "min": 0.0,
+                "p50": 0.0,
+                "p90": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "stddev": 0.0
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 25.039999999999058,
+                "mean": 18.269000000000233,
+                "min": 16.415000000000873,
+                "p50": 16.61499999999978,
+                "p90": 21.69399999999987,
+                "p95": 23.366999999999464,
+                "p99": 24.705399999999138,
+                "stddev": 3.3866168959591527
+              }
+            }
+          }
+        ],
+        "sheets": 1
+      },
+      {
+        "layout": {
+          "carriedHeadings": 4,
+          "complete": false,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 3,
+          "keepTogether": [
+            {
+              "heightPx": 502.59375,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 292
+            }
+          ],
+          "layoutMs": 84.00500002503395,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1056,
+            "width": 816
+          },
+          "paper": "letter",
+          "sheets": 10,
+          "variant": "adjusted"
+        },
+        "paper": "letter",
+        "routes": [
+          {
+            "cold_ms": 1431.4,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 1421.3374,
+                "mean": 1377.5807799999998,
+                "min": 1311.7616,
+                "p50": 1398.5438,
+                "p90": 1412.28956,
+                "p95": 1416.8134799999998,
+                "p99": 1420.4326159999998,
+                "stddev": 38.818883746053224
+              },
+              "ms_per_page_p50": 139.85
+            },
+            "file_bytes": 1418731,
+            "pages": 10,
+            "route": "webview2_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 126.0,
+                "mean": 110.2,
+                "min": 85.0,
+                "p50": 114.0,
+                "p90": 125.6,
+                "p95": 125.8,
+                "p99": 125.96,
+                "stddev": 15.509996776273036
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 125.08499999999913,
+                "mean": 108.25799999999981,
+                "min": 83.32499999999891,
+                "p50": 108.2400000000016,
+                "p90": 124.92500000000001,
+                "p95": 125.00499999999957,
+                "p99": 125.06899999999922,
+                "stddev": 15.770788693024201
+              }
+            }
+          },
+          {
+            "cold_ms": 1503.1,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 1598.4591,
+                "mean": 1547.14586,
+                "min": 1506.8398,
+                "p50": 1525.0379,
+                "p90": 1596.05334,
+                "p95": 1597.25622,
+                "p99": 1598.2185240000001,
+                "stddev": 39.919622193833476
+              },
+              "ms_per_page_p50": 152.5
+            },
+            "file_bytes": 1510868,
+            "pages": 10,
+            "route": "cdp_page_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 102.0,
+                "mean": 91.8,
+                "min": 83.0,
+                "p50": 90.0,
+                "p90": 100.8,
+                "p95": 101.4,
+                "p99": 101.88,
+                "stddev": 7.520638270785266
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 99.9900000000016,
+                "mean": 86.65399999999936,
+                "min": 74.89500000000044,
+                "p50": 83.39999999999782,
+                "p90": 96.65400000000008,
+                "p95": 98.32200000000084,
+                "p99": 99.65640000000145,
+                "stddev": 8.516892273594056
+              }
+            }
+          }
+        ],
+        "sheets": 10
+      },
+      {
+        "layout": {
+          "carriedHeadings": 25,
+          "complete": false,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 18,
+          "keepTogether": [
+            {
+              "heightPx": 502.59375,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 292
+            }
+          ],
+          "layoutMs": 450.6099999845028,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1056,
+            "width": 816
+          },
+          "paper": "letter",
+          "sheets": 50,
+          "variant": "adjusted"
+        },
+        "paper": "letter",
+        "routes": [
+          {
+            "cold_ms": 4802.6,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 4900.3464,
+                "mean": 4706.1413,
+                "min": 4621.6094,
+                "p50": 4676.6291,
+                "p90": 4824.28732,
+                "p95": 4862.31686,
+                "p99": 4892.740492,
+                "stddev": 102.80217344568173
+              },
+              "ms_per_page_p50": 93.53
+            },
+            "file_bytes": 8816153,
+            "pages": 50,
+            "route": "webview2_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 537.0,
+                "mean": 467.6,
+                "min": 423.0,
+                "p50": 471.0,
+                "p90": 511.8,
+                "p95": 524.4,
+                "p99": 534.48,
+                "stddev": 40.13776276774778
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 541.5149999999994,
+                "mean": 469.8550000000003,
+                "min": 424.8700000000026,
+                "p50": 474.7900000000009,
+                "p90": 514.8989999999991,
+                "p95": 528.2069999999992,
+                "p99": 538.8533999999994,
+                "stddev": 41.37261739363289
+              }
+            }
+          },
+          {
+            "cold_ms": 5883.8,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 5990.2176,
+                "mean": 5799.9398599999995,
+                "min": 5530.3304,
+                "p50": 5820.4972,
+                "p90": 5977.89544,
+                "p95": 5984.05652,
+                "p99": 5988.985384,
+                "stddev": 170.22866378028817
+              },
+              "ms_per_page_p50": 116.41
+            },
+            "file_bytes": 9382406,
+            "pages": 50,
+            "route": "cdp_page_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 510.0,
+                "mean": 467.8,
+                "min": 423.0,
+                "p50": 470.0,
+                "p90": 509.2,
+                "p95": 509.6,
+                "p99": 509.92,
+                "stddev": 37.39732610762432
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 525.1049999999959,
+                "mean": 474.96599999999455,
+                "min": 425.0099999999947,
+                "p50": 474.8600000000006,
+                "p90": 521.7349999999948,
+                "p95": 523.4199999999953,
+                "p99": 524.7679999999958,
+                "stddev": 41.22154283866754
+              }
+            }
+          }
+        ],
+        "sheets": 50
+      },
+      {
+        "layout": {
+          "carriedHeadings": 0,
+          "complete": false,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 1,
+          "keepTogether": [],
+          "layoutMs": 23.99500000476837,
+          "manualBreaks": [],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1122.5196850393702,
+            "width": 793.28
+          },
+          "paper": "a4",
+          "sheets": 1,
+          "variant": "adjusted"
+        },
+        "paper": "a4",
+        "routes": [
+          {
+            "cold_ms": 553.5,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 513.6492,
+                "mean": 481.26876000000004,
+                "min": 445.4591,
+                "p50": 481.4809,
+                "p90": 512.8356,
+                "p95": 513.2424,
+                "p99": 513.5678399999999,
+                "stddev": 28.241027750320978
+              },
+              "ms_per_page_p50": 481.48
+            },
+            "file_bytes": 143439,
+            "pages": 1,
+            "route": "webview2_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 0.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 0.0,
+                "mean": 0.0,
+                "min": 0.0,
+                "p50": 0.0,
+                "p90": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "stddev": 0.0
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 16.580000000001746,
+                "mean": 10.157000000000698,
+                "min": 8.514999999999418,
+                "p50": 8.555000000007567,
+                "p90": 13.383999999999652,
+                "p95": 14.982000000000697,
+                "p99": 16.260400000001535,
+                "stddev": 3.211589326175334
+              }
+            }
+          },
+          {
+            "cold_ms": 471.6,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 538.8346,
+                "mean": 472.40605999999997,
+                "min": 452.7574,
+                "p50": 458.1711,
+                "p90": 506.97144000000003,
+                "p95": 522.90302,
+                "p99": 535.648284,
+                "stddev": 33.31534684391565
+              },
+              "ms_per_page_p50": 458.17
+            },
+            "file_bytes": 148328,
+            "pages": 1,
+            "route": "cdp_page_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 0.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 0.0,
+                "mean": 0.0,
+                "min": 0.0,
+                "p50": 0.0,
+                "p90": 0.0,
+                "p95": 0.0,
+                "p99": 0.0,
+                "stddev": 0.0
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 16.679999999993015,
+                "mean": 10.186999999993713,
+                "min": 8.53499999998894,
+                "p50": 8.569999999992433,
+                "p90": 13.44999999999418,
+                "p95": 15.064999999993596,
+                "p99": 16.356999999993132,
+                "stddev": 3.246589903267394
+              }
+            }
+          }
+        ],
+        "sheets": 1
+      },
+      {
+        "layout": {
+          "carriedHeadings": 2,
+          "complete": false,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 3,
+          "keepTogether": [
+            {
+              "heightPx": 502.59375,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 358.5196850393702
+            }
+          ],
+          "layoutMs": 85.60500001907349,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1122.5196850393702,
+            "width": 793.28
+          },
+          "paper": "a4",
+          "sheets": 10,
+          "variant": "adjusted"
+        },
+        "paper": "a4",
+        "routes": [
+          {
+            "cold_ms": 1433.3,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 1439.7122,
+                "mean": 1401.5184800000002,
+                "min": 1378.0797,
+                "p50": 1394.6857,
+                "p90": 1428.40216,
+                "p95": 1434.05718,
+                "p99": 1438.5811959999999,
+                "stddev": 22.23284053632373
+              },
+              "ms_per_page_p50": 139.47
+            },
+            "file_bytes": 1481378,
+            "pages": 10,
+            "route": "webview2_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 120.0,
+                "mean": 106.6,
+                "min": 95.0,
+                "p50": 106.0,
+                "p90": 118.4,
+                "p95": 119.2,
+                "p99": 119.84,
+                "stddev": 10.150862032359615
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 116.71499999999652,
+                "mean": 103.33500000000058,
+                "min": 91.56500000000231,
+                "p50": 99.89500000000407,
+                "p90": 116.71499999999652,
+                "p95": 116.71499999999652,
+                "p99": 116.71499999999652,
+                "stddev": 11.32976433999976
+              }
+            }
+          },
+          {
+            "cold_ms": 1598.3,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 1781.7487,
+                "mean": 1674.6615599999998,
+                "min": 1586.7941,
+                "p50": 1690.477,
+                "p90": 1748.95062,
+                "p95": 1765.34966,
+                "p99": 1778.468892,
+                "stddev": 68.82345969192774
+              },
+              "ms_per_page_p50": 169.05
+            },
+            "file_bytes": 1584107,
+            "pages": 10,
+            "route": "cdp_page_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 129.0,
+                "mean": 109.6,
+                "min": 93.0,
+                "p50": 106.0,
+                "p90": 123.8,
+                "p95": 126.4,
+                "p99": 128.48,
+                "stddev": 12.142487389328432
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 133.36000000000058,
+                "mean": 108.27799999999988,
+                "min": 91.69500000000698,
+                "p50": 99.9149999999936,
+                "p90": 126.62599999999802,
+                "p95": 129.9929999999993,
+                "p99": 132.68660000000034,
+                "stddev": 14.915294700405623
+              }
+            }
+          }
+        ],
+        "sheets": 10
+      },
+      {
+        "layout": {
+          "carriedHeadings": 7,
+          "complete": false,
+          "devicePixelRatio": 1.5,
+          "fonts": {
+            "mono": true,
+            "reading": true,
+            "ui": true
+          },
+          "imageBytes": 127206,
+          "images": 19,
+          "keepTogether": [
+            {
+              "heightPx": 502.59375,
+              "movedFrom": 2,
+              "sheet": 3,
+              "spaceLeftPx": 358.5196850393702
+            }
+          ],
+          "layoutMs": 508.0300000011921,
+          "manualBreaks": [
+            {
+              "afterSheet": 3,
+              "background": "cornell"
+            },
+            {
+              "afterSheet": 4,
+              "background": "dots"
+            }
+          ],
+          "oversized": 0,
+          "pageSizePx": {
+            "height": 1122.5196850393702,
+            "width": 793.28
+          },
+          "paper": "a4",
+          "sheets": 50,
+          "variant": "adjusted"
+        },
+        "paper": "a4",
+        "routes": [
+          {
+            "cold_ms": 5034.5,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 5174.0036,
+                "mean": 5049.20742,
+                "min": 4954.7265,
+                "p50": 5052.5144,
+                "p90": 5139.5772799999995,
+                "p95": 5156.79044,
+                "p99": 5170.560968,
+                "stddev": 79.05265442623418
+              },
+              "ms_per_page_p50": 101.05
+            },
+            "file_bytes": 9310777,
+            "pages": 50,
+            "route": "webview2_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 518.0,
+                "mean": 476.6,
+                "min": 434.0,
+                "p50": 469.0,
+                "p90": 513.6,
+                "p95": 515.8,
+                "p99": 517.56,
+                "stddev": 31.550594289173063
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 524.8300000000163,
+                "mean": 483.2560000000027,
+                "min": 433.2850000000035,
+                "p50": 483.3300000000163,
+                "p90": 521.5119999999995,
+                "p95": 523.1710000000079,
+                "p99": 524.4982000000147,
+                "stddev": 34.51317884518654
+              }
+            }
+          },
+          {
+            "cold_ms": 6183.1,
+            "export": {
+              "ms": {
+                "count": 5,
+                "max": 6137.147,
+                "mean": 6011.702,
+                "min": 5943.61,
+                "p50": 5983.546,
+                "p90": 6087.3974,
+                "p95": 6112.2722,
+                "p99": 6132.17204,
+                "stddev": 66.45754688521087
+              },
+              "ms_per_page_p50": 119.67
+            },
+            "file_bytes": 9881599,
+            "pages": 50,
+            "route": "cdp_page_print_to_pdf",
+            "visible_page": {
+              "frames_over_50ms": 5.0,
+              "longest_task_ms": {
+                "count": 5,
+                "max": 537.0,
+                "mean": 479.2,
+                "min": 437.0,
+                "p50": 487.0,
+                "p90": 520.2,
+                "p95": 528.6,
+                "p99": 535.32,
+                "stddev": 37.333095237336
+              },
+              "max_frame_gap_ms": {
+                "count": 5,
+                "max": 549.9899999999907,
+                "mean": 484.9739999999991,
+                "min": 441.5,
+                "p50": 491.4750000000058,
+                "p90": 529.9619999999879,
+                "p95": 539.9759999999893,
+                "p99": 547.9871999999904,
+                "stddev": 40.57282087801408
+              }
+            }
+          }
+        ],
+        "sheets": 50
+      }
+    ]
+  },
+  "spike": "pdf"
+}

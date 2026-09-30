@@ -1,5 +1,5 @@
 [workspace]
-members = ["app/src-tauri"]
+members = ["app/src-tauri", "spikes/harness"]
 resolver = "2"
 
 [profile.release]
@@ -9,3 +9,11 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+# The Phase 1 spikes: optimized, but without the slow link-time optimization of a release build.
+[profile.spikes]
+inherits = "release"
+codegen-units = 16
+lto = false
+panic = "unwind"
+strip = false
