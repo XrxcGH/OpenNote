@@ -113,7 +113,7 @@ describe('Where to keep things', () => {
   it('asks for a name, and a folder OpenNote can use', async () => {
     const { platform } = await toStorage();
     fireEvent.change(screen.getByLabelText('Notebook name'), { target: { value: ' ' } });
-    expect(screen.getByText('Give the notebook a name.')).toBeTruthy();
+    expect(screen.getByText('Give the notebook a name.', { selector: '[id$="-error"]' })).toBeTruthy();
     expect(button('Start taking notes').getAttribute('aria-disabled')).toBe('true');
     fireEvent.change(screen.getByLabelText('Notebook name'), { target: { value: 'Biology 101' } });
 

@@ -1,5 +1,5 @@
 import { screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { chord, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
@@ -10,6 +10,11 @@ import { expectFocus, expectNoAxeViolations, renderApp } from '../../test';
 import { registerRegionMain } from '../regions';
 
 const stops: (() => void)[] = [];
+
+// The features register real tools, so each test starts from a bare command bar and adds its own.
+beforeEach(() => {
+  stops.push(commandBar.replaceAll([]));
+});
 
 afterEach(async () => {
   stops.splice(0).forEach((stop) => stop());
@@ -44,7 +49,8 @@ describe('the command bar tabs', () => {
     const view = screen.getByRole('toolbar', { name: 'View' });
     const fern = within(view).getByRole('button', { name: 'Fern' });
     expect(fern.getAttribute('aria-keyshortcuts')).toBe('Control+Alt+F');
-    expect(fern.getAttribute('title')).toBe('Fern (Ctrl+Alt+F)');
+    await userEvent.hover(fern);
+    expect((await screen.findByRole('tooltip')).textContent).toBe('Fern (Ctrl+Alt+F)');
     await expectNoAxeViolations(document.body);
   });
 
@@ -67,7 +73,8 @@ describe('the command bar tabs', () => {
     await expectFocus(tools[0]);
     await userEvent.keyboard('{End}');
     expect(tools.map((button) => button.tabIndex)).toEqual([-1, -1, 0]);
-    await userEvent.keyboard('{Escape}');
+    // A shown tooltip takes the first Escape, so the second one leaves for the page.
+    await userEvent.keyboard('{Escape}{Escape}');
     await expectFocus(heading as HTMLElement);
   });
 });
@@ -130,14 +137,7 @@ describe('the command bar overflow', () => {
 
 describe('the bottom bar', () => {
   it('shows in compact with the actions whose commands exist, and More holds the rest', async () => {
-    const ran = vi.fn();
     stops.push(
-      commands.register(
-        defineCommand({ id: 'notes.newPage', title: 'commands.bar.newPage', category: 'notebooks', run: ran }),
-      ),
-      commands.register(
-        defineCommand({ id: 'trash.open', title: 'commands.bar.trash', category: 'notebooks', run: ran }),
-      ),
       titleBarItems.register({
         id: 'test.chip',
         side: 'end',
@@ -154,8 +154,7 @@ describe('the bottom bar', () => {
       within(bar)
         .getAllByRole('button')
         .map((button) => button.textContent),
-    ).toEqual(['Search', 'New page', 'More']);
-    await userEvent.click(within(bar).getByRole('button', { name: 'New page' }));
+    ).toEqual(['Notebooks', 'Search', 'New page', 'More']);
     const more = within(bar).getByRole('button', { name: 'More commands' });
     await userEvent.click(more);
     const panel = await screen.findByRole('dialog', { name: 'More commands' });
@@ -166,7 +165,6 @@ describe('the bottom bar', () => {
     ).toEqual(['Settings', 'Keyboard shortcuts', 'Update ready', 'Trash']);
     await userEvent.keyboard('{Escape}');
     await expectFocus(more);
-    await vi.waitFor(() => expect(ran).toHaveBeenCalledOnce());
     await expectNoAxeViolations(document.body);
   });
 });

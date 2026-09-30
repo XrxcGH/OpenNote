@@ -94,7 +94,8 @@ describe('the title bar items', () => {
 
 describe('the title bar variants', () => {
   it('shows only the logo and name during setup', async () => {
-    await renderApp();
+    // Setup leaves again when no step is pending, so the profile is a new one.
+    await renderApp({ boot: { firstRun: true, state: { setup: { status: 'notStarted' } } } });
     act(() => navigate({ view: 'setup', step: 'welcome' }));
     expect(await within(banner()).findByText('OpenNote')).toBeTruthy();
     expect(within(banner()).queryByRole('button', { name: 'Go back' })).toBeNull();

@@ -38,7 +38,8 @@ describe('the command palette', () => {
     opener.textContent = 'Opener';
     opener.focus();
     const box = await openWith('Ctrl+K');
-    await userEvent.type(box, 'toggle dark');
+    expect(document.activeElement).toBe(box);
+    await userEvent.keyboard('toggle dark');
     await waitFor(() => expect(screen.getByRole('option', { name: /Toggle dark mode/ })).toBeTruthy());
     await userEvent.keyboard('{Enter}');
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));

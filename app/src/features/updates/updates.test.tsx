@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { WebUpdater } from '../../platform/web/updater';
 import type { UpdaterPhase, UpdaterStatus } from '../../platform/types';
@@ -21,6 +21,8 @@ const ready = (version: string, blockedBy: 'recording' | null = null): UpdaterPh
 
 async function start(initial: UpdaterStatus, install: 'auto' | 'ask' | 'manual' = 'auto') {
   const app = await renderApp({ boot: { updater: initial }, settings: { updates: { install } } });
+  // Start-up focus lands on the tree once it draws. A popover opened before then would lose focus to it.
+  await expect.poll(() => document.activeElement?.getAttribute('role')).toBe('treeitem');
   return { ...app, updater: app.platform.updater as WebUpdater };
 }
 
@@ -112,7 +114,7 @@ describe('the Updates section', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Go back to version 0.4.0' }));
     const dialog = await screen.findByRole('dialog', { name: 'Go back to version 0.4.0?' });
     expect(dialog.contains(document.activeElement)).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Go back' }));
     await waitFor(() => expect(updater.calls).toContain('goBack'));
   });
 });

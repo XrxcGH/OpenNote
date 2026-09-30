@@ -22,7 +22,7 @@ describe('the wide workspace', () => {
     expect(width('pages')).toBe(300);
     expect(separator('notebooks').getAttribute('aria-valuetext')).toBe('Notebooks pane, 272 pixels');
     expect(separator('notebooks').getAttribute('aria-controls')).toBe(notebooksNav().id);
-    await screen.findByRole('button', { name: 'Lectures' });
+    await screen.findByRole('treeitem', { name: 'Lectures' });
     await expectNoAxeViolations(container);
     document.documentElement.dataset.theme = 'dark';
     await expectNoAxeViolations(container);
@@ -41,18 +41,18 @@ describe('the wide workspace', () => {
     await pressChord('Ctrl+Shift+1');
     await expect.poll(() => screen.queryByRole('button', { name: 'Show notebooks' })).toBeNull();
     expect(announcements()).toContain('Notebooks pane shown');
-    expect(await screen.findByRole('button', { name: 'Lectures' })).toBeTruthy();
+    expect(await screen.findByRole('treeitem', { name: 'Lectures' })).toBeTruthy();
   });
 
   it('moves focus to the rail when the pane that holds it collapses, and back in when it expands', async () => {
     await renderApp({ sizeClass: 'wide' });
-    const row = await screen.findByRole('button', { name: 'Lectures' });
+    const row = await screen.findByRole('treeitem', { name: 'Lectures' });
     row.focus();
     await pressChord('Ctrl+Shift+1');
     const show = await screen.findByRole('button', { name: 'Show notebooks' });
     await expectFocus(show);
     fireEvent.click(show);
-    await expectFocus(await screen.findByRole('button', { name: 'Lectures' }));
+    await expectFocus(await screen.findByRole('treeitem', { name: 'Lectures' }));
   });
 });
 

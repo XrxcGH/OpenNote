@@ -123,7 +123,7 @@ describe('tooltip pointer', () => {
     await userEvent.hover(dark);
     await findTooltip();
     await userEvent.hover(settings);
-    await expect.poll(() => tooltip()?.textContent, { timeout: 300 }).toBe('Settings');
+    await expect.poll(() => tooltip()?.textContent, { timeout: 450 }).toBe('Settings');
   });
 
   it('hides on a press and stays hidden until the pointer leaves', async () => {

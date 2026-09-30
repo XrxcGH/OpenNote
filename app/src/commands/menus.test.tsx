@@ -1,13 +1,14 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { commands, contextMenus } from '../registries';
 import type { ContextMenuItem } from '../registries/types';
-import { createStubNotesService } from '../services/notes/stub';
+import { createMemoryNotesService } from '../services/notes/memory';
 import { resetStores } from '../state/store';
 import { createTestPlatform } from '../test/platform';
 import { menuItemsFor } from './menus';
 import { chord, commandContext, configureCommands, defineCommand } from './registry';
 import type { CommandDef } from './types';
 
+// Real features fill the tree and theme menus, so these tests use menus Phase 2 leaves empty.
 const stops: (() => void)[] = [];
 
 function add(id: string, rest: Partial<CommandDef<unknown>> = {}) {
@@ -25,10 +26,14 @@ function add(id: string, rest: Partial<CommandDef<unknown>> = {}) {
 }
 
 function item(id: string, rest: Partial<ContextMenuItem> = {}) {
-  stops.push(contextMenus.register({ id, menu: 'tree.page', command: `test.${id}`, group: 'edit', order: 0, ...rest }));
+  stops.push(
+    contextMenus.register({ id, menu: 'page.table', command: `test.${id}`, group: 'edit', order: 0, ...rest }),
+  );
 }
 
-beforeAll(() => configureCommands({ platform: createTestPlatform(), notes: createStubNotesService('sample') }));
+beforeAll(() =>
+  configureCommands({ platform: createTestPlatform(), notes: createMemoryNotesService({ seed: 'sample' }) }),
+);
 
 afterEach(() => {
   stops.splice(0).forEach((stop) => stop());
@@ -44,7 +49,7 @@ describe('menuItemsFor order and labels', () => {
     item('rename', { group: 'edit', order: 2 });
     item('newPage', { group: 'create' });
     item('moveUp', { group: 'edit', order: 1 });
-    const specs = menuItemsFor('tree.page', ctx());
+    const specs = menuItemsFor('page.table', ctx());
     expect(specs.map((spec) => spec.id)).toEqual(['moveUp', 'rename', 'newPage', 'trash']);
     expect(specs.map((spec) => Boolean(spec.separatorBefore))).toEqual([false, false, true, true]);
     expect(specs.map((spec) => Boolean(spec.danger))).toEqual([false, false, false, true]);
@@ -57,7 +62,7 @@ describe('menuItemsFor order and labels', () => {
     add('flagged', { flag: 'storage.core' });
     for (const id of ['rename', 'promote', 'hidden', 'flagged']) item(id);
     item('later', { flag: 'storage.core' });
-    const specs = menuItemsFor('tree.page', ctx());
+    const specs = menuItemsFor('page.table', ctx());
     expect(specs.map(({ id, label, shortcut, disabled }) => ({ id, label, shortcut, disabled }))).toEqual([
       { id: 'rename', label: 'Toggle dark mode', shortcut: 'F2', disabled: false },
       { id: 'promote', label: 'Toggle dark mode', shortcut: undefined, disabled: true },
@@ -70,10 +75,10 @@ describe('menuItemsFor states and actions', () => {
     add('light', { checked: () => true });
     add('dark', { checked: () => false });
     add('wrap', { checked: () => true });
-    item('light', { menu: 'theme.choices', group: 'choice' });
-    item('dark', { menu: 'theme.choices', group: 'choice', order: 1 });
-    item('wrap', { menu: 'theme.choices', group: 'other' });
-    const specs = menuItemsFor('theme.choices', ctx());
+    item('light', { menu: 'page.canvas', group: 'choice' });
+    item('dark', { menu: 'page.canvas', group: 'choice', order: 1 });
+    item('wrap', { menu: 'page.canvas', group: 'other' });
+    const specs = menuItemsFor('page.canvas', ctx());
     expect(specs.map(({ kind, checked }) => ({ kind, checked }))).toEqual([
       { kind: 'radio', checked: true },
       { kind: 'radio', checked: false },
@@ -87,7 +92,7 @@ describe('menuItemsFor states and actions', () => {
     add('color', { run: (_, args) => ran(args) });
     item('move', { args: { direction: 'up' } });
     item('color', { submenu: 'color', args: { from: 'menu' } });
-    const [move, color] = menuItemsFor('tree.page', ctx());
+    const [move, color] = menuItemsFor('page.table', ctx());
     move.onSelect?.();
     await vi.waitFor(() => expect(ran).toHaveBeenCalledWith({ direction: 'up' }, { kind: 'node', id: 'p1' }));
     expect(color.onSelect).toBeUndefined();

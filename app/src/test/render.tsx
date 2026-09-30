@@ -66,10 +66,15 @@ export async function renderApp(options: RenderAppOptions = {}): Promise<Rendere
   disposers.push(installApp(platform, notes, { keepThemeInStorage: true }));
   if (options.sizeClass) setSizeClass(options.sizeClass);
   if (options.density) setDensity(options.density);
+  // index.html gives the app a #root that fills the window, and the workspace sizes itself from it.
+  const host = document.body.appendChild(document.createElement('div'));
+  host.id = 'root';
+  disposers.push(() => host.remove());
   const result = render(
     <NotesProvider service={notes}>
       <App />
     </NotesProvider>,
+    { container: host },
   );
   return { ...result, platform, notes };
 }

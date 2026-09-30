@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { getLocation } from '../../app/location';
 import { getSettings } from '../../state/settings';
@@ -57,7 +57,7 @@ describe('the theme menu', () => {
     expect(radios.map((radio) => radio.textContent)).toEqual(['Light', 'Dark', 'Match Windows']);
     expect(radios.map((radio) => radio.getAttribute('aria-checked'))).toEqual(['true', 'false', 'false']);
     expect(screen.getByRole('menuitem', { name: 'Appearance settings' })).toBeTruthy();
-    expect(screen.getByRole('separator')).toBeTruthy();
+    expect(within(screen.getByRole('menu')).getByRole('separator')).toBeTruthy();
     fireEvent.click(await choice('Match Windows'));
     await expect.poll(() => getSettings().appearance.theme).toBe('system');
     expect(announcements()).toEqual(['Light theme, following Windows']);
@@ -83,7 +83,7 @@ describe('the theme menu', () => {
     expect(getSettings().appearance.theme).toBe('system');
     fireEvent.click(await choice('Dark'));
     await expect.poll(dataTheme).toBe('dark');
-    expect(announcements()).toEqual(['Dark theme']);
+    await expect.poll(() => announcements()).toEqual(['Dark theme']);
   });
 
   it('opens Settings at Appearance', async () => {
@@ -98,7 +98,6 @@ describe('under a Windows contrast theme', () => {
   it('is aria-disabled but focusable, and explains why', async () => {
     const { container } = await renderApp(windows(false, true));
     expect(toggle().getAttribute('aria-disabled')).toBe('true');
-    expect(toggle().title).toBe('A Windows contrast theme is on, so Windows sets the colors.');
     expect(description()).toBe('A Windows contrast theme is on, so Windows sets the colors.');
     toggle().focus();
     await expectFocus(toggle());

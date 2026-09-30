@@ -7,9 +7,12 @@ import '../styles/layers.css';
 import '../theme/fonts';
 import '../theme/tokens.css';
 import '../styles/base.css';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
 import { disposeApp } from './render';
+
+// Finding a row can wait for the notes service and the tree's first load, which a loaded machine slows.
+configure({ asyncUtilTimeout: 5000 });
 
 let problems: string[] = [];
 

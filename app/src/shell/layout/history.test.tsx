@@ -66,7 +66,7 @@ describe('history', () => {
     await pressChord('Ctrl+Shift+2');
     await screen.findByRole('button', { name: 'Show pages' });
     await executeCommand('nav.revealInTree', undefined, 'palette');
-    await expectFocus(await screen.findByRole('button', { name: 'Meiosis' }));
+    await expectFocus(await screen.findByRole('treeitem', { name: 'Meiosis' }));
     expect(sessionStore.get().expanded).toContain('n-biology');
   });
 });

@@ -23,7 +23,7 @@ describe('the Settings page', () => {
     await expectFocus(heading);
     const nav = screen.getByRole('navigation', { name: 'Settings sections' });
     const links = within(nav).getAllByRole('link');
-    expect(links.map((link) => link.textContent)).toEqual(['General', 'Shortcuts', 'About']);
+    expect(links.map((link) => link.textContent)).toEqual(['General', 'Appearance', 'Updates', 'Shortcuts', 'About']);
     expect(links[0].getAttribute('aria-current')).toBe('page');
     expect(links[1].getAttribute('aria-current')).toBeNull();
     await expectNoAxeViolations(document.body);

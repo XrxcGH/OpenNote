@@ -20,15 +20,17 @@ describe('regions', () => {
         pageId: null,
       }),
     );
-    (await screen.findByRole('button', { name: 'Labs' })).focus();
-    await screen.findByRole('button', { name: 'Mitosis' });
+    (await screen.findByRole('treeitem', { name: 'Labs' })).focus();
+    await screen.findByRole('treeitem', { name: 'Mitosis' });
     const visited: (string | null | undefined)[] = [];
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 5; i += 1) {
       await pressChord('F6');
       visited.push(regionOfFocus());
     }
-    expect(visited).toEqual(['pages', 'page', 'titleBar', 'notebooks']);
-    await expectFocus(screen.getByRole('button', { name: 'Labs' }));
+    expect(visited).toEqual(['pages', 'page', 'titleBar', 'commandBar', 'notebooks']);
+    await expectFocus(screen.getByRole('treeitem', { name: 'Labs' }));
+    await pressChord('Shift+F6');
+    expect(regionOfFocus()).toBe('commandBar');
     await pressChord('Shift+F6');
     expect(regionOfFocus()).toBe('titleBar');
     await pressChord('Shift+F6');
@@ -46,11 +48,11 @@ describe('regions', () => {
       }),
     );
     const pages = screen.getByRole('navigation', { name: 'Pages' });
-    (await within(pages).findByRole('button', { name: 'Meiosis' })).focus();
+    (await within(pages).findByRole('treeitem', { name: 'Meiosis' })).focus();
     await pressChord('F6');
     expect(regionOfFocus()).toBe('page');
     await pressChord('Shift+F6');
-    await expectFocus(within(pages).getByRole('button', { name: 'Meiosis' }));
+    await expectFocus(within(pages).getByRole('treeitem', { name: 'Meiosis' }));
   });
 
   it('works from a text field, and skips a collapsed pane’s content for its rail', async () => {
@@ -63,9 +65,12 @@ describe('regions', () => {
         pageId: null,
       }),
     );
-    await screen.findByRole('button', { name: 'Cell structure' });
+    await screen.findByRole('treeitem', { name: 'Cell structure' });
     await pressChord('Ctrl+Shift+1');
-    await screen.findByRole('button', { name: 'Show notebooks' });
+    // Collapsing the pane moves focus to its rail once the layout settles. Wait for that before moving focus again.
+    await expectFocus(await screen.findByRole('button', { name: 'Show notebooks' }));
+    // Start-up focus placement watches the page for a moment longer, and would pull focus back to the rail.
+    await new Promise((resolve) => setTimeout(resolve, 250));
     const field = document.createElement('input');
     field.setAttribute('aria-label', 'Scratch');
     screen.getByRole('main').append(field);

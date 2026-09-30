@@ -2,7 +2,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { navigate } from '../app/location';
 import { commands } from '../registries';
-import { createStubNotesService } from '../services/notes/stub';
+import { createMemoryNotesService } from '../services/notes/memory';
 import { pushLayer } from '../state/layers';
 import { resetStores } from '../state/store';
 import { createTestPlatform } from '../test/platform';
@@ -20,7 +20,9 @@ function add(id: string, rest: Partial<CommandDef>) {
   );
 }
 
-beforeAll(() => configureCommands({ platform: createTestPlatform(), notes: createStubNotesService('sample') }));
+beforeAll(() =>
+  configureCommands({ platform: createTestPlatform(), notes: createMemoryNotesService({ seed: 'sample' }) }),
+);
 
 afterEach(() => {
   stops.splice(0).forEach((stop) => stop());

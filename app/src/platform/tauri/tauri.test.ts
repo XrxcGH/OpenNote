@@ -15,7 +15,7 @@ let calls: Call[];
 let answers: Record<string, unknown>;
 let platform: Platform;
 
-beforeEach(() => {
+beforeEach(async () => {
   calls = [];
   answers = {};
   mockIPC(
@@ -29,6 +29,9 @@ beforeEach(() => {
     { shouldMockEvents: true },
   );
   platform = createTauriPlatform(defaultBootData());
+  // The updater asks for its status at start-up (WP2). The tests below look only at what they send themselves.
+  await settle();
+  calls = [];
 });
 
 afterEach(() => clearMocks());
