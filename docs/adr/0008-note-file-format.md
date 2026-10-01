@@ -45,7 +45,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | P3-1 | Reading order in the view | Done: `view.readingOrder`, `setPage` merge patch, fixtures in `reading-order/` |
 | P3-2 | Descriptions and the `decorative` flag | Done: already in the spec and model for images, drawings, and files; a round-trip test now covers them |
 | P3-3 | Named styles in `notebook.json` | Done: `styles` in the spec, `NotebookFile`, `NotebookTree`, `NodeProps`, and `set_notebook_props`; copies merge by `changed` |
-| P3-4 | Typing groups join `PatchBlock` and `SetPage` | Pending |
+| P3-4 | Typing groups join `PatchBlock` and `SetPage` | Done: in `UndoStack`, with followers ignored |
 | P3-5 | Full block JSON in undo, redo, and remote frames | Pending |
 | P3-6 | Image size and type check on import | Pending |
 | P3-7 | Restoring parts of a version, deleting history, and retention | Pending |
@@ -59,7 +59,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | C3 | Stored pressure and positions | Pending |
 | C4 | Anchored ink | Pending |
 | C5 | Exact geometry for shapes | Pending |
-| C6 | Typing rule joins anchored ink changes | Pending |
+| C6 | Typing rule joins anchored ink changes | Pending: the rule is in `UndoStack::record_with`; the session wires it once anchors exist (C4) |
 | C7 | Shared `newId()` and a header-only codec reader | For the app bridge: TypeScript exports |
 | C8 | `ink.svg` width of transformed strokes | Pending |
 | C9 | Binary applied-changes frames on the page `Channel` | For the app bridge: needs the `Channel` frames |

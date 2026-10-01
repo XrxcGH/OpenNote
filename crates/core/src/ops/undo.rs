@@ -27,7 +27,7 @@ use crate::ops::{AppliedChanges, CoalesceKey, Op, Origin, Txn};
 use crate::seams::Applier;
 use crate::time::Clock;
 
-pub use group::{merge_splices, SLIDER_GAP, TYPING_CHARS, TYPING_GAP, TYPING_SPAN};
+pub use group::{merge_splices, Anchored, SLIDER_GAP, TYPING_CHARS, TYPING_GAP, TYPING_SPAN};
 
 /// The most entries one stack keeps.
 pub const MAX_ENTRIES: usize = 1_000;
@@ -115,6 +115,12 @@ impl UndoStack {
     ///
     /// Transactions from undo, redo, and recovery, and transactions without operations, are not recorded.
     pub fn record(&mut self, txn: &Txn, now: Duration) -> isize {
+        self.record_with(txn, now, &|_, _| false)
+    }
+
+    /// Like [`UndoStack::record`], for a caller that knows which ink blocks are anchored to which text blocks.
+    /// Typing in a text block then keeps joining when the same transaction patches ink anchored to that block.
+    pub fn record_with(&mut self, txn: &Txn, now: Duration, anchored: Anchored<'_>) -> isize {
         if txn.origin != Origin::Local || txn.ops.is_empty() {
             return 0;
         }
@@ -124,7 +130,7 @@ impl UndoStack {
         }
         let sealed = std::mem::take(&mut self.sealed);
         match self.undo.back_mut() {
-            Some(top) if !sealed && group::joins(top, txn, now) => {
+            Some(top) if !sealed && group::joins_with(top, txn, now, anchored) => {
                 let old = top.bytes;
                 group::join(top, txn, now);
                 self.charged = self.charged.saturating_sub(old).saturating_add(top.bytes);
