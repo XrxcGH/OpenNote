@@ -31,6 +31,7 @@ fn sample_payload(settings: &Settings) -> BootData {
         in_user_programs: false,
         folder_writable: true,
         has_start_menu_shortcut: false,
+        proposed_notes_folder: String::new(),
         is_dev_build: true,
     };
     payload(

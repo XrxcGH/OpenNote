@@ -51,6 +51,8 @@ pub struct InstallStatus {
     pub folder_writable: bool,
     pub has_start_menu_shortcut: bool,
     pub is_dev_build: bool,
+    /// Where setup proposes to keep notes: an `OpenNote` folder inside the person's Documents folder.
+    pub proposed_notes_folder: String,
 }
 
 /// What a proposed notes folder holds, matching the interface's `FolderCheck`.
@@ -128,6 +130,7 @@ pub fn status(paths: &Paths) -> InstallStatus {
         folder_writable: folder_writable(folder),
         has_start_menu_shortcut: shortcut_path(paths).is_file(),
         is_dev_build: cfg!(debug_assertions),
+        proposed_notes_folder: paths.documents.join("OpenNote").display().to_string(),
     }
 }
 

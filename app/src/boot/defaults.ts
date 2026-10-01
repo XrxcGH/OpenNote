@@ -44,6 +44,7 @@ export function defaultBootData(os: OsAppearance = DEFAULT_OS): BootData {
       folderWritable: true,
       hasStartMenuShortcut: false,
       isDevBuild: true,
+      proposedNotesFolder: 'C:\\Users\\Ada\\Documents\\OpenNote',
     },
     updater: DEFAULT_UPDATER_STATUS,
     flagOverrides: {},

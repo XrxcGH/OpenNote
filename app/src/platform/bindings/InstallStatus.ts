@@ -11,4 +11,8 @@ inUserPrograms: boolean,
 /**
  * The exe's folder is writable, so the app can update itself there.
  */
-folderWritable: boolean, hasStartMenuShortcut: boolean, isDevBuild: boolean, };
+folderWritable: boolean, hasStartMenuShortcut: boolean, isDevBuild: boolean, 
+/**
+ * Where setup proposes to keep notes: an `OpenNote` folder inside the person's Documents folder.
+ */
+proposedNotesFolder: string, };

@@ -110,6 +110,12 @@ describe('Where to keep things', () => {
     await expectNoAxeViolations(container);
   });
 
+  it('proposes the Documents folder that Rust reports, ahead of the notes service', async () => {
+    await toStorage(firstRun({ install: { proposedNotesFolder: 'D:\\Documents\\OpenNote' } }));
+    expect(screen.getByText('D:\\Documents\\OpenNote')).toBeTruthy();
+    expect(screen.queryByText('C:\\Users\\Ada\\Documents\\OpenNote')).toBeNull();
+  });
+
   it('asks for a name, and a folder OpenNote can use', async () => {
     const { platform } = await toStorage();
     fireEvent.change(screen.getByLabelText('Notebook name'), { target: { value: ' ' } });

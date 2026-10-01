@@ -1,5 +1,5 @@
 // Step 3 (ARCHITECTURE.md section 17.5): the notes folder, where the app lives, and the first notebook. The
-// folder comes from the settings, or from the notes service's proposal, and is checked each time it changes.
+// folder comes from the settings, or from Windows' Documents folder, and is checked each time it changes.
 // What the step chose stays in the draft, so Back and closing the app never lose it.
 
 import { useEffect, useId, useState } from 'react';
@@ -30,7 +30,12 @@ function useStorageDefaults({ draft, setDraft }: SetupStepProps): InstallStatus 
     const { platform, notes } = getHost();
     void (async () => {
       const status = await platform.install.status();
-      const folder = first ? (getSettings().storage.notesFolder ?? (await notes.loadInitial([])).library.folder) : null;
+      // Windows' Documents folder, from Rust, comes before whatever folder the notes service starts with.
+      const folder = first
+        ? getSettings().storage.notesFolder ||
+          status.proposedNotesFolder ||
+          (await notes.loadInitial([])).library.folder
+        : null;
       if (cancelled) return;
       setInstall(status);
       if (folder === null) return;
