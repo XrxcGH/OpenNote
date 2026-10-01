@@ -38,3 +38,35 @@ M6 on the loopback share:
 - POSIX semantics aren't available, so the rename falls back to `FileRenameInfo`.
 - Any held target then refuses the replace with access denied, and flushing a folder handle fails.
 - Every save there is unconfirmed, as the table in spec 17.5 says.
+
+## Phase 3 exit-gate runs
+
+These ran on the same Surface Laptop Studio 2 after every Phase 3 work package merged, from optimized builds (the `spikes` profile). They don't count as passes on the reference laptop. Other programs kept the processor at 100% and left little memory free throughout, so the times are much noisier than the ones above.
+
+| File | What it holds |
+|---|---|
+| `2026-09-30-kill-harness-core-1000.json` | 1,000 kills of the core workload with seed 20260930, with no failures |
+| `2026-09-30-surface-laptop-studio-2-bench-1000-pages.json` | `opennote-perf bench all --pages 1000` |
+
+Kill harness: 506 writers were killed at a random moment, 264 just after a save step, and 230 at an armed fail point, of which 72 were reached. The writers acknowledged 12,470 edits, and the hostile reader held files 14,211 times. The run took 2 hours 57 minutes, because each iteration gets slower as scratch pages pile up in the notebook.
+
+Property tests: with `PROPTEST_CASES=10000`, all 591 tests of `opennote-core` with every feature passed in 26 minutes. The round trip on disk (P2) took 20 of them.
+
+Benchmarks within their gates, in milliseconds at the 95th or 99th percentile:
+
+- Typing batch 0.07 (gate 0.5), 500-point stroke 0.12 (2), journal append and flush 2.5 (30).
+- Notebook open 38 warm (50) and 17 cold (250), page list of one section 7 (50), core share of a budget page open 1.9 (25).
+- Start-up path 38 (150), scan after an unclean exit 260 (500).
+- Core memory 10.5 MB with ten budget pages (96 MB), and no growth on reopening.
+
+Over their gates:
+
+| Measure | Result | Gate | Second run |
+|---|---|---|---|
+| `store.open.budget_page.p95` | 278 ms (50th percentile 136) | 25 ms | 294 ms |
+| `store.save.one_stroke.p95` | 1,123 ms (50th percentile 39) | 25 ms | 1,088 ms |
+| `store.recovery.journal_4mib.max` | 987 ms | 100 ms | 746 ms |
+
+The store open decodes all 5,000 strokes, and decoding them alone took 165 to 203 ms at the 50th percentile in the format suite. The save's 95th percentile includes the compactions the saver chooses. Runs of the format suite differed by up to 13 times, so the load on the machine explains part of the excess, but not all of it.
+
+The session, start-up, and memory suites still run on the in-memory test core (`session::kit`), as their module comments say. Their numbers leave out the disk and the real codecs until those suites move to the real parts.
