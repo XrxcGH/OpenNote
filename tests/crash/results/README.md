@@ -19,7 +19,7 @@ Other work ran on the machine at the same time, so the numbers are noisy. Two ru
 | `2026-09-30-surface-laptop-studio-2-share-loopback-m6.json` | M6 on the loopback share |
 | `2026-09-30-kill-harness-fs-100.json` | 100 kills of the file system workload, with no failures |
 
-Times are in milliseconds, at the 50th, 95th, and 99th percentiles. Run them again with `opennote-crashtest measure all --dir <folder> --label <drive> --out <file>`.
+Times are in milliseconds, at the 50th, 95th, and 99th percentiles. Run them again with `cargo crashtest measure all --dir <folder> --label <drive> --out <file>`, which builds the optimized `perf` profile.
 
 ## What they show
 

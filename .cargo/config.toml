@@ -1,0 +1,5 @@
+# Benchmarks and crash measurements must run optimized: a debug build is many times slower, so its times mean
+# nothing. These aliases build the `perf` profile of Cargo.toml.
+[alias]
+perf = "run --profile perf -p opennote-perf --"
+crashtest = "run --profile perf -p opennote-crashtest --"

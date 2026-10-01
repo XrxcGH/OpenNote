@@ -5,6 +5,21 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
+/// Why a debug build doesn't measure.
+const DEBUG_BUILD: &str = concat!(
+    "this is a debug build, so its times mean nothing. Build the perf profile with `cargo perf` or ",
+    "`cargo crashtest`, or pass --debug to run anyway"
+);
+
+/// Refuses to measure in a debug build, unless `allow` is set for a quick check that the code works. A debug
+/// build is many times slower than an optimized one, so its times mean nothing against the budgets.
+pub fn require_optimized(allow: bool) -> Result<(), String> {
+    if cfg!(debug_assertions) && !allow {
+        return Err(DEBUG_BUILD.to_owned());
+    }
+    Ok(())
+}
+
 /// Timings of repeated runs of one operation.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Samples(Vec<Duration>);

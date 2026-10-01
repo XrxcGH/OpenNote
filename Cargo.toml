@@ -19,3 +19,14 @@ codegen-units = 16
 lto = false
 panic = "unwind"
 strip = false
+
+# The benchmarks in tests/perf and the measurements and kill harness in tests/crash. They are optimized like a
+# release build, so their times mean something. Link-time optimization is off, to build faster, and line tables
+# let a profiler name the hot functions. `cargo perf` and `cargo crashtest` (.cargo/config.toml) build this way.
+[profile.perf]
+inherits = "release"
+codegen-units = 16
+debug = "line-tables-only"
+lto = false
+panic = "unwind"
+strip = false

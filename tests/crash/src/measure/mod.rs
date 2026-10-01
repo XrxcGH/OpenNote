@@ -85,6 +85,7 @@ fn name_prefix(name: &str) -> &'static str {
 
 /// Runs `measure`.
 pub fn run(options: &Options) -> Result<(), String> {
+    opennote_perf::harness::require_optimized(options.flag("debug"))?;
     let which = options.positionals.get(1).cloned().unwrap_or_else(|| "all".into());
     let mut ctx = Ctx {
         dir: options.path("dir")?,

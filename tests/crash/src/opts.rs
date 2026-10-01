@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 /// Options that take no value.
-const FLAGS: [&str; 4] = ["sabotage", "no-hostile", "setup", "reference"];
+const FLAGS: [&str; 5] = ["debug", "sabotage", "no-hostile", "setup", "reference"];
 
 /// Parsed options.
 #[derive(Debug, Default)]
