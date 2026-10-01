@@ -3,8 +3,8 @@
 use super::*;
 use crate::id::{GroupId, NotebookId, SectionId, TrashItemId};
 use crate::model::{
-    FormatInfo, Group, Moving, NotebookFile, PageEntry, SectionFile, TrashItemFile, TrashKind, TrashOrigin,
-    TrashReason, VersionEntry, VersionReason, VersionsFile,
+    FormatInfo, Group, Moving, NotebookFile, NotebookStyles, PageEntry, SectionFile, StyleSpec, TrashItemFile,
+    TrashKind, TrashOrigin, TrashReason, VersionEntry, VersionReason, VersionsFile, STYLE_NAMES,
 };
 
 fn arb_device() -> impl Strategy<Value = DeviceRef> {
@@ -20,6 +20,46 @@ fn arb_defaults(unknown: bool) -> BoxedStrategy<Option<JsonMap>> {
         m
     }))
     .boxed()
+}
+
+/// The named styles of a notebook: some of the names of version 1, and unknown names when `unknown` is set.
+pub fn arb_styles(unknown: bool) -> impl Strategy<Value = NotebookStyles> {
+    let name = if unknown {
+        prop_oneof![
+            proptest::sample::select(&STYLE_NAMES[..]).prop_map(str::to_owned),
+            "zz[a-z]{1,4}"
+        ]
+        .boxed()
+    } else {
+        proptest::sample::select(&STYLE_NAMES[..])
+            .prop_map(str::to_owned)
+            .boxed()
+    };
+    let spec = (
+        (
+            proptest::option::of(arb_text(12)),
+            proptest::option::of(arb_size()),
+            proptest::option::of(arb_color()),
+        ),
+        (
+            proptest::option::of(arb_size()),
+            proptest::option::of(arb_size()),
+            proptest::option::of((50i64..=500).prop_map(|n| n as f64 / 100.0)),
+        ),
+        arb_extra(unknown),
+    )
+        .prop_map(
+            |((font, size, color), (space_before, space_after, line_height), extra)| StyleSpec {
+                font,
+                size,
+                color,
+                space_before,
+                space_after,
+                line_height,
+                extra,
+            },
+        );
+    proptest::collection::btree_map(name, spec, 0..4)
 }
 
 /// A section group with a unique ID. Its parent, when set, is an earlier group.
@@ -67,19 +107,27 @@ pub fn arb_notebook_file(unknown: bool) -> impl Strategy<Value = NotebookFile> {
         arb_timestamp(),
         arb_timestamp(),
     );
-    (head, arb_defaults(unknown), arb_groups(unknown), arb_extra(unknown)).prop_map(
-        |((id, title, color, created, changed), defaults, groups, extra)| NotebookFile {
-            id: NotebookId(id),
-            title,
-            color,
-            created,
-            changed,
-            defaults,
-            groups,
-            extra,
-            format: FormatInfo::default(),
-        },
+    (
+        head,
+        arb_defaults(unknown),
+        arb_styles(unknown),
+        arb_groups(unknown),
+        arb_extra(unknown),
     )
+        .prop_map(
+            |((id, title, color, created, changed), defaults, styles, groups, extra)| NotebookFile {
+                id: NotebookId(id),
+                title,
+                color,
+                created,
+                changed,
+                defaults,
+                styles,
+                groups,
+                extra,
+                format: FormatInfo::default(),
+            },
+        )
 }
 
 /// Page entries with unique IDs. Parents, when set, are earlier entries.

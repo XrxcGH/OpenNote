@@ -24,6 +24,7 @@ impl NotebookStore {
             color: self.notebook.color.clone(),
             created: self.notebook.created,
             changed: self.notebook.changed,
+            styles: self.notebook.styles.clone(),
             groups,
             sections,
             access: self.access(),

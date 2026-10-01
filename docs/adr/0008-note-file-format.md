@@ -44,7 +44,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 |---|---|---|
 | P3-1 | Reading order in the view | Done: `view.readingOrder`, `setPage` merge patch, fixtures in `reading-order/` |
 | P3-2 | Descriptions and the `decorative` flag | Done: already in the spec and model for images, drawings, and files; a round-trip test now covers them |
-| P3-3 | Named styles in `notebook.json` | Pending |
+| P3-3 | Named styles in `notebook.json` | Done: `styles` in the spec, `NotebookFile`, `NotebookTree`, `NodeProps`, and `set_notebook_props`; copies merge by `changed` |
 | P3-4 | Typing groups join `PatchBlock` and `SetPage` | Pending |
 | P3-5 | Full block JSON in undo, redo, and remote frames | Pending |
 | P3-6 | Image size and type check on import | Pending |

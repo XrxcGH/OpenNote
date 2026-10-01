@@ -6,7 +6,7 @@ use super::create::check_title;
 use super::{invalid_move, not_found, place_key, NotebookStore, Sibling};
 use crate::error::CoreError;
 use crate::id::{GroupId, Id, PageId, SectionId};
-use crate::model::Color;
+use crate::model::{Color, NotebookStyles, MAX_STYLES, MAX_STYLE_NAME_CHARS};
 use crate::order::OrderKey;
 use crate::session::notebook::{NodeProps, NodeRef, ParentRef};
 
@@ -229,6 +229,28 @@ impl NotebookStore {
         self.write_notebook()
     }
 
+    /// Sets the notebook's named styles (spec 4.1). An empty map removes them.
+    pub fn set_notebook_styles(&mut self, styles: NotebookStyles) -> Result<(), CoreError> {
+        self.check_writable()?;
+        if styles.len() > MAX_STYLES {
+            return Err(invalid_move(format!("a notebook keeps at most {MAX_STYLES} styles")));
+        }
+        for (name, style) in &styles {
+            if name.is_empty() || name.chars().count() > MAX_STYLE_NAME_CHARS {
+                return Err(invalid_move("a style name is 1 to 64 characters"));
+            }
+            if let Some(problem) = style.problem() {
+                return Err(invalid_move(format!("style {name}: {problem}")));
+            }
+        }
+        if self.notebook.styles == styles {
+            return Ok(());
+        }
+        self.notebook.styles = styles;
+        self.notebook.changed = self.now();
+        self.write_notebook()
+    }
+
     /// Renames a group or section. Page titles live in `page.json`, so a page is renamed through its session,
     /// and [`NotebookStore::set_title_copy`] refreshes the copy after the save (spec 18.1).
     pub fn rename(&mut self, node: NodeRef, title: &str) -> Result<(), CoreError> {
@@ -290,6 +312,9 @@ impl NotebookStore {
     /// Changes a node's color, or a page's pin. Colors of groups and sections change their tree file, and
     /// colors and pins of pages change their entry.
     pub fn set_props(&mut self, node: NodeRef, props: &NodeProps) -> Result<(), CoreError> {
+        if props.styles.is_some() {
+            return Err(invalid_move("only the notebook has styles"));
+        }
         let now = self.now();
         match node {
             NodeRef::Group(id) => {

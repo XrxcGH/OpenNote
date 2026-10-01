@@ -285,6 +285,19 @@ Per-device view state, such as scroll position, zoom, the last open page, and co
       }
     }
   },
+  "styles": {
+    "normal": {
+      "font": "Georgia",
+      "size": 16,
+      "lineHeight": 1.5
+    },
+    "h1": {
+      "size": 28,
+      "color": "indigo",
+      "spaceBefore": 18,
+      "spaceAfter": 6
+    }
+  },
   "groups": [
     {
       "id": "01m3s9sbxgnp9pzjzdccftczg5",
@@ -309,7 +322,24 @@ Per-device view state, such as scroll position, zoom, the last open page, and co
 | `changed` | timestamp | required | When a field of this file last changed. Used only to merge sync copies (section 14.3) |
 | `defaults` | object | none | Defaults for new pages. Only `view` (section 5.4) is defined in version 1 |
 | `groups` | array | `[]` | Section groups (section 4.3) |
-| `styles` | object | none | Reserved for how this notebook shows each named style (section 5.6) |
+| `styles` | object | none | How this notebook shows each named style (below) |
+
+The `styles` object maps a style name to how the notebook shows it. The names of version 1 are `normal` (body text), `h1` to `h6` (headings), `title`, `quote`, and `code`. Each value is an object whose keys are all optional:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `font` | string | A font family name, 1 to 200 characters. A reader whose device lacks the font uses its own |
+| `size` | number | The text size in page units, from 1 to 1000 |
+| `color` | color | The text color (section 2.7) |
+| `spaceBefore`, `spaceAfter` | number | The space above and below an element in page units, from 0 to 1000 |
+| `lineHeight` | number | The line height as a multiple of the size, from 0.5 to 10 |
+
+A missing key means the app's own value. The rules for `styles`:
+
+- Readers keep style names and keys they don't know and write them back unchanged (section 2.9), so a notebook can style names such as `subtitle` and `citation` (section 6.6) too.
+- A reader shows a value outside its range as if the key were missing. A notebook has at most 64 styles.
+- A writer leaves `styles` out when it has none. It writes the names of version 1 in the order above, and then the other names in code point order.
+- Two copies of the file merge by `changed`, like the other fields of the file (section 14.3).
 
 The list of sections is not stored here. Each section records its own group and order in its own `section.json`. Creating a section on one device and reordering sections on another then change different files.
 
@@ -651,7 +681,6 @@ Version 1 writers never write these fields. Version 1 readers must keep them unc
 | `recordings` | `page.json` | Audio recordings and their pauses (Phase 9) |
 | `marks` | `data` of text blocks | Ranges in the Markdown linked to moments in a recording (Phase 9) |
 | `parent` | Blocks | Blocks nested inside a group block |
-| `styles` | `notebook.json` | Each notebook's font, size, color, and spacing for the named styles of section 6.6 |
 | `encryption` | `section.json` and `page.json` | Password-protected sections (section 5.7) |
 
 A later version defines each field and raises `formatVersion`. Every stroke already stores its start time and per-point times (section 9.4), so handwriting needs no new field to link to audio.
@@ -781,7 +810,7 @@ A text block's elements are its headings, paragraphs, list items, code blocks, m
 
 Element IDs share the page's ID space with block IDs. When `ids` lists fewer IDs than the block has elements, the last elements have no ID yet, and writers add IDs for them. When it lists more, readers ignore the extra IDs, and writers drop them. A tool that edits the Markdown but can't track elements leaves `ids` alone, and IDs then match elements in order. Keys of `tags` and `styles` that are not in `ids` are ignored.
 
-A style name refers to a named style of the app, such as `title`, `subtitle`, `quote`, `citation`, or `code`, instead of formatting stored in the Markdown. Readers show an element with an unknown style as plain text. Named styles keep the Markdown and `page.md` clean, because neither carries styles. A later version lets each notebook change how a style looks.
+A style name refers to a named style of the app, such as `title`, `subtitle`, `quote`, `citation`, or `code`, instead of formatting stored in the Markdown. Readers show an element with an unknown style as plain text. Named styles keep the Markdown and `page.md` clean, because neither carries styles. Each notebook can change how a style looks with the `styles` object of `notebook.json` (section 4.1).
 
 ### 6.7 Descriptions for screen readers
 

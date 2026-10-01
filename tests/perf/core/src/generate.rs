@@ -254,6 +254,7 @@ fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
         color: None,
         created: notebook.created,
         changed: notebook.changed,
+        styles: notebook.styles.clone(),
         groups: notebook.groups.clone(),
         sections: sections.iter().map(node).collect(),
         access: Access::ReadWrite,
