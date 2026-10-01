@@ -38,11 +38,11 @@ def load_strokes(page_dir: Path, page: dict) -> dict[str, dict]:
 
 
 def reading_order(page: dict) -> list[dict]:
-    """The blocks in reading order (spec 6.2): `readingOrder` first, then flowing blocks, then floating rows."""
+    """The blocks in reading order (spec 6.2): `view.readingOrder` first, then flowing blocks, then floating rows."""
     blocks = sorted(page.get("blocks", []), key=lambda b: (b["order"], b["id"]))
     by_id = {b["id"]: b for b in blocks}
     out, seen = [], set()
-    for block_id in page.get("readingOrder", []):
+    for block_id in page.get("view", {}).get("readingOrder", []):
         if block_id in by_id and block_id not in seen:
             seen.add(block_id)
             out.append(by_id[block_id])

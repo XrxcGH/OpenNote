@@ -8,6 +8,7 @@ These files test every implementation of the [note format](../README.md) against
 | `ink/` | Segment files, each with a JSON file that says what a reader must decode or report |
 | `markdown/escape/` | Text and its escaped form (spec 7.6) |
 | `markdown/documents/` | Canonical Markdown and the document tree it stands for (spec 7.8) |
+| `reading-order/` | Pages that test the reading order of spec 6.2, each with the order a reader must find |
 | `readable/spec-example/` | The page of spec 5.5 with the exact `page.md` of spec 11.1 and `ink.svg` of spec 11.3 |
 
 ## The version 1 notebook

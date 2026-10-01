@@ -35,7 +35,6 @@ pub fn read_page(bytes: &[u8], limits: &Limits) -> Result<ReadPage, FormatError>
     let tags = fields.strings("tags")?;
     let view = view::read_view(fields.required("view")?)?;
     let blocks = blocks::read_blocks(fields.array("blocks")?)?;
-    let reading_order = fields.ids("readingOrder")?;
     let assets = match fields.opt_object("assets")? {
         Some(map) => parts::read_assets(map)?,
         None => BTreeMap::new(),
@@ -57,7 +56,6 @@ pub fn read_page(bytes: &[u8], limits: &Limits) -> Result<ReadPage, FormatError>
         tags,
         view,
         blocks,
-        reading_order,
         assets,
         ink,
         recordings,
@@ -87,24 +85,24 @@ fn check(mut page: Page, mut info: FormatInfo, mut warnings: Vec<Warning>, limit
 
 /// Writes `page.json` in canonical form (spec 2.2).
 ///
-/// `readingOrder` keeps only IDs of blocks on the page, once each (spec 6.2). Everything else is written as
-/// the page holds it.
+/// `view.readingOrder` keeps only IDs of blocks on the page, once each (spec 6.2). Everything else is written
+/// as the page holds it.
 pub fn write_page(page: &Page) -> Vec<u8> {
     let mut obj = header::start(kinds::PAGE);
+    let mut seen = HashSet::new();
+    let reading: Vec<_> = page
+        .view
+        .reading_order
+        .iter()
+        .filter(|id| page.blocks.contains(**id) && seen.insert(**id))
+        .collect();
     obj.put("id", Json::string(page.id.to_string()))
         .put("title", Json::str(&page.title))
         .put("created", Json::string(page.created.to_rfc3339()))
         .put("modified", Json::string(page.modified.to_rfc3339()))
         .unless("tags", page.tags.is_empty(), || Json::strings(&page.tags))
-        .put("view", view::write_view(&page.view))
-        .unless("blocks", page.blocks.is_empty(), || blocks::write_blocks(&page.blocks));
-    let mut seen = HashSet::new();
-    let reading: Vec<_> = page
-        .reading_order
-        .iter()
-        .filter(|id| page.blocks.contains(**id) && seen.insert(**id))
-        .collect();
-    obj.unless("readingOrder", reading.is_empty(), || Json::strings(reading))
+        .put("view", view::write_view(&page.view, &reading))
+        .unless("blocks", page.blocks.is_empty(), || blocks::write_blocks(&page.blocks))
         .unless("assets", page.assets.is_empty(), || parts::write_assets(&page.assets))
         .opt("ink", parts::write_ink(page.ink.segments()))
         .opt("recordings", page.recordings.as_ref().map(Json::Raw))

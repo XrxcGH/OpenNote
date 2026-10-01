@@ -10,11 +10,12 @@ mod format_fixtures {
     pub mod ink;
     pub mod notebook;
     pub mod pages;
+    pub mod reading;
 }
 
 use std::path::{Path, PathBuf};
 
-use format_fixtures::{biology, ink};
+use format_fixtures::{biology, ink, reading};
 use opennote_core::format::gzip::gunzip;
 use opennote_core::format::history_json::{read_versions, write_versions};
 use opennote_core::format::json;
@@ -371,4 +372,21 @@ fn fixture_markdown_documents_are_canonical() {
         }
     }
     assert!(plain >= 2);
+}
+
+/// The reading order of spec 6.2 on pages that cover each rule. The Python reader finds the same orders.
+#[test]
+fn fixture_reading_order_cases() {
+    let cases = reading::cases();
+    let mut out = Vec::new();
+    for case in &cases {
+        let bytes = serde_json::to_vec(&case.page).unwrap();
+        let read = read_page(&bytes, &limits()).unwrap();
+        assert!(validate_page(&read.page, &limits()).is_valid(), "{}", case.name);
+        assert_eq!(read.page.reading_order(), case.expected, "{}", case.name);
+        let expected: Vec<String> = case.expected.iter().map(ToString::to_string).collect();
+        out.push(json!({"name": case.name, "about": case.about, "page": case.page, "expected": expected}));
+    }
+    let path = fixtures().join("reading-order").join("cases.json");
+    check_file(&path, &ascii_json(&json!({ "cases": out })));
 }

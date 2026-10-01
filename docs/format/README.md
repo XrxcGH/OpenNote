@@ -414,7 +414,6 @@ A page folder holds `page.json` and, when needed, `page.md`, `ink.svg`, `ink/`, 
 | `tags` | array of strings | `[]` | Tags. A `/` nests them, as in `exam/unit-3`. Stored as typed |
 | `view` | object | required | Layout, paper, and background (section 5.4) |
 | `blocks` | array | `[]` | The page's blocks, sorted by order key (section 6) |
-| `readingOrder` | array of IDs | `[]` | Block IDs in the order screen readers read them, for freeform pages (section 6.2) |
 | `assets` | object | `{}` | The asset table, keyed by asset ID (section 10.2) |
 | `ink` | object | none | The ink segment list (section 8.3) |
 | `recordings` | array | `[]` | Reserved for audio recordings (section 5.6) |
@@ -490,6 +489,7 @@ Fields that equal their defaults are left out, as section 2.2 requires, so this 
 | `background.marginLine` | `false` | Draws a margin line on ruled paper |
 | `background.template` | none | The ID of a saved template, for the `template` pattern |
 | `contentWidth` | none | On flow pages, the width of the text column. Absent means the reading width |
+| `readingOrder` | `[]` | Block IDs in the order screen readers, `page.md`, and the reading view read them (section 6.2). Absent means the default order |
 
 Portrait paper sizes in page units:
 
@@ -698,7 +698,14 @@ Reading order, used by screen readers, `page.md`, and the phone's reading view, 
 2. A row starts at the first block not yet in a row. It takes every later block whose `y` is at most 8 units below the `y` of the row's first block.
 3. Each row reads from left to right: by `x`, then `y`, then order key and ID.
 
-A freeform page can set its own reading order with `readingOrder`, a list of block IDs. The listed blocks come first, in that order, and the others follow in the order above. IDs that name no block are ignored, and writers drop them at the next save.
+A page can set its own reading order with `view.readingOrder` (section 5.4), a list of block IDs. The listed blocks come first, in that order. The others follow in the order above, so a block that is not in the list yet reads after the listed ones. IDs that name no block are ignored, and repeated IDs count once. Writers drop both at the next save.
+
+Writers keep the list in step with the blocks:
+
+- A change that deletes a block removes its ID from the list in the same transaction, so undo brings both back.
+- A change to the view is a JSON merge patch (Request for Comments (RFC) 7396). A list is one value, so a patch that names `readingOrder` replaces the whole list, and `null` removes it and restores the default order.
+- When two edits of the same page change the list, the later one wins in full. A reader never combines the two lists.
+- A new page made from the notebook's `defaults.view` starts without a list.
 
 ### 6.3 Block types in version 1
 
@@ -2223,6 +2230,7 @@ The folder `docs/format/fixtures/` holds files that every implementation tests a
 | `journal/` | Journal generations with the pages recovery must produce |
 | `markdown/escape/` and `markdown/documents/` | The conformance fixtures of section 7.8 |
 | `readable/` | Pages with their exact `page.md`, `ink.svg`, and `index.md` |
+| `reading-order/` | Pages with the reading order of section 6.2 that a reader must find |
 
 The folder `docs/format/tools/` holds `read_opennote.py`, a reference reader written with only the Python standard library. It turns a notebook into Markdown and SVG files, and its test runs it against the fixtures. It shows that this specification is enough to read a notebook without OpenNote's code.
 

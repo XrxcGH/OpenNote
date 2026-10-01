@@ -218,6 +218,7 @@ pub fn arb_view(unknown: bool) -> impl Strategy<Value = PageView> {
             paper,
             background,
             content_width,
+            reading_order: Vec::new(),
             extra,
         },
     )

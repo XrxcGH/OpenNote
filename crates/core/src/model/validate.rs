@@ -69,7 +69,7 @@ fn check_page_fields(page: &Page, limits: &Limits, report: &mut ValidationReport
     if paper.width <= 0.0 || paper.height <= 0.0 {
         report.error("view.paper", "the paper has no area");
     }
-    for id in &page.reading_order {
+    for id in &view.reading_order {
         if !page.blocks.contains(*id) {
             report.warn("page.readingOrder", format!("{id} names no block"));
         }

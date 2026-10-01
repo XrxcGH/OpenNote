@@ -497,7 +497,6 @@ fn requests_resolve_apply_and_undo() {
             title: Some("Resolved".into()),
             tags: None,
             view: None,
-            reading_order: None,
         }],
     };
     let ack = handle.apply(req).unwrap();

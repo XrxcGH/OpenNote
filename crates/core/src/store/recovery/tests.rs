@@ -289,7 +289,6 @@ pub(crate) fn same_content(a: &Page, b: &Page) -> bool {
         && a.view == b.view
         && a.blocks == b.blocks
         && a.assets == b.assets
-        && a.reading_order == b.reading_order
         && strokes(a) == strokes(b)
 }
 

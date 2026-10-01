@@ -180,7 +180,6 @@ fn encode_fields(fields: &PageFields, codec: &dyn Codec) -> FieldsJson {
         title: fields.title.clone(),
         tags: fields.tags.clone(),
         view: fields.view.as_ref().map(|view| fragment::write_view(codec, view)),
-        reading_order: fields.reading_order.clone(),
     }
 }
 
@@ -318,7 +317,6 @@ fn decode_fields(fields: FieldsJson, ctx: &DecodeCtx<'_>) -> Result<PageFields, 
         title: fields.title,
         tags: fields.tags,
         view,
-        reading_order: fields.reading_order,
     })
 }
 

@@ -49,8 +49,7 @@ fn fail(op_index: usize, check: &'static str, detail: impl Into<String>) -> Appl
 fn set_page(page: &mut Page, before: &PageFields, after: &PageFields, index: usize) -> Result<(), ApplyError> {
     let matches = before.title.as_ref().is_none_or(|t| *t == page.title)
         && before.tags.as_ref().is_none_or(|t| *t == page.tags)
-        && before.view.as_ref().is_none_or(|v| **v == page.view)
-        && before.reading_order.as_ref().is_none_or(|r| *r == page.reading_order);
+        && before.view.as_ref().is_none_or(|v| **v == page.view);
     if !matches {
         return Err(fail(index, "pageFieldsEqual", "the page fields differ from `before`"));
     }
@@ -62,9 +61,6 @@ fn set_page(page: &mut Page, before: &PageFields, after: &PageFields, index: usi
     }
     if let Some(view) = &after.view {
         page.view = PageView::clone(view);
-    }
-    if let Some(order) = &after.reading_order {
-        page.reading_order.clone_from(order);
     }
     Ok(())
 }

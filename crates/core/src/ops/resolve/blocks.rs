@@ -287,15 +287,17 @@ pub(super) fn delete_blocks(c: &EditCtx<'_>, ids: &[BlockId]) -> Result<Vec<Op>,
     if blocks.is_empty() {
         return Ok(ops);
     }
-    let order = &c.page.reading_order;
-    if order.iter().any(|id| seen.contains(id)) {
+    let view = &c.page.view;
+    if view.reading_order.iter().any(|id| seen.contains(id)) {
+        let mut after = view.clone();
+        after.reading_order.retain(|id| !seen.contains(id));
         ops.push(Op::SetPage {
             before: PageFields {
-                reading_order: Some(order.clone()),
+                view: Some(Box::new(view.clone())),
                 ..PageFields::default()
             },
             after: PageFields {
-                reading_order: Some(order.iter().copied().filter(|id| !seen.contains(id)).collect()),
+                view: Some(Box::new(after)),
                 ..PageFields::default()
             },
         });

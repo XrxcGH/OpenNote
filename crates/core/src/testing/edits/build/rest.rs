@@ -3,12 +3,14 @@
 use super::{editable, pick, Ctx};
 use crate::format::names::asset_file_name;
 use crate::id::{AssetId, StrokeId};
-use crate::model::{Asset, JsonMap, NamedValue, Pattern, ViewMode};
+use crate::model::{Asset, JsonMap, NamedValue, PageView, Pattern, ViewMode};
 use crate::ops::apply::checks::asset_user;
+use crate::ops::merge_patch::diff;
 use crate::ops::resolve::view::view_to_json;
 use crate::ops::resolve::{Edit, StyleEdit};
 use crate::testing::edits::{AbstractEdit, Action};
 use crate::time::Timestamp;
+use serde_json::Value;
 
 /// The request for a stroke, page, or asset edit, or `None` if it has no valid target.
 pub(super) fn action(c: &Ctx<'_>, edit: &AbstractEdit) -> Option<Action> {
@@ -73,15 +75,10 @@ fn strokes(c: &Ctx<'_>, first: usize, count: usize) -> Option<Vec<StrokeId>> {
 }
 
 fn page_action(c: &Ctx<'_>, edit: &AbstractEdit) -> Option<Action> {
-    let set_page = |title, tags, view, reading_order| Edit::SetPage {
-        title,
-        tags,
-        view,
-        reading_order,
-    };
+    let set_page = |title, tags, view| Edit::SetPage { title, tags, view };
     match edit {
-        AbstractEdit::SetTitle { title } => c.one(set_page(Some(title.clone()), None, None, None)),
-        AbstractEdit::SetTags { tags } => c.one(set_page(None, Some(tags.clone()), None, None)),
+        AbstractEdit::SetTitle { title } => c.one(set_page(Some(title.clone()), None, None)),
+        AbstractEdit::SetTags { tags } => c.one(set_page(None, Some(tags.clone()), None)),
         AbstractEdit::SetView {
             pattern,
             paginated,
@@ -96,12 +93,13 @@ fn page_action(c: &Ctx<'_>, edit: &AbstractEdit) -> Option<Action> {
                 ViewMode::Infinite
             }
             .into();
-            c.one(set_page(None, None, Some(view_to_json(&view)), None))
+            c.one(set_page(None, None, Some(view_patch(&c.page.view, &view))))
         }
         AbstractEdit::SetReadingOrder { blocks } => {
             let all: Vec<_> = c.page.blocks.iter().map(|b| b.id).collect();
-            let order = blocks.iter().filter_map(|&i| pick(&all, i)).collect();
-            c.one(set_page(None, None, None, Some(order)))
+            let mut view = c.page.view.clone();
+            view.reading_order = blocks.iter().filter_map(|&i| pick(&all, i)).collect();
+            c.one(set_page(None, None, Some(view_patch(&c.page.view, &view))))
         }
         AbstractEdit::AddAsset { name, salt } => add_asset(c, name, *salt),
         AbstractEdit::RemoveAsset { asset } => {
@@ -118,6 +116,14 @@ fn page_action(c: &Ctx<'_>, edit: &AbstractEdit) -> Option<Action> {
         }
         _ => None,
     }
+}
+
+/// The merge patch that turns the view `from` into the view `to`.
+fn view_patch(from: &PageView, to: &PageView) -> serde_json::Value {
+    let (Value::Object(from), Value::Object(to)) = (view_to_json(from), view_to_json(to)) else {
+        return Value::Null;
+    };
+    Value::Object(diff(&from, &to))
 }
 
 fn add_asset(c: &Ctx<'_>, name: &str, salt: u64) -> Option<Action> {

@@ -196,7 +196,7 @@ impl PageStore {
         };
         next.ink.commit(through, segments, dead);
         let blocks: HashSet<_> = next.blocks.iter().map(|b| b.id).collect();
-        next.reading_order.retain(|id| blocks.contains(id));
+        next.view.reading_order.retain(|id| blocks.contains(id));
         fix_stroke_counts(&mut next);
         next
     }
@@ -320,7 +320,6 @@ fn first_difference(a: &Page, b: &Page) -> Option<&'static str> {
         ("tags", a.tags == b.tags),
         ("view", a.view == b.view),
         ("blocks", a.blocks == b.blocks),
-        ("readingOrder", a.reading_order == b.reading_order),
         ("assets", a.assets == b.assets),
         ("recordings", a.recordings == b.recordings),
         ("encryption", a.encryption == b.encryption),

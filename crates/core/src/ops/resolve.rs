@@ -134,12 +134,10 @@ pub enum Edit {
         /// New tags.
         #[serde(default)]
         tags: Option<Vec<String>>,
-        /// A new view, as `page.json` writes it.
+        /// A JSON merge patch (RFC 7396) over the current view, as `page.json` writes it. It can set
+        /// `readingOrder` (spec 6.2), and `null` puts a member back to its default.
         #[serde(default)]
         view: Option<serde_json::Value>,
-        /// A new reading order (spec 6.2).
-        #[serde(default)]
-        reading_order: Option<Vec<BlockId>>,
     },
     /// Adds an imported asset to the table.
     AddAsset {
@@ -313,17 +311,11 @@ fn resolve_edit(c: &EditCtx<'_>, edit: &Edit) -> Result<Vec<Op>, EditError> {
         Edit::TransformStrokes { strokes, matrix } => strokes::transform(c, strokes, matrix),
         Edit::RestyleStrokes { strokes, style } => strokes::restyle(c, strokes, style),
         Edit::MoveStrokesToBlock { strokes, block } => strokes::move_to_block(c, strokes, *block),
-        Edit::SetPage {
-            title,
-            tags,
-            view,
-            reading_order,
-        } => {
+        Edit::SetPage { title, tags, view } => {
             let edit = page::PageEdit {
                 title: title.as_deref(),
                 tags: tags.as_deref(),
                 view: view.as_ref(),
-                reading_order: reading_order.as_deref(),
             };
             page::set_page(c, &edit)
         }

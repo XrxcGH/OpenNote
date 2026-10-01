@@ -5,7 +5,6 @@
 //! out the revision and what the reader found. A save changes those without changing the page.
 
 use crate::error::ApplyError;
-use crate::id::BlockId;
 use crate::model::Page;
 use crate::ops::Txn;
 
@@ -69,13 +68,11 @@ impl Oracle {
     }
 }
 
-/// The block IDs of the reading order that name blocks. Others are ignored, and writers drop them.
-fn reading_order(page: &Page) -> Vec<BlockId> {
-    page.reading_order
-        .iter()
-        .copied()
-        .filter(|id| page.blocks.contains(*id))
-        .collect()
+/// The page's view with only the reading-order IDs that name blocks. Others are ignored, and writers drop them.
+fn view_without_dead_ids(page: &Page) -> crate::model::PageView {
+    let mut view = page.view.clone();
+    view.reading_order.retain(|id| page.blocks.contains(*id));
+    view
 }
 
 /// Whether two pages have the same content: equal in everything but the ink's segments, pending records, and
@@ -87,9 +84,8 @@ pub fn same_content(a: &Page, b: &Page) -> bool {
         && a.created == b.created
         && a.modified == b.modified
         && a.tags == b.tags
-        && a.view == b.view
+        && view_without_dead_ids(a) == view_without_dead_ids(b)
         && a.blocks == b.blocks
-        && reading_order(a) == reading_order(b)
         && a.assets == b.assets
         && a.ink.strokes().eq(b.ink.strokes())
         && a.recordings == b.recordings

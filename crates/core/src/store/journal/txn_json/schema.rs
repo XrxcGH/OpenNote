@@ -83,8 +83,6 @@ pub struct FieldsJson {
     pub tags: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub view: Option<Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reading_order: Option<Vec<BlockId>>,
 }
 
 /// A block's order key and frame.

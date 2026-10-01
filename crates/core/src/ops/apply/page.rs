@@ -36,16 +36,14 @@ pub(super) fn remove_asset(a: &mut Applying<'_>, asset: &Asset) -> Result<(), Fa
 pub(super) fn set_page(a: &mut Applying<'_>, before: &PageFields, after: &PageFields) -> Result<(), Fail> {
     let paired = before.title.is_some() == after.title.is_some()
         && before.tags.is_some() == after.tags.is_some()
-        && before.view.is_some() == after.view.is_some()
-        && before.reading_order.is_some() == after.reading_order.is_some();
+        && before.view.is_some() == after.view.is_some();
     if !paired {
         return Err(fail("fieldsPaired", "before and after name different fields"));
     }
     let page = &*a.page;
     let equal = before.title.as_ref().is_none_or(|t| *t == page.title)
         && before.tags.as_ref().is_none_or(|t| *t == page.tags)
-        && before.view.as_ref().is_none_or(|v| **v == page.view)
-        && before.reading_order.as_ref().is_none_or(|r| *r == page.reading_order);
+        && before.view.as_ref().is_none_or(|v| **v == page.view);
     if !equal {
         return Err(fail("pageFieldsEqual", "the page fields differ from before"));
     }
@@ -57,9 +55,6 @@ pub(super) fn set_page(a: &mut Applying<'_>, before: &PageFields, after: &PageFi
     }
     if let Some(view) = &after.view {
         a.set_view(PageView::clone(view));
-    }
-    if let Some(order) = &after.reading_order {
-        a.set_reading_order(order.clone());
     }
     a.changes.page_fields = true;
     Ok(())

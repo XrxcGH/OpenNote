@@ -124,7 +124,6 @@ fn titles_and_tags_change_only_when_they_differ() {
         title: None,
         tags: Some(vec!["a".repeat(201)]),
         view: None,
-        reading_order: None,
     };
     assert_eq!(code(&page, tags), "invalid");
 }
@@ -156,7 +155,27 @@ fn reading_orders_drop_unknown_and_repeated_blocks() {
     let [text, image, ..] = ids(&page)[..] else { panic!() };
     let missing = BlockId(Id::from_parts(9, 9));
     let (changed, _) = apply_one(&page, set_reading_order(vec![image, missing, image, text]));
-    assert_eq!(changed.reading_order, [image, text]);
+    assert_eq!(changed.view.reading_order, [image, text]);
+}
+
+#[test]
+fn a_view_is_a_merge_patch_over_the_current_view() {
+    let page = sample_page();
+    let [text, image, ..] = ids(&page)[..] else { panic!() };
+    let first =
+        json!({"mode": "paginated", "paper": {"width": 700}, "readingOrder": [image.to_string(), text.to_string()]});
+    let (one, _) = apply_one(&page, set_view(first));
+    // A later patch changes one member and leaves the others alone.
+    let (two, _) = apply_one(&one, set_view(json!({"paper": {"height": 900}})));
+    assert_eq!(two.view.mode.as_str(), "paginated");
+    assert_eq!((two.view.paper.width, two.view.paper.height), (700.0, 900.0));
+    assert_eq!(two.view.reading_order, [image, text]);
+    // `null` puts a member back to its default, for an object and for the reading order.
+    let (three, _) = apply_one(&two, set_view(json!({"paper": null, "readingOrder": null})));
+    assert_eq!(three.view.paper, page.view.paper);
+    assert!(three.view.reading_order.is_empty());
+    assert_eq!(three.view.mode.as_str(), "paginated");
+    assert_eq!(code(&page, set_view(json!({"readingOrder": [5]}))), "invalid");
 }
 
 #[test]

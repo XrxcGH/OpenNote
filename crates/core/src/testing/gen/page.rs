@@ -143,9 +143,11 @@ fn assemble(
         created: header.created,
         modified: header.modified,
         tags: header.tags.clone(),
-        view: header.view.clone(),
+        view: PageView {
+            reading_order: dedupe(reading_order),
+            ..header.view.clone()
+        },
         blocks,
-        reading_order: dedupe(reading_order),
         assets: assets.iter().map(|a| (a.id, a.clone())).collect::<BTreeMap<_, _>>(),
         ink,
         recordings: header.recordings.clone(),

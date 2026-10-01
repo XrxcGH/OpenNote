@@ -22,6 +22,7 @@ pub fn read_view(value: Value) -> Result<PageView, FormatError> {
         layout: fields.named("layout")?.unwrap_or(defaults.layout),
         mode: fields.named("mode")?.unwrap_or(defaults.mode),
         content_width: fields.opt_f64("contentWidth")?,
+        reading_order: fields.ids("readingOrder")?,
         paper,
         background,
         extra: fields.rest(),
@@ -70,8 +71,9 @@ pub fn named<T: NamedValue>(value: &Named<T>) -> Json<'_> {
     Json::str(value.as_str())
 }
 
-/// Writes `view`, leaving out every value that equals its default.
-pub fn write_view(view: &PageView) -> Json<'_> {
+/// Writes `view`, leaving out every value that equals its default. `reading_order` is the view's reading order
+/// without the IDs that name no block, and without repeats (spec 6.2).
+pub fn write_view<'a>(view: &'a PageView, reading_order: &[&'a crate::id::BlockId]) -> Json<'a> {
     let defaults = PageView::default();
     let mut obj = Obj::new();
     obj.unless("layout", view.layout == defaults.layout, || named(&view.layout))
@@ -80,7 +82,10 @@ pub fn write_view(view: &PageView) -> Json<'_> {
     obj.unless("paper", is_empty_object(&paper), || paper);
     let background = write_background(&view.background);
     obj.unless("background", is_empty_object(&background), || background)
-        .opt("contentWidth", view.content_width.map(Json::Geometry));
+        .opt("contentWidth", view.content_width.map(Json::Geometry))
+        .unless("readingOrder", reading_order.is_empty(), || {
+            Json::strings(reading_order.iter().copied())
+        });
     obj.finish(&view.extra)
 }
 

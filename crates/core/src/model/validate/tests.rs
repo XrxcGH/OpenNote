@@ -97,7 +97,7 @@ fn stroke_counts_and_unreadable_blocks_are_warnings() {
             unreadable: None,
         });
     });
-    page.reading_order = vec![BlockId::ZERO];
+    page.view.reading_order = vec![BlockId::ZERO];
     let report = validate_page(&page, &Limits::default());
     assert!(report.is_valid(), "{report:?}");
     let found = codes(&report.warnings);

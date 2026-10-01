@@ -107,10 +107,8 @@ pub struct PageFields {
     pub title: Option<String>,
     /// The tags.
     pub tags: Option<Vec<String>>,
-    /// The view settings, boxed to keep operations small in undo stacks.
+    /// The view settings, with the reading order (spec 6.2), boxed to keep operations small in undo stacks.
     pub view: Option<Box<PageView>>,
-    /// The reading order of a freeform page (spec 6.2).
-    pub reading_order: Option<Vec<BlockId>>,
 }
 
 /// A block's order key and frame.

@@ -79,7 +79,7 @@ fn check_page(page: &Page) -> Result<(), TestCaseError> {
             .get(stroke.block)
             .is_some_and(|b| matches!(b.data, BlockData::Ink(_))));
     }
-    prop_assert!(page.reading_order.iter().all(|id| page.blocks.contains(*id)));
+    prop_assert!(page.view.reading_order.iter().all(|id| page.blocks.contains(*id)));
     Ok(())
 }
 

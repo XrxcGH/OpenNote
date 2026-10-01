@@ -48,6 +48,15 @@ class ReferenceReaderTest(unittest.TestCase):
         svg = read_opennote.render_ink_svg(page, strokes)
         self.assertEqual(svg, (folder / "ink.svg").read_text(encoding="utf-8"))
 
+    def test_reading_order_follows_the_fixtures(self) -> None:
+        """Finds the reading order of every case in docs/format/fixtures/reading-order (spec 6.2)."""
+        cases = json.loads((FIXTURES / "reading-order" / "cases.json").read_text(encoding="utf-8"))["cases"]
+        self.assertGreaterEqual(len(cases), 8)
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                found = [block["id"] for block in read_opennote.reading_order(case["page"])]
+                self.assertEqual(found, case["expected"])
+
     def test_segments_decode_as_the_ink_fixtures_record(self) -> None:
         """Decodes every segment in docs/format/fixtures/ink and compares the result or the error."""
         cases = sorted((FIXTURES / "ink").glob("*.json"))

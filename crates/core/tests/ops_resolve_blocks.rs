@@ -293,10 +293,10 @@ fn fallbacks_are_removed_with_null() {
 fn deleting_blocks_takes_strokes_and_reading_order() {
     let mut page = sample_page();
     let [text, _, layer, _] = ids(&page)[..] else { panic!() };
-    page.reading_order = vec![layer, text];
+    page.view.reading_order = vec![layer, text];
     let (changed, txn) = apply_one(&page, delete(&[layer, layer]));
     assert!(changed.ink.is_empty());
-    assert_eq!(changed.reading_order, [text]);
+    assert_eq!(changed.view.reading_order, [text]);
     let shape = matches!(&txn.ops[..], [Op::SetPage { .. }, Op::DeleteBlocks { blocks, strokes }]
         if blocks.len() == 1 && strokes.len() == 1);
     assert!(shape, "{:?}", txn.ops);

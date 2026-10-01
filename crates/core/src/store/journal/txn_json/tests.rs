@@ -57,11 +57,12 @@ fn block_ops(page: &Page) -> Vec<Op> {
     let text = blocks[0].id;
     let mut patch = JsonMap::new();
     patch.insert("alt".into(), serde_json::Value::String("A leaf".into()));
+    let mut view = page.view.clone();
+    view.reading_order = vec![text];
     let before = PageFields {
         title: Some("Photosynthesis".into()),
         tags: Some(vec!["biology".into()]),
-        view: Some(Box::new(page.view.clone())),
-        reading_order: Some(vec![text]),
+        view: Some(Box::new(view)),
     };
     let after = PageFields {
         title: Some("Light".into()),

@@ -215,9 +215,10 @@ fn defaults_are_left_out_and_values_that_differ_are_written() {
 fn reading_order_keeps_only_blocks_once() {
     let mut page = sample_page();
     let first = page.blocks.iter().next().unwrap().id;
-    page.reading_order = vec![first, crate::id::BlockId::ZERO, first];
+    page.view.reading_order = vec![first, crate::id::BlockId::ZERO, first];
     let value: Value = serde_json::from_slice(&write_page(&page)).unwrap();
-    assert_eq!(value["readingOrder"], json!([first.to_string()]));
+    assert_eq!(value["view"]["readingOrder"], json!([first.to_string()]));
+    assert!(value.get("readingOrder").is_none());
 }
 
 #[test]
