@@ -44,6 +44,15 @@ interface AuditResult {
   text: string;
 }
 
+/**
+ * Arguments for one headless render. The browser profile lives in `dir`, which the caller deletes;
+ * without --user-data-dir, headless Edge leaves a new HeadlessEdge profile in the temp folder on every run.
+ */
+export function browserArgs(dir: string): string[] {
+  const profile = `--user-data-dir=${join(dir, 'profile')}`;
+  return ['--headless', '--no-sandbox', '--disable-gpu', profile, '--virtual-time-budget=3000', '--dump-dom'];
+}
+
 function render(svg: string, exe: string): AuditResult[] {
   const dir = mkdtempSync(join(tmpdir(), 'checks-layout-'));
   try {
@@ -54,8 +63,7 @@ function render(svg: string, exe: string): AuditResult[] {
       `<pre id="out"></pre><script>${AUDIT}</script></body></html>`,
     ].join('');
     writeFileSync(page, html);
-    const args = ['--headless', '--no-sandbox', '--disable-gpu', '--virtual-time-budget=3000', '--dump-dom'];
-    const dom = execFileSync(exe, [...args, `file://${page}`], {
+    const dom = execFileSync(exe, [...browserArgs(dir), `file://${page}`], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });
@@ -63,7 +71,8 @@ function render(svg: string, exe: string): AuditResult[] {
     if (!json) throw new Error('the audit script produced no result');
     return JSON.parse(decodeHtmlEntities(json));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    // The browser's helper processes can hold profile files for a moment after it exits.
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 }
 
