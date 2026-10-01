@@ -46,7 +46,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | P3-2 | Descriptions and the `decorative` flag | Done: already in the spec and model for images, drawings, and files; a round-trip test now covers them |
 | P3-3 | Named styles in `notebook.json` | Done: `styles` in the spec, `NotebookFile`, `NotebookTree`, `NodeProps`, and `set_notebook_props`; copies merge by `changed` |
 | P3-4 | Typing groups join `PatchBlock` and `SetPage` | Done: in `UndoStack`, with followers ignored |
-| P3-5 | Full block JSON in undo, redo, and remote frames | Pending |
+| P3-5 | Full block JSON in undo, redo, and remote frames | Done: `FrameInfo` carries `blocks`, `title`, `tags`, `view`, and `assets` |
 | P3-6 | Image size and type check on import | Pending |
 | P3-7 | Restoring parts of a version, deleting history, and retention | Pending |
 | P3-8 | Injected `invoke` and `Channel`, and `page_handle` | For the app bridge: needs TypeScript and `core_bridge.rs` |

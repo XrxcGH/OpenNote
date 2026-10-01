@@ -7,10 +7,11 @@ use super::state::{PageSession, PageState};
 use super::TxnAck;
 use crate::error::EditError;
 use crate::id::{AssetId, ClientId};
-use crate::model::{BlockData, InkRecord, Stroke};
+use crate::model::{Block, BlockData, InkRecord, Stroke};
 use crate::ops::resolve::{resolve, resolve_add_strokes, ResolveCtx, StrokeTxnMeta, TxnRequest};
 use crate::ops::undo::{UndoOutcome, UndoStack};
 use crate::ops::{AppliedChanges, Op, Txn};
+use crate::store::journal::fragment;
 use crate::wire::frames::{self, AppliedFrame, FrameInfo};
 
 /// Most entries one client's undo stack keeps (plan 7.3).
@@ -148,8 +149,9 @@ impl PageSession {
         self.frame(&st, client, (seq, &changes, ui)).map(Some)
     }
 
-    /// The frame for applied changes: the new text of changed text blocks, the title, and the added and
-    /// changed strokes as they are now.
+    /// The frame for applied changes: the new text of changed text blocks, the full JSON of inserted and changed
+    /// blocks, the page's title, tags, and view, the added asset entries, and the added and changed strokes as
+    /// they are now.
     pub(crate) fn frame(
         &self,
         st: &PageState,
@@ -164,6 +166,24 @@ impl PageSession {
                 _ => None,
             })
             .collect();
+        let codec = self.ctx.codec.as_ref();
+        let blocks: Vec<Arc<Block>> = changes
+            .blocks_changed
+            .iter()
+            .filter_map(|id| st.page.blocks.get(*id).cloned())
+            .collect();
+        let blocks = match fragment::write_blocks(codec, &blocks) {
+            serde_json::Value::Array(items) => items,
+            serde_json::Value::Null => Vec::new(),
+            other => vec![other],
+        };
+        let assets = changes
+            .assets_changed
+            .iter()
+            .filter_map(|id| st.page.assets.get(id))
+            .map(|asset| fragment::write_asset(codec, asset))
+            .collect();
+        let page = &st.page;
         let records: Vec<InkRecord> = changes
             .strokes_added
             .iter()
@@ -177,7 +197,11 @@ impl PageSession {
             changes: changes.clone(),
             ui,
             texts,
-            title: changes.page_fields.then(|| st.page.title.clone()),
+            blocks,
+            title: changes.page_fields.then(|| page.title.clone()),
+            tags: changes.page_fields.then(|| page.tags.clone()),
+            view: changes.page_fields.then(|| fragment::write_view(codec, &page.view)),
+            assets,
             can_undo,
             can_redo,
             strokes: u32::try_from(records.len()).unwrap_or(u32::MAX),

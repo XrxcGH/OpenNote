@@ -2,6 +2,10 @@
 //!
 //! A frame is a `u32` JSON length, little-endian, the JSON, and then any stroke records in the segment record
 //! format: the strokes the change added, or whose properties it changed, as they are now.
+//!
+//! The JSON says everything a window needs to apply the change without asking for the page again: the full
+//! JSON of every inserted or changed block, the IDs of removed blocks, the page's title, tags, and view when
+//! they changed, and the asset table entries the change added.
 
 use std::collections::BTreeMap;
 
@@ -30,8 +34,18 @@ pub struct FrameInfo {
     pub ui: Option<serde_json::Value>,
     /// The new Markdown of each changed text block, so the editor replaces only the range that differs.
     pub texts: BTreeMap<BlockId, String>,
+    /// The full JSON of every inserted or changed block, text blocks included, as `page.json` writes them. A
+    /// block removed by the change is named in `changes.blocksRemoved`.
+    pub blocks: Vec<serde_json::Value>,
     /// The page's title, when page fields changed.
     pub title: Option<String>,
+    /// The page's tags, when page fields changed.
+    pub tags: Option<Vec<String>>,
+    /// The page's view, as `page.json` writes it and with its reading order, when page fields changed.
+    pub view: Option<serde_json::Value>,
+    /// The asset table entries the change added, as `page.json` writes them, each with its `id`. An entry the
+    /// change removed is named in `changes.assetsChanged` and is missing here.
+    pub assets: Vec<serde_json::Value>,
     /// Whether the client can undo now.
     pub can_undo: bool,
     /// Whether the client can redo now.
@@ -82,7 +96,11 @@ mod tests {
             },
             ui: Some(serde_json::json!({"anchor": 3})),
             texts: BTreeMap::from([(block, "Hello".to_owned())]),
+            blocks: Vec::new(),
             title: None,
+            tags: None,
+            view: None,
+            assets: Vec::new(),
             can_undo: false,
             can_redo: true,
             strokes: 0,
