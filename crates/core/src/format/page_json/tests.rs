@@ -236,3 +236,53 @@ fn the_title_is_found_without_a_full_parse() {
     assert_eq!(page_title_prefix(b"{\"title\": 5}"), None);
     assert_eq!(page_title_prefix(b"\xff"), None);
 }
+
+#[test]
+fn descriptions_and_decorative_flags_round_trip_on_pictures_drawings_and_files() {
+    let mut page = sample_page();
+    let ids: Vec<_> = page.blocks.iter().map(|b| b.id).collect();
+    let mut flagged = 0;
+    for id in ids {
+        let mut block = crate::model::Block::clone(page.blocks.get(id).unwrap());
+        match &mut block.data {
+            BlockData::Image(data) => {
+                data.alt = "A leaf".to_owned();
+                data.decorative = true;
+            }
+            BlockData::Ink(data) => {
+                data.alt = "A diagram".to_owned();
+                data.decorative = true;
+            }
+            BlockData::File(data) => {
+                data.alt = "A handout".to_owned();
+                data.decorative = true;
+            }
+            _ => continue,
+        }
+        flagged += 1;
+        page.blocks.replace(std::sync::Arc::new(block)).unwrap();
+    }
+    assert!(flagged >= 2, "the sample page has an image and an ink block");
+    let bytes = write_page(&page);
+    let value: Value = serde_json::from_slice(&bytes).unwrap();
+    let blocks = value["blocks"].as_array().unwrap();
+    let marked = blocks.iter().filter(|b| b["data"]["decorative"] == json!(true)).count();
+    assert_eq!(marked, flagged);
+    let read = read_page(&bytes, &limits()).unwrap().page;
+    assert_eq!(read.blocks, page.blocks);
+    assert_eq!(write_page(&read), bytes);
+    // A flag that is false is left out, as spec 2.2 asks.
+    let mut plain = page.clone();
+    for id in plain.blocks.iter().map(|b| b.id).collect::<Vec<_>>() {
+        let mut block = crate::model::Block::clone(plain.blocks.get(id).unwrap());
+        match &mut block.data {
+            BlockData::Image(data) => data.decorative = false,
+            BlockData::Ink(data) => data.decorative = false,
+            BlockData::File(data) => data.decorative = false,
+            _ => continue,
+        }
+        plain.blocks.replace(std::sync::Arc::new(block)).unwrap();
+    }
+    let text = String::from_utf8(write_page(&plain)).unwrap();
+    assert!(!text.contains("decorative"));
+}
