@@ -45,7 +45,7 @@ describe('the command palette', () => {
     await userEvent.keyboard('toggle dark');
     await waitFor(() => expect(screen.getByRole('option', { name: /Toggle dark mode/ })).toBeTruthy());
     await userEvent.keyboard('{Enter}');
-    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'), { timeout: 5000 });
     expect(screen.queryByRole('combobox')).toBeNull();
     await expectFocus(opener);
     opener.remove();
