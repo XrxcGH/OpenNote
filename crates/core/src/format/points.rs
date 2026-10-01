@@ -127,6 +127,11 @@ pub fn decode_points(bytes: &[u8], count: u32, channels: Channels) -> Result<Vec
 /// Checks point data without keeping the points: every value in range, and the stored bounding box right.
 pub fn check_points(bytes: &[u8], count: u32, channels: Channels, bbox: &BBox) -> Result<(), InkError> {
     check_count(bytes, count)?;
+    // Opening a page checks every point of every stroke, and nearly all of them are valid. A tight loop
+    // accepts those. Anything it doesn't accept goes through the full decoder, which names the problem.
+    if quick_check(bytes, count, channels, bbox) {
+        return Ok(());
+    }
     let mut found = EMPTY_BOX;
     walk(bytes, count, channels, |point| grow(&mut found, point))?;
     if found == *bbox {
@@ -134,6 +139,110 @@ pub fn check_points(bytes: &[u8], count: u32, channels: Channels, bbox: &BBox) -
     } else {
         Err(InkError::BoundingBox)
     }
+}
+
+/// Whether the point data is certainly valid and matches `bbox`: it accepts exactly what [`walk`] and the
+/// bounding box check accept, without building points or errors. `false` only means "check it fully".
+fn quick_check(bytes: &[u8], count: u32, channels: Channels, bbox: &BBox) -> bool {
+    let (pressure, tilt, time) = (channels.pressure(), channels.tilt(), channels.time());
+    let mut pos = 0usize;
+    // Every value stays within `MAX_COORD`, `u16`, `MAX_TILT`, or `u32`, and every delta within `i32`, so
+    // none of this arithmetic can wrap.
+    let (mut x, mut y, mut p, mut tx, mut ty, mut t) = (0i64, 0i64, 0i64, 0i64, 0i64, 0u64);
+    let (mut min_x, mut min_y, mut max_x, mut max_y) = (i64::MAX, i64::MAX, i64::MIN, i64::MIN);
+    for index in 0..count {
+        let first = index == 0;
+        let (Some(dx), Some(dy)) = (quick_zigzag(bytes, &mut pos), quick_zigzag(bytes, &mut pos)) else {
+            return false;
+        };
+        (x, y) = if first {
+            (dx, dy)
+        } else {
+            (x.wrapping_add(dx), y.wrapping_add(dy))
+        };
+        if x.unsigned_abs() > MAX_COORD as u64 || y.unsigned_abs() > MAX_COORD as u64 {
+            return false;
+        }
+        (min_x, min_y, max_x, max_y) = (min_x.min(x), min_y.min(y), max_x.max(x), max_y.max(y));
+        if pressure {
+            match quick_pressure(bytes, &mut pos, first, p) {
+                Some(value) => p = value,
+                None => return false,
+            }
+        }
+        if tilt {
+            let (Some(dx), Some(dy)) = (quick_zigzag(bytes, &mut pos), quick_zigzag(bytes, &mut pos)) else {
+                return false;
+            };
+            (tx, ty) = if first {
+                (dx, dy)
+            } else {
+                (tx.wrapping_add(dx), ty.wrapping_add(dy))
+            };
+            if tx.unsigned_abs() > MAX_TILT as u64 || ty.unsigned_abs() > MAX_TILT as u64 {
+                return false;
+            }
+        }
+        if time {
+            let Some(dt) = quick_varint(bytes, &mut pos).map(u64::from) else {
+                return false;
+            };
+            t = if first { dt } else { t.wrapping_add(dt) };
+            if (first && dt > u64::from(MAX_FIRST_TIME)) || t > u64::from(u32::MAX) {
+                return false;
+            }
+        }
+    }
+    let found = [min_x, min_y, max_x, max_y];
+    let stored = [bbox.min_x, bbox.min_y, bbox.max_x, bbox.max_y].map(i64::from);
+    pos == bytes.len() && found == stored
+}
+
+/// The pressure of the next point, if it is in range. The first point stores it whole.
+#[inline(always)]
+fn quick_pressure(bytes: &[u8], pos: &mut usize, first: bool, before: i64) -> Option<i64> {
+    let value = if first {
+        i64::from(quick_varint(bytes, pos)?)
+    } else {
+        before.wrapping_add(quick_zigzag(bytes, pos)?)
+    };
+    (0..=i64::from(u16::MAX)).contains(&value).then_some(value)
+}
+
+/// [`Reader::varint`] without the error: `None` for anything it would reject.
+#[inline(always)]
+fn quick_varint(bytes: &[u8], pos: &mut usize) -> Option<u32> {
+    let first = *bytes.get(*pos)?;
+    if first < 0x80 {
+        *pos = pos.wrapping_add(1);
+        return Some(u32::from(first));
+    }
+    let mut value = u32::from(first & 0x7f);
+    let mut at = pos.wrapping_add(1);
+    for shift in [7u32, 14, 21, 28] {
+        let byte = *bytes.get(at)?;
+        at = at.wrapping_add(1);
+        if shift == 28 && byte > 0x0f {
+            return None;
+        }
+        value |= u32::from(byte & 0x7f).wrapping_shl(shift);
+        if byte & 0x80 == 0 {
+            // A zero last byte would not be the shortest form.
+            if byte == 0 {
+                return None;
+            }
+            *pos = at;
+            return Some(value);
+        }
+    }
+    None
+}
+
+/// [`Reader::zigzag`] without the error.
+#[inline(always)]
+fn quick_zigzag(bytes: &[u8], pos: &mut usize) -> Option<i64> {
+    let z = quick_varint(bytes, pos)?;
+    Some(i64::from((z >> 1) as i32 ^ ((z & 1) as i32).wrapping_neg()))
 }
 
 /// Rejects counts outside 1 to [`MAX_POINTS`], and counts the bytes can't hold: every point takes at least
