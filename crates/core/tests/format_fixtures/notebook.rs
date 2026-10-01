@@ -1,7 +1,7 @@
 //! The version 1 fixture notebook (spec Appendix B.6), built by the version 1 writer.
 //!
 //! `OPENNOTE_BLESS=1 cargo test -p opennote-core --all-features fixture` writes it into
-//! `docs/format/fixtures/notebooks/v1`. Every other run compares the files with what this code writes.
+//! `docs/format/fixtures/nb/v1`. Every other run compares the files with what this code writes.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;

@@ -4,7 +4,7 @@ These files test every implementation of the [note format](../README.md) against
 
 | Folder | Contents |
 |---|---|
-| `notebooks/v1/` | A small notebook written by the version 1 writer, with its readable copies |
+| `nb/v1/` | A small notebook written by the version 1 writer, with its readable copies |
 | `ink/` | Segment files, each with a JSON file that says what a reader must decode or report |
 | `markdown/escape/` | Text and its escaped form (spec 7.6) |
 | `markdown/documents/` | Canonical Markdown and the document tree it stands for (spec 7.8) |
@@ -12,7 +12,7 @@ These files test every implementation of the [note format](../README.md) against
 
 ## The version 1 notebook
 
-The notebook in `notebooks/v1/` covers the parts of the format a reader meets most:
+The notebook in `nb/v1/` covers the parts of the format a reader meets most:
 
 - Section groups nested two levels deep, and a section at the top level.
 - A page with a subpage and a sub-subpage, a pinned page, and a page with a color.
@@ -23,7 +23,7 @@ The notebook in `notebooks/v1/` covers the parts of the format a reader meets mo
 
 Each page folder holds the `page.md` and `ink.svg` that the version 1 writer made from it, and the notebook folder holds `index.md` and `README.md`. A reader that follows the spec writes the same files. The copy of the spec in `.opennote/FORMAT.md` is left out, because this folder already sits next to the spec.
 
-Version 1 is still a draft, so the Rust tests can write these files again with `OPENNOTE_BLESS=1 cargo test -p opennote-core --all-features fixture -- --test-threads=1`. Once version 1 is frozen, the files never change. Later versions add their own folders, such as `notebooks/v2/`.
+Version 1 is still a draft, so the Rust tests can write these files again with `OPENNOTE_BLESS=1 cargo test -p opennote-core --all-features fixture -- --test-threads=1`. Once version 1 is frozen, the files never change. Later versions add their own folders, such as `nb/v2/`.
 
 ## Ink
 

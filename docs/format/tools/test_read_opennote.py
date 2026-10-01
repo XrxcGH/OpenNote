@@ -25,8 +25,8 @@ class ReferenceReaderTest(unittest.TestCase):
     """The reference reader's output matches the expected files of every fixture notebook."""
 
     def test_reads_the_version_1_fixture_notebook(self) -> None:
-        """Reads docs/format/fixtures/notebooks/v1 and compares the Markdown and SVG files it writes."""
-        notebook = FIXTURES / "notebooks" / "v1"
+        """Reads docs/format/fixtures/nb/v1 and compares the Markdown and SVG files it writes."""
+        notebook = FIXTURES / "nb" / "v1"
         with tempfile.TemporaryDirectory() as out:
             self.assertEqual(read_opennote.main(["read_opennote.py", str(notebook), out]), 0)
             written = sorted(p.relative_to(out).as_posix() for p in Path(out).rglob("*") if p.is_file())
