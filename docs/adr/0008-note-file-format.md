@@ -36,6 +36,36 @@ The format also fixes how files change over time:
 - All JSON files share one format version number. Each file also states the oldest reader that can show it. Older apps open newer files read-only, and newer apps upgrade older files in memory, writing them back only when edited, after a backup.
 - Encrypted sections are reserved. Version 1 already forbids plain-text copies of them in readable files, the search index, thumbnails, and the journal.
 
+### Amendments before version 1 froze
+
+The Phase 4 and Phase 5 designs asked for these changes while version 1 was still a draft. Items P3-1 to P3-12 come from Phase 4, and C1 to C11 come from Phase 5. The table records what became of each one.
+
+| Item | Change | Status |
+|---|---|---|
+| P3-1 | Reading order in the view | Done: `view.readingOrder`, `setPage` merge patch, fixtures in `reading-order/` |
+| P3-2 | Descriptions and the `decorative` flag | Done: already in the spec and model for images, drawings, and files; a round-trip test now covers them |
+| P3-3 | Named styles in `notebook.json` | Pending |
+| P3-4 | Typing groups join `PatchBlock` and `SetPage` | Pending |
+| P3-5 | Full block JSON in undo, redo, and remote frames | Pending |
+| P3-6 | Image size and type check on import | Pending |
+| P3-7 | Restoring parts of a version, deleting history, and retention | Pending |
+| P3-8 | Injected `invoke` and `Channel`, and `page_handle` | For the app bridge: needs TypeScript and `core_bridge.rs` |
+| P3-9 | `asset_import_path` stays out of the WebView capability | For the app bridge: needs the Tauri capability file |
+| P3-10 | `spliceText` edit | Pending |
+| P3-11 | Width of a floating text block without `w` | Pending |
+| P3-12 | No two adjacent lists of one kind | Pending |
+| C1 | `StrokeTxnMeta` with `ui` and `edits` | Pending |
+| C2 | Partial erase makes sliced strokes | Pending |
+| C3 | Stored pressure and positions | Pending |
+| C4 | Anchored ink | Pending |
+| C5 | Exact geometry for shapes | Pending |
+| C6 | Typing rule joins anchored ink changes | Pending |
+| C7 | Shared `newId()` and a header-only codec reader | For the app bridge: TypeScript exports |
+| C8 | `ink.svg` width of transformed strokes | Pending |
+| C9 | Binary applied-changes frames on the page `Channel` | For the app bridge: needs the `Channel` frames |
+| C10 | `page_read_strokes` | Pending |
+| C11 | Pen corpus for M2 and the budget page | Pending |
+
 ### Conditions
 
 This decision stands only after four measurements in the first week of Phase 3:
