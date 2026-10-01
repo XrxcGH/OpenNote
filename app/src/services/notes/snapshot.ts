@@ -136,6 +136,31 @@ class Saver implements SnapshotSaver {
   }
 }
 
+/** The detail on the error flush() rejects with when nothing keeps the notes, so the interface can say so. */
+export const NOT_KEPT = 'not-kept';
+
+/**
+ * The saver for a library that nothing keeps, which is the Phase 2 library on a channel without the snapshot.
+ * The first change leaves it unsaved for good: the title bar says so, and the window can't close without the
+ * person agreeing to lose the notes.
+ */
+export function createVolatileSaver(onStatus: (status: SaveStatus) => void): SnapshotSaver {
+  let changed = false;
+  return {
+    changed() {
+      if (changed) return;
+      changed = true;
+      onStatus('error');
+    },
+    flush: () =>
+      changed
+        ? Promise.reject(new NotesError('io', 'Nothing keeps these notes after the app closes.', undefined, NOT_KEPT))
+        : Promise.resolve(),
+    status: () => (changed ? 'error' : 'saved'),
+    hasUnsaved: () => changed,
+  };
+}
+
 export function createSnapshotSaver(
   client: NotesSnapshotClient,
   serialize: () => string,

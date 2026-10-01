@@ -1,6 +1,8 @@
 // Chooses the notes service and makes it available to components (ARCHITECTURE.md section 12.5). Phase 2 uses the
-// in-memory service, seeded from the notes snapshot when there is one, else from the sample library. Test builds
-// save the snapshot behind notes.memorySnapshot. Phase 3's storage-backed service takes over behind storage.core.
+// in-memory service, seeded from the notes snapshot when there is one. Without one, the web platform and the dev
+// channel start from the sample library, and a real profile starts empty. Test builds save the snapshot behind
+// notes.memorySnapshot; a real profile without it keeps nothing and says so (the service is volatile). Phase 3's
+// storage-backed service takes over behind storage.core.
 //
 // The first loadInitial starts here, before React renders, so the tree and the last page arrive in one call.
 
@@ -19,9 +21,22 @@ export { CHIP_COLORS, NOTES_LIMITS } from './types';
 export { NotesError, isNotesError } from './errors';
 export type { InvalidNameReason, NotesErrorCode } from './errors';
 
+/**
+ * Only the development shell shows the sample library: the web platform, which the dev server and every test run
+ * on, and the dev channel. Any other profile is a person's own, where the notebook that first-run setup makes
+ * must be the whole library, and samples would be saved along with it.
+ */
+function showsSamples(platform: Platform): boolean {
+  return platform.kind === 'web' || platform.boot.channel === 'dev';
+}
+
 async function seedFrom(platform: Platform): Promise<SnapshotData | 'sample'> {
   const json = await platform.notesSnapshot?.load().catch(() => null);
-  return (json && parseSnapshot(json)) || 'sample';
+  const saved = json ? parseSnapshot(json) : null;
+  if (saved) return saved;
+  if (showsSamples(platform)) return 'sample';
+  const { boot } = platform;
+  return { folder: boot.settings.storage.notesFolder ?? boot.install.proposedNotesFolder ?? '', notebooks: [] };
 }
 
 const initialLoads = new WeakMap<NotesService, Promise<InitialTree>>();
@@ -50,7 +65,9 @@ export function initialTree(
 
 export async function createNotesService(platform: Platform): Promise<NotesService> {
   const snapshot = isEnabled('notes.memorySnapshot') ? (platform.notesSnapshot ?? undefined) : undefined;
-  const service = createMemoryNotesService({ seed: await seedFrom(platform), snapshot });
+  // A real profile without the snapshot has nothing that keeps the notes, so the service must not say they're saved.
+  const volatile = !snapshot && platform.kind === 'tauri';
+  const service = createMemoryNotesService({ seed: await seedFrom(platform), snapshot, volatile });
   const early = service.loadInitial(pathOf(getLocation()));
   initialLoads.set(service, early);
   early.catch(() => initialLoads.delete(service));

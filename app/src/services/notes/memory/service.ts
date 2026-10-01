@@ -7,9 +7,9 @@ import { NotesError } from '../errors';
 import type { NotesErrorCode } from '../errors';
 import { resolveFixture } from '../fixtures';
 import type { NotesFixture } from '../fixtures';
-import { createSnapshotSaver } from '../snapshot';
+import { createSnapshotSaver, createVolatileSaver } from '../snapshot';
 import type { SnapshotData, SnapshotSaver } from '../snapshot';
-import type { InitialTree, NodeId, NodeSummary, NotesEvent, NotesService } from '../types';
+import type { InitialTree, NodeId, NodeSummary, NotesEvent, NotesService, SaveStatus } from '../types';
 import type { Library } from './library';
 import { fromSnapshot, toSnapshot } from './persist';
 import { listTrash, restore, restoreFromTrash, trash } from './trash';
@@ -23,6 +23,11 @@ export interface MemoryNotesOptions {
   /** Phase 2 test builds: persist across restarts. */
   snapshot?: NotesSnapshotClient;
   snapshotDebounceMs?: number;
+  /**
+   * Nothing keeps the library when the app closes, so the first change counts as unsaved for good. Without a
+   * snapshot and without this, the service is a plain in-memory library and has nothing to save.
+   */
+  volatile?: boolean;
   /** The clock for created, modified, and trashed times. */
   now?: () => string;
 }
@@ -188,11 +193,14 @@ export function createMemoryNotesService(options: MemoryNotesOptions): MemoryNot
   const emit = (events: NotesEvent[]) => events.forEach((event) => [...listeners].forEach((listen) => listen(event)));
   let saver: SnapshotSaver | null = null;
   const { runner, failNext } = createRunner(options, emit, () => saver);
+  const onStatus = (status: SaveStatus) => emit([{ type: 'status', status }]);
   if (options.snapshot) {
     saver = createSnapshotSaver(options.snapshot, () => JSON.stringify(toSnapshot(runner.lib)), {
       debounceMs: options.snapshotDebounceMs,
-      onStatus: (status) => emit([{ type: 'status', status }]),
+      onStatus,
     });
+  } else if (options.volatile) {
+    saver = createVolatileSaver(onStatus);
   }
   return {
     contractVersion: 1,
