@@ -9,10 +9,10 @@ use super::{PageStore, SaveError, SaveOutcome, SaveRequest};
 use crate::error::{FsError, FsErrorKind, JournalError};
 use crate::fail_point;
 use crate::format::{segment_footer_crc, DecodedSegment, SegmentHeader};
-use crate::id::{RevisionId, SegmentId};
+use crate::id::{RevisionId, SegmentId, StrokeId};
 use crate::limits::Policy;
 use crate::model::{Access, Block, BlockData, Ink, InkRecord, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef};
-use crate::store::compact::{compact, CompactionPlan};
+use crate::store::compact::{compact, merged_dead_bytes, CompactionPlan};
 use crate::store::fs::Fs;
 use crate::store::layout::{NotebookLayout, ASSETS_DIR, INK_DIR};
 
@@ -75,7 +75,7 @@ impl PageStore {
         let ink = &req.page.ink;
         let old = ink.segments().to_vec();
         let plan = match req.compaction {
-            CompactionPlan::Minor => match self.decode_all(dir, req.page) {
+            CompactionPlan::Minor => match self.decode_all(dir, req.page, req.pending) {
                 Some(decoded) => return self.write_minor(dir, req, &decoded),
                 None => CompactionPlan::Major,
             },
@@ -107,28 +107,51 @@ impl PageStore {
         );
         let mut segments: Vec<SegmentRef> = req.page.ink.segments().iter().take(1).cloned().collect();
         segments.extend(self.write_segment(dir, req.page, &records)?);
-        let base = decoded.first().map(|d| d.records.clone()).unwrap_or_default();
-        let dead = Ink::replay(Vec::new(), vec![base, records]).0.dead_bytes();
+        let base = decoded.first().map(|d| d.records.as_slice()).unwrap_or_default();
+        let dead = merged_dead_bytes(base, &records);
         fail_point!("compact.written");
         Ok((segments, dead))
     }
 
     /// Every listed segment, decoded without damage, or `None` when any can't be read.
-    fn decode_all(&self, dir: &Path, page: &Page) -> Option<Vec<DecodedSegment>> {
-        let config = &self.config;
-        page.ink
-            .segments()
+    ///
+    /// The later segments are decoded first. The base then skips the point checks of the strokes they don't
+    /// touch, which stay in the base unchanged and were checked when the page opened. The footer CRC-32 still
+    /// covers every byte.
+    fn decode_all(&self, dir: &Path, page: &Page, pending: &[InkRecord]) -> Option<Vec<DecodedSegment>> {
+        let Some((base, later)) = page.ink.segments().split_first() else {
+            return Some(Vec::new());
+        };
+        let later: Vec<DecodedSegment> = later
             .iter()
-            .map(|segment| {
-                let path = NotebookLayout::segment_path(dir, segment.id);
-                let bytes = config.fs.read(&path, config.limits.segment_bytes).ok()?;
-                let decoded = config
-                    .codec
-                    .decode_segment(&bytes, segment, page.id, &config.limits)
-                    .ok()?;
-                (decoded.damaged.is_empty() && decoded.unknown_records == 0).then_some(decoded)
-            })
-            .collect()
+            .map(|segment| self.decode_intact(dir, page, segment, &|_| true))
+            .collect::<Option<_>>()?;
+        let touched: HashSet<StrokeId> = later
+            .iter()
+            .flat_map(|segment| segment.records.iter())
+            .chain(pending)
+            .map(InkRecord::stroke_id)
+            .collect();
+        let base = self.decode_intact(dir, page, base, &|id| touched.contains(&id))?;
+        Some(std::iter::once(base).chain(later).collect())
+    }
+
+    /// One segment, decoded without damage, or `None`.
+    fn decode_intact(
+        &self,
+        dir: &Path,
+        page: &Page,
+        segment: &SegmentRef,
+        check: &dyn Fn(StrokeId) -> bool,
+    ) -> Option<DecodedSegment> {
+        let config = &self.config;
+        let path = NotebookLayout::segment_path(dir, segment.id);
+        let bytes = config.fs.read(&path, config.limits.segment_bytes).ok()?;
+        let decoded = config
+            .codec
+            .decode_segment_checking(&bytes, segment, page.id, &config.limits, check)
+            .ok()?;
+        (decoded.damaged.is_empty() && decoded.unknown_records == 0).then_some(decoded)
     }
 
     /// Writes one segment with `create_durable`. No records write nothing.

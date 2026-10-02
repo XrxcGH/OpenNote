@@ -169,4 +169,14 @@ proptest! {
         prop_assert_eq!(live(&after_major), live(&ink));
         prop_assert_eq!(after_major.dead_bytes(), 0);
     }
+
+    /// The shortcut for the dead bytes after a minor compaction counts what a full replay counts.
+    #[test]
+    fn merged_dead_bytes_match_a_full_replay(
+        base in proptest::collection::vec(arb_record(), 0..12),
+        merged in proptest::collection::vec(arb_record(), 0..6),
+    ) {
+        let (full, _) = Ink::replay(Vec::new(), vec![base.clone(), merged.clone()]);
+        prop_assert_eq!(merged_dead_bytes(&base, &merged), full.dead_bytes());
+    }
 }

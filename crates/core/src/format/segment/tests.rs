@@ -111,6 +111,26 @@ fn every_record_kind_round_trips() {
 }
 
 #[test]
+fn points_are_checked_only_for_the_strokes_asked_for() {
+    // A stroke whose stored bounding box doesn't match its points, in a segment whose footer is intact.
+    let mut bad = sample_stroke();
+    bad.bbox.max_x += 1;
+    let bad_id = bad.id;
+    let records = vec![InkRecord::Stroke(Arc::new(bad))];
+    let bytes = encode_segment(&b2_header(), &records);
+    let expect = entry(&bytes, b2_header().id, 1);
+    let page = sample_page_id();
+    let full = decode_segment(&bytes, &expect, page, &limits()).unwrap();
+    assert!(full.records.is_empty());
+    assert_eq!(full.damaged[0].reason, "points");
+    let checked = decode_segment_checking(&bytes, &expect, page, &limits(), &|id| id == bad_id).unwrap();
+    assert_eq!(checked, full);
+    let skipped = decode_segment_checking(&bytes, &expect, page, &limits(), &|_| false).unwrap();
+    assert!(skipped.damaged.is_empty());
+    assert_eq!(skipped.records, records);
+}
+
+#[test]
 fn a_damaged_record_costs_one_stroke() {
     let records = mixed_records();
     let mut bytes = encode_segment(&b2_header(), &records);

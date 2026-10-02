@@ -171,6 +171,17 @@ impl Codec for CanonicalCodec {
         segment::decode_segment(bytes, expect, page, limits)
     }
 
+    fn decode_segment_checking(
+        &self,
+        bytes: &[u8],
+        expect: &SegmentRef,
+        page: PageId,
+        limits: &Limits,
+        check: &dyn Fn(StrokeId) -> bool,
+    ) -> Result<DecodedSegment, FormatError> {
+        segment::decode_segment_checking(bytes, expect, page, limits, check)
+    }
+
     fn encode_records(&self, records: &[InkRecord]) -> Vec<u8> {
         segment::encode_records(records)
     }
