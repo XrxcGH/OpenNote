@@ -17,6 +17,9 @@ configure({ asyncUtilTimeout: 5000 });
 let problems: string[] = [];
 
 beforeEach(() => {
+  // The theme choice outlasts a test in localStorage, and every test file shares the page's storage, so the theme
+  // a test starts with would otherwise depend on which test ran before it.
+  localStorage.clear();
   problems = [];
   for (const level of ['error', 'warn'] as const) {
     vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
