@@ -181,17 +181,17 @@ function listFiles(folder: string, depth: number): string[] {
 }
 
 /**
- * Keeps what the app logged before it failed to start, and which files its profile holds, in the folder CI keeps.
- * The webview folder shows whether WebView2 got as far as opening its debugging port.
+ * Keeps the test profile in the folder CI keeps, without the webview folder's browser cache: the app's logs, its
+ * perf log and settings, and a listing of every file. Where the webview folder is empty, WebView2 never started.
  */
 function keepAppLogs(profileDir: string, stamp: number): void {
   try {
     const kept = join(LOGS, `app-${stamp}`);
     mkdirSync(kept, { recursive: true });
     writeFileSync(join(kept, 'profile-files.txt'), listFiles(profileDir, 5).join(EOL));
-    cpSync(join(profileDir, 'local', 'logs'), join(kept, 'logs'), { recursive: true });
+    cpSync(profileDir, join(kept, 'profile'), { recursive: true, filter: (path) => !path.includes('EBWebView') });
   } catch {
-    // The app may have died before it made a log folder.
+    // The app may have died before it made a profile folder.
   }
 }
 

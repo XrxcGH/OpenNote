@@ -206,6 +206,11 @@ jobs:
         run: pwsh tests/e2e/scripts/edgedriver.ps1
       - name: tauri-driver
         run: pwsh tests/e2e/scripts/tauri-driver.ps1
+      - name: The app opens WebView2's debugging port, which the E2E specs need
+        timeout-minutes: 3
+        env:
+          OPENNOTE_E2E_EXE: target/e2e/opennote.exe
+        run: pwsh tests/e2e/scripts/probe-app.ps1
       - name: E2E smoke set
         # Ends early enough that the next steps, which keep the logs, still run inside the job's limit.
         timeout-minutes: 15
