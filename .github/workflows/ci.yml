@@ -22,6 +22,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Normally 1 to 3 minutes. A run that passes its limit is stuck, so it ends and says so.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,6 +55,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Normally under 2 minutes.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,6 +73,8 @@ jobs:
   ui-web:
     # The production interface in Edge: the bundle budget, then Playwright against the test build.
     runs-on: windows-latest
+    # Normally about 5 minutes.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -115,6 +121,8 @@ jobs:
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest
+    # Normally about 11 minutes with a cold cache.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -156,6 +164,9 @@ jobs:
     # The E2E smoke set on the real app, driven by WebdriverIO through tauri-driver and msedgedriver.
     needs: windows-app
     runs-on: windows-latest
+    # Normally about 10 minutes, most of it installing tauri-driver on a cold cache. Without a limit, a hung
+    # session holds the runner for GitHub's six-hour default.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -187,13 +198,16 @@ jobs:
       - name: tauri-driver
         run: pwsh tests/e2e/scripts/tauri-driver.ps1
       - name: E2E smoke set
+        # Ends early enough that the next steps, which keep the logs, still run inside the job's limit.
+        timeout-minutes: 15
         env:
           OPENNOTE_E2E_EXE: target/e2e/opennote.exe
         run: npm run test:e2e
       - name: Start-up regression check
         run: node tests/perf/startup.ts --runs 5 --exe target/e2e/opennote.exe --compare-with main
       - name: Keep the E2E logs
-        if: failure()
+        # A step that times out is canceled, not failed, and its logs are the ones worth reading.
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-logs
