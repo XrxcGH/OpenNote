@@ -1,19 +1,24 @@
 //! Grouping transactions into undo steps (plan 7.3).
 //!
 //! A new transaction joins the top entry only when both carry the same group key and the rule for that kind
-//! allows it:
+//! allows it.
 //!
-//! - Typing in a text block joins less than 1 second after the last edit, when the new splice continues where
-//!   the last one ended and doesn't switch between inserting and deleting. The group must be under 10 seconds
-//!   old and under 100 characters.
-//! - Typing that isn't a splice, such as a table cell or a page title, joins the same way when the transaction
-//!   is only `PatchBlock` operations on the keyed block, or only `SetPage` operations. There is no splice to
-//!   continue and no characters to count, so the time limits are the whole rule.
-//! - A typing transaction may carry `MoveBlock` operations, such as the blocks below a growing text box that
-//!   move down with it, and they never stop it joining. When it types in a text block, it may also carry
-//!   `PatchBlock` operations on ink blocks anchored to that block, which move with their text.
-//! - Drag, resize, rotate, and erase join for the same gesture.
-//! - A slider joins less than 1 second after its last change.
+//! Typing in a text block joins less than 1 second after the last edit, when the new splice continues where
+//! the last one ended and doesn't switch between inserting and deleting. The group must be under 10 seconds
+//! old and under 100 characters.
+//!
+//! Typing that isn't a splice, such as a table cell or a page title, joins the same way when the transaction
+//! is only `PatchBlock` operations on the keyed block, or only `SetPage` operations. There is no splice to
+//! continue and no characters to count, so the time limits are the whole rule.
+//!
+//! A typing transaction may carry `MoveBlock` operations, such as the blocks below a growing text box that
+//! move down with it. They never stop it joining.
+//!
+//! When it types in a text block, it may also carry `PatchBlock` operations on ink blocks anchored to that
+//! block, which move with their text.
+//!
+//! Drag, resize, rotate, and erase join for the same gesture. A slider joins less than 1 second after its last
+//! change.
 
 use std::time::Duration;
 

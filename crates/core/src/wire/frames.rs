@@ -3,9 +3,9 @@
 //! A frame is a `u32` JSON length, little-endian, the JSON, and then any stroke records in the segment record
 //! format: the strokes the change added, or whose properties it changed, as they are now.
 //!
-//! The JSON says everything a window needs to apply the change without asking for the page again: the full
-//! JSON of every inserted or changed block, the IDs of removed blocks, the page's title, tags, and view when
-//! they changed, and the asset table entries the change added.
+//! The JSON says everything a window needs to apply the change without asking for the page again. That is the
+//! full JSON of every inserted or changed block, the IDs of removed blocks, and the page's title, tags, and view
+//! when they changed. It also holds the asset table entries the change added.
 
 use std::collections::BTreeMap;
 
