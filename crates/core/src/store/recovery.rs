@@ -15,7 +15,7 @@ use crate::model::asset::hex;
 use crate::model::{Access, ReadOnlyReason};
 use crate::seams::{Applier, Codec};
 use crate::session::events::{DeferReason, RecoveryOutcome};
-use crate::store::fs::{FolderIdentity, Fs};
+use crate::store::fs::{FolderIdentity, Fs, FsLock};
 use crate::store::journal::format::HeaderMeta;
 use crate::store::journal::reader::{read_generation, JournalGen, JournalRecord};
 use crate::store::layout::NotebookLayout;
@@ -122,15 +122,11 @@ pub fn recover_page(ctx: &RecoverCtx, page: PageId, generations: &[PathBuf]) -> 
 }
 
 fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Result<RecoveryOutcome, Stop> {
-    let mut locks = Vec::new();
-    for path in generations {
-        match ctx.fs.try_lock(path)? {
-            Some(lock) => locks.push(lock),
-            None => return Ok(RecoveryOutcome::OwnerAlive),
-        }
-    }
-    let located = (ctx.locate)(page);
-    let (read, loaded) = read_and_load(ctx, page, generations, located.as_deref());
+    let early = (ctx.locate)(page);
+    let Some((locks, read, loaded)) = lock_and_read(ctx, page, generations, early.as_deref())? else {
+        return Ok(RecoveryOutcome::OwnerAlive);
+    };
+    let (located, loaded) = still_current(ctx, page, early, loaded);
     let read = read?;
     drop(locks);
     for (path, bytes, move_file) in &read.quarantine {
@@ -158,25 +154,60 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
     Ok(outcome)
 }
 
-/// Reads every generation, and loads the page from `located`. Loading only reads files, so it runs on another
-/// thread while the generations decode.
-fn read_and_load(
+/// The generations' locks, the generations as read, and the page as loaded from `located`, or `None` when
+/// another process holds a generation.
+type Locked = Option<(
+    Vec<Box<dyn FsLock>>,
+    Result<Read, Stop>,
+    Option<Result<LoadedPage, LoadError>>,
+)>;
+
+/// Locks and reads every generation, while the page loads from `located` on another thread. Loading only reads
+/// files, so it starts before the locks: a virus scanner may hold a journal file that was just written for many
+/// milliseconds. [`still_current`] then checks what it loaded.
+fn lock_and_read(
     ctx: &RecoverCtx<'_>,
     page: PageId,
     generations: &[PathBuf],
     located: Option<&Path>,
-) -> (Result<Read, Stop>, Result<LoadedPage, LoadError>) {
+) -> Result<Locked, Stop> {
     let store = ctx.store;
     std::thread::scope(|scope| {
         let load = located.map(|dir| std::thread::Builder::new().spawn_scoped(scope, move || store.load(dir)));
+        let mut locks = Vec::new();
+        for path in generations {
+            match ctx.fs.try_lock(path)? {
+                Some(lock) => locks.push(lock),
+                None => return Ok(None),
+            }
+        }
         let read = read_all(ctx, page, generations);
         let loaded = match load {
-            None => Err(LoadError::Missing),
-            Some(Ok(handle)) => handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
-            Some(Err(_)) => located.map_or(Err(LoadError::Missing), |dir| store.load(dir)),
+            Some(Ok(handle)) => Some(handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic))),
+            Some(Err(_)) | None => None,
         };
-        (read, loaded)
+        Ok(Some((locks, read, loaded)))
     })
+}
+
+/// Where the page is now, and the page as loaded before the locks if it is still the one on disk: in the same
+/// folder, with the same `page.json` fingerprint. Otherwise the page loads again. The process that held the
+/// journal until a moment before may have saved or moved the page meanwhile.
+fn still_current(
+    ctx: &RecoverCtx<'_>,
+    page: PageId,
+    early: Option<PathBuf>,
+    loaded: Option<Result<LoadedPage, LoadError>>,
+) -> (Option<PathBuf>, Result<LoadedPage, LoadError>) {
+    let located = (ctx.locate)(page);
+    let Some(dir) = located.as_deref() else {
+        return (located, Err(LoadError::Missing));
+    };
+    let loaded = match (loaded, early.as_deref() == Some(dir)) {
+        (Some(Ok(loaded)), true) if ctx.store.fingerprint(dir).ok().flatten() == Some(loaded.stamp) => Ok(loaded),
+        _ => ctx.store.load(dir),
+    };
+    (located, loaded)
 }
 
 /// Reads every generation. A newer journal or another folder's journal stops recovery. A generation whose
