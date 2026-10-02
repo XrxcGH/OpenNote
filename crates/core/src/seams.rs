@@ -53,7 +53,7 @@ pub trait Codec: Send + Sync + 'static {
         expect: &SegmentRef,
         page: PageId,
         limits: &Limits,
-        touched: &dyn Fn(StrokeId) -> bool,
+        touched: &(dyn Fn(StrokeId) -> bool + Sync),
     ) -> Result<DecodedSegment, FormatError> {
         let _ = touched;
         self.decode_segment(bytes, expect, page, limits)

@@ -14,6 +14,7 @@ pub mod limits;
 pub mod model;
 pub mod ops;
 pub mod order;
+mod par;
 pub mod seams;
 pub mod session;
 pub mod store;

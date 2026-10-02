@@ -11,6 +11,7 @@ use crate::id::{IntentId, NotebookId, PageId, RevisionId};
 use crate::limits::Limits;
 use crate::model::Stroke;
 use crate::ops::Txn;
+use crate::par;
 use crate::seams::Codec;
 use crate::session::journal_thread::TreeIntent;
 use crate::store::fs::Fs;
@@ -178,6 +179,9 @@ impl StopReason {
     }
 }
 
+/// The fewest journal records worth a thread of their own. Decoding one takes a few microseconds.
+const MIN_RECORDS_PER_THREAD: usize = 256;
+
 /// A generation as read.
 #[derive(Clone, Debug, PartialEq)]
 pub struct JournalGen {
@@ -239,10 +243,12 @@ pub fn list_journals(fs: &dyn Fs, root: &Path) -> Result<Vec<KeyJournals>, FsErr
 /// Reads one generation, stopping at the first record that is incomplete, zero, damaged, or out of sequence.
 pub fn read_generation(bytes: &[u8], codec: &dyn Codec, limits: &Limits) -> Result<JournalGen, FormatError> {
     let decoded = decode_header(bytes, limits.gunzip_bytes)?;
-    let mut records = Vec::new();
+    // The frames come first, one after another, since each starts where the last ended. Their payloads then
+    // decode on several threads, and the first that doesn't decode ends the generation there.
+    let mut raws = Vec::new();
     let mut at = decoded.len;
     let mut expected = decoded.header.anchor.checked_add(1);
-    let stop = loop {
+    let mut stop = loop {
         let offset = at as u64;
         let raw = match next_frame(bytes, at, limits.journal_payload) {
             Frame::Record(raw) => raw,
@@ -255,13 +261,26 @@ pub fn read_generation(bytes: &[u8], codec: &dyn Codec, limits: &Limits) -> Resu
             let expected = expected.unwrap_or(u64::MAX);
             break StopReason::SequenceGap { offset, expected };
         };
-        match decode_raw(&raw, codec, limits) {
-            Some(record) => records.push(record),
-            None => break StopReason::Unreadable { offset },
-        }
         expected = want.checked_add(1);
         at = at.saturating_add(raw.bytes.len());
+        raws.push((offset, raw));
     };
+    let decoded_raws = par::chunked(&raws, MIN_RECORDS_PER_THREAD, |chunk| {
+        chunk
+            .iter()
+            .map(|(_, raw)| decode_raw(raw, codec, limits))
+            .collect::<Vec<_>>()
+    });
+    let mut records = Vec::with_capacity(raws.len());
+    for ((offset, _), record) in raws.iter().zip(decoded_raws.into_iter().flatten()) {
+        match record {
+            Some(record) => records.push(record),
+            None => {
+                stop = StopReason::Unreadable { offset: *offset };
+                break;
+            }
+        }
+    }
     Ok(JournalGen {
         header: decoded.header,
         base: decoded.base,

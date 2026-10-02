@@ -177,7 +177,7 @@ impl Codec for CanonicalCodec {
         expect: &SegmentRef,
         page: PageId,
         limits: &Limits,
-        touched: &dyn Fn(StrokeId) -> bool,
+        touched: &(dyn Fn(StrokeId) -> bool + Sync),
     ) -> Result<DecodedSegment, FormatError> {
         segment::decode_segment_for(bytes, expect, page, limits, touched)
     }

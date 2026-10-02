@@ -5,19 +5,19 @@
 //! one, and the rest of the segment still reads.
 
 mod records;
+mod select;
 
 use crate::error::{FormatError, FormatErrorKind};
 use crate::format::{DamagedRecord, DecodedSegment, SegmentHeader};
-use std::collections::HashSet;
-
-use crate::id::{Id, PageId, SegmentId, StrokeId};
+use crate::id::{PageId, SegmentId, StrokeId};
 use crate::limits::Limits;
 use crate::model::{InkRecord, SegmentRef};
 use crate::time::Timestamp;
 use crate::SEGMENT_VERSION;
 
 pub use records::{encode_record, parse_body, Parsed, FRAME_BYTES, KIND_PROPS, KIND_REMOVE, KIND_STROKE};
-use records::{i64_at, id_at, is_known_stroke, parse_record, u16_at, u32_at};
+use records::{i64_at, id_at, parse_record, u16_at, u32_at};
+use select::{left_out, parse_frames, Want};
 
 /// The first 8 bytes of every segment file.
 pub const MAGIC: [u8; 8] = [0x89, b'O', b'N', b'K', 0x0d, 0x0a, 0x1a, 0x0a];
@@ -169,27 +169,9 @@ pub fn decode_segment_for(
     expect: &SegmentRef,
     page: PageId,
     limits: &Limits,
-    touched: &dyn Fn(StrokeId) -> bool,
+    touched: &(dyn Fn(StrokeId) -> bool + Sync),
 ) -> Result<DecodedSegment, FormatError> {
     decode(bytes, expect, page, limits, &Want::Touched(touched))
-}
-
-/// The records a decode wants.
-enum Want<'a> {
-    /// Every record, fully checked.
-    All,
-    /// The records [`decode_segment_for`] keeps.
-    Touched(&'a dyn Fn(StrokeId) -> bool),
-}
-
-impl Want<'_> {
-    /// Whether to check the points of a record's stroke. Every record kind starts with its stroke's ID.
-    fn checks_points(&self, body: &[u8]) -> bool {
-        match self {
-            Want::All => true,
-            Want::Touched(touched) => id_at(body, 0).is_none_or(|id| touched(StrokeId(id))),
-        }
-    }
 }
 
 fn decode(
@@ -306,50 +288,7 @@ fn read_exact(bytes: &[u8], end: usize, count: u32, limits: &Limits, want: &Want
         return None;
     }
     let left_out = left_out(bytes, &frames, want);
-    let mut records = Vec::new();
-    let mut unknown = 0u32;
-    for (index, frame) in frames.iter().enumerate() {
-        if left_out.get(index).copied().unwrap_or(false) {
-            continue;
-        }
-        let body = bytes.get(frame.body.clone())?;
-        match parse_record(frame.kind, frame.flags, body, limits, want.checks_points(body)) {
-            Parsed::Record(record) => records.push(record),
-            Parsed::Unknown => unknown = unknown.saturating_add(1),
-            Parsed::Bad(_) => return None,
-        }
-    }
-    Some((records, unknown))
-}
-
-/// Which frames [`decode_segment_for`] leaves out: known `Stroke` records of strokes outside `touched` that
-/// have no other record in the segment. Nothing for [`Want::All`].
-fn left_out(bytes: &[u8], frames: &[Frame], want: &Want<'_>) -> Vec<bool> {
-    let Want::Touched(touched) = want else {
-        return Vec::new();
-    };
-    let ids: Vec<Option<Id>> = frames
-        .iter()
-        .map(|frame| bytes.get(frame.body.clone()).and_then(|body| id_at(body, 0)))
-        .collect();
-    let mut sorted: Vec<Id> = ids.iter().flatten().copied().collect();
-    sorted.sort_unstable();
-    let repeated: HashSet<Id> = sorted
-        .windows(2)
-        .filter_map(|pair| match pair {
-            [a, b] if a == b => Some(*a),
-            _ => None,
-        })
-        .collect();
-    frames
-        .iter()
-        .zip(&ids)
-        .map(|(frame, id)| {
-            let body = bytes.get(frame.body.clone()).unwrap_or_default();
-            id.is_some_and(|id| !repeated.contains(&id) && !touched(StrokeId(id)))
-                && is_known_stroke(frame.kind, frame.flags, body)
-        })
-        .collect()
+    parse_frames(bytes, &frames, &left_out, limits, want)
 }
 
 /// Walks the records one at a time (spec 9.6 step 5), skipping damaged ones.

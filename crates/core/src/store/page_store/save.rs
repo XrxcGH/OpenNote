@@ -144,7 +144,7 @@ impl PageStore {
         dir: &Path,
         page: &Page,
         segment: &SegmentRef,
-        touched: &dyn Fn(StrokeId) -> bool,
+        touched: &(dyn Fn(StrokeId) -> bool + Sync),
     ) -> Option<DecodedSegment> {
         let config = &self.config;
         let path = NotebookLayout::segment_path(dir, segment.id);
