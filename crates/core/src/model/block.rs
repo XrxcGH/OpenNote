@@ -6,7 +6,7 @@ use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 
 use super::{named_enum, JsonMap, Named};
-use crate::id::{AssetId, BlockId, ColumnId, ElementId, Id, RowId};
+use crate::id::{AssetId, BlockId, ColumnId, ElementId, RowId};
 use crate::order::OrderKey;
 use crate::time::Timestamp;
 
@@ -29,6 +29,8 @@ named_enum! {
         Layer = "layer",
         /// A drawing area.
         Drawing = "drawing",
+        /// Ink drawn with a text block, such as a highlight or a note in the margin.
+        Anchored = "anchored",
     }
 }
 
@@ -137,13 +139,35 @@ pub struct InkBlockData {
     pub extra: JsonMap,
 }
 
-/// Where anchored handwriting is tied to text (spec 8.1).
+/// Where anchored ink is tied to text (spec 8.1).
 #[derive(Clone, Debug, PartialEq)]
 pub struct InkAnchor {
-    /// A text block's ID, or a text element's ID.
-    pub block: Id,
-    /// Unicode code points of the element's displayed text before the anchored character.
-    pub offset: u32,
+    /// The text block the ink is drawn with.
+    pub block: BlockId,
+    /// The element of that block, such as a paragraph.
+    pub para: Option<ElementId>,
+    /// Unicode code points of the element's displayed text before the anchored character. Without `para`, of the
+    /// whole block's displayed text.
+    pub at: Option<u32>,
+    /// The text around the anchored place, to find it again after the text changes.
+    pub quote: Option<AnchorQuote>,
+    /// How far the ink block's origin is from the anchored place, to the right, in page units.
+    pub dx: f64,
+    /// How far the ink block's origin is from the anchored place, downward, in page units.
+    pub dy: f64,
+    /// Unknown keys.
+    pub extra: JsonMap,
+}
+
+/// The text near an anchored place, in the style of a web text-quote selector (spec 8.1).
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct AnchorQuote {
+    /// The text just before `exact`.
+    pub prefix: String,
+    /// The text from the anchored character on.
+    pub exact: String,
+    /// The text just after `exact`.
+    pub suffix: String,
     /// Unknown keys.
     pub extra: JsonMap,
 }

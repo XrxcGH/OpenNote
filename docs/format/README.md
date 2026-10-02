@@ -742,7 +742,7 @@ Writers keep the list in step with the blocks:
 | Type | `data` fields | Meaning |
 |---|---|---|
 | `text` | `markdown`, `ids`, `tags`, `styles` | A text box. It holds one or more paragraphs, headings, lists, quotes, callouts, and code blocks in OpenNote Markdown (section 7). The other fields name its elements (section 6.6) |
-| `ink` | `role`, `strokeCount`, `anchor`, `alt`, `decorative` | A place for strokes (section 8). `role` is `layer` for the page's handwriting layer, or `drawing` for a drawing area. `strokeCount` is a cached count of live strokes. `anchor` ties it to text (section 8.1) |
+| `ink` | `role`, `strokeCount`, `anchor`, `alt`, `decorative` | A place for strokes (section 8). `role` is `layer` for the page's handwriting layer, `drawing` for a drawing area, or `anchored` for ink tied to text. `strokeCount` is a cached count of live strokes. `anchor` says where the text is (section 8.1) |
 | `image` | `asset`, `alt`, `decorative`, `crop` | An image from the asset table. `crop` is `{x, y, w, h}` as fractions from 0 to 1, and defaults to the whole image |
 | `file` | `asset`, `display`, `alt`, `decorative` | An attachment from the asset table, shown as an `icon` (the default) or a `preview` |
 | `table` | `header`, `columns`, `rows` | A table (below) |
@@ -967,12 +967,20 @@ Every stroke belongs to exactly one ink block.
 
 Stroke coordinates are relative to the ink block's origin. Moving a whole drawing therefore changes one frame, not thousands of strokes.
 
-Handwriting can be anchored to text, so that a note in the margin follows its paragraph. The ink block's `data` then holds an `anchor` object. Its `block` field is the ID of a text block or of one of its elements (section 6.6). Its `offset` field counts the Unicode code points of that element's displayed text before the anchored character.
+Ink can be anchored to text, such as a highlight under a phrase or a note in the margin beside a paragraph. It is a floating ink block whose `role` is `anchored`, and its `data` holds an `anchor` object:
 
-- The frame's `x` and `y` keep the handwriting's position from the last layout.
-- When the text reflows, an app that lays out text moves the ink block so that it keeps its distance from the anchored character. It writes the new `x` and `y` at the next save. The stroke points never change.
-- A reader that doesn't lay out text uses the frame as it is. So does every reader when the anchor names nothing on the page.
+| Field | Default | Meaning |
+|---|---|---|
+| `block` | required | The ID of the text block the ink is drawn with |
+| `para` | none | The ID of an element of that block (section 6.6), such as a paragraph |
+| `at` | none | The Unicode code points of the displayed text before the anchored character. The text is the element's when `para` is set, and the whole block's when it is not |
+| `quote` | none | The text around the anchored place: `exact`, the text from the anchored character on, with `prefix` before it and `suffix` after it. They let an app find the place again after the text is edited |
+| `dx`, `dy` | 0 | The distance from the anchored place to the ink block's origin, in page units |
 
+- The ink is drawn with the text block it names. Its highlighter strokes are drawn just below that block's text, and its other strokes just above it. The block's place in the order of blocks doesn't matter for that.
+- The frame's `x` and `y` keep the ink's last absolute position. A reader that doesn't lay out text uses the frame as it is. So does every reader when the anchor names nothing on the page.
+- When the text reflows, an app that lays out text moves the ink block so that it keeps its distance from the anchored place, and writes the new `x` and `y` at the next save. The stroke points never change.
+- Ink blocks with another role have no anchor. A reader keeps one it finds there.
 ### 8.2 Strokes
 
 A stroke stores its raw input: position, pressure, tilt, and time for every point. Once a stroke is finished, its points never change. Moving, scaling, or rotating a stroke sets its affine transform, and recoloring it sets its style. Rendering can improve later without changing the data, as the development plan requires.

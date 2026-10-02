@@ -25,8 +25,8 @@ use thiserror::Error;
 
 pub use asset::Asset;
 pub use block::{
-    Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData, InkRole, Lock,
-    OtherData, TableCell, TableColumn, TableData, TableRow, TextData,
+    AnchorQuote, Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData,
+    InkRole, Lock, OtherData, TableCell, TableColumn, TableData, TableRow, TextData,
 };
 pub use blocks::Blocks;
 pub use history::{VersionEntry, VersionReason, VersionsFile};

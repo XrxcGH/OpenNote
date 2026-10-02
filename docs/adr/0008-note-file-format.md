@@ -57,7 +57,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | C1 | `StrokeTxnMeta` with `ui` and `edits` | Pending |
 | C2 | Partial erase makes sliced strokes | Pending |
 | C3 | Stored pressure and positions | Pending |
-| C4 | Anchored ink | Pending |
+| C4 | Anchored ink | Done: role `anchored` and the `anchor` object in spec 6.3 and 8.1, in the model, both codecs, and the fixtures. `alt` and `decorative` were already there (P3-2) |
 | C5 | Exact geometry for shapes | Pending |
 | C6 | Typing rule joins anchored ink changes | Pending: the rule is in `UndoStack::record_with`; the session wires it once anchors exist (C4) |
 | C7 | Shared `newId()` and a header-only codec reader | For the app bridge: TypeScript exports |

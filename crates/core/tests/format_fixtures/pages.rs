@@ -33,6 +33,12 @@ pub fn photosynthesis(files: &mut Files, dir: &str) -> Page {
     let mut blocks = vec![
         block(202, "a0", floating(96.0, 120.0, Some(624.0)), text),
         block(201, "a1", floating(0.0, 0.0, None), ink_block(InkRole::Layer, 0, "")),
+        block(
+            203,
+            "a2",
+            floating(120.0, 168.0, None),
+            anchored_ink(id(202), elements[1]),
+        ),
     ];
     let records: Vec<InkRecord> = strokes.iter().cloned().map(InkRecord::Stroke).collect();
     add_segment(files, dir, &mut page, 501, &records);
@@ -306,4 +312,27 @@ fn extension(n: u64, order: &str, fallback: Option<&str>) -> Block {
         ..Fallback::default()
     });
     block
+}
+
+/// An empty block of anchored ink (spec 8.1) tied to a place in the page's text, with an unknown key to keep.
+fn anchored_ink(text: BlockId, para: ElementId) -> BlockData {
+    let anchor = InkAnchor {
+        block: text,
+        para: Some(para),
+        at: Some(4),
+        quote: Some(AnchorQuote {
+            prefix: "The ".to_owned(),
+            exact: "thylakoid".to_owned(),
+            suffix: " membrane".to_owned(),
+            extra: JsonMap::new(),
+        }),
+        dx: -6.5,
+        dy: 14.0,
+        extra: [("zzfuture".to_owned(), json!(1))].into_iter().collect(),
+    };
+    BlockData::Ink(InkBlockData {
+        role: Named::Known(InkRole::Anchored),
+        anchor: Some(anchor),
+        ..InkBlockData::default()
+    })
 }
