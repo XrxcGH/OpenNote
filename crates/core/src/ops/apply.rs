@@ -35,6 +35,35 @@ impl Applier for OpsApplier {
     fn apply(&self, page: &mut Page, txn: &Txn) -> Result<AppliedChanges, ApplyError> {
         page.apply(txn)
     }
+
+    fn apply_each(&self, page: &mut Page, txns: &[&Txn]) -> Result<(), (usize, ApplyError)> {
+        apply_each(page, txns)
+    }
+}
+
+/// Applies transactions in order, as [`Page::apply`] does one by one, and stops at the first that fails.
+///
+/// A run of transactions that only add strokes, as a journal of handwriting holds, applies as one. Adding a
+/// stroke changes nothing that another stroke's checks read, except the strokes themselves, so the run passes
+/// its checks exactly when each transaction would. The page then ends the same, but the strokes go into the
+/// page's indexes at once, and each ink block's `strokeCount` is updated once rather than after every stroke.
+/// When a check fails, nothing of the run is applied, and it is applied one by one instead, which stops at the
+/// same transaction with the same error.
+fn apply_each(page: &mut Page, txns: &[&Txn]) -> Result<(), (usize, ApplyError)> {
+    let mut done = 0usize;
+    while let Some(rest) = txns.get(done..).filter(|rest| !rest.is_empty()) {
+        let run = rest.iter().take_while(|txn| strokes::only_adds_strokes(txn)).count();
+        let run_txns = rest.get(..run).unwrap_or_default();
+        if run > 1 && strokes::add_stroke_run(page, run_txns) {
+            done = done.saturating_add(run);
+            continue;
+        }
+        for txn in rest.iter().take(run.max(1)) {
+            apply_ops(page, &txn.ops, txn.at).map_err(|err| (done, err))?;
+            done = done.saturating_add(1);
+        }
+    }
+    Ok(())
 }
 
 impl Page {

@@ -76,6 +76,16 @@ pub trait Codec: Send + Sync + 'static {
 pub trait Applier: Send + Sync + 'static {
     /// Applies every operation, or none, and reports what changed.
     fn apply(&self, page: &mut Page, txn: &Txn) -> Result<AppliedChanges, ApplyError>;
+
+    /// Applies transactions in order, each all or nothing, and stops at the first that fails: `Err` holds its
+    /// index and error, and the ones before it stay applied. The page ends exactly as applying them one by one
+    /// leaves it, but an applier may get there faster, as recovery's replay of a long journal needs.
+    fn apply_each(&self, page: &mut Page, txns: &[&Txn]) -> Result<(), (usize, ApplyError)> {
+        for (index, txn) in txns.iter().enumerate() {
+            self.apply(page, txn).map_err(|err| (index, err))?;
+        }
+        Ok(())
+    }
 }
 
 /// Turns links between pages and assets into relative paths for `page.md` (spec 11.1).

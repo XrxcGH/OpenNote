@@ -135,6 +135,21 @@ impl Ink {
         old
     }
 
+    /// Adds strokes whose IDs are neither taken nor repeated, as inserting them one by one would, but builds
+    /// each index once. Thousands of strokes, as a recovered journal holds, go in several times faster.
+    pub(crate) fn insert_new(&mut self, strokes: &[Arc<Stroke>]) {
+        let mut added: BTreeMap<StrokeId, Arc<Stroke>> = strokes.iter().map(|s| (s.id, s.clone())).collect();
+        self.strokes.append(&mut added);
+        let mut keys: HashMap<BlockId, Vec<(Timestamp, StrokeId)>> = HashMap::new();
+        for stroke in strokes {
+            keys.entry(stroke.block).or_default().push((stroke.start, stroke.id));
+        }
+        for (block, keys) in keys {
+            let mut keys: BTreeSet<(Timestamp, StrokeId)> = keys.into_iter().collect();
+            self.by_block.entry(block).or_default().append(&mut keys);
+        }
+    }
+
     /// Removes and returns the stroke with this ID.
     pub fn remove(&mut self, id: StrokeId) -> Option<Arc<Stroke>> {
         let stroke = self.strokes.remove(&id)?;
