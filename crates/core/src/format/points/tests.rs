@@ -187,8 +187,41 @@ fn the_largest_varint_decodes() {
     assert_eq!(reader.varint(), Ok(u32::MAX));
 }
 
+/// The full decoder's verdict on point data, without the quick check in front of it.
+fn full_check(bytes: &[u8], count: u32, channels: Channels, bbox: &BBox) -> bool {
+    let mut found = EMPTY_BOX;
+    check_count(bytes, count).is_ok()
+        && walk(bytes, count, channels, |point| grow(&mut found, point)).is_ok()
+        && found == *bbox
+}
+
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(256))]
+
+    /// The quick check accepts exactly what the full decoder accepts, for valid point data with one byte changed
+    /// and with its bounding box moved.
+    #[test]
+    fn the_quick_check_agrees_with_the_full_decoder(
+        (channels, points) in arb_points(64),
+        at in any::<usize>(),
+        byte in any::<u8>(),
+        nudge in 0usize..6,
+    ) {
+        let mut out = Vec::new();
+        let mut bbox = encode_points(&points, channels, &mut out).unwrap();
+        let count = points.len() as u32;
+        prop_assert!(quick_check(&out, count, channels, &bbox));
+        let index = at % out.len();
+        out[index] = byte;
+        match nudge {
+            0 => bbox.min_x = bbox.min_x.wrapping_sub(1),
+            1 => bbox.max_y = bbox.max_y.wrapping_add(1),
+            _ => {}
+        }
+        let full = full_check(&out, count, channels, &bbox);
+        prop_assert_eq!(check_count(&out, count).is_ok() && quick_check(&out, count, channels, &bbox), full);
+        prop_assert_eq!(check_points(&out, count, channels, &bbox).is_ok(), full);
+    }
 
     /// P3, the codec half: decoding what was encoded gives the points, the encoder agrees byte for byte with
     /// the independent encoder of `testing::gen`, and checks pass.
@@ -212,6 +245,8 @@ proptest! {
         channels in 0u16..8,
     ) {
         let _ = decode_points(&bytes, count, Channels(channels));
-        let _ = check_points(&bytes, count, Channels(channels), &BBox::default());
+        let bbox = BBox::default();
+        let checked = check_points(&bytes, count, Channels(channels), &bbox).is_ok();
+        prop_assert_eq!(checked, full_check(&bytes, count, Channels(channels), &bbox));
     }
 }

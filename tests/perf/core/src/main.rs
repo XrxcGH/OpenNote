@@ -2,9 +2,12 @@
 //!
 //! ```text
 //! opennote-perf generate --pages <n> --seed <s> [--one-section] <dir>
-//! opennote-perf bench <suite> [--pages <n>] [--quick] [--reference] [--machine <name>] [--out <file>] <dir>
+//! opennote-perf bench <suite> [--pages <n>] [--quick] [--reference] [--machine <name>] [--out <file>]
+//!                    [--debug] <dir>
 //! opennote-perf compare <results> <baseline> [--tolerance <percent>]
 //! ```
+//!
+//! Run it optimized, with `cargo perf bench ...`: `bench` refuses a debug build unless `--debug` is given.
 //!
 //! The suites are `format`, `ops`, `store`, `session`, `startup`, `memory`, and `all`. Results are JSON. A
 //! result more than the tolerance worse than the baseline, 10% by default, fails the run.
@@ -17,7 +20,8 @@ use opennote_perf::harness::{self, BenchCtx, GenerateArgs, Report};
 use opennote_perf::{bench_format, bench_ops, bench_session, bench_startup, bench_store, generate, memory};
 
 const USAGE: &str = "usage: opennote-perf generate --pages <n> --seed <s> [--one-section] <dir>
-       opennote-perf bench <suite> [--pages <n>] [--quick] [--reference] [--machine <name>] [--out <file>] <dir>
+       opennote-perf bench <suite> [--pages <n>] [--quick] [--reference] [--machine <name>] [--out <file>]
+                           [--debug] <dir>
        opennote-perf compare <results> <baseline> [--tolerance <percent>]";
 
 /// A benchmark suite's entry point.
@@ -80,6 +84,7 @@ fn bench(options: &Options) -> Result<(), String> {
     if chosen.is_empty() {
         return Err(format!("unknown suite {suite:?}\n{USAGE}"));
     }
+    harness::require_optimized(options.flag("debug"))?;
     for (_, run_suite) in chosen {
         run_suite(&mut ctx)?;
     }
@@ -120,7 +125,7 @@ struct Options {
 }
 
 /// Options that take no value.
-const FLAGS: [&str; 3] = ["one-section", "quick", "reference"];
+const FLAGS: [&str; 4] = ["debug", "one-section", "quick", "reference"];
 
 impl Options {
     fn parse(args: &[String]) -> Result<Options, String> {

@@ -2218,7 +2218,7 @@ The folder `docs/format/fixtures/` holds files that every implementation tests a
 
 | Folder | Contents |
 |---|---|
-| `notebooks/v1/` | A small notebook written by the version 1 writer, never changed after release. Each later version adds its own folder |
+| `nb/v1/` | A small notebook written by the version 1 writer, never changed after release. Each later version adds its own folder |
 | `ink/` | Segment files with their decoded strokes as JSON, including damaged files and their expected reports |
 | `journal/` | Journal generations with the pages recovery must produce |
 | `markdown/escape/` and `markdown/documents/` | The conformance fixtures of section 7.8 |

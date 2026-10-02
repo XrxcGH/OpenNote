@@ -1,5 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::indexing_slicing, clippy::arithmetic_side_effects)]
 
+use std::collections::HashSet;
+
 use proptest::prelude::*;
 
 use super::*;
@@ -168,5 +170,52 @@ proptest! {
         let (after_major, _) = Ink::replay(Vec::new(), vec![compact(&ink, CompactionPlan::Major, &[])]);
         prop_assert_eq!(live(&after_major), live(&ink));
         prop_assert_eq!(after_major.dead_bytes(), 0);
+    }
+
+    /// A base decoded for compaction gives the same compacted records and dead bytes as a full decode.
+    #[test]
+    fn a_base_decoded_for_compaction_compacts_the_same(
+        base in proptest::collection::vec(arb_record(), 1..12),
+        merged in proptest::collection::vec(arb_record(), 0..6),
+    ) {
+        let header = SegmentHeader {
+            id: SegmentId(Id::from_parts(7, 7)),
+            page: PageId(Id::from_parts(8, 8)),
+            created: Timestamp::EPOCH,
+        };
+        let bytes = crate::format::segment::encode_segment(&header, &base);
+        let entry = SegmentRef {
+            id: header.id,
+            bytes: bytes.len() as u64,
+            records: u32::try_from(base.len()).unwrap(),
+            crc32: crate::format::segment_footer_crc(&bytes).unwrap(),
+            extra: JsonMap::new(),
+        };
+        let limits = crate::limits::Limits::default();
+        let full = crate::format::segment::decode_segment(&bytes, &entry, header.page, &limits).unwrap();
+        let touched: HashSet<StrokeId> = merged.iter().map(InkRecord::stroke_id).collect();
+        let part = crate::format::segment::decode_segment_for(&bytes, &entry, header.page, &limits, &|id| {
+            touched.contains(&id)
+        })
+        .unwrap();
+        prop_assert_eq!(&full.records, &base);
+        prop_assert!(part.damaged.is_empty() && part.unknown_records == 0);
+        prop_assert_eq!(merged_dead_bytes(&part.records, &merged), merged_dead_bytes(&base, &merged));
+        let (ink, _) = Ink::replay(Vec::new(), vec![base.clone(), merged.clone()]);
+        let rest = decoded(merged.clone());
+        prop_assert_eq!(
+            compact(&ink, CompactionPlan::Minor, &[decoded(part.records.clone()), rest.clone()]),
+            compact(&ink, CompactionPlan::Minor, &[decoded(base.clone()), rest])
+        );
+    }
+
+    /// The shortcut for the dead bytes after a minor compaction counts what a full replay counts.
+    #[test]
+    fn merged_dead_bytes_match_a_full_replay(
+        base in proptest::collection::vec(arb_record(), 0..12),
+        merged in proptest::collection::vec(arb_record(), 0..6),
+    ) {
+        let (full, _) = Ink::replay(Vec::new(), vec![base.clone(), merged.clone()]);
+        prop_assert_eq!(merged_dead_bytes(&base, &merged), full.dead_bytes());
     }
 }

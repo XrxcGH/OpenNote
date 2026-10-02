@@ -8,13 +8,13 @@ use std::time::Duration;
 use super::{PageStore, SaveError, SaveOutcome, SaveRequest};
 use crate::error::{FsError, FsErrorKind, JournalError};
 use crate::fail_point;
-use crate::format::{segment_footer_crc, DecodedSegment, SegmentHeader};
-use crate::id::{RevisionId, SegmentId};
+use crate::id::RevisionId;
 use crate::limits::Policy;
-use crate::model::{Access, Block, BlockData, Ink, InkRecord, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef};
-use crate::store::compact::{compact, CompactionPlan};
+use crate::model::{Access, Block, BlockData, Blocks, Ink, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef};
 use crate::store::fs::Fs;
-use crate::store::layout::{NotebookLayout, ASSETS_DIR, INK_DIR};
+use crate::store::layout::{NotebookLayout, ASSETS_DIR};
+
+mod ink;
 
 /// How long a save waits for the journal to flush `SaveBegin`.
 const SAVE_BEGIN_TIMEOUT: Duration = Duration::from_secs(5);
@@ -46,11 +46,27 @@ impl PageStore {
         before_commit: &mut BeforeCommit<'_>,
     ) -> Result<SaveOutcome, SaveError> {
         refuse_protected(req.page)?;
-        let (segments, dead_bytes) = self.write_ink(dir, &req)?;
+        let ink = self.plan_ink(dir, &req)?;
+        let (segments, dead_bytes) = (ink.segments.clone(), ink.dead_bytes);
+        let prepare = || self.prepare_page(req.page, segments.clone(), dead_bytes);
+        // The new page.json needs only the new segment's entry, and making and reading it back touches no file.
+        // So it runs on another thread while the segment is written and flushed, and the file system sees the
+        // same calls in the same order.
+        let (written, prepared) = match &ink.file {
+            None => (self.write_planned(dir, &ink), prepare()),
+            Some(_) => std::thread::scope(|scope| {
+                let thread = std::thread::Builder::new().spawn_scoped(scope, prepare);
+                let written = self.write_planned(dir, &ink);
+                let prepared = match thread {
+                    Ok(thread) => thread.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+                    Err(_) => prepare(),
+                };
+                (written, prepared)
+            }),
+        };
+        written?;
         self.check_assets(dir, req.page)?;
-        let page = self.next_revision(req.page, req.pending.len(), segments.clone(), dead_bytes);
-        let bytes = self.config.codec.write_page(&page);
-        self.check_read_back(&page, &bytes)?;
+        let (page, bytes) = prepared?;
         before_commit(page.revision.id, req.through_seq)?;
         fail_point!("save.save_begin.flushed");
         self.check_disk(dir, req.page, req.base_stamp)?;
@@ -70,90 +86,12 @@ impl PageStore {
         })
     }
 
-    /// S2 and S3: writes the new or compacted segment, and returns the new segment list and dead bytes.
-    fn write_ink(&self, dir: &Path, req: &SaveRequest<'_>) -> Result<(Vec<SegmentRef>, u64), SaveError> {
-        let ink = &req.page.ink;
-        let old = ink.segments().to_vec();
-        let plan = match req.compaction {
-            CompactionPlan::Minor => match self.decode_all(dir, req.page) {
-                Some(decoded) => return self.write_minor(dir, req, &decoded),
-                None => CompactionPlan::Major,
-            },
-            plan => plan,
-        };
-        if plan == CompactionPlan::Major {
-            let records = compact(ink, CompactionPlan::Major, &[]);
-            let segments = self.write_segment(dir, req.page, &records)?.into_iter().collect();
-            fail_point!("compact.written");
-            return Ok((segments, 0));
-        }
-        let mut segments = old;
-        segments.extend(self.write_segment(dir, req.page, req.pending)?);
-        let dead = ink.dead_bytes().saturating_add(pending_dead(req.pending));
-        Ok((segments, dead))
-    }
-
-    fn write_minor(
-        &self,
-        dir: &Path,
-        req: &SaveRequest<'_>,
-        decoded: &[DecodedSegment],
-    ) -> Result<(Vec<SegmentRef>, u64), SaveError> {
-        let working = with_pending(&req.page.ink, req.pending);
-        let records = compact(
-            working.as_ref().unwrap_or(&req.page.ink),
-            CompactionPlan::Minor,
-            decoded,
-        );
-        let mut segments: Vec<SegmentRef> = req.page.ink.segments().iter().take(1).cloned().collect();
-        segments.extend(self.write_segment(dir, req.page, &records)?);
-        let base = decoded.first().map(|d| d.records.clone()).unwrap_or_default();
-        let dead = Ink::replay(Vec::new(), vec![base, records]).0.dead_bytes();
-        fail_point!("compact.written");
-        Ok((segments, dead))
-    }
-
-    /// Every listed segment, decoded without damage, or `None` when any can't be read.
-    fn decode_all(&self, dir: &Path, page: &Page) -> Option<Vec<DecodedSegment>> {
-        let config = &self.config;
-        page.ink
-            .segments()
-            .iter()
-            .map(|segment| {
-                let path = NotebookLayout::segment_path(dir, segment.id);
-                let bytes = config.fs.read(&path, config.limits.segment_bytes).ok()?;
-                let decoded = config
-                    .codec
-                    .decode_segment(&bytes, segment, page.id, &config.limits)
-                    .ok()?;
-                (decoded.damaged.is_empty() && decoded.unknown_records == 0).then_some(decoded)
-            })
-            .collect()
-    }
-
-    /// Writes one segment with `create_durable`. No records write nothing.
-    fn write_segment(&self, dir: &Path, page: &Page, records: &[InkRecord]) -> Result<Option<SegmentRef>, SaveError> {
-        if records.is_empty() {
-            return Ok(None);
-        }
-        let config = &self.config;
-        let header = SegmentHeader {
-            id: SegmentId::generate(&*config.clock),
-            page: page.id,
-            created: config.clock.now(),
-        };
-        let bytes = config.codec.encode_segment(&header, records);
-        ensure_dir(&*config.fs, &dir.join(INK_DIR)).map_err(SaveError::Fs)?;
-        let path = NotebookLayout::segment_path(dir, header.id);
-        config.fs.create_durable(&path, &bytes).map_err(SaveError::Fs)?;
-        fail_point!("save.segment.written");
-        Ok(Some(SegmentRef {
-            id: header.id,
-            bytes: bytes.len() as u64,
-            records: u32::try_from(records.len()).unwrap_or(u32::MAX),
-            crc32: segment_footer_crc(&bytes).unwrap_or_else(|| crc32fast::hash(&bytes)),
-            extra: JsonMap::new(),
-        }))
+    /// S5: the page as it will be written, and its bytes, which must read back as the page.
+    fn prepare_page(&self, page: &Page, segments: Vec<SegmentRef>, dead: u64) -> Result<(Page, Vec<u8>), SaveError> {
+        let next = self.next_revision(page, segments, dead);
+        let bytes = self.config.codec.write_page(&next);
+        self.check_read_back(&next, &bytes)?;
+        Ok((next, bytes))
     }
 
     /// S4: every asset in the table exists with its size.
@@ -172,10 +110,12 @@ impl PageStore {
         }
     }
 
-    /// S5, first half: the page as it will be written, with revision `R'` whose parent is `R`.
-    fn next_revision(&self, page: &Page, through: usize, segments: Vec<SegmentRef>, dead: u64) -> Page {
+    /// S5, first half: the page as it will be written, with revision `R'` whose parent is `R`. Its ink holds
+    /// only the segment list, which is all `page.json` stores: copying the live strokes would cost time on a
+    /// large page, and freeing them again as much.
+    fn next_revision(&self, page: &Page, segments: Vec<SegmentRef>, dead: u64) -> Page {
         let config = &self.config;
-        let mut next = page.clone();
+        let mut next = without_strokes(page);
         let mut ancestors = vec![page.revision.id];
         ancestors.extend(
             page.revision
@@ -194,10 +134,10 @@ impl PageStore {
             writer: config.writer.clone(),
             extra: JsonMap::new(),
         };
-        next.ink.commit(through, segments, dead);
+        next.ink.commit(0, segments, dead);
         let blocks: HashSet<_> = next.blocks.iter().map(|b| b.id).collect();
         next.reading_order.retain(|id| blocks.contains(id));
-        fix_stroke_counts(&mut next);
+        fix_counts(&mut next.blocks, &page.ink);
         next
     }
 
@@ -208,12 +148,10 @@ impl PageStore {
             .codec
             .read_page(bytes, &self.config.limits)
             .map_err(|err| SaveError::Serializer(format!("the written page doesn't read: {err}")))?;
-        let mut read = read.page;
+        let read = read.page;
         if read.ink.segments() != page.ink.segments() {
             return Err(SaveError::Serializer("the segment list differs".to_owned()));
         }
-        read.ink = page.ink.clone();
-        read.format = page.format.clone();
         match first_difference(page, &read) {
             None => Ok(()),
             Some(field) => Err(SaveError::Serializer(format!("{field} differs after reading back"))),
@@ -260,53 +198,46 @@ fn refuse_protected(page: &Page) -> Result<(), SaveError> {
     Ok(())
 }
 
-/// The ink with `pending` as its pending records, when they differ from the snapshot's.
-fn with_pending(ink: &Ink, pending: &[InkRecord]) -> Option<Ink> {
-    if ink.pending() == pending {
-        return None;
-    }
-    let mut working = ink.clone();
-    working.commit(usize::MAX, ink.segments().to_vec(), ink.dead_bytes());
-    for record in pending {
-        working.push_pending(record.clone());
-    }
-    Some(working)
-}
-
-/// The dead bytes the pending records add, as a replay of the new segment counts them. A committed stroke that
-/// the pending records remove is no longer in memory, so its bytes are only counted at the next load.
-fn pending_dead(pending: &[InkRecord]) -> u64 {
-    let mut shadow = Ink::default();
-    let mut dead = 0u64;
-    for record in pending {
-        let killed = match record {
-            InkRecord::Stroke(stroke) => shadow.insert(stroke.clone()),
-            InkRecord::Remove(id) => shadow.remove(*id),
-            InkRecord::Props(props) => {
-                shadow.apply_props(props);
-                None
-            }
-        };
-        dead = dead.saturating_add(killed.map_or(0, |stroke| stroke.record_len()));
-    }
-    dead
-}
-
 /// Sets each ink block's `strokeCount` to its live strokes (spec 8.3).
 pub(super) fn fix_stroke_counts(page: &mut Page) {
-    let stale: Vec<Arc<Block>> = page
-        .blocks
+    fix_counts(&mut page.blocks, &page.ink);
+}
+
+/// Sets each ink block's `strokeCount` to the number of live strokes of `ink` in it.
+fn fix_counts(blocks: &mut Blocks, ink: &Ink) {
+    let stale: Vec<Arc<Block>> = blocks
         .iter()
-        .filter(|b| matches!(&b.data, BlockData::Ink(data) if data.stroke_count != page.ink.count_in_block(b.id)))
+        .filter(|b| matches!(&b.data, BlockData::Ink(data) if data.stroke_count != ink.count_in_block(b.id)))
         .cloned()
         .collect();
     for block in stale {
         let mut fixed = Block::clone(&block);
         if let BlockData::Ink(data) = &mut fixed.data {
-            data.stroke_count = page.ink.count_in_block(block.id);
+            data.stroke_count = ink.count_in_block(block.id);
         }
         // The block exists, so replacing it can't fail.
-        let _ = page.blocks.replace(Arc::new(fixed));
+        let _ = blocks.replace(Arc::new(fixed));
+    }
+}
+
+/// A copy of the page whose ink is empty: no strokes, segments, or pending records.
+fn without_strokes(page: &Page) -> Page {
+    Page {
+        id: page.id,
+        title: page.title.clone(),
+        created: page.created,
+        modified: page.modified,
+        tags: page.tags.clone(),
+        view: page.view.clone(),
+        blocks: page.blocks.clone(),
+        reading_order: page.reading_order.clone(),
+        assets: page.assets.clone(),
+        ink: Ink::default(),
+        recordings: page.recordings.clone(),
+        encryption: page.encryption.clone(),
+        revision: page.revision.clone(),
+        extra: page.extra.clone(),
+        format: page.format.clone(),
     }
 }
 

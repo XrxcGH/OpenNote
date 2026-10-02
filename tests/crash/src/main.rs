@@ -5,8 +5,10 @@
 //!                        [--workload core|fs] [--failpoint <name>] [--sabotage] [--no-hostile] [--out <json>]
 //!
 //! opennote-crashtest measure <m3|m5|m6|all> --dir <dir> [--label <drive>] [--runs <n>] [--machine <name>]
-//!                            [--out <json>]
+//!                            [--out <json>] [--debug]
 //! ```
+//!
+//! Build it optimized, with `cargo crashtest ...`. `measure` refuses a debug build unless `--debug` is given.
 //!
 //! `run` starts a writer process for each iteration, kills it at a random moment, at a fail point, or just
 //! after a save step, and checks the notebook. It exits with 1 when a check fails. `writer` and `hold` are the
@@ -28,7 +30,7 @@ use workload::{Paths, Workload};
 const USAGE: &str = "usage: opennote-crashtest run --notebook <dir> --data <dir> --iterations <n> --seed <s>
                           [--workload core|fs] [--failpoint <name>] [--sabotage] [--no-hostile] [--out <json>]
        opennote-crashtest measure <m3|m5|m6|all> --dir <dir> [--label <drive>] [--runs <n>]
-                          [--machine <name>] [--out <json>]";
+                          [--machine <name>] [--out <json>] [--debug]";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();

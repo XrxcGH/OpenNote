@@ -85,11 +85,11 @@ struct Read {
 }
 
 impl Read {
-    fn records(&self, from: usize) -> Vec<Vec<JournalRecord>> {
+    fn records(&self, from: usize) -> Vec<&[JournalRecord]> {
         self.generations
             .iter()
             .skip(from)
-            .map(|(_, g)| g.records.clone())
+            .map(|(_, g)| g.records.as_slice())
             .collect()
     }
 
@@ -129,7 +129,9 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
             None => return Ok(RecoveryOutcome::OwnerAlive),
         }
     }
-    let read = read_all(ctx, page, generations)?;
+    let located = (ctx.locate)(page);
+    let (read, loaded) = read_and_load(ctx, page, generations, located.as_deref());
+    let read = read?;
     drop(locks);
     for (path, bytes, move_file) in &read.quarantine {
         quarantine(ctx, path, bytes, *move_file)?;
@@ -137,10 +139,6 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
     if read.generations.is_empty() {
         return Ok(RecoveryOutcome::Nothing);
     }
-    let located = (ctx.locate)(page);
-    let loaded = located
-        .as_deref()
-        .map_or(Err(LoadError::Missing), |dir| ctx.store.load(dir));
     let outcome = match loaded {
         Ok(loaded) if is_damaged(&loaded) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Damaged(located))?,
         Ok(loaded) => {
@@ -156,7 +154,29 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
         Err(LoadError::NewerFormat(_)) => return Err(defer(DeferReason::NewerPage)),
         Err(LoadError::Unavailable(_)) => return Err(defer(DeferReason::PageUnavailable)),
     };
+    free_later(read);
     Ok(outcome)
+}
+
+/// Reads every generation, and loads the page from `located`. Loading only reads files, so it runs on another
+/// thread while the generations decode.
+fn read_and_load(
+    ctx: &RecoverCtx<'_>,
+    page: PageId,
+    generations: &[PathBuf],
+    located: Option<&Path>,
+) -> (Result<Read, Stop>, Result<LoadedPage, LoadError>) {
+    let store = ctx.store;
+    std::thread::scope(|scope| {
+        let load = located.map(|dir| std::thread::Builder::new().spawn_scoped(scope, move || store.load(dir)));
+        let read = read_all(ctx, page, generations);
+        let loaded = match load {
+            None => Err(LoadError::Missing),
+            Some(Ok(handle)) => handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+            Some(Err(_)) => located.map_or(Err(LoadError::Missing), |dir| store.load(dir)),
+        };
+        (read, loaded)
+    })
 }
 
 /// Reads every generation. A newer journal or another folder's journal stops recovery. A generation whose
@@ -202,6 +222,12 @@ fn read_all(ctx: &RecoverCtx<'_>, page: PageId, paths: &[PathBuf]) -> Result<Rea
         generations,
         quarantine: kept,
     })
+}
+
+/// Frees the generations on another thread. Freeing thousands of decoded records takes a few milliseconds that
+/// recovery needn't wait for. Without a thread, they are freed here.
+fn free_later(read: Read) {
+    let _ = std::thread::Builder::new().spawn(move || drop(read));
 }
 
 /// Keeps bytes in `recovery/` for diagnosis. With `move_file`, the generation itself goes there.
@@ -251,7 +277,7 @@ fn anchored(
         return Ok(None);
     };
     let records = after_anchor(&read.records(from), anchor);
-    if !records.iter().any(JournalRecord::is_edit) {
+    if !records.iter().any(|record| record.is_edit()) {
         return forget(ctx, read).map(Some);
     }
     let mut page = loaded.page.clone();

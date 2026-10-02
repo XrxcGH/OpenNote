@@ -124,25 +124,32 @@ impl Ink {
 
     /// Adds a stroke, or replaces the one with the same ID, which it returns.
     pub fn insert(&mut self, stroke: Arc<Stroke>) -> Option<Arc<Stroke>> {
-        let old = self.remove(stroke.id);
-        self.by_block
-            .entry(stroke.block)
-            .or_default()
-            .insert((stroke.start, stroke.id));
-        self.strokes.insert(stroke.id, stroke);
+        let key = (stroke.start, stroke.id);
+        let block = stroke.block;
+        let old = self.strokes.insert(stroke.id, stroke);
+        // The old entry goes first: it has the same key when the block and start time didn't change.
+        if let Some(old) = &old {
+            self.unindex(old);
+        }
+        self.by_block.entry(block).or_default().insert(key);
         old
     }
 
     /// Removes and returns the stroke with this ID.
     pub fn remove(&mut self, id: StrokeId) -> Option<Arc<Stroke>> {
         let stroke = self.strokes.remove(&id)?;
+        self.unindex(&stroke);
+        Some(stroke)
+    }
+
+    /// Removes a stroke from the index by ink block.
+    fn unindex(&mut self, stroke: &Stroke) {
         if let Some(set) = self.by_block.get_mut(&stroke.block) {
-            set.remove(&(stroke.start, id));
+            set.remove(&(stroke.start, stroke.id));
             if set.is_empty() {
                 self.by_block.remove(&stroke.block);
             }
         }
-        Some(stroke)
     }
 
     /// Applies a property record. Returns the stroke as it was, or `None` if no such stroke is live.
@@ -193,16 +200,16 @@ impl Ink {
     }
 
     fn replay_one(&mut self, record: InkRecord, warnings: &mut Vec<Warning>) {
-        let dead = match &record {
-            InkRecord::Stroke(stroke) => self.insert(stroke.clone()),
+        let dead = match record {
+            InkRecord::Stroke(stroke) => self.insert(stroke),
             InkRecord::Props(props) => {
-                if self.apply_props(props).is_none() {
+                if self.apply_props(&props).is_none() {
                     warnings.push(Warning::new("ink.propsMissing", props.id.to_string()));
                 }
                 None
             }
             InkRecord::Remove(id) => {
-                let removed = self.remove(*id);
+                let removed = self.remove(id);
                 if removed.is_none() {
                     warnings.push(Warning::new("ink.removeMissing", id.to_string()));
                 }

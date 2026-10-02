@@ -160,11 +160,16 @@ pub enum Parsed {
 
 /// Parses a record's body. `frame_flags` holds the frame's flags and reserved bytes, which must be zero.
 pub fn parse_body(kind: u8, frame_flags: [u8; 3], body: &[u8], limits: &Limits) -> Parsed {
+    parse_record(kind, frame_flags, body, limits, true)
+}
+
+/// [`parse_body`], checking a stroke's points (spec 9.4) only when `points` is set.
+pub(crate) fn parse_record(kind: u8, frame_flags: [u8; 3], body: &[u8], limits: &Limits, points: bool) -> Parsed {
     if frame_flags != [0, 0, 0] {
         return Parsed::Unknown;
     }
     match kind {
-        KIND_STROKE => parse_stroke(body, limits),
+        KIND_STROKE => parse_stroke(body, limits, points),
         KIND_PROPS => parse_props(body),
         KIND_REMOVE if body.len() == 16 => id_at(body, 0).map_or(Parsed::Bad("body"), |id| {
             Parsed::Record(InkRecord::Remove(StrokeId(id)))
@@ -174,14 +179,21 @@ pub fn parse_body(kind: u8, frame_flags: [u8; 3], body: &[u8], limits: &Limits) 
     }
 }
 
-fn parse_stroke(body: &[u8], limits: &Limits) -> Parsed {
+/// Whether the kind and flags of a record mark a `Stroke` record this version knows.
+pub(crate) fn is_known_stroke(kind: u8, frame_flags: [u8; 3], body: &[u8]) -> bool {
+    kind == KIND_STROKE
+        && frame_flags == [0, 0, 0]
+        && u16_at(body, 42).is_some_and(|flags| flags & !KNOWN_STROKE_FLAGS == 0)
+}
+
+fn parse_stroke(body: &[u8], limits: &Limits, points: bool) -> Parsed {
     let Some(flags) = u16_at(body, 42) else {
         return Parsed::Bad("body");
     };
     if flags & !KNOWN_STROKE_FLAGS != 0 {
         return Parsed::Unknown;
     }
-    match stroke_fields(body, flags, limits) {
+    match stroke_fields(body, flags, limits, points) {
         Ok(stroke) => Parsed::Record(InkRecord::Stroke(Arc::new(stroke))),
         Err(reason) => Parsed::Bad(reason),
     }
@@ -192,7 +204,7 @@ fn field<T>(value: Option<T>) -> Result<T, &'static str> {
     value.ok_or("body")
 }
 
-fn stroke_fields(body: &[u8], flags: u16, limits: &Limits) -> Result<Stroke, &'static str> {
+fn stroke_fields(body: &[u8], flags: u16, limits: &Limits, check: bool) -> Result<Stroke, &'static str> {
     let start = field(i64_at(body, 32))?;
     if !(Timestamp::MIN.unix_ms()..=Timestamp::MAX.unix_ms()).contains(&start) {
         return Err("body");
@@ -213,7 +225,9 @@ fn stroke_fields(body: &[u8], flags: u16, limits: &Limits) -> Result<Stroke, &'s
     if point_count > limits.points_per_stroke {
         return Err("points");
     }
-    check_points(points, point_count, channels, &bbox).map_err(|_| "points")?;
+    if check {
+        check_points(points, point_count, channels, &bbox).map_err(|_| "points")?;
+    }
     Ok(Stroke {
         id: StrokeId(field(id_at(body, 0))?),
         block: BlockId(field(id_at(body, 16))?),

@@ -308,6 +308,8 @@ The next steps, in rough order:
 
 Performance tests compare against the budgets in BRAND.md and fail the build if a result is more than 10% worse than the last release. Every bug fix adds a test that failed before the fix.
 
+Benchmarks and crash measurements run from an optimized build, because a debug build is several times slower and its times mean nothing. The `perf` profile in `Cargo.toml` builds them optimized, with line tables for profilers. Run them with `cargo perf bench <suite> <dir>` and `cargo crashtest measure <m3|m5|m6|all> --dir <dir>`, two aliases in `.cargo/config.toml`. Both commands refuse a debug build unless they get `--debug`.
+
 The keyboard and screen reader checklist uses Narrator and NVDA with no mouse. It covers creating a notebook, writing, and formatting a page, inserting a table, and chart, searching, recording audio, and exporting a PDF.
 
 ## 7. Device test matrix

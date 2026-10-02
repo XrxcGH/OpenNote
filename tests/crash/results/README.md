@@ -19,7 +19,7 @@ Other work ran on the machine at the same time, so the numbers are noisy. Two ru
 | `2026-09-30-surface-laptop-studio-2-share-loopback-m6.json` | M6 on the loopback share |
 | `2026-09-30-kill-harness-fs-100.json` | 100 kills of the file system workload, with no failures |
 
-Times are in milliseconds, at the 50th, 95th, and 99th percentiles. Run them again with `opennote-crashtest measure all --dir <folder> --label <drive> --out <file>`.
+Times are in milliseconds, at the 50th, 95th, and 99th percentiles. Run them again with `cargo crashtest measure all --dir <folder> --label <drive> --out <file>`, which builds the optimized `perf` profile.
 
 ## What they show
 
@@ -70,3 +70,37 @@ Over their gates:
 The store open decodes all 5,000 strokes, and decoding them alone took 165 to 203 ms at the 50th percentile in the format suite. The save's 95th percentile includes the compactions the saver chooses. Runs of the format suite differed by up to 13 times, so the load on the machine explains part of the excess, but not all of it.
 
 The session, start-up, and memory suites still run on the in-memory test core (`session::kit`), as their module comments say. Their numbers leave out the disk and the real codecs until those suites move to the real parts.
+
+## Phase 3 performance follow-up
+
+These ran on 2 October 2026 on the same Surface Laptop Studio 2, plugged in, with Defender real-time protection on. Other programs, including another agent's builds, kept the processor 15 to 40% busy, with about half the memory free.
+
+The exit-gate runs above used the optimized `spikes` profile, so a debug build doesn't explain their excess. Still, nothing stopped a debug run: `cargo run -p opennote-perf` built the debug profile, where opening the budget page took 729 ms at the 50th percentile against 71 ms optimized. Now `cargo perf bench store <dir>` builds the `perf` profile, which inherits the release optimizations, and both benchmark tools refuse a debug build unless they get `--debug`. DEVELOPMENT.md says how to run them.
+
+Before is `origin/phase-3` built with `spikes`, and after is branch `p3-perf` built with `perf`. The two ran in turn, three times each, 20 seconds apart. Times are in milliseconds, and none of them counts as a pass on the reference laptop.
+
+| Measure | Gate | Exit-gate run | Before | After |
+|---|---|---|---|---|
+| `store.open.budget_page.p95` | 25 | 278 | 43 to 44 (50th percentile 42) | 17 to 20 (50th percentile 16 to 17) |
+| `store.save.one_stroke.p95` | 25 | 1,123 | 237 to 253 (50th percentile 25 to 27) | 18 to 19 (50th percentile 15) |
+| `store.recovery.journal_4mib.max` | 100 | 987 | 278 and 284, and once 15,891 | 112 to 131 |
+
+Journal appends stayed at 1.1 to 1.6 ms at the 99th percentile. `2026-10-02-surface-laptop-studio-2-store-before.json` and `2026-10-02-surface-laptop-studio-2-store-after.json` hold the second run of each.
+
+### What changed
+
+- Stroke points are checked with a fast path first. For 5,000 strokes, the check fell from 38 to 10 ms.
+- A minor compaction leaves the untouched strokes of the base segment unparsed, and takes the later segments that the store just wrote from memory. On this laptop a new segment file took about 24 ms to open the first time, most likely while Defender scanned it. So these saves took about 200 ms and set the 95th percentile.
+- A save no longer copies the page's strokes. It builds and checks `page.json` on a second thread while the new segment is written and flushed. The file system still sees the same calls in the same order.
+- Recovery replays journal records by reference, loads the page while the journal decodes, and frees the decoded journal on another thread.
+- Applying a transaction that changes one thing makes no hash sets.
+- The core builds with `opt-level = 3` in release, and so in `perf`. That made each step 12 to 24% faster.
+- Segment records and journal payloads decode on up to 8 threads. Decoding the budget page's segment fell from 8.7 to 4.4 ms, and the 4 MiB journal from 39 to 14 ms.
+
+### What is left
+
+Recovery still misses its gate. A timed run took about 100 ms. Reading and decoding the journal while the page loads took 24, and replaying 7,206 transactions through the applier took 23. Saving the page took 25, and writing its history version 13. The save writes and flushes a 4 MiB segment. In the benchmark, the journal was also written a moment before, so its first read likely waits for the scan too. Replaying runs of `addStrokes` as one batch would save most of the replay.
+
+### Crash safety
+
+All 599 tests of `opennote-core` with every feature passed. They include the crash scenarios on the fault-injecting file system and the power cuts. `2026-10-02-kill-harness-core-100.json` holds 100 kills of the core workload with seed 20261002, after all of these changes, with no failures. 50 writers were killed at a random moment, 26 just after a save step, and 24 at an armed fail point, of which 13 were reached. The hostile reader held files 2,780 times.

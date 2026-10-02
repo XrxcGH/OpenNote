@@ -39,7 +39,7 @@ fn fixtures() -> PathBuf {
 }
 
 fn notebook_dir() -> PathBuf {
-    fixtures().join("notebooks").join("v1")
+    fixtures().join("nb").join("v1")
 }
 
 /// Writes the file in bless mode, and otherwise checks that it holds exactly these bytes.

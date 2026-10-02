@@ -70,11 +70,9 @@ fn major(ink: &Ink) -> Vec<InkRecord> {
 
 fn minor(ink: &Ink, decoded: &[DecodedSegment]) -> Vec<InkRecord> {
     let (base, merged) = match decoded.split_first() {
-        Some((base, rest)) => (base.records.clone(), rest),
-        None => (Vec::new(), &[][..]),
+        Some((base, rest)) => (base.records.as_slice(), rest),
+        None => (&[][..], &[][..]),
     };
-    let base_ink = Ink::replay(Vec::new(), vec![base]).0;
-    let base_strokes: HashMap<StrokeId, &Arc<Stroke>> = base_ink.strokes().map(|s| (s.id, s)).collect();
     let later = merged
         .iter()
         .flat_map(|segment| segment.records.iter())
@@ -87,6 +85,14 @@ fn minor(ink: &Ink, decoded: &[DecodedSegment]) -> Vec<InkRecord> {
             rewritten.insert(record.stroke_id());
         }
     }
+    // Strokes replay independently of each other, so the base records of the touched strokes are enough.
+    let base: Vec<InkRecord> = base
+        .iter()
+        .filter(|record| touched.contains(&record.stroke_id()))
+        .cloned()
+        .collect();
+    let base_ink = Ink::replay(Vec::new(), vec![base]).0;
+    let base_strokes: HashMap<StrokeId, &Arc<Stroke>> = base_ink.strokes().map(|s| (s.id, s)).collect();
     touched
         .into_iter()
         .filter_map(|id| {
@@ -99,6 +105,23 @@ fn minor(ink: &Ink, decoded: &[DecodedSegment]) -> Vec<InkRecord> {
             }
         })
         .collect()
+}
+
+/// The dead bytes of the base segment followed by the merged one, as [`Ink::replay`] counts them.
+///
+/// Strokes replay independently of each other. Take a stroke whose only record in both segments is one `Stroke`
+/// record in the base. Nothing replaces or removes it, so it adds no dead bytes. Only the other records replay,
+/// and on a large base, the strokes left out are nearly all of it.
+pub fn merged_dead_bytes(base: &[InkRecord], merged: &[InkRecord]) -> u64 {
+    let mut counts: HashMap<StrokeId, u32> = HashMap::new();
+    for record in base.iter().chain(merged) {
+        let count = counts.entry(record.stroke_id()).or_default();
+        *count = count.saturating_add(1);
+    }
+    let alone =
+        |record: &InkRecord| matches!(record, InkRecord::Stroke(_)) && counts.get(&record.stroke_id()) == Some(&1);
+    let base: Vec<InkRecord> = base.iter().filter(|record| !alone(record)).cloned().collect();
+    Ink::replay(Vec::new(), vec![base, merged.to_vec()]).0.dead_bytes()
 }
 
 /// One property record that turns `base` into `live`, or `None` when nothing changed.

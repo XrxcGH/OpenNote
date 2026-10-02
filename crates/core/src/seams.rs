@@ -6,7 +6,7 @@
 
 use crate::error::{ApplyError, FormatError};
 use crate::format::{DecodedSegment, ReadPage, ReadableState, SegmentHeader};
-use crate::id::{AssetId, PageId};
+use crate::id::{AssetId, PageId, StrokeId};
 use crate::limits::Limits;
 use crate::model::{InkRecord, NotebookFile, NotebookTree, Page, SectionFile, SegmentRef, TrashItemFile, VersionsFile};
 use crate::ops::{AppliedChanges, Txn};
@@ -43,6 +43,21 @@ pub trait Codec: Send + Sync + 'static {
         page: PageId,
         limits: &Limits,
     ) -> Result<DecodedSegment, FormatError>;
+    /// Decodes an ink segment file like [`decode_segment`](Codec::decode_segment), for minor compaction to read
+    /// the base segment. The page checked all of its strokes when it opened, and the merge needs only the few
+    /// that later segments change. So this may skip the point checks (spec 9.4) of strokes outside `touched`.
+    /// It may also leave out each of them whose only record in the segment is a `Stroke` record.
+    fn decode_segment_for(
+        &self,
+        bytes: &[u8],
+        expect: &SegmentRef,
+        page: PageId,
+        limits: &Limits,
+        touched: &(dyn Fn(StrokeId) -> bool + Sync),
+    ) -> Result<DecodedSegment, FormatError> {
+        let _ = touched;
+        self.decode_segment(bytes, expect, page, limits)
+    }
     /// Encodes records in the segment record format, for journal blobs and the page envelope.
     fn encode_records(&self, records: &[InkRecord]) -> Vec<u8>;
     /// Decodes records in the segment record format.

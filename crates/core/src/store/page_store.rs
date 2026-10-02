@@ -1,11 +1,12 @@
 //! Loading and saving pages (plan 8.1, spec 17.7). Owned by WP4.
 
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 
 use crate::error::{CoreError, FormatError, FsError, FsErrorKind, JournalError};
 use crate::fail_point;
-use crate::format::DamagedRecord;
+use crate::format::{DamagedRecord, DecodedSegment};
 use crate::id::{AssetId, RevisionId};
 use crate::limits::Limits;
 use crate::model::{DeviceRef, InkRecord, Page, Revision, SegmentRef, Stroke};
@@ -37,7 +38,18 @@ pub struct PageStoreConfig {
 pub struct PageStore {
     /// What the store works with.
     pub config: PageStoreConfig,
+    /// The segments this store wrote lately, which minor compaction reads instead of the files.
+    written: Mutex<VecDeque<WrittenSegment>>,
 }
+
+/// A segment this store wrote, with the records in it.
+struct WrittenSegment {
+    entry: SegmentRef,
+    decoded: DecodedSegment,
+}
+
+/// How many written segments a store remembers. Minor compaction merges at most a few segments of each page.
+const REMEMBERED_SEGMENTS: usize = 32;
 
 /// A page as loaded, with what it found on disk.
 #[derive(Clone, Debug)]
@@ -132,7 +144,32 @@ pub enum ReadableOutcome {
 impl PageStore {
     /// A store with this configuration.
     pub fn new(config: PageStoreConfig) -> PageStore {
-        PageStore { config }
+        PageStore {
+            config,
+            written: Mutex::new(VecDeque::new()),
+        }
+    }
+
+    /// Remembers a segment this store just wrote and flushed, forgetting the oldest beyond
+    /// [`REMEMBERED_SEGMENTS`].
+    fn remember(&self, entry: &SegmentRef, decoded: DecodedSegment) {
+        let mut written = self.written.lock().unwrap_or_else(PoisonError::into_inner);
+        if written.len() >= REMEMBERED_SEGMENTS {
+            written.pop_front();
+        }
+        written.push_back(WrittenSegment {
+            entry: entry.clone(),
+            decoded,
+        });
+    }
+
+    /// The records of a segment this store wrote, when `entry` lists it exactly as written.
+    fn remembered(&self, entry: &SegmentRef) -> Option<DecodedSegment> {
+        let written = self.written.lock().unwrap_or_else(PoisonError::into_inner);
+        written
+            .iter()
+            .find(|segment| segment.entry == *entry)
+            .map(|segment| segment.decoded.clone())
     }
 
     /// Loads `page.json` and every segment, and replays the ink. Never reads `page.md`.

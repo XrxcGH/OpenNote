@@ -31,10 +31,10 @@ pub struct Replayed {
 }
 
 /// The records after `anchor`, from every generation, once each and in order, up to the first gap.
-pub fn after_anchor(generations: &[Vec<JournalRecord>], anchor: u64) -> Vec<JournalRecord> {
-    let mut by_seq: BTreeMap<u64, JournalRecord> = BTreeMap::new();
-    for record in generations.iter().flatten().filter(|r| r.seq() > anchor) {
-        by_seq.entry(record.seq()).or_insert_with(|| record.clone());
+pub fn after_anchor<'a>(generations: &[&'a [JournalRecord]], anchor: u64) -> Vec<&'a JournalRecord> {
+    let mut by_seq: BTreeMap<u64, &'a JournalRecord> = BTreeMap::new();
+    for record in generations.iter().copied().flatten().filter(|r| r.seq() > anchor) {
+        by_seq.entry(record.seq()).or_insert(record);
     }
     let mut expected = anchor.saturating_add(1);
     let mut contiguous = Vec::new();
@@ -50,10 +50,10 @@ pub fn after_anchor(generations: &[Vec<JournalRecord>], anchor: u64) -> Vec<Jour
 
 /// Applies the transactions with their checks, and turns strokes in progress that never got their final
 /// `addStrokes` into normal strokes. Replay stops at the first transaction that fails (spec 20.11).
-pub fn replay(ctx: &RecoverCtx<'_>, page: &mut Page, records: &[JournalRecord]) -> Replayed {
+pub fn replay(ctx: &RecoverCtx<'_>, page: &mut Page, records: &[&JournalRecord]) -> Replayed {
     let mut done = Replayed::default();
     let mut progress: BTreeMap<StrokeId, Arc<Stroke>> = BTreeMap::new();
-    for (index, record) in records.iter().enumerate() {
+    for (index, &record) in records.iter().enumerate() {
         match record {
             JournalRecord::Txn { txn, .. } => {
                 if let Err(err) = ctx.applier.apply(page, txn) {
@@ -61,6 +61,7 @@ pub fn replay(ctx: &RecoverCtx<'_>, page: &mut Page, records: &[JournalRecord]) 
                         .get(index..)
                         .unwrap_or_default()
                         .iter()
+                        .copied()
                         .filter_map(as_txn)
                         .collect();
                     done.failed = Some((err, rest));
