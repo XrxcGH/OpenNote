@@ -190,3 +190,36 @@ fn two_notebooks_can_share_a_backup_folder() {
     );
     assert!(fs.exists(&biology.set.join("notebook.json")));
 }
+
+#[test]
+fn marker_paths_outside_the_set_are_never_removed() {
+    let fs = notebook();
+    let dest = Path::new("/usb/backups");
+    fs.put(Path::new("/usb/victim.txt"), b"keep");
+    fs.put(Path::new("/victim.txt"), b"keep");
+    let marker = serde_json::json!({
+        "complete": true,
+        "finished": null,
+        "source": ROOT,
+        "files": {"../../victim.txt": [4, 0], "/victim.txt": [4, 0], "a/./b": [1, 0], "": [1, 0]},
+    });
+    let set = dest.join("2026-09-30");
+    fs.put(&set.join(scheduled::MARKER), marker.to_string().as_bytes());
+    let report = backup_notebook(
+        &fs,
+        Path::new(ROOT),
+        dest,
+        at("2026-09-30T14:00:00Z"),
+        0,
+        &BackupPolicy::default(),
+    )
+    .unwrap();
+    assert_eq!((report.set, report.removed_files), (set.clone(), 0));
+    assert_eq!(fs.get(Path::new("/usb/victim.txt")).unwrap(), b"keep");
+    assert_eq!(fs.get(Path::new("/victim.txt")).unwrap(), b"keep");
+    let kept = String::from_utf8(fs.get(&set.join(scheduled::MARKER)).unwrap()).unwrap();
+    assert!(
+        !kept.contains("victim") && !kept.contains("a/./b"),
+        "bad keys are dropped: {kept}"
+    );
+}

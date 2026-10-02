@@ -10,7 +10,7 @@
 //! named like `2026-09-30 (2)`.
 
 use std::collections::{BTreeMap, HashSet};
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -193,7 +193,9 @@ fn copy_changed(
     Ok(())
 }
 
-/// Removes files the set copied earlier that the notebook no longer has.
+/// Removes files the set copied earlier that the notebook no longer has. The marker sits on the destination
+/// and can't be trusted (spec 2.10): a key that isn't a plain relative path inside the set is dropped from it
+/// without touching the disk.
 fn remove_gone(
     fs: &dyn Fs,
     set: &Path,
@@ -204,7 +206,11 @@ fn remove_gone(
     let present: HashSet<String> = files.iter().map(|(relative, _)| key_of(relative)).collect();
     let gone: Vec<String> = marker.files.keys().filter(|k| !present.contains(*k)).cloned().collect();
     for key in gone {
-        match fs.remove_file(&set.join(&key)) {
+        let Some(relative) = relative_of(&key) else {
+            marker.files.remove(&key);
+            continue;
+        };
+        match fs.remove_file(&set.join(relative)) {
             Ok(()) => report.removed_files = report.removed_files.saturating_add(1),
             Err(err) if err.kind == FsErrorKind::NotFound => {}
             Err(err) => return Err(err.into()),
@@ -212,6 +218,20 @@ fn remove_gone(
         marker.files.remove(&key);
     }
     Ok(())
+}
+
+/// The relative path of a marker key, or `None` unless every `/`-separated part is a plain name: no empty
+/// part, `.`, `..`, root, drive, or separator of another platform.
+fn relative_of(key: &str) -> Option<PathBuf> {
+    let mut relative = PathBuf::new();
+    for part in key.split('/') {
+        let mut components = Path::new(part).components();
+        match (components.next(), components.next()) {
+            (Some(Component::Normal(name)), None) if name == part => relative.push(name),
+            _ => return None,
+        }
+    }
+    Some(relative)
 }
 
 /// A relative path with `/` separators, as the marker stores it.
