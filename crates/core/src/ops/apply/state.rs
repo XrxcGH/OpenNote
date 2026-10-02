@@ -115,7 +115,8 @@ impl<'p> Applying<'p> {
     pub fn recount(&mut self, blocks: &[BlockId]) {
         let mut seen = HashSet::new();
         for &id in blocks {
-            if !seen.insert(id) {
+            // One block needs no set, which saves an allocation on every stroke drawn.
+            if blocks.len() > 1 && !seen.insert(id) {
                 continue;
             }
             let count = self.page.ink.count_in_block(id);
@@ -183,8 +184,10 @@ impl<'p> Applying<'p> {
         dedupe(&mut changes.strokes_removed);
         changes.strokes_removed.retain(|id| !live(id));
         dedupe(&mut changes.strokes_changed);
-        let added: HashSet<StrokeId> = changes.strokes_added.iter().copied().collect();
-        changes.strokes_changed.retain(|id| live(id) && !added.contains(id));
+        if !changes.strokes_changed.is_empty() {
+            let added: HashSet<StrokeId> = changes.strokes_added.iter().copied().collect();
+            changes.strokes_changed.retain(|id| live(id) && !added.contains(id));
+        }
         dedupe(&mut changes.assets_changed);
         changes
     }
@@ -192,6 +195,10 @@ impl<'p> Applying<'p> {
 
 /// Keeps the first of each value, in order.
 fn dedupe<T: Copy + Eq + Hash>(values: &mut Vec<T>) {
+    // Most transactions change one thing, and a set for it would cost more than the rest of the commit.
+    if values.len() < 2 {
+        return;
+    }
     let mut seen = HashSet::new();
     values.retain(|value| seen.insert(*value));
 }
