@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{ensure_all, notebook_files};
 use crate::error::{CoreError, FsError, FsErrorKind};
+use crate::id::PageId;
 use crate::store::fs::Fs;
 use crate::time::Timestamp;
 
@@ -62,6 +63,8 @@ pub struct BackupReport {
     pub removed_files: u32,
     /// Older sets deleted by the policy.
     pub dropped_sets: Vec<PathBuf>,
+    /// Open pages whose unsaved changes couldn't be saved first. The set holds their last saved state.
+    pub unsaved_pages: Vec<PageId>,
 }
 
 /// The marker's content: whether the set is complete, and the source fingerprint of every file it copied.

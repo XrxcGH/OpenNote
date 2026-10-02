@@ -285,3 +285,26 @@ fn the_notebook_takes_its_color_and_styles_as_props() {
     notebook.set_notebook_props(none).unwrap();
     assert!(notebook.tree().styles.is_empty());
 }
+
+#[test]
+fn a_page_that_cant_be_saved_doesnt_stop_the_backup() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let section = notebook.create_section("Lab", top()).unwrap();
+    let (page, _) = kit.inked_page(&notebook, section).unwrap();
+    let c = client("main-1");
+    let handle = notebook.open_page(page, c.clone()).unwrap();
+    kit.backend.fail_saves(Some(crate::error::FsErrorKind::ReadOnlyFile));
+    let txn = crate::session::kit::retitle(kit.clock.as_ref(), &c, "Photosynthesis", "A");
+    handle.commit_for_tests(&txn).unwrap();
+    kit.advance(Duration::from_secs(1));
+    assert!(handle.read_only().is_some() && handle.has_unsaved());
+    let policy = crate::store::backup::BackupPolicy::default();
+    let report = notebook.backup_to(Path::new("/backups"), &policy, 0).unwrap();
+    assert_eq!(
+        report.unsaved_pages,
+        [page],
+        "the shell can say which page is missing its edits"
+    );
+    assert!(report.copied_files > 0 && report.finished.is_some());
+}

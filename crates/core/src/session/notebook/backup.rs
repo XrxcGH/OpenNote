@@ -16,8 +16,10 @@ use crate::time::Timestamp;
 
 impl NotebookHandle {
     /// Backs the notebook up into today's set under `dest`, then drops the sets `policy` doesn't keep.
-    /// Pages with unsaved changes are saved first, so the set holds what is on screen. Only files that changed
-    /// since the day's last run are copied. `utc_offset_minutes` places the day in local time.
+    /// Pages with unsaved changes are saved first, so the set holds what is on screen. A page that can't be
+    /// saved now, such as a read-only file, doesn't stop the backup: the set gets its last saved state, and the
+    /// report lists it. Only files that changed since the day's last run are copied. `utc_offset_minutes`
+    /// places the day in local time.
     pub fn backup_to(
         &self,
         dest: &Path,
@@ -30,18 +32,23 @@ impl NotebookHandle {
             let detail = "a backup can't go inside the notebook it copies";
             return Err(CoreError::Edit(EditError::Invalid(detail.into())));
         }
+        let mut unsaved = Vec::new();
         for session in shared.sessions() {
-            session.save(Why::Now)?;
+            if session.save(Why::Now).is_err() {
+                unsaved.push(session.id);
+            }
         }
         let now = shared.ctx.clock.now();
-        backup::backup_notebook(
+        let mut report = backup::backup_notebook(
             shared.ctx.fs.as_ref(),
             &shared.root,
             dest,
             now,
             utc_offset_minutes,
             policy,
-        )
+        )?;
+        report.unsaved_pages = unsaved;
+        Ok(report)
     }
 
     /// Backs the notebook up if `every` has passed since the last backup under `dest`, and answers with the
