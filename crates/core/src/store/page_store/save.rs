@@ -11,7 +11,9 @@ use crate::fail_point;
 use crate::format::{segment_footer_crc, DecodedSegment, SegmentHeader};
 use crate::id::{RevisionId, SegmentId, StrokeId};
 use crate::limits::Policy;
-use crate::model::{Access, Block, BlockData, Ink, InkRecord, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef};
+use crate::model::{
+    Access, Block, BlockData, Blocks, Ink, InkRecord, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef,
+};
 use crate::store::compact::{compact, merged_dead_bytes, CompactionPlan};
 use crate::store::fs::Fs;
 use crate::store::layout::{NotebookLayout, ASSETS_DIR, INK_DIR};
@@ -48,7 +50,7 @@ impl PageStore {
         refuse_protected(req.page)?;
         let (segments, dead_bytes) = self.write_ink(dir, &req)?;
         self.check_assets(dir, req.page)?;
-        let page = self.next_revision(req.page, req.pending.len(), segments.clone(), dead_bytes);
+        let page = self.next_revision(req.page, segments.clone(), dead_bytes);
         let bytes = self.config.codec.write_page(&page);
         self.check_read_back(&page, &bytes)?;
         before_commit(page.revision.id, req.through_seq)?;
@@ -195,10 +197,12 @@ impl PageStore {
         }
     }
 
-    /// S5, first half: the page as it will be written, with revision `R'` whose parent is `R`.
-    fn next_revision(&self, page: &Page, through: usize, segments: Vec<SegmentRef>, dead: u64) -> Page {
+    /// S5, first half: the page as it will be written, with revision `R'` whose parent is `R`. Its ink holds
+    /// only the segment list, which is all `page.json` stores: copying the live strokes would cost time on a
+    /// large page, and freeing them again as much.
+    fn next_revision(&self, page: &Page, segments: Vec<SegmentRef>, dead: u64) -> Page {
         let config = &self.config;
-        let mut next = page.clone();
+        let mut next = without_strokes(page);
         let mut ancestors = vec![page.revision.id];
         ancestors.extend(
             page.revision
@@ -217,10 +221,10 @@ impl PageStore {
             writer: config.writer.clone(),
             extra: JsonMap::new(),
         };
-        next.ink.commit(through, segments, dead);
+        next.ink.commit(0, segments, dead);
         let blocks: HashSet<_> = next.blocks.iter().map(|b| b.id).collect();
         next.reading_order.retain(|id| blocks.contains(id));
-        fix_stroke_counts(&mut next);
+        fix_counts(&mut next.blocks, &page.ink);
         next
     }
 
@@ -231,12 +235,10 @@ impl PageStore {
             .codec
             .read_page(bytes, &self.config.limits)
             .map_err(|err| SaveError::Serializer(format!("the written page doesn't read: {err}")))?;
-        let mut read = read.page;
+        let read = read.page;
         if read.ink.segments() != page.ink.segments() {
             return Err(SaveError::Serializer("the segment list differs".to_owned()));
         }
-        read.ink = page.ink.clone();
-        read.format = page.format.clone();
         match first_difference(page, &read) {
             None => Ok(()),
             Some(field) => Err(SaveError::Serializer(format!("{field} differs after reading back"))),
@@ -317,19 +319,44 @@ fn pending_dead(pending: &[InkRecord]) -> u64 {
 
 /// Sets each ink block's `strokeCount` to its live strokes (spec 8.3).
 pub(super) fn fix_stroke_counts(page: &mut Page) {
-    let stale: Vec<Arc<Block>> = page
-        .blocks
+    fix_counts(&mut page.blocks, &page.ink);
+}
+
+/// Sets each ink block's `strokeCount` to the number of live strokes of `ink` in it.
+fn fix_counts(blocks: &mut Blocks, ink: &Ink) {
+    let stale: Vec<Arc<Block>> = blocks
         .iter()
-        .filter(|b| matches!(&b.data, BlockData::Ink(data) if data.stroke_count != page.ink.count_in_block(b.id)))
+        .filter(|b| matches!(&b.data, BlockData::Ink(data) if data.stroke_count != ink.count_in_block(b.id)))
         .cloned()
         .collect();
     for block in stale {
         let mut fixed = Block::clone(&block);
         if let BlockData::Ink(data) = &mut fixed.data {
-            data.stroke_count = page.ink.count_in_block(block.id);
+            data.stroke_count = ink.count_in_block(block.id);
         }
         // The block exists, so replacing it can't fail.
-        let _ = page.blocks.replace(Arc::new(fixed));
+        let _ = blocks.replace(Arc::new(fixed));
+    }
+}
+
+/// A copy of the page whose ink is empty: no strokes, segments, or pending records.
+fn without_strokes(page: &Page) -> Page {
+    Page {
+        id: page.id,
+        title: page.title.clone(),
+        created: page.created,
+        modified: page.modified,
+        tags: page.tags.clone(),
+        view: page.view.clone(),
+        blocks: page.blocks.clone(),
+        reading_order: page.reading_order.clone(),
+        assets: page.assets.clone(),
+        ink: Ink::default(),
+        recordings: page.recordings.clone(),
+        encryption: page.encryption.clone(),
+        revision: page.revision.clone(),
+        extra: page.extra.clone(),
+        format: page.format.clone(),
     }
 }
 
