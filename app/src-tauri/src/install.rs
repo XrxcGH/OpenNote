@@ -334,25 +334,52 @@ pub async fn install_move_to_user_programs(app: AppHandle) -> IpcResult<()> {
     Ok(())
 }
 
-/// Deletes the exe this copy was moved from, once the old process has let go of it. Only something named like
-/// OpenNote's own exe is deleted, and never the running one.
-pub fn delete_moved_from(old: PathBuf) {
+/// Why a `--moved-from` argument isn't the copy this one was made from, or `Ok` when it is. The argument comes
+/// from the command line, which anything can write, so it is believed only when it matches what `copy_exe` made:
+/// the running exe sits in the Programs folder, and `old` is a different file outside it, named like OpenNote's
+/// exe, with the same bytes.
+fn check_moved_from(running: &Path, programs: &Path, old: &Path) -> Result<(), &'static str> {
+    if !running.parent().is_some_and(|folder| same_folder(folder, programs)) {
+        return Err("this copy doesn't run from the Programs folder");
+    }
+    if is_inside(old, programs) || same_folder(old, running) {
+        return Err("the file is this copy or lives in the Programs folder");
+    }
     let name = old
         .file_name()
         .map(|name| name.to_string_lossy().to_lowercase())
         .unwrap_or_default();
-    let running = std::env::current_exe().unwrap_or_default();
-    if !name.starts_with("opennote") || !name.ends_with(".exe") || same_folder(&old, &running) {
-        log::warn!("Left {} alone: it isn't a copy of OpenNote to remove.", old.display());
-        return;
+    if !name.starts_with("opennote") || !name.ends_with(".exe") {
+        return Err("the file isn't named like OpenNote's exe");
     }
+    match (file_hash(old), file_hash(running)) {
+        (Ok(old_hash), Ok(running_hash)) if old_hash == running_hash => Ok(()),
+        (Ok(_), Ok(_)) => Err("the file isn't a copy of this one"),
+        _ => Err("the file can't be read"),
+    }
+}
+
+/// Deletes the exe this copy was moved from, once the old process has let go of it. Returns whether the argument
+/// was believed (see [`check_moved_from`]); anything else is left alone and logged.
+pub fn delete_moved_from(paths: &Paths, old: PathBuf) -> bool {
+    let running = std::env::current_exe().unwrap_or_default();
+    if let Err(why) = check_moved_from(&running, &programs_dir(paths), &old) {
+        log::warn!("Left {} alone: {why}.", old.display());
+        return false;
+    }
+    remove_when_free(old, DELETE_RETRY_FOR);
+    true
+}
+
+/// Deletes `old` on another thread, trying again while something holds it, for up to `retry_for`.
+fn remove_when_free(old: PathBuf, retry_for: Duration) {
     thread::spawn(move || {
         let started = Instant::now();
         loop {
             match fs::remove_file(&old) {
                 Ok(()) => return log::info!("Removed the old copy at {}.", old.display()),
                 Err(error) if error.kind() == io::ErrorKind::NotFound => return,
-                Err(error) if started.elapsed() >= DELETE_RETRY_FOR => {
+                Err(error) if started.elapsed() >= retry_for => {
                     return log::warn!("Couldn't remove the old copy at {}: {error}", old.display());
                 }
                 Err(_) => thread::sleep(Duration::from_millis(250)),

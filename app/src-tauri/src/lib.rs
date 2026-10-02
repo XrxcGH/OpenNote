@@ -50,9 +50,12 @@ pub fn run(context: EarlyContext) {
     let loaded = SettingsStore::load(&paths);
     let (state, state_notice) = DeviceStateStore::load(&paths);
     perf::mark("settingsLoaded", None);
-    let launch = boot::Launch { args, guard };
-    if let Some(old) = launch.args.moved_from.clone() {
-        install::delete_moved_from(old);
+    let mut launch = boot::Launch { args, guard };
+    // A moved-from path that isn't the copy this one was made from is dropped, so it also gets no "Moved" notice.
+    if let Some(old) = launch.args.moved_from.take() {
+        if install::delete_moved_from(&paths, old.clone()) {
+            launch.args.moved_from = Some(old);
+        }
     }
     let settings = loaded.store.get();
     let mut notices = loaded.notices;

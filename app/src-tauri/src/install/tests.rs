@@ -131,14 +131,82 @@ fn the_shortcut_is_created_with_its_app_user_model_id() {
     assert!(bytes.windows(id.len()).any(|window| window == id.as_slice()));
 }
 
-#[test]
-fn leaves_anything_but_an_opennote_exe_alone() {
+/// A downloaded copy and the copy `copy_exe` made in a Programs folder, as they are after a move.
+struct Move {
+    _dir: tempfile::TempDir,
+    programs: PathBuf,
+    running: PathBuf,
+    old: PathBuf,
+}
+
+fn after_a_move() -> Move {
     let dir = tempfile::tempdir().expect("a temp folder");
-    let other = dir.path().join("important.exe");
-    fs::write(&other, b"x").expect("a file");
-    delete_moved_from(other.clone());
-    thread::sleep(Duration::from_millis(300));
-    assert!(other.exists());
+    let old = dir.path().join("Downloads").join("OpenNote_Windows.exe");
+    fs::create_dir_all(old.parent().expect("a folder")).expect("a folder");
+    fs::write(&old, b"the app").expect("the download");
+    let programs = dir.path().join("Programs").join("OpenNote");
+    let running = copy_exe(&old, &programs).expect("copies");
+    Move {
+        _dir: dir,
+        programs,
+        running,
+        old,
+    }
+}
+
+#[test]
+fn believes_the_copy_it_was_moved_from() {
+    let moved = after_a_move();
+    assert_eq!(check_moved_from(&moved.running, &moved.programs, &moved.old), Ok(()));
+}
+
+#[test]
+fn leaves_the_installed_copy_and_staged_updates_alone() {
+    let moved = after_a_move();
+    // A crafted command line names the installed copy, or a staged update next to it.
+    let staged = moved.programs.join("updates").join("OpenNote-1.0.0-windows-x86_64.exe");
+    fs::create_dir_all(staged.parent().expect("a folder")).expect("a folder");
+    fs::copy(&moved.running, &staged).expect("a staged copy");
+    for target in [&moved.running, &staged] {
+        assert!(check_moved_from(&moved.running, &moved.programs, target).is_err());
+    }
+}
+
+#[test]
+fn leaves_a_different_file_alone_even_when_it_is_named_like_opennote() {
+    let moved = after_a_move();
+    let other = moved.old.with_file_name("OpenNote_notes.exe");
+    fs::write(&other, b"someone else's program").expect("a file");
+    assert!(check_moved_from(&moved.running, &moved.programs, &other).is_err());
+}
+
+#[test]
+fn leaves_anything_not_named_like_opennote_alone() {
+    let moved = after_a_move();
+    let renamed = moved.old.with_file_name("important.exe");
+    fs::copy(&moved.old, &renamed).expect("a copy");
+    assert!(check_moved_from(&moved.running, &moved.programs, &renamed).is_err());
+    assert!(check_moved_from(
+        &moved.running,
+        &moved.programs,
+        &moved.old.with_file_name("OpenNote.txt")
+    )
+    .is_err());
+}
+
+#[test]
+fn ignores_the_argument_when_this_copy_is_not_the_installed_one() {
+    let moved = after_a_move();
+    // Run from the download, as `Downloads\OpenNote.exe --moved-from <installed copy>` would be.
+    assert!(check_moved_from(&moved.old, &moved.programs, &moved.running).is_err());
+    assert!(check_moved_from(&moved.old, &moved.programs, &moved.old).is_err());
+}
+
+#[test]
+fn ignores_a_file_that_is_not_there() {
+    let moved = after_a_move();
+    let gone = moved.old.with_file_name("OpenNote_gone.exe");
+    assert!(check_moved_from(&moved.running, &moved.programs, &gone).is_err());
 }
 
 #[test]
@@ -146,7 +214,7 @@ fn removes_the_old_copy_after_a_move() {
     let dir = tempfile::tempdir().expect("a temp folder");
     let old = dir.path().join("OpenNote_Windows64.exe");
     fs::write(&old, b"x").expect("a file");
-    delete_moved_from(old.clone());
+    remove_when_free(old.clone(), DELETE_RETRY_FOR);
     let deadline = Instant::now() + Duration::from_secs(5);
     while old.exists() && Instant::now() < deadline {
         thread::sleep(Duration::from_millis(50));
