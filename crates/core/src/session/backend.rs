@@ -23,7 +23,9 @@ use crate::session::journal_thread::{BaseSnapshot, JournalConfig, JournalHandle,
 use crate::store::assets::{AssetSource, ImportCtx};
 use crate::store::external::{classify_change, ExternalDecision};
 use crate::store::fs::{Durability, FileStamp, FolderIdentity, Fs};
+use crate::store::gc::RefSet;
 use crate::store::history::{self, Retention, ThinReport};
+use crate::store::journal::format::decode_header;
 use crate::store::journal::reader::{list_journals, KeyJournals};
 use crate::store::layout::{DataLayout, NotebookKey, NotebookLayout};
 use crate::store::page_store::{
@@ -37,6 +39,8 @@ use crate::time::{Clock, Timestamp};
 
 #[cfg(any(test, feature = "testing"))]
 pub mod mem;
+#[cfg(test)]
+mod tests;
 
 /// A page's journal, as a page session uses it.
 pub trait PageJournal: Send + Sync {
@@ -171,7 +175,7 @@ pub trait Backend: Send + Sync + 'static {
     /// Reads one version.
     fn open_version(&self, dir: &Path, rev: RevisionId) -> Result<ReadPage, CoreError>;
     /// Thins the history and collects garbage of a page that is not open.
-    fn tidy_page(&self, dir: &Path, now: Timestamp, keep: Retention) -> Result<(), CoreError>;
+    fn tidy_page(&self, dir: &Path, page: PageId, now: Timestamp, keep: Retention) -> Result<(), CoreError>;
     /// Deletes the saved versions of a page, keeping the named ones when `keep_named` is set.
     fn delete_history(&self, dir: &Path, keep_named: bool) -> Result<ThinReport, CoreError>;
     /// Imports a file as an asset of a page.
@@ -268,6 +272,25 @@ impl StoreBackend {
             codec: self.config.codec.as_ref(),
             dir,
         }
+    }
+
+    /// What the page's journal generations still refer to. Recovery can rebuild the page from their base
+    /// snapshots (spec 20.10), which may list segments, assets, and a revision that `page.json` no longer does.
+    /// A generation that can't be read fails the call, so nothing is tidied on a guess.
+    fn journal_refs(&self, page: PageId) -> Result<(RefSet, Vec<RevisionId>), CoreError> {
+        let (fs, limits) = (self.config.fs.as_ref(), &self.config.limits);
+        let mut refs = RefSet::default();
+        let mut revisions = Vec::new();
+        for journals in self.journals()? {
+            for path in journals.pages.get(&page).into_iter().flatten() {
+                let decoded = decode_header(&fs.read(path, u64::MAX)?, limits.gunzip_bytes)?;
+                revisions.push(decoded.header.base);
+                if let Some(base) = decoded.base {
+                    refs.add_page(&self.config.codec.read_page(&base, limits)?.page);
+                }
+            }
+        }
+        Ok((refs, revisions))
     }
 }
 
@@ -389,10 +412,10 @@ impl Backend for StoreBackend {
         history::delete_versions(&self.files(dir), keep_named)
     }
 
-    fn tidy_page(&self, dir: &Path, now: Timestamp, keep: Retention) -> Result<(), CoreError> {
+    fn tidy_page(&self, dir: &Path, page: PageId, now: Timestamp, keep: Retention) -> Result<(), CoreError> {
         let files = self.files(dir);
-        history::thin(&files, now, 0, keep, &[])?;
-        let refs = crate::store::gc::RefSet::default();
+        let (refs, protected) = self.journal_refs(page)?;
+        history::thin(&files, now, 0, keep, &protected)?;
         crate::store::gc::collect_garbage(&files, &refs, now, self.config.timings.gc_grace)?;
         Ok(())
     }

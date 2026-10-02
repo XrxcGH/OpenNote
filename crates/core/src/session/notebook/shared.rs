@@ -196,7 +196,7 @@ impl NotebookShared {
                     return;
                 }
                 let now = notebook.ctx.clock.now();
-                let _ = notebook.ctx.backend.tidy_page(&dir, now, notebook.ctx.retention());
+                let _ = notebook.ctx.backend.tidy_page(&dir, id, now, notebook.ctx.retention());
             });
     }
 

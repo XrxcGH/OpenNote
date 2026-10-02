@@ -381,7 +381,7 @@ impl Backend for MemBackend {
         Ok(ThinReport::default())
     }
 
-    fn tidy_page(&self, _dir: &Path, _now: Timestamp, _keep: Retention) -> Result<(), CoreError> {
+    fn tidy_page(&self, _dir: &Path, _page: PageId, _now: Timestamp, _keep: Retention) -> Result<(), CoreError> {
         Ok(())
     }
 
