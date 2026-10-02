@@ -4,6 +4,10 @@
 //! read-only like any notebook. Runs on the same day update that day's set, copying only the files that
 //! changed since its last run and removing files the notebook no longer has. Daily, weekly, and monthly sets
 //! are kept. Files are copied byte for byte, so protected sections stay encrypted in the copy.
+//!
+//! A set belongs to the notebook its marker names. Only those sets are updated, counted, or deleted, so the
+//! destination can hold other folders and other notebooks' sets. When the date's name is taken, the set is
+//! named like `2026-09-30 (2)`.
 
 use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -12,12 +16,15 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use super::{ensure_all, notebook_files};
-use crate::error::{CoreError, FsErrorKind};
+use crate::error::{CoreError, FsError, FsErrorKind};
 use crate::store::fs::Fs;
 use crate::time::Timestamp;
 
 /// The marker file at the root of every backup set. A notebook folder that holds it opens read-only.
 pub const MARKER: &str = ".opennote-backup.json";
+
+/// The most sets of one day under one destination: one for each notebook backed up there.
+const SETS_PER_DAY: u32 = 32;
 
 /// How many backup sets are kept.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -77,13 +84,12 @@ pub fn is_backup(fs: &dyn Fs, notebook_root: &Path) -> bool {
     fs.metadata(&notebook_root.join(MARKER)).is_ok()
 }
 
-/// When the newest complete backup set under `dest` finished.
-pub fn last_backup(fs: &dyn Fs, dest: &Path) -> Option<Timestamp> {
-    set_names(fs, dest)
+/// When the newest complete backup set of the notebook at `root` under `dest` finished.
+pub fn last_backup(fs: &dyn Fs, root: &Path, dest: &Path) -> Option<Timestamp> {
+    sets(fs, root, dest)
         .into_iter()
-        .filter_map(|name| read_marker(fs, &dest.join(name)))
-        .filter(|marker| marker.complete)
-        .filter_map(|marker| marker.finished)
+        .filter(|(_, marker)| marker.complete)
+        .filter_map(|(_, marker)| marker.finished)
         .max()
 }
 
@@ -98,11 +104,12 @@ pub fn backup_notebook(
     policy: &BackupPolicy,
 ) -> Result<BackupReport, CoreError> {
     let day = local_day(now, utc_offset_minutes);
-    let set = dest.join(&day);
+    ensure_all(fs, dest)?;
+    let set = day_set(fs, root, dest, &day)?;
     ensure_all(fs, &set)?;
     let mut marker = read_marker(fs, &set).unwrap_or_default();
     marker.complete = false;
-    marker.source = root.to_string_lossy().into_owned();
+    marker.source = source_of(root);
     write_marker(fs, &set, &marker)?;
     let mut report = BackupReport {
         set: set.clone(),
@@ -115,8 +122,47 @@ pub fn backup_notebook(
     marker.finished = Some(now);
     write_marker(fs, &set, &marker)?;
     report.finished = Some(now);
-    report.dropped_sets = prune(fs, dest, policy)?;
+    report.dropped_sets = prune(fs, root, dest, policy)?;
     Ok(report)
+}
+
+/// The folder of the day's set: the one this notebook already has, or else the first free name. A folder that
+/// holds anything but this notebook's set is never written into.
+fn day_set(fs: &dyn Fs, root: &Path, dest: &Path, day: &str) -> Result<PathBuf, CoreError> {
+    let mut free = None;
+    for n in 1..=SETS_PER_DAY {
+        let set = dest.join(set_name(day, n));
+        match fs.read_dir(&set) {
+            Ok(_) if owns(fs, root, &set) => return Ok(set),
+            Ok(entries) if entries.is_empty() => {
+                free.get_or_insert(set);
+            }
+            Err(err) if err.kind == FsErrorKind::NotFound => {
+                free.get_or_insert(set);
+            }
+            // Another folder, another notebook's set, or a file.
+            Ok(_) | Err(_) => {}
+        }
+    }
+    free.ok_or_else(|| FsError::new(FsErrorKind::AlreadyExists, dest.join(day)).into())
+}
+
+fn set_name(day: &str, n: u32) -> String {
+    if n <= 1 {
+        day.to_owned()
+    } else {
+        format!("{day} ({n})")
+    }
+}
+
+/// How a set's marker names the notebook it copies.
+fn source_of(root: &Path) -> String {
+    root.to_string_lossy().into_owned()
+}
+
+/// Whether `set` is a backup set of the notebook at `root`.
+fn owns(fs: &dyn Fs, root: &Path, set: &Path) -> bool {
+    read_marker(fs, set).is_some_and(|marker| marker.source == source_of(root))
 }
 
 /// Copies the files that are new, or whose size or last-write time changed since the set's last run.
@@ -195,28 +241,35 @@ fn local_day(at: Timestamp, offset_minutes: i32) -> String {
     text.get(..10).unwrap_or(&text).to_owned()
 }
 
-/// The names of the backup sets under `dest`, newest first.
-fn set_names(fs: &dyn Fs, dest: &Path) -> Vec<String> {
-    let mut names: Vec<String> = fs
+/// The backup sets of the notebook at `root` under `dest`, with their markers, newest first. A folder without
+/// this notebook's marker is never one of them.
+fn sets(fs: &dyn Fs, root: &Path, dest: &Path) -> Vec<(String, Marker)> {
+    let source = source_of(root);
+    let mut sets: Vec<(String, Marker)> = fs
         .read_dir(dest)
         .unwrap_or_default()
         .into_iter()
         .filter(|e| e.is_dir && day_of(&e.name).is_some())
-        .map(|e| e.name)
+        .filter_map(|e| read_marker(fs, &dest.join(&e.name)).map(|marker| (e.name, marker)))
+        .filter(|(_, marker)| marker.source == source)
         .collect();
-    names.sort_by(|a, b| b.cmp(a));
-    names
+    sets.sort_by(|a, b| b.0.cmp(&a.0));
+    sets
 }
 
+/// The day of a set's name: `2026-09-30`, or `2026-09-30 (2)` when that name was taken.
 fn day_of(name: &str) -> Option<Timestamp> {
-    (name.len() == 10).then_some(())?;
-    Timestamp::parse(&format!("{name}T00:00:00Z")).ok()
+    let (day, rest) = (name.get(..10)?, name.get(10..)?);
+    let number = rest.strip_prefix(" (").and_then(|r| r.strip_suffix(')'));
+    let numbered = number.is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()));
+    (rest.is_empty() || numbered).then_some(())?;
+    Timestamp::parse(&format!("{day}T00:00:00Z")).ok()
 }
 
-/// Deletes the sets the policy doesn't keep: the newest `daily` days, and the newest set of each of the newest
-/// `weekly` weeks and `monthly` months.
-fn prune(fs: &dyn Fs, dest: &Path, policy: &BackupPolicy) -> Result<Vec<PathBuf>, CoreError> {
-    let names = set_names(fs, dest);
+/// Deletes the sets of the notebook at `root` the policy doesn't keep: the newest `daily` days, and the newest
+/// set of each of the newest `weekly` weeks and `monthly` months.
+fn prune(fs: &dyn Fs, root: &Path, dest: &Path, policy: &BackupPolicy) -> Result<Vec<PathBuf>, CoreError> {
+    let names: Vec<String> = sets(fs, root, dest).into_iter().map(|(name, _)| name).collect();
     let mut weeks = Vec::new();
     let mut months = Vec::new();
     let mut dropped = Vec::new();

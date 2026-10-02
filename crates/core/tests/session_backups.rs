@@ -35,11 +35,11 @@ fn a_backup_copies_what_is_on_screen_and_then_only_what_changed() {
     add_text(&mut real, 1, "First");
     let dest = real.dir.path().join("backups");
     let policy = BackupPolicy::default();
-    assert!(real.core.last_backup(&dest).is_none());
+    assert!(real.core.last_backup(real.notebook.path(), &dest).is_none());
 
     let first = real.notebook.backup_to(&dest, &policy, 0).unwrap();
     assert!(first.copied_files > 3, "the page was saved first and copied: {first:?}");
-    assert!(real.core.last_backup(&dest).is_some());
+    assert!(real.core.last_backup(real.notebook.path(), &dest).is_some());
     let again = real.notebook.backup_to(&dest, &policy, 0).unwrap();
     assert_eq!((again.copied_files, again.removed_files), (0, 0), "nothing changed");
 

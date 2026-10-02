@@ -63,7 +63,7 @@ fn scheduled_backups_copy_only_what_changed() {
     assert_eq!(first.set, dest.join("2026-09-30"));
     assert_eq!(first.copied_files, 6, "every file but the temporary one and the lock");
     assert!(is_backup(&fs, &first.set));
-    assert_eq!(last_backup(&fs, dest), Some(now));
+    assert_eq!(last_backup(&fs, Path::new(ROOT), dest), Some(now));
     let page = Path::new(ROOT).join(SECTION).join(PAGE);
     let later = now.saturating_add(Duration::from_secs(3_600));
     let again = backup_notebook(&fs, Path::new(ROOT), dest, later, 0, &policy).unwrap();
@@ -109,4 +109,84 @@ fn backups_are_due_on_schedule() {
     assert!(backup_due(None, hour, now));
     assert!(!backup_due(Some(now.saturating_sub(hour / 2)), hour, now));
     assert!(backup_due(Some(now.saturating_sub(hour)), hour, now));
+}
+
+#[test]
+fn pruning_never_deletes_folders_it_did_not_create() {
+    let fs = notebook();
+    let dest = Path::new("/usb/backups");
+    fs.put(&dest.join("2024-03-10").join("photo.jpg"), b"photo");
+    fs.put(&dest.join("2024-05-02").join("export.csv"), b"export");
+    let policy = BackupPolicy {
+        daily: 1,
+        weekly: 1,
+        monthly: 1,
+    };
+    let start = at("2026-08-01T12:00:00Z");
+    for day in 0..10u64 {
+        let now = start.saturating_add(Duration::from_secs(86_400 * day));
+        backup_notebook(&fs, Path::new(ROOT), dest, now, 0, &policy).unwrap();
+    }
+    assert_eq!(fs.get(&dest.join("2024-03-10").join("photo.jpg")).unwrap(), b"photo");
+    assert_eq!(fs.get(&dest.join("2024-05-02").join("export.csv")).unwrap(), b"export");
+    assert!(
+        !fs.exists(&dest.join("2026-08-01")),
+        "this notebook's own old sets still go"
+    );
+}
+
+#[test]
+fn a_date_folder_that_is_not_a_set_of_this_notebook_is_left_alone() {
+    let fs = notebook();
+    let dest = Path::new("/usb/backups");
+    fs.put(&dest.join("2026-09-30").join("photo.jpg"), b"photo");
+    let report = backup_notebook(
+        &fs,
+        Path::new(ROOT),
+        dest,
+        at("2026-09-30T14:00:00Z"),
+        0,
+        &BackupPolicy::default(),
+    )
+    .unwrap();
+    assert_ne!(report.set, dest.join("2026-09-30"));
+    assert!(
+        !fs.exists(&dest.join("2026-09-30").join(scheduled::MARKER)),
+        "no marker goes into a folder it doesn't own"
+    );
+    assert_eq!(fs.get(&report.set.join("notebook.json")).unwrap(), b"notebook");
+}
+
+#[test]
+fn two_notebooks_can_share_a_backup_folder() {
+    let fs = notebook();
+    let other = Path::new("/notes/Chemistry");
+    fs.put(&other.join("notebook.json"), b"chemistry");
+    fs.put(&other.join(SECTION).join("section.json"), b"elements");
+    let dest = Path::new("/usb/backups");
+    let policy = BackupPolicy {
+        daily: 1,
+        weekly: 0,
+        monthly: 0,
+    };
+    let now = at("2026-09-30T14:00:00Z");
+    let biology = backup_notebook(&fs, Path::new(ROOT), dest, now, 0, &policy).unwrap();
+    let chemistry = backup_notebook(&fs, other, dest, now, 0, &policy).unwrap();
+    assert_ne!(biology.set, chemistry.set, "each notebook gets its own set");
+    assert_eq!(chemistry.removed_files, 0);
+    let again = backup_notebook(&fs, Path::new(ROOT), dest, now, 0, &policy).unwrap();
+    assert_eq!(
+        (again.set, again.copied_files, again.removed_files),
+        (biology.set.clone(), 0, 0)
+    );
+    assert_eq!(fs.get(&biology.set.join("notebook.json")).unwrap(), b"notebook");
+    assert_eq!(fs.get(&chemistry.set.join("notebook.json")).unwrap(), b"chemistry");
+    let tomorrow = now.saturating_add(Duration::from_secs(86_400));
+    let next = backup_notebook(&fs, other, dest, tomorrow, 0, &policy).unwrap();
+    assert_eq!(
+        next.dropped_sets,
+        std::slice::from_ref(&chemistry.set),
+        "only its own old set goes"
+    );
+    assert!(fs.exists(&biology.set.join("notebook.json")));
 }

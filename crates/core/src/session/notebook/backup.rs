@@ -55,7 +55,7 @@ impl NotebookHandle {
     ) -> Result<Option<BackupReport>, CoreError> {
         let fs = self.inner.ctx.fs.as_ref();
         let now = self.inner.ctx.clock.now();
-        if !backup::backup_due(backup::last_backup(fs, dest), every, now) {
+        if !backup::backup_due(backup::last_backup(fs, &self.inner.root, dest), every, now) {
             return Ok(None);
         }
         self.backup_to(dest, policy, utc_offset_minutes).map(Some)
@@ -69,9 +69,10 @@ impl NotebookHandle {
 }
 
 impl Core {
-    /// When the newest complete backup under `dest` finished, for "Last backup" in Settings.
-    pub fn last_backup(&self, dest: &Path) -> Option<Timestamp> {
-        backup::last_backup(self.ctx().fs.as_ref(), dest)
+    /// When the newest complete backup of the notebook folder `notebook` under `dest` finished, for "Last
+    /// backup" in Settings. Other notebooks' sets in the same folder don't count.
+    pub fn last_backup(&self, notebook: &Path, dest: &Path) -> Option<Timestamp> {
+        backup::last_backup(self.ctx().fs.as_ref(), notebook, dest)
     }
 
     /// What Setup tells a person who picks `folder` for their notes, or `None` when no sync tool manages it.
