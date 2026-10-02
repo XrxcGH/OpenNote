@@ -715,7 +715,7 @@ Password-protected sections arrive in a later version. Version 1 reserves their 
 A frame has `x`, `y`, `w`, `h`, and `rotate`, all in page units except `rotate`, which is in degrees. Each is optional.
 
 - A block whose frame has both `x` and `y` is **floating**. It sits at that position on the page. A missing `h` means "as tall as the content", which text boxes use. A missing `w` and `h` on an ink block means it has no bounds.
-- A floating `text` block without `w` is as wide as its content, but no narrower than 120 units and no wider than 600. Longer text wraps at 600. Units are page units (section 2.6), so every reader gives a text box the same width.
+- A floating `text` block without `w` is as wide as its content, from 120 to 600 units. Longer text wraps at 600.
 - A block without a frame, or whose frame has only `w` or `h`, is **flowing**. Flowing blocks stack from top to bottom in order, and `w` and `h` act as size hints.
 
 On a `freeform` page, new blocks float. On a `flow` page, new blocks flow. Either kind can appear on either page. For example, a flow page can carry floating handwriting over its text.
@@ -936,7 +936,7 @@ Every other character is written as itself. Text never contains `U+000D`: a line
 
 - Exactly one blank line separates blocks. There are no blank lines at the start, no trailing spaces on any line, and no newline at the end of the `markdown` string.
 - A list is tight, with no blank lines between items, unless an item holds more than one block. Then one blank line separates its items.
-- Two lists of one kind, both bulleted (task lists included) or both numbered, are never written next to each other, because the blank line between them would read back as one loose list. A writer joins them first: the items of the later list follow those of the earlier one, which keeps its start number. A bulleted list beside a numbered list stays two lists.
+- A writer never writes two lists of one kind next to each other, both bulleted (task lists included) or both numbered. The blank line between them would read back as one loose list. It joins them first: the later list's items follow the earlier list's, which keeps its start number. A bulleted list beside a numbered list stays two lists.
 - Marks nest in this order, outermost first: link, strong emphasis, emphasis, strikethrough, underline, highlight, text color, text size, subscript or superscript, and code. Where two ranges overlap, the mark that comes later in this order is closed and reopened.
 - Whitespace at either edge of a marked range is moved outside the delimiters.
 - Where a delimiter (`*`, `**`, `~~`, or `==`) would not open or close under CommonMark's rules for that position, the writer uses the matching HTML tag from section 7.4 for that range.

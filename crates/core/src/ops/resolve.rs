@@ -56,6 +56,20 @@ pub enum Edit {
         /// Its new Markdown.
         markdown: String,
     },
+    /// One splice in a text block's Markdown, for an editor that already knows what changed. It resolves to one
+    /// `EditText` operation with the same checks as any splice: `at` is an offset in UTF-8 bytes, on a character
+    /// boundary, and `del` is the text found there. A mismatch means the interface is out of date, so it must
+    /// reload the page.
+    SpliceText {
+        /// The text block.
+        block: BlockId,
+        /// The offset of the splice in the block's Markdown, in UTF-8 bytes.
+        at: u32,
+        /// The text deleted at `at`. Empty for a pure insertion.
+        del: String,
+        /// The text inserted at `at`. Empty for a pure deletion.
+        ins: String,
+    },
     /// A new block after or before a sibling. The core makes its order key and timestamps.
     InsertBlock {
         /// The block.
@@ -293,6 +307,7 @@ pub fn resolve(page: &Page, req: &TxnRequest, ctx: &ResolveCtx) -> Result<Txn, E
 fn resolve_edit(c: &EditCtx<'_>, edit: &Edit) -> Result<Vec<Op>, EditError> {
     match edit {
         Edit::SetText { block, markdown } => blocks::set_text(c, *block, markdown),
+        Edit::SpliceText { block, at, del, ins } => blocks::splice_text(c, *block, *at, del, ins),
         Edit::InsertBlock { block, after, before } => blocks::insert_block(c, block, *after, *before),
         Edit::MoveBlock {
             block,

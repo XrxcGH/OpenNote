@@ -289,3 +289,13 @@ impl Session {
         count
     }
 }
+
+/// `spliceText`.
+pub fn splice_text(block: BlockId, at: u32, del: &str, ins: &str) -> Edit {
+    Edit::SpliceText {
+        block,
+        at,
+        del: del.to_owned(),
+        ins: ins.to_owned(),
+    }
+}

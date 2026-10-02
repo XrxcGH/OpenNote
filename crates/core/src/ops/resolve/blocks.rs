@@ -1,4 +1,4 @@
-//! Resolving the edits that change blocks: `setText`, `insertBlock`, `moveBlock`, `patchBlock`, and
+//! Resolving the edits that change blocks: `setText`, `spliceText`, `insertBlock`, `moveBlock`, `patchBlock`, and
 //! `deleteBlocks`.
 
 use std::collections::HashSet;
@@ -8,7 +8,7 @@ use serde_json::Value;
 
 use super::place::place;
 use super::{find_block, invalid, locked, EditCtx};
-use crate::error::EditError;
+use crate::error::{ApplyError, EditError};
 use crate::id::{BlockId, Id};
 use crate::model::{Block, BlockData, Frame, JsonMap, Lock, NamedValue, Page};
 use crate::ops::apply::checks::{check_block, check_frame, lock_level, LockLevel};
@@ -18,7 +18,7 @@ use crate::ops::merge_patch::view::{
 use crate::ops::merge_patch::{apply_patch, diff, round_trips};
 use crate::ops::resolve::NewBlock;
 use crate::ops::text_diff;
-use crate::ops::{Op, PageFields, Placement, Stamps};
+use crate::ops::{Op, PageFields, Placement, Splice, Stamps};
 
 impl EditCtx<'_> {
     fn stamps(&self, block: &Block) -> Stamps {
@@ -55,6 +55,39 @@ pub(super) fn set_text(c: &EditCtx<'_>, id: BlockId, markdown: &str) -> Result<V
         })
         .into_iter()
         .collect())
+}
+
+/// `spliceText`: the editor's own splice, checked against the block's Markdown.
+pub(super) fn splice_text(c: &EditCtx<'_>, id: BlockId, at: u32, del: &str, ins: &str) -> Result<Vec<Op>, EditError> {
+    let block = find_block(c.page, id)?;
+    editable(block)?;
+    let BlockData::Text(text) = &block.data else {
+        return Err(invalid(format!("{id} is not a text block")));
+    };
+    let start = at as usize;
+    if text.markdown.get(start..start.saturating_add(del.len())) != Some(del) {
+        let detail = format!("splice 0 at byte {at} of {id} does not delete the text found there");
+        return Err(EditError::Precondition(ApplyError {
+            op_index: 0,
+            check: "spliceMatches",
+            detail,
+        }));
+    }
+    if (text.markdown.len() - del.len()) as u64 + ins.len() as u64 > c.ctx.limits.markdown_bytes {
+        return Err(invalid("the Markdown passes the limit"));
+    }
+    if del == ins {
+        return Ok(Vec::new());
+    }
+    Ok(vec![Op::EditText {
+        id,
+        splices: vec![Splice {
+            at,
+            del: del.to_owned(),
+            ins: ins.to_owned(),
+        }],
+        stamps: c.stamps(block),
+    }])
 }
 
 /// Every block ID and text element ID on the page, except the elements of `except`.

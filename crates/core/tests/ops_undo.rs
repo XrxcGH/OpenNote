@@ -355,3 +355,27 @@ fn followers_that_move_with_typing_do_not_split_the_group() {
     s.edit(&mut stack, "main-1", (100, group), vec![again]);
     assert_eq!(stack.undo.len(), 2);
 }
+
+#[test]
+fn spliced_typing_groups_like_set_text() {
+    let (mut s, mut stack) = (Session::new(), stack());
+    let (text, start) = (s.text(), s.markdown());
+    let group = typing(&text.to_string());
+    for word in ["a", "b", "c"] {
+        let at = u32::try_from(s.markdown().len()).unwrap();
+        s.edit(
+            &mut stack,
+            "main-1",
+            (200, group.clone()),
+            vec![splice_text(text, at, "", word)],
+        );
+    }
+    assert_eq!(s.markdown(), format!("{start}abc"));
+    assert_eq!(stack.undo.len(), 1, "typing by splice joins one step");
+    let Op::EditText { splices, .. } = &stack.undo[0].forward[0] else {
+        panic!()
+    };
+    assert_eq!((splices.len(), splices[0].ins.as_str()), (1, "abc"));
+    assert_eq!(s.undo_all(&mut stack), 1);
+    assert_eq!(s.markdown(), start);
+}

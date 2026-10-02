@@ -33,6 +33,61 @@ fn set_text_gives_one_splice() {
 }
 
 #[test]
+fn splice_text_gives_one_checked_splice() {
+    let page = sample_page();
+    let [text, image, ..] = ids(&page)[..] else { panic!() };
+    let old = markdown(&page, text);
+    let at = old.find("thylakoid").unwrap();
+    let at32 = u32::try_from(at).unwrap();
+    let (changed, txn) = apply_one(&page, splice_text(text, at32, "thylakoid", "stroma"));
+    assert_eq!(markdown(&changed, text), old.replace("thylakoid", "stroma"));
+    assert!(matches!(
+        &txn.ops[..],
+        [Op::EditText { splices, .. }] if splices.len() == 1 && splices[0].at == at32 && splices[0].ins == "stroma"
+    ));
+    // A pure insertion, a pure deletion, and a splice that changes nothing.
+    let (inserted, _) = apply_one(&page, splice_text(text, 0, "", "New "));
+    assert_eq!(markdown(&inserted, text), format!("New {old}"));
+    let (deleted, _) = apply_one(&page, splice_text(text, at32, "thylakoid", ""));
+    assert_eq!(markdown(&deleted, text), old.replace("thylakoid", ""));
+    assert!(changes_nothing(
+        &page,
+        splice_text(text, at32, "thylakoid", "thylakoid")
+    ));
+    assert!(changes_nothing(&page, splice_text(text, 0, "", "")));
+    assert_eq!(code(&page, splice_text(image, 0, "", "x")), "invalid");
+    let missing = BlockId(Id::from_parts(1, 1));
+    assert_eq!(code(&page, splice_text(missing, 0, "", "x")), "notFound");
+}
+
+#[test]
+fn splice_text_refuses_a_splice_that_does_not_match() {
+    let page = sample_page();
+    let [text, ..] = ids(&page)[..] else { panic!() };
+    let old = markdown(&page, text);
+    let at = u32::try_from(old.find("thylakoid").unwrap()).unwrap();
+    // The text at the offset is not the deleted text, and the interface must reload the page.
+    let error = run_one(&page, splice_text(text, at + 1, "thylakoid", "x")).unwrap_err();
+    assert_eq!((error.code(), error.resync()), ("precondition", true));
+    assert_eq!(code(&page, splice_text(text, u32::MAX, "", "x")), "precondition");
+    assert_eq!(code(&page, splice_text(text, at, "thylakoids", "x")), "precondition");
+    // The offset of a character's second byte is not a boundary, even when nothing is deleted.
+    let (with_emoji, _) = apply_one(&page, splice_text(text, 0, "", "\u{1f33f}"));
+    assert_eq!(code(&with_emoji, splice_text(text, 1, "", "x")), "precondition");
+    assert_eq!(code(&with_emoji, splice_text(text, 4, "", "x")), "ok");
+    let long = "x".repeat(4 * 1024 * 1024 + 1);
+    assert_eq!(code(&page, splice_text(text, 0, "", &long)), "invalid");
+}
+
+#[test]
+fn locks_stop_splice_text() {
+    let mut page = sample_page();
+    let text = ids(&page)[0];
+    with_lock(&mut page, text, Lock::All);
+    assert_eq!(code(&page, splice_text(text, 0, "", "x")), "locked");
+}
+
+#[test]
 fn locks_reject_edits_with_their_code() {
     let mut page = sample_page();
     let text = ids(&page)[0];
