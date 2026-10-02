@@ -21,6 +21,7 @@ test('Ctrl+K runs a command by name, and announces the result count', async ({ p
 
 test('typing in the palette keeps up', async ({ page }) => {
   await page.goto('/');
+  await expect(page.getByText('Biology 101')).toBeVisible();
   await page.keyboard.press('Control+KeyK');
   const box = page.getByRole('combobox');
   const text = 'toggle dark mode';
