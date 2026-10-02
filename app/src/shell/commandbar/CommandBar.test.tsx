@@ -1,12 +1,12 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { userEvent } from 'vitest/browser';
 import { chord, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
 import { commandBar, commands, contextMenus, titleBarItems } from '../../registries';
 import type { CommandBarItem } from '../../registries/types';
 import type { MessageKey } from '../../strings/t';
-import { expectFocus, expectNoAxeViolations, renderApp } from '../../test';
+import { expectFocus, expectNoAxeViolations, renderApp, setViewport } from '../../test';
 import { registerRegionMain } from '../regions';
 import { diagAct } from '../../test/zzdiag';
 
@@ -19,7 +19,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   stops.splice(0).forEach((stop) => stop());
-  await page.viewport(1280, 800);
+  await setViewport(1280, 800);
 });
 
 function command(id: string, title: MessageKey, rest: Partial<CommandDef> = {}) {
@@ -121,7 +121,7 @@ describe('the command bar overflow', () => {
       command(`long${i}`, title);
       tool(`long${i}`, { priority: 200 });
     });
-    await page.viewport(640, 800);
+    await setViewport(640, 800);
     await renderApp({ sizeClass: 'medium' });
     const toolbar = screen.getByRole('toolbar', { name: 'Home' });
     const more = await within(toolbar).findByRole('button', { name: 'More commands' });

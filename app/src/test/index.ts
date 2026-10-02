@@ -5,4 +5,5 @@ export { expectNoAxeViolations } from './axe';
 export { expectFocus, pressChord } from './keys';
 export { createTestPlatform } from './platform';
 export { disposeApp, renderApp, renderUi } from './render';
+export { setViewport } from './viewport';
 export { announcements } from '../ui/announce';

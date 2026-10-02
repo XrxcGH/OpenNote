@@ -1,14 +1,14 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { page, userEvent } from 'vitest/browser';
+import { userEvent } from 'vitest/browser';
 import { getLocation } from '../../app/location';
 import { closeOverlay } from '../../shell/commandbar/overlays';
 import { getSettings } from '../../state/settings';
-import { expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
+import { expectFocus, expectNoAxeViolations, pressChord, renderApp, setViewport } from '../../test';
 
 afterEach(async () => {
   closeOverlay();
-  await page.viewport(1280, 800);
+  await setViewport(1280, 800);
 });
 
 async function openSettings() {

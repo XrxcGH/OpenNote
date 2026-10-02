@@ -3,11 +3,10 @@
 
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { page } from 'vitest/browser';
 import { navigate } from '../../app/location';
 import { executeCommand } from '../../commands/registry';
 import type { NodeId } from '../../services/notes/types';
-import { expectNoAxeViolations, pressChord, renderApp } from '../../test';
+import { expectNoAxeViolations, pressChord, renderApp, setViewport } from '../../test';
 import { confirm } from '../../ui';
 import { overflowOf } from './fit';
 
@@ -78,7 +77,7 @@ describe('the title bar items', () => {
   });
 
   it('fits the narrowest medium window, with the arrows and the theme toggle still in the bar', async () => {
-    await page.viewport(600, 700);
+    await setViewport(600, 700);
     try {
       await renderApp({ sizeClass: 'medium' });
       act(() => navigate(mitosis));
@@ -87,7 +86,7 @@ describe('the title bar items', () => {
       expect(within(banner()).getByRole('button', { name: 'Go back' })).toBeTruthy();
       expect(within(banner()).getByRole('switch', { name: 'Dark mode' })).toBeTruthy();
     } finally {
-      await page.viewport(1280, 800);
+      await setViewport(1280, 800);
     }
   });
 });
