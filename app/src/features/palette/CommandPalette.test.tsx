@@ -6,6 +6,7 @@ import { configureCommands } from '../../commands/registry';
 import { closeOverlay } from '../../shell/commandbar/overlays';
 import { announcements, expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
 import type { NodeId, NotesService } from '../../services/notes/types';
+import { diagAct } from '../../test/zzdiag';
 
 const id = (value: string) => value as NodeId;
 
@@ -54,9 +55,9 @@ describe('the command palette', () => {
   it('announces how many results there are, then "No results"', async () => {
     await renderApp();
     const box = await openWith('Ctrl+K');
-    await userEvent.type(box, 'dark');
+    await diagAct('palette1', box, () => userEvent.type(box, 'dark'));
     await waitFor(() => expect(announcements().at(-1)).toMatch(/^\d+ results?$/), { timeout: 3000 });
-    await userEvent.type(box, 'zzqx');
+    await diagAct('palette2', box, () => userEvent.type(box, 'zzqx'));
     await waitFor(() => expect(announcements().at(-1)).toBe('No results'), { timeout: 3000 });
     expect(screen.queryAllByRole('option')).toHaveLength(0);
   });
@@ -92,7 +93,7 @@ describe('the quick switcher', () => {
     await renderApp();
     const box = await openWith('Ctrl+O');
     expect(screen.getByRole('dialog', { name: 'Go to a page' })).toBeTruthy();
-    await userEvent.type(box, 'mitosis');
+    await diagAct('switcher', box, () => userEvent.type(box, 'mitosis'));
     await screen.findByRole('option', { name: /Mitosis/ });
     await userEvent.keyboard('{Enter}');
     await waitFor(() => expect(getLocation()).toMatchObject({ view: 'workspace', pageId: 'p-mitosis' }));
