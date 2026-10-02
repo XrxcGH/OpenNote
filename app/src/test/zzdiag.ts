@@ -71,6 +71,23 @@ export const environment = () => {
 
 /** Used by the real specs while the hang is being diagnosed: acts, and if it hangs says what the page looks like. */
 export async function diagAct(label: string, el: Element, act: () => Promise<unknown>): Promise<void> {
+  let ticks = 0;
+  let frames = 0;
+  let maxGap = 0;
+  let last = performance.now();
+  const ticker = setInterval(() => {
+    const now = performance.now();
+    maxGap = Math.max(maxGap, now - last);
+    last = now;
+    ticks += 1;
+  }, 50);
+  let running = true;
+  const frame = () => {
+    frames += 1;
+    if (running) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+  const started = performance.now();
   const outcome = await Promise.race([
     act().then(
       () => 'ok',
@@ -78,12 +95,20 @@ export async function diagAct(label: string, el: Element, act: () => Promise<unk
     ),
     new Promise((done) => setTimeout(() => done('STUCK'), 4000)),
   ]);
+  running = false;
+  clearInterval(ticker);
   if (outcome === 'ok') return;
+  const animations = document.getAnimations().map((a) => {
+    const target = (a.effect as KeyframeEffect | null)?.target as Element | null;
+    return `${a.playState}:${a.constructor.name}:${target?.tagName}.${String(target?.className).slice(0, 30)}:${a.id}`;
+  });
   const direct: Record<string, string> = {};
-  const selector = String((page.elementLocator(el) as unknown as { selector: string }).selector);
-  const parentFrames = [...window.parent.document.querySelectorAll('iframe')].map(
-    (f) => `${f.getAttribute('data-vitest')}:${f.clientWidth}x${f.clientHeight}:${f.getAttribute('src')?.slice(-40)}`,
-  );
+  let selector: string;
+  try {
+    selector = String((page.elementLocator(el) as unknown as { selector: string }).selector);
+  } catch (e) {
+    selector = 'ERR ' + String(e).slice(0, 200);
+  }
   try {
     direct.elements = String(page.elementLocator(el).elements().length);
   } catch (e) {
@@ -105,14 +130,16 @@ export async function diagAct(label: string, el: Element, act: () => Promise<unk
         {
           label,
           outcome,
+          waited: Math.round(performance.now() - started),
           selector,
           direct,
-          parentFrames,
-          timeOrigin: performance.timeOrigin,
-          up: Math.round(performance.now()),
+          loop: { ticks, frames, maxGap: Math.round(maxGap) },
+          animations,
+          vis: document.visibilityState,
+          hasFocus: document.hasFocus(),
+          active: document.activeElement?.tagName,
           connected: el.isConnected,
           look: look(el),
-          env: environment(),
         },
         null,
         1,
