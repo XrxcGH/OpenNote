@@ -13,6 +13,11 @@ panic = "abort"
 strip = true
 
 # The Phase 1 spikes: optimized, but without the slow link-time optimization of a release build.
+# The document core opens, saves, and recovers every page, so it is optimized for speed rather than size. On
+# the budget page of plan 13.9 this made each step of opening, saving, and recovery 12 to 24% faster.
+[profile.release.package.opennote-core]
+opt-level = 3
+
 [profile.spikes]
 inherits = "release"
 codegen-units = 16
