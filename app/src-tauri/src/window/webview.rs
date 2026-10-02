@@ -166,6 +166,25 @@ pub fn configure(window: &WebviewWindow) {
 #[cfg(not(windows))]
 pub fn configure(_window: &WebviewWindow) {}
 
+/// What wry gives WebView2 when an app gives it no arguments: the ones that turn off the "mini menu" and Smart
+/// Screen, and the autoplay policy. Arguments passed through Tauri replace these, so a build that passes some
+/// starts from the same ones.
+#[cfg(any(test, feature = "test-endpoints"))]
+const WRY_BROWSER_ARGS: &str =
+    "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required";
+
+/// The browser arguments a build driven by WebDriver passes to WebView2, or `None` when the driver asked for none.
+/// msedgedriver asks for the debugging port it needs in `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`. WebView2 153 on
+/// GitHub's Windows runners left that variable out of the browser's command line, because the app passes
+/// arguments of its own, so msedgedriver waited a minute for a port file that never appeared. Passing the same
+/// text through Tauri puts it on the command line. Only `test-endpoints` builds do this.
+#[cfg(any(test, feature = "test-endpoints"))]
+#[cfg_attr(not(windows), allow(dead_code))]
+pub fn driver_browser_args(requested: Option<&str>) -> Option<String> {
+    let requested = requested?.trim();
+    (!requested.is_empty()).then(|| format!("{WRY_BROWSER_ARGS} {requested}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,6 +211,16 @@ mod tests {
         let supported = classify(Some("141.0.3537.57".into()));
         assert_eq!(supported.version(), Some("141.0.3537.57"));
         assert!(matches!(supported, RuntimeCheck::Supported { .. }));
+    }
+
+    #[test]
+    fn adds_the_arguments_a_webdriver_asks_for_after_wrys_own() {
+        assert_eq!(driver_browser_args(None), None);
+        assert_eq!(driver_browser_args(Some("  ")), None);
+        let args = driver_browser_args(Some(" --remote-debugging-port=0 ")).expect("arguments");
+        assert!(args.starts_with("--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection "));
+        assert!(args.contains("--autoplay-policy=no-user-gesture-required"));
+        assert!(args.ends_with(" --remote-debugging-port=0"));
     }
 
     #[cfg(windows)]

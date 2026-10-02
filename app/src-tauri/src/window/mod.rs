@@ -81,14 +81,20 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     app.manage(Current::new(os));
     app.manage(Background(color));
 
-    let window = WebviewWindowBuilder::from_config(app, config)?
+    let builder = WebviewWindowBuilder::from_config(app, config)?
         .decorations(true)
         .background_color(Color(r, g, b, 255))
         .initialization_script(boot::initialization_script(&data))
         .data_directory(paths.webview.clone())
         .disable_drag_drop_handler()
-        .zoom_hotkeys_enabled(false)
-        .build()?;
+        .zoom_hotkeys_enabled(false);
+    #[cfg(all(windows, feature = "test-endpoints"))]
+    let builder =
+        match webview::driver_browser_args(std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").ok().as_deref()) {
+            Some(args) => builder.additional_browser_args(&args),
+            None => builder,
+        };
+    let window = builder.build()?;
     perf::mark("windowCreated", None);
     webview::configure(&window);
     zoom::apply(&window, settings.appearance.text_size.percent(), os.text_scale);
