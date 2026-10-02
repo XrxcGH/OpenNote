@@ -85,11 +85,11 @@ struct Read {
 }
 
 impl Read {
-    fn records(&self, from: usize) -> Vec<Vec<JournalRecord>> {
+    fn records(&self, from: usize) -> Vec<&[JournalRecord]> {
         self.generations
             .iter()
             .skip(from)
-            .map(|(_, g)| g.records.clone())
+            .map(|(_, g)| g.records.as_slice())
             .collect()
     }
 
@@ -251,7 +251,7 @@ fn anchored(
         return Ok(None);
     };
     let records = after_anchor(&read.records(from), anchor);
-    if !records.iter().any(JournalRecord::is_edit) {
+    if !records.iter().any(|record| record.is_edit()) {
         return forget(ctx, read).map(Some);
     }
     let mut page = loaded.page.clone();
