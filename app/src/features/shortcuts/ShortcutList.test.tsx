@@ -5,8 +5,7 @@ import { chord, defineCommand } from '../../commands/registry';
 import { commands, shortcutListSections } from '../../registries';
 import { closeOverlay } from '../../shell/commandbar/overlays';
 import { setShortcut } from '../../state/keymap';
-import { announcements, expectNoAxeViolations, pressChord, renderApp } from '../../test';
-import { diagAct } from '../../test/zzdiag';
+import { announcements, expectNoAxeViolations, pressChord, renderApp, typeInto } from '../../test';
 
 const stops: (() => void)[] = [];
 
@@ -44,11 +43,11 @@ describe('the shortcut list', () => {
     await renderApp();
     const dialog = await openList();
     const filter = within(dialog).getByRole('textbox', { name: 'Filter shortcuts' });
-    await diagAct('filter1', filter, () => userEvent.type(filter, 'ctrl+k'));
+    await typeInto(filter, 'ctrl+k');
     await waitFor(() => expect(within(dialog).getAllByRole('row').length).toBeLessThan(10));
     expect(rowOf(dialog, 'Open command palette')).toBeTruthy();
     await userEvent.clear(filter);
-    await diagAct('filter2', filter, () => userEvent.type(filter, 'zzqx'));
+    await typeInto(filter, 'zzqx');
     expect(await within(dialog).findByText('No shortcuts match "zzqx".')).toBeTruthy();
   });
 

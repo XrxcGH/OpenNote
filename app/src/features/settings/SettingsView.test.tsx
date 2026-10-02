@@ -4,7 +4,7 @@ import { userEvent } from 'vitest/browser';
 import { getLocation } from '../../app/location';
 import { closeOverlay } from '../../shell/commandbar/overlays';
 import { getSettings } from '../../state/settings';
-import { expectFocus, expectNoAxeViolations, pressChord, renderApp, setViewport } from '../../test';
+import { expectFocus, expectNoAxeViolations, pressChord, renderApp, setViewport, typeInto } from '../../test';
 
 afterEach(async () => {
   closeOverlay();
@@ -67,7 +67,7 @@ describe('the Settings sections and screens', () => {
     await openSettings();
     await userEvent.click(screen.getByRole('link', { name: 'Shortcuts' }));
     const filter = await screen.findByRole('textbox', { name: 'Filter shortcuts' });
-    await userEvent.type(filter, 'dark');
+    await typeInto(filter, 'dark');
     await userEvent.keyboard('{Escape}');
     expect((filter as HTMLInputElement).value).toBe('');
     await userEvent.keyboard('{Escape}');

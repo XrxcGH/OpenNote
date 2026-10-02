@@ -1,7 +1,7 @@
 // Real key presses and focus checks for component tests in the browser (PLAN.md section 3.14).
 
 import { expect } from 'vitest';
-import { userEvent } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import type { Locator } from 'vitest/browser';
 
 const KEYS: Record<string, string> = {
@@ -32,4 +32,14 @@ export async function pressChord(chord: string): Promise<void> {
 export async function expectFocus(target: Element | Locator): Promise<void> {
   const element = target instanceof Element ? target : target.element();
   await expect.poll(() => document.activeElement).toBe(element);
+}
+
+/**
+ * Types into a field. userEvent.type finds an element by a CSS path such as "body > div:nth-child(4) > dialog", and
+ * a node added to the page between making the path and using it (a live region, a toast, a tooltip) leaves a path
+ * that matches nothing, so the call then waits for ever. A locator made from the element finds it by its label,
+ * placeholder, or role instead.
+ */
+export function typeInto(field: HTMLElement, text: string): Promise<void> {
+  return userEvent.type(page.elementLocator(field), text);
 }
