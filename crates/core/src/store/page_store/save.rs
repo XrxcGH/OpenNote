@@ -100,7 +100,7 @@ impl PageStore {
         };
         if plan == CompactionPlan::Major {
             let records = compact(ink, CompactionPlan::Major, &[]);
-            let file = self.encode_segment(req.page, &records);
+            let file = self.encode_segment(req.page, &records, false);
             let segments = file.iter().map(|file| file.entry.clone()).collect();
             return Ok(InkPlan {
                 segments,
@@ -109,7 +109,7 @@ impl PageStore {
                 compacted: true,
             });
         }
-        let file = self.encode_segment(req.page, req.pending);
+        let file = self.encode_segment(req.page, req.pending, true);
         let mut segments = ink.segments().to_vec();
         segments.extend(file.iter().map(|file| file.entry.clone()));
         Ok(InkPlan {
@@ -127,7 +127,7 @@ impl PageStore {
             CompactionPlan::Minor,
             decoded,
         );
-        let file = self.encode_segment(req.page, &records);
+        let file = self.encode_segment(req.page, &records, true);
         let mut segments: Vec<SegmentRef> = req.page.ink.segments().iter().take(1).cloned().collect();
         segments.extend(file.iter().map(|file| file.entry.clone()));
         let base = decoded.first().map(|d| d.records.as_slice()).unwrap_or_default();
@@ -147,6 +147,9 @@ impl PageStore {
             let path = NotebookLayout::segment_path(dir, file.entry.id);
             fs.create_durable(&path, &file.bytes).map_err(SaveError::Fs)?;
             fail_point!("save.segment.written");
+            if let Some(decoded) = &file.decoded {
+                self.remember(&file.entry, decoded.clone());
+            }
         }
         if plan.compacted {
             fail_point!("compact.written");
@@ -171,9 +174,14 @@ impl PageStore {
         let Some((base, later)) = page.ink.segments().split_first() else {
             return Some(Vec::new());
         };
+        // A segment this store wrote since the base is taken from memory: reading a file just written can wait
+        // for a virus scanner, and it holds what was written.
         let later: Vec<DecodedSegment> = later
             .iter()
-            .map(|segment| self.decode_intact(dir, page, segment, &|_| true))
+            .map(|segment| {
+                self.remembered(segment)
+                    .or_else(|| self.decode_intact(dir, page, segment, &|_| true))
+            })
             .collect::<Option<_>>()?;
         let touched: HashSet<StrokeId> = later
             .iter()
@@ -203,8 +211,9 @@ impl PageStore {
         (decoded.damaged.is_empty() && decoded.unknown_records == 0).then_some(decoded)
     }
 
-    /// One segment, encoded, with its entry. No records make no segment.
-    fn encode_segment(&self, page: &Page, records: &[InkRecord]) -> Option<SegmentFile> {
+    /// One segment, encoded, with its entry, and its records when `remember` is set. No records make no
+    /// segment.
+    fn encode_segment(&self, page: &Page, records: &[InkRecord], remember: bool) -> Option<SegmentFile> {
         if records.is_empty() {
             return None;
         }
@@ -215,6 +224,13 @@ impl PageStore {
             created: config.clock.now(),
         };
         let bytes = config.codec.encode_segment(&header, records);
+        let decoded = remember.then(|| DecodedSegment {
+            header,
+            records: records.to_vec(),
+            damaged: Vec::new(),
+            unknown_records: 0,
+            footer_ok: true,
+        });
         let entry = SegmentRef {
             id: header.id,
             bytes: bytes.len() as u64,
@@ -222,7 +238,7 @@ impl PageStore {
             crc32: segment_footer_crc(&bytes).unwrap_or_else(|| crc32fast::hash(&bytes)),
             extra: JsonMap::new(),
         };
-        Some(SegmentFile { entry, bytes })
+        Some(SegmentFile { entry, bytes, decoded })
     }
 
     /// S4: every asset in the table exists with its size.
@@ -328,6 +344,9 @@ struct InkPlan {
 struct SegmentFile {
     entry: SegmentRef,
     bytes: Vec<u8>,
+    /// The records, for a segment that a later minor compaction may merge. A major compaction's new base is
+    /// left out: it can be large, and a minor compaction reads little of it.
+    decoded: Option<DecodedSegment>,
 }
 
 /// A page from a newer version, or of an encrypted section, is never replaced (spec 5.7 and 15.2).
