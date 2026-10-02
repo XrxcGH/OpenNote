@@ -151,7 +151,11 @@ fn run_command(dir: &Path, version: &Version, command: &[String]) {
                     log_event(dir, &format!("applied {} {}", applied.from, applied.to));
                     relaunch(&applied.exe, &["--after-update", &applied.from.to_string()]);
                 }
-                Err(error) => log_event(dir, &format!("update failed {}", error.code())),
+                Err(error) => {
+                    log_event(dir, &format!("update failed {}", error.code()));
+                    // The reason, for a test that fails: the code alone says "unreachable" for any network error.
+                    log_event(dir, &format!("update failure detail: {error}"));
+                }
             }
         }
         Some("check") => {

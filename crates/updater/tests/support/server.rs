@@ -63,7 +63,14 @@ impl Server {
         };
         let serving = server.clone();
         thread::spawn(move || {
-            for stream in listener.incoming().flatten() {
+            for stream in listener.incoming() {
+                let stream = match stream {
+                    Ok(stream) => stream,
+                    Err(error) => {
+                        eprintln!("SERVER: accept failed: {error}");
+                        continue;
+                    }
+                };
                 let serving = serving.clone();
                 thread::spawn(move || serving.answer(stream));
             }
@@ -87,8 +94,16 @@ impl Server {
     fn answer(&self, mut stream: TcpStream) {
         let mut reader = BufReader::new(stream.try_clone().expect("a clone"));
         let mut request_line = String::new();
-        if reader.read_line(&mut request_line).is_err() {
-            return;
+        match reader.read_line(&mut request_line) {
+            Ok(0) => {
+                eprintln!("SERVER: connection closed before a request line");
+                return;
+            }
+            Err(error) => {
+                eprintln!("SERVER: read_line failed: {error}");
+                return;
+            }
+            Ok(_) => {}
         }
         let mut line = String::new();
         while reader.read_line(&mut line).is_ok_and(|read| read > 2) {
