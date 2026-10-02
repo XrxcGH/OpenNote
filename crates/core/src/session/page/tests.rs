@@ -525,6 +525,8 @@ fn binary_strokes_resolve_into_one_transaction() {
         client: c,
         client_seq: 1,
         coalesce: None,
+        ui: None,
+        edits: Vec::new(),
     };
     let ack = handle.add_strokes(meta, &records).unwrap();
     assert_eq!(ack.seq, 1);

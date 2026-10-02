@@ -71,6 +71,8 @@ fn checked_strokes_need_new_ids_and_an_ink_block() {
         client: ClientId::parse("main-1").unwrap(),
         client_seq: 1,
         coalesce: None,
+        ui: None,
+        edits: Vec::new(),
     };
     let stroke = Arc::new(crate::testing::sample::sample_stroke());
     let taken = resolve_checked_strokes(&page, &meta, vec![stroke.clone()], &ctx);

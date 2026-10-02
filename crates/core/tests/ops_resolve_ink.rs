@@ -240,3 +240,101 @@ fn requests_read_the_wire_format() {
         (2, true, true)
     );
 }
+
+fn meta(page: &opennote_core::model::Page, edits: Vec<Edit>) -> opennote_core::ops::resolve::StrokeTxnMeta {
+    opennote_core::ops::resolve::StrokeTxnMeta {
+        page: page.id,
+        client: opennote_core::ClientId::parse("main-1").unwrap(),
+        client_seq: 1,
+        coalesce: None,
+        ui: Some(json!({"selAfter": {"anchor": 2, "head": 2}})),
+        edits,
+    }
+}
+
+fn add_with(
+    page: &opennote_core::model::Page,
+    edits: Vec<Edit>,
+    strokes: Vec<std::sync::Arc<opennote_core::model::Stroke>>,
+) -> Result<opennote_core::ops::Txn, EditError> {
+    let (clock, limits) = (test_clock(), Limits::default());
+    let ctx = ResolveCtx {
+        clock: &clock,
+        limits: &limits,
+        imported: &|_| None,
+    };
+    opennote_core::ops::resolve::resolve_checked_strokes(page, &meta(page, edits), strokes, &ctx)
+}
+
+#[test]
+fn stroke_requests_carry_edits_and_the_selection_in_one_transaction() {
+    let page = sample_page();
+    let old = sample_stroke();
+    let mut part = old.clone();
+    part.start = old.start;
+    let kept = std::sync::Arc::new(part);
+    // A partial erase: the stroke goes, and a slice of it comes back under the same ID.
+    assert!(
+        add_with(&page, Vec::new(), vec![kept.clone()]).is_err(),
+        "the ID is in use without the removal"
+    );
+    let txn = add_with(&page, vec![remove_strokes(&[old.id])], vec![kept.clone()]).unwrap();
+    assert!(matches!(
+        &txn.ops[..],
+        [Op::RemoveStrokes { .. }, Op::AddStrokes { .. }]
+    ));
+    assert!(txn.ui.is_some());
+    let mut changed = page.clone();
+    changed.apply(&txn).unwrap();
+    assert!(changed.ink.stroke(old.id).is_some());
+    // Undoing the transaction in one step restores the original stroke.
+    let inverse: Vec<Op> = txn
+        .ops
+        .iter()
+        .rev()
+        .flat_map(opennote_core::ops::apply::invert)
+        .collect();
+    let mut undone = changed.clone();
+    undone
+        .apply(&opennote_core::ops::Txn {
+            ops: inverse,
+            ..txn.clone()
+        })
+        .unwrap();
+    assert_eq!(undone.ink.stroke(old.id), page.ink.stroke(old.id));
+}
+
+#[test]
+fn the_first_stroke_can_bring_its_layer_block() {
+    let mut page = sample_page();
+    let layer = sample_ink_block();
+    page = apply_one(&page, delete(&[layer])).0;
+    let stroke = sample_stroke();
+    assert!(add_with(&page, Vec::new(), vec![std::sync::Arc::new(stroke.clone())]).is_err());
+    let mut block = new_block(1, "ink", json!({"role": "layer"}));
+    block.id = layer;
+    let txn = add_with(
+        &page,
+        vec![insert(block, None, None)],
+        vec![std::sync::Arc::new(stroke.clone())],
+    )
+    .unwrap();
+    assert!(matches!(&txn.ops[..], [Op::InsertBlocks { .. }, Op::AddStrokes { .. }]));
+    let mut changed = page.clone();
+    changed.apply(&txn).unwrap();
+    assert!(changed.ink.stroke(stroke.id).is_some() && changed.blocks.contains(layer));
+}
+
+#[test]
+fn a_failing_edit_fails_the_whole_stroke_request() {
+    let page = sample_page();
+    let missing = StrokeId(Id::from_parts(1, 1));
+    let mut fresh = sample_stroke();
+    fresh.id = StrokeId(Id::from_parts(9, 9));
+    let result = add_with(
+        &page,
+        vec![remove_strokes(&[missing])],
+        vec![std::sync::Arc::new(fresh)],
+    );
+    assert_eq!(result.unwrap_err().code(), "notFound");
+}

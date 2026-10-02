@@ -323,6 +323,8 @@ fn draw(c: &Ctx<'_>, block: usize, steps: &[(i8, i8, u16)], (style, salt): (u8, 
         client: c.client.clone(),
         client_seq: c.seq,
         coalesce: None,
+        ui: None,
+        edits: Vec::new(),
     };
     Some(Action::Strokes {
         meta,

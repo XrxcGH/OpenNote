@@ -54,7 +54,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | P3-10 | `spliceText` edit | Done: `Edit::SpliceText` resolves to one `EditText` splice at a UTF-8 byte offset, with the same checks, and groups as typing |
 | P3-11 | Width of a floating text block without `w` | Done: spec 6.2 says content width, from 120 to 600 units |
 | P3-12 | No two adjacent lists of one kind | Done: spec 7.7 says writers join them; `alsoWrittenFrom` in the document fixtures covers it |
-| C1 | `StrokeTxnMeta` with `ui` and `edits` | Pending |
+| C1 | `StrokeTxnMeta` with `ui` and `edits` | Done: `edits` resolve first, then the strokes are added, and a new stroke may reuse the ID of one an edit removed |
 | C2 | Partial erase makes sliced strokes | Pending |
 | C3 | Stored pressure and positions | Pending |
 | C4 | Anchored ink | Done: role `anchored` and the `anchor` object in spec 6.3 and 8.1, in the model, both codecs, and the fixtures. `alt` and `decorative` were already there (P3-2) |
