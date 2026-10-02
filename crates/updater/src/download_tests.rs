@@ -119,7 +119,16 @@ fn never_stages_a_file_that_fails_a_check() {
     for (case, signed, served) in cases {
         let offer = offer(&setup, "0.5.0", &data, &signed, &served);
         let result = setup.updater.download(&offer, &|_, _| {});
-        assert!(matches!(result, Err(UpdateError::Verify(_))), "{case}: {result:?}");
+        // The message says what happened without printing the result, which can carry key and signature text.
+        let outcome = if result.is_ok() {
+            "went through"
+        } else {
+            "failed some other way"
+        };
+        assert!(
+            matches!(result, Err(UpdateError::Verify(_))),
+            "{case}: expected a verification failure, but the download {outcome}"
+        );
         assert_eq!(files(&setup), Vec::<String>::new(), "{case}");
         assert_eq!(setup.updater.state().staged, None, "{case}");
     }

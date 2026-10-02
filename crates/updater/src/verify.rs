@@ -210,7 +210,15 @@ mod tests {
     fn reason(result: Result<(), UpdateError>) -> String {
         match result {
             Err(UpdateError::Verify(reason)) => reason,
-            other => panic!("expected a verification failure, got {other:?}"),
+            // Says what happened without printing the result, which can carry key and signature text.
+            other => panic!(
+                "expected a verification failure, but the check {}",
+                if other.is_ok() {
+                    "passed"
+                } else {
+                    "failed some other way"
+                }
+            ),
         }
     }
 

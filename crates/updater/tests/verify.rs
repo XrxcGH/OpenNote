@@ -66,7 +66,7 @@ fn the_trusted_comment_has_timestamp_file_and_version_fields() {
         .and_then(|field| field.strip_prefix("timestamp:"));
     assert!(
         timestamp.is_some_and(|seconds| seconds.parse::<u64>().is_ok()),
-        "{comment}"
+        "the timestamp field isn't a whole number of seconds"
     );
     check_comment(comment, &Version::parse("0.0.2-fixture").expect("valid"), "payload.txt").expect("layout");
 }
