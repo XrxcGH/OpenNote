@@ -11,7 +11,7 @@ use opennote_core::format::points::encode_points;
 use opennote_core::model::{Channels, Point, Stroke, StrokeStyle};
 use opennote_core::{BlockId, StrokeId, Timestamp};
 
-use super::Rng;
+use super::{Corpus, Rng};
 
 /// A pen and digitizer, as their recordings look through Pointer Events.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -109,7 +109,10 @@ pub fn handwriting(rng: &mut Rng, pen: &PenProfile, block: BlockId, count: usize
     let mut start = 1_790_777_000_000i64;
     for _ in 0..count {
         let count = rng.between(20, 140) as usize;
-        let points = stroke_points(rng, pen, (x, y), count);
+        let points = match Corpus::recorded(pen.name) {
+            Some(corpus) => corpus.stroke(rng, (x, y)),
+            None => stroke_points(rng, pen, (x, y), count),
+        };
         let channels = Channels(Channels::PRESSURE | Channels::TILT | Channels::TIME);
         let mut encoded = Vec::new();
         let Ok(bbox) = encode_points(&points, channels, &mut encoded) else {

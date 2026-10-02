@@ -101,3 +101,45 @@ fn synthetic_strokes_look_like_handwriting() {
         assert!(travel > 1.0 && travel < 200.0, "{travel}");
     }
 }
+
+#[test]
+fn recordings_of_the_corpus_replace_synthetic_strokes() {
+    let dir = tempfile::tempdir().unwrap();
+    let surface = r#"{"profile": "surface_pen", "device": "test", "strokes": [
+        {"points": [[10, 20, 0.5, 30, -10, 0], [12, 22, 1.5, 31, -10, 4.2], [15, 21, 0.25, 31, -11, 8.4]]},
+        {"points": [[0, 0, 0.1, 0, 0, 0]]},
+        {"points": [[5, 5, 0.3, 20, 0, 0], [6, 5, 0.3, 20, 0, 4]]}
+    ]}"#;
+    std::fs::write(dir.path().join("a.pen.json"), surface).unwrap();
+    std::fs::write(
+        dir.path().join("b.pen.json"),
+        r#"{"profile": "wacom", "strokes": [{"points": [[0, 0, 1, 0, 0, 0], [1, 1, 1, 0, 0, 1]]}]}"#,
+    )
+    .unwrap();
+    std::fs::write(dir.path().join("broken.pen.json"), "not json").unwrap();
+    std::fs::write(dir.path().join("notes.txt"), "ignored").unwrap();
+
+    let corpus = Corpus::load(dir.path(), "surface_pen");
+    assert_eq!(
+        corpus.len(),
+        2,
+        "the one-point stroke and the other profile's file are left out"
+    );
+    assert_eq!(Corpus::load(dir.path(), "wacom").len(), 1);
+    assert!(Corpus::load(dir.path(), "fine_tilt").is_empty());
+    assert!(Corpus::load(&dir.path().join("missing"), "surface_pen").is_empty());
+
+    let mut rng = Rng::new(3);
+    for _ in 0..10 {
+        let points = corpus.stroke(&mut rng, (100.0, 200.0));
+        assert_eq!(
+            (points[0].x, points[0].y),
+            (6_400, 12_800),
+            "a stroke starts where it is asked to"
+        );
+        assert!(points.windows(2).all(|w| w[1].t >= w[0].t));
+    }
+    let first = Corpus::load(dir.path(), "surface_pen").stroke(&mut Rng::new(1), (0.0, 0.0));
+    let again = Corpus::load(dir.path(), "surface_pen").stroke(&mut Rng::new(1), (0.0, 0.0));
+    assert_eq!(first, again, "the same seed picks the same stroke");
+}

@@ -64,7 +64,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | C8 | `ink.svg` width of transformed strokes | Done: spec 11.3, `Affine::width_scale`, the Rust writer, and the Python reader |
 | C9 | Binary applied-changes frames on the page `Channel` | For the app bridge: needs the `Channel` frames |
 | C10 | `page_read_strokes` | Done in the core as `PageHandle::read_strokes`; the Tauri command is for the app bridge |
-| C11 | Pen corpus for M2 and the budget page | Pending |
+| C11 | Pen corpus for M2 and the budget page | Done in the code: `tests/fixtures/pen/` has a README and format, and the generator and M2 use matching recordings. The recordings themselves are still to be made on a real pen |
 
 ### Conditions
 

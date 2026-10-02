@@ -1,10 +1,12 @@
 //! The sample notebook generator (plan 13.9). Owned by WP1.
 //!
 //! It writes a deterministic notebook through the canonical writer: by default 20 sections of 50 pages in 3
-//! section groups, with subpages, or every page in one section. The Phase 1 pen recordings were not kept, so the
-//! strokes are synthetic handwriting from [`pen`], shaped like Surface Pen recordings. Images are on 10% of
+//! section groups, with subpages, or every page in one section. The Phase 1 pen recordings were not kept. Strokes
+//! come from the pen corpus in `tests/fixtures/pen/` when it has recordings for the pen profile (amendment C11),
+//! and are synthetic handwriting from [`pen`], shaped like Surface Pen recordings, otherwise. Images are on 10% of
 //! pages, 5 history versions on 10%, and 30 items are in Trash.
 
+mod corpus;
 mod pages;
 mod pen;
 mod rng;
@@ -24,6 +26,7 @@ use opennote_core::testing::NoLinks;
 use opennote_core::{GroupId, OrderKey, PageId, SectionId, Timestamp, TrashItemId};
 
 use crate::harness::GenerateArgs;
+pub use corpus::Corpus;
 pub use pages::{build_page, device, Built, PageKind};
 pub use pen::{handwriting, stroke_points, PenProfile, FINE_TILT, SURFACE_PEN, WACOM};
 pub use rng::Rng;
