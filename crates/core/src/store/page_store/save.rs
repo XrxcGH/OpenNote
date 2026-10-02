@@ -8,15 +8,13 @@ use std::time::Duration;
 use super::{PageStore, SaveError, SaveOutcome, SaveRequest};
 use crate::error::{FsError, FsErrorKind, JournalError};
 use crate::fail_point;
-use crate::format::{segment_footer_crc, DecodedSegment, SegmentHeader};
-use crate::id::{RevisionId, SegmentId, StrokeId};
+use crate::id::RevisionId;
 use crate::limits::Policy;
-use crate::model::{
-    Access, Block, BlockData, Blocks, Ink, InkRecord, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef,
-};
-use crate::store::compact::{compact, merged_dead_bytes, CompactionPlan};
+use crate::model::{Access, Block, BlockData, Blocks, Ink, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef};
 use crate::store::fs::Fs;
-use crate::store::layout::{NotebookLayout, ASSETS_DIR, INK_DIR};
+use crate::store::layout::{NotebookLayout, ASSETS_DIR};
+
+mod ink;
 
 /// How long a save waits for the journal to flush `SaveBegin`.
 const SAVE_BEGIN_TIMEOUT: Duration = Duration::from_secs(5);
@@ -88,157 +86,12 @@ impl PageStore {
         })
     }
 
-    /// S2 and S3, first half: the new or compacted segment, encoded, and the segment list and dead bytes after it.
-    fn plan_ink(&self, dir: &Path, req: &SaveRequest<'_>) -> Result<InkPlan, SaveError> {
-        let ink = &req.page.ink;
-        let plan = match req.compaction {
-            CompactionPlan::Minor => match self.decode_all(dir, req.page, req.pending) {
-                Some(decoded) => return Ok(self.plan_minor(req, &decoded)),
-                None => CompactionPlan::Major,
-            },
-            plan => plan,
-        };
-        if plan == CompactionPlan::Major {
-            let records = compact(ink, CompactionPlan::Major, &[]);
-            let file = self.encode_segment(req.page, &records, false);
-            let segments = file.iter().map(|file| file.entry.clone()).collect();
-            return Ok(InkPlan {
-                segments,
-                dead_bytes: 0,
-                file,
-                compacted: true,
-            });
-        }
-        let file = self.encode_segment(req.page, req.pending, true);
-        let mut segments = ink.segments().to_vec();
-        segments.extend(file.iter().map(|file| file.entry.clone()));
-        Ok(InkPlan {
-            segments,
-            dead_bytes: ink.dead_bytes().saturating_add(pending_dead(req.pending)),
-            file,
-            compacted: false,
-        })
-    }
-
-    fn plan_minor(&self, req: &SaveRequest<'_>, decoded: &[DecodedSegment]) -> InkPlan {
-        let working = with_pending(&req.page.ink, req.pending);
-        let records = compact(
-            working.as_ref().unwrap_or(&req.page.ink),
-            CompactionPlan::Minor,
-            decoded,
-        );
-        let file = self.encode_segment(req.page, &records, true);
-        let mut segments: Vec<SegmentRef> = req.page.ink.segments().iter().take(1).cloned().collect();
-        segments.extend(file.iter().map(|file| file.entry.clone()));
-        let base = decoded.first().map(|d| d.records.as_slice()).unwrap_or_default();
-        InkPlan {
-            segments,
-            dead_bytes: merged_dead_bytes(base, &records),
-            file,
-            compacted: true,
-        }
-    }
-
-    /// S2 and S3, second half: writes the planned segment with `create_durable`.
-    fn write_planned(&self, dir: &Path, plan: &InkPlan) -> Result<(), SaveError> {
-        if let Some(file) = &plan.file {
-            let fs = &*self.config.fs;
-            ensure_dir(fs, &dir.join(INK_DIR)).map_err(SaveError::Fs)?;
-            let path = NotebookLayout::segment_path(dir, file.entry.id);
-            fs.create_durable(&path, &file.bytes).map_err(SaveError::Fs)?;
-            fail_point!("save.segment.written");
-            if let Some(decoded) = &file.decoded {
-                self.remember(&file.entry, decoded.clone());
-            }
-        }
-        if plan.compacted {
-            fail_point!("compact.written");
-        }
-        Ok(())
-    }
-
     /// S5: the page as it will be written, and its bytes, which must read back as the page.
     fn prepare_page(&self, page: &Page, segments: Vec<SegmentRef>, dead: u64) -> Result<(Page, Vec<u8>), SaveError> {
         let next = self.next_revision(page, segments, dead);
         let bytes = self.config.codec.write_page(&next);
         self.check_read_back(&next, &bytes)?;
         Ok((next, bytes))
-    }
-
-    /// Every listed segment, decoded without damage, or `None` when any can't be read.
-    ///
-    /// The later segments are decoded first. The base then skips the strokes they don't touch, which stay in it
-    /// unchanged and were checked when the page opened. Their points go unchecked, and a stroke whose only record
-    /// is a `Stroke` record is left out, since it adds no dead bytes. The footer CRC-32 still covers every byte.
-    fn decode_all(&self, dir: &Path, page: &Page, pending: &[InkRecord]) -> Option<Vec<DecodedSegment>> {
-        let Some((base, later)) = page.ink.segments().split_first() else {
-            return Some(Vec::new());
-        };
-        // A segment this store wrote since the base is taken from memory: reading a file just written can wait
-        // for a virus scanner, and it holds what was written.
-        let later: Vec<DecodedSegment> = later
-            .iter()
-            .map(|segment| {
-                self.remembered(segment)
-                    .or_else(|| self.decode_intact(dir, page, segment, &|_| true))
-            })
-            .collect::<Option<_>>()?;
-        let touched: HashSet<StrokeId> = later
-            .iter()
-            .flat_map(|segment| segment.records.iter())
-            .chain(pending)
-            .map(InkRecord::stroke_id)
-            .collect();
-        let base = self.decode_intact(dir, page, base, &|id| touched.contains(&id))?;
-        Some(std::iter::once(base).chain(later).collect())
-    }
-
-    /// One segment, decoded without damage, or `None`.
-    fn decode_intact(
-        &self,
-        dir: &Path,
-        page: &Page,
-        segment: &SegmentRef,
-        touched: &(dyn Fn(StrokeId) -> bool + Sync),
-    ) -> Option<DecodedSegment> {
-        let config = &self.config;
-        let path = NotebookLayout::segment_path(dir, segment.id);
-        let bytes = config.fs.read(&path, config.limits.segment_bytes).ok()?;
-        let decoded = config
-            .codec
-            .decode_segment_for(&bytes, segment, page.id, &config.limits, touched)
-            .ok()?;
-        (decoded.damaged.is_empty() && decoded.unknown_records == 0).then_some(decoded)
-    }
-
-    /// One segment, encoded, with its entry, and its records when `remember` is set. No records make no
-    /// segment.
-    fn encode_segment(&self, page: &Page, records: &[InkRecord], remember: bool) -> Option<SegmentFile> {
-        if records.is_empty() {
-            return None;
-        }
-        let config = &self.config;
-        let header = SegmentHeader {
-            id: SegmentId::generate(&*config.clock),
-            page: page.id,
-            created: config.clock.now(),
-        };
-        let bytes = config.codec.encode_segment(&header, records);
-        let decoded = remember.then(|| DecodedSegment {
-            header,
-            records: records.to_vec(),
-            damaged: Vec::new(),
-            unknown_records: 0,
-            footer_ok: true,
-        });
-        let entry = SegmentRef {
-            id: header.id,
-            bytes: bytes.len() as u64,
-            records: u32::try_from(records.len()).unwrap_or(u32::MAX),
-            crc32: segment_footer_crc(&bytes).unwrap_or_else(|| crc32fast::hash(&bytes)),
-            extra: JsonMap::new(),
-        };
-        Some(SegmentFile { entry, bytes, decoded })
     }
 
     /// S4: every asset in the table exists with its size.
@@ -331,24 +184,6 @@ impl PageStore {
     }
 }
 
-/// The ink a save writes: the segment list after it, its dead bytes, and the one new segment, if any.
-struct InkPlan {
-    segments: Vec<SegmentRef>,
-    dead_bytes: u64,
-    file: Option<SegmentFile>,
-    /// Whether the new segment comes from a compaction.
-    compacted: bool,
-}
-
-/// A new segment file and its entry in `page.json`.
-struct SegmentFile {
-    entry: SegmentRef,
-    bytes: Vec<u8>,
-    /// The records, for a segment that a later minor compaction may merge. A major compaction's new base is
-    /// left out: it can be large, and a minor compaction reads little of it.
-    decoded: Option<DecodedSegment>,
-}
-
 /// A page from a newer version, or of an encrypted section, is never replaced (spec 5.7 and 15.2).
 fn refuse_protected(page: &Page) -> Result<(), SaveError> {
     let reason = match &page.format.access {
@@ -361,38 +196,6 @@ fn refuse_protected(page: &Page) -> Result<(), SaveError> {
         )));
     }
     Ok(())
-}
-
-/// The ink with `pending` as its pending records, when they differ from the snapshot's.
-fn with_pending(ink: &Ink, pending: &[InkRecord]) -> Option<Ink> {
-    if ink.pending() == pending {
-        return None;
-    }
-    let mut working = ink.clone();
-    working.commit(usize::MAX, ink.segments().to_vec(), ink.dead_bytes());
-    for record in pending {
-        working.push_pending(record.clone());
-    }
-    Some(working)
-}
-
-/// The dead bytes the pending records add, as a replay of the new segment counts them. A committed stroke that
-/// the pending records remove is no longer in memory, so its bytes are only counted at the next load.
-fn pending_dead(pending: &[InkRecord]) -> u64 {
-    let mut shadow = Ink::default();
-    let mut dead = 0u64;
-    for record in pending {
-        let killed = match record {
-            InkRecord::Stroke(stroke) => shadow.insert(stroke.clone()),
-            InkRecord::Remove(id) => shadow.remove(*id),
-            InkRecord::Props(props) => {
-                shadow.apply_props(props);
-                None
-            }
-        };
-        dead = dead.saturating_add(killed.map_or(0, |stroke| stroke.record_len()));
-    }
-    dead
 }
 
 /// Sets each ink block's `strokeCount` to its live strokes (spec 8.3).
