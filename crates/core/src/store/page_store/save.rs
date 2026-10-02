@@ -48,11 +48,27 @@ impl PageStore {
         before_commit: &mut BeforeCommit<'_>,
     ) -> Result<SaveOutcome, SaveError> {
         refuse_protected(req.page)?;
-        let (segments, dead_bytes) = self.write_ink(dir, &req)?;
+        let ink = self.plan_ink(dir, &req)?;
+        let (segments, dead_bytes) = (ink.segments.clone(), ink.dead_bytes);
+        let prepare = || self.prepare_page(req.page, segments.clone(), dead_bytes);
+        // The new page.json needs only the new segment's entry, and making and reading it back touches no file.
+        // So it runs on another thread while the segment is written and flushed, and the file system sees the
+        // same calls in the same order.
+        let (written, prepared) = match &ink.file {
+            None => (self.write_planned(dir, &ink), prepare()),
+            Some(_) => std::thread::scope(|scope| {
+                let thread = std::thread::Builder::new().spawn_scoped(scope, prepare);
+                let written = self.write_planned(dir, &ink);
+                let prepared = match thread {
+                    Ok(thread) => thread.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+                    Err(_) => prepare(),
+                };
+                (written, prepared)
+            }),
+        };
+        written?;
         self.check_assets(dir, req.page)?;
-        let page = self.next_revision(req.page, segments.clone(), dead_bytes);
-        let bytes = self.config.codec.write_page(&page);
-        self.check_read_back(&page, &bytes)?;
+        let (page, bytes) = prepared?;
         before_commit(page.revision.id, req.through_seq)?;
         fail_point!("save.save_begin.flushed");
         self.check_disk(dir, req.page, req.base_stamp)?;
@@ -72,47 +88,78 @@ impl PageStore {
         })
     }
 
-    /// S2 and S3: writes the new or compacted segment, and returns the new segment list and dead bytes.
-    fn write_ink(&self, dir: &Path, req: &SaveRequest<'_>) -> Result<(Vec<SegmentRef>, u64), SaveError> {
+    /// S2 and S3, first half: the new or compacted segment, encoded, and the segment list and dead bytes after it.
+    fn plan_ink(&self, dir: &Path, req: &SaveRequest<'_>) -> Result<InkPlan, SaveError> {
         let ink = &req.page.ink;
-        let old = ink.segments().to_vec();
         let plan = match req.compaction {
             CompactionPlan::Minor => match self.decode_all(dir, req.page, req.pending) {
-                Some(decoded) => return self.write_minor(dir, req, &decoded),
+                Some(decoded) => return Ok(self.plan_minor(req, &decoded)),
                 None => CompactionPlan::Major,
             },
             plan => plan,
         };
         if plan == CompactionPlan::Major {
             let records = compact(ink, CompactionPlan::Major, &[]);
-            let segments = self.write_segment(dir, req.page, &records)?.into_iter().collect();
-            fail_point!("compact.written");
-            return Ok((segments, 0));
+            let file = self.encode_segment(req.page, &records);
+            let segments = file.iter().map(|file| file.entry.clone()).collect();
+            return Ok(InkPlan {
+                segments,
+                dead_bytes: 0,
+                file,
+                compacted: true,
+            });
         }
-        let mut segments = old;
-        segments.extend(self.write_segment(dir, req.page, req.pending)?);
-        let dead = ink.dead_bytes().saturating_add(pending_dead(req.pending));
-        Ok((segments, dead))
+        let file = self.encode_segment(req.page, req.pending);
+        let mut segments = ink.segments().to_vec();
+        segments.extend(file.iter().map(|file| file.entry.clone()));
+        Ok(InkPlan {
+            segments,
+            dead_bytes: ink.dead_bytes().saturating_add(pending_dead(req.pending)),
+            file,
+            compacted: false,
+        })
     }
 
-    fn write_minor(
-        &self,
-        dir: &Path,
-        req: &SaveRequest<'_>,
-        decoded: &[DecodedSegment],
-    ) -> Result<(Vec<SegmentRef>, u64), SaveError> {
+    fn plan_minor(&self, req: &SaveRequest<'_>, decoded: &[DecodedSegment]) -> InkPlan {
         let working = with_pending(&req.page.ink, req.pending);
         let records = compact(
             working.as_ref().unwrap_or(&req.page.ink),
             CompactionPlan::Minor,
             decoded,
         );
+        let file = self.encode_segment(req.page, &records);
         let mut segments: Vec<SegmentRef> = req.page.ink.segments().iter().take(1).cloned().collect();
-        segments.extend(self.write_segment(dir, req.page, &records)?);
+        segments.extend(file.iter().map(|file| file.entry.clone()));
         let base = decoded.first().map(|d| d.records.as_slice()).unwrap_or_default();
-        let dead = merged_dead_bytes(base, &records);
-        fail_point!("compact.written");
-        Ok((segments, dead))
+        InkPlan {
+            segments,
+            dead_bytes: merged_dead_bytes(base, &records),
+            file,
+            compacted: true,
+        }
+    }
+
+    /// S2 and S3, second half: writes the planned segment with `create_durable`.
+    fn write_planned(&self, dir: &Path, plan: &InkPlan) -> Result<(), SaveError> {
+        if let Some(file) = &plan.file {
+            let fs = &*self.config.fs;
+            ensure_dir(fs, &dir.join(INK_DIR)).map_err(SaveError::Fs)?;
+            let path = NotebookLayout::segment_path(dir, file.entry.id);
+            fs.create_durable(&path, &file.bytes).map_err(SaveError::Fs)?;
+            fail_point!("save.segment.written");
+        }
+        if plan.compacted {
+            fail_point!("compact.written");
+        }
+        Ok(())
+    }
+
+    /// S5: the page as it will be written, and its bytes, which must read back as the page.
+    fn prepare_page(&self, page: &Page, segments: Vec<SegmentRef>, dead: u64) -> Result<(Page, Vec<u8>), SaveError> {
+        let next = self.next_revision(page, segments, dead);
+        let bytes = self.config.codec.write_page(&next);
+        self.check_read_back(&next, &bytes)?;
+        Ok((next, bytes))
     }
 
     /// Every listed segment, decoded without damage, or `None` when any can't be read.
@@ -156,10 +203,10 @@ impl PageStore {
         (decoded.damaged.is_empty() && decoded.unknown_records == 0).then_some(decoded)
     }
 
-    /// Writes one segment with `create_durable`. No records write nothing.
-    fn write_segment(&self, dir: &Path, page: &Page, records: &[InkRecord]) -> Result<Option<SegmentRef>, SaveError> {
+    /// One segment, encoded, with its entry. No records make no segment.
+    fn encode_segment(&self, page: &Page, records: &[InkRecord]) -> Option<SegmentFile> {
         if records.is_empty() {
-            return Ok(None);
+            return None;
         }
         let config = &self.config;
         let header = SegmentHeader {
@@ -168,17 +215,14 @@ impl PageStore {
             created: config.clock.now(),
         };
         let bytes = config.codec.encode_segment(&header, records);
-        ensure_dir(&*config.fs, &dir.join(INK_DIR)).map_err(SaveError::Fs)?;
-        let path = NotebookLayout::segment_path(dir, header.id);
-        config.fs.create_durable(&path, &bytes).map_err(SaveError::Fs)?;
-        fail_point!("save.segment.written");
-        Ok(Some(SegmentRef {
+        let entry = SegmentRef {
             id: header.id,
             bytes: bytes.len() as u64,
             records: u32::try_from(records.len()).unwrap_or(u32::MAX),
             crc32: segment_footer_crc(&bytes).unwrap_or_else(|| crc32fast::hash(&bytes)),
             extra: JsonMap::new(),
-        }))
+        };
+        Some(SegmentFile { entry, bytes })
     }
 
     /// S4: every asset in the table exists with its size.
@@ -269,6 +313,21 @@ impl PageStore {
             Err(err) => Err(SaveError::Fs(err)),
         }
     }
+}
+
+/// The ink a save writes: the segment list after it, its dead bytes, and the one new segment, if any.
+struct InkPlan {
+    segments: Vec<SegmentRef>,
+    dead_bytes: u64,
+    file: Option<SegmentFile>,
+    /// Whether the new segment comes from a compaction.
+    compacted: bool,
+}
+
+/// A new segment file and its entry in `page.json`.
+struct SegmentFile {
+    entry: SegmentRef,
+    bytes: Vec<u8>,
 }
 
 /// A page from a newer version, or of an encrypted section, is never replaced (spec 5.7 and 15.2).
