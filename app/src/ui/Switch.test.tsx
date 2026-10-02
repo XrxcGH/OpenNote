@@ -42,9 +42,13 @@ describe('Switch rendering', () => {
   it('moves the thumb to the end when on, so the state isn’t color alone', async () => {
     const { rerender } = renderUi(<Fixture checked={false} />);
     const thumb = () => toggle().querySelector('span > span') as HTMLElement;
-    const off = thumb().getBoundingClientRect().x;
+    // Measured from the track's start, not the page's. The label sits before the track, so its width decides
+    // where the track is, and a web font that finishes loading between the two measures changes that width.
+    const travel = () =>
+      thumb().getBoundingClientRect().x - (thumb().parentElement as HTMLElement).getBoundingClientRect().x;
+    const off = travel();
     rerender(<Fixture checked />);
-    await expect.poll(() => thumb().getBoundingClientRect().x).toBeGreaterThan(off);
+    await expect.poll(travel).toBeGreaterThan(off);
   });
 });
 
