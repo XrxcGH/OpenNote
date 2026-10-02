@@ -1,5 +1,5 @@
 //! Scheduled backups through the public API: sets of changed files, a read-only way to open them, and the
-//! sync-tool notice (FEATURES.md, Phase 3).
+//! sync-tool notice (docs/FEATURES.md, Phase 3).
 
 mod real_core;
 

@@ -1,4 +1,4 @@
-//! Scheduled backups of a notebook, and what a sync tool's folder means for it (FEATURES.md, Phase 3).
+//! Scheduled backups of a notebook, and what a sync tool's folder means for it (docs/FEATURES.md, Phase 3).
 //!
 //! The schedule itself is the shell's. These calls do one backup, say when the last one ran and whether the
 //! next is due, and describe the sync tool that manages a notes folder.

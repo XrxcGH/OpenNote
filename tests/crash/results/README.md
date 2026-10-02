@@ -1,6 +1,6 @@
 # Week-one results of WP2
 
-These files hold the first runs of measurements M3, M5, and M6 and of the kill harness, from plan section 2. They ran on a Surface Laptop Studio 2, which is much faster than the reference laptop in BRAND.md. Every report says `"reference_laptop": false`, and none of these numbers counts as a pass on the reference laptop.
+These files hold the first runs of measurements M3, M5, and M6 and of the kill harness, from plan section 2. They ran on a Surface Laptop Studio 2, which is much faster than the reference laptop in docs/BRAND.md. Every report says `"reference_laptop": false`, and none of these numbers counts as a pass on the reference laptop.
 
 ## The machine
 
@@ -75,7 +75,7 @@ The session, start-up, and memory suites still run on the in-memory test core (`
 
 These ran on 2 October 2026 on the same Surface Laptop Studio 2, plugged in, with Defender real-time protection on. Other programs, including another agent's builds, kept the processor 15 to 40% busy, with about half the memory free.
 
-The exit-gate runs above used the optimized `spikes` profile, so a debug build doesn't explain their excess. Still, nothing stopped a debug run: `cargo run -p opennote-perf` built the debug profile, where opening the budget page took 729 ms at the 50th percentile against 71 ms optimized. Now `cargo perf bench store <dir>` builds the `perf` profile, which inherits the release optimizations, and both benchmark tools refuse a debug build unless they get `--debug`. DEVELOPMENT.md says how to run them.
+The exit-gate runs above used the optimized `spikes` profile, so a debug build doesn't explain their excess. Still, nothing stopped a debug run: `cargo run -p opennote-perf` built the debug profile, where opening the budget page took 729 ms at the 50th percentile against 71 ms optimized. Now `cargo perf bench store <dir>` builds the `perf` profile, which inherits the release optimizations, and both benchmark tools refuse a debug build unless they get `--debug`. docs/DEVELOPMENT.md says how to run them.
 
 Before is `origin/phase-3` built with `spikes`, and after is branch `p3-perf` built with `perf`. The two ran in turn, three times each, 20 seconds apart. Times are in milliseconds, and none of them counts as a pass on the reference laptop.
 

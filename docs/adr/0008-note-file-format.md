@@ -5,11 +5,11 @@
 
 ## Context
 
-The note file format is the hardest decision to reverse in OpenNote. Every later platform must read it, and every sync tool and backup will copy it. The [development plan](../../DEVELOPMENT.md#4-note-file-format) fixes its outline. A notebook is a folder, and `page.json` is the source of truth. Ink keeps raw points, `page.md` is a readable copy, every file has a version, and saves are atomic. Phase 3 must turn that outline into a specification and code before any user data exists. Numbers 0004 to 0007 are reserved for the Phase 1 spike records.
+The note file format is the hardest decision to reverse in OpenNote. Every later platform must read it, and every sync tool and backup will copy it. The [development plan](../DEVELOPMENT.md#4-note-file-format) fixes its outline. A notebook is a folder, and `page.json` is the source of truth. Ink keeps raw points, `page.md` is a readable copy, every file has a version, and saves are atomic. Phase 3 must turn that outline into a specification and code before any user data exists. Numbers 0004 to 0007 are reserved for the Phase 1 spike records.
 
 The format has to meet these forces at once:
 
-- The [budgets in BRAND.md](../../BRAND.md#10-comfort-and-performance-budgets). A page with 500 blocks and 5,000 strokes opens in 150 ms. The app stays under 400 MB with a 1,000-page notebook, and a crash loses at most 1 second of work.
+- The [budgets in BRAND.md](../BRAND.md#10-comfort-and-performance-budgets). A page with 500 blocks and 5,000 strokes opens in 150 ms. The app stays under 400 MB with a 1,000-page notebook, and a crash loses at most 1 second of work.
 - Windows as it really behaves. Antivirus scanners, the search indexer, and sync clients hold files open. The Documents folder is often inside OneDrive, so folder sync exists from the first release.
 - Longevity. Notes must stay readable without OpenNote, and a stranger must be able to write a reader from the specification alone.
 - Portability to macOS, Linux, iOS, and Android, and readiness for sync and collaboration later.

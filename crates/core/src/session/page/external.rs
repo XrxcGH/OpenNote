@@ -1,4 +1,4 @@
-//! Edits made outside OpenNote (FEATURES.md, Phase 3): the readable copies a person edited, the text they can
+//! Edits made outside OpenNote (docs/FEATURES.md, Phase 3): the readable copies a person edited, the text they can
 //! bring back into the page, and the files that are only in the cloud.
 
 use std::path::{Path, PathBuf};

@@ -1,4 +1,4 @@
-//! Edits made outside OpenNote (FEATURES.md, Phase 3): a person edits `page.md` in another program, OpenNote
+//! Edits made outside OpenNote (docs/FEATURES.md, Phase 3): a person edits `page.md` in another program, OpenNote
 //! keeps that copy aside, and offers to bring its text into the page.
 
 mod real_core;

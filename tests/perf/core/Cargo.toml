@@ -1,7 +1,7 @@
 [package]
 name = "opennote-perf"
 version = "0.1.0"
-description = "Benchmarks for crates/core against the budgets in BRAND.md, and the sample notebook generator"
+description = "Benchmarks for crates/core against the budgets in docs/BRAND.md, and the sample notebook generator"
 edition = "2021"
 rust-version = "1.89"
 license = "Apache-2.0"

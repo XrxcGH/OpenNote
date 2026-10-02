@@ -60,7 +60,7 @@ A tool that only exports notebooks needs sections 2 to 11, 15, 16, and 21.
 
 - Notes stay readable without OpenNote. Every page has a Markdown copy, handwriting has an SVG picture, and every format is documented here in full.
 - A crash never damages a page. Each page changes through one atomic file replace, and every file it refers to is written first and never changed afterward.
-- At most 1 second of work is lost when the app or the computer stops suddenly, as [BRAND.md section 10](../../BRAND.md#10-comfort-and-performance-budgets) requires.
+- At most 1 second of work is lost when the app or the computer stops suddenly, as [BRAND.md section 10](../BRAND.md#10-comfort-and-performance-budgets) requires.
 - Sync tools and several devices are expected. Files may arrive in any order. Conflicting copies are kept and shown, never silently overwritten.
 - Older apps open newer files read-only. Newer apps upgrade older files with tested migrations.
 - The same rules work on Windows, macOS, Linux, iOS, and Android.
@@ -1000,7 +1000,7 @@ A stroke's style has four parts:
 | Color | Red, green, blue, and alpha in sRGB, as the light-theme value |
 | Width | The nominal diameter in page units |
 
-The palette slot is the pen name that [BRAND.md section 4](../../BRAND.md#4-color) asks notes to store. It lets the app draw each brand pen with its dark value in the dark theme. The stored color stays the authority for printing, export, and other readers.
+The palette slot is the pen name that [BRAND.md section 4](../BRAND.md#4-color) asks notes to store. It lets the app draw each brand pen with its dark value in the dark theme. The stored color stays the authority for printing, export, and other readers.
 
 Strokes in one ink block are drawn in order of their start time, then their ID. This needs no stored order, never conflicts in a merge, and puts a restored stroke back at its original depth. Highlighter strokes are drawn below the other strokes of their block.
 
@@ -1811,7 +1811,7 @@ FAT32 (the file allocation table format) and exFAT keep no metadata log, so a dr
 | The notebook's folder is gone, such as an unplugged drive or an offline share | Offline | Keeps edits in memory and in the journal, and saves when the folder returns | "This notebook's drive isn't connected. Your changes are kept until it's back." |
 | A cloud file that is not downloaded, while offline | Cloud placeholder | Keeps the page read-only until the file is available | "This page is stored in OneDrive and isn't downloaded yet." |
 
-A writer may tell Controlled folder access apart from missing permissions, because it blocks writes that the folder's permissions allow, and then name the exact cause. Messages follow the voice in [BRAND.md section 3](../../BRAND.md#3-voice-and-tone).
+A writer may tell Controlled folder access apart from missing permissions, because it blocks writes that the folder's permissions allow, and then name the exact cause. Messages follow the voice in [BRAND.md section 3](../BRAND.md#3-voice-and-tone).
 
 ### 17.7 The page save, step by step
 

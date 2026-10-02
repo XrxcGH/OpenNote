@@ -36,7 +36,7 @@ pub enum PageKind {
     Light,
     /// 100 to 200 blocks, and about 1,000 strokes. 30% of pages.
     Medium,
-    /// 500 blocks and 5,000 strokes, the page budget of BRAND.md. 9% of pages.
+    /// 500 blocks and 5,000 strokes, the page budget of docs/BRAND.md. 9% of pages.
     Budget,
     /// 5,000 blocks, or 500 blocks with 50,000 strokes. 1% of pages.
     VeryLarge,

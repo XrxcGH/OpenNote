@@ -1,5 +1,5 @@
 //! Telling changes made elsewhere apart (spec 14.1), and the storage side of edits from other apps and notes in
-//! sync-tool folders (FEATURES.md, Phase 3). Owned by WP4.
+//! sync-tool folders (docs/FEATURES.md, Phase 3). Owned by WP4.
 //!
 //! The folder watcher, the reload, and the notices are the session's and the interface's. This module gives
 //! them the decisions. It says what a changed `page.json` means and which page a changed path belongs to. It

@@ -94,7 +94,7 @@ pub struct Measurement {
 pub struct Report {
     /// The machine the numbers come from.
     pub machine: String,
-    /// Whether that machine is the reference laptop of BRAND.md section 10. Numbers from any other machine,
+    /// Whether that machine is the reference laptop of docs/BRAND.md section 10. Numbers from any other machine,
     /// such as the faster laptop of the week-one measurements, are kept with that caveat and never count as
     /// a pass on the reference laptop.
     pub reference_laptop: bool,

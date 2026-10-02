@@ -1,4 +1,4 @@
-//! Backups before a format upgrade (spec 15.4), and scheduled backups (FEATURES.md, Phase 3). Owned by WP4.
+//! Backups before a format upgrade (spec 15.4), and scheduled backups (docs/FEATURES.md, Phase 3). Owned by WP4.
 //!
 //! The schedule, the folder picker, and the "last backup" line in Settings are WP5's and the interface's.
 //! This module copies the files: [`backup_before_upgrade`] for migrations, and [`scheduled::backup_notebook`]

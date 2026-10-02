@@ -1,4 +1,4 @@
-//! Bringing the text of an edited `page.md` back into the page (FEATURES.md, Edits from other apps).
+//! Bringing the text of an edited `page.md` back into the page (docs/FEATURES.md, Edits from other apps).
 //!
 //! When a person edits `page.md` in another program, OpenNote keeps that copy aside and never writes over it
 //! silently (spec 11.2). This module turns the copy into a plan the person can accept. The plan holds new text
