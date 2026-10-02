@@ -935,6 +935,7 @@ Every other character is written as itself. Text never contains `U+000D`: a line
 
 - Exactly one blank line separates blocks. There are no blank lines at the start, no trailing spaces on any line, and no newline at the end of the `markdown` string.
 - A list is tight, with no blank lines between items, unless an item holds more than one block. Then one blank line separates its items.
+- Two lists of one kind, both bulleted (task lists included) or both numbered, are never written next to each other, because the blank line between them would read back as one loose list. A writer joins them first: the items of the later list follow those of the earlier one, which keeps its start number. A bulleted list beside a numbered list stays two lists.
 - Marks nest in this order, outermost first: link, strong emphasis, emphasis, strikethrough, underline, highlight, text color, text size, subscript or superscript, and code. Where two ranges overlap, the mark that comes later in this order is closed and reopened.
 - Whitespace at either edge of a marked range is moved outside the delimiters.
 - Where a delimiter (`*`, `**`, `~~`, or `==`) would not open or close under CommonMark's rules for that position, the writer uses the matching HTML tag from section 7.4 for that range.

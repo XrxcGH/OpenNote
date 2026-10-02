@@ -354,24 +354,47 @@ fn plain_paragraph(document: &Value) -> Option<String> {
     Some(text)
 }
 
+/// Whether two lists of one kind (both numbered, or both bulleted) sit next to each other in a document.
+fn has_adjacent_lists(document: &Value) -> bool {
+    let kind = |block: &Value| (block["type"] == "list").then(|| block["ordered"].as_bool().unwrap_or(false));
+    document.as_array().is_some_and(|blocks| {
+        blocks
+            .windows(2)
+            .any(|pair| kind(&pair[0]).is_some() && kind(&pair[0]) == kind(&pair[1]))
+    })
+}
+
 /// The document fixtures are canonical Markdown (spec 7.7), and plain paragraphs are escaped as spec 7.6 says.
 #[test]
 fn fixture_markdown_documents_are_canonical() {
     let path = fixtures().join("markdown").join("documents").join("cases.json");
     let cases: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
     let mut plain = 0;
+    let mut joined = 0;
     for case in cases["cases"].as_array().unwrap() {
         let markdown = case["markdown"].as_str().unwrap();
         let name = case["name"].as_str().unwrap();
         assert!(!markdown.ends_with('\n') && !markdown.starts_with('\n'), "{name}");
         assert!(!markdown.contains("\n\n\n") && !markdown.contains(" \n"), "{name}");
         assert!(case["document"].is_array(), "{name}");
+        assert!(
+            !has_adjacent_lists(&case["document"]),
+            "{name}: lists of one kind are joined"
+        );
+        for other in case["alsoWrittenFrom"].as_array().into_iter().flatten() {
+            assert!(
+                has_adjacent_lists(other),
+                "{name}: an alternative must hold the lists a writer joins"
+            );
+            joined += 1;
+        }
         if let Some(text) = plain_paragraph(&case["document"]) {
             assert_eq!(escape_text(&text, true), markdown, "{name}");
             plain += 1;
         }
     }
     assert!(plain >= 2);
+    assert!(joined >= 1, "a case must cover joining lists of one kind");
 }
 
 /// The reading order of spec 6.2 on pages that cover each rule. The Python reader finds the same orders.
