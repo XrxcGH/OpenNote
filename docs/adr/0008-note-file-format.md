@@ -52,7 +52,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | P3-8 | Injected `invoke` and `Channel`, and `page_handle` | For the app bridge: needs TypeScript and `core_bridge.rs` |
 | P3-9 | `asset_import_path` stays out of the WebView capability | For the app bridge: needs the Tauri capability file |
 | P3-10 | `spliceText` edit | Pending |
-| P3-11 | Width of a floating text block without `w` | Pending |
+| P3-11 | Width of a floating text block without `w` | Done: spec 6.2 says content width, from 120 to 600 units |
 | P3-12 | No two adjacent lists of one kind | Done: spec 7.7 says writers join them; `alsoWrittenFrom` in the document fixtures covers it |
 | C1 | `StrokeTxnMeta` with `ui` and `edits` | Pending |
 | C2 | Partial erase makes sliced strokes | Pending |

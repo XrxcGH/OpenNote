@@ -715,6 +715,7 @@ Password-protected sections arrive in a later version. Version 1 reserves their 
 A frame has `x`, `y`, `w`, `h`, and `rotate`, all in page units except `rotate`, which is in degrees. Each is optional.
 
 - A block whose frame has both `x` and `y` is **floating**. It sits at that position on the page. A missing `h` means "as tall as the content", which text boxes use. A missing `w` and `h` on an ink block means it has no bounds.
+- A floating `text` block without `w` is as wide as its content, but no narrower than 120 units and no wider than 600. Longer text wraps at 600. Units are page units (section 2.6), so every reader gives a text box the same width.
 - A block without a frame, or whose frame has only `w` or `h`, is **flowing**. Flowing blocks stack from top to bottom in order, and `w` and `h` act as size hints.
 
 On a `freeform` page, new blocks float. On a `flow` page, new blocks flow. Either kind can appear on either page. For example, a flow page can carry floating handwriting over its text.
