@@ -35,9 +35,10 @@ export async function expectFocus(target: Element | Locator): Promise<void> {
 }
 
 /**
- * Types into a field. userEvent.type finds an element by a CSS path such as "body > div:nth-child(4) > dialog", and
- * a node added to the page between making the path and using it (a live region, a toast, a tooltip) leaves a path
- * that matches nothing, so the call then waits for ever. A locator made from the element finds it by its label,
+ * Types into a field through a locator. Given a bare element, userEvent.type finds it by a CSS path such as
+ * "body > div:nth-child(4) > dialog". The path is made in the page and used a moment later by Playwright.
+ * A node added to the body in between (a live region, a toast, a tooltip) shifts an index. Then the path
+ * matches nothing, and the call waits for ever. A locator made from the element finds it by its label,
  * placeholder, or role instead.
  */
 export function typeInto(field: HTMLElement, text: string): Promise<void> {
