@@ -1,5 +1,7 @@
 // Small natural-language helpers shared by the prose rules.
 
+import { stripHtmlTags } from './html.ts';
+
 /** A URL, allowing balanced parentheses inside it (as in Wikipedia links). */
 export const URL = /https?:\/\/(?:[^\s()]|\([^\s()]*\))+/g;
 
@@ -16,13 +18,13 @@ export function wordCount(text: string): number {
 
 /** Removes Markdown and HTML markup so only readable text is left. */
 export function cleanInline(text: string): string {
-  return text
+  const plain = text
     .replace(/`[^`]*`/g, '§')
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/<https?:[^>]*>/g, ' ')
-    .replace(URL, ' ')
-    .replace(/<[^>]+>/g, ' ')
+    .replace(URL, ' ');
+  return stripHtmlTags(plain, ' ')
     .replace(/(\*\*|__|\*|~~)/g, '')
     .replace(/\s+/g, ' ')
     .trim();

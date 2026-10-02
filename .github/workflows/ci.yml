@@ -8,6 +8,9 @@ on:
   # caller's event, so a release run is a push here and runs CHECKS on all files.
   workflow_call:
 
+# Every job only reads the repository. A called workflow can narrow the caller's permissions but never widen
+# them, so the release workflow's own read-only grant for this call still works. Uploading the debug build
+# as a run artifact uses the runner's own token, not GITHUB_TOKEN, so no job needs more than this.
 permissions:
   contents: read
 
