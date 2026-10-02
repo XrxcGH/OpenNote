@@ -97,20 +97,31 @@ impl PageJournal {
         if edit {
             self.last_edit = self.last_edit.max(seq);
         }
-        self.keep(config, seq, edit, bytes);
+        self.keep(seq, edit, bytes);
         self.write_last(config);
+        self.bound_kept(config);
     }
 
-    fn keep(&mut self, config: &JournalConfig, seq: u64, edit: bool, bytes: Vec<u8>) {
+    fn keep(&mut self, seq: u64, edit: bool, bytes: Vec<u8>) {
         self.kept_bytes = self.kept_bytes.saturating_add(bytes.len() as u64);
         self.kept.push(Kept { seq, edit, bytes });
-        // Past four forced saves' worth, a journal that can't be written stops keeping copies until the next
-        // save: memory is bounded, and the page is saved every second meanwhile (spec 20.12).
+    }
+
+    /// Past four forced saves' worth, the journal stops keeping copies until a save covers them: memory is
+    /// bounded, and the page is saved every second meanwhile (spec 20.12). It runs only after the newest
+    /// record was written, or failed to be, so a healthy generation still gets every record. Only a new
+    /// generation has to wait, until a save covers `lost_through`.
+    fn bound_kept(&mut self, config: &JournalConfig) {
         if self.kept_bytes > config.timings.journal_force_bytes.saturating_mul(4) {
             self.lost_through = self.kept.last().map_or(self.lost_through, |k| k.seq);
             self.kept.clear();
             self.kept_bytes = 0;
         }
+    }
+
+    /// Whether a new generation would hold every record past the anchor.
+    fn can_start(&self) -> bool {
+        self.lost_through <= self.anchor
     }
 
     /// Writes the newest kept record, starting a generation first if needed.
@@ -121,6 +132,9 @@ impl PageJournal {
         }
         let Some((_, file)) = self.file.as_mut() else {
             // A new generation copies every kept record, the newest included.
+            if !self.can_start() {
+                return;
+            }
             if let Err(err) = self.start_generation(config) {
                 self.fail(config, err);
             }
@@ -167,7 +181,7 @@ impl PageJournal {
     /// A broken journal tries a new generation, at most once a second unless `now` is set.
     fn retry(&mut self, config: &JournalConfig, now: bool) {
         let due = now || self.last_try.is_none_or(|last| last.elapsed() >= RETRY_EVERY);
-        if !due || self.lost_through > self.anchor {
+        if !due || !self.can_start() {
             return;
         }
         self.last_try = Some(Instant::now());
@@ -215,12 +229,13 @@ impl PageJournal {
 
     /// Appends and flushes `SaveBegin` (step S6).
     pub fn save_begin(&mut self, config: &JournalConfig, seq: u64, bytes: Vec<u8>) -> Result<(), JournalError> {
-        self.keep(config, seq, false, bytes);
+        self.keep(seq, false, bytes);
         if self.broken {
             self.retry(config, true);
         } else {
             self.write_last(config);
         }
+        self.bound_kept(config);
         self.sync(config);
         match self.shared.health.error() {
             Some(err) => Err(JournalError::Degraded(err)),
@@ -242,7 +257,8 @@ impl PageJournal {
             return;
         }
         let large = self.current_len() > config.timings.rotate_bytes;
-        if durability == Durability::Confirmed && large {
+        // With copies dropped past the anchor, a new generation would have a gap: keep the current one.
+        if durability == Durability::Confirmed && large && self.can_start() {
             self.rotate(config);
         }
     }
@@ -290,8 +306,9 @@ impl PageJournal {
                     boot: self.meta.boot.clone(),
                 };
                 let bytes = encode(&record, &*config.codec);
-                self.keep(config, seq, false, bytes);
+                self.keep(seq, false, bytes);
                 self.write_last(config);
+                self.bound_kept(config);
                 self.sync(config);
             }
             _ => self.sync(config),

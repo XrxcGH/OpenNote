@@ -13,6 +13,7 @@ use crate::testing::sample::{sample_page, sample_stroke, test_clock};
 use crate::testing::{CollectingSink, MemFs, RegistryCodec};
 use crate::time::Timestamp;
 
+mod bounded;
 mod failing;
 mod tree_tests;
 
