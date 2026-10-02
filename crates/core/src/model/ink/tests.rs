@@ -134,6 +134,37 @@ fn replay_applies_records_in_order_and_counts_dead_bytes() {
 }
 
 #[test]
+fn new_strokes_replay_as_inserting_them_one_by_one() {
+    let strokes = [
+        stroke(3, 10, 300),
+        stroke(1, 10, 100),
+        stroke(2, 11, 200),
+        stroke(4, 10, 100),
+    ];
+    let mut one_by_one = Ink::default();
+    for stroke in &strokes {
+        one_by_one.insert(stroke.clone());
+    }
+    let records = |strokes: &[Arc<Stroke>]| strokes.iter().cloned().map(InkRecord::Stroke).collect::<Vec<_>>();
+    let (first, second) = strokes.split_at(2);
+    let (ink, warnings) = Ink::replay(vec![segment(1), segment(2)], vec![records(first), records(second)]);
+    one_by_one.commit(0, vec![segment(1), segment(2)], 0);
+    assert_eq!(ink, one_by_one);
+    assert!(warnings.is_empty());
+    assert_eq!(
+        ink.in_block(block(10)).map(|s| s.id).collect::<Vec<_>>(),
+        [sid(1), sid(4), sid(3)]
+    );
+    // A stroke saved twice is replaced, and its first record counts as dead.
+    let (twice, _) = Ink::replay(
+        vec![segment(1)],
+        vec![records(&[stroke(1, 10, 100), stroke(1, 10, 100)])],
+    );
+    assert_eq!(twice.len(), 1);
+    assert_eq!(twice.dead_bytes(), stroke(1, 10, 100).record_len());
+}
+
+#[test]
 fn replay_warns_when_records_and_segments_disagree() {
     let (_, warnings) = Ink::replay(vec![segment(1)], vec![]);
     assert_eq!(warnings[0].code, "ink.segmentCount");

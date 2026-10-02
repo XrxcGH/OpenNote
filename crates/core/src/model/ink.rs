@@ -207,8 +207,15 @@ impl Ink {
             let detail = format!("{} segments listed, {} decoded", segments.len(), records.len());
             warnings.push(Warning::new("ink.segmentCount", detail));
         }
-        for record in records.into_iter().flatten() {
-            ink.replay_one(record, &mut warnings);
+        let records: Vec<InkRecord> = records.into_iter().flatten().collect();
+        match new_strokes(&records) {
+            // Strokes that each appear once, as a page saved without edits to its ink holds, go in at once.
+            Some(strokes) => ink.insert_new(&strokes),
+            None => {
+                for record in records {
+                    ink.replay_one(record, &mut warnings);
+                }
+            }
         }
         ink.segments = segments;
         (ink, warnings)
@@ -235,6 +242,21 @@ impl Ink {
             self.dead_bytes = self.dead_bytes.saturating_add(dead.record_len());
         }
     }
+}
+
+/// The strokes of records that only add strokes, each with an ID of its own. `None` for any other records.
+fn new_strokes(records: &[InkRecord]) -> Option<Vec<Arc<Stroke>>> {
+    let strokes: Vec<Arc<Stroke>> = records
+        .iter()
+        .map(|record| match record {
+            InkRecord::Stroke(stroke) => Some(stroke.clone()),
+            _ => None,
+        })
+        .collect::<Option<_>>()?;
+    let mut ids: Vec<StrokeId> = strokes.iter().map(|stroke| stroke.id).collect();
+    ids.sort_unstable();
+    let repeated = ids.windows(2).any(|pair| matches!(pair, [a, b] if a == b));
+    (!repeated).then_some(strokes)
 }
 
 #[cfg(test)]

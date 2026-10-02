@@ -69,10 +69,10 @@ pub(super) fn add_stroke_run(page: &mut Page, txns: &[&Txn]) -> bool {
         return false;
     };
     page.ink.insert_new(&strokes);
-    let mut a = Applying::new(page);
     for stroke in strokes {
-        a.record(InkRecord::Stroke(stroke));
+        page.ink.push_pending(InkRecord::Stroke(stroke));
     }
+    let mut a = Applying::new(page);
     a.recount(&touched);
     a.commit(last.at);
     true
