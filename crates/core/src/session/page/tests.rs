@@ -532,3 +532,38 @@ fn binary_strokes_resolve_into_one_transaction() {
     assert_eq!(ack.seq, 1);
     assert_eq!(handle.page_for_tests().ink.len(), 2);
 }
+
+#[test]
+fn strokes_are_read_by_id_and_by_area() {
+    let s = setup();
+    let handle = s.notebook.open_page(s.page, client("main-1")).unwrap();
+    let stroke = handle.page_for_tests().ink.strokes().next().cloned().unwrap();
+    let near = super::view::stroke_rect(&stroke);
+    let far = crate::model::Rect {
+        x: 10_000.0,
+        y: 10_000.0,
+        w: 10.0,
+        h: 10.0,
+    };
+    let unknown = crate::id::StrokeId(crate::id::Id::from_parts(1, 1));
+    let read = |ids: Option<&[crate::id::StrokeId]>, rect| handle.read_strokes(ids, rect);
+    let everything = read(None, None);
+    assert_eq!(everything.strokes, 1);
+    let decoded = s
+        .kit
+        .codec
+        .decode_records(&everything.records, &Limits::default())
+        .unwrap();
+    assert!(matches!(&decoded[..], [crate::model::InkRecord::Stroke(read)] if read.id == stroke.id));
+    assert_eq!(read(None, Some(near)).strokes, 1);
+    assert_eq!(read(None, Some(far)).strokes, 0);
+    assert!(read(None, Some(far)).records.is_empty());
+    assert_eq!(
+        read(Some(&[stroke.id, stroke.id]), None).strokes,
+        1,
+        "an ID counts once"
+    );
+    assert_eq!(read(Some(&[unknown]), None).strokes, 0, "a missing stroke is skipped");
+    assert_eq!(read(Some(&[stroke.id]), Some(far)).strokes, 0, "both filters apply");
+    assert_eq!(read(Some(&[stroke.id, unknown]), Some(near)).strokes, 1);
+}

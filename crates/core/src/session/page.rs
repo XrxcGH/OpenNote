@@ -13,7 +13,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{CoreError, EditError};
-use crate::id::{AssetId, BlockId, ClientId, PageId, RevisionId};
+use crate::id::{AssetId, BlockId, ClientId, PageId, RevisionId, StrokeId};
 use crate::limits::Limits;
 use crate::model::{Asset, DeviceRef, Page, Rect, Revision, VersionEntry};
 use crate::ops::resolve::{StrokeTxnMeta, TxnRequest};
@@ -39,6 +39,7 @@ pub(crate) mod view;
 mod tests;
 
 pub(crate) use state::{Opening, PageSession};
+pub use view::StrokeRead;
 
 /// The answer to an applied edit (plan 11.4).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
@@ -154,6 +155,12 @@ impl PageHandle {
     /// The strokes that didn't fit in an envelope for `viewport`, as messages for the page's channel.
     pub fn remaining_ink(&self, viewport: Rect) -> Vec<Vec<u8>> {
         self.session.ink_chunks(viewport)
+    }
+
+    /// Reads strokes by ID, by area, or both, for pages whose far ink the interface doesn't hold: the live strokes
+    /// named by `strokes` that meet `rect`. A missing filter lets every stroke through.
+    pub fn read_strokes(&self, strokes: Option<&[StrokeId]>, rect: Option<Rect>) -> view::StrokeRead {
+        self.session.read_strokes(strokes, rect)
     }
 
     /// Resolves, applies, and journals an edit request.
