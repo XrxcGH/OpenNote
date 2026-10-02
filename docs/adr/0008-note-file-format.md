@@ -48,7 +48,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | P3-4 | Typing groups join `PatchBlock` and `SetPage` | Done: in `UndoStack`, with followers ignored |
 | P3-5 | Full block JSON in undo, redo, and remote frames | Done: `FrameInfo` carries `blocks`, `title`, `tags`, `view`, and `assets` |
 | P3-6 | Image size and type check on import | Done: `AssetSource` takes `image`, and imports check an image's first bytes |
-| P3-7 | Restoring parts of a version, deleting history, and retention | Done: `PageHandle::restore_blocks`, `NotebookHandle::delete_history`, and `Core::set_retention` |
+| P3-7 | Restoring parts of a version, deleting history, and retention | Done in the core: `PageHandle::restore_blocks`, `NotebookHandle::delete_history`, and `Core::set_retention`. The Tauri commands are for the app bridge |
 | P3-8 | Injected `invoke` and `Channel`, and `page_handle` | For the app bridge: needs TypeScript and `core_bridge.rs` |
 | P3-9 | `asset_import_path` stays out of the WebView capability | For the app bridge: needs the Tauri capability file |
 | P3-10 | `spliceText` edit | Done: `Edit::SpliceText` resolves to one `EditText` splice at a UTF-8 byte offset, with the same checks, and groups as typing |
