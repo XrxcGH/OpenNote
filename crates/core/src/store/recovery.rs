@@ -139,14 +139,14 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
     if read.generations.is_empty() {
         return Ok(RecoveryOutcome::Nothing);
     }
-    let outcome = match loaded {
-        Ok(loaded) if is_damaged(&loaded) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Damaged(located))?,
+    let outcome = match &loaded {
+        Ok(loaded) if is_damaged(loaded) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Damaged(located))?,
         Ok(loaded) => {
-            check_writable(&loaded)?;
+            check_writable(loaded)?;
             let dir = located.unwrap_or_default();
-            match anchored(ctx, &read, &loaded, &dir)? {
+            match anchored(ctx, &read, loaded, &dir)? {
                 Some(outcome) => outcome,
-                None => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Other { dir, loaded: &loaded })?,
+                None => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Other { dir, loaded })?,
             }
         }
         Err(LoadError::Missing) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Missing(located))?,
@@ -154,7 +154,7 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
         Err(LoadError::NewerFormat(_)) => return Err(defer(DeferReason::NewerPage)),
         Err(LoadError::Unavailable(_)) => return Err(defer(DeferReason::PageUnavailable)),
     };
-    free_later(read);
+    free_later((read, loaded));
     Ok(outcome)
 }
 
@@ -224,10 +224,10 @@ fn read_all(ctx: &RecoverCtx<'_>, page: PageId, paths: &[PathBuf]) -> Result<Rea
     })
 }
 
-/// Frees the generations on another thread. Freeing thousands of decoded records takes a few milliseconds that
-/// recovery needn't wait for. Without a thread, they are freed here.
-fn free_later(read: Read) {
-    let _ = std::thread::Builder::new().spawn(move || drop(read));
+/// Frees the generations or pages on another thread. Freeing thousands of decoded records or strokes takes a
+/// few milliseconds that recovery needn't wait for. Without a thread, they are freed here.
+fn free_later<T: Send + 'static>(value: T) {
+    let _ = std::thread::Builder::new().spawn(move || drop(value));
 }
 
 /// Keeps bytes in `recovery/` for diagnosis. With `move_file`, the generation itself goes there.
@@ -292,15 +292,16 @@ fn anchored(
         txns: done.txns,
         strokes: done.strokes,
     };
-    finish(
+    let outcome = finish(
         ctx,
         read,
         &page,
         &plan,
         done,
         located_outcome(ctx, read, page.id, dir, default),
-    )
-    .map(Some)
+    );
+    free_later(page);
+    outcome.map(Some)
 }
 
 /// The latest anchor for the revision on disk, and the generation to collect records from.

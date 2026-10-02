@@ -221,7 +221,7 @@ fn fix_counts(blocks: &mut Blocks, ink: &Ink) {
 }
 
 /// A copy of the page whose ink is empty: no strokes, segments, or pending records.
-fn without_strokes(page: &Page) -> Page {
+pub(crate) fn without_strokes(page: &Page) -> Page {
     Page {
         id: page.id,
         title: page.title.clone(),

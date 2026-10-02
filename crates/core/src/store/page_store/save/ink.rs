@@ -1,6 +1,6 @@
 //! Steps S2 and S3 of a save: the new or compacted segment, planned and then written.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use super::ensure_dir;
@@ -193,6 +193,29 @@ fn with_pending(ink: &Ink, pending: &[InkRecord]) -> Option<Ink> {
 /// The dead bytes the pending records add, as a replay of the new segment counts them. A committed stroke that
 /// the pending records remove is no longer in memory, so its bytes are only counted at the next load.
 fn pending_dead(pending: &[InkRecord]) -> u64 {
+    if pending.iter().all(|record| matches!(record, InkRecord::Stroke(_))) {
+        replaced_bytes(pending)
+    } else {
+        shadow_dead(pending)
+    }
+}
+
+/// [`pending_dead`] for records that only add strokes: they kill only the strokes they add again. Counting
+/// those needs no shadow ink, whose indexes cost milliseconds for the thousands of strokes a recovered journal
+/// saves.
+fn replaced_bytes(pending: &[InkRecord]) -> u64 {
+    let mut sizes: HashMap<StrokeId, u64> = HashMap::with_capacity(pending.len());
+    pending
+        .iter()
+        .filter_map(|record| match record {
+            InkRecord::Stroke(stroke) => sizes.insert(stroke.id, stroke.record_len()),
+            _ => None,
+        })
+        .fold(0u64, u64::saturating_add)
+}
+
+/// [`pending_dead`] for any records: replays them on a shadow ink.
+fn shadow_dead(pending: &[InkRecord]) -> u64 {
     let mut shadow = Ink::default();
     let mut dead = 0u64;
     for record in pending {
@@ -207,4 +230,32 @@ fn pending_dead(pending: &[InkRecord]) -> u64 {
         dead = dead.saturating_add(killed.map_or(0, |stroke| stroke.record_len()));
     }
     dead
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used, clippy::indexing_slicing)]
+
+    use std::sync::Arc;
+
+    use super::*;
+    use crate::id::Id;
+    use crate::model::Affine;
+    use crate::testing::sample::sample_stroke;
+
+    #[test]
+    fn strokes_added_again_count_as_dead_without_a_shadow_ink() {
+        let first = Arc::new(sample_stroke());
+        let mut other = sample_stroke();
+        other.id = StrokeId(Id::from_parts(9, 9));
+        let mut again = sample_stroke();
+        again.transform = Some(Affine([2.0, 0.0, 0.0, 2.0, 0.0, 0.0]));
+        let pending: Vec<InkRecord> = [first.clone(), Arc::new(other), Arc::new(again)]
+            .into_iter()
+            .map(InkRecord::Stroke)
+            .collect();
+        assert_eq!(pending_dead(&pending), first.record_len());
+        assert_eq!(replaced_bytes(&pending), shadow_dead(&pending));
+        assert_eq!(replaced_bytes(&pending[..2]), 0);
+    }
 }

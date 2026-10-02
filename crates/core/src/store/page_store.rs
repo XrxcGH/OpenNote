@@ -253,7 +253,7 @@ mod repair;
 mod save;
 
 pub use load::{ink_access, load_ink, missing_assets, InkLoad};
-pub(crate) use save::ensure_dir;
+pub(crate) use save::{ensure_dir, without_strokes};
 
 #[cfg(test)]
 pub(crate) mod tests;
