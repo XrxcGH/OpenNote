@@ -6,8 +6,8 @@ use std::sync::Arc;
 use super::state::{PageSession, PageState};
 use super::TxnAck;
 use crate::error::EditError;
-use crate::id::{AssetId, ClientId};
-use crate::model::{Block, BlockData, InkRecord, Stroke};
+use crate::id::{AssetId, BlockId, ClientId};
+use crate::model::{Block, BlockData, InkRecord, Page, Stroke};
 use crate::ops::resolve::{resolve, resolve_add_strokes, ResolveCtx, StrokeTxnMeta, TxnRequest};
 use crate::ops::undo::{UndoOutcome, UndoStack};
 use crate::ops::{AppliedChanges, Op, Txn};
@@ -96,11 +96,18 @@ impl PageSession {
             }
         }
         let now = self.ctx.clock.monotonic();
-        let entry = st.clients.entry(client.clone()).or_default();
+        let PageState {
+            clients,
+            page,
+            undo_bytes,
+            ..
+        } = &mut *st;
+        let anchored = |ink: BlockId, text: BlockId| is_anchored(page, ink, text);
+        let entry = clients.entry(client.clone()).or_default();
         entry.seq = client_seq;
         let stack = entry.undo.get_or_insert_with(|| UndoStack::new(MAX_UNDO_ENTRIES));
-        let delta = stack.record(txn, now);
-        st.undo_bytes = st.undo_bytes.saturating_add_signed(delta);
+        let delta = stack.record_with(txn, now, &anchored);
+        *undo_bytes = undo_bytes.saturating_add_signed(delta);
         self.ctx.charge_undo(delta);
         let (can_undo, can_redo) = PageSession::undo_state(st, client);
         Ok(TxnAck {
@@ -213,4 +220,12 @@ impl PageSession {
         };
         frames::encode(&info, &bytes).map_err(|e| EditError::Invalid(e.to_string()))
     }
+}
+
+/// Whether the ink block is anchored to the text block (spec 8.1), so typing that moves it still groups.
+fn is_anchored(page: &Page, ink: BlockId, text: BlockId) -> bool {
+    matches!(
+        page.blocks.get(ink).map(|block| &block.data),
+        Some(BlockData::Ink(data)) if data.anchor.as_ref().is_some_and(|anchor| anchor.block == text)
+    )
 }
