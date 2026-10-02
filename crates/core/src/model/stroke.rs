@@ -116,6 +116,13 @@ impl Affine {
         *self == Affine::IDENTITY
     }
 
+    /// The factor by which this transform scales lengths on average: the square root of the absolute value of
+    /// its determinant (spec 11.3).
+    pub fn width_scale(&self) -> f64 {
+        let [a, b, c, d, ..] = self.0.map(f64::from);
+        (a * d - b * c).abs().sqrt()
+    }
+
     /// Maps a point.
     pub fn apply(&self, x: f64, y: f64) -> (f64, f64) {
         let [a, b, c, d, e, f] = self.0.map(f64::from);

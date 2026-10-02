@@ -4,12 +4,15 @@ use std::collections::HashSet;
 
 use serde_json::Value;
 
-use super::view::view_from_json;
+use super::view::{view_from_json, view_to_json};
 use super::{invalid, not_found, EditCtx};
 use crate::error::EditError;
 use crate::format::names::check_asset_file_name;
-use crate::id::{AssetId, BlockId};
+use crate::id::AssetId;
+use crate::limits::Limits;
+use crate::model::{Page, PageView};
 use crate::ops::apply::checks::{asset_user, check_tags};
+use crate::ops::merge_patch::apply_patch;
 use crate::ops::{Op, PageFields};
 
 /// The fields `setPage` asks for.
@@ -17,7 +20,6 @@ pub(super) struct PageEdit<'a> {
     pub title: Option<&'a str>,
     pub tags: Option<&'a [String]>,
     pub view: Option<&'a Value>,
-    pub reading_order: Option<&'a [BlockId]>,
 }
 
 /// `setPage`: only the fields that change, with their values before.
@@ -42,29 +44,33 @@ pub(super) fn set_page(c: &EditCtx<'_>, edit: &PageEdit<'_>) -> Result<Vec<Op>, 
             after.tags = Some(tags.to_vec());
         }
     }
-    if let Some(value) = edit.view {
-        let view = view_from_json(value, limits).map_err(invalid)?;
+    if let Some(patch) = edit.view {
+        let mut view = patched_view(page, patch, limits)?;
+        let mut seen = HashSet::new();
+        view.reading_order
+            .retain(|id| page.blocks.contains(*id) && seen.insert(*id));
         if view != page.view {
             before.view = Some(Box::new(page.view.clone()));
             after.view = Some(Box::new(view));
-        }
-    }
-    if let Some(order) = edit.reading_order {
-        let mut seen = HashSet::new();
-        let order: Vec<BlockId> = order
-            .iter()
-            .copied()
-            .filter(|id| page.blocks.contains(*id) && seen.insert(*id))
-            .collect();
-        if order != page.reading_order {
-            before.reading_order = Some(page.reading_order.clone());
-            after.reading_order = Some(order);
         }
     }
     if after == PageFields::default() {
         return Ok(Vec::new());
     }
     Ok(vec![Op::SetPage { before, after }])
+}
+
+/// The page's view with a merge patch (RFC 7396) applied, as `page.json` writes it: `null` puts a member back
+/// to its default, objects patch the object there, and an array such as `readingOrder` replaces the old one.
+fn patched_view(page: &Page, patch: &Value, limits: &Limits) -> Result<PageView, EditError> {
+    let Value::Object(patch) = patch else {
+        return Err(invalid("the view patch must be an object"));
+    };
+    let Value::Object(mut current) = view_to_json(&page.view) else {
+        return Err(invalid("the view can't be written"));
+    };
+    apply_patch(&mut current, patch);
+    view_from_json(&Value::Object(current), limits).map_err(invalid)
 }
 
 /// `addAsset`: the table entry of an asset that was already imported. An asset already in the table is left

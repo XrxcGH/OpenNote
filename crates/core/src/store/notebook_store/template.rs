@@ -44,10 +44,10 @@ pub(crate) fn template_view(codec: &dyn Codec, page: &Page, defaults: [Option<&J
         merge_objects(target, view);
     }
     let bytes = serde_json::to_vec(&json).ok()?;
-    codec
-        .read_page(&bytes, &Limits::default())
-        .ok()
-        .map(|read| read.page.view)
+    let mut view = codec.read_page(&bytes, &Limits::default()).ok()?.page.view;
+    // A new page has no blocks yet, so it has nothing to put in a reading order.
+    view.reading_order.clear();
+    Some(view)
 }
 
 /// Merges `from` into `into`, object by object. Other values replace.

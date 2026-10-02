@@ -224,6 +224,7 @@ fn tree() -> NotebookTree {
         color: None,
         created: Timestamp::EPOCH,
         changed: Timestamp::EPOCH,
+        styles: Default::default(),
         groups: vec![group],
         sections: vec![
             section_node("01m3s9v8ym7yt5c8yb61tthbwt", "Lab reports", semester, labs),

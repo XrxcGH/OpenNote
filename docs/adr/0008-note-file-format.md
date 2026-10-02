@@ -22,7 +22,7 @@ We will store notebooks in format version 1 as the [specification](../format/REA
 
 - A notebook is a folder with a name the person chose. Section and page folders are named by permanent IDs, and section groups live in `notebook.json`. Every page folder has `page.md` and, when it has ink, `ink.svg`. The notebook has `README.md`, `index.md`, and a copy of the specification, so people can read it without OpenNote.
 - `page.json` is canonical JSON and the page's single commit point. Writers skip a write that would not change a file's bytes, so Git, sync tools, and backups stay quiet. Blocks carry order keys. Text blocks are text boxes that hold OpenNote Markdown: CommonMark with a few extensions. Its escaping rules already reserve the syntax that later phases will add.
-- Paragraphs, headings, and list items can have stable element IDs, kept beside the Markdown with their tags, to-do check marks, and named styles. Links, tags, and handwriting anchors can then point at one paragraph, while `page.md` stays clean. Pictures carry a description and a `decorative` flag, and freeform pages can set a reading order.
+- Paragraphs, headings, and list items can have stable element IDs, kept beside the Markdown with their tags, to-do check marks, and named styles. Links, tags, and handwriting anchors can then point at one paragraph, while `page.md` stays clean. Pictures carry a description and a `decorative` flag, and a page can set a reading order in its view.
 - Ink lives in immutable binary segment files. Points are quantized and stored as deltas in variable-length integers, at about 8 bytes per point. Every record has a checksum, and every stroke stores the palette slot of its pen. Saves add small segments, compaction runs in two tiers, and page history shares segments instead of copying them.
 - Assets are immutable files named by ID with a readable stem.
 
@@ -35,6 +35,36 @@ The format also fixes how files change over time:
 - Trash and page history live inside the notebook, so they travel with it. Conflicts are always kept and shown, never overwritten. A tree intent log, plus marks inside the notebook, lets any device finish a half-done move or deletion without trusting clocks.
 - All JSON files share one format version number. Each file also states the oldest reader that can show it. Older apps open newer files read-only, and newer apps upgrade older files in memory, writing them back only when edited, after a backup.
 - Encrypted sections are reserved. Version 1 already forbids plain-text copies of them in readable files, the search index, thumbnails, and the journal.
+
+### Amendments before version 1 froze
+
+The Phase 4 and Phase 5 designs asked for these changes while version 1 was still a draft. Items P3-1 to P3-12 come from Phase 4, and C1 to C11 come from Phase 5. The table records what became of each one.
+
+| Item | Change | Status |
+|---|---|---|
+| P3-1 | Reading order in the view | Done: `view.readingOrder`, `setPage` merge patch, fixtures in `reading-order/` |
+| P3-2 | Descriptions and the `decorative` flag | Done: already in the spec and model for images, drawings, and files; a round-trip test now covers them |
+| P3-3 | Named styles in `notebook.json` | Done: `styles` in the spec, `NotebookFile`, `NotebookTree`, `NodeProps`, and `set_notebook_props`; copies merge by `changed` |
+| P3-4 | Typing groups join `PatchBlock` and `SetPage` | Done: in `UndoStack`, with followers ignored |
+| P3-5 | Full block JSON in undo, redo, and remote frames | Done: `FrameInfo` carries `blocks`, `title`, `tags`, `view`, and `assets` |
+| P3-6 | Image size and type check on import | Done: `AssetSource` takes `image`, and imports check an image's first bytes |
+| P3-7 | Restoring parts of a version, deleting history, and retention | Done in the core: `PageHandle::restore_blocks`, `NotebookHandle::delete_history`, and `Core::set_retention`. The Tauri commands are for the app bridge |
+| P3-8 | Injected `invoke` and `Channel`, and `page_handle` | For the app bridge: needs TypeScript and `core_bridge.rs` |
+| P3-9 | `asset_import_path` stays out of the WebView capability | For the app bridge: needs the Tauri capability file |
+| P3-10 | `spliceText` edit | Done: `Edit::SpliceText` resolves to one `EditText` splice at a UTF-8 byte offset, with the same checks, and groups as typing |
+| P3-11 | Width of a floating text block without `w` | Done: spec 6.2 says content width, from 120 to 600 units |
+| P3-12 | No two adjacent lists of one kind | Done: spec 7.7 says writers join them; `alsoWrittenFrom` in the document fixtures covers it |
+| C1 | `StrokeTxnMeta` with `ui` and `edits` | Done: `edits` resolve first, then the strokes are added, and a new stroke may reuse the ID of one an edit removed |
+| C2 | Partial erase makes sliced strokes | Done: spec 8.2 describes the parts, their cut ends, and their start times |
+| C3 | Stored pressure and positions | Done: spec 8.2 and 9.4 say what is stored |
+| C4 | Anchored ink | Done: role `anchored` and the `anchor` object in spec 6.3 and 8.1, in the model, both codecs, and the fixtures. `alt` and `decorative` were already there (P3-2) |
+| C5 | Exact geometry for shapes | Done: informative note in spec 9.3 |
+| C6 | Typing rule joins anchored ink changes | Done: the page session records with `UndoStack::record_with`, which knows each ink block's anchor |
+| C7 | Shared `newId()` and a header-only codec reader | For the app bridge: TypeScript exports |
+| C8 | `ink.svg` width of transformed strokes | Done: spec 11.3, `Affine::width_scale`, the Rust writer, and the Python reader |
+| C9 | Binary applied-changes frames on the page `Channel` | For the app bridge: needs the `Channel` frames |
+| C10 | `page_read_strokes` | Done in the core as `PageHandle::read_strokes`; the Tauri command is for the app bridge |
+| C11 | Pen corpus for M2 and the budget page | Done in the code: `tests/fixtures/pen/` has a README and format, and the generator and M2 use matching recordings. The recordings themselves are still to be made on a real pen |
 
 ### Conditions
 

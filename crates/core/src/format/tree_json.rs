@@ -5,6 +5,7 @@
 
 mod entries;
 mod merge;
+mod styles;
 
 use super::header::{self, restrict};
 use super::json::{self, Json};
@@ -79,6 +80,11 @@ pub fn read_notebook(bytes: &[u8], limits: &Limits) -> Result<NotebookFile, Form
         created: fields.time("created")?,
         changed: fields.time("changed")?,
         defaults: fields.opt_object("defaults")?,
+        styles: fields
+            .take("styles")
+            .map(styles::read_styles)
+            .transpose()?
+            .unwrap_or_default(),
         groups,
         extra: fields.rest(),
         format,
@@ -93,8 +99,12 @@ pub fn write_notebook(file: &NotebookFile) -> Vec<u8> {
         .opt("color", file.color.as_ref().map(|c| Json::string(c.to_text())))
         .put("created", Json::string(file.created.to_rfc3339()))
         .put("changed", Json::string(file.changed.to_rfc3339()))
-        .opt("defaults", file.defaults.as_ref().map(|d| json::Obj::new().finish(d)));
+        .opt("defaults", file.defaults.as_ref().map(|d| json::Obj::new().finish(d)))
+        .unless("styles", file.styles.is_empty(), || styles::write_styles(&file.styles));
     let groups: Vec<Json<'_>> = sorted_groups(&file.groups).into_iter().map(write_group).collect();
     obj.unless("groups", groups.is_empty(), || Json::Array(groups));
     json::write_document(&obj.finish(&file.extra))
 }
+
+#[cfg(test)]
+mod tests;

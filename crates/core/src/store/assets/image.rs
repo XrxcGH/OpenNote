@@ -1,4 +1,5 @@
-//! Pixel sizes of common image files, and media types from file names.
+//! Pixel sizes of common image files, media types from file names, and whether a file's first bytes match the
+//! media type it is declared as.
 
 /// Media types by file extension, one per line, for files imported from disk.
 const MIME_BY_EXTENSION: &str = "png image/png
@@ -50,6 +51,37 @@ pub fn image_size(bytes: &[u8], mime: &str) -> Option<(u32, u32)> {
         .or_else(|| gif(bytes))
         .or_else(|| jpeg(bytes))
         .or_else(|| bmp(bytes))
+}
+
+/// Whether a file's first bytes match the image type it is declared as. `None` is for a type that isn't a known
+/// image type, which the core accepts as declared (spec 10.3).
+pub fn matches_declared_type(bytes: &[u8], mime: &str) -> Option<bool> {
+    let mime = mime.to_ascii_lowercase();
+    let starts = |prefix: &[u8]| bytes.get(..prefix.len()) == Some(prefix);
+    let brand = |brands: &[&[u8]]| {
+        bytes.get(4..8) == Some(b"ftyp") && bytes.get(8..12).is_some_and(|brand| brands.contains(&brand))
+    };
+    Some(match mime.as_str() {
+        "image/png" => starts(b"\x89PNG\r\n\x1a\n"),
+        "image/jpeg" | "image/jpg" => starts(&[0xff, 0xd8, 0xff]),
+        "image/gif" => starts(b"GIF87a") || starts(b"GIF89a"),
+        "image/webp" => starts(b"RIFF") && bytes.get(8..12) == Some(b"WEBP"),
+        "image/bmp" => starts(b"BM"),
+        "image/tiff" => starts(b"II*\0") || starts(b"MM\0*"),
+        "image/x-icon" | "image/vnd.microsoft.icon" => starts(&[0, 0, 1, 0]),
+        "image/svg+xml" => looks_like_svg(bytes),
+        "image/avif" => brand(&[b"avif", b"avis", b"mif1"]),
+        "image/heic" | "image/heif" => brand(&[b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"mif1", b"msf1"]),
+        _ => return None,
+    })
+}
+
+/// Whether the first kilobyte of a file is the start of an XML document that holds an `<svg` element.
+fn looks_like_svg(bytes: &[u8]) -> bool {
+    let head = bytes.get(..bytes.len().min(1024)).unwrap_or_default();
+    let head = head.strip_prefix(b"\xef\xbb\xbf").unwrap_or(head);
+    let text = String::from_utf8_lossy(head);
+    text.trim_start().starts_with('<') && text.contains("<svg")
 }
 
 fn be_u32(bytes: &[u8], at: usize) -> Option<u32> {
@@ -132,6 +164,52 @@ mod tests {
         assert_eq!(image_size(&bmp_bytes, "image/bmp"), Some((5, 7)));
         assert_eq!(image_size(b"\xff\xd8\xff", "image/jpeg"), None);
         assert_eq!(image_size(b"", "image/png"), None);
+    }
+
+    #[test]
+    fn knows_the_first_bytes_of_each_image_type() {
+        let png = b"\x89PNG\r\n\x1a\nrest";
+        assert_eq!(matches_declared_type(png, "image/png"), Some(true));
+        assert_eq!(matches_declared_type(png, "IMAGE/PNG"), Some(true));
+        assert_eq!(matches_declared_type(png, "image/jpeg"), Some(false));
+        assert_eq!(
+            matches_declared_type(&[0xff, 0xd8, 0xff, 0xe0], "image/jpeg"),
+            Some(true)
+        );
+        assert_eq!(matches_declared_type(b"GIF89a.", "image/gif"), Some(true));
+        assert_eq!(matches_declared_type(b"GIF8", "image/gif"), Some(false));
+        assert_eq!(
+            matches_declared_type(b"RIFF\x10\0\0\0WEBPVP8 ", "image/webp"),
+            Some(true)
+        );
+        assert_eq!(
+            matches_declared_type(b"RIFF\x10\0\0\0WAVEfmt ", "image/webp"),
+            Some(false)
+        );
+        assert_eq!(matches_declared_type(b"BM\0\0", "image/bmp"), Some(true));
+        assert_eq!(matches_declared_type(b"II*\0", "image/tiff"), Some(true));
+        assert_eq!(matches_declared_type(&[0, 0, 1, 0, 1], "image/x-icon"), Some(true));
+        assert_eq!(
+            matches_declared_type(b"\0\0\0\x18ftypheic\0\0", "image/heic"),
+            Some(true)
+        );
+        assert_eq!(
+            matches_declared_type(b"\0\0\0\x18ftypavif\0\0", "image/avif"),
+            Some(true)
+        );
+        assert_eq!(
+            matches_declared_type(b"\0\0\0\x18ftypmp42\0\0", "image/avif"),
+            Some(false)
+        );
+        let svg = b"\xef\xbb\xbf  <?xml version=\"1.0\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\"/>";
+        assert_eq!(matches_declared_type(svg, "image/svg+xml"), Some(true));
+        assert_eq!(
+            matches_declared_type(b"<html><body>hi</body></html>", "image/svg+xml"),
+            Some(false)
+        );
+        assert_eq!(matches_declared_type(b"anything", "application/pdf"), None);
+        assert_eq!(matches_declared_type(b"anything", "image/x-unknown"), None);
+        assert_eq!(matches_declared_type(b"", "image/png"), Some(false));
     }
 
     #[test]

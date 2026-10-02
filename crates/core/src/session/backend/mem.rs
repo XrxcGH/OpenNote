@@ -28,6 +28,7 @@ use crate::session::journal_thread::{BaseSnapshot, JournalMeta};
 use crate::store::assets::{AssetSource, ImportCtx};
 use crate::store::external::ExternalDecision;
 use crate::store::fs::{Durability, FileStamp, Fs};
+use crate::store::history::{Retention, ThinReport};
 use crate::store::journal::reader::KeyJournals;
 use crate::store::layout::{NotebookKey, NotebookLayout, ASSETS_DIR, CONFLICTS_DIR, PAGE_MD};
 use crate::store::lock::ensure_dir_all;
@@ -364,22 +365,33 @@ impl Backend for MemBackend {
         Ok(self.codec.read_page(&page_json, &self.limits)?)
     }
 
-    fn tidy_page(&self, _dir: &Path, _now: Timestamp) -> Result<(), CoreError> {
+    fn delete_history(&self, _dir: &Path, _keep_named: bool) -> Result<ThinReport, CoreError> {
+        Ok(ThinReport::default())
+    }
+
+    fn tidy_page(&self, _dir: &Path, _now: Timestamp, _keep: Retention) -> Result<(), CoreError> {
         Ok(())
     }
 
     fn import_asset(&self, dir: &Path, source: AssetSource, ctx: &ImportCtx<'_>) -> Result<Asset, CoreError> {
-        let (name, mime, bytes) = match source {
-            AssetSource::Bytes { name, mime, bytes } => (name, mime, bytes),
-            AssetSource::Path(path) => {
+        let (name, mime, bytes, claimed) = match source {
+            AssetSource::Bytes {
+                name,
+                mime,
+                bytes,
+                image,
+            } => (name, mime, bytes, image),
+            AssetSource::Path { path, image } => {
                 let name = path
                     .file_name()
                     .map(|n| n.to_string_lossy().into_owned())
                     .unwrap_or_default();
                 let bytes = self.fs.read(&path, u64::MAX)?;
-                (name, "application/octet-stream".to_owned(), bytes)
+                (name, "application/octet-stream".to_owned(), bytes, image)
             }
         };
+        crate::store::assets::check_declared_type(&bytes, &mime)?;
+        let size = crate::store::assets::picture_size(&bytes, &mime, claimed);
         let sha256: [u8; 32] = Sha256::digest(&bytes).into();
         if let Some(existing) = ctx.existing.values().find(|a| a.sha256 == sha256) {
             return Ok(existing.clone());
@@ -397,8 +409,8 @@ impl Backend for MemBackend {
             bytes: len,
             sha256,
             name,
-            width: None,
-            height: None,
+            width: size.map(|(w, _)| w),
+            height: size.map(|(_, h)| h),
             created: ctx.clock.now(),
             extra: JsonMap::new(),
         })

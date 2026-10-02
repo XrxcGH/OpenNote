@@ -264,3 +264,118 @@ fn contiguous_splices_merge() {
     assert_eq!(merge_splices(&s(3, "", "a"), &s(3, "a", "")), None);
     assert_eq!(merge_splices(&s(3, "x", "y"), &s(4, "", "z")), None);
 }
+
+fn typing(target: &str) -> Option<opennote_core::ops::CoalesceKey> {
+    key(CoalesceKind::Typing, target)
+}
+
+#[test]
+fn typing_into_a_block_field_groups_its_patches() {
+    let (mut s, mut stack) = (Session::new(), stack());
+    let image = ids(&s.page)[1];
+    let alt = |text: &str| patch(image, serde_json::json!({ "alt": text }));
+    let original = s.page.blocks.get(image).unwrap().clone();
+    for (pause, text) in [(100, "A"), (200, "A l"), (300, "A le"), (200, "A lea")] {
+        s.edit(
+            &mut stack,
+            "main-1",
+            (pause, typing(&image.to_string())),
+            vec![alt(text)],
+        );
+    }
+    assert_eq!(stack.undo.len(), 1, "four patches in under a second apart are one step");
+    s.edit(
+        &mut stack,
+        "main-1",
+        (1_000, typing(&image.to_string())),
+        vec![alt("A leaf")],
+    );
+    assert_eq!(stack.undo.len(), 2, "a pause of 1 second starts a new step");
+    s.edit(&mut stack, "main-1", (100, typing("another")), vec![alt("A leaf.")]);
+    assert_eq!(stack.undo.len(), 3, "another target starts a new step");
+    assert_eq!(s.undo_all(&mut stack), 3);
+    assert_eq!(
+        s.page.blocks.get(image),
+        Some(&original),
+        "undo restores the block, times included"
+    );
+}
+
+#[test]
+fn typing_groups_of_patches_close_after_10_seconds() {
+    let (mut s, mut stack) = (Session::new(), stack());
+    let image = ids(&s.page)[1];
+    for n in 0..30 {
+        let edit = patch(image, serde_json::json!({ "alt": "x".repeat(n + 1) }));
+        s.edit(&mut stack, "main-1", (500, typing(&image.to_string())), vec![edit]);
+    }
+    assert_eq!(stack.undo.len(), 2, "15 seconds of typing make 2 steps");
+}
+
+#[test]
+fn typing_a_title_groups_its_set_page_edits() {
+    let (mut s, mut stack) = (Session::new(), stack());
+    let original = s.page.title.clone();
+    for (pause, title) in [(100, "L"), (300, "Li"), (300, "Lig")] {
+        s.edit(&mut stack, "main-1", (pause, typing("title")), vec![set_title(title)]);
+    }
+    assert_eq!(stack.undo.len(), 1);
+    // Typing in the page's text starts its own step, even under the same key target.
+    s.type_text(&mut stack, 100, "!");
+    assert_eq!(stack.undo.len(), 2);
+    s.edit(&mut stack, "main-1", (100, typing("title")), vec![set_title("Ligh")]);
+    assert_eq!(stack.undo.len(), 3, "an edit of another kind in between ends the group");
+    assert_eq!(s.undo_all(&mut stack), 3);
+    assert_eq!(s.page.title, original);
+}
+
+#[test]
+fn followers_that_move_with_typing_do_not_split_the_group() {
+    let (mut s, mut stack) = (Session::new(), stack());
+    let (text, image) = (s.text(), ids(&s.page)[1]);
+    let original = s.page.blocks.get(image).unwrap().frame.clone();
+    let group = typing(&text.to_string());
+    for (n, word) in ["a", "b", "c"].into_iter().enumerate() {
+        let markdown = format!("{}{word}", s.markdown());
+        let follower = move_block(image, Some(at(10.0, 100.0 + 10.0 * n as f64)), None);
+        let edits = vec![set_text(text, &markdown), follower];
+        s.edit(&mut stack, "main-1", (100, group.clone()), edits);
+    }
+    assert_eq!(
+        stack.undo.len(),
+        1,
+        "moving the blocks below doesn't end a typing group"
+    );
+    assert_eq!(s.undo_all(&mut stack), 1);
+    assert_eq!(s.page.blocks.get(image).unwrap().frame, original);
+    // Moves alone are not typing.
+    let alone = move_block(image, Some(at(5.0, 5.0)), None);
+    s.edit(&mut stack, "main-1", (100, group.clone()), vec![alone.clone()]);
+    let again = move_block(image, Some(at(6.0, 6.0)), None);
+    s.edit(&mut stack, "main-1", (100, group), vec![again]);
+    assert_eq!(stack.undo.len(), 2);
+}
+
+#[test]
+fn spliced_typing_groups_like_set_text() {
+    let (mut s, mut stack) = (Session::new(), stack());
+    let (text, start) = (s.text(), s.markdown());
+    let group = typing(&text.to_string());
+    for word in ["a", "b", "c"] {
+        let at = u32::try_from(s.markdown().len()).unwrap();
+        s.edit(
+            &mut stack,
+            "main-1",
+            (200, group.clone()),
+            vec![splice_text(text, at, "", word)],
+        );
+    }
+    assert_eq!(s.markdown(), format!("{start}abc"));
+    assert_eq!(stack.undo.len(), 1, "typing by splice joins one step");
+    let Op::EditText { splices, .. } = &stack.undo[0].forward[0] else {
+        panic!()
+    };
+    assert_eq!((splices.len(), splices[0].ins.as_str()), (1, "abc"));
+    assert_eq!(s.undo_all(&mut stack), 1);
+    assert_eq!(s.markdown(), start);
+}

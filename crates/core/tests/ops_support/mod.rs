@@ -178,28 +178,22 @@ pub fn set_title(title: &str) -> Edit {
         title: Some(title.to_owned()),
         tags: None,
         view: None,
-        reading_order: None,
     }
 }
 
-/// `setPage` with a view.
-pub fn set_view(view: Value) -> Edit {
+/// `setPage` with a view merge patch.
+pub fn set_view(patch: Value) -> Edit {
     Edit::SetPage {
         title: None,
         tags: None,
-        view: Some(view),
-        reading_order: None,
+        view: Some(patch),
     }
 }
 
-/// `setPage` with a reading order.
+/// `setPage` with a view patch that sets the reading order.
 pub fn set_reading_order(order: Vec<BlockId>) -> Edit {
-    Edit::SetPage {
-        title: None,
-        tags: None,
-        view: None,
-        reading_order: Some(order),
-    }
+    let ids: Vec<String> = order.iter().map(ToString::to_string).collect();
+    set_view(json!({ "readingOrder": ids }))
 }
 
 /// A group key.
@@ -293,5 +287,15 @@ impl Session {
             count += 1;
         }
         count
+    }
+}
+
+/// `spliceText`.
+pub fn splice_text(block: BlockId, at: u32, del: &str, ins: &str) -> Edit {
+    Edit::SpliceText {
+        block,
+        at,
+        del: del.to_owned(),
+        ins: ins.to_owned(),
     }
 }

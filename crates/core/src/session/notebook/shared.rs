@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError, RwLock, Weak};
 use super::undo::TreeUndo;
 use crate::error::CoreError;
 use crate::id::{NotebookId, PageId, SectionId};
-use crate::model::Page;
+use crate::model::{Page, ReadOnlyReason};
 use crate::session::core::CoreCtx;
 use crate::session::events::{CoreEvent, ExternalAction};
 use crate::session::journal_thread::JournalMeta;
@@ -171,6 +171,11 @@ impl NotebookShared {
         });
     }
 
+    /// Whether this notebook is a scheduled backup set, which opens read-only.
+    pub(crate) fn is_backup(&self) -> bool {
+        matches!(self.tree().store.read_only, Some(ReadOnlyReason::Backup))
+    }
+
     /// Forgets a closed page session, and tidies the page's history and unused files a little later, if it
     /// isn't open again by then (spec 19).
     pub(crate) fn page_closed(&self, session: &PageSession) {
@@ -191,7 +196,7 @@ impl NotebookShared {
                     return;
                 }
                 let now = notebook.ctx.clock.now();
-                let _ = notebook.ctx.backend.tidy_page(&dir, now);
+                let _ = notebook.ctx.backend.tidy_page(&dir, now, notebook.ctx.retention());
             });
     }
 

@@ -17,6 +17,25 @@
       }
     }
   },
+  "styles": {
+    "normal": {
+      "font": "Georgia",
+      "size": 16,
+      "lineHeight": 1.5
+    },
+    "h1": {
+      "size": 28,
+      "color": "indigo",
+      "spaceBefore": 18,
+      "spaceAfter": 6
+    },
+    "zz-callout": {
+      "color": "#aabbcc",
+      "zzshadow": {
+        "blur": 3
+      }
+    }
+  },
   "groups": [
     {
       "id": "01m3sa1mj800000000000052cw",

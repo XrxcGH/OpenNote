@@ -285,6 +285,19 @@ Per-device view state, such as scroll position, zoom, the last open page, and co
       }
     }
   },
+  "styles": {
+    "normal": {
+      "font": "Georgia",
+      "size": 16,
+      "lineHeight": 1.5
+    },
+    "h1": {
+      "size": 28,
+      "color": "indigo",
+      "spaceBefore": 18,
+      "spaceAfter": 6
+    }
+  },
   "groups": [
     {
       "id": "01m3s9sbxgnp9pzjzdccftczg5",
@@ -309,7 +322,24 @@ Per-device view state, such as scroll position, zoom, the last open page, and co
 | `changed` | timestamp | required | When a field of this file last changed. Used only to merge sync copies (section 14.3) |
 | `defaults` | object | none | Defaults for new pages. Only `view` (section 5.4) is defined in version 1 |
 | `groups` | array | `[]` | Section groups (section 4.3) |
-| `styles` | object | none | Reserved for how this notebook shows each named style (section 5.6) |
+| `styles` | object | none | How this notebook shows each named style (below) |
+
+The `styles` object maps a style name to how the notebook shows it. The names of version 1 are `normal` (body text), `h1` to `h6` (headings), `title`, `quote`, and `code`. Each value is an object whose keys are all optional:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `font` | string | A font family name, 1 to 200 characters. A reader whose device lacks the font uses its own |
+| `size` | number | The text size in page units, from 1 to 1000 |
+| `color` | color | The text color (section 2.7) |
+| `spaceBefore`, `spaceAfter` | number | The space above and below an element in page units, from 0 to 1000 |
+| `lineHeight` | number | The line height as a multiple of the size, from 0.5 to 10 |
+
+A missing key means the app's own value. The rules for `styles`:
+
+- Readers keep style names and keys they don't know and write them back unchanged (section 2.9), so a notebook can style names such as `subtitle` and `citation` (section 6.6) too.
+- A reader shows a value outside its range as if the key were missing. A notebook has at most 64 styles.
+- A writer leaves `styles` out when it has none. It writes the names of version 1 in the order above, and then the other names in code point order.
+- Two copies of the file merge by `changed`, like the other fields of the file (section 14.3).
 
 The list of sections is not stored here. Each section records its own group and order in its own `section.json`. Creating a section on one device and reordering sections on another then change different files.
 
@@ -414,7 +444,6 @@ A page folder holds `page.json` and, when needed, `page.md`, `ink.svg`, `ink/`, 
 | `tags` | array of strings | `[]` | Tags. A `/` nests them, as in `exam/unit-3`. Stored as typed |
 | `view` | object | required | Layout, paper, and background (section 5.4) |
 | `blocks` | array | `[]` | The page's blocks, sorted by order key (section 6) |
-| `readingOrder` | array of IDs | `[]` | Block IDs in the order screen readers read them, for freeform pages (section 6.2) |
 | `assets` | object | `{}` | The asset table, keyed by asset ID (section 10.2) |
 | `ink` | object | none | The ink segment list (section 8.3) |
 | `recordings` | array | `[]` | Reserved for audio recordings (section 5.6) |
@@ -490,6 +519,7 @@ Fields that equal their defaults are left out, as section 2.2 requires, so this 
 | `background.marginLine` | `false` | Draws a margin line on ruled paper |
 | `background.template` | none | The ID of a saved template, for the `template` pattern |
 | `contentWidth` | none | On flow pages, the width of the text column. Absent means the reading width |
+| `readingOrder` | `[]` | Block IDs in the order screen readers, `page.md`, and the reading view read them (section 6.2). Absent means the default order |
 
 Portrait paper sizes in page units:
 
@@ -651,7 +681,6 @@ Version 1 writers never write these fields. Version 1 readers must keep them unc
 | `recordings` | `page.json` | Audio recordings and their pauses (Phase 9) |
 | `marks` | `data` of text blocks | Ranges in the Markdown linked to moments in a recording (Phase 9) |
 | `parent` | Blocks | Blocks nested inside a group block |
-| `styles` | `notebook.json` | Each notebook's font, size, color, and spacing for the named styles of section 6.6 |
 | `encryption` | `section.json` and `page.json` | Password-protected sections (section 5.7) |
 
 A later version defines each field and raises `formatVersion`. Every stroke already stores its start time and per-point times (section 9.4), so handwriting needs no new field to link to audio.
@@ -686,6 +715,7 @@ Password-protected sections arrive in a later version. Version 1 reserves their 
 A frame has `x`, `y`, `w`, `h`, and `rotate`, all in page units except `rotate`, which is in degrees. Each is optional.
 
 - A block whose frame has both `x` and `y` is **floating**. It sits at that position on the page. A missing `h` means "as tall as the content", which text boxes use. A missing `w` and `h` on an ink block means it has no bounds.
+- A floating `text` block without `w` is as wide as its content, from 120 to 600 units. Longer text wraps at 600.
 - A block without a frame, or whose frame has only `w` or `h`, is **flowing**. Flowing blocks stack from top to bottom in order, and `w` and `h` act as size hints.
 
 On a `freeform` page, new blocks float. On a `flow` page, new blocks flow. Either kind can appear on either page. For example, a flow page can carry floating handwriting over its text.
@@ -698,14 +728,21 @@ Reading order, used by screen readers, `page.md`, and the phone's reading view, 
 2. A row starts at the first block not yet in a row. It takes every later block whose `y` is at most 8 units below the `y` of the row's first block.
 3. Each row reads from left to right: by `x`, then `y`, then order key and ID.
 
-A freeform page can set its own reading order with `readingOrder`, a list of block IDs. The listed blocks come first, in that order, and the others follow in the order above. IDs that name no block are ignored, and writers drop them at the next save.
+A page can set its own reading order with `view.readingOrder` (section 5.4), a list of block IDs. The listed blocks come first, in that order. The others follow in the order above, so a block that is not in the list yet reads after the listed ones. IDs that name no block are ignored, and repeated IDs count once. Writers drop both at the next save.
+
+Writers keep the list in step with the blocks:
+
+- A change that deletes a block removes its ID from the list in the same transaction, so undo brings both back.
+- A change to the view is a JSON merge patch (Request for Comments (RFC) 7396). A list is one value, so a patch that names `readingOrder` replaces the whole list, and `null` removes it and restores the default order.
+- When two edits of the same page change the list, the later one wins in full. A reader never combines the two lists.
+- A new page made from the notebook's `defaults.view` starts without a list.
 
 ### 6.3 Block types in version 1
 
 | Type | `data` fields | Meaning |
 |---|---|---|
 | `text` | `markdown`, `ids`, `tags`, `styles` | A text box. It holds one or more paragraphs, headings, lists, quotes, callouts, and code blocks in OpenNote Markdown (section 7). The other fields name its elements (section 6.6) |
-| `ink` | `role`, `strokeCount`, `anchor`, `alt`, `decorative` | A place for strokes (section 8). `role` is `layer` for the page's handwriting layer, or `drawing` for a drawing area. `strokeCount` is a cached count of live strokes. `anchor` ties it to text (section 8.1) |
+| `ink` | `role`, `strokeCount`, `anchor`, `alt`, `decorative` | A place for strokes (section 8). `role` is `layer` for the page's handwriting layer, `drawing` for a drawing area, or `anchored` for ink tied to text. `strokeCount` is a cached count of live strokes. `anchor` says where the text is (section 8.1) |
 | `image` | `asset`, `alt`, `decorative`, `crop` | An image from the asset table. `crop` is `{x, y, w, h}` as fractions from 0 to 1, and defaults to the whole image |
 | `file` | `asset`, `display`, `alt`, `decorative` | An attachment from the asset table, shown as an `icon` (the default) or a `preview` |
 | `table` | `header`, `columns`, `rows` | A table (below) |
@@ -774,7 +811,7 @@ A text block's elements are its headings, paragraphs, list items, code blocks, m
 
 Element IDs share the page's ID space with block IDs. When `ids` lists fewer IDs than the block has elements, the last elements have no ID yet, and writers add IDs for them. When it lists more, readers ignore the extra IDs, and writers drop them. A tool that edits the Markdown but can't track elements leaves `ids` alone, and IDs then match elements in order. Keys of `tags` and `styles` that are not in `ids` are ignored.
 
-A style name refers to a named style of the app, such as `title`, `subtitle`, `quote`, `citation`, or `code`, instead of formatting stored in the Markdown. Readers show an element with an unknown style as plain text. Named styles keep the Markdown and `page.md` clean, because neither carries styles. A later version lets each notebook change how a style looks.
+A style name refers to a named style of the app, such as `title`, `subtitle`, `quote`, `citation`, or `code`, instead of formatting stored in the Markdown. Readers show an element with an unknown style as plain text. Named styles keep the Markdown and `page.md` clean, because neither carries styles. Each notebook can change how a style looks with the `styles` object of `notebook.json` (section 4.1).
 
 ### 6.7 Descriptions for screen readers
 
@@ -899,6 +936,7 @@ Every other character is written as itself. Text never contains `U+000D`: a line
 
 - Exactly one blank line separates blocks. There are no blank lines at the start, no trailing spaces on any line, and no newline at the end of the `markdown` string.
 - A list is tight, with no blank lines between items, unless an item holds more than one block. Then one blank line separates its items.
+- A writer never writes two lists of one kind next to each other, both bulleted (task lists included) or both numbered. The blank line between them would read back as one loose list. It joins them first: the later list's items follow the earlier list's, which keeps its start number. A bulleted list beside a numbered list stays two lists.
 - Marks nest in this order, outermost first: link, strong emphasis, emphasis, strikethrough, underline, highlight, text color, text size, subscript or superscript, and code. Where two ranges overlap, the mark that comes later in this order is closed and reopened.
 - Whitespace at either edge of a marked range is moved outside the delimiters.
 - Where a delimiter (`*`, `**`, `~~`, or `==`) would not open or close under CommonMark's rules for that position, the writer uses the matching HTML tag from section 7.4 for that range.
@@ -929,15 +967,29 @@ Every stroke belongs to exactly one ink block.
 
 Stroke coordinates are relative to the ink block's origin. Moving a whole drawing therefore changes one frame, not thousands of strokes.
 
-Handwriting can be anchored to text, so that a note in the margin follows its paragraph. The ink block's `data` then holds an `anchor` object. Its `block` field is the ID of a text block or of one of its elements (section 6.6). Its `offset` field counts the Unicode code points of that element's displayed text before the anchored character.
+Ink can be anchored to text, such as a highlight under a phrase or a note in the margin beside a paragraph. It is a floating ink block whose `role` is `anchored`, and its `data` holds an `anchor` object:
 
-- The frame's `x` and `y` keep the handwriting's position from the last layout.
-- When the text reflows, an app that lays out text moves the ink block so that it keeps its distance from the anchored character. It writes the new `x` and `y` at the next save. The stroke points never change.
-- A reader that doesn't lay out text uses the frame as it is. So does every reader when the anchor names nothing on the page.
+| Field | Default | Meaning |
+|---|---|---|
+| `block` | required | The ID of the text block the ink is drawn with |
+| `para` | none | The ID of an element of that block (section 6.6), such as a paragraph |
+| `at` | none | The Unicode code points of the displayed text before the anchored character. The text is the element's when `para` is set, and the whole block's when it is not |
+| `quote` | none | The text around the anchored place: `exact`, the text from the anchored character on, with `prefix` before it and `suffix` after it. They let an app find the place again after the text is edited |
+| `dx`, `dy` | 0 | The distance from the anchored place to the ink block's origin, in page units |
 
+- The ink is drawn with the text block it names. Its highlighter strokes are drawn just below that block's text, and its other strokes just above it. The block's place in the order of blocks doesn't matter for that.
+- The frame's `x` and `y` keep the ink's last absolute position. A reader that doesn't lay out text uses the frame as it is. So does every reader when the anchor names nothing on the page.
+- When the text reflows, an app that lays out text moves the ink block to keep its distance from the anchored place. It writes the new `x` and `y` at the next save. The stroke points never change.
+- Ink blocks with another role have no anchor. A reader keeps one it finds there.
 ### 8.2 Strokes
 
-A stroke stores its raw input: position, pressure, tilt, and time for every point. Once a stroke is finished, its points never change. Moving, scaling, or rotating a stroke sets its affine transform, and recoloring it sets its style. Rendering can improve later without changing the data, as the development plan requires.
+A stroke stores the input of the pen as the app drew it, with the settings the person had chosen at that moment:
+
+- Pressure is the device's pressure after the pressure curve and the minimum width.
+- Positions may be smoothed by a stabilizer.
+- Tilt and time are raw.
+
+A later change to these settings never changes an old stroke, because the stroke already holds the result. Once a stroke is finished, its points never change. Moving, scaling, or rotating a stroke sets its affine transform, and recoloring it sets its style. Rendering can improve later without changing the data, as the development plan requires.
 
 A stroke's style has four parts:
 
@@ -952,7 +1004,9 @@ The palette slot is the pen name that [BRAND.md section 4](../../BRAND.md#4-colo
 
 Strokes in one ink block are drawn in order of their start time, then their ID. This needs no stored order, never conflicts in a merge, and puts a restored stroke back at its original depth. Highlighter strokes are drawn below the other strokes of their block.
 
-A partial erase removes the stroke and adds one or two new strokes with slices of its points. The new strokes get new IDs, keep their original times, and record the erased stroke's ID as their origin.
+A partial erase removes the stroke and adds one or more new strokes. Each is a contiguous slice of the original's points, plus at most one interpolated point at each cut end, so a cut is clean at any pen speed. The new strokes get new IDs and record the erased stroke's ID as their origin.
+
+A part starts at the original's start time plus the time of its first point, and counts its point times from there. Its first point then has a time under 1 millisecond (section 9.4). One pen draws at a time, so the parts keep the drawing order.
 
 Imported ink without times sets the "start time unknown" flag (section 9.3).
 
@@ -1050,7 +1104,7 @@ The body of a `Stroke` record has 72 fixed bytes, then optional fields, then the
 | 42 | 2 | Stroke flags (below) |
 | 44 | 4 | Color: red, green, blue, and alpha bytes, in sRGB with straight alpha |
 | 48 | 4 | Width in page units (`f32`) |
-| 52 | 16 | Bounding box of the raw points: minimum x, minimum y, maximum x, and maximum y, each an `i32` in 1/64 page units |
+| 52 | 16 | Bounding box of the stored points, before the transform: minimum x, minimum y, maximum x, and maximum y, each an `i32` in 1/64 page units |
 | 68 | 4 | Point count, 1 to 200,000 (`u32`) |
 | 72 | 24 | Transform, only if flag bit 3 is set: six `f32` values `a b c d e f` |
 | next | 16 | Origin stroke ID, only if flag bit 4 is set |
@@ -1066,7 +1120,11 @@ The body of a `Stroke` record has 72 fixed bytes, then optional fields, then the
 | 5 | Start time unknown (imported ink) |
 | 6 to 15 | Zero in version 1. Bit 6 is reserved for barrel rotation |
 
-The transform maps a raw point `(x, y)` to `(a·x + c·y + e, b·x + d·y + f)` in the ink block's coordinates. This is the convention of SVG and the HTML canvas.
+
+A stroke whose flag bits 2 and 5 are both clear has a start time but no per-point times. It holds exact geometry, such as a recognized line, circle, or polygon, and not a hand-drawn path. This is informative, because readers draw it like any other stroke.
+
+A writer that changes such a stroke keeps its points exact. It does not smooth, resample, or simplify them, so a recognized shape stays a shape.
+The transform maps a stored point `(x, y)` to `(a·x + c·y + e, b·x + d·y + f)` in the ink block's coordinates. This is the convention of SVG and the HTML canvas.
 
 Readers draw unknown tool values as a pen and treat unknown palette slots as custom colors. They keep the record's bytes unchanged either way.
 
@@ -1080,6 +1138,8 @@ Each point has up to 6 channels, always in this order. `x` and `y` are always pr
 | `p`, pressure | `u16` | `round(pressure × 65535)`, for pressure from 0 to 1 |
 | `tx`, `ty`, tilt | `i16` | 1/100 degree: `round(tilt × 100)`, from −9000 to 9000. Tilt follows the `tiltX` and `tiltY` of Pointer Events |
 | `t`, time | `u32` | 100 microseconds after the stroke's start time |
+
+Pressure is stored after the person's pressure curve and minimum width, and `x` and `y` after any stabilizer, as section 8.2 says. Tilt and time are stored as the device reported them.
 
 Point 0 stores absolute values: `x`, `y`, `tx`, and `ty` as zigzag varints, and `p` and `t` as unsigned varints. For point 0, `t` is the part of the start time below one millisecond, from 0 to 9. Every later point stores the difference from the point before it: `dx`, `dy`, `dp`, `dtx`, and `dty` as zigzag varints, and `dt` as an unsigned varint, because time never goes backward.
 
@@ -1185,7 +1245,7 @@ Readers must check an asset's file name before using it. The name must be the as
 | `bytes` | required | The file's size |
 | `sha256` | required | The SHA-256 hash of the file, as 64 lowercase hexadecimal digits |
 | `name` | required | The original file name. Shown for attachments and used by exports, never as a path |
-| `width`, `height` | none | Pixel size, for images |
+| `width`, `height` | none | Pixel size, for images. A writer reads it from the file's header when it knows the type, and otherwise takes the size its decoder measured, so a page can keep the picture's shape before the picture loads |
 | `created` | required | When the asset was added |
 | `state` | none | Reserved: `recording` while an audio file is still growing (Phase 9) |
 
@@ -1193,6 +1253,7 @@ Readers must check an asset's file name before using it. The name must be the as
 
 - Assets are immutable. Replacing or editing an image makes a new asset.
 - A writer writes an asset file durably (section 17.2) when it is imported, before any block or journal record refers to it. Large imports copy in the background, and the block is added only when the file is safe on disk.
+- A writer checks that the first bytes of an `image/*` file match the media type it declares, such as the eight signature bytes of `image/png`, before it records the asset. A file that doesn't match is refused. A writer takes a media type it doesn't know as declared.
 - The hash lets a writer reuse an existing asset when the same file is added twice to a page, and lets checks detect damage.
 - A missing asset, often one that a sync tool has not delivered yet, is shown as a placeholder. Its reference is kept.
 - Audio recordings are the one kind of asset that grows while it is referenced. A later version defines how (section 5.6).
@@ -1263,7 +1324,7 @@ Before a writer replaces `page.md`, `ink.svg`, or `index.md`, it looks at the fi
 | Has a checksum that matches | Written by OpenNote | Writes the new file if its revision is stale |
 | Anything else | Edited by a person or another tool | Moves it to the conflicts folder, writes the new file, and tells the person once |
 
-Edited copies go to the page's `.conflicts/` folder as `page.md.<time>.edited` or `ink.svg.<time>.edited`, and to `.opennote/conflicts/index.md.<time>.edited` for the index. `<time>` has the form `20260930T140740Z`. A later version of OpenNote may offer to import such edits.
+Edited copies go to the page's `.conflicts/` folder as `page.md.<time>.edited` or `ink.svg.<time>.edited`, and to `.opennote/conflicts/index.md.<time>.edited` for the index. `<time>` has the form `20260930T140740Z`. OpenNote offers to bring the text changes of an edited `page.md` into the page. It compares the copy with the page as that `page.md` was written from it, so it only changes the text blocks the person edited.
 
 This check matters because readable copies are written without a flush. After a power cut they can be empty or filled with zero bytes, which must never be mistaken for a person's work.
 
@@ -1283,7 +1344,7 @@ This check matters because readable copies are written without a flush. After a 
 ```
 
 - The view box is the union of the strokes' bounding boxes, grown by 8 units on each side. Each ink block becomes one `<g>` group. Floating blocks sit at their frame position. Flowing blocks are stacked below the floating content, in order, 24 units apart.
-- Each stroke becomes one `<path>` through its points, after its transform, in page units rounded to 0.1. It uses the stored color and nominal width. A color with alpha below 255 adds `stroke-opacity`. Highlighter strokes come first in each group.
+- Each stroke becomes one `<path>` through its points, after its transform, in page units rounded to 0.1. It uses the stored color. Its width is the nominal width times the square root of the absolute value of its transform's determinant (`|ad − bc|`), so resized ink matches the app. A stroke without a transform has its nominal width. A color with alpha below 255 adds `stroke-opacity`. Highlighter strokes come first in each group.
 - The comment on the second line carries the page ID, the revision, the format version, and a checksum computed as for `page.md`.
 - Writers write `ink.svg` when a page closes after its ink changed, and when a page opens with a missing or stale `ink.svg`, after the page is on screen. They do not rewrite it during editing, because it can be several megabytes.
 
@@ -2223,6 +2284,7 @@ The folder `docs/format/fixtures/` holds files that every implementation tests a
 | `journal/` | Journal generations with the pages recovery must produce |
 | `markdown/escape/` and `markdown/documents/` | The conformance fixtures of section 7.8 |
 | `readable/` | Pages with their exact `page.md`, `ink.svg`, and `index.md` |
+| `reading-order/` | Pages with the reading order of section 6.2 that a reader must find |
 
 The folder `docs/format/tools/` holds `read_opennote.py`, a reference reader written with only the Python standard library. It turns a notebook into Markdown and SVG files, and its test runs it against the fixtures. It shows that this specification is enough to read a notebook without OpenNote's code.
 

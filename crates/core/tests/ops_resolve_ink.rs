@@ -124,7 +124,6 @@ fn titles_and_tags_change_only_when_they_differ() {
         title: None,
         tags: Some(vec!["a".repeat(201)]),
         view: None,
-        reading_order: None,
     };
     assert_eq!(code(&page, tags), "invalid");
 }
@@ -156,7 +155,27 @@ fn reading_orders_drop_unknown_and_repeated_blocks() {
     let [text, image, ..] = ids(&page)[..] else { panic!() };
     let missing = BlockId(Id::from_parts(9, 9));
     let (changed, _) = apply_one(&page, set_reading_order(vec![image, missing, image, text]));
-    assert_eq!(changed.reading_order, [image, text]);
+    assert_eq!(changed.view.reading_order, [image, text]);
+}
+
+#[test]
+fn a_view_is_a_merge_patch_over_the_current_view() {
+    let page = sample_page();
+    let [text, image, ..] = ids(&page)[..] else { panic!() };
+    let first =
+        json!({"mode": "paginated", "paper": {"width": 700}, "readingOrder": [image.to_string(), text.to_string()]});
+    let (one, _) = apply_one(&page, set_view(first));
+    // A later patch changes one member and leaves the others alone.
+    let (two, _) = apply_one(&one, set_view(json!({"paper": {"height": 900}})));
+    assert_eq!(two.view.mode.as_str(), "paginated");
+    assert_eq!((two.view.paper.width, two.view.paper.height), (700.0, 900.0));
+    assert_eq!(two.view.reading_order, [image, text]);
+    // `null` puts a member back to its default, for an object and for the reading order.
+    let (three, _) = apply_one(&two, set_view(json!({"paper": null, "readingOrder": null})));
+    assert_eq!(three.view.paper, page.view.paper);
+    assert!(three.view.reading_order.is_empty());
+    assert_eq!(three.view.mode.as_str(), "paginated");
+    assert_eq!(code(&page, set_view(json!({"readingOrder": [5]}))), "invalid");
 }
 
 #[test]
@@ -220,4 +239,102 @@ fn requests_read_the_wire_format() {
         (txn.ops.len(), txn.ui.is_some(), txn.coalesce.is_some()),
         (2, true, true)
     );
+}
+
+fn meta(page: &opennote_core::model::Page, edits: Vec<Edit>) -> opennote_core::ops::resolve::StrokeTxnMeta {
+    opennote_core::ops::resolve::StrokeTxnMeta {
+        page: page.id,
+        client: opennote_core::ClientId::parse("main-1").unwrap(),
+        client_seq: 1,
+        coalesce: None,
+        ui: Some(json!({"selAfter": {"anchor": 2, "head": 2}})),
+        edits,
+    }
+}
+
+fn add_with(
+    page: &opennote_core::model::Page,
+    edits: Vec<Edit>,
+    strokes: Vec<std::sync::Arc<opennote_core::model::Stroke>>,
+) -> Result<opennote_core::ops::Txn, EditError> {
+    let (clock, limits) = (test_clock(), Limits::default());
+    let ctx = ResolveCtx {
+        clock: &clock,
+        limits: &limits,
+        imported: &|_| None,
+    };
+    opennote_core::ops::resolve::resolve_checked_strokes(page, &meta(page, edits), strokes, &ctx)
+}
+
+#[test]
+fn stroke_requests_carry_edits_and_the_selection_in_one_transaction() {
+    let page = sample_page();
+    let old = sample_stroke();
+    let mut part = old.clone();
+    part.start = old.start;
+    let kept = std::sync::Arc::new(part);
+    // A partial erase: the stroke goes, and a slice of it comes back under the same ID.
+    assert!(
+        add_with(&page, Vec::new(), vec![kept.clone()]).is_err(),
+        "the ID is in use without the removal"
+    );
+    let txn = add_with(&page, vec![remove_strokes(&[old.id])], vec![kept.clone()]).unwrap();
+    assert!(matches!(
+        &txn.ops[..],
+        [Op::RemoveStrokes { .. }, Op::AddStrokes { .. }]
+    ));
+    assert!(txn.ui.is_some());
+    let mut changed = page.clone();
+    changed.apply(&txn).unwrap();
+    assert!(changed.ink.stroke(old.id).is_some());
+    // Undoing the transaction in one step restores the original stroke.
+    let inverse: Vec<Op> = txn
+        .ops
+        .iter()
+        .rev()
+        .flat_map(opennote_core::ops::apply::invert)
+        .collect();
+    let mut undone = changed.clone();
+    undone
+        .apply(&opennote_core::ops::Txn {
+            ops: inverse,
+            ..txn.clone()
+        })
+        .unwrap();
+    assert_eq!(undone.ink.stroke(old.id), page.ink.stroke(old.id));
+}
+
+#[test]
+fn the_first_stroke_can_bring_its_layer_block() {
+    let mut page = sample_page();
+    let layer = sample_ink_block();
+    page = apply_one(&page, delete(&[layer])).0;
+    let stroke = sample_stroke();
+    assert!(add_with(&page, Vec::new(), vec![std::sync::Arc::new(stroke.clone())]).is_err());
+    let mut block = new_block(1, "ink", json!({"role": "layer"}));
+    block.id = layer;
+    let txn = add_with(
+        &page,
+        vec![insert(block, None, None)],
+        vec![std::sync::Arc::new(stroke.clone())],
+    )
+    .unwrap();
+    assert!(matches!(&txn.ops[..], [Op::InsertBlocks { .. }, Op::AddStrokes { .. }]));
+    let mut changed = page.clone();
+    changed.apply(&txn).unwrap();
+    assert!(changed.ink.stroke(stroke.id).is_some() && changed.blocks.contains(layer));
+}
+
+#[test]
+fn a_failing_edit_fails_the_whole_stroke_request() {
+    let page = sample_page();
+    let missing = StrokeId(Id::from_parts(1, 1));
+    let mut fresh = sample_stroke();
+    fresh.id = StrokeId(Id::from_parts(9, 9));
+    let result = add_with(
+        &page,
+        vec![remove_strokes(&[missing])],
+        vec![std::sync::Arc::new(fresh)],
+    );
+    assert_eq!(result.unwrap_err().code(), "notFound");
 }

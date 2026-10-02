@@ -10,8 +10,8 @@ use serde_json::Value;
 use super::fields::{id_array, item_id, item_object, item_string, number, Fields, Out};
 use crate::id::{ColumnId, ElementId};
 use crate::model::{
-    Crop, FileData, FileDisplay, ImageData, InkAnchor, InkBlockData, JsonMap, Named, TableCell, TableColumn, TableData,
-    TableRow, TextData,
+    AnchorQuote, Crop, FileData, FileDisplay, ImageData, InkAnchor, InkBlockData, JsonMap, Named, TableCell,
+    TableColumn, TableData, TableRow, TextData,
 };
 
 const TEXT_KEYS: &[&str] = &["markdown", "ids", "tags", "styles", "checked"];
@@ -86,13 +86,7 @@ pub fn ink_to_json(ink: &InkBlockData) -> JsonMap {
     out.put("role", ink.role.as_str());
     out.put("strokeCount", ink.stroke_count);
     out.put_if(ink.anchor.is_some(), "anchor", || {
-        let Some(anchor) = &ink.anchor else {
-            return Value::Null;
-        };
-        let mut anchor_out = Out::new(&anchor.extra);
-        anchor_out.put("block", anchor.block.to_string());
-        anchor_out.put("offset", anchor.offset);
-        Value::Object(anchor_out.done())
+        ink.anchor.as_ref().map_or(Value::Null, anchor_to_json)
     });
     out.put_if(!ink.alt.is_empty(), "alt", || Value::from(ink.alt.clone()));
     out.put_if(ink.decorative, "decorative", || Value::Bool(true));
@@ -102,17 +96,7 @@ pub fn ink_to_json(ink: &InkBlockData) -> JsonMap {
 /// Reads an ink block's `data`.
 pub fn ink_from_json(map: &JsonMap) -> Result<InkBlockData, String> {
     let f = Fields::new(map, "data", INK_KEYS);
-    let anchor = match f.object("anchor")? {
-        None => None,
-        Some(anchor) => {
-            let a = Fields::new(anchor, "anchor", &["block", "offset"]);
-            Some(InkAnchor {
-                block: a.required_id("block")?,
-                offset: a.count("offset")?.ok_or("anchor.offset must be present")?,
-                extra: a.extra(),
-            })
-        }
-    };
+    let anchor = f.object("anchor")?.map(anchor_from_json).transpose()?;
     Ok(InkBlockData {
         role: f.named("role")?,
         stroke_count: f.count("strokeCount")?.unwrap_or(0),
@@ -120,6 +104,55 @@ pub fn ink_from_json(map: &JsonMap) -> Result<InkBlockData, String> {
         alt: f.string_or("alt", "")?,
         decorative: f.flag("decorative")?,
         extra: f.extra(),
+    })
+}
+
+const ANCHOR_KEYS: &[&str] = &["block", "para", "at", "quote", "dx", "dy"];
+const QUOTE_KEYS: &[&str] = &["prefix", "exact", "suffix"];
+
+fn anchor_to_json(anchor: &InkAnchor) -> Value {
+    let mut out = Out::new(&anchor.extra);
+    out.put("block", anchor.block.to_string());
+    out.put_if(anchor.para.is_some(), "para", || {
+        anchor.para.map_or(Value::Null, |para| Value::from(para.to_string()))
+    });
+    out.put_if(anchor.at.is_some(), "at", || anchor.at.map_or(Value::Null, Value::from));
+    out.put_if(anchor.quote.is_some(), "quote", || {
+        anchor.quote.as_ref().map_or(Value::Null, |quote| {
+            let mut q = Out::new(&quote.extra);
+            q.put_if(!quote.prefix.is_empty(), "prefix", || Value::from(quote.prefix.clone()));
+            q.put("exact", quote.exact.clone());
+            q.put_if(!quote.suffix.is_empty(), "suffix", || Value::from(quote.suffix.clone()));
+            Value::Object(q.done())
+        })
+    });
+    out.put_if(anchor.dx != 0.0, "dx", || number(anchor.dx));
+    out.put_if(anchor.dy != 0.0, "dy", || number(anchor.dy));
+    Value::Object(out.done())
+}
+
+fn anchor_from_json(map: &JsonMap) -> Result<InkAnchor, String> {
+    let a = Fields::new(map, "anchor", ANCHOR_KEYS);
+    let quote = match a.object("quote")? {
+        None => None,
+        Some(quote) => {
+            let q = Fields::new(quote, "anchor.quote", QUOTE_KEYS);
+            Some(AnchorQuote {
+                prefix: q.string_or("prefix", "")?,
+                exact: q.required_str("exact")?.to_owned(),
+                suffix: q.string_or("suffix", "")?,
+                extra: q.extra(),
+            })
+        }
+    };
+    Ok(InkAnchor {
+        block: a.required_id("block")?,
+        para: a.id("para")?,
+        at: a.count("at")?,
+        quote,
+        dx: a.number("dx")?.unwrap_or(0.0),
+        dy: a.number("dy")?.unwrap_or(0.0),
+        extra: a.extra(),
     })
 }
 

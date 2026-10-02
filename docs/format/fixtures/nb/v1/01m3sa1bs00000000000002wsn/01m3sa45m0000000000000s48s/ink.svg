@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- opennote: {"page": "01m3sa45m0000000000000s48s", "revision": "01m3saa8y00000000000029eyh", "format": 1, "checksum": "crc32:db94130c"} -->
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="11.2 88 59.8 34" width="59.8" height="34">
+<!-- opennote: {"page": "01m3sa45m0000000000000s48s", "revision": "01m3saa8y00000000000029eyh", "format": 1, "checksum": "crc32:145f85ed"} -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="11.2 88 97.9 97" width="97.9" height="97">
   <title>Handwriting: Cell structure</title>
   <g>
     <path d="M19.2 100.2L21 99.6L22.9 98.9L24.8 98.3L26.6 97.8L28.5 97.3L30.3 96.8L32.2 96.5L34 96.2L35.7 96L37.5 96L39.2 96L40.8 96.2L42.4 96.5L44 96.8L45.5 97.3L47 97.8L48.4 98.3L49.8 98.9L51.1 99.6L52.4 100.2L53.7 100.9L54.9 101.5L56.1 102.1L57.2 102.6L58.4 103L59.5 103.4L60.7 103.7L61.8 103.9L62.9 104" fill="none" stroke="#2f4b9c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M22 106.2L23.7 106L25.5 106L27.2 106L28.8 106.2L30.4 106.5L32 106.8L33.5 107.3L35 107.8L36.4 108.3L37.8 108.9L39.1 109.6L40.4 110.2L41.7 110.9L42.9 111.5L44.1 112.1L45.2 112.6L46.4 113L47.5 113.4L48.7 113.7L49.8 113.9L50.9 114L52 114L53.2 113.9L54.4 113.6L55.6 113.3L56.8 112.9L58.1 112.4L59.4 111.9L60.7 111.3" fill="none" stroke="#2f4b9c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M43 165.3L45.6 165.1L48.2 165L50.7 165.1L53.2 165.3L55.6 165.7L58 166.2L60.3 166.9L62.5 167.6L64.6 168.5L66.6 169.4L68.7 170.3L70.6 171.3L72.5 172.3L74.3 173.2L76.1 174.1L77.9 174.9L79.6 175.6L81.3 176.1L83 176.6L84.7 176.9L86.4 177L88.1 177L89.8 176.8L91.6 176.4L93.3 176L95.2 175.4L97.1 174.6L99 173.8L101.1 172.9" fill="none" stroke="#2f4b9c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

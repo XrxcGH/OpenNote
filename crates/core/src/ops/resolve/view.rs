@@ -5,12 +5,13 @@
 
 use serde_json::Value;
 
+use crate::id::BlockId;
 use crate::id::Id;
 use crate::limits::Limits;
 use crate::model::{Background, Color, JsonMap, PageView, Paper};
-use crate::ops::merge_patch::view::fields::{number, Fields, Out};
+use crate::ops::merge_patch::view::fields::{id_array, item_id, number, Fields, Out};
 
-const VIEW_KEYS: &[&str] = &["layout", "mode", "paper", "background", "contentWidth"];
+const VIEW_KEYS: &[&str] = &["layout", "mode", "paper", "background", "contentWidth", "readingOrder"];
 const PAPER_KEYS: &[&str] = &["size", "orientation", "width", "height", "margins"];
 const BACKGROUND_KEYS: &[&str] = &["pattern", "spacing", "color", "marginLine", "template"];
 
@@ -29,6 +30,9 @@ pub fn view_to_json(view: &PageView) -> Value {
     if let Some(width) = view.content_width {
         out.put("contentWidth", number(width));
     }
+    out.put_if(!view.reading_order.is_empty(), "readingOrder", || {
+        id_array(&view.reading_order)
+    });
     Value::Object(out.done())
 }
 
@@ -75,12 +79,18 @@ pub fn view_from_json(value: &Value, limits: &Limits) -> Result<PageView, String
     if content_width.is_some_and(|w| !size_ok(w, limits)) {
         return Err("view.contentWidth must be positive and within the limit".to_owned());
     }
+    let reading_order = f
+        .array("readingOrder")?
+        .iter()
+        .map(|item| item_id::<BlockId>(item, "view.readingOrder"))
+        .collect::<Result<Vec<_>, _>>()?;
     Ok(PageView {
         layout: f.named("layout")?,
         mode: f.named("mode")?,
         paper: paper.unwrap_or_default(),
         background: background.unwrap_or_default(),
         content_width,
+        reading_order,
         extra: f.extra(),
     })
 }

@@ -152,6 +152,8 @@ impl Bench {
                 client: self.client.clone(),
                 client_seq: self.seq,
                 coalesce: None,
+                ui: None,
+                edits: Vec::new(),
             };
             self.clock.advance(Duration::from_millis(400));
             let (result, took) = time(|| {

@@ -25,13 +25,16 @@ use thiserror::Error;
 
 pub use asset::Asset;
 pub use block::{
-    Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData, InkRole, Lock,
-    OtherData, TableCell, TableColumn, TableData, TableRow, TextData,
+    AnchorQuote, Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData,
+    InkRole, Lock, OtherData, TableCell, TableColumn, TableData, TableRow, TextData,
 };
 pub use blocks::Blocks;
 pub use history::{VersionEntry, VersionReason, VersionsFile};
 pub use ink::{Ink, InkRecord, SegmentRef, StrokeProps};
-pub use notebook::{Group, NotebookFile, NotebookTree, PageNode, PageNodeState, SectionNode, TreeChild};
+pub use notebook::{
+    Group, NotebookFile, NotebookStyles, NotebookTree, PageNode, PageNodeState, SectionNode, StyleSpec, TreeChild,
+    MAX_STYLES, MAX_STYLE_NAME_CHARS, STYLE_NAMES,
+};
 pub use page::{Access, DeviceRef, FormatInfo, Page, ReadOnlyReason, Rect, Revision, Warning};
 pub use section::{Moving, PageEntry, SectionFile};
 pub use stroke::{Affine, BBox, Channels, Point, Stroke, StrokeStyle};

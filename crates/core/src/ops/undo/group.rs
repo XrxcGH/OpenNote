@@ -1,13 +1,24 @@
 //! Grouping transactions into undo steps (plan 7.3).
 //!
 //! A new transaction joins the top entry only when both carry the same group key and the rule for that kind
-//! allows it:
+//! allows it.
 //!
-//! - Typing joins less than 1 second after the last edit, when the new splice continues where the last one
-//!   ended and doesn't switch between inserting and deleting. The group must be under 10 seconds old and under
-//!   100 characters.
-//! - Drag, resize, rotate, and erase join for the same gesture.
-//! - A slider joins less than 1 second after its last change.
+//! Typing in a text block joins less than 1 second after the last edit, when the new splice continues where
+//! the last one ended and doesn't switch between inserting and deleting. The group must be under 10 seconds
+//! old and under 100 characters.
+//!
+//! Typing that isn't a splice, such as a table cell or a page title, joins the same way when the transaction
+//! is only `PatchBlock` operations on the keyed block, or only `SetPage` operations. There is no splice to
+//! continue and no characters to count, so the time limits are the whole rule.
+//!
+//! A typing transaction may carry `MoveBlock` operations, such as the blocks below a growing text box that
+//! move down with it. They never stop it joining.
+//!
+//! When it types in a text block, it may also carry `PatchBlock` operations on ink blocks anchored to that
+//! block, which move with their text.
+//!
+//! Drag, resize, rotate, and erase join for the same gesture. A slider joins less than 1 second after its last
+//! change.
 
 use std::time::Duration;
 
@@ -45,8 +56,17 @@ fn end(at: u32, text: &str) -> u64 {
     u64::from(at) + text.len() as u64
 }
 
-/// Whether `txn` may join `top`.
+/// Whether `txn` may join `top`, for a stack that doesn't know which ink is anchored to which text.
+#[cfg(test)]
 pub(super) fn joins(top: &UndoEntry, txn: &Txn, now: Duration) -> bool {
+    joins_with(top, txn, now, &|_, _| false)
+}
+
+/// Tells whether an ink block is anchored to a text block: the arguments are the ink block and the text block.
+pub type Anchored<'a> = &'a dyn Fn(BlockId, BlockId) -> bool;
+
+/// Whether `txn` may join `top`.
+pub(super) fn joins_with(top: &UndoEntry, txn: &Txn, now: Duration, anchored: Anchored<'_>) -> bool {
     let (Some(top_key), Some(key)) = (&top.coalesce, &txn.coalesce) else {
         return false;
     };
@@ -59,7 +79,7 @@ pub(super) fn joins(top: &UndoEntry, txn: &Txn, now: Duration) -> bool {
             since_last < TYPING_GAP
                 && now.saturating_sub(top.first) < TYPING_SPAN
                 && typed_chars(&top.forward) < TYPING_CHARS
-                && continues_typing(top, txn)
+                && continues_typing(top, txn, anchored)
         }
         CoalesceKind::Drag | CoalesceKind::Resize | CoalesceKind::Rotate | CoalesceKind::Erase => true,
         CoalesceKind::Slider => since_last < SLIDER_GAP,
@@ -78,32 +98,62 @@ pub(super) fn typed_chars(ops: &[Op]) -> usize {
         .sum()
 }
 
-/// The one splice of a typing transaction. A typing transaction holds one `EditText` with one splice, and may
-/// also patch the same block, such as its element IDs.
-fn typing_splice(txn: &Txn) -> Option<(BlockId, &Splice)> {
-    let mut found = None;
+/// What a typing transaction types into.
+enum Typing<'a> {
+    /// One splice of a text block's Markdown.
+    Text(BlockId, &'a Splice),
+    /// Changes to the data of one block, such as the Markdown of a table cell.
+    Block(BlockId),
+    /// Changes to the page's fields, such as its title.
+    Page,
+}
+
+/// The shape of a typing transaction, or `None` when it holds anything that isn't typing.
+///
+/// A transaction that types in a text block holds one `EditText` with one splice. It may also hold
+/// `PatchBlock` operations on the same block, such as its element IDs, and on ink blocks anchored to it. A
+/// transaction that types somewhere else holds `PatchBlock` operations on one block, or `SetPage` operations,
+/// and nothing else. Any of them may hold `MoveBlock` operations, which are ignored.
+fn typing_shape<'a>(txn: &'a Txn, anchored: Anchored<'_>) -> Option<Typing<'a>> {
+    let mut text = None;
+    let mut patched = Vec::new();
+    let mut page = false;
     for op in &txn.ops {
         match op {
-            Op::EditText { id, splices, .. } => match (found, splices.as_slice()) {
-                (None, [splice]) => found = Some((*id, splice)),
+            Op::EditText { id, splices, .. } => match (text, splices.as_slice()) {
+                (None, [splice]) => text = Some((*id, splice)),
                 _ => return None,
             },
-            Op::PatchBlock { .. } => {}
+            Op::PatchBlock { id, .. } => patched.push(*id),
+            Op::SetPage { .. } => page = true,
+            Op::MoveBlock { .. } => {}
             _ => return None,
         }
     }
-    let (id, splice) = found?;
-    let same_block = txn.ops.iter().all(|op| match op {
-        Op::PatchBlock { id: patched, .. } => *patched == id,
-        _ => true,
-    });
-    same_block.then_some((id, splice))
+    match (text, page, patched.first()) {
+        (Some((id, splice)), false, _) => patched
+            .iter()
+            .all(|p| *p == id || anchored(*p, id))
+            .then_some(Typing::Text(id, splice)),
+        (None, true, None) => Some(Typing::Page),
+        (None, false, Some(first)) => patched.iter().all(|p| p == first).then_some(Typing::Block(*first)),
+        _ => None,
+    }
 }
 
-fn continues_typing(top: &UndoEntry, txn: &Txn) -> bool {
-    let Some((block, new)) = typing_splice(txn) else {
-        return false;
-    };
+fn continues_typing(top: &UndoEntry, txn: &Txn, anchored: Anchored<'_>) -> bool {
+    match typing_shape(txn, anchored) {
+        Some(Typing::Text(block, new)) => continues_splice(top, block, new),
+        Some(Typing::Block(block)) => top
+            .forward
+            .iter()
+            .any(|op| matches!(op, Op::PatchBlock { id, .. } if *id == block)),
+        Some(Typing::Page) => top.forward.iter().any(|op| matches!(op, Op::SetPage { .. })),
+        None => false,
+    }
+}
+
+fn continues_splice(top: &UndoEntry, block: BlockId, new: &Splice) -> bool {
     let last = top.forward.iter().rev().find_map(|op| match op {
         Op::EditText { id, splices, .. } if *id == block => splices.last(),
         _ => None,

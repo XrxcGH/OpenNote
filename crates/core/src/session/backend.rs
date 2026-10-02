@@ -23,7 +23,7 @@ use crate::session::journal_thread::{BaseSnapshot, JournalConfig, JournalHandle,
 use crate::store::assets::{AssetSource, ImportCtx};
 use crate::store::external::{classify_change, ExternalDecision};
 use crate::store::fs::{Durability, FileStamp, FolderIdentity, Fs};
-use crate::store::history::{self, Retention};
+use crate::store::history::{self, Retention, ThinReport};
 use crate::store::journal::reader::{list_journals, KeyJournals};
 use crate::store::layout::{DataLayout, NotebookKey, NotebookLayout};
 use crate::store::page_store::{
@@ -169,7 +169,9 @@ pub trait Backend: Send + Sync + 'static {
     /// Reads one version.
     fn open_version(&self, dir: &Path, rev: RevisionId) -> Result<ReadPage, CoreError>;
     /// Thins the history and collects garbage of a page that is not open.
-    fn tidy_page(&self, dir: &Path, now: Timestamp) -> Result<(), CoreError>;
+    fn tidy_page(&self, dir: &Path, now: Timestamp, keep: Retention) -> Result<(), CoreError>;
+    /// Deletes the saved versions of a page, keeping the named ones when `keep_named` is set.
+    fn delete_history(&self, dir: &Path, keep_named: bool) -> Result<ThinReport, CoreError>;
     /// Imports a file as an asset of a page.
     fn import_asset(&self, dir: &Path, source: AssetSource, ctx: &ImportCtx<'_>) -> Result<Asset, CoreError>;
     /// Reads an asset, or a range of it.
@@ -377,9 +379,13 @@ impl Backend for StoreBackend {
         history::open_version(&self.files(dir), rev, &self.config.limits)
     }
 
-    fn tidy_page(&self, dir: &Path, now: Timestamp) -> Result<(), CoreError> {
+    fn delete_history(&self, dir: &Path, keep_named: bool) -> Result<ThinReport, CoreError> {
+        history::delete_versions(&self.files(dir), keep_named)
+    }
+
+    fn tidy_page(&self, dir: &Path, now: Timestamp, keep: Retention) -> Result<(), CoreError> {
         let files = self.files(dir);
-        history::thin(&files, now, 0, Retention::Year1, &[])?;
+        history::thin(&files, now, 0, keep, &[])?;
         let refs = crate::store::gc::RefSet::default();
         crate::store::gc::collect_garbage(&files, &refs, now, self.config.timings.gc_grace)?;
         Ok(())

@@ -2,7 +2,7 @@
 
 use super::{quoted, seal};
 use crate::format::markdown::{escape_text, one_line, rewrite_links, write_destination};
-use crate::id::{AssetId, PageId};
+use crate::id::{AssetId, BlockId, PageId};
 use crate::model::{Block, BlockData, InkBlockData, InkRole, Page, TableData};
 use crate::seams::LinkResolver;
 
@@ -30,23 +30,45 @@ impl LinkResolver for PageLinks<'_> {
     }
 }
 
-/// Renders `page.md` with its checksum (spec 11.1).
-pub fn render_page_md(page: &Page, links: &dyn LinkResolver) -> Vec<u8> {
+/// One part of the body of `page.md`, which a blank line separates from the next.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BodyPart {
+    /// The block the part renders, or `None` for the title and the handwriting line.
+    pub block: Option<BlockId>,
+    /// The part as `page.md` writes it, never empty.
+    pub text: String,
+}
+
+/// The parts of the body of `page.md`, in the order the file writes them.
+pub fn body_parts(page: &Page, links: &dyn LinkResolver) -> Vec<BodyPart> {
     let links = PageLinks { page, links };
-    let mut text = front_matter(page);
-    let mut parts: Vec<String> = Vec::new();
+    let mut parts = Vec::new();
     let title = one_line(&page.title);
     if !title.is_empty() {
-        parts.push(format!("# {}", escape_text(&title, true)));
+        parts.push(BodyPart {
+            block: None,
+            text: format!("# {}", escape_text(&title, true)),
+        });
     }
     if has_ink(page) {
-        parts.push(HANDWRITING_LINE.to_owned());
+        parts.push(BodyPart {
+            block: None,
+            text: HANDWRITING_LINE.to_owned(),
+        });
     }
     for id in page.reading_order() {
         if let Some(block) = page.blocks.get(id) {
-            parts.extend(render_block(block, &links).filter(|part| !part.is_empty()));
+            let text = render_block(block, &links).filter(|text| !text.is_empty());
+            parts.extend(text.map(|text| BodyPart { block: Some(id), text }));
         }
     }
+    parts
+}
+
+/// Renders `page.md` with its checksum (spec 11.1).
+pub fn render_page_md(page: &Page, links: &dyn LinkResolver) -> Vec<u8> {
+    let mut text = front_matter(page);
+    let parts: Vec<String> = body_parts(page, links).into_iter().map(|part| part.text).collect();
     if !parts.is_empty() {
         text.push('\n');
         // Markdown never holds U+0000, which CommonMark reads as U+FFFD (spec 7.6). A zero byte would also make

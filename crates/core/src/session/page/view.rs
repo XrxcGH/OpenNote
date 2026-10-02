@@ -1,11 +1,12 @@
 //! What the interface reads from a page session: the page envelope (plan 11.3), and the rest of the ink of a
 //! very large page, in chunks for the page's channel.
 
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use super::state::{PageSession, PageState};
 use crate::error::CoreError;
-use crate::id::ClientId;
+use crate::id::{ClientId, StrokeId};
 use crate::model::{InkRecord, Page, ReadOnlyReason, Rect, Stroke};
 use crate::wire::envelope::{self, Envelope, EnvelopeParts, SessionInfo};
 
@@ -51,6 +52,15 @@ fn ordered_strokes(page: &Page, viewport: Option<Rect>) -> (Vec<Arc<Stroke>>, Ve
         Some(view) => all.into_iter().partition(|s| stroke_rect(s).intersects(&view)),
         None => (all, Vec::new()),
     }
+}
+
+/// Strokes read from a page, for `page_read_strokes`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct StrokeRead {
+    /// How many strokes `records` holds.
+    pub strokes: u32,
+    /// The strokes as ink records (spec 9.2), the same bytes the page envelope carries.
+    pub records: Vec<u8>,
 }
 
 fn record_bytes(strokes: &[Arc<Stroke>]) -> u64 {
@@ -132,6 +142,33 @@ impl PageSession {
             chunks.push(self.ctx.codec.encode_records(&current));
         }
         chunks
+    }
+
+    /// The live strokes that `ids` name and that meet `rect`, as ink records in drawing order. Either filter may
+    /// be left out, and with neither, every stroke comes back. An ID that names no live stroke is skipped,
+    /// because the page may have changed since the interface learned it (amendment C10).
+    pub(crate) fn read_strokes(&self, ids: Option<&[StrokeId]>, rect: Option<Rect>) -> StrokeRead {
+        let st = self.state();
+        let mut found: Vec<Arc<Stroke>> = match ids {
+            Some(ids) => {
+                let mut seen = HashSet::new();
+                let named = ids.iter().filter(|id| seen.insert(**id));
+                named.filter_map(|id| st.page.ink.stroke(*id).cloned()).collect()
+            }
+            None => st.page.ink.strokes().cloned().collect(),
+        };
+        if let Some(view) = rect {
+            found.retain(|stroke| stroke_rect(stroke).intersects(&view));
+        }
+        found.sort_by_key(|s| (s.start, s.id));
+        let strokes = u32::try_from(found.len()).unwrap_or(u32::MAX);
+        let records: Vec<InkRecord> = found.into_iter().map(InkRecord::Stroke).collect();
+        let records = if records.is_empty() {
+            Vec::new()
+        } else {
+            self.ctx.codec.encode_records(&records)
+        };
+        StrokeRead { strokes, records }
     }
 
     /// Why the page is read-only, if it is.

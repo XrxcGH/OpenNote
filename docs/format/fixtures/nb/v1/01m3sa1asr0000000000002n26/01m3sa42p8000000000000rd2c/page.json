@@ -51,6 +51,34 @@
         "role": "layer",
         "strokeCount": 4
       }
+    },
+    {
+      "id": "01m3sa769r000000000001h1w6",
+      "type": "ink",
+      "order": "a2",
+      "frame": {
+        "x": 120,
+        "y": 168
+      },
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "role": "anchored",
+        "strokeCount": 0,
+        "anchor": {
+          "block": "01m3sa75ag000000000001gt4q",
+          "para": "01m3sad8mg00000000000314tf",
+          "at": 4,
+          "quote": {
+            "prefix": "The ",
+            "exact": "thylakoid",
+            "suffix": " membrane"
+          },
+          "dx": -6.5,
+          "dy": 14,
+          "zzfuture": 1
+        }
+      }
     }
   ],
   "ink": {

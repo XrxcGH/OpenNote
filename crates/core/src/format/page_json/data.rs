@@ -11,8 +11,8 @@ use super::view::named;
 use crate::format::json::{Json, Obj};
 use crate::id::{ElementId, Id};
 use crate::model::{
-    BlockData, Crop, FileData, ImageData, InkAnchor, InkBlockData, JsonMap, Named, NamedValue, OtherData, TableCell,
-    TableColumn, TableData, TableRow, TextData,
+    AnchorQuote, BlockData, Crop, FileData, ImageData, InkAnchor, InkBlockData, JsonMap, Named, NamedValue, OtherData,
+    TableCell, TableColumn, TableData, TableRow, TextData,
 };
 
 /// Reads `data` for a block type. Unknown types, and known types whose data fails, are kept as they are.
@@ -208,9 +208,33 @@ fn read_ink(map: &JsonMap) -> Result<InkBlockData, String> {
 
 fn read_anchor(map: &JsonMap) -> Result<InkAnchor, String> {
     let mut view = View::new(map);
+    let block = view.id("block")?;
+    let para = match view.get("para") {
+        None => None,
+        Some(_) => Some(view.id("para")?),
+    };
+    let at = match view.get("at") {
+        None => None,
+        Some(_) => Some(view.u32_or("at", 0)?),
+    };
+    let quote = view.object("quote")?.map(read_quote).transpose()?;
     Ok(InkAnchor {
-        block: view.id("block")?,
-        offset: view.u32_or("offset", 0)?,
+        block,
+        para,
+        at,
+        quote,
+        dx: view.number("dx")?.unwrap_or(0.0),
+        dy: view.number("dy")?.unwrap_or(0.0),
+        extra: view.rest(),
+    })
+}
+
+fn read_quote(map: &JsonMap) -> Result<AnchorQuote, String> {
+    let mut view = View::new(map);
+    Ok(AnchorQuote {
+        prefix: view.str_or("prefix", "")?.to_owned(),
+        exact: view.str("exact")?.to_owned(),
+        suffix: view.str_or("suffix", "")?.to_owned(),
         extra: view.rest(),
     })
 }
@@ -331,15 +355,7 @@ fn write_ink(ink: &InkBlockData) -> Json<'_> {
     let mut obj = Obj::new();
     obj.put("role", named(&ink.role))
         .put("strokeCount", Json::Int(ink.stroke_count.into()));
-    obj.opt(
-        "anchor",
-        ink.anchor.as_ref().map(|anchor| {
-            let mut a = Obj::new();
-            a.put("block", id_string(anchor.block))
-                .put("offset", Json::Int(anchor.offset.into()));
-            a.finish(&anchor.extra)
-        }),
-    );
+    obj.opt("anchor", ink.anchor.as_ref().map(write_anchor));
     obj.unless("alt", ink.alt.is_empty(), || Json::str(&ink.alt))
         .unless("decorative", !ink.decorative, || Json::Bool(true));
     obj.finish(&ink.extra)
@@ -394,4 +410,23 @@ fn write_table(table: &TableData) -> Json<'_> {
         .put("columns", Json::Array(columns.collect()))
         .put("rows", Json::Array(rows.collect()));
     obj.finish(&table.extra)
+}
+
+fn write_anchor(anchor: &InkAnchor) -> Json<'_> {
+    let mut a = Obj::new();
+    a.put("block", id_string(anchor.block))
+        .opt("para", anchor.para.map(id_string))
+        .opt("at", anchor.at.map(|at| Json::Int(at.into())))
+        .opt("quote", anchor.quote.as_ref().map(write_quote))
+        .unless("dx", anchor.dx == 0.0, || Json::Geometry(anchor.dx))
+        .unless("dy", anchor.dy == 0.0, || Json::Geometry(anchor.dy));
+    a.finish(&anchor.extra)
+}
+
+fn write_quote(quote: &AnchorQuote) -> Json<'_> {
+    let mut q = Obj::new();
+    q.unless("prefix", quote.prefix.is_empty(), || Json::str(&quote.prefix))
+        .put("exact", Json::str(&quote.exact))
+        .unless("suffix", quote.suffix.is_empty(), || Json::str(&quote.suffix));
+    q.finish(&quote.extra)
 }

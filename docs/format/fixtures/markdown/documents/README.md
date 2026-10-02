@@ -27,3 +27,7 @@ An inline is a run of text, a hard break, or an image:
 - An image is `{"image": "asset:<asset ID>", "alt": "..."}`.
 
 Marks are listed in the nesting order of spec 7.7, outermost first. Text holds no escapes: the serializer escapes it as spec 7.6 says.
+
+## Documents that are not canonical
+
+A document never holds two lists of one kind next to each other, because the blank line between them would read back as one loose list (spec 7.7). A case may have `alsoWrittenFrom`, an array of documents that do hold such lists. A serializer must write each of them as the case's `markdown`, which means it joins the lists first: the items of the later list follow those of the earlier one, and the earlier list's `start` is kept. Parsing `markdown` still gives `document`.

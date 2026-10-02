@@ -261,12 +261,14 @@ fn renaming_and_recoloring_change_one_file() {
     let props = NodeProps {
         color: Some(fern.clone()),
         pinned: None,
+        styles: None,
     };
     store.set_props(NodeRef::Section(section), &props).unwrap();
     store.set_props(NodeRef::Group(group), &props).unwrap();
     let pin = NodeProps {
         color: None,
         pinned: Some(true),
+        styles: None,
     };
     store.set_props(NodeRef::Page(a), &pin).unwrap();
     assert!(is_invalid_move(
@@ -281,6 +283,50 @@ fn renaming_and_recoloring_change_one_file() {
     assert_eq!((node.title.as_str(), node.color.clone()), ("Labs", fern));
     assert!(node.pages[0].pinned);
     assert_eq!(node.pages[0].title, "Alpha");
+}
+
+#[test]
+fn a_notebook_keeps_its_named_styles() {
+    let (kit, mut store, section, _) = with_pages();
+    let styles = |size: f64| {
+        let mut styles = crate::model::NotebookStyles::new();
+        let h1 = crate::model::StyleSpec {
+            size: Some(size),
+            color: Some(Color::Palette("fern".into())),
+            ..Default::default()
+        };
+        styles.insert("h1".to_owned(), h1);
+        styles
+    };
+    let before = store.tree().changed;
+    store.set_notebook_styles(styles(28.0)).unwrap();
+    assert_eq!(store.tree().styles, styles(28.0));
+    assert!(store.tree().changed >= before);
+    assert_eq!(
+        kit.open().unwrap().tree().styles,
+        styles(28.0),
+        "the styles reach notebook.json"
+    );
+    // Nothing changes when the styles do not, and an empty map removes them.
+    let at = store.tree().changed;
+    store.set_notebook_styles(styles(28.0)).unwrap();
+    assert_eq!(store.tree().changed, at);
+    store.set_notebook_styles(crate::model::NotebookStyles::new()).unwrap();
+    assert!(kit.open().unwrap().tree().styles.is_empty());
+    // Values out of range and styles on other nodes are refused.
+    for bad in [0.5, f64::NAN, 5_000.0] {
+        assert!(
+            is_invalid_move(&store.set_notebook_styles(styles(bad)).unwrap_err()),
+            "{bad}"
+        );
+    }
+    let props = NodeProps {
+        styles: Some(styles(20.0)),
+        ..NodeProps::default()
+    };
+    assert!(is_invalid_move(
+        &store.set_props(NodeRef::Section(section), &props).unwrap_err()
+    ));
 }
 
 #[test]

@@ -24,11 +24,12 @@ mod thinning;
 pub use thinning::bucket;
 
 /// How long versions are kept (spec 13.3).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Retention {
     /// 30 days.
     Days30,
     /// 1 year, the default.
+    #[default]
     Year1,
     /// Forever.
     Forever,
@@ -204,33 +205,13 @@ pub fn open_version(files: &PageFiles<'_>, rev: RevisionId, limits: &Limits) -> 
     Ok(read)
 }
 
-/// Thins the versions of a page (spec 13.3). `utc_offset_minutes` places day boundaries in local time.
-///
-/// Named versions, versions marked `keep`, the newest version, and `protected` revisions always stay. The
-/// history of a page, with the ink and assets only history uses, stays within 50 MiB. The new list is written
-/// before the dropped snapshots are deleted.
-pub fn thin(
+/// Writes the shortened list, then deletes the dropped snapshots (spec 13.3). A crash in between leaves a
+/// snapshot that listing adds back, and never an entry without a snapshot.
+fn drop_versions(
     files: &PageFiles<'_>,
-    now: Timestamp,
-    utc_offset_minutes: i32,
-    keep: Retention,
-    protected: &[RevisionId],
+    mut list: VersionsFile,
+    dropped: Vec<RevisionId>,
 ) -> Result<ThinReport, CoreError> {
-    let limits = Limits::default();
-    let mut list = list_versions(files, &limits)?;
-    let plan = thinning::Plan {
-        now,
-        offset_minutes: utc_offset_minutes,
-        max_age: match keep {
-            Retention::Days30 => Some(thinning::MONTH),
-            Retention::Year1 => Some(thinning::YEAR),
-            Retention::Forever => None,
-        },
-        protected,
-    };
-    let mut dropped = plan.drop_by_age(&list.versions);
-    let sizes = thinning::shared_sizes(files, &limits);
-    dropped.extend(plan.drop_by_size(&list.versions, &dropped, &sizes));
     let dropped_set: BTreeSet<RevisionId> = dropped.iter().copied().collect();
     list.versions.retain(|v| !dropped_set.contains(&v.revision));
     if !dropped.is_empty() {
@@ -250,6 +231,50 @@ pub fn thin(
         kept: u32::try_from(list.versions.len()).unwrap_or(u32::MAX),
         dropped,
     })
+}
+
+/// Deletes all the saved versions of a page, as "Delete history" does. With `keep_named`, versions that have a
+/// name or are marked `keep` stay. The ink and assets only history used are collected later, when the page is
+/// tidied.
+pub fn delete_versions(files: &PageFiles<'_>, keep_named: bool) -> Result<ThinReport, CoreError> {
+    let list = list_versions(files, &Limits::default())?;
+    let dropped = list
+        .versions
+        .iter()
+        .filter(|v| !(keep_named && (v.keep || v.name.is_some())))
+        .map(|v| v.revision)
+        .collect();
+    drop_versions(files, list, dropped)
+}
+
+/// Thins the versions of a page (spec 13.3). `utc_offset_minutes` places day boundaries in local time.
+///
+/// Named versions, versions marked `keep`, the newest version, and `protected` revisions always stay. The
+/// history of a page, with the ink and assets only history uses, stays within 50 MiB. The new list is written
+/// before the dropped snapshots are deleted.
+pub fn thin(
+    files: &PageFiles<'_>,
+    now: Timestamp,
+    utc_offset_minutes: i32,
+    keep: Retention,
+    protected: &[RevisionId],
+) -> Result<ThinReport, CoreError> {
+    let limits = Limits::default();
+    let list = list_versions(files, &limits)?;
+    let plan = thinning::Plan {
+        now,
+        offset_minutes: utc_offset_minutes,
+        max_age: match keep {
+            Retention::Days30 => Some(thinning::MONTH),
+            Retention::Year1 => Some(thinning::YEAR),
+            Retention::Forever => None,
+        },
+        protected,
+    };
+    let mut dropped = plan.drop_by_age(&list.versions);
+    let sizes = thinning::shared_sizes(files, &limits);
+    dropped.extend(plan.drop_by_size(&list.versions, &dropped, &sizes));
+    drop_versions(files, list, dropped)
 }
 
 #[cfg(test)]

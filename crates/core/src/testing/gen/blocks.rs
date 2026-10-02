@@ -5,8 +5,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use super::*;
 use crate::id::{ColumnId, ElementId, RowId};
 use crate::model::{
-    Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData, InkRole, Lock,
-    OtherData, TableCell, TableColumn, TableData, TableRow, TextData,
+    AnchorQuote, Block, BlockData, Crop, Fallback, FileData, FileDisplay, Frame, ImageData, InkAnchor, InkBlockData,
+    InkRole, Lock, OtherData, TableCell, TableColumn, TableData, TableRow, TextData,
 };
 
 /// The kinds of generated blocks, as `BlockParts::kind` numbers them.
@@ -210,9 +210,18 @@ fn text_data(parts: &BlockParts, ctx: &mut BlockCtx<'_>) -> BlockData {
 }
 
 fn ink_data(id: BlockId, parts: &BlockParts, ctx: &BlockCtx<'_>) -> BlockData {
-    let anchor = parts.ink.1.map(|offset| InkAnchor {
-        block: ctx.anchor_target,
-        offset,
+    let anchor = parts.ink.1.map(|at| InkAnchor {
+        block: BlockId(ctx.anchor_target),
+        para: (at % 2 == 1).then_some(ElementId(ctx.anchor_target)),
+        at: Some(at),
+        quote: (at % 3 == 0).then(|| AnchorQuote {
+            prefix: "light ".into(),
+            exact: "reactions".into(),
+            suffix: if at % 2 == 0 { String::new() } else { " occur".into() },
+            extra: JsonMap::new(),
+        }),
+        dx: f64::from(at % 5) * 2.5 - 5.0,
+        dy: if at % 7 == 0 { 0.0 } else { f64::from(at % 11) * 1.25 },
         extra: JsonMap::new(),
     });
     BlockData::Ink(InkBlockData {

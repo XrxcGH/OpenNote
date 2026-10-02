@@ -25,8 +25,6 @@ pub struct Page {
     pub view: PageView,
     /// The page's blocks.
     pub blocks: Blocks,
-    /// Block IDs in the order screen readers read them (spec 6.2). Empty means the default order.
-    pub reading_order: Vec<BlockId>,
     /// The asset table.
     pub assets: BTreeMap<AssetId, Asset>,
     /// The segment list and the live strokes.
@@ -54,7 +52,6 @@ impl Page {
             tags: Vec::new(),
             view: PageView::default(),
             blocks: Blocks::default(),
-            reading_order: Vec::new(),
             assets: BTreeMap::new(),
             ink: Ink::default(),
             recordings: None,
@@ -65,9 +62,9 @@ impl Page {
         }
     }
 
-    /// Block IDs in reading order (spec 6.2), with `reading_order` first.
+    /// Block IDs in reading order (spec 6.2), with `view.reading_order` first.
     pub fn reading_order(&self) -> Vec<BlockId> {
-        self.blocks.reading_order(&self.reading_order)
+        self.blocks.reading_order(&self.view.reading_order)
     }
 }
 
@@ -191,6 +188,8 @@ pub enum ReadOnlyReason {
     SuspectOverwrite,
     /// The section is encrypted (spec 5.7).
     Encrypted,
+    /// The notebook is a scheduled backup, which opens read-only so pages can be copied out of it.
+    Backup,
 }
 
 /// A problem a reader worked around.

@@ -13,7 +13,7 @@ use crate::format::ReadableState;
 use crate::id::RevisionId;
 
 pub use index::render_index_md;
-pub use page_md::render_page_md;
+pub use page_md::{body_parts, render_page_md, BodyPart};
 pub use svg::render_ink_svg;
 
 /// The text before a checksum's 8 digits: in front matter, and in the comment of `ink.svg`. Titles are written

@@ -6,11 +6,12 @@ use std::sync::Arc;
 use super::state::{PageSession, PageState};
 use super::TxnAck;
 use crate::error::EditError;
-use crate::id::{AssetId, ClientId};
-use crate::model::{BlockData, InkRecord, Stroke};
+use crate::id::{AssetId, BlockId, ClientId};
+use crate::model::{Block, BlockData, InkRecord, Page, Stroke};
 use crate::ops::resolve::{resolve, resolve_add_strokes, ResolveCtx, StrokeTxnMeta, TxnRequest};
 use crate::ops::undo::{UndoOutcome, UndoStack};
 use crate::ops::{AppliedChanges, Op, Txn};
+use crate::store::journal::fragment;
 use crate::wire::frames::{self, AppliedFrame, FrameInfo};
 
 /// Most entries one client's undo stack keeps (plan 7.3).
@@ -72,7 +73,7 @@ impl PageSession {
     }
 
     /// Checks that the page may change and that the client's sequence number has no gap or repeat.
-    fn check_request(&self, st: &PageState, client: &ClientId, client_seq: u64) -> Result<(), EditError> {
+    pub(super) fn check_request(&self, st: &PageState, client: &ClientId, client_seq: u64) -> Result<(), EditError> {
         self.check_editable(st)?;
         let expected = st.clients.get(client).map_or(1, |c| c.seq.saturating_add(1));
         if client_seq != expected {
@@ -82,7 +83,7 @@ impl PageSession {
     }
 
     /// Commits a transaction from a client request, records it in the client's undo stack, and answers.
-    fn commit_request(
+    pub(super) fn commit_request(
         &self,
         st: &mut PageState,
         txn: &Txn,
@@ -95,11 +96,18 @@ impl PageSession {
             }
         }
         let now = self.ctx.clock.monotonic();
-        let entry = st.clients.entry(client.clone()).or_default();
+        let PageState {
+            clients,
+            page,
+            undo_bytes,
+            ..
+        } = &mut *st;
+        let anchored = |ink: BlockId, text: BlockId| is_anchored(page, ink, text);
+        let entry = clients.entry(client.clone()).or_default();
         entry.seq = client_seq;
         let stack = entry.undo.get_or_insert_with(|| UndoStack::new(MAX_UNDO_ENTRIES));
-        let delta = stack.record(txn, now);
-        st.undo_bytes = st.undo_bytes.saturating_add_signed(delta);
+        let delta = stack.record_with(txn, now, &anchored);
+        *undo_bytes = undo_bytes.saturating_add_signed(delta);
         self.ctx.charge_undo(delta);
         let (can_undo, can_redo) = PageSession::undo_state(st, client);
         Ok(TxnAck {
@@ -148,8 +156,9 @@ impl PageSession {
         self.frame(&st, client, (seq, &changes, ui)).map(Some)
     }
 
-    /// The frame for applied changes: the new text of changed text blocks, the title, and the added and
-    /// changed strokes as they are now.
+    /// The frame for applied changes: the new text of changed text blocks, the full JSON of inserted and changed
+    /// blocks, the page's title, tags, and view, the added asset entries, and the added and changed strokes as
+    /// they are now.
     pub(crate) fn frame(
         &self,
         st: &PageState,
@@ -164,6 +173,24 @@ impl PageSession {
                 _ => None,
             })
             .collect();
+        let codec = self.ctx.codec.as_ref();
+        let blocks: Vec<Arc<Block>> = changes
+            .blocks_changed
+            .iter()
+            .filter_map(|id| st.page.blocks.get(*id).cloned())
+            .collect();
+        let blocks = match fragment::write_blocks(codec, &blocks) {
+            serde_json::Value::Array(items) => items,
+            serde_json::Value::Null => Vec::new(),
+            other => vec![other],
+        };
+        let assets = changes
+            .assets_changed
+            .iter()
+            .filter_map(|id| st.page.assets.get(id))
+            .map(|asset| fragment::write_asset(codec, asset))
+            .collect();
+        let page = &st.page;
         let records: Vec<InkRecord> = changes
             .strokes_added
             .iter()
@@ -177,7 +204,11 @@ impl PageSession {
             changes: changes.clone(),
             ui,
             texts,
-            title: changes.page_fields.then(|| st.page.title.clone()),
+            blocks,
+            title: changes.page_fields.then(|| page.title.clone()),
+            tags: changes.page_fields.then(|| page.tags.clone()),
+            view: changes.page_fields.then(|| fragment::write_view(codec, &page.view)),
+            assets,
             can_undo,
             can_redo,
             strokes: u32::try_from(records.len()).unwrap_or(u32::MAX),
@@ -189,4 +220,12 @@ impl PageSession {
         };
         frames::encode(&info, &bytes).map_err(|e| EditError::Invalid(e.to_string()))
     }
+}
+
+/// Whether the ink block is anchored to the text block (spec 8.1), so typing that moves it still groups.
+fn is_anchored(page: &Page, ink: BlockId, text: BlockId) -> bool {
+    matches!(
+        page.blocks.get(ink).map(|block| &block.data),
+        Some(BlockData::Ink(data)) if data.anchor.as_ref().is_some_and(|anchor| anchor.block == text)
+    )
 }

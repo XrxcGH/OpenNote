@@ -12,12 +12,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::CoreError;
 use crate::id::{ClientId, GroupId, NotebookId, PageId, SectionId, TrashItemId};
-use crate::model::{Color, NotebookTree, TrashItemFile, TrashReason};
+use crate::model::{Color, NotebookStyles, NotebookTree, TrashItemFile, TrashReason};
 use crate::session::page::PageHandle;
 use crate::store::notebook_store::{invalid_move, FlatPage, Transfer};
 use crate::store::scan::ScanReport;
 use crate::store::verify::VerifyReport;
 
+mod backup;
+mod history;
 pub(crate) mod open;
 mod ops;
 pub(crate) mod shared;
@@ -25,6 +27,7 @@ pub(crate) mod shared;
 mod tests;
 pub(crate) mod undo;
 
+pub use history::{HistoryDeleted, HistoryScope};
 pub(crate) use open::open_notebook;
 pub(crate) use shared::NotebookShared;
 use undo::TreeAction;
@@ -64,8 +67,8 @@ pub struct NodePlacement {
     pub before: Option<NodeRef>,
 }
 
-/// Properties of a node in the tree. `None` leaves a property as it is.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// Properties of a node in the tree, or of the notebook itself. `None` leaves a property as it is.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct NodeProps {
     /// A new color chip. `Some(None)` removes it.
     #[serde(default)]
@@ -73,6 +76,9 @@ pub struct NodeProps {
     /// Pin or unpin a page.
     #[serde(default)]
     pub pinned: Option<bool>,
+    /// New named styles, for the notebook only. An empty map removes them.
+    #[serde(default)]
+    pub styles: Option<NotebookStyles>,
 }
 
 /// What to do about a copied page folder with the same page ID (spec 14.4).
@@ -114,6 +120,11 @@ impl NotebookHandle {
     /// The navigation tree.
     pub fn tree(&self) -> NotebookTree {
         self.inner.tree().store.tree()
+    }
+
+    /// Whether this notebook is a scheduled backup set. It opens read-only, so pages can be copied out of it.
+    pub fn is_backup(&self) -> bool {
+        self.inner.is_backup()
     }
 
     /// A section's pages in display order, with their levels, as the notes contract lists them.
@@ -211,6 +222,21 @@ impl NotebookHandle {
     /// Gives pages, with their subpages, a new level in place: the notes contract's `setPageLevel`.
     pub fn set_page_level(&self, pages: &[PageId], level: u8) -> Result<(), CoreError> {
         self.change(false, |t| t.store.set_page_level(pages, level))
+    }
+
+    /// Changes the notebook's own color or named styles. A notebook isn't a node of the tree, so these changes
+    /// aren't in the tree's undo history.
+    pub fn set_notebook_props(&self, props: NodeProps) -> Result<(), CoreError> {
+        if props.pinned.is_some() {
+            return Err(invalid_move("only pages can be pinned"));
+        }
+        if let Some(color) = props.color {
+            self.set_notebook_color(color)?;
+        }
+        if let Some(styles) = props.styles {
+            self.change(false, |t| t.store.set_notebook_styles(styles))?;
+        }
+        Ok(())
     }
 
     /// Changes a node's color or pin.

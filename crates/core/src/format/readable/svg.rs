@@ -10,7 +10,8 @@
 //! `y` of its points, and then 24 units of space.
 //!
 //! A group without strokes is written as `<g/>`. A stroke of one point repeats it, so its round cap shows.
-//! Stroke widths and opacity are rounded to 0.01.
+//! Stroke widths and opacity are rounded to 0.01. A transformed stroke is as wide as its nominal width times the
+//! square root of the absolute determinant of its transform (spec 11.3).
 
 use std::fmt::Write as _;
 
@@ -102,7 +103,10 @@ fn write_group(out: &mut String, strokes: &[DrawnStroke<'_>]) {
             out,
             "    <path d=\"{path}\" fill=\"none\" stroke=\"#{r:02x}{g:02x}{b:02x}\"{opacity} stroke-width=\"{}\" \
              stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
-            fixed(f64::from(style.width), 2)
+            fixed(
+                f64::from(style.width) * drawn.stroke.transform.map_or(1.0, |t| t.width_scale()),
+                2
+            )
         );
     }
     out.push_str("  </g>\n");

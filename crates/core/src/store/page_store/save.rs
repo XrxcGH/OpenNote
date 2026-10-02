@@ -136,7 +136,7 @@ impl PageStore {
         };
         next.ink.commit(0, segments, dead);
         let blocks: HashSet<_> = next.blocks.iter().map(|b| b.id).collect();
-        next.reading_order.retain(|id| blocks.contains(id));
+        next.view.reading_order.retain(|id| blocks.contains(id));
         fix_counts(&mut next.blocks, &page.ink);
         next
     }
@@ -230,7 +230,6 @@ fn without_strokes(page: &Page) -> Page {
         tags: page.tags.clone(),
         view: page.view.clone(),
         blocks: page.blocks.clone(),
-        reading_order: page.reading_order.clone(),
         assets: page.assets.clone(),
         ink: Ink::default(),
         recordings: page.recordings.clone(),
@@ -251,7 +250,6 @@ fn first_difference(a: &Page, b: &Page) -> Option<&'static str> {
         ("tags", a.tags == b.tags),
         ("view", a.view == b.view),
         ("blocks", a.blocks == b.blocks),
-        ("readingOrder", a.reading_order == b.reading_order),
         ("assets", a.assets == b.assets),
         ("recordings", a.recordings == b.recordings),
         ("encryption", a.encryption == b.encryption),

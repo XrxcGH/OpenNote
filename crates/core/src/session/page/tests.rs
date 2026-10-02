@@ -303,15 +303,18 @@ fn restoring_a_version_in_place_saves_the_current_state_first() {
 fn assets_import_and_read_back_by_range() {
     let s = setup();
     let handle = s.notebook.open_page(s.page, client("main-1")).unwrap();
-    let source = crate::store::assets::AssetSource::Bytes {
-        name: "leaf.png".into(),
-        mime: "image/png".into(),
-        bytes: b"0123456789".to_vec(),
-    };
+    let source =
+        crate::store::assets::AssetSource::bytes("leaf.png", "image/png", b"\x89PNG\r\n\x1a\n0123456789".to_vec());
     let asset = handle.import_asset(source.clone()).unwrap();
     assert_eq!(handle.import_asset(source).unwrap().id, asset.id);
-    let part = handle.asset_bytes(asset.id, Some(2..5)).unwrap();
-    assert_eq!((part.bytes.as_slice(), part.total), (&b"234"[..], 10));
+    let part = handle.asset_bytes(asset.id, Some(10..13)).unwrap();
+    assert_eq!((part.bytes.as_slice(), part.total), (&b"234"[..], 18));
+    let fake = crate::store::assets::AssetSource::bytes("fake.png", "image/png", b"not a picture".to_vec());
+    let refused = handle.import_asset(fake).unwrap_err();
+    assert!(
+        matches!(&refused, CoreError::Edit(EditError::Invalid(m)) if m.starts_with("assetType")),
+        "{refused:?}"
+    );
     assert!(handle.asset_bytes(crate::id::AssetId::ZERO, None).is_err());
 }
 
@@ -497,7 +500,6 @@ fn requests_resolve_apply_and_undo() {
             title: Some("Resolved".into()),
             tags: None,
             view: None,
-            reading_order: None,
         }],
     };
     let ack = handle.apply(req).unwrap();
@@ -523,8 +525,45 @@ fn binary_strokes_resolve_into_one_transaction() {
         client: c,
         client_seq: 1,
         coalesce: None,
+        ui: None,
+        edits: Vec::new(),
     };
     let ack = handle.add_strokes(meta, &records).unwrap();
     assert_eq!(ack.seq, 1);
     assert_eq!(handle.page_for_tests().ink.len(), 2);
+}
+
+#[test]
+fn strokes_are_read_by_id_and_by_area() {
+    let s = setup();
+    let handle = s.notebook.open_page(s.page, client("main-1")).unwrap();
+    let stroke = handle.page_for_tests().ink.strokes().next().cloned().unwrap();
+    let near = super::view::stroke_rect(&stroke);
+    let far = crate::model::Rect {
+        x: 10_000.0,
+        y: 10_000.0,
+        w: 10.0,
+        h: 10.0,
+    };
+    let unknown = crate::id::StrokeId(crate::id::Id::from_parts(1, 1));
+    let read = |ids: Option<&[crate::id::StrokeId]>, rect| handle.read_strokes(ids, rect);
+    let everything = read(None, None);
+    assert_eq!(everything.strokes, 1);
+    let decoded = s
+        .kit
+        .codec
+        .decode_records(&everything.records, &Limits::default())
+        .unwrap();
+    assert!(matches!(&decoded[..], [crate::model::InkRecord::Stroke(read)] if read.id == stroke.id));
+    assert_eq!(read(None, Some(near)).strokes, 1);
+    assert_eq!(read(None, Some(far)).strokes, 0);
+    assert!(read(None, Some(far)).records.is_empty());
+    assert_eq!(
+        read(Some(&[stroke.id, stroke.id]), None).strokes,
+        1,
+        "an ID counts once"
+    );
+    assert_eq!(read(Some(&[unknown]), None).strokes, 0, "a missing stroke is skipped");
+    assert_eq!(read(Some(&[stroke.id]), Some(far)).strokes, 0, "both filters apply");
+    assert_eq!(read(Some(&[stroke.id, unknown]), Some(near)).strokes, 1);
 }

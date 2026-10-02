@@ -1,6 +1,7 @@
 //! View settings of a page (spec 5.4): layout, mode, paper, and background.
 
 use super::{named_enum, Color, JsonMap, Named};
+use crate::id::BlockId;
 
 named_enum! {
     /// How new blocks are placed (spec 5.4).
@@ -95,6 +96,8 @@ pub struct PageView {
     pub background: Background,
     /// On flow pages, the width of the text column. `None` means the reading width.
     pub content_width: Option<f64>,
+    /// Block IDs in the order screen readers read them (spec 6.2). Empty means the default order.
+    pub reading_order: Vec<BlockId>,
     /// Unknown keys.
     pub extra: JsonMap,
 }
@@ -107,6 +110,7 @@ impl Default for PageView {
             paper: Paper::default(),
             background: Background::default(),
             content_width: None,
+            reading_order: Vec::new(),
             extra: JsonMap::new(),
         }
     }

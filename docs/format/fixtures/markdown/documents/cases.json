@@ -182,6 +182,78 @@
         {"type": "break"},
         {"type": "paragraph", "content": [{"text": "After ", "marks": []}, {"text": "code", "marks": ["code"]}]}
       ]
+    },
+    {
+      "name": "a bulleted list beside a numbered list",
+      "markdown": "- Apples\n\n1. Pears",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 1,
+          "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+        }
+      ]
+    },
+    {
+      "name": "two lists of one kind are written as one",
+      "markdown": "- Apples\n- [ ] Pears\n\nBetween\n\n3. Third\n4. Fourth\n5. Fifth",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]},
+            {"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}
+          ]
+        },
+        {"type": "paragraph", "content": [{"text": "Between", "marks": []}]},
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 3,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fifth", "marks": []}]}]}
+          ]
+        }
+      ],
+      "alsoWrittenFrom": [
+        [
+          {
+            "type": "list",
+            "ordered": false,
+            "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+          },
+          {
+            "type": "list",
+            "ordered": false,
+            "items": [{"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+          },
+          {"type": "paragraph", "content": [{"text": "Between", "marks": []}]},
+          {
+            "type": "list",
+            "ordered": true,
+            "start": 3,
+            "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]}]
+          },
+          {
+            "type": "list",
+            "ordered": true,
+            "start": 1,
+            "items": [
+              {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]},
+              {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fifth", "marks": []}]}]}
+            ]
+          }
+        ]
+      ]
     }
   ]
 }

@@ -135,10 +135,12 @@ impl NotebookHandle {
             NodeRef::Group(g) => NodeProps {
                 color: Some(store.group(g)?.color.clone()),
                 pinned: None,
+                styles: None,
             },
             NodeRef::Section(s) => NodeProps {
                 color: Some(store.section(s)?.file.color.clone()),
                 pinned: None,
+                styles: None,
             },
             NodeRef::Page(p) => {
                 let section = store.section_of(p).ok_or_else(|| not_found(format!("page {p}")))?;
@@ -149,6 +151,7 @@ impl NotebookHandle {
                 NodeProps {
                     color: Some(entry.color.clone()),
                     pinned: Some(entry.pinned),
+                    styles: None,
                 }
             }
         })

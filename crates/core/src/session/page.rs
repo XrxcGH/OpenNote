@@ -13,7 +13,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{CoreError, EditError};
-use crate::id::{AssetId, BlockId, ClientId, PageId, RevisionId};
+use crate::id::{AssetId, BlockId, ClientId, PageId, RevisionId, StrokeId};
 use crate::limits::Limits;
 use crate::model::{Asset, DeviceRef, Page, Rect, Revision, VersionEntry};
 use crate::ops::resolve::{StrokeTxnMeta, TxnRequest};
@@ -30,6 +30,7 @@ use crate::wire::envelope::Envelope;
 use crate::wire::frames::AppliedFrame;
 
 mod edits;
+mod external;
 pub(crate) mod save;
 pub(crate) mod state;
 mod versions;
@@ -38,7 +39,9 @@ pub(crate) mod view;
 #[cfg(test)]
 mod tests;
 
+pub use external::EditedImport;
 pub(crate) use state::{Opening, PageSession};
+pub use view::StrokeRead;
 
 /// The answer to an applied edit (plan 11.4).
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
@@ -156,6 +159,12 @@ impl PageHandle {
         self.session.ink_chunks(viewport)
     }
 
+    /// Reads strokes by ID, by area, or both, for pages whose far ink the interface doesn't hold: the live strokes
+    /// named by `strokes` that meet `rect`. A missing filter lets every stroke through.
+    pub fn read_strokes(&self, strokes: Option<&[StrokeId]>, rect: Option<Rect>) -> view::StrokeRead {
+        self.session.read_strokes(strokes, rect)
+    }
+
     /// Resolves, applies, and journals an edit request.
     pub fn apply(&self, req: TxnRequest) -> Result<TxnAck, EditError> {
         if req.page != self.session.id {
@@ -231,6 +240,35 @@ impl PageHandle {
     /// Restores a version, or makes it a new page.
     pub fn restore_version(&self, rev: RevisionId, as_copy: bool) -> Result<RestoreResult, CoreError> {
         self.session.restore_version(rev, as_copy)
+    }
+
+    /// Brings blocks back from a saved version, with their strokes and assets, as one transaction. The client's
+    /// next sequence number goes in `client_seq`, and one undo step reverses it.
+    pub fn restore_blocks(&self, client_seq: u64, rev: RevisionId, blocks: &[BlockId]) -> Result<TxnAck, EditError> {
+        self.session.restore_blocks((&self.client, client_seq), rev, blocks)
+    }
+
+    /// The readable copies of this page that a person edited in another program, which OpenNote kept aside
+    /// instead of overwriting.
+    pub fn edited_copies(&self) -> Result<Vec<crate::store::external::EditedCopy>, CoreError> {
+        self.session.edited_copies()
+    }
+
+    /// Plans how the text of an edited `page.md` comes into the page. Nothing changes until the interface sends
+    /// the plan's edits as a request.
+    pub fn plan_edited_import(&self, copy: &Path) -> Result<EditedImport, CoreError> {
+        self.session.plan_edited_import(copy)
+    }
+
+    /// Deletes an edited copy, once its text is brought in or the person turns it down.
+    pub fn discard_edited_copy(&self, copy: &Path) -> Result<(), CoreError> {
+        self.session.discard_edited_copy(copy)
+    }
+
+    /// The files of this page that are only in the cloud, so the interface can ask for them before it shows
+    /// the page.
+    pub fn cloud_only_files(&self) -> Vec<PathBuf> {
+        self.session.cloud_only_files()
     }
 
     /// Names a version, or marks it to keep forever.

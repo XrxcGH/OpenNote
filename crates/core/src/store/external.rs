@@ -8,6 +8,8 @@
 
 use std::path::{Component, Path, PathBuf};
 
+pub mod import;
+
 use crate::error::{FsError, FsErrorKind};
 use crate::format::names::{conflict_copy_kind, ConflictCopyOf};
 use crate::id::{PageId, RevisionId, SectionId};

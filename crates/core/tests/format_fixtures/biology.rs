@@ -90,6 +90,7 @@ pub fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
         color: notebook.color.clone(),
         created: notebook.created,
         changed: notebook.changed,
+        styles: notebook.styles.clone(),
         groups: notebook.groups.clone(),
         sections: nodes,
         access: Access::ReadWrite,
@@ -152,6 +153,19 @@ fn notebook() -> NotebookFile {
     file.defaults = json!({"view": {"mode": "paginated", "paper": {"size": "a4", "width": 793.7, "height": 1122.52}}})
         .as_object()
         .cloned();
+    file.styles = json!({
+        "h1": {"size": 28, "color": "indigo", "spaceBefore": 18, "spaceAfter": 6},
+        "normal": {"font": "Georgia", "size": 16, "lineHeight": 1.5},
+        "zz-callout": {"color": "#aabbcc", "zzshadow": {"blur": 3}}
+    })
+    .as_object()
+    .map(|styles| {
+        styles
+            .iter()
+            .map(|(name, style)| (name.clone(), serde_json::from_value(style.clone()).unwrap()))
+            .collect()
+    })
+    .unwrap();
     file.groups = vec![
         group(G_SEMESTER, "Semester 1", None, "a0"),
         group(G_LABS, "Labs", Some(G_SEMESTER), "a0"),

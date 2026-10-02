@@ -219,9 +219,11 @@ fn fields_bytes(fields: &PageFields) -> usize {
         .flatten()
         .map(|t| t.len() + size_of::<String>())
         .sum::<usize>();
-    let view = fields.view.as_ref().map_or(0, |_| size_of::<crate::model::PageView>());
-    let order = fields.reading_order.as_ref().map_or(0, |o| o.len() * 16);
-    title + tags + view + order
+    let view = fields
+        .view
+        .as_ref()
+        .map_or(0, |v| size_of::<crate::model::PageView>() + v.reading_order.len() * 16);
+    title + tags + view
 }
 
 fn stroke_bytes(stroke: &Stroke) -> usize {

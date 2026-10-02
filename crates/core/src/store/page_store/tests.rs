@@ -268,7 +268,7 @@ fn saves_fix_stroke_counts_and_drop_stale_reading_order() {
     let h = Harness::new();
     let mut page = sample_page();
     h.put_assets(&page);
-    page.reading_order = vec![crate::id::BlockId(Id::from_parts(1, 1))];
+    page.view.reading_order = vec![crate::id::BlockId(Id::from_parts(1, 1))];
     let ink_block = crate::testing::sample::sample_ink_block();
     let mut block = crate::model::Block::clone(page.blocks.get(ink_block).unwrap());
     if let crate::model::BlockData::Ink(data) = &mut block.data {
@@ -277,7 +277,7 @@ fn saves_fix_stroke_counts_and_drop_stale_reading_order() {
     page.blocks.replace(Arc::new(block)).unwrap();
     h.save(&page, None, CompactionPlan::None);
     let loaded = h.store.load(&h.dir).unwrap().page;
-    assert!(loaded.reading_order.is_empty());
+    assert!(loaded.view.reading_order.is_empty());
     let count = match &loaded.blocks.get(ink_block).unwrap().data {
         crate::model::BlockData::Ink(data) => data.stroke_count,
         _ => panic!("an ink block"),

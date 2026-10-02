@@ -36,6 +36,7 @@ fn tree(groups: Vec<Group>, sections: Vec<SectionNode>) -> NotebookTree {
         color: None,
         created: Timestamp::EPOCH,
         changed: Timestamp::EPOCH,
+        styles: Default::default(),
         groups,
         sections,
         access: Access::ReadWrite,

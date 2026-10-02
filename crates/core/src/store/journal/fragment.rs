@@ -54,7 +54,16 @@ pub fn read_blocks(codec: &dyn Codec, value: &Value, limits: &Limits) -> Result<
 pub fn write_view(codec: &dyn Codec, view: &PageView) -> Value {
     let mut page = skeleton();
     page.view = view.clone();
-    write_field(codec, &page, VIEW)
+    // The page codec drops reading-order IDs that name no block, and the frame has no blocks, so the
+    // list is put back by hand. A token written by a codec that doesn't write JSON keeps it as it is.
+    let mut value = write_field(codec, &page, VIEW);
+    if let Value::Object(map) = &mut value {
+        if !view.reading_order.is_empty() {
+            let ids = view.reading_order.iter().map(|id| Value::String(id.to_string()));
+            map.insert("readingOrder".to_owned(), Value::Array(ids.collect()));
+        }
+    }
+    value
 }
 
 /// Reads a view written by [`write_view`].

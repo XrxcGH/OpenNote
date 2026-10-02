@@ -44,8 +44,12 @@ fn every_data_field_is_read() {
     assert_eq!(text.checked.len(), 1);
     assert_eq!(text.extra.get("zzfuture"), Some(&json!(1)));
     assert_eq!(Value::Object(text_to_json(&text)), data);
-    let anchor = json!({"block": "01m3sa14y9zszek1wdk3snddt0", "offset": 4});
-    let ink = json!({"role": "drawing", "strokeCount": 3, "anchor": anchor, "alt": "A leaf", "decorative": true});
+    let anchor = json!({
+        "block": "01m3sa14y9zszek1wdk3snddt0", "para": "01m3sa14y9zszek1wdk3snddt1", "at": 4,
+        "quote": {"prefix": "the ", "exact": "thylakoid", "suffix": " membrane", "zzfuture": 2},
+        "dx": -12.5, "dy": 8.0, "zzfuture": 1,
+    });
+    let ink = json!({"role": "anchored", "strokeCount": 3, "anchor": anchor, "alt": "A leaf", "decorative": true});
     let parsed = data_from_json("ink", &map(ink.clone())).unwrap();
     assert_eq!(Value::Object(data_to_json(&parsed)), ink);
     let column = "01m3sabc31y0rfa24eeh6j4ky4";
@@ -66,7 +70,15 @@ fn bad_data_is_rejected_with_a_reason() {
         ("text", json!({"ids": ["nope"]})),
         ("text", json!({"tags": {"01m3sa14y9zszek1wdk3snddt0": "x"}})),
         ("ink", json!({"strokeCount": -1})),
-        ("ink", json!({"anchor": {"block": "01m3sa14y9zszek1wdk3snddt0"}})),
+        ("ink", json!({"anchor": {"at": 3}})),
+        (
+            "ink",
+            json!({"anchor": {"block": "01m3sa14y9zszek1wdk3snddt0", "quote": {"prefix": "a"}}}),
+        ),
+        (
+            "ink",
+            json!({"anchor": {"block": "01m3sa14y9zszek1wdk3snddt0", "dx": "far"}}),
+        ),
         ("image", json!({"alt": "no asset"})),
         (
             "image",

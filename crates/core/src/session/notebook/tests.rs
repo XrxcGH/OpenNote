@@ -69,6 +69,7 @@ fn tree_changes_undo_and_redo() {
     let color = NodeProps {
         color: Some(Some(Color::Palette("fern".into()))),
         pinned: None,
+        styles: None,
     };
     notebook.set_props(NodeRef::Section(a), color).unwrap();
     notebook.delete(&[NodeRef::Section(a)]).unwrap();
@@ -249,4 +250,38 @@ fn trash_expires_when_the_notebook_opens() {
     assert_eq!(again.trash().unwrap().len(), 1);
     kit.core.run_pending_work();
     assert!(again.trash().unwrap().is_empty());
+}
+
+#[test]
+fn the_notebook_takes_its_color_and_styles_as_props() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let mut styles = crate::model::NotebookStyles::new();
+    styles.insert(
+        "quote".to_owned(),
+        crate::model::StyleSpec {
+            size: Some(15.0),
+            ..Default::default()
+        },
+    );
+    let props = NodeProps {
+        color: Some(Some(Color::Palette("fern".into()))),
+        styles: Some(styles.clone()),
+        ..NodeProps::default()
+    };
+    notebook.set_notebook_props(props).unwrap();
+    let tree = notebook.tree();
+    assert_eq!(tree.styles, styles);
+    assert_eq!(tree.color, Some(Color::Palette("fern".into())));
+    let pin = NodeProps {
+        pinned: Some(true),
+        ..NodeProps::default()
+    };
+    assert!(notebook.set_notebook_props(pin).is_err());
+    let none = NodeProps {
+        styles: Some(Default::default()),
+        ..NodeProps::default()
+    };
+    notebook.set_notebook_props(none).unwrap();
+    assert!(notebook.tree().styles.is_empty());
 }

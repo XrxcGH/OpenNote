@@ -33,7 +33,6 @@ enum Prior {
     Title(String),
     Tags(Vec<String>),
     View(Box<PageView>),
-    ReadingOrder(Vec<BlockId>),
 }
 
 /// The page while a transaction applies to it.
@@ -100,12 +99,6 @@ impl<'p> Applying<'p> {
         self.priors.push(Prior::View(Box::new(old)));
     }
 
-    /// Sets the reading order.
-    pub fn set_reading_order(&mut self, order: Vec<BlockId>) {
-        let old = std::mem::replace(&mut self.page.reading_order, order);
-        self.priors.push(Prior::ReadingOrder(old));
-    }
-
     /// Queues an ink record for the next save.
     pub fn record(&mut self, record: InkRecord) {
         self.records.push(record);
@@ -161,7 +154,6 @@ impl<'p> Applying<'p> {
                 Prior::Title(old) => page.title = old,
                 Prior::Tags(old) => page.tags = old,
                 Prior::View(old) => page.view = *old,
-                Prior::ReadingOrder(old) => page.reading_order = old,
             }
         }
     }

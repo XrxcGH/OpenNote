@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- opennote: {"page": "01m3sa42p8000000000000rd2c", "revision": "01m3saa6080000000000028qr4", "format": 1, "checksum": "crc32:fcac0e1e"} -->
+<!-- opennote: {"page": "01m3sa42p8000000000000rd2c", "revision": "01m3saa6080000000000028qr4", "format": 1, "checksum": "crc32:a7a2bce3"} -->
 <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="94.5 388 239.6 143.9" width="239.6" height="143.9">
   <title>Handwriting: Photosynthesis</title>
   <g>
@@ -8,4 +8,5 @@
     <path d="M300.4 397.1L301.5 397.6L302.7 398.1L303.8 398.7L305 399.4L306.1 400L307.3 400.6L308.5 401.3L309.7 401.9L311 402.4L312.3 402.9L313.7 403.3L315.1 403.6L316.5 403.9L318 404L319.5 404L321.1 403.9L322.8 403.7L324.4 403.4L326.1 403" fill="none" stroke="#336699" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M197.1 523.9L197.1 523.9" fill="none" stroke="#5b3a8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
+  <g/>
 </svg>

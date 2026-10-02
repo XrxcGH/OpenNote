@@ -18,6 +18,7 @@ use crate::session::maintenance::Maintenance;
 use crate::session::notebook::NotebookShared;
 use crate::session::page::PageSession;
 use crate::store::fs::Fs;
+use crate::store::history::Retention;
 use crate::store::layout::DataLayout;
 use crate::store::notebook_store::{TreeEnv, TreeFormats};
 use crate::time::Clock;
@@ -47,12 +48,19 @@ pub(crate) struct CoreCtx {
     pub(crate) sessions: Mutex<Vec<Weak<PageSession>>>,
     pub(crate) undo_bytes: AtomicUsize,
     pub(crate) serial: AtomicU64,
+    /// How long versions are kept (spec 13.3), from the settings the shell passes in.
+    pub(crate) retention: RwLock<Retention>,
 }
 
 impl CoreCtx {
     /// This device.
     pub(crate) fn device(&self) -> DeviceRef {
         self.device.read().unwrap_or_else(PoisonError::into_inner).clone()
+    }
+
+    /// How long versions are kept.
+    pub(crate) fn retention(&self) -> Retention {
+        *self.retention.read().unwrap_or_else(PoisonError::into_inner)
     }
 
     /// A new serial number for a page session.

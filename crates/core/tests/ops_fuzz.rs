@@ -130,6 +130,8 @@ fn binary_strokes_are_checked_and_boxed() {
         client: ClientId::parse("main-1").unwrap(),
         client_seq: 1,
         coalesce: None,
+        ui: None,
+        edits: Vec::new(),
     };
     let mut runner = proptest::test_runner::TestRunner::default();
     let id = StrokeId(opennote_core::Id::from_parts(1_800_000_000_000, 1));

@@ -7,6 +7,7 @@
 mod blocks;
 mod page;
 mod place;
+mod restore;
 mod strokes;
 pub mod view;
 
@@ -23,6 +24,7 @@ use crate::ops::{CoalesceKey, Op, Origin, Txn};
 use crate::order::OrderKey;
 use crate::time::{Clock, Timestamp};
 
+pub use restore::resolve_restore_blocks;
 pub use strokes::compose;
 
 /// A transaction request from the interface.
@@ -55,6 +57,20 @@ pub enum Edit {
         block: BlockId,
         /// Its new Markdown.
         markdown: String,
+    },
+    /// One splice in a text block's Markdown, for an editor that already knows what changed. It resolves to one
+    /// `EditText` operation with the same checks as any splice: `at` is an offset in UTF-8 bytes, on a character
+    /// boundary, and `del` is the text found there. A mismatch means the interface is out of date, so it must
+    /// reload the page.
+    SpliceText {
+        /// The text block.
+        block: BlockId,
+        /// The offset of the splice in the block's Markdown, in UTF-8 bytes.
+        at: u32,
+        /// The text deleted at `at`. Empty for a pure insertion.
+        del: String,
+        /// The text inserted at `at`. Empty for a pure deletion.
+        ins: String,
     },
     /// A new block after or before a sibling. The core makes its order key and timestamps.
     InsertBlock {
@@ -134,12 +150,10 @@ pub enum Edit {
         /// New tags.
         #[serde(default)]
         tags: Option<Vec<String>>,
-        /// A new view, as `page.json` writes it.
+        /// A JSON merge patch (RFC 7396) over the current view, as `page.json` writes it. It can set
+        /// `readingOrder` (spec 6.2), and `null` puts a member back to its default.
         #[serde(default)]
         view: Option<serde_json::Value>,
-        /// A new reading order (spec 6.2).
-        #[serde(default)]
-        reading_order: Option<Vec<BlockId>>,
     },
     /// Adds an imported asset to the table.
     AddAsset {
@@ -191,7 +205,8 @@ pub struct StyleEdit {
     pub width: Option<f32>,
 }
 
-/// The metadata of a binary stroke request (`page_add_strokes`).
+/// The metadata of a binary stroke request (`page_add_strokes`). Its `edits` and the new strokes are one
+/// transaction, so they are one undo step and a crash never leaves half of them.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StrokeTxnMeta {
@@ -204,6 +219,13 @@ pub struct StrokeTxnMeta {
     /// How it may join the undo entry before it.
     #[serde(default)]
     pub coalesce: Option<CoalesceKey>,
+    /// The selection before and after, opaque to the core.
+    #[serde(default)]
+    pub ui: Option<serde_json::Value>,
+    /// Edits that come first in the same transaction, such as removing the strokes a partial erase cuts. A new
+    /// stroke may reuse the ID of a stroke they remove, so shapes keep their IDs through handle edits.
+    #[serde(default)]
+    pub edits: Vec<Edit>,
 }
 
 /// Reads a JSON value that may be `null`, keeping `null` as `Some(Value::Null)`, so a missing member and a
@@ -273,18 +295,7 @@ fn local_txn(ctx: &ResolveCtx, at: Timestamp, (client, coalesce): (&ClientId, &O
 pub fn resolve(page: &Page, req: &TxnRequest, ctx: &ResolveCtx) -> Result<Txn, EditError> {
     check_page(page, req.page)?;
     let at = ctx.clock.now();
-    let mut working: Option<Page> = None;
-    let mut ops = Vec::new();
-    let last = req.edits.len().saturating_sub(1);
-    for (index, edit) in req.edits.iter().enumerate() {
-        let current = working.as_ref().unwrap_or(page);
-        let edit_ops = resolve_edit(&EditCtx { page: current, ctx, at }, edit)?;
-        if index < last && !edit_ops.is_empty() {
-            let working = working.get_or_insert_with(|| page.clone());
-            apply_ops(working, &edit_ops, at).map_err(EditError::Precondition)?;
-        }
-        ops.extend(edit_ops);
-    }
+    let (ops, _) = resolve_edits(page, &req.edits, (ctx, at), false)?;
     Ok(Txn {
         ui: req.ui.clone(),
         ops,
@@ -292,9 +303,34 @@ pub fn resolve(page: &Page, req: &TxnRequest, ctx: &ResolveCtx) -> Result<Txn, E
     })
 }
 
+/// Resolves edits in order, each against the page as the edits before it left it. It answers with the
+/// operations, and with the page after them when any edit changed something. The last edit is applied to that
+/// page only when `more` is set, because more operations follow it.
+fn resolve_edits(
+    page: &Page,
+    edits: &[Edit],
+    (ctx, at): (&ResolveCtx, Timestamp),
+    more: bool,
+) -> Result<(Vec<Op>, Option<Page>), EditError> {
+    let mut working: Option<Page> = None;
+    let mut ops = Vec::new();
+    let last = edits.len().saturating_sub(1);
+    for (index, edit) in edits.iter().enumerate() {
+        let current = working.as_ref().unwrap_or(page);
+        let edit_ops = resolve_edit(&EditCtx { page: current, ctx, at }, edit)?;
+        if (more || index < last) && !edit_ops.is_empty() {
+            let working = working.get_or_insert_with(|| page.clone());
+            apply_ops(working, &edit_ops, at).map_err(EditError::Precondition)?;
+        }
+        ops.extend(edit_ops);
+    }
+    Ok((ops, working))
+}
+
 fn resolve_edit(c: &EditCtx<'_>, edit: &Edit) -> Result<Vec<Op>, EditError> {
     match edit {
         Edit::SetText { block, markdown } => blocks::set_text(c, *block, markdown),
+        Edit::SpliceText { block, at, del, ins } => blocks::splice_text(c, *block, *at, del, ins),
         Edit::InsertBlock { block, after, before } => blocks::insert_block(c, block, *after, *before),
         Edit::MoveBlock {
             block,
@@ -313,17 +349,11 @@ fn resolve_edit(c: &EditCtx<'_>, edit: &Edit) -> Result<Vec<Op>, EditError> {
         Edit::TransformStrokes { strokes, matrix } => strokes::transform(c, strokes, matrix),
         Edit::RestyleStrokes { strokes, style } => strokes::restyle(c, strokes, style),
         Edit::MoveStrokesToBlock { strokes, block } => strokes::move_to_block(c, strokes, *block),
-        Edit::SetPage {
-            title,
-            tags,
-            view,
-            reading_order,
-        } => {
+        Edit::SetPage { title, tags, view } => {
             let edit = page::PageEdit {
                 title: title.as_deref(),
                 tags: tags.as_deref(),
                 view: view.as_ref(),
-                reading_order: reading_order.as_deref(),
             };
             page::set_page(c, &edit)
         }
@@ -357,8 +387,11 @@ pub fn resolve_checked_strokes(
 ) -> Result<Txn, EditError> {
     check_page(page, meta.page)?;
     let at = ctx.clock.now();
-    let ops = strokes::add(&EditCtx { page, ctx, at }, strokes)?;
+    let (mut ops, working) = resolve_edits(page, &meta.edits, (ctx, at), true)?;
+    let current = working.as_ref().unwrap_or(page);
+    ops.extend(strokes::add(&EditCtx { page: current, ctx, at }, strokes)?);
     Ok(Txn {
+        ui: meta.ui.clone(),
         ops,
         ..local_txn(ctx, at, (&meta.client, &meta.coalesce))
     })

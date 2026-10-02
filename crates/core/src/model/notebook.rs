@@ -1,11 +1,76 @@
 //! `notebook.json` (spec 4.1 and 4.3), and the navigation tree the interface shows.
 
-use serde::Serialize;
+use std::collections::BTreeMap;
+
+use serde::{Deserialize, Serialize};
 
 use super::{Access, Color, FormatInfo, JsonMap, Warning};
 use crate::id::{GroupId, NotebookId, PageId, SectionId};
 use crate::order::OrderKey;
 use crate::time::Timestamp;
+
+/// The names of the styles a version 1 reader knows, in the order `notebook.json` writes them (spec 4.1).
+pub const STYLE_NAMES: [&str; 10] = ["normal", "h1", "h2", "h3", "h4", "h5", "h6", "title", "quote", "code"];
+
+/// How a notebook shows one named style (spec 4.1 and 6.6). A missing value means the app's own.
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StyleSpec {
+    /// The font family.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub font: Option<String>,
+    /// The text size in page units.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<f64>,
+    /// The text color.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<Color>,
+    /// Space above the element in page units.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub space_before: Option<f64>,
+    /// Space below the element in page units.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub space_after: Option<f64>,
+    /// The line height as a multiple of the size.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub line_height: Option<f64>,
+    /// Unknown keys.
+    #[serde(flatten)]
+    pub extra: JsonMap,
+}
+
+impl StyleSpec {
+    /// What is wrong with a style a person sets, or `None`. Readers show a value outside its range as if it were
+    /// missing, so a file with one still opens (spec 4.1).
+    pub fn problem(&self) -> Option<&'static str> {
+        let within =
+            |value: Option<f64>, low: f64, high: f64| value.is_none_or(|v| v.is_finite() && v >= low && v <= high);
+        if self
+            .font
+            .as_ref()
+            .is_some_and(|f| f.is_empty() || f.chars().count() > 200)
+        {
+            Some("a font name is 1 to 200 characters")
+        } else if !within(self.size, 1.0, 1_000.0) {
+            Some("a size is from 1 to 1000")
+        } else if !within(self.space_before, 0.0, 1_000.0) || !within(self.space_after, 0.0, 1_000.0) {
+            Some("a space is from 0 to 1000")
+        } else if !within(self.line_height, 0.5, 10.0) {
+            Some("a line height is from 0.5 to 10")
+        } else {
+            None
+        }
+    }
+}
+
+/// The most styles a notebook keeps, and the longest style name (spec 16).
+pub const MAX_STYLES: usize = 64;
+/// The longest style name in characters.
+pub const MAX_STYLE_NAME_CHARS: usize = 64;
+
+/// The named styles of a notebook, by style name. Names a reader doesn't know are kept (spec 2.9). An empty
+/// map means the notebook has no `styles` and shows the app's own.
+pub type NotebookStyles = BTreeMap<String, StyleSpec>;
 
 /// The content of `notebook.json`.
 #[derive(Clone, Debug, PartialEq)]
@@ -22,6 +87,8 @@ pub struct NotebookFile {
     pub changed: Timestamp,
     /// Defaults for new pages. Only `view` is defined in version 1.
     pub defaults: Option<JsonMap>,
+    /// How the notebook shows each named style.
+    pub styles: NotebookStyles,
     /// Section groups, in any order. Each group names its parent and order.
     pub groups: Vec<Group>,
     /// Unknown keys.
@@ -40,6 +107,7 @@ impl NotebookFile {
             created,
             changed: created,
             defaults: None,
+            styles: NotebookStyles::new(),
             groups: Vec::new(),
             extra: JsonMap::new(),
             format: FormatInfo::default(),
@@ -84,6 +152,8 @@ pub struct NotebookTree {
     pub created: Timestamp,
     /// When `notebook.json` last changed.
     pub changed: Timestamp,
+    /// How the notebook shows each named style.
+    pub styles: NotebookStyles,
     /// Every section group.
     pub groups: Vec<Group>,
     /// Every section outside Trash.
