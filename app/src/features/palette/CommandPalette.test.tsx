@@ -44,7 +44,12 @@ describe('the command palette', () => {
     const box = await openWith('Ctrl+K');
     expect(document.activeElement).toBe(box);
     await userEvent.keyboard('toggle dark');
-    await waitFor(() => expect(screen.getByRole('option', { name: /Toggle dark mode/ })).toBeTruthy());
+    // Each letter searches again, so the list settles after a moment. Enter runs the highlighted option, which has
+    // to be the one this test means.
+    await waitFor(() => {
+      const option = screen.getByRole('option', { name: /Toggle dark mode/ });
+      expect(box.getAttribute('aria-activedescendant')).toBe(option.id);
+    });
     await userEvent.keyboard('{Enter}');
     await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'), { timeout: 5000 });
     expect(screen.queryByRole('combobox')).toBeNull();
