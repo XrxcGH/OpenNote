@@ -13,8 +13,7 @@ use crate::{
 const HASH: &str = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
 
 fn manifest(version: &str) -> Vec<u8> {
-    let entry =
-        json!({ "url": format!("https://updates.test/{version}.exe"), "signature": "c2ln", "size": 3, "sha256": HASH });
+    let entry = json!({ "url": format!("https://github.com/XrxcGH/OpenNote/releases/download/v{version}/OpenNote.exe"), "signature": "c2ln", "size": 3, "sha256": HASH });
     json!({ "version": version, "notes": format!("Notes for {version}"), "platforms": { "windows-x86_64": entry } })
         .to_string()
         .into_bytes()

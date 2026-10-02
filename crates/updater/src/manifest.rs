@@ -48,13 +48,16 @@ pub fn parse(bytes: &[u8]) -> Result<Manifest, UpdateError> {
 }
 
 /// This platform's file in a manifest, or `None` when the manifest has no file for this platform. The entry must
-/// have an HTTPS URL, a size from 1 byte to `max_exe_bytes`, a 64-digit lowercase SHA-256, and a signature.
+/// have an HTTPS URL on GitHub, a size from 1 byte to `max_exe_bytes`, a 64-digit lowercase SHA-256, and a signature.
 pub fn offer_for(manifest: &Manifest, platform: PlatformKey, max_exe_bytes: u64) -> Result<Option<Offer>, UpdateError> {
     let version = Version::parse(&manifest.version).map_err(|error| invalid(error.to_string()))?;
     let Some(entry) = manifest.platforms.get(platform.key()) else {
         return Ok(None);
     };
     let url = Url::parse(&entry.url).map_err(|error| invalid(error.to_string()))?;
+    if !url.is_release_host() {
+        return Err(invalid("the file isn't on a server the updater downloads from"));
+    }
     if entry.size == 0 || entry.size > max_exe_bytes {
         return Err(invalid(format!(
             "the file's size, {}, is outside 1 to {max_exe_bytes}",
@@ -199,6 +202,8 @@ mod tests {
         let cases = [
             ("url", json!("http://github.com/x.exe")),
             ("url", json!("file:///C:/x.exe")),
+            ("url", json!("https://evil.example/big.bin")),
+            ("url", json!("https://github.com@evil.example/x.exe")),
             ("size", json!(0)),
             ("size", json!(MAX_EXE_BYTES + 1)),
             ("size", json!(-1)),

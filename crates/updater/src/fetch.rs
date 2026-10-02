@@ -30,7 +30,35 @@ impl Url {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Whether a release file may come from here: [`RELEASE_HOSTS`], or `http://127.0.0.1` in `test-endpoints`
+    /// builds. The host is read the way a client reads it, so a user name in front (`github.com@evil.example`) or a
+    /// backslash doesn't pass for GitHub, and only the default port is accepted.
+    pub fn is_release_host(&self) -> bool {
+        if TEST_ENDPOINTS && is_local_test_url(&self.0) {
+            return true;
+        }
+        let Some(rest) = self.0.get(HTTPS.len()..) else {
+            return false;
+        };
+        let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
+        if authority.contains(['@', '\\']) {
+            return false;
+        }
+        let host = authority.strip_suffix(":443").unwrap_or(authority);
+        RELEASE_HOSTS.iter().any(|allowed| host.eq_ignore_ascii_case(allowed))
+    }
 }
+
+/// Where the updater downloads from. A release's files are on `github.com`, which redirects them to GitHub's
+/// release storage. The manifest isn't signed, so a manifest that names any other server is refused rather than
+/// letting whoever edited it point every client at a server of their choosing.
+pub const RELEASE_HOSTS: [&str; 4] = [
+    "github.com",
+    "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com",
+    "github-releases.githubusercontent.com",
+];
 
 impl fmt::Display for Url {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -73,6 +101,8 @@ pub enum FetchError {
     TooLarge { limit: u64 },
     /// A URL or redirect that isn't HTTPS.
     InsecureUrl(String),
+    /// A URL or redirect to a server that isn't one of [`RELEASE_HOSTS`].
+    ForeignHost(String),
     /// Writing to the sink failed.
     Io(std::io::Error),
 }
@@ -85,6 +115,7 @@ impl fmt::Display for FetchError {
             Self::Status(status) => write!(f, "the update server answered with status {status}"),
             Self::TooLarge { limit } => write!(f, "the download passed its {limit}-byte limit"),
             Self::InsecureUrl(url) => write!(f, "refused a URL that isn't HTTPS: {url}"),
+            Self::ForeignHost(url) => write!(f, "refused a URL on a server that isn't GitHub's: {url}"),
             Self::Io(error) => write!(f, "couldn't write the download: {error}"),
         }
     }
@@ -150,7 +181,7 @@ impl Fetch for UreqFetch {
                     .get("location")
                     .and_then(|value| value.to_str().ok())
                     .ok_or(FetchError::Status(status))?;
-                current = Url::parse(&resolve(&current, location))?;
+                current = redirect_target(&current, location)?;
                 continue;
             }
             if status != 200 {
@@ -164,6 +195,16 @@ impl Fetch for UreqFetch {
             return copy_limited(reader, max_bytes, sink);
         }
         Err(FetchError::Unreachable(format!("more than {MAX_REDIRECTS} redirects")))
+    }
+}
+
+/// Where a redirect goes: HTTPS, on one of [`RELEASE_HOSTS`].
+fn redirect_target(current: &Url, location: &str) -> Result<Url, FetchError> {
+    let target = Url::parse(&resolve(current, location))?;
+    if target.is_release_host() {
+        Ok(target)
+    } else {
+        Err(FetchError::ForeignHost(target.to_string()))
     }
 }
 
@@ -243,6 +284,63 @@ mod tests {
         assert_eq!(resolve(&url, "https://objects.example/x"), "https://objects.example/x");
         let other = resolve(&url, "//other.example/x");
         assert!(Url::parse(&other).is_err(), "a scheme-relative redirect is refused");
+    }
+
+    #[test]
+    fn knows_the_hosts_a_release_file_may_come_from() {
+        for url in [
+            "https://github.com/XrxcGH/OpenNote/releases/download/v1.0.0/OpenNote_Windows64.exe",
+            "https://GitHub.com/x",
+            "https://github.com:443/x",
+            "https://objects.githubusercontent.com/github-production-release-asset/1?X-Amz=2",
+            "https://release-assets.githubusercontent.com/x",
+            "https://github.com?x=1",
+        ] {
+            assert!(Url::parse(url).expect("https").is_release_host(), "{url}");
+        }
+        for url in [
+            "https://evil.example/big.bin",
+            "https://github.com.evil.example/x",
+            "https://evil.example/github.com/x",
+            "https://evil.example?github.com",
+            "https://github.com@evil.example/x",
+            "https://github.com:secret@evil.example/x",
+            "https://evil.example\\@github.com/x",
+            "https://github.com:8443/x",
+            "https://raw.githubusercontent.com/attacker/repo/main/big.bin",
+            "https://githubusercontent.com/x",
+            "https://notgithub.com/x",
+        ] {
+            assert!(!Url::parse(url).expect("https").is_release_host(), "{url}");
+        }
+    }
+
+    #[test]
+    fn follows_redirects_only_to_release_hosts() {
+        let url = Url::parse("https://github.com/XrxcGH/OpenNote/releases/download/v1/x.exe").expect("https");
+        let storage = "https://objects.githubusercontent.com/github-production-release-asset/1";
+        assert_eq!(
+            redirect_target(&url, storage).expect("GitHub's storage").as_str(),
+            storage
+        );
+        assert_eq!(
+            redirect_target(&url, "/XrxcGH/OpenNote/other")
+                .expect("same server")
+                .as_str(),
+            "https://github.com/XrxcGH/OpenNote/other"
+        );
+        assert!(matches!(
+            redirect_target(&url, "https://evil.example/big.bin"),
+            Err(FetchError::ForeignHost(_))
+        ));
+        assert!(matches!(
+            redirect_target(&url, "//evil.example/big.bin"),
+            Err(FetchError::InsecureUrl(_))
+        ));
+        assert!(matches!(
+            redirect_target(&url, "http://github.com/x"),
+            Err(FetchError::InsecureUrl(_))
+        ));
     }
 
     #[test]
