@@ -18,6 +18,7 @@ use crate::store::notebook_store::{invalid_move, FlatPage, Transfer};
 use crate::store::scan::ScanReport;
 use crate::store::verify::VerifyReport;
 
+mod backup;
 mod history;
 pub(crate) mod open;
 mod ops;
@@ -119,6 +120,11 @@ impl NotebookHandle {
     /// The navigation tree.
     pub fn tree(&self) -> NotebookTree {
         self.inner.tree().store.tree()
+    }
+
+    /// Whether this notebook is a scheduled backup set. It opens read-only, so pages can be copied out of it.
+    pub fn is_backup(&self) -> bool {
+        self.inner.is_backup()
     }
 
     /// A section's pages in display order, with their levels, as the notes contract lists them.

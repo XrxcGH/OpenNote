@@ -188,6 +188,8 @@ pub enum ReadOnlyReason {
     SuspectOverwrite,
     /// The section is encrypted (spec 5.7).
     Encrypted,
+    /// The notebook is a scheduled backup, which opens read-only so pages can be copied out of it.
+    Backup,
 }
 
 /// A problem a reader worked around.

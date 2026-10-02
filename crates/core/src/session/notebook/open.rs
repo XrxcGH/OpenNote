@@ -41,9 +41,18 @@ pub(crate) fn open_notebook(ctx: &Arc<CoreCtx>, dir: &Path, how: &OpenAs) -> Res
     let key = notebook_key(file.id, &identity);
     let volume = fs.volume(dir).ok();
     let remote = volume.as_ref().is_some_and(|v| v.remote);
-    let lock = lock_notebook(fs, &ctx.data, &key, &layout, remote)?;
+    // A backup set opens read-only without a lock, so it can sit on a drive nobody may write to.
+    let backup = crate::store::backup::is_backup(fs, dir);
+    let lock = if backup {
+        None
+    } else {
+        lock_notebook(fs, &ctx.data, &key, &layout, remote)?
+    };
     let mut notices = Vec::new();
-    let read_only = if lock.is_none() {
+    let read_only = if backup {
+        notices.push(Warning::new("notebook.backup", dir.display().to_string()));
+        Some(ReadOnlyReason::Backup)
+    } else if lock.is_none() {
         notices.push(Warning::new("notebook.lockedElsewhere", dir.display().to_string()));
         Some(ReadOnlyReason::LockedElsewhere)
     } else if how.copy_of_open {

@@ -330,12 +330,16 @@ impl Core {
         }
         let ctx = &self.inner.ctx;
         let file = read_notebook_file(&ctx.tree_env(), &NotebookLayout::new(dir))?;
-        let copy_of_open = ctx.notebooks().iter().any(|n| n.id() == file.id);
+        let copy_of_open = ctx.notebooks().iter().any(|n| n.id() == file.id && !n.is_backup());
         let handle = open_notebook(ctx, dir, &OpenAs { copy_of_open })?;
         ctx.notebooks
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .push(handle.inner.clone());
+        // A backup set shares its notebook's ID, so listing it would replace the notebook in the library.
+        if handle.is_backup() {
+            return Ok(handle);
+        }
         let entry = LibraryEntry {
             path: dir.to_path_buf(),
             notebook: file.id,
