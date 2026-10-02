@@ -18,6 +18,7 @@ use crate::store::notebook_store::{invalid_move, FlatPage, Transfer};
 use crate::store::scan::ScanReport;
 use crate::store::verify::VerifyReport;
 
+mod history;
 pub(crate) mod open;
 mod ops;
 pub(crate) mod shared;
@@ -25,6 +26,7 @@ pub(crate) mod shared;
 mod tests;
 pub(crate) mod undo;
 
+pub use history::{HistoryDeleted, HistoryScope};
 pub(crate) use open::open_notebook;
 pub(crate) use shared::NotebookShared;
 use undo::TreeAction;

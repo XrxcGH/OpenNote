@@ -73,7 +73,7 @@ impl PageSession {
     }
 
     /// Checks that the page may change and that the client's sequence number has no gap or repeat.
-    fn check_request(&self, st: &PageState, client: &ClientId, client_seq: u64) -> Result<(), EditError> {
+    pub(super) fn check_request(&self, st: &PageState, client: &ClientId, client_seq: u64) -> Result<(), EditError> {
         self.check_editable(st)?;
         let expected = st.clients.get(client).map_or(1, |c| c.seq.saturating_add(1));
         if client_seq != expected {
@@ -83,7 +83,7 @@ impl PageSession {
     }
 
     /// Commits a transaction from a client request, records it in the client's undo stack, and answers.
-    fn commit_request(
+    pub(super) fn commit_request(
         &self,
         st: &mut PageState,
         txn: &Txn,

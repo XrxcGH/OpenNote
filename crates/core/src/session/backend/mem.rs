@@ -28,6 +28,7 @@ use crate::session::journal_thread::{BaseSnapshot, JournalMeta};
 use crate::store::assets::{AssetSource, ImportCtx};
 use crate::store::external::ExternalDecision;
 use crate::store::fs::{Durability, FileStamp, Fs};
+use crate::store::history::{Retention, ThinReport};
 use crate::store::journal::reader::KeyJournals;
 use crate::store::layout::{NotebookKey, NotebookLayout, ASSETS_DIR, CONFLICTS_DIR, PAGE_MD};
 use crate::store::lock::ensure_dir_all;
@@ -364,7 +365,11 @@ impl Backend for MemBackend {
         Ok(self.codec.read_page(&page_json, &self.limits)?)
     }
 
-    fn tidy_page(&self, _dir: &Path, _now: Timestamp) -> Result<(), CoreError> {
+    fn delete_history(&self, _dir: &Path, _keep_named: bool) -> Result<ThinReport, CoreError> {
+        Ok(ThinReport::default())
+    }
+
+    fn tidy_page(&self, _dir: &Path, _now: Timestamp, _keep: Retention) -> Result<(), CoreError> {
         Ok(())
     }
 

@@ -7,6 +7,7 @@
 mod blocks;
 mod page;
 mod place;
+mod restore;
 mod strokes;
 pub mod view;
 
@@ -23,6 +24,7 @@ use crate::ops::{CoalesceKey, Op, Origin, Txn};
 use crate::order::OrderKey;
 use crate::time::{Clock, Timestamp};
 
+pub use restore::resolve_restore_blocks;
 pub use strokes::compose;
 
 /// A transaction request from the interface.

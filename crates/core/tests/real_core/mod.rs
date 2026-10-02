@@ -122,3 +122,11 @@ pub fn page_json(handle: &PageHandle) -> Value {
 pub fn frame_json(frame: &opennote_core::wire::frames::AppliedFrame) -> Value {
     opennote_core::wire::frames::decode(&frame.bytes).unwrap().0
 }
+
+impl Real {
+    /// The next client sequence number, for requests that don't go through `request`.
+    pub fn next_seq(&mut self) -> u64 {
+        self.seq += 1;
+        self.seq
+    }
+}

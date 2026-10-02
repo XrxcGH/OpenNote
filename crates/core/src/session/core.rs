@@ -24,6 +24,7 @@ use crate::session::notebook::open::OpenAs;
 use crate::session::notebook::{open_notebook, NotebookHandle};
 use crate::session::page::save::Why;
 use crate::store::fs::Fs;
+use crate::store::history::Retention;
 use crate::store::layout::{DataLayout, NotebookLayout};
 use crate::store::notebook_store::{create_notebook, read_notebook_file, CanonicalFormats, TreeFormats};
 use crate::store::std_fs::StdFs;
@@ -231,6 +232,7 @@ impl Core {
             sessions: Mutex::new(Vec::new()),
             undo_bytes: AtomicUsize::new(0),
             serial: AtomicU64::new(0),
+            retention: RwLock::new(Retention::default()),
         });
         if parts.mode == WorkMode::Threads {
             ctx.saver.start(ctx.clock.clone());
@@ -420,6 +422,17 @@ impl Core {
         device::save(ctx.fs.as_ref(), &ctx.data, &device)?;
         *ctx.device.write().unwrap_or_else(PoisonError::into_inner) = device;
         Ok(())
+    }
+
+    /// Sets how long page versions are kept (`settings.editing.history.keep`, spec 13.3). Versions are thinned
+    /// to it when a page is tidied after it closes, so a shorter time takes effect page by page.
+    pub fn set_retention(&self, keep: Retention) {
+        *self.inner.ctx.retention.write().unwrap_or_else(PoisonError::into_inner) = keep;
+    }
+
+    /// How long page versions are kept.
+    pub fn retention(&self) -> Retention {
+        self.inner.ctx.retention()
     }
 
     /// The core's memory use.

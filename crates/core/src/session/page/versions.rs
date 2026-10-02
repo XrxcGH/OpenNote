@@ -6,10 +6,11 @@ use std::path::{Path, PathBuf};
 use super::save::Why;
 use super::state::{PageSession, PageState};
 use super::view::detached_envelope;
-use super::{AssetBytes, ConflictChoice, ConflictInfo, RestoreResult, RevisionInfo};
-use crate::error::{CoreError, FsErrorKind};
-use crate::id::{AssetId, RevisionId};
+use super::{AssetBytes, ConflictChoice, ConflictInfo, RestoreResult, RevisionInfo, TxnAck};
+use crate::error::{CoreError, EditError, FsErrorKind};
+use crate::id::{AssetId, BlockId, ClientId, RevisionId};
 use crate::model::{Asset, Page, ReadOnlyReason, VersionEntry, VersionReason};
+use crate::ops::resolve::{resolve_restore_blocks, ResolveCtx};
 use crate::session::autosave::{Dirty, Urgency};
 use crate::session::backend::VersionToWrite;
 use crate::session::events::CoreEvent;
@@ -66,6 +67,32 @@ impl PageSession {
         }
         let revision = self.replace_content(version, VersionReason::BeforeRestore)?;
         Ok(RestoreResult::Restored { revision })
+    }
+
+    /// Brings blocks back from a saved version as one transaction of the client, so one undo step reverses it.
+    /// The old copy of each block replaces the current one, with its strokes, and the assets it needs come back.
+    pub(crate) fn restore_blocks(
+        &self,
+        (client, client_seq): (&ClientId, u64),
+        rev: RevisionId,
+        ids: &[BlockId],
+    ) -> Result<TxnAck, EditError> {
+        let dir = self.dir();
+        let read = self.ctx.backend.open_version(&dir, rev).map_err(version_error)?;
+        let old = self.with_ink(&dir, read.page).map_err(version_error)?;
+        let ack = {
+            let mut st = self.state();
+            self.check_request(&st, client, client_seq)?;
+            let ctx = ResolveCtx {
+                clock: self.ctx.clock.as_ref(),
+                limits: &self.ctx.limits,
+                imported: &|_| None,
+            };
+            let txn = resolve_restore_blocks(&st.page, &old, ids, client, &ctx)?;
+            self.commit_request(&mut st, &txn, (client, client_seq))?
+        };
+        self.ctx.enforce_undo_budget();
+        Ok(ack)
     }
 
     /// Saves the current state as a version, then makes `content` the page's next revision and saves it. The
@@ -304,4 +331,14 @@ pub(crate) fn mark_dirty(session: &PageSession, st: &mut PageState) {
     st.urgency = Urgency::Now;
     st.versions.edited = true;
     session.schedule(st);
+}
+
+/// A failure to read a saved version, as the error of an edit.
+fn version_error(error: CoreError) -> EditError {
+    match error {
+        CoreError::NotFound(what) => EditError::NotFound(what),
+        CoreError::Fs(fs) if fs.kind == FsErrorKind::NotFound => EditError::NotFound("that version".into()),
+        CoreError::Edit(edit) => edit,
+        other => EditError::Invalid(other.to_string()),
+    }
 }

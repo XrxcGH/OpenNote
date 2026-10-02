@@ -233,6 +233,12 @@ impl PageHandle {
         self.session.restore_version(rev, as_copy)
     }
 
+    /// Brings blocks back from a saved version, with their strokes and assets, as one transaction. The client's
+    /// next sequence number goes in `client_seq`, and one undo step reverses it.
+    pub fn restore_blocks(&self, client_seq: u64, rev: RevisionId, blocks: &[BlockId]) -> Result<TxnAck, EditError> {
+        self.session.restore_blocks((&self.client, client_seq), rev, blocks)
+    }
+
     /// Names a version, or marks it to keep forever.
     pub fn name_version(&self, rev: RevisionId, name: Option<String>, keep: bool) -> Result<(), CoreError> {
         self.session.name_version(rev, name, keep)

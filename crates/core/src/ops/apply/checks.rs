@@ -182,28 +182,33 @@ pub fn check_stroke(stroke: &Stroke, limits: &Limits) -> Result<(), String> {
     check_transform(stroke.transform)
 }
 
-/// The first block that refers to the asset, through its data, its fallback image, or a Markdown image.
-pub fn asset_user(page: &Page, id: AssetId) -> Option<BlockId> {
+/// Whether the block refers to the asset, through its data, its fallback image, or a Markdown image.
+pub fn block_uses_asset(block: &Block, id: AssetId) -> bool {
     let text = id.to_string();
     let in_markdown = |markdown: &str| mentions_asset(markdown, &text);
-    page.blocks.iter().find_map(|block| {
-        let in_data = match &block.data {
-            BlockData::Image(image) => image.asset == id,
-            BlockData::File(file) => file.asset == id,
-            BlockData::Text(t) => in_markdown(&t.markdown),
-            BlockData::Table(t) => t
-                .rows
-                .iter()
-                .flat_map(|r| r.cells.values())
-                .any(|c| in_markdown(&c.markdown)),
-            BlockData::Ink(_) | BlockData::Other(_) => false,
-        };
-        let in_fallback = block
-            .fallback
-            .as_ref()
-            .is_some_and(|f| f.image == Some(id) || in_markdown(&f.markdown));
-        (in_data || in_fallback).then_some(block.id)
-    })
+    let in_data = match &block.data {
+        BlockData::Image(image) => image.asset == id,
+        BlockData::File(file) => file.asset == id,
+        BlockData::Text(t) => in_markdown(&t.markdown),
+        BlockData::Table(t) => t
+            .rows
+            .iter()
+            .flat_map(|r| r.cells.values())
+            .any(|c| in_markdown(&c.markdown)),
+        BlockData::Ink(_) | BlockData::Other(_) => false,
+    };
+    let in_fallback = block
+        .fallback
+        .as_ref()
+        .is_some_and(|f| f.image == Some(id) || in_markdown(&f.markdown));
+    in_data || in_fallback
+}
+
+/// The first block that refers to the asset (see [`block_uses_asset`]).
+pub fn asset_user(page: &Page, id: AssetId) -> Option<BlockId> {
+    page.blocks
+        .iter()
+        .find_map(|block| block_uses_asset(block, id).then_some(block.id))
 }
 
 /// Whether Markdown names the asset in an `asset:` destination, ignoring case as ID parsing does.
