@@ -16,10 +16,10 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, connect } from 'node:net';
-import { homedir, tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { EOL, homedir, tmpdir } from 'node:os';
+import { join, resolve, sep } from 'node:path';
 import { remote } from 'webdriverio';
 
 export type Browser = Awaited<ReturnType<typeof remote>>;
@@ -171,10 +171,25 @@ function openSession(port: number, exe: string): Promise<Browser> {
   });
 }
 
-/** Keeps what the app logged before it failed to start, in the folder CI keeps. */
+/** The files under a folder, to some depth, one path per line. */
+function listFiles(folder: string, depth: number): string[] {
+  if (depth === 0 || !existsSync(folder)) return [];
+  return readdirSync(folder, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(folder, entry.name);
+    return entry.isDirectory() ? [`${path}${sep}`, ...listFiles(path, depth - 1)] : [path];
+  });
+}
+
+/**
+ * Keeps what the app logged before it failed to start, and which files its profile holds, in the folder CI keeps.
+ * The webview folder shows whether WebView2 got as far as opening its debugging port.
+ */
 function keepAppLogs(profileDir: string, stamp: number): void {
   try {
-    cpSync(join(profileDir, 'local', 'logs'), join(LOGS, `app-${stamp}`), { recursive: true });
+    const kept = join(LOGS, `app-${stamp}`);
+    mkdirSync(kept, { recursive: true });
+    writeFileSync(join(kept, 'profile-files.txt'), listFiles(profileDir, 5).join(EOL));
+    cpSync(join(profileDir, 'local', 'logs'), join(kept, 'logs'), { recursive: true });
   } catch {
     // The app may have died before it made a log folder.
   }
