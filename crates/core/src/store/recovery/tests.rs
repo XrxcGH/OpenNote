@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use super::*;
 use crate::id::{Id, SectionId, StrokeId, TxnId};
+use crate::model::asset::hex;
 use crate::model::{Page, Stroke};
 use crate::ops::{Op, Origin, PageFields, Txn};
 use crate::session::journal_thread::{BaseSnapshot, JournalConfig, JournalHandle, JournalMeta, JournalThread};

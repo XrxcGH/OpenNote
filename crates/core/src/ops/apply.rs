@@ -47,6 +47,7 @@ impl Applier for OpsApplier {
 /// stroke changes nothing that another stroke's checks read, except the strokes themselves, so the run passes
 /// its checks exactly when each transaction would. The page then ends the same, but the strokes go into the
 /// page's indexes at once, and each ink block's `strokeCount` is updated once rather than after every stroke.
+///
 /// When a check fails, nothing of the run is applied, and it is applied one by one instead, which stops at the
 /// same transaction with the same error.
 fn apply_each(page: &mut Page, txns: &[&Txn]) -> Result<(), (usize, ApplyError)> {

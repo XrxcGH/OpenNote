@@ -50,8 +50,8 @@ pub(super) fn only_adds_strokes(txn: &Txn) -> bool {
 
 /// Applies a run of transactions that only add strokes as one. Every stroke first passes the checks of
 /// `AddStrokes`, against the page and the strokes before it in the run, and then they all go in at once. Each
-/// ink block's strokes are counted once, and the page's `modified` becomes the last transaction's time, as
-/// applying them one by one leaves it. `false`, with the page untouched, when a check fails.
+/// ink block's strokes are counted once. The page's `modified` becomes the last transaction's time, as applying
+/// them one by one leaves it. `false`, with the page untouched, when a check fails.
 pub(super) fn add_stroke_run(page: &mut Page, txns: &[&Txn]) -> bool {
     let Some(last) = txns.last() else {
         return true;
