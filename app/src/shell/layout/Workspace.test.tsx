@@ -12,6 +12,16 @@ const separator = (pane: 'notebooks' | 'pages') => screen.getByRole('separator',
 const width = (pane: 'notebooks' | 'pages') => Number(separator(pane).getAttribute('aria-valuenow'));
 const storedWidth = (pane: 'notebooks' | 'pages') => sessionStore.get().panes[pane].width;
 
+/**
+ * Puts focus on a splitter once the app has settled. While the tree is still drawing, start-up places focus on a
+ * row, so a splitter focused too early can lose it, and the key presses after it then go to the row instead.
+ */
+async function focusSplitter(pane: 'notebooks' | 'pages') {
+  await screen.findByRole('treeitem', { name: 'Lectures' });
+  separator(pane).focus();
+  await expectFocus(separator(pane));
+}
+
 describe('the wide workspace', () => {
   it('shows the notebooks and pages panes and the page as landmarks, and passes axe in both themes', async () => {
     const { container } = await renderApp({ sizeClass: 'wide' });
@@ -59,7 +69,7 @@ describe('the wide workspace', () => {
 describe('the wide splitters', () => {
   it('resizes with the splitter keys, and Enter collapses and expands with focus kept', async () => {
     await renderApp({ sizeClass: 'wide' });
-    separator('notebooks').focus();
+    await focusSplitter('notebooks');
     await pressChord('Right');
     await expect.poll(() => width('notebooks')).toBe(280);
     await pressChord('Shift+Right');
@@ -81,7 +91,7 @@ describe('the wide splitters', () => {
 
   it('resets a pane to its default width on double-click', async () => {
     await renderApp({ sizeClass: 'wide' });
-    separator('pages').focus();
+    await focusSplitter('pages');
     await pressChord('Shift+Right');
     await expect.poll(() => width('pages')).toBe(340);
     fireEvent.doubleClick(separator('pages'));
