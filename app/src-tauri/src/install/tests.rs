@@ -21,6 +21,25 @@ fn a_relative_folder_is_never_accepted() {
 }
 
 #[test]
+fn a_network_or_device_path_is_never_probed() {
+    // These would make Windows sign in to a host, or reach a device, before the answer came back.
+    for path in [
+        r"\\attacker.example\share",
+        r"\\attacker.example\share\notes",
+        r"\\?\UNC\attacker.example\share",
+        r"\\?\C:\Notes",
+        r"\\.\pipe\x",
+        "//attacker.example/share",
+    ] {
+        assert_eq!(
+            check_folder_with(Path::new(path), &[]),
+            FolderCheck::NotAbsolute,
+            "{path}"
+        );
+    }
+}
+
+#[test]
 fn finds_programs_and_the_shortcut_inside_a_test_profile() {
     let paths = Paths::under_profile(Path::new("C:\\profile"));
     assert_eq!(programs_dir(&paths), Path::new("C:\\profile\\Programs\\OpenNote"));

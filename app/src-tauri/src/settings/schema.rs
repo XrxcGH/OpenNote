@@ -81,8 +81,8 @@ impl Settings {
         if let Some(folder) = &self.storage.notes_folder {
             check.that(
                 "storage.notesFolder",
-                std::path::Path::new(folder).is_absolute(),
-                "The notes folder isn't an absolute path.",
+                crate::paths::is_local_path(std::path::Path::new(folder)),
+                "The notes folder isn't a full path to a folder on this PC.",
             );
         }
         for (command, chords) in &self.shortcuts {

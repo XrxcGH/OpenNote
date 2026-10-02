@@ -69,6 +69,14 @@ fn checks_paths_chords_and_versions() {
     let mut settings = Settings::default();
     settings.storage.notes_folder = Some("notes".into());
     assert_eq!(failed_field(&settings).as_deref(), Some("storage.notesFolder"));
+    for network in [r"\\attacker.example\share", r"\\?\C:\Notes", "//attacker.example/share"] {
+        settings.storage.notes_folder = Some(network.into());
+        assert_eq!(
+            failed_field(&settings).as_deref(),
+            Some("storage.notesFolder"),
+            "{network}"
+        );
+    }
     settings.storage.notes_folder = Some(if cfg!(windows) { "D:\\Notes" } else { "/notes" }.into());
     assert_eq!(failed_field(&settings), None);
     settings

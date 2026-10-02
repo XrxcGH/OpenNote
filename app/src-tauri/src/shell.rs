@@ -3,14 +3,14 @@
 //! `https://github.com/XrxcGH/OpenNote/`, Microsoft's WebView2 page, the notes, logs, data, and app folders, and
 //! links in notes (http, https, and mailto only).
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use tauri::{State, Url};
 
 use crate::{
     ipc::{IpcError, IpcResult},
-    paths::Paths,
+    paths::{is_local_path, Paths},
     settings::SettingsStore,
     window::webview::DOWNLOAD_PAGE,
 };
@@ -141,7 +141,16 @@ pub fn resolve(
         }),
         ExternalTarget::Webview2Download => Resolved::Url(DOWNLOAD_PAGE.to_owned()),
         ExternalTarget::Folder { which } => Resolved::Folder(match which {
-            AppFolder::Notes => notes_folder.map_or_else(|| paths.documents.join("OpenNote"), PathBuf::from),
+            AppFolder::Notes => match notes_folder {
+                Some(folder) if !is_local_path(Path::new(folder)) => {
+                    return Err(IpcError::invalid(
+                        "storage.notesFolder",
+                        "The notes folder isn't a full path to a folder on this PC.",
+                    ));
+                }
+                Some(folder) => PathBuf::from(folder),
+                None => paths.documents.join("OpenNote"),
+            },
             AppFolder::Logs => paths.logs.clone(),
             AppFolder::Data => paths.local.clone(),
             AppFolder::App => app_exe_dir,
@@ -187,6 +196,16 @@ pub fn shell_open_external(
         Resolved::Url(url) => open(&url),
         Resolved::Folder(folder) => {
             if !folder.is_dir() {
+                // The app's own folders are made on demand. A notes folder that isn't there is left for setup or
+                // the person to make, so this never writes to a path the settings name.
+                if matches!(
+                    target,
+                    ExternalTarget::Folder {
+                        which: AppFolder::Notes
+                    }
+                ) {
+                    return Err(IpcError::new(crate::ipc::codes::IO, "The notes folder doesn't exist."));
+                }
                 std::fs::create_dir_all(&folder)?;
             }
             open(&folder.to_string_lossy())
@@ -298,6 +317,30 @@ mod tests {
             PathBuf::new(),
         );
         assert_eq!(chosen, Ok(Resolved::Folder(PathBuf::from("D:\\Notes"))));
+    }
+
+    #[test]
+    fn will_not_open_a_network_path_as_the_notes_folder() {
+        let open_notes = |folder: &str| {
+            resolve(
+                &ExternalTarget::Folder {
+                    which: AppFolder::Notes,
+                },
+                &paths(),
+                Some(folder),
+                PathBuf::new(),
+            )
+        };
+        for bad in [
+            r"\\attacker.example\share",
+            r"\\?\C:\Notes",
+            r"\\.\pipe\x",
+            "//host/share",
+            "Notes",
+        ] {
+            assert!(open_notes(bad).is_err(), "{bad}");
+        }
+        assert!(open_notes(r"D:\Notes").is_ok());
     }
 
     #[test]

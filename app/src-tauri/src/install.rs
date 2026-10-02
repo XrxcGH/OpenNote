@@ -23,7 +23,7 @@ pub use shortcut::create_shortcut;
 use crate::{
     ipc::{IpcError, IpcResult},
     lifecycle::{self, ExitReason, ExitState, Relaunch},
-    paths::Paths,
+    paths::{is_local_path, Paths},
 };
 
 /// The process's app user model ID. Taskbar pins and the Start menu shortcut share it, so they group together.
@@ -218,7 +218,8 @@ fn count_notebooks(dir: &Path) -> u32 {
 
 /// What a proposed notes folder is like, given the folders the app itself lives in.
 pub fn check_folder_with(path: &Path, app_folders: &[&Path]) -> FolderCheck {
-    if !path.is_absolute() {
+    // A network or device path is refused before anything touches it, so the probe file below never goes there.
+    if !is_local_path(path) {
         return FolderCheck::NotAbsolute;
     }
     if app_folders.iter().any(|folder| is_inside(path, folder)) {

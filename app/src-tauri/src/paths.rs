@@ -14,6 +14,14 @@ pub const PROFILE_DIR_VAR: &str = "OPENNOTE_PROFILE_DIR";
 
 const APP_FOLDER: &str = "OpenNote";
 
+/// Whether `path` is a full path to a place on this PC. A network path (`\\host\share`) and the device paths
+/// (`\\?\`, `\\.\`) aren't: touching one makes Windows sign in to that host, and the app writes only
+/// where the person's own folders are.
+pub fn is_local_path(path: &Path) -> bool {
+    let text = path.to_string_lossy();
+    path.is_absolute() && !text.starts_with(r"\\") && !text.starts_with("//")
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Paths {
     /// Personal settings that roam with the Windows profile: `%APPDATA%\OpenNote`.
@@ -172,6 +180,24 @@ mod tests {
         assert!(paths.local.parent().is_some_and(Path::is_dir));
         assert!(paths.documents.is_absolute());
         assert_ne!(paths.roaming, paths.local);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_local_path_is_a_drive_path() {
+        assert!(is_local_path(Path::new(r"D:\Notes")));
+        assert!(is_local_path(Path::new(r"C:\Users\ada\Documents\OpenNote")));
+        for other in [
+            r"Notes",
+            r"\Notes",
+            r"\\host\share",
+            r"\\?\C:\Notes",
+            r"\\?\UNC\host\share",
+            r"\\.\pipe\x",
+            "//host/share",
+        ] {
+            assert!(!is_local_path(Path::new(other)), "{other}");
+        }
     }
 
     #[test]

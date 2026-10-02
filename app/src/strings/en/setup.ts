@@ -44,7 +44,7 @@ export const setup = {
       notWritable: "OpenNote can't save in this folder. Choose another one.",
       insideAppFolder:
         'This folder is inside the OpenNote app folder, where an update could replace it. Choose another one.',
-      notAbsolute: 'Choose a full folder path, such as C:\\Users\\you\\Documents\\OpenNote.',
+      notAbsolute: 'Choose a folder on this PC by its full path, such as C:\\Users\\you\\Documents\\OpenNote.',
     },
     app: {
       label: 'The app',
