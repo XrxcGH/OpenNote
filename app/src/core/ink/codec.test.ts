@@ -149,7 +149,7 @@ describe('record blobs', () => {
 
 describe('the fixture notebook', () => {
   it('has segments that read cleanly', () => {
-    const notebook = join(FIXTURES, 'notebooks', 'v1');
+    const notebook = join(FIXTURES, 'nb', 'v1');
     let decoded = 0;
     for (const section of readdirSync(notebook).filter((name) => /^[0-9a-z]{26}$/.test(name))) {
       for (const page of readdirSync(join(notebook, section)).filter((name) => /^[0-9a-z]{26}$/.test(name))) {
