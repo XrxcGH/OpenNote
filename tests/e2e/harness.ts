@@ -11,10 +11,12 @@
 //
 // - MSEDGEDRIVER names msedgedriver. Without it: the newest one edgedriver.ps1 cached in tests/e2e/.drivers.
 //
-// tauri-driver's output goes to tests/e2e/logs, which CI keeps when a spec fails.
+// tauri-driver's output goes to tests/e2e/logs, with the app's own logs when a launch fails. CI keeps them when a
+// spec fails.
 
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, rmSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, rmSync } from 'node:fs';
 import { createServer, connect } from 'node:net';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -124,38 +126,89 @@ function keyboardOnly(browser: Browser): void {
   });
 }
 
-export async function launchApp(options: LaunchOptions = {}): Promise<AppSession> {
-  const found = tools();
-  const exe = options.exe ?? found.exe;
-  if (!exe || !found.tauriDriver || !found.edgeDriver) throw new Error(String(skipReason()));
-  const profileDir = options.profileDir ?? mkdtempSync(join(tmpdir(), 'opennote-e2e-'));
+const LOGS = join(ROOT, 'tests', 'e2e', 'logs');
+
+/** Ends tauri-driver along with the msedgedriver and app processes under it, which a plain kill leaves running. */
+function stopDriver(driver: ChildProcess): void {
+  if (driver.exitCode !== null || driver.pid === undefined) return;
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/pid', String(driver.pid), '/T', '/F'], { stdio: 'ignore' });
+  } else {
+    driver.kill();
+  }
+}
+
+/** Starts tauri-driver. A session makes it start msedgedriver, which starts the app. */
+async function startDriver(
+  tauriDriver: string,
+  edgeDriver: string,
+  env: NodeJS.ProcessEnv,
+  stamp: number,
+): Promise<{ driver: ChildProcess; port: number }> {
   const [port, nativePort] = [await freePort(), await freePort()];
-  const args = ['--port', String(port), '--native-port', String(nativePort), '--native-driver', found.edgeDriver];
-  const logs = join(ROOT, 'tests', 'e2e', 'logs');
-  mkdirSync(logs, { recursive: true });
-  const log = openSync(join(logs, `tauri-driver-${Date.now()}.log`), 'a');
-  const driver = spawn(found.tauriDriver, args, {
-    env: { ...process.env, OPENNOTE_PROFILE_DIR: profileDir, ...options.env },
-    stdio: ['ignore', log, log],
-  });
-  await waitForPort(port, 20_000);
-  const browser = await remote({
+  const args = ['--port', String(port), '--native-port', String(nativePort), '--native-driver', edgeDriver];
+  mkdirSync(LOGS, { recursive: true });
+  const log = openSync(join(LOGS, `tauri-driver-${stamp}.log`), 'a');
+  const driver = spawn(tauriDriver, args, { env, stdio: ['ignore', log, log] });
+  // A driver that outlived its spec would keep this process, and so the whole test run, from ever ending.
+  driver.unref();
+  return { driver, port };
+}
+
+function openSession(port: number, exe: string): Promise<Browser> {
+  return remote({
     hostname: '127.0.0.1',
     port,
     logLevel: 'warn',
+    // msedgedriver waits 60 s for the app's WebView2 to open its debugging port, so trying again after that only
+    // repeats the wait. A failed launch stops after the first try.
+    connectionRetryCount: 0,
+    connectionRetryTimeout: 90_000,
     capabilities: {
       'tauri:options': { application: exe },
       'wdio:enforceWebDriverClassic': true,
     } as WebdriverIO.Capabilities,
   });
+}
+
+/** Keeps what the app logged before it failed to start, in the folder CI keeps. */
+function keepAppLogs(profileDir: string, stamp: number): void {
+  try {
+    cpSync(join(profileDir, 'local', 'logs'), join(LOGS, `app-${stamp}`), { recursive: true });
+  } catch {
+    // The app may have died before it made a log folder.
+  }
+}
+
+export async function launchApp(options: LaunchOptions = {}): Promise<AppSession> {
+  const found = tools();
+  const exe = options.exe ?? found.exe;
+  if (!exe || !found.tauriDriver || !found.edgeDriver) throw new Error(String(skipReason()));
+  const profileDir = options.profileDir ?? mkdtempSync(join(tmpdir(), 'opennote-e2e-'));
+  const removeProfile = () => {
+    if (!options.profileDir) rmSync(profileDir, { recursive: true, force: true });
+  };
+  const stamp = Date.now();
+  const env = { ...process.env, OPENNOTE_PROFILE_DIR: profileDir, ...options.env };
+  const { driver, port } = await startDriver(found.tauriDriver, found.edgeDriver, env, stamp);
+  let browser: Browser;
+  try {
+    await waitForPort(port, 20_000);
+    browser = await openSession(port, exe);
+  } catch (error) {
+    stopDriver(driver);
+    keepAppLogs(profileDir, stamp);
+    removeProfile();
+    throw error;
+  }
   if (options.keyboardOnly) keyboardOnly(browser);
   return {
     browser,
     profileDir,
     async close() {
       await browser.deleteSession().catch(() => {});
-      driver.kill();
-      if (!options.profileDir) rmSync(profileDir, { recursive: true, force: true });
+      stopDriver(driver);
+      removeProfile();
     },
   };
 }
