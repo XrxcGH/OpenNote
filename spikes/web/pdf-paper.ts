@@ -24,7 +24,7 @@ const MM = INCH / 25.4;
 /** Cornell paper: a cue column 2.5 inches wide on the left, and a summary area 2 inches tall at the bottom. */
 export const CUE_WIDTH = 2.5 * INCH;
 export const SUMMARY_HEIGHT = 2 * INCH;
-/** Ruled lines follow the note line height (BRAND.md section 5). */
+/** Ruled lines follow the note line height (docs/BRAND.md section 5). */
 const RULE = 26;
 const DOT_PITCH = INCH / 4;
 

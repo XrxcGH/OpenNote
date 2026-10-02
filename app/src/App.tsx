@@ -82,7 +82,7 @@ export function App() {
           aria-keyshortcuts="Control+Shift+D"
           title="Dark mode (Ctrl+Shift+D)"
         >
-          {/* Shows the current theme; Fill marks the switch as on (BRAND.md sections 8 and 11). */}
+          {/* Shows the current theme; Fill marks the switch as on (docs/BRAND.md sections 8 and 11). */}
           {dark ? <MoonIcon weight="fill" aria-hidden="true" /> : <SunIcon aria-hidden="true" />}
         </button>
       </header>

@@ -5,7 +5,7 @@ use serde_json::{json, Map, Value};
 
 use crate::common::stats::{share_within, summarize};
 
-/// The typing budget in BRAND.md section 10: a key press shows within 16 ms.
+/// The typing budget in docs/BRAND.md section 10: a key press shows within 16 ms.
 pub const TYPING_BUDGET_MS: f64 = 16.0;
 /// One frame at 60 frames per second, the frame rate budget for zooming and scrolling.
 pub const FRAME_60_MS: f64 = 1000.0 / 60.0;
@@ -137,7 +137,7 @@ pub fn frame_summary(intervals: &[f64], refresh_hz: u32) -> Value {
         "over_33_3ms": count_over(2.0 * FRAME_60_MS),
         "display_refresh_hz": refresh_hz,
         "missed_display_refreshes": dropped.iter().sum::<i64>(),
-        // BRAND.md: "never two dropped frames in a row", at the display's own rate.
+        // docs/BRAND.md: "never two dropped frames in a row", at the display's own rate.
         "two_or_more_dropped_in_a_row": dropped.iter().filter(|count| **count >= 2).count(),
     })
 }

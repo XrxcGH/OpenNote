@@ -1,5 +1,5 @@
 // Validates brand/tokens.json: every theme defines the same tokens, text meets its contrast
-// target in every theme, and motion stays within the limits set in BRAND.md.
+// target in every theme, and motion stays within the limits set in docs/BRAND.md.
 
 import type { Finding, Rule, SourceFile } from '../types.ts';
 import { numberSetting } from '../config.ts';
@@ -68,7 +68,7 @@ function themeFindings(file: SourceFile, tokens: Tokens): Finding[] {
         findings.push(
           report(
             lineOf(file, value),
-            `"${theme.name}.${key}" is pure black or white. BRAND.md uses softer tones.`,
+            `"${theme.name}.${key}" is pure black or white. The brand guide (docs/BRAND.md) uses softer tones.`,
             'warning',
           ),
         );
