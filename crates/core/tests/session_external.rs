@@ -144,3 +144,43 @@ fn only_listed_copies_can_be_read_or_deleted() {
     assert!(elsewhere.exists());
     assert!(handle.cloud_only_files().is_empty());
 }
+
+/// The `page.json` of the only page under `folder`.
+fn page_file(folder: &std::path::Path) -> std::path::PathBuf {
+    for entry in std::fs::read_dir(folder).unwrap() {
+        let path = entry.unwrap().path();
+        let hidden = path.file_name().unwrap().to_string_lossy().starts_with('.');
+        if path.is_dir() && !hidden {
+            let found = page_file(&path);
+            if found.exists() {
+                return found;
+            }
+        } else if path.file_name().unwrap() == "page.json" {
+            return path;
+        }
+    }
+    folder.join("page.json")
+}
+
+#[test]
+fn a_page_a_newer_version_saved_elsewhere_is_never_replaced() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let (_, edit) = text_block(1, "Mine");
+    handle.apply(real.request(vec![edit])).unwrap();
+    let path = page_file(real.notebook.path());
+    let mut theirs: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+    theirs["formatVersion"] = json!(999);
+    theirs["minReaderVersion"] = json!(999);
+    let newer = serde_json::to_vec(&theirs).unwrap();
+    std::fs::write(&path, &newer).unwrap();
+
+    let error = handle.save_now().unwrap_err();
+    assert!(matches!(error, opennote_core::error::CoreError::ReadOnly(_)), "{error}");
+    assert!(matches!(
+        handle.read_only(),
+        Some(opennote_core::model::ReadOnlyReason::NewerFormat)
+    ));
+    assert!(handle.has_unsaved(), "the edit stays in memory and in the journal");
+    assert_eq!(std::fs::read(&path).unwrap(), newer, "the newer file stays as it is");
+}

@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 use std::ops::Range;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
@@ -30,7 +30,7 @@ use crate::store::external::ExternalDecision;
 use crate::store::fs::{Durability, FileStamp, Fs};
 use crate::store::history::{Retention, ThinReport};
 use crate::store::journal::reader::KeyJournals;
-use crate::store::layout::{NotebookKey, NotebookLayout, ASSETS_DIR, CONFLICTS_DIR, PAGE_MD};
+use crate::store::layout::{file_time, NotebookKey, NotebookLayout, ASSETS_DIR, CONFLICTS_DIR, DAMAGED_DIR, PAGE_MD};
 use crate::store::lock::ensure_dir_all;
 use crate::store::notebook_store::{next_revision, read_page_files, write_page_files};
 use crate::store::page_store::{LoadError, LoadedPage, SaveError, SaveOutcome};
@@ -278,6 +278,18 @@ impl Backend for MemBackend {
             Err(e) if e.kind == FsErrorKind::AlreadyExists => Ok(revision),
             Err(e) => Err(e.into()),
         }
+    }
+
+    fn move_damaged(&self, dir: &Path, file_name: &str) -> Result<PathBuf, FsError> {
+        let from = dir.join(file_name);
+        let bytes = self.fs.read(&from, u64::MAX)?;
+        ensure_dir_all(self.fs.as_ref(), &dir.join(DAMAGED_DIR))?;
+        let to = dir
+            .join(DAMAGED_DIR)
+            .join(format!("{}-{file_name}", file_time(self.clock.now())));
+        self.fs.create_durable(&to, &bytes)?;
+        self.fs.remove_file(&from)?;
+        Ok(to)
     }
 
     fn absorb_conflict_copies(&self, _dir: &Path) -> Result<Vec<RevisionId>, CoreError> {

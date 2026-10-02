@@ -156,6 +156,8 @@ pub trait Backend: Send + Sync + 'static {
     fn write_readable(&self, dir: &Path, page: &Page, links: &dyn LinkResolver) -> Result<(), FsError>;
     /// Keeps another version of `page.json` in `.conflicts/` (spec 14.1).
     fn keep_conflict(&self, dir: &Path, theirs: &[u8]) -> Result<RevisionId, CoreError>;
+    /// Moves a file of the page folder that failed to read into `.damaged/`, and returns where it went.
+    fn move_damaged(&self, dir: &Path, file_name: &str) -> Result<PathBuf, FsError>;
     /// Moves sync-tool conflict copies into `.conflicts/`. Returns the revisions of real divergences.
     fn absorb_conflict_copies(&self, dir: &Path) -> Result<Vec<RevisionId>, CoreError>;
     /// Repairs damaged ink (spec 9.6).
@@ -346,6 +348,10 @@ impl Backend for StoreBackend {
 
     fn keep_conflict(&self, dir: &Path, theirs: &[u8]) -> Result<RevisionId, CoreError> {
         self.store.keep_conflict(dir, theirs)
+    }
+
+    fn move_damaged(&self, dir: &Path, file_name: &str) -> Result<PathBuf, FsError> {
+        self.store.move_damaged(dir, file_name)
     }
 
     fn absorb_conflict_copies(&self, dir: &Path) -> Result<Vec<RevisionId>, CoreError> {

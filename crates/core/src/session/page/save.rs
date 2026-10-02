@@ -16,7 +16,8 @@ use crate::session::events::{CoreEvent, ExternalAction, IndexHint};
 use crate::session::journal_thread::BaseSnapshot;
 use crate::store::external::ExternalDecision;
 use crate::store::fs::{Durability, FileStamp};
-use crate::store::page_store::{LoadedPage, SaveError, SaveOutcome};
+use crate::store::layout::PAGE_JSON;
+use crate::store::page_store::{LoadError, LoadedPage, SaveError, SaveOutcome};
 
 /// Why a page saves.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -69,7 +70,7 @@ impl PageSession {
                 Ok(outcome) => return Ok(Some(self.saved(snapshot, &outcome, why))),
                 Err(SaveError::External { .. }) if !retried => {
                     retried = true;
-                    self.external_change(snapshot);
+                    self.external_change(snapshot)?;
                 }
                 Err(e) => return Err(self.failed(snapshot, e)),
             }
@@ -230,22 +231,22 @@ impl PageSession {
 
     /// Handles a `page.json` that changed on disk since it was read (spec 14.1). An older revision of this
     /// device's, or its own, is saved over. Anything else is kept in `.conflicts/`, and the save goes ahead.
-    fn external_change(&self, snapshot: Snapshot) {
-        let loaded = self.ctx.backend.load(&snapshot.dir).ok();
+    /// A file that can't be read is never replaced unread: see [`PageSession::unreadable_change`].
+    fn external_change(&self, snapshot: Snapshot) -> Result<(), CoreError> {
+        let loaded = match self.ctx.backend.load(&snapshot.dir) {
+            Ok(loaded) => loaded,
+            Err(error) => return self.unreadable_change(snapshot, error),
+        };
         let mut st = self.state();
         st.saving = false;
         restore(&mut st, snapshot.hint, snapshot.before);
-        let Some(loaded) = loaded else {
-            st.stamp = None;
-            return;
-        };
         let decision = self
             .ctx
             .backend
             .classify_change(&loaded.page.revision, st.base, &st.page.revision, true);
         st.stamp = Some(loaded.stamp);
         if matches!(decision, ExternalDecision::Unchanged | ExternalDecision::OlderOfOurs) {
-            return;
+            return Ok(());
         }
         if let Ok(revision) = self.ctx.backend.keep_conflict(&snapshot.dir, &loaded.bytes) {
             if !st.conflicts.contains(&revision) {
@@ -257,6 +258,41 @@ impl PageSession {
                 action: ExternalAction::Conflict { other_device },
             });
         }
+        Ok(())
+    }
+
+    /// A changed `page.json` that can't be read. A deleted one is written again, and a damaged one goes into
+    /// `.damaged/` first. One from a newer version makes the page read-only (spec 5.7). One that can't be read
+    /// now fails the save and keeps the old fingerprint, so the next try checks the file again. Either way
+    /// every edit stays in memory and in the journal.
+    fn unreadable_change(&self, snapshot: Snapshot, error: LoadError) -> Result<(), CoreError> {
+        match error {
+            LoadError::Missing => {}
+            LoadError::Damaged(_) => {
+                if let Err(err) = self.ctx.backend.move_damaged(&snapshot.dir, PAGE_JSON) {
+                    return Err(self.failed(snapshot, SaveError::Fs(err)));
+                }
+            }
+            LoadError::Unavailable(err) => return Err(self.failed(snapshot, SaveError::Fs(err))),
+            LoadError::NewerFormat(_) => {
+                let reason = ReadOnlyReason::NewerFormat;
+                let mut st = self.state();
+                st.saving = false;
+                restore(&mut st, snapshot.hint, snapshot.before);
+                st.read_only = Some(reason.clone());
+                drop(st);
+                self.ctx.events.emit(CoreEvent::ReadOnly {
+                    page: self.id,
+                    reason: reason.clone(),
+                });
+                return Err(CoreError::ReadOnly(reason));
+            }
+        }
+        let mut st = self.state();
+        st.saving = false;
+        restore(&mut st, snapshot.hint, snapshot.before);
+        st.stamp = None;
+        Ok(())
     }
 
     /// A failed save (spec 17.6): the page stays dirty, autosave tries again when the error allows it, and a
