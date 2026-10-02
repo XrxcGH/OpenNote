@@ -8,7 +8,6 @@ import type { CommandBarItem } from '../../registries/types';
 import type { MessageKey } from '../../strings/t';
 import { expectFocus, expectNoAxeViolations, renderApp, setViewport } from '../../test';
 import { registerRegionMain } from '../regions';
-import { diagAct } from '../../test/zzdiag';
 
 const stops: (() => void)[] = [];
 
@@ -157,7 +156,7 @@ describe('the bottom bar', () => {
         .map((button) => button.textContent),
     ).toEqual(['Notebooks', 'Search', 'New page', 'More']);
     const more = within(bar).getByRole('button', { name: 'More commands' });
-    await diagAct('more', more, () => userEvent.click(more));
+    await userEvent.click(more);
     const panel = await screen.findByRole('dialog', { name: 'More commands' });
     expect(
       within(panel)
