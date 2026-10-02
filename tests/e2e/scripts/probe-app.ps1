@@ -35,6 +35,19 @@ for ($second = 0; $second -lt $WaitSeconds; $second++) {
 }
 
 Write-Output "Debugging port opened: $opened"
+Write-Output '--- WebView2 browser process (does its command line carry --remote-debugging-port?)'
+Get-CimInstance Win32_Process -Filter "Name = 'msedgewebview2.exe'" -ErrorAction SilentlyContinue |
+  Where-Object { $_.CommandLine -notmatch '--type=' } |
+  ForEach-Object { "$($_.ProcessId): $($_.CommandLine)" }
+Write-Output '--- Edge and WebView2 policies'
+foreach ($key in 'HKLM:\SOFTWARE\Policies\Microsoft\Edge', 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2',
+  'HKLM:\SOFTWARE\Policies\Microsoft\EdgeWebView', 'HKCU:\SOFTWARE\Policies\Microsoft\Edge') {
+  if (Test-Path $key) {
+    Write-Output $key
+    (Get-ItemProperty $key).PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } |
+      ForEach-Object { "  $($_.Name) = $($_.Value)" }
+  }
+}
 if ($app.HasExited) {
   Write-Output "The app exited with code $($app.ExitCode)."
 } else {
