@@ -61,7 +61,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | C5 | Exact geometry for shapes | Done: informative note in spec 9.3 |
 | C6 | Typing rule joins anchored ink changes | Done: the page session records with `UndoStack::record_with`, which knows each ink block's anchor |
 | C7 | Shared `newId()` and a header-only codec reader | For the app bridge: TypeScript exports |
-| C8 | `ink.svg` width of transformed strokes | Pending |
+| C8 | `ink.svg` width of transformed strokes | Done: spec 11.3, `Affine::width_scale`, the Rust writer, and the Python reader |
 | C9 | Binary applied-changes frames on the page `Channel` | For the app bridge: needs the `Channel` frames |
 | C10 | `page_read_strokes` | Pending |
 | C11 | Pen corpus for M2 and the budget page | Pending |

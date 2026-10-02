@@ -170,9 +170,9 @@
     "segments": [
       {
         "id": "01m3sagk2r000000000003vfrj",
-        "bytes": 724,
+        "bytes": 748,
         "records": 2,
-        "crc32": "4ea7234c"
+        "crc32": "1e5f7836"
       }
     ]
   },

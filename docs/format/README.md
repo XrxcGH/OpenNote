@@ -1344,7 +1344,7 @@ This check matters because readable copies are written without a flush. After a 
 ```
 
 - The view box is the union of the strokes' bounding boxes, grown by 8 units on each side. Each ink block becomes one `<g>` group. Floating blocks sit at their frame position. Flowing blocks are stacked below the floating content, in order, 24 units apart.
-- Each stroke becomes one `<path>` through its points, after its transform, in page units rounded to 0.1. It uses the stored color and nominal width. A color with alpha below 255 adds `stroke-opacity`. Highlighter strokes come first in each group.
+- Each stroke becomes one `<path>` through its points, after its transform, in page units rounded to 0.1. It uses the stored color. Its width is the nominal width times the square root of the absolute value of its transform's determinant (`|ad − bc|`), so resized ink matches the app. A stroke without a transform has its nominal width. A color with alpha below 255 adds `stroke-opacity`. Highlighter strokes come first in each group.
 - The comment on the second line carries the page ID, the revision, the format version, and a checksum computed as for `page.md`.
 - Writers write `ink.svg` when a page closes after its ink changed, and when a page opens with a missing or stale `ink.svg`, after the page is on screen. They do not rewrite it during editing, because it can be several megabytes.
 

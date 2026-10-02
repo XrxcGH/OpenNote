@@ -6,6 +6,8 @@ Floating blocks sit at their frame. Flowing blocks stack below the floating cont
 
 from __future__ import annotations
 
+import math
+
 from readable_text import fixed, is_floating, one_line, quoted, seal
 
 
@@ -55,12 +57,20 @@ def xml_text(text: str) -> str:
     return "".join(out)
 
 
+def width_scale(transform: list | None) -> float:
+    """The square root of the absolute determinant of a transform (spec 11.3); 1 without a transform."""
+    if transform is None:
+        return 1.0
+    a, b, c, d = transform[:4]
+    return math.sqrt(abs(a * d - b * c))
+
+
 def svg_path(stroke: dict, points: list) -> str:
     points = points * 2 if len(points) == 1 else points
     d = "".join(f"{'M' if i == 0 else 'L'}{fixed(x, 1)} {fixed(y, 1)}" for i, (x, y) in enumerate(points))
     r, g, b, a = stroke["style"]["color"]
     opacity = f' stroke-opacity="{fixed(a / 255.0, 2)}"' if a < 255 else ""
-    width = fixed(stroke["style"]["width"], 2)
+    width = fixed(stroke["style"]["width"] * width_scale(stroke["transform"]), 2)
     return (
         f'    <path d="{d}" fill="none" stroke="#{r:02x}{g:02x}{b:02x}"{opacity} stroke-width="{width}" '
         'stroke-linecap="round" stroke-linejoin="round"/>'

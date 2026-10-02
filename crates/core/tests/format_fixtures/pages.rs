@@ -207,7 +207,7 @@ fn drawing_strokes(drawing: BlockId) -> Vec<InkRecord> {
     [(611, 6), (612, 7)]
         .into_iter()
         .map(|(n, seed)| {
-            let s = stroke(StrokeSpec {
+            let mut s = stroke(StrokeSpec {
                 n,
                 block: drawing,
                 tool: 0,
@@ -216,6 +216,10 @@ fn drawing_strokes(drawing: BlockId) -> Vec<InkRecord> {
                 channels: 7,
                 points: curve(seed, 30, (20.0, 40.0 + f64::from(seed) * 10.0)),
             });
+            // The second stroke was resized to one and a half times, so ink.svg draws it that much wider.
+            if n == 612 {
+                s.transform = Some(Affine([1.5, 0.0, 0.0, 1.5, 10.0, 6.0]));
+            }
             InkRecord::Stroke(Arc::new(s))
         })
         .collect()
