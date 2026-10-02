@@ -1221,7 +1221,7 @@ Readers must check an asset's file name before using it. The name must be the as
 | `bytes` | required | The file's size |
 | `sha256` | required | The SHA-256 hash of the file, as 64 lowercase hexadecimal digits |
 | `name` | required | The original file name. Shown for attachments and used by exports, never as a path |
-| `width`, `height` | none | Pixel size, for images |
+| `width`, `height` | none | Pixel size, for images. A writer reads it from the file's header when it knows the type, and otherwise takes the size its decoder measured, so a page can keep the picture's shape before the picture loads |
 | `created` | required | When the asset was added |
 | `state` | none | Reserved: `recording` while an audio file is still growing (Phase 9) |
 
@@ -1229,6 +1229,7 @@ Readers must check an asset's file name before using it. The name must be the as
 
 - Assets are immutable. Replacing or editing an image makes a new asset.
 - A writer writes an asset file durably (section 17.2) when it is imported, before any block or journal record refers to it. Large imports copy in the background, and the block is added only when the file is safe on disk.
+- A writer checks that the first bytes of an `image/*` file match the media type it declares, such as the eight signature bytes of `image/png`, before it records the asset. A file that doesn't match is refused. A writer takes a media type it doesn't know as declared.
 - The hash lets a writer reuse an existing asset when the same file is added twice to a page, and lets checks detect damage.
 - A missing asset, often one that a sync tool has not delivered yet, is shown as a placeholder. Its reference is kept.
 - Audio recordings are the one kind of asset that grows while it is referenced. A later version defines how (section 5.6).

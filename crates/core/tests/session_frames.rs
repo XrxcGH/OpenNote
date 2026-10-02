@@ -103,3 +103,42 @@ fn text_blocks_come_whole_in_frames() {
     assert!(undone["title"].is_null() && undone["view"].is_null() && undone["tags"].is_null());
     assert_eq!(undone["assets"], json!([]));
 }
+
+#[test]
+fn imported_assets_keep_the_size_the_interface_measured_and_come_in_frames() {
+    use opennote_core::store::assets::{AssetSource, ImageSize};
+    let mut real = Real::new();
+    let handle = real.open();
+    let mut webp = b"RIFF\x20\0\0\0WEBPVP8 ".to_vec();
+    webp.extend_from_slice(&[0; 24]);
+    let source = AssetSource::Bytes {
+        name: "Diagram.webp".into(),
+        mime: "image/webp".into(),
+        bytes: webp,
+        image: Some(ImageSize {
+            width: 640,
+            height: 480,
+        }),
+    };
+    let asset = handle.import_asset(source).unwrap();
+    assert_eq!((asset.width, asset.height), (Some(640), Some(480)));
+    handle
+        .apply(real.request(vec![Edit::AddAsset { asset: asset.id }]))
+        .unwrap();
+    let undone = frame_json(&handle.undo(&real.client).unwrap().unwrap());
+    assert_eq!(undone["changes"]["assetsChanged"], json!([asset.id.to_string()]));
+    assert_eq!(undone["assets"], json!([]), "a removed entry is named, not sent");
+    let redone = frame_json(&handle.redo(&real.client).unwrap().unwrap());
+    let entries = redone["assets"].as_array().unwrap();
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0]["id"], asset.id.to_string());
+    assert_eq!(
+        (&entries[0]["width"], &entries[0]["height"]),
+        (&json!(640), &json!(480))
+    );
+    assert_eq!(entries[0]["mime"], "image/webp");
+    // A file that isn't what it says never gets a table entry.
+    let fake = AssetSource::bytes("leaf.png", "image/png", b"<html>not a picture</html>".to_vec());
+    let refused = handle.import_asset(fake).unwrap_err();
+    assert!(refused.to_string().contains("assetType"), "{refused}");
+}

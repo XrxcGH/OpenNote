@@ -303,15 +303,18 @@ fn restoring_a_version_in_place_saves_the_current_state_first() {
 fn assets_import_and_read_back_by_range() {
     let s = setup();
     let handle = s.notebook.open_page(s.page, client("main-1")).unwrap();
-    let source = crate::store::assets::AssetSource::Bytes {
-        name: "leaf.png".into(),
-        mime: "image/png".into(),
-        bytes: b"0123456789".to_vec(),
-    };
+    let source =
+        crate::store::assets::AssetSource::bytes("leaf.png", "image/png", b"\x89PNG\r\n\x1a\n0123456789".to_vec());
     let asset = handle.import_asset(source.clone()).unwrap();
     assert_eq!(handle.import_asset(source).unwrap().id, asset.id);
-    let part = handle.asset_bytes(asset.id, Some(2..5)).unwrap();
-    assert_eq!((part.bytes.as_slice(), part.total), (&b"234"[..], 10));
+    let part = handle.asset_bytes(asset.id, Some(10..13)).unwrap();
+    assert_eq!((part.bytes.as_slice(), part.total), (&b"234"[..], 18));
+    let fake = crate::store::assets::AssetSource::bytes("fake.png", "image/png", b"not a picture".to_vec());
+    let refused = handle.import_asset(fake).unwrap_err();
+    assert!(
+        matches!(&refused, CoreError::Edit(EditError::Invalid(m)) if m.starts_with("assetType")),
+        "{refused:?}"
+    );
     assert!(handle.asset_bytes(crate::id::AssetId::ZERO, None).is_err());
 }
 

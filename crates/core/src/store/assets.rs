@@ -9,7 +9,9 @@ use std::path::{Path, PathBuf};
 
 use sha2::{Digest, Sha256};
 
-use crate::error::{CoreError, FsError, FsErrorKind};
+use serde::{Deserialize, Serialize};
+
+use crate::error::{CoreError, EditError, FsError, FsErrorKind};
 use crate::format::names::asset_file_name;
 use crate::id::AssetId;
 use crate::model::{Asset, JsonMap};
@@ -20,12 +22,34 @@ use crate::time::Clock;
 
 mod image;
 
-pub use image::{image_size, mime_for_name};
+pub use image::{image_size, matches_declared_type, mime_for_name};
 
 /// How much of a source file an import reads at a time, between progress reports.
 const CHUNK: u64 = 1024 * 1024;
 
-/// Where an imported file comes from.
+/// The pixel size of an image, as the interface measured it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImageSize {
+    /// Width in pixels.
+    pub width: u32,
+    /// Height in pixels.
+    pub height: u32,
+}
+
+/// The largest side of an image the table will record. A claim beyond it is ignored.
+const MAX_IMAGE_SIDE: u32 = 1_000_000;
+
+impl ImageSize {
+    /// Whether both sides are positive and within the limit.
+    fn is_plausible(self) -> bool {
+        (1..=MAX_IMAGE_SIDE).contains(&self.width) && (1..=MAX_IMAGE_SIDE).contains(&self.height)
+    }
+}
+
+/// Where an imported file comes from. Either source may bring `image`, the size the interface measured
+/// when it decoded the picture. The core reads sizes from the headers of PNG, GIF, JPEG, and BMP files itself
+/// and trusts those over `image`. For every other image type, such as WebP, SVG, and HEIC, it records `image`
+/// in the asset table, so a page shows the picture's real shape before the picture loads.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AssetSource {
     /// Bytes from the interface, such as a pasted image.
@@ -36,9 +60,36 @@ pub enum AssetSource {
         mime: String,
         /// The file's bytes.
         bytes: Vec<u8>,
+        /// The size of the picture, when it is an image the interface decoded.
+        image: Option<ImageSize>,
     },
     /// A file on disk, copied in the background.
-    Path(PathBuf),
+    Path {
+        /// Where the file is.
+        path: PathBuf,
+        /// The size the interface measured, for an image it decoded.
+        image: Option<ImageSize>,
+    },
+}
+
+impl AssetSource {
+    /// Bytes from the interface, without a measured size.
+    pub fn bytes(name: impl Into<String>, mime: impl Into<String>, bytes: Vec<u8>) -> AssetSource {
+        AssetSource::Bytes {
+            name: name.into(),
+            mime: mime.into(),
+            bytes,
+            image: None,
+        }
+    }
+
+    /// A file on disk, without a measured size.
+    pub fn path(path: impl Into<PathBuf>) -> AssetSource {
+        AssetSource::Path {
+            path: path.into(),
+            image: None,
+        }
+    }
 }
 
 /// What an import needs besides the page folder and the source.
@@ -59,14 +110,23 @@ pub fn import_asset(
     source: AssetSource,
     ctx: &ImportCtx<'_>,
 ) -> Result<Asset, CoreError> {
-    let (name, mime, bytes) = match source {
-        AssetSource::Bytes { name, mime, bytes } => {
+    let (name, mime, bytes, claimed) = match source {
+        AssetSource::Bytes {
+            name,
+            mime,
+            bytes,
+            image,
+        } => {
             let len = bytes.len() as u64;
             (ctx.progress)(len, len);
-            (name, mime, bytes)
+            (name, mime, bytes, image)
         }
-        AssetSource::Path(path) => read_source(fs, &path, ctx.progress)?,
+        AssetSource::Path { path, image } => {
+            let (name, mime, bytes) = read_source(fs, &path, ctx.progress)?;
+            (name, mime, bytes, image)
+        }
     };
+    check_declared_type(&bytes, &mime)?;
     let sha256: [u8; 32] = Sha256::digest(&bytes).into();
     let len = bytes.len() as u64;
     if let Some(existing) = ctx.existing.values().find(|a| a.sha256 == sha256 && a.bytes == len) {
@@ -77,7 +137,7 @@ pub fn import_asset(
         return Ok(existing.clone());
     }
     let id = AssetId::generate(ctx.clock);
-    let (width, height) = image_size(&bytes, &mime).map_or((None, None), |(w, h)| (Some(w), Some(h)));
+    let (width, height) = picture_size(&bytes, &mime, claimed).map_or((None, None), |(w, h)| (Some(w), Some(h)));
     let asset = Asset {
         id,
         file: asset_file_name(id, &name, &mime),
@@ -93,6 +153,28 @@ pub fn import_asset(
     let path = NotebookLayout::asset_path(page_dir, &asset)?;
     write_file(fs, page_dir, &path, &bytes)?;
     Ok(asset)
+}
+
+/// An `image/*` file must start with the bytes of its type, so a file named `leaf.png` that holds anything else
+/// never gets a picture's place in a page. Media types the core doesn't know are taken as declared.
+pub(crate) fn check_declared_type(bytes: &[u8], mime: &str) -> Result<(), CoreError> {
+    if matches_declared_type(bytes, mime) == Some(false) {
+        let detail = format!("assetType: the file's first bytes are not those of {mime}");
+        return Err(CoreError::Edit(EditError::Invalid(detail)));
+    }
+    Ok(())
+}
+
+/// The size of a picture: the one its header gives, else the one the interface measured, when it makes sense.
+pub(crate) fn picture_size(bytes: &[u8], mime: &str, claimed: Option<ImageSize>) -> Option<(u32, u32)> {
+    if !mime.to_ascii_lowercase().starts_with("image/") {
+        return None;
+    }
+    image_size(bytes, mime).or_else(|| {
+        claimed
+            .filter(|size| size.is_plausible())
+            .map(|size| (size.width, size.height))
+    })
 }
 
 fn write_file(fs: &dyn Fs, page_dir: &Path, path: &Path, bytes: &[u8]) -> Result<(), FsError> {

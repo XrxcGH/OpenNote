@@ -47,7 +47,7 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | P3-3 | Named styles in `notebook.json` | Done: `styles` in the spec, `NotebookFile`, `NotebookTree`, `NodeProps`, and `set_notebook_props`; copies merge by `changed` |
 | P3-4 | Typing groups join `PatchBlock` and `SetPage` | Done: in `UndoStack`, with followers ignored |
 | P3-5 | Full block JSON in undo, redo, and remote frames | Done: `FrameInfo` carries `blocks`, `title`, `tags`, `view`, and `assets` |
-| P3-6 | Image size and type check on import | Pending |
+| P3-6 | Image size and type check on import | Done: `AssetSource` takes `image`, and imports check an image's first bytes |
 | P3-7 | Restoring parts of a version, deleting history, and retention | Pending |
 | P3-8 | Injected `invoke` and `Channel`, and `page_handle` | For the app bridge: needs TypeScript and `core_bridge.rs` |
 | P3-9 | `asset_import_path` stays out of the WebView capability | For the app bridge: needs the Tauri capability file |
