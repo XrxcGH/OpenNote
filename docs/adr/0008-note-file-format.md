@@ -55,10 +55,10 @@ The Phase 4 and Phase 5 designs asked for these changes while version 1 was stil
 | P3-11 | Width of a floating text block without `w` | Done: spec 6.2 says content width, from 120 to 600 units |
 | P3-12 | No two adjacent lists of one kind | Done: spec 7.7 says writers join them; `alsoWrittenFrom` in the document fixtures covers it |
 | C1 | `StrokeTxnMeta` with `ui` and `edits` | Done: `edits` resolve first, then the strokes are added, and a new stroke may reuse the ID of one an edit removed |
-| C2 | Partial erase makes sliced strokes | Pending |
-| C3 | Stored pressure and positions | Pending |
+| C2 | Partial erase makes sliced strokes | Done: spec 8.2 describes the parts, their cut ends, and their start times |
+| C3 | Stored pressure and positions | Done: spec 8.2 and 9.4 say what is stored |
 | C4 | Anchored ink | Done: role `anchored` and the `anchor` object in spec 6.3 and 8.1, in the model, both codecs, and the fixtures. `alt` and `decorative` were already there (P3-2) |
-| C5 | Exact geometry for shapes | Pending |
+| C5 | Exact geometry for shapes | Done: informative note in spec 9.3 |
 | C6 | Typing rule joins anchored ink changes | Done: the page session records with `UndoStack::record_with`, which knows each ink block's anchor |
 | C7 | Shared `newId()` and a header-only codec reader | For the app bridge: TypeScript exports |
 | C8 | `ink.svg` width of transformed strokes | Pending |

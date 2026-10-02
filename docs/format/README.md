@@ -979,11 +979,17 @@ Ink can be anchored to text, such as a highlight under a phrase or a note in the
 
 - The ink is drawn with the text block it names. Its highlighter strokes are drawn just below that block's text, and its other strokes just above it. The block's place in the order of blocks doesn't matter for that.
 - The frame's `x` and `y` keep the ink's last absolute position. A reader that doesn't lay out text uses the frame as it is. So does every reader when the anchor names nothing on the page.
-- When the text reflows, an app that lays out text moves the ink block so that it keeps its distance from the anchored place, and writes the new `x` and `y` at the next save. The stroke points never change.
+- When the text reflows, an app that lays out text moves the ink block to keep its distance from the anchored place. It writes the new `x` and `y` at the next save. The stroke points never change.
 - Ink blocks with another role have no anchor. A reader keeps one it finds there.
 ### 8.2 Strokes
 
-A stroke stores its raw input: position, pressure, tilt, and time for every point. Once a stroke is finished, its points never change. Moving, scaling, or rotating a stroke sets its affine transform, and recoloring it sets its style. Rendering can improve later without changing the data, as the development plan requires.
+A stroke stores the input of the pen as the app drew it, with the settings the person had chosen at that moment:
+
+- Pressure is the device's pressure after the pressure curve and the minimum width.
+- Positions may be smoothed by a stabilizer.
+- Tilt and time are raw.
+
+A later change to these settings never changes an old stroke, because the stroke already holds the result. Once a stroke is finished, its points never change. Moving, scaling, or rotating a stroke sets its affine transform, and recoloring it sets its style. Rendering can improve later without changing the data, as the development plan requires.
 
 A stroke's style has four parts:
 
@@ -998,7 +1004,9 @@ The palette slot is the pen name that [BRAND.md section 4](../../BRAND.md#4-colo
 
 Strokes in one ink block are drawn in order of their start time, then their ID. This needs no stored order, never conflicts in a merge, and puts a restored stroke back at its original depth. Highlighter strokes are drawn below the other strokes of their block.
 
-A partial erase removes the stroke and adds one or two new strokes with slices of its points. The new strokes get new IDs, keep their original times, and record the erased stroke's ID as their origin.
+A partial erase removes the stroke and adds one or more new strokes. Each is a contiguous slice of the original's points, plus at most one interpolated point at each cut end, so a cut is clean at any pen speed. The new strokes get new IDs and record the erased stroke's ID as their origin.
+
+A part starts at the original's start time plus the time of its first point, and counts its point times from there. Its first point then has a time under 1 millisecond (section 9.4). One pen draws at a time, so the parts keep the drawing order.
 
 Imported ink without times sets the "start time unknown" flag (section 9.3).
 
@@ -1096,7 +1104,7 @@ The body of a `Stroke` record has 72 fixed bytes, then optional fields, then the
 | 42 | 2 | Stroke flags (below) |
 | 44 | 4 | Color: red, green, blue, and alpha bytes, in sRGB with straight alpha |
 | 48 | 4 | Width in page units (`f32`) |
-| 52 | 16 | Bounding box of the raw points: minimum x, minimum y, maximum x, and maximum y, each an `i32` in 1/64 page units |
+| 52 | 16 | Bounding box of the stored points, before the transform: minimum x, minimum y, maximum x, and maximum y, each an `i32` in 1/64 page units |
 | 68 | 4 | Point count, 1 to 200,000 (`u32`) |
 | 72 | 24 | Transform, only if flag bit 3 is set: six `f32` values `a b c d e f` |
 | next | 16 | Origin stroke ID, only if flag bit 4 is set |
@@ -1112,7 +1120,11 @@ The body of a `Stroke` record has 72 fixed bytes, then optional fields, then the
 | 5 | Start time unknown (imported ink) |
 | 6 to 15 | Zero in version 1. Bit 6 is reserved for barrel rotation |
 
-The transform maps a raw point `(x, y)` to `(a·x + c·y + e, b·x + d·y + f)` in the ink block's coordinates. This is the convention of SVG and the HTML canvas.
+
+A stroke whose flag bits 2 and 5 are both clear has a start time but no per-point times. It holds exact geometry, such as a recognized line, circle, or polygon, and not a hand-drawn path. This is informative, because readers draw it like any other stroke.
+
+A writer that changes such a stroke keeps its points exact. It does not smooth, resample, or simplify them, so a recognized shape stays a shape.
+The transform maps a stored point `(x, y)` to `(a·x + c·y + e, b·x + d·y + f)` in the ink block's coordinates. This is the convention of SVG and the HTML canvas.
 
 Readers draw unknown tool values as a pen and treat unknown palette slots as custom colors. They keep the record's bytes unchanged either way.
 
@@ -1126,6 +1138,8 @@ Each point has up to 6 channels, always in this order. `x` and `y` are always pr
 | `p`, pressure | `u16` | `round(pressure × 65535)`, for pressure from 0 to 1 |
 | `tx`, `ty`, tilt | `i16` | 1/100 degree: `round(tilt × 100)`, from −9000 to 9000. Tilt follows the `tiltX` and `tiltY` of Pointer Events |
 | `t`, time | `u32` | 100 microseconds after the stroke's start time |
+
+Pressure is stored after the person's pressure curve and minimum width, and `x` and `y` after any stabilizer, as section 8.2 says. Tilt and time are stored as the device reported them.
 
 Point 0 stores absolute values: `x`, `y`, `tx`, and `ty` as zigzag varints, and `p` and `t` as unsigned varints. For point 0, `t` is the part of the start time below one millisecond, from 0 to 9. Every later point stores the difference from the point before it: `dx`, `dy`, `dp`, `dtx`, and `dty` as zigzag varints, and `dt` as an unsigned varint, because time never goes backward.
 
