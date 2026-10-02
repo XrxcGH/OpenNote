@@ -5,6 +5,7 @@ export const common = {
   appName: 'OpenNote',
   cancel: 'Cancel',
   close: 'Close',
+  closeAnyway: 'Close anyway',
   notifications: 'Notifications',
   editMenu: 'Edit',
   cut: 'Cut',

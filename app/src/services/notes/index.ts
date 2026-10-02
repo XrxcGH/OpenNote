@@ -19,6 +19,7 @@ import type { InitialTree, NodeId, NotesService } from './types';
 export type * from './types';
 export { CHIP_COLORS, NOTES_LIMITS } from './types';
 export { NotesError, isNotesError } from './errors';
+export { NOT_KEPT } from './snapshot';
 export type { InvalidNameReason, NotesErrorCode } from './errors';
 
 /**

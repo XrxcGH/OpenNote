@@ -5,7 +5,8 @@ import type { FlagId } from '../../app/flags';
 import type { CommandId } from '../../commands/types';
 import { beforeExit, commandBar, commands, contextMenus, titleBarItems } from '../../registries';
 import type { MenuId } from '../../registries/types';
-import { currentNotesService } from '../../services/notes';
+import { currentNotesService, isNotesError, NOT_KEPT } from '../../services/notes';
+import { t } from '../../strings/t';
 import { treeCommands } from './commands';
 import { SaveStatus } from './SaveStatus';
 
@@ -98,15 +99,39 @@ titleBarItems.register({
   Component: SaveStatus,
 });
 
+/** How long "Close anyway" lets the next close through. */
+export const CLOSE_ANYWAY_MS = 10_000;
+
+let discardUntil = 0;
+
+/** The toast's sentence for notes that can't be saved: why, when the save said, else the plain refusal. */
+function unsavedMessage(failure: unknown): string {
+  if (!isNotesError(failure, 'io')) return t('tree.exit.unsaved');
+  if (failure.detail === NOT_KEPT) return t('tree.exit.notKept');
+  return failure.detail ? t('tree.exit.unsavedBecause', { detail: failure.detail }) : t('tree.exit.unsaved');
+}
+
+// A save that can't succeed, such as a full disk, mustn't trap the person in the app. The refusal says why and
+// offers "Close anyway", which lets one close through within a few seconds, after one more try to save.
 beforeExit.register({
   id: 'notes.flush',
   order: 10,
   async run() {
+    // "Close anyway" covers one close, and only soon after it was chosen.
+    const allowed = Date.now() < discardUntil;
+    discardUntil = 0;
     const notes = currentNotesService();
     if (!notes) return { ok: true as const };
-    await notes.flush().catch(() => {});
-    return notes.hasUnsavedChanges()
-      ? { ok: false as const, reason: 'tree.exit.unsaved' as const }
-      : { ok: true as const };
+    const failure = await notes.flush().then(
+      () => null,
+      (error: unknown) => error,
+    );
+    if (!notes.hasUnsavedChanges() || allowed) return { ok: true as const };
+    return {
+      ok: false as const,
+      reason: 'tree.exit.unsaved' as const,
+      message: unsavedMessage(failure),
+      closeAnyway: () => void (discardUntil = Date.now() + CLOSE_ANYWAY_MS),
+    };
   },
 });

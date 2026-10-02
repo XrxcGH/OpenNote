@@ -162,11 +162,21 @@ export interface ShortcutListSectionDef {
   flag?: FlagId;
 }
 
+/**
+ * What a beforeExit hook answers. A refusal can carry `message`, a sentence the hook built, in place of the reason
+ * key's text. It can also offer `closeAnyway`, which makes the hook let the next close through at the cost of what
+ * it protects. The toast then has a "Close anyway" action, so a refusal that can't clear itself, such as notes
+ * that can't be saved, never traps the person in the app.
+ */
+export type BeforeExitAnswer =
+  | { ok: true }
+  | { ok: false; reason: Extract<ExitResult, { ok: false }>['reason']; message?: string; closeAnyway?: () => void };
+
 export interface BeforeExitHook {
   id: string;
   /** Lower orders run first. */
   order: number;
-  run(reason: ExitReason): Promise<ExitResult>;
+  run(reason: ExitReason): Promise<BeforeExitAnswer>;
 }
 
 /**

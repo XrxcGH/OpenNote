@@ -68,3 +68,30 @@ describe('the exit handshake in the interface', () => {
     stop();
   });
 });
+
+describe('a refusal in the exit handshake', () => {
+  it('offers "Close anyway" when the refusing hook has a way out, and says what the hook said', async () => {
+    const platform = createTestPlatform();
+    const exitReady = vi.spyOn(platform.lifecycle, 'exitReady');
+    const close = vi.spyOn(platform.window, 'close');
+    const closeAnyway = vi.fn();
+    const answer = { ok: false, reason: 'errors.commandFailed', message: 'The disk is full.', closeAnyway } as const;
+    unregister.push(beforeExit.register({ id: 'stuck', order: 10, run: () => Promise.resolve(answer) }));
+    await answerBeforeExit(platform, 'close');
+    expect(exitReady).toHaveBeenCalledWith({ ok: false, reason: 'errors.commandFailed' });
+    const toast = toastStore.get().current;
+    expect(toast?.message).toBe('The disk is full.');
+    expect(toast?.action?.label).toBe('Close anyway');
+    expect(closeAnyway).not.toHaveBeenCalled();
+    await toast?.action?.run();
+    expect(closeAnyway).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('shows no action when the refusing hook has no way out', async () => {
+    const platform = createTestPlatform();
+    hook('first', 10, () => Promise.resolve({ ok: false, reason: 'errors.commandFailed' }));
+    await answerBeforeExit(platform, 'close');
+    expect(toastStore.get().current?.action).toBeUndefined();
+  });
+});

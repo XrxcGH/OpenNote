@@ -163,6 +163,9 @@ export const tree = {
   },
   exit: {
     unsaved: "Some notes aren't saved yet. Try closing again in a moment.",
+    unsavedBecause:
+      "Some notes aren't saved yet ({detail}). OpenNote keeps trying, so you can close again once it works.",
+    notKept: "This version of OpenNote doesn't keep your notes after it closes.",
   },
   palette: {
     path: '{path}',

@@ -3,8 +3,8 @@
 // same tree. It uses the fixture shape, isn't a file format, has no migration, and goes away with the
 // notes.memorySnapshot flag.
 //
-// Saves wait 1 s after the last change, flush() saves at once, and a failed save leaves the changes unsaved until
-// the next save works.
+// Saves wait 1 s after the last change and flush() saves at once. A failed save leaves the changes unsaved and
+// tries again on a timer (5 s, then doubling to 1 min) as well as on the next change or flush, until one works.
 
 import { NotesError } from './errors';
 import { parseFixture } from './fixtures';
@@ -29,6 +29,9 @@ export interface SnapshotData extends FixtureData {
 }
 
 export const SNAPSHOT_DEBOUNCE_MS = 1000;
+/** The wait before the first retry of a failed save. Each failure in a row doubles it, up to the maximum. */
+export const SNAPSHOT_RETRY_MS = 5000;
+export const SNAPSHOT_RETRY_MAX_MS = 60_000;
 
 const optionalText = (value: unknown) => value === null || typeof value === 'string';
 
@@ -66,7 +69,14 @@ export interface SnapshotSaver {
 
 interface SaverOptions {
   debounceMs?: number;
+  retryMs?: number;
   onStatus(status: SaveStatus): void;
+}
+
+/** What a rejected save says. Rust's errors are plain `{ code, message }` objects, which String() would hide. */
+function reasonOf(error: unknown): string {
+  const message = typeof error === 'object' && error !== null ? (error as { message?: unknown }).message : undefined;
+  return typeof message === 'string' ? message : String(error);
 }
 
 class Saver implements SnapshotSaver {
@@ -75,6 +85,7 @@ class Saver implements SnapshotSaver {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private saving: Promise<void> | null = null;
   private reported: SaveStatus = 'saved';
+  private retryDelay: number;
   private readonly client: NotesSnapshotClient;
   private readonly serialize: () => string;
   private readonly options: SaverOptions;
@@ -83,6 +94,7 @@ class Saver implements SnapshotSaver {
     this.client = client;
     this.serialize = serialize;
     this.options = options;
+    this.retryDelay = options.retryMs ?? SNAPSHOT_RETRY_MS;
   }
 
   status(): SaveStatus {
@@ -118,14 +130,25 @@ class Saver implements SnapshotSaver {
     try {
       await this.saving;
       this.failed = false;
+      this.retryDelay = this.options.retryMs ?? SNAPSHOT_RETRY_MS;
     } catch (error) {
       this.dirty = true;
       this.failed = true;
-      throw new NotesError('io', `Couldn't save the notes snapshot: ${String(error)}`);
+      this.scheduleRetry();
+      const reason = reasonOf(error);
+      throw new NotesError('io', `Couldn't save the notes snapshot: ${reason}`, undefined, reason);
     } finally {
       this.saving = null;
       this.report();
     }
+  }
+
+  /** Tries a failed save again after a wait that doubles, unless a save is already due. */
+  private scheduleRetry(): void {
+    if (this.timer) return;
+    const wait = this.retryDelay;
+    this.retryDelay = Math.min(wait * 2, SNAPSHOT_RETRY_MAX_MS);
+    this.timer = setTimeout(() => void this.flush().catch(() => {}), wait);
   }
 
   private report(): void {
