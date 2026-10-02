@@ -129,7 +129,24 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
             None => return Ok(RecoveryOutcome::OwnerAlive),
         }
     }
-    let read = read_all(ctx, page, generations)?;
+    // Loading the page only reads it, so it runs on another thread while the generations decode.
+    let located = (ctx.locate)(page);
+    let store = ctx.store;
+    let (read, loaded) = std::thread::scope(|scope| {
+        let load = located
+            .as_deref()
+            .map(|dir| std::thread::Builder::new().spawn_scoped(scope, move || store.load(dir)));
+        let read = read_all(ctx, page, generations);
+        let loaded = match load {
+            None => Err(LoadError::Missing),
+            Some(Ok(handle)) => handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+            Some(Err(_)) => located
+                .as_deref()
+                .map_or(Err(LoadError::Missing), |dir| store.load(dir)),
+        };
+        (read, loaded)
+    });
+    let read = read?;
     drop(locks);
     for (path, bytes, move_file) in &read.quarantine {
         quarantine(ctx, path, bytes, *move_file)?;
@@ -137,10 +154,6 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
     if read.generations.is_empty() {
         return Ok(RecoveryOutcome::Nothing);
     }
-    let located = (ctx.locate)(page);
-    let loaded = located
-        .as_deref()
-        .map_or(Err(LoadError::Missing), |dir| ctx.store.load(dir));
     let outcome = match loaded {
         Ok(loaded) if is_damaged(&loaded) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Damaged(located))?,
         Ok(loaded) => {
