@@ -1324,7 +1324,7 @@ Before a writer replaces `page.md`, `ink.svg`, or `index.md`, it looks at the fi
 | Has a checksum that matches | Written by OpenNote | Writes the new file if its revision is stale |
 | Anything else | Edited by a person or another tool | Moves it to the conflicts folder, writes the new file, and tells the person once |
 
-Edited copies go to the page's `.conflicts/` folder as `page.md.<time>.edited` or `ink.svg.<time>.edited`, and to `.opennote/conflicts/index.md.<time>.edited` for the index. `<time>` has the form `20260930T140740Z`. A later version of OpenNote may offer to import such edits.
+Edited copies go to the page's `.conflicts/` folder as `page.md.<time>.edited` or `ink.svg.<time>.edited`, and to `.opennote/conflicts/index.md.<time>.edited` for the index. `<time>` has the form `20260930T140740Z`. OpenNote offers to bring the text changes of an edited `page.md` into the page. It compares the copy with the page as that `page.md` was written from it, so it only changes the text blocks the person edited.
 
 This check matters because readable copies are written without a flush. After a power cut they can be empty or filled with zero bytes, which must never be mistaken for a person's work.
 

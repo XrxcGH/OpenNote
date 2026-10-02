@@ -30,6 +30,7 @@ use crate::wire::envelope::Envelope;
 use crate::wire::frames::AppliedFrame;
 
 mod edits;
+mod external;
 pub(crate) mod save;
 pub(crate) mod state;
 mod versions;
@@ -38,6 +39,7 @@ pub(crate) mod view;
 #[cfg(test)]
 mod tests;
 
+pub use external::EditedImport;
 pub(crate) use state::{Opening, PageSession};
 pub use view::StrokeRead;
 
@@ -244,6 +246,29 @@ impl PageHandle {
     /// next sequence number goes in `client_seq`, and one undo step reverses it.
     pub fn restore_blocks(&self, client_seq: u64, rev: RevisionId, blocks: &[BlockId]) -> Result<TxnAck, EditError> {
         self.session.restore_blocks((&self.client, client_seq), rev, blocks)
+    }
+
+    /// The readable copies of this page that a person edited in another program, which OpenNote kept aside
+    /// instead of overwriting.
+    pub fn edited_copies(&self) -> Result<Vec<crate::store::external::EditedCopy>, CoreError> {
+        self.session.edited_copies()
+    }
+
+    /// Plans how the text of an edited `page.md` comes into the page. Nothing changes until the interface sends
+    /// the plan's edits as a request.
+    pub fn plan_edited_import(&self, copy: &Path) -> Result<EditedImport, CoreError> {
+        self.session.plan_edited_import(copy)
+    }
+
+    /// Deletes an edited copy, once its text is brought in or the person turns it down.
+    pub fn discard_edited_copy(&self, copy: &Path) -> Result<(), CoreError> {
+        self.session.discard_edited_copy(copy)
+    }
+
+    /// The files of this page that are only in the cloud, so the interface can ask for them before it shows
+    /// the page.
+    pub fn cloud_only_files(&self) -> Vec<PathBuf> {
+        self.session.cloud_only_files()
     }
 
     /// Names a version, or marks it to keep forever.
