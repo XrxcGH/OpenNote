@@ -69,6 +69,15 @@ jobs:
         run: npm ci
       - name: Component tests (Vitest browser mode)
         run: npm run test:components
+      - name: Keep the failure screenshots
+        # Vitest saves a screenshot of the page for each failed test.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-failures-${{ matrix.os }}
+          path: app/.vitest/attachments
+          retention-days: 7
+          if-no-files-found: ignore
 
   ui-web:
     # The production interface in Edge: the bundle budget, then Playwright against the test build.
