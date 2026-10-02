@@ -8,14 +8,16 @@ mod records;
 
 use crate::error::{FormatError, FormatErrorKind};
 use crate::format::{DamagedRecord, DecodedSegment, SegmentHeader};
-use crate::id::{PageId, SegmentId, StrokeId};
+use std::collections::HashSet;
+
+use crate::id::{Id, PageId, SegmentId, StrokeId};
 use crate::limits::Limits;
 use crate::model::{InkRecord, SegmentRef};
 use crate::time::Timestamp;
 use crate::SEGMENT_VERSION;
 
 pub use records::{encode_record, parse_body, Parsed, FRAME_BYTES, KIND_PROPS, KIND_REMOVE, KIND_STROKE};
-use records::{i64_at, id_at, parse_record, u16_at, u32_at};
+use records::{i64_at, id_at, is_known_stroke, parse_record, u16_at, u32_at};
 
 /// The first 8 bytes of every segment file.
 pub const MAGIC: [u8; 8] = [0x89, b'O', b'N', b'K', 0x0d, 0x0a, 0x1a, 0x0a];
@@ -153,17 +155,49 @@ pub fn decode_segment(
     page: PageId,
     limits: &Limits,
 ) -> Result<DecodedSegment, FormatError> {
-    decode_segment_checking(bytes, expect, page, limits, &|_| true)
+    decode(bytes, expect, page, limits, &Want::All)
 }
 
-/// [`decode_segment`], checking the points of only the strokes `check` accepts. Every other check still runs,
-/// and every record is still returned.
-pub fn decode_segment_checking(
+/// [`decode_segment`] for minor compaction, which needs the records of only the strokes in `touched`.
+///
+/// It checks the points of only those strokes. When the footer is intact, it also leaves out, unparsed, each
+/// other stroke whose only record is a `Stroke` record this version knows. Nothing replaces or removes such a
+/// stroke, so it adds no dead bytes, and the compacted segment doesn't mention it. The footer's CRC-32 still
+/// covers every byte, and every other check still runs.
+pub fn decode_segment_for(
     bytes: &[u8],
     expect: &SegmentRef,
     page: PageId,
     limits: &Limits,
-    check: &dyn Fn(StrokeId) -> bool,
+    touched: &dyn Fn(StrokeId) -> bool,
+) -> Result<DecodedSegment, FormatError> {
+    decode(bytes, expect, page, limits, &Want::Touched(touched))
+}
+
+/// The records a decode wants.
+enum Want<'a> {
+    /// Every record, fully checked.
+    All,
+    /// The records [`decode_segment_for`] keeps.
+    Touched(&'a dyn Fn(StrokeId) -> bool),
+}
+
+impl Want<'_> {
+    /// Whether to check the points of a record's stroke. Every record kind starts with its stroke's ID.
+    fn checks_points(&self, body: &[u8]) -> bool {
+        match self {
+            Want::All => true,
+            Want::Touched(touched) => id_at(body, 0).is_none_or(|id| touched(StrokeId(id))),
+        }
+    }
+}
+
+fn decode(
+    bytes: &[u8],
+    expect: &SegmentRef,
+    page: PageId,
+    limits: &Limits,
+    want: &Want<'_>,
 ) -> Result<DecodedSegment, FormatError> {
     let header = read_header(bytes, limits)?;
     if header.header.id != expect.id || header.header.page != page {
@@ -179,7 +213,7 @@ pub fn decode_segment_checking(
             let detail = "the segment doesn't match its entry in page.json";
             return Err(FormatError::new(FormatErrorKind::Checksum, detail));
         }
-        if let Some(records) = read_exact(bytes, footer_at, header.count, limits, check) {
+        if let Some(records) = read_exact(bytes, footer_at, header.count, limits, want) {
             return Ok(DecodedSegment {
                 header: header.header,
                 records: records.0,
@@ -190,7 +224,7 @@ pub fn decode_segment_checking(
         }
     }
     let end = if bytes.ends_with(&FOOTER_MAGIC) { footer_at } else { len };
-    let mut walk = walk(bytes, end, limits, check);
+    let mut walk = walk(bytes, end, limits, want);
     walk.header = header.header;
     walk.footer_ok = footer_ok;
     Ok(walk)
@@ -260,31 +294,66 @@ fn footer_ok(bytes: &[u8]) -> bool {
 
 /// Reads exactly `count` records that end exactly at the footer, trusting the footer's CRC-32 for their
 /// frames. Returns the records and the count of unknown ones, or `None` when anything is off.
-fn read_exact(
-    bytes: &[u8],
-    end: usize,
-    count: u32,
-    limits: &Limits,
-    check: &dyn Fn(StrokeId) -> bool,
-) -> Option<(Vec<InkRecord>, u32)> {
-    let mut records = Vec::new();
-    let mut unknown = 0u32;
+fn read_exact(bytes: &[u8], end: usize, count: u32, limits: &Limits, want: &Want<'_>) -> Option<(Vec<InkRecord>, u32)> {
+    let mut frames = Vec::new();
     let mut pos = HEADER_BYTES;
     for _ in 0..count {
         let frame = read_frame(bytes, pos, end).ok()?;
+        pos = frame.body.end;
+        frames.push(frame);
+    }
+    if pos != end {
+        return None;
+    }
+    let left_out = left_out(bytes, &frames, want);
+    let mut records = Vec::new();
+    let mut unknown = 0u32;
+    for (index, frame) in frames.iter().enumerate() {
+        if left_out.get(index).copied().unwrap_or(false) {
+            continue;
+        }
         let body = bytes.get(frame.body.clone())?;
-        match parse_record(frame.kind, frame.flags, body, limits, checks_points(body, check)) {
+        match parse_record(frame.kind, frame.flags, body, limits, want.checks_points(body)) {
             Parsed::Record(record) => records.push(record),
             Parsed::Unknown => unknown = unknown.saturating_add(1),
             Parsed::Bad(_) => return None,
         }
-        pos = frame.body.end;
     }
-    (pos == end).then_some((records, unknown))
+    Some((records, unknown))
+}
+
+/// Which frames [`decode_segment_for`] leaves out: known `Stroke` records of strokes outside `touched` that
+/// have no other record in the segment. Nothing for [`Want::All`].
+fn left_out(bytes: &[u8], frames: &[Frame], want: &Want<'_>) -> Vec<bool> {
+    let Want::Touched(touched) = want else {
+        return Vec::new();
+    };
+    let ids: Vec<Option<Id>> = frames
+        .iter()
+        .map(|frame| bytes.get(frame.body.clone()).and_then(|body| id_at(body, 0)))
+        .collect();
+    let mut sorted: Vec<Id> = ids.iter().flatten().copied().collect();
+    sorted.sort_unstable();
+    let repeated: HashSet<Id> = sorted
+        .windows(2)
+        .filter_map(|pair| match pair {
+            [a, b] if a == b => Some(*a),
+            _ => None,
+        })
+        .collect();
+    frames
+        .iter()
+        .zip(&ids)
+        .map(|(frame, id)| {
+            let body = bytes.get(frame.body.clone()).unwrap_or_default();
+            id.is_some_and(|id| !repeated.contains(&id) && !touched(StrokeId(id)))
+                && is_known_stroke(frame.kind, frame.flags, body)
+        })
+        .collect()
 }
 
 /// Walks the records one at a time (spec 9.6 step 5), skipping damaged ones.
-fn walk(bytes: &[u8], end: usize, limits: &Limits, check: &dyn Fn(StrokeId) -> bool) -> DecodedSegment {
+fn walk(bytes: &[u8], end: usize, limits: &Limits, want: &Want<'_>) -> DecodedSegment {
     let mut out = DecodedSegment {
         header: SegmentHeader {
             id: SegmentId::ZERO,
@@ -301,7 +370,7 @@ fn walk(bytes: &[u8], end: usize, limits: &Limits, check: &dyn Fn(StrokeId) -> b
     while pos < end {
         match read_frame(bytes, pos, end) {
             Ok(frame) => {
-                take_record(&mut out, bytes, &frame, index, limits, check);
+                take_record(&mut out, bytes, &frame, index, limits, want);
                 pos = frame.body.end;
             }
             Err(reason) => {
@@ -318,17 +387,10 @@ fn walk(bytes: &[u8], end: usize, limits: &Limits, check: &dyn Fn(StrokeId) -> b
 }
 
 /// Checks one walked record and adds it to the result: decoded, unknown, or damaged.
-fn take_record(
-    out: &mut DecodedSegment,
-    bytes: &[u8],
-    frame: &Frame,
-    index: u32,
-    limits: &Limits,
-    check: &dyn Fn(StrokeId) -> bool,
-) {
+fn take_record(out: &mut DecodedSegment, bytes: &[u8], frame: &Frame, index: u32, limits: &Limits, want: &Want<'_>) {
     let body = bytes.get(frame.body.clone()).unwrap_or_default();
     let parsed = if frame.crc_ok(bytes) {
-        parse_record(frame.kind, frame.flags, body, limits, checks_points(body, check))
+        parse_record(frame.kind, frame.flags, body, limits, want.checks_points(body))
     } else {
         Parsed::Bad("checksum")
     };
@@ -339,11 +401,6 @@ fn take_record(
             .damaged
             .push(damaged(bytes, index, frame.start, Some(frame), reason)),
     }
-}
-
-/// Whether to check the points of a record's stroke. Every record kind starts with its stroke's ID.
-fn checks_points(body: &[u8], check: &dyn Fn(StrokeId) -> bool) -> bool {
-    id_at(body, 0).is_none_or(|id| check(StrokeId(id)))
 }
 
 /// The next offset from `from` where a record frame parses, has zero flags, and has a matching CRC-32.

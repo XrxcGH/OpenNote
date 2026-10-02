@@ -179,6 +179,13 @@ pub(crate) fn parse_record(kind: u8, frame_flags: [u8; 3], body: &[u8], limits: 
     }
 }
 
+/// Whether the kind and flags of a record mark a `Stroke` record this version knows.
+pub(crate) fn is_known_stroke(kind: u8, frame_flags: [u8; 3], body: &[u8]) -> bool {
+    kind == KIND_STROKE
+        && frame_flags == [0, 0, 0]
+        && u16_at(body, 42).is_some_and(|flags| flags & !KNOWN_STROKE_FLAGS == 0)
+}
+
 fn parse_stroke(body: &[u8], limits: &Limits, points: bool) -> Parsed {
     let Some(flags) = u16_at(body, 42) else {
         return Parsed::Bad("body");

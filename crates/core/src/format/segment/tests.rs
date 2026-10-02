@@ -111,7 +111,7 @@ fn every_record_kind_round_trips() {
 }
 
 #[test]
-fn points_are_checked_only_for_the_strokes_asked_for() {
+fn a_decode_for_compaction_checks_and_keeps_only_what_it_needs() {
     // A stroke whose stored bounding box doesn't match its points, in a segment whose footer is intact.
     let mut bad = sample_stroke();
     bad.bbox.max_x += 1;
@@ -123,11 +123,30 @@ fn points_are_checked_only_for_the_strokes_asked_for() {
     let full = decode_segment(&bytes, &expect, page, &limits()).unwrap();
     assert!(full.records.is_empty());
     assert_eq!(full.damaged[0].reason, "points");
-    let checked = decode_segment_checking(&bytes, &expect, page, &limits(), &|id| id == bad_id).unwrap();
-    assert_eq!(checked, full);
-    let skipped = decode_segment_checking(&bytes, &expect, page, &limits(), &|_| false).unwrap();
-    assert!(skipped.damaged.is_empty());
-    assert_eq!(skipped.records, records);
+    let touched = decode_segment_for(&bytes, &expect, page, &limits(), &|id| id == bad_id).unwrap();
+    assert_eq!(touched, full);
+    // Untouched, it is the only record of its stroke, so it is left out unparsed.
+    let untouched = decode_segment_for(&bytes, &expect, page, &limits(), &|_| false).unwrap();
+    assert!(untouched.damaged.is_empty() && untouched.records.is_empty());
+
+    // A stroke with more than one record keeps all of them, and so does a touched one. A lone one goes.
+    let mut lone = sample_stroke();
+    lone.id = "01m3sa8wb93eknedj0qexh7af4".parse().unwrap();
+    let mut touched_stroke = sample_stroke();
+    touched_stroke.id = "01m3sa8wb93eknedj0qexh7af5".parse().unwrap();
+    let mut records = mixed_records();
+    records.push(InkRecord::Stroke(Arc::new(lone)));
+    records.push(InkRecord::Stroke(Arc::new(touched_stroke.clone())));
+    let count = u32::try_from(records.len()).unwrap();
+    let bytes = encode_segment(&b2_header(), &records);
+    let expect = entry(&bytes, b2_header().id, count);
+    let decoded = decode_segment_for(&bytes, &expect, page, &limits(), &|id| id == touched_stroke.id).unwrap();
+    // The moved stroke of `mixed_records` and `lone` are each their stroke's only record.
+    let mut want = records.clone();
+    want.remove(5);
+    want.remove(1);
+    assert_eq!(decoded.records, want);
+    assert!(decoded.damaged.is_empty());
 }
 
 #[test]

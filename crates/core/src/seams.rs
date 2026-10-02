@@ -43,18 +43,19 @@ pub trait Codec: Send + Sync + 'static {
         page: PageId,
         limits: &Limits,
     ) -> Result<DecodedSegment, FormatError>;
-    /// Decodes an ink segment file like [`decode_segment`](Codec::decode_segment), but may skip the point checks
-    /// (spec 9.4) of strokes that `check` turns down. Minor compaction reads the base segment this way: the page
-    /// checked all of its strokes when it opened, and the merge needs only the few that later segments change.
-    fn decode_segment_checking(
+    /// Decodes an ink segment file like [`decode_segment`](Codec::decode_segment), for minor compaction to read
+    /// the base segment. The page checked all of its strokes when it opened, and the merge needs only the few
+    /// that later segments change. So this may skip the point checks (spec 9.4) of strokes outside `touched`.
+    /// It may also leave out each of them whose only record in the segment is a `Stroke` record.
+    fn decode_segment_for(
         &self,
         bytes: &[u8],
         expect: &SegmentRef,
         page: PageId,
         limits: &Limits,
-        check: &dyn Fn(StrokeId) -> bool,
+        touched: &dyn Fn(StrokeId) -> bool,
     ) -> Result<DecodedSegment, FormatError> {
-        let _ = check;
+        let _ = touched;
         self.decode_segment(bytes, expect, page, limits)
     }
     /// Encodes records in the segment record format, for journal blobs and the page envelope.

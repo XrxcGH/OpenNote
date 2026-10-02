@@ -115,9 +115,9 @@ impl PageStore {
 
     /// Every listed segment, decoded without damage, or `None` when any can't be read.
     ///
-    /// The later segments are decoded first. The base then skips the point checks of the strokes they don't
-    /// touch, which stay in the base unchanged and were checked when the page opened. The footer CRC-32 still
-    /// covers every byte.
+    /// The later segments are decoded first. The base then skips the strokes they don't touch, which stay in it
+    /// unchanged and were checked when the page opened. Their points go unchecked, and a stroke whose only record
+    /// is a `Stroke` record is left out, since it adds no dead bytes. The footer CRC-32 still covers every byte.
     fn decode_all(&self, dir: &Path, page: &Page, pending: &[InkRecord]) -> Option<Vec<DecodedSegment>> {
         let Some((base, later)) = page.ink.segments().split_first() else {
             return Some(Vec::new());
@@ -142,14 +142,14 @@ impl PageStore {
         dir: &Path,
         page: &Page,
         segment: &SegmentRef,
-        check: &dyn Fn(StrokeId) -> bool,
+        touched: &dyn Fn(StrokeId) -> bool,
     ) -> Option<DecodedSegment> {
         let config = &self.config;
         let path = NotebookLayout::segment_path(dir, segment.id);
         let bytes = config.fs.read(&path, config.limits.segment_bytes).ok()?;
         let decoded = config
             .codec
-            .decode_segment_checking(&bytes, segment, page.id, &config.limits, check)
+            .decode_segment_for(&bytes, segment, page.id, &config.limits, touched)
             .ok()?;
         (decoded.damaged.is_empty() && decoded.unknown_records == 0).then_some(decoded)
     }
