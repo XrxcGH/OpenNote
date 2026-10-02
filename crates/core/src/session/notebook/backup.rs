@@ -12,6 +12,7 @@ use crate::session::core::Core;
 use crate::session::page::save::Why;
 use crate::store::backup::{self, BackupPolicy, BackupReport};
 use crate::store::external::{sync_notice, SyncNotice};
+use crate::store::fs::{FolderIdentity, Fs};
 use crate::time::Timestamp;
 
 impl NotebookHandle {
@@ -28,7 +29,7 @@ impl NotebookHandle {
     ) -> Result<BackupReport, CoreError> {
         let shared = &self.inner;
         shared.check_open()?;
-        if dest.starts_with(&shared.root) {
+        if inside_notebook(shared.ctx.fs.as_ref(), &shared.root, shared.identity, dest) {
             let detail = "a backup can't go inside the notebook it copies";
             return Err(CoreError::Edit(EditError::Invalid(detail.into())));
         }
@@ -73,6 +74,16 @@ impl NotebookHandle {
         let volume = self.inner.ctx.fs.volume(&self.inner.root).ok()?;
         sync_notice(&volume)
     }
+}
+
+/// Whether `dest` is the notebook folder or inside it, however its path is spelled: another case, a `\\?\`
+/// prefix, `..`, a short name, a `subst` drive, or a junction. Each folder on the way up is compared with the
+/// notebook folder by identity, so a set never copies the sets before it into itself.
+fn inside_notebook(fs: &dyn Fs, root: &Path, notebook: FolderIdentity, dest: &Path) -> bool {
+    dest.starts_with(root)
+        || dest
+            .ancestors()
+            .any(|folder| fs.folder_identity(folder).is_ok_and(|id| id == notebook))
 }
 
 impl Core {

@@ -62,6 +62,23 @@ fn a_backup_inside_the_notebook_is_refused() {
 }
 
 #[test]
+fn a_backup_inside_the_notebook_is_refused_however_the_path_is_spelled() {
+    let real = Real::new();
+    let root = real.notebook.path().to_path_buf();
+    let (parent, name) = (root.parent().unwrap(), root.file_name().unwrap());
+    let around = parent.join("..").join(parent.file_name().unwrap()).join(name);
+    let mut spellings = vec![around.join("backups")];
+    if cfg!(windows) {
+        spellings.push(std::path::PathBuf::from(root.to_string_lossy().to_uppercase()).join("backups"));
+        spellings.push(std::path::PathBuf::from(format!(r"\\?\{}", root.display())).join("backups"));
+    }
+    for dest in spellings {
+        let refused = real.notebook.backup_to(&dest, &BackupPolicy::default(), 0);
+        assert!(refused.is_err_and(|e| e.to_string().contains("inside")), "{dest:?}");
+    }
+}
+
+#[test]
 fn backups_run_when_due() {
     let real = Real::new();
     let dest = real.dir.path().join("backups");
