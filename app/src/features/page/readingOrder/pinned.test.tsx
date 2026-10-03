@@ -57,11 +57,8 @@ describe('the pinned reorder', () => {
 
   it('moves only what is out of place', () => {
     container = document.body.appendChild(document.createElement('div'));
-    const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((name) => {
-      const element = document.createElement('div');
-      element.id = name;
-      return element;
-    }) as [HTMLElement, HTMLElement, HTMLElement, HTMLElement];
+    const make = () => document.createElement('div');
+    const [a, b, c, d] = [make(), make(), make(), make()];
     container.append(a, b, c, d);
     expect(pinnedReorder(container, [a, c, d, b], null)).toBe(1);
     expect([...container.children]).toEqual([a, c, d, b]);
