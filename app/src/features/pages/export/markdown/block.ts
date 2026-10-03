@@ -103,7 +103,7 @@ function mathBlock(lines: readonly string[], start: number, out: Block[]): numbe
   const body: string[] = [];
   let i = start + 1;
   while (i < lines.length && lines[i].trim() !== '$$') body.push(lines[i++]);
-  out.push({ type: 'code', language: 'math', text: body.join('\n') });
+  out.push({ type: 'math', source: body.join('\n') });
   return Math.min(i + 1, lines.length);
 }
 

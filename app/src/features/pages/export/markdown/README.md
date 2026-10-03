@@ -6,7 +6,7 @@ The editor in Phase 4 has its own parser and serializer, which edit text. This p
 
 ## What it reads
 
-- Blocks: paragraphs, ATX and setext headings, bullet, numbered, and task lists with nesting, block quotes, callouts (`> [!tip]`, with `-` and `+` folds), fenced and indented code, thematic breaks, and `$$` math blocks. Math reads as a code block with the language `math` until Phase 10.
+- Blocks: paragraphs, ATX and setext headings, bullet, numbered, and task lists with nesting, block quotes, callouts (`> [!tip]`, with `-` and `+` folds), fenced and indented code, thematic breaks, and `$$` math blocks. Math is a `math` block, and `$math$` is an inline `math` atom. Both are drawn as their source text until Phase 10.
 - Inlines: emphasis and strong emphasis with CommonMark's flanking rules, `~~strike~~`, `==highlight==`, code spans, links, images, autolinks, hard breaks, backslash escapes, and character references.
 - The HTML tags of spec 7.4: underline, subscript, superscript, `mark` and `span` with `data-color` or `data-size`, and the long forms of emphasis. Any other raw HTML stays plain text.
 - Lazy continuation lines, tabs, and CRLF line ends, because text can come from hand edits.
@@ -19,14 +19,14 @@ The parser passes the shared fixtures in `docs/format/fixtures/markdown`: every 
 
 Re-exported from `features/pages`.
 
-| Name | Purpose |
-|---|---|
-| `parseMarkdown(markdown)` | A text block's Markdown to the tree (`Document`) |
-| `parseInline(markdown)` | Inline Markdown, such as a table cell, to runs |
-| `renderHtml(document, options)` | The tree as HTML |
-| `renderInlineHtml(runs, options)` | Runs as HTML |
-| `documentText`, `inlineText` | The plain text of a tree, for titles, summaries, and text checks |
-| `escapeHtml`, `escapeAttr`, `safeHref` | Escaping and the link rule |
+| Name                                   | Purpose                                                          |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| `parseMarkdown(markdown)`              | A text block's Markdown to the tree (`Document`)                 |
+| `parseInline(markdown)`                | Inline Markdown, such as a table cell, to runs                   |
+| `renderHtml(document, options)`        | The tree as HTML                                                 |
+| `renderInlineHtml(runs, options)`      | Runs as HTML                                                     |
+| `documentText`, `inlineText`           | The plain text of a tree, for titles, summaries, and text checks |
+| `escapeHtml`, `escapeAttr`, `safeHref` | Escaping and the link rule                                       |
 
 `HtmlOptions` lets the caller decide what the markup refers to.
 

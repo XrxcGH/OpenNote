@@ -10,6 +10,7 @@ type Node =
   | { t: 'text'; s: string }
   | { t: 'br' }
   | { t: 'code'; s: string }
+  | { t: 'math'; s: string }
   | { t: 'image'; dest: string; alt: string }
   | Wrapper
   | { t: 'delim'; ch: string; count: number; canOpen: boolean; canClose: boolean }
@@ -200,7 +201,13 @@ function ordered(marks: readonly Mark[]): Mark[] {
 function plain(nodes: readonly Node[]): string {
   return nodes
     .map((n) =>
-      n.t === 'text' || n.t === 'code' ? n.s : n.t === 'mark' ? plain(n.children) : n.t === 'image' ? n.alt : ' ',
+      n.t === 'text' || n.t === 'code' || n.t === 'math'
+        ? n.s
+        : n.t === 'mark'
+          ? plain(n.children)
+          : n.t === 'image'
+            ? n.alt
+            : ' ',
     )
     .join('');
 }
@@ -209,6 +216,7 @@ function flatten(nodes: readonly Node[], marks: readonly Mark[], out: Inline[]):
   for (const node of nodes) {
     if (node.t === 'text' && node.s !== '') out.push({ text: node.s, marks: ordered(marks) });
     else if (node.t === 'code') out.push({ text: node.s, marks: ordered([...marks, 'code']) });
+    else if (node.t === 'math') out.push({ math: node.s });
     else if (node.t === 'br') out.push({ hardBreak: true });
     else if (node.t === 'image') out.push({ image: node.dest, alt: node.alt });
     else if (node.t === 'mark') flatten(node.children, [...marks, node.mark], out);
@@ -289,6 +297,7 @@ class InlineParser {
   private step(c: string): void {
     if (c === '\\') this.backslash();
     else if (c === '`') this.codeSpan();
+    else if (c === '$') this.inlineMath();
     else if (c === '&') this.entity();
     else if (c === '<') this.angle();
     else if (c === '*' || c === '_' || c === '~' || c === '=') this.delimiter(c);
@@ -315,6 +324,26 @@ class InlineParser {
       this.text('\\');
       this.pos += 1;
     }
+  }
+
+  /** `$math$`: the opening `$` is followed by a non-space, and the closing one is preceded by a non-space. */
+  private inlineMath(): void {
+    const src = this.src;
+    const from = this.pos + 1;
+    const first = src[from];
+    if (first !== undefined && !/\s/.test(first) && first !== '$') {
+      for (let at = from; at < src.length; at += 1) {
+        if (src[at] === '\n') break;
+        if (src[at] === '\\') at += 1;
+        else if (src[at] === '$' && !/\s/.test(src[at - 1] ?? ' ') && at > from) {
+          this.out.push({ t: 'math', s: src.slice(from, at) });
+          this.pos = at + 1;
+          return;
+        }
+      }
+    }
+    this.text('$');
+    this.pos += 1;
   }
 
   private codeSpan(): void {

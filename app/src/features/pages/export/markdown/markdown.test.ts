@@ -156,7 +156,7 @@ describe('block Markdown', () => {
       { type: 'code', language: '', text: 'indented\n\nmore' },
     ]);
     expect(parseMarkdown('```js\nunclosed\n')).toEqual([{ type: 'code', language: 'js', text: 'unclosed\n' }]);
-    expect(parseMarkdown('$$\nx^2\n$$')).toEqual([{ type: 'code', language: 'math', text: 'x^2' }]);
+    expect(parseMarkdown('$$\nx^2\n$$')).toEqual([{ type: 'math', source: 'x^2' }]);
   });
 
   it('reads thematic breaks in all three forms, and tabs as indentation', () => {
@@ -248,5 +248,19 @@ describe('HTML', () => {
     expect(html('![Leaf *one*](asset:A)', { image: () => 'assets/leaf.png' })).toBe(
       '<p><img src="assets/leaf.png" alt="Leaf one"></p>',
     );
+  });
+});
+
+describe('math', () => {
+  it('reads $math$ when the dollar signs touch the math, and leaves prices alone', () => {
+    expect(parseInline('so $a_b$ here')).toEqual([text('so '), { math: 'a_b' }, text(' here')]);
+    expect(parseInline('costs $5 and $6')).toEqual([text('costs $5 and $6')]);
+    expect(parseInline('a \\$5 b')).toEqual([text('a $5 b')]);
+    expect(parseInline('$ spaced $')).toEqual([text('$ spaced $')]);
+  });
+
+  it('draws math as a span or a block in the web page', () => {
+    expect(renderHtml(parseMarkdown('$$\nx<2\n$$'))).toBe('<div class="math">x&lt;2</div>');
+    expect(renderHtml(parseMarkdown('a $x$ b'))).toContain('<span class="math">x</span>');
   });
 });

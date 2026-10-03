@@ -86,6 +86,7 @@ class Renderer {
 
   private run(run: Inline): string {
     if ('hardBreak' in run) return `<br${voidEnd(this.o.xml)}`;
+    if ('math' in run) return `<span class="math">${escapeHtml(run.math)}</span>`;
     if ('image' in run) {
       const src = this.o.image?.(run.image, run.alt) ?? null;
       if (src === null) return '';
@@ -111,6 +112,8 @@ class Renderer {
         return `<h${b.level}>${this.inline(b.content)}</h${b.level}>`;
       case 'break':
         return `<hr${voidEnd(this.o.xml)}`;
+      case 'math':
+        return `<div class="math">${escapeHtml(b.source)}</div>`;
       case 'code': {
         const cls = b.language === '' ? '' : ` class="language-${cssName(b.language)}"`;
         return `<pre><code${cls}>${escapeHtml(b.text)}</code></pre>`;
