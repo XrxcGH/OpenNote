@@ -4,6 +4,7 @@
 pub mod appearance;
 pub mod args;
 pub mod audio;
+pub mod audio_more;
 pub mod boot;
 pub mod clipboard;
 pub mod command_list;
@@ -183,6 +184,15 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         audio::audio_remove_part,
         audio::audio_delete_files,
         audio::audio_adopt_tracks,
+        audio_more::audio_split,
+        audio_more::audio_enhance,
+        audio_more::audio_compress,
+        audio_more::audio_storage_scan,
+        audio_more::audio_purge_history,
+        audio_more::audio_export,
+        audio_more::audio_import_file,
+        audio_more::meeting::audio_meeting_poll,
+        audio_more::snap::audio_snap,
         hardening::crash_consent_get,
         hardening::crash_consent_set,
         hardening::crash_example,

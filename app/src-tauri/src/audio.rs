@@ -77,6 +77,11 @@ impl AudioState {
         }))
     }
 
+    /// The devices, clocks, and codecs the commands run on, for the commands in `audio_more`.
+    pub(crate) fn services(&self) -> &Services {
+        &self.0.services
+    }
+
     fn lock(&self) -> std::sync::MutexGuard<'_, AudioService> {
         self.0.service.lock().unwrap_or_else(PoisonError::into_inner)
     }
@@ -94,7 +99,7 @@ impl AudioState {
 }
 
 /// The `assets` folder of a page of an open notebook, as the core lays it out. It may not exist yet.
-fn page_assets_dir(bridge: &Bridge, page: PageId) -> Option<PathBuf> {
+pub(crate) fn page_assets_dir(bridge: &Bridge, page: PageId) -> Option<PathBuf> {
     let (notebook, _) = bridge.core.find_node(page.0)?;
     let tree = notebook.tree();
     let (section, _) = tree.find_page(page)?;
@@ -114,7 +119,7 @@ fn assets_dir(bridge: &Bridge, page: &str) -> IpcResult<PathBuf> {
 }
 
 /// A folder from the interface, if it is the `assets` folder of a page of an open notebook, with the page.
-fn checked_dir(bridge: &Bridge, dir: &str) -> IpcResult<(PathBuf, PageId)> {
+pub(crate) fn checked_dir(bridge: &Bridge, dir: &str) -> IpcResult<(PathBuf, PageId)> {
     let path = PathBuf::from(dir);
     let plain = path
         .components()
@@ -134,7 +139,7 @@ fn checked_dir(bridge: &Bridge, dir: &str) -> IpcResult<(PathBuf, PageId)> {
 
 /// An asset table entry for each track of `entry`, as the files in `dir` are now. `growing` says the files are
 /// still being written. It reads the finished files to hash them, so it runs off the async runtime's threads.
-fn track_assets(
+pub(crate) fn track_assets(
     services: &Services,
     dir: &Path,
     entry: &RecordingEntry,
@@ -175,12 +180,12 @@ pub fn audio_error(error: AudioError) -> IpcError {
     IpcError::new(code, error.to_string())
 }
 
-fn blocking_failed(error: impl std::fmt::Display) -> IpcError {
+pub(crate) fn blocking_failed(error: impl std::fmt::Display) -> IpcError {
     IpcError::new(codes::INTERNAL, error.to_string())
 }
 
 /// Runs slow work, such as opening devices or copying a long recording, off the async runtime's threads.
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     state: &AudioState,
     work: impl FnOnce(&AudioState) -> IpcResult<T> + Send + 'static,
 ) -> IpcResult<T> {
@@ -360,7 +365,7 @@ pub struct Edited {
     pub duration_ns: u64,
 }
 
-fn edited(summary: &RecordingSummary, previous: &RecordingEntry) -> Edited {
+pub(crate) fn edited(summary: &RecordingSummary, previous: &RecordingEntry) -> Edited {
     Edited {
         entry: RecordingEntry::from_summary(summary, Some(previous)),
         duration_ns: opennote_media::positions::PositionMap::from_summary(summary).duration_ns(),

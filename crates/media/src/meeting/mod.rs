@@ -79,6 +79,13 @@ impl MeetingWatcher {
         &self.settings
     }
 
+    /// Takes the person's choices as the screen holds them: whether detection is on, and the apps never to ask about.
+    pub fn apply(&mut self, settings: MeetingSettings) {
+        let enabled = settings.enabled;
+        self.settings.never_for = settings.never_for.iter().map(|name| name.to_lowercase()).collect();
+        self.set_enabled(enabled);
+    }
+
     /// Turns detection on or off. Turning it off forgets the calls in progress.
     pub fn set_enabled(&mut self, enabled: bool) {
         self.settings.enabled = enabled;

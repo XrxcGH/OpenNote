@@ -23,8 +23,10 @@ use crate::playback::{DecoderFactory, TrackReader};
 
 mod enhance;
 mod fft;
+mod pcm;
 
 pub use enhance::{Enhancer, Settings};
+pub use pcm::{export_opus, export_wav, import_pcm, write_opus, MemoryPcm, RATE};
 
 const FRAME: u64 = FRAME_SAMPLES as u64;
 

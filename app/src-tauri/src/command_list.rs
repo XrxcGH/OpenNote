@@ -18,6 +18,8 @@ pub const APP_COMMANDS: &[&str] = &[
     "audio_open_playback", "audio_play", "audio_pause_playback", "audio_seek", "audio_skip",
     "audio_set_speed", "audio_set_skip_silence", "audio_playback_status", "audio_close_playback",
     "audio_trim_silence", "audio_remove_part", "audio_delete_files", "audio_adopt_tracks",
+    "audio_split", "audio_enhance", "audio_compress", "audio_storage_scan", "audio_purge_history", "audio_export",
+    "audio_import_file", "audio_meeting_poll", "audio_snap",
     "crash_consent_get", "crash_consent_set", "crash_example", "crash_list", "crash_prepare", "crash_send",
     "crash_delete", "crash_delete_all", "diagnostics_self_check", "diagnostics_build_feedback",
     "diagnostics_save_feedback", "diagnostics_startup", "diagnostics_enter_safe_mode", "diagnostics_restart",
