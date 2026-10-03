@@ -10,6 +10,7 @@ pub mod core_bridge;
 pub mod early;
 pub mod events;
 pub mod images;
+pub mod ink_bridge;
 pub mod install;
 pub mod instance;
 pub mod ipc;
@@ -164,6 +165,8 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         core_bridge::history_restore,
         core_bridge::history_restore_blocks,
         core_bridge::history_name,
+        ink_bridge::page_add_strokes,
+        ink_bridge::page_read_strokes,
         clipboard::clipboard_facts,
         clipboard::clipboard_read,
         images::import::image_import,

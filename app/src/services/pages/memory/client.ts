@@ -17,6 +17,8 @@ import type {
   TxnAck,
 } from '../types';
 import { applyEdit, editableCopy } from './apply';
+import { addStrokes, inkRecords, withoutInk } from './ink';
+import { inkListeners } from '../ink';
 import type { ByteSplice } from './apply';
 import { createUndoStacks, diffFrame, revert } from './history';
 import type { UndoStacks } from './history';
@@ -119,6 +121,10 @@ function send(ctx: Ctx, splices: boolean, batch: EditBatch): Promise<TxnAck> {
       if (splice && text) made.push({ block: edit.block, splice });
       changed ||= !text || splice !== null;
     }
+    if (batch.strokes) {
+      addStrokes(next, batch.strokes);
+      changed = true;
+    }
   } catch (error) {
     return Promise.reject(error);
   }
@@ -201,8 +207,17 @@ export function openClient(
   const frames = listeners<AppliedFrame>();
   const external = listeners<ExternalChange>();
   const readOnly = listeners<ReadOnlyInfo | null>();
+  const ink = inkListeners();
+  const told = (frame: AppliedFrame | null) => {
+    ink.emit(frame?.ink);
+    return frame;
+  };
   const self: Client = {
-    frame: (make) => frames.emit(make(stacks.canUndo(), stacks.canRedo())),
+    frame(make) {
+      const frame = make(stacks.canUndo(), stacks.canRedo());
+      frames.emit(frame);
+      ink.emit(frame.ink);
+    },
     external: external.emit,
     readOnly: readOnly.emit,
   };
@@ -235,12 +250,18 @@ export function openClient(
   return {
     id: state.page.id,
     client,
-    initial: structuredClone(state.page),
+    initial: structuredClone(withoutInk(state.page)),
     readOnly: state.readOnly ? { ...state.readOnly } : null,
     supportsSplice: splices,
+    ink: {
+      records: inkRecords(state.page),
+      more: false,
+      readAll: () => Promise.resolve(inkRecords(state.page)),
+      onChange: ink.add,
+    },
     send: (batch) => send(ctx, splices, batch),
-    undo: () => step(ctx, 'undo'),
-    redo: () => step(ctx, 'redo'),
+    undo: () => step(ctx, 'undo').then(told),
+    redo: () => step(ctx, 'redo').then(told),
     saveNow() {
       if (!closed) state.versions.save(state.page, 'save');
       return Promise.resolve();

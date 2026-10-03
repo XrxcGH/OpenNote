@@ -7,7 +7,7 @@ import type { ImagesClient, PagesClient } from '../types';
 import { invoke } from './invoke';
 
 const coreInvoke: CoreInvoke = (command, args) =>
-  (invoke as (command: string, args?: Record<string, unknown>) => Promise<unknown>)(command, args);
+  (invoke as (command: string, args?: Record<string, unknown> | Uint8Array) => Promise<unknown>)(command, args);
 
 /** Listens for a core event. The returned function stops listening, even before Tauri confirms the listener. */
 const coreListen: CoreListen = (event, handler) => {

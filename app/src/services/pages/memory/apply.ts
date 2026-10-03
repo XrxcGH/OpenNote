@@ -1,6 +1,7 @@
 // Applying edits to a page in memory (owner: WP2). The checks follow Phase 3's (crates/core/src/ops/resolve): a
 // splice must find its deleted text at its UTF-8 offset, blocks must exist, locked blocks refuse what their lock
 // forbids, and new blocks get order keys between their neighbors.
+import { applyStrokeEdit, dropStrokesOf } from './ink';
 import { applyMergePatch } from '../../../platform/mergePatch';
 import { PageServiceError } from '../types';
 import type { BlockId, BlockJson, Edit, PageJson } from '../types';
@@ -170,6 +171,7 @@ export function applyEdit(page: PageJson, edit: Edit, now: string): ByteSplice |
     case 'deleteBlocks': {
       edit.blocks.forEach((id) => editable(blockOf(page, id)));
       page.blocks = page.blocks.filter((block) => !edit.blocks.includes(block.id));
+      dropStrokesOf(page, edit.blocks);
       const order = page.view.readingOrder;
       if (order) page.view = { ...page.view, readingOrder: order.filter((id) => !edit.blocks.includes(id)) };
       return null;
@@ -181,5 +183,10 @@ export function applyEdit(page: PageJson, edit: Edit, now: string): ByteSplice |
     case 'addAsset':
       if (!page.assets[edit.asset]) throw new PageServiceError('notFound', `The page has no asset ${edit.asset}.`);
       return null;
+    case 'removeStrokes':
+    case 'transformStrokes':
+    case 'restyleStrokes':
+    case 'moveStrokesToBlock':
+      return applyStrokeEdit(page, edit);
   }
 }
