@@ -96,7 +96,7 @@ export interface ImportResult {
   skipped: number;
 }
 
-export type ExportFormat = 'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'xlsx' | 'csv';
+export type ExportFormat = 'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv';
 export type ExportScope = 'notebook' | 'section' | 'page';
 
 export interface ExportRequest {

@@ -93,6 +93,8 @@ export const interop = {
       docxHint: 'One .docx file with headings, lists, tables, and pictures.',
       pdf: 'PDF files',
       pdfHint: 'A folder of PDF files, one for each page.',
+      pptx: 'PowerPoint slides',
+      pptxHint: 'One .pptx file. Headings and divider lines start new slides, with text, lists, tables, and pictures.',
       xlsx: 'Tables as an Excel workbook',
       xlsxHint: 'One .xlsx file with a sheet for each table. Text outside tables is left out.',
       csv: 'Tables as CSV files',

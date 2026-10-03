@@ -41,6 +41,8 @@ pub enum ExportFormat {
     Docx,
     /// A folder of PDF files (needs the PDF writer of Phase 6).
     Pdf,
+    /// One PowerPoint file with a slide for each page, or part of a page.
+    Pptx,
     /// One Excel workbook with a sheet for each table.
     Xlsx,
     /// One CSV file for a table, or a folder of them.
@@ -259,6 +261,7 @@ pub fn run(source: &TreeSource, request: &ExportRequest, control: &Control) -> R
         ExportFormat::HtmlSingle => opennote_interop::export_html_single(source, scope, folder, control),
         ExportFormat::Docx => opennote_interop::export_docx_with(source, scope, folder, control),
         ExportFormat::Pdf => opennote_interop::export_pdf_bundle(source, scope, &NoPdfRenderer, folder, control),
+        ExportFormat::Pptx => opennote_interop::export_pptx(source, scope, folder, control),
         ExportFormat::Xlsx => opennote_interop::export_tables(source, scope, TableFormat::Xlsx, folder, control),
         ExportFormat::Csv => opennote_interop::export_tables(source, scope, TableFormat::Csv, folder, control),
     }
