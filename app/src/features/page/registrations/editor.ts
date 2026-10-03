@@ -30,12 +30,24 @@ import { editMenu, registerAppMenu } from '../../../ui/appMenu';
 import { targetEditor } from '../formattingBar/target';
 import { getSettings } from '../../../state/settings';
 import { registerPageCommand } from '../keys';
+import { shownQueue } from '../sync/shown';
 import { editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
 import type { SlashSession } from '../../../editor/extensions/slash';
 import type { PageCommandId } from '../keys';
 
 const formatting = () => import('../formattingBar/commands');
+
+// The formatting commands load in idle time once a page is shown. Without this the first Ctrl+B waited for the
+// chunk, and whatever was typed in the meantime came out unformatted.
+let warmed = false;
+shownQueue.subscribe(() => {
+  if (warmed || !shownQueue.get()) return;
+  warmed = true;
+  const whenIdle = (run: () => void) =>
+    typeof requestIdleCallback === 'function' ? requestIdleCallback(run, { timeout: 2000 }) : setTimeout(run, 200);
+  whenIdle(() => void formatting().catch(() => undefined));
+});
 
 interface EditorCommand {
   id: PageCommandId;
