@@ -1,0 +1,23 @@
+/* The mark on a link's target: a soft wash and an outline that fade, so the eye finds the place. */
+@layer components {
+  .reveal {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+    background: var(--color-selection-highlight);
+    border-radius: var(--radius-sm);
+    animation: reveal-fade var(--motion-duration-deliberate) var(--motion-easing-exit) 1.4s forwards;
+  }
+
+  @keyframes reveal-fade {
+    to {
+      background: transparent;
+      outline-color: transparent;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      animation: none;
+    }
+  }
+}

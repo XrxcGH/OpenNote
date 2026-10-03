@@ -7,6 +7,7 @@ import type { Platform } from '../../platform/types';
 import type { NotesService } from '../../services/notes/types';
 import type { IndexUpdate } from '../../services/search/types';
 import { setSearchClient } from './client';
+import { installDeepLinks } from './deeplink/install';
 import { startTitleFeed } from './feed';
 import type { TitleFeed } from './feed';
 
@@ -24,7 +25,8 @@ let linkLayerLoading = false;
  * not at start-up: the chunk that holds the kit would otherwise load before the first paint.
  */
 function loadLinkLayer(): void {
-  if (linkLayerLoading || !isEnabled('search.links')) return;
+  const wanted = isEnabled('search.links') || isEnabled('search.lineTags') || isEnabled('search.paragraphLinks');
+  if (linkLayerLoading || !wanted) return;
   linkLayerLoading = true;
   void import('./links/registerEditor');
 }
@@ -47,6 +49,7 @@ export function installSearch(platform: Platform, notes: NotesService): () => vo
   running = feed;
   const stops = [
     () => feed?.stop(),
+    installDeepLinks(platform, notes),
     platform.search.onUpdate(handle),
     // Links follow a new title once the person is done with it, which leaving the page says. The tree may have
     // renamed the page a moment ago, so the index hears the tree first.

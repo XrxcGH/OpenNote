@@ -10,6 +10,7 @@ import { maybeSearchClient } from './client';
 import { editorHasFocus, runPageLinkCommand } from './links/events';
 import { fuzzyTitles, textMatches } from './provider';
 import { SearchButton } from './SearchButton';
+import './registerQol';
 
 commands.register(
   defineCommand({

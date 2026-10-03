@@ -227,6 +227,12 @@ export interface IndexStatus {
   rebuilds: number;
 }
 
+/** What the desktop host adds in Beta 4. The web host and the tests leave it out, and the features check for it. */
+export interface SearchExtras {
+  /** The `opennote://` link the app was started with, once. */
+  launchLink(): Promise<string | null>;
+}
+
 export interface SearchClient {
   /**
    * What the host can do, so the panel shows only filters that work. `places`: the notebook and section filters
@@ -271,4 +277,5 @@ export interface SearchClient {
   /** Waits until the index has caught up with every save, for tests. */
   flush(): Promise<void>;
   onUpdate(listener: (update: IndexUpdate) => void): Unsubscribe;
+  readonly extras?: SearchExtras;
 }

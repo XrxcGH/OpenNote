@@ -84,7 +84,24 @@ type Phase6FlagId =
 /** Smart tables, charts, math, and the study tool windows (Phases 7 and 10). */
 type ExprFlagId = 'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows';
 /** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */
-type Phase8FlagId = 'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags';
+type Phase8FlagId =
+  | 'search.panel'
+  | 'search.switcher'
+  | 'search.links'
+  | 'search.backlinks'
+  | 'search.tags'
+  | QolSearchFlagId;
+/** The Beta 4 search and linking additions, which features/search/flags.ts defines. */
+type QolSearchFlagId =
+  | 'search.lineTags'
+  | 'search.paragraphLinks'
+  | 'search.properties'
+  | 'search.replace'
+  | 'search.indexMedia'
+  | 'daily.notes'
+  | 'collections.views'
+  | 'graph.view'
+  | 'canvas.cards';
 /** Phase 12's flags, which features/intel/flags.ts defines. */
 type IntelFlagId = 'intel.ocr' | 'intel.readAloud' | 'intel.summaries' | 'intel.handwriting' | 'intel.searchText';
 

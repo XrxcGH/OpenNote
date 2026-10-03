@@ -12,6 +12,7 @@
 mod args;
 mod calls;
 mod events;
+mod extras;
 #[cfg(test)]
 mod tests;
 
