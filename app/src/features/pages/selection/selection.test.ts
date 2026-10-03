@@ -191,7 +191,12 @@ describe('a selection as a page', () => {
 describe('a selection as a picture', () => {
   const { page, boxes } = sample();
   const sel = selectArea(page, square(40, 90, 500, 340), { boxes })!;
-  const options = { boxes, assetUrl: () => 'data:image/png;base64,AAAA', background: '#ffffff', label: 'Selection' };
+  const options = {
+    boxes,
+    assetUrl: () => 'data:image/png;base64,AAAA',
+    background: 'var(--color-surface-page)',
+    label: 'Selection',
+  };
 
   it('holds ink as paths, images as images, and text as embedded HTML', () => {
     const svg = selectionSvg(page, sel, options);
@@ -221,7 +226,7 @@ describe('a selection as a picture', () => {
   });
 
   it('keeps embedded styles in a CDATA section so any rule is safe', () => {
-    const svg = selectionSvg(page, sel, { ...options, css: 'p > a { color: red } /* ]]> */' });
-    expect(svg).toContain('<style><![CDATA[p > a { color: red } /* ]] > */]]></style>');
+    const svg = selectionSvg(page, sel, { ...options, css: 'p > a { margin: 0 } /* ]]> */' });
+    expect(svg).toContain('<style><![CDATA[p > a { margin: 0 } /* ]] > */]]></style>');
   });
 });

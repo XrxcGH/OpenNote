@@ -30,7 +30,7 @@ All of it is re-exported from `features/pages`.
 
 ## Tests
 
-`elements.test.ts` covers making an element from a selection, inserting at a scale (and back at the original place), the thumbnail picture, every library operation and error, search ranking, and the file: a round trip, the refusals, the dropped parts, and a property test that the reader never throws on any JSON.
+`elements.test.ts` covers making an element from a selection, inserting at a scale (and back at the original place), the thumbnail picture, every library operation and error, and search ranking. It also covers the file: a round trip, the refusals, the dropped parts, and a property test that the reader never throws on any JSON.
 
 ## What the UI wiring needs
 

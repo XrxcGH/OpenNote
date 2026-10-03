@@ -1,6 +1,6 @@
-// Reading aids (FEATURES.md, Phase 6): a line focus band, soft page tints, extra word and paragraph spacing, a maximum
-// line width, and syllable breaks. They change only how a page is shown, never the note, so they are a device setting
-// and never reach page.json. This file reads and writes the setting and turns it into styles.
+// Reading aids (FEATURES.md, Phase 6) are a line focus band, soft page tints, wider spacing, a maximum line width, and
+// syllable breaks. They change only how a page is shown, never the note, so they are a device setting and never reach
+// page.json. This file reads and writes the setting and turns it into styles.
 
 import { tokenVar } from '../paper/svg';
 

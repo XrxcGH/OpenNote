@@ -12,7 +12,10 @@ import { cropPage, CROP_INK, type CropOptions } from './crop';
 import type { Selection } from './select';
 
 export interface SvgOptions extends CropOptions {
-  /** Where an asset can be loaded from, as the HTML export has it. A data URI is the only kind that survives drawing the SVG onto a canvas. */
+  /**
+   * Where an asset can be loaded from, as the HTML export has it. Only a data URI survives drawing the SVG onto a
+   * canvas.
+   */
   readonly assetUrl: (asset: ExportAsset) => string | null;
   /** The fill behind the content, such as `#ffffff`. Without it the picture is transparent. */
   readonly background?: string;
@@ -34,7 +37,8 @@ function imageTag(block: ExportBlock & { type: 'image' }, page: ExportPage, url:
   const h = f.h ?? asset?.height ?? 0;
   const turn = f.rotate ? ` transform="rotate(${num(f.rotate)} ${num(f.x! + w / 2)} ${num(f.y! + h / 2)})"` : '';
   const role = block.decorative ? ' aria-hidden="true"' : ` role="img" aria-label="${escapeAttr(block.alt)}"`;
-  return `<image href="${escapeAttr(url)}" x="${num(f.x!)}" y="${num(f.y!)}" width="${num(w)}" height="${num(h)}" preserveAspectRatio="none"${turn}${role}/>`;
+  const at = `x="${num(f.x!)}" y="${num(f.y!)}" width="${num(w)}" height="${num(h)}"`;
+  return `<image href="${escapeAttr(url)}" ${at} preserveAspectRatio="none"${turn}${role}/>`;
 }
 
 function textTag(block: ExportBlock, html: string): string {

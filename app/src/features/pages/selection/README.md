@@ -21,13 +21,13 @@ All of it is re-exported from `features/pages`.
 - **Smart trims, exact does not.** Smart bounds are the box around the selected items. Exact bounds are the lasso's own box, and `clip` holds the lasso polygon so the SVG clips to it. The PDF page is the lasso's box, because a print sheet is a rectangle.
 - **Flowing blocks need boxes.** A block with no frame (flowing text, a table, an image) can be selected only when the view passes its measured box in `boxes`. A floating text box with no height is taken as 300 by 24 units unless a box says otherwise.
 - **Ink on skipped layers stays out.** `skip` holds block IDs, such as hidden or locked ink layers (FEATURES.md, Layers).
-- **The crop is a page.** `cropPage` moves the content so the crop's corner is the origin, turns flowing blocks into floating ones where they were laid out, folds each stroke's transform into its points and width, and puts all strokes in one ink block (`selection-ink`) with the description the caller gives. It keeps only the assets the selection uses. The paper is plain, so the picture has no rules behind it.
+- **The crop is a page.** `cropPage` moves the content so the crop's corner is the origin. It turns flowing blocks into floating ones where they were laid out. It folds each stroke's transform into its points and width. It puts all strokes in one ink block (`selection-ink`) with the description the caller gives. It keeps only the assets the selection uses. The paper is plain, so the picture has no rules behind it.
 - **Text in SVG is HTML.** `foreignObject` draws in browsers and WebView but not in vector editors. A caller that needs text in a vector editor exports PDF. For PNG, the host draws the SVG onto a canvas, which needs every image as a data URI (`assetUrl` returns one) and the fonts embedded in the `css` option.
 - **The PDF page size** is the crop in points. Chromium rounds a page up to a grid of 0.96 points, so the PDF can be up to a point larger than the crop (see the `pdf` README).
 
 ## Tests
 
-`selection.test.ts` covers the geometry, smart and exact selection, skipped layers, measured boxes, the minimum crop, the page made from a selection, and the SVG. `export.test.ts` prints a selection to PDF with the installed Edge and checks the page size, the text layer, the image, the vector ink, and the description of the handwriting in the tags.
+`selection.test.ts` covers the geometry, smart and exact selection, skipped layers, measured boxes, the minimum crop, the page made from a selection, and the SVG. `export.test.ts` prints a selection to PDF with the installed Edge. It checks the page size, the text layer, the image, the vector ink, and the description of the handwriting in the tags.
 
 ## What the UI wiring needs
 

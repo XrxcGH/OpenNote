@@ -106,5 +106,6 @@ export function slideHtml(slide: Slide, cx: BlockContext, label = slide.title): 
   const body = slide.parts
     .map((part) => (part.kind === 'text' ? renderHtml(part.content, htmlOptions(cx)) : renderBlock(part.block, cx)))
     .join('\n');
-  return `<section class="slide" data-slide="${slide.index}"${label === '' ? '' : ` aria-label="${escapeAttr(label)}"`}>\n${body}\n</section>`;
+  const name = label === '' ? '' : ` aria-label="${escapeAttr(label)}"`;
+  return `<section class="slide" data-slide="${slide.index}"${name}>\n${body}\n</section>`;
 }

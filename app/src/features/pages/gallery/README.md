@@ -1,22 +1,22 @@
 # Page gallery
 
-The page gallery (FEATURES.md, Phase 6, "Page gallery"): a section's pages as a grid of thumbnails, each with its title and date. Pages reorder by drag, or with Move up and Move down, and selecting several works as in the tree. This folder is the arithmetic behind it: the grid, the keyboard, the drop slot, and the reordering. It has no DOM and no React. The thumbnails themselves are drawn by the page view (paper, ink, and text at the `thumbnail` detail level of the [zoom](../zoom/README.md) module).
+The page gallery (FEATURES.md, Phase 6, "Page gallery"): a section's pages as a grid of thumbnails that show the title and the date of each page. Pages reorder by drag, or with Move up and Move down, and selecting several works as in the tree. This folder is the arithmetic behind it: the grid, the keyboard, the drop slot, and the reordering. It has no DOM and no React. The thumbnails themselves are drawn by the page view (paper, ink, and text at the `thumbnail` detail level of the [zoom](../zoom/README.md) module).
 
 ## Public API
 
 All of it is re-exported from `features/pages`.
 
-| Name | Purpose |
-|---|---|
-| `gridLayout({ width, count, ... })` | Columns, cell size, rows, and total height for a width |
-| `cellRect(layout, index)`, `indexAt(layout, x, y)` | Where a cell sits, and the cell under a point |
-| `visibleRange(layout, scrollTop, viewportHeight, overscan?)` | The cells to draw, so a section of hundreds of pages draws a few dozen |
-| `dropSlot(layout, x, y)` | The gap a dragged thumbnail drops into, from 0 to the page count |
-| `moveGridFocus(layout, index, key, rowsPerPage?)` | The cell an arrow key, Home, End, Page Up, or Page Down goes to |
-| `rangeBetween(anchor, index)` | The cells of a shift-click |
-| `dropPages(order, moving, slot)` | The new order after a drop, and the page the moved pages sit before (`beforeId`) |
-| `stepPages(order, selected, 'up' or 'down')` | Move up and Move down for the selected pages |
-| `clickSelection(order, selected, anchor, id, how)` | The selection after a plain, control, or shift click |
+| Name                                                         | Purpose                                                                          |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `gridLayout({ width, count, ... })`                          | Columns, cell size, rows, and total height for a width                           |
+| `cellRect(layout, index)`, `indexAt(layout, x, y)`           | Where a cell sits, and the cell under a point                                    |
+| `visibleRange(layout, scrollTop, viewportHeight, overscan?)` | The cells to draw, so a section of hundreds of pages draws a few dozen           |
+| `dropSlot(layout, x, y)`                                     | The gap a dragged thumbnail drops into, from 0 to the page count                 |
+| `moveGridFocus(layout, index, key, rowsPerPage?)`            | The cell an arrow key, Home, End, Page Up, or Page Down goes to                  |
+| `rangeBetween(anchor, index)`                                | The cells of a shift-click                                                       |
+| `dropPages(order, moving, slot)`                             | The new order after a drop, and the page the moved pages sit before (`beforeId`) |
+| `stepPages(order, selected, 'up' or 'down')`                 | Move up and Move down for the selected pages                                     |
+| `clickSelection(order, selected, anchor, id, how)`           | The selection after a plain, control, or shift click                             |
 
 ## Rules
 

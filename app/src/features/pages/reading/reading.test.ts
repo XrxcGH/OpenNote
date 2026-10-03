@@ -60,7 +60,7 @@ function luminance([r, g, b]: number[]): number {
   const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
-const rgb = (hex: string): number[] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const channels = (hex: string): number[] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 function contrast(a: number[], b: number[]): number {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
@@ -88,12 +88,12 @@ describe('page tints', () => {
     (name) => {
       const theme = themes[name];
       for (const [tint, { token, percent }] of Object.entries(TINT_MIX)) {
-        const page = rgb(theme.surface.page);
-        const other = rgb(lookup(theme, token));
+        const page = channels(theme.surface.page);
+        const other = channels(lookup(theme, token));
         const mixed = page.map((c, i) => (c * (100 - percent) + other[i] * percent) / 100);
-        expect(contrast(rgb(theme.text.primary), mixed), `${tint} primary`).toBeGreaterThanOrEqual(7);
-        expect(contrast(rgb(theme.text.secondary), mixed), `${tint} secondary`).toBeGreaterThanOrEqual(4.5);
-        expect(contrast(rgb(theme.text.muted), mixed), `${tint} muted`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(channels(theme.text.primary), mixed), `${tint} primary`).toBeGreaterThanOrEqual(7);
+        expect(contrast(channels(theme.text.secondary), mixed), `${tint} secondary`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(channels(theme.text.muted), mixed), `${tint} muted`).toBeGreaterThanOrEqual(4.5);
       }
     },
   );

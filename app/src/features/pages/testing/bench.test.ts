@@ -1,7 +1,7 @@
 // The benchmark for the pages feature's pure modules and the PDF export (Phase 6 core). A normal test run measures
-// small inputs and fails only on a budget that is far looser than the numbers in docs/perf/phase-6-core.md, so a change
-// that turns a linear step quadratic is caught. `OPENNOTE_BENCH=1` measures the full sizes, prints a table of medians,
-// and prints the export through the installed Edge as well. `OPENNOTE_BENCH_OUT=<file>` also writes the table as JSON.
+// small inputs. The budgets are far looser than the numbers in docs/perf/phase-6-core.md. A change that turns a linear
+// step quadratic still fails them. `OPENNOTE_BENCH=1` measures the full sizes and the export through the installed
+// Edge, and prints a table of medians. `OPENNOTE_BENCH_OUT=<file>` also writes the table as JSON.
 import { writeFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { exportHtml } from '../export/toHtml';
