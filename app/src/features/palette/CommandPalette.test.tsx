@@ -108,7 +108,11 @@ describe('the quick switcher', () => {
     await renderApp();
     const box = await openWith('Ctrl+O');
     await typeInto(box, 'mitosis');
-    const option = await screen.findByRole('option', { name: /Mitosis/ });
+    // Each letter searches again, and a slow machine lists Mitosis for a part of the word before the list is rebuilt
+    // for all of it. The count is announced once every provider has answered for the whole word, so the option
+    // that is measured is the one that stays.
+    await waitFor(() => expect(announcements().at(-1)).toMatch(/^\d+ results?$/), { timeout: 3000 });
+    const option = screen.getByRole('option', { name: /Mitosis/ });
     const dot = option.querySelector('span[style*="--ink-fern"]');
     expect(dot?.getAttribute('aria-hidden')).toBe('true');
     expect(dot?.textContent).toBe('');
