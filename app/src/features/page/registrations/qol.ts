@@ -409,3 +409,33 @@ addCommand({
     if (id) announce(t('study.mindmap.inserted'));
   },
 });
+
+// Diagrams from text: Mermaid text drawn on this device, redrawn as it is edited, and saved as an SVG.
+blockRenderers.register(
+  panelRenderer({
+    type: 'diagram',
+    label: 'study.diagram.block',
+    flag: 'math.diagrams',
+    load: async () => {
+      const { mountDiagram } = await import('../../math');
+      return { mount: (container, props) => mountDiagram(container, props) };
+    },
+  }),
+);
+
+addCommand({
+  id: 'insert.diagram',
+  title: 'study.diagram.insert',
+  keywords: 'study.diagram.insertKeywords',
+  icon: 'FlowArrow',
+  flag: 'math.diagrams',
+  slash: { group: 'advanced', order: 33 },
+  bar: { group: 'math', priority: 36 },
+  run: async () => {
+    const { STARTER_TEXT, fallbackOf } = await import('../../math');
+    const { insertPanelBlock } = await import('../panels/insertPanel');
+    const source = STARTER_TEXT.flowchart;
+    const id = await insertPanelBlock('diagram', { source }, fallbackOf(source));
+    if (id) announce(t('study.diagram.inserted'));
+  },
+});

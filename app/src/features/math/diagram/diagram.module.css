@@ -1,0 +1,66 @@
+/*
+ * A diagram drawn from text (Further features, Phase 7): the text above, the drawing below, on tokens. The drawing
+ * keeps its own colours, which Mermaid picks to match the light or dark theme.
+ */
+@layer components {
+  .root {
+    display: grid;
+    gap: var(--space-3);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .field select {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .source {
+    padding: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+    white-space: pre-wrap;
+    font-size: var(--type-small-size);
+  }
+
+  .picture {
+    overflow: auto;
+    padding: var(--space-3);
+    background: var(--color-surface-raised);
+    border-radius: var(--radius-md);
+  }
+
+  .picture svg {
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+}

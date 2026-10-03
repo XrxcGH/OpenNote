@@ -14,3 +14,5 @@ export { default as QuickMathSetting } from './QuickMathSetting';
 export { mountMindMap } from './mindmap/mount';
 export { newNode, parseOutline, toOutline } from './mindmap/tree';
 export type { MapNode } from './mindmap/tree';
+export { mountDiagram } from './diagram/mount';
+export { STARTER_TEXT, fallbackOf } from './diagram/kind';
