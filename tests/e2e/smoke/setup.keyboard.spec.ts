@@ -61,7 +61,7 @@ describe('setup with the keyboard alone', { skip: skip() }, () => {
 
       before(async () => {
         writeWindowsTheme(windows === 'Light' ? 1 : 0);
-        session = await launchApp({ keyboardOnly: true });
+        session = await launchApp({ keyboardOnly: true, profile: 'fresh' });
       });
 
       after(async () => {
@@ -71,6 +71,8 @@ describe('setup with the keyboard alone', { skip: skip() }, () => {
       it('preselects Match Windows, names the Windows setting, and stores the choice', async () => {
         const { browser } = session;
         await browser.$('button=Get started').waitForExist({ timeout: 20_000 });
+        // Setup puts focus on the button once it has drawn. A key pressed before that goes to the page and is lost.
+        await browser.waitUntil(async () => (await focusedText(session)) === 'Get started', { timeout: 10_000 });
         await press(session, Key.Enter);
 
         const windowsCard = browser.$('[role="radio"][aria-checked="true"]');
@@ -83,7 +85,7 @@ describe('setup with the keyboard alone', { skip: skip() }, () => {
         // Moving away and back saves the choice at once, so settings.json holds it before any page opens.
         await press(session, Key.ArrowRight);
         await press(session, Key.ArrowLeft);
-        const file = join(session.profileDir, 'roaming', 'OpenNote', 'settings.json');
+        const file = join(session.profileDir, 'roaming', 'settings.json');
         await browser.waitUntil(() => existsSync(file), { timeout: 5_000 });
         await browser.waitUntil(() => JSON.parse(readFileSync(file, 'utf8')).appearance?.theme === 'system', {
           timeout: 5_000,

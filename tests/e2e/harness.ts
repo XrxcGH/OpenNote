@@ -1,7 +1,8 @@
 // Drives the real app end to end (ARCHITECTURE.md section 21.5). Each session starts tauri-driver with the
 // msedgedriver that matches the WebView2 Runtime. It connects with WebdriverIO's remote() over WebDriver Classic,
 // because tauri-driver doesn't speak WebDriver BiDi. The app gets a fresh OPENNOTE_PROFILE_DIR, so tests never
-// touch real settings or notes. Specs run with `node --test`.
+// touch real settings or notes, and starts as a person who has finished first-run setup, unless a spec asks for the
+// first run. Specs run with `node --test`, one file at a time, because they share the machine's windows and theme.
 //
 // These variables say where the tools are:
 //
@@ -19,7 +20,7 @@ import type { ChildProcess } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, connect } from 'node:net';
 import { EOL, homedir, tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { remote } from 'webdriverio';
 
 export type Browser = Awaited<ReturnType<typeof remote>>;
@@ -37,7 +38,14 @@ export interface LaunchOptions {
   keyboardOnly?: boolean;
   /** Reuse a profile, for example to relaunch after a change. Default: a fresh temporary one. */
   profileDir?: string;
+  /**
+   * 'ready' (the default) starts like a person who has finished first-run setup, so the workspace opens. 'fresh'
+   * starts like a first launch, which opens setup.
+   */
+  profile?: ProfileKind;
 }
+
+export type ProfileKind = 'ready' | 'fresh';
 
 export const ROOT = resolve(import.meta.dirname, '..', '..');
 
@@ -128,6 +136,21 @@ function keyboardOnly(browser: Browser): void {
 
 const LOGS = join(ROOT, 'tests', 'e2e', 'logs');
 
+/**
+ * Makes a profile folder look like one where first-run setup is finished. A launch with no settings.json is the
+ * first run and opens setup, and so is one whose state.json says setup hasn't been done. An existing settings.json
+ * is kept, for a spec that writes its own. The state's "done" with no steps recorded is what a development or test
+ * payload uses, so it stays right when a later version adds a setup step.
+ */
+export function seedProfile(dir: string, kind: ProfileKind = 'ready'): void {
+  if (kind === 'fresh') return;
+  const settings = join(dir, 'roaming', 'settings.json');
+  const state = join(dir, 'local', 'state.json');
+  for (const file of [settings, state]) mkdirSync(dirname(file), { recursive: true });
+  if (!existsSync(settings)) writeFileSync(settings, JSON.stringify({ schemaVersion: 1, minWriterSchema: 1 }));
+  if (!existsSync(state)) writeFileSync(state, JSON.stringify({ stateVersion: 1, setup: { status: 'done' } }));
+}
+
 /** Ends tauri-driver along with the msedgedriver and app processes under it, which a plain kill leaves running. */
 function stopDriver(driver: ChildProcess): void {
   if (driver.exitCode !== null || driver.pid === undefined) return;
@@ -200,6 +223,7 @@ export async function launchApp(options: LaunchOptions = {}): Promise<AppSession
   const exe = options.exe ?? found.exe;
   if (!exe || !found.tauriDriver || !found.edgeDriver) throw new Error(String(skipReason()));
   const profileDir = options.profileDir ?? mkdtempSync(join(tmpdir(), 'opennote-e2e-'));
+  seedProfile(profileDir, options.profile);
   const removeProfile = () => {
     if (!options.profileDir) rmSync(profileDir, { recursive: true, force: true });
   };
