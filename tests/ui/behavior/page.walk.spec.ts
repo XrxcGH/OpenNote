@@ -83,6 +83,9 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await slash(page, 'image');
   await (await chooser).setFiles({ name: 'cell.png', mimeType: 'image/png', buffer: PIXEL });
   await expect.poll(() => held(page)).toContain('image');
+  // The page holds the image before the view has finished with it; the view then selects it and takes the focus. A
+  // click and keys sent before that land on the image, not the text.
+  await expect(page.getByRole('button', { name: 'Crop image' })).toBeVisible();
 
   // A table, through the slash menu, typed into.
   await page.getByRole('textbox', { name: 'Text' }).last().click();
