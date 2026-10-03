@@ -41,7 +41,12 @@ function Option({ result, id, active, onHover, onChoose }: OptionProps) {
       onPointerMove={onHover}
       onClick={onChoose}
     >
-      <span className={styles.optionTitle}>{result.title}</span>
+      <span className={styles.optionTitle}>
+        {result.ink && (
+          <span aria-hidden="true" className={styles.ink} style={{ background: `var(--ink-${result.ink})` }} />
+        )}
+        {result.title}
+      </span>
       {first && <kbd className={styles.keys}>{formatChord(first)}</kbd>}
       {result.detail && (
         <span id={`${id}-detail`} className={styles.detail} aria-hidden="true">

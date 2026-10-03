@@ -63,6 +63,18 @@ describe('the title bar items', () => {
     await expect.poll(() => document.title).toBe('Mitosis - OpenNote');
   });
 
+  it('marks only the notebook in the breadcrumb with its color, as the tree does', async () => {
+    await renderApp();
+    act(() => navigate(mitosis));
+    const crumbs = await screen.findByRole('list', { name: 'Current location' });
+    await expect.poll(() => within(crumbs).queryAllByRole('listitem').length).toBe(3);
+    const items = within(crumbs).getAllByRole('listitem');
+    expect(items[0].hasAttribute('data-ink')).toBe(true);
+    expect((items[0] as HTMLElement).style.getPropertyValue('--crumb-ink')).toBe('var(--ink-fern)');
+    expect(items[1].hasAttribute('data-ink')).toBe(false);
+    expect(items[2].hasAttribute('data-ink')).toBe(false);
+  });
+
   it('steps back and forward with the arrows, which say when there is nowhere to go', async () => {
     await renderApp();
     const back = () => within(banner()).getByRole('button', { name: 'Go back' });

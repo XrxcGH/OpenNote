@@ -104,6 +104,16 @@
     overflow-wrap: anywhere;
   }
 
+  /* The notebook's color, as a small dot before a page or notebook. The title says it all; the dot is only company. */
+  .ink {
+    display: inline-block;
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+    margin-inline-end: var(--space-3);
+    border-radius: var(--radius-pill);
+    forced-color-adjust: none;
+  }
+
   .keys {
     color: var(--color-text-secondary);
     font-family: var(--font-ui);
