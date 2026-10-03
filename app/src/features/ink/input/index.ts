@@ -38,3 +38,4 @@ export type {
   PenSource,
   ResolvedPenAction,
 } from './buttons';
+export * from './gestures';
