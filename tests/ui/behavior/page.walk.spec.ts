@@ -94,15 +94,18 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await expect.poll(async () => JSON.stringify(await held(page))).toContain('table');
 
   // Undo takes the cell's words back off, and redo brings them back.
-  const withHead = await page.evaluate(() =>
-    JSON.stringify(
-      (window as unknown as { __OPENNOTE_TEST__: { pagesHeld(): unknown } }).__OPENNOTE_TEST__.pagesHeld(),
-    ),
-  );
-  expect(withHead).toContain('Head');
+  // The cell's words reach the service in the next flush, 150 to 300 ms after typing stops.
+  const heldPage = () =>
+    page.evaluate(() =>
+      JSON.stringify(
+        (window as unknown as { __OPENNOTE_TEST__: { pagesHeld(): unknown } }).__OPENNOTE_TEST__.pagesHeld(),
+      ),
+    );
+  await expect.poll(heldPage).toContain('"markdown":"Head"');
   await keyboard.press('Control+z');
   await expect.poll(() => table.textContent()).not.toContain('Head');
   await keyboard.press('Control+y');
   await expect.poll(() => table.textContent()).toContain('Head');
+  await expect.poll(heldPage).toContain('"markdown":"Head"');
   expect(errors).toEqual([]);
 });
