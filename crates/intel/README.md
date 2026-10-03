@@ -119,6 +119,8 @@ cargo test -p opennote-intel --release --test bench -- --ignored --nocapture --t
 - `correct(text)` and `correct_transcript(transcript)` replace mishearings. Each `Change` has the old text, the new text, and its position in UTF-16 units.
 - `offer(original, fixed)` suggests a term to add after the person fixes a word.
 
+**UI wiring.** The app keeps one list for each notebook in the device store and fixes text through `wire::VocabularyCorrectRequest`, which needs no engine (app `intel_ext_call`, method `vocabulary.correct`). The editor and the preview with Undo are in `app/src/features/intel/vocabulary`.
+
 **UI wiring needs.** Store one list for each notebook as a text file the person can edit and share. Pass `prompt()` to the whisper.cpp engine as its initial prompt, and run `correct_transcript` on the result. Show the changes and let the person undo them. After a fix in the transcript, call `offer` and ask before adding the term.
 
 ## transcribe

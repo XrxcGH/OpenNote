@@ -17,6 +17,10 @@ export {
 } from './runtime';
 export { searchTextInImage, searchTextInInk, searchTextReady } from './search';
 export { openActivityPanel } from './background/ActivityPanel';
+export { extrasState, isExtraOn, loadExtras } from './extras';
+export { changeExtra, openAsk, openFindByMeaning, resumeExtras, toggleRelatedPages } from './lifecycle';
+export { indexPage } from './meaning/engine';
+export { suggestWriting } from './writing/run';
 export { getImageText, onImageText, queueImageText, watchImagesForText } from './background/imageText';
 export { editVocabularyForCurrentNotebook } from './vocabulary/open';
 export { fixWithVocabulary, offerVocabularyTerm } from './vocabulary/apply';

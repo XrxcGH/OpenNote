@@ -8,6 +8,7 @@ How the Rust crate `opennote-intel` reaches the screen: OCR, handwriting recogni
 - [Where things are](#where-things-are)
 - [Opt-in](#opt-in)
 - [Flags](#flags)
+- [More on-device parts](#more-on-device-parts)
 - [Missing pieces](#missing-pieces)
 - [Seams for other parts of the app](#seams-for-other-parts-of-the-app)
 - [Tests](#tests)
@@ -47,6 +48,33 @@ Read aloud keeps the browser's voices while its switch is off. With it on, the p
 | `intel.summaries`   | Summarize this page                               | On                       |
 | `intel.handwriting` | Convert handwriting to text, and its Settings row | Development, nightly, and Beta |
 | `intel.searchText`  | The seam for search (nothing in search calls it yet) | Development, nightly, and Beta |
+
+The flags for the parts below are in [More on-device parts](#more-on-device-parts).
+
+## More on-device parts
+
+These came after the first set. Each has its own flag, on in development, nightly, and Beta builds, and each stays off in Settings until the person turns it on. Strings are in `strings/en/intelPlus.ts`, and styles in `plus.module.css`.
+
+| Part | Flag | Where | What it does |
+| --- | --- | --- | --- |
+| Model downloads | `intel.models` | `models/`, `app-tauri/src/intel/models.rs` | Lists the speech models with sizes, asks before a download, resumes, checks the SHA-256, refuses while Work offline or safe mode is on, and lists when one last ran in Privacy |
+| Setup step | `setup.smartFeatures` | `setup/` | Recommended, Custom, or Not now (selected in advance), with the model size and the statement that nothing leaves the device |
+| Background work | `intel.background` | `background/` | The activity panel and the queue behind it: pause, only when idle or plugged in, only on request, and a cap on the processor |
+| Text in new images | `intel.backgroundOcr` | `background/imageText.ts` | Queues new images a page shows, keeps the words on this device, and offers `onImageText` and `getImageText` to search |
+| Custom vocabulary | `intel.vocabulary` | `vocabulary/` | One plain-text list for each notebook, the offer to add a fixed word, and a preview of fixes with Undo (`offerVocabularyTerm`, `fixWithVocabulary`) |
+| Handwriting extras | `intel.handwritingExtras` | `handwriting/` | Signs, degrees, formulas with subscripts, and a review of unsure words with their other readings |
+| Search by meaning | `intel.meaning` | `meaning/` | A vector index beside the text index, Find by meaning, and Related pages. The built-in embedder hashes words, word parts, and a short list of words that mean the same. It sits behind `Embedder`, so a trained model can replace it |
+| Ask your notes | `intel.ask` | `ask/` | Answers from the best passages and lists the pages it used. The quoting engine sits behind `AnswerEngine`, so a local language model can replace it |
+| Writing tools | `intel.writing` | `writing/`, `page/intel/writing.ts` | Proofread, Rewrite in plain words, Shorten, Make a list, and Tidy structure, as marked suggestions. The rules engine sits behind `WritingEngine` |
+
+The device store and the downloads share one command, `intel_ext_call` (`services/intel/ext.ts`), so a new method adds no permission. Pages that are protected are never indexed: `meaningIndex().setProtectedCheck(...)` is the seam for locked sections.
+
+## Not built, and why
+
+- **The whisper.cpp engine.** It needs a native build with CMake and a C++ toolchain, which is a heavy new dependency. The model picker, the downloads, and the queue are ready for it: an engine implements `TranscriptionEngine` and the app picks the model chosen in Settings.
+- **Dictation and live captions** need that engine for streaming recognition. **Speaker separation** needs a voice model. **Translate on this device** needs a translation model and runtime for each language pack. None of them is useful without its engine, so none is shown.
+- **Math from handwriting.** The Windows ink recognizer returns one line of text, and a fraction bar, a root sign, or a matrix comes back as dashes and letters, so the structure is lost. A real result needs the Windows math input control (a COM component that is missing from some Windows builds and needs its own window) or a trained model. Neither fits the crate's allow-listed dependencies. Typed signs, Greek letter names, and powers that the recognizer does return are handled by the handwriting extras.
+- **A cloud key choice in setup.** It needs an account and a secret, so Custom offers only features that run on this device.
 
 ## Missing pieces
 
