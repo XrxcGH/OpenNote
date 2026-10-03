@@ -14,9 +14,15 @@
   .toolbar {
     display: flex;
     flex-wrap: wrap;
-    align-items: end;
+    align-items: start;
     justify-content: space-between;
     gap: var(--space-4);
+  }
+
+  /* The switch and the Reset all button line up with the field's input, under its label line, not with the help
+     text below it. */
+  .toolbar > :not(:first-child) {
+    margin-block-start: calc(var(--type-small-line) + var(--space-2));
   }
 
   /* Positioned, so the visually hidden table heads stay inside the scroller instead of stretching the dialog. The
