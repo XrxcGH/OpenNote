@@ -1,6 +1,6 @@
 // Audio and video files dropped on a page become recordings (Phase 9). The sound is decoded with the codecs Windows
 // has and written into the page's own `assets` folder as a recording of one track, so the file plays with the same
-// player, speed, flags and time-stamped notes as a recording the app made. A video keeps its sound only.
+// player, speed, flags, and time-stamped notes as a recording the app made. A video keeps its sound only.
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { shownPage as shownOpenPage } from '../history/shown';

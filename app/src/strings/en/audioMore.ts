@@ -1,6 +1,6 @@
 // The audio lane's later features (quality of life after Phase 9): the Recording section of Settings, splitting and
 // enhancing a recording, the storage list, the meeting prompt, snapping the screen, files dropped on a page, export,
-// and the transcripts, speakers, recap, action items and chapters. One owner, so parallel work never edits it.
+// and the transcripts, speakers, recap, action items, and chapters. One owner, so parallel work never edits it.
 
 export const audioMore = {
   settings: {
@@ -75,7 +75,7 @@ export const audioMore = {
     compressLabel: 'Compress the recording on {page}',
     compressTitle: 'Compress this recording?',
     compressBody:
-      'The recording becomes {quality} and frees about {size}. Notes, flags and times stay. An enhanced copy, if there is one, is removed.',
+      'It becomes {quality} and frees about {size}. Notes, flags, and times stay. Any enhanced copy is removed.',
     compressAction: 'Compress',
     qualitySmaller: 'about half the size',
     qualitySmallest: 'about a third of the size',
@@ -83,7 +83,7 @@ export const audioMore = {
     removeAudio: 'Remove audio',
     removeLabel: 'Remove the audio of the recording on {page}',
     removeTitle: 'Remove the audio?',
-    removeBody: 'This frees {size}. The transcript, flags and notes stay, but the recording can’t be played again.',
+    removeBody: 'This frees {size}. The transcript, flags, and notes stay, but the recording can’t be played again.',
     removeAction: 'Remove audio',
     audioRemoved: 'Audio removed. {size} freed.',
     removedNote: 'The audio was removed to save space. The transcript and flags are kept.',
@@ -196,8 +196,7 @@ export const audioMore = {
     chaptersKept: 'The chapters are kept with the transcript.',
     clearChapters: 'Remove chapters',
     due: 'due {date}',
-    engineNone:
-      'Making a transcript from speech needs the on-device transcriber, which is not on this PC yet. You can add a transcript from text or captions.',
+    engineNone: 'Speech transcription isn’t on this PC yet. You can add a transcript from text or captions instead.',
     engineWorking: 'Making the transcript. Long recordings take a few minutes.',
     engineDone: 'The transcript is ready.',
     engineFailed: 'The transcript couldn’t be made: {message}',
@@ -207,7 +206,7 @@ export const audioMore = {
     rights: 'Only make transcripts of audio you have the right to use.',
     addTitle: 'Add a transcript',
     addBody:
-      'Paste captions (SRT or WebVTT), lines that start with a time such as [12:05], or plain text. Plain text is spread over the recording by length.',
+      'Paste captions, lines that start with a time like [12:05], or plain text. Plain text is spread by length.',
     addLabel: 'Transcript text',
     addSave: 'Add transcript',
     addCancel: 'Cancel',
@@ -228,7 +227,7 @@ export const audioMore = {
     recapCopied: 'Copied the recap.',
     recapEmpty: 'Nothing is selected to copy.',
     recapFromPage: 'No transcript is available, so this is the page’s own headings and checkboxes.',
-    recapNothing: 'This page has no summary, headings or checkboxes to copy.',
+    recapNothing: 'This page has no summary, headings, or checkboxes to copy.',
     noTranscript: 'This page has no transcript. Make one from the recording’s More menu.',
     noRecording: 'This page has no recording.',
     momentGone: 'The recording for that moment isn’t on this page.',

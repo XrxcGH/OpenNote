@@ -87,7 +87,10 @@ fn capture(kind: &str) -> IpcResult<Vec<u8>> {
 
 #[cfg(windows)]
 fn snap_failed(error: windows::core::Error) -> IpcError {
-    IpcError::new("audioSnap", format!("The screen couldn’t be captured: {}", error.message()))
+    IpcError::new(
+        "audioSnap",
+        format!("The screen couldn’t be captured: {}", error.message()),
+    )
 }
 
 /// The pixels of a rectangle of the screen, as top-down BGRA with every pixel opaque.
@@ -136,7 +139,7 @@ fn grab(x: i32, y: i32, width: i32, height: i32) -> windows::core::Result<Vec<u8
         if lines == 0 {
             return Err(windows::core::Error::from_thread());
         }
-        for pixel in pixels.chunks_exact_mut(4) {
+        for pixel in pixels.as_chunks_mut::<4>().0 {
             pixel[3] = 255;
         }
         Ok(pixels)
@@ -168,7 +171,8 @@ fn encode_png(pixels: &[u8], width: u32, height: u32) -> windows::core::Result<V
         let apartment = CoInitializeEx(None, COINIT_MULTITHREADED);
         let result = (|| -> windows::core::Result<Vec<u8>> {
             let factory: IWICImagingFactory = CoCreateInstance(&CLSID_WICImagingFactory, None, CLSCTX_INPROC_SERVER)?;
-            let bitmap = factory.CreateBitmapFromMemory(width, height, &GUID_WICPixelFormat32bppBGRA, width * 4, pixels)?;
+            let bitmap =
+                factory.CreateBitmapFromMemory(width, height, &GUID_WICPixelFormat32bppBGRA, width * 4, pixels)?;
             let output = CreateStreamOnHGlobal(HGLOBAL::default(), true)?;
             let encoder = factory.CreateEncoder(&GUID_ContainerFormatPng, std::ptr::null())?;
             encoder.Initialize(&output, WICBitmapEncoderNoCache)?;

@@ -59,7 +59,11 @@ fn watch() -> &'static Mutex<Watch> {
 /// Looks at who uses the microphone. `enabled` and `never_for` are the person's choices, and `recording` says
 /// whether a recording runs, which keeps the prompt quiet.
 #[tauri::command]
-pub async fn audio_meeting_poll(enabled: bool, never_for: Vec<String>, recording: bool) -> IpcResult<Option<MeetingPrompt>> {
+pub async fn audio_meeting_poll(
+    enabled: bool,
+    never_for: Vec<String>,
+    recording: bool,
+) -> IpcResult<Option<MeetingPrompt>> {
     tauri::async_runtime::spawn_blocking(move || {
         let mut guard = watch().lock().unwrap_or_else(PoisonError::into_inner);
         guard.watcher.apply(MeetingSettings { enabled, never_for });

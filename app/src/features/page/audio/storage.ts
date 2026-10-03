@@ -1,6 +1,6 @@
 // What recordings take (Phase 9, "Recording storage"). The host lists every recording in the open notebooks with its
 // length and size. Two things can free space, and each asks first, saying how much: Compress writes a smaller copy
-// that takes the original's place, and Remove audio deletes the audio but keeps the transcript, flags and notes. Both
+// that takes the original's place, and Remove audio deletes the audio but keeps the transcript, flags, and notes. Both
 // save the page with the new entry before the old files go, so a crash never leaves a page that names missing files.
 import { extrasOf, withoutEnhanced } from '../../../core/audio';
 import type { CompressQuality, RecordingEntry, StoredRecording } from '../../../core/audio';
@@ -70,7 +70,7 @@ export async function compressStored(stored: StoredRecording, quality: CompressQ
   }
 }
 
-/** Removes the audio, keeping the transcript, flags and notes, after asking. Answers whether anything changed. */
+/** Removes the audio, keeping the transcript, flags, and notes, after asking. Answers whether anything changed. */
 export async function removeStoredAudio(stored: StoredRecording): Promise<boolean> {
   const old = liveEntry(stored);
   const block = blockOf(stored);

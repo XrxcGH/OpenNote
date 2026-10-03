@@ -195,7 +195,10 @@ const LEADING_STAMP = /^\[?((?:\d+:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?)\]?\s*[-–:]
  * paragraphs. Plain paragraphs have no times, so they are spread over `durationMs` by their length.
  */
 export function parseTranscript(text: string, durationMs: number): { segments: Segment[]; timed: boolean } {
-  const rows = text.replace(/\r\n?/g, '\n').replace(/^\uFEFF/, '').split('\n');
+  const rows = text
+    .replace(/\r\n?/g, '\n')
+    .replace(/^\uFEFF/, '')
+    .split('\n');
   const cues: Segment[] = [];
   for (let i = 0; i < rows.length; i += 1) {
     const cue = CUE.exec(rows[i].trim());

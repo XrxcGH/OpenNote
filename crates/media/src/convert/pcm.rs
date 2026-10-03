@@ -1,10 +1,10 @@
 //! Audio that did not come from the recorder: samples in memory written as a recording, and a recording
 //! mixed down to one file.
 //!
-//! "Audio and video files" decodes a dropped file to mono samples at 48 kHz (the app does that, with the
-//! decoder Windows has) and hands them to [`import_pcm`], which writes them as the one track of a recording
-//! that the page can play, flag, and take notes against. "Export a recording as audio" goes the other way:
-//! [`export_opus`] and [`export_wav`] mix a recording's tracks into one file, with the pauses left out.
+//! A dropped audio or video file is decoded to mono samples at 48 kHz. The app does that, with the decoder Windows
+//! has. It hands the samples to [`import_pcm`], which writes them as the one track of a recording. The page can
+//! play that recording, flag it, and take notes against it. Export goes the other way. [`export_opus`] and
+//! [`export_wav`] mix a recording's tracks into one file, with the pauses left out.
 
 use std::fs::File;
 use std::io::{BufWriter, Seek, SeekFrom, Write};

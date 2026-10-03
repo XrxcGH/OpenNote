@@ -1,4 +1,4 @@
-// The "More" menu of a recording on the page (Phase 9): trimming, splitting and removing parts, the enhanced voice,
+// The "More" menu of a recording on the page (Phase 9): trimming, splitting, and removing parts, the enhanced voice,
 // and saving the recording as an audio file. Only what is on shows: a feature whose flag is off is left out.
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 import { useRef } from 'react';

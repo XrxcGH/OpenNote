@@ -1,7 +1,9 @@
-//! The commands of the audio lane's later features (quality of life after Phase 9): splitting a recording, a
-//! voice-enhanced copy, compressing, the list of what recordings take, export as audio, a dropped audio or video file
-//! made into a recording, the screen snap, and the meeting prompt's watcher. `audio.rs` has the recording and
-//! playback commands; the pieces of the media crate that these use are described in `crates/media/src`.
+//! The commands of the audio lane's later features (quality of life after Phase 9).
+//!
+//! They split a recording, make a voice-enhanced copy, and compress a recording. They list what recordings take and
+//! export a recording as audio. They turn a dropped audio or video file into a recording. They snap the screen and
+//! run the meeting prompt's watcher. `audio.rs` has the recording and playback commands. The media crate pieces
+//! that these use are described in `crates/media/src`.
 //!
 //! An edit writes new files and leaves the old ones, as in `audio.rs`: the interface saves the page with the new entry
 //! and then calls `audio_delete_files` for the old one.
@@ -15,7 +17,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use opennote_core::{session::notebook::HistoryScope, store::layout::NotebookLayout, store::layout::ASSETS_DIR, PageId};
+use opennote_core::{
+    session::notebook::HistoryScope, store::layout::NotebookLayout, store::layout::ASSETS_DIR, PageId,
+};
 use opennote_media::{
     audio::{ClockAnchor, TrackKind},
     convert::{self, Quality, Settings},
@@ -119,8 +123,8 @@ pub async fn audio_compress(
         let services = state.services();
         let summary = entry.summary().map_err(audio_error)?;
         let plan = RecordingPlan::replacing(&summary, services.session.as_ref());
-        let copy = convert::compress(&dir, &summary, &plan, &services.decoder, quality_of(&quality))
-            .map_err(audio_error)?;
+        let copy =
+            convert::compress(&dir, &summary, &plan, &services.decoder, quality_of(&quality)).map_err(audio_error)?;
         Ok(edited(&copy, &entry))
     })
     .await
@@ -208,14 +212,13 @@ fn recordings_of(page_dir: &Path) -> Vec<RecordingEntry> {
 #[tauri::command]
 pub async fn audio_purge_history(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<u32> {
     let id = PageId::parse(&page).map_err(|_| IpcError::invalid("page", "That isn't a page ID."))?;
-    let notebook = bridge
-        .with(|bridge| {
-            bridge
-                .core
-                .find_node(id.0)
-                .map(|(notebook, _)| notebook)
-                .ok_or_else(|| IpcError::new("notFound", "That page isn't in a notebook."))
-        })?;
+    let notebook = bridge.with(|bridge| {
+        bridge
+            .core
+            .find_node(id.0)
+            .map(|(notebook, _)| notebook)
+            .ok_or_else(|| IpcError::new("notFound", "That page isn't in a notebook."))
+    })?;
     tauri::async_runtime::spawn_blocking(move || {
         notebook
             .delete_history(HistoryScope::Page(id), false)
@@ -252,7 +255,12 @@ pub async fn audio_export(
         let written = match format.as_str() {
             "wav" => convert::export_wav(&dir, &summary, &services.decoder, &temp),
             "opus" => convert::export_opus(&dir, &summary, &services.decoder, &services.encoder, &temp),
-            _ => return Err(IpcError::invalid("format", "That isn't an audio format OpenNote writes.")),
+            _ => {
+                return Err(IpcError::invalid(
+                    "format",
+                    "That isn't an audio format OpenNote writes.",
+                ))
+            }
         }
         .map_err(audio_error)?;
         fs::rename(&temp, &dest).inspect_err(|_| {
@@ -308,7 +316,13 @@ pub async fn audio_import_file(
         let services = state.services();
         let extension: String = Path::new(&header.name)
             .extension()
-            .map(|ext| ext.to_string_lossy().chars().filter(char::is_ascii_alphanumeric).take(5).collect())
+            .map(|ext| {
+                ext.to_string_lossy()
+                    .chars()
+                    .filter(char::is_ascii_alphanumeric)
+                    .take(5)
+                    .collect()
+            })
             .unwrap_or_default();
         let temp = dir.join(format!(".import-{}.{extension}", std::process::id()));
         fs::write(&temp, &body)?;

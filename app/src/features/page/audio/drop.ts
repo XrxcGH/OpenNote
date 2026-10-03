@@ -1,4 +1,4 @@
-// Audio and video files dropped on a page (Phase 9). The page's own drop handler knows images, text and links, so
+// Audio and video files dropped on a page (Phase 9). The page's own drop handler knows images, text, and links, so
 // this one listens first, takes only the media files, and leaves every other drop to the page. It stays small
 // because it loads at start-up: the work loads when a media file is dropped.
 import { isEnabled } from '../../../app/flags';

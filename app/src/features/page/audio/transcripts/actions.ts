@@ -1,5 +1,5 @@
 // What the transcript features do. The screens call these, and so do the commands; this module loads on first use.
-// Making a transcript, summarizing it, finding action items and chapters, quoting lines into the notes, the recap,
+// Making a transcript, summarizing it, finding action items, and chapters, quoting lines into the notes, the recap,
 // and what a split or a removed part of the audio does to the words.
 import { extrasOf, playable } from '../../../../core/audio';
 import type { RecordingEntry } from '../../../../core/audio';

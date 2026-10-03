@@ -1,7 +1,8 @@
-// The host commands of the audio lane's later features, which are not part of recording and playback itself: splitting
-// a recording, a voice-enhanced copy, compressing, the list of what recordings take, deleting a page's history,
-// export, a dropped audio or video file, the screen snap, and the meeting watcher. They are the commands of
-// app/src-tauri/src/audio_more. Like `AudioHost`, this shape is all the interface knows of Tauri.
+// The host commands of the audio lane's later features, which are not part of recording and playback itself. They
+// split a recording, make a voice-enhanced copy, and compress a recording. They list what recordings take and delete
+// a page's history. They export a recording, import a dropped audio or video file, snap the screen, and watch for
+// meetings. They are the commands of app/src-tauri/src/audio_more. Like `AudioHost`, this shape is all the interface
+// knows of Tauri.
 import type { RecordingEntry, TrackEntry } from './types';
 
 /** A recording after an edit: the entry that takes the old one's place, and its length. */
