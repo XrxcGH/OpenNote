@@ -138,8 +138,8 @@ export const pageViews = {
   },
   image: {
     title: 'Export selection as image',
-    description: 'Select blocks on the page first, or export the whole page.',
-    selection: 'Selected blocks',
+    description: 'Pick items with the lasso first, or export the whole page.',
+    selection: 'Selected items',
     wholePage: 'Whole page',
     format: 'Format',
     scale: 'Resolution',

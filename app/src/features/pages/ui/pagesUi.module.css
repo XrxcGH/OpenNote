@@ -154,3 +154,106 @@
     background: var(--color-surface-page);
   }
 }
+
+@layer components {
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .items {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 16rem;
+    overflow: auto;
+  }
+
+  .item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+  }
+
+  .itemName {
+    flex: 1 1 8rem;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+    color: var(--color-text-primary);
+  }
+}
+
+@layer components {
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 24rem;
+    overflow: auto;
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .cardPicture {
+    inline-size: 100%;
+    block-size: 6rem;
+    object-fit: contain;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+  }
+}
+
+@layer components {
+  .presentView {
+    position: relative;
+    overflow: auto;
+    min-block-size: 0;
+    display: grid;
+    align-items: start;
+    justify-items: center;
+  }
+
+  .presentSheet {
+    position: relative;
+    margin-block: auto;
+    background: var(--color-surface-page);
+  }
+
+  .presentPicture {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    user-select: none;
+  }
+
+  .presentMarks {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .presentMarks[data-tool='move'] {
+    pointer-events: none;
+  }
+}

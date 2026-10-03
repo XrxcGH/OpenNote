@@ -5,8 +5,8 @@ import { shownMounted } from '../../page';
 import { dataUri, documentCss, lightTheme } from '../export';
 import type { ExportAsset } from '../export';
 import type { Rect } from '../pagination';
-import { selectArea, selectionSvg } from '../selection';
-import type { Selection } from '../selection';
+import { selectArea, selectChosen, selectionSvg } from '../selection';
+import type { Chosen, Selection } from '../selection';
 import { inlineFontFaces } from './fonts';
 import { exportLabels } from './exporter';
 import type { PageSource } from './source';
@@ -31,10 +31,14 @@ export function blockBoxes(): Map<string, Rect> {
   return boxes;
 }
 
-/** The selection a scope stands for: a lasso around the chosen blocks' boxes, or around everything. */
-export function selectionFor(source: PageSource, scope: PictureScope, chosen: readonly string[]): Selection | null {
+/**
+ * The selection a scope stands for: exactly what the lasso picked (smart select, trimmed to those items), or
+ * everything on the page.
+ */
+export function selectionFor(source: PageSource, scope: PictureScope, chosen: Chosen): Selection | null {
   const boxes = blockBoxes();
-  const ids = scope === 'selection' ? chosen : [...boxes.keys()];
+  if (scope === 'selection') return selectChosen(source.page, chosen, { boxes });
+  const ids = [...boxes.keys()];
   let around: Rect | null = null;
   for (const id of ids) {
     const box = boxes.get(id);

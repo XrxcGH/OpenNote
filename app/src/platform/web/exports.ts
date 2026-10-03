@@ -78,6 +78,10 @@ export function createWebExports(): ExportsClient {
     async printClose(job) {
       close(job);
     },
+    async selectionDocx(png) {
+      // A stand-in: a zip signature and the picture's size, which is enough for the interface's own checks.
+      return new Uint8Array([0x50, 0x4b, 0x03, 0x04, ...png.subarray(0, 8)]);
+    },
     async pickSave({ suggested }) {
       if (state.cancelNext) {
         state.cancelNext = false;

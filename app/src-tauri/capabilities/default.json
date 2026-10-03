@@ -124,6 +124,7 @@
     "allow-export-pick-save",
     "allow-export-write",
     "allow-export-open",
+    "allow-export-selection-docx",
     "allow-tool-window-open",
     "allow-interop-pick",
     "allow-interop-detect",

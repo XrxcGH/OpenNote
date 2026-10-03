@@ -82,7 +82,14 @@ type Phase6FlagId =
   | 'pages.exportImage'
   | 'pages.gallery'
   | 'pages.slides'
-  | 'pages.reading';
+  | 'pages.reading'
+  | 'pages.layouts'
+  | 'pages.sheets'
+  | 'pages.accessiblePdf'
+  | 'pages.elements'
+  | 'pages.exportSelection'
+  | 'pages.laser'
+  | 'pages.syllables';
 /** Smart tables, charts, math, and the study tool windows (Phases 7 and 10). */
 type ExprFlagId = 'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows';
 /** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */

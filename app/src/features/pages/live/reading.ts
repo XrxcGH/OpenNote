@@ -1,6 +1,7 @@
 // Reading aids on the page view: a tint, wider spacing, a shorter line, and the focus band that lights the lines being
 // read. They are a setting of this device and change only how the page looks. They never reach the note, and the print
 // document does not use them. The setting lives in this browser's storage, which is this device.
+import { isEnabled } from '../../../app/flags';
 import { createStore } from '../../../state/store';
 import type { MountedPage } from '../../page';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../reading';
 import type { LineBox, ReadingAids } from '../reading';
 import { linesOf } from '../print/dom';
+import { attachSyllables } from './syllables';
 import styles from './live.module.css';
 
 const KEY = 'opennote.readingAids';
@@ -89,6 +91,7 @@ export function attachReading(mounted: MountedPage, paginated: () => boolean): {
   const below = band.appendChild(doc.createElement('div'));
   above.className = below.className = styles.dim;
   world.append(band);
+  const syllables = attachSyllables(mounted.flow.element);
   let lines: LineBox[] | null = null;
   let active = -1;
   let frame = 0;
@@ -137,6 +140,7 @@ export function attachReading(mounted: MountedPage, paginated: () => boolean): {
       .querySelector(`.${styles.sheets}`)
       ?.classList.toggle('reading-sheets', tinted && paginated());
     mounted.flow.element.classList.toggle('reading-text', isActive(aids));
+    syllables.set(aids.syllables && isEnabled('pages.syllables'));
     lines = null;
     schedule();
   };
@@ -177,6 +181,7 @@ export function attachReading(mounted: MountedPage, paginated: () => boolean): {
       host.removeEventListener('pointermove', onPointer);
       doc.removeEventListener('selectionchange', onSelection);
       mutations?.disconnect();
+      syllables.stop();
       cancelAnimationFrame(frame);
       band.remove();
       world.classList.remove('reading-page');

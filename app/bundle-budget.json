@@ -13,7 +13,7 @@
   },
   "lazyKb": {
     "features/pages/live": 40,
-    "features/pages/ui": 50,
+    "features/pages/ui": 60,
     "editor/markdown/worker": 45,
     "editor/highlight": 20,
     "highlight.js/lib/languages": 5,

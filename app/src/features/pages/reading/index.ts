@@ -2,4 +2,5 @@
 
 export * from './aids';
 export * from './focus';
+export * from './marks';
 export * from './syllables';

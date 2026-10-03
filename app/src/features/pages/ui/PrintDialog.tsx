@@ -4,6 +4,7 @@
 // where the printer is chosen.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Platform } from '../../../platform/types';
+import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { Button, Dialog, ProgressBar, RadioCard, RadioGroup, Switch, TextField, showToast } from '../../../ui';
 import { exportPdfFile, PdfCheckError, prepareInput } from '../host/exporter';
@@ -45,6 +46,7 @@ interface Form {
   header: string;
   footer: string;
   background: boolean;
+  accessible: boolean;
 }
 
 /** Prepares the page in a frame no one sees, so the preview shows the sheets exactly as the PDF will have them. */
@@ -107,6 +109,8 @@ const parityKey = {
 
 /** The limitations of WebView2's printing that the dialog already says, so a saved file doesn't repeat them. */
 const KNOWN = new Set(['untagged', 'noLanguage', 'variableFonts']);
+/** An accessible PDF asked for tags, so a file without them is worth saying. */
+const KNOWN_ACCESSIBLE = new Set(['variableFonts']);
 
 interface Working {
   readonly stage: string;
@@ -125,8 +129,9 @@ function reportFailure(error: unknown, platform: Platform): void {
 }
 
 /** Tells the person where the PDF went, and what to know about it. */
-function reportSaved(outcome: Extract<PdfOutcome, { status: 'saved' }>, platform: Platform): void {
-  const extra = outcome.problems.find((problem) => !KNOWN.has(problem.kind));
+function reportSaved(outcome: Extract<PdfOutcome, { status: 'saved' }>, platform: Platform, accessible: boolean): void {
+  const known = accessible ? KNOWN_ACCESSIBLE : KNOWN;
+  const extra = outcome.problems.find((problem) => !known.has(problem.kind));
   const message = t('pageViews.print.done', { name: outcome.name });
   showToast({
     message: extra ? `${message} ${t(`pageViews.print.problem.${extra.kind}`)}` : message,
@@ -135,7 +140,7 @@ function reportSaved(outcome: Extract<PdfOutcome, { status: 'saved' }>, platform
 }
 
 /** Runs the export with progress, and stops it when asked. */
-function useExport(props: PrintDialogProps, options: PrintOptions) {
+function useExport(props: PrintDialogProps, options: PrintOptions, accessible: boolean) {
   const { source, platform, mode, close } = props;
   const [working, setWorking] = useState<Working | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -146,12 +151,13 @@ function useExport(props: PrintDialogProps, options: PrintOptions) {
     try {
       const outcome = await exportPdfFile(platform.exports, source, {
         print: options,
+        accessible,
         signal: controller.signal,
         onProgress: (progress) => setWorking({ stage: progress.stage, fraction: progress.fraction }),
       });
       if (outcome.status === 'canceled') return setWorking(null);
       close();
-      reportSaved(outcome, platform);
+      reportSaved(outcome, platform, accessible);
       if (mode === 'print') await platform.exports.open(outcome.path, false).catch(() => undefined);
     } catch (error) {
       setWorking(null);
@@ -197,6 +203,16 @@ function Fields({ form, total, rangeError, set }: FieldsProps) {
         checked={form.background}
         onChange={(value) => set('background', value)}
       />
+      {isEnabled('pages.accessiblePdf') ? (
+        <>
+          <Switch
+            label={t('pagesPlus.pdf.accessible')}
+            checked={form.accessible}
+            onChange={(value) => set('accessible', value)}
+          />
+          <p className={styles.hint}>{t('pagesPlus.pdf.accessibleHelp')}</p>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -243,11 +259,18 @@ function Progress({ working }: { working: Working }) {
 
 export function PrintDialog(props: PrintDialogProps) {
   const { source, mode, close } = props;
-  const [form, setForm] = useState<Form>({ range: '', parity: 'all', header: '', footer: '', background: true });
+  const [form, setForm] = useState<Form>({
+    range: '',
+    parity: 'all',
+    header: '',
+    footer: '',
+    background: true,
+    accessible: isEnabled('pages.accessiblePdf'),
+  });
   const [sheet, setSheet] = useState(0);
   const options = useMemo(() => toOptions(form), [form]);
   const preview = usePreview(source, options);
-  const { working, run, stop } = useExport(props, options);
+  const { working, run, stop } = useExport(props, options, form.accessible);
   const total = preview.status === 'ready' ? preview.result.sheets : 0;
   const rangeError = preview.status === 'ready' && parsePageRange(form.range, total, form.parity).error !== undefined;
   const set = <K extends keyof Form>(key: K, value: Form[K]) => {

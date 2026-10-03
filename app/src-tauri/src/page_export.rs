@@ -172,12 +172,23 @@ pub async fn print_render(
     width: f64,
     height: f64,
     background: bool,
+    tagged: Option<bool>,
+    outline: Option<bool>,
 ) -> IpcResult<Response> {
     check_sheet(width, height)?;
     let label = job_label(&job)?;
     let window = app
         .get_webview_window(&label)
         .ok_or_else(|| not_found("The print window"))?;
+    let (tagged, outline) = (tagged.unwrap_or(false), outline.unwrap_or(false));
+    if tagged || outline {
+        // The DevTools route writes structure tags, a language, and bookmarks. If it fails, the plain route below
+        // still makes the PDF, and the export's check tells the person it has no tags.
+        match render_with_devtools(&window, (width, height), background, tagged, outline).await {
+            Ok(bytes) => return Ok(Response::new(bytes)),
+            Err(error) => log::warn!("Tagged PDF failed, printing without tags: {error:?}"),
+        }
+    }
     let file = std::env::temp_dir().join(format!("opennote-print-{}-{job}.pdf", std::process::id()));
     let (tx, rx) = mpsc::channel::<Result<bool, String>>();
     start_print(&window, file.clone(), (width, height), background, tx)?;
@@ -192,6 +203,123 @@ pub async fn print_render(
     };
     let _ = fs::remove_file(&file);
     Ok(Response::new(bytes?))
+}
+
+/// The parameters of the DevTools `Page.printToPDF` call for a sheet of `width` by `height` inches. The document's
+/// own `@page` rule still sizes each page (`preferCSSPageSize`), as it does for `PrintToPdf`.
+fn devtools_params(width: f64, height: f64, background: bool, tagged: bool, outline: bool) -> Value {
+    json!({
+        "landscape": false,
+        "displayHeaderFooter": false,
+        "printBackground": background,
+        "scale": 1,
+        "paperWidth": width,
+        "paperHeight": height,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "marginLeft": 0,
+        "marginRight": 0,
+        "preferCSSPageSize": true,
+        "generateTaggedPDF": tagged,
+        "generateDocumentOutline": outline,
+    })
+}
+
+/// Decodes standard base64 (with or without padding), or `None` when the text holds anything else.
+fn decode_base64(text: &str) -> Option<Vec<u8>> {
+    let mut out = Vec::with_capacity(text.len() / 4 * 3);
+    let (mut bits, mut count) = (0u32, 0u8);
+    for byte in text.bytes() {
+        let value = match byte {
+            b'A'..=b'Z' => byte - b'A',
+            b'a'..=b'z' => byte - b'a' + 26,
+            b'0'..=b'9' => byte - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            b'=' | b'\r' | b'\n' => continue,
+            _ => return None,
+        };
+        bits = (bits << 6) | u32::from(value);
+        count += 6;
+        if count >= 8 {
+            count -= 8;
+            out.push((bits >> count) as u8);
+            bits &= (1 << count) - 1;
+        }
+    }
+    Some(out)
+}
+
+/// The PDF bytes in a `Page.printToPDF` reply (`{"data": "<base64>"}`).
+fn pdf_from_reply(reply: &str) -> Result<Vec<u8>, String> {
+    let value: Value = serde_json::from_str(reply).map_err(|error| error.to_string())?;
+    let data = value["data"].as_str().ok_or("The reply holds no PDF.")?;
+    decode_base64(data).ok_or_else(|| "The PDF in the reply isn't valid base64.".to_owned())
+}
+
+/// Prints the window's document with Chromium's `Page.printToPDF`, which can write structure tags and bookmarks.
+async fn render_with_devtools(
+    window: &WebviewWindow,
+    (width, height): (f64, f64),
+    background: bool,
+    tagged: bool,
+    outline: bool,
+) -> IpcResult<Vec<u8>> {
+    let params = devtools_params(width, height, background, tagged, outline).to_string();
+    let (tx, rx) = mpsc::channel::<Result<String, String>>();
+    start_devtools_print(window, params, tx)?;
+    let outcome = tauri::async_runtime::spawn_blocking(move || rx.recv_timeout(RENDER_TIMEOUT))
+        .await
+        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
+    match outcome {
+        Ok(Ok(reply)) => pdf_from_reply(&reply).map_err(|message| IpcError::new(codes::INTERNAL, message)),
+        Ok(Err(message)) => Err(IpcError::new(codes::INTERNAL, format!("Page.printToPDF failed: {message}"))),
+        Err(_) => Err(IpcError::new("timeout", "Printing to PDF took too long.")),
+    }
+}
+
+#[cfg(windows)]
+fn start_devtools_print(
+    window: &WebviewWindow,
+    params: String,
+    tx: mpsc::Sender<Result<String, String>>,
+) -> IpcResult<()> {
+    use webview2_com::CallDevToolsProtocolMethodCompletedHandler;
+    use windows::core::HSTRING;
+
+    window
+        .with_webview(move |webview| {
+            // SAFETY: the controller is a live COM object, and this closure runs on the main thread that owns the
+            // window. The completion handler sends the reply and nothing else.
+            let started = unsafe {
+                (|| -> windows::core::Result<()> {
+                    let core = webview.controller().CoreWebView2()?;
+                    let done = tx.clone();
+                    let handler = CallDevToolsProtocolMethodCompletedHandler::create(Box::new(move |result, reply| {
+                        let _ = done.send(result.map(|()| reply).map_err(|error| error.to_string()));
+                        Ok(())
+                    }));
+                    core.CallDevToolsProtocolMethod(
+                        &HSTRING::from("Page.printToPDF"),
+                        &HSTRING::from(params.as_str()),
+                        &handler,
+                    )
+                })()
+            };
+            if let Err(error) = started {
+                let _ = tx.send(Err(error.to_string()));
+            }
+        })
+        .map_err(IpcError::from)
+}
+
+#[cfg(not(windows))]
+fn start_devtools_print(
+    _window: &WebviewWindow,
+    _params: String,
+    _tx: mpsc::Sender<Result<String, String>>,
+) -> IpcResult<()> {
+    Err(IpcError::not_implemented("print_render"))
 }
 
 #[cfg(windows)]
@@ -507,6 +635,35 @@ fn write_parts(main: &Path, parts: &[Part], body: &[u8]) -> IpcResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn devtools_params_ask_for_tags_and_bookmarks() {
+        let params = devtools_params(8.5, 11.0, true, true, false);
+        assert_eq!(params["generateTaggedPDF"], true);
+        assert_eq!(params["generateDocumentOutline"], false);
+        assert_eq!(params["preferCSSPageSize"], true);
+        assert_eq!(params["paperWidth"], 8.5);
+        assert_eq!(params["printBackground"], true);
+    }
+
+    #[test]
+    fn base64_decodes_with_and_without_padding() {
+        assert_eq!(decode_base64("").unwrap(), b"");
+        assert_eq!(decode_base64("TWFu").unwrap(), b"Man");
+        assert_eq!(decode_base64("TWE=").unwrap(), b"Ma");
+        assert_eq!(decode_base64("TQ==").unwrap(), b"M");
+        assert_eq!(decode_base64("TQ").unwrap(), b"M");
+        assert_eq!(decode_base64("+/8=").unwrap(), [0xfb, 0xff]);
+        assert!(decode_base64("T*Q=").is_none());
+    }
+
+    #[test]
+    fn the_pdf_comes_out_of_the_devtools_reply() {
+        assert_eq!(pdf_from_reply(r#"{"data":"JVBERg=="}"#).unwrap(), b"%PDF");
+        assert!(pdf_from_reply("{}").is_err());
+        assert!(pdf_from_reply("not json").is_err());
+        assert!(pdf_from_reply(r#"{"data":"%%"}"#).is_err());
+    }
 
     #[test]
     fn job_labels_hold_only_safe_characters() {

@@ -11,8 +11,10 @@ import {
   type Orientation,
   type PaperSizeName,
 } from '../pagination/geometry';
+import { DRAWING_KEY } from '../paper/drawing';
+import type { PaperTemplate } from '../paper/types';
 import { withSpacing } from '../paper/presets';
-import { diffPatch, mergeLayers, type JsonObject } from './json';
+import { diffPatch, mergeLayers, type Json, type JsonObject } from './json';
 import {
   DEFAULT_VIEW,
   defaultPaperFor,
@@ -89,8 +91,19 @@ export function setLayout(view: PageViewSpec, layout: LayoutKind): PageViewSpec 
   return { ...view, layout };
 }
 
+/** Changes the background. Leaving the `template` pattern drops the template's name and its drawing. */
 export function setBackground(view: PageViewSpec, background: Partial<BackgroundSpec>): PageViewSpec {
-  return { ...view, background: { ...view.background, ...background } };
+  const merged = { ...view.background, ...background };
+  if (background.pattern === undefined || background.pattern === 'template') return { ...view, background: merged };
+  const { template: _template, ...rest } = merged;
+  const { [DRAWING_KEY]: _drawing, ...extra } = rest.extra;
+  return { ...view, background: { ...rest, extra } };
+}
+
+/** Puts a template on the page: its name in `background.template` and its drawing beside it, so the page holds both. */
+export function setTemplate(view: PageViewSpec, template: PaperTemplate): PageViewSpec {
+  const extra = { ...view.background.extra, [DRAWING_KEY]: template as unknown as Json };
+  return { ...view, background: { ...view.background, pattern: 'template', template: template.id, extra } };
 }
 
 /** Changes the spacing of ruled and grid paper, kept within the range the pattern allows. */
@@ -118,4 +131,19 @@ export function viewPatch(from: PageViewSpec, to: PageViewSpec): JsonObject | nu
 export function newPageView(region: string | undefined, notebook?: JsonObject, section?: JsonObject): PageViewSpec {
   const app = writeView({ ...DEFAULT_VIEW, paper: defaultPaperFor(region) });
   return readView(mergeLayers(app, notebook, section)).view;
+}
+
+/** The key of the view that asks for at least this many sheets. An extra key of the view, which the format keeps. */
+export const MIN_SHEETS_KEY = 'minSheets';
+
+/** How many sheets the view asks for at least; 1 when it asks for none. */
+export function minSheetsOf(view: PageViewSpec): number {
+  const value = view.extra[MIN_SHEETS_KEY];
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1;
+}
+
+/** Asks for at least `count` sheets, so a sheet can be added before anything is written on it. */
+export function withMinSheets(view: PageViewSpec, count: number): PageViewSpec {
+  const { [MIN_SHEETS_KEY]: _before, ...rest } = view.extra;
+  return { ...view, extra: count > 1 ? { ...rest, [MIN_SHEETS_KEY]: Math.floor(count) } : rest };
 }

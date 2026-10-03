@@ -15,6 +15,7 @@ export {
   type PlannerText,
 } from './templates';
 export { MAX_ELEMENTS, MAX_LABEL } from './template';
+export { DRAWING_KEY, readDrawing } from './drawing';
 export { STROKE } from './types';
 export type {
   PageBackground,

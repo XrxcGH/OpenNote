@@ -3,6 +3,7 @@
 
 import { contentBox, sheetGeometry, type SheetGeometry } from '../pagination/geometry';
 import { flowGeometry } from '../paper/patterns';
+import { DRAWING_KEY, readDrawing } from '../paper/drawing';
 import type { PageBackground, PaperTemplate } from '../paper/types';
 import { isFlow, isPaginated, type BackgroundSpec, type PageViewSpec } from './view';
 
@@ -33,9 +34,13 @@ export interface PageLayout {
 /** Finds a saved template by ID. The interface supplies it from the notebook's templates. */
 export type TemplateLookup = (id: string) => PaperTemplate | undefined;
 
-/** The background in the form the paper generators take. A template that can't be found draws nothing. */
+/**
+ * The background in the form the paper generators take. The drawing the page holds comes first, then the lookup. A
+ * template that can't be found either way draws nothing.
+ */
 export function resolveBackground(spec: BackgroundSpec, lookup?: TemplateLookup): PageBackground {
-  const template = spec.template === undefined ? undefined : lookup?.(spec.template);
+  const template =
+    spec.template === undefined ? undefined : (readDrawing(spec.extra[DRAWING_KEY]) ?? lookup?.(spec.template));
   return {
     pattern: spec.pattern,
     spacing: spec.spacing,
