@@ -84,6 +84,7 @@ const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const off = { dev: false, nightly: false, beta: false, stable: false };
 const on = { dev: true, nightly: true, beta: true, stable: true };
 const testBuilds = { dev: true, nightly: true, beta: false, stable: false };
+const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
 
 const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>) =>
   defineFlag({ id, description, issue: `${ISSUES}${encodeURIComponent(id)}`, enabled });
@@ -95,7 +96,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('updates.resume', 'Resume a download that stopped partway.', off),
   flag('updates.betaChannel', 'The Stable or Beta choice in Settings.', off),
   flag('notes.sectionGroups', 'Section groups in notebooks.', on),
-  flag('trash.view', 'The Trash view with Restore.', testBuilds),
+  flag('trash.view', 'The Trash view with Restore.', betaBuilds),
   flag('notes.memorySnapshot', 'Keep the Phase 2 notes in a temporary snapshot file.', testBuilds),
   flag('commandBar.insert', 'The Insert tab of the command bar.', off),
   flag('commandBar.draw', 'The Draw tab of the command bar.', off),
@@ -105,7 +106,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('settings.recording', 'The Recording section of Settings.', off),
   flag('settings.privacyAndAi', 'The Privacy and smart features section of Settings.', off),
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', off),
-  flag('storage.core', 'Keep notes on disk: the notebook list in the library file, pages in the notes folder.', on),
+  flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),
   ...PAGE_FLAGS,
 ];
 

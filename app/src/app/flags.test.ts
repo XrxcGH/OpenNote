@@ -8,6 +8,8 @@ describe('flags', () => {
   it('follow the channel defaults', () => {
     initFlags('dev');
     expect(isEnabled('trash.view')).toBe(true);
+    initFlags('beta');
+    expect(isEnabled('trash.view')).toBe(true);
     initFlags('stable');
     expect(isEnabled('trash.view')).toBe(false);
     expect(isEnabled('notes.sectionGroups')).toBe(true);
