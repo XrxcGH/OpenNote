@@ -20,12 +20,15 @@ async function press(browser: Browser, ...keys: string[]) {
   await action.perform();
 }
 
+/** The "Lectures" row in the notebooks tree. The row names itself through aria-labelledby, so match by that title. */
+const LECTURES = '//*[@role="treeitem"][@aria-labelledby = //*[normalize-space(.) = "Lectures"]/@id]';
+
 describe('the layout, with the keyboard alone', { skip: skipReason() }, () => {
   let session: AppSession;
 
   before(async () => {
     session = await launchApp({ keyboardOnly: true });
-    await session.browser.$('button=Lectures').waitForExist({ timeout: 20_000 });
+    await session.browser.$(LECTURES).waitForExist({ timeout: 20_000 });
   });
 
   after(async () => {
@@ -47,15 +50,20 @@ describe('the layout, with the keyboard alone', { skip: skipReason() }, () => {
   it('hides the notebooks pane to its rail with Ctrl+Shift+1, and shows it again', async () => {
     const { browser } = session;
     await press(browser, Key.Ctrl, Key.Shift, '1');
-    await browser.$('button=Lectures').waitForDisplayed({ timeout: 5_000, reverse: true });
+    await browser.$(LECTURES).waitForDisplayed({ timeout: 5_000, reverse: true });
     assert.notEqual(await activeTag(browser), 'BODY');
     await press(browser, Key.Ctrl, Key.Shift, '1');
-    await browser.$('button=Lectures').waitForDisplayed({ timeout: 5_000 });
+    await browser.$(LECTURES).waitForDisplayed({ timeout: 5_000 });
   });
 
   it('opens a section from its row with Enter, and Alt+Left goes back', async () => {
     const { browser } = session;
-    await browser.execute(() => document.querySelector<HTMLElement>('[data-region="notebooks"] button')?.focus());
+    await browser.execute(() => {
+      const rows = [...document.querySelectorAll<HTMLElement>('[data-region="notebooks"] [role="treeitem"]')];
+      rows
+        .find((row) => document.getElementById(row.getAttribute('aria-labelledby') ?? '')?.textContent === 'Lectures')
+        ?.focus();
+    });
     const before = await browser.getTitle();
     await press(browser, Key.Enter);
     await browser.waitUntil(async () => (await browser.getTitle()) !== before, { timeout: 5_000 });

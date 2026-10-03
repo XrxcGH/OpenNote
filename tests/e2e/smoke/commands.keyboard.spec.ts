@@ -39,7 +39,9 @@ describe('commands work from the keyboard', { skip: skipReason() }, () => {
   it('Ctrl+/ lists the shortcuts, and Escape closes the list', async () => {
     const { browser } = session;
     await chord(Key.Ctrl, '/');
-    const dialog = browser.$('[role="dialog"]');
+    // The list is a native <dialog>, so it has no role attribute to select by, and the palette's dialog may still be
+    // closing. The list is the dialog that names the palette command.
+    const dialog = browser.$('//dialog[@open][contains(normalize-space(.), "Open command palette")]');
     await dialog.waitForExist({ timeout: 5_000 });
     assert.match(await dialog.getText(), /Open command palette/);
     await browser.keys(Key.Escape);
