@@ -43,7 +43,9 @@
     background: var(--color-selection-highlight);
   }
 
-  .text :global(.ProseMirror) > :first-child {
+  /* The first block of text keeps this with and without an editor: an editor's widgets, such as a heading's fold
+     button, don't count as the first child. */
+  .text :global(.ProseMirror) > :nth-child(1 of :not(:global(.ProseMirror-widget))) {
     margin-block-start: 0;
   }
 

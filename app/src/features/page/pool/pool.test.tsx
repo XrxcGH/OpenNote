@@ -84,17 +84,23 @@ function press(type: string, target: Element, point: { x: number; y: number }): 
   );
 }
 
-/** What assistive technology reads from an element: tags, roles, names, states, and text. */
-function accessible(element: Element): unknown {
+/**
+ * What assistive technology reads from the text of an element: tags, roles, names, states, and text.
+ *
+ * The controls an editor adds while it is mounted (fold buttons and task check boxes, which sit outside the text
+ * in `contenteditable="false"` holders) are left out, and so are the plain wrappers their node views put around
+ * the text. Static text doesn't draw those controls yet; until it does, this compares the text itself.
+ */
+function accessible(element: Element): unknown[] {
   const keep = ['role', 'aria-label', 'aria-multiline', 'aria-checked', 'tabindex', 'href', 'alt'];
-  return {
-    tag: element.tagName,
-    attrs: keep.flatMap((name) => (element.hasAttribute(name) ? [[name, element.getAttribute(name)]] : [])),
-    children: [...element.childNodes].flatMap((child) => {
-      if (child instanceof Element) return child.matches('br.ProseMirror-trailingBreak') ? [] : [accessible(child)];
-      return child.textContent ? [child.textContent] : [];
-    }),
-  };
+  const attrs = keep.flatMap((name) => (element.hasAttribute(name) ? [[name, element.getAttribute(name)]] : []));
+  const children = [...element.childNodes].flatMap((child): unknown[] => {
+    if (!(child instanceof Element)) return child.textContent ? [child.textContent] : [];
+    if (child.matches('br.ProseMirror-trailingBreak, [contenteditable="false"]')) return [];
+    return accessible(child);
+  });
+  const wrapper = (element.tagName === 'DIV' || element.tagName === 'SPAN') && attrs.length === 0;
+  return wrapper ? children : [{ tag: element.tagName, attrs, children }];
 }
 
 describe('static text', () => {
