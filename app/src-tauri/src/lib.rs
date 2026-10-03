@@ -16,6 +16,7 @@ pub mod ipc;
 pub mod lifecycle;
 pub mod log;
 pub mod notes_snapshot;
+pub mod page_export;
 pub mod paths;
 pub mod perf;
 pub mod settings;
@@ -89,6 +90,7 @@ pub fn run(context: EarlyContext) {
         .manage(pages)
         .manage(clipboard::ClipTokens::default())
         .manage(spelling::SpellService)
+        .manage(page_export::ExportGrants::default())
         // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
         .manage(instance)
         .setup(|app| {
@@ -176,5 +178,11 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         spelling::spell_remove_word,
         speech::speech_voices,
         speech::speech_synthesize,
+        page_export::print_prepare,
+        page_export::print_render,
+        page_export::print_close,
+        page_export::export_pick_save,
+        page_export::export_write,
+        page_export::export_open,
     ]
 }
