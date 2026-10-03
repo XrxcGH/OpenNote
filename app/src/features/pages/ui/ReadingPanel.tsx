@@ -2,7 +2,8 @@
 // once and is kept on this device. None of it reaches the note or the print.
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { Dialog, RadioCard, RadioGroup } from '../../../ui';
+import { isEnabled } from '../../../app/flags';
+import { Dialog, RadioCard, RadioGroup, Switch } from '../../../ui';
 import { readingAids, setReadingAids } from '../live/reading';
 import { DEFAULT_READING, FOCUS_SIZES, TINTS } from '../reading';
 import type { FocusLines, ReadingAids, Step, Tint } from '../reading';
@@ -85,6 +86,16 @@ export function ReadingPanel({ close }: { close(): void }) {
             <RadioCard key={width} value={width} label={t(`pageViews.reading.lineWidths.${width}`)} />
           ))}
         </RadioGroup>
+        {isEnabled('pages.syllables') ? (
+          <>
+            <Switch
+              label={t('pagesPlus.reading.syllables')}
+              checked={aids.syllables}
+              onChange={(checked) => change({ syllables: checked })}
+            />
+            <p className={styles.hint}>{t('pagesPlus.reading.syllablesHelp')}</p>
+          </>
+        ) : null}
       </div>
     </Dialog>
   );

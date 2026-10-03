@@ -33,6 +33,11 @@ export const pagesPlus = {
     elementsKeywords: 'element elements library save reuse signature header axis stamp snippet',
     notebookDefaultKeywords: 'notebook default layout new pages paper',
   },
+  reading: {
+    syllables: 'Show syllables',
+    syllablesHelp:
+      'Colors every second syllable of long English words, so a word shows where it divides. The page itself is not changed.',
+  },
   present: {
     title: 'Presenting the page',
     tool: 'Pointer',
