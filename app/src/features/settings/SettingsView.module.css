@@ -116,6 +116,23 @@
     font-family: var(--font-mono);
   }
 
+  /* The ink stroke signs off the heading, so it sits close under it instead of a grid gap away. */
+  .stroke {
+    margin-block-start: calc(-1 * var(--space-5));
+  }
+
+  /* The logo mark and the window, side by side above the facts. */
+  .mark {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+  }
+
+  .logoMark svg {
+    inline-size: var(--space-10);
+    block-size: var(--space-10);
+  }
+
   .actions {
     display: flex;
     flex-wrap: wrap;

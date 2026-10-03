@@ -36,6 +36,17 @@ describe('the Settings page', () => {
     const heading = await screen.findByRole('heading', { level: 1, name: 'About' });
     await expectFocus(heading);
     expect(screen.getByRole('link', { name: 'About' }).getAttribute('aria-current')).toBe('page');
+    // The logo mark, the window, and the heading's ink stroke are drawings that screen readers skip.
+    const main = heading.closest('main') as HTMLElement;
+    await expect
+      .poll(() => main.querySelector('svg[viewBox="0 0 100 102"][aria-hidden="true"]'), { timeout: 5000 })
+      .toBeTruthy();
+    await expect
+      .poll(() => main.querySelector('svg[viewBox="0 0 64 64"][aria-hidden="true"]'), { timeout: 5000 })
+      .toBeTruthy();
+    await expect
+      .poll(() => main.querySelector('svg[viewBox="0 0 56 8"][aria-hidden="true"]'), { timeout: 5000 })
+      .toBeTruthy();
     expect(await screen.findByText('Apache License 2.0')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Notes folder' })).toBeNull();
     expect(getLocation()).toEqual({ view: 'settings', section: 'about' });
