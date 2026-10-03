@@ -28,6 +28,14 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* The section list stays in view while a long section scrolls under the header, so its column is never an empty
+     strip and another section is always one click away. */
+  .nav {
+    position: sticky;
+    inset-block-start: 0;
+    align-self: start;
+  }
+
   /* The list's block padding is room inside the scroller for the first link's focus ring. The header and the
      main column give up and take back the same 4 px, so nothing moves. */
   .nav ul {
