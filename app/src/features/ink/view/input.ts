@@ -43,6 +43,8 @@ interface InkGesture {
   readonly style: PenStyle;
   readonly release: () => void;
   lastTime: number;
+  lastX: number;
+  lastY: number;
   builder?: StrokeBuilder;
   erase?: StrokeEraseSession;
   partial?: PartialEraseSession<InkStroke>;
@@ -112,8 +114,12 @@ export function createPenTool(
     if (!g || !surface) return;
     const samples: RawSample[] = [];
     for (const event of events) {
-      if (event.pointerId !== g.pointerId || event.timeStamp <= g.lastTime) continue;
+      // pointerrawupdate and the router's moves bring the same samples: skip what came already, by time and place.
+      const seen = event.timeStamp === g.lastTime && event.clientX === g.lastX && event.clientY === g.lastY;
+      if (event.pointerId !== g.pointerId || event.timeStamp < g.lastTime || seen) continue;
       g.lastTime = event.timeStamp;
+      g.lastX = event.clientX;
+      g.lastY = event.clientY;
       samples.push(sampleOf(event, ctx));
     }
     if (samples.length === 0) return;
@@ -220,7 +226,16 @@ function begin(
 ): InkGesture {
   const zoom = ctx.camera.zoom;
   const style = styleOf(activeSlot());
-  const g: InkGesture = { mode, pointerId: event.pointerId, style, release, lastTime: -Infinity, radius: 0 };
+  const g: InkGesture = {
+    mode,
+    pointerId: event.pointerId,
+    style,
+    release,
+    lastTime: -Infinity,
+    lastX: NaN,
+    lastY: NaN,
+    radius: 0,
+  };
   const skip = eraserSkip(filter);
   if (mode === 'ink') {
     g.builder = createStrokeBuilder({

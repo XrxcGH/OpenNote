@@ -19,19 +19,22 @@ function start(): void {
   if (started || !shownMedia.get()) return;
   started = true;
   const seams = Promise.all([loadInkView(), import('../viewport/router'), import('../seams/selectionStore')]);
-  void seams.then(([{ installInk }, router, selection]) =>
-    installInk({
-      registerPointerTool: router.registerPointerTool,
-      setActiveTool: router.setActiveTool,
-      viewport: part((page) => page.viewport),
-      queue: part((page) => page.sync),
-      page: part((page) => page.page),
-      layer: part((page) => page.layer),
-      selection: selection.pageSelection,
-      select: selection.selectOnPage,
-      objectCommand: (command) => shownMedia.get()?.objects.command(command),
-    }),
-  );
+  // A load that fails, as when a test ends before the chunk arrives, leaves the page without ink tools, not broken.
+  void seams
+    .then(([{ installInk }, router, selection]) =>
+      installInk({
+        registerPointerTool: router.registerPointerTool,
+        setActiveTool: router.setActiveTool,
+        viewport: part((page) => page.viewport),
+        queue: part((page) => page.sync),
+        page: part((page) => page.page),
+        layer: part((page) => page.layer),
+        selection: selection.pageSelection,
+        select: selection.selectOnPage,
+        objectCommand: (command) => shownMedia.get()?.objects.command(command),
+      }),
+    )
+    .catch(() => undefined);
 }
 
 shownMedia.subscribe(start);
