@@ -288,5 +288,6 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         intel::intel_read_aloud_next,
         intel::intel_read_aloud_cancel,
         intel::intel_clip_audio,
+        intel::intel_ext_call,
     ]
 }

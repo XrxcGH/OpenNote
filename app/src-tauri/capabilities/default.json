@@ -150,6 +150,7 @@
     "allow-intel-read-aloud-start",
     "allow-intel-read-aloud-next",
     "allow-intel-read-aloud-cancel",
-    "allow-intel-clip-audio"
+    "allow-intel-clip-audio",
+    "allow-intel-ext-call"
   ]
 }

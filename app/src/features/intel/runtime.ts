@@ -4,8 +4,8 @@
 import { commandContext } from '../../commands/registry';
 import { loadIntelHost } from '../../platform/intel';
 import type { IntelHost } from '../../platform/intel';
-import { createIntelClient, isIntelError, toIntelError } from '../../services/intel';
-import type { Feature, IntelClient } from '../../services/intel';
+import { createIntelClient, createIntelExt, isIntelError, toIntelError } from '../../services/intel';
+import type { Feature, IntelClient, IntelExt } from '../../services/intel';
 import { t } from '../../strings/t';
 import { confirm, showToast } from '../../ui';
 import { intelState, isOn, OFF } from './choices';
@@ -16,6 +16,7 @@ export type OnDeviceFeature = (typeof ON_DEVICE_FEATURES)[number];
 
 let hostPromise: Promise<IntelHost> | null = null;
 let clientPromise: Promise<IntelClient> | null = null;
+let extPromise: Promise<IntelExt> | null = null;
 let loading: Promise<void> | null = null;
 
 function host(): Promise<IntelHost> {
@@ -27,6 +28,12 @@ function host(): Promise<IntelHost> {
 export function intelClient(): Promise<IntelClient> {
   clientPromise ??= host().then((one) => createIntelClient(one.transport));
   return clientPromise;
+}
+
+/** The device store and model downloads for this platform, made on first use. */
+export function intelExt(): Promise<IntelExt> {
+  extPromise ??= host().then((one) => createIntelExt(one.transport));
+  return extPromise;
 }
 
 /** Reads the saved choices once. A failure leaves everything off, which is the safe answer. */
@@ -153,6 +160,7 @@ export function reportProblem(error: unknown, kind: 'image' | 'handwriting' | 's
 export function resetIntelForTests(next: IntelHost | null = null): void {
   hostPromise = next ? Promise.resolve(next) : null;
   clientPromise = null;
+  extPromise = null;
   loading = null;
   listeners.clear();
   intelState.set({ loaded: false, choices: OFF, status: null, failed: false });

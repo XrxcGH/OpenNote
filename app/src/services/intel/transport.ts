@@ -63,6 +63,8 @@ export interface IntelCommands {
   intel_read_aloud_cancel: { args: { sessionId: string }; result: null };
   /** The WAV file of a clip. The command layer forgets the clip once it has handed over the bytes. */
   intel_clip_audio: { args: { clipId: string }; result: RawBytes };
+  /** Model downloads and the device store (ext.ts): one command, so a new method needs no new permission. */
+  intel_ext_call: { args: { request: { method: string; params: unknown } }; result: unknown };
 }
 
 export type IntelCommand = keyof IntelCommands;

@@ -5,6 +5,16 @@
 export { createIntelClient } from './client';
 export type { IntelClient, SpokenText } from './client';
 export { IntelClientError, isIntelError, toIntelError } from './errors';
+export { createIntelExt, ExtError, toExtError } from './ext';
+export type {
+  ExtErrorCode,
+  IntelExt,
+  ModelInfo,
+  ModelList,
+  ModelState,
+  VocabularyChange,
+  VocabularyCorrection,
+} from './ext';
 export { createFakeIntelTransport } from './fake';
 export type { FakeIntelOptions, FakeIntelTransport } from './fake';
 export { fromImageData } from './image';
