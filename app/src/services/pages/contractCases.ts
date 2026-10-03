@@ -150,6 +150,17 @@ export const CONTRACT_CASES: readonly ContractCase[] = [
     },
   },
   {
+    name: 'takes the next edit after one it refused',
+    async run(make) {
+      const { service, page } = await opened(make);
+      const missing = { edit: 'deleteBlocks' as const, blocks: ['01k6c0ntract00000000000zzz'] };
+      await rejects(page.send({ edits: [missing] }), 'notFound', 'an edit of a missing block');
+      await page.send({ edits: [{ edit: 'setText', block: FIRST, markdown: 'Still here' }] });
+      equal(markdownOf(await reopen(service), FIRST), 'Still here', 'text');
+      await page.close();
+    },
+  },
+  {
     name: 'inserts blocks after, before, and at the end, and reports their order keys',
     async run(make) {
       const { service, page } = await opened(make);

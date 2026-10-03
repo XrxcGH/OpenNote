@@ -43,11 +43,17 @@ function delimiterOf(mark: Mark): string {
   return isPlainHighlight(mark) ? '==' : DELIMITERS[mark.type.name];
 }
 
+/** An attribute value as the tag may hold it: the schema checks it on the way in, and this keeps any other value
+ * from closing the quote or the tag. */
+function attrValue(value: unknown): string {
+  return String(value).replace(/[^#A-Za-z0-9-]/g, '');
+}
+
 function openTag(mark: Mark): string {
   const name = mark.type.name;
-  if (name === 'highlight' && mark.attrs.color) return `<mark data-color="${mark.attrs.color as string}">`;
-  if (name === 'textColor') return `<span data-color="${mark.attrs.color as string}">`;
-  if (name === 'textSize') return `<span data-size="${mark.attrs.size as string}">`;
+  if (name === 'highlight' && mark.attrs.color) return `<mark data-color="${attrValue(mark.attrs.color)}">`;
+  if (name === 'textColor') return `<span data-color="${attrValue(mark.attrs.color)}">`;
+  if (name === 'textSize') return `<span data-size="${attrValue(mark.attrs.size)}">`;
   return `<${TAGS[name]}>`;
 }
 

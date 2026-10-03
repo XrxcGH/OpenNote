@@ -121,31 +121,66 @@ function listeners<T>() {
   };
 }
 
+/**
+ * One open page's calls, in the order they were asked for. The core counts only the requests it accepts
+ * (crates/core/src/session/page/edits.rs, check_request). So a numbered request takes its number when it is sent,
+ * and the count moves only on an ack: a refused edit leaves its number for the next. After an out-of-order answer,
+ * the count is read back from the core.
+ */
+function sequence(start: number, reread: () => Promise<number>) {
+  let last = start;
+  let tail: Promise<unknown> = Promise.resolve();
+  const turn = <T>(call: () => Promise<T>): Promise<T> => {
+    const next = tail.then(call, call);
+    tail = next.catch(() => undefined);
+    return next;
+  };
+  const numbered = <T>(call: (clientSeq: number) => Promise<T>): Promise<T> =>
+    turn(async () => {
+      try {
+        const answer = await call(last + 1);
+        last += 1;
+        return answer;
+      } catch (error) {
+        if ((error as Partial<IpcError> | null)?.code === 'outOfOrder') last = await reread().catch(() => last);
+        throw error;
+      }
+    });
+  return { turn, numbered };
+}
+
 interface Session {
   page: string;
   client: string;
   core: CoreClient;
-  nextSeq(): number;
+  /** Runs a call after every earlier call for this open page has settled. */
+  turn<T>(call: () => Promise<T>): Promise<T>;
+  /** Runs a call that takes the client's next sequence number. */
+  numbered<T>(call: (clientSeq: number) => Promise<T>): Promise<T>;
   reread(): Promise<{ page: PageJson; envelope: DecodedEnvelope }>;
   external: ReturnType<typeof listeners<ExternalChange>>;
 }
 
 function history(session: Session): PageHistory {
-  const { core, page, client } = session;
+  const { core, page, client, turn } = session;
   return {
-    list: () => core.historyList(page, client).then((versions) => versions.map(toVersionInfo), rejectAs),
+    list: () => turn(() => core.historyList(page, client)).then((versions) => versions.map(toVersionInfo), rejectAs),
     open: (revision) =>
-      core.historyOpen(page, client, revision).then((envelope) => toPageJson(envelope.page, page), rejectAs),
+      turn(() => core.historyOpen(page, client, revision)).then(
+        (envelope) => toPageJson(envelope.page, page),
+        rejectAs,
+      ),
     async restore(revision, asCopy) {
-      const result = await core.historyRestore(page, client, revision, asCopy).catch(rejectAs);
+      const result = await turn(() => core.historyRestore(page, client, revision, asCopy)).catch(rejectAs);
       if (result.kind === 'copied') return { page: String(result.page), asCopy: true };
       // The page now holds the version, so the view reopens it.
       session.external.emit({ action: 'reloaded' });
       return { page, asCopy: false };
     },
     async restoreBlocks(revision, blocks) {
-      const request = { page, client, clientSeq: session.nextSeq(), revision, blocks: [...blocks] };
-      const ack: TxnAck = await core.historyRestoreBlocks(request).catch(rejectAs);
+      const ack: TxnAck = await session
+        .numbered((clientSeq) => core.historyRestoreBlocks({ page, client, clientSeq, revision, blocks: [...blocks] }))
+        .catch(rejectAs);
       const { page: held } = await session.reread();
       const restored = held.blocks.filter((block) => blocks.includes(block.id));
       const present = new Set(restored.map((block) => block.id));
@@ -157,7 +192,7 @@ function history(session: Session): PageHistory {
       };
       return frameFromPage(held, changes, ack);
     },
-    name: (revision, name, keep) => core.historyName(page, client, revision, name, keep).catch(rejectAs),
+    name: (revision, name, keep) => turn(() => core.historyName(page, client, revision, name, keep)).catch(rejectAs),
   };
 }
 
@@ -207,14 +242,17 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
     async open(pageId, { viewport }): Promise<OpenPage> {
       const name = `main-${++clients}`;
       const envelope = await client.pageOpen(pageId, name, viewport).catch(rejectAs);
-      let seq = envelope.session.clientSeq;
+      const { turn, numbered } = sequence(envelope.session.clientSeq, () =>
+        client.pageOpen(pageId, name, null).then((again) => again.session.clientSeq),
+      );
       const session: Session = {
         page: pageId,
         client: name,
         core: client,
-        nextSeq: () => ++seq,
+        turn,
+        numbered,
         async reread() {
-          const again = await client.pageOpen(pageId, name, null);
+          const again = await turn(() => client.pageOpen(pageId, name, null));
           return { page: toPageJson(again.page, pageId), envelope: again };
         },
         external: listeners<ExternalChange>(),
@@ -229,33 +267,34 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
         // Phase 3's core takes spliceText (P3-10); an older core would refuse it as invalid.
         supportsSplice: true,
         send: (batch) =>
-          client
-            .pageApply({
+          numbered((clientSeq) =>
+            client.pageApply({
               page: pageId,
               client: name,
-              clientSeq: session.nextSeq(),
+              clientSeq,
               coalesce: batch.coalesce ?? null,
               ui: batch.ui ?? null,
               edits: batch.edits,
-            })
-            .catch(rejectAs),
-        undo: () => client.pageUndo(pageId, name).then(frame, rejectAs),
-        redo: () => client.pageRedo(pageId, name).then(frame, rejectAs),
-        saveNow: () => client.pageSaveNow(pageId).catch(rejectAs),
+            }),
+          ).catch(rejectAs),
+        undo: () => turn(() => client.pageUndo(pageId, name)).then(frame, rejectAs),
+        redo: () => turn(() => client.pageRedo(pageId, name)).then(frame, rejectAs),
+        saveNow: () => turn(() => client.pageSaveNow(pageId)).catch(rejectAs),
         importImage(source) {
           if (source.kind === 'bytes') return images.importBytes(pageId, source.bytes, source.name, source.mime);
           if (source.kind === 'url') return images.importUrl(pageId, source.url);
           return images.importClip(pageId, source.token);
         },
         // WebView2 reaches custom schemes as http://<scheme>.localhost (images/protocol.rs).
-        assetUrl: (asset) => `http://opennote-asset.localhost/${pageId}/${asset}`,
+        assetUrl: (asset) =>
+          `http://opennote-asset.localhost/${encodeURIComponent(pageId)}/${encodeURIComponent(asset)}`,
         history: history(session),
         onFrame: heard.onFrame,
         onExternal: heard.onExternal,
         onReadOnly: heard.onReadOnly,
         close: () => {
           heard.stop();
-          return client.pageClose(pageId, name).catch(rejectAs);
+          return turn(() => client.pageClose(pageId, name)).catch(rejectAs);
         },
       };
     },

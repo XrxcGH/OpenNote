@@ -3,7 +3,10 @@
 // sends, automatic changes as their own step, followers, composition, and new text boxes.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { META_AUTO_CHANGE, META_COMMAND } from '../../../editor/meta';
+import { PageServiceError } from '../../../services/pages/types';
+import { exitHook } from './queue';
 import { blockId, caretAtEnd, syncPage, syncRig } from './testSync';
+import type { SyncRig } from './testSync';
 
 vi.mock('../../../ui/toast', () => ({ showToast: vi.fn() }));
 
@@ -160,5 +163,68 @@ describe('the edits a flush sends', () => {
     rig.queue.appendToNextBatch(B, [{ edit: 'moveBlock', block: A, frame: { y: 10 } }]);
     await tick(150);
     expect(rig.sent()[1]).toEqual({ edits: [{ edit: 'moveBlock', block: A, frame: { y: 10 } }] });
+  });
+});
+
+describe('a change the core refuses', () => {
+  const refuseOnce = (rig: SyncRig) => {
+    const send = rig.page.send.bind(rig.page);
+    let refused = false;
+    return vi.spyOn(rig.page, 'send').mockImplementation((batch) => {
+      if (refused) return send(batch);
+      refused = true;
+      return Promise.reject(new PageServiceError('locked', 'Locked for now.'));
+    });
+  };
+
+  it('keeps the text unsent, and sends it again with the next flush', async () => {
+    const rig = await syncRig(syncPage(['Hello']));
+    caretAtEnd(rig.editors.get(A)!);
+    refuseOnce(rig);
+    rig.type(A, '!');
+    await tick(150);
+    expect(rig.syncs.get(A)!.dirty).toBe(true);
+    expect(rig.queue.hasUnsent()).toBe(true);
+    await rig.queue.flushAll('exit');
+    expect((await rig.held()).blocks[0].data.markdown).toBe('Hello!');
+    expect(rig.queue.hasUnsent()).toBe(false);
+  });
+
+  it('inserts a new text box again after its first insert was refused', async () => {
+    const rig = await syncRig(syncPage(['One']));
+    const C = blockId(3);
+    rig.mount(C, '', { block: { id: C, type: 'text', frame: { x: 40, y: 80, w: 300 } } });
+    refuseOnce(rig);
+    rig.type(C, 'Notes');
+    await tick(150);
+    rig.type(C, '!');
+    await tick(150);
+    const held = await rig.held();
+    expect(held.blocks.find((block) => block.id === C)?.data.markdown).toBe('Notes!');
+  });
+
+  it('keeps edits that rode along with a refused batch for the next one', async () => {
+    const rig = await syncRig(syncPage(['One', 'Two']));
+    caretAtEnd(rig.editors.get(A)!);
+    refuseOnce(rig);
+    rig.type(A, 'x');
+    rig.queue.appendToNextBatch(A, [{ edit: 'deleteBlocks', blocks: [B] }]);
+    await tick(150);
+    await rig.queue.flushAll('exit');
+    const held = await rig.held();
+    expect(held.blocks.map((block) => [block.id, block.data.markdown])).toEqual([[A, 'Onex']]);
+  });
+
+  it('keeps the window open on exit while a refused change is unsent, until Close anyway', async () => {
+    const rig = await syncRig(syncPage(['Hello']));
+    caretAtEnd(rig.editors.get(A)!);
+    vi.spyOn(rig.page, 'send').mockRejectedValue(new PageServiceError('locked', 'Locked for now.'));
+    rig.type(A, '!');
+    const exit = exitHook(rig.queue);
+    const refused = await exit();
+    expect(refused).toMatchObject({ ok: false, reason: 'pageSync.exitUnsaved' });
+    if (refused.ok) return;
+    refused.closeAnyway?.();
+    expect(await exit()).toEqual({ ok: true });
   });
 });

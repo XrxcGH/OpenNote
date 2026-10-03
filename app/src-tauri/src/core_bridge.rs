@@ -12,7 +12,7 @@
 
 use std::{
     collections::{BTreeMap, HashMap},
-    fs,
+    fs, io,
     path::{Path, PathBuf},
     sync::{Arc, Mutex, OnceLock, PoisonError},
     time::Duration,
@@ -43,6 +43,12 @@ use crate::{
 
 /// How long the exit flush may take before the journals keep the rest for the next start (core plan 9.3).
 const EXIT_FLUSH: Duration = Duration::from_secs(5);
+
+/// The longest page ID the commands take. The interface's page IDs are far shorter.
+const MAX_PAGE_ID: usize = 128;
+
+/// What the interface hears when the core can't start. The cause, which can name local paths, goes to the log.
+const NOT_STARTED: &str = "OpenNote couldn't open its pages. Try again in a moment.";
 
 /// Sends one event to the interface.
 type Emit = Box<dyn Fn(&'static str, Value) + Send + Sync>;
@@ -91,7 +97,8 @@ impl EventSink for AppEvents {
 /// The managed state behind the page commands.
 pub struct CoreBridge {
     root: PathBuf,
-    state: Mutex<Option<Result<Bridge, String>>>,
+    /// The started bridge. A start that failed leaves it empty, so the next command tries again.
+    state: Mutex<Option<Bridge>>,
     relay: Arc<Relay>,
 }
 
@@ -130,8 +137,37 @@ fn revision_id(text: &str) -> IpcResult<RevisionId> {
     RevisionId::parse(text).map_err(|error| invalid("revision", error))
 }
 
+/// Checks a page argument: a short, plain ID, as the interface's page IDs are, so nothing else becomes a key of the
+/// page map.
+fn check_page(page: &str) -> IpcResult<()> {
+    let plain = page
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_');
+    if page.is_empty() || page.len() > MAX_PAGE_ID || !plain {
+        return Err(IpcError::invalid("page", "isn't a page ID"));
+    }
+    Ok(())
+}
+
+/// The page map, or an empty one when there is no file yet. Any other failure stops the start, so a map that can't
+/// be read now is never replaced by one without its pages.
+fn read_map(file: &Path) -> Result<BTreeMap<String, String>, IpcError> {
+    match fs::read_to_string(file) {
+        Ok(text) => serde_json::from_str(&text)
+            .map_err(|error| internal(format!("The page map at {} can't be read: {error}", file.display()))),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(BTreeMap::new()),
+        Err(error) => Err(internal(format!(
+            "The page map at {} can't be read: {error}",
+            file.display()
+        ))),
+    }
+}
+
 impl Bridge {
     fn start(root: &Path, relay: Arc<Relay>) -> Result<Bridge, IpcError> {
+        // The map goes first, so a map that can't be read stops the start before the core holds the notebook.
+        let map_file = root.join("pages.json");
+        let map = read_map(&map_file)?;
         let config =
             CoreConfig::production(root.join("core"), env!("CARGO_PKG_VERSION").to_owned()).map_err(internal)?;
         let core = Core::start(config, Arc::new(AppEvents(relay.clone())), None).map_err(internal)?;
@@ -152,11 +188,6 @@ impl Bridge {
                 notebook.create_section("Pages", at).map_err(internal)?
             }
         };
-        let map_file = root.join("pages.json");
-        let map = fs::read_to_string(&map_file)
-            .ok()
-            .and_then(|text| serde_json::from_str(&text).ok())
-            .unwrap_or_default();
         Ok(Bridge {
             core,
             notebook,
@@ -174,8 +205,10 @@ impl Bridge {
         pages.entry(core).or_insert_with(|| ui.to_owned());
     }
 
-    /// The core page that holds an interface page, made the first time it opens.
+    /// The core page that holds an interface page, made the first time it opens. The map holds a new page only once
+    /// the file does, so a page whose mapping wasn't written isn't typed into.
     fn core_page(&mut self, page: &str) -> IpcResult<PageId> {
+        check_page(page)?;
         if let Some(id) = self.map.get(page) {
             return PageId::parse(id).map_err(|error| invalid("page", error));
         }
@@ -184,12 +217,28 @@ impl Bridge {
             before: None,
         };
         let id = self.notebook.create_page(self.section, at).map_err(internal)?;
-        self.map.insert(page.to_owned(), id.to_string());
-        let json = serde_json::to_vec_pretty(&self.map).map_err(internal)?;
+        let mut next = self.map.clone();
+        next.insert(page.to_owned(), id.to_string());
+        let json = serde_json::to_vec_pretty(&next).map_err(internal)?;
         write_atomic(&self.map_file, &json)?;
+        self.map = next;
         Ok(id)
     }
 
+    /// The client's open session of a page, for every command but page_open: only page_open makes a page.
+    fn open_handle(&self, page: &str, client: &str) -> IpcResult<PageHandle> {
+        check_page(page)?;
+        let not_open = || IpcError::new("notFound", "This page isn't open.");
+        let id = self
+            .map
+            .get(page)
+            .and_then(|id| PageId::parse(id).ok())
+            .ok_or_else(not_open)?;
+        let client = ClientId::parse(client).map_err(|error| invalid("client", error))?;
+        self.open.get(&(id, client)).cloned().ok_or_else(not_open)
+    }
+
+    /// The client's session of a page, opened and made first when needed (page_open).
     fn handle(&mut self, page: &str, client: &str) -> IpcResult<PageHandle> {
         let id = self.core_page(page)?;
         self.relay_page(page, id);
@@ -227,23 +276,29 @@ impl CoreBridge {
         }
     }
 
-    /// Runs `work` on the bridge, starting the core first if it hasn't started.
+    /// Runs `work` on the bridge, starting the core first if it hasn't started. A start that fails is logged and
+    /// tried again by the next command.
     fn with<T>(&self, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         if state.is_none() {
-            *state = Some(Bridge::start(&self.root, self.relay.clone()).map_err(|error| error.message));
+            match Bridge::start(&self.root, self.relay.clone()) {
+                Ok(bridge) => *state = Some(bridge),
+                Err(error) => {
+                    ::log::error!("The core couldn't start: {}", error.message);
+                    return Err(IpcError::new(codes::INTERNAL, NOT_STARTED));
+                }
+            }
         }
         match state.as_mut() {
-            Some(Ok(bridge)) => work(bridge),
-            Some(Err(message)) => Err(IpcError::new(codes::INTERNAL, message.clone())),
-            None => Err(IpcError::new(codes::INTERNAL, "The core didn't start.")),
+            Some(bridge) => work(bridge),
+            None => Err(IpcError::new(codes::INTERNAL, NOT_STARTED)),
         }
     }
 
     /// Saves every page and stops the core. The app calls it on exit.
     pub fn shutdown(&self) {
         let state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-        if let Some(Ok(bridge)) = state.as_ref() {
+        if let Some(bridge) = state.as_ref() {
             if let Err(error) = bridge.core.flush_all(EXIT_FLUSH) {
                 ::log::error!("Couldn't save the open pages: {error}");
             }
@@ -257,7 +312,7 @@ pub fn page_handle(app: &AppHandle, page: PageId) -> Option<PageHandle> {
     let bridge = app.state::<CoreBridge>();
     let state = bridge.state.lock().unwrap_or_else(PoisonError::into_inner);
     match state.as_ref() {
-        Some(Ok(bridge)) => bridge
+        Some(bridge) => bridge
             .open
             .iter()
             .find(|((id, _), _)| *id == page)
@@ -271,7 +326,7 @@ pub fn core_page_id(app: &AppHandle, page: &str) -> Option<PageId> {
     let bridge = app.state::<CoreBridge>();
     let state = bridge.state.lock().unwrap_or_else(PoisonError::into_inner);
     match state.as_ref() {
-        Some(Ok(bridge)) => bridge.map.get(page).and_then(|id| PageId::parse(id).ok()),
+        Some(bridge) => bridge.map.get(page).and_then(|id| PageId::parse(id).ok()),
         _ => None,
     }
 }
@@ -315,7 +370,7 @@ pub async fn page_apply(
     edits: Vec<Edit>,
 ) -> IpcResult<TxnAck> {
     bridge.with(|bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.open_handle(&page, &client)?;
         let request = TxnRequest {
             page: handle.id(),
             client: handle.client().clone(),
@@ -332,7 +387,7 @@ pub async fn page_apply(
 #[tauri::command]
 pub async fn page_undo(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Response> {
     bridge.with(|bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.open_handle(&page, &client)?;
         let frame = handle.undo(handle.client()).map_err(edit_error)?;
         Ok(Response::new(frame.map(|frame| frame.bytes).unwrap_or_default()))
     })
@@ -341,7 +396,7 @@ pub async fn page_undo(bridge: State<'_, CoreBridge>, page: String, client: Stri
 #[tauri::command]
 pub async fn page_redo(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Response> {
     bridge.with(|bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.open_handle(&page, &client)?;
         let frame = handle.redo(handle.client()).map_err(edit_error)?;
         Ok(Response::new(frame.map(|frame| frame.bytes).unwrap_or_default()))
     })
@@ -376,7 +431,7 @@ pub async fn page_close(bridge: State<'_, CoreBridge>, page: String, client: Str
 /// The page's saved versions, newest first (core plan 8).
 #[tauri::command]
 pub async fn history_list(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Vec<VersionEntry>> {
-    bridge.with(|bridge| bridge.handle(&page, &client)?.history().map_err(core_error))
+    bridge.with(|bridge| bridge.open_handle(&page, &client)?.history().map_err(core_error))
 }
 
 /// A saved version as a read-only page envelope.
@@ -388,7 +443,7 @@ pub async fn history_open(
     revision: String,
 ) -> IpcResult<Response> {
     bridge.with(|bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.open_handle(&page, &client)?;
         let envelope = handle.open_version(revision_id(&revision)?).map_err(core_error)?;
         Ok(Response::new(envelope.bytes))
     })
@@ -404,7 +459,7 @@ pub async fn history_restore(
     as_copy: bool,
 ) -> IpcResult<RestoreResult> {
     bridge.with(|bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.open_handle(&page, &client)?;
         handle
             .restore_version(revision_id(&revision)?, as_copy)
             .map_err(core_error)
@@ -422,7 +477,7 @@ pub async fn history_restore_blocks(
     blocks: Vec<BlockId>,
 ) -> IpcResult<TxnAck> {
     bridge.with(|bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.open_handle(&page, &client)?;
         handle
             .restore_blocks(client_seq, revision_id(&revision)?, &blocks)
             .map_err(edit_error)
@@ -440,7 +495,7 @@ pub async fn history_name(
     keep: bool,
 ) -> IpcResult<()> {
     bridge.with(|bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.open_handle(&page, &client)?;
         handle
             .name_version(revision_id(&revision)?, name, keep)
             .map_err(core_error)
@@ -534,5 +589,68 @@ mod tests {
         assert_eq!(named.as_deref(), Some("p-history"));
         assert!(!versions.is_empty());
         assert_eq!(core_error(CoreError::NotFound("version".into())).code, "notFound");
+    }
+
+    #[test]
+    fn an_unreadable_page_map_stops_the_start_and_is_never_replaced() {
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let map_file = dir.path().join("pages.json");
+        fs::write(&map_file, b"{ not json").expect("a damaged map");
+        let bridge = CoreBridge::at(dir.path().to_owned());
+        let error = bridge
+            .with(|bridge| bridge.handle("p-damaged", "main-1").map(|_| ()))
+            .expect_err("the start fails");
+        assert_eq!(error.code, codes::INTERNAL);
+        assert!(!error.message.contains(&dir.path().display().to_string()));
+        assert_eq!(fs::read(&map_file).expect("the map"), b"{ not json");
+        // A start that failed is tried again by the next command, once the file can be read.
+        fs::write(&map_file, br#"{ "p-kept": "01k6f00000000000000000p001" }"#).expect("a mended map");
+        let kept = bridge
+            .with(|bridge| Ok(bridge.map.get("p-kept").cloned()))
+            .expect("the second start");
+        bridge.shutdown();
+        assert_eq!(kept.as_deref(), Some("01k6f00000000000000000p001"));
+    }
+
+    #[test]
+    fn a_page_is_mapped_only_once_its_map_is_written() {
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let bridge = CoreBridge::at(dir.path().to_owned());
+        let (first, second, mapped) = bridge
+            .with(|bridge| {
+                // A folder where the map goes makes every write fail.
+                bridge.map_file = dir.path().join("blocked");
+                fs::create_dir(&bridge.map_file).map_err(internal)?;
+                let first = bridge.core_page("p-new").is_err();
+                let second = bridge.core_page("p-new").is_err();
+                Ok((first, second, bridge.map.contains_key("p-new")))
+            })
+            .expect("the bridge");
+        bridge.shutdown();
+        assert!(first && second);
+        assert!(!mapped);
+    }
+
+    #[test]
+    fn only_page_open_makes_a_page_and_page_ids_are_checked() {
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let bridge = CoreBridge::at(dir.path().to_owned());
+        let (unopened, opened) = bridge
+            .with(|bridge| {
+                let unopened = bridge.open_handle("p-never-opened", "main-1").map(|_| ()).unwrap_err();
+                bridge.handle("p-opened", "main-1")?;
+                let opened = bridge.open_handle("p-opened", "main-1").is_ok();
+                Ok((unopened, opened))
+            })
+            .expect("the bridge");
+        let map = fs::read_to_string(dir.path().join("pages.json")).expect("the map");
+        bridge.shutdown();
+        assert_eq!(unopened.code, "notFound");
+        assert!(opened);
+        assert!(!map.contains("p-never-opened"));
+        for bad in ["", "a/b", "..", "p 1", &"p".repeat(MAX_PAGE_ID + 1)] {
+            assert_eq!(check_page(bad).expect_err(bad).code, codes::INVALID);
+        }
+        assert!(check_page("01k6f00000000000000000p001").is_ok());
     }
 }

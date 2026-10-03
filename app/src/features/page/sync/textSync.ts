@@ -229,16 +229,29 @@ class Sync implements TextSyncHandle {
     const failed = (error: unknown) => {
       this.sent = before.sent;
       this.insert = before.insert;
-      if (!(error instanceof PageServiceError) || !error.resync || this.whole) return;
-      if (hasResyncListener(this.queue)) return;
-      // Nobody reopens the page, so the whole text goes instead, and nothing typed is lost.
-      this.whole = true;
-      void this.enqueue(this.editor.state.doc, undefined, null);
+      const resync = error instanceof PageServiceError && error.resync;
+      // The page view reopens the page.
+      if (resync && hasResyncListener(this.queue)) return;
+      if (resync && !this.whole) {
+        // Nobody reopens the page, so the whole text goes instead, and nothing typed is lost.
+        this.whole = true;
+        void this.enqueue(this.editor.state.doc, undefined, null);
+        return;
+      }
+      this.keepUnsent();
     };
     return this.internals.enqueue(build, this.block, failed).then(
       () => undefined,
       (error: unknown) => reportSendError(this.queue, error),
     );
+  }
+
+  /** Marks the text as not sent, so the next change, blur, page switch, or exit sends it again. */
+  private keepUnsent(): void {
+    if (this.pending || this.detached) return;
+    const { doc, selection } = this.editor.state;
+    const target = this.source.target(doc, selection);
+    this.pending = { before: this.ui(selection), range: { from: 0, to: doc.content.size }, target };
   }
 
   /** Sends the pending typing, as it was in `doc`, with the selection `after` it. */
