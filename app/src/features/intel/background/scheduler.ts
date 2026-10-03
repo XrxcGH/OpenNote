@@ -95,6 +95,22 @@ export interface Scheduler {
   dispose(): void;
 }
 
+/** Removes the entries the test picks. */
+function removeWhere(entries: Entry[], test: (entry: Entry) => boolean): void {
+  for (let at = entries.length - 1; at >= 0; at -= 1) {
+    const entry = entries[at];
+    if (entry && test(entry)) entries.splice(at, 1);
+  }
+}
+
+/** What keeps work from starting under these limits, or null when nothing does. */
+function blockReason(prefs: BackgroundPrefs, surroundings: Surroundings): WaitReason | null {
+  if (prefs.paused) return 'paused';
+  if (prefs.onlyWhenIdle && !surroundings.idle()) return 'idle';
+  if (prefs.onlyWhenPluggedIn && !surroundings.pluggedIn()) return 'power';
+  return null;
+}
+
 export function createScheduler(surroundings: Surroundings, initial: Partial<BackgroundPrefs> = {}): Scheduler {
   const entries: Entry[] = [];
   const state = createStore<BackgroundState>(
@@ -108,14 +124,6 @@ export function createScheduler(surroundings: Surroundings, initial: Partial<Bac
   const publish = (waiting: WaitReason | null) =>
     state.set((current) => ({ ...current, jobs: entries.map((entry) => ({ ...entry.info })), waiting }));
 
-  const blocker = (): WaitReason | null => {
-    const { prefs } = state.get();
-    if (prefs.paused) return 'paused';
-    if (prefs.onlyWhenIdle && !surroundings.idle()) return 'idle';
-    if (prefs.onlyWhenPluggedIn && !surroundings.pluggedIn()) return 'power';
-    return null;
-  };
-
   const later = (ms: number) => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
@@ -127,7 +135,7 @@ export function createScheduler(surroundings: Surroundings, initial: Partial<Bac
   function pump(): void {
     if (running) return publish(null);
     const next = entries.find((entry) => entry.info.status === 'waiting');
-    const reason = blocker();
+    const reason = blockReason(state.get().prefs, surroundings);
     publish(next ? reason : null);
     if (!next) return;
     if (reason) return later(RECHECK_MS);
@@ -183,20 +191,13 @@ export function createScheduler(surroundings: Surroundings, initial: Partial<Bac
       pump();
     },
     clearFinished() {
-      for (let at = entries.length - 1; at >= 0; at -= 1) {
-        const status = entries[at]?.info.status;
-        if (status === 'done' || status === 'failed') entries.splice(at, 1);
-      }
+      removeWhere(entries, (entry) => entry.info.status === 'done' || entry.info.status === 'failed');
       pump();
     },
     setPrefs(patch) {
       state.set((current) => ({ ...current, prefs: { ...current.prefs, ...patch } }));
-      if (patch.onlyOnRequest) {
-        for (let at = entries.length - 1; at >= 0; at -= 1) {
-          const entry = entries[at];
-          if (entry?.spec.automatic && entry.info.status === 'waiting') entries.splice(at, 1);
-        }
-      }
+      if (patch.onlyOnRequest)
+        removeWhere(entries, (entry) => !!entry.spec.automatic && entry.info.status === 'waiting');
       pump();
     },
     pump,

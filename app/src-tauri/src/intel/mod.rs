@@ -381,11 +381,7 @@ pub async fn intel_clip_audio(state: State<'_, IntelState>, clip_id: String) -> 
 #[tauri::command]
 pub async fn intel_ext_call(state: State<'_, IntelState>, request: ext::ExtRequest) -> IpcResult<serde_json::Value> {
     let ext = state.0.ext.clone();
-    match spawn_blocking(move || {
-        ext.call(&request, crate::hardening::offline(), crate::hardening::safe_mode())
-    })
-    .await
-    {
+    match spawn_blocking(move || ext.call(&request, crate::hardening::offline(), crate::hardening::safe_mode())).await {
         Ok(result) => result,
         Err(error) => Err(IpcError::new(codes::INTERNAL, error.to_string())),
     }

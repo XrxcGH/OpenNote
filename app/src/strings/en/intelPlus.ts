@@ -148,7 +148,8 @@ export const intelPlus = {
   handwriting: {
     reviewTitle: 'Check the handwriting',
     reviewBody:
-      '{count, plural, =0 {Every word looks clear.} one {# word is underlined because it may be wrong.} other {# words are underlined because they may be wrong.}}',
+      '{count, plural, =0 {Every word looks clear.} one {# word is underlined because it may be wrong.} ' +
+      'other {# words are underlined because they may be wrong.}}',
     reviewHelp:
       'Choose an underlined word to see other readings. Symbols and chemical formulas are tidied when you insert.',
     alternatives: 'Other readings',
@@ -163,7 +164,9 @@ export const intelPlus = {
     meaning: {
       name: 'search by meaning',
       label: 'Search by meaning and related pages',
-      help: 'Finds pages about the same idea even when the words differ, and lists related pages beside a page. It keeps a private index of your pages on this device, and skips locked sections.',
+      help:
+        'Finds pages about the same idea even when the words differ, and lists related pages beside a page. ' +
+        'It keeps a private index of your pages on this device, and skips locked sections.',
       offer:
         'OpenNote can find pages by meaning and list related pages. It keeps a private index of your pages on this device.',
     },
@@ -177,7 +180,9 @@ export const intelPlus = {
     writing: {
       name: 'writing tools',
       label: 'Writing tools',
-      help: 'Proofread, rewrite, shorten, make a list, or tidy the structure of selected text. Changes are marked, and nothing is replaced until you accept.',
+      help:
+        'Proofread, rewrite, shorten, make a list, or tidy the structure of selected text. ' +
+        'Changes are marked, and nothing is replaced until you accept.',
       offer:
         'OpenNote can suggest changes to the text you select. Changes are marked, and nothing is replaced until you accept.',
     },
@@ -229,7 +234,8 @@ export const intelPlus = {
     },
     keywords: 'writing proofread rewrite shorten list tidy grammar spelling edit',
     reviewBody:
-      '{count, plural, =0 {No changes to suggest.} one {# change is marked.} other {# changes are marked.}} Nothing is replaced until you accept.',
+      '{count, plural, =0 {No changes to suggest.} one {# change is marked.} other {# changes are marked.}} ' +
+      'Nothing is replaced until you accept.',
     legend: 'Added words are underlined. Removed words are crossed out.',
     addedStart: 'Added: ',
     addedEnd: ' End of added text.',

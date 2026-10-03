@@ -9,6 +9,26 @@ import { intelClient, intelExt } from '../runtime';
 import { addTerm } from './list';
 import { loadVocabulary, saveVocabulary } from './store';
 
+/** Adds the offered term to the notebook's list and says so. A failed save is shown. */
+async function addOffered(notebookId: string | null, offer: { term: string; heardAs: string }): Promise<void> {
+  try {
+    await saveVocabulary(notebookId, addTerm(await loadVocabulary(notebookId), offer.term, offer.heardAs));
+    showToast({ message: t('intelPlus.vocabulary.added', { term: offer.term }) });
+  } catch {
+    showToast({ message: t('intelPlus.vocabulary.saveFailed'), tone: 'danger' });
+  }
+}
+
+/** The term worth offering after a fix, or null when there is none or the question can't be asked. */
+async function termToOffer(notebookId: string | null, original: string, fixed: string) {
+  try {
+    const list = await loadVocabulary(notebookId);
+    return await (await intelClient()).vocabularyOffer(list, original, fixed);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * After the person fixed `original` to `fixed` in a transcript, offers to add the term. Does nothing when
  * transcription is off, when the term is listed or ordinary, or when the call fails: an offer is never worth an error.
@@ -20,28 +40,13 @@ export async function offerVocabularyTerm(
   fixed: string,
 ): Promise<boolean> {
   if (!isOn('transcription')) return false;
-  try {
-    const list = await loadVocabulary(notebookId);
-    const offer = await (await intelClient()).vocabularyOffer(list, original, fixed);
-    if (!offer) return false;
-    showToast({
-      message: t('intelPlus.vocabulary.offerMessage', { term: offer.term }),
-      action: {
-        label: t('intelPlus.vocabulary.offerAdd'),
-        run: async () => {
-          try {
-            await saveVocabulary(notebookId, addTerm(await loadVocabulary(notebookId), offer.term, offer.heardAs));
-            showToast({ message: t('intelPlus.vocabulary.added', { term: offer.term }) });
-          } catch {
-            showToast({ message: t('intelPlus.vocabulary.saveFailed'), tone: 'danger' });
-          }
-        },
-      },
-    });
-    return true;
-  } catch {
-    return false;
-  }
+  const offer = await termToOffer(notebookId, original, fixed);
+  if (!offer) return false;
+  showToast({
+    message: t('intelPlus.vocabulary.offerMessage', { term: offer.term }),
+    action: { label: t('intelPlus.vocabulary.offerAdd'), run: () => addOffered(notebookId, offer) },
+  });
+  return true;
 }
 
 export interface VocabularyPreview {

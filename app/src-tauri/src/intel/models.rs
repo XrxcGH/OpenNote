@@ -487,7 +487,14 @@ mod tests {
     fn a_download_is_kept_after_its_checksum_matches() {
         let dir = tempfile::tempdir().unwrap();
         let progress = AtomicU64::new(0);
-        download(&memory(DATA, false), &SPEC, dir.path(), &AtomicBool::new(false), &progress).unwrap();
+        download(
+            &memory(DATA, false),
+            &SPEC,
+            dir.path(),
+            &AtomicBool::new(false),
+            &progress,
+        )
+        .unwrap();
         assert_eq!(fs::read(dir.path().join("test.bin")).unwrap(), DATA);
         assert!(!dir.path().join("test.bin.part").exists());
         assert_eq!(progress.load(Ordering::Relaxed), DATA.len() as u64);
@@ -507,7 +514,14 @@ mod tests {
     fn a_server_that_ignores_the_range_restarts_the_file() {
         let dir = tempfile::tempdir().unwrap();
         fs::write(dir.path().join("test.bin.part"), &DATA[..5]).unwrap();
-        download(&memory(DATA, true), &SPEC, dir.path(), &AtomicBool::new(false), &AtomicU64::new(0)).unwrap();
+        download(
+            &memory(DATA, true),
+            &SPEC,
+            dir.path(),
+            &AtomicBool::new(false),
+            &AtomicU64::new(0),
+        )
+        .unwrap();
         assert_eq!(fs::read(dir.path().join("test.bin")).unwrap(), DATA);
     }
 
@@ -559,7 +573,10 @@ mod tests {
     fn a_blocked_start_does_not_run_and_the_list_shows_what_is_on_disk() {
         let dir = tempfile::tempdir().unwrap();
         let models = Models::with_source(dir.path().to_path_buf(), Arc::new(memory(DATA, false)));
-        assert_eq!(models.start("speech-base-en", Some(DownloadError::Offline)), Err(DownloadError::Offline));
+        assert_eq!(
+            models.start("speech-base-en", Some(DownloadError::Offline)),
+            Err(DownloadError::Offline)
+        );
         let first = &models.list().models[0];
         assert_eq!((first.state, first.bytes), ("notInstalled", 0));
         let spec = &CATALOG[0];

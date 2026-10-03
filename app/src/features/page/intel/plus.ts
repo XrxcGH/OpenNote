@@ -99,7 +99,7 @@ WRITING_TOOLS.forEach(([tool, id], order) => {
   });
 });
 
-// Search by meaning keeps its index current: it looks at the page that opens, and at start-up brings the rest up to date.
+// Search by meaning keeps its index current: it reads the page that opens, and at start-up it catches up on the rest.
 void api().then((module) => module.resumeExtras());
 
 // Reads the text in images the page shows that the device hasn't read yet, through the activity panel's queue. It

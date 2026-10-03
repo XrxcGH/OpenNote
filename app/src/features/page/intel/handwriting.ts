@@ -29,7 +29,7 @@ export async function handwritingToText(): Promise<void> {
     await intel();
   if (!hasInkStrokeSource()) registerInkStrokeSource(inkSource);
   announce(t('intel.handwriting.working'));
-  // With the extras on, symbols and formulas are tidied and unsure words are reviewed before anything is added.
+  // With the extras on, the text is tidied first, and any unsure words are reviewed before anything is added.
   let lines: string[] | null;
   if (isEnabled('intel.handwritingExtras')) {
     const recognition = await readHandwritingWords(ids);

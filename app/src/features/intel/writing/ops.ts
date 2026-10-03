@@ -75,7 +75,7 @@ const TYPOS: ReadonlyArray<readonly [string, string]> = [
 export function proofread(text: string): string {
   return (
     replacePhrases(text, TYPOS)
-      // Spaces: none before , ; : ! ? . and one after them when a word follows. A dot between digits or letters is left alone.
+      // Spacing: no space goes before a mark, and one goes after it when a word follows. A dot between letters stays.
       .replace(/[ \t]+([,;:!?])/g, '$1')
       .replace(/[ \t]+\.(?=\s|$)/g, '.')
       .replace(/([,;:!?])(?=[\p{L}])/gu, '$1 ')

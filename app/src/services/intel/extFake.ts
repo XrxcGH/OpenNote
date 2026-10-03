@@ -42,6 +42,24 @@ const CATALOG: readonly Entry[] = [
   },
 ];
 
+/** The first mishearing each line lists, replaced by its term. The real correction is the Rust crate's. */
+function correct(vocabulary: string, text: string): VocabularyCorrection {
+  const changes: VocabularyCorrection['changes'] = [];
+  let out = text;
+  for (const line of vocabulary.split(/\r?\n/)) {
+    const [term = '', heard = ''] = line.split('|').map((part) => part.trim());
+    const aliases = heard.split(',').map((one) => one.trim());
+    for (const alias of aliases.filter(Boolean)) {
+      const at = out.toLowerCase().indexOf(alias.toLowerCase());
+      if (at < 0) continue;
+      const span = { start: at, end: at + alias.length };
+      changes.push({ from: out.slice(span.start, span.end), to: term, span });
+      out = out.slice(0, span.start) + term + out.slice(span.end);
+    }
+  }
+  return { text: out, changes };
+}
+
 export function createFakeExt(): FakeExt {
   const files = new Map<string, string>();
   const calls: string[] = [];
@@ -49,6 +67,11 @@ export function createFakeExt(): FakeExt {
     CATALOG.map((one) => [one.id, { ...one, state: 'notInstalled', bytes: 0, error: null }]),
   );
   let lastRanUnix: number | null = null;
+  const find = (id: string | undefined): ModelInfo => {
+    const found = models.get(id ?? '');
+    if (!found) throw new ExtError('invalid', 'That model is not in the catalog.');
+    return found;
+  };
   const fake: FakeExt = {
     files,
     offline: false,
@@ -63,75 +86,44 @@ export function createFakeExt(): FakeExt {
     handle({ method, params }) {
       calls.push(method);
       const p = (params ?? {}) as Record<string, string>;
-      const model = () => {
-        const found = models.get(p.id ?? '');
-        if (!found) throw new ExtError('invalid', 'That model is not in the catalog.');
-        return found;
-      };
-      switch (method) {
-        case 'store.get':
-          return files.get(p.name ?? '') ?? null;
-        case 'store.put':
-          files.set(p.name ?? '', p.text ?? '');
-          return null;
-        case 'store.remove':
-          files.delete(p.name ?? '');
-          return null;
-        case 'vocabulary.correct': {
-          const { vocabulary = '', text = '' } = p;
-          const changes: VocabularyCorrection['changes'] = [];
-          let out = text;
-          for (const line of vocabulary.split(/\r?\n/)) {
-            const [term = '', heard = ''] = line.split('|').map((part) => part.trim());
-            for (const alias of heard
-              .split(',')
-              .map((one) => one.trim())
-              .filter(Boolean)) {
-              const at = out.toLowerCase().indexOf(alias.toLowerCase());
-              if (at < 0) continue;
-              changes.push({
-                from: out.slice(at, at + alias.length),
-                to: term,
-                span: { start: at, end: at + alias.length },
-              });
-              out = out.slice(0, at) + term + out.slice(at + alias.length);
-            }
-          }
-          const result: VocabularyCorrection = { text: out, changes };
-          return result;
-        }
-        case 'models.list': {
-          const list: ModelList = {
-            models: [...models.values()].map((one) => ({ ...one })),
-            lastRanUnix,
-            offline: fake.offline,
-          };
-          return list;
-        }
-        case 'models.start': {
-          if (fake.offline) throw new ExtError('offline', 'Work offline is on.');
-          const one = model();
-          if (one.state !== 'installed') {
-            one.state = 'downloading';
-            one.error = null;
-            lastRanUnix = Math.floor(Date.now() / 1000);
-          }
-          return null;
-        }
-        case 'models.cancel': {
-          const one = model();
-          if (one.state === 'downloading') one.state = one.bytes > 0 ? 'partial' : 'notInstalled';
-          return null;
-        }
-        case 'models.remove': {
-          const one = model();
-          one.state = 'notInstalled';
-          one.bytes = 0;
-          return null;
-        }
-        default:
-          throw new ExtError('invalid', `There is no method called ${method}.`);
+      if (method === 'store.get') return files.get(p.name ?? '') ?? null;
+      if (method === 'store.put') {
+        files.set(p.name ?? '', p.text ?? '');
+        return null;
       }
+      if (method === 'store.remove') {
+        files.delete(p.name ?? '');
+        return null;
+      }
+      if (method === 'vocabulary.correct') return correct(p.vocabulary ?? '', p.text ?? '');
+      if (method === 'models.list') {
+        const list: ModelList = {
+          models: [...models.values()].map((one) => ({ ...one })),
+          lastRanUnix,
+          offline: fake.offline,
+        };
+        return list;
+      }
+      if (method === 'models.start') {
+        if (fake.offline) throw new ExtError('offline', 'Work offline is on.');
+        const one = find(p.id);
+        if (one.state !== 'installed') {
+          one.state = 'downloading';
+          one.error = null;
+          lastRanUnix = Math.floor(Date.now() / 1000);
+        }
+        return null;
+      }
+      if (method === 'models.cancel') {
+        const one = find(p.id);
+        if (one.state === 'downloading') one.state = one.bytes > 0 ? 'partial' : 'notInstalled';
+        return null;
+      }
+      if (method === 'models.remove') {
+        Object.assign(find(p.id), { state: 'notInstalled', bytes: 0 });
+        return null;
+      }
+      throw new ExtError('invalid', `There is no method called ${method}.`);
     },
   };
   return fake;

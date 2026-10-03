@@ -65,7 +65,10 @@ fn store_name(name: &str) -> Result<&str, IpcError> {
     if plain {
         Ok(name)
     } else {
-        Err(invalid("A stored name has letters, digits, dots, dashes, and underscores only.", "name"))
+        Err(invalid(
+            "A stored name has letters, digits, dots, dashes, and underscores only.",
+            "name",
+        ))
     }
 }
 
@@ -108,7 +111,8 @@ impl Ext {
                 if content.len() > MAX_STORED_BYTES {
                     return Err(invalid("That is too much to store.", "text"));
                 }
-                write_atomic(&self.file(text(params, "name")?)?, content.as_bytes()).map_err(|error| io_error(&error))?;
+                write_atomic(&self.file(text(params, "name")?)?, content.as_bytes())
+                    .map_err(|error| io_error(&error))?;
                 Ok(Value::Null)
             }
             "store.remove" => match fs::remove_file(self.file(text(params, "name")?)?) {
@@ -117,9 +121,10 @@ impl Ext {
                 Err(error) => Err(io_error(&error)),
             },
             "vocabulary.correct" => {
-                let request: opennote_intel::wire::VocabularyCorrectRequest = serde_json::from_value(params.clone())
-                    .map_err(|error| invalid(&error.to_string(), "params"))?;
-                serde_json::to_value(request.correct()).map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
+                let request: opennote_intel::wire::VocabularyCorrectRequest =
+                    serde_json::from_value(params.clone()).map_err(|error| invalid(&error.to_string(), "params"))?;
+                serde_json::to_value(request.correct())
+                    .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
             }
             "models.list" => serde_json::to_value(self.models.list())
                 .map(|mut list| {
@@ -165,20 +170,38 @@ mod tests {
     }
 
     fn call(ext: &Ext, method: &str, params: Value) -> Result<Value, IpcError> {
-        ext.call(&ExtRequest { method: method.to_owned(), params }, false, false)
+        ext.call(
+            &ExtRequest {
+                method: method.to_owned(),
+                params,
+            },
+            false,
+            false,
+        )
     }
 
     #[test]
     fn the_store_keeps_text_by_name() {
         let (_dir, ext) = ext();
-        assert_eq!(call(&ext, "store.get", json!({ "name": "words.txt" })).unwrap(), Value::Null);
-        call(&ext, "store.put", json!({ "name": "words.txt", "text": "Ångström\nOpenNote" })).unwrap();
+        assert_eq!(
+            call(&ext, "store.get", json!({ "name": "words.txt" })).unwrap(),
+            Value::Null
+        );
+        call(
+            &ext,
+            "store.put",
+            json!({ "name": "words.txt", "text": "Ångström\nOpenNote" }),
+        )
+        .unwrap();
         assert_eq!(
             call(&ext, "store.get", json!({ "name": "words.txt" })).unwrap(),
             json!("Ångström\nOpenNote")
         );
         call(&ext, "store.remove", json!({ "name": "words.txt" })).unwrap();
-        assert_eq!(call(&ext, "store.get", json!({ "name": "words.txt" })).unwrap(), Value::Null);
+        assert_eq!(
+            call(&ext, "store.get", json!({ "name": "words.txt" })).unwrap(),
+            Value::Null
+        );
     }
 
     #[test]

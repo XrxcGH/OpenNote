@@ -1,8 +1,8 @@
 // Turning text into a vector that is near the vectors of text about the same thing (Phase 12). This is the built-in
-// embedder: it needs no model and no download. It hashes whole words (after light stemming and a small table of
-// words that mean the same), pairs of words, and the letter triples inside long words into a fixed-size vector, so
-// "colour" finds "color", "purchased" finds "buying", and two notes about the same topic land near each other.
-// A trained model can replace it behind the same `Embedder` shape without changing the index or the screens.
+// embedder. It needs no model and no download. It hashes three kinds of feature into a vector of fixed size: whole
+// words, after light stemming and a small table of words that mean the same; pairs of words; and the letter triples
+// inside long words. So "colour" finds "color", "purchased" finds "buying", and two notes about one topic land near
+// each other. A trained model can replace it behind the same `Embedder` shape, without changing the index.
 
 /** The size of a vector. */
 export const DIM = 768;

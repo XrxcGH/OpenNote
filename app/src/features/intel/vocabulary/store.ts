@@ -1,5 +1,5 @@
-// Where a notebook's custom vocabulary is kept: a text file in this device's store, one for each notebook and one for
-// all of them. A list that can't be read is an empty list, which changes nothing.
+// Where a notebook's custom vocabulary is kept: in this device's store, as one text file for each notebook plus
+// one file for all notebooks. A list that can't be read is an empty list, which changes nothing.
 import { intelExt } from '../runtime';
 import { vocabularyFile } from './list';
 

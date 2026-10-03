@@ -29,7 +29,7 @@ function merge(runs: DiffRun[]): DiffRun[] {
   return out;
 }
 
-/** The runs that turn `before` into `after`. Reading the `same` and `add` runs gives `after`, and `same` and `del` gives `before`. */
+/** The runs that turn `before` into `after`: `same` and `add` read as `after`, and `same` and `del` read as `before`. */
 export function diffWords(before: string, after: string): DiffRun[] {
   if (before === after) return before ? [{ kind: 'same', text: before }] : [];
   const a = pieces(before);
