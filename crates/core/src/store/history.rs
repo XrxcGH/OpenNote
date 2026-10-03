@@ -61,9 +61,19 @@ pub fn write_version(
     if page.encryption.is_some() {
         return Ok(());
     }
-    ensure_dir(files.fs, &files.dir.join(HISTORY_DIR))?;
-    let mut list = list_versions(files, &Limits::default())?;
-    let snapshot = gzip(page_bytes);
+    // Compressing touches no file, so it runs on another thread while the folder and the list are read.
+    let (listed, snapshot) = std::thread::scope(|scope| {
+        let thread = std::thread::Builder::new().spawn_scoped(scope, || gzip(page_bytes));
+        let listed = ensure_dir(files.fs, &files.dir.join(HISTORY_DIR))
+            .map_err(CoreError::from)
+            .and_then(|()| list_versions(files, &Limits::default()));
+        let snapshot = match thread {
+            Ok(thread) => thread.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
+            Err(_) => gzip(page_bytes),
+        };
+        (listed, snapshot)
+    });
+    let mut list = listed?;
     let path = NotebookLayout::version_path(files.dir, page.revision.id);
     match files.fs.create_durable(&path, &snapshot) {
         // Another snapshot of the same revision already holds that revision's bytes.

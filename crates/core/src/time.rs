@@ -7,7 +7,7 @@ use std::fmt;
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use serde::de::{self, Deserializer};
+use serde::de::{self, Deserializer, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 use thiserror::Error;
 
@@ -261,8 +261,23 @@ impl Serialize for Timestamp {
 
 impl<'de> Deserialize<'de> for Timestamp {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Timestamp, D::Error> {
-        let text = String::deserialize(deserializer)?;
-        Timestamp::parse(&text).map_err(de::Error::custom)
+        // Parsed where the text lies, without a copy of it: pages and journals hold thousands of times.
+        struct TimeVisitor;
+        impl Visitor<'_> for TimeVisitor {
+            type Value = Timestamp;
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("a string")
+            }
+            fn visit_str<E: de::Error>(self, text: &str) -> Result<Timestamp, E> {
+                Timestamp::parse(text).map_err(E::custom)
+            }
+            fn visit_bytes<E: de::Error>(self, bytes: &[u8]) -> Result<Timestamp, E> {
+                let text =
+                    std::str::from_utf8(bytes).map_err(|_| E::invalid_value(de::Unexpected::Bytes(bytes), &self))?;
+                self.visit_str(text)
+            }
+        }
+        deserializer.deserialize_str(TimeVisitor)
     }
 }
 

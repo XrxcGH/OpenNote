@@ -11,22 +11,23 @@ use std::path::{Path, PathBuf};
 use crate::error::{CoreError, FsError, FsErrorKind};
 use crate::fail_point;
 use crate::id::PageId;
-use crate::model::asset::hex;
 use crate::model::{Access, ReadOnlyReason};
 use crate::seams::{Applier, Codec};
 use crate::session::events::{DeferReason, RecoveryOutcome};
 use crate::store::fs::{FolderIdentity, Fs};
 use crate::store::journal::format::HeaderMeta;
-use crate::store::journal::reader::{read_generation, JournalGen, JournalRecord};
+use crate::store::journal::reader::{JournalGen, JournalRecord};
 use crate::store::layout::NotebookLayout;
 use crate::store::page_store::{ensure_dir, LoadError, LoadedPage, PageStore};
 use crate::time::Clock;
 
 mod finish;
+mod read;
 mod rebuild;
 mod replay;
 
 use finish::{save_recovered, Journals, SavePlan};
+use read::{lock_and_read, still_current};
 use replay::{after_anchor, replay, write_recovery_file, Replayed};
 
 /// What recovery needs.
@@ -122,15 +123,11 @@ pub fn recover_page(ctx: &RecoverCtx, page: PageId, generations: &[PathBuf]) -> 
 }
 
 fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Result<RecoveryOutcome, Stop> {
-    let mut locks = Vec::new();
-    for path in generations {
-        match ctx.fs.try_lock(path)? {
-            Some(lock) => locks.push(lock),
-            None => return Ok(RecoveryOutcome::OwnerAlive),
-        }
-    }
-    let located = (ctx.locate)(page);
-    let (read, loaded) = read_and_load(ctx, page, generations, located.as_deref());
+    let early = (ctx.locate)(page);
+    let Some((locks, read, loaded)) = lock_and_read(ctx, page, generations, early.as_deref())? else {
+        return Ok(RecoveryOutcome::OwnerAlive);
+    };
+    let (located, loaded) = still_current(ctx, page, early, loaded);
     let read = read?;
     drop(locks);
     for (path, bytes, move_file) in &read.quarantine {
@@ -139,14 +136,14 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
     if read.generations.is_empty() {
         return Ok(RecoveryOutcome::Nothing);
     }
-    let outcome = match loaded {
-        Ok(loaded) if is_damaged(&loaded) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Damaged(located))?,
+    let outcome = match &loaded {
+        Ok(loaded) if is_damaged(loaded) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Damaged(located))?,
         Ok(loaded) => {
-            check_writable(&loaded)?;
+            check_writable(loaded)?;
             let dir = located.unwrap_or_default();
-            match anchored(ctx, &read, &loaded, &dir)? {
+            match anchored(ctx, &read, loaded, &dir)? {
                 Some(outcome) => outcome,
-                None => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Other { dir, loaded: &loaded })?,
+                None => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Other { dir, loaded })?,
             }
         }
         Err(LoadError::Missing) => rebuild::rebuild(ctx, &read, page, rebuild::Disk::Missing(located))?,
@@ -154,80 +151,14 @@ fn recover(ctx: &RecoverCtx<'_>, page: PageId, generations: &[PathBuf]) -> Resul
         Err(LoadError::NewerFormat(_)) => return Err(defer(DeferReason::NewerPage)),
         Err(LoadError::Unavailable(_)) => return Err(defer(DeferReason::PageUnavailable)),
     };
-    free_later(read);
+    free_later((read, loaded));
     Ok(outcome)
 }
 
-/// Reads every generation, and loads the page from `located`. Loading only reads files, so it runs on another
-/// thread while the generations decode.
-fn read_and_load(
-    ctx: &RecoverCtx<'_>,
-    page: PageId,
-    generations: &[PathBuf],
-    located: Option<&Path>,
-) -> (Result<Read, Stop>, Result<LoadedPage, LoadError>) {
-    let store = ctx.store;
-    std::thread::scope(|scope| {
-        let load = located.map(|dir| std::thread::Builder::new().spawn_scoped(scope, move || store.load(dir)));
-        let read = read_all(ctx, page, generations);
-        let loaded = match load {
-            None => Err(LoadError::Missing),
-            Some(Ok(handle)) => handle.join().unwrap_or_else(|panic| std::panic::resume_unwind(panic)),
-            Some(Err(_)) => located.map_or(Err(LoadError::Missing), |dir| store.load(dir)),
-        };
-        (read, loaded)
-    })
-}
-
-/// Reads every generation. A newer journal or another folder's journal stops recovery. A generation whose
-/// header is damaged moves to `recovery/`, and the damaged tail of a generation is copied there.
-fn read_all(ctx: &RecoverCtx<'_>, page: PageId, paths: &[PathBuf]) -> Result<Read, Stop> {
-    let limits = &ctx.store.config.limits;
-    let identity = hex(&ctx.identity.0);
-    let mut generations = Vec::new();
-    let mut kept = Vec::new();
-    for path in paths {
-        let bytes = match ctx.fs.read(path, u64::MAX) {
-            Ok(bytes) => bytes,
-            Err(err) if err.kind == FsErrorKind::NotFound => continue,
-            Err(err) => return Err(err.into()),
-        };
-        let generation = match read_generation(&bytes, ctx.codec, limits) {
-            Ok(generation) => generation,
-            Err(err) if matches!(err.kind, crate::error::FormatErrorKind::NewerVersion(_)) => {
-                return Err(defer(DeferReason::NewerJournal));
-            }
-            Err(_) => {
-                kept.push((path.clone(), bytes, true));
-                continue;
-            }
-        };
-        if generation.header.page != page {
-            continue;
-        }
-        let meta = HeaderMeta::from_value(&generation.header.meta);
-        if meta.is_none_or(|meta| meta.notebook_identity != identity) {
-            return Err(defer(DeferReason::IdentityMismatch));
-        }
-        if let Some(offset) = generation.stop.offset().filter(|_| !generation.stop.is_clean()) {
-            let tail = bytes
-                .get(usize::try_from(offset).unwrap_or(usize::MAX)..)
-                .unwrap_or_default();
-            kept.push((path.clone(), tail.to_vec(), false));
-        }
-        generations.push((path.clone(), generation));
-    }
-    generations.sort_by_key(|(_, g)| g.header.generation);
-    Ok(Read {
-        generations,
-        quarantine: kept,
-    })
-}
-
-/// Frees the generations on another thread. Freeing thousands of decoded records takes a few milliseconds that
-/// recovery needn't wait for. Without a thread, they are freed here.
-fn free_later(read: Read) {
-    let _ = std::thread::Builder::new().spawn(move || drop(read));
+/// Frees the generations or pages on another thread. Freeing thousands of decoded records or strokes takes a
+/// few milliseconds that recovery needn't wait for. Without a thread, they are freed here.
+fn free_later<T: Send + 'static>(value: T) {
+    let _ = std::thread::Builder::new().spawn(move || drop(value));
 }
 
 /// Keeps bytes in `recovery/` for diagnosis. With `move_file`, the generation itself goes there.
@@ -292,15 +223,16 @@ fn anchored(
         txns: done.txns,
         strokes: done.strokes,
     };
-    finish(
+    let outcome = finish(
         ctx,
         read,
         &page,
         &plan,
         done,
         located_outcome(ctx, read, page.id, dir, default),
-    )
-    .map(Some)
+    );
+    free_later(page);
+    outcome.map(Some)
 }
 
 /// The latest anchor for the revision on disk, and the generation to collect records from.

@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use super::*;
 use crate::id::{Id, SectionId, StrokeId, TxnId};
+use crate::model::asset::hex;
 use crate::model::{Page, Stroke};
 use crate::ops::{Op, Origin, PageFields, Txn};
 use crate::session::journal_thread::{BaseSnapshot, JournalConfig, JournalHandle, JournalMeta, JournalThread};
@@ -309,4 +310,51 @@ fn a_page_without_journals_needs_nothing() {
     let fs = MemFs::new();
     fs.mkdir_all(Path::new(ROOT));
     assert_eq!(recover(&fs, &RegistryCodec::new(), None), RecoveryOutcome::Nothing);
+}
+
+#[test]
+fn a_page_loaded_before_the_locks_is_kept_only_while_it_is_on_disk() {
+    let sim = Sim::new(Timings::default());
+    let early = sim.store.load(&page_dir()).unwrap();
+    let identity = sim.fs.folder_identity(Path::new(ROOT)).unwrap();
+    let layout = NotebookLayout::new(ROOT);
+    let found = Some(page_dir());
+    let locate = move |_: PageId| found.clone();
+    let ctx = RecoverCtx {
+        fs: &sim.fs,
+        codec: &sim.codec,
+        applier: &ScriptApplier,
+        store: &sim.store,
+        layout: &layout,
+        identity: &identity,
+        boot: "boot",
+        clock: &*sim.clock,
+        locate: &locate,
+        recovery_dir: Path::new("/data/recovery"),
+    };
+    let id = sample_page().id;
+    let kept = |early_dir: PathBuf, loaded: &LoadedPage| {
+        let (dir, now) = still_current(&ctx, id, Some(early_dir), Some(Ok(loaded.clone())));
+        assert_eq!(dir, Some(page_dir()));
+        let now = now.unwrap();
+        (Arc::ptr_eq(&now.bytes, &loaded.bytes), now)
+    };
+    // Unchanged, it is kept. Found somewhere else before, it loads again.
+    assert!(kept(page_dir(), &early).0);
+    let (same, moved) = kept(PathBuf::from("/elsewhere"), &early);
+    assert!(!same);
+    assert_eq!(moved.stamp, early.stamp);
+    // Saved again since, it loads again.
+    let request = SaveRequest {
+        page: &early.page,
+        pending: &[],
+        through_seq: 0,
+        base_stamp: Some(early.stamp),
+        journal: None,
+        compaction: CompactionPlan::None,
+    };
+    let saved = sim.store.save(&page_dir(), request).unwrap();
+    let (same, now) = kept(page_dir(), &early);
+    assert!(!same);
+    assert_eq!(now.page.revision.id, saved.revision.id);
 }

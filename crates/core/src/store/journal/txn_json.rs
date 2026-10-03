@@ -64,16 +64,21 @@ pub fn decode_txn(json: &[u8], blob: &[u8], codec: &dyn Codec, limits: &Limits) 
             _ => Err(invalid("the blob holds a record that is not a stroke")),
         })
         .collect::<Result<_, _>>()?;
-    let ctx = DecodeCtx {
-        codec,
-        limits,
-        strokes: &strokes,
+    let ops = match whole_blob_op(&parsed.ops, strokes.len()) {
+        Some(op) => vec![op(strokes)],
+        None => {
+            let ctx = DecodeCtx {
+                codec,
+                limits,
+                strokes: &strokes,
+            };
+            parsed
+                .ops
+                .into_iter()
+                .map(|op| decode_op(op, &ctx))
+                .collect::<Result<_, _>>()?
+        }
     };
-    let ops = parsed
-        .ops
-        .into_iter()
-        .map(|op| decode_op(op, &ctx))
-        .collect::<Result<_, _>>()?;
     Ok(Txn {
         id: parsed.txn,
         at: parsed.at,
@@ -198,6 +203,20 @@ fn encode_props(change: &StrokePropsChange) -> PropsJson {
         stroke: change.id,
         before: state(&change.before),
         after: state(&change.after),
+    }
+}
+
+/// Makes an operation on strokes.
+type StrokesOp = fn(Vec<Arc<Stroke>>) -> Op;
+
+/// The operation of a transaction whose one operation adds or removes every stroke of the blob, as drawing and
+/// erasing make. It takes the decoded strokes as they are, rather than a copy of them.
+fn whole_blob_op(ops: &[OpJson], strokes: usize) -> Option<StrokesOp> {
+    let whole = |[start, end]: [u32; 2]| start == 0 && usize::try_from(end).is_ok_and(|end| end == strokes);
+    match ops {
+        [OpJson::AddStrokes { records }] if whole(*records) => Some(|strokes| Op::AddStrokes { strokes }),
+        [OpJson::RemoveStrokes { records }] if whole(*records) => Some(|strokes| Op::RemoveStrokes { strokes }),
+        _ => None,
     }
 }
 

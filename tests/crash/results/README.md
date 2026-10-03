@@ -2,6 +2,15 @@
 
 These files hold the first runs of measurements M3, M5, and M6 and of the kill harness, from plan section 2. They ran on a Surface Laptop Studio 2, which is much faster than the reference laptop in docs/BRAND.md. Every report says `"reference_laptop": false`, and none of these numbers counts as a pass on the reference laptop.
 
+## Contents
+
+- [The machine](#the-machine)
+- [The files](#the-files)
+- [What they show](#what-they-show)
+- [Phase 3 exit-gate runs](#phase-3-exit-gate-runs)
+- [Phase 3 performance follow-up](#phase-3-performance-follow-up)
+- [Recovery within its gate](#recovery-within-its-gate)
+
 ## The machine
 
 - Surface Laptop Studio 2 with an Intel Core i7-13800H.
@@ -104,3 +113,38 @@ Recovery still misses its gate. A timed run took about 100 ms. Reading and decod
 ### Crash safety
 
 All 599 tests of `opennote-core` with every feature passed. They include the crash scenarios on the fault-injecting file system and the power cuts. `2026-10-02-kill-harness-core-100.json` holds 100 kills of the core workload with seed 20261002, after all of these changes, with no failures. 50 writers were killed at a random moment, 26 just after a save step, and 24 at an armed fail point, of which 13 were reached. The hostile reader held files 2,780 times.
+
+## Recovery within its gate
+
+These ran on 2 October 2026 on the same Surface Laptop Studio 2, with Defender real-time protection on. Other agents kept the processor 12 to 82% busy and wrote to the same drive, so the runs are noisy.
+
+Before is `phase-3` at `efa414b`, and after is branch `p3-perf`, both built with `perf`. Each window ran them in turn, three times each, with 20 seconds between runs. No time below counts as a pass on the reference laptop.
+
+| Window | Gate | Before | After |
+|---|---|---|---|
+| Quieter | 100 | 121, 138, and 143 | 88, 85, and 97 |
+| Busier, earlier | 100 | 140, 135, and 148 | 105, 113, and 85 |
+
+These are `store.recovery.journal_4mib.max` in milliseconds, the slowest of three recoveries. The after build met the gate in four runs of six, and the before build in none. In both windows, the before build was slower than the 112 to 131 ms it took earlier that day.
+
+Opening the budget page took 14 to 15 ms at the 50th percentile after, against 15 to 17 before, and saving it after one stroke took 15 to 17 in both. Their 95th percentiles moved by up to 9 ms between runs of the same build. `2026-10-02-surface-laptop-studio-2-recovery-before.json` and `2026-10-02-surface-laptop-studio-2-recovery-after.json` hold the second run of each in the quieter window.
+
+### What changed
+
+- Replay hands each run of transactions between other records to the applier at once. The applier checks a run of transactions that only add strokes as a whole, then puts their strokes into the page's indexes at once and counts each block's strokes once. A run that fails a check is applied one by one, which stops where it did before. Replaying 7,206 transactions fell from 23 to 4 or 5 ms.
+- Records after the anchor that already follow each other one by one are taken as they stand, without sorting.
+- The page loads while recovery waits for the journal locks. Taking them took 4 to 18 ms, most likely while Defender scanned the journal written just before. Once recovery holds them, it keeps what it loaded only when `page.json` is in the same folder with the same fingerprint, and loads it again otherwise. Over 15 recoveries in a row, the median fell from 88 to 82 ms.
+- The save that ends recovery no longer builds a shadow ink to count dead bytes, and sizes the segment buffer from the records. Its history version is written from a copy of the page without strokes, and the snapshot compresses on a second thread while the history folder is read. The replayed and loaded pages are freed on another thread.
+- Loading a page puts strokes that each appear once into the ink's indexes at once. Times and client IDs deserialize without copying their text, and a transaction whose operation adds every stroke of its blob keeps the decoded strokes. Decoding the journal's 7,206 transactions on one thread fell from 38 to 35 ms.
+
+### Where the time goes
+
+A timed recovery of the after build took 82 ms. Waiting for the journal lock took 17, then reading and decoding the journal took 20, while the page loaded. Replay took 4. Saving took 26, with the segment write and the check of `page.json` running side by side for 13 of them. Writing the history version took 12. Each durable write waits for the drive, so the save and the history version grow most when other programs write to it. Decoding the journal on 8 threads took 10 ms at best, about the same as on 4.
+
+### Crash safety
+
+All 807 tests of the workspace passed, and all 666 of `opennote-core` with every feature. They include the crash scenarios on the fault-injecting file system and the power cuts. `2026-10-02-kill-harness-core-100-recovery.json` holds 100 kills of the core workload with seed 20261003, after all of these changes, with no failures. 48 writers were killed at a random moment, 27 just after a save step, and 25 at an armed fail point, of which 11 were reached. The hostile reader held files 2,835 times.
+
+### What is left
+
+The entry of a recovered version in `versions.json` lists the page's segments from before the recovery save, without the segment that save wrote. Garbage collection keeps the segments that `page.json` and the version entries list, so once a later save compacts that segment away, it may delete a segment the version needs. The entry should list the saved segments, as a normal save's does. These changes keep the old list, so recovery writes the same files as before.

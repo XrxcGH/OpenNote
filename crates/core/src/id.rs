@@ -314,8 +314,23 @@ impl Serialize for ClientId {
 
 impl<'de> Deserialize<'de> for ClientId {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<ClientId, D::Error> {
-        let text = String::deserialize(deserializer)?;
-        ClientId::parse(&text).map_err(de::Error::custom)
+        // Parsed where the text lies, without a copy of it: a long journal holds a client ID in every record.
+        struct ClientVisitor;
+        impl Visitor<'_> for ClientVisitor {
+            type Value = ClientId;
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("a string")
+            }
+            fn visit_str<E: de::Error>(self, text: &str) -> Result<ClientId, E> {
+                ClientId::parse(text).map_err(E::custom)
+            }
+            fn visit_bytes<E: de::Error>(self, bytes: &[u8]) -> Result<ClientId, E> {
+                let text =
+                    std::str::from_utf8(bytes).map_err(|_| E::invalid_value(de::Unexpected::Bytes(bytes), &self))?;
+                self.visit_str(text)
+            }
+        }
+        deserializer.deserialize_str(ClientVisitor)
     }
 }
 

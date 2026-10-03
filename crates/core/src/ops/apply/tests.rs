@@ -8,6 +8,8 @@ use crate::order::OrderKey;
 use crate::testing::oracle::same_content_but_modified;
 use crate::testing::sample::{sample_asset_id, sample_ink_block, sample_page, sample_stroke};
 
+mod runs;
+
 const LATER: Timestamp = Timestamp::from_unix_ms(1_790_800_000_000);
 
 fn txn(ops: Vec<Op>) -> Txn {

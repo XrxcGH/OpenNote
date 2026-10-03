@@ -32,9 +32,19 @@ pub const MIN_BYTES: usize = HEADER_BYTES + FOOTER_BYTES;
 /// How many times the file's length the walk may hash while it looks for records after damage.
 const RESYNC_BUDGET: usize = 4;
 
+/// The bytes a record takes encoded, or about that many, to size the buffer it goes into.
+fn record_bytes(record: &InkRecord) -> usize {
+    match record {
+        InkRecord::Stroke(stroke) => usize::try_from(stroke.record_len()).unwrap_or(0),
+        InkRecord::Props(_) | InkRecord::Remove(_) => 128,
+    }
+}
+
 /// Encodes a segment file: header, records, and footer.
 pub fn encode_segment(header: &SegmentHeader, records: &[InkRecord]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(MIN_BYTES.saturating_add(records.len().saturating_mul(256)));
+    // Sized for every record, so a large segment, such as a recovered journal's, is never copied as it grows.
+    let records_bytes = records.iter().map(record_bytes).fold(0usize, usize::saturating_add);
+    let mut out = Vec::with_capacity(MIN_BYTES.saturating_add(records_bytes));
     out.extend_from_slice(&MAGIC);
     out.extend_from_slice(&SEGMENT_VERSION.to_le_bytes());
     out.extend_from_slice(&0u16.to_le_bytes());
