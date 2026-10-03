@@ -47,6 +47,8 @@ pub enum SourceKind {
     Spreadsheet,
     /// PowerPoint presentations (`.pptx`), each slide a page.
     Presentation,
+    /// Email files (`.eml`), each message a page.
+    Email,
     /// OneNote's own section and notebook files (`.one`, `.onepkg`), which this version cannot read.
     OneNoteFile,
 }
@@ -68,6 +70,7 @@ impl SourceKind {
             SourceKind::StickyNotes => "Windows Sticky Notes",
             SourceKind::Spreadsheet => "Excel workbooks",
             SourceKind::Presentation => "PowerPoint presentations",
+            SourceKind::Email => "Email files",
             SourceKind::OneNoteFile => "OneNote files",
         }
     }
@@ -165,6 +168,7 @@ fn by_extension(ext: &str) -> Option<Detected> {
         "csv" | "tsv" => SourceKind::Csv,
         "xlsx" | "xlsm" => SourceKind::Spreadsheet,
         "pptx" | "pptm" => SourceKind::Presentation,
+        "eml" => SourceKind::Email,
         _ => return None,
     };
     Some(detected(kind, kind.label()))
@@ -222,6 +226,7 @@ impl Survey {
             (SourceKind::Csv, self.count(&["csv", "tsv"])),
             (SourceKind::Spreadsheet, self.count(&["xlsx", "xlsm"])),
             (SourceKind::Presentation, self.count(&["pptx", "pptm"])),
+            (SourceKind::Email, self.count(&["eml"])),
         ];
         let best = candidates.iter().map(|(_, n)| *n).max().unwrap_or(0);
         candidates.iter().find(|(_, n)| *n == best && best > 0).map(|(k, _)| *k)

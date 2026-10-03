@@ -20,6 +20,7 @@ export type SourceKind =
   | 'stickyNotes'
   | 'spreadsheet'
   | 'presentation'
+  | 'email'
   | 'oneNoteFile';
 
 /** What a file, folder, or archive is. */

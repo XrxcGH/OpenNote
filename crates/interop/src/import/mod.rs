@@ -5,6 +5,7 @@
 //! that notebook. Each import returns a [`crate::Report`] with an entry for each page.
 
 mod dateline;
+mod eml;
 mod enex;
 mod enex_xml;
 mod enml;
@@ -35,6 +36,7 @@ mod xlsx;
 mod xmltree;
 mod zipxml;
 
+pub use eml::import_eml;
 pub use enex::{import_enex, import_enex_reader};
 pub use html::import_html_folder;
 pub use keep::{import_keep_folder, looks_like_keep};
