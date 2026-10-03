@@ -30,7 +30,12 @@ async function expectFocusedRow(browser: Browser, title: string): Promise<void> 
     const active = document.activeElement;
     return {
       focus: active
-        ? `${active.tagName} role=${active.getAttribute('role')} class=${String(active.className).slice(0, 40)} region=${active.closest('[data-region]')?.getAttribute('data-region')} text=${active.textContent?.slice(0, 30)}`
+        ? [
+            active.tagName,
+            `role=${active.getAttribute('role')}`,
+            `region=${active.closest('[data-region]')?.getAttribute('data-region')}`,
+            `text=${active.textContent?.slice(0, 30)}`,
+          ].join(' ')
         : 'none',
       size: `${innerWidth}x${innerHeight} ${document.documentElement.dataset.sizeClass}`,
       field: document.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')?.value ?? null,
