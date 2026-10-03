@@ -6,6 +6,7 @@ import type { Root } from 'react-dom/client';
 import { createStore, useStore } from '../../../state/store';
 import { CalculatorTool } from './CalculatorTool';
 import { TimersTool } from './TimersTool';
+import { ExtraToolBody } from './extraTools';
 import { ToolWindow } from './ToolWindow';
 import { UpcomingTool } from './UpcomingTool';
 import { TOOLS } from './tools';
@@ -21,7 +22,10 @@ const layer = createStore<Layer>({ open: [], pinned: [] }, 'tool windows');
 let root: Root | null = null;
 
 export function ToolBody({ tool }: { tool: ToolId }) {
-  return tool === 'timers' ? <TimersTool /> : tool === 'calculator' ? <CalculatorTool /> : <UpcomingTool />;
+  if (tool === 'timers') return <TimersTool />;
+  if (tool === 'calculator') return <CalculatorTool />;
+  if (tool === 'upcoming') return <UpcomingTool />;
+  return <ExtraToolBody tool={tool} />;
 }
 
 /** True where the app can open a window of its own for a tool. */

@@ -1,0 +1,211 @@
+/*
+ * Flashcards (Study tools): decks, review, and card editing. Calm and plain, on tokens, with every control at least
+ * the target size. Nothing here counts streaks or scores.
+ */
+@layer components {
+  .root {
+    display: grid;
+    gap: var(--space-4);
+    min-inline-size: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .title {
+    flex: 1;
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .grow {
+    flex: 1;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .muted,
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .form {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .field textarea,
+  .field select,
+  .field input[type='date'],
+  .field input[type='text'],
+  .field input[type='number'] {
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .field textarea {
+    resize: vertical;
+    min-block-size: calc(var(--size-target-pointer) * 2);
+  }
+
+  .face {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    min-block-size: 8rem;
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .answer {
+    padding-block-start: var(--space-3);
+    border-block-start: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+  }
+
+  .blank {
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-raised);
+    border-block-end: 2px solid var(--color-accent-primary);
+    color: var(--color-text-secondary);
+  }
+
+  .choices {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .choice[data-state='right'] {
+    border-color: var(--color-status-success);
+  }
+
+  .choice[data-state='wrong'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .picture {
+    position: relative;
+    display: inline-block;
+    max-inline-size: 100%;
+    line-height: 0;
+  }
+
+  .picture img {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+
+  .box {
+    position: absolute;
+    padding: 0;
+    background: var(--color-text-primary);
+    border: 2px solid var(--color-accent-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .box[data-open] {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  .box:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .inlineImage {
+    max-inline-size: 100%;
+    max-block-size: 16rem;
+  }
+
+  .link {
+    min-block-size: var(--size-target-min);
+    padding: 0;
+    font: inherit;
+    text-align: start;
+    color: var(--color-text-link);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .check {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .check input {
+    margin-block-start: var(--space-2);
+  }
+
+  .tag {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+}
