@@ -13,6 +13,8 @@ export interface TitleOptions {
   /** "Changed Sep 23, 2026", or null. */
   changed: string | null;
   readOnly: boolean;
+  /** The band the page view showed while the page loaded (TitleSlot.tsx). It moves into the world with its focus. */
+  band?: HTMLElement | null;
   send(title: string): void;
   /** Enter, or Arrow Down at the end: focus the first text block in reading order. */
   enterPage(): void;
@@ -38,9 +40,10 @@ function caretAtEnd(textbox: HTMLElement): boolean {
 
 export function createTitle(world: HTMLElement, options: TitleOptions): TitleBand {
   const doc = world.ownerDocument;
-  const element = doc.createElement('div');
+  const adopted = options.band?.querySelector('h1') ?? null;
+  const element = adopted ? options.band! : doc.createElement('div');
   element.className = styles.band;
-  const heading = doc.createElement('h1');
+  const heading = adopted ?? doc.createElement('h1');
   heading.className = styles.title;
   heading.tabIndex = -1;
   heading.dataset.pageTitle = '';
@@ -55,15 +58,20 @@ export function createTitle(world: HTMLElement, options: TitleOptions): TitleBan
   textbox.spellcheck = true;
   if (!options.readOnly) textbox.setAttribute('contenteditable', 'plaintext-only');
   textbox.textContent = options.title;
-  heading.append(textbox);
-  element.append(heading);
-  if (options.changed) {
-    const changed = doc.createElement('p');
-    changed.className = styles.changed;
-    changed.textContent = options.changed;
-    element.append(changed);
+  const focused = adopted !== null && doc.activeElement === adopted;
+  heading.replaceChildren(textbox);
+  if (!adopted) {
+    element.append(heading);
+    if (options.changed) {
+      const changed = doc.createElement('p');
+      changed.className = styles.changed;
+      changed.textContent = options.changed;
+      element.append(changed);
+    }
   }
   world.prepend(element);
+  // Moving the band blurs its heading; the heading the tree focused keeps focus.
+  if (focused) heading.focus({ preventScroll: true });
 
   let sent = options.title;
   let timer = 0;
@@ -104,7 +112,8 @@ export function createTitle(world: HTMLElement, options: TitleOptions): TitleBan
       textbox.removeEventListener('input', onInput);
       textbox.removeEventListener('keydown', onKey);
       textbox.removeEventListener('blur', flush);
-      element.remove();
+      // An adopted band belongs to the page view, which has taken it back or given it to the next page.
+      if (!adopted) element.remove();
     },
   };
 }

@@ -14,7 +14,7 @@ import { t } from '../../strings/t';
 import { ProgressBar, useDelayedFlag } from '../../ui';
 import { titleOf, useTreeNode } from '../tree';
 import { EmptyPageArt } from './EmptyPageArt';
-import { TitlePlaceholder } from './title/TitlePlaceholder';
+import { TitleSlot, useTitleBand } from './title/TitleSlot';
 import styles from './PageView.module.css';
 import { usePageZoom } from './zoom';
 
@@ -46,13 +46,14 @@ export function PageView() {
   const editing = useFlag('page.editor');
   const shown = editing && page !== null;
   const zoom = usePageZoom(shown ? null : (page?.id ?? null));
-  // With the editor on, the heading is the title band in the page's world, or its placeholder while it loads.
-  useEffect(
-    () => registerRegionMain('page', () => heading.current ?? document.querySelector('h1[data-page-title]')),
-    [],
-  );
   const title = page ? titleOf(page) : t('tree.page.noneTitle');
   const changed = page ? t('tree.page.changed', { date: formatDate(page.modified) }) : null;
+  // With the editor on, the heading is the title band's. It is one element that moves into each page's world.
+  const band = useTitleBand();
+  useEffect(
+    () => registerRegionMain('page', () => heading.current ?? (shown ? band.querySelector('h1') : null)),
+    [band, shown],
+  );
   return (
     <article
       className={shown ? styles.editing : styles.page}
@@ -62,9 +63,12 @@ export function PageView() {
     >
       {showProgress && <ProgressBar label={t('tree.loading.page')} />}
       {shown ? (
-        <Suspense fallback={<TitlePlaceholder title={title} changed={changed} />}>
-          <PageBody key={page.id} pageId={page.id} title={title} changed={changed} />
-        </Suspense>
+        <>
+          <TitleSlot band={band} title={title} changed={changed} />
+          <Suspense fallback={null}>
+            <PageBody key={page.id} pageId={page.id} title={title} changed={changed} band={band} />
+          </Suspense>
+        </>
       ) : (
         <>
           <h1 ref={heading} tabIndex={-1} className={styles.title}>

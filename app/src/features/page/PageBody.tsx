@@ -12,7 +12,7 @@ import { pagesClient, pageView } from './runtime';
 import type { MountedPage } from './mount';
 import paneStyles from './readingOrder/pane.module.css';
 import { ReadingOrderPane } from './readingOrder/ReadingOrderPane';
-import { takeTitleFocus, TitlePlaceholder } from './title/TitlePlaceholder';
+import { returnBand } from './title/TitleSlot';
 import { readingOrderOpen } from './viewport/shown';
 
 const LAYERS = { viewport: '', world: '', underlay: '' };
@@ -22,11 +22,12 @@ export interface PageBodyProps {
   /** The tree's name for the page, shown when the page itself has no title yet. */
   title: string;
   changed: string | null;
+  /** The title band the page view shows while the page loads; the world adopts it. */
+  band: HTMLElement | null;
 }
 
-export default function PageBody({ pageId, title, changed }: PageBodyProps) {
+export default function PageBody({ pageId, title, changed, band }: PageBodyProps) {
   const host = useRef<HTMLDivElement>(null);
-  const placeholder = useRef<HTMLHeadingElement | null>(null);
   const [failed, setFailed] = useState(false);
   const [mounted, setMounted] = useState<MountedPage | null>(null);
   const paneWanted = useStore(readingOrderOpen, (open) => open);
@@ -41,17 +42,18 @@ export default function PageBody({ pageId, title, changed }: PageBodyProps) {
         if (cancelled || !host.current) return void page.close();
         const mounted = mountPage(host.current, page, {
           classNames: LAYERS,
-          title: { text: page.initial.title || title, changed },
+          title: { text: page.initial.title || title, changed, band },
           compact: getSizeClass() === 'compact',
           savedView: pageView(page.id)?.view ?? null,
         });
         destroy = mounted.destroy;
-        if (takeTitleFocus(placeholder.current)) mounted.title?.heading.focus();
         setMounted(mounted);
       })
       .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
+      // The band goes back beside the page at once, before the page's slower teardown.
+      if (band) returnBand(band);
       void destroy?.();
     };
     // The title and the changed line are read once, when the page opens.
@@ -60,7 +62,6 @@ export default function PageBody({ pageId, title, changed }: PageBodyProps) {
   return (
     <>
       {failed && <p role="alert">{t('page.openFailed')}</p>}
-      {!mounted && !failed && <TitlePlaceholder ref={placeholder} title={title} changed={changed} />}
       <div className={paneStyles.row}>
         <div ref={host} className={styles.body} />
         {mounted && paneOpen && <ReadingOrderPane mounted={mounted} onClose={() => readingOrderOpen.set(false)} />}

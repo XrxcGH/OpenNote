@@ -26,7 +26,6 @@
   .text {
     display: inline-block;
     min-inline-size: 8ch;
-    outline: none;
   }
 
   .text:empty::before {

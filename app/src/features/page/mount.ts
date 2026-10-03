@@ -73,8 +73,8 @@ export interface MountOptions {
   compact?: boolean;
   /** The view this device last chose for the page. */
   savedView?: PageViewMode | null;
-  /** The title band, inside the world. */
-  title?: { text: string; changed: string | null };
+  /** The title band, inside the world; `band` is the one the page view showed while the page loaded. */
+  title?: { text: string; changed: string | null; band?: HTMLElement | null };
   /** Called when undo or another window changes the title, tags, or view. */
   onPageFields?(fields: NonNullable<AppliedFrame['page']>): void;
   /** Whether the shown page's stores point at this view; tests that mount several pages turn it off. */
@@ -182,6 +182,7 @@ function titleBand(world: HTMLElement, parts: TitleParts, options: MountOptions)
   return createTitle(world, {
     title: options.title.text,
     changed: options.title.changed,
+    band: options.title.band ?? null,
     readOnly: page.readOnly !== null,
     send(title) {
       void sync.send({ edits: [{ edit: 'setPage', title }], coalesce: { kind: 'typing', target: 'title' } });
