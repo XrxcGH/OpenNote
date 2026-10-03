@@ -78,4 +78,12 @@ describe('link destinations', () => {
     expect(isBlockedHref('data:text/html,x')).toBe(true);
     expect(isBlockedHref('https://example.com')).toBe(false);
   });
+
+  it('reads the scheme as a browser does, after it drops tabs, line ends, and leading controls', () => {
+    expect(isBlockedHref('java\tscript:alert(1)')).toBe(true);
+    expect(isBlockedHref('java\r\nscript:alert(1)')).toBe(true);
+    expect(isBlockedHref('\x01\x1f javascript:alert(1)')).toBe(true);
+    expect(isBlockedHref('https://example.com/a\x00b')).toBe(true);
+    expect(linkKind('\thttps://example.com')).toBe('web');
+  });
 });

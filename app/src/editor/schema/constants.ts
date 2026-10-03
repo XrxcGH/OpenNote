@@ -59,9 +59,22 @@ export type LinkKind = 'web' | 'mail' | 'opennote' | 'asset' | 'inert';
 const SCHEME = /^([A-Za-z][A-Za-z0-9+.-]*):/;
 const BLOCKED_SCHEMES = new Set(['javascript', 'vbscript', 'data']);
 
+/** A destination as a browser reads it (URL standard): controls and spaces at either end and every tab and line
+ * end are removed first. */
+function asBrowserReads(href: string): string {
+  // eslint-disable-next-line no-control-regex -- the URL standard's C0 controls are the point.
+  return href.replace(/^[\u0000- ]+|[\u0000- ]+$/g, '').replace(/[\t\n\r]/g, '');
+}
+
+/** Whether a destination still holds a control character once a browser has read it. */
+function hasControl(href: string): boolean {
+  // eslint-disable-next-line no-control-regex -- see asBrowserReads.
+  return /[\u0000-\u001f\u007f]/.test(asBrowserReads(href));
+}
+
 /** The scheme of a link destination in lower case, or null for a relative one. */
 export function schemeOf(href: string): string | null {
-  const match = SCHEME.exec(href.trim());
+  const match = SCHEME.exec(asBrowserReads(href));
   return match ? match[1].toLowerCase() : null;
 }
 
@@ -82,8 +95,9 @@ export function linkKind(href: string): LinkKind {
   }
 }
 
-/** Destinations that never become links, even inert ones (Phase 4 design, 15.9). */
+/** Destinations that never become links, even inert ones (Phase 4 design, 15.9), and any with a control character
+ * a browser would keep. */
 export function isBlockedHref(href: string): boolean {
   const scheme = schemeOf(href);
-  return scheme !== null && BLOCKED_SCHEMES.has(scheme);
+  return (scheme !== null && BLOCKED_SCHEMES.has(scheme)) || hasControl(href);
 }
