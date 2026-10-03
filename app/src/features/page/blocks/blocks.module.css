@@ -72,8 +72,166 @@
   }
 
   .text :global(.ProseMirror) mark {
+    padding-inline: 0.1em;
+    border-radius: 2px;
     background: var(--color-selection-highlight);
     color: inherit;
+  }
+
+  /* The other highlighters are the pens' colors, washed out like a highlighter on paper (BRAND.md section 4). */
+  .text :global(.ProseMirror) mark[data-color='mint'] {
+    background: color-mix(in srgb, var(--ink-fern) 22%, transparent);
+  }
+
+  .text :global(.ProseMirror) mark[data-color='rose'] {
+    background: color-mix(in srgb, var(--ink-brick) 20%, transparent);
+  }
+
+  .text :global(.ProseMirror) mark[data-color='apricot'] {
+    background: color-mix(in srgb, var(--ink-amber) 24%, transparent);
+  }
+
+  .text :global(.ProseMirror) mark[data-color='lilac'] {
+    background: color-mix(in srgb, var(--ink-plum) 20%, transparent);
+  }
+
+  .text :global(.ProseMirror) span[data-color='ink'] {
+    color: var(--ink-ink);
+  }
+
+  .text :global(.ProseMirror) span[data-color='indigo'] {
+    color: var(--ink-indigo);
+  }
+
+  .text :global(.ProseMirror) span[data-color='brick'] {
+    color: var(--ink-brick);
+  }
+
+  .text :global(.ProseMirror) span[data-color='fern'] {
+    color: var(--ink-fern);
+  }
+
+  .text :global(.ProseMirror) span[data-color='plum'] {
+    color: var(--ink-plum);
+  }
+
+  .text :global(.ProseMirror) span[data-color='amber'] {
+    color: var(--ink-amber);
+  }
+
+  .text :global(.ProseMirror) span[data-color='walnut'] {
+    color: var(--ink-walnut);
+  }
+
+  .text :global(.ProseMirror) span[data-size='small'] {
+    font-size: 0.85em;
+  }
+
+  .text :global(.ProseMirror) span[data-size='large'] {
+    font-size: 1.25em;
+  }
+
+  .text :global(.ProseMirror) span[data-size='xlarge'] {
+    font-size: 1.5em;
+  }
+
+  .text :global(.ProseMirror) :is(ul, ol) {
+    margin-block: var(--space-2);
+    padding-inline-start: 1.5em;
+  }
+
+  .text :global(.ProseMirror) li > p {
+    margin-block: var(--space-1);
+  }
+
+  .text :global(.ProseMirror) li::marker {
+    color: var(--color-accent-clay);
+  }
+
+  .text :global(.ProseMirror) li[data-checked]::marker {
+    content: '\2610\00a0\00a0';
+    color: var(--color-text-secondary);
+  }
+
+  .text :global(.ProseMirror) li[data-checked='true']::marker {
+    content: '\2611\00a0\00a0';
+    color: var(--color-accent-primary);
+  }
+
+  .text :global(.ProseMirror) li[data-checked='true'] > p {
+    color: var(--color-text-secondary);
+  }
+
+  /*
+   * Callouts: a soft card tinted by its type, with the type's color on its edge and beside its title. The title
+   * names the type in words, so color is never the only signal.
+   */
+  .text :global(.ProseMirror) [data-callout] {
+    --callout: var(--color-border-control);
+    margin-block: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--callout);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--callout) 8%, var(--color-surface-page));
+  }
+
+  .text :global(.ProseMirror) [data-callout] > p {
+    margin-block: var(--space-1) 0;
+  }
+
+  .text :global(.ProseMirror) [data-callout-title] {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .text :global(.ProseMirror) [data-callout-title]::before {
+    content: '';
+    flex: none;
+    inline-size: 0.55em;
+    block-size: 0.55em;
+    border-radius: 50%;
+    background: var(--callout);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='note'], [data-callout='info']) {
+    --callout: var(--ink-indigo);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='tip'], [data-callout='success']) {
+    --callout: var(--color-accent-primary);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='important'], [data-callout='example']) {
+    --callout: var(--ink-amber);
+  }
+
+  .text :global(.ProseMirror) [data-callout='question'] {
+    --callout: var(--ink-plum);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='warning'], [data-callout='caution']) {
+    --callout: var(--color-accent-clay);
+  }
+
+  .text :global(.ProseMirror) [data-callout='danger'] {
+    --callout: var(--color-status-danger);
+  }
+
+  .text :global(.ProseMirror) [data-callout='quote'] {
+    --callout: var(--ink-walnut);
+  }
+
+  @media (forced-colors: active) {
+    .text :global(.ProseMirror) [data-callout] {
+      border-inline-start-color: CanvasText;
+      background: Canvas;
+    }
+
+    .text :global(.ProseMirror) [data-callout-title]::before {
+      background: CanvasText;
+    }
   }
 
   .text :global(.ProseMirror) pre,
