@@ -113,15 +113,19 @@ describe('the quick switcher', () => {
     expect(dot?.getAttribute('aria-hidden')).toBe('true');
     expect(dot?.textContent).toBe('');
     expect(option.getAttribute('aria-label')).toBeNull();
-    // The dot hangs in front: the title's text and the detail under it start at the same place.
-    const left = (node: Node) => {
+    // The dot hangs in front: the title's text and the detail under it start at the same place, and the dot ends
+    // before them. The text is measured as a range; the dot has no text, so it is measured as the box it is (an
+    // empty element's range has no size, and where browsers put it differs).
+    const textLeft = (node: Node) => {
       const range = document.createRange();
       range.selectNodeContents(node);
       return Math.round(range.getBoundingClientRect().left);
     };
-    const title = left(dot?.parentElement?.lastChild as Node);
-    expect(left(option.querySelector('[id$="-detail"]') as Node)).toBe(title);
-    expect(left(dot as Node) - title).toBeLessThan(0);
+    const title = textLeft(dot?.parentElement?.lastChild as Node);
+    expect(textLeft(option.querySelector('[id$="-detail"]') as Node)).toBe(title);
+    const dotBox = (dot as Element).getBoundingClientRect();
+    expect(dotBox.width).toBeGreaterThan(0);
+    expect(Math.round(dotBox.right)).toBeLessThanOrEqual(title);
   });
 
   it('lists recent pages first when nothing is typed', async () => {
