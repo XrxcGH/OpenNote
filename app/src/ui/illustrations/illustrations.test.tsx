@@ -150,7 +150,27 @@ describe('where things stand', () => {
     for (const thing of [books, notebook, candle]) expectStandsOn(pointsOf(thing), desk);
     const sill = outline(frame.querySelector('path:last-child') as SVGGeometryElement);
     const sillTop = Math.min(...sill.map((p) => p.y));
-    expectStandsOn(outline(plant.querySelector('path') as SVGGeometryElement), () => sillTop);
+    // Every part of the plant stands on the sill without passing into it. That includes the vine's tail.
+    expectStandsOn(pointsOf(plant), () => sillTop);
+  });
+});
+
+describe('where things meet', () => {
+  it("keeps the plant's left leaf clear of the window's middle bar", () => {
+    const svg = drawn(renderUi(<DeskScene sky="day" />).container);
+    const [frame, plant] = [...svg.querySelectorAll(':scope > g')];
+    const bars = outline(frame.querySelector('path[d^="M50"]') as SVGGeometryElement, 1000);
+    const leftLeaf = outline(plant.querySelectorAll<SVGGeometryElement>('path')[4]);
+    let gap = Infinity;
+    for (const a of leftLeaf) for (const b of bars) gap = Math.min(gap, Math.hypot(a.x - b.x, a.y - b.y));
+    // Two 1.5 px strokes meet at 1.5 units apart; 3 leaves a clear line of sky between them.
+    expect(gap).toBeGreaterThan(3);
+  });
+
+  it("sets the candle's body down in its dish, not above it", () => {
+    const paths = drawn(renderUi(<Candle />).container).querySelectorAll<SVGGeometryElement>('path');
+    const [body, saucer] = [paths[2], paths[4]];
+    expectStandsOn(outline(body), surface(saucer));
   });
 });
 
