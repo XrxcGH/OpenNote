@@ -53,30 +53,30 @@ Real pen evidence is `hover`, `down`, `move`, `up`, and `cancel`. A `leave` from
 
 `score.ts` adds the terms that hold now. It recomputes them from the contact's features, never accumulating, at its own events, at ages 25 to 500 ms, and for all contacts when a pen arrives, a pen goes down, or a touch lands or lifts.
 
-| Id  | Evidence                                                                        | Points                           |
-| --- | ------------------------------------------------------------------------------- | -------------------------------- |
-| E1  | Palm size: 20 mm long or 15 mm across                                           | +4                               |
-| E2  | Large: 14 to 20 mm, a thumb or flat finger                                      | +1                               |
-| E3  | Fingertip: 11 mm or less                                                        | -1                               |
-| E4  | Grew 4 mm, or 40% past a fingertip                                              | +2                               |
-| E5  | In the hand region                                                              | +3 near or down; +2 or +1 recent |
-| E6  | Far side of the tip, or 80 mm outside the region                                | -2                               |
-| E7  | The pen was down when it landed                                                 | +2                               |
-| E8  | Landed within 400 ms of a pen lift or leave; within 1 s                         | +2; +1                           |
-| E9  | Landed first: young and still when a pen arrived                                | +2                               |
-| E10 | Still at 150 ms; at 500 ms                                                      | +1; +2                           |
-| E11 | Swipe: 3 mm straight in 200 ms; 8 mm and not large                              | -2; -3                           |
-| E12 | A palm within 70 mm                                                             | +2                               |
-| E13 | Another contact landed within 12 mm (a split palm)                              | +2                               |
-| E14 | Three landings within 300 ms and 90 mm                                          | +2                               |
-| E15 | Grip at a screen edge                                                           | +3, never draws                  |
-| E16 | The OS says palm: a touch `pointercancel` under managed touch, or a native hint | Latch                            |
-| E17 | The size of a learned passive stylus tip                                        | -2                               |
-| E18 | Its own palm: a resting contact in the region anchored at it                    | -2                               |
-| E19 | Lifted as a tap                                                                 | -1                               |
-| E20 | Sensitivity low, standard, high                                                 | -1, 0, +1                        |
+| Id  | Evidence                                                                                       | Points                           |
+| --- | ---------------------------------------------------------------------------------------------- | -------------------------------- |
+| E1  | Palm size: 20 mm long or 15 mm across                                                          | +4                               |
+| E2  | Large: 14 to 20 mm, a thumb or flat finger                                                     | +1                               |
+| E3  | Fingertip: 11 mm or less                                                                       | -1                               |
+| E4  | Grew 4 mm, or 40% past a fingertip                                                             | +2                               |
+| E5  | In the hand region, where it is now                                                            | +3 near or down; +2 or +1 recent |
+| E6  | Far side of the tip, or 80 mm outside the region                                               | -2                               |
+| E7  | The pen was down when it landed, or it rested 300 ms in the hand region while the pen was down | +2                               |
+| E8  | Landed within 400 ms of a pen lift or leave; within 1 s                                        | +2; +1                           |
+| E9  | Landed first: young and still when a pen arrived                                               | +2                               |
+| E10 | Still at 150 ms; at 500 ms                                                                     | +1; +2                           |
+| E11 | Swipe: 3 mm straight in 200 ms; 8 mm and not large; never inside the hand region near the pen  | -2; -3                           |
+| E12 | A palm within 70 mm                                                                            | +2                               |
+| E13 | Another contact landed within 12 mm (a split palm)                                             | +2                               |
+| E14 | Three landings within 300 ms and 90 mm                                                         | +2                               |
+| E15 | Grip at a screen edge                                                                          | +3, never draws                  |
+| E16 | The OS says palm: a touch `pointercancel` under managed touch, or a native hint                | Latch                            |
+| E17 | The size of a learned passive stylus tip                                                       | -2                               |
+| E18 | Its own palm: a resting contact in the region anchored at it                                   | -2                               |
+| E19 | Lifted as a tap                                                                                | -1                               |
+| E20 | Sensitivity low, standard, high                                                                | -1, 0, +1                        |
 
-Sizes count only when the digitizer reports real sizes. Motion counts against the pen, so a palm that slides with the writing hand stays still. A score of 4 or more latches palm. A score of 0 or less is a finger. An action that has run 500 ms is confirmed, and only E1, E4, or E16 can stop it.
+Sizes count only when the digitizer reports real sizes. Motion counts against the pen, so a palm that moves with the writing hand stays still, and a palm that slides between words in the hand region is no swipe. A score of 4 or more latches palm. A score of 0 or less is a finger. An action that has run 500 ms is confirmed, and only E1, E4, or E16 can stop it.
 
 ## Roles and gates
 
@@ -95,7 +95,7 @@ Touch is managed (`touchPolicy()`) once a pen has been seen, when the profile re
 
 ## Finger drawing
 
-With an ink tool, presence away or absent, and finger drawing on, one contact draws. A newcomer that is not a palm draws at once, whatever ignored contacts are down. With a drawing contact already down, a newcomer pairs into a pan inside the pair window, or takes the draw slot when the first is weak (still, growing, or scoring 2). Otherwise a finger-like newcomer becomes a shadow, built but not shown, and is promoted with its whole path if the first proves to be a palm. Everything else is ignored.
+With an ink tool, presence away or absent, and finger drawing on, one contact draws. A newcomer that is not a palm draws at once, whatever ignored contacts are down. The pipeline keeps its ink hidden until it moves 0.5 mm or lifts, so a hand edge that lands first never flashes a dot. With a drawing contact already down, a newcomer pairs into a pan inside the pair window (in the first contact's hand region only when it is fingertip-sized), or takes the draw slot when the first is weak (still, growing, or scoring 2). Otherwise a finger-like newcomer becomes a shadow, built but not shown, and is promoted with its whole path if the first proves to be a palm. Everything else is ignored.
 
 At the lift, a score of 2 or more retracts the stroke. With presence absent, it commits at once, so phones neither wait nor lose ink. Elsewhere it is held for `graceMs`, and real pen evidence in that time drops it. Ink committed under a second before a pen arrives, inside its hand region, is taken back.
 

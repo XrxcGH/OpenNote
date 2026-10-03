@@ -107,7 +107,7 @@ function decideDraw(core: Core, i: number): Role {
     return Role.Draw;
   }
   const inHand = core.touchHand.membership(c.x0[i], c.y0[i], c.x[d], c.y[d]) >= 0.5;
-  if (!inHand && canPair(c, i, d)) {
+  if ((!inHand || (c.why[i] & E.Fingertip) !== 0) && canPair(c, i, d)) {
     pair(core, i, d);
     return Role.Nav;
   }

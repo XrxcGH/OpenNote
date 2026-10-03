@@ -51,6 +51,10 @@ export const LEARN_HOLD_MS = 300;
 /** E8: the ChromeOS filter cancels touches within 0.4 s of stylus use and holds those within 1 s [S16]. */
 export const AFTER_PEN_CANCEL_MS = 400;
 export const AFTER_PEN_HOLD_MS = 1000;
+/** E7 also holds for a contact in the hand region that has stayed down this long while the pen was down [V]. */
+export const PEN_DOWN_HELD_MS = 300;
+/** The most one event adds to that time, so a gap in events does not count as contact. */
+export const PEN_DOWN_STEP_MS = 50;
 /** E9 [V]: a contact this young and this still when a pen arrives landed first [S29]. */
 export const PALM_FIRST_AGE_MS = 1500;
 export const PALM_FIRST_TRAVEL_MM = 2;

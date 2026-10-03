@@ -335,9 +335,12 @@ class Filter implements PalmFilter {
     const core = this.core;
     const c = core.c;
     const pens = core.pens;
+    const dt = c.tLast[i] - c.tTrack[i];
+    c.tTrack[i] = c.tLast[i];
     if (penContext(p) && pens.tipValid) {
       c.relTo(i, pens.tipX, pens.tipY);
       if (p !== P.Down) return;
+      c.penDownMs[i] += Math.min(dt, K.PEN_DOWN_STEP_MS);
       c.sumDx[i] += c.x[i] - pens.tipX;
       c.sumDy[i] += c.y[i] - pens.tipY;
       c.sumN[i]++;

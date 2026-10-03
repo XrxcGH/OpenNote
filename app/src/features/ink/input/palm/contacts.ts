@@ -73,6 +73,9 @@ export class ContactTable {
   readonly relX0 = f64();
   readonly relY0 = f64();
   readonly relDisp = f64();
+  /** Time spent down while the pen was down, and when that was last counted. */
+  readonly penDownMs = f64();
+  readonly tTrack = f64();
   readonly score = new Int8Array(MAX_CONTACTS);
   readonly why = new Uint32Array(MAX_CONTACTS);
   readonly cls = new Uint8Array(MAX_CONTACTS);
@@ -110,7 +113,8 @@ export class ContactTable {
     this.sumDx[i] = this.sumDy[i] = this.sumN[i] = 0;
     this.sinceUp[i] = Infinity;
     this.tAction[i] = Number.NaN;
-    this.pairD0[i] = this.relX0[i] = this.relY0[i] = this.relDisp[i] = 0;
+    this.pairD0[i] = this.relX0[i] = this.relY0[i] = this.relDisp[i] = this.penDownMs[i] = 0;
+    this.tTrack[i] = t;
     this.score[i] = 0;
     this.why[i] = 0;
     this.cls[i] = this.confirmed[i] = this.role[i] = this.started[i] = this.flags[i] = this.checkpoint[i] = 0;

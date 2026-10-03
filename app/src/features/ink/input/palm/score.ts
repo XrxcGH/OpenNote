@@ -106,15 +106,18 @@ function sizeTerms(c: ContactTable, i: number, x: ScoreContext): number {
   return s;
 }
 
-/** E5 and E6: where the contact landed relative to the pen tip, or to the drawing contact in draw mode. */
+/**
+ * E5 and E6: where the contact is relative to the pen tip, or where it landed relative to the drawing contact in
+ * draw mode. Against the pen it is the current position, because a resting palm slides along the line with the hand.
+ */
 function regionTerms(c: ContactTable, i: number, x: ScoreContext): number {
   if (x.penCtx && x.tipValid) {
-    if (x.hand.membership(c.x0[i], c.y0[i], x.tipX, x.tipY) >= 0.5) {
+    if (x.hand.membership(c.x[i], c.y[i], x.tipX, x.tipY) >= 0.5) {
       c.why[i] |= E.HandRegion;
       if (x.presence >= P.Near) return 3;
       return x.sinceEvidence < K.RECENT_STRONG_MS ? 2 : 1;
     }
-    if (x.hand.farFrom(c.x0[i], c.y0[i], x.tipX, x.tipY)) {
+    if (x.hand.farFrom(c.x[i], c.y[i], x.tipX, x.tipY)) {
       c.why[i] |= E.FarSide;
       return -2;
     }
@@ -131,7 +134,8 @@ function regionTerms(c: ContactTable, i: number, x: ScoreContext): number {
 function timingTerms(c: ContactTable, i: number, x: ScoreContext): number {
   let s = 0;
   const flags = c.flags[i];
-  if (flags & F.PenDownAtLand) {
+  const heldWhileWriting = (c.why[i] & E.HandRegion) !== 0 && c.penDownMs[i] >= K.PEN_DOWN_HELD_MS;
+  if (flags & F.PenDownAtLand || heldWhileWriting) {
     s += 2;
     c.why[i] |= E.PenDown;
   } else if (c.sinceUp[i] <= K.AFTER_PEN_HOLD_MS) {
@@ -144,14 +148,17 @@ function timingTerms(c: ContactTable, i: number, x: ScoreContext): number {
   }
   const age = x.t - c.t0[i];
   const motion = c.motion(i);
+  // A palm slides with the writing hand between words, so motion in the hand region is no swipe while the pen is near.
+  const handSlide = (c.why[i] & E.HandRegion) !== 0 && x.presence >= P.Near;
   if (x.penCtx && i !== x.drawSlot && motion < K.STILL_MM && age >= K.STILL_EARLY_MS) {
     s += age >= K.STILL_LATE_MS ? 2 : 1;
     c.why[i] |= E.Still;
   }
-  if (motion >= K.LONG_SWIPE_MM && c.majorMax[i] < K.LARGE_MAJOR_MM) {
+  if (!handSlide && motion >= K.LONG_SWIPE_MM && c.majorMax[i] < K.LARGE_MAJOR_MM) {
     s -= 3;
     c.why[i] |= E.Swipe;
   } else if (
+    !handSlide &&
     motion >= K.SWIPE_MM &&
     c.disp200[i] >= K.SWIPE_MM &&
     c.disp200[i] >= K.SWIPE_STRAIGHTNESS * c.path200[i]
