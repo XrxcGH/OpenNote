@@ -57,6 +57,13 @@
     justify-content: center;
   }
 
+  /* At first run the Match Windows caption says why it is preselected, which takes two lines in a row of cards.
+     Choosing another card puts back the one-line caption. Every caption keeps room for two lines, so the row
+     doesn't jump. Stacked in compact, each caption has the width for one line. */
+  :global(:root:not([data-size-class='compact'])) .look [role='radiogroup'] > [role='radio'] {
+    grid-template-rows: auto auto minmax(calc(2 * var(--type-small-line)), auto);
+  }
+
   .header {
     display: grid;
     gap: var(--space-3);

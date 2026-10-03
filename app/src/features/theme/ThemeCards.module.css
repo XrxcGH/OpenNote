@@ -9,12 +9,12 @@
     gap: var(--space-7);
   }
 
-  /* The three cards share a row until the window is compact, shrinking from their full width together. */
+  /* The three cards share a row until the window is compact, shrinking from their full width together. Their height
+     is their content's, so the card's padding is the same above the preview and below the caption. */
   .cards [role='radio'] {
     flex: 1 1 0;
     min-inline-size: 0;
     max-inline-size: var(--size-theme-card);
-    min-block-size: var(--size-theme-card);
     align-content: start;
   }
 
@@ -26,7 +26,6 @@
   :global(:root[data-size-class='compact']) .cards [role='radio'] {
     flex: none;
     max-inline-size: none;
-    min-block-size: 0;
   }
 
   .note {
