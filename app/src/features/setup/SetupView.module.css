@@ -51,10 +51,15 @@
     gap: var(--space-6);
   }
 
-  /* The theme cards stop growing at their full width, so the row centers under the centered heading. Settings
-     keeps its row start-aligned with the text above it. */
+  /* The theme cards grow past their Settings width to fill the setup card's column, so the row's outer edges meet
+     the edges of the buttons below, and the row centers under the centered heading. Settings keeps its row
+     start-aligned with the text above it. */
   .look [role='radiogroup'] {
     justify-content: center;
+  }
+
+  .look [role='radiogroup'] > [role='radio'] {
+    max-inline-size: none;
   }
 
   /* At first run the Match Windows caption says why it is preselected, which takes two lines in a row of cards.
