@@ -1,5 +1,6 @@
 // Code blocks (ARCHITECTURE.md sections 10.2 and 14; owner: WP6). The node keeps the schema's definition and adds a
 // view with a language button, the keys of section 22.4, and the "editor.code" scope while the caret is in code.
+// The highlight plugin comes along while page.codeHighlight is on; its highlighter loads when code needs colors.
 import { Extension, InputRule } from '@tiptap/core';
 import type { Editor, Extensions, NodeViewRenderer } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
@@ -21,6 +22,7 @@ import type { Command } from '../commands/code';
 import styles from '../highlight/code.module.css';
 import { CODE_LANGUAGES, languageName } from '../highlight/languages';
 import { languagePicker } from '../highlight/picker';
+import { highlightPlugin } from '../highlight/plugin';
 import type { EditorHost } from '../host';
 import { CodeBlock } from '../schema/nodes';
 
@@ -157,7 +159,7 @@ export function codeBlockExtensions(host: EditorHost): Extensions {
         'Mod-Enter': key(editor, leaveCode),
       };
     },
-    addProseMirrorPlugins: () => [scopePlugin()],
+    addProseMirrorPlugins: () => [scopePlugin(), ...(host.flag('page.codeHighlight') ? [highlightPlugin(host)] : [])],
   });
   return [Code, Keys];
 }
