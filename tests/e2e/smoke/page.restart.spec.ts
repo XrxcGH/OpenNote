@@ -37,7 +37,7 @@ async function openMitosis(browser: Browser): Promise<void> {
   await clickRow(browser, 'Pages', 'Mitosis');
 }
 
-const textBox = (browser: Browser) => browser.$('[role="textbox"][aria-label="Text"]');
+const textBox = (browser: Browser) => browser.$('[role="textbox"][aria-label="Page text"]');
 
 describe('typed text survives a restart', { skip: skipReason() }, () => {
   const profileDir = mkdtempSync(join(tmpdir(), 'opennote-e2e-page-'));

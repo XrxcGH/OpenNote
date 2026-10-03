@@ -26,7 +26,7 @@ describe('the page view', () => {
     const heading = await screen.findByRole('heading', { level: 1, name: 'Mitosis' });
     await expectFocus(heading);
     expect(screen.getByText(/^Changed Sep 23, 20\d\d$/)).toBeTruthy();
-    expect(await screen.findByRole('textbox', { name: 'Text' }, { timeout: 10_000 })).toBeTruthy();
+    expect(await screen.findByRole('textbox', { name: 'Page text' }, { timeout: 10_000 })).toBeTruthy();
   });
 
   it('sends what is typed into an empty page to the page service', async () => {
@@ -38,7 +38,7 @@ describe('the page view', () => {
     const pages = await screen.findByRole('tree', { name: 'Pages' });
     (await within(pages).findByRole('treeitem', { name: 'Mitosis' })).focus();
     await pressChord('Enter');
-    const box = await screen.findByRole('textbox', { name: 'Text' }, { timeout: 10_000 });
+    const box = await screen.findByRole('textbox', { name: 'Page text' }, { timeout: 10_000 });
     box.focus();
     await userEvent.keyboard('Cells divide');
     const sent = () => (platform.pages as MemoryPageService).sent('p-mitosis').flatMap((batch) => batch.edits);

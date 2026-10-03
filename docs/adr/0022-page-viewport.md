@@ -40,3 +40,13 @@ This holds only if spike S5 passes on the Surface and the reference laptop. Touc
 - Windows 11's in-place pen handwriting doesn't reach text on the page, because pen contact goes to the router. The Windows handwriting panel still types into page text, and in-place handwriting works in the app's plain text fields. The owner decides after spike S6 whether a later setting should change this, knowing it conflicts with ink.
 - Follow-up work: the camera and router seams in `features/page/seams/`; the motion benchmark with touch pan and pinch; the manual Surface checks.
 - Revisit if spike S5 fails and the transform fallback also drops frames, or if a WebView2 update changes how `touch-action` treats pens. The Phase 4 and Phase 5 owners check it together.
+
+## Implementation and spike S5 status
+
+WP3 built the decision as written, in `app/src/features/page/viewport/`:
+
+- `viewport.ts` holds the camera without layout reads on scroll or zoom, and a `ResizeObserver` keeps the viewport's rectangle. Camera listeners run at most once per animation frame during a gesture and once when it settles.
+- `router.ts` routes pointers in the capture phase, by priority. A claimed pointer's events are canceled and stopped, so the compatibility mouse events never reach the blocks. Phase 4's tools are gestures (50), objects (30), and select (10).
+- `gestures.ts` pans one finger after 8 px, glides after a flick for at most 400 ms (none with reduced motion), pinches around the fingers' midpoint, and pans with the barrel button or the middle mouse button. It writes scroll offsets once per frame from coalesced moves and snaps them to device pixels when a gesture ends. `holdCamera` stops all of it.
+
+Browser tests drive the pan, the glide, the pinch, `holdCamera`, and the router's priorities with synthetic pointer events. Spike S5 itself still needs the Surface and the reference laptop: the 60 frames per second check for touch pan and pinch, the `pointercancel` check, and the long-press, selection handle, and pen marquee checks. Until it runs, this record stays Proposed, and the transform fallback isn't built.

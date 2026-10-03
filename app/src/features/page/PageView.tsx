@@ -14,6 +14,7 @@ import { t } from '../../strings/t';
 import { ProgressBar, useDelayedFlag } from '../../ui';
 import { titleOf, useTreeNode } from '../tree';
 import { EmptyPageArt } from './EmptyPageArt';
+import { TitleSlot, useTitleBand } from './title/TitleSlot';
 import styles from './PageView.module.css';
 import { usePageZoom } from './zoom';
 
@@ -42,25 +43,39 @@ export function PageView() {
   const { page, loading } = usePage(location.view === 'workspace' ? location.pageId : null);
   const heading = useRef<HTMLHeadingElement>(null);
   const showProgress = useDelayedFlag(loading);
-  const zoom = usePageZoom(page?.id ?? null);
   const editing = useFlag('page.editor');
-  useEffect(() => registerRegionMain('page', () => heading.current), []);
+  const shown = editing && page !== null;
+  const zoom = usePageZoom(shown ? null : (page?.id ?? null));
+  const title = page ? titleOf(page) : t('tree.page.noneTitle');
+  const changed = page ? t('tree.page.changed', { date: formatDate(page.modified) }) : null;
+  // With the editor on, the heading is the title band's. It is one element that moves into each page's world.
+  const band = useTitleBand();
+  useEffect(
+    () => registerRegionMain('page', () => heading.current ?? (shown ? band.querySelector('h1') : null)),
+    [band, shown],
+  );
   return (
     <article
-      className={styles.page}
+      className={shown ? styles.editing : styles.page}
       data-scope="page"
       aria-busy={loading || undefined}
       style={zoom === 100 ? undefined : { zoom: zoom / 100 }}
     >
       {showProgress && <ProgressBar label={t('tree.loading.page')} />}
-      <h1 ref={heading} tabIndex={-1} className={styles.title}>
-        {page ? titleOf(page) : t('tree.page.noneTitle')}
-      </h1>
-      {page && <p className={styles.changed}>{t('tree.page.changed', { date: formatDate(page.modified) })}</p>}
-      {page && editing && (
-        <Suspense fallback={null}>
-          <PageBody key={page.id} pageId={page.id} />
-        </Suspense>
+      {shown ? (
+        <>
+          <TitleSlot band={band} title={title} changed={changed} />
+          <Suspense fallback={null}>
+            <PageBody key={page.id} pageId={page.id} title={title} changed={changed} band={band} />
+          </Suspense>
+        </>
+      ) : (
+        <>
+          <h1 ref={heading} tabIndex={-1} className={styles.title}>
+            {title}
+          </h1>
+          {changed && <p className={styles.changed}>{changed}</p>}
+        </>
       )}
       {page && !editing && <p className={styles.note}>{t('tree.page.empty')}</p>}
       {!page && !loading && (

@@ -73,23 +73,21 @@
     stroke: var(--color-accent-primary);
   }
 
+  /* With the editor on, the page fills the region and its viewport scrolls (ARCHITECTURE.md section 5.1). */
+  .editing {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+  }
+
+  .header {
+    padding: var(--space-6) var(--space-8) var(--space-2);
+  }
+
   .body {
     position: relative;
-  }
-
-  .viewport {
-    position: relative;
-  }
-
-  .world {
-    position: relative;
-    min-block-size: 12rem;
-  }
-
-  .underlay {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
+    flex: 1;
+    min-block-size: 0;
   }
 
   @media (forced-colors: active) {
