@@ -2,6 +2,7 @@
 // Nothing is virtualized: the whole list is in the page.
 
 import { useEffect, useId, useRef, useState } from 'react';
+import type { Ref } from 'react';
 import { resetShortcut } from '../../state/keymap';
 import { t } from '../../strings/t';
 import { Button, announce } from '../../ui';
@@ -14,13 +15,31 @@ import styles from './ShortcutList.module.css';
 /** Under the dialog's h2 the headings are h3; under Settings' h1 they are h2. */
 export type HeadingLevel = 2 | 3;
 
+/** A row's Change and Reset buttons. */
+function RowActions({ row, onChange, cell }: { row: ShortcutRow; onChange(): void; cell: Ref<HTMLTableCellElement> }) {
+  const reset = () => {
+    void resetShortcut(row.id).then(() => announce(t('shortcuts.resetDone', { command: row.title })));
+  };
+  return (
+    <td ref={cell} className={styles.actions}>
+      {row.customizable && (
+        <Button variant="quiet" aria-label={t('shortcuts.changeLabel', { command: row.title })} onClick={onChange}>
+          {t('shortcuts.change')}
+        </Button>
+      )}
+      {row.changed && (
+        <Button variant="quiet" aria-label={t('shortcuts.resetLabel', { command: row.title })} onClick={reset}>
+          {t('shortcuts.reset')}
+        </Button>
+      )}
+    </td>
+  );
+}
+
 function CommandRow({ row }: { row: ShortcutRow }) {
   const [changing, setChanging] = useState(false);
   const actions = useRef<HTMLTableCellElement>(null);
   const afterChange = useRef(false);
-  const reset = () => {
-    void resetShortcut(row.id).then(() => announce(t('shortcuts.resetDone', { command: row.title })));
-  };
   // When the change ends, focus goes back to the row's Change button, which the field had replaced.
   useEffect(() => {
     if (!changing && afterChange.current) {
@@ -50,22 +69,7 @@ function CommandRow({ row }: { row: ShortcutRow }) {
           <td>
             <ChordList chords={row.keys} />
           </td>
-          <td ref={actions} className={styles.actions}>
-            {row.customizable && (
-              <Button
-                variant="quiet"
-                aria-label={t('shortcuts.changeLabel', { command: row.title })}
-                onClick={() => setChanging(true)}
-              >
-                {t('shortcuts.change')}
-              </Button>
-            )}
-            {row.changed && (
-              <Button variant="quiet" aria-label={t('shortcuts.resetLabel', { command: row.title })} onClick={reset}>
-                {t('shortcuts.reset')}
-              </Button>
-            )}
-          </td>
+          <RowActions row={row} cell={actions} onChange={() => setChanging(true)} />
         </>
       )}
     </tr>
