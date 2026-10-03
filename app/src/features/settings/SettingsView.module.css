@@ -110,6 +110,7 @@
   }
 
   .help {
+    margin: 0;
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);

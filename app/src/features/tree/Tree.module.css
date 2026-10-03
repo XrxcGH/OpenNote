@@ -242,8 +242,14 @@
     white-space: normal;
   }
 
+  /* No browser margins: the pane's padding and the drawing's own margin set the space. */
   .empty {
+    margin: 0;
     color: var(--color-text-secondary);
+  }
+
+  .empty p {
+    margin: 0;
   }
 
   .emptyArt {
