@@ -13,12 +13,13 @@ test('shows a prompt, then the open page with a text box to type into', async ({
   await box.click();
   await page.keyboard.type('Osmosis moves water');
   await expect(box).toHaveText('Osmosis moves water');
-  const sent = () =>
+  // Typing reaches the service in batches (the first words, then splices), so the test reads the page it holds.
+  const held = () =>
     page.evaluate(() => {
       const hooks = (window as unknown as { __OPENNOTE_TEST__: Record<string, () => unknown> }).__OPENNOTE_TEST__;
-      return JSON.stringify(hooks.pagesSent());
+      return JSON.stringify(hooks.pagesHeld());
     });
-  await expect.poll(sent).toContain('Osmosis moves water');
+  await expect.poll(held).toContain('"markdown":"Osmosis moves water"');
 });
 
 test('shows every page as the sampler with ?fixture=sampler', async ({ page }) => {
