@@ -12,6 +12,7 @@
 pub mod commands;
 mod export;
 mod jobs;
+pub mod more;
 pub mod pick;
 mod restore;
 #[cfg(test)]

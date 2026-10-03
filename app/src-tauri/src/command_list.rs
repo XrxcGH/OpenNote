@@ -39,7 +39,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "search_call",
     "tool_window_open",
     "interop_pick", "interop_detect", "interop_local_sources", "interop_preview", "interop_import", "interop_cancel",
-    "interop_export", "interop_reveal",
+    "interop_export", "interop_reveal", "interop_more",
     "intel_settings_get", "intel_settings_set", "intel_status", "intel_ocr_languages",
     "intel_ocr_recognize", "intel_ink_recognize", "intel_ink_tidy", "intel_summarize",
     "intel_keywords", "intel_action_items", "intel_chapters", "intel_vocabulary_offer",

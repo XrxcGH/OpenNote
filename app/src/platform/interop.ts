@@ -162,5 +162,10 @@ export interface InteropClient {
   cancel(job: string): void;
   /** Shows a file or folder in Explorer. */
   reveal(path: string): Promise<void>;
+  /**
+   * Runs one of the host's extra operations by name, such as `save_report` or `send_to_folder`. The desktop app has
+   * them all; a host that lacks one leaves this out, and the features that need it stay hidden.
+   */
+  more?<T>(op: string, args?: Record<string, unknown>): Promise<T>;
   onProgress(listener: (event: JobEvent) => void): Unsubscribe;
 }

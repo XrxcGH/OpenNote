@@ -31,6 +31,7 @@ import { smart } from './smart';
 import { search } from './search';
 import { audio } from './audio';
 import { interop } from './interop';
+import { moreInterop } from './moreInterop';
 import { intel } from './intel';
 
 export const en = {
@@ -65,5 +66,6 @@ export const en = {
   search,
   audio,
   interop,
+  moreInterop,
   intel,
 } as const;

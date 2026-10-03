@@ -257,6 +257,7 @@ pub async fn interop_import(
             Ok(restore::tree_of(&handle))
         })?;
         let (lost_pages, skipped) = report.loss_counts();
+        jobs::remember_report(&job, report.to_markdown());
         Ok(ImportDone {
             tree,
             pages: report.pages.len(),

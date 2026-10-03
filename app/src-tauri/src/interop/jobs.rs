@@ -2,7 +2,7 @@
 //! progress events named `interop://progress`.
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     sync::{Arc, Mutex, OnceLock, PoisonError},
     time::{Duration, Instant},
 };
@@ -23,6 +23,32 @@ pub type Emit = Arc<dyn Fn(Value) + Send + Sync>;
 fn registry() -> &'static Mutex<HashMap<String, CancelToken>> {
     static JOBS: OnceLock<Mutex<HashMap<String, CancelToken>>> = OnceLock::new();
     JOBS.get_or_init(Mutex::default)
+}
+
+/// How many finished jobs keep their report for the Save report button.
+const KEPT_REPORTS: usize = 8;
+
+fn reports() -> &'static Mutex<VecDeque<(String, String)>> {
+    static REPORTS: OnceLock<Mutex<VecDeque<(String, String)>>> = OnceLock::new();
+    REPORTS.get_or_init(Mutex::default)
+}
+
+/// Keeps the Markdown report of a finished job, so the person can save it as a file afterwards.
+pub fn remember_report(job: &str, markdown: String) {
+    let mut kept = reports().lock().unwrap_or_else(PoisonError::into_inner);
+    kept.retain(|(name, _)| name != job);
+    kept.push_back((job.to_owned(), markdown));
+    while kept.len() > KEPT_REPORTS {
+        kept.pop_front();
+    }
+}
+
+/// The report a finished job kept.
+pub fn report_for(job: &str) -> Option<String> {
+    let kept = reports().lock().unwrap_or_else(PoisonError::into_inner);
+    kept.iter()
+        .find(|(name, _)| name == job)
+        .map(|(_, markdown)| markdown.clone())
 }
 
 /// A job that is running. It leaves the registry when it is dropped.
