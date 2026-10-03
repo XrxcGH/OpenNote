@@ -1,8 +1,9 @@
 // The quality-of-life features of typed notes and the page chrome: the commands, their keys, the command bar items,
 // the settings part, and the hook that attaches the rest to each page view. This is the one registration file for
 // that lane. It loads at start-up, so it holds definitions only; each command loads its code when it first runs.
-import { announce } from '../../../ui';
-import { chord, defineCommand } from '../../../commands/registry';
+import { announce, registerAppMenu } from '../../../ui';
+import { pageSelection, selectOnPage } from '../seams/selectionStore';
+import { chord, defineCommand, executeCommand } from '../../../commands/registry';
 import type { CommandDef } from '../../../commands/types';
 import { isEnabled } from '../../../app/flags';
 import { commandBar, commands, pageCreated } from '../../../registries';
@@ -10,7 +11,7 @@ import type { CommandBarItem } from '../../../registries/types';
 import { t } from '../../../strings/t';
 import { targetEditor } from '../formattingBar/target';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
-import { editingSettingsParts } from '../registries';
+import { editingSettingsParts, slashItems } from '../registries';
 import { oneImageSelected } from '../images/shown';
 import { openFind, readingLock } from '../qol/stores';
 import { shownIsTemplate } from '../templates/state';
@@ -216,6 +217,73 @@ register({
   when: shown,
   run: () => void templates().then((module) => module.newPageInSeries()),
 });
+// Attachments.
+const attachments = () => import('../attachments/commands');
+const oneFileSelected = (): boolean => {
+  const mounted = shownMounted.get();
+  const { blocks, strokes } = pageSelection.get();
+  return !!mounted && blocks.length === 1 && strokes.length === 0 && mounted.layer.block(blocks[0])?.type === 'file';
+};
+register({
+  id: 'insert.attachFile',
+  title: 'pageExtras.attach.command',
+  keywords: 'pageExtras.attach.keywords',
+  category: 'insert',
+  flag: 'page.attachments',
+  when: shown,
+  run: () => void attachments().then((module) => module.attachFile()),
+});
+register({
+  id: 'object.openAttachment',
+  title: 'pageExtras.attach.openCommand',
+  keywords: 'pageExtras.attach.keywords',
+  category: 'object',
+  flag: 'page.attachments',
+  when: oneFileSelected,
+  run: () => void attachments().then((module) => module.openSelected()),
+});
+register({
+  id: 'object.attachmentDisplay',
+  title: 'pageExtras.attach.displayCommand',
+  keywords: 'pageExtras.attach.keywords',
+  category: 'object',
+  flag: 'page.attachments',
+  when: oneFileSelected,
+  run: () => void attachments().then((module) => module.toggleDisplay()),
+});
+slashItems.register({
+  id: 'attachFile',
+  title: 'pageExtras.attach.command',
+  keywords: 'pageExtras.attach.keywords',
+  icon: '',
+  group: 'media',
+  order: 30,
+  flag: 'page.attachments',
+  command: 'insert.attachFile',
+});
+// The attachment's context menu: Open, then the display choice.
+registerAppMenu('page.attachment', ({ host }) => {
+  const id = host.dataset.blockId;
+  if (!id) return null;
+  selectOnPage({ blocks: [id], strokes: [] });
+  host.focus({ preventScroll: true });
+  const run = (command: 'object.openAttachment' | 'object.attachmentDisplay') => () =>
+    void executeCommand(command, undefined, 'menu');
+  return {
+    label: t('pageExtras.attach.menu'),
+    items: [
+      { id: 'open', label: t('pageExtras.attach.openCommand'), onSelect: run('object.openAttachment') },
+      { id: 'display', label: t('pageExtras.attach.displayCommand'), onSelect: run('object.attachmentDisplay') },
+      {
+        id: 'delete',
+        label: t('page.object.delete'),
+        separatorBefore: true,
+        onSelect: () => void executeCommand('object.delete', undefined, 'menu'),
+      },
+    ],
+  };
+});
+
 // Text wrap around the selected image.
 for (const mode of ['alone', 'inline', 'left', 'right'] as const) {
   register({
@@ -281,6 +349,7 @@ const bar = (item: Omit<CommandBarItem, 'id'>): CommandBarItem => ({ id: `qol.${
   }),
   bar({ tab: 'home', group: 'find', command: 'page.find', priority: 20, flag: 'page.findReplace' }),
   bar({ tab: 'insert', group: 'blocks', command: 'templates.insert', priority: 40, flag: 'page.templates' }),
+  bar({ tab: 'insert', group: 'blocks', command: 'insert.attachFile', priority: 45, flag: 'page.attachments' }),
   bar({ tab: 'home', group: 'paragraph', command: 'checklist.checkAll', priority: 36, flag: 'page.checklistExtras' }),
 ].forEach((item) => commandBar.register(item));
 
@@ -293,15 +362,18 @@ editingSettingsParts.register({
 });
 
 // What loads after start-up: the editor extensions and the hook that attaches the features to each page view.
-void import('../qol/editorExtension');
+// A load that fails, as when a test ends before the chunk arrives, leaves the page without these extras.
+void import('../qol/editorExtension').catch(() => undefined);
 mountedPageHooks.register({
   id: 'qol',
   attach(mounted) {
     let stop: (() => void) | null = null;
     let detached = false;
-    void import('../qol/attach').then((module) => {
-      stop = detached ? null : module.attachQol(mounted);
-    });
+    void import('../qol/attach')
+      .then((module) => {
+        stop = detached ? null : module.attachQol(mounted);
+      })
+      .catch(() => undefined);
     return () => {
       detached = true;
       stop?.();

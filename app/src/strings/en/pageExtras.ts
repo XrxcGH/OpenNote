@@ -165,6 +165,27 @@ export const pageExtras = {
     doneSkipped:
       '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}} {skipped, plural, one {# image or drawing stays on this page.} other {# images and drawings stay on this page.}}',
   },
+  attach: {
+    command: 'Attach file',
+    keywords: 'attach file document word excel powerpoint pdf insert',
+    openCommand: 'Open attachment',
+    displayCommand: 'Show attachment as icon or preview',
+    menu: 'Attachment',
+    open: 'Open',
+    label: 'Attachment: {name}, {size}',
+    missing: 'Attachment, file missing',
+    opened: 'Opened {name}. Changes you save there come back into this page.',
+    saved: 'Saved the changes from the other app.',
+    added: '{count, plural, one {Attached # file.} other {Attached # files.}}',
+    linkAdded: 'Added a link.',
+    tooLarge:
+      '{count, plural, one {# file is over 200 MB and can’t be attached.} other {# files are over 200 MB and can’t be attached.}}',
+    failed: '{count, plural, one {# file couldn’t be attached.} other {# files couldn’t be attached.}}',
+    blocked: 'Windows would run this file instead of opening it, so a note won’t open it.',
+    noApp: 'Windows has no app set up to open this kind of file.',
+    desktopOnly: 'Opening an attachment in its own app needs the desktop app.',
+    openFailed: 'The attachment couldn’t be opened.',
+  },
   wrap: {
     menu: 'Text wrap',
     command: 'Wrap text around image',
