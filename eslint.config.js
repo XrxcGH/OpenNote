@@ -6,7 +6,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import opennote from './eslint/rules.js';
 
-const TESTS = ['app/src/**/*.test.{ts,tsx}', 'app/src/test/**'];
+const TESTS = ['app/src/**/*.test.{ts,tsx}', 'app/src/test/**', 'app/src/features/page/test/**'];
 
 export default tseslint.config(
   {

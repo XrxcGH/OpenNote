@@ -1,12 +1,30 @@
-// The page placeholder in the production build: a prompt with no page open, then the page's title as a heading.
+// The page view in the production build: a prompt with no page open, then the page's title as a heading and a text
+// box that typing reaches through the web platform's page service.
 
 import { expect, test } from '../fixtures';
 
-test('shows a prompt, then the open page as a heading', async ({ page }) => {
+test('shows a prompt, then the open page with a text box to type into', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'No page open' })).toBeVisible();
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
-  await expect(page.getByText(/Writing and drawing on pages arrive in a later version/)).toBeVisible();
+  const box = page.getByRole('textbox', { name: 'Text' });
+  await box.click();
+  await page.keyboard.type('Osmosis moves water');
+  await expect(box).toHaveText('Osmosis moves water');
+  const sent = () =>
+    page.evaluate(() => {
+      const hooks = (window as unknown as { __OPENNOTE_TEST__: Record<string, () => unknown> }).__OPENNOTE_TEST__;
+      return JSON.stringify(hooks.pagesSent());
+    });
+  await expect.poll(sent).toContain('Osmosis moves water');
+});
+
+test('shows every page as the sampler with ?fixture=sampler', async ({ page }) => {
+  await page.goto('/?fixture=sampler');
+  await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
+  await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
+  await expect(page.getByText('Every kind of text')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Table' })).toBeVisible();
 });
