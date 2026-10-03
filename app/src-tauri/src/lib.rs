@@ -22,6 +22,7 @@ pub mod lifecycle;
 pub mod log;
 pub mod notes;
 pub mod notes_snapshot;
+pub mod page_docx;
 pub mod page_export;
 pub mod paths;
 pub mod perf;
@@ -261,6 +262,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_export::export_pick_save,
         page_export::export_write,
         page_export::export_open,
+        page_docx::export_selection_docx,
         tool_windows::tool_window_open,
         interop::commands::interop_pick,
         interop::commands::interop_detect,

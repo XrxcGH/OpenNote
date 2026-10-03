@@ -3,6 +3,7 @@ import { pageOf, textBlock } from '../testing/build';
 import { waveStroke } from '../testing/samples';
 import { cropPage } from './crop';
 import { selectArea, selectChosen } from './select';
+import { selectionText } from './text';
 
 const page = pageOf(
   [
@@ -62,5 +63,18 @@ describe('a selection of items already chosen', () => {
   it('answers null when nothing chosen can be placed', () => {
     expect(selectChosen(page, { blocks: [], strokes: [] })).toBeNull();
     expect(selectChosen(page, { blocks: ['nope'], strokes: ['nope'] })).toBeNull();
+  });
+});
+
+describe('the words of a selection', () => {
+  it('joins the picked text, drops the markup, and cuts a long text short', () => {
+    const marked = pageOf([{ ...textBlock('# Heading\n\nSome **bold** words', { x: 0, y: 0, w: 200 }), id: 't' }]);
+    const sel = selectChosen(
+      marked,
+      { blocks: ['t'], strokes: [] },
+      { boxes: new Map([['t', { x: 0, y: 0, w: 200, h: 40 }]]) },
+    )!;
+    expect(selectionText(marked, sel)).toBe('Heading Some bold words');
+    expect(selectionText(marked, sel, 7)).toBe('Heading…');
   });
 });

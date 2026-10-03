@@ -200,3 +200,20 @@ commandBar.register({
   priority: 32,
   flag: 'pages.elements',
 });
+
+// ---- Export selection: the lasso's picks as PDF, PNG, SVG, or Word, and copy as an image -----------------------------------
+command({
+  id: 'pages.exportSelection',
+  title: 'pagesPlus.commands.exportSelection',
+  keywords: 'pagesPlus.commands.exportKeywords',
+  flag: 'pages.exportSelection',
+  run: (ctx) => import('./ui/imageCommands').then((m) => m.exportImage(ctx, ['pdf', 'png', 'svg', 'docx'])),
+});
+command({
+  id: 'pages.copyImage',
+  title: 'pagesPlus.commands.copyImage',
+  keywords: 'pagesPlus.commands.exportKeywords',
+  flag: 'pages.exportSelection',
+  run: (ctx) => import('./ui/imageCommands').then((m) => m.copyImage(ctx)),
+});
+menuItems('pages.export', 'pages.exportSelection', 'selection', ['pages.exportSelection', 'pages.copyImage']);

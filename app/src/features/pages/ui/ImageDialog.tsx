@@ -3,21 +3,31 @@ import { useEffect, useState } from 'react';
 import type { Platform } from '../../../platform/types';
 import { t } from '../../../strings/t';
 import { Dialog, RadioCard, RadioGroup, showToast } from '../../../ui';
-import { makePicture, selectionFor, svgToPng } from '../host/picture';
+import { isEnabled } from '../../../app/flags';
+import { exportPdfFile } from '../host/exporter';
+import { saveFile } from '../host/files';
+import { blockBoxes, makePicture, selectionFor, svgToPng } from '../host/picture';
 import type { Picture, PictureScope } from '../host/picture';
 import { exportFileName } from '../pdf';
+import { cropPage, selectionText } from '../selection';
+import type { Chosen } from '../selection';
 import type { PageSource } from '../host/source';
 import styles from './pagesUi.module.css';
 
 export interface ImageDialogProps {
   readonly source: PageSource;
   readonly platform: Platform;
-  /** The blocks selected on the page now. */
-  readonly chosen: readonly string[];
+  /** The blocks and strokes the lasso picked on the page now. */
+  readonly chosen: Chosen;
+  /** The formats the dialog offers. The first is chosen at the start. */
+  readonly formats?: readonly Format[];
   close(): void;
 }
 
-type Format = 'png' | 'svg';
+export type Format = 'png' | 'svg' | 'pdf' | 'docx';
+
+/** The formats of Export as picture. */
+export const IMAGE_FORMATS: readonly Format[] = ['png', 'svg'];
 type Scale = '1' | '2' | '3';
 type Built =
   | { readonly status: 'loading' }
@@ -31,7 +41,7 @@ const SCALE_KEYS = {
 } as const;
 
 /** The picture for a scope, made again when the scope changes. */
-function useBuilt(source: PageSource, scope: PictureScope, chosen: readonly string[]): Built {
+function useBuilt(source: PageSource, scope: PictureScope, chosen: Chosen): Built {
   const [built, setBuilt] = useState<Built>({ status: 'loading' });
   useEffect(() => {
     let current = true;
@@ -67,6 +77,42 @@ function useActions(props: ImageDialogProps, built: Built, format: Format, scale
     format === 'png'
       ? new Uint8Array(await (await svgToPng(picture, Number(scale))).arrayBuffer())
       : new TextEncoder().encode(picture.svg);
+  const title = source.title || t('pageViews.print.untitled');
+  const savedToast = (name: string, path: string) =>
+    showToast({
+      message: t('pageViews.files.saved', { name }),
+      action: { label: t('pageViews.print.openFile'), run: () => platform.exports.open(path, true) },
+    });
+  /** The selection as its own one-sheet PDF, tagged when accessible PDF is on. */
+  const savePdf = async (picture: Picture) => {
+    const page = cropPage(source.page, picture.selection, { boxes: blockBoxes(), title });
+    const outcome = await exportPdfFile(
+      platform.exports,
+      { ...source, page, title },
+      { print: { background: false }, accessible: isEnabled('pages.accessiblePdf') },
+    );
+    if (outcome.status === 'canceled') return;
+    close();
+    savedToast(outcome.name, outcome.path);
+  };
+  /** The selection's picture in a Word file, with the selection's words as the picture's description. */
+  const saveDocx = async (picture: Picture) => {
+    const png = new Uint8Array(await (await svgToPng(picture, 2)).arrayBuffer());
+    const alt = selectionText(source.page, picture.selection) || title;
+    const docx = await platform.exports.selectionDocx(png, {
+      title,
+      alt,
+      width: Math.max(1, Math.round(picture.width)),
+      height: Math.max(1, Math.round(picture.height)),
+    });
+    const path = await saveFile(platform, {
+      suggested: exportFileName(title, 'docx'),
+      label: t('pagesPlus.export.docxLabel'),
+      extension: 'docx',
+      bytes: docx,
+    });
+    if (path !== null) close();
+  };
   const guarded = async (work: (picture: Picture) => Promise<void>) => {
     if (built.status !== 'ready' || busy) return;
     setBusy(true);
@@ -80,6 +126,8 @@ function useActions(props: ImageDialogProps, built: Built, format: Format, scale
   };
   const save = () =>
     guarded(async (picture) => {
+      if (format === 'pdf') return savePdf(picture);
+      if (format === 'docx') return saveDocx(picture);
       const name = exportFileName(source.title || t('pageViews.print.untitled'), format);
       const label = t(format === 'png' ? 'pageViews.files.pngLabel' : 'pageViews.files.svgLabel');
       const path = await platform.exports.pickSave({ suggested: name, label, extension: format });
@@ -103,6 +151,7 @@ function useActions(props: ImageDialogProps, built: Built, format: Format, scale
 
 interface OptionsProps {
   readonly chosen: number;
+  readonly formats: readonly Format[];
   readonly scope: PictureScope;
   readonly format: Format;
   readonly scale: Scale;
@@ -110,6 +159,13 @@ interface OptionsProps {
   onFormat(value: Format): void;
   onScale(value: Scale): void;
 }
+
+const FORMAT_LABELS = {
+  png: 'pageViews.files.pngLabel',
+  svg: 'pageViews.files.svgLabel',
+  pdf: 'pageViews.files.pdfLabel',
+  docx: 'pagesPlus.export.docxLabel',
+} as const;
 
 function Options(props: OptionsProps) {
   return (
@@ -119,8 +175,9 @@ function Options(props: OptionsProps) {
         <RadioCard value="page" label={t('pageViews.image.wholePage')} />
       </RadioGroup>
       <RadioGroup<Format> label={t('pageViews.image.format')} value={props.format} onChange={props.onFormat}>
-        <RadioCard value="png" label={t('pageViews.files.pngLabel')} />
-        <RadioCard value="svg" label={t('pageViews.files.svgLabel')} />
+        {props.formats.map((format) => (
+          <RadioCard key={format} value={format} label={t(FORMAT_LABELS[format])} />
+        ))}
       </RadioGroup>
       {props.format === 'png' ? (
         <RadioGroup<Scale> label={t('pageViews.image.scale')} value={props.scale} onChange={props.onScale}>
@@ -148,8 +205,10 @@ function Preview({ built }: { built: Built }) {
 
 export function ImageDialog(props: ImageDialogProps) {
   const { source, chosen, close } = props;
-  const [scope, setScope] = useState<PictureScope>(chosen.length > 0 ? 'selection' : 'page');
-  const [format, setFormat] = useState<Format>('png');
+  const formats = props.formats ?? IMAGE_FORMATS;
+  const picked = chosen.blocks.length + chosen.strokes.length;
+  const [scope, setScope] = useState<PictureScope>(picked > 0 ? 'selection' : 'page');
+  const [format, setFormat] = useState<Format>(formats[0]);
   const [scale, setScale] = useState<Scale>('2');
   const built = useBuilt(source, scope, chosen);
   const actions = useActions(props, built, format, scale);
@@ -157,7 +216,7 @@ export function ImageDialog(props: ImageDialogProps) {
   const copy = { id: 'copy', label: t('pageViews.image.copy'), variant: 'secondary' as const };
   return (
     <Dialog
-      title={t('pageViews.image.title')}
+      title={t(formats.length > IMAGE_FORMATS.length ? 'pagesPlus.export.title' : 'pageViews.image.title')}
       description={t('pageViews.image.description')}
       size="large"
       onDismiss={close}
@@ -174,7 +233,8 @@ export function ImageDialog(props: ImageDialogProps) {
     >
       <div className={styles.split}>
         <Options
-          chosen={chosen.length}
+          chosen={picked}
+          formats={formats}
           scope={scope}
           format={format}
           scale={scale}

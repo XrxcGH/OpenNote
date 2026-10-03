@@ -4,3 +4,4 @@ export * from './geometry';
 export * from './select';
 export * from './crop';
 export * from './svg';
+export * from './text';

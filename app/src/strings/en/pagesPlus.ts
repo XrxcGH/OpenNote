@@ -23,10 +23,17 @@ export const pagesPlus = {
     sheetPrevious: 'Previous sheet',
     sheetAdd: 'Add a sheet',
     sheetKeywords: 'sheet page navigator thumbnails strip flip go to add next previous',
+    exportSelection: 'Export selection…',
+    copyImage: 'Copy selection as image',
+    exportKeywords: 'export selection lasso pdf png svg word docx copy image clipboard',
     saveElement: 'Save selection as element…',
     elementsLibrary: 'Elements library…',
     elementsKeywords: 'element elements library save reuse signature header axis stamp snippet',
     notebookDefaultKeywords: 'notebook default layout new pages paper',
+  },
+  export: {
+    title: 'Export selection',
+    docxLabel: 'Word document',
   },
   pdf: {
     accessible: 'Accessible PDF',

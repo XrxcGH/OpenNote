@@ -35,7 +35,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "page_add_strokes", "page_read_strokes",
     "clipboard_facts", "clipboard_read", "image_import", "image_import_url", "image_import_clip",
     "spell_languages", "spell_check", "spell_suggest", "spell_add_word", "spell_remove_word", "speech_voices", "speech_synthesize",
-    "print_prepare", "print_render", "print_close", "export_pick_save", "export_write", "export_open",
+    "print_prepare", "print_render", "print_close", "export_pick_save", "export_write", "export_open", "export_selection_docx",
     "search_call",
     "tool_window_open",
     "interop_pick", "interop_detect", "interop_local_sources", "interop_preview", "interop_import", "interop_cancel",

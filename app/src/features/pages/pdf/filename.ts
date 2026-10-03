@@ -25,7 +25,7 @@ export function fileStem(title: string, fallback = 'Untitled'): string {
 /** A name for an exported file: the stem and an extension without its dot. */
 export function exportFileName(
   title: string,
-  extension: 'pdf' | 'md' | 'html' | 'png' | 'svg',
+  extension: 'pdf' | 'md' | 'html' | 'png' | 'svg' | 'docx',
   fallback?: string,
 ): string {
   return `${fileStem(title, fallback)}.${extension}`;
