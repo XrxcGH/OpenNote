@@ -3,16 +3,20 @@
 
 pub mod appearance;
 pub mod args;
+pub mod audio;
 pub mod boot;
 pub mod clipboard;
 pub mod command_list;
 pub mod core_bridge;
 pub mod early;
 pub mod events;
+pub mod hardening;
 pub mod images;
 pub mod ink_bridge;
 pub mod install;
 pub mod instance;
+pub mod intel;
+pub mod interop;
 pub mod ipc;
 pub mod lifecycle;
 pub mod log;
@@ -27,6 +31,7 @@ pub mod speech;
 pub mod spelling;
 pub mod state;
 pub mod theme_tokens;
+pub mod tool_windows;
 pub mod updater;
 pub mod window;
 pub mod zoom;
@@ -54,6 +59,8 @@ pub fn run(context: EarlyContext) {
         guard,
         webview2_version,
     } = context;
+    // The crash hooks go first, so a crash while the rest starts is saved too (once the person said yes).
+    let hardening = hardening::Hardening::start(&paths);
     install::set_app_user_model_id();
     let loaded = SettingsStore::load(&paths);
     let (state, state_notice) = DeviceStateStore::load(&paths);
@@ -80,6 +87,8 @@ pub fn run(context: EarlyContext) {
     };
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
     let pages = core_bridge::CoreBridge::new(&paths);
+    let audio = audio::AudioState::new(&paths);
+    let intel = intel::IntelState::new(&paths);
     let builder = images::register_renditions(tauri::Builder::default());
     let app = builder
         .manage(loaded.store)
@@ -90,9 +99,12 @@ pub fn run(context: EarlyContext) {
         .manage(paths)
         .manage(ExitState::default())
         .manage(pages)
+        .manage(hardening)
         .manage(clipboard::ClipTokens::default())
         .manage(spelling::SpellService)
         .manage(page_export::ExportGrants::default())
+        .manage(audio)
+        .manage(intel)
         // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
         .manage(instance)
         .setup(|app| {
@@ -108,8 +120,10 @@ pub fn run(context: EarlyContext) {
         .expect("OpenNote failed to start");
     app.run(|app, event| {
         if let tauri::RunEvent::Exit = event {
+            audio::shutdown(app);
             flush_files(app);
             app.state::<core_bridge::CoreBridge>().shutdown();
+            app.state::<hardening::Hardening>().end_clean();
         }
     });
 }
@@ -125,6 +139,7 @@ pub fn flush_files(app: &tauri::AppHandle) {
 }
 
 /// Every command in `command_list::APP_COMMANDS`. A test keeps the two lists in step.
+// checks-disable-next-line modifiability: Tauri's handler macro takes the whole list of commands in one place.
 fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
     tauri::generate_handler![
         settings::commands::settings_update,
@@ -143,6 +158,47 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         lifecycle::app_exit_ready,
         perf::perf_mark,
         crate::log::log_write,
+        audio::audio_assets_dir,
+        audio::audio_devices,
+        audio::audio_clock,
+        audio::audio_prepare,
+        audio::audio_begin,
+        audio::audio_recording_status,
+        audio::audio_pause_recording,
+        audio::audio_resume_recording,
+        audio::audio_switch_microphone,
+        audio::audio_switch_system_audio,
+        audio::audio_stop,
+        audio::audio_recover,
+        audio::audio_open_playback,
+        audio::audio_play,
+        audio::audio_pause_playback,
+        audio::audio_seek,
+        audio::audio_skip,
+        audio::audio_set_speed,
+        audio::audio_set_skip_silence,
+        audio::audio_playback_status,
+        audio::audio_close_playback,
+        audio::audio_trim_silence,
+        audio::audio_remove_part,
+        audio::audio_delete_files,
+        audio::audio_adopt_tracks,
+        hardening::crash_consent_get,
+        hardening::crash_consent_set,
+        hardening::crash_example,
+        hardening::crash_list,
+        hardening::crash_prepare,
+        hardening::crash_send,
+        hardening::crash_delete,
+        hardening::crash_delete_all,
+        hardening::diagnostics_self_check,
+        hardening::diagnostics_build_feedback,
+        hardening::diagnostics_save_feedback,
+        hardening::diagnostics_startup,
+        hardening::diagnostics_enter_safe_mode,
+        hardening::diagnostics_restart,
+        hardening::privacy_get,
+        hardening::privacy_set_offline,
         install::install_status,
         install::install_pick_folder,
         install::install_check_folder,
@@ -186,6 +242,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         core_bridge::history_name,
         ink_bridge::page_add_strokes,
         ink_bridge::page_read_strokes,
+        core_bridge::search::search_call,
         clipboard::clipboard_facts,
         clipboard::clipboard_read,
         images::import::image_import,
@@ -204,5 +261,32 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_export::export_pick_save,
         page_export::export_write,
         page_export::export_open,
+        tool_windows::tool_window_open,
+        interop::commands::interop_pick,
+        interop::commands::interop_detect,
+        interop::commands::interop_local_sources,
+        interop::commands::interop_preview,
+        interop::commands::interop_import,
+        interop::commands::interop_cancel,
+        interop::commands::interop_export,
+        interop::commands::interop_reveal,
+        intel::intel_settings_get,
+        intel::intel_settings_set,
+        intel::intel_status,
+        intel::intel_ocr_languages,
+        intel::intel_ocr_recognize,
+        intel::intel_ink_recognize,
+        intel::intel_ink_tidy,
+        intel::intel_summarize,
+        intel::intel_keywords,
+        intel::intel_action_items,
+        intel::intel_chapters,
+        intel::intel_vocabulary_offer,
+        intel::intel_speech_voices,
+        intel::intel_speech_synthesize,
+        intel::intel_read_aloud_start,
+        intel::intel_read_aloud_next,
+        intel::intel_read_aloud_cancel,
+        intel::intel_clip_audio,
     ]
 }

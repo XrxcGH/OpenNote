@@ -6,12 +6,20 @@ import type { Channel } from '../platform/bindings/Channel';
 import { INK_FLAGS } from '../features/ink/flags';
 import { PAGE_FLAGS } from '../features/page/flags';
 import { PAGES_FLAGS } from '../features/pages/flags';
+import { AUDIO_FLAGS } from '../features/audio/flags';
+import { INTEROP_FLAGS } from '../features/interop/flags';
+import { INTEL_FLAGS } from '../features/intel/flags';
+import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
+import { EXPR_FLAGS } from '../features/tools/flags';
+import { SEARCH_FLAGS } from '../features/search/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
 
 export type FlagId =
   | 'window.snapLayouts'
+  /** The undecorated window with the HTML title bar and caption buttons (ARCHITECTURE.md section 10). */
+  | 'shell.customFrame'
   | 'install.uninstallEntry'
   | 'updates.meteredCheck'
   | 'updates.resume'
@@ -29,9 +37,18 @@ export type FlagId =
   | 'bottomBar.recent'
   /** Notes kept on disk in every build: the library file and the core's pages in the notes folder. */
   | 'storage.core'
+  /** Phase 11: import from other apps, and export to files. */
+  | 'interop.import'
+  | 'interop.export'
+  | 'interop.exportPdf'
   | Phase4FlagId
   | Phase5FlagId
-  | Phase6FlagId;
+  | Phase6FlagId
+  | ExprFlagId
+  | Phase8FlagId
+  | Phase9FlagId
+  | IntelFlagId
+  | Phase13FlagId;
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -64,6 +81,12 @@ type Phase6FlagId =
   | 'pages.gallery'
   | 'pages.slides'
   | 'pages.reading';
+/** Smart tables, charts, math, and the study tool windows (Phases 7 and 10). */
+type ExprFlagId = 'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows';
+/** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */
+type Phase8FlagId = 'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags';
+/** Phase 12's flags, which features/intel/flags.ts defines. */
+type IntelFlagId = 'intel.ocr' | 'intel.readAloud' | 'intel.summaries' | 'intel.handwriting' | 'intel.searchText';
 
 type Phase5FlagId =
   | 'ink.core'
@@ -82,6 +105,18 @@ type Phase5FlagId =
   | 'ink.nativeTrail'
   | 'ink.openSnapshot'
   | 'dev.penRecorder';
+
+/** Phase 9's flags; features/audio/flags.ts defines them. */
+type Phase9FlagId =
+  'audio.record' | 'audio.stamps' | 'audio.flags' | 'audio.trim' | 'audio.systemAudio' | 'audio.meetingPrompt';
+/** Phase 13: the Privacy panel, Work offline, crash reports, the self-check, feedback, and safe start. */
+type Phase13FlagId =
+  | 'privacy.panel'
+  | 'privacy.workOffline'
+  | 'diagnostics.crashReports'
+  | 'diagnostics.selfCheck'
+  | 'diagnostics.feedback'
+  | 'diagnostics.safeStart';
 
 export interface FlagDef {
   id: FlagId;
@@ -107,6 +142,7 @@ const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>
 
 export const FLAGS: readonly FlagDef[] = [
   flag('window.snapLayouts', 'The Snap Layouts flyout on the Maximize button, if the spike passes.', off),
+  flag('shell.customFrame', 'The custom title bar with its own caption buttons, instead of the native frame.', off),
   flag('install.uninstallEntry', 'A per-user entry in Installed apps.', off),
   flag('updates.meteredCheck', 'Wait for an unmetered network before downloading an update.', off),
   flag('updates.resume', 'Resume a download that stopped partway.', off),
@@ -126,6 +162,12 @@ export const FLAGS: readonly FlagDef[] = [
   ...PAGE_FLAGS,
   ...INK_FLAGS,
   ...PAGES_FLAGS,
+  ...EXPR_FLAGS,
+  ...SEARCH_FLAGS,
+  ...AUDIO_FLAGS,
+  ...INTEROP_FLAGS,
+  ...INTEL_FLAGS,
+  ...DIAGNOSTICS_FLAGS,
 ];
 
 interface FlagState {

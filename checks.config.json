@@ -8,6 +8,7 @@
     "app/src/platform/bindings/*.ts",
     "app/src/theme/tokens.css",
     "app/src/theme/tokens.ts",
+    "crates/interop/tests/corpus/*/**",
     "target/**"
   ],
   "rules": {

@@ -1,0 +1,46 @@
+[package]
+name = "opennote-media"
+version = "0.1.0"
+description = "OpenNote's audio recording: capture, Opus encoding, timelines, and crash recovery"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "opennote_media"
+
+[features]
+default = []
+# Encodes with libopus. The opus crate builds libopus from source, which needs CMake, so this is opt-in.
+opus = ["dep:opus"]
+
+[dependencies]
+opennote-core = { path = "../core" }
+opus = { version = "0.4", optional = true }
+rtrb = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10.9"
+
+# cpal opens the microphone and WASAPI loopback. Other platforms get their own adapters later.
+[target.'cfg(windows)'.dependencies]
+cpal = "0.18"
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Performance",
+  "Win32_System_Registry",
+  "Win32_System_Power",
+  "Win32_System_Threading",
+] }
+
+[dev-dependencies]
+ogg = "0.9"
+opennote-core = { path = "../core", features = ["testing"] }
+proptest.workspace = true
+tempfile = "3"
+
+# Measures CPU use while recording and playing back. It needs real Opus, so it needs the opus feature.
+[[example]]
+name = "cpu_bench"
+required-features = ["opus"]

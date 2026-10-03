@@ -150,6 +150,7 @@ function build(): Record<string, () => PageFixture> {
         block('image', 2, { asset: null, alt: 'A missing image' }),
         block('image', 3, { asset: null, alt: 'A cropped image', crop: { x: 0.1, y: 0.1, w: 0.5, h: 0.5 } }),
       ]),
+    smart: () => page('Smart notes', [text(0, 'Start here.'), table(1, 4)]),
     short: () => page('Short note', [text(0, '# Short note\n\nA few words to type after.')]),
     twentyPage: () => page('A twenty-page note', [text(0, longNoteMarkdown())]),
     twentyPageOutline: () => page('An outline', [text(0, outlineMarkdown())]),
@@ -186,7 +187,7 @@ function build(): Record<string, () => PageFixture> {
 }
 
 export type PageFixtureName =
-  'sampler' | 'short' | 'twentyPage' | 'twentyPageOutline' | 'twentyPageCallout' | 'freeform8' | 'budget500';
+  'sampler' | 'smart' | 'short' | 'twentyPage' | 'twentyPageOutline' | 'twentyPageCallout' | 'freeform8' | 'budget500';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

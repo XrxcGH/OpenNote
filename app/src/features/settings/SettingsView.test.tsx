@@ -27,7 +27,10 @@ describe('the Settings page', () => {
       'General',
       'Appearance',
       'Editing',
+      'On-device intelligence',
       'Updates',
+      'Privacy',
+      'Help',
       'Shortcuts',
       'About',
     ]);

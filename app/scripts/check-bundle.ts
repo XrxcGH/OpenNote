@@ -31,10 +31,10 @@ export interface Budget {
   lazyKb: Record<string, number>;
   lazyDefaultKb: number;
   /**
-   * Lazy groups that load only after another one: a group whose source path contains `within` counts without the
-   * files of the group whose path contains `entry`, which is loaded by then.
+   * Lazy groups that load only after another one: a group whose source path contains `within` (or any of them, when
+   * it is a list) counts without the files of the group whose path contains `entry`, which is loaded by then.
    */
-  after?: { within: string; entry: string };
+  after?: { within: string | readonly string[]; entry: string };
 }
 
 export interface Group {
@@ -79,7 +79,8 @@ export function groups(manifest: Manifest, budget: Budget): Group[] {
   const first = budget.after && lazyKeys.find((k) => k.includes(budget.after!.entry));
   const loadedFirst = first ? staticClosure(manifest, [first]) : new Set<string>();
   for (const key of lazyKeys) {
-    const follows = first !== undefined && key !== first && key.includes(budget.after!.within);
+    const follows =
+      first !== undefined && key !== first && [budget.after!.within].flat().some((fragment) => key.includes(fragment));
     const loaded = (k: string) => startup.has(k) || (follows && loadedFirst.has(k));
     const own = [...staticClosure(manifest, [key])].filter((k) => !loaded(k)).map((k) => manifest[k]);
     const limit = Object.entries(budget.lazyKb).find(([fragment]) => key.includes(fragment))?.[1];

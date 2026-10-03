@@ -3,3 +3,4 @@
 // results rank the same way.
 
 export { normalize, score } from './score';
+export { addSwitcherProvider } from './switcher';

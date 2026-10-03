@@ -54,8 +54,10 @@ app/
   src/theme/      Theme code; tokens.css and tokens.ts, built from brand/tokens.json, are the only files with raw design values
   src-tauri/      Rust shell: windows, menus, commands the interface calls
 crates/
-  core/           Document model, file format, storage, undo history, search index
+  core/           Document model, file format, storage, undo history
+  search/         Full-text index, saved searches, and the link graph between pages
   media/          Audio capture and encoding, transcription, OCR adapters
+  intel/          On-device OCR, handwriting, read aloud, summaries, and transcription, with no network access (see docs/intel.md)
   interop/        Import and export: Markdown, HTML, DOCX, PDF, OneNote, Evernote
 brand/            Design tokens, logo and icon
 checks/           The CHECKS quality gate
@@ -261,6 +263,8 @@ Build:
 - Add OCR for images and PDFs, so their text is searchable.
 - Add handwriting recognition for search and ink-to-text.
 - Add local transcription of recordings with whisper.cpp, using the NPU when present and the processor otherwise. The model downloads only after the person agrees.
+- Add read aloud with the voices installed in Windows, word by word highlighting, and a local extractive summary and keyword finder. No model is needed for either.
+- Keep every on-device feature off until the person turns it on, and enforce that in one place in the Rust crate.
 
 Test: accuracy benchmarks on sample sets, performance tests that confirm the interface stays within budget during processing, and a network test that proves no data is sent.
 
@@ -445,6 +449,8 @@ A build ships to beta or stable only when every item is checked:
 - [ ] Every release exe is code-signed, and each update signature covers the version in the manifest.
 - [ ] Updating from each of the last three versions keeps every note and setting, and going back to the previous version works.
 - [ ] Changelog and documentation are updated.
+
+Run `npm run release:check` to answer these items. A script checks what a computer can check, and the rest are signed off in `docs/releases/<version>.signoff.json`. The release workflow runs the same script and stops when an item is not done. See [RELEASING.md](RELEASING.md).
 
 ## 11. Definition of done
 

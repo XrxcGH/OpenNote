@@ -1,0 +1,16 @@
+[
+  {
+    "app_version": "1.0.0-beta.2",
+    "id": "crash-1790000100-0",
+    "kind": "panic",
+    "size_bytes": 1204,
+    "time_unix": 1790000100
+  },
+  {
+    "app_version": "1.0.0-beta.1",
+    "id": "crash-1790000000-0",
+    "kind": "exception",
+    "size_bytes": 988,
+    "time_unix": 1790000000
+  }
+]

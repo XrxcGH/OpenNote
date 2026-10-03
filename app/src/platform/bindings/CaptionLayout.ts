@@ -2,6 +2,11 @@
 import type { Rect } from "./Rect";
 
 /**
- * Where the Maximize button is, and its accessible names, matching the interface's `CaptionLayout`.
+ * Where the Maximize button is, its accessible names, and whether the Snap Layouts overlay covers it, matching
+ * the interface's `CaptionLayout`.
  */
-export type CaptionLayout = { maximize: Rect, labels: { maximize: string, restore: string, }, };
+export type CaptionLayout = { maximize: Rect, labels: { maximize: string, restore: string, }, 
+/**
+ * The `window.snapLayouts` flag: put the native overlay over Maximize.
+ */
+snapLayouts: boolean, };

@@ -27,12 +27,15 @@ import type {
 } from '../types';
 import type { ExitResult } from '../bindings/ExitResult';
 import type { ImportedAsset, PageRect } from '../../services/pages/types';
+import type { IndexUpdate } from '../../services/search/types';
 import type { ClipboardFacts } from '../types';
+import type { IntelCommands } from '../../services/intel';
+import type { IntelChoiceCommands } from './intel';
 
 type None = Record<string, never>;
 
 /** Every app command: its arguments and what it returns. */
-export interface Commands {
+export interface Commands extends IntelCommands, IntelChoiceCommands {
   settings_update: { args: { patch: SettingsPatch }; result: Settings };
   settings_reset: { args: { section: SettingsSectionKey }; result: Settings };
   state_update: { args: { patch: DeviceStatePatch }; result: null };
@@ -70,6 +73,8 @@ export interface Commands {
   page_redo: { args: { page: string; client: string }; result: ArrayBuffer };
   page_save_now: { args: { page: string }; result: null };
   page_close: { args: { page: string; client: string }; result: null };
+  // Phase 8: every search and link method, by name.
+  search_call: { args: { method: string; args: Record<string, unknown> }; result: unknown };
   clipboard_facts: { args: None; result: ClipboardFacts };
   clipboard_read: { args: None; result: ArrayBuffer };
   image_import_url: { args: { page: string; url: string }; result: ImportedAsset };
@@ -109,6 +114,7 @@ export interface Events {
   'window://forwarded-args': string[];
   'app://before-exit': ExitReason;
   'updater://status': UpdaterStatus;
+  'search:updated': IndexUpdate;
 }
 
 /** Any rejection as an IpcError. A command the shell doesn't have yet reads as code notImplemented. */

@@ -16,6 +16,10 @@ These wireframes show the layout of each major screen, with sizes, keep-out zone
 - [Phone](#phone)
 - [Study tools](#study-tools)
 - [Send to](#send-to)
+- [Crash reports](#crash-reports)
+- [Check OpenNote](#check-opennote)
+- [Send feedback](#send-feedback)
+- [Start in safe mode](#start-in-safe-mode)
 - [Changing the drawings](#changing-the-drawings)
 
 ## Reading the drawings
@@ -150,6 +154,49 @@ The layout follows the window width, as set out in [section 6 of the brand guide
 - Destinations come from linked accounts (Google Drive, OneDrive) or this PC, with favorites listed first.
 - "Keep linked" lets OpenNote offer to update the uploaded copy after later edits.
 - The upload runs in the background, and a toast shows the link when it finishes.
+
+## Crash reports
+
+![The consent screen for crash reports, with an example report open](images/13-crash-report-consent.svg)
+
+Crash reports are off until the person turns them on. The consent screen is a dialog with these rules:
+
+- **When it shows:** once at the first start of a beta build, again only when the wording changes (a yes to older wording stops counting), and any time from Settings, under Privacy. It never returns after a no.
+- **What it says:** what a report holds, what it never holds, and that a report stays on this computer until the person reads it and chooses to send it. The example report is a real report in the real format, and it is hidden until the person opens it.
+- **The choices:** "Turn on crash reports" and "Keep crash reports off" are buttons of the same size and weight. Neither is pre-selected. Escape and the close button mean no.
+- **Keyboard and screen readers:** focus starts on the heading. The example is a labeled region with a read-only, selectable text block. The result is announced: "Crash reports are on. They stay on this computer." or "Crash reports are off."
+- **Reviewing a report:** the list in Settings, under Privacy, shows each saved report with Review and Delete. Review shows all the text that would be sent, the address, and one Send button. Sending is never automatic, and a send in progress cannot be closed away.
+
+The text is in `app/src/strings/en/diagnostics.ts`, and the states are in `app/src/features/diagnostics`.
+
+## Check OpenNote
+
+![The self-check: seven checks, each with a status in words](images/14-self-check.svg)
+
+- Opens from Settings, under Privacy, and from the command palette. It runs when it opens and when "Check again" is chosen.
+- A headline says how many checks need attention. Each row has an icon, a title, a status in words (OK, Needs attention, Problem, or Not checked), and one sentence. Color is never the only signal.
+- Problems in the notebook list the first five files, relative to the notebook, and count the rest.
+- It changes nothing, and nothing leaves the computer.
+
+## Send feedback
+
+![Reviewing the whole feedback file before saving it](images/15-feedback-review.svg)
+
+- **The form:** an optional description in the person's own words, and two switches: recent log lines (on) and saved crash reports (off).
+- **The review:** the whole file, as a read-only text block, with the list of its parts on the right, and a line that says how many things were removed. Save is available only after the text is on screen.
+- **Saving:** the person picks a folder, and the file is saved there. OpenNote does not send it. The person attaches it to their report or email.
+
+## Start in safe mode
+
+A dialog before the notebook opens, after two crashes in a row. It is text and two buttons, so it has no drawing.
+
+- **What it says:** that OpenNote stopped working during its last starts, what safe mode turns off (background work, embeds, on-device models), and that notebooks stay open for reading and editing. After a crash in safe mode, it says that safe mode did not help and points to Send feedback.
+- **The choices:** "Start in safe mode" and "Start normally" are buttons of the same size and weight, and neither is pre-selected. Escape and the close button mean "Start normally".
+- **While safe mode is on:** a notice below the title bar says "OpenNote is in safe mode" in words, lists what is off, and has a "Restart normally" button. It stays until the next start.
+- **Keyboard and screen readers:** focus starts on the heading. The choice is announced.
+- **Counting sessions:** Check OpenNote and the Privacy panel show "9 of the last 10 sessions ended without a crash", from the same record.
+
+The text is in `app/src/strings/en/diagnostics.ts`, and the states are in `app/src/features/diagnostics/safeStart.ts`.
 
 ## Changing the drawings
 

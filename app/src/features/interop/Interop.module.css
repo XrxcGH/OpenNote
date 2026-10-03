@@ -1,0 +1,142 @@
+/* The import and export dialogs: a column of short blocks, quiet lists, and badges that pair text with color. */
+@layer components {
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-inline-size: 0;
+  }
+
+  .body h3,
+  .body h4,
+  .body p {
+    margin: 0;
+  }
+
+  .heading {
+    font-size: var(--type-subtitle-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .heading:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .subheading {
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-body-line);
+  }
+
+  .note {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .scroll {
+    max-block-size: 10rem;
+    overflow-y: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .row + .row {
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .plain {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--color-text-secondary);
+  }
+
+  .losses {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .loss {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start-width: 3px;
+    border-radius: var(--radius-md);
+  }
+
+  .loss[data-outcome='skipped'] {
+    border-inline-start-color: var(--color-status-danger);
+  }
+
+  .loss[data-outcome='simplified'] {
+    border-inline-start-color: var(--color-status-warning);
+  }
+
+  .tag {
+    font-size: var(--type-caption-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-caption-line);
+  }
+
+  .path {
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .status {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .error {
+    color: var(--color-status-danger);
+  }
+
+  .formats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .folder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-inline-size: 0;
+  }
+}

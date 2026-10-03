@@ -3,4 +3,5 @@
 
 export const errors = {
   commandFailed: "That didn't work, and nothing changed. Try again.",
+  pageFailed: "OpenNote ran into a problem and can't show this window. Close it and open OpenNote again.",
 } as const;

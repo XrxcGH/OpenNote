@@ -1,14 +1,26 @@
 name: release
 
-# Pushing a tag such as v0.1.0 runs CI, builds one exe per Windows architecture, signs the updates, and publishes
-# a GitHub Release. See docs/RELEASING.md. Each job gets only the permissions it needs, and only the signing step
-# sees the signing secrets. The actions in this file are pinned to full commit SHAs, because they build and sign
-# the updates.
+# Pushing a tag such as v1.0.0 runs the release checklist and CI, builds one exe per Windows architecture, signs the
+# updates, and publishes a GitHub Release.
+#
+# Running the workflow by hand (workflow_dispatch) is a dry run. It does everything except publish, signs with a
+# key made for that run, and keeps the results as run artifacts.
+#
+# See docs/RELEASING.md. Each job gets only the permissions it needs. The signing secrets belong to the release
+# environment, which only v* tags may use after a maintainer approves. They reach one step of the package job, which
+# can only read the repository. The publish job can write releases, but it gets no secrets and runs no project code.
+# The actions in this file are pinned to full commit SHAs, because they build and sign updates.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions: {}
+
+# One release run per ref, so two runs never publish the same tag at once. A dry run on a branch has its own group.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 defaults:
   run:
@@ -16,19 +28,78 @@ defaults:
 
 jobs:
   version:
-    # Fails in seconds when the tag doesn't match the version files, before CI and the build run.
+    # Works out the tag, and fails in seconds when it doesn't match the version files, before CI and the build run.
+    # A dry run uses the version in the files. The release checklist is enforced for a pushed tag, except a tag
+    # for a test build, such as v0.3.0-test.1, which only reports it.
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      enforce: ${{ steps.tag.outputs.enforce }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          # The whole history and every branch, to check that the tag is on main.
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+      - name: Check that the tag is on main
+        # Only reviewed code is released. Branch protection on main doesn't cover tags, so a tag pushed on any other
+        # commit stops here. The release environment and the tag ruleset (docs/RELEASING.md) guard the secrets.
+        if: github.event_name == 'push'
+        run: |
+          git merge-base --is-ancestor $env:GITHUB_SHA origin/main
+          if ($LASTEXITCODE -ne 0) {
+            "::error::The tagged commit $env:GITHUB_SHA is not on main. Tag a merge commit on main."
+            exit 1
+          }
+      - id: tag
+        name: Work out the tag
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'push') { $tag = $env:GITHUB_REF_NAME }
+          else { $tag = 'v' + (Get-Content package.json -Raw | ConvertFrom-Json).version }
+          $enforce = ($env:GITHUB_EVENT_NAME -eq 'push') -and ($tag -notmatch '-test(\.|$)')
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "enforce=$($enforce.ToString().ToLower())" >> $env:GITHUB_OUTPUT
       - name: Check that the tag matches the version files
-        run: node app/scripts/check-version.ts $env:GITHUB_REF_NAME
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: node app/scripts/check-version.ts $env:TAG
+
+  checklist:
+    # The release checklist in docs/DEVELOPMENT.md section 10. For a release it must be complete, so a missing
+    # sign-off stops the release before any build. For a dry run or a test build it reports what is left.
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      issues: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install tools without install scripts
+        run: npm ci --ignore-scripts
+      - name: Check the release checklist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+          ENFORCE: ${{ needs.version.outputs.enforce }}
+        run: |
+          $extra = if ($env:ENFORCE -eq 'true') { @() } else { @('--report') }
+          $version = $env:TAG -replace '^v', ''
+          node app/scripts/release/checklist.ts --version $version --tag $env:TAG --markdown checklist.md @extra
+      - name: Show the checklist in the run summary
+        if: always()
+        run: if (Test-Path checklist.md) { Get-Content checklist.md >> $env:GITHUB_STEP_SUMMARY }
 
   ci:
     # The same checks a pull request gets, run on the tagged commit. No secrets are passed.
@@ -40,12 +111,18 @@ jobs:
   build:
     # Builds one exe per Windows architecture with a read-only token and no secrets. The x64 runner
     # cross-compiles the 32-bit and ARM64 exes with the MSVC tools it has for those architectures.
-    needs: ci
+    needs: [ci, checklist]
     runs-on: windows-latest
     permissions:
       contents: read
+    outputs:
+      # The SHA-256 of each exe, under a name for its Rust target. The package job signs an exe only if it still has
+      # this hash. Each leg of the matrix sets only its own output, and GitHub keeps every output that is set.
+      sha256-x86_64-pc-windows-msvc: ${{ steps.hash.outputs.sha256-x86_64-pc-windows-msvc }}
+      sha256-i686-pc-windows-msvc: ${{ steps.hash.outputs.sha256-i686-pc-windows-msvc }}
+      sha256-aarch64-pc-windows-msvc: ${{ steps.hash.outputs.sha256-aarch64-pc-windows-msvc }}
     strategy:
-      # Let every architecture finish, so one run shows every failure. The publish job needs all three.
+      # Let every architecture finish, so one run shows every failure. The package job needs all three.
       fail-fast: false
       matrix:
         # The same targets and file names as app/release-files.json. The write-manifest.ts tests check this.
@@ -64,11 +141,11 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # No npm or Rust build cache: the CI jobs of the same ref can write those caches, so each exe is always built
+      # from a clean start.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: npm
-      # No Rust build cache: each exe is always built from a clean target directory.
       - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
           toolchain: stable
@@ -81,7 +158,15 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist-release | Out-Null
           Copy-Item "target/$env:RELEASE_TARGET/release/opennote.exe" "dist-release/$env:RELEASE_FILE"
-      - name: Keep the exe for the publish job
+      - name: Check that the exe may ship
+        # Fails for an exe built with the test-endpoints feature, or with an update key that is not committed.
+        run: node app/scripts/check-release-exe.ts "dist-release/$env:RELEASE_FILE"
+      - id: hash
+        name: Report the hash of the exe
+        run: |
+          $hash = (Get-FileHash "dist-release/$env:RELEASE_FILE" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "sha256-$env:RELEASE_TARGET=$hash" >> $env:GITHUB_OUTPUT
+      - name: Keep the exe for the package job
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: exe-${{ matrix.target }}
@@ -89,13 +174,16 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  publish:
-    # The only job that can write releases. It builds nothing and runs no install scripts,
-    # so the only project dependency that runs next to the signing key is the Tauri CLI.
-    needs: build
+  sbom:
+    # Lists everything built into the exes. It runs cargo metadata, which downloads crate sources, so it runs apart
+    # from the signing step. It gets no secrets.
+    needs: version
     runs-on: windows-latest
     permissions:
-      contents: write
+      contents: read
+    outputs:
+      # The package job publishes the bill of materials only if it still has this hash.
+      sha256: ${{ steps.hash.outputs.sha256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -103,35 +191,193 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
       - name: Install tools without install scripts
         run: npm ci --ignore-scripts
-      - name: Download the exes
+      - name: Write the software bill of materials
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          New-Item -ItemType Directory -Force dist-sbom | Out-Null
+          node app/scripts/release/sbom.ts $env:TAG dist-sbom/OpenNote.sbom.cdx.json
+      - id: hash
+        name: Report the hash of the bill of materials
+        run: |
+          $hash = (Get-FileHash dist-sbom/OpenNote.sbom.cdx.json -Algorithm SHA256).Hash.ToLowerInvariant()
+          "sha256=$hash" >> $env:GITHUB_OUTPUT
+      - name: Keep the bill of materials for the package job
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sbom
+          path: dist-sbom/OpenNote.sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 1
+
+  package:
+    # Signs the exes, writes the manifest and the other release files, and checks them the way the app will. This
+    # is the only job that gets the signing secrets, and only in the step that signs. It can only read the
+    # repository, and it runs no install scripts, so the Tauri command-line tool is the only project
+    # dependency that runs next to the key. A dry run signs with a throwaway key instead, and gets no secrets.
+    needs: [version, checklist, build, sbom]
+    runs-on: windows-latest
+    # The signing secrets live in the release environment, which only v* tags may use, after a maintainer approves.
+    # A workflow file on any other ref can't read them. A dry run uses no environment.
+    environment: ${{ github.event_name == 'push' && 'release' || '' }}
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The release notes list the merges since the previous tag.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install tools without install scripts
+        run: npm ci --ignore-scripts
+      # Each artifact by its exact name, never by a pattern. Any job in the run can upload artifacts, including the CI
+      # jobs. Their actions and test tools come from outside this repository.
+      - name: Download the 64-bit exe
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          pattern: exe-*
+          name: exe-x86_64-pc-windows-msvc
           path: dist-release
-          merge-multiple: true
+      - name: Download the 32-bit exe
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: exe-i686-pc-windows-msvc
+          path: dist-release
+      - name: Download the ARM64 exe
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: exe-aarch64-pc-windows-msvc
+          path: dist-release
+      - name: Download the bill of materials
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: sbom
+          path: dist-release
+      - name: Check the downloads before signing
+        # Stops unless dist-release holds only the three exes and the bill of materials, each with the hash its job
+        # reported. It also checks each exe again for test endpoints and update keys that aren't committed.
+        env:
+          BUILD_SHA256: ${{ toJSON(needs.build.outputs) }}
+          SBOM_SHA256: ${{ needs.sbom.outputs.sha256 }}
+        run: node app/scripts/release/check-downloads.ts dist-release
+      - name: Write the release notes
+        run: node app/scripts/release/notes.ts $env:TAG --markdown release-notes.md --plain release-notes.txt
+      # Add the Authenticode code-signing step here, before the update signatures, once the certificate exists.
+      # See docs/RELEASING.md, Add code signing later.
       - name: Sign the updates
+        if: github.event_name == 'push'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        # Stops with an error unless TAURI_SIGNING_PRIVATE_KEY is set, so nothing is published unsigned.
+        run: node app/scripts/release/sign.ts dist-release $env:TAG
+      - name: Sign with a throwaway key (dry run)
+        if: github.event_name == 'workflow_dispatch'
+        run: node app/scripts/release/sign.ts dist-release $env:TAG --dry-run --pubkey-out dry-run/update.pub
+      - name: Write the update manifest
+        env:
+          RELEASE_NOTES_FILE: release-notes.txt
+        # Stops unless every exe is here, with a signature for this version.
+        run: node app/scripts/write-manifest.ts dist-release $env:TAG
+      - name: Write the checksums
+        run: node app/scripts/release/checksums.ts dist-release
+      - name: Check the release the way the app will
+        if: github.event_name == 'push'
+        env:
+          ENFORCE: ${{ needs.version.outputs.enforce }}
+        # Uses the update keys committed in app/src-tauri/keys, which are the keys built into the exe. A release
+        # also needs an Authenticode signature, unless it is a test build.
         run: |
-          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) {
-            Write-Output '::error::The TAURI_SIGNING_PRIVATE_KEY secret is not set. See docs/RELEASING.md.'
+          $extra = if ($env:ENFORCE -eq 'true') { @('--require-authenticode') } else { @() }
+          node app/scripts/release/verify.ts dist-release $env:TAG @extra
+      - name: Check the dry run the way the app will
+        if: github.event_name == 'workflow_dispatch'
+        run: node app/scripts/release/verify.ts dist-release $env:TAG --pubkey dry-run/update.pub
+      - name: Write the winget manifests
+        # winget takes stable releases only.
+        if: ${{ !contains(needs.version.outputs.tag, '-') }}
+        run: node app/scripts/release/winget.ts dist-release $env:TAG winget-manifests
+      - name: Summarize what would be published
+        if: always()
+        run: |
+          "## Release files for $env:TAG" >> $env:GITHUB_STEP_SUMMARY
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch') {
+            "Dry run: nothing is published. The update signatures use a throwaway key." >> $env:GITHUB_STEP_SUMMARY
+          }
+          if (Test-Path dist-release) {
+            foreach ($file in Get-ChildItem dist-release) {
+              "- $($file.Name) ($($file.Length) bytes)" >> $env:GITHUB_STEP_SUMMARY
+            }
+          }
+      - name: Keep the release files
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-files
+          path: |
+            dist-release
+            release-notes.md
+            dry-run/update.pub
+          if-no-files-found: error
+          retention-days: 7
+      - name: Keep the winget manifests
+        if: ${{ !contains(needs.version.outputs.tag, '-') }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: winget-manifests
+          path: winget-manifests
+          if-no-files-found: error
+          retention-days: 90
+
+  publish:
+    # The only job that can write releases. It publishes the files the package job checked, and nothing else.
+    # It gets no secrets and runs no project code. A dry run never reaches it.
+    if: github.event_name == 'push'
+    needs: [version, package]
+    runs-on: ubuntu-latest
+    # A maintainer approves again here, after reading the package job's summary, before anything goes live.
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Download the release files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-files
+          path: .
+      - name: Check that the beta channel can be updated
+        # The beta channel reads beta.json from the fixed channel-manifests prerelease (crates/updater/src/config.rs),
+        # not from the tag's own release. Stop before publishing anything if that prerelease is missing.
+        if: needs.version.outputs.enforce == 'true' && contains(needs.version.outputs.tag, '-')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $prerelease = gh release view channel-manifests --json isPrerelease --jq .isPrerelease
+          if ($LASTEXITCODE -ne 0 -or $prerelease -ne 'true') {
+            "::error::The channel-manifests prerelease is missing. See docs/RELEASING.md, Create the beta channel."
             exit 1
           }
-          # --app-version puts the version in the signed trusted comment, so it can't be changed later.
-          $version = $env:GITHUB_REF_NAME -replace '^v', ''
-          foreach ($exe in Get-ChildItem dist-release -Filter *.exe) {
-            npx tauri signer sign --app-version $version $exe.FullName
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
-      - name: Write the update manifest
-        # Stops unless every exe in RELEASE_FILES is here, with a signature for this version.
-        run: node app/scripts/write-manifest.ts dist-release $env:GITHUB_REF_NAME
       - name: Publish the release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: dist-release/*
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          generate_release_notes: true
+          body_path: release-notes.md
+          fail_on_unmatched_files: true
+          prerelease: ${{ contains(needs.version.outputs.tag, '-') }}
+      - name: Update the beta channel
+        # Only for a beta. A test build writes beta.json too, but it must never reach beta copies. Its version sorts
+        # above every beta of the same release, so they would install it and then refuse the later betas.
+        if: needs.version.outputs.enforce == 'true' && contains(needs.version.outputs.tag, '-')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload channel-manifests dist-release/beta.json --clobber

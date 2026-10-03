@@ -15,6 +15,7 @@ const GROUP_LABELS: Record<string, MessageKey> = {
   notebooks: 'palette.groups.notebooks',
   sections: 'palette.groups.sections',
   pages: 'palette.groups.pages',
+  matches: 'search.groups.matches',
 };
 
 export const optionId = (listId: string, index: number) => `${listId}-option-${index}`;

@@ -9,7 +9,7 @@
 use super::*;
 use crate::format::ReadableState;
 use crate::id::{Id, PageId, StrokeId};
-use crate::model::{Access, InkRecord, ReadOnlyReason};
+use crate::model::{Access, Asset, InkRecord, ReadOnlyReason};
 use crate::store::compact::plan_compaction;
 use crate::testing::sample::{sample_asset_id, sample_device, sample_page, sample_stroke, test_clock};
 use crate::testing::{MemFs, NoLinks};
@@ -176,6 +176,44 @@ fn a_missing_asset_stops_the_save_before_anything_is_replaced() {
     let err = h.store.save(&h.dir, request(&page, None)).unwrap_err();
     assert_eq!(err, SaveError::MissingAsset(sample_asset_id()));
     assert_eq!(h.store.fingerprint(&h.dir).unwrap(), None);
+}
+
+/// The sample page with a second asset: an audio file in the `recording` state, as a recording saves it
+/// before it begins (spec 10.2).
+fn with_growing_audio(page: &mut Page) -> Asset {
+    let mut audio = page.assets.values().next().unwrap().clone();
+    audio.id = "01m3sa43z1tp9rdr5e8df2jbxz".parse().unwrap();
+    audio.file = format!("{}-mic.ogg", audio.id);
+    audio.mime = "audio/ogg".into();
+    audio.bytes = 0;
+    audio.extra.insert("state".into(), "recording".into());
+    assert!(audio.is_recording());
+    page.assets.insert(audio.id, audio.clone());
+    audio
+}
+
+#[test]
+fn a_recording_that_is_still_growing_does_not_stop_a_save_or_make_the_page_read_only() {
+    let h = Harness::new();
+    let mut page = sample_page();
+    h.put_assets(&page);
+    let audio = with_growing_audio(&mut page);
+    let path = NotebookLayout::asset_path(&h.dir, &audio).unwrap();
+    // Before the recording begins its file doesn't exist, and while it runs the file grows.
+    let (saved, first) = h.save(&page, None, CompactionPlan::None);
+    h.fs.put(&path, &[1u8; 300]);
+    let (saved, _) = h.save(&saved, Some(first.stamp), CompactionPlan::None);
+    let loaded = h.store.load(&h.dir).unwrap();
+    assert!(loaded.missing.is_empty(), "{:?}", loaded.missing);
+    assert!(!loaded.page.format.access.is_read_only());
+    assert_eq!(loaded.page.assets[&audio.id].extra["state"], "recording");
+    // A finished asset is checked as always.
+    let mut finished = saved.clone();
+    let entry = finished.assets.get_mut(&audio.id).unwrap();
+    entry.extra.clear();
+    entry.bytes = 299;
+    let err = h.store.save(&h.dir, request(&finished, None)).unwrap_err();
+    assert_eq!(err, SaveError::MissingAsset(audio.id));
 }
 
 #[test]

@@ -1,0 +1,92 @@
+/* The component gallery page. Every value comes from a design token. */
+@layer components {
+  .page {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-block-size: 100%;
+    background: var(--color-surface-app);
+    color: var(--color-text-primary);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-5);
+    padding: var(--space-3) var(--space-5);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .title {
+    margin: 0;
+    font-size: inherit;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .options {
+    display: flex;
+    gap: var(--space-5);
+  }
+
+  .main {
+    padding: var(--space-5);
+  }
+
+  .group {
+    margin: var(--space-5) 0 var(--space-2);
+    font-size: inherit;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .list {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+  }
+
+  /* Each link is its own target, at least as tall as the density asks. */
+  .list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-2);
+    min-block-size: var(--target-size);
+  }
+
+  .title a,
+  .options a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--target-size);
+  }
+
+  .description {
+    color: var(--color-text-secondary);
+  }
+
+  .empty {
+    max-inline-size: 60ch;
+    color: var(--color-text-secondary);
+  }
+
+  .entry {
+    max-inline-size: 960px;
+  }
+
+  .entryTitle {
+    margin: 0 0 var(--space-2);
+    font-size: inherit;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .stage {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-5);
+    margin-block-start: var(--space-4);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+  }
+}

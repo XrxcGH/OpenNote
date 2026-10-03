@@ -86,8 +86,9 @@ export type Edit =
   | { edit: 'moveBlock'; block: BlockId; frame?: Frame | null; after?: BlockId; before?: BlockId }
   | { edit: 'patchBlock'; block: BlockId; lock?: BlockLock | null; data?: JsonPatch; fallback?: unknown }
   | { edit: 'deleteBlocks'; blocks: BlockId[] }
-  | { edit: 'setPage'; title?: string; view?: JsonPatch }
+  | { edit: 'setPage'; title?: string; tags?: string[]; view?: JsonPatch }
   | { edit: 'addAsset'; asset: AssetId }
+  | { edit: 'removeAsset'; asset: AssetId }
   /** Phase 5's stroke edits (ink.ts). */
   | StrokeEdit;
 

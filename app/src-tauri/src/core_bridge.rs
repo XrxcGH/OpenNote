@@ -23,6 +23,7 @@ use opennote_core::{
         resolve::{Edit, TxnRequest},
         CoalesceKey,
     },
+    session::notebook::NotebookHandle,
     session::{
         core::{Core, CoreConfig},
         events::{CoreEvent, EventSink},
@@ -39,6 +40,9 @@ use crate::{
     paths::Paths,
     settings::SettingsStore,
 };
+
+// Phase 8: search and linking over this core. One command carries every method.
+pub mod search;
 
 /// How long the exit flush may take before the journals keep the rest for the next start (core plan 9.3).
 const EXIT_FLUSH: Duration = Duration::from_secs(5);
@@ -59,6 +63,8 @@ pub type Emit = Box<dyn Fn(&'static str, Value) + Send + Sync>;
 #[derive(Default)]
 pub struct Relay {
     emit: OnceLock<Emit>,
+    /// The search indexer, which hears every core event and every save.
+    index: OnceLock<opennote_search::IndexerHandle>,
     trees: Mutex<Option<mpsc::Sender<NotebookId>>>,
 }
 
@@ -76,6 +82,9 @@ struct AppEvents(Arc<Relay>);
 
 impl EventSink for AppEvents {
     fn emit(&self, event: CoreEvent) {
+        if let Some(index) = self.0.index.get() {
+            index.on_event(&event);
+        }
         if let CoreEvent::SaveFailed { .. } = &event {
             ::log::warn!("The core couldn't save a page: {event:?}");
         }
@@ -107,6 +116,7 @@ pub struct CoreBridge {
     /// The started bridge. A start that failed leaves it empty, so the next command tries again.
     state: Arc<Mutex<Option<Bridge>>>,
     relay: Arc<Relay>,
+    search: Arc<search::Hub>,
 }
 
 /// The started core with what the commands keep beside it.
@@ -171,9 +181,12 @@ fn data_dir(root: &Path) -> PathBuf {
 }
 
 impl Bridge {
-    fn start(root: &Path, relay: Arc<Relay>) -> Result<Bridge, IpcError> {
+    fn start(root: &Path, relay: Arc<Relay>, search: &search::Hub) -> Result<Bridge, IpcError> {
         let config = CoreConfig::production(data_dir(root), env!("CARGO_PKG_VERSION").to_owned()).map_err(internal)?;
-        let core = Core::start(config, Arc::new(AppEvents(relay.clone())), None).map_err(internal)?;
+        // The index starts first, because the core's save hook and events need its handle.
+        search.spawn(root, &relay)?;
+        let core = Core::start(config, Arc::new(AppEvents(relay.clone())), search.sink()).map_err(internal)?;
+        search.attach(&core);
         Ok(Bridge {
             core,
             root: root.to_path_buf(),
@@ -256,6 +269,7 @@ impl CoreBridge {
             root,
             state: Arc::new(Mutex::new(None)),
             relay: Arc::default(),
+            search: Arc::default(),
         }
     }
 
@@ -282,7 +296,7 @@ impl CoreBridge {
     pub fn with<T>(&self, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         if state.is_none() {
-            match Bridge::start(&self.root, self.relay.clone()) {
+            match Bridge::start(&self.root, self.relay.clone(), &self.search) {
                 Ok(bridge) => {
                     *state = Some(bridge);
                     self.watch_trees();
@@ -306,6 +320,8 @@ impl CoreBridge {
             bridge.use_folder(folder);
             let result = work(bridge);
             bridge.drop_stale_handles();
+            // Notebooks this command opened or closed reach the index now, with the tree events.
+            self.search.notebooks_changed(&bridge.core);
             bridge.send_tree_events();
             result
         })
@@ -336,6 +352,17 @@ impl CoreBridge {
         }
     }
 
+    /// The open notebooks, which are the notebook folders in the notes folder. It starts the core and opens the
+    /// library if that has not happened. The answer is empty when the core can't start. The self-check reads the
+    /// notebooks through their own `verify`.
+    pub fn notebooks(&self) -> Vec<NotebookHandle> {
+        self.notes(None, |bridge| Ok(bridge.core.notebooks()))
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|notebook| !notebook.is_backup())
+            .collect()
+    }
+
     /// Saves every page and stops the core. The app calls it on exit.
     pub fn shutdown(&self) {
         *self.relay.trees.lock().unwrap_or_else(PoisonError::into_inner) = None;
@@ -344,6 +371,8 @@ impl CoreBridge {
             if let Err(error) = bridge.core.flush_all(EXIT_FLUSH) {
                 ::log::error!("Couldn't save the open pages: {error}");
             }
+            // The index follows the saves just flushed, then closes before the core goes.
+            self.search.close();
             bridge.core.shutdown(EXIT_FLUSH);
         }
     }

@@ -1,0 +1,140 @@
+{
+  "recordings": [
+    {
+      "fingerprint": "08cec3432bfc1405",
+      "name": "black text on white, gray pixels",
+      "result": {
+        "angle": 1.399999976158142,
+        "language": "en-US",
+        "lines": [
+          {
+            "bounds": {
+              "height": 70.0,
+              "width": 570.0,
+              "x": 37.0,
+              "y": 33.0
+            },
+            "text": "HELLO PEOPLE",
+            "words": [
+              {
+                "bounds": {
+                  "height": 62.0,
+                  "width": 234.0,
+                  "x": 37.0,
+                  "y": 41.0
+                },
+                "text": "HELLO"
+              },
+              {
+                "bounds": {
+                  "height": 63.0,
+                  "width": 282.0,
+                  "x": 325.0,
+                  "y": 33.0
+                },
+                "text": "PEOPLE"
+              }
+            ]
+          },
+          {
+            "bounds": {
+              "height": 67.0,
+              "width": 426.0,
+              "x": 40.0,
+              "y": 148.0
+            },
+            "text": "OPEN NOTE",
+            "words": [
+              {
+                "bounds": {
+                  "height": 61.0,
+                  "width": 186.0,
+                  "x": 40.0,
+                  "y": 154.0
+                },
+                "text": "OPEN"
+              },
+              {
+                "bounds": {
+                  "height": 61.0,
+                  "width": 186.0,
+                  "x": 280.0,
+                  "y": 148.0
+                },
+                "text": "NOTE"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "fingerprint": "c10e566443abab64",
+      "name": "black text on a transparent background, RGBA pixels",
+      "result": {
+        "angle": 1.399999976158142,
+        "language": "en-US",
+        "lines": [
+          {
+            "bounds": {
+              "height": 70.0,
+              "width": 570.0,
+              "x": 37.0,
+              "y": 33.0
+            },
+            "text": "HELLO PEOPLE",
+            "words": [
+              {
+                "bounds": {
+                  "height": 62.0,
+                  "width": 234.0,
+                  "x": 37.0,
+                  "y": 41.0
+                },
+                "text": "HELLO"
+              },
+              {
+                "bounds": {
+                  "height": 63.0,
+                  "width": 282.0,
+                  "x": 325.0,
+                  "y": 33.0
+                },
+                "text": "PEOPLE"
+              }
+            ]
+          },
+          {
+            "bounds": {
+              "height": 67.0,
+              "width": 426.0,
+              "x": 40.0,
+              "y": 148.0
+            },
+            "text": "OPEN NOTE",
+            "words": [
+              {
+                "bounds": {
+                  "height": 61.0,
+                  "width": 186.0,
+                  "x": 40.0,
+                  "y": 154.0
+                },
+                "text": "OPEN"
+              },
+              {
+                "bounds": {
+                  "height": 61.0,
+                  "width": 186.0,
+                  "x": 280.0,
+                  "y": 148.0
+                },
+                "text": "NOTE"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

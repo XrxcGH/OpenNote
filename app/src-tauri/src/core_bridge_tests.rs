@@ -134,3 +134,75 @@ fn a_beta_one_profile_keeps_its_core_data_under_core() {
     );
     assert!(!old.exists());
 }
+
+/// Phase 9 keeps a recording's entry in the page's view, because the core can't edit a block of a type it doesn't
+/// know, and the time stamps of typed text in the data of a text block. Both must come back after a restart.
+#[test]
+fn a_recording_entry_and_text_marks_survive_a_restart() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let (local, notes) = (dir.path().join("local"), dir.path().join("Notes"));
+    let edits = |value: Value| -> Vec<Edit> { serde_json::from_value(value).expect("edits") };
+    let apply = |handle: &PageHandle, seq: u64, edits: Vec<Edit>| {
+        let request = TxnRequest {
+            page: handle.id(),
+            client: handle.client().clone(),
+            client_seq: seq,
+            coalesce: None,
+            ui: None,
+            edits,
+        };
+        handle.apply(request).expect("applies");
+    };
+    let bridge = CoreBridge::at(local.clone());
+    let page = a_page(&bridge, &notes);
+    bridge
+        .notes(Some(notes.clone()), |bridge| {
+            let handle = bridge.handle(&page, "main-1")?;
+            insert(&handle, 1, "Osmosis");
+            let entry = json!({ "id": "r1", "state": "recording", "flags": [{ "id": "f" }], "tracks": [] });
+            apply(
+                &handle,
+                2,
+                edits(json!([
+                    { "edit": "insertBlock", "after": "01k6f00000000000000000b001", "block": {
+                        "id": "01k6f00000000000000000b002", "type": "ext:org.opennote/recording",
+                        "data": { "recording": "r1" }, "fallback": { "markdown": "Audio recording" } } },
+                    { "edit": "setPage", "view": { "recordings": { "r1": entry } } }
+                ])),
+            );
+            let done = json!({ "id": "r1", "state": "complete", "flags": null, "tracks": [] });
+            let marks = json!({ "recordings": ["r1"], "marks": [{
+                "from": 1, "to": 8, "recording": 0, "startNs": 5, "endNs": 9
+            }] });
+            apply(
+                &handle,
+                3,
+                edits(json!([
+                    { "edit": "setPage", "view": { "recordings": { "r1": done } } },
+                    { "edit": "patchBlock", "block": "01k6f00000000000000000b001", "data": { "marks": marks } }
+                ])),
+            );
+            Ok(())
+        })
+        .expect("the first run");
+    bridge.shutdown();
+    let again = CoreBridge::at(local);
+    let page_json = again
+        .notes(Some(notes), |bridge| {
+            let envelope = bridge.handle(&page, "main-1")?.envelope(None).map_err(internal)?;
+            let decoded = opennote_core::wire::envelope::decode(&envelope.bytes).map_err(internal)?;
+            serde_json::from_slice::<Value>(decoded.page_json).map_err(internal)
+        })
+        .expect("the second run");
+    again.shutdown();
+    let blocks = &page_json["blocks"];
+    assert_eq!(blocks[0]["data"]["markdown"], "Osmosis");
+    assert_eq!(blocks[0]["data"]["marks"]["marks"][0]["startNs"], 5);
+    assert_eq!(blocks[1]["type"], "ext:org.opennote/recording");
+    assert_eq!(blocks[1]["data"]["recording"], "r1");
+    assert_eq!(page_json["view"]["recordings"]["r1"]["state"], "complete");
+    assert!(
+        page_json["view"]["recordings"]["r1"].get("flags").is_none(),
+        "null removes a member"
+    );
+}

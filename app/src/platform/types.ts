@@ -3,8 +3,12 @@
 // so the whole interface also runs in a plain browser for development and tests.
 
 import type { NotesCoreClient } from '../services/notes/core/service';
+import type { AudioHost, RecordingEntry } from '../core/audio';
+import type { DiagnosticsClient } from '../features/diagnostics';
 import type { ImportedAsset, PageService } from '../services/pages/types';
+import type { SearchClient } from '../services/search/types';
 import type { MessageKey } from '../strings/t';
+import type { InteropClient } from './interop';
 import type { BootData } from './bindings/BootData';
 import type { CaptionLayout } from './bindings/CaptionLayout';
 import type { CaptionState } from './bindings/CaptionState';
@@ -57,6 +61,8 @@ export type { WindowPlacement } from './bindings/WindowPlacement';
 
 export type Unsubscribe = () => void;
 
+export type { SearchClient };
+
 /** An RFC 7396 merge patch: every key optional, objects patched recursively, and null removes a key. */
 export type MergePatch<T> = {
   [K in keyof T]?: (T[K] extends readonly unknown[] ? T[K] : T[K] extends object ? MergePatch<T[K]> : T[K]) | null;
@@ -80,18 +86,57 @@ export interface Platform {
   readonly updater: UpdaterClient;
   readonly shell: ShellClient;
   readonly pages: PagesClient;
+  /** Search and linking over the index (Phase 8). */
+  readonly search: SearchClient;
+  /** Phase 13: crash reports, the self-check, the feedback file, safe start, and Work offline. */
+  readonly diagnostics: DiagnosticsClient;
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
   readonly images: ImagesClient;
   readonly exports: ExportsClient;
+  /** Phase 9: recording and playback. */
+  readonly audio: AudioClient;
   /** Null unless the read-aloud fallback is built. */
   readonly speech: SpeechClient | null;
+  /** Phase 11: import and export. */
+  readonly interop: InteropClient;
   /** Phase 2 only, behind notes.memorySnapshot. */
   readonly notesSnapshot: NotesSnapshotClient | null;
   /** The notes bridge over the core, which keeps the tree in the notes folder. Null on the web platform. */
   readonly notesCore: NotesCoreClient | null;
   readonly perf: PerfClient;
   log(level: LogLevel, message: string): void;
+}
+
+/** Phase 9's audio client: the media crate's commands, and the folder that keeps a page's recordings. */
+export interface AudioClient {
+  readonly host: AudioHost;
+  /**
+   * The host keeps each track in the page's own folder as an asset of the page, so the page's table must list it
+   * (`addAsset` when a track is made or changes, `removeAsset` when an edit replaces it). The fake host keeps no
+   * files, so the page has nothing to list.
+   */
+  readonly keepsAssets: boolean;
+  /** The folder of a page's recordings, which the host's start, recover, and playback commands take. */
+  assetsDir(page: string): Promise<string>;
+  /**
+   * Hands the open page the tracks of an entry, read from the files in its folder as they are now. The flag
+   * `growing` says the files are still being written. The `addAsset` edits that follow put the tracks in the
+   * page's table.
+   */
+  adoptTracks(assetsDir: string, entry: RecordingEntry, growing: boolean): Promise<void>;
+  /** Trims the silence at both ends, or answers null when there is none worth trimming. */
+  trimSilence(assetsDir: string, entry: RecordingEntry): Promise<AudioEdit | null>;
+  /** Removes the audio between two positions, in nanoseconds. */
+  removePart(assetsDir: string, entry: RecordingEntry, startNs: number, endNs: number): Promise<AudioEdit>;
+  /** Deletes the files of a recording the page no longer lists. Answers with the bytes freed. */
+  deleteFiles(assetsDir: string, entry: RecordingEntry): Promise<number>;
+}
+
+/** A recording after an edit: the entry that takes the old one's place, and its new length. */
+export interface AudioEdit {
+  entry: RecordingEntry;
+  durationNs: number;
 }
 
 export interface SettingsClient {

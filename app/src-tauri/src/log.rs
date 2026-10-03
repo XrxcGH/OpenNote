@@ -198,7 +198,27 @@ impl log::Log for FileSink {
     }
 }
 
+/// What a panic's log line says in place of a message built at run time.
+const RUN_TIME_MESSAGE: &str = "a message built at run time, left out";
+
+/// The log line for a panic: where it started and, when it is a string literal in the program, its message. A
+/// message built at run time can hold note content, so it is left out, as the crash report leaves it out.
+fn panic_line(location: Option<&std::panic::Location<'_>>, payload: &(dyn std::any::Any + Send)) -> String {
+    let location = location.map_or_else(
+        || "an unknown place".to_owned(),
+        |l| format!("{}:{}:{}", l.file(), l.line(), l.column()),
+    );
+    let message = payload
+        .downcast_ref::<&'static str>()
+        .copied()
+        .unwrap_or(RUN_TIME_MESSAGE);
+    format!("Panic: panicked at {location}: {message}")
+}
+
 /// Starts logging to `dir`, and logs panics too. Safe to call once; later calls are ignored.
+///
+/// It replaces the panic hook and doesn't call the one before it. `opennote_crashreport::install` calls the hook
+/// it replaces. So install it after this, or panics stop reaching the log.
 pub fn init(dir: &Path, profile: &Path) {
     let sink = FileSink {
         dir: dir.to_owned(),
@@ -212,7 +232,9 @@ pub fn init(dir: &Path, profile: &Path) {
         } else {
             log::LevelFilter::Info
         });
-        std::panic::set_hook(Box::new(|info| log::error!("Panic: {info}")));
+        std::panic::set_hook(Box::new(|info| {
+            log::error!("{}", panic_line(info.location(), info.payload()));
+        }));
     }
 }
 
@@ -260,6 +282,21 @@ mod tests {
         );
         assert_eq!(redact("Nothing to hide", profile), "Nothing to hide");
         assert_eq!(redact("Nothing to hide", Path::new("")), "Nothing to hide");
+    }
+
+    #[test]
+    fn a_panic_line_keeps_only_a_literal_message() {
+        let here = std::panic::Location::caller();
+        let at = format!("{}:{}:{}", here.file(), here.line(), here.column());
+        let literal: Box<dyn std::any::Any + Send> = Box::new("index out of bounds");
+        assert_eq!(
+            panic_line(Some(here), literal.as_ref()),
+            format!("Panic: panicked at {at}: index out of bounds")
+        );
+        let built: Box<dyn std::any::Any + Send> = Box::new(String::from("no section named Holiday plans"));
+        let line = panic_line(None, built.as_ref());
+        assert_eq!(line, format!("Panic: panicked at an unknown place: {RUN_TIME_MESSAGE}"));
+        assert!(!line.contains("Holiday"));
     }
 
     #[test]

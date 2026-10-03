@@ -1,0 +1,51 @@
+[package]
+name = "opennote-intel"
+version = "0.1.0"
+description = "OpenNote's on-device OCR, handwriting recognition, and transcription, with no network access"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "opennote_intel"
+
+[features]
+default = ["winrt"]
+# The Windows engines: Windows.Media.Ocr, Windows Ink Analysis, and Windows.Media.SpeechSynthesis. Without it
+# the crate builds the same on every platform, and only the replay engines and the extractive summarizer work.
+# CI on Linux has no Windows engines, so it runs the replay engines, and a Windows build can test that path
+# with `--no-default-features`.
+winrt = []
+# Makes the platform engines and the free functions public, so this crate's own tests can drive them directly.
+# Only the dev-dependency below turns it on. The app reaches every engine through Engines, which enforces the
+# person's opt-in, and tests/gate.rs fails if another crate of the workspace turns this on.
+unstable-engines = []
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.21"
+
+# Windows.Media.Ocr and Windows.UI.Input.Inking.Analysis are WinRT APIs that run on the device.
+# The feature list stays free of every networking namespace. The test in tests/no_network.rs holds the exact list.
+# It also checks every Windows namespace the source names, because other crates turn on more features of this build.
+[target.'cfg(windows)'.dependencies]
+windows-collections = "0.3"
+windows = { version = "0.62", features = [
+  "Foundation",
+  "Foundation_Collections",
+  "Globalization",
+  "Graphics_Imaging",
+  "Media_Core",
+  "Media_Ocr",
+  "Media_SpeechSynthesis",
+  "Storage_Streams",
+  "UI_Input_Inking",
+  "UI_Input_Inking_Analysis",
+  "Win32_System_Threading",
+] }
+
+[dev-dependencies]
+opennote-intel = { path = ".", default-features = false, features = ["unstable-engines"] }
+proptest = { workspace = true }

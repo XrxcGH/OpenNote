@@ -1,6 +1,16 @@
 {
   "startup": { "jsKb": 196, "cssKb": 18 },
-  "after": { "within": "features/page", "entry": "features/page/PageBody" },
+  "after": {
+    "within": [
+      "features/page/",
+      "features/pages/",
+      "features/math/",
+      "features/tables/",
+      "editor/extensions/graphFence",
+      "@observablehq/plot"
+    ],
+    "entry": "features/page/PageBody"
+  },
   "lazyKb": {
     "features/pages/live": 40,
     "features/pages/ui": 50,
@@ -12,6 +22,10 @@
     "features/page/styles": 15,
     "features/page/readingOrder": 15,
     "features/page/PageBody": 225,
+    "@observablehq/plot": 135,
+    "features/math": 125,
+    "features/tables": 40,
+    "features/search/links": 190,
     "features/page": 40,
     "features/palette": 40,
     "features/settings": 40,

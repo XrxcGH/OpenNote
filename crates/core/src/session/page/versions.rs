@@ -304,6 +304,13 @@ impl PageSession {
         Ok(asset)
     }
 
+    /// Takes an asset whose file another part of the app wrote in the page's `assets` folder, such as an audio
+    /// recording, so a following `addAsset` edit can put it in the table. A recording that is still growing
+    /// comes with `state` set to `recording` (spec 10.2).
+    pub(crate) fn adopt_asset(&self, asset: Asset) {
+        self.state().imported.insert(asset.id, asset);
+    }
+
     /// Reads an asset, or a range of it, and closes the file at once.
     pub(crate) fn asset_bytes(&self, id: AssetId, range: Option<Range<u64>>) -> Result<AssetBytes, CoreError> {
         let (dir, asset) = {

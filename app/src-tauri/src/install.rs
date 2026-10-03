@@ -150,7 +150,7 @@ pub async fn install_pick_folder(window: WebviewWindow, initial: Option<String>)
 }
 
 #[cfg(windows)]
-fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Option<String>> {
+pub(crate) fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Option<String>> {
     use windows::{
         core::HSTRING,
         Win32::{
@@ -199,7 +199,7 @@ fn pick_folder(owner: isize, initial: Option<String>) -> IpcResult<Option<String
 }
 
 #[cfg(not(windows))]
-fn pick_folder(_owner: isize, _initial: Option<String>) -> IpcResult<Option<String>> {
+pub(crate) fn pick_folder(_owner: isize, _initial: Option<String>) -> IpcResult<Option<String>> {
     Err(IpcError::not_implemented("install_pick_folder"))
 }
 

@@ -1,0 +1,32 @@
+[
+  {
+    "feature": "ocr",
+    "enabled": false,
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "feature": "handwriting",
+    "enabled": false,
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "feature": "readAloud",
+    "enabled": false,
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "feature": "summaries",
+    "enabled": true,
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "feature": "transcription",
+    "enabled": true,
+    "available": false,
+    "unavailableReason": "no transcription engine is installed yet"
+  }
+]

@@ -178,6 +178,7 @@ export function applyEdit(page: PageJson, edit: Edit, now: string): ByteSplice |
     }
     case 'setPage':
       if (edit.title !== undefined) page.title = edit.title;
+      if (edit.tags !== undefined) page.tags = [...edit.tags];
       if (edit.view) page.view = applyMergePatch(page.view, edit.view);
       return null;
     case 'addAsset':
@@ -188,5 +189,8 @@ export function applyEdit(page: PageJson, edit: Edit, now: string): ByteSplice |
     case 'restyleStrokes':
     case 'moveStrokesToBlock':
       return applyStrokeEdit(page, edit);
+    case 'removeAsset':
+      delete page.assets[edit.asset];
+      return null;
   }
 }

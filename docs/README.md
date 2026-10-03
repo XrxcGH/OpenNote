@@ -30,6 +30,9 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 ## File format
 
 - [format/README.md](format/README.md): the note file format specification, tools, and fixtures.
+## Performance
+
+- [perf/phase-8-core.md](perf/phase-8-core.md): how fast the Phase 8 search core runs, with the corpus, the method, the numbers, and the open questions.
 
 ## Releasing
 

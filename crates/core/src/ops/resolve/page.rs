@@ -74,16 +74,28 @@ fn patched_view(page: &Page, patch: &Value, limits: &Limits) -> Result<PageView,
 }
 
 /// `addAsset`: the table entry of an asset that was already imported. An asset already in the table is left
-/// as it is.
+/// as it is, except that an audio file marked as growing (spec 10.2) is replaced by the entry that was imported
+/// for it since, which is how a finished recording gets its size and hash.
 pub(super) fn add_asset(c: &EditCtx<'_>, id: AssetId) -> Result<Vec<Op>, EditError> {
-    if c.page.assets.contains_key(&id) {
-        return Ok(Vec::new());
-    }
-    let asset = (c.ctx.imported)(id).ok_or_else(|| not_found(format!("imported asset {id}")))?;
+    let growing = match c.page.assets.get(&id) {
+        Some(old) if old.is_recording() => Some(old.clone()),
+        Some(_) => return Ok(Vec::new()),
+        None => None,
+    };
+    let Some(asset) = (c.ctx.imported)(id) else {
+        return match growing {
+            Some(_) => Ok(Vec::new()),
+            None => Err(not_found(format!("imported asset {id}"))),
+        };
+    };
     if asset.id != id || !check_asset_file_name(id, &asset.file) {
         return Err(invalid(format!("the imported asset {id} has a bad table entry")));
     }
-    Ok(vec![Op::AddAsset { asset }])
+    Ok(match growing {
+        Some(old) if old == asset => Vec::new(),
+        Some(old) => vec![Op::RemoveAsset { asset: old }, Op::AddAsset { asset }],
+        None => vec![Op::AddAsset { asset }],
+    })
 }
 
 /// `removeAsset`: the table entry, once no block refers to the asset.

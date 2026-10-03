@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost 'self' opennote-asset: http://opennote-asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: http://opennote-asset.localhost blob: data:; worker-src 'self'"
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost 'self' opennote-asset: http://opennote-asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: http://opennote-asset.localhost blob: data:; media-src blob:; worker-src 'self'"
     }
   },
   "bundle": {

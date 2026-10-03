@@ -22,6 +22,13 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 log.workspace = true
 opennote-core = { path = "../../crates/core" }
+opennote-crashreport = { path = "../../crates/crashreport" }
+opennote-diagnostics = { path = "../../crates/diagnostics" }
+opennote-intel = { path = "../../crates/intel" }
+opennote-interop = { path = "../../crates/interop" }
+# Phase 9: recording to Opus needs libopus, which builds with CMake (preinstalled on the Windows runners).
+opennote-media = { path = "../../crates/media", features = ["opus"] }
+opennote-search = { path = "../../crates/search" }
 opennote-updater = { path = "../../crates/updater" }
 semver.workspace = true
 serde.workspace = true
@@ -33,6 +40,8 @@ ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
+# For `#[implement]`, which the Snap Layouts overlay's UI Automation provider uses.
+windows-core = "0.62.2"
 
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.62.2"
@@ -57,6 +66,8 @@ features = [
   "Win32_System_Threading",
   "Win32_System_Variant",
   "Win32_UI_Accessibility",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_Shell",
   "Win32_UI_Shell_Common",
   "Win32_UI_Shell_PropertiesSystem",

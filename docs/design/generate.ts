@@ -11,6 +11,7 @@ import { newPage, organize, search } from './screens/workspace.ts';
 import { paginated, recording } from './screens/page-views.ts';
 import { settings } from './screens/settings.ts';
 import { phone, sizeClasses } from './screens/responsive.ts';
+import { crashConsent, feedbackReview, selfCheck } from './screens/hardening.ts';
 
 const OUT_DIR = join(import.meta.dirname, 'images');
 
@@ -29,6 +30,9 @@ const screens: Screen[] = [
   phone(),
   studyTools(),
   sendTo(),
+  crashConsent(),
+  selfCheck(),
+  feedbackReview(),
 ];
 
 mkdirSync(OUT_DIR, { recursive: true });

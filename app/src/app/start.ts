@@ -5,7 +5,9 @@ import { hasInjectedBoot, readBoot, readDevOptions } from '../boot/read';
 import { installDispatcher } from '../commands/dispatcher';
 import { configureCommands } from '../commands/registry';
 import '../features';
+import { installDiagnostics, offerSafeStart } from '../features/diagnostics';
 import { installPageZoom, installPages } from '../features/page';
+import { installSearch } from '../features/search';
 import { installSetup } from '../features/setup';
 import { installAppearance } from '../features/theme';
 import { createPlatform } from '../platform';
@@ -55,8 +57,10 @@ export function installApp(
     installAppearance(),
     installPageZoom(),
     installPages(platform),
+    installSearch(platform, notes),
     installAppContextMenu(),
     installSetup(platform, notes),
+    installDiagnostics(platform),
   ];
   return () => stops.forEach((stop) => stop());
 }
@@ -70,5 +74,7 @@ export async function startApp(): Promise<{ platform: Platform; notes: NotesServ
   initStores(boot, platform);
   const notes = await createNotesService(platform);
   installApp(platform, notes, { keepThemeInStorage: !hasInjectedBoot() });
+  // After two crashes in a row, safe mode is offered before the notebook opens.
+  await offerSafeStart(platform);
   return { platform, notes };
 }

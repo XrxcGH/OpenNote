@@ -274,6 +274,10 @@ fn fetch_checked(url: &str, policy: Policy, convert: bool) -> Result<Checked, Ip
 
 #[tauri::command]
 pub async fn image_import_url(app: AppHandle, page: String, url: String) -> IpcResult<ImportedAsset> {
+    // Work offline blocks every network use, including this one (docs/FEATURES.md, Privacy panel).
+    if crate::hardening::offline() {
+        return Err(failed("Work offline is on."));
+    }
     let convert = convert_enabled(&app);
     on_blocking(move || {
         let handle = open_page(&app, &page)?;

@@ -1,0 +1,19 @@
+{
+  "color": "DEFAULT",
+  "isTrashed": false,
+  "isPinned": false,
+  "isArchived": false,
+  "textContent": "A quick sketch of the garden.\nMaybe add a pond.\n\nSecond paragraph.",
+  "title": "Garden idea",
+  "attachments": [{ "filePath": "sketch.png", "mimetype": "image/png" }],
+  "annotations": [
+    {
+      "description": "Pond building guide",
+      "source": "WEBLINK",
+      "title": "How to build a pond",
+      "url": "https://example.org/pond"
+    }
+  ],
+  "userEditedTimestampUsec": 1790003600000000,
+  "createdTimestampUsec": 1790000000000000
+}

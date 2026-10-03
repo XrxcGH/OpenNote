@@ -1,0 +1,67 @@
+/*
+ * Drawn equations and the live preview in the source field (Phase 10). KaTeX's own style sheet sizes and spaces the
+ * drawing; these rules only place it in the text and in the editing field, on tokens.
+ */
+@layer components {
+  .drawn {
+    font-family: var(--font-reading);
+    color: var(--color-text-primary);
+  }
+
+  .invalid {
+    outline: 1px dashed var(--color-status-danger);
+    outline-offset: 2px;
+  }
+
+  .holderBlock {
+    margin-block-start: var(--space-2);
+  }
+
+  .holderInline {
+    position: absolute;
+    z-index: var(--layer-dropdown);
+    margin-block-start: var(--space-1);
+    min-inline-size: 16rem;
+    padding: var(--space-2);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .preview {
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    overflow-x: auto;
+  }
+
+  .problem {
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+  }
+
+  .problem:empty {
+    display: none;
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+
+  .actions button {
+    min-block-size: var(--size-target-min);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+}

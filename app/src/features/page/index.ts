@@ -6,3 +6,4 @@ export { installPages } from './runtime';
 export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from './pagesApi';
 export type { MountedPage, MountedPageHook } from './pagesApi';
 export { pageSelection } from './seams/selectionStore';
+export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
