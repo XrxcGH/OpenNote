@@ -100,7 +100,8 @@ describe('the notes service over the core', () => {
       invoke: (command) => {
         calls.push(command);
         if (command === 'notes_list_notebooks') {
-          return Promise.resolve([{ id: 'n-1', kind: 'notebook', title: 'Thesis', color: '#ff0000' }]);
+          // checks-disable-next-line brand-consistency: a stored color that isn't a pen name, which reads as none
+          return Promise.resolve([{ id: 'n-1', kind: 'notebook', title: 'Thesis', color: 'teal' }]);
         }
         if (command === 'notes_rename') return Promise.reject({ code: 'invalid-name', message: 'x', field: 'empty' });
         return Promise.resolve({ library: { folder: 'Notes', readOnly: false }, notebooks: [], children: {} });

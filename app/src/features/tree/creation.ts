@@ -1,7 +1,7 @@
 // New notebooks, section groups, sections, pages, and subpages (ARCHITECTURE.md section 13.5). A new item goes
 // after the current one, at the same level, and opens in rename mode. A new section or group made from a
-// notebook or group goes inside it, at the end, and opens it. A new notebook opens too, as the current notebook. After a new page, the page created hooks run (for
-// example Phase 4's date and time line).
+// notebook or group goes inside it, at the end, and opens it. A new notebook opens too, as the current notebook.
+// After a new page, the page created hooks run (for example Phase 4's date and time line).
 
 import { getLocation, navigate } from '../../app/location';
 import type { CommandContext } from '../../commands/types';

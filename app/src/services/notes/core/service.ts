@@ -1,6 +1,6 @@
 // The notes service over Phase 3's core (ADR 0014; ARCHITECTURE.md section 12.5). Each method is one command of
-// the app's notes bridge (app/src-tauri/src/notes), which keeps the tree in the notes folder in the note format:
-// a folder for each notebook, with its sections, pages, and Trash inside it. The bridge sends the notes events.
+// the app's notes bridge (app/src-tauri/src/notes). The bridge keeps the tree in the notes folder in the note
+// format: a folder for each notebook, with its sections, pages, and Trash inside it. It sends the notes events.
 //
 // A tree change is on disk when its command resolves, so the service is saving only while a change is on its way.
 
@@ -8,18 +8,14 @@ import { NotesError } from '../errors';
 import type { InvalidNameReason, NotesErrorCode } from '../errors';
 import type {
   ChipColor,
-  CreateInput,
   InitialTree,
   NodeId,
   NodeSummary,
   NotesEvent,
   NotesService,
-  PageLevel,
-  Placement,
   SaveStatus,
   TrashedItem,
   TrashReceipt,
-  TrashReceiptId,
 } from '../types';
 import { CHIP_COLORS } from '../types';
 
@@ -70,110 +66,144 @@ function node(raw: NodeSummary): NodeSummary {
 
 const nodes = (list: readonly NodeSummary[]) => list.map(node);
 
-function event(raw: NotesEvent): NotesEvent {
-  return raw.type === 'upserted' ? { ...raw, nodes: nodes(raw.nodes) } : raw;
+function initialTree(tree: InitialTree): InitialTree {
+  const children: Record<string, readonly NodeSummary[]> = {};
+  for (const [id, list] of Object.entries(tree.children)) children[id] = nodes(list);
+  return { ...tree, notebooks: nodes(tree.notebooks), children, page: tree.page ? node(tree.page) : null };
 }
 
-export function createCoreNotesService(client: NotesCoreClient): CoreNotesService {
-  const listeners = new Set<(event: NotesEvent) => void>();
-  const writes = new Set<Promise<unknown>>();
-  let failed = false;
-  let reported: SaveStatus = 'saved';
-  let stopListening: (() => void) | null = null;
+/** Calls, the save status while changes are on their way, and the listeners. */
+class Bridge {
+  private readonly listeners = new Set<(event: NotesEvent) => void>();
+  private readonly writes = new Set<Promise<unknown>>();
+  private failed = false;
+  private reported: SaveStatus = 'saved';
+  private stopListening: (() => void) | null = null;
+  private readonly client: NotesCoreClient;
 
-  const emit = (next: NotesEvent) => {
-    for (const listener of [...listeners]) listener(next);
-  };
-  const status = (): SaveStatus => (writes.size > 0 ? 'saving' : failed ? 'error' : 'saved');
-  const report = () => {
-    const next = status();
-    if (next === reported) return;
-    reported = next;
-    emit({ type: 'status', status: next });
-  };
+  constructor(client: NotesCoreClient) {
+    this.client = client;
+  }
 
-  const read = async <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
+  status(): SaveStatus {
+    return this.writes.size > 0 ? 'saving' : this.failed ? 'error' : 'saved';
+  }
+
+  unsaved(): boolean {
+    return this.writes.size > 0;
+  }
+
+  async read<T>(command: string, args?: Record<string, unknown>): Promise<T> {
     try {
-      return (await client.invoke(command, args)) as T;
+      return (await this.client.invoke(command, args)) as T;
     } catch (error) {
       throw toNotesError(error);
     }
-  };
+  }
 
   /** A change: saving until it settles. A refusal of the call itself isn't a failed save. */
-  const write = <T>(command: string, args?: Record<string, unknown>): Promise<T> => {
-    const call = read<T>(command, args);
-    writes.add(call);
-    report();
-    const settle = (ok: boolean, error?: unknown) => {
-      writes.delete(call);
-      if (ok) failed = false;
-      else if (error instanceof NotesError && (error.code === 'io' || error.code === 'unavailable')) failed = true;
-      report();
+  write<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+    const call = this.read<T>(command, args);
+    this.writes.add(call);
+    this.report();
+    const settle = (error?: unknown) => {
+      this.writes.delete(call);
+      this.failed = error instanceof NotesError && (error.code === 'io' || error.code === 'unavailable');
+      this.report();
     };
-    call.then(
-      () => settle(true),
-      (error: unknown) => settle(false, error),
-    );
+    call.then(() => settle(), settle);
     return call;
-  };
+  }
 
+  async flush(): Promise<void> {
+    while (this.writes.size > 0) await Promise.allSettled([...this.writes]);
+    await this.read('notes_flush');
+  }
+
+  watch(listener: (event: NotesEvent) => void): () => void {
+    this.listeners.add(listener);
+    this.stopListening ??= this.client.listen((raw) =>
+      this.emit(raw.type === 'upserted' ? { ...raw, nodes: nodes(raw.nodes) } : raw),
+    );
+    return () => {
+      this.listeners.delete(listener);
+      if (this.listeners.size > 0) return;
+      this.stopListening?.();
+      this.stopListening = null;
+    };
+  }
+
+  private emit(event: NotesEvent): void {
+    for (const listener of [...this.listeners]) listener(event);
+  }
+
+  private report(): void {
+    const next = this.status();
+    if (next === this.reported) return;
+    this.reported = next;
+    this.emit({ type: 'status', status: next });
+  }
+}
+
+type Reads = Pick<NotesService, 'loadInitial' | 'listNotebooks' | 'listChildren' | 'get' | 'listTrash'>;
+
+function reads(bridge: Bridge): Reads {
   return {
-    contractVersion: 1,
-    async loadInitial(path: readonly NodeId[]): Promise<InitialTree> {
-      const tree = await read<InitialTree>('notes_load_initial', { path });
-      const children: Record<string, readonly NodeSummary[]> = {};
-      for (const [id, list] of Object.entries(tree.children)) children[id] = nodes(list);
-      return {
-        ...tree,
-        notebooks: nodes(tree.notebooks),
-        children,
-        page: tree.page ? node(tree.page) : null,
-      };
-    },
-    listNotebooks: async () => nodes(await read<NodeSummary[]>('notes_list_notebooks')),
-    listChildren: async (parentId: NodeId) => nodes(await read<NodeSummary[]>('notes_list_children', { parentId })),
-    get: async (id: NodeId) => {
-      const found = await read<NodeSummary | null>('notes_get', { id });
+    loadInitial: async (path) => initialTree(await bridge.read<InitialTree>('notes_load_initial', { path })),
+    listNotebooks: async () => nodes(await bridge.read<NodeSummary[]>('notes_list_notebooks')),
+    listChildren: async (parentId) => nodes(await bridge.read<NodeSummary[]>('notes_list_children', { parentId })),
+    get: async (id) => {
+      const found = await bridge.read<NodeSummary | null>('notes_get', { id });
       return found ? node(found) : null;
     },
-    create: async (input: CreateInput) => node(await write<NodeSummary>('notes_create', { input })),
-    rename: async (id: NodeId, title: string) => node(await write<NodeSummary>('notes_rename', { id, title })),
-    setColor: async (id: NodeId, color: ChipColor | null) =>
-      node(await write<NodeSummary>('notes_set_color', { id, color })),
-    move: async (ids: readonly NodeId[], placement: Placement) => {
-      await write('notes_move', { ids, placement });
-    },
-    setPageLevel: async (ids: readonly NodeId[], level: PageLevel) => {
-      await write('notes_set_page_level', { ids, level });
-    },
-    trash: (ids: readonly NodeId[]) => write<TrashReceipt>('notes_trash', { ids }),
-    restore: async (receiptId: TrashReceiptId) => nodes(await write<NodeSummary[]>('notes_restore', { receiptId })),
     listTrash: async () => {
-      const items = await read<TrashedItem[]>('notes_list_trash');
+      const items = await bridge.read<TrashedItem[]>('notes_list_trash');
       return items.map((item) => ({ ...item, node: node(item.node) }));
     },
-    restoreFromTrash: async (ids: readonly NodeId[]) =>
-      nodes(await write<NodeSummary[]>('notes_restore_from_trash', { ids })),
-    purgeFromTrash: async (ids: readonly NodeId[]) => {
-      await write('notes_purge', { ids });
-    },
-    saveStatus: status,
-    hasUnsavedChanges: () => writes.size > 0,
-    async flush() {
-      while (writes.size > 0) await Promise.allSettled([...writes]);
-      await read('notes_flush');
-    },
-    watch(listener: (event: NotesEvent) => void) {
-      listeners.add(listener);
-      stopListening ??= client.listen((raw) => emit(event(raw)));
-      return () => {
-        listeners.delete(listener);
-        if (listeners.size === 0) {
-          stopListening?.();
-          stopListening = null;
-        }
-      };
-    },
+  };
+}
+
+type Writes = Pick<
+  CoreNotesService,
+  | 'create'
+  | 'rename'
+  | 'setColor'
+  | 'move'
+  | 'setPageLevel'
+  | 'trash'
+  | 'restore'
+  | 'restoreFromTrash'
+  | 'purgeFromTrash'
+>;
+
+function writes(bridge: Bridge): Writes {
+  const summary = async (command: string, args: Record<string, unknown>) =>
+    node(await bridge.write<NodeSummary>(command, args));
+  const summaries = async (command: string, args: Record<string, unknown>) =>
+    nodes(await bridge.write<NodeSummary[]>(command, args));
+  const done = async (command: string, args: Record<string, unknown>) => void (await bridge.write(command, args));
+  return {
+    create: (input) => summary('notes_create', { input }),
+    rename: (id, title) => summary('notes_rename', { id, title }),
+    setColor: (id, color) => summary('notes_set_color', { id, color }),
+    move: (ids, placement) => done('notes_move', { ids, placement }),
+    setPageLevel: (ids, level) => done('notes_set_page_level', { ids, level }),
+    trash: (ids) => bridge.write<TrashReceipt>('notes_trash', { ids }),
+    restore: (receiptId) => summaries('notes_restore', { receiptId }),
+    restoreFromTrash: (ids) => summaries('notes_restore_from_trash', { ids }),
+    purgeFromTrash: (ids) => done('notes_purge', { ids }),
+  };
+}
+
+export function createCoreNotesService(client: NotesCoreClient): CoreNotesService {
+  const bridge = new Bridge(client);
+  return {
+    contractVersion: 1,
+    ...reads(bridge),
+    ...writes(bridge),
+    saveStatus: () => bridge.status(),
+    hasUnsavedChanges: () => bridge.unsaved(),
+    flush: () => bridge.flush(),
+    watch: (listener) => bridge.watch(listener),
   };
 }
