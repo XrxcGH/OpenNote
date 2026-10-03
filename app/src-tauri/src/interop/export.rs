@@ -88,6 +88,9 @@ pub struct ExportRequest {
     pub sections: Vec<ExportSection>,
     /// The folder the export goes into.
     pub folder: String,
+    /// A file sent earlier that this export replaces ("Update the copy"). Only the formats that make one file.
+    #[serde(default)]
+    pub replace: Option<String>,
 }
 
 /// The notebook, sections, and pages of an export, read from the bridge's page files.
@@ -251,10 +254,38 @@ impl NoteSource for TreeSource {
     }
 }
 
-/// Runs the export the request names, into `folder`.
+/// Runs the export the request names, into `folder`. With `replace`, the new file takes the place of that file.
 pub fn run(source: &TreeSource, request: &ExportRequest, control: &Control) -> Result<Exported> {
+    let Some(target) = request.replace.as_deref().map(Path::new) else {
+        return run_into(source, request, Path::new(&request.folder), control);
+    };
+    let parent = target
+        .parent()
+        .filter(|p| p.is_dir())
+        .ok_or_else(|| InteropError::Missing("folder of the copy".to_owned()))?;
+    // The export writes into a folder of its own beside the copy, so the copy changes only when the export is whole.
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos());
+    let staging = parent.join(format!(".opennote-update-{}-{stamp}", std::process::id()));
+    std::fs::create_dir(&staging).map_err(|e| InteropError::io(&staging, e))?;
+    let result = run_into(source, request, &staging, control).and_then(|mut exported| {
+        let made = exported
+            .files
+            .first()
+            .cloned()
+            .ok_or_else(|| InteropError::Missing("file in the export".to_owned()))?;
+        std::fs::rename(&made, target).map_err(|e| InteropError::io(target, e))?;
+        exported.root = parent.to_path_buf();
+        exported.files = vec![target.to_path_buf()];
+        Ok(exported)
+    });
+    let _ = std::fs::remove_dir_all(&staging);
+    result
+}
+
+fn run_into(source: &TreeSource, request: &ExportRequest, folder: &Path, control: &Control) -> Result<Exported> {
     let scope = source.scope(request.scope);
-    let folder = Path::new(&request.folder);
     match request.format {
         ExportFormat::Markdown => opennote_interop::export_files_with(source, scope, Format::Markdown, folder, control),
         ExportFormat::Html => opennote_interop::export_files_with(source, scope, Format::Html, folder, control),

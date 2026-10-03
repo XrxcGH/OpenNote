@@ -10,6 +10,7 @@ import { t } from '../../strings/t';
 import { Button, Dialog, RadioCard, RadioGroup, announce } from '../../ui';
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
+import { SendExtras } from './SendExtras';
 import type { ExportFlow, ExportState } from './exportFlow';
 import type { ExportTarget } from './exportTarget';
 import styles from './Interop.module.css';
@@ -119,6 +120,7 @@ function Options({
           {state.folder ? t('interop.export.changeFolder') : t('interop.export.chooseFolder')}
         </Button>
       </div>
+      <SendExtras flow={flow} folder={state.folder} />
       {state.error && (
         <p role="alert" className={styles.error}>
           {exportErrorText(state.error)}

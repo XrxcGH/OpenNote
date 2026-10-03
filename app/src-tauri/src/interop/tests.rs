@@ -184,6 +184,7 @@ fn request(format: ExportFormat, scope: ExportScope, folder: &Path, pages: &[Str
             ],
         }],
         folder: folder.to_string_lossy().into_owned(),
+        replace: None,
     }
 }
 

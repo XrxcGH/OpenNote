@@ -2,6 +2,14 @@
 // so parallel work never edits the same strings file.
 
 export const moreInterop = {
+  send: {
+    favorites: 'Favorite folders',
+    use: 'Use {name}',
+    favorite: 'Add this folder to favorites',
+    unfavorite: 'Remove this folder from favorites',
+    copies: 'Copies you sent',
+    update: 'Update {name}',
+  },
   snip: {
     offer: 'You copied a screenshot. Add it to this page?',
     add: 'Add to page',

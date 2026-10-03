@@ -110,6 +110,8 @@ export interface ExportRequest {
   sections: { title: string; pages: { ui: string; title: string; level: number }[] }[];
   /** The folder the export goes into; the export makes its own folder or file inside. */
   folder: string;
+  /** A file an earlier export made, which this one replaces ("Update the copy"). Only for formats that make one file. */
+  replace?: string;
 }
 
 export interface ExportResult {
