@@ -6,8 +6,8 @@ import { createMemoryNotesService } from '../services/notes/memory';
 import { pushLayer } from '../state/layers';
 import { resetStores } from '../state/store';
 import { createTestPlatform } from '../test/platform';
-import { activeScopes, commandForKey, installDispatcher, reachesCommandsInText } from './dispatcher';
-import { chord, configureCommands, defineCommand } from './registry';
+import { activeScopes, commandForKey, installDispatcher, layerScopes, reachesCommandsInText } from './dispatcher';
+import { chord, configureCommands, defineCommand, focusZone } from './registry';
 import type { CommandDef } from './types';
 
 const stops: (() => void)[] = [];
@@ -122,6 +122,25 @@ describe('text fields, dialogs, repeats, and flags', () => {
     expect(run(inside, 'r', 'KeyR', 'ctrl alt')).toBe('test.inDialog');
     pop();
     expect(run(document.body, 'n', 'KeyN', 'ctrl alt')).toBe('test.newPage');
+  });
+
+  it('run the commands of the scopes a modal layer holds, such as the tree in the notebooks drawer', () => {
+    add('rename', { keys: [chord('Ctrl+Alt+E')], scope: 'tree' });
+    add('newPage', { keys: [chord('Ctrl+Alt+N')], scope: 'workspace' });
+    const pop = pushLayer({ id: 'drawer', kind: 'drawer', modal: true, close() {} });
+    const row = element(
+      '<div role="dialog"><div data-region="notebooks"><div data-scope="tree notebooksTree">' +
+        '<div role="treeitem" id="row"></div></div></div></div>',
+      '#row',
+    );
+    expect([...layerScopes(row)].sort()).toEqual(['notebooksTree', 'tree', 'workspace']);
+    expect(focusZone(row)).toBe('notebooks');
+    expect(run(row, 'e', 'KeyE', 'ctrl alt')).toBe('test.rename');
+    expect(run(row, 'n', 'KeyN', 'ctrl alt')).toBe('test.newPage');
+    // A global command still needs to allow the modal layer.
+    add('global', { keys: [chord('Ctrl+Alt+G')] });
+    expect(run(row, 'g', 'KeyG', 'ctrl alt')).toBeNull();
+    pop();
   });
 
   it('repeat only commands that allow it, skip flags that are off, and leave key capture alone', () => {

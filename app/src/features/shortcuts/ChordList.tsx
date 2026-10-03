@@ -1,6 +1,6 @@
-// A command's keys, each in a <kbd>, with "or" between them. No keys reads "None".
+// A command's keys, each in a <kbd>, with "or" between them. No keys reads "None". When the keys wrap, "or" goes
+// to the next line with the chord it introduces, never alone at the end of a line.
 
-import { Fragment } from 'react';
 import { formatChord } from '../../commands/keymap';
 import type { Chord } from '../../commands/types';
 import { t } from '../../strings/t';
@@ -11,10 +11,10 @@ export function ChordList({ chords }: { chords: readonly string[] }) {
   return (
     <span className={styles.chords}>
       {chords.map((chord, i) => (
-        <Fragment key={chord}>
+        <span key={chord} className={styles.chord}>
           {i > 0 && <span className={styles.or}>{t('shortcuts.or')}</span>}
           <kbd className={styles.kbd}>{formatChord(chord as Chord)}</kbd>
-        </Fragment>
+        </span>
       ))}
     </span>
   );

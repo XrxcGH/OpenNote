@@ -10,9 +10,10 @@
   }
 
   .header {
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--space-4) var(--space-2);
   }
 
+  /* The scroll padding brings a control that Tab reaches below the fold in with room for its focus ring. */
   .body {
     display: grid;
     grid-template-columns: var(--size-settings-nav) minmax(0, 1fr);
@@ -20,17 +21,28 @@
     align-content: start;
     min-block-size: 0;
     overflow-y: auto;
+    scroll-padding-block: var(--space-3);
   }
 
   :global(:root[data-size-class='compact']) .body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* The section list stays in view while a long section scrolls under the header, so its column is never an empty
+     strip and another section is always one click away. */
+  .nav {
+    position: sticky;
+    inset-block-start: 0;
+    align-self: start;
+  }
+
+  /* The list's block padding is room inside the scroller for the first link's focus ring. The header and the
+     main column give up and take back the same 4 px, so nothing moves. */
   .nav ul {
     display: grid;
     gap: var(--space-1);
     margin: 0;
-    padding: 0 var(--space-3);
+    padding: var(--space-2) var(--space-3);
     list-style: none;
   }
 
@@ -67,7 +79,7 @@
     gap: var(--space-6);
     align-content: start;
     min-inline-size: 0;
-    padding: var(--space-2) var(--space-7) var(--space-8);
+    padding: var(--space-3) var(--space-7) var(--space-8);
   }
 
   .heading,
@@ -106,6 +118,7 @@
   }
 
   .help {
+    margin: 0;
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
@@ -163,5 +176,17 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  /* A labeled switch's hover area pads its label by 8 px and a 1 px border. The area hangs out to the start, so
+     the label lines up with the heading above and the help text below. */
+  .block [role='switch'] {
+    margin-inline-start: calc(-1 * (var(--space-3) + 1px));
+  }
+
+  /* One width for every flag's switch, so the tracks line up at its end instead of following each label. */
+  .flags [role='switch'] {
+    display: flex;
+    inline-size: min(100%, 24rem);
   }
 }

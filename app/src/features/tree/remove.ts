@@ -70,7 +70,7 @@ async function confirmNotebook(node: NodeSummary): Promise<boolean> {
   const count = await countPages(node.id);
   return confirm({
     title: t('tree.trash.confirmTitle', { title: titleOf(node) }),
-    body: t('tree.trash.confirmBody', { count }),
+    body: count ? t('tree.trash.confirmBody', { count }) : t('tree.trash.confirmBodyEmpty'),
     confirmLabel: t('tree.trash.confirm'),
     danger: true,
   });

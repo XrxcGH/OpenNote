@@ -52,7 +52,7 @@ export const setup = {
       moveDetail: 'Moves OpenNote to your user folder. No administrator rights needed.',
       keep: 'Keep it where it is',
       keepDetail: '{path}',
-      keepDetailReadOnly: "{path} OpenNote can't update itself in this folder.",
+      keepDetailReadOnly: "OpenNote can't update itself while it runs from {path}.",
       inPlace: 'OpenNote already runs from your user folder, so there is nothing to move.',
       development: 'This is a development build, so it stays where it is.',
     },

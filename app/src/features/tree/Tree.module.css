@@ -122,9 +122,12 @@
     border-radius: var(--radius-sm);
   }
 
+  /* The 8 px dot sits in the same 12 px slot as the square, so sibling sections and section groups start their
+     names at one edge. */
   .dot {
     inline-size: var(--space-3);
     block-size: var(--space-3);
+    margin-inline: var(--space-1);
     border-radius: var(--radius-pill);
   }
 
@@ -242,8 +245,14 @@
     white-space: normal;
   }
 
+  /* No browser margins: the pane's padding and the drawing's own margin set the space. */
   .empty {
+    margin: 0;
     color: var(--color-text-secondary);
+  }
+
+  .empty p {
+    margin: 0;
   }
 
   .emptyArt {

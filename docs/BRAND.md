@@ -210,7 +210,7 @@ Depth comes from warm, soft shadows in three steps (`elevation.1` to `elevation.
 
 ## 8. Icons, logo, and illustration
 
-Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut.
+Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut. A button that shows its name gets a tooltip only to add its shortcut, never one that repeats its label.
 
 The logo is a folded page with a moss-green ink stroke ending in a clay pen tip: see [`brand/logo-mark.svg`](../brand/logo-mark.svg) and [`brand/app-icon.svg`](../brand/app-icon.svg). Keep clear space of half the mark's width around it, and don't recolor, stretch or add effects.
 
@@ -221,7 +221,8 @@ Illustrations appear in onboarding, empty states, error screens, the theme previ
 - Things in a drawing obey gravity. Books, pots, the notebook, and the candle stand on their shelf, desk, or sill line. None sinks into its line or floats above it. A leaning book stands on its lower corner and rests against its neighbor. The component tests check both.
 - Nothing crowds another shape, such as a star against a leaf or the sun against a window bar.
 - A drawing set above left-aligned text is cropped to its content, so its shelf starts where the text starts.
-- The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing.
+- Every line stays inside its drawing's box at any drawn size, stroke width included, so no edge is clipped.
+- The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The stars are drawn at 1:1 at any width, and each stays at least 5 pixels clear of the card's top edge, so none looks like a speck on the card.
 
 No 3D renders, gradient blobs, stock photos, or mascots.
 
@@ -283,6 +284,7 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 | Page canvas | Paper backgrounds (plain, lined, dot grid, graph, Cornell) drawn with `border.subtle`. Page breaks are dashed lines with the page number in `text.muted`. |
 | Recording bar | Pinned above the page, with a pulsing dot, elapsed time, and pause and stop buttons. Timestamps link to ink and text. |
 | Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch, with a hidden description of how to reach Light, Dark, and Match Windows. |
+| Choice cards | A radio group of cards. The cards of one choice share one width, and a row that wraps splits evenly, never leaving one card alone. |
 | Theme cards | Three cards in a radio group named "Theme", each with a small live preview that screen readers and Tab skip. Holding an arrow key moves one step. |
 | Empty states | One small drawing above one plain sentence, on a page card. The sentence carries the meaning; the drawing is only company. |
 | Ambient canvas | The desk behind the page card: window light in Daylight, a dusk sky with a few stars in Evening. Static, painted once, and kept within 1.3:1 of `surface.sunken`. Flat under Windows contrast themes. |
@@ -290,7 +292,7 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 | Dialogs | Title, one-sentence explanation, then actions (primary on the right). Escape closes. Focus returns to where it was. |
 | Update notice | A small "Update ready" chip in the title bar, with release notes on hover or tap. "Restart to update" applies it; otherwise it applies the next time the app closes. Never a pop-up, never mid-task. |
 | Toasts | Bottom center, one at a time, with an Undo action for destructive changes. |
-| Command palette | Ctrl+K opens a searchable list of every command, with shortcuts. |
+| Command palette | Ctrl+K opens a searchable list of every command, with shortcuts. With no matches it says "No results." where the results would be. |
 
 ## 12. Accessibility
 

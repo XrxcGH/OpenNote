@@ -73,8 +73,9 @@ describe('the command bar tabs', () => {
     await expectFocus(tools[0]);
     await userEvent.keyboard('{End}');
     expect(tools.map((button) => button.tabIndex)).toEqual([-1, -1, 0]);
-    // A shown tooltip takes the first Escape, so the second one leaves for the page.
-    await userEvent.keyboard('{Escape}{Escape}');
+    // These tools have no shortcut, so they show no tooltip to take the first Escape: it leaves for the page.
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    await userEvent.keyboard('{Escape}');
     await expectFocus(heading as HTMLElement);
   });
 });

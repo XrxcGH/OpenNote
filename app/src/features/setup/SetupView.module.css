@@ -39,14 +39,34 @@
     box-shadow: var(--elevation-2);
   }
 
+  /* The scroll padding brings a control that Tab reaches below the fold in with room for its focus ring. */
   .content {
     overflow-y: auto;
     padding: var(--space-8) var(--space-8) var(--space-5);
+    scroll-padding-block: var(--space-3);
   }
 
   .step {
     display: grid;
     gap: var(--space-6);
+  }
+
+  /* In setup the theme cards grow past their Settings width to fill the column. The row's outer edges then meet
+     the edges of the buttons below, and the row centers under the centered heading. Settings keeps its row
+     start-aligned with the text above it. */
+  .look [role='radiogroup'] {
+    justify-content: center;
+  }
+
+  .look [role='radiogroup'] > [role='radio'] {
+    max-inline-size: none;
+  }
+
+  /* At first run the Match Windows caption says why it is preselected, which takes two lines in a row of cards.
+     Choosing another card puts back the one-line caption. Every caption keeps room for two lines, so the row
+     doesn't jump. Stacked in compact, each caption has the width for one line. */
+  :global(:root:not([data-size-class='compact'])) .look [role='radiogroup'] > [role='radio'] {
+    grid-template-rows: auto auto minmax(calc(2 * var(--type-small-line)), auto);
   }
 
   .header {
@@ -75,15 +95,17 @@
     color: var(--color-text-secondary);
   }
 
-  /* The welcome step: everything centered under the title, with the desk between the sentence and the note. */
+  /* The welcome step: the title stays where every other step has it, the note sits at the bottom, and the desk is
+     centered in the room between them. */
   .welcome {
+    grid-template-rows: auto 1fr auto;
     min-block-size: 100%;
-    align-content: center;
     text-align: center;
   }
 
   .scene {
     display: grid;
+    align-content: center;
     justify-items: center;
   }
 

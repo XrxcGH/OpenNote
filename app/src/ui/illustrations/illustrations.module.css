@@ -113,7 +113,11 @@
     z-index: calc(var(--layer-base) - 1);
     display: none;
     inline-size: 100%;
+    /* Drawn at 1:1 at any width. A wider canvas centers the field instead of scaling it. The page card's top edge
+       stays 32 px down at any width, so no star drifts onto it. */
+    max-inline-size: 1280px;
     block-size: 160px;
+    margin-inline: auto;
     margin-block-end: -160px;
     pointer-events: none;
     fill: var(--color-ambient-spark);

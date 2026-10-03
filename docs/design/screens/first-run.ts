@@ -4,7 +4,7 @@ import { type Box, type Palette, captionKeepOut, circle, palette, rect, region, 
 import { WIDE, miniApp, titleBar } from '../lib/chrome.ts';
 import { type Screen, makeScreen } from './screen.ts';
 
-const CARD: Box = { x: 360, y: 130, w: 720, h: 600 };
+const CARD: Box = { x: 360, y: 114, w: 720, h: 672 };
 
 function setupCard(p: Palette, step: number, title: string, subtitle: string): string[] {
   const center = CARD.x + CARD.w / 2;
@@ -83,7 +83,7 @@ export function firstRunLook(): Screen {
       anchor: 'middle',
     }),
     ...buttons(p, 'Continue'),
-    region(CARD, 'Setup card 720×600, centered'),
+    region(CARD, 'Setup card 720×672, centered'),
     region({ x: CARD.x + 30, y: cardsY - 6, w: 660, h: 212 }, 'Theme cards 200×200, gap 24'),
     tag(CARD.x + CARD.w + 16, cardsY + 100, 'Clicking a card repaints the whole screen', NOTE.region),
     tag(CARD.x + CARD.w + 16, cardsY + 124, 'Focus starts on the preselected card', NOTE.region),

@@ -124,7 +124,7 @@
     display: inline-block;
     inline-size: var(--space-3);
     block-size: var(--space-3);
-    margin-inline-end: var(--space-3);
+    margin-inline: var(--space-2);
     border-radius: var(--radius-pill);
     background: var(--crumb-ink);
     forced-color-adjust: none;

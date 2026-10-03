@@ -25,7 +25,7 @@ export default function LookStep(props: SetupStepProps) {
     setThemePreference(choice, 'setup');
   };
   return (
-    <div className={styles.step}>
+    <div className={`${styles.step} ${styles.look}`}>
       <StepHeader {...props} title={t('setup.steps.look')} subtitle={subtitle} />
       <ThemeCards
         value={theme}

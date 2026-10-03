@@ -210,6 +210,45 @@ describe('in both themes', () => {
   });
 });
 
+describe('inside their boxes', () => {
+  it.each([64, 103])('keeps every window line, stroke and all, inside the drawing at %i px tall', (height) => {
+    const svg = drawn(renderUi(<Window sky="day" height={height} />).container);
+    const box = svg.getBoundingClientRect();
+    for (const shape of svg.querySelectorAll<SVGGeometryElement>('path, circle')) {
+      const style = getComputedStyle(shape);
+      // Lines don't scale, so half of each one's width reaches past its path by the same number of pixels.
+      const half = style.stroke === 'none' ? 0 : parseFloat(style.strokeWidth) / 2;
+      const edge = shape.getBoundingClientRect();
+      expect(edge.left - half).toBeGreaterThanOrEqual(box.left);
+      expect(edge.top - half).toBeGreaterThanOrEqual(box.top);
+      expect(edge.right + half).toBeLessThanOrEqual(box.right);
+      expect(edge.bottom + half).toBeLessThanOrEqual(box.bottom);
+    }
+  });
+
+  it("keeps every star at least 5 px clear of the page card's top edge, however wide the canvas", () => {
+    document.documentElement.dataset.theme = 'dark';
+    // The page card starts one --space-8 margin down the canvas.
+    const card = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-8'));
+    expect(card).toBe(32);
+    for (const width of [600, 1280, 1920, 2560]) {
+      const { container, unmount } = renderUi(
+        <div style={{ inlineSize: width }}>
+          <StarField />
+        </div>,
+      );
+      const top = drawn(container).getBoundingClientRect().top;
+      for (const star of container.querySelectorAll('circle')) {
+        const dot = star.getBoundingClientRect();
+        // Above the edge, or below it where the card covers it, by 5 px either way.
+        const clear = Math.max(card - (dot.bottom - top), dot.top - top - card);
+        expect(clear, `the star at x ${star.getAttribute('cx')} on a ${width} px canvas`).toBeGreaterThanOrEqual(5);
+      }
+      unmount();
+    }
+  });
+});
+
 describe('motion', () => {
   it('fades in once over the fast duration and never loops', () => {
     const { container } = renderUi(<DeskScene sky="day" />);

@@ -28,6 +28,35 @@
   .group :where([role='radiogroup']) {
     gap: var(--space-3);
   }
+
+  /* The cards of any other choice share one width, the widest card's, so their edges line up. They shrink together
+     when the column is narrower. */
+  .matched [role='radiogroup'] {
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    justify-self: start;
+  }
+
+  /* Equal steps, such as the percentages, get equal cards: 80 px each, the label centered, whatever its digits. */
+  .even {
+    container-type: inline-size;
+  }
+
+  .even [role='radio'] {
+    min-inline-size: calc(var(--space-9) * 2);
+    justify-items: center;
+  }
+
+  /* Eight steps, the text sizes, need 696 px in one row: eight 80 px cards and seven 8 px gaps. Narrower, they
+     split four and four, so no step is left alone on a second row. */
+  @container (inline-size < 696px) {
+    .even [role='radiogroup']:has(> :nth-child(8):last-child) {
+      display: grid;
+      grid-template-columns: repeat(4, auto);
+      justify-content: start;
+    }
+  }
 }
 
 /* A selected choice keeps a visible mark when Windows replaces the colors. */

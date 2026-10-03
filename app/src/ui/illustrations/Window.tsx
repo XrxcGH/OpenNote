@@ -1,4 +1,4 @@
-// An arched window, 100 x 102: a sunset sky by day, and stars with a crescent moon in the evening. The sill and the
+// An arched window, 100 x 103: a sunset sky by day, and stars with a crescent moon in the evening. The sill and the
 // panes are lines. The sky, the dusk hills, the sun, and the moon are flat fills from the tokens, and the stars
 // are dots.
 
@@ -37,9 +37,9 @@ export function WindowArt({ sky }: { sky: Sky }) {
 }
 
 /** The window at its drawn size, or at a given height with the same proportions. */
-export function Window({ sky, className, height = 102 }: ArtProps & { sky: Sky; height?: number }) {
+export function Window({ sky, className, height = 103 }: ArtProps & { sky: Sky; height?: number }) {
   return (
-    <Art width={Math.round((100 * height) / 102)} height={height} box={[100, 102]} className={className}>
+    <Art width={Math.round((100 * height) / 103)} height={height} box={[100, 103]} className={className}>
       <WindowArt sky={sky} />
     </Art>
   );

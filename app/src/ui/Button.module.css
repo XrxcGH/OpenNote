@@ -104,10 +104,17 @@
   .button[aria-disabled='true'],
   .iconButton:disabled,
   .iconButton[aria-disabled='true'] {
-    border-color: var(--color-border-subtle);
     background: transparent;
     color: var(--color-text-muted);
     cursor: default;
+  }
+
+  /* Only a button with a visible border keeps a faint one when disabled. A borderless button never gains a box,
+     or a disabled one would stand out more than the enabled one beside it. */
+  .secondary:is(:disabled, [aria-disabled='true']),
+  .primary:is(:disabled, [aria-disabled='true']),
+  .danger[data-fill]:is(:disabled, [aria-disabled='true']) {
+    border-color: var(--color-border-subtle);
   }
 }
 

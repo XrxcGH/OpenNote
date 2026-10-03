@@ -45,18 +45,24 @@ function ActionButton({ action }: { action: BottomAction }) {
   const keys = useKeysFor(action.command);
   const label = t(action.label);
   const Icon = action.icon;
-  return (
-    <Tooltip label={label} shortcut={keys[0] ? formatChord(keys[0]) : null}>
-      <button
-        type="button"
-        className={styles.bottomButton}
-        aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
-        onClick={() => void executeCommand(action.command, undefined, 'commandBar')}
-      >
-        <Icon aria-hidden />
-        {label}
-      </button>
+  const button = (
+    <button
+      type="button"
+      className={styles.bottomButton}
+      aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
+      onClick={() => void executeCommand(action.command, undefined, 'commandBar')}
+    >
+      <Icon aria-hidden />
+      {label}
+    </button>
+  );
+  // The button shows its label, so a tooltip only earns its place when it adds the shortcut.
+  return keys[0] ? (
+    <Tooltip label={label} shortcut={formatChord(keys[0])}>
+      {button}
     </Tooltip>
+  ) : (
+    button
   );
 }
 

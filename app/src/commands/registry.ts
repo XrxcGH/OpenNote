@@ -40,8 +40,11 @@ export function focusZone(element: Element | null = document.activeElement): Foc
   if (!element || element === document.body) return 'none';
   if (element.matches('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return 'textInput';
   if (element.closest('[data-scope~="palette"]')) return 'palette';
-  if (element.closest('[role="dialog"], dialog')) return 'dialog';
-  const region = element.closest('[data-region]')?.getAttribute('data-region') as FocusZone | undefined;
+  const dialog = element.closest('[role="dialog"], dialog');
+  const regionElement = element.closest('[data-region]');
+  // A region a dialog holds, such as the notebooks in the drawer, is still that region.
+  if (dialog && !(regionElement && dialog.contains(regionElement))) return 'dialog';
+  const region = regionElement?.getAttribute('data-region') as FocusZone | undefined;
   return region && REGIONS.includes(region) ? region : 'none';
 }
 
