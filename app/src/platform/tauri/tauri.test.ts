@@ -110,13 +110,11 @@ describe('commands', () => {
     ]);
   });
 
-  it('sends the notes snapshot, logs, and perf marks', async () => {
-    await platform.notesSnapshot?.load();
-    await platform.notesSnapshot?.save('{}');
-    expect(calls).toEqual([
-      { command: 'notes_snapshot_load', args: {} },
-      { command: 'notes_snapshot_save', args: { json: '{}' } },
-    ]);
+  it('sends notes commands to the core, logs, and perf marks', async () => {
+    // With storage.core, the core keeps the notes, so there is no Phase 2 snapshot.
+    expect(platform.notesSnapshot).toBeNull();
+    await platform.notesCore?.invoke('notes_list_children', { parentId: 'n-1' });
+    expect(calls).toEqual([{ command: 'notes_list_children', args: { parentId: 'n-1' } }]);
     calls.length = 0;
     platform.log('error', 'It broke.');
     platform.perf.mark('firstPaint', 'dark');
