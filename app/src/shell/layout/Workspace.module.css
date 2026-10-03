@@ -82,26 +82,33 @@
     padding: var(--space-5);
   }
 
-  /* The desk the page lies on. By day, window light falls from the top corner; in the evening the sky deepens
-     toward dusk, and the stars sit behind the page. Both stay within 1.3:1 of the sunken canvas, and the washes
-     only ever show around the page card, never behind text. */
+  /* The desk the page lies on. By day, warm window light pools from the top corner, and a patch of it falls on the
+     desk with the soft shadow of the window's cross bars. In the evening the sky deepens from night indigo through
+     dusk to a low sunset band at the horizon, and the stars sit behind the page. Every tone stays within 1.5:1 of
+     the sunken canvas, and the light only ever shows around the page card, never behind text. */
   .page {
     grid-area: page;
     min-inline-size: 0;
     overflow: auto;
     isolation: isolate;
+    --pane-shadow: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
     background:
-      radial-gradient(ellipse 70% 55% at top right, var(--color-ambient-canvas-top), transparent 70%),
+      /* The window's cross bars cast two faint shadows across the patch of light, fading at their ends. */
+      linear-gradient(to bottom, transparent, var(--pane-shadow) 25% 75%, transparent) 72% 71.2% / 6px 34% no-repeat,
+      linear-gradient(to right, transparent, var(--pane-shadow) 25% 75%, transparent) 81.4% 64% / 30% 6px no-repeat,
+      /* The patch of window light on the desk. */
+        radial-gradient(closest-side, var(--color-ambient-glow) 35%, transparent) 92.3% 88.1% / 48% 58% no-repeat,
+      /* The pool of light from the window at the top corner. */
+        radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
       var(--color-surface-sunken);
   }
 
   :global(:root[data-theme='dark']) .page {
-    background: linear-gradient(
-      to bottom,
-      var(--color-ambient-canvas-top),
-      var(--color-surface-sunken) 55%,
-      var(--color-ambient-canvas-bottom)
-    );
+    background:
+      /* The last of the sunset, low on the horizon. */
+      radial-gradient(ellipse 130% 28% at 50% 100%, var(--color-ambient-glow), transparent),
+      /* Night at the top, deepening through dusk toward the horizon. */
+        linear-gradient(to bottom, var(--color-ambient-canvas-top) 10%, var(--color-ambient-canvas-bottom) 88%);
   }
 
   .page:focus-visible {

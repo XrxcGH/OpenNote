@@ -10,21 +10,28 @@
     background: var(--color-surface-app);
   }
 
-  /* Window light: a warm wash from the top corner by day, and a sky that darkens toward dusk in the evening. It
-     paints the backdrop, never the card, and stays within a hair of the surface (BRAND.md section 4). */
+  /* Window light. By day, a warm pool falls from the top corner, with a patch of light and the window's soft
+     cross-bar shadow. In the evening, a dusk sky ends in a low sunset band. It paints the backdrop, never the card,
+     and stays close to the surface (BRAND.md section 4). */
   .screen {
+    --pane-shadow: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
     background:
-      radial-gradient(ellipse 70% 55% at top right, var(--color-ambient-canvas-top), transparent 70%),
+      /* The window's cross bars cast two faint shadows across the patch of light, fading at their ends. */
+      linear-gradient(to bottom, transparent, var(--pane-shadow) 25% 75%, transparent) 88% 64.3% / 6px 30% no-repeat,
+      linear-gradient(to right, transparent, var(--pane-shadow) 25% 75%, transparent) 98.7% 60% / 22% 6px no-repeat,
+      /* The patch of window light beside the card. */
+        radial-gradient(closest-side, var(--color-ambient-glow) 35%, transparent) 109.4% 77.3% / 36% 56% no-repeat,
+      /* The pool of light from the window at the top corner. */
+        radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
       var(--color-surface-app);
   }
 
   :global(:root[data-theme='dark']) .screen {
-    background: linear-gradient(
-      to bottom,
-      var(--color-ambient-canvas-top),
-      var(--color-surface-sunken) 55%,
-      var(--color-ambient-canvas-bottom)
-    );
+    background:
+      /* The last of the sunset, low on the horizon. */
+      radial-gradient(ellipse 130% 28% at 50% 100%, var(--color-ambient-glow), transparent),
+      /* Night at the top, deepening through dusk toward the horizon. */
+        linear-gradient(to bottom, var(--color-ambient-canvas-top) 10%, var(--color-ambient-canvas-bottom) 88%);
   }
 
   .card {

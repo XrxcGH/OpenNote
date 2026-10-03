@@ -173,6 +173,23 @@ describe('in color', () => {
   });
 });
 
+describe('the evening sky', () => {
+  it('lights twenty-five stars, three of them larger, none brighter than 80 percent', () => {
+    const stars = [...renderUi(<StarField />).container.querySelectorAll('circle')];
+    const radii = stars.map((star) => Number(star.getAttribute('r')));
+    const opacities = stars.map((star) => Number(star.getAttribute('opacity')));
+    expect(stars).toHaveLength(25);
+    expect(radii.filter((r) => r >= 1.7)).toHaveLength(3);
+    expect(Math.max(...radii)).toBeLessThanOrEqual(1.8);
+    expect(Math.min(...radii)).toBeGreaterThanOrEqual(0.75);
+    expect(Math.min(...opacities)).toBeGreaterThanOrEqual(0.45);
+    expect(Math.max(...opacities)).toBeLessThanOrEqual(0.8);
+    // The larger stars are the brightest, so the field has a few points of light and no clutter.
+    const big = stars.filter((_, i) => radii[i] >= 1.7).map((star) => Number(star.getAttribute('opacity')));
+    expect(Math.min(...big)).toBeGreaterThanOrEqual(0.75);
+  });
+});
+
 describe('motion', () => {
   it('fades in once over the fast duration and never loops', () => {
     const { container } = renderUi(<DeskScene sky="day" />);

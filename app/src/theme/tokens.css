@@ -39,8 +39,9 @@
   --color-art-candle: #F5D59C;
   --color-art-dusk: #EDC0C9;
   --color-art-night: #C7CEEA;
-  --color-ambient-canvas-top: #FFF4DF;
+  --color-ambient-canvas-top: #FFF0D4;
   --color-ambient-canvas-bottom: #EAE3D8;
+  --color-ambient-glow: #FCE4B8;
   --color-ambient-spark: #F2CF8A;
   --color-caption-close-hover: #C42B1C;
   --color-caption-close-hover-text: #FFFCF6;
@@ -225,8 +226,9 @@
   --color-art-candle: #6A4E27;
   --color-art-dusk: #62404D;
   --color-art-night: #383F6C;
-  --color-ambient-canvas-top: #1D1F2C;
-  --color-ambient-canvas-bottom: #2E2430;
+  --color-ambient-canvas-top: #1B2036;
+  --color-ambient-canvas-bottom: #33243A;
+  --color-ambient-glow: #45302C;
   --color-ambient-spark: #E7D9B0;
   --color-caption-close-hover: #C42B1C;
   --color-caption-close-hover-text: #FFFCF6;
@@ -288,8 +290,9 @@
     --color-art-candle: #6A4E27;
     --color-art-dusk: #62404D;
     --color-art-night: #383F6C;
-    --color-ambient-canvas-top: #1D1F2C;
-    --color-ambient-canvas-bottom: #2E2430;
+    --color-ambient-canvas-top: #1B2036;
+    --color-ambient-canvas-bottom: #33243A;
+    --color-ambient-glow: #45302C;
     --color-ambient-spark: #E7D9B0;
     --color-caption-close-hover: #C42B1C;
     --color-caption-close-hover-text: #FFFCF6;
@@ -352,8 +355,9 @@
   --color-art-candle: #F5D59C;
   --color-art-dusk: #EDC0C9;
   --color-art-night: #C7CEEA;
-  --color-ambient-canvas-top: #FFF4DF;
+  --color-ambient-canvas-top: #FFF0D4;
   --color-ambient-canvas-bottom: #EAE3D8;
+  --color-ambient-glow: #FCE4B8;
   --color-ambient-spark: #F2CF8A;
   --color-caption-close-hover: #C42B1C;
   --color-caption-close-hover-text: #FFFCF6;
@@ -413,8 +417,9 @@
   --color-art-candle: #6A4E27;
   --color-art-dusk: #62404D;
   --color-art-night: #383F6C;
-  --color-ambient-canvas-top: #1D1F2C;
-  --color-ambient-canvas-bottom: #2E2430;
+  --color-ambient-canvas-top: #1B2036;
+  --color-ambient-canvas-bottom: #33243A;
+  --color-ambient-glow: #45302C;
   --color-ambient-spark: #E7D9B0;
   --color-caption-close-hover: #C42B1C;
   --color-caption-close-hover-text: #FFFCF6;
@@ -496,6 +501,7 @@
     --color-art-night: Canvas;
     --color-ambient-canvas-top: Canvas;
     --color-ambient-canvas-bottom: Canvas;
+    --color-ambient-glow: Canvas;
     --color-ambient-spark: Canvas;
     --color-status-success: CanvasText;
     --color-status-warning: CanvasText;

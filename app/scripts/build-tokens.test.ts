@@ -72,16 +72,16 @@ describe('buildCss', () => {
   it('writes the warm accents and the ambient sky in both themes and in the scoped blocks', () => {
     expect(blockOf(':root')).toContain('--color-accent-candle: #9A5410;');
     expect(blockOf(':root')).toContain('--color-accent-night-subtle: #E8EAF3;');
-    expect(blockOf(':root')).toContain('--color-ambient-canvas-top: #FFF4DF;');
+    expect(blockOf(':root')).toContain('--color-ambient-canvas-top: #FFF0D4;');
     expect(blockOf(':root[data-theme="dark"]')).toContain('--color-accent-dusk: #EBA0B2;');
-    expect(blockOf(':root[data-theme="dark"]')).toContain('--color-ambient-canvas-bottom: #2E2430;');
+    expect(blockOf(':root[data-theme="dark"]')).toContain('--color-ambient-canvas-bottom: #33243A;');
     expect(blockOf('[data-theme-scope="dark"]')).toContain('--color-ambient-spark: #E7D9B0;');
     expect(css).toContain('[data-theme-scope="light"],\n:root[data-page-color="paper"] [data-region="page"] {');
   });
 
   it('flattens the ambient wash and the stars to Canvas under a Windows contrast theme', () => {
     const forced = css.slice(css.indexOf('@media (forced-colors: active)'));
-    ['canvas-top', 'canvas-bottom', 'spark'].forEach((name) =>
+    ['canvas-top', 'canvas-bottom', 'glow', 'spark'].forEach((name) =>
       expect(forced).toContain(`--color-ambient-${name}: Canvas;`),
     );
     ['candle', 'dusk', 'night'].forEach((name) => {

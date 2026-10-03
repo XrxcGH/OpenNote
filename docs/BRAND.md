@@ -109,13 +109,14 @@ Three small accent families and one ambient group give the shell its warmth. Eac
 | `accent.duskSubtle` | `#F6E4E4` | `#3A2A30` | A soft rose surface behind a dusk accent; drawings use `art.dusk` |
 | `accent.night` | `#4A5590` | `#A9B4EC` | The moon icon, night line art |
 | `accent.nightSubtle` | `#E8EAF3` | `#1F2233` | The upper night sky in the evening window |
-| `ambient.canvasTop` | `#FFF4DF` window light | `#1D1F2C` night sky | Top of the desk canvas behind the page and the setup backdrop |
-| `ambient.canvasBottom` | `#EAE3D8` (the sunken color) | `#2E2430` dusk horizon | Bottom of the same gradient |
+| `ambient.canvasTop` | `#FFF0D4` window light | `#1B2036` night sky | The pool of light from the window's corner by day; the top of the evening sky |
+| `ambient.canvasBottom` | `#EAE3D8` (the sunken color) | `#33243A` dusk | Bottom of the evening sky, above the sunset band |
+| `ambient.glow` | `#FCE4B8` window light on the desk | `#45302C` sunset | The warmest light on the canvas: the patch of window light by day, the low sunset band in the evening |
 | `ambient.spark` | `#F2CF8A` sun disc | `#E7D9B0` starlight | The sun disc and stars only, never text |
 
 Candle, dusk, and night are never status colors and never fill a button, so candle can't be mistaken for `status.warning`. They also never stand alone as a signal.
 
-The ambient washes stay quiet: CHECKS holds `ambient.canvasTop` and `ambient.canvasBottom` to at most 1.3:1 against `surface.sunken` (a `max` ceiling on a contrast pair), and they only ever show around the page card, never behind text. Under Windows contrast themes the accents become the system text color, and the fills and ambient tokens become the system canvas, so the gradients flatten and the stars disappear.
+The ambient washes stay calm: CHECKS holds `ambient.canvasTop`, `ambient.canvasBottom`, and `ambient.glow` to at most 1.5:1 against `surface.sunken` (a `max` ceiling on a contrast pair). The ceiling was 1.3 until the evening sky gained its sunset band, which sits just under 1.5. Every text pairing on these tones keeps the same targets as on the canvas, and the washes only ever show around the page card, never behind text. Under Windows contrast themes the accents become the system text color, and the fills and ambient tokens become the system canvas, so the gradients flatten and the stars disappear.
 
 ### Drawing tints
 
@@ -256,7 +257,12 @@ A drawing never moves to a pane that has none, and the extra motifs live inside 
 - Nothing crowds another shape, such as a star against a leaf or the sun against a window bar. The window vine keeps at least 4 units from the stars and the moon, and the two candles' dishes don't overlap.
 - A drawing set above left-aligned text is cropped to its content, so its shelf starts where the text starts.
 - Every line stays inside its drawing's box at any drawn size, stroke width included, so no edge is clipped.
-- The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The stars are drawn at 1:1 at any width, and each stays at least 5 pixels clear of the card's top edge, so none looks like a speck on the card.
+
+### The ambient canvas
+
+- The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The card itself stays plain paper.
+- By day, warm light pools from the window's top corner, and a soft patch of it lies on the desk. Across the patch falls the faint shadow of the window's cross bars: two thin bars at 5 percent of the text color that fade at their ends.
+- In the evening, the sky deepens from night indigo through dusk to a low sunset band at the horizon. Twenty-five stars sit at the top, 0.75 to 1.25 pixels in radius at 45 to 70 percent opacity, with three larger ones, up to 1.8 pixels, at up to 80 percent. They are drawn at 1:1 at any width, and each stays at least 5 pixels clear of the card's top edge, so none looks like a speck on the card.
 
 No 3D renders, gradient blobs, stock photos, or mascots.
 
