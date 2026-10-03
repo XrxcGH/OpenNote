@@ -28,6 +28,12 @@
   .group :where([role='radiogroup']) {
     gap: var(--space-3);
   }
+
+  /* Equal steps, such as the percentages, get equal cards: 80 px each, the label centered, whatever its digits. */
+  .even [role='radio'] {
+    min-inline-size: calc(var(--space-9) * 2);
+    justify-items: center;
+  }
 }
 
 /* A selected choice keeps a visible mark when Windows replaces the colors. */

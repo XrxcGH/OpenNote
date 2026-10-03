@@ -20,14 +20,16 @@ interface ChoiceProps {
   help?: string;
   value: string;
   options: readonly { value: string; label: string }[];
+  /** Gives every option one width, for a row of equal steps such as percentages. */
+  even?: boolean;
   onChange(value: string): void;
 }
 
 /** A labeled group of choices. Every option is a card in a radio group, so arrow keys move the selection. */
-function Choice({ label, help, value, options, onChange }: ChoiceProps) {
+function Choice({ label, help, value, options, even, onChange }: ChoiceProps) {
   const id = useId();
   return (
-    <section className={styles.group} aria-labelledby={`${id}-label`}>
+    <section className={even ? `${styles.group} ${styles.even}` : styles.group} aria-labelledby={`${id}-label`}>
       <h2 id={`${id}-label`} className={styles.label}>
         {label}
       </h2>
@@ -66,6 +68,7 @@ function SizeGroups({ appearance }: { appearance: Appearance }) {
         help={t('theme.appearance.textSize.help')}
         value={String(appearance.textSize)}
         options={TEXT_SIZES.map((size) => ({ value: String(size), label: percent(size) }))}
+        even
         onChange={(size) => setTextSize(Number(size) as TextSize)}
       />
       <Choice
@@ -73,6 +76,7 @@ function SizeGroups({ appearance }: { appearance: Appearance }) {
         help={t('theme.appearance.interfaceSize.help')}
         value={String(appearance.uiScale)}
         options={UI_SCALES.map((scale) => ({ value: String(scale), label: percent(scale) }))}
+        even
         onChange={(scale) => save({ uiScale: Number(scale) })}
       />
     </>
