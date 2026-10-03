@@ -8,6 +8,7 @@ import { commandContext, defineCommand } from '../../../commands/registry';
 import type { CommandCategory, CommandContext, CommandId } from '../../../commands/types';
 import type { EditorCommandArgs } from '../../../editor/commands/catalog';
 import {
+  MERGE_BLOCKS_EVENT,
   blockKindAt,
   caretInLink,
   inTaskItem,
@@ -15,7 +16,7 @@ import {
   linkApplies,
   marksAllowed,
 } from '../../../editor/commands/state';
-import type { BlockKindName } from '../../../editor/commands/state';
+import type { BlockKindName, MergeBlocksDetail } from '../../../editor/commands/state';
 import { commandBar, commands, contextMenus } from '../../../registries';
 import type { CommandBarItem, ContextMenuItem } from '../../../registries/types';
 import type { MessageKey } from '../../../strings/t';
@@ -254,3 +255,11 @@ registerAppMenu('page.text', (context) => {
   );
   return { label: t('editor.textMenu'), items };
 });
+
+// Backspace at the start of a flowing text block asks the page to merge it into the block above.
+if (typeof document !== 'undefined') {
+  document.addEventListener(MERGE_BLOCKS_EVENT, (event) => {
+    const { detail } = event as CustomEvent<MergeBlocksDetail>;
+    void import('../formattingBar/merge').then(({ mergeIntoPrevious }) => mergeIntoPrevious(detail));
+  });
+}

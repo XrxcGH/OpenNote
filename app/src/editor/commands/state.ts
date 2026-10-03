@@ -106,3 +106,13 @@ export function inTaskItem(state: EditorState): boolean {
   }
   return false;
 }
+
+/** The event an editor sends when Backspace at its very start should merge it into the text block above. */
+export const MERGE_BLOCKS_EVENT = 'opennote:mergeblocks';
+
+export interface MergeBlocksDetail {
+  /** The block whose text moves up. */
+  block: string;
+  /** The text block above, which keeps the merged text. */
+  previous: string;
+}
