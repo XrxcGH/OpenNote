@@ -20,14 +20,14 @@ import {
   marksAllowed,
 } from '../../../editor/commands/state';
 import type { BlockKindName, FoldsDetail, FoldsRequestDetail, MergeBlocksDetail } from '../../../editor/commands/state';
-import { commandBar, commands, contextMenus } from '../../../registries';
+import { commandBar, commands, contextMenus, pageCreated } from '../../../registries';
 import type { CommandBarItem, ContextMenuItem } from '../../../registries/types';
 import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
 import { editMenu, registerAppMenu } from '../../../ui/appMenu';
 import { targetEditor } from '../formattingBar/target';
 import { registerPageCommand } from '../keys';
-import { slashItems } from '../registries';
+import { editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
 import type { SlashSession } from '../../../editor/extensions/slash';
 import type { PageCommandId } from '../keys';
@@ -368,3 +368,24 @@ if (typeof document !== 'undefined') {
     void folds().then(({ saveFolds }) => saveFolds(detail));
   });
 }
+
+// A new page gets the date and time under its title, and Settings, then Editing, gets WP4's two parts.
+pageCreated.register({
+  id: 'editor.dateLine',
+  order: 10,
+  run: async (pageId) => (await import('../formattingBar/dateLine')).addDateLine(pageId),
+});
+editingSettingsParts.register({
+  id: 'editor.typing',
+  title: 'editor.general.title',
+  order: 10,
+  flag: 'page.editor',
+  load: () => import('../settings/EditingGeneral'),
+});
+editingSettingsParts.register({
+  id: 'editor.autocorrect',
+  title: 'editor.autocorrect.title',
+  order: 20,
+  flag: 'page.typingHelpers',
+  load: () => import('../settings/EditingAutoCorrect'),
+});
