@@ -39,3 +39,19 @@ test('changes the width and color of the active pen slot', async ({ page }) => {
   await page.getByRole('menuitemradio', { name: 'Fern' }).click();
   await expect(page.getByRole('button', { name: 'Pen, Fern, 1 mm' })).toBeVisible();
 });
+
+test('leaves the text under the ink to click and type into with Select and type', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  const box = page.getByRole('textbox', { name: 'Text' }).first();
+  const at = (await box.boundingBox())!;
+  const overlay = (await page.locator('[data-ink-overlay]').boundingBox())!;
+  const y = at.y - overlay.y + at.height / 2;
+  await draw(page, line([at.x - overlay.x, y], [at.x - overlay.x + 200, y + 40]));
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(1);
+  await choose(page, 'Select and type');
+  await box.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' under ink');
+  await expect(box).toContainText('under ink');
+});

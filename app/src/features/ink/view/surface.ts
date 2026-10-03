@@ -423,6 +423,8 @@ export class InkSurface {
   private growWorld(): void {
     const element = this.layerId ? this.parts.layer?.view(this.layerId)?.element : null;
     if (!element || !this.extent) return;
+    // The wrapper covers the ink, which covers text: it must never take a click meant for the text below.
+    element.style.pointerEvents = 'none';
     element.style.minWidth = `${Math.max(0, this.extent.maxX + INK_MARGIN)}px`;
     element.style.minHeight = `${Math.max(0, this.extent.maxY + INK_MARGIN)}px`;
   }
