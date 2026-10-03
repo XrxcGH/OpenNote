@@ -1,11 +1,13 @@
 // Following a [[page link]]: it opens the page it points at. A link to nothing offers to make the page, so a
 // link written first and a page made later is a short step.
+import { isEnabled } from '../../../app/flags';
 import { getLocation } from '../../../app/location';
 import { commandContext } from '../../../commands/registry';
 import type { NodeId } from '../../../services/notes/types';
 import type { LinkRef } from '../../../services/search/types';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
+import { openAndReveal } from '../deeplink/jump';
 import { locationOfPage, openPage } from '../locate';
 import { resolveNow } from './resolver';
 
@@ -36,7 +38,9 @@ export async function followLink(link: LinkRef): Promise<boolean> {
   const answer = await resolveNow(link);
   const target = answer?.targets[0];
   if (target) {
-    await openPage(notes, target.page);
+    // A link to a heading jumps to it; a link to a page opens the page.
+    if (isEnabled('search.paragraphLinks') && target.block) await openAndReveal(notes, target.page, target.block);
+    else await openPage(notes, target.page);
     return true;
   }
   showToast({

@@ -18,6 +18,7 @@ import type {
   UnlinkedMention,
 } from '../../services/search/types';
 import { invoke, listen } from './invoke';
+import { createTauriSearchExtras } from './searchExtras';
 
 function call<T>(method: string, args: Record<string, unknown> = {}): Promise<T> {
   return invoke('search_call', { method, args }) as Promise<T>;
@@ -48,5 +49,6 @@ export function createTauriSearch(): SearchClient {
     rebuild: () => none('rebuild'),
     flush: () => none('flush'),
     onUpdate: (listener) => listen('search:updated', listener),
+    extras: createTauriSearchExtras(call),
   };
 }

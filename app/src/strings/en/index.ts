@@ -35,6 +35,7 @@ import { interop } from './interop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
 import { study } from './study';
+import { qolSearch } from './qolSearch';
 
 export const en = {
   common,
@@ -72,4 +73,5 @@ export const en = {
   intel,
   pageExtras,
   study,
+  qolSearch,
 } as const;

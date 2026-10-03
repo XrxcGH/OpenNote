@@ -114,7 +114,19 @@ type QolFlagId =
   | 'tools.reminders'
   | 'tools.citations';
 /** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */
-type Phase8FlagId = 'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags';
+type Phase8FlagId =
+  'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags' | QolSearchFlagId;
+/** The Beta 4 search and linking additions, which features/search/flags.ts defines. */
+type QolSearchFlagId =
+  | 'search.lineTags'
+  | 'search.paragraphLinks'
+  | 'search.properties'
+  | 'search.replace'
+  | 'search.indexMedia'
+  | 'daily.notes'
+  | 'collections.views'
+  | 'graph.view'
+  | 'canvas.cards';
 /** Phase 12's flags, which features/intel/flags.ts defines. */
 type IntelFlagId = 'intel.ocr' | 'intel.readAloud' | 'intel.summaries' | 'intel.handwriting' | 'intel.searchText';
 

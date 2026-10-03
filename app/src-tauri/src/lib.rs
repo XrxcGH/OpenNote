@@ -8,6 +8,7 @@ pub mod boot;
 pub mod clipboard;
 pub mod command_list;
 pub mod core_bridge;
+pub mod deeplink;
 pub mod early;
 pub mod events;
 pub mod hardening;
@@ -65,10 +66,12 @@ pub fn run(context: EarlyContext) {
     // The crash hooks go first, so a crash while the rest starts is saved too (once the person said yes).
     let hardening = hardening::Hardening::start(&paths);
     install::set_app_user_model_id();
+    deeplink::register_protocol();
     let loaded = SettingsStore::load(&paths);
     let (state, state_notice) = DeviceStateStore::load(&paths);
     perf::mark("settingsLoaded", None);
     let mut launch = boot::Launch { args, guard };
+    deeplink::remember_launch(&launch.args.rest);
     // A moved-from path that isn't the copy this one was made from is dropped, so it also gets no "Moved" notice.
     if let Some(old) = launch.args.moved_from.take() {
         if install::delete_moved_from(&paths, old.clone()) {

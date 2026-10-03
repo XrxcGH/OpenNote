@@ -175,3 +175,24 @@ fn a_page_with_an_encryption_key_yields_an_empty_locked_document() {
     let forced = PageDoc::from_page(&self::page(), notebook_id(1), section_id(1), true);
     assert!(forced.locked);
 }
+
+#[test]
+fn properties_become_searchable_lines() {
+    let mut page = page();
+    add(&mut page, 1, text("Body"), None);
+    page.view.extra.insert(
+        "properties".into(),
+        serde_json::json!({ "fields": [
+            { "id": "a", "name": "Status", "type": "choice", "value": "Open" },
+            { "id": "b", "name": "Rating", "type": "number", "value": 4 },
+            { "id": "c", "name": "Reviewed", "type": "checkbox", "value": true },
+            { "id": "d", "name": "Done", "type": "checkbox", "value": false },
+            { "id": "e", "name": "Course", "type": "page", "value": "x", "label": "Bio 201" },
+        ] }),
+    );
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    let last = doc.blocks.last().expect("a properties block");
+    assert_eq!(last.kind, BlockKind::Other);
+    assert_eq!(last.text, "Status: Open\nRating: 4\nReviewed\nCourse: Bio 201");
+    assert_eq!(doc.blocks.len(), 2);
+}

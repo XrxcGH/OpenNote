@@ -5,15 +5,18 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, RefObject } from 'react';
+import { isEnabled } from '../../app/flags';
 import { commandContext } from '../../commands/registry';
-import type { SearchHit, SearchResponse, TagNode } from '../../services/search/types';
+import type { SearchHit, SearchResponse, Snippet, TagNode } from '../../services/search/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Dialog, Switch, TextField, announce } from '../../ui';
 import { maybeSearchClient } from './client';
+import { openAndReveal } from './deeplink/jump';
 import { Highlighted } from './Highlighted';
 import { openPage } from './locate';
+import { openReplace } from './replace/open';
 import { deleteSaved, loadSaved, saveSearch } from './saved';
 import type { SavedSearch } from './saved';
 import styles from './search.module.css';
@@ -122,6 +125,12 @@ function SavedBar({ current, onPick }: { current: SavedSearch; onPick(search: Sa
   );
 }
 
+/** Says where the words were found when it was not typed text: in a picture or in a drawing. */
+function SnippetKind({ kind }: { kind: Snippet['kind'] }) {
+  if (kind !== 'image' && kind !== 'ink') return null;
+  return <strong className={styles.snippetKind}>{t(`qolSearch.media.${kind}`)} </strong>;
+}
+
 function Preview({ hit }: { hit: SearchHit | undefined }) {
   if (!hit) return <p className={styles.previewEmpty}>{t('search.panel.previewEmpty')}</p>;
   return (
@@ -132,6 +141,7 @@ function Preview({ hit }: { hit: SearchHit | undefined }) {
       <p className={styles.previewDate}>{t('search.panel.changed', { date: formatDate(hit.modified) })}</p>
       {hit.snippet && (
         <p className={styles.previewText}>
+          <SnippetKind kind={hit.snippet.kind} />
           <Highlighted text={hit.snippet.text} ranges={hit.snippet.highlights} />
         </p>
       )}
@@ -229,6 +239,7 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
           </span>
           {hit.snippet && (
             <span className={styles.optionSnippet}>
+              <SnippetKind kind={hit.snippet.kind} />
               <Highlighted text={hit.snippet.text} ranges={hit.snippet.highlights} />
             </span>
           )}
@@ -253,7 +264,9 @@ function useResultKeys(hits: SearchHit[], onClose: () => void) {
     if (!hit) return;
     const { notes } = commandContext('palette');
     onClose();
-    void openPage(notes, hit.page);
+    // A result that points at a block jumps to it and marks it for a moment.
+    if (isEnabled('search.paragraphLinks') && hit.snippet) void openAndReveal(notes, hit.page, hit.snippet.block);
+    else void openPage(notes, hit.page);
   };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.nativeEvent.isComposing || event.altKey) return;
@@ -350,6 +363,13 @@ export default function SearchPanel({ query: initial = '', onClose }: SearchPane
         <Notes response={response} />
         <FilterBar filters={filters} tags={tags} set={set} />
         <SavedBar current={{ name: '', text, ...filters }} onPick={fromSaved} />
+        {isEnabled('search.replace') && (
+          <div className={styles.saved}>
+            <Button variant="quiet" onClick={() => openReplace(text)}>
+              {t('qolSearch.replace.open')}
+            </Button>
+          </div>
+        )}
         <div className={styles.body}>
           <Results
             id={listId}

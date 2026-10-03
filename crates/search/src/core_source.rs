@@ -35,6 +35,7 @@ use opennote_core::store::std_fs::StdFs;
 use opennote_core::{NotebookId, PageId, SectionId};
 
 use crate::doc::PageDoc;
+use crate::media::MediaText;
 use crate::sync::{PageSource, PageStamp, SourceError};
 
 /// A place for the core, filled once it has started.
@@ -70,6 +71,7 @@ pub struct CorePageSource {
     fs: Arc<dyn Fs>,
     codec: Arc<dyn Codec>,
     limits: Limits,
+    media: Option<MediaText>,
 }
 
 impl CorePageSource {
@@ -80,7 +82,14 @@ impl CorePageSource {
             fs,
             codec,
             limits,
+            media: None,
         }
+    }
+
+    /// Adds the text read from pictures, handwriting, and recordings to the pages this source reads.
+    pub fn with_media(mut self, media: MediaText) -> CorePageSource {
+        self.media = Some(media);
+        self
     }
 
     /// A source with the file system, codec, and limits of the production core.
@@ -143,6 +152,9 @@ impl PageSource for CorePageSource {
             return Ok(None);
         };
         if section.encrypted {
+            if let Some(media) = &self.media {
+                media.forget_page(page);
+            }
             return Ok(Some(PageDoc::locked_stub(page, notebook, section.id)));
         }
         if node.state != PageNodeState::Normal {
@@ -155,6 +167,9 @@ impl PageSource for CorePageSource {
             Ok(loaded) => {
                 let mut doc = PageDoc::from_page(&loaded.page, notebook, section.id, false);
                 doc.fingerprint = seen;
+                if let Some(media) = &self.media {
+                    media.apply(&mut doc);
+                }
                 Ok(Some(doc))
             }
             Err(LoadError::Missing) => Err(SourceError::transient("the page file has not arrived")),

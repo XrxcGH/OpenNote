@@ -140,7 +140,25 @@ impl PageDoc {
                 doc.add_block(block);
             }
         }
+        doc.add_properties(page);
         doc
+    }
+
+    /// Adds the page's properties (`view.properties.fields`) as one more block, so a search finds a page by a
+    /// field's name or value. The block takes the page's own ID, which no real block has, and it reads as
+    /// `Name: value` lines. The typed values stay in the page, and collections read them from there.
+    fn add_properties(&mut self, page: &Page) {
+        let text = properties_text(page);
+        if text.is_empty() {
+            return;
+        }
+        if let Ok(id) = BlockId::parse(&page.id.to_string()) {
+            self.blocks.push(BlockText {
+                id,
+                kind: BlockKind::Other,
+                text,
+            });
+        }
     }
 
     fn add_block(&mut self, block: &Block) {
@@ -156,6 +174,42 @@ impl PageDoc {
             });
         }
     }
+}
+
+/// The most field lines the search text of a page's properties holds.
+const MAX_PROPERTY_LINES: usize = 64;
+
+/// A page's properties as `Name: value` lines, or an empty string when it has none. A checkbox reads as its name
+/// when it is checked and is left out when it is not. A link to a page reads as that page's title at the time.
+pub fn properties_text(page: &Page) -> String {
+    let fields = page
+        .view
+        .extra
+        .get("properties")
+        .and_then(|properties| properties.get("fields"))
+        .and_then(serde_json::Value::as_array);
+    let mut lines = Vec::new();
+    for field in fields.into_iter().flatten().take(MAX_PROPERTY_LINES) {
+        let Some(name) = field.get("name").and_then(serde_json::Value::as_str).map(str::trim) else {
+            continue;
+        };
+        let label = field.get("label").and_then(serde_json::Value::as_str);
+        let value = match (field.get("value"), label) {
+            (_, Some(label)) if !label.is_empty() => label.to_owned(),
+            (Some(serde_json::Value::String(text)), _) => text.trim().to_owned(),
+            (Some(serde_json::Value::Number(number)), _) => number.to_string(),
+            (Some(serde_json::Value::Bool(true)), _) => {
+                lines.push(name.to_owned());
+                continue;
+            }
+            _ => continue,
+        };
+        if !name.is_empty() && !value.is_empty() {
+            lines.push(format!("{name}: {value}"));
+        }
+    }
+    lines.join("
+")
 }
 
 /// The searchable text of a block, and the kind it counts as.

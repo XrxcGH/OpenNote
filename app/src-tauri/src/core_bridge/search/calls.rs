@@ -14,7 +14,7 @@ use super::args::{
     parse, MentionArgs, PageArgs, PreviewArgs, QueryArgs, ResolveArgs, SuggestArgs, SwitcherArgs, TagArgs,
 };
 use super::events::now;
-use super::{internal, invalid, lock, lock_index, search_error, Hub};
+use super::{internal, lock, lock_index, search_error, Hub};
 use crate::ipc::IpcResult;
 
 fn to_value<T: Serialize>(value: &T) -> IpcResult<Value> {
@@ -51,7 +51,7 @@ impl Hub {
             "rebuild" => rebuild(handle, notebooks),
             "status" => status(handle, &index()),
             "flush" => Ok(json!(handle.flush(Duration::from_secs(20)))),
-            other => Err(invalid("method", format!("unknown search method {other}"))),
+            other => self.extra(handle, notebooks, other, args),
         }
     }
 

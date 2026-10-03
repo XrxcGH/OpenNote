@@ -227,6 +227,117 @@ export interface IndexStatus {
   rebuilds: number;
 }
 
+/** Where the Tags pane looks. */
+export type ScopeRef = { kind: 'page' | 'section' | 'notebook'; id: string } | { kind: 'all' };
+
+/** A page as collections, the calendar, and the graph filters list it. */
+export interface PageFact {
+  page: PageId;
+  notebook: string;
+  section: string;
+  title: string;
+  /** Unix milliseconds. */
+  created: number;
+  modified: number;
+  /** The page's tags and the tags of its lines. */
+  tags: string[];
+  hasProperties: boolean;
+  /** The page's `view.properties`, as the page file holds it. Read it with features/search/properties. */
+  properties?: unknown;
+}
+
+/** A text block that carries line tags or an open checkbox, with the data that names its lines. */
+export interface TaggedBlock {
+  page: PageId;
+  title: string;
+  notebook: string;
+  section: string;
+  modified: number;
+  block: BlockId;
+  markdown: string;
+  ids: string[];
+  tags: Record<string, string[]>;
+  checked: string[];
+}
+
+export type MediaKind = 'image' | 'handwriting' | 'transcript';
+
+/** A block whose text holds some words. */
+export interface TextHit {
+  page: PageId;
+  title: string;
+  block: BlockId;
+  kind: string;
+}
+
+export interface GraphPage {
+  page: PageId;
+  title: string;
+  notebook: string;
+  section: string;
+}
+
+export interface GraphEdge {
+  from: PageId;
+  to: PageId;
+  count: number;
+  ambiguous: boolean;
+}
+
+export interface LinkGraphData {
+  pages: GraphPage[];
+  edges: GraphEdge[];
+  /** Pages with no links in or out. */
+  orphans: PageId[];
+  /** Links that point at nothing. */
+  broken: number;
+}
+
+export interface Neighbor {
+  page: PageId;
+  title: string;
+  /** How many links away, 1 being next to the page. */
+  distance: number;
+}
+
+export interface Connection {
+  page: PageId;
+  title: string;
+  count: number;
+  ambiguous: boolean;
+}
+
+export interface Connections {
+  outgoing: Connection[];
+  incoming: Connection[];
+}
+
+/** What the desktop host adds in Beta 4. The web host and the tests leave it out, and the features check for it. */
+export interface SearchExtras {
+  /** The `opennote://` link the app was started with, once. */
+  launchLink(): Promise<string | null>;
+  /** Every page of a notebook, or of all notebooks, with its dates, tags, and properties. */
+  pageFacts(notebook?: string | null): Promise<PageFact[]>;
+  /** The text blocks in a scope that carry line tags or an open checkbox. */
+  taggedBlocks(scope: ScopeRef): Promise<TaggedBlock[]>;
+  /**
+   * Records the words read from a picture, handwriting, or a recording, so search finds the block by them. The text
+   * stays on this device and out of the page. A page the index does not hold, such as one in a locked section,
+   * keeps nothing. Empty text removes it. Resolves whether anything changed.
+   */
+  setMediaText(page: PageId, block: BlockId, kind: MediaKind, text: string): Promise<boolean>;
+  /** The blocks of a page that have recorded text. */
+  mediaBlocks(page: PageId): Promise<{ block: BlockId; kind: MediaKind }[]>;
+  /** The blocks whose text holds the words anywhere inside, ignoring case: a literal search, for replace. */
+  findText(needle: string, limit?: number): Promise<TextHit[]>;
+  /** The pages of a notebook, or of all notebooks, and the links between them. */
+  linkGraph(notebook?: string | null): Promise<LinkGraphData>;
+  /** The pages within `depth` links (1 to 3) of a page, in either direction. */
+  neighbors(page: PageId, depth: number): Promise<Neighbor[]>;
+  /** What a page links to and what links to it. */
+  connections(page: PageId): Promise<Connections>;
+}
+
 export interface SearchClient {
   /**
    * What the host can do, so the panel shows only filters that work. `places`: the notebook and section filters
@@ -271,4 +382,5 @@ export interface SearchClient {
   /** Waits until the index has caught up with every save, for tests. */
   flush(): Promise<void>;
   onUpdate(listener: (update: IndexUpdate) => void): Unsubscribe;
+  readonly extras?: SearchExtras;
 }
