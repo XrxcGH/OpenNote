@@ -1,9 +1,11 @@
 //! The format functions tree code calls besides the codec, behind a seam so tree code can be tested with the
 //! registry codec before the real formats land.
 
+#[cfg(any(test, feature = "testing"))]
 use std::collections::BTreeMap;
 
 use crate::format::{readable, tree_json};
+#[cfg(any(test, feature = "testing"))]
 use crate::limits::Limits;
 use crate::model::{NotebookFile, SectionFile};
 
