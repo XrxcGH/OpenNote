@@ -93,6 +93,21 @@ describe('parsing marks, atoms, and other syntax', () => {
     );
   });
 
+  it('drops script links hidden by the characters a browser removes from a URL', () => {
+    // A browser drops tabs and line ends anywhere in a URL, and control characters at its start.
+    const links: string[] = [];
+    for (const source of [
+      '[a](java&#x09;script:alert(1))',
+      '[b](<\x01javascript:alert(1)>)',
+      '[c](<java\tscript:x>)',
+    ]) {
+      parseTextBlock(source).descendants((node) => {
+        node.marks.forEach((mark) => mark.type.name === 'link' && links.push(String(mark.attrs.href)));
+      });
+    }
+    expect(links).toEqual([]);
+  });
+
   it('reads math atoms and keeps their source', () => {
     expect(read('$$\nx^2\n$$\n\nsolve $a_b$ and cost \\$5')).toBe(
       'doc(mathBlock[source=x^2], paragraph("solve ", mathInline[source=a_b], " and cost $5"))',

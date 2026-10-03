@@ -33,7 +33,9 @@ export const Link = Mark.create({
   name: 'link',
   priority: RANK.link,
   inclusive: false,
-  addAttributes: () => ({ href: { default: '', rendered: false } }),
+  addAttributes: () => ({
+    href: { default: '', rendered: false, parseHTML: (element: HTMLElement) => element.getAttribute('href') ?? '' },
+  }),
   parseHTML: () => [
     {
       tag: 'a[href]',
@@ -95,17 +97,24 @@ export const Highlight = Mark.create({
   },
 });
 
+function textColorOf(element: HTMLElement): string | null {
+  const color = element.getAttribute('data-color') ?? '';
+  return TEXT_COLOR_PATTERN.test(color) ? color : null;
+}
+
+function textSizeOf(element: HTMLElement): string | null {
+  const size = element.getAttribute('data-size');
+  return isOneOf(TEXT_SIZES, size) ? size : null;
+}
+
 export const TextColor = Mark.create({
   name: 'textColor',
   priority: RANK.textColor,
-  addAttributes: () => ({ color: { default: '', rendered: false } }),
+  addAttributes: () => ({ color: { default: '', rendered: false, parseHTML: textColorOf } }),
   parseHTML: () => [
     {
       tag: 'span[data-color]',
-      getAttrs: (element: HTMLElement) => {
-        const color = element.getAttribute('data-color') ?? '';
-        return TEXT_COLOR_PATTERN.test(color) ? { color } : false;
-      },
+      getAttrs: (element: HTMLElement) => (textColorOf(element) === null ? false : null),
     } satisfies TagParseRule,
   ],
   renderHTML: ({ mark }) => ['span', { 'data-color': mark.attrs.color as string }, 0],
@@ -114,14 +123,11 @@ export const TextColor = Mark.create({
 export const TextSize = Mark.create({
   name: 'textSize',
   priority: RANK.textSize,
-  addAttributes: () => ({ size: { default: 'large', rendered: false } }),
+  addAttributes: () => ({ size: { default: 'large', rendered: false, parseHTML: textSizeOf } }),
   parseHTML: () => [
     {
       tag: 'span[data-size]',
-      getAttrs: (element: HTMLElement) => {
-        const size = element.getAttribute('data-size');
-        return isOneOf(TEXT_SIZES, size) ? { size } : false;
-      },
+      getAttrs: (element: HTMLElement) => (textSizeOf(element) === null ? false : null),
     } satisfies TagParseRule,
   ],
   renderHTML: ({ mark }) => ['span', { 'data-size': mark.attrs.size as string }, 0],

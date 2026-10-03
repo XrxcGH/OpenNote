@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
+import { DOMSerializer } from '@tiptap/pm/model';
 import { describe, expect, it } from 'vitest';
+import { textSchema } from '../../../editor/schema/schema';
 import { shape } from '../../../editor/shape';
 import excel from './fixtures/excel.html?raw';
 import gdocs from './fixtures/gdocs.html?raw';
@@ -177,6 +179,21 @@ describe('pasted HTML is never trusted', () => {
       'doc(paragraph("Hello click data ", linkftp://files.example.com/a("ftp")), paragraph("a secret relative"), paragraph("Styled"))',
     ]);
     expect(result.images).toEqual([]);
+  });
+
+  it('never lets an attribute on a pasted heading choose the element it renders as', () => {
+    const result = paste({
+      html:
+        '<h1 level="ttp://www.w3.org/1999/xhtml script">fetch(1)</h1>' +
+        '<h2 level="ttp://www.w3.org/1999/xhtml style">*{display:none}</h2>',
+    });
+    const piece = result.pieces[0];
+    if (piece.kind !== 'text') throw new Error('expected text');
+    expect(shape(piece.doc)).toBe('doc(heading[level=1]("fetch(1)"), heading[level=2]("*{display:none}"))');
+    const dom = DOMSerializer.fromSchema(textSchema).serializeFragment(piece.doc.content);
+    const holder = document.createElement('div');
+    holder.append(dom);
+    expect(holder.querySelector('script, style')).toBeNull();
   });
 
   it('strips the CF_HTML header that Windows puts before the markup', () => {

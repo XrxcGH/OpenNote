@@ -5,6 +5,7 @@
 // Undo and redo flush, wait for the chain to drain, and apply the core's frame. When the step changed something
 // outside the focused text box, they say what it was.
 import type { MarkdownCache } from '../../../editor/markdown';
+import type { BeforeExitAnswer } from '../../../registries/types';
 import { PageServiceError } from '../../../services/pages/types';
 import type { AppliedFrame, BlockId, Edit, EditBatch, OpenPage, TxnAck } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
@@ -33,6 +34,8 @@ export interface SyncQueue {
   appendToNextBatch(block: BlockId, edits: readonly Edit[]): void;
   /** Keep-below moves, from WP3. */
   addFollowerMoves(block: BlockId, moves: readonly Edit[]): void;
+  /** Whether a change hasn't reached the core yet, such as one it refused: the next flush sends it again. */
+  hasUnsent(): boolean;
 }
 
 export interface SyncHost {
@@ -116,6 +119,37 @@ export function reportSendError(queue: SyncQueue, error: unknown): void {
     return;
   }
   showToast({ id: 'page-sync-not-kept', message: notKept(error), tone: 'danger' });
+}
+
+/**
+ * Whether the edits riding along with a refused batch wait for the next one. Not after a refusal that names a block
+ * the core doesn't have, which they would only meet again, or one that reopens the page.
+ */
+function keepsRiders(error: unknown): boolean {
+  if (!(error instanceof PageServiceError)) return true;
+  return !error.resync && error.code !== 'notFound';
+}
+
+/** How long "Close anyway" lets a close through after a page's change couldn't be sent. */
+const CLOSE_ANYWAY_MS = 10_000;
+
+/**
+ * The page's part of the exit handshake: flush, and keep the window open while a change the core refused is still
+ * unsent, with "Close anyway" to close within a few seconds without it.
+ */
+export function exitHook(queue: SyncQueue): () => Promise<BeforeExitAnswer> {
+  let closeAnywayUntil = 0;
+  return async () => {
+    const allowed = Date.now() < closeAnywayUntil;
+    closeAnywayUntil = 0;
+    await queue.flushAll('exit');
+    if (!queue.hasUnsent() || allowed) return { ok: true };
+    return {
+      ok: false,
+      reason: 'pageSync.exitUnsaved',
+      closeAnyway: () => void (closeAnywayUntil = Date.now() + CLOSE_ANYWAY_MS),
+    };
+  };
 }
 
 function joinMoves(before: MoveEdit, edit: MoveEdit): MoveEdit {
@@ -208,6 +242,10 @@ class Queue implements SyncQueue, QueueInternals {
     this.wait(block, moves);
   }
 
+  hasUnsent(): boolean {
+    return this.waiting.size > 0 || [...this.handles].some((handle) => handle.pending());
+  }
+
   track(handle: Flushable): () => void {
     this.handles.add(handle);
     return () => void this.handles.delete(handle);
@@ -226,7 +264,8 @@ class Queue implements SyncQueue, QueueInternals {
 
   private async run(build: BatchBuilder, block: BlockId | null, failed?: (error: unknown) => void) {
     const built = build();
-    const extra = this.takeWaiting(block);
+    const taken = this.takeWaiting(block);
+    const extra = taken.flatMap(([, edits]) => edits);
     if (!built && extra.length === 0) return null;
     const batch: EditBatch = built
       ? { ...built, edits: joinEdits([...built.edits, ...extra]) }
@@ -240,20 +279,22 @@ class Queue implements SyncQueue, QueueInternals {
       this.setState(ack);
       return ack;
     } catch (error) {
+      if (keepsRiders(error)) this.putBack(taken);
       failed?.(error);
       throw error;
     }
   }
 
-  private takeWaiting(block: BlockId | null): Edit[] {
-    if (block !== null) {
-      const found = this.waiting.get(block) ?? [];
-      this.waiting.delete(block);
-      return found;
-    }
-    const all = [...this.waiting.values()].flat();
-    this.waiting.clear();
-    return all;
+  private takeWaiting(block: BlockId | null): [BlockId, Edit[]][] {
+    const found = block === null ? undefined : this.waiting.get(block);
+    const taken: [BlockId, Edit[]][] = block === null ? [...this.waiting] : found ? [[block, found]] : [];
+    taken.forEach(([id]) => this.waiting.delete(id));
+    return taken;
+  }
+
+  /** Edits that rode along with a refused batch wait for the next one, ahead of any that came since. */
+  private putBack(taken: readonly [BlockId, Edit[]][]): void {
+    for (const [id, edits] of taken) this.waiting.set(id, [...edits, ...(this.waiting.get(id) ?? [])]);
   }
 
   private wait(block: BlockId, edits: readonly Edit[]): void {
