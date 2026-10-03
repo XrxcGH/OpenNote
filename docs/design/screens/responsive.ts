@@ -114,7 +114,7 @@ export function sizeClasses(): Screen {
     tag(
       40,
       640,
-      'Pen palette, command bar and dialogs adapt with the same breakpoints (BRAND.md section 6)',
+      'Pen palette, command bar and dialogs adapt with the same breakpoints (docs/BRAND.md section 6)',
       NOTE.region,
     ),
   ];

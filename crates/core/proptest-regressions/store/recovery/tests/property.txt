@@ -1,0 +1,2 @@
+# Past proptest failures, which run again before any new cases.
+cc 2bedb48fca04ec064a279a37ef7887fcbc0a0f5922b35cf4bd37f6d37b5fbfd1 # shrinks to steps = [Retitle(0)], power_cut = false

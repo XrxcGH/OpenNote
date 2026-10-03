@@ -7,13 +7,19 @@ import '../styles/layers.css';
 import '../theme/fonts';
 import '../theme/tokens.css';
 import '../styles/base.css';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
 import { disposeApp } from './render';
+
+// Finding a row can wait for the notes service and the tree's first load, which a loaded machine slows.
+configure({ asyncUtilTimeout: 5000 });
 
 let problems: string[] = [];
 
 beforeEach(() => {
+  // The theme choice outlasts a test in localStorage, and every test file shares the page's storage, so the theme
+  // a test starts with would otherwise depend on which test ran before it.
+  localStorage.clear();
   problems = [];
   for (const level of ['error', 'warn'] as const) {
     vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {

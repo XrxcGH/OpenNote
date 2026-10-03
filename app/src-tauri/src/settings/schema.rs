@@ -1,11 +1,17 @@
 //! Settings schema version 1 (ARCHITECTURE.md section 16.3), serialized in camelCase to match the interface's
-//! `Settings` type. Missing fields take their defaults.
+//! `Settings` type. Missing fields take their defaults. Adding a field with a default keeps the schema version;
+//! the `editing` group (Phase 4) and the `ink` group (Phase 5) were added that way.
 
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::ipc::{IpcError, IpcResult};
+use super::{
+    editing::EditingSettings,
+    ink::InkSettings,
+    validate::{self, Check},
+};
+use crate::ipc::IpcResult;
 
 /// The schema version this build reads and writes.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -18,19 +24,29 @@ pub const UI_SCALE_RANGE: (u16, u16) = (90, 150);
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct Settings {
     pub schema_version: u32,
     /// The oldest schema version that may still write this file (section 16.6).
     pub min_writer_schema: u32,
+    #[cfg_attr(test, ts(inline))]
     pub appearance: Appearance,
+    #[cfg_attr(test, ts(inline))]
     pub storage: Storage,
+    #[cfg_attr(test, ts(inline))]
     pub startup: Startup,
-    /// Command id to its chords, for overridden shortcuts only.
+    /// Command id to its chords, for overridden shortcuts only. An empty list unbinds the command.
     pub shortcuts: BTreeMap<String, Vec<String>>,
+    #[cfg_attr(test, ts(inline))]
     pub keymap: Keymap,
+    #[cfg_attr(test, ts(inline))]
     pub updates: Updates,
+    #[cfg_attr(test, ts(inline))]
     pub setup: SetupRecord,
+    #[cfg_attr(test, ts(inline))]
     pub experimental: Experimental,
+    pub editing: EditingSettings,
+    pub ink: InkSettings,
 }
 
 impl Default for Settings {
@@ -46,40 +62,97 @@ impl Default for Settings {
             updates: Updates::default(),
             setup: SetupRecord::default(),
             experimental: Experimental::default(),
+            editing: EditingSettings::default(),
+            ink: InkSettings::default(),
         }
     }
 }
 
 impl Settings {
-    /// Checks what serde can't: that the text size and interface size are ones the interface offers.
+    /// Checks what serde can't, such as ranges, absolute paths, and chords. The error names the field's path.
     pub fn validate(&self) -> IpcResult<()> {
+        let mut check = Check::default();
         let (min, max) = UI_SCALE_RANGE;
-        if !(min..=max).contains(&self.appearance.ui_scale) {
-            return Err(IpcError::invalid(
-                "appearance.uiScale",
-                "The interface size is outside 90% to 150%.",
-            ));
+        check.that(
+            "appearance.uiScale",
+            (min..=max).contains(&self.appearance.ui_scale),
+            "The interface size is outside 90% to 150%.",
+        );
+        if let Some(folder) = &self.storage.notes_folder {
+            check.that(
+                "storage.notesFolder",
+                crate::paths::is_local_path(std::path::Path::new(folder)),
+                "The notes folder isn't a full path to a folder on this PC.",
+            );
         }
-        if !TEXT_SIZES.contains(&self.appearance.text_size) {
-            return Err(IpcError::invalid(
-                "appearance.textSize",
-                "The text size isn't one of the offered sizes.",
-            ));
+        for (command, chords) in &self.shortcuts {
+            let valid = validate::command_id(command) && chords.len() <= 4 && chords.iter().all(|c| validate::chord(c));
+            check.that("shortcuts", valid, "A shortcut isn't a chord that can be assigned.");
         }
-        Ok(())
+        if let Some(version) = &self.updates.skipped_version {
+            check.that(
+                "updates.skippedVersion",
+                semver::Version::parse(version).is_ok(),
+                "The skipped version isn't a version number.",
+            );
+        }
+        self.editing.check(&mut check);
+        self.ink.check(&mut check);
+        check.finish()
+    }
+}
+
+/// A text size in percent, one of [`TEXT_SIZES`]. Anything else fails to parse, so it falls back to 100%.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "u16", into = "u16")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub struct TextSize(#[cfg_attr(test, ts(type = "80 | 90 | 100 | 110 | 125 | 150 | 175 | 200"))] u16);
+
+impl TextSize {
+    /// The size in percent.
+    pub fn percent(self) -> u16 {
+        self.0
+    }
+}
+
+impl Default for TextSize {
+    fn default() -> Self {
+        Self(100)
+    }
+}
+
+impl TryFrom<u16> for TextSize {
+    type Error = String;
+
+    fn try_from(percent: u16) -> Result<Self, Self::Error> {
+        if TEXT_SIZES.contains(&percent) {
+            Ok(Self(percent))
+        } else {
+            Err(format!("{percent}% isn't one of the offered text sizes"))
+        }
+    }
+}
+
+impl From<TextSize> for u16 {
+    fn from(size: TextSize) -> u16 {
+        size.0
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct Appearance {
     pub theme: ThemePreference,
+    #[cfg_attr(test, ts(inline))]
     pub page_color: PageColor,
-    /// Page zoom, as a percentage from [`TEXT_SIZES`].
-    pub text_size: u16,
-    /// The size of sidebars, toolbars, and menus, as a percentage in [`UI_SCALE_RANGE`]. The page zoom stays.
+    /// The whole interface's zoom, as WebView2 zoom (section 10.4).
+    pub text_size: TextSize,
+    /// The size of sidebars, toolbars, and menus, as a percentage in [`UI_SCALE_RANGE`].
     pub ui_scale: u16,
+    #[cfg_attr(test, ts(inline))]
     pub motion: Motion,
+    #[cfg_attr(test, ts(inline))]
     pub density: Density,
 }
 
@@ -88,7 +161,7 @@ impl Default for Appearance {
         Self {
             theme: ThemePreference::System,
             page_color: PageColor::MatchTheme,
-            text_size: 100,
+            text_size: TextSize::default(),
             ui_scale: 100,
             motion: Motion::System,
             density: Density::Auto,
@@ -99,6 +172,7 @@ impl Default for Appearance {
 /// Light, Dark, or Match Windows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum ThemePreference {
     Light,
     Dark,
@@ -109,6 +183,7 @@ pub enum ThemePreference {
 /// The page color in dark mode: follow the theme, or always paper white.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum PageColor {
     #[default]
     MatchTheme,
@@ -118,6 +193,7 @@ pub enum PageColor {
 /// Follow Windows' animation setting, or always reduce motion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum Motion {
     #[default]
     System,
@@ -127,6 +203,7 @@ pub enum Motion {
 /// The size of buttons and rows: automatic, standard (mouse), or large (touch).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum Density {
     #[default]
     Auto,
@@ -136,6 +213,7 @@ pub enum Density {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct Storage {
     /// An absolute path, or `None` until setup chooses one.
     pub notes_folder: Option<String>,
@@ -143,6 +221,7 @@ pub struct Storage {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct Startup {
     pub open_last_page: bool,
 }
@@ -156,6 +235,7 @@ impl Default for Startup {
 /// The shortcut set that the `shortcuts` overrides apply on top of.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct Keymap {
     pub preset: KeymapPreset,
 }
@@ -163,6 +243,7 @@ pub struct Keymap {
 /// OpenNote's own shortcuts, or the optional set that follows OneNote's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum KeymapPreset {
     #[default]
     Default,
@@ -172,8 +253,11 @@ pub enum KeymapPreset {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct Updates {
+    #[cfg_attr(test, ts(inline))]
     pub install: InstallPolicy,
+    #[cfg_attr(test, ts(inline))]
     pub channel: UpdateChannel,
     pub skipped_version: Option<String>,
 }
@@ -181,6 +265,7 @@ pub struct Updates {
 /// Install automatically, ask first, or only check when asked (section 18.4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum InstallPolicy {
     #[default]
     Auto,
@@ -190,6 +275,7 @@ pub enum InstallPolicy {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub enum UpdateChannel {
     #[default]
     Stable,
@@ -199,6 +285,7 @@ pub enum UpdateChannel {
 /// Which person-scoped setup steps are done. Device-scoped steps live in the device state.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct SetupRecord {
     pub completed_steps: Vec<String>,
 }
@@ -206,6 +293,7 @@ pub struct SetupRecord {
 /// Feature flag overrides. Only development and nightly builds read them.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct Experimental {
     pub flags: BTreeMap<String, bool>,
 }
@@ -213,6 +301,7 @@ pub struct Experimental {
 /// A top-level settings section that `settings_reset` can put back to its defaults.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub enum SettingsSectionKey {
     Appearance,
     Storage,
@@ -222,11 +311,13 @@ pub enum SettingsSectionKey {
     Updates,
     Setup,
     Experimental,
+    Editing,
+    Ink,
 }
 
 impl SettingsSectionKey {
     /// Every section, in the order of `settings.json`.
-    pub const ALL: [SettingsSectionKey; 8] = [
+    pub const ALL: [SettingsSectionKey; 10] = [
         Self::Appearance,
         Self::Storage,
         Self::Startup,
@@ -235,6 +326,8 @@ impl SettingsSectionKey {
         Self::Updates,
         Self::Setup,
         Self::Experimental,
+        Self::Editing,
+        Self::Ink,
     ];
 
     /// The section's key in `settings.json`.
@@ -248,78 +341,12 @@ impl SettingsSectionKey {
             Self::Updates => "updates",
             Self::Setup => "setup",
             Self::Experimental => "experimental",
+            Self::Editing => "editing",
+            Self::Ink => "ink",
         }
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use serde_json::json;
-
-    use super::*;
-
-    #[test]
-    fn defaults_match_schema_version_1() {
-        let expected = json!({
-            "schemaVersion": 1,
-            "minWriterSchema": 1,
-            "appearance": {
-                "theme": "system", "pageColor": "matchTheme", "textSize": 100, "uiScale": 100, "motion": "system",
-                "density": "auto"
-            },
-            "storage": { "notesFolder": null },
-            "startup": { "openLastPage": true },
-            "shortcuts": {},
-            "keymap": { "preset": "default" },
-            "updates": { "install": "auto", "channel": "stable", "skippedVersion": null },
-            "setup": { "completedSteps": [] },
-            "experimental": { "flags": {} }
-        });
-        assert_eq!(serde_json::to_value(Settings::default()).expect("serializes"), expected);
-        assert_eq!(
-            serde_json::from_value::<Settings>(json!({})).expect("parses"),
-            Settings::default()
-        );
-    }
-
-    #[test]
-    fn section_keys_match_their_serialized_names() {
-        let defaults = serde_json::to_value(Settings::default()).expect("serializes");
-        for section in SettingsSectionKey::ALL {
-            assert_eq!(serde_json::to_value(section).expect("serializes"), json!(section.key()));
-            assert!(defaults.get(section.key()).is_some(), "{}", section.key());
-        }
-    }
-
-    #[test]
-    fn refuses_text_sizes_the_interface_doesnt_offer() {
-        let mut settings = Settings::default();
-        settings.appearance.text_size = 175;
-        assert_eq!(settings.validate(), Ok(()));
-        settings.appearance.text_size = 120;
-        assert_eq!(
-            settings.validate().map_err(|e| e.field),
-            Err(Some("appearance.textSize".to_owned()))
-        );
-    }
-
-    #[test]
-    fn accepts_interface_sizes_from_90_to_150_percent() {
-        let mut settings = Settings::default();
-        for (ui_scale, valid) in [(90, true), (125, true), (150, true), (85, false), (175, false)] {
-            settings.appearance.ui_scale = ui_scale;
-            assert_eq!(settings.validate().is_ok(), valid, "{ui_scale}");
-        }
-    }
-
-    #[test]
-    fn names_the_onenote_shortcut_set() {
-        let keymap = Keymap {
-            preset: KeymapPreset::OneNote,
-        };
-        assert_eq!(
-            serde_json::to_value(keymap).expect("serializes"),
-            json!({ "preset": "onenote" })
-        );
-    }
-}
+#[path = "schema_tests.rs"]
+mod tests;

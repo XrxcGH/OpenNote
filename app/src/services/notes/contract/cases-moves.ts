@@ -62,6 +62,19 @@ export const moveCases: readonly ContractCase[] = [
     await expectNotesError(s.move([lib.exams], { parentId: lib.exams, beforeId: null }), 'invalid-move');
     expect(await titles(s, lib.biology)).toEqual(['Lectures', 'Labs', 'Exam prep']);
   }),
+  kase('move.group-depth', 'rejects a move that nests section groups more than 4 deep', async (s) => {
+    const lib = await library(s);
+    const inner = await add(s, lib.exams, 'sectionGroup', 'Inner');
+    const two = await add(s, lib.biology, 'sectionGroup', 'Two');
+    const three = await add(s, two.id, 'sectionGroup', 'Three');
+    const four = await add(s, three.id, 'sectionGroup', 'Four');
+    await expectNotesError(s.move([lib.exams], { parentId: four.id, beforeId: null }), 'invalid-move');
+    expect(await titles(s, lib.biology)).toEqual(['Lectures', 'Labs', 'Exam prep', 'Two']);
+    await s.move([lib.exams], { parentId: three.id, beforeId: null });
+    expect(await titles(s, three.id)).toEqual(['Four', 'Exam prep']);
+    await s.move([inner.id], { parentId: four.id, beforeId: null });
+    expect(await titles(s, four.id)).toEqual(['Inner']);
+  }),
   kase('move.kind', 'rejects moves that break the kind rules and changes nothing', async (s) => {
     const lib = await library(s);
     await expectNotesError(s.move([lib.pages.Mitosis], { parentId: lib.biology, beforeId: null }), 'invalid-move');

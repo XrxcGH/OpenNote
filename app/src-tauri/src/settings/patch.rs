@@ -24,6 +24,26 @@ pub fn merge_patch(target: &mut Value, patch: &Value) {
     }
 }
 
+/// The paths a patch sets or removes: every non-object value, with the keys that lead to it.
+pub fn leaf_paths(patch: &Value) -> Vec<Vec<String>> {
+    let mut paths = Vec::new();
+    collect_leaves(patch, &mut Vec::new(), &mut paths);
+    paths
+}
+
+fn collect_leaves(value: &Value, path: &mut Vec<String>, paths: &mut Vec<Vec<String>>) {
+    match value {
+        Value::Object(fields) if !fields.is_empty() => {
+            for (key, child) in fields {
+                path.push(key.clone());
+                collect_leaves(child, path, paths);
+                path.pop();
+            }
+        }
+        _ => paths.push(path.clone()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
@@ -53,6 +73,14 @@ mod tests {
         for (target, patch, expected) in cases {
             assert_eq!(patched(target, patch.clone()), expected, "patch {patch}");
         }
+    }
+
+    #[test]
+    fn lists_the_paths_a_patch_touches() {
+        let paths = leaf_paths(&json!({ "appearance": { "theme": "dark", "extra": null }, "shortcuts": {} }));
+        let mut joined: Vec<String> = paths.iter().map(|path| path.join(".")).collect();
+        joined.sort();
+        assert_eq!(joined, ["appearance.extra", "appearance.theme", "shortcuts"]);
     }
 
     fn json_value() -> impl Strategy<Value = Value> {

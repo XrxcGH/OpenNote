@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sa48hr000000000000svf6",
+  "title": "Old notes",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:07:40.412Z",
+  "view": {},
+  "revision": {
+    "id": "01m3saabvr000000000002a64y",
+    "parents": [],
+    "ancestors": [],
+    "savedAt": "2026-09-30T14:07:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.4.0 (windows)"
+  }
+}

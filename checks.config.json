@@ -88,6 +88,16 @@
     },
     "brand-tokens": {
       "maxDurationMs": 400
+    },
+    "logical-properties": {
+      "include": [
+        "app/src/**/*.{css,scss,tsx}"
+      ]
+    },
+    "ui-voice": {
+      "include": [
+        "app/src/strings/en/**/*.ts"
+      ]
     }
   }
 }

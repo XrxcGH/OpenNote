@@ -21,4 +21,5 @@ export const keys = {
   tab: 'Tab',
   insert: 'Insert',
   menu: 'Menu',
+  plus: 'Plus',
 } as const;

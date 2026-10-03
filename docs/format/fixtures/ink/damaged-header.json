@@ -1,0 +1,12 @@
+{
+  "description": "The header's CRC-32 fails.",
+  "error": "checksum",
+  "expect": {
+    "bytes": 624,
+    "crc32": "fc79f7a2",
+    "id": "01m3sawfy8000000000006sqsc",
+    "records": 6
+  },
+  "file": "damaged-header.onk",
+  "page": "01m3sa12426sg32pmtyffjaqcf"
+}

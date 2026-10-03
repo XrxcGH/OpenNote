@@ -1,8 +1,11 @@
-// A labeled text field. Help and error text are linked with aria-describedby, and an error sets aria-invalid.
-// Enter commits and Escape cancels, as inline rename needs.
+// A labeled text field (BRAND.md section 11): the label above and help or error text below, both linked to the
+// input with aria-describedby, and aria-invalid while there is an error. A new error is also announced, so a
+// person typing hears it without leaving the field. Enter commits and Escape cancels, as inline rename needs.
+// Enter that ends an input method's composition does neither.
 
 import { useEffect, useId, useRef } from 'react';
-import styles from './controls.module.css';
+import { announce } from './announce';
+import styles from './TextField.module.css';
 
 export interface TextFieldProps {
   label: string;
@@ -17,35 +20,33 @@ export interface TextFieldProps {
   onCancel?(): void;
 }
 
-export function TextField({
-  label,
-  value,
-  onChange,
-  error,
-  help,
-  readOnly,
-  autoSelect,
-  onCommit,
-  onCancel,
-}: TextFieldProps) {
+export function TextField(props: TextFieldProps) {
+  const { label, value, onChange, error, help, readOnly, autoSelect, onCommit, onCancel } = props;
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (autoSelect) input.current?.select();
   }, [autoSelect]);
+  useEffect(() => {
+    if (error) announce(error);
+  }, [error]);
   const describedBy = [error && `${id}-error`, help && `${id}-help`].filter(Boolean).join(' ') || undefined;
   return (
     <div className={styles.field}>
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id} className={styles.label}>
+        {label}
+      </label>
       <input
         id={id}
         ref={input}
+        className={styles.input}
         value={value}
         readOnly={readOnly}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) return;
           if (event.key === 'Enter') onCommit?.();
           if (event.key === 'Escape' && onCancel) {
             event.preventDefault();
@@ -54,12 +55,12 @@ export function TextField({
         }}
       />
       {error && (
-        <span id={`${id}-error`} className={styles.fieldError}>
+        <span id={`${id}-error`} className={styles.error}>
           {error}
         </span>
       )}
       {help && (
-        <span id={`${id}-help`} className={styles.fieldNote}>
+        <span id={`${id}-help`} className={styles.help}>
           {help}
         </span>
       )}

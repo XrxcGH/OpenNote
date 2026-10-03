@@ -67,10 +67,39 @@ fn apply(args: &mut Args, flag: &str, value: &str) -> bool {
     true
 }
 
-/// Waits up to `timeout` for a process to exit, and returns at once when it has already exited.
-pub fn wait_for_exit(_pid: u32, _timeout: Duration) {
-    // The shell work package waits with OpenProcess and WaitForSingleObject. Until then nothing relaunches the
-    // app, so there's nothing to wait for.
+/// Waits up to `timeout` for a process to exit, and returns at once when it has already exited. Returns false
+/// only when the process was still running at the timeout.
+#[cfg(windows)]
+pub fn wait_for_exit(pid: u32, timeout: Duration) -> bool {
+    use windows::Win32::{
+        Foundation::{CloseHandle, WAIT_TIMEOUT},
+        System::Threading::{OpenProcess, WaitForSingleObject, PROCESS_SYNCHRONIZE},
+    };
+
+    // SAFETY: OpenProcess has no preconditions. A failure means the process is gone (or was never ours to wait
+    // for), so there's nothing to wait for.
+    let Ok(process) = (unsafe { OpenProcess(PROCESS_SYNCHRONIZE, false, pid) }) else {
+        return true;
+    };
+    let millis = u32::try_from(timeout.as_millis()).unwrap_or(u32::MAX);
+    // SAFETY: `process` is a handle this function opened with SYNCHRONIZE access, closed exactly once below.
+    let waited = unsafe { WaitForSingleObject(process, millis) };
+    // SAFETY: as above.
+    let _ = unsafe { CloseHandle(process) };
+    if waited == WAIT_TIMEOUT {
+        log::warn!(
+            "Process {pid} was still running after {} s; starting anyway.",
+            timeout.as_secs()
+        );
+        return false;
+    }
+    true
+}
+
+/// Other systems don't relaunch the app, so there's nothing to wait for.
+#[cfg(not(windows))]
+pub fn wait_for_exit(_pid: u32, _timeout: Duration) -> bool {
+    true
 }
 
 #[cfg(test)]
@@ -105,6 +134,32 @@ mod tests {
         let args = parse(&["notes.onepkg", "--wait-pid=7", "--unknown", "x=y"]);
         assert_eq!(args.wait_pid, Some(7));
         assert_eq!(args.rest, ["notes.onepkg", "--unknown", "x=y"]);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn waits_for_a_process_to_exit() {
+        use std::process::{Command, Stdio};
+
+        let slow = |pings: &str| {
+            Command::new("ping")
+                .args(["-n", pings, "127.0.0.1"])
+                .stdout(Stdio::null())
+                .spawn()
+                .expect("ping starts")
+        };
+        let mut short = slow("2");
+        assert!(wait_for_exit(short.id(), Duration::from_secs(20)));
+        assert!(short.try_wait().expect("status").is_some());
+
+        let mut long = slow("30");
+        assert!(!wait_for_exit(long.id(), Duration::from_millis(100)));
+        long.kill().expect("stops");
+        let _ = long.wait();
+        assert!(
+            wait_for_exit(long.id(), Duration::from_secs(1)),
+            "an exited process returns at once"
+        );
     }
 
     #[test]

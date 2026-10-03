@@ -8,6 +8,9 @@ on:
   # caller's event, so a release run is a push here and runs CHECKS on all files.
   workflow_call:
 
+# Every job only reads the repository. A called workflow can narrow the caller's permissions but never widen
+# them, so the release workflow's own read-only grant for this call still works. Uploading the debug build
+# as a run artifact uses the runner's own token, not GITHUB_TOKEN, so no job needs more than this.
 permissions:
   contents: read
 
@@ -19,6 +22,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Normally 1 to 3 minutes. A run that passes its limit is stuck, so it ends and says so.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,6 +55,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Normally under 2 minutes.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,10 +69,21 @@ jobs:
         run: npm ci
       - name: Component tests (Vitest browser mode)
         run: npm run test:components
+      - name: Keep the failure screenshots
+        # Vitest saves a screenshot of the page for each failed test.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-failures-${{ matrix.os }}
+          path: app/.vitest/attachments
+          retention-days: 7
+          if-no-files-found: ignore
 
   ui-web:
     # The production interface in Edge: the bundle budget, then Playwright against the test build.
     runs-on: windows-latest
+    # Normally about 5 minutes.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,6 +130,8 @@ jobs:
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest
+    # Normally about 11 minutes with a cold cache.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -134,8 +154,16 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Rust tests
         run: cargo test --workspace
+      - name: Core lints and tests with every feature
+        run: |
+          cargo clippy -p opennote-core --all-targets --all-features -- -D warnings
+          cargo test -p opennote-core --all-features
       - name: Inter-process types match the Rust ones (bindings drift check)
-        run: git diff --exit-code app/src/platform/bindings
+        # Catches new files too, which git diff alone would miss.
+        shell: bash
+        run: |
+          git status --porcelain app/src/platform/bindings
+          test -z "$(git status --porcelain app/src/platform/bindings)"
       - name: Test build of the app (ci profile, with the test endpoints the E2E tests use)
         run: npx tauri build --no-bundle --features test-endpoints -- --profile ci
       - name: Keep the test build
@@ -149,6 +177,9 @@ jobs:
     # The E2E smoke set on the real app, driven by WebdriverIO through tauri-driver and msedgedriver.
     needs: windows-app
     runs-on: windows-latest
+    # Normally about 10 minutes, most of it installing tauri-driver on a cold cache. Without a limit, a hung
+    # session holds the runner for GitHub's six-hour default.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -179,16 +210,92 @@ jobs:
         run: pwsh tests/e2e/scripts/edgedriver.ps1
       - name: tauri-driver
         run: pwsh tests/e2e/scripts/tauri-driver.ps1
+      - name: The app opens WebView2's debugging port, which the E2E specs need
+        timeout-minutes: 3
+        env:
+          OPENNOTE_E2E_EXE: target/e2e/opennote.exe
+        run: pwsh tests/e2e/scripts/probe-app.ps1
       - name: E2E smoke set
+        # Ends early enough that the next steps, which keep the logs, still run inside the job's limit.
+        timeout-minutes: 15
         env:
           OPENNOTE_E2E_EXE: target/e2e/opennote.exe
         run: npm run test:e2e
       - name: Start-up regression check
         run: node tests/perf/startup.ts --runs 5 --exe target/e2e/opennote.exe --compare-with main
       - name: Keep the E2E logs
-        if: failure()
+        # A step that times out is canceled, not failed, and its logs are the ones worth reading.
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-logs
           path: tests/e2e/logs
           retention-days: 7
+
+  core-linux:
+    # The core has no platform UI, so it also runs on Linux, where the Unix file system code is tested.
+    runs-on: ubuntu-latest
+    # Normally about 10 minutes with a cold cache.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy for the core, the kill harness, and the benchmarks
+        run: >-
+          cargo clippy -p opennote-core -p opennote-crashtest -p opennote-perf
+          --all-targets --all-features -- -D warnings
+      - name: Core tests with every feature
+        run: cargo test -p opennote-core --all-features
+      - name: Benchmark harness tests
+        run: cargo test -p opennote-perf
+      - name: Fuzz targets compile
+        run: cargo check --manifest-path crates/core/fuzz/Cargo.toml
+      - name: No work package stubs are left (pull requests into main)
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        run: |
+          if grep -rn 'unimplemented!("WP' crates/core; then
+            echo "Remove every work package stub before Phase 3 merges into main."
+            exit 1
+          fi
+
+  format-fixtures:
+    # Every implementation of the note format reads the same fixtures in docs/format/fixtures.
+    runs-on: ubuntu-latest
+    # Normally about 5 minutes with a cold cache.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install tools
+        run: npm ci
+      - name: Rust fixture tests
+        run: cargo test -p opennote-core --all-features fixture
+      - name: TypeScript fixture tests
+        run: npx vitest run --config app/vite.config.ts --passWithNoTests src/core/
+
+  reference-reader:
+    # The Python reference reader proves that the specification is enough to read a notebook.
+    runs-on: ubuntu-latest
+    # Normally under 1 minute.
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Reference reader tests
+        run: python -m unittest discover -s docs/format/tools -p "test_*.py" -v

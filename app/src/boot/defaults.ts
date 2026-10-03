@@ -6,6 +6,7 @@ import { DEFAULT_OS } from '../state/os';
 import { DEFAULT_SETTINGS } from '../state/settings';
 import { DEFAULT_UPDATER_STATUS } from '../state/updater';
 import { tokens } from '../theme/tokens';
+import { RUST_DEVICE_STATE_DEFAULTS } from './rustDefaults';
 
 export const DEFAULT_DEVICE_STATE: DeviceState = {
   stateVersion: 1,
@@ -20,6 +21,8 @@ export const DEFAULT_DEVICE_STATE: DeviceState = {
   recentCommands: [],
   recentPages: [],
   setup: { status: 'done', step: null, completedSteps: [], draft: null },
+  pageViews: {},
+  ink: RUST_DEVICE_STATE_DEFAULTS.ink,
 };
 
 export function defaultBootData(os: OsAppearance = DEFAULT_OS): BootData {
@@ -41,6 +44,7 @@ export function defaultBootData(os: OsAppearance = DEFAULT_OS): BootData {
       folderWritable: true,
       hasStartMenuShortcut: false,
       isDevBuild: true,
+      proposedNotesFolder: 'C:\\Users\\Ada\\Documents\\OpenNote',
     },
     updater: DEFAULT_UPDATER_STATUS,
     flagOverrides: {},

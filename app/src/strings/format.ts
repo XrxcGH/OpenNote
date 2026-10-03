@@ -1,4 +1,4 @@
-// Numbers, dates, and times in the BRAND.md style: "3 pages", "2:05 PM", and "Sep 30, 2026". The locale is set
+// Numbers, dates, and times in the docs/BRAND.md style: "3 pages", "2:05 PM", and "Sep 30, 2026". The locale is set
 // here, in one place, until Phase 13 adds others.
 
 const LOCALE = 'en-US';

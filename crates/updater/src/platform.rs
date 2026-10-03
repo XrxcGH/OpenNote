@@ -1,8 +1,8 @@
 //! This build's platform key and the release file it updates to. A build only updates to its own architecture:
 //! under emulation on an ARM64 PC, the x64 build keeps updating to x64 (ARCHITECTURE.md section 18.3).
 //!
-//! The table matches `RELEASE_FILES` in app/scripts/write-manifest.ts, and a test checks that. The updater work
-//! package moves both to one shared file, app/release-files.json.
+//! The table is app/release-files.json, which the release scripts and the workflow test also read. It's compiled
+//! in as constants, so reading it can never fail at start, and a test checks the constants against the file.
 
 /// A platform key in the update manifest's `platforms` map.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -104,15 +104,14 @@ mod tests {
     }
 
     #[test]
-    fn matches_the_release_manifest_script() {
-        let script = include_str!("../../../app/scripts/write-manifest.ts");
-        for row in &RELEASE_FILES {
-            let line = format!(
-                "target: '{}', platform: '{}', file: '{}'",
-                row.target, row.key, row.file
-            );
-            assert!(script.contains(&line), "write-manifest.ts has no row for {}", row.key);
-        }
+    fn matches_the_shared_release_files_table() {
+        let table: serde_json::Value =
+            serde_json::from_str(include_str!("../../../app/release-files.json")).expect("the table is JSON");
+        let rows: Vec<serde_json::Value> = RELEASE_FILES
+            .iter()
+            .map(|row| serde_json::json!({ "platform": row.key, "target": row.target, "file": row.file }))
+            .collect();
+        assert_eq!(table, serde_json::Value::Array(rows));
     }
 
     #[test]

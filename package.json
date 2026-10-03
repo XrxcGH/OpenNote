@@ -17,7 +17,7 @@
     "test:components": "vitest run --config app/vitest.config.ts --project components",
     "test:ui": "npm run app:build:test && playwright test --config tests/ui/playwright.config.ts",
     "test:ui:update": "npm run app:build:test && playwright test --config tests/ui/playwright.config.ts --update-snapshots",
-    "test:e2e": "node --test \"tests/e2e/smoke/**/*.spec.ts\"",
+    "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/smoke/**/*.spec.ts\"",
     "perf:startup": "node tests/perf/startup.ts",
     "bundle:check": "node app/scripts/check-bundle.ts",
     "app:typecheck": "tsc -p app/tsconfig.json && tsc -p app/scripts/tsconfig.json",

@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sa47jg000000000000skqq",
+  "title": "Private",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:07:40.412Z",
+  "view": {},
+  "encryption": {
+    "reserved": true
+  },
+  "revision": {
+    "id": "01m3saaawg0000000000029ydf",
+    "parents": [],
+    "ancestors": [],
+    "savedAt": "2026-09-30T14:07:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.4.0 (windows)"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sa12426sg32pmtyffjaqcf",
+  "title": "Photosynthesis",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:05:40.020Z",
+  "tags": ["biology"],
+  "view": {},
+  "blocks": [
+    {
+      "id": "01m3sa14y9zszek1wdk3snddsn",
+      "type": "text",
+      "order": "a0",
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "markdown": "## Light reactions\n\nThe thylakoid membrane"
+      }
+    }
+  ],
+  "revision": {
+    "id": "01m3sa8yf8bryf28a7sjgb7mmc",
+    "parents": [],
+    "ancestors": [],
+    "savedAt": "2026-09-30T14:05:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.4.0 (windows)"
+  }
+}

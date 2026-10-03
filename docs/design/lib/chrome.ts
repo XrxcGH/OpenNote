@@ -1,4 +1,4 @@
-// Shared pieces of the OpenNote window at the "wide" size class (BRAND.md section 6).
+// Shared pieces of the OpenNote window at the "wide" size class (docs/BRAND.md section 6).
 
 import {
   type Box,

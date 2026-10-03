@@ -5,6 +5,9 @@ import { hasInjectedBoot, readBoot, readDevOptions } from '../boot/read';
 import { installDispatcher } from '../commands/dispatcher';
 import { configureCommands } from '../commands/registry';
 import '../features';
+import { installPageZoom } from '../features/page';
+import { installSetup } from '../features/setup';
+import { installAppearance } from '../features/theme';
 import { createPlatform } from '../platform';
 import type { BootData, Platform } from '../platform/types';
 import { createNotesService } from '../services/notes';
@@ -17,6 +20,7 @@ import { initSettings } from '../state/settings';
 import { initUpdater } from '../state/updater';
 import { setPseudoLocale } from '../strings/t';
 import { initTheme } from '../theme/theme';
+import { installAppContextMenu } from '../ui';
 import { initFlags } from './flags';
 
 /** The channel, then overrides from the boot payload and the experimental settings. */
@@ -32,7 +36,11 @@ export function initStores(boot: BootData, platform: Platform): void {
   initUpdater(boot, platform);
 }
 
-/** Wires the window-wide listeners: shortcuts, Escape for the layer stack, the size class, and the theme. */
+/**
+ * Wires the window-wide listeners: shortcuts, Escape for the layer stack, the size class, the theme, the
+ * appearance controls (density and Ctrl+wheel text size), Ctrl+wheel page zoom, and the app's context menu in
+ * editors. It also opens first-run setup when steps are pending.
+ */
 export function installApp(
   platform: Platform,
   notes: NotesService,
@@ -44,6 +52,10 @@ export function installApp(
     installDispatcher(),
     installLayerEscape(),
     initLayout(),
+    installAppearance(),
+    installPageZoom(),
+    installAppContextMenu(),
+    installSetup(platform, notes),
   ];
   return () => stops.forEach((stop) => stop());
 }

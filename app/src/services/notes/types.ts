@@ -6,23 +6,46 @@
 
 /** Opaque; stable across renames, moves, and restarts. */
 export type NodeId = string & { readonly __brand: 'NodeId' };
+/** Opaque. Storage may encode several Trash items in one, for example across notebooks. */
 export type TrashReceiptId = string & { readonly __brand: 'TrashReceiptId' };
 export type NodeKind = 'notebook' | 'sectionGroup' | 'section' | 'page';
-/** The pen names in brand/tokens.json, stored by name so chips follow the theme as ink does. */
+/**
+ * The pen names in brand/tokens.json, stored by name so chips follow the theme as ink does. A stored color that
+ * isn't a pen name (Phase 3's format also allows hexadecimal colors) reads as null, and create and setColor store
+ * any other value as null.
+ */
 // checks-disable-next-line brand-consistency: pen names from the tokens, not CSS colors
 export type ChipColor = 'ink' | 'indigo' | 'brick' | 'fern' | 'plum' | 'amber' | 'walnut';
 /** Subpage depth, as in OneNote. */
 export type PageLevel = 0 | 1 | 2;
 export type SaveStatus = 'saved' | 'saving' | 'offline' | 'error';
 
+/** Every chip color, in the tokens' order, for menus and for checking stored values. */
+// checks-disable-next-line brand-consistency: the same pen names as ChipColor, listed for use at run time
+export const CHIP_COLORS: readonly ChipColor[] = ['ink', 'indigo', 'brick', 'fern', 'plum', 'amber', 'walnut'];
+
+/** Limits both implementations enforce (ADR 0014). */
+export const NOTES_LIMITS = {
+  /** Titles set through this interface, after trimming. */
+  titleLength: 200,
+  /** Section groups nest at most this deep: a top-level group is at depth 1. */
+  groupDepth: 4,
+  /** The deepest subpage level. */
+  pageLevel: 2,
+} as const;
+
 export interface NodeSummary {
   readonly id: NodeId;
   readonly kind: NodeKind;
   /** Null only for notebooks. */
   readonly parentId: NodeId | null;
-  /** As the person typed it (trimmed); storage maps it to file names. */
+  /**
+   * As the person typed it (trimmed); storage maps it to file names. Titles set through this interface are 1 to
+   * 200 characters, but storage may return a page title that is empty, or longer, from another tool. The shell
+   * shows an empty title as "Untitled page".
+   */
   readonly title: string;
-  /** Notebooks, section groups, and sections; always null for pages. */
+  /** Notebooks, section groups, and sections; always null for pages. Only pen names, else null. */
   readonly color: ChipColor | null;
   /** Pages only; 0 for everything else. */
   readonly pageLevel: PageLevel;
@@ -70,13 +93,22 @@ export interface CreateInput {
   readonly pageLevel?: PageLevel;
 }
 
+/**
+ * One trash call. Each root becomes its own Trash item, and the items can sit in different notebooks, because
+ * each notebook keeps its own Trash. Trashing a notebook takes it out of the library and keeps its folder.
+ */
 export interface TrashReceipt {
   readonly id: TrashReceiptId;
   /** The roots that were trashed, in display order; their subtrees and subpages went with them. */
   readonly nodeIds: readonly NodeId[];
 }
 
+/**
+ * A trashed root. Items trashed from inside a notebook that is itself in Trash stay with that notebook: they
+ * aren't listed and can't be restored until the notebook is back.
+ */
 export interface TrashedItem {
+  /** Shared by every item one trash call made. */
   readonly receiptId: TrashReceiptId;
   /** A trashed root. Its parentId is the parent it was trashed from. */
   readonly node: NodeSummary;
@@ -113,9 +145,14 @@ export interface NotesService {
   setPageLevel(ids: readonly NodeId[], level: PageLevel): Promise<void>;
 
   trash(ids: readonly NodeId[]): Promise<TrashReceipt>;
-  /** Undo of one trash call. */
+  /**
+   * Undo of one trash call: restores the receipt's items that are still in Trash and listed, and rejects with
+   * not-found when none are.
+   */
   restore(receiptId: TrashReceiptId): Promise<readonly NodeSummary[]>;
+  /** The listed Trash items, newest first. */
   listTrash(): Promise<readonly TrashedItem[]>;
+  /** Restores the listed items with these root ids. */
   restoreFromTrash(ids: readonly NodeId[]): Promise<readonly NodeSummary[]>;
 
   saveStatus(): SaveStatus;

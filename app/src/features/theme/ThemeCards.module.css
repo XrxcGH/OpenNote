@@ -1,0 +1,133 @@
+/* The theme cards. The previews use the scoped theme blocks, so each shows its own theme whatever the window's. */
+@layer components {
+  .cards {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .cards [role='radiogroup'] {
+    gap: var(--space-7);
+  }
+
+  .cards [role='radio'] {
+    inline-size: var(--size-theme-card);
+    min-block-size: var(--size-theme-card);
+    align-content: start;
+  }
+
+  /* In compact the cards stack, and each fills the width. */
+  :global(:root[data-size-class='compact']) .cards [role='radiogroup'] {
+    flex-direction: column;
+  }
+
+  :global(:root[data-size-class='compact']) .cards [role='radio'] {
+    inline-size: auto;
+    min-block-size: 0;
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .mini {
+    display: grid;
+    grid-template-rows: var(--space-3) 1fr;
+    block-size: calc(var(--size-theme-card) / 2);
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-app);
+  }
+
+  .bar {
+    background: var(--color-surface-raised);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+  }
+
+  .side {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-surface-sunken);
+  }
+
+  .page {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-surface-page);
+  }
+
+  .line,
+  .short,
+  .heading,
+  .selected {
+    display: block;
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-text-muted);
+    opacity: 0.6;
+  }
+
+  .heading {
+    inline-size: 50%;
+    background: var(--color-text-primary);
+    opacity: 1;
+  }
+
+  .short {
+    inline-size: 70%;
+  }
+
+  .selected {
+    background: var(--color-accent-primary);
+    opacity: 1;
+  }
+
+  /* Match Windows shows both themes, each half of the same window. */
+  .split {
+    display: grid;
+  }
+
+  .split > * {
+    grid-area: 1 / 1;
+  }
+
+  .split > :first-child {
+    clip-path: inset(0 50% 0 0);
+  }
+
+  .split > :last-child {
+    clip-path: inset(0 0 0 50%);
+  }
+}
+
+/* The previews show what Light and Dark look like, even under a Windows contrast theme. The selected card keeps
+   a visible mark. */
+@layer forced {
+  @media (forced-colors: active) {
+    .mini,
+    .mini * {
+      forced-color-adjust: none;
+    }
+
+    .mini {
+      border-color: CanvasText;
+    }
+
+    .cards [role='radio'][aria-checked='true'] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+}
