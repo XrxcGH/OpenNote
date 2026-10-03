@@ -38,6 +38,7 @@ import { savePageView } from './runtime';
 import { setGeometrySource } from './seams/geometry';
 import { pageSelection, selectOnPage } from './seams/selectionStore';
 import { createSyncQueue, exitHook, shownQueue } from './sync';
+import { keepLinksInPlace } from './linkClicks';
 import type { SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
 import { createGestureTool } from './viewport/gestures';
@@ -260,6 +261,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const stops = [
     rememberView(page.id, viewport),
     routePointers(container, viewport, [gestures, objectsTool, select]),
+    keepLinksInPlace(container),
     installObjectKeys(viewport.world, objects, layer),
     objectMenus(container, objects, layer),
     () => chrome.destroy(),
