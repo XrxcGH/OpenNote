@@ -78,9 +78,12 @@
     max-inline-size: var(--size-reading-measure);
   }
 
+  /* The subtitle size of every other Settings section heading, not the browser's 1.5em. */
   .section h2,
   .section h3 {
     margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
   }
 
   .card {
