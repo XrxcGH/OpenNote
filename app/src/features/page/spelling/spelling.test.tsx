@@ -82,6 +82,7 @@ describe('spelling squiggles', () => {
     await expect.poll(shownWords).toEqual(['recieve', 'teh', 'wich']);
     const refresh = vi.spyOn(spellingHighlights, 'refresh');
     const editor = page.mounted.pool.editor(FIRST)!;
+    expect(editor.view.dom.getAttribute('spellcheck')).toBe('false');
     editor.commands.insertContentAt(1, 'So ');
     expect(refresh).not.toHaveBeenCalled();
     await expect.poll(() => refresh.mock.calls.length).toBeGreaterThan(0);

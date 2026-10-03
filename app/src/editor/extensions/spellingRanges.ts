@@ -52,6 +52,8 @@ const spellingKey = new PluginKey('opennote.spelling');
 function spellingPlugin(host: EditorHost): Plugin {
   return new Plugin({
     key: spellingKey,
+    // WebView2's own checker knows one language and no dictionary, and would squiggle a second time (ADR 0023).
+    props: { attributes: { spellcheck: 'false' } },
     view(view) {
       let base: PMNode | null = null;
       let all = true;
