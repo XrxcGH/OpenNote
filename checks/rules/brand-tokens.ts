@@ -2,6 +2,8 @@
 // theme. The forced-colors map names system colors for existing tokens, and motion stays within the limits set in
 // docs/BRAND.md. Contrast pairs may name pens and highlighters (ink.pens.<Name>, ink.highlighters.<Name>), which
 // resolve to their light or dark value per theme. A pair may also composite a translucent background over a color.
+// A pair has a floor (`min`), a ceiling (`max`), or both: a ceiling keeps an ambient wash close to the surface it
+// sits next to, so it never competes with the writing.
 
 import type { Finding, Rule, SourceFile } from '../types.ts';
 import { numberSetting } from '../config.ts';
@@ -10,7 +12,10 @@ import { reporter } from './helpers.ts';
 interface ContrastPair {
   fg: string;
   bg: string;
-  min: number;
+  /** The lowest ratio allowed, such as 7 for body text. */
+  min?: number;
+  /** The highest ratio allowed, such as 1.3 for a wash that should stay close to its surface. */
+  max?: number;
   /** Composites a translucent `bg`, such as a highlighter, over this color first. */
   over?: string;
 }
@@ -124,11 +129,15 @@ function contrastFindings(file: SourceFile, tokens: Tokens): Finding[] {
         findings.push(report(line, `Contrast pair ${describe(pair)} doesn't exist in theme "${theme}".`));
         continue;
       }
+      if (pair.min === undefined && pair.max === undefined) {
+        findings.push(report(line, `Contrast pair ${describe(pair)} needs a "min", a "max", or both.`));
+        continue;
+      }
       const ratio = contrastRatio(fg, bg, under);
-      if (ratio < pair.min)
-        findings.push(
-          report(line, `${theme}: ${describe(pair)} has contrast ${ratio.toFixed(2)}:1, needs ${pair.min}:1.`),
-        );
+      const shown = `${theme}: ${describe(pair)} has contrast ${ratio.toFixed(2)}:1`;
+      if (pair.min !== undefined && ratio < pair.min) findings.push(report(line, `${shown}, needs ${pair.min}:1.`));
+      if (pair.max !== undefined && ratio > pair.max)
+        findings.push(report(line, `${shown}, which is over the ${pair.max}:1 ceiling.`));
     }
   }
   return findings;

@@ -60,6 +60,36 @@ test('brand-tokens composites a highlighter over the page before measuring text 
   assert.ok(contrastRatio('#F0E9DE', '#A88A2C66', '#24201C') >= 7);
 });
 
+test('brand-tokens enforces a ceiling on contrast, for washes that must stay close to a surface', async () => {
+  const tokens = baseTokens();
+  // The selected row and the page are 1.2:1 apart in light and 1.4:1 in dark.
+  const ceiling = (max: number) => ({ ...tokens, contrast: [{ fg: 'surface.selected', bg: 'surface.page', max }] });
+  assert.deepEqual(await tokenMessages(ceiling(1.5)), []);
+  const found = await tokenMessages(ceiling(1.05));
+  assert.equal(found.length, 2);
+  assert.match(
+    found[0],
+    /^light: surface.selected on surface.page has contrast 1.\d\d:1, which is over the 1.05:1 ceiling/,
+  );
+  assert.match(
+    found[1],
+    /^dark: surface.selected on surface.page has contrast 1.\d\d:1, which is over the 1.05:1 ceiling/,
+  );
+});
+
+test('brand-tokens checks a floor and a ceiling together, and asks for at least one', async () => {
+  const tokens = baseTokens();
+  const both = { fg: 'text.primary', bg: 'surface.page', min: 7, max: 12 };
+  const found = await tokenMessages({ ...tokens, contrast: [both] });
+  assert.equal(found.length, 2);
+  assert.match(
+    found[0],
+    /^light: text.primary on surface.page has contrast 1\d.\d\d:1, which is over the 12:1 ceiling/,
+  );
+  const neither = await tokenMessages({ ...tokens, contrast: [{ fg: 'text.primary', bg: 'surface.page' }] });
+  assert.match(neither[0], /text.primary on surface.page needs a "min", a "max", or both/);
+});
+
 test('logical-properties flags physical properties and values in style sheets', async () => {
   const css = [
     '.a { margin-left: 4px; inset-inline-start: 0; }',
