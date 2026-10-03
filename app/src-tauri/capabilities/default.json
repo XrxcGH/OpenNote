@@ -75,6 +75,12 @@
     "allow-spell-add-word",
     "allow-spell-remove-word",
     "allow-speech-voices",
-    "allow-speech-synthesize"
+    "allow-speech-synthesize",
+    "allow-print-prepare",
+    "allow-print-render",
+    "allow-print-close",
+    "allow-export-pick-save",
+    "allow-export-write",
+    "allow-export-open"
   ]
 }

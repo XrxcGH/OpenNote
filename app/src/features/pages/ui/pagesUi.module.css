@@ -1,0 +1,156 @@
+/* The dialogs and overlays of Phase 6: print, picture export, reading aids, the gallery, and slides. */
+@layer components {
+  .form {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .row {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  @container (max-width: 34rem) {
+    .split {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .label {
+    margin: 0;
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    color: var(--color-text-secondary);
+  }
+
+  .hint {
+    margin: 0;
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    color: var(--color-text-muted);
+  }
+
+  .preview {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: center;
+  }
+
+  .sheetBox {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    box-shadow: var(--elevation-1);
+  }
+
+  .sheetFrame {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    border: 0;
+    transform-origin: 0 0;
+    pointer-events: none;
+  }
+
+  .stepper {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-size: var(--type-caption-size);
+    color: var(--color-text-secondary);
+  }
+
+  .progress {
+    display: grid;
+    gap: var(--space-3);
+    min-inline-size: min(22rem, 100%);
+  }
+
+  .error {
+    margin: 0;
+    color: var(--color-status-danger);
+    font-size: var(--type-caption-size);
+  }
+}
+
+@layer components {
+  /* Present as slides: a full-window stage with the slide scaled to fit, and quiet controls along the bottom. */
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-dialog, 60);
+    display: grid;
+    grid-template-rows: 1fr auto;
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+  }
+
+  .stageView {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slideFrame {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 1280px;
+    block-size: 720px;
+    border: 0;
+    background: var(--color-surface-page);
+    border-radius: var(--radius-lg);
+    transform-origin: 0 0;
+    pointer-events: none;
+  }
+
+  .stageBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--type-caption-size);
+    color: var(--color-text-secondary);
+  }
+
+  .stageBar button {
+    color: inherit;
+  }
+
+  .stageHelp {
+    margin-inline-start: auto;
+  }
+
+  .stageEmpty {
+    display: grid;
+    place-items: center;
+    block-size: 100%;
+    font-size: var(--type-body-size);
+  }
+}
+
+@layer components {
+  .pictureFrame {
+    max-inline-size: 100%;
+    max-block-size: 22rem;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+  }
+}

@@ -3,3 +3,6 @@
 export { PageView } from './PageView';
 export { installPageZoom } from './zoom';
 export { installPages } from './runtime';
+export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from './pagesApi';
+export type { MountedPage, MountedPageHook } from './pagesApi';
+export { pageSelection } from './seams/selectionStore';

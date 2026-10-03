@@ -2,6 +2,7 @@
 
 import { isEnabled } from '../../app/flags';
 import type { BootData, Platform } from '../types';
+import { createTauriExports } from './exports';
 import { createTauriInstall } from './install';
 import { createTauriClipboard } from './clipboard';
 import { createTauriImages } from './images';
@@ -38,6 +39,7 @@ export function createTauriPlatform(boot: BootData): Platform {
     spelling: createTauriSpelling(),
     clipboard: createTauriClipboard(),
     images,
+    exports: createTauriExports(),
     speech: createTauriSpeech(),
     // With storage.core, the core keeps the notes; the Phase 2 snapshot is only for a build without it.
     notesSnapshot: !isEnabled('storage.core') && isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,

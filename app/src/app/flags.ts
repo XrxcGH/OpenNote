@@ -5,6 +5,7 @@
 import type { Channel } from '../platform/bindings/Channel';
 import { INK_FLAGS } from '../features/ink/flags';
 import { PAGE_FLAGS } from '../features/page/flags';
+import { PAGES_FLAGS } from '../features/pages/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -29,7 +30,8 @@ export type FlagId =
   /** Notes kept on disk in every build: the library file and the core's pages in the notes folder. */
   | 'storage.core'
   | Phase4FlagId
-  | Phase5FlagId;
+  | Phase5FlagId
+  | Phase6FlagId;
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -52,6 +54,16 @@ type Phase4FlagId =
   | 'page.heicImport'
   | 'editor.spelling'
   | 'editor.readAloud';
+
+/** Phase 6: page views and export (features/pages/flags.ts). */
+type Phase6FlagId =
+  | 'pages.view'
+  | 'pages.pdf'
+  | 'pages.exportText'
+  | 'pages.exportImage'
+  | 'pages.gallery'
+  | 'pages.slides'
+  | 'pages.reading';
 
 type Phase5FlagId =
   | 'ink.core'
@@ -113,6 +125,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
+  ...PAGES_FLAGS,
 ];
 
 interface FlagState {

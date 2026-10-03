@@ -1,7 +1,9 @@
 {
-  "startup": { "jsKb": 180, "cssKb": 15 },
-  "after": { "within": "features/page/", "entry": "features/page/PageBody" },
+  "startup": { "jsKb": 190, "cssKb": 16 },
+  "after": { "within": "features/page", "entry": "features/page/PageBody" },
   "lazyKb": {
+    "features/pages/live": 40,
+    "features/pages/ui": 50,
     "editor/markdown/worker": 45,
     "editor/highlight": 20,
     "highlight.js/lib/languages": 5,

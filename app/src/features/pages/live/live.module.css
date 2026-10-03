@@ -1,0 +1,96 @@
+/* The paginated view: sheets drawn under the page, the gap between them, the spacers that push content past a sheet
+   edge, and the sheet counter. Colors are tokens, so both themes follow. */
+@layer components {
+  .sheets {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    pointer-events: none;
+  }
+
+  .sheet {
+    position: absolute;
+    inset-inline-start: 0;
+    overflow: hidden;
+    background: var(--color-surface-page);
+    box-shadow: var(--elevation-1);
+  }
+
+  .sheet > svg {
+    display: block;
+  }
+
+  /* The gap between two sheets is drawn over the margins on both sides of the edge, where no content ever goes. */
+  .edge {
+    position: absolute;
+    inset-inline: 0;
+    background: var(--color-surface-sunken);
+    border-block: 1px solid var(--color-border-subtle);
+  }
+
+  .paper {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .paper > svg {
+    display: block;
+  }
+
+  /* A spacer pushes the lines after it down by the planned height. It is hidden while the page is measured. */
+  .spacer {
+    display: block;
+    inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  :global([data-paginating]) .spacer,
+  :global([data-paginating]) :global([data-pg-push])::before {
+    display: none !important;
+  }
+
+  /* Room above a top-level element of the text, inside the element, so the text itself is untouched. */
+  :global([data-pg-push])::before {
+    content: '';
+    display: block;
+    block-size: var(--pg-push, 0);
+  }
+
+  .counter {
+    position: absolute;
+    inset-block-end: var(--space-3);
+    inset-inline: 0;
+    margin-inline: auto;
+    inline-size: max-content;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    box-shadow: var(--elevation-1);
+    pointer-events: none;
+    z-index: var(--layer-page-chrome);
+  }
+
+  /* The reading focus band: everything outside the lit lines dims. It never takes the pointer. */
+  .focusLayer {
+    position: absolute;
+    inset: 0;
+    z-index: var(--layer-ink-live);
+    pointer-events: none;
+  }
+
+  .dim {
+    position: absolute;
+    inset-inline-start: 0;
+    background: color-mix(in srgb, var(--color-surface-page) 82%, transparent);
+  }
+}
