@@ -5,16 +5,27 @@ import { escapeParagraphText } from '../../../editor/markdown';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { shownMedia } from '../images/shown';
+import { shownStrokes } from '../seams/inkStrokes';
 import { pageSelection } from '../seams/selectionStore';
 
 const intel = () => import('../../intel').then((module) => module.loadApi());
+
+/** The pen layer's strokes for the recognizer: the shown page's, transforms applied, keyed by stroke ID. */
+const inkSource = {
+  strokes: (ids: readonly string[]) =>
+    shownStrokes(ids).map((stroke) => ({
+      key: stroke.id,
+      points: stroke.points.map((point): [number, number] => [point.x, point.y]),
+    })),
+};
 
 /** Reads the selected handwriting and adds it to the page as text, below the last block. The ink stays. */
 export async function handwritingToText(): Promise<void> {
   const mounted = shownMedia.get();
   const ids = pageSelection.get().strokes;
   if (!mounted || ids.length === 0) return;
-  const { readHandwriting } = await intel();
+  const { readHandwriting, registerInkStrokeSource, hasInkStrokeSource } = await intel();
+  if (!hasInkStrokeSource()) registerInkStrokeSource(inkSource);
   announce(t('intel.handwriting.working'));
   const lines = await readHandwriting(ids);
   if (lines === null) return;

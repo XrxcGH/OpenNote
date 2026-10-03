@@ -79,7 +79,7 @@ The web platform has a fake recorder and player, so the first three run with no 
 
 ## Not done
 
-- Strokes carry no stamps, because the ink layer isn't here yet. When it is, it calls `addStampSource` in `playback.ts` with a function that returns `strokeEntries(recordings, strokes)`, and tapping a stroke and the highlight follow.
+- Strokes need no marks: each keeps its start time. `stamps.ts` adds `inkEntries` as a stamp source, reading the shown page's strokes through `seams/inkStrokes.ts` (the ink view sets the reader), and the "Play the recording from the selected ink" command plays from the first selected stroke. The highlight does not paint strokes yet.
 - Tapping a word works with Alt+click and a key. A touch or pen tap has no gesture yet.
 - Splitting, compressing, and enhancing a recording, and the storage list, have no screens.
 - The Recording section of Settings, and the meeting prompt.

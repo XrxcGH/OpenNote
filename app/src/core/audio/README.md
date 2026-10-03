@@ -48,5 +48,5 @@ npx vitest run --config app/vitest.config.ts --project unit app/src/core/audio
 
 The page feature wires this client in `app/src/features/page/audio`. Its [README](../../features/page/audio/README.md) says what is done. Two things are not:
 
-- Build a `StampIndex` from the strokes too, with `strokeEntries(recordings, strokes)`, once the ink layer exists.
+- The page builds its `StampIndex` from the strokes too, with `strokeEntries(recordings, strokes)` (features/page/audio/stamps.ts).
 - Wire the skip, speed, and flag keys to the playback session in the ink zoom box, when it exists.

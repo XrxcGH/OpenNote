@@ -4,6 +4,8 @@ import { isEnabled } from '../../../app/flags';
 import type { CommandDef } from '../../../commands/types';
 import { commandBar, commands, settingsSections } from '../../../registries';
 import { getSettings, settingsStore, updateSettings } from '../../../state/settings';
+import { applyToPoint } from '../geometry/matrix';
+import type { Stroke } from '../geometry/types';
 import type { InkHost } from './host';
 import { DrawPens, DrawTools } from './DrawBar';
 import { registerExportStrokes } from './exportSource';
@@ -22,6 +24,19 @@ let current: { surface: InkSurface; frame: SelectionFrame; stop: () => void } | 
 export function shownSurface(): InkSurface | null {
   return current?.surface ?? null;
 }
+
+/** A stroke with its own transform applied, keeping each point's time, for the features that read handwriting. */
+function placed(stroke: Stroke): Stroke {
+  const { transform: m, ...rest } = stroke;
+  if (!m) return stroke;
+  return { ...rest, points: stroke.points.map((p) => ({ ...p, ...applyToPoint(m, p) })) };
+}
+
+/** The shown page's strokes, transforms applied: audio stamps and handwriting to text read them. */
+export const shownStrokeReader = {
+  all: (): Stroke[] => [...(current?.surface.index.all() ?? [])].map(placed),
+  get: (ids: readonly string[]): Stroke[] => (current?.surface.strokes(ids) ?? []).map(placed),
+};
 
 function follow(host: InkHost): () => void {
   const sync = () => {

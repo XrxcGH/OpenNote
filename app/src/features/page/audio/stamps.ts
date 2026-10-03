@@ -8,16 +8,19 @@
 import type { Editor } from '@tiptap/core';
 import type { Transaction } from '@tiptap/pm/state';
 import { isEnabled } from '../../../app/flags';
-import { TextMarks } from '../../../core/audio';
-import type { StampEntry, TextMarksData } from '../../../core/audio';
+import { strokeEntries, TextMarks } from '../../../core/audio';
+import type { StampEntry, StrokeTime, TextMarksData } from '../../../core/audio';
 import { META_REMOTE } from '../../../editor/meta';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { shownPage as shownOpenPage } from '../history/shown';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
+import { shownStrokes } from '../seams/inkStrokes';
+import { pageSelection } from '../seams/selectionStore';
 import { appendToNextBatch } from '../sync/shown';
 import { dataOf, recordingBlocks } from './blocks';
+import { recordingEntries } from './entries';
 import { stampNow } from './controller';
 import { clockNs } from './format';
 import { addStampSource, openFor, playAtCapture } from './playback';
@@ -107,6 +110,34 @@ export function textEntries(): StampEntry[] {
   return entries;
 }
 addStampSource(textEntries);
+
+/** The shown page's strokes as the stamp index reads them: start and length in milliseconds. */
+function strokeTimes(ids?: readonly string[]): StrokeTime[] {
+  return shownStrokes(ids).map((stroke) => ({
+    id: stroke.id,
+    startMs: stroke.startTime,
+    durationMs: stroke.points.at(-1)?.time ?? 0,
+  }));
+}
+
+/** Every stroke drawn while one of the page's recordings ran. A stroke keeps its start time, so it needs no marks. */
+export function inkEntries(): StampEntry[] {
+  return strokeEntries([...recordingEntries.get().values()], strokeTimes());
+}
+addStampSource(inkEntries);
+
+/** Plays the recording from the moment the first of these strokes (the selected ones by default) was drawn. */
+export async function playFromInk(ids: readonly string[] = pageSelection.get().strokes): Promise<boolean> {
+  const strokes = strokeTimes(ids).sort((a, b) => a.startMs - b.startMs);
+  const entry = strokeEntries([...recordingEntries.get().values()], strokes)[0];
+  const holder = entry && recordingBlocks().find((candidate) => dataOf(candidate)?.entry.id === entry.recording);
+  const page = shownOpenPage.get()?.id;
+  if (!entry || !holder || !page || !(await openFor(holder, page))) return false;
+  await playAtCapture(entry.startNs);
+  const started = dataOf(holder)?.entry.startedNs ?? 0;
+  announce(t('audio.announce.playingFrom', { time: clockNs(entry.startNs - started) }));
+  return true;
+}
 
 /** Plays the recording from the moment the text at `offset` of the block was written. */
 export async function playFromText(block: string, offset?: number): Promise<boolean> {

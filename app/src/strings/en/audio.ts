@@ -10,6 +10,7 @@ export const audio = {
     options: 'Recording options',
     play: 'Play or pause the recording',
     playFromCaret: 'Play the recording from the caret',
+    playFromInk: 'Play the recording from the selected ink',
     skipBack: 'Skip back 10 seconds',
     skipForward: 'Skip forward 10 seconds',
     flag: 'Flag this moment',

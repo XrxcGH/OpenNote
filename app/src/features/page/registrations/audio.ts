@@ -13,6 +13,7 @@ import { RecordingIndicator } from '../audio/Indicator';
 import { adoptPage, entriesOf } from '../audio/entries';
 import { isRunning, playbackOpen, RECORDING_TYPE, recordingUi } from '../audio/state';
 import { shownPage as shownOpenPage } from '../history/shown';
+import { pageSelection } from '../seams/selectionStore';
 import { blockRenderers } from '../registries';
 import { shownQueue } from '../sync/shown';
 import { lazyBlockView } from '../tables/lazyView';
@@ -114,6 +115,14 @@ const SPECS: readonly Spec[] = [
     flag: 'audio.stamps',
     when: pageShown,
     run: async () => (await work()).playFromCaret(),
+  },
+  {
+    id: 'audio.playFromInk',
+    title: 'audio.commands.playFromInk',
+    key: '',
+    flag: 'audio.stamps',
+    when: () => pageShown() && pageSelection.get().strokes.length > 0,
+    run: async () => (await work()).playFromInk(),
   },
   {
     id: 'audio.trimSilence',

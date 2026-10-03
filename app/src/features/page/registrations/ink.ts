@@ -3,6 +3,7 @@
 // chunk and the seams it needs load with the first page shown, so only these few lines count against start-up.
 import { loadInkView } from '../../ink/flags';
 import { shownMedia } from '../images/shown';
+import { setInkStrokeReader } from '../seams/inkStrokes';
 
 /** A part of the shown page, followed through the shown page view. */
 const part = <T>(pick: (page: NonNullable<ReturnType<typeof shownMedia.get>>) => T) => ({
@@ -21,8 +22,9 @@ function start(): void {
   const seams = Promise.all([loadInkView(), import('../viewport/router'), import('../seams/selectionStore')]);
   // A load that fails, as when a test ends before the chunk arrives, leaves the page without ink tools, not broken.
   void seams
-    .then(([{ installInk }, router, selection]) =>
-      installInk({
+    .then(([{ installInk, shownStrokeReader }, router, selection]) => {
+      setInkStrokeReader(shownStrokeReader);
+      return installInk({
         registerPointerTool: router.registerPointerTool,
         setActiveTool: router.setActiveTool,
         viewport: part((page) => page.viewport),
@@ -32,8 +34,8 @@ function start(): void {
         selection: selection.pageSelection,
         select: selection.selectOnPage,
         objectCommand: (command) => shownMedia.get()?.objects.command(command),
-      }),
-    )
+      });
+    })
     .catch(() => undefined);
 }
 

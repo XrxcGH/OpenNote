@@ -57,6 +57,11 @@ export async function playFromCaret(): Promise<void> {
   if (!(await play())) announce(t('audio.announce.nothingStamped'));
 }
 
+export async function playFromInk(): Promise<void> {
+  const { playFromInk: play } = await import('./stamps');
+  if (!(await play())) announce(t('audio.announce.nothingStamped'));
+}
+
 export async function trim(): Promise<void> {
   const block = target();
   const data = block && dataOf(block);
