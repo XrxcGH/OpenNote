@@ -7,6 +7,7 @@
 // emphasis, which reads as a single run. Decisions start with every delimiter and fall back to tags until
 // nothing changes.
 import type { Mark } from '@tiptap/pm/model';
+import { cleanText } from './escape';
 import { canClose, canCloseHighlight, canOpen, canOpenHighlight, edgeClass } from './flanking';
 import type { CharClass } from './flanking';
 import type { Plan, Range } from './marksPlan';
@@ -57,9 +58,14 @@ function closeTag(mark: Mark): string {
 
 const ENTITY_LIKE = /&(?=#?[A-Za-z0-9]+;)/g;
 
+/** A destination as the reader gets it back. Line ends are percent-encoded, and other control text is replaced. */
+export function destinationText(href: string): string {
+  return cleanText(href.replace(/\r/g, '%0D')).replace(/\n/g, '%0A');
+}
+
 /** SPEC 7.5: bare when it holds no spaces, parentheses, angle brackets, backslashes, or control characters. */
 export function formatDestination(href: string): string {
-  const text = href.replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  const text = destinationText(href);
   const bare = text !== '' && !/[\s()<>\\\p{Cc}]/u.test(text);
   const body = (bare ? text : text.replace(/[<>\\]/g, '\\$&')).replace(ENTITY_LIKE, '\\&');
   return bare ? body : `<${body}>`;

@@ -105,6 +105,12 @@ describe('hostile input', () => {
     expect(serializeTextBlock(parseTextBlock('one\r\ntwo\rthree'))).toBe('one two three');
     expect(serializeTextBlock(parseTextBlock('a\uD800b'))).toBe('a�b');
   });
+
+  it('writes no lone surrogate from math, image text, or a link', () => {
+    const sources = ['$$\uD800$$', '$a\uDC00$', '![\uD800](x\uDC00)', '[a](b\uD800)', '$$\n\uD800\n$$'];
+    // Inside a mark, the writer checks that its delimiters read back, which compares the cleaned text.
+    for (const source of [...sources, '*$$\uDC00$$*', '*[a](b\uD800)*', '_![a\nb](c)_']) expectSafe(source);
+  });
 });
 
 describe('hand-edited reserved syntax', () => {
