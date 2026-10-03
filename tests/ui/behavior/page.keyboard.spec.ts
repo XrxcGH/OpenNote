@@ -16,6 +16,14 @@ function held(page: Page): Promise<string | undefined> {
   });
 }
 
+/**
+ * Waits until the page has loaded the chunks its commands need. A command used sooner runs after the keys typed
+ * behind it, which no run on a fast machine shows.
+ */
+async function waitForCommands(page: Page): Promise<void> {
+  await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
+}
+
 /** Opens Membranes, which starts empty, and puts the caret in its text. */
 async function openEmptyPage(page: Page): Promise<void> {
   await page.goto('/');
@@ -24,6 +32,7 @@ async function openEmptyPage(page: Page): Promise<void> {
   await page.getByRole('textbox', { name: 'Page title' }).click();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('textbox', { name: 'Page text' })).toBeFocused();
+  await waitForCommands(page);
 }
 
 /** Types a line of steps: text, or a key in braces, such as "{Enter}". */

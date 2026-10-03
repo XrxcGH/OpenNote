@@ -26,6 +26,9 @@ test('the section list stays in view while a long section scrolls', async ({ pag
   const nav = page.getByRole('navigation', { name: 'Settings sections' });
   await nav.getByRole('link', { name: 'Shortcuts' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Shortcuts' })).toBeFocused();
+  // The heading is there before the section is: the section loads on its own, and with nothing under the heading
+  // there is nothing to scroll. Its tables are the long part.
+  await expect(page.getByRole('main').getByRole('table').first()).toBeVisible();
   await page.getByRole('main').evaluate((main) => (main.scrollTop = main.scrollHeight));
   await expect(page.getByRole('heading', { level: 1, name: 'Shortcuts' })).not.toBeInViewport();
   await expect(nav.getByRole('link', { name: 'About' })).toBeInViewport();

@@ -2,11 +2,12 @@
 // a page, type into its text box, close the app, start it again on the same profile, and find the text.
 
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { launchApp, skipReason } from '../harness.ts';
+import { launchApp, skipReason, tools } from '../harness.ts';
 import type { AppSession, Browser } from '../harness.ts';
 
 const TEXT = 'Typed before a restart';
@@ -37,6 +38,20 @@ async function openMitosis(browser: Browser): Promise<void> {
   await clickRow(browser, 'Pages', 'Mitosis');
 }
 
+/**
+ * Closes the app's window as its close button does, and waits for the process to go. Rust holds the close until the
+ * interface has flushed the page, so the process leaves only after the typed text is with the core. Ending the
+ * WebDriver session instead stops the app at once, and text typed in the last moments is lost, as in a crash.
+ */
+function closeWindow(): void {
+  const name = basename(tools().exe ?? 'opennote.exe').replace(/\.exe$/i, '');
+  const script =
+    `$app = Get-Process -Name '${name}' -ErrorAction SilentlyContinue | Sort-Object StartTime -Descending | ` +
+    'Select-Object -First 1; if (-not $app) { exit 2 }; [void]$app.CloseMainWindow(); ' +
+    '[void]$app.WaitForExit(20000); exit [int](-not $app.HasExited)';
+  execFileSync('powershell.exe', ['-NoProfile', '-Command', script]);
+}
+
 const textBox = (browser: Browser) => browser.$('[role="textbox"][aria-label="Page text"]');
 
 describe('typed text survives a restart', { skip: skipReason() }, () => {
@@ -56,11 +71,13 @@ describe('typed text survives a restart', { skip: skipReason() }, () => {
     await box.click();
     await session.browser.keys(TEXT);
     await session.browser.waitUntil(async () => (await box.getText()).includes(TEXT), { timeout: 5_000 });
+    closeWindow();
     await session.close();
     session = await launchApp({ profileDir });
     await openMitosis(session.browser);
     const again = textBox(session.browser);
     await again.waitForExist({ timeout: 20_000 });
-    assert.ok((await again.getText()).includes(TEXT), 'the text came back after the restart');
+    const text = await again.getText();
+    assert.ok(text.includes(TEXT), `the text came back after the restart, but the page has "${text.slice(0, 200)}"`);
   });
 });

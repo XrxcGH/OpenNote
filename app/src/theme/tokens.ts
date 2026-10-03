@@ -54,9 +54,17 @@ export const tokens = {
       "selection": {
         "highlight": "#F4DE93"
       },
+      "art": {
+        "moss": "#C8DCC6",
+        "clay": "#EDC3AF",
+        "candle": "#F5D59C",
+        "dusk": "#EDC0C9",
+        "night": "#C7CEEA"
+      },
       "ambient": {
-        "canvasTop": "#FFF4DF",
+        "canvasTop": "#FFF0D4",
         "canvasBottom": "#EAE3D8",
+        "glow": "#FCE4B8",
         "spark": "#F2CF8A"
       },
       "caption": {
@@ -121,9 +129,17 @@ export const tokens = {
       "selection": {
         "highlight": "#52451F"
       },
+      "art": {
+        "moss": "#3E5A46",
+        "clay": "#6A4332",
+        "candle": "#6A4E27",
+        "dusk": "#62404D",
+        "night": "#383F6C"
+      },
       "ambient": {
-        "canvasTop": "#1D1F2C",
-        "canvasBottom": "#2E2430",
+        "canvasTop": "#1B2036",
+        "canvasBottom": "#33243A",
+        "glow": "#45302C",
         "spark": "#E7D9B0"
       },
       "caption": {
@@ -168,8 +184,14 @@ export const tokens = {
     "accent.duskSubtle": "Canvas",
     "accent.night": "CanvasText",
     "accent.nightSubtle": "Canvas",
+    "art.moss": "Canvas",
+    "art.clay": "Canvas",
+    "art.candle": "Canvas",
+    "art.dusk": "Canvas",
+    "art.night": "Canvas",
     "ambient.canvasTop": "Canvas",
     "ambient.canvasBottom": "Canvas",
+    "ambient.glow": "Canvas",
     "ambient.spark": "Canvas",
     "status.success": "CanvasText",
     "status.warning": "CanvasText",
@@ -780,6 +802,36 @@ export const tokens = {
       "min": 3
     },
     {
+      "fg": "text.primary",
+      "bg": "ambient.glow",
+      "min": 7
+    },
+    {
+      "fg": "text.secondary",
+      "bg": "ambient.glow",
+      "min": 4.5
+    },
+    {
+      "fg": "text.muted",
+      "bg": "ambient.glow",
+      "min": 4.5
+    },
+    {
+      "fg": "text.link",
+      "bg": "ambient.glow",
+      "min": 4.5
+    },
+    {
+      "fg": "focus.ring",
+      "bg": "ambient.glow",
+      "min": 3
+    },
+    {
+      "fg": "border.control",
+      "bg": "ambient.glow",
+      "min": 3
+    },
+    {
       "fg": "status.success",
       "bg": "surface.app",
       "min": 4.5
@@ -787,12 +839,17 @@ export const tokens = {
     {
       "fg": "ambient.canvasTop",
       "bg": "surface.sunken",
-      "max": 1.3
+      "max": 1.5
     },
     {
       "fg": "ambient.canvasBottom",
       "bg": "surface.sunken",
-      "max": 1.3
+      "max": 1.5
+    },
+    {
+      "fg": "ambient.glow",
+      "bg": "surface.sunken",
+      "max": 1.5
     }
   ],
   "ink": {

@@ -50,6 +50,8 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
   await page.getByRole('textbox', { name: 'Text' }).click();
+  // Commands used before their chunks load run after the keys typed behind them.
+  await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached' });
   const { keyboard } = page;
 
   // Markdown shortcuts as you type.

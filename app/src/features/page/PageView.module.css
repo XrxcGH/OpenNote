@@ -49,12 +49,18 @@
   }
 
   /* The drawing above the "no page" sentence: a little company, with the sentence below it keeping the meaning. */
-  .art {
+  .page .art {
     margin-block-start: var(--space-5);
+  }
+
+  .page .art + .note {
+    margin-block-start: var(--space-4);
   }
 
   /* With the editor on, the page fills the region and its viewport scrolls (ARCHITECTURE.md section 5.1). */
   .editing {
+    /* The sheet stays opaque paper over the ambient canvas (BRAND.md section 7). */
+    background: var(--color-surface-page);
     display: flex;
     flex-direction: column;
     block-size: 100%;

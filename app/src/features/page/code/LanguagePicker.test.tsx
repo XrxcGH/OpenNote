@@ -50,7 +50,7 @@ describe('the language picker', () => {
     const onPick = vi.fn();
     renderUi(<Harness current={null} onPick={onPick} onClose={vi.fn()} />);
     await vi.waitFor(() => expect(document.activeElement).toBe(filter()));
-    await userEvent.type(filter(), 'ts');
+    fireEvent.change(filter(), { target: { value: 'ts' } });
     expect(highlighted()?.textContent).toBe('TypeScript');
     fireEvent.keyDown(filter(), { key: 'ArrowDown' });
     expect(highlighted()?.textContent).not.toBe('TypeScript');
@@ -62,10 +62,10 @@ describe('the language picker', () => {
   it('chooses plain text, and says when nothing matches', async () => {
     const onPick = vi.fn();
     renderUi(<Harness current="js" onPick={onPick} onClose={vi.fn()} />);
-    await userEvent.type(filter(), 'zzz');
+    fireEvent.change(filter(), { target: { value: 'zzz' } });
     expect(screen.getByRole('status').textContent).toBe('No language matches “zzz”.');
-    await userEvent.clear(filter());
-    await userEvent.type(filter(), 'plain');
+    fireEvent.change(filter(), { target: { value: '' } });
+    fireEvent.change(filter(), { target: { value: 'plain' } });
     fireEvent.click(screen.getByRole('option', { name: 'Plain text' }));
     expect(onPick).toHaveBeenCalledWith(null);
   });

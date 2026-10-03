@@ -1,7 +1,8 @@
-// The drawing above the sentence of an empty state: 110 px wide, about 50 px tall, and different for each place.
-// "No notebooks yet" gets a bookshelf with a leaning book and a sprig. "No page open" gets an open notebook with a
-// candle beside it. "Trash is empty" gets a candle beside a tidy stack of books. The sentence keeps the meaning,
-// and the drawing is only company.
+// The drawing above the sentence of an empty state: drawn 110 wide and shown at 176 px, about 85 px tall, and
+// different for each place. "No notebooks yet" gets a bookshelf with a leaning book and a small potted plant whose
+// tendril trails down to the shelf. "No page open" gets an open notebook with a candle beside it. "Trash is empty"
+// gets a candle beside a tidy stack of four books. The sentence keeps the meaning, and the drawing is only
+// company.
 
 import { Art } from './Art';
 import type { ArtProps } from './Art';
@@ -41,7 +42,12 @@ function Shelf() {
         className={`${styles.fillMoss} ${styles.moss}`}
         d="M90.2 35.6C86.6 32.6 86.8 28.6 90.2 26 93.6 28.6 93.8 32.6 90.2 35.6Z"
       />
-      <path className={styles.fillCandle} d="M82.4 56C87 55.4 93.4 55.4 98 56L96 70.4C92 70.9 88.4 70.9 84.4 70.4Z" />
+      <path className={styles.moss} d="M83 56.8C78.6 58.6 79.8 63.4 77 66 75.2 67.8 75.4 69.6 76.8 70.3" />
+      <path
+        className={`${styles.fillMoss} ${styles.moss}`}
+        d="M79.4 61.1Q78.4 57.3 74.9 59Q75.9 62.8 79.4 61.1ZM76.2 67.1Q76 63.5 72.5 64.5Q72.7 68.1 76.2 67.1Z"
+      />
+      <path className={styles.fillClay} d="M82.4 56C87 55.4 93.4 55.4 98 56L96 70.4C92 70.9 88.4 70.9 84.4 70.4Z" />
     </>
   );
 }
@@ -50,13 +56,14 @@ export function EmptyArt({ kind, className }: ArtProps & { kind: EmptyKind }) {
   // Each drawing is cropped to its content, so there is no empty paper above it, and its shelf starts where the
   // sentence below it starts.
   const shelf = kind === 'notebooks';
+  const height = shelf ? 52 : 54;
   return (
-    <Art width={110} height={shelf ? 52 : 54} className={className}>
+    <Art width={176} height={height * 1.6} box={[110, height]} className={className}>
       <g transform={`translate(-5 ${shelf ? -22 : -20})`}>
         <path d={SHELF} />
         {shelf && <Shelf />}
         {kind === 'page' && (
-          <g transform="translate(14 33.4)">
+          <g transform="translate(14 31)">
             <NotebookArt />
           </g>
         )}

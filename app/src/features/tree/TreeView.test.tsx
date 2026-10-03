@@ -186,13 +186,13 @@ describe('empty states and accessibility', () => {
     expect(art?.getAttribute('aria-hidden')).toBe('true');
     expect((art as Node).compareDocumentPosition(sentence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The empty pane has its own drawing, so the footer's plant leaves it alone.
-    expect(container.querySelector('svg[viewBox="0 0 48 66"]')).toBeNull();
+    expect(container.querySelector('svg[viewBox="0 0 56 66"]')).toBeNull();
   });
 
   it('keeps a small plant in the notebooks pane footer beside Trash, hidden from screen readers', async () => {
     const { container } = await renderApp();
     await screen.findByRole('button', { name: 'Trash' });
-    const plant = container.querySelector('svg[viewBox="0 0 48 66"]');
+    const plant = container.querySelector('svg[viewBox="0 0 56 66"]');
     expect(plant?.getAttribute('aria-hidden')).toBe('true');
     expect(plant?.closest('div')?.contains(screen.getByRole('button', { name: 'Trash' }))).toBe(true);
   });

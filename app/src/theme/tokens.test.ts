@@ -74,7 +74,7 @@ describe('page and ink tokens for Phases 4 and 5', () => {
 
   it('defines the warm accents and the ambient sky in both themes, with forced colors for each', () => {
     const accents = ['candle', 'candleSubtle', 'dusk', 'duskSubtle', 'night', 'nightSubtle'];
-    const ambient = ['canvasTop', 'canvasBottom', 'spark'];
+    const ambient = ['canvasTop', 'canvasBottom', 'glow', 'spark'];
     accents.forEach((key) => {
       expect(tokens.color.light.accent).toHaveProperty(key);
       expect(tokens.color.dark.accent).toHaveProperty(key);
@@ -83,12 +83,6 @@ describe('page and ink tokens for Phases 4 and 5', () => {
     expect(Object.keys(tokens.color.light.ambient)).toEqual(ambient);
     expect(Object.keys(tokens.color.dark.ambient)).toEqual(ambient);
     ambient.forEach((key) => expect(tokens.forcedColors).toHaveProperty([`ambient.${key}`], 'Canvas'));
-  });
-
-  it('keeps the ambient wash close to the canvas, so it never competes with the page', () => {
-    const ceilings = tokens.contrast.filter((pair) => 'max' in pair);
-    expect(ceilings.map((pair) => pair.fg)).toEqual(['ambient.canvasTop', 'ambient.canvasBottom']);
-    ceilings.forEach((pair) => expect(pair).toMatchObject({ bg: 'surface.sunken', max: 1.3 }));
   });
 
   it('keeps palm rejection and shape timings in milliseconds for code', () => {
@@ -102,5 +96,30 @@ describe('cascade layers', () => {
   it('declares the layer order once, lowest first', () => {
     const css = readFileSync(join(import.meta.dirname, '..', 'styles', 'layers.css'), 'utf8');
     expect(css).toContain('@layer tokens, base, components, states, forced;');
+  });
+});
+
+describe('drawing tints', () => {
+  it('defines the five drawing tints in both themes, and flattens them to the canvas in forced colors', () => {
+    const tints = ['moss', 'clay', 'candle', 'dusk', 'night'];
+    expect(Object.keys(tokens.color.light.art)).toEqual(tints);
+    expect(Object.keys(tokens.color.dark.art)).toEqual(tints);
+    tints.forEach((key) => expect(tokens.forcedColors).toHaveProperty([`art.${key}`], 'Canvas'));
+  });
+});
+
+describe('the ambient canvas', () => {
+  it('keeps the ambient wash close to the canvas, so it never competes with the page', () => {
+    const ceilings = tokens.contrast.filter((pair) => 'max' in pair);
+    expect(ceilings.map((pair) => pair.fg)).toEqual(['ambient.canvasTop', 'ambient.canvasBottom', 'ambient.glow']);
+    // The sunset band is the strongest tone, and the ceiling sits just above it.
+    ceilings.forEach((pair) => expect(pair).toMatchObject({ bg: 'surface.sunken', max: 1.5 }));
+  });
+
+  it('holds text on every ambient tone to the same targets as on the canvas', () => {
+    const on = (bg: string) =>
+      tokens.contrast.flatMap((pair) => (pair.bg === bg && 'min' in pair ? [[pair.fg, pair.min]] : []));
+    expect(on('ambient.glow')).toEqual(on('ambient.canvasTop'));
+    expect(on('ambient.canvasBottom')).toEqual(on('ambient.canvasTop'));
   });
 });

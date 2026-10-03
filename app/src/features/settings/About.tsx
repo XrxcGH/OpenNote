@@ -75,7 +75,7 @@ function Mark() {
         <span className={styles.logoMark}>
           <Logo />
         </span>
-        <Window sky={theme === 'dark' ? 'night' : 'day'} height={64} />
+        <Window sky={theme === 'dark' ? 'night' : 'day'} height={112} />
       </div>
     </>
   );

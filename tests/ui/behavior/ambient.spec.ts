@@ -116,6 +116,24 @@ for (const theme of THEMES) {
     expect(found.starsDisplay).toBe(theme === 'dark' ? 'block' : 'none');
     expect(Number(found.starsLayer)).toBeLessThan(0);
   });
+
+  test(`paints window light by day or a dusk sky at night around a plain card, in ${theme}`, async ({ page }) => {
+    await openScreen(page, byId('workspace.sample'), { size: 'wide', theme });
+    const seen = await page.evaluate(() => {
+      const card = document.querySelector('article') as HTMLElement;
+      let canvas: HTMLElement | null = card.parentElement;
+      while (canvas && getComputedStyle(canvas).backgroundImage === 'none') canvas = canvas.parentElement;
+      const image = canvas ? getComputedStyle(canvas).backgroundImage : '';
+      return { layers: image.match(/(radial|linear)-gradient/g) ?? [], card: getComputedStyle(card).backgroundImage };
+    });
+    // The page card itself stays plain paper.
+    expect(seen.card).toBe('none');
+    // By day: the patch of light and the pool from the corner. At night: the sunset band low on the horizon over the
+    // night-to-dusk sky.
+    expect(seen.layers).toEqual(
+      theme === 'light' ? ['radial-gradient', 'radial-gradient'] : ['radial-gradient', 'linear-gradient'],
+    );
+  });
 }
 
 test('fades the drawings in once, and not at all with reduced motion', async ({ page }) => {
@@ -136,7 +154,7 @@ test('keeps the plant out of the way in the compact layout', async ({ page }) =>
   await openScreen(page, byId('workspace.sample'), { size: 'compact', theme: 'light' });
   const shown = await page.evaluate(
     () =>
-      [...document.querySelectorAll('svg[viewBox="0 0 48 66"]')].filter((svg) => svg.getBoundingClientRect().width > 0)
+      [...document.querySelectorAll('svg[viewBox="0 0 56 66"]')].filter((svg) => svg.getBoundingClientRect().width > 0)
         .length,
   );
   expect(shown).toBe(0);
