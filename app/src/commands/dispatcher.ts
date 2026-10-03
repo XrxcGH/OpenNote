@@ -4,7 +4,8 @@
 // 2. The active scopes come from the focused element's data-scope attributes and the view.
 // 3. The most specific command wins. One whose `when` or `enabled` is false lets the key go on.
 // 4. Text fields take only chords with Ctrl or Alt, or function keys, and keep their own editing chords.
-// 5. While a modal layer is open, only commands that allow it run, and those of the layer's own scope.
+// 5. While a modal layer is open, only commands that allow it run, those of a modal scope, and those of a scope the
+//    layer holds itself, such as the tree inside the notebooks drawer.
 // 6. Held keys repeat only commands that allow it. The default is prevented only when a command runs.
 
 import { isEnabled } from '../app/flags';
@@ -12,7 +13,7 @@ import { getLocation } from '../app/location';
 import { topLayer } from '../state/layers';
 import { chordMatches, keyKind, loadKeyboardLayout, parseChord, primaryChord } from './chords';
 import type { KeyInput } from './chords';
-import { SCOPE_PARENT, commandsForChord, scopeDepth } from './keymap';
+import { SCOPE_PARENT, commandsForChord, scopeChain, scopeDepth } from './keymap';
 import type { AnyCommand } from './keymap';
 import { commandContext, executeCommand } from './registry';
 import type { Chord, KeyScope } from './types';
@@ -47,17 +48,37 @@ export function reachesCommandsInText(chord: Chord): boolean {
 const VIEWS_WITH_WORKSPACE = new Set(['workspace', 'trash']);
 const MODAL_SCOPES = new Set<KeyScope>(['palette', 'dialog']);
 
-/** The scopes active for a focused element: global, the workspace while it shows, and every data-scope around it. */
-export function activeScopes(element: Element | null, view: string = getLocation().view): Set<KeyScope> {
-  const scopes = new Set<KeyScope>(['global']);
-  if (VIEWS_WITH_WORKSPACE.has(view)) scopes.add('workspace');
+const DIALOG = '[role="dialog"], dialog';
+
+/** The scopes the data-scope attributes on and around an element name, up to the edge of `within` if given. */
+function scopesAround(element: Element | null, within?: Element): KeyScope[] {
+  const found: KeyScope[] = [];
   for (let at = element?.closest('[data-scope]'); at; at = at.parentElement?.closest('[data-scope]')) {
+    if (within && !within.contains(at)) break;
     for (const token of (at.getAttribute('data-scope') ?? '').split(/\s+/)) {
-      if (token in SCOPE_PARENT) scopes.add(token as KeyScope);
+      if (token in SCOPE_PARENT) found.push(token as KeyScope);
     }
   }
-  if (!scopes.has('palette') && element?.closest('[role="dialog"], dialog')) scopes.add('dialog');
+  return found;
+}
+
+/** The scopes active for a focused element: global, the workspace while it shows, and every data-scope around it. */
+export function activeScopes(element: Element | null, view: string = getLocation().view): Set<KeyScope> {
+  const scopes = new Set<KeyScope>(['global', ...scopesAround(element)]);
+  if (VIEWS_WITH_WORKSPACE.has(view)) scopes.add('workspace');
+  if (!scopes.has('palette') && element?.closest(DIALOG)) scopes.add('dialog');
   return scopes;
+}
+
+/**
+ * The scopes the dialog around a focused element holds itself, with the scopes they sit in short of global. The
+ * notebooks drawer is a modal dialog with the notebooks tree inside, so the tree's commands and the workspace's,
+ * which the tree's menus list with their shortcuts, still run there.
+ */
+export function layerScopes(element: Element | null): Set<KeyScope> {
+  const layer = element?.closest(DIALOG);
+  const held = layer ? scopesAround(element, layer) : [];
+  return new Set(held.flatMap(scopeChain).filter((scope) => scope !== 'global'));
 }
 
 function bySpecificity(a: AnyCommand, b: AnyCommand): number {
@@ -71,10 +92,11 @@ interface Press {
   readonly repeat: boolean;
 }
 
-function allowed(def: AnyCommand, press: Press, textInput: boolean): boolean {
+function allowed(def: AnyCommand, press: Press, textInput: boolean, held: Set<KeyScope>): boolean {
   if (press.repeat && !def.allowRepeat) return false;
   if (textInput && !def.allowInTextInput) return false;
-  if (topLayer()?.modal && !def.allowInModal && !MODAL_SCOPES.has(def.scope ?? 'global')) return false;
+  const scope = def.scope ?? 'global';
+  if (topLayer()?.modal && !def.allowInModal && !MODAL_SCOPES.has(scope) && !held.has(scope)) return false;
   const ctx = commandContext('keyboard');
   return (!def.when || def.when(ctx)) && (!def.enabled || def.enabled(ctx));
 }
@@ -84,13 +106,14 @@ export function commandForKey(event: KeyInput & Press): AnyCommand | null {
   const { target } = event;
   if (target?.closest('[data-key-capture]')) return null;
   const scopes = activeScopes(target);
+  const held = layerScopes(target);
   const textInput = isTextInput(target);
   for (const { chord } of chordMatches(event)) {
     if (textInput && !reachesCommandsInText(chord)) continue;
     const candidates = commandsForChord(chord)
       .filter((def) => (!def.flag || isEnabled(def.flag)) && scopes.has(def.scope ?? 'global'))
       .sort(bySpecificity);
-    const def = candidates.find((candidate) => allowed(candidate, event, textInput));
+    const def = candidates.find((candidate) => allowed(candidate, event, textInput, held));
     if (def) return def;
   }
   return null;
