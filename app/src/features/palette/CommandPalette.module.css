@@ -48,10 +48,13 @@
     font-weight: var(--font-weight-semibold);
   }
 
+  /* In a short window the list stops 16 px above the window's bottom edge, so the palette keeps its corners and
+     shadow. Below the palette's top line it leaves 174 px: the dialog layer's padding 16, the dialog's padding and
+     border 50, the input, chips and their gaps 92, and 16 px under the palette. */
   .list {
     display: grid;
     gap: var(--space-3);
-    max-block-size: 60vh;
+    max-block-size: min(60vh, calc(100dvh - var(--size-palette-top) - 174px));
     overflow-y: auto;
     overscroll-behavior: contain;
   }
