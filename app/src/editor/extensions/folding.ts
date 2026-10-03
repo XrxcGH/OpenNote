@@ -9,7 +9,6 @@ import type { Extensions } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin } from '@tiptap/pm/state';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
-import { ReplaceStep } from '@tiptap/pm/transform';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
@@ -88,47 +87,135 @@ function button(host: EditorHost, node: PMNode, kind: FoldKind, folded: boolean)
   };
 }
 
-/** Every fold button, and the `hidden` attribute on what each fold hides. */
-function build(host: EditorHost, doc: PMNode, folded: readonly number[]): DecorationSet {
-  const decorations: Decoration[] = [];
-  const isFolded = new Set(folded);
-  for (const { pos, kind, node } of foldables(doc)) {
-    const on = isFolded.has(pos);
-    const at = kind === 'heading' ? pos : pos + 1;
-    decorations.push(
-      Decoration.widget(at, button(host, node, kind, on), {
-        side: -1,
-        key: `fold:${kind}:${on}:${foldName(node, kind)}`,
-        ignoreSelection: true,
-        stopEvent: () => true,
-      }),
-    );
-    if (!on) continue;
-    decorations.push(Decoration.node(pos, pos + node.nodeSize, { 'data-folded': 'true' }));
-    for (const [from, to] of hiddenRanges(doc, pos)) decorations.push(Decoration.node(from, to, { hidden: 'hidden' }));
-  }
-  return DecorationSet.create(doc, decorations);
+function widgetFor(host: EditorHost, doc: PMNode, pos: number, folded: ReadonlySet<number>): Decoration | null {
+  const kind = foldableAt(doc, pos);
+  const node = doc.nodeAt(pos);
+  if (!kind || !node) return null;
+  const on = folded.has(pos);
+  return Decoration.widget(kind === 'heading' ? pos : pos + 1, button(host, node, kind, on), {
+    side: -1,
+    key: `fold:${kind}:${on}:${foldName(node, kind)}`,
+    ignoreSelection: true,
+    stopEvent: () => true,
+    fold: true,
+  });
 }
 
-/** Whether the transaction only edits text inside textblocks, which changes no fold. */
-function onlyText(tr: Transaction): boolean {
-  return tr.steps.every((step, index) => {
-    if (!(step instanceof ReplaceStep)) return false;
-    const doc = tr.docs[index];
-    const { from, to, slice } = step as ReplaceStep & { from: number; to: number };
-    if (slice.openStart !== 0 || slice.openEnd !== 0) return false;
-    let inline = true;
-    slice.content.forEach((node) => void (inline = inline && node.isInline));
-    const $from = doc.resolve(from);
-    return inline && $from.parent.isTextblock && $from.sameParent(doc.resolve(to));
+/** The `hidden` attribute on what each fold hides, and the folded mark on the folded node. */
+function hiddenFor(doc: PMNode, folded: readonly number[]): Decoration[] {
+  const decorations: Decoration[] = [];
+  for (const pos of folded) {
+    const node = doc.nodeAt(pos);
+    if (!node) continue;
+    decorations.push(Decoration.node(pos, pos + node.nodeSize, { 'data-folded': 'true' }, { hidden: true }));
+    for (const [from, to] of hiddenRanges(doc, pos)) {
+      decorations.push(Decoration.node(from, to, { hidden: 'hidden' }, { hidden: true }));
+    }
+  }
+  return decorations;
+}
+
+/** Every fold button and every hidden range, from scratch: when an editor starts. */
+function build(host: EditorHost, doc: PMNode, folded: readonly number[]): DecorationSet {
+  const isFolded = new Set(folded);
+  const widgets = foldables(doc)
+    .map(({ pos }) => widgetFor(host, doc, pos, isFolded))
+    .filter((decoration): decoration is Decoration => decoration !== null);
+  return DecorationSet.create(doc, [...widgets, ...hiddenFor(doc, folded)]);
+}
+
+const isFoldNode = (node: PMNode) => node.type.name === 'listItem' || node.type.name === 'heading';
+
+/** The headings whose sections can change with an edit at `$pos`: the nearest earlier ones, one per level. */
+function headingsBefore(doc: PMNode, pos: number, add: (pos: number) => void): void {
+  const $pos = doc.resolve(pos);
+  for (let depth = $pos.depth; depth >= 0; depth -= 1) {
+    const container = $pos.node(depth);
+    if (container.type.name.endsWith('List') || container.type.name === 'listItem' || container.isTextblock) continue;
+    let offset = depth === 0 ? 0 : $pos.start(depth);
+    const index = $pos.index(depth);
+    const starts: number[] = [];
+    for (let at = 0; at < Math.min(index + 1, container.childCount); at += 1) {
+      starts.push(offset);
+      offset += container.child(at).nodeSize;
+    }
+    let lowest = 7;
+    for (let at = starts.length - 1; at >= 0 && lowest > 1; at -= 1) {
+      const child = container.child(at);
+      if (child.type.name !== 'heading') continue;
+      const level = child.attrs.level as number;
+      if (level < lowest) {
+        lowest = level;
+        add(starts[at]);
+      }
+    }
+  }
+}
+
+/**
+ * The fold buttons an edit can change: headings and items it touched, their ancestors (whose children or text
+ * changed), and the headings whose sections it can reach. Everything else only maps.
+ */
+function touched(tr: Transaction): Set<number> {
+  const doc = tr.doc;
+  const found = new Set<number>();
+  const add = (pos: number) => void found.add(pos);
+  tr.mapping.maps.forEach((map, index) => {
+    const rest = tr.mapping.slice(index + 1);
+    map.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
+      const from = Math.max(0, Math.min(doc.content.size, rest.map(newStart, -1)));
+      const to = Math.max(from, Math.min(doc.content.size, rest.map(newEnd, 1)));
+      for (const at of [from, to]) {
+        const $at = doc.resolve(at);
+        for (let depth = $at.depth; depth > 0; depth -= 1) if (isFoldNode($at.node(depth))) add($at.before(depth));
+        headingsBefore(doc, at, add);
+      }
+      doc.nodesBetween(from, to, (node, pos) => {
+        if (isFoldNode(node)) add(pos);
+        return !node.isTextblock;
+      });
+    });
   });
+  return found;
+}
+
+/** Maps the decorations, then rebuilds the buttons the change touched and every hidden range. */
+function update(
+  host: EditorHost,
+  tr: Transaction,
+  previous: DecorationSet,
+  folded: readonly number[],
+  extra: Iterable<number> = [],
+): DecorationSet {
+  const doc = tr.doc;
+  let set = previous.map(tr.mapping, doc);
+  const targets = tr.docChanged ? touched(tr) : new Set<number>();
+  for (const pos of extra) targets.add(pos);
+  const isFolded = new Set(folded);
+  const stale: Decoration[] = set.find(undefined, undefined, (spec) => spec.hidden === true);
+  const fresh: Decoration[] = hiddenFor(doc, folded);
+  for (const pos of targets) {
+    const node = doc.nodeAt(pos);
+    if (!node) continue;
+    const at = node.type.name === 'heading' ? pos : pos + 1;
+    stale.push(...set.find(at, at, (spec) => spec.fold === true));
+    const widget = widgetFor(host, doc, pos, isFolded);
+    if (widget) fresh.push(widget);
+  }
+  set = set.remove(stale);
+  return set.add(doc, fresh);
 }
 
 function apply(host: EditorHost, tr: Transaction, value: PluginValue, state: EditorState): PluginValue {
   const set = tr.getMeta(META_FOLDS) as readonly number[] | undefined;
   if (set) {
     rememberFolds(state.doc, set);
-    return { folded: set, decorations: build(host, state.doc, set) };
+    // The buttons whose state flipped get new names and aria-expanded.
+    const flipped = [
+      ...set.filter((pos) => !value.folded.includes(pos)),
+      ...value.folded.filter((pos) => !set.includes(pos)),
+    ];
+    return { folded: set, decorations: update(host, tr, value.decorations, set, flipped) };
   }
   if (!tr.docChanged) {
     rememberFolds(state.doc, value.folded);
@@ -140,8 +227,7 @@ function apply(host: EditorHost, tr: Transaction, value: PluginValue, state: Edi
     .map((result) => result.pos)
     .filter((pos) => foldableAt(state.doc, pos) !== null);
   rememberFolds(state.doc, folded);
-  if (onlyText(tr)) return { folded, decorations: value.decorations.map(tr.mapping, tr.doc) };
-  return { folded, decorations: build(host, state.doc, folded) };
+  return { folded, decorations: update(host, tr, value.decorations, folded) };
 }
 
 function foldingPlugin(host: EditorHost): Plugin<PluginValue> {
