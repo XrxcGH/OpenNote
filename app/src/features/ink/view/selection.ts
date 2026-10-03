@@ -3,6 +3,7 @@
 // frame is a group of real buttons, so a keyboard reaches each part: arrow keys move, Delete deletes, and Escape
 // lets go of the selection.
 import type { BlockJson, Edit } from '../../../services/pages/types';
+import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, buttonClass, openMenu } from '../../../ui';
@@ -14,6 +15,7 @@ import { slotsForTool } from '../pens/palette';
 import { selectionFrame } from '../selection/lassoItems';
 import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
+import { startReplay } from './replay';
 import { followersForMatrix } from './shapeEdit';
 import { labelsIn } from './shapeLibrary';
 import type { InkSurface } from './surface';
@@ -108,6 +110,9 @@ class FrameView implements SelectionFrame {
       ['ink.selection.recolor', 'recolor', () => void this.recolorMenu()],
       ['ink.selection.thicker', 'thicker', () => void this.widths(THICKER)],
       ['ink.selection.thinner', 'thinner', () => void this.widths(THINNER)],
+      ...(isEnabled('ink.replay')
+        ? ([['ink.replay.title', 'replay', () => startReplay(host, surface)]] as [MessageKey, string, () => void][])
+        : []),
     ]);
     ({ frame: this.frame, mover: this.mover, bar: this.bar } = parts);
     this.frame.addEventListener('keydown', this.onKey);

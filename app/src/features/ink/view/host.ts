@@ -80,6 +80,13 @@ export interface InkHost {
   select(next: InkSelection, options?: { announce?: boolean }): void;
   /** Runs one of Phase 4's object commands on the selected blocks. */
   objectCommand(command: 'delete'): void;
+  /** The page's recordings, so replay can play the sound along. Absent when the page has none to offer. */
+  audio?: {
+    /** Plays the recording from the moment the first of these strokes was written. False when there is none. */
+    playFrom(ids: readonly string[]): Promise<boolean>;
+    pause(): void;
+    setSpeed?(speed: number): void;
+  };
   /** The sheets of a paginated page, so pushed content lands on the next sheet. Absent in the flow and freeform views. */
   sheets?(): Sheets | null;
 }

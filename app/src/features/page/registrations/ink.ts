@@ -34,6 +34,14 @@ function start(): void {
         selection: selection.pageSelection,
         select: selection.selectOnPage,
         objectCommand: (command) => shownMedia.get()?.objects.command(command),
+        audio: {
+          playFrom: (ids) => import('../audio/stamps').then((stamps) => stamps.playFromInk(ids)),
+          pause: () =>
+            void import('../audio/playback').then((playback) => {
+              if (playback.playbackUi.get().status?.state === 'playing') void playback.toggle();
+            }),
+          setSpeed: (speed) => void import('../audio/playback').then((playback) => playback.setSpeed(speed)),
+        },
       });
     })
     .catch(() => undefined);

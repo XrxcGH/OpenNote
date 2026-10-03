@@ -14,6 +14,7 @@ import type { InkHost } from './host';
 import { setViewContext } from './context';
 import { DrawShapes } from './DrawShapes';
 import { installHover } from './hover';
+import { installReplay, startReplay } from './replay';
 import { installShapeHandles } from './shapeEdit';
 import { addTextToShape } from './shapeLibrary';
 import { insertSpaceByHeight } from './space';
@@ -64,6 +65,7 @@ export function installMore(context: MoreContext): () => void {
     installCanvasLock(host),
     installSnapTools(host, surfaces),
     installShapeHandles(host, surfaces),
+    installReplay(host, surfaces),
   ];
   const defs: CommandDef[] = [
     {
@@ -121,6 +123,17 @@ export function installMore(context: MoreContext): () => void {
         if (current) void addTextToShape(host, current);
       },
     },
+    {
+      id: 'ink.replay',
+      title: 'ink.replay.title',
+      keywords: 'ink.replay.keywords',
+      category: 'view',
+      flag: 'ink.replay',
+      run: () => {
+        const current = surface();
+        if (current) startReplay(host, current);
+      },
+    },
     gestureCommand('scribbleErase'),
     gestureCommand('circleSelect'),
     gestureCommand('twoFingerUndo'),
@@ -157,6 +170,15 @@ export function installMore(context: MoreContext): () => void {
       presentation: 'component',
       Component: DrawShapes,
       flag: 'ink.shapeTools',
+    }),
+    commandBar.register({
+      id: 'ink.replay',
+      tab: 'draw',
+      group: 'review',
+      command: 'ink.replay',
+      priority: 25,
+      presentation: 'button',
+      flag: 'ink.replay',
     }),
     commandBar.register({
       id: 'ink.canvasLock',
