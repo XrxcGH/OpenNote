@@ -192,3 +192,20 @@ mountedPageHooks.register({
     };
   },
 });
+
+// Study tools in their own windows: the unit converter and the reference tables open from the palette.
+for (const [tool, flag, title, keywords, icon] of [
+  ['converter', 'tools.converter', 'study.converter.open', 'study.converter.keywords', 'Ruler'],
+  ['reference', 'tools.reference', 'study.reference.open', 'study.reference.keywords', 'Atom'],
+] as const) {
+  addCommand({
+    id: `tools.${tool}`,
+    title,
+    keywords,
+    category: 'general',
+    icon,
+    flag,
+    anywhere: true,
+    run: async () => (await import('../../tools')).openTool(tool),
+  });
+}
