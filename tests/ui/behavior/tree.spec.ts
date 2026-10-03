@@ -77,3 +77,22 @@ test('moves a row with Ctrl+Shift+Down and keeps focus on it', async ({ page }) 
   await expect(labs).toBeFocused();
   await expect(notebooks(page).getByRole('treeitem').nth(3)).toHaveAccessibleName('Labs');
 });
+
+test('opens a new notebook, so New section right after it makes the section there', async ({ page }) => {
+  await notebooks(page).getByRole('treeitem', { name: 'Lectures' }).click();
+  await page.getByRole('button', { name: 'New notebook' }).click();
+  await expect(page.getByRole('textbox', { name: /^Rename/ })).toBeFocused();
+  await page.keyboard.type('Chemistry');
+  await page.keyboard.press('Enter');
+  await expect(notebooks(page).getByRole('treeitem', { name: 'Chemistry' })).toBeVisible();
+  await page.getByRole('button', { name: 'New section' }).click();
+  await expect(page.getByRole('textbox', { name: /^Rename/ })).toBeFocused();
+  await page.keyboard.type('Atoms');
+  await page.keyboard.press('Enter');
+  await expect(notebooks(page).getByRole('treeitem', { name: 'Atoms' })).toBeVisible();
+  const rows = await notebooks(page)
+    .getByRole('treeitem')
+    .evaluateAll((items) => items.map((item) => `${item.getAttribute('aria-level')} ${item.textContent ?? ''}`));
+  const at = rows.findIndex((row) => row.startsWith('1 Chemistry'));
+  expect(rows[at + 1]).toMatch(/^2 Atoms/);
+});
