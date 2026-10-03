@@ -1,4 +1,4 @@
-// A potted plant with a trailing vine, 48 x 66: leaves in the moss tint, a dusk-tinted pot, and a vine that
+// A potted plant with a trailing vine, 48 x 66: leaves in the moss tint, a clay pot, and a vine that
 // spills over the rim. It is small enough to sit in a corner, and it is drawn to be shown at about half size.
 
 import { Art } from './Art';
@@ -8,7 +8,7 @@ import styles from './illustrations.module.css';
 export function PlantArt() {
   return (
     <>
-      <path className={styles.fillDusk} d="M12 45H36L33.5 62.5C28 63.6 20 63.6 14.5 62.5Z" />
+      <path className={styles.fillClay} d="M12 45H36L33.5 62.5C28 63.6 20 63.6 14.5 62.5Z" />
       <path d="M9.5 44.6C20 43.6 29 43.6 38.5 44.6" />
       <g className={styles.moss}>
         <path d="M24 44C23.4 34 24.4 23 24 12" />

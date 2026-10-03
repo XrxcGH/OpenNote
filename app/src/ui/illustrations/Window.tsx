@@ -1,7 +1,9 @@
 // An arched window, 100 x 103: a sunset sky by day, and stars with a crescent moon in the evening. The sill and the
-// panes are lines. The sky, the dusk hills, the sun, and the moon are flat fills from the tokens, and the stars
-// are dots.
+// panes are lines. The sky is a soft gradient from the tints. By day, paper light turns to a candle and dusk band
+// at the hills. In the evening, deep night lightens to indigo at the horizon. The hills, the sun, and the
+// moon are flat fills from the tokens, and the stars are dots.
 
+import { useId } from 'react';
 import { Art } from './Art';
 import type { ArtProps } from './Art';
 import styles from './illustrations.module.css';
@@ -10,6 +12,21 @@ export type Sky = 'day' | 'night';
 
 /** Six stars, each a zero-length stroke that the round cap turns into a dot. */
 const STARS = 'M20 36h.1M37 21h.1M63 17h.1M88 47h.1M40 70h.1M66 66h.1';
+
+/** The sky's color stops, top to bottom: the sunset band sits behind the sun, and the night lightens at the hills. */
+const STOPS = {
+  day: [
+    [0, styles.stopPaper],
+    [0.35, styles.stopPaper],
+    [0.6, styles.stopCandle],
+    [0.85, styles.stopDusk],
+  ],
+  night: [
+    [0, styles.stopDeep],
+    [0.45, styles.stopDeep],
+    [0.9, styles.stopNight],
+  ],
+} as const;
 
 function Heavens({ sky }: { sky: Sky }) {
   if (sky === 'day') return <circle className={styles.sun} cx="72" cy="72" r="9.5" />;
@@ -22,14 +39,22 @@ function Heavens({ sky }: { sky: Sky }) {
 }
 
 export function WindowArt({ sky }: { sky: Sky }) {
+  const gradient = useId();
   return (
     <>
-      <path
-        className={sky === 'day' ? styles.fillCandle : styles.fillNight}
-        d="M6.2 96 5.8 47C6 22.5 27 4.3 50.2 4 73.2 4.4 93.6 22 94.2 47.2L93.8 96Z"
-      />
+      <defs>
+        <linearGradient id={gradient} x2="0" y2="1">
+          {STOPS[sky].map(([offset, className]) => (
+            <stop key={offset} offset={offset} className={className} />
+          ))}
+        </linearGradient>
+      </defs>
+      <path fill={`url(#${gradient})`} d="M6.2 96 5.8 47C6 22.5 27 4.3 50.2 4 73.2 4.4 93.6 22 94.2 47.2L93.8 96Z" />
       <Heavens sky={sky} />
-      <path className={styles.fillDusk} d="M7 78C20 73.5 30 80 46 76.5S72 72 93 77.5L93 95.3H7Z" />
+      <path
+        className={sky === 'day' ? styles.fillMoss : styles.fillDusk}
+        d="M7 78C20 73.5 30 80 46 76.5S72 72 93 77.5L93 95.3H7Z"
+      />
       <path d="M50 4.2V96M6 56.4C30 55.6 70 57.2 94 56.2" />
       <path d="M1.5 96.5H98.5V101.5H1.5Z" />
     </>

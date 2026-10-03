@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { cdp } from 'vitest/browser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderUi } from '../../test';
@@ -52,9 +53,9 @@ describe('every drawing', () => {
       expect(markup).not.toMatch(/<(filter|animate|animateTransform|image|foreignObject)/i);
     });
 
-    it(`${name} is under 3 KB of markup`, () => {
+    it(`${name} is under 6 KB of markup`, () => {
       const { container } = renderUi(element);
-      expect(drawn(container).outerHTML.length).toBeLessThan(3072);
+      expect(drawn(container).outerHTML.length).toBeLessThan(6144);
     });
   }
 
@@ -177,18 +178,31 @@ describe('where things meet', () => {
 describe('in both themes', () => {
   it.each(['light', 'dark'] as const)('paints the window with the %s theme tokens', (theme) => {
     document.documentElement.dataset.theme = theme;
+    const stops = (container: HTMLElement) =>
+      [...container.querySelectorAll('stop')].map((stop) => getComputedStyle(stop).stopColor);
     const day = renderUi(<Window sky="day" />);
-    const [sky, sun] = [day.container.querySelector('path'), day.container.querySelector('circle')] as Element[];
-    expect(getComputedStyle(sky).fill).toBe(colorOf('--color-accent-candle-subtle'));
+    const [sky, hills] = [...day.container.querySelectorAll('path')];
+    const sun = day.container.querySelector('circle') as Element;
+    // A sunset band: paper light at the top, then candle amber behind the sun and dusk rose at the hills.
+    expect(getComputedStyle(sky).fill).toMatch(/^url\(/);
+    expect(stops(day.container)).toEqual(
+      ['--color-accent-candle-subtle', '--color-accent-candle-subtle', '--color-art-candle', '--color-art-dusk'].map(
+        colorOf,
+      ),
+    );
     expect(getComputedStyle(sun).fill).toBe(colorOf('--color-ambient-spark'));
     expect(getComputedStyle(sun).stroke).toBe(colorOf('--color-accent-candle'));
+    expect(getComputedStyle(hills).fill).toBe(colorOf('--color-art-moss'));
     day.unmount();
     const night = renderUi(<Window sky="night" />);
-    const [pane, stars, moon] = [...night.container.querySelectorAll('path')];
-    expect(getComputedStyle(pane).fill).toBe(colorOf('--color-accent-night-subtle'));
+    const [, stars, moon, dusk] = [...night.container.querySelectorAll('path')];
+    expect(stops(night.container)).toEqual(
+      ['--color-accent-night-subtle', '--color-accent-night-subtle', '--color-art-night'].map(colorOf),
+    );
     expect(getComputedStyle(stars).stroke).toBe(colorOf('--color-ambient-spark'));
     expect(getComputedStyle(moon).fill).toBe(colorOf('--color-ambient-spark'));
     expect(getComputedStyle(moon).stroke).toBe(colorOf('--color-accent-night'));
+    expect(getComputedStyle(dusk).fill).toBe(colorOf('--color-art-dusk'));
   });
 
   it('draws lines in the control border color, so they read below the text', () => {
@@ -207,6 +221,42 @@ describe('in both themes', () => {
     const light = colorOf('--color-ambient-canvas-top');
     document.documentElement.dataset.theme = 'dark';
     expect(colorOf('--color-ambient-canvas-top')).not.toBe(light);
+  });
+});
+
+describe('in color', () => {
+  it.each(['light', 'dark'] as const)('fills the spines, the pot, and the glow with the %s tints', (theme) => {
+    document.documentElement.dataset.theme = theme;
+    const fills = (element: ReactElement, selector: string) => {
+      const { container, unmount } = renderUi(element);
+      const found = [...container.querySelectorAll(selector)].map((shape) => getComputedStyle(shape).fill);
+      unmount();
+      return found;
+    };
+    // Every book has its own colored spine, never the paper behind it.
+    const spines = fills(<Books />, 'path[class]').slice(0, 3);
+    expect(spines).toEqual(['--color-art-dusk', '--color-art-moss', '--color-art-night'].map(colorOf));
+    // The pot and the candle dish are clay, and the leaves are moss.
+    expect(fills(<Plant />, 'path')[0]).toBe(colorOf('--color-art-clay'));
+    expect(fills(<Plant />, 'g g path')).toContain(colorOf('--color-art-moss'));
+    const candle = renderUi(<Candle />);
+    const dish = candle.container.querySelectorAll('path')[4];
+    expect(getComputedStyle(dish).fill).toBe(colorOf('--color-art-clay'));
+    // The glow is the candle tint at the flame, fading to nothing at its edge.
+    const glow = [...candle.container.querySelectorAll('radialGradient stop')].map((stop) => getComputedStyle(stop));
+    expect(glow[0].stopColor).toBe(colorOf('--color-art-candle'));
+    expect(glow.at(-1)?.stopOpacity).toBe('0');
+    candle.unmount();
+  });
+
+  it('keeps every drawing tint distinct from the paper it sits on', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      document.documentElement.dataset.theme = theme;
+      const paper = colorOf('--color-surface-page');
+      const tints = ['moss', 'clay', 'candle', 'dusk', 'night'].map((tint) => colorOf(`--color-art-${tint}`));
+      expect(new Set(tints).size).toBe(5);
+      expect(tints).not.toContain(paper);
+    }
   });
 });
 
@@ -289,6 +339,10 @@ describe('under a Windows contrast theme', () => {
       expect(getComputedStyle(shape).fill).toBe('none');
       expect(getComputedStyle(shape).stroke).toBe(text);
     }
+    // A glow would be an outlined circle around each flame, so it goes.
+    const halos = [...container.querySelectorAll('circle[fill^="url"]')];
+    expect(halos.length).toBeGreaterThan(0);
+    for (const halo of halos) expect(getComputedStyle(halo).display).toBe('none');
   });
 
   it('hides the stars, which the evening theme otherwise shows', async () => {

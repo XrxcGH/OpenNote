@@ -1,5 +1,5 @@
-// A lit candle in a dish, 28 x 58. The flame is the one place the candle color shows; the glow around it is a flat
-// radial gradient in the candle tint. The flame never flickers.
+// A lit candle in a clay dish, 28 x 58. The flame is the one place the candle color shows; the warm glow around it
+// is a flat radial gradient in the candle tint that fades to nothing. The flame never flickers.
 
 import { useId } from 'react';
 import { Art } from './Art';
@@ -13,15 +13,16 @@ export function CandleArt() {
       <defs>
         <radialGradient id={glow} className={styles.glow}>
           <stop offset="0" />
+          <stop offset="0.45" stopOpacity="0.6" />
           <stop offset="1" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle cx="14" cy="13" r="17" fill={`url(#${glow})`} stroke="none" />
+      <circle className={styles.halo} cx="14" cy="12" r="16" fill={`url(#${glow})`} />
       <path className={styles.sun} d="M14 4.6C17.8 9.6 18.2 14.6 14.2 17.8 10.2 14.8 10.4 9.8 14 4.6Z" />
       <path d="M14 18.4V22" />
       <path d="M9 22.6C12 21.8 16 22 19 22.5L19.2 54.2C16 54.9 12 54.8 8.8 54.1Z" />
       <path d="M16.2 22.8C16.4 26.4 16 28.2 14.8 28.6" />
-      <path d="M3 51C8 56.2 20 56.4 25 51.2" />
+      <path className={styles.fillClay} d="M3 51C8 56.2 20 56.4 25 51.2" />
       <path d="M8 56H20" />
     </>
   );

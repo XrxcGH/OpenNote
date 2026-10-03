@@ -104,3 +104,12 @@ describe('cascade layers', () => {
     expect(css).toContain('@layer tokens, base, components, states, forced;');
   });
 });
+
+describe('drawing tints', () => {
+  it('defines the five drawing tints in both themes, and flattens them to the canvas in forced colors', () => {
+    const tints = ['moss', 'clay', 'candle', 'dusk', 'night'];
+    expect(Object.keys(tokens.color.light.art)).toEqual(tints);
+    expect(Object.keys(tokens.color.dark.art)).toEqual(tints);
+    tints.forEach((key) => expect(tokens.forcedColors).toHaveProperty([`art.${key}`], 'Canvas'));
+  });
+});

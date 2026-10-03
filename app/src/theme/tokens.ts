@@ -54,6 +54,13 @@ export const tokens = {
       "selection": {
         "highlight": "#F4DE93"
       },
+      "art": {
+        "moss": "#C8DCC6",
+        "clay": "#EDC3AF",
+        "candle": "#F5D59C",
+        "dusk": "#EDC0C9",
+        "night": "#C7CEEA"
+      },
       "ambient": {
         "canvasTop": "#FFF4DF",
         "canvasBottom": "#EAE3D8",
@@ -121,6 +128,13 @@ export const tokens = {
       "selection": {
         "highlight": "#52451F"
       },
+      "art": {
+        "moss": "#3E5A46",
+        "clay": "#6A4332",
+        "candle": "#6A4E27",
+        "dusk": "#62404D",
+        "night": "#383F6C"
+      },
       "ambient": {
         "canvasTop": "#1D1F2C",
         "canvasBottom": "#2E2430",
@@ -168,6 +182,11 @@ export const tokens = {
     "accent.duskSubtle": "Canvas",
     "accent.night": "CanvasText",
     "accent.nightSubtle": "Canvas",
+    "art.moss": "Canvas",
+    "art.clay": "Canvas",
+    "art.candle": "Canvas",
+    "art.dusk": "Canvas",
+    "art.night": "Canvas",
     "ambient.canvasTop": "Canvas",
     "ambient.canvasBottom": "Canvas",
     "ambient.spark": "Canvas",

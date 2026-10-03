@@ -41,7 +41,7 @@ function Shelf() {
         className={`${styles.fillMoss} ${styles.moss}`}
         d="M90.2 35.6C86.6 32.6 86.8 28.6 90.2 26 93.6 28.6 93.8 32.6 90.2 35.6Z"
       />
-      <path className={styles.fillCandle} d="M82.4 56C87 55.4 93.4 55.4 98 56L96 70.4C92 70.9 88.4 70.9 84.4 70.4Z" />
+      <path className={styles.fillClay} d="M82.4 56C87 55.4 93.4 55.4 98 56L96 70.4C92 70.9 88.4 70.9 84.4 70.4Z" />
     </>
   );
 }

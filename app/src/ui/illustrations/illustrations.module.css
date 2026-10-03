@@ -1,6 +1,6 @@
 /* The drawings (docs/BRAND.md section 8): small, quiet line art in the 1.5 px style of the icons. Every color is a
-   token. Lines are border.control, so they read below the text. Fills come from the subtle accents and the ambient
-   spark, at most three to a motif. Nothing here loops, and nothing sits behind text. */
+   token. Lines are border.control, so they read below the text. Fills come from the five soft drawing tints, the paper
+   tint, and the ambient spark. Nothing here loops, and nothing sits behind text. */
 @layer components {
   .art {
     display: block;
@@ -22,21 +22,52 @@
     vector-effect: non-scaling-stroke;
   }
 
-  /* Flat fills from the tokens. Stroke only where the drawing needs an outline. */
+  /* Soft fills from the five drawing tints (art.*), so a drawing has color as well as lines. Moss is for leaves and
+     covers, clay for a pot or dish, candle for warm light, dusk for rose spines and hills, and night for indigo.
+     Paper is the pale warm page of a notebook. Stroke only where the drawing needs an outline. */
+  .fillMoss {
+    fill: var(--color-art-moss);
+  }
+
+  .fillClay {
+    fill: var(--color-art-clay);
+  }
+
   .fillCandle {
-    fill: var(--color-accent-candle-subtle);
+    fill: var(--color-art-candle);
   }
 
   .fillDusk {
-    fill: var(--color-accent-dusk-subtle);
+    fill: var(--color-art-dusk);
   }
 
   .fillNight {
-    fill: var(--color-accent-night-subtle);
+    fill: var(--color-art-night);
   }
 
-  .fillMoss {
-    fill: var(--color-accent-primary-subtle);
+  .fillPaper {
+    fill: var(--color-accent-candle-subtle);
+  }
+
+  /* The window sky: paper light into a candle and dusk sunset band by day, deep night into indigo in the evening. */
+  .stopPaper {
+    stop-color: var(--color-accent-candle-subtle);
+  }
+
+  .stopCandle {
+    stop-color: var(--color-art-candle);
+  }
+
+  .stopDusk {
+    stop-color: var(--color-art-dusk);
+  }
+
+  .stopDeep {
+    stop-color: var(--color-accent-night-subtle);
+  }
+
+  .stopNight {
+    stop-color: var(--color-art-night);
   }
 
   .spark {
@@ -87,9 +118,13 @@
     stroke: var(--color-accent-night);
   }
 
-  /* The glow around a flame is a flat radial gradient inside the drawing, never a blur. */
+  /* The warm glow around a flame is a flat radial gradient in the candle tint inside the drawing, never a blur. */
   .glow stop {
-    stop-color: var(--color-accent-candle-subtle);
+    stop-color: var(--color-art-candle);
+  }
+
+  .halo {
+    stroke: none;
   }
 
   /* The sign-off stroke under a heading: moss ink with a clay dot, like the logo. */
@@ -160,7 +195,7 @@
       stroke: CanvasText;
     }
 
-    :is(.stars, .dots) {
+    :is(.stars, .dots, .halo) {
       display: none;
     }
   }

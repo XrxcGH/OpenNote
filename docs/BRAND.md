@@ -104,11 +104,11 @@ Three small accent families and one ambient group give the shell its warmth. Eac
 | Token | Light | Dark | Use |
 |---|---|---|---|
 | `accent.candle` | `#9A5410` | `#F0A860` | The sun icon, a candle flame, lamplight |
-| `accent.candleSubtle` | `#F8EBD3` | `#3A2C1C` | Candle glow and illustration fills |
+| `accent.candleSubtle` | `#F8EBD3` | `#3A2C1C` | Warm paper: notebook pages in drawings and the top of the day window's sky |
 | `accent.dusk` | `#9C4559` | `#EBA0B2` | Sunset line art, dusk accents |
-| `accent.duskSubtle` | `#F6E4E4` | `#3A2A30` | Sunset band fill |
+| `accent.duskSubtle` | `#F6E4E4` | `#3A2A30` | A soft rose surface behind a dusk accent; drawings use `art.dusk` |
 | `accent.night` | `#4A5590` | `#A9B4EC` | The moon icon, night line art |
-| `accent.nightSubtle` | `#E8EAF3` | `#1F2233` | Night window pane fill |
+| `accent.nightSubtle` | `#E8EAF3` | `#1F2233` | The upper night sky in the evening window |
 | `ambient.canvasTop` | `#FFF4DF` window light | `#1D1F2C` night sky | Top of the desk canvas behind the page and the setup backdrop |
 | `ambient.canvasBottom` | `#EAE3D8` (the sunken color) | `#2E2430` dusk horizon | Bottom of the same gradient |
 | `ambient.spark` | `#F2CF8A` sun disc | `#E7D9B0` starlight | The sun disc and stars only, never text |
@@ -116,6 +116,20 @@ Three small accent families and one ambient group give the shell its warmth. Eac
 Candle, dusk, and night are never status colors and never fill a button, so candle can't be mistaken for `status.warning`. They also never stand alone as a signal.
 
 The ambient washes stay quiet: CHECKS holds `ambient.canvasTop` and `ambient.canvasBottom` to at most 1.3:1 against `surface.sunken` (a `max` ceiling on a contrast pair), and they only ever show around the page card, never behind text. Under Windows contrast themes the accents become the system text color, and the fills and ambient tokens become the system canvas, so the gradients flatten and the stars disappear.
+
+### Drawing tints
+
+The drawings get their color from five soft tints, one for each motif color, so a drawing is never outlines alone. They are fills only: never text, never a button, and never a signal.
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `art.moss` | `#C8DCC6` | `#3E5A46` | Leaves, vines, the day window's hills, a moss spine |
+| `art.clay` | `#EDC3AF` | `#6A4332` | Pots and the candle dish |
+| `art.candle` | `#F5D59C` | `#6A4E27` | The glow around a flame, the sunset band, an amber spine |
+| `art.dusk` | `#EDC0C9` | `#62404D` | The rose of the sunset band, the evening hills, a rose spine |
+| `art.night` | `#C7CEEA` | `#383F6C` | The night window's horizon, an indigo spine |
+
+A notebook's pages use `accent.candleSubtle` as warm paper, and the night window's upper sky uses `accent.nightSubtle`. The lines on top stay `border.control`, so a fill never hides an edge. Under Windows contrast themes the tints become the system canvas, and the drawings go back to plain outlines.
 
 ### Ink colors
 
@@ -210,14 +224,25 @@ Depth comes from warm, soft shadows in three steps (`elevation.1` to `elevation.
 
 ## 8. Icons, logo, and illustration
 
+### Icons
+
 Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut. A button that shows its name gets a tooltip only to add its shortcut, never one that repeats its label.
+
+### Logo
 
 The logo is a folded page with a moss-green ink stroke ending in a clay pen tip: see [`brand/logo-mark.svg`](../brand/logo-mark.svg) and [`brand/app-icon.svg`](../brand/app-icon.svg). Keep clear space of half the mark's width around it, and don't recolor, stretch or add effects.
 
+### Illustrations
+
 Illustrations appear in onboarding, empty states, error screens, the theme previews, Settings > About and the notebooks pane footer. A pane or card has at most one, and none is larger than 240 by 150 pixels. The motif set is a window, a plant and vine, a candle, books, a sunset, and stars with a moon.
 
-- They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors with at most three fills.
-- Each is under 3 KB, hidden from screen readers, and never sits behind text.
+- They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors.
+- Lines are `border.control`. Fills come from the five drawing tints and warm paper, so every book has a colored spine, every pot is filled, and every flame has a warm glow.
+- The day window holds a sunset band behind the sun, and the evening window a crescent moon with a few stars, by theme.
+- Each is under 6 KB of markup, hidden from screen readers, and never sits behind text.
+
+### Drawing geometry
+
 - Things in a drawing obey gravity. Books, pots, the notebook, and the candle stand on their shelf, desk, or sill line. None sinks into its line or floats above it. A leaning book stands on its lower corner and rests against its neighbor. The component tests check both.
 - Nothing crowds another shape, such as a star against a leaf or the sun against a window bar.
 - A drawing set above left-aligned text is cropped to its content, so its shelf starts where the text starts.
