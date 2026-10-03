@@ -77,13 +77,14 @@ describe('the ink pipeline', () => {
 
   it('commits finger ink at once on a phone, showing it only once it moves', () => {
     const { h, calls } = host();
-    const p = createInkPipeline(h, {}, { pxPerMm: PPM, penDigitizer: false });
+    const p = createInkPipeline(h, {}, { pxPerMm: PPM, penDigitizer: false, touchSize: true });
     p.setInkToolActive(true);
     p.handle(rec('down', 'touch', 5, 0, 50, 50));
     expect(calls).toContain('ink 5 shadow');
     p.handle(rec('move', 'touch', 5, 10, 52, 50));
     p.handle(rec('up', 'touch', 5, 20, 54, 50, 0));
-    expect(calls.filter((c) => c.startsWith('ink 5'))).toEqual(['ink 5 shadow', 'ink 5 show', 'ink 5 commit']);
+    const ink = ['ink 5 shadow', 'ink 5 show', 'ink 5 point', 'ink 5 commit'];
+    expect(calls.filter((c) => c.startsWith('ink 5'))).toEqual(ink);
   });
 
   it('swallows the tap of a palm that landed before the pen, and starts a far-side scroll', () => {

@@ -2,7 +2,7 @@
 // event time, so a recorded session replays the same way. A pen never waits: `pen` does constant bookkeeping and
 // gates nothing. Touch ink is provisional until its contact resolves and its hold passes.
 
-import { Cls as Cls_, F as F_ } from './contacts';
+import { Cls as Cls_, F as F_, SizeMode as SizeMode_ } from './contacts';
 import { Core } from './core';
 import {
   decideDown as decideDown_,
@@ -11,7 +11,7 @@ import {
   freezeNav as freezeNav_,
   pressAllowed as pressAllowed_,
 } from './decide';
-import { Fx as Fx_, Role as Role_ } from './effects';
+import { End as End_, Fx as Fx_, Role as Role_ } from './effects';
 import type { Effects } from './effects';
 import { leanOf as leanOf_ } from './handRegion';
 import { P as P_, PRESENCE_NAMES, penContext as penContext_ } from './presence';
@@ -26,6 +26,8 @@ import type { RoleCode } from './effects';
 /** Local copies, so event paths call and read them directly rather than through module bindings. */
 const Cls = { ...Cls_ };
 const F = { ...F_ };
+const SizeMode = { ...SizeMode_ };
+const End = { ...End_ };
 const decideDown = decideDown_;
 const decideEnd = decideEnd_;
 const afterMove = afterMove_;
@@ -84,6 +86,11 @@ export interface PalmFilter {
   explain(id: number): number;
   /** The live contact's role, or Ignore for an unknown id. */
   roleOf(id: number): RoleCode;
+  /** Whether a point (client CSS px) lies in the writing hand of the pen's last position or of the line written. */
+  inHand(x: number, y: number): boolean;
+  /** Whether a pen has been seen on this device, and whether its touch digitizer reports real contact sizes. */
+  penSeen(): boolean;
+  sizesReal(): boolean;
   learned(): LearnedState;
 }
 
@@ -113,6 +120,10 @@ class Filter implements PalmFilter {
     core.pxPerMm = resolvePxPerMm(core.profile.pxPerMm, core.learnedIn?.pxPerMmCalibrated);
     core.pens.watchdogMs = core.profile.hoverWatchdogMs;
     if (core.learnedIn?.penSeen) core.pens.penSeen = true;
+    // The native seam knows whether the digitizer reports contact sizes; the session learns it otherwise.
+    if (core.c.sizeMode === SizeMode.Unknown && core.profile.touchSize !== null) {
+      core.c.sizeMode = core.profile.touchSize ? SizeMode.Real : SizeMode.None;
+    }
     core.seedHands();
   }
 
@@ -136,6 +147,8 @@ class Filter implements PalmFilter {
       pens.tipX = x / core.pxPerMm;
       pens.tipY = y / core.pxPerMm;
       pens.tipValid = true;
+      if (signal === 'down') core.penDownAt(pens.tipX, pens.tipY);
+      else if (signal === 'up') core.penUpAt(pens.tipX, pens.tipY);
     }
     if ((signal === 'down' || (signal === 'hover' && !core.hand.seeded)) && leanOf(tiltX, tiltY, this.lean)) {
       core.hand.lean(this.lean.x, this.lean.y);
@@ -154,16 +167,18 @@ class Filter implements PalmFilter {
       return;
     }
     if (arrival) this.arrive(t);
-    if (wentDown) freezeNav(core, t);
     core.prepare(t, after);
+    // Judge first, so a palm latched by this event reverts its own camera move before the rest freeze.
     core.rescoreAll();
+    if (wentDown) freezeNav(core, t);
   }
 
-  /** A pen arrived: contacts that landed first and stayed still gain E9. */
+  /** A pen arrived: contacts that landed first and rest now gain E9; a palm may have drifted as it settled. */
   private arrive(t: number): void {
     const c = this.core.c;
     for (let i = 0; i < K.MAX_CONTACTS; i++) {
-      if (c.used[i] === 0 || t - c.t0[i] >= K.PALM_FIRST_AGE_MS || c.disp[i] >= K.PALM_FIRST_TRAVEL_MM) continue;
+      if (c.used[i] === 0 || t - c.t0[i] >= K.PALM_FIRST_AGE_MS) continue;
+      if (c.tMoved[i] !== c.t0[i] && c.stillFor(i, t) < K.RECENT_STILL_MS) continue;
       c.flags[i] |= F.PalmFirst;
     }
   }
@@ -190,12 +205,11 @@ class Filter implements PalmFilter {
     const i = c.add(id, t, xm, ym);
     if (i < 0) return Role.Ignore;
     core.dueAt = Math.min(core.dueAt, t + K.CHECKPOINTS_MS[0]);
-    this.size(i, w, h, pressure);
+    this.size(i, t, w, h, pressure);
     const p = core.presenceAt(t);
     if (p === P.Down) c.flags[i] |= F.PenDownAtLand;
     c.sinceUp[i] = t - core.pens.lastUpOrLeave;
     if (surface === 'chrome') c.flags[i] |= F.Chrome;
-    if (!penContext(p) && !(core.inkTool && core.fingerDrawOn())) c.flags[i] |= F.Unjudged;
     this.edge(i, xm, ym);
     core.x.land(t, xm, ym);
     this.track(i, p);
@@ -216,7 +230,7 @@ class Filter implements PalmFilter {
     const i = c.find(id);
     if (i < 0) return Role.Ignore;
     c.moveTo(i, t, x / core.pxPerMm, y / core.pxPerMm);
-    this.size(i, w, h, pressure);
+    this.size(i, t, w, h, pressure);
     const p = core.presenceAt(t);
     this.track(i, p);
     core.prepare(t, p);
@@ -233,7 +247,8 @@ class Filter implements PalmFilter {
     core.settle(t);
     const i = c.find(id);
     if (i < 0) return 0;
-    if (canceled && core.managed()) c.flags[i] |= F.OsPalm;
+    // A cancel is a palm verdict only from a platform that cancels palms; elsewhere it is a system gesture.
+    if (canceled && core.managed() && core.profile.osPalmCancel !== false) c.flags[i] |= F.OsPalm;
     if (t - c.t0[i] <= K.TAP_MS && c.disp[i] < K.STILL_MM) c.flags[i] |= F.Tap;
     const p = core.presenceAt(t);
     core.prepare(t, p);
@@ -296,9 +311,9 @@ class Filter implements PalmFilter {
       if (c.used[i] === 0) continue;
       const role = c.role[i];
       if (role === Role.Draw) {
-        const held = core.endStroke(i, t);
+        const held = core.endStroke(i, t) & End.Held;
         core.setRole(i, Role.Ignore, held ? Fx.Hold : 0);
-      } else if (role === Role.Shadow) {
+      } else if (role === Role.Shadow || role === Role.Pend) {
         core.setRole(i, Role.Ignore, Fx.Retract);
       } else if (role !== Role.Ignore) {
         core.setRole(i, Role.Ignore, 0);
@@ -307,7 +322,7 @@ class Filter implements PalmFilter {
       c.pairWith[i] = -1;
       c.flags[i] |= F.Suppress;
     }
-    core.drawSlot = core.shadowSlot = -1;
+    core.drawSlot = core.shadowSlot = core.pendA = -1;
   }
 
   tick(t: number): void {
@@ -350,11 +365,24 @@ class Filter implements PalmFilter {
     return i < 0 ? Role.Ignore : (this.core.c.role[i] as RoleCode);
   }
 
+  inHand(x: number, y: number): boolean {
+    const core = this.core;
+    return core.inPenHand(x / core.pxPerMm, y / core.pxPerMm, true);
+  }
+
+  penSeen(): boolean {
+    return this.core.pens.penSeen;
+  }
+
+  sizesReal(): boolean {
+    return this.core.c.sizeMode === SizeMode.Real;
+  }
+
   learned(): LearnedState {
     return this.core.learned();
   }
 
-  private size(i: number, w: number, h: number, pressure: number): void {
+  private size(i: number, t: number, w: number, h: number, pressure: number): void {
     const c = this.core.c;
     const ppm = this.core.pxPerMm;
     if (!(w > 1 || h > 1)) {
@@ -363,7 +391,7 @@ class Filter implements PalmFilter {
     }
     const major = Math.max(w, h) / ppm;
     const minor = Math.min(w, h) / ppm;
-    c.sizeTo(i, w, h, major, minor, Number.isFinite(pressure) ? pressure : 0);
+    c.sizeTo(i, t, w, h, major, minor, Number.isFinite(pressure) ? pressure : 0);
   }
 
   /** Offsets from the pen tip (pen down) or from the drawing contact (finger drawing), for learning. */
@@ -374,12 +402,13 @@ class Filter implements PalmFilter {
     const dt = c.tLast[i] - c.tTrack[i];
     c.tTrack[i] = c.tLast[i];
     if (penContext(p) && pens.tipValid) {
-      c.relTo(i, pens.tipX, pens.tipY);
+      c.relTo(i, pens.tipX, pens.tipY, c.tLast[i]);
       if (p !== P.Down) return;
       c.penDownMs[i] += Math.min(dt, K.PEN_DOWN_STEP_MS);
       c.sumDx[i] += c.x[i] - pens.tipX;
       c.sumDy[i] += c.y[i] - pens.tipY;
       c.sumN[i]++;
+      core.vote(i);
       return;
     }
     const d = core.drawSlot;
@@ -403,7 +432,7 @@ class Filter implements PalmFilter {
     if (c.live === 0) return;
     for (let i = 0; i < K.MAX_CONTACTS; i++) {
       if (c.used[i] === 0 || t - c.tLast[i] < K.PRUNE_MS) continue;
-      if (c.role[i] === Role.Draw) core.setRole(i, Role.Ignore, core.endStroke(i, t) ? Fx.Hold : 0);
+      if (c.role[i] === Role.Draw) core.setRole(i, Role.Ignore, core.endStroke(i, t) & End.Held ? Fx.Hold : 0);
       core.release(i, t);
     }
   }

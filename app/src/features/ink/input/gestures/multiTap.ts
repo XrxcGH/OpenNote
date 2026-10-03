@@ -47,6 +47,8 @@ export interface MultiTapDetector {
   voidContact(id: number): void;
   /** Forgets everything, for when a pen comes near or a gesture takes the fingers. */
   cancel(): void;
+  /** Raises the spacing fingers of one tap need, in mm, for the fingers that land next; 0 restores the default. */
+  setMinSpacing(mm: number): void;
 }
 
 interface Finger {
@@ -70,6 +72,7 @@ class Detector implements MultiTapDetector {
   private valid = true;
   private previous: Tap | null = null;
   private pending: { result: MultiTapResult; at: number; ids: readonly number[] } | null = null;
+  private minSpacing = 0;
 
   constructor(options: Partial<MultiTapOptions>) {
     this.options = { ...DEFAULT_MULTI_TAP, ...options };
@@ -87,7 +90,7 @@ class Detector implements MultiTapDetector {
     if (Math.max(w, h) >= o.palmMm) this.valid = false;
     for (const f of this.fingers) {
       const d = Math.hypot(x - f.x, y - f.y);
-      if (d < o.minSpacing || d > o.maxSpacing) this.valid = false;
+      if (d < Math.max(o.minSpacing, this.minSpacing) || d > o.maxSpacing) this.valid = false;
     }
     this.fingers.push({ id, x, y, downTime: time, lifted: false });
   }
@@ -137,6 +140,10 @@ class Detector implements MultiTapDetector {
     this.reset();
     this.previous = null;
     this.pending = null;
+  }
+
+  setMinSpacing(mm: number): void {
+    this.minSpacing = mm;
   }
 
   /** A group with a finger still down after `tapMs` is no tap; its lift may never come. */

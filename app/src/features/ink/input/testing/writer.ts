@@ -6,7 +6,7 @@ import type { LearnedState, PalmSettings } from '../palm/index';
 import type { SimProfile } from './profiles';
 import { reportSize } from './profiles';
 import { SESSION_FORMAT, SESSION_VERSION } from './session';
-import type { EventType, Grip, Intent, LabelClass, Label, Session, SessionEvent } from './session';
+import type { Coalesced, EventType, Grip, Intent, LabelClass, Label, Session, SessionEvent } from './session';
 
 /** A seeded random source (mulberry32). */
 export type Rand = () => number;
@@ -48,7 +48,14 @@ export interface WriterOptions {
   readonly settings: Partial<PalmSettings>;
   readonly learned?: LearnedState;
   readonly task: string;
+  /** A pen sample rate other than the profile's, for coalesced batches. */
+  readonly rateHz?: number;
+  /** Pen strokes report zero pressure on their first and last samples. */
+  readonly zeroPressureEnds?: boolean;
 }
+
+/** Sensor noise on a touch position, mm peak to peak. */
+const JITTER_MM = 0.5;
 
 export class SessionWriter {
   private readonly drafts: Draft[] = [];
@@ -66,6 +73,12 @@ export class SessionWriter {
   ) {}
 
   private emit(e: Omit<Draft, 'order'>): void {
+    // A Wacom pen with Windows Ink off arrives as a mouse: no pressure, no tilt, and no leave on the root.
+    if (e.pt === 'pen' && this.profile.device.id === 'windows-pen-as-mouse') {
+      if (e.type === 'pointerleave') return;
+      const { tx: _tx, ty: _ty, alt: _alt, az: _az, ...rest } = e;
+      e = { ...rest, pt: 'mouse', p: (e.bs ?? 0) !== 0 ? 0.5 : 0 };
+    }
     this.drafts.push({ ...e, order: this.order++ } as Draft);
   }
 
@@ -86,14 +99,33 @@ export class SessionWriter {
     return { tx, ty, alt: 1.0, az };
   }
 
-  /** Hover samples from t0 to t1 along a path, at the pen rate. Some are lost on unstable digitizers. */
+  private get rate(): number {
+    return this.options.rateHz ?? this.profile.rateHz;
+  }
+
+  /**
+   * Hover samples from t0 to t1 along a path, at the pen rate. Some are lost on unstable digitizers; an AES pen may
+   * lose proximity, leaving range for 300 to 700 ms and coming back. WebKit reports hover only on change, and Apple
+   * Pencil hover has no tilt.
+   */
   hover(t0: number, t1: number, at: (t: number) => Vec2, id = 1): void {
-    if (this.profile.stylus !== 'pen' || this.profile.hover === 'none') return;
-    const step = 1000 / this.profile.rateHz;
-    const tilt = this.tilt();
+    const p = this.profile;
+    if (p.stylus !== 'pen' || p.hover === 'none') return;
+    const step = 1000 / this.rate;
+    const tilt = p.hoverTilt ? this.tilt() : {};
+    const lost = t1 - t0 > 200 && this.rand() < p.proximityLoss ? between(this.rand, t0, t1 - 100) : Number.NaN;
+    const back = lost + between(this.rand, 300, 700);
+    let last = '';
     for (let t = t0; t <= t1; t += step * 2) {
-      if (this.rand() < this.profile.hoverDrop) continue;
+      if (this.rand() < p.hoverDrop) continue;
+      if (t >= lost && t < back) {
+        if (t - step * 2 < lost) this.leave(t, id);
+        continue;
+      }
       const [x, y] = at(t);
+      const key = `${this.px(x)},${this.px(y)}`;
+      if (p.hoverOnChange && key === last) continue;
+      last = key;
       this.emit({
         t,
         type: 'pointermove',
@@ -113,12 +145,15 @@ export class SessionWriter {
   /** A pen stroke from t0 to t1. Returns its sample count. */
   stroke(t0: number, t1: number, at: (t: number) => Vec2, id = 1): number {
     const p = this.profile;
-    const step = 1000 / p.rateHz;
+    const step = 1000 / this.rate;
     const tilt = this.tilt();
+    const zeroEnds = this.options.zeroPressureEnds === true;
     const pressure = (t: number) =>
-      p.pressureLevels === 0
-        ? 0.5
-        : Math.round((0.25 + 0.4 * Math.sin(((t - t0) / (t1 - t0)) * Math.PI)) * 1000) / 1000;
+      zeroEnds && (t === t0 || t + step > t1)
+        ? 0
+        : p.pressureLevels === 0
+          ? 0.5
+          : Math.round((0.25 + 0.4 * Math.sin(((t - t0) / (t1 - t0)) * Math.PI)) * 1000) / 1000;
     let n = 0;
     for (let t = t0; t <= t1; t += step) {
       const [x, y] = at(t);
@@ -175,8 +210,8 @@ export class SessionWriter {
     for (let t = spec.t0; t < end; t += step) {
       const [x, y] = spec.at(t);
       const [w, h] = reportSize(p, ...spec.size(t));
-      const jx = (this.rand() - 0.5) * 0.2;
-      const jy = (this.rand() - 0.5) * 0.2;
+      const jx = (this.rand() - 0.5) * JITTER_MM;
+      const jy = (this.rand() - 0.5) * JITTER_MM;
       const type = t === spec.t0 ? 'pointerdown' : 'pointermove';
       this.emit({
         t,
@@ -230,7 +265,10 @@ export class SessionWriter {
   }
 
   build(): Session {
-    const sorted = [...this.drafts].sort((a, b) => a.t - b.t || a.order - b.order);
+    const sorted = coalesce(
+      [...this.drafts].sort((a, b) => a.t - b.t || a.order - b.order),
+      this.profile.frameHz,
+    );
     const events = sorted.map(({ order: _order, ...e }, seq) => ({ seq, ...e }) as SessionEvent);
     const p = this.profile;
     return {
@@ -267,6 +305,46 @@ export class SessionWriter {
       expects: [],
     };
   }
+}
+
+/**
+ * Batches each pointer's moves per display frame, as a browser delivers them: the last move of a frame is the event,
+ * and the earlier ones ride on it as coalesced samples. Downs, lifts, and other events stay as they are.
+ */
+function coalesce(drafts: Draft[], frameHz: number): Draft[] {
+  const frame = 1000 / frameHz;
+  const out: (Draft | null)[] = [];
+  const open = new Map<string, { at: number; frame: number }>();
+  for (const e of drafts) {
+    const key = `${e.pt ?? ''}${e.id ?? ''}`;
+    if (e.type !== 'pointermove' || e.pt === undefined) {
+      if (e.pt !== undefined) open.delete(key);
+      out.push(e);
+      continue;
+    }
+    const f = Math.floor(e.t / frame);
+    const prev = open.get(key);
+    const held = prev && prev.frame === f ? out[prev.at] : null;
+    open.set(key, { at: out.length, frame: f });
+    if (!held || held.bs !== e.bs) {
+      out.push(e);
+      continue;
+    }
+    // The batch is delivered with its last sample, after whatever other pointers sent in between.
+    const sample: Coalesced = [
+      held.t,
+      held.x ?? 0,
+      held.y ?? 0,
+      held.p ?? 0,
+      held.tx ?? 0,
+      held.ty ?? 0,
+      held.w ?? 1,
+      held.h ?? 1,
+    ];
+    out[prev!.at] = null;
+    out.push({ ...e, co: [...(held.co ?? []), sample] });
+  }
+  return out.filter((e): e is Draft => e !== null);
 }
 
 /**

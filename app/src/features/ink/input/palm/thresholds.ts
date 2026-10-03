@@ -43,7 +43,20 @@ export const RADIUS_MAX_MM = 80;
 export const LEAN_FLIP_STROKES = 5;
 /** [V] Default hand offsets from the tip and radii, right-handed; left mirrors x. */
 export const PEN_HAND = { ox: 40, oy: 45, r: 50 } as const;
-export const TOUCH_HAND = { ox: 25, oy: 30, r: 40 } as const;
+/** [V] The hand of a drawing finger or passive stylus sits on the palm side only, so the thumb side (a pinch) is out. */
+export const TOUCH_HAND = { ox: 32, oy: 40, r: 35 } as const;
+/** The touch hand's membership falls to 0 over this distance outside its circle. */
+export const TOUCH_FALLOFF_MM = 12;
+/** Contacts that rested this long while the pen was down, on one side of the tip, set the side of the hand. */
+export const SIDE_VOTES = 2;
+/** A resting contact this far from the tip, in x or y, is not the writing hand. */
+export const SIDE_REACH_MM = 80;
+/** A contact resting this long while the pen is down votes a second time. */
+export const SIDE_LONG_MS = 600;
+/** Pen anchors besides the tip: the start of the line being written, and that start one line down. */
+export const LINE_MM = 10;
+/** A pen down this far back from the last lift, along the line, starts a new line. */
+export const LINE_JUMP_MM = 30;
 /** A contact held this long while the pen is down teaches the hand region. */
 export const LEARN_HOLD_MS = 300;
 
@@ -55,13 +68,18 @@ export const AFTER_PEN_HOLD_MS = 1000;
 export const PEN_DOWN_HELD_MS = 300;
 /** The most one event adds to that time, so a gap in events does not count as contact. */
 export const PEN_DOWN_STEP_MS = 50;
-/** E9 [V]: a contact this young and this still when a pen arrives landed first [S29]. */
+/** E9 [V]: a contact this young, and still now, when a pen arrives landed first [S29]. */
 export const PALM_FIRST_AGE_MS = 1500;
-export const PALM_FIRST_TRAVEL_MM = 2;
 /** E10: still at 150 ms and at 500 ms [S28]. */
 export const STILL_MM = 1.5;
 export const STILL_EARLY_MS = 150;
 export const STILL_LATE_MS = 500;
+/** A contact has moved when it gets this far from where it last moved; sensor jitter stays under it. */
+export const MOVE_STEP_MM = 1;
+/** Still now: no move for this long. A palm drifts while it settles and then rests, so stillness is recent. */
+export const RECENT_STILL_MS = 150;
+/** E10 +2: still for this long, at 500 ms or older. */
+export const STILL_LONG_MS = 350;
 /** E11 [V]: a swipe. */
 export const SWIPE_MM = 3;
 export const SWIPE_MS = 200;
@@ -81,10 +99,12 @@ export const BURST_MS = 300;
 export const BURST_MM = 90;
 
 // Grip and stylus tips.
-/** E15 [S6]: a grip starts this close to a screen edge. */
+/** E15 [S6]: a grip starts this close to a screen edge, and stays there: still this long, or elongated and still. */
 export const EDGE_MM = 5;
-export const GRIP_MAJOR_MM = 12;
+export const GRIP_STILL_MS = 500;
 export const GRIP_ASPECT = 1.8;
+/** An edge contact is a hidden stroke until it travels this far, then shows with its whole path. */
+export const EDGE_TRAVEL_MM = 2;
 /** E17: a learned passive stylus tip, plus this margin. */
 export const TIP_MARGIN_MM = 2;
 /** "High" sensitivity with a learned tip draws only within this margin. */
@@ -104,10 +124,31 @@ export const FINGER_SCORE = 0;
 export const CONFIRM_MS = 500;
 /** Ages at which every live contact is scored again [S28]. */
 export const CHECKPOINTS_MS: readonly number[] = [25, 50, 100, 150, 200, 350, 500];
-/** A drawing contact is weak: this still at this age, or scoring this much. */
+/** A drawing contact is weak: no move in the last 150 ms at this age, or scoring this much. */
 export const WEAK_TRAVEL_MM = 2;
 export const WEAK_AGE_MS = 150;
 export const WEAK_SCORE = 2;
+/**
+ * Touch ink shows once its contact has moved this far: at once for a fingertip that keeps its size on a digitizer with
+ * real sizes, and otherwise once it moves like a stroke rather than like a palm that drifts while it settles. Else it
+ * shows at its lift.
+ */
+export const SHOW_MM = 0.5;
+/** A fingertip whose size grew less than this since it landed has not grown like a settling palm. */
+export const SHOW_GROW_MM = 1;
+/**
+ * A palm drifts up to about 8 mm while it settles, and has settled 250 ms after it lands. A contact that has traveled
+ * this far, or has moved `MOVE_ON_MM` from where it was at that age, moves like a stroke or a scroll.
+ */
+export const SETTLE_TRAVEL_MM = 10;
+export const SETTLED_AT_MS = 250;
+export const MOVE_ON_MM = 1.5;
+/** A pending pair in finger drawing resolves to a stroke when one contact writes this far and the other rests. */
+export const PEND_WRITE_MM = 3;
+/** The resting contact has moved at most 1 / this of the writer's distance; a lopsided pinch moves both more. */
+export const PEND_REST_SHARE = 4;
+/** A pinch in the hand: the two contacts head more than 60 degrees apart; a sliding hand follows its finger. */
+export const SQUEEZE_COS = 0.5;
 /** A touch stroke that scores this much at its lift is retracted (a thumb at +1 still draws). */
 export const RETRACT_AT_LIFT = 2;
 
@@ -127,8 +168,21 @@ export const TAP_MAX_MM = 80;
 export const PAN_HEADING_DEG = 45;
 export const PAN_SPEED_RATIO = 3;
 export const PINCH_MM = 2;
+/**
+ * A pair that spreads or squeezes (headings over 60 degrees apart, neither moving against the pinch) needs this much
+ * less score to pinch: the parts of a palm drift together, so a thumb in the hand of the next line still zooms.
+ */
+export const PINCH_BONUS = -3;
 /** A pan or scroll that began this recently is reverted when the pen goes down. */
 export const NAV_REVERT_MS = 500;
+/**
+ * On a device that has seen a pen, one-finger scroll waits until its contact is this old with a steady size, or has
+ * traveled this far, so a palm that settles never moves the page. The wait loses no motion.
+ */
+export const SCROLL_SETTLE_MS = 100;
+export const SCROLL_SETTLE_MM = 4.5;
+/** A size that has not changed for this long is steady. */
+export const SIZE_STEADY_MS = 50;
 
 // Holds and commits.
 /** Touch ink committed this long before a pen arrives, inside its hand region, is taken back [S16]. */

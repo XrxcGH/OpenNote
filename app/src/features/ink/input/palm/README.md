@@ -47,7 +47,9 @@ Real pen evidence is `hover`, `down`, `move`, `up`, and `cancel`. A `leave` from
 
 - Shape: center at the tip plus an offset, radius `r`. Membership is 1 inside the circle, inside the forearm strip beyond it, and within 15 mm of the tip. It falls to 0 over 25 mm outside. The far side is more than 15 mm behind the tip, away from the hand.
 - Seed: learned device state, then the pen's lean (a pen that leans 15 degrees or more points at the hand), then the handedness setting, then the system setting, then right-handed.
-- Learning: a palm that ends after hard evidence, or after 300 ms down with the pen down, moves the offset 20% toward where it sat. Each stroke's lean blends in at 30%. An explicit setting holds the side of the hand until 5 strokes in a row lean the other way.
+- Learning: a palm that ends after hard evidence, or after 300 ms down with the pen down, moves the offset 20% toward where it sat when it sits on the region's side. Each stroke's lean blends in at 30%. An explicit setting holds the side of the hand until 5 strokes in a row lean the other way.
+- Side: without a lean, a setting, or a system hint the side is unknown. Contacts that rest 300 ms while the pen is down vote for the side they sit on (again at 600 ms), and a palm latched by size or by the OS casts two votes. Two votes set the side, or flip a guessed one at once. Until then no contact gets E6, and once the pen has left, a contact in the hand on either side gets E5.
+- Anchors: the last pen position and, once the pen has left, the start of the line being written and that start one line down, where the hand comes back for the next line.
 
 ## Evidence
 
@@ -59,24 +61,24 @@ Real pen evidence is `hover`, `down`, `move`, `up`, and `cancel`. A `leave` from
 | E2  | Large: 14 to 20 mm, a thumb or flat finger                                                     | +1                               |
 | E3  | Fingertip: 11 mm or less                                                                       | -1                               |
 | E4  | Grew 4 mm, or 40% past a fingertip                                                             | +2                               |
-| E5  | In the hand region, where it is now                                                            | +3 near or down; +2 or +1 recent |
-| E6  | Far side of the tip, or 80 mm outside the region                                               | -2                               |
+| E5  | In the hand region of any anchor, where it is now                                              | +3 near or down; +2 or +1 recent |
+| E6  | Far side of the tip, or 80 mm outside the region, once the side is known                       | -2                               |
 | E7  | The pen was down when it landed, or it rested 300 ms in the hand region while the pen was down | +2                               |
-| E8  | Landed within 400 ms of a pen lift or leave; within 1 s                                        | +2; +1                           |
+| E8  | Landed within 400 ms of a pen lift or leave; within 1 s. Once the side is known, only in, or near the hand | +2; +1                |
 | E9  | Landed first: young and still when a pen arrived                                               | +2                               |
 | E10 | Still at 150 ms; at 500 ms                                                                     | +1; +2                           |
-| E11 | Swipe: 3 mm straight in 200 ms; 8 mm and not large; never inside the hand region near the pen  | -2; -3                           |
+| E11 | Swipe, once it has moved on: 3 mm straight in 200 ms; 8 mm and not large; never inside the hand region near the pen | -2; -3      |
 | E12 | A palm within 70 mm                                                                            | +2                               |
 | E13 | Another contact landed within 12 mm (a split palm)                                             | +2                               |
 | E14 | Three landings within 300 ms and 90 mm                                                         | +2                               |
-| E15 | Grip at a screen edge                                                                          | +3, never draws                  |
+| E15 | Grip: landed within 5 mm of an edge and stays there, still for 500 ms, or elongated and still  | +3                               |
 | E16 | The OS says palm: a touch `pointercancel` under managed touch, or a native hint                | Latch                            |
 | E17 | The size of a learned passive stylus tip                                                       | -2                               |
 | E18 | Its own palm: a resting contact in the region anchored at it                                   | -2                               |
 | E19 | Lifted as a tap                                                                                | -1                               |
 | E20 | Sensitivity low, standard, high                                                                | -1, 0, +1                        |
 
-Sizes count only when the digitizer reports real sizes. Motion counts against the pen, so a palm that moves with the writing hand stays still, and a palm that slides between words in the hand region is no swipe. A score of 4 or more latches palm. A score of 0 or less is a finger. An action that has run 500 ms is confirmed, and only E1, E4, or E16 can stop it.
+Sizes count only when the digitizer reports real sizes (the profile's `touchSize`, or learned in the session), and then E1 and E4 count in every presence. A contact has moved on once it has traveled 10 mm, or 1.5 mm from where it was 250 ms after it landed. A palm drifts up to about 8 mm while it grows and settles, so less is no evidence of a stroke, a swipe, or a scroll. Motion counts against the pen, so a palm that moves with the writing hand stays still, and a palm that slides between words in the hand region is no swipe. A score of 4 or more latches palm. A score of 0 or less is a finger. An action that has run 500 ms is confirmed, and only E1, E4, or E16 can stop it.
 
 ## Roles and gates
 
@@ -84,22 +86,30 @@ Roles are `pass` (native, unmanaged pages only), `ignore`, `draw`, `shadow`, `sc
 
 | Presence         | Page tap and long press | One-finger scroll | Two-finger pan and pinch                     | Controls         |
 | ---------------- | ----------------------- | ----------------- | -------------------------------------------- | ---------------- |
-| `down`           | Never                   | Never             | Never starts; a running one stops            | Score -1 or less |
+| `down`           | Never                   | Never             | Never starts; a running or pending one stops | Score -1 or less |
 | `near`           | Score -2 or less        | Score -1 or less  | Both 0 or less, motion confirmed, setting on | Score 1 or less  |
-| `recent`         | 0 or less               | 0 or less         | Both 0 or less, motion confirmed             | Not palm         |
+| `recent`         | 0 or less, -1 in a hand | 0 or less         | Both 0 or less, motion confirmed             | Not palm         |
 | `away`, `absent` | Always                  | Always            | Pair rules                                   | Always           |
 
-A pan pairs two contacts that are not palms, landed within 150 ms (300 ms when the first has barely moved), and sit 15 to 120 mm apart. It starts once both pass 1.5 mm of slop and move together, or their spacing changes 2 mm. A third finger inside the window voids the pair. A palm or a later contact is ignored and leaves the pair alone.
+A pan pairs two contacts that are not palms, landed within 150 ms (300 ms when the first has barely moved), and sit 15 to 120 mm apart. It starts once both pass 1.5 mm of slop and move together, or their spacing changes 2 mm. For the gate, a pair that spreads or squeezes with neither contact moving against the pinch gets 3 points off both scores, since the parts of a palm drift together. With the pen near or recent, a contact outside every hand region gets 1 more off. A third finger inside the window voids the pair. A palm or a later contact is ignored and leaves the pair alone.
+
+On a device that has seen a pen, a one-finger scroll starts once its contact is 100 ms old with a steady size, or has traveled 4.5 mm. Without real sizes it starts once the contact has moved on. The camera then catches up from where the contact crossed slop, so no motion is lost and a palm that settles never moves the page. When the pen goes down, a scroll, or pan that has not started is dropped. A running one stops, and reverts when it began under 500 ms ago, lies in the pen's hand, or was never judged a finger. The pen's verdicts run first, so a palm latched by that event reverts its own move.
 
 Touch is managed (`touchPolicy()`) once a pen has been seen, when the profile reports a pen digitizer, or while finger drawing is on with an ink tool. The page then keeps `touch-action: none` and drives scroll, pan, and pinch from script. That way, the first palm of an approach never starts a native pan.
 
 ## Finger drawing
 
-With an ink tool, presence away or absent, and finger drawing on, one contact draws. A newcomer that is not a palm draws at once, whatever ignored contacts are down. The pipeline keeps its ink hidden until it moves 0.5 mm or lifts, so a hand edge that lands first never flashes a dot. With a drawing contact already down, a newcomer pairs into a pan inside the pair window (in the first contact's hand region only when it is fingertip-sized), or takes the draw slot when the first is weak (still, growing, or scoring 2). Otherwise a finger-like newcomer becomes a shadow, built but not shown, and is promoted with its whole path if the first proves to be a palm. Everything else is ignored.
+With an ink tool, presence away or absent, and finger drawing on, one contact draws. A newcomer that is not a palm draws at once, whatever ignored contacts are down. Its ink stays hidden until the filter shows it with its whole path (`Promote`). A fingertip that keeps its size on a digitizer with real sizes shows at 0.5 mm. Any other contact shows once it has moved on, or at its lift. A palm that lands first and drifts as it settles never shows.
 
-At the lift, a score of 2 or more retracts the stroke. With presence absent, it commits at once, so phones neither wait nor lose ink. Elsewhere it is held for `graceMs`, and real pen evidence in that time drops it. Ink committed under a second before a pen arrives, inside its hand region, is taken back.
+With a drawing contact already down, any newcomer that is not a palm and lands inside the pair window pends with it, and both strokes build hidden until motion decides. When one rests inside the other's hand region, the other is the writer, and only a spread or squeeze is a pinch. The pair resolves in one of three ways. A pan or pinch retracts both strokes. A writer keeps its stroke with its whole path: the writer of a hand pair once it writes 3 mm, or else a contact that writes 3 mm and has moved on while the other rests. When one contact lifts or is latched palm, the other keeps its stroke.
 
-Known limit: a lone, small, moving contact that never grows and has no neighbor is a finger by every signal a page can see.
+A newcomer after the window takes the draw slot when the holder rests inside the newcomer's hand region, or when the holder is weak (no move for 150 ms, growing, or scoring 2) and the newcomer scores lower. A holder that never moved on is latched palm, and its hidden ink goes. Otherwise a finger-like newcomer becomes a shadow. The shadow is promoted with its whole path if it writes while the holder rests or the holder proves to be a palm. Everything else is ignored. A contact that lands within 5 mm of an edge is a shadow until it travels 2 mm away, then draws with its whole path. It is a grip only once it stays there.
+
+At the lift, a score of 2 or more retracts the stroke. With presence absent, or no pen ever seen on the device, it commits at once, so phones and tablets without a pen neither wait nor lose ink. Elsewhere it is held for `graceMs`, and real pen evidence in that time drops it. A dot (under 2 mm of travel) shows at its lift on a digitizer with real sizes. Without them, on a device that has seen a pen, it stays hidden until it commits, since a palm bounce looks the same. While a pen is in use (in this session, or with pen evidence in the last 20 s) a dot waits unseen for the 1 s late-retract window. Ink committed under a second before a pen arrives, inside its hand region, is taken back.
+
+A pen that reports as a mouse (`windows-pen-as-mouse`) is pen evidence: the pipeline feeds its events to the filter, and fingers draw only when finger drawing is on.
+
+Known limit: a lone, small, moving contact that never grows and has no neighbor is a finger by every signal a page can see. So is a palm that bounces and lifts before any pen evidence on a digitizer without sizes: only the late retract takes its dot back.
 
 ## Device profiles and settings
 

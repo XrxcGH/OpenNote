@@ -3,11 +3,14 @@
 
 import { describe, expect, it } from 'vitest';
 import { End, Fx } from './effects';
+import { EMPTY_LEARNED } from './settings';
 import { E } from './score';
 import { down, effects, filter, FINGER, fxOf, move, NO_SIZE, PALM, pen, px } from './fixtures';
 
 const HAND = [140, 140] as const;
 const FAR = [40, 80] as const;
+/** A device on which a pen has been seen before this session. */
+const PEN_BEFORE = { ...EMPTY_LEARNED, penSeen: true };
 
 describe('a palm that lands before the pen', () => {
   it('is judged when the pen arrives: its tap is swallowed and any camera move reverts', () => {
@@ -119,9 +122,20 @@ describe('finger and passive stylus drawing with a resting hand', () => {
   it('never draws with a thumb gripping the screen edge, and the real finger draws', () => {
     const f = filter({ fingerDraw: 'on' }, { edgeGrip: true });
     f.setViewport(px(150), px(250));
-    down(f, 1, 0, 1, 120, { size: 16, minor: 9 });
+    expect(down(f, 1, 0, 1, 120, { size: 16, minor: 9 })).toBe('shadow');
+    expect(down(f, 2, 400, 70, 100)).toBe('draw');
+    f.tick(500);
+    expect(fxOf(f, 1)).toBe(Fx.Retract | Fx.SuppressTap);
     expect(f.roleOf(1)).toBe(1);
-    expect(down(f, 2, 300, 70, 100)).toBe('draw');
+  });
+
+  it('draws a stroke that starts at a screen edge once it moves away from it', () => {
+    const f = filter({ fingerDraw: 'on' }, { edgeGrip: true, touchSize: true });
+    f.setViewport(px(150), px(250));
+    expect(down(f, 1, 0, 2, 120)).toBe('shadow');
+    move(f, 1, 200, 2.2, 120);
+    expect(move(f, 1, 230, 4.5, 120)).toBe('draw');
+    expect(fxOf(f, 1)).toBe(Fx.Promote);
   });
 });
 
@@ -138,7 +152,7 @@ describe('focus loss and page switch', () => {
   });
 
   it('commits a held stroke at once on a page switch and ignores leave from away', () => {
-    const f = filter({ fingerDraw: 'on' }, { penDigitizer: true });
+    const f = filter({ fingerDraw: 'on' }, { penDigitizer: true }, PEN_BEFORE);
     down(f, 1, 0, 100, 100);
     move(f, 1, 100, 110, 100);
     expect(f.touchEnd(1, 200, false)).toBe(End.Held);
@@ -267,12 +281,13 @@ describe('contacts that never end', () => {
 });
 
 describe('touch stroke holds', () => {
-  it('commits at once with no pen digitizer and holds for grace where a pen exists', () => {
-    const f = filter({}, { penDigitizer: false });
-    down(f, 1, 0, 100, 100);
-    expect(f.touchEnd(1, 300, false)).toBe(0);
-    expect(fxOf(f, 1)).toBe(Fx.Commit);
-    const g = filter({ fingerDraw: 'on' }, { penDigitizer: true });
+  it('commits at once until a pen is seen, and holds for grace once one has been', () => {
+    for (const f of [filter({}, { penDigitizer: false }), filter({}, { penDigitizer: true })]) {
+      down(f, 1, 0, 100, 100);
+      expect(f.touchEnd(1, 300, false)).toBe(0);
+      expect(fxOf(f, 1)).toBe(Fx.Commit);
+    }
+    const g = filter({ fingerDraw: 'on' }, { penDigitizer: true }, PEN_BEFORE);
     down(g, 1, 0, 100, 100);
     move(g, 1, 50, 110, 100);
     expect(g.touchEnd(1, 300, false)).toBe(End.Held);
@@ -283,13 +298,13 @@ describe('touch stroke holds', () => {
   });
 
   it('drops a held stroke when the pen arrives, and takes back one committed just before', () => {
-    const f = filter({ fingerDraw: 'on' }, { penDigitizer: true });
+    const f = filter({ fingerDraw: 'on' }, { penDigitizer: true }, PEN_BEFORE);
     down(f, 1, 0, ...HAND);
     move(f, 1, 50, HAND[0] + 5, HAND[1]);
     f.touchEnd(1, 100, false);
     pen(f, 'hover', 400);
     expect(fxOf(f, 1)).toBe(Fx.Retract);
-    const g = filter({ fingerDraw: 'on' }, { penDigitizer: true });
+    const g = filter({ fingerDraw: 'on' }, { penDigitizer: true }, PEN_BEFORE);
     down(g, 1, 0, ...HAND);
     move(g, 1, 50, HAND[0] + 5, HAND[1]);
     g.touchEnd(1, 100, false);
@@ -300,7 +315,7 @@ describe('touch stroke holds', () => {
   });
 
   it('drops a live finger stroke when the pen hovers, and a blur never does', () => {
-    const f = filter({ fingerDraw: 'on' }, { penDigitizer: true });
+    const f = filter({ fingerDraw: 'on' }, { penDigitizer: true }, PEN_BEFORE);
     down(f, 1, 0, 100, 100);
     f.system('blur', 50);
     expect(fxOf(f, 1)).toBe(Fx.Hold);
@@ -311,12 +326,26 @@ describe('touch stroke holds', () => {
 });
 
 describe('finger drawing pairs', () => {
-  it('turns a still stroke into a pinch when the second finger lands within 300 ms', () => {
+  it('turns a still stroke into a pinch when the second finger lands within 300 ms and they spread', () => {
     const f = filter({ fingerDraw: 'on' });
     down(f, 1, 0, 100, 100);
-    move(f, 1, 100, 100.5, 100);
-    expect(down(f, 2, 250, 60, 90)).toBe('nav');
-    expect(fxOf(f, 1)).toBe(Fx.Retract);
+    move(f, 1, 100, 100.3, 100);
+    expect(down(f, 2, 250, 60, 90)).toBe('pend');
+    expect(f.roleOf(1)).toBe(6);
+    move(f, 1, 280, 101.6, 100);
+    expect(move(f, 2, 290, 58, 90)).toBe('nav');
+    expect(fxOf(f, 1)).toBe(Fx.Retract | Fx.Start);
+    expect(fxOf(f, 2)).toBe(Fx.Retract | Fx.Start);
+  });
+
+  it('gives the stroke back when the second contact rests while the first writes', () => {
+    const f = filter({ fingerDraw: 'on' }, { touchSize: true });
+    down(f, 1, 0, 100, 100);
+    expect(down(f, 2, 100, 128, 135)).toBe('pend');
+    move(f, 2, 150, 128.2, 135);
+    expect(move(f, 1, 200, 104, 100)).toBe('draw');
+    expect(fxOf(f, 1)).toBe(Fx.Promote);
+    expect(fxOf(f, 2)).toBe(Fx.Retract);
   });
 
   it('keeps a moving stroke when the second finger lands after 150 ms', () => {
@@ -364,7 +393,7 @@ describe('native hints and handedness', () => {
 describe('settings and boundaries', () => {
   it('pairs a second finger at 150 ms after a moving first one, and not at 151 ms', () => {
     for (const [late, role] of [
-      [150, 'nav'],
+      [150, 'pend'],
       [151, 'shadow'],
     ] as const) {
       const f = filter({ fingerDraw: 'on' });

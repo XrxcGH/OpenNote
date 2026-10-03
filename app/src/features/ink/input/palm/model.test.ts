@@ -96,7 +96,9 @@ describe('the hand region', () => {
 describe('the evidence score', () => {
   const setup = (presence: P) => {
     const c = new ContactTable();
-    const x = new ScoreContext(new HandRegion(PEN_HAND), new HandRegion(TOUCH_HAND));
+    const hand = new HandRegion(PEN_HAND);
+    hand.seeded = true;
+    const x = new ScoreContext(hand, new HandRegion(TOUCH_HAND));
     x.presence = presence;
     x.penCtx = presence >= P.Recent;
     x.tipValid = true;
@@ -135,18 +137,21 @@ describe('the evidence score', () => {
     x.t = 150;
     expect(scoreContact(c, i, x)).toBe(-5);
     expect(c.why[i]).toBe(E.FarSide | E.Swipe);
+    x.hand.seeded = false;
+    expect(scoreContact(c, i, x)).toBe(-3);
+    expect(c.why[i]).toBe(E.Swipe);
   });
 
   it('reads palm size, growth, and fingertips only from a digitizer with real sizes', () => {
     const { c, x } = setup(P.Near);
     const i = c.add(1, 0, 40, 80);
-    c.sizeTo(i, 40, 40, 8, 8, 0);
-    c.sizeTo(i, 80, 40, 16, 8, 0);
+    c.sizeTo(i, 0, 40, 40, 8, 8, 0);
+    c.sizeTo(i, 10, 80, 40, 16, 8, 0);
     expect(c.sizeMode).toBe(SizeMode.Real);
     scoreContact(c, i, x);
     expect(c.why[i] & (E.Growth | E.Large)).toBe(E.Growth | E.Large);
     const j = c.add(2, 0, 30, 40);
-    c.sizeTo(j, 30, 30, 6, 6, 0);
+    c.sizeTo(j, 20, 30, 30, 6, 6, 0);
     expect(scoreContact(c, j, x)).toBe(-3);
     expect(c.why[j]).toBe(E.FarSide | E.Fingertip);
   });

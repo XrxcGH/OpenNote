@@ -35,7 +35,9 @@ export class PenSlots {
   lastUpOrLeave = -Infinity;
   /** Last contact (down or move). */
   lastContact = -Infinity;
+  /** A pen has been seen on this device, in this session or before it; and in this session. */
   penSeen = false;
+  sessionPen = false;
   /** The anchor: the last pen position in mm, and the lean as a unit vector toward the hand (0, 0 when unknown). */
   tipX = 0;
   tipY = 0;
@@ -112,7 +114,7 @@ export class PenSlots {
     }
     if (t > this.tEvent[s]) this.tEvent[s] = t;
     if (t > this.lastEvidence) this.lastEvidence = t;
-    this.penSeen = true;
+    this.penSeen = this.sessionPen = true;
     this.tLeftDown[s] = Number.NaN;
     if (signal === 'hover') this.state[s] = Slot.Hovering;
     else if (signal === 'down' || signal === 'move') {

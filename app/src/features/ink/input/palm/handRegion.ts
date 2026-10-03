@@ -46,11 +46,24 @@ export class HandRegion {
   private contrary = 0;
   /** True once set from a lean, a setting, or learning, rather than the default. */
   seeded = false;
+  /** While the side is unknown, `holds` also tries the mirror image, for decisions that only need some hand. */
+  either = false;
 
-  constructor(base: HandShape) {
+  constructor(
+    base: HandShape,
+    private readonly falloff = REGION_FALLOFF_MM,
+  ) {
     this.ox = base.ox;
     this.oy = base.oy;
     this.r = base.r;
+  }
+
+  /** Mirrors the region to the other side at once, for a side learned from resting contacts. */
+  flip(): void {
+    this.ox = -this.ox;
+    this.contrary = 0;
+    this.seeded = true;
+    this.either = false;
   }
 
   set(shape: HandShape, pinned: boolean): void {
@@ -70,19 +83,33 @@ export class HandRegion {
     const dx = cx - tipX;
     const dy = cy - tipY;
     if (dx * dx + dy * dy <= TIP_GRIP_MM * TIP_GRIP_MM) return 1;
-    const outside = this.outside(cx, cy, tipX, tipY);
-    return outside <= 0 ? 1 : Math.max(0, 1 - outside / REGION_FALLOFF_MM);
+    const outside = this.outside(cx, cy, tipX, tipY, this.ox);
+    return outside <= 0 ? 1 : Math.max(0, 1 - outside / this.falloff);
+  }
+
+  /** Membership on either side while the side is unknown: for taking back ink or a gesture, never for scoring. */
+  membershipAny(cx: number, cy: number, tipX: number, tipY: number): number {
+    const m = this.membership(cx, cy, tipX, tipY);
+    if (this.seeded || m >= 1) return m;
+    const outside = this.outside(cx, cy, tipX, tipY, -this.ox);
+    return Math.max(m, outside <= 0 ? 1 : Math.max(0, 1 - outside / this.falloff));
+  }
+
+  /** Whether a point lies inside the circle or forearm strip, on either side while the side is unknown. */
+  holds(cx: number, cy: number, tipX: number, tipY: number): boolean {
+    if (this.outside(cx, cy, tipX, tipY, this.ox) <= 0) return true;
+    return this.either && this.outside(cx, cy, tipX, tipY, -this.ox) <= 0;
   }
 
   /** How far outside the region a point lies; inside the circle or the forearm strip it is 0. */
-  outside(cx: number, cy: number, tipX: number, tipY: number): number {
-    const ex = cx - tipX - this.ox;
+  outside(cx: number, cy: number, tipX: number, tipY: number, ox = this.ox): number {
+    const ex = cx - tipX - ox;
     const ey = cy - tipY - this.oy;
     const dist = len(ex, ey);
     if (dist <= this.r) return 0;
-    const norm = len(this.ox, this.oy) || 1;
-    const along = (ex * this.ox + ey * this.oy) / norm;
-    const across = Math.abs(ex * -this.oy + ey * this.ox) / norm;
+    const norm = len(ox, this.oy) || 1;
+    const along = (ex * ox + ey * this.oy) / norm;
+    const across = Math.abs(ex * -this.oy + ey * ox) / norm;
     if (along > 0 && across <= FOREARM_HALF_MM) return 0;
     return dist - this.r;
   }
@@ -116,11 +143,13 @@ export class HandRegion {
 
   /** Learns from a palm's mean offset from the anchor while both were down. */
   learn(mx: number, my: number): void {
-    if (this.pinned && Math.sign(mx) !== Math.sign(this.ox) && Math.abs(mx) > 10) return;
+    // A palm on the other side does not move the region: side votes flip it whole.
+    if (Math.sign(mx) !== Math.sign(this.ox) && Math.abs(mx) > 10) return;
     const miss = len(mx - this.ox, my - this.oy);
     this.ox += LEARN_RATE * (mx - this.ox);
     this.oy += LEARN_RATE * (my - this.oy);
     this.r = clamp(this.r + LEARN_RATE * (miss + REGION_FALLOFF_MM - this.r), RADIUS_MIN_MM, RADIUS_MAX_MM);
     this.seeded = true;
+    this.either = false;
   }
 }

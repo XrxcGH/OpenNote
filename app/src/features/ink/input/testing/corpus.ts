@@ -9,7 +9,7 @@ import { emptyTally, score } from './metrics';
 import type { Tally } from './metrics';
 import { PROFILES } from './profiles';
 import { replaySession } from './replay';
-import { applies, generate, SCENARIOS } from './scenarios';
+import { applies, generate, handsOf, SCENARIOS } from './scenarios';
 import { parseSession } from './session';
 import type { Session } from './session';
 
@@ -58,22 +58,25 @@ export function runCorpus(fixtures: readonly Session[], seeds = CORPUS_SEEDS): C
     spent.events += session.events.length;
     time.set(id, spent);
     score(session, result, tally);
-    const worse =
-      tally.strayInk + tally.strayCamera + tally.strayTaps + tally.strayGestures + tally.inkDropped + tally.navMissed >
-      before.strayInk +
-        before.strayCamera +
-        before.strayTaps +
-        before.strayGestures +
-        before.inkDropped +
-        before.navMissed;
-    if (worse) failures.push(`${session.header.task} on ${id}`);
+    const bad = (x: Tally) =>
+      x.strayInk +
+      x.strayCamera +
+      x.revertedCamera +
+      x.strayTaps +
+      x.strayGestures +
+      x.inkDropped +
+      x.navMissed +
+      x.tapMissed +
+      x.gestureMissed;
+    if (bad(tally) > bad(before)) failures.push(`${session.header.task} (${session.header.handedness}) on ${id}`);
   };
   for (const scenario of SCENARIOS) {
     for (const profile of PROFILES) {
       if (!applies(scenario, profile)) continue;
       // Finger and stylus sessions are short, so they get more seeds for a comparable number of contacts.
       const n = profile.stylus === 'pen' ? seeds : seeds * 4;
-      for (let seed = 1; seed <= n; seed++) add(generate(scenario, profile, seed));
+      for (const hand of handsOf(scenario))
+        for (let seed = 1; seed <= n; seed++) add(generate(scenario, profile, seed, hand));
     }
   }
   for (const session of fixtures) add(session);

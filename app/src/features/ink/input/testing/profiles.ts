@@ -29,6 +29,12 @@ export interface SimProfile {
   readonly osCancelMs: number;
   /** Chance a pen hover event is lost (unstable proximity). */
   readonly hoverDrop: number;
+  /** Chance per hover run that the pen loses proximity: a leave, 300 to 700 ms of nothing, then re-entry (AES). */
+  readonly proximityLoss: number;
+  /** Hover samples carry tilt; Apple Pencil hover does not. */
+  readonly hoverTilt: boolean;
+  /** Hover is reported only when the position changes (WebKit). */
+  readonly hoverOnChange: boolean;
   /** No touch arrives while the pen is down (iPadOS, Samsung EMR). */
   readonly blocksTouchWhileDown: boolean;
   /** Screen size in mm, for the edge-grip rule. */
@@ -45,8 +51,23 @@ const base = {
   osCancel: 0,
   osCancelMs: 80,
   hoverDrop: 0,
+  proximityLoss: 0,
+  hoverTilt: true,
+  hoverOnChange: false,
   blocksTouchWhileDown: false,
   screenMm: [300, 200] as const,
+};
+
+/** iPadOS: one contact radius (width equals height), Pencil hover without tilt and only on change. */
+const ipad = {
+  frameHz: 120,
+  tilt: 'angles' as TiltMode,
+  size: 'quantized' as SizeReport,
+  cssPxPerMm: 5.2,
+  osCancel: 0.5,
+  hoverTilt: false,
+  hoverOnChange: true,
+  screenMm: [250, 175] as const,
 };
 
 export const PROFILES: readonly SimProfile[] = [
@@ -98,6 +119,19 @@ export const PROFILES: readonly SimProfile[] = [
   },
   {
     ...base,
+    id: 'oem-mpp-notilt',
+    name: 'OEM Windows laptop, MPP pen with no tilt, no Confidence or size usages',
+    device: { id: 'windows-pen', platform: 'windows', penDigitizer: true, touchSize: false },
+    stylus: 'pen',
+    hover: 'short',
+    hoverLeadMs: 60,
+    tilt: 'none',
+    size: 'none',
+    cssPxPerMm: 4.7,
+    hoverDrop: 0.03,
+  },
+  {
+    ...base,
     id: 'wacom-aes',
     name: 'ThinkPad, Wacom AES',
     device: { id: 'windows-pen', platform: 'windows', penDigitizer: true },
@@ -106,7 +140,20 @@ export const PROFILES: readonly SimProfile[] = [
     hoverLeadMs: 50,
     size: 'constant',
     cssPxPerMm: 5.6,
-    hoverDrop: 0.05,
+    proximityLoss: 0.15,
+  },
+  {
+    ...base,
+    id: 'wacom-aes-notilt',
+    name: 'Windows laptop, Wacom AES pen with no tilt',
+    device: { id: 'windows-pen', platform: 'windows', penDigitizer: true },
+    stylus: 'pen',
+    hover: 'short',
+    hoverLeadMs: 50,
+    tilt: 'none',
+    size: 'constant',
+    cssPxPerMm: 5.6,
+    proximityLoss: 0.15,
   },
   {
     ...base,
@@ -121,9 +168,31 @@ export const PROFILES: readonly SimProfile[] = [
   },
   {
     ...base,
+    id: 'wacom-emr-mouse',
+    name: 'Windows tablet, Wacom EMR with Windows Ink off: the pen reports as a mouse',
+    device: { id: 'windows-pen-as-mouse', platform: 'windows', penDigitizer: true },
+    stylus: 'pen',
+    hover: 'long',
+    hoverLeadMs: 250,
+    rateHz: 200,
+    pressureLevels: 0,
+    tilt: 'none',
+    cssPxPerMm: 5.2,
+  },
+  {
+    ...base,
     id: 's-pen',
     name: 'Galaxy Tab S9, S Pen (Android 14)',
-    device: { id: 'android-13', platform: 'android', apiLevel: 34, pxPerMm: 6.3, penDigitizer: true, edgeGrip: true },
+    device: {
+      id: 'android-13',
+      platform: 'android',
+      apiLevel: 34,
+      pxPerMm: 6.3,
+      penDigitizer: true,
+      edgeGrip: true,
+      osPalmCancel: true,
+      osBlocksTouchNearPen: true,
+    },
     stylus: 'pen',
     hover: 'long',
     hoverLeadMs: 250,
@@ -141,13 +210,8 @@ export const PROFILES: readonly SimProfile[] = [
     device: { id: 'ipad', platform: 'ipados', pxPerMm: 5.2, penDigitizer: true, osBlocksTouchNearPen: true },
     stylus: 'pen',
     hover: 'none',
-    frameHz: 120,
-    tilt: 'angles',
-    size: 'quantized',
-    cssPxPerMm: 5.2,
-    osCancel: 0.5,
+    ...ipad,
     blocksTouchWhileDown: true,
-    screenMm: [250, 175],
   },
   {
     ...base,
@@ -156,13 +220,8 @@ export const PROFILES: readonly SimProfile[] = [
     device: { id: 'ipad-hover', platform: 'ipados', pxPerMm: 5.2, penDigitizer: true, osBlocksTouchNearPen: true },
     stylus: 'pen',
     hover: 'short',
-    frameHz: 120,
-    tilt: 'angles',
-    size: 'quantized',
-    cssPxPerMm: 5.2,
-    osCancel: 0.5,
+    ...ipad,
     blocksTouchWhileDown: true,
-    screenMm: [250, 175],
   },
   {
     ...base,
@@ -171,14 +230,20 @@ export const PROFILES: readonly SimProfile[] = [
     device: { id: 'ipad', platform: 'ipados', pxPerMm: 5.2, penDigitizer: true, osBlocksTouchNearPen: true },
     stylus: 'pen',
     hover: 'none',
-    frameHz: 120,
+    ...ipad,
     pressureLevels: 0,
-    tilt: 'angles',
-    size: 'quantized',
-    cssPxPerMm: 5.2,
-    osCancel: 0.5,
     blocksTouchWhileDown: true,
-    screenMm: [250, 175],
+  },
+  {
+    ...base,
+    id: 'pencil-usb-c-hover',
+    name: 'iPad Pro M2 or later, Apple Pencil (USB-C) with hover, no pressure',
+    device: { id: 'ipad-hover', platform: 'ipados', pxPerMm: 5.2, penDigitizer: true, osBlocksTouchNearPen: true },
+    stylus: 'pen',
+    hover: 'short',
+    ...ipad,
+    pressureLevels: 0,
+    blocksTouchWhileDown: true,
   },
   {
     ...base,
@@ -187,13 +252,8 @@ export const PROFILES: readonly SimProfile[] = [
     device: { id: 'ipad-hover', platform: 'ipados', pxPerMm: 5.2, penDigitizer: true, osBlocksTouchNearPen: true },
     stylus: 'pen',
     hover: 'short',
-    frameHz: 120,
-    tilt: 'angles',
-    size: 'quantized',
-    cssPxPerMm: 5.2,
-    osCancel: 0.5,
+    ...ipad,
     blocksTouchWhileDown: true,
-    screenMm: [250, 175],
   },
   {
     ...base,
@@ -281,6 +341,54 @@ export const PROFILES: readonly SimProfile[] = [
     cssPxPerMm: 6.3,
     screenMm: [70, 150],
   },
+  {
+    ...base,
+    id: 'ipad-finger',
+    name: 'iPad, fingers only, no pen ever seen',
+    device: { id: 'ipad', platform: 'ipados', pxPerMm: 5.2, penDigitizer: true, osBlocksTouchNearPen: true },
+    stylus: 'none',
+    hover: 'none',
+    ...ipad,
+    pressureLevels: 0,
+    tilt: 'none',
+  },
+  {
+    ...base,
+    id: 'ipad-stylus',
+    name: 'iPad, passive capacitive stylus (touch), no pen ever seen',
+    device: { id: 'ipad', platform: 'ipados', pxPerMm: 5.2, penDigitizer: true, osBlocksTouchNearPen: true },
+    stylus: 'touch',
+    hover: 'none',
+    ...ipad,
+    pressureLevels: 0,
+    tilt: 'none',
+  },
+  {
+    ...base,
+    id: 'win-touch',
+    name: 'Windows OEM touch laptop, fingers only, no contact size',
+    device: { id: 'tablet-touch', platform: 'windows', pxPerMm: 5.2, penDigitizer: false, touchSize: false },
+    stylus: 'none',
+    hover: 'none',
+    rateHz: 120,
+    pressureLevels: 0,
+    tilt: 'none',
+    size: 'none',
+    cssPxPerMm: 5.2,
+  },
+  {
+    ...base,
+    id: 'win-stylus',
+    name: 'Windows OEM touch laptop, passive capacitive stylus, one constant contact size',
+    device: { id: 'tablet-touch', platform: 'windows', pxPerMm: 5.6, penDigitizer: false },
+    stylus: 'touch',
+    hover: 'none',
+    rateHz: 120,
+    pressureLevels: 0,
+    tilt: 'none',
+    size: 'constant',
+    cssPxPerMm: 5.6,
+  },
 ];
 
 export const PEN_PROFILES = PROFILES.filter((p) => p.stylus === 'pen');
@@ -300,8 +408,9 @@ export function reportSize(p: SimProfile, majorMm: number, minorMm: number): [nu
     case 'constant':
       return [20, 20];
     case 'quantized': {
-      const q = (mm: number) => Math.max(1, Math.round(mm / 4)) * 4 * p.cssPxPerMm;
-      return [q(majorMm), q(minorMm)];
+      // UIKit reports one radius in steps, so width equals height.
+      const q = Math.max(1, Math.round(majorMm / 4)) * 4 * p.cssPxPerMm;
+      return [q, q];
     }
     default:
       return [majorMm * p.cssPxPerMm, minorMm * p.cssPxPerMm];

@@ -1,8 +1,8 @@
 // A seeded model of a writing hand and of handwriting. The pen plan writes words along lines, hovering between words
 // and leaving range between lines. The hand places palm heel, pinky, and knuckle contacts relative to the pen tip by
-// handedness and grip, with physical sizes, growth after landing, and splitting into several contacts. Every
-// non-intent contact it makes has at least one physical tell a page can see: where it is, how big it is, or how it
-// moves with the pen.
+// handedness and grip, with physical sizes, growth after landing, drift of the centroid while a palm settles, and
+// splitting into several contacts. Its parameters straddle the classifier's thresholds rather than sit on one side of
+// them: palms land from 8 to 30 mm and drift 2 to 8 mm, and the other hand lands anywhere outside the writing hand.
 
 import type { Grip } from './session';
 import type { Rand, SessionWriter, Vec2 } from './writer';
@@ -121,15 +121,30 @@ export interface PalmShape {
   /** Size at landing, mm, and how long it takes to reach full size. */
   readonly initial: number;
   readonly growMs: number;
+  /** How far the centroid drifts while the contact grows, mm, away from the fingers. */
+  readonly drift: number;
 }
 
 export function palmShape(r: Rand, grows = false): PalmShape {
   return {
     major: between(r, 35, 60),
     minor: between(r, 25, 40),
-    initial: grows ? between(r, 7, 11) : between(r, 20, 30),
-    growMs: grows ? between(r, 30, 300) : between(r, 0, 80),
+    initial: grows ? between(r, 7, 11) : between(r, 8, 30),
+    growMs: between(r, 60, 250),
+    drift: between(r, 2, 8),
   };
+}
+
+/** The drift of a settling palm at t: it grows toward the heel, so its centroid moves away from the fingers. */
+export function driftAt(s: PalmShape, t0: number, t: number, dir: Vec2): Vec2 {
+  const f = Math.min(1, Math.max(0, (t - t0) / s.growMs));
+  return [dir[0] * s.drift * f, dir[1] * s.drift * f];
+}
+
+/** A unit vector along an offset, turned by up to 45 degrees either way. */
+export function awayFrom(r: Rand, offset: Vec2): Vec2 {
+  const a = Math.atan2(offset[1], offset[0]) + between(r, -Math.PI / 4, Math.PI / 4);
+  return [Math.cos(a), Math.sin(a)];
 }
 
 export function sizeAt(s: PalmShape, t0: number, t: number, scale = 1): Vec2 {
@@ -164,6 +179,7 @@ export interface PalmOptions {
  */
 export function palm(w: SessionWriter, r: Rand, o: PalmOptions): number[] {
   const shape = palmShape(r, o.grows);
+  const dir = awayFrom(r, o.offset);
   const ids: number[] = [];
   const mirror = o.offset[0] < 0 ? -1 : 1;
   const parts = Math.max(1, Math.min(3, o.parts ?? 1));
@@ -172,7 +188,8 @@ export function palm(w: SessionWriter, r: Rand, o: PalmOptions): number[] {
     const t0 = o.t0 + (k === 0 ? 0 : between(r, 0, o.spread ?? 150));
     const at = (t: number): Vec2 => {
       const [px, py] = o.follow(t);
-      return [px + o.offset[0] + part.dx * mirror, py + o.offset[1] + part.dy];
+      const [dx, dy] = driftAt(shape, t0, t, dir);
+      return [px + o.offset[0] + part.dx * mirror + dx, py + o.offset[1] + part.dy + dy];
     };
     const id = w.touch({
       t0,
@@ -208,7 +225,32 @@ export function handFollow(plan: PenPlan): (t: number) => Vec2 {
   };
 }
 
-/** A finger of the other hand: a far-side contact that moves along a path. */
-export function farSide(hand: 'right' | 'left', from: Vec2, distance: number): Vec2 {
-  return [from[0] + (hand === 'left' ? distance : -distance), from[1] - distance * 0.4];
+/**
+ * Whether the writing hand covers a point: its palm, 85 mm around the heel, its forearm (70 mm either side of the line
+ * from the tip through the heel, as the pen's lean varies by 15 degrees), and 25 mm around the tip.
+ */
+export function handCovers(hand: 'right' | 'left', grip: Grip, tip: Vec2, p: Vec2): boolean {
+  const sx = hand === 'left' ? -1 : 1;
+  const heel: Vec2 = grip === 'hooked' ? [tip[0] + sx * 38, tip[1] - 36] : [tip[0] + sx * 42, tip[1] + 48];
+  const ax = heel[0] - tip[0];
+  const ay = heel[1] - tip[1];
+  const n = Math.hypot(ax, ay);
+  const ex = p[0] - heel[0];
+  const ey = p[1] - heel[1];
+  const along = (ex * ax + ey * ay) / n;
+  const across = Math.abs(ex * ay - ey * ax) / n;
+  return Math.hypot(ex, ey) < 85 || (along > 0 && across < 70) || Math.hypot(p[0] - tip[0], p[1] - tip[1]) < 25;
+}
+
+/**
+ * Where a finger of the other hand lands: anywhere on the screen the writing hand does not cover, at least `room` mm
+ * from every edge, with room for `below` mm more under it.
+ */
+export function otherHand(r: Rand, hand: 'right' | 'left', grip: Grip, tip: Vec2, screen: Vec2, below = 0): Vec2 {
+  const room = 15;
+  for (let k = 0; k < 400; k++) {
+    const p: Vec2 = [between(r, room, screen[0] - room), between(r, room, screen[1] - room - below)];
+    if (!handCovers(hand, grip, tip, p) && !handCovers(hand, grip, tip, [p[0], p[1] + below])) return p;
+  }
+  return [hand === 'left' ? screen[0] - room : room, room];
 }

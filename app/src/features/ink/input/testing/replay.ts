@@ -5,6 +5,7 @@
 
 import { createInkPipeline } from '../pipeline';
 import type { CameraOp, InkPipeline, PipelineHost, PointerRecord, TouchInk, TouchStrokePhase } from '../pipeline';
+import type { StrokeBuilder } from '../strokeBuilder';
 import type { DeviceProfile, LearnedState, PalmSettings, TouchPolicy } from '../palm/index';
 import { tiltFromAngles } from '../samples';
 import { createStrokeBuilder } from '../strokeBuilder';
@@ -29,6 +30,9 @@ export interface ContactOutcome {
   camY: number;
   zoom: number;
   peak: number;
+  /** When the camera first moved past slop or zoomed for this contact, and when a revert put it back. */
+  movedAt: number;
+  revertedAt: number;
   startedAt: number;
   tapAllowed: boolean;
   menuAllowed: boolean;
@@ -38,7 +42,9 @@ export interface ReplayResult {
   readonly contacts: Map<number, ContactOutcome>;
   readonly penSamples: number;
   readonly penSamplesExpected: number;
-  readonly gestures: { readonly kind: 'undo' | 'redo'; readonly t: number }[];
+  /** Pen strokes whose stored first point is not the first contact sample, through a real stroke builder. */
+  readonly penStrokesBroken: number;
+  readonly gestures: { readonly kind: 'undo' | 'redo'; readonly t: number; readonly silent: boolean }[];
   readonly policies: TouchPolicy[];
   readonly cssPxPerMm: number;
   readonly learned: LearnedState;
@@ -58,6 +64,8 @@ const outcome = (id: number, t: number): ContactOutcome => ({
   camY: 0,
   zoom: 1,
   peak: 0,
+  movedAt: Number.NaN,
+  revertedAt: Number.NaN,
   startedAt: Number.NaN,
   tapAllowed: false,
   menuAllowed: false,
@@ -67,10 +75,14 @@ const outcome = (id: number, t: number): ContactOutcome => ({
 class RecordingHost implements PipelineHost {
   now = 0;
   penSamples = 0;
+  penStrokesBroken = 0;
   readonly contacts = new Map<number, ContactOutcome>();
-  readonly gestures: { kind: 'undo' | 'redo'; t: number }[] = [];
+  readonly gestures: { kind: 'undo' | 'redo'; t: number; silent: boolean }[] = [];
   readonly policies: TouchPolicy[] = [];
   private strokeIds = 0;
+  private readonly pens = new Map<number, { builder: StrokeBuilder; x: number; y: number }>();
+
+  constructor(private readonly slopPx: number) {}
 
   of(id: number): ContactOutcome {
     let c = this.contacts.get(id);
@@ -81,8 +93,17 @@ class RecordingHost implements PipelineHost {
     return c;
   }
 
-  penSample(): void {
+  /** Each pen stroke goes through a real stroke builder, whose first stored point must be the first contact sample. */
+  penSample(r: PointerRecord): void {
     this.penSamples++;
+    if (r.type === 'down') this.pens.set(r.id, { builder: this.touchBuilder(), x: r.x, y: r.y });
+    const pen = this.pens.get(r.id);
+    if (!pen) return;
+    pen.builder.push({ x: r.x, y: r.y, time: r.t, pointerType: 'pen', pressure: r.p, tiltX: r.tiltX, tiltY: r.tiltY });
+    if (r.type !== 'up') return;
+    this.pens.delete(r.id);
+    const first = pen.builder.finish()[0]?.points[0];
+    if (!first || Math.abs(first.x - pen.x) > 0.01 || Math.abs(first.y - pen.y) > 0.01) this.penStrokesBroken++;
   }
 
   touchBuilder() {
@@ -128,10 +149,13 @@ class RecordingHost implements PipelineHost {
       c.camX += a / (1 - GLIDE_FRICTION);
       c.camY += b / (1 - GLIDE_FRICTION);
     } else if (op === 'revert') {
+      if (!Number.isNaN(c.movedAt) && Number.isNaN(c.revertedAt)) c.revertedAt = this.now;
       c.camX = c.camY = 0;
       c.zoom = 1;
     }
     c.peak = Math.max(c.peak, Math.hypot(c.camX, c.camY));
+    const moved = Math.hypot(c.camX, c.camY) > this.slopPx || Math.abs(c.zoom - 1) > 0.01;
+    if (moved && Number.isNaN(c.movedAt)) c.movedAt = this.now;
     if (op === 'panBy' && Number.isNaN(c.startedAt)) c.startedAt = this.now;
   }
 
@@ -143,8 +167,8 @@ class RecordingHost implements PipelineHost {
     if (allowed) this.of(id).menuAllowed = true;
   }
 
-  gesture(kind: 'undo' | 'redo'): void {
-    this.gestures.push({ kind, t: this.now });
+  gesture(kind: 'undo' | 'redo', silent: boolean): void {
+    this.gestures.push({ kind, t: this.now, silent });
   }
 
   touchPolicy(policy: TouchPolicy): void {
@@ -198,9 +222,9 @@ const POINTER_TYPES: Partial<Record<SessionEvent['type'], PointerRecord['type']>
   pointercancel: 'cancel',
 };
 
-/** Whether an event is a pen sample the page view passes to the active tool. */
-const isPenSample = (e: SessionEvent) =>
-  e.pt === 'pen' &&
+/** Whether an event is a pen sample the page view passes to the active tool; a mouse is a pen on that profile. */
+const isPenSample = (e: SessionEvent, penAsMouse: boolean) =>
+  (e.pt === 'pen' || (penAsMouse && e.pt === 'mouse')) &&
   (e.type === 'pointerdown' || e.type === 'pointerup' || (e.type === 'pointermove' && (e.bs ?? 0) !== 0));
 
 export interface ReplayOptions {
@@ -215,7 +239,7 @@ export interface ReplayOptions {
 
 /** Replays a session through the shipped pipeline and records the outcome per contact. */
 export function replaySession(session: Session, options: ReplayOptions = {}): ReplayResult {
-  const host = new RecordingHost();
+  const host = new RecordingHost(1.5 * session.header.screen.cssPxPerMm);
   const sim = PROFILES.find((p) => p.id === session.header.profile);
   const profile = options.profile ?? sim?.device ?? { pxPerMm: session.header.screen.cssPxPerMm };
   const learned = options.learned ?? session.header.learned;
@@ -235,10 +259,11 @@ export function replaySession(session: Session, options: ReplayOptions = {}): Re
       pipeline.tick(clock);
     }
   };
+  const penAsMouse = profile.id === 'windows-pen-as-mouse';
   for (const e of session.events) {
     advance(e.t);
     host.now = Math.max(host.now, e.t);
-    if (isPenSample(e)) expected += 1 + (e.co?.length ?? 0);
+    if (isPenSample(e, penAsMouse)) expected += 1 + (e.co?.length ?? 0);
     deliver(pipeline, host, r, e);
     options.trace?.(e, pipeline);
   }
@@ -248,6 +273,7 @@ export function replaySession(session: Session, options: ReplayOptions = {}): Re
     contacts: host.contacts,
     penSamples: host.penSamples,
     penSamplesExpected: expected,
+    penStrokesBroken: host.penStrokesBroken,
     gestures: host.gestures,
     policies: host.policies,
     cssPxPerMm: session.header.screen.cssPxPerMm,

@@ -24,9 +24,12 @@ export interface Tally {
   strayShownPen: number;
   strayShownTouch: number;
   strayShownMs: number;
-  /** G3: camera moved over 1.5 mm or zoomed by a non-intent contact after reverts; and moves that were reverted. */
+  /** G3: camera moved over 1.5 mm or zoomed by a non-intent contact after reverts; and moves that were reverted, */
+  /** with the largest such move in mm and the longest it stayed on screen before the revert, ms. */
   strayCamera: number;
   revertedCamera: number;
+  revertedPeakMm: number;
+  revertedMs: number;
   /** G4: taps or menus from non-intent contacts, and gestures nobody meant. */
   strayTaps: number;
   strayGestures: number;
@@ -61,6 +64,8 @@ export const emptyTally = (): Tally => ({
   strayShownMs: 0,
   strayCamera: 0,
   revertedCamera: 0,
+  revertedPeakMm: 0,
+  revertedMs: 0,
   strayTaps: 0,
   strayGestures: 0,
   penLost: 0,
@@ -76,7 +81,7 @@ export const emptyTally = (): Tally => ({
 
 const SLOP_MM = 1.5;
 
-/** When each touch contact first moved past slop, and how many samples it had, from the session's events. */
+/** When each touch contact first moved past slop, and how many samples it had, coalesced ones included. */
 function contactTracks(s: Session): Map<number, { slopAt: number; samples: number }> {
   const out = new Map<number, { slopAt: number; samples: number; x0: number; y0: number }>();
   const k = 1 / s.header.screen.cssPxPerMm;
@@ -87,9 +92,16 @@ function contactTracks(s: Session): Map<number, { slopAt: number; samples: numbe
       c = { slopAt: Number.NaN, samples: 0, x0: e.x ?? 0, y0: e.y ?? 0 };
       out.set(e.id, c);
     }
-    if (e.type === 'pointerdown' || e.type === 'pointermove') c.samples++;
-    const d = Math.hypot(((e.x ?? 0) - c.x0) * k, ((e.y ?? 0) - c.y0) * k);
-    if (Number.isNaN(c.slopAt) && d >= SLOP_MM && e.type === 'pointermove') c.slopAt = e.t;
+    if (e.type !== 'pointerdown' && e.type !== 'pointermove') continue;
+    const samples: [number, number, number][] = [
+      ...(e.co ?? []).map((q) => [q[0], q[1], q[2]] as [number, number, number]),
+    ];
+    samples.push([e.t, e.x ?? 0, e.y ?? 0]);
+    for (const [t, x, y] of samples) {
+      c.samples++;
+      const d = Math.hypot((x - c.x0) * k, (y - c.y0) * k);
+      if (Number.isNaN(c.slopAt) && d >= SLOP_MM && e.type === 'pointermove') c.slopAt = t;
+    }
   }
   return out;
 }
@@ -104,7 +116,7 @@ export function score(session: Session, result: ReplayResult, into: Tally = empt
   const tracks = contactTracks(session);
   t.sessions++;
   t.penStrokes += session.labels.filter((l) => l.cls === 'pen' && l.id < 100).length;
-  t.penLost += Math.max(0, result.penSamplesExpected - result.penSamples);
+  t.penLost += Math.max(0, result.penSamplesExpected - result.penSamples) + result.penStrokesBroken;
   const gestureMeant = session.labels.some((l) => l.intent === 'gesture');
   if (!gestureMeant) t.strayGestures += result.gestures.length;
   else if (result.gestures.length === 0) t.gestureMissed++;
@@ -112,6 +124,7 @@ export function score(session: Session, result: ReplayResult, into: Tally = empt
     const label = labelOf(session, id);
     if (!label) continue;
     const residual = Math.hypot(c.camX, c.camY) * mm > SLOP_MM || Math.abs(c.zoom - 1) > 0.01;
+    const inkKept = !Number.isNaN(c.committedAt) && !c.uncommitted;
     if (label.intent === 'none') {
       t.nonIntent++;
       const kept = !Number.isNaN(c.committedAt) && !c.uncommitted;
@@ -124,11 +137,17 @@ export function score(session: Session, result: ReplayResult, into: Tally = empt
         t.strayShownMs = Math.max(t.strayShownMs, until - c.firstShown);
       }
       if (residual) t.strayCamera++;
-      else if (c.peak * mm > SLOP_MM) t.revertedCamera++;
+      else if (!Number.isNaN(c.revertedAt)) {
+        t.revertedCamera++;
+        t.revertedPeakMm = Math.max(t.revertedPeakMm, c.peak * mm);
+        t.revertedMs = Math.max(t.revertedMs, c.revertedAt - c.movedAt);
+      }
       if (c.tapAllowed || c.menuAllowed) t.strayTaps++;
       continue;
     }
     const track = tracks.get(id);
+    // A pan, pinch, scroll, tap, or gesture that leaves a stroke behind is stray ink as much as a palm's is.
+    if (label.intent !== 'ink' && inkKept) t.strayInk++;
     if (label.intent === 'ink') {
       t.intendedInk++;
       if (Number.isNaN(c.committedAt) || c.uncommitted) t.inkDropped++;
@@ -182,6 +201,9 @@ export function gateValues(t: Tally): Record<string, number> {
     G2_strayShownTouchRate: t.nonIntent === 0 ? 0 : t.strayShownTouch / t.nonIntent,
     G2_strayShownMs: t.strayShownMs,
     G3_strayCamera: t.strayCamera,
+    G3_revertedCamera: t.revertedCamera,
+    G3_revertedPeakMm: t.revertedPeakMm,
+    G3_revertedMs: t.revertedMs,
     G4_strayTaps: t.strayTaps + t.strayGestures,
     G5_penLost: t.penLost,
     G7_inkDroppedRate: t.intendedInk === 0 ? 0 : t.inkDropped / t.intendedInk,
@@ -199,7 +221,13 @@ export function merge(a: Tally, b: Tally): Tally {
   const out = emptyTally();
   for (const key of Object.keys(out) as (keyof Tally)[]) {
     if (key === 'navDelays') out.navDelays = [...a.navDelays, ...b.navDelays];
-    else if (key === 'strayShownMs' || key === 'commitDelay' || key === 'commitDelayAbsent')
+    else if (
+      key === 'strayShownMs' ||
+      key === 'commitDelay' ||
+      key === 'commitDelayAbsent' ||
+      key === 'revertedPeakMm' ||
+      key === 'revertedMs'
+    )
       out[key] = Math.max(a[key], b[key]);
     else out[key] = a[key] + b[key];
   }

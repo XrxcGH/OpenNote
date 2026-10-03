@@ -2,8 +2,9 @@
 // measures is the accuracy of the shipped wiring. It owns the palm filter, the multi-tap detector, `touchNav`, and
 // the provisional touch stroke builders, and tells the host what to draw, commit, retract, scroll, and allow.
 // A pen sample goes straight to the host before anything else runs: nothing here gates or delays a pen.
-// A touch stroke stays hidden until its contact moves 0.5 mm or lifts, so a hand edge that lands first and rests
-// never flashes a dot; a real stroke shows from its first sample once it moves, which takes a few ms.
+// A touch stroke stays hidden until the filter shows it (`Promote`) or it lifts, so a hand edge that lands first and
+// settles never flashes ink; a real stroke then shows with its whole path. A dot shows at its lift, unless the filter
+// keeps it hidden until it commits (a pen about, or no contact sizes to tell a palm bounce).
 
 import { createMultiTapDetector } from './gestures/multiTap';
 import { createPalmFilter, End, Fx, Role, resolvePxPerMm } from './palm/index';
@@ -56,7 +57,8 @@ export interface PipelineHost {
   camera(op: CameraOp, id: number, a: number, b: number, c: number): void;
   tap(id: number, allowed: boolean): void;
   contextMenu(id: number, allowed: boolean): void;
-  gesture(kind: 'undo' | 'redo'): void;
+  /** A multi-finger gesture. `silent` takes back one delivered just before a pen arrived, with no feedback. */
+  gesture(kind: 'undo' | 'redo', silent: boolean): void;
   touchPolicy(policy: TouchPolicy): void;
 }
 
@@ -75,8 +77,14 @@ export interface InkPipeline {
 /** Multi-tap waits this long after pen evidence. */
 const TAP_AFTER_PEN_MS = 1000;
 const LONG_PRESS_MS = 500;
-/** A drawing contact shows its ink once it has moved this far, in mm, or at its lift. */
-const SHOW_AFTER_MM = 0.5;
+/** A gesture delivered this soon before a pen arrives in the tap's hand region is taken back, like ink [S16]. */
+const GESTURE_RETRACT_MS = 1000;
+/** Fingers of a tap sit at least this far apart on a device that has seen a pen but reports no contact size. */
+const TAP_SPACING_NO_SIZE_MM = 25;
+/** One-finger scroll starts from the point where it crossed slop, so the wait for it to settle loses no motion. */
+const SLOP_MM = 1.5;
+
+const inked = (role: Role) => role === Role.Draw || role === Role.Shadow || role === Role.Pend;
 
 interface Entry {
   role: Role;
@@ -99,13 +107,19 @@ class Pipeline implements InkPipeline {
   /** Lifted strokes waiting for a Commit or a Retract, and recent commits that may be taken back. */
   private readonly held = new Map<number, TouchInk>();
   private readonly committed = new Map<number, TouchInk>();
-  /** Held strokes that never moved: a dot shows only when it commits. */
+  /** Held strokes the filter keeps hidden: such a dot shows only when it commits. */
   private readonly hidden = new Set<number>();
   private readonly page = { x: 0, y: 0 };
   private readonly pxPerMm: number;
   private lastPen = -Infinity;
   private policy: TouchPolicy | null = null;
   private navStarts: number[] = [];
+  /** A Wacom pen with Windows Ink off arrives as a mouse; it still writes, so it is still a pen. */
+  private readonly penAsMouse: boolean;
+  /** The last gesture delivered, where its taps landed (mm), and when, so a pen that arrives can take it back. */
+  private lastGesture: { kind: 'undo' | 'redo'; t: number; x: number; y: number } | null = null;
+  private tapX = 0;
+  private tapY = 0;
 
   constructor(
     private readonly host: PipelineHost,
@@ -115,11 +129,12 @@ class Pipeline implements InkPipeline {
   ) {
     this.filter = createPalmFilter(settings, profile, learned);
     this.pxPerMm = resolvePxPerMm(profile.pxPerMm, learned?.pxPerMmCalibrated);
+    this.penAsMouse = profile.id === 'windows-pen-as-mouse';
     this.syncPolicy();
   }
 
   handle(r: PointerRecord): void {
-    if (r.kind === 'pen') this.pen(r);
+    if (r.kind === 'pen' || (r.kind === 'mouse' && this.penAsMouse)) this.pen(r);
     else if (r.kind === 'touch') this.touch(r);
     this.syncPolicy();
   }
@@ -135,7 +150,10 @@ class Pipeline implements InkPipeline {
     this.filter.tick(t);
     this.drain(t);
     const gesture = this.taps.poll(t);
-    if (gesture) this.host.gesture(gesture);
+    if (gesture) {
+      this.host.gesture(gesture, false);
+      this.lastGesture = { kind: gesture, t, x: this.tapX, y: this.tapY };
+    }
     for (const [id, e] of this.live) {
       if (e.pressAsked || t - e.t0 < LONG_PRESS_MS) continue;
       e.pressAsked = true;
@@ -168,8 +186,22 @@ class Pipeline implements InkPipeline {
     if (signal !== 'leave') {
       this.lastPen = r.t;
       this.taps.cancel();
+      this.takeBackGesture(r.t);
     }
     this.drain(r.t);
+  }
+
+  /** A pen arrived just after a gesture, in the hand region where its taps landed: they were a palm. */
+  private takeBackGesture(t: number): void {
+    const g = this.lastGesture;
+    if (!g) return;
+    if (t - g.t > GESTURE_RETRACT_MS) {
+      this.lastGesture = null;
+      return;
+    }
+    if (!this.filter.inHand(g.x * this.pxPerMm, g.y * this.pxPerMm)) return;
+    this.lastGesture = null;
+    this.host.gesture(g.kind === 'undo' ? 'redo' : 'undo', true);
   }
 
   private touch(r: PointerRecord): void {
@@ -195,30 +227,36 @@ class Pipeline implements InkPipeline {
       pressAsked: false,
     };
     this.live.set(r.id, e);
-    if (role === Role.Draw || role === Role.Shadow) this.beginInk(r, e);
+    if (inked(role)) this.beginInk(r, e);
     this.drain(r.t);
     const presence = f.presence(r.t);
     const quiet = (presence === 'away' || presence === 'absent') && r.t - this.lastPen >= TAP_AFTER_PEN_MS;
-    if (quiet && r.surface === 'page' && !e.suppressed) {
-      const k = 1 / this.pxPerMm;
-      this.taps.down(r.id, r.x * k, r.y * k, r.w > 1 ? r.w * k : 0, r.h > 1 ? r.h * k : 0, r.t);
-    }
+    if (!quiet || r.surface !== 'page' || e.suppressed) return;
+    // With a pen about and no contact size, a palm that settles twice looks like a two-finger double tap: its parts
+    // sit close together, where the hand rests.
+    const guarded = f.penSeen() && !f.sizesReal();
+    if (guarded && f.inHand(r.x, r.y)) return;
+    const k = 1 / this.pxPerMm;
+    this.taps.setMinSpacing(guarded ? TAP_SPACING_NO_SIZE_MM : 0);
+    this.taps.down(r.id, r.x * k, r.y * k, r.w > 1 ? r.w * k : 0, r.h > 1 ? r.h * k : 0, r.t);
+    this.tapX = r.x * k;
+    this.tapY = r.y * k;
   }
 
   private touchMove(r: PointerRecord): void {
     const e = this.live.get(r.id);
+    if (e) {
+      e.x = r.x;
+      e.y = r.y;
+    }
     this.filter.touchMove(r.id, r.t, r.x, r.y, r.w, r.h, r.p);
     this.drain(r.t);
     if (!e) return;
-    e.x = r.x;
-    e.y = r.y;
     const k = 1 / this.pxPerMm;
     this.taps.move(r.id, r.x * k, r.y * k);
-    if ((e.role === Role.Draw || e.role === Role.Shadow) && e.ink) {
+    if (inked(e.role) && e.ink) {
       this.push(e.ink, r);
-      const moved = Math.hypot(r.x - e.x0, r.y - e.y0) >= SHOW_AFTER_MM * this.pxPerMm;
-      if (e.role === Role.Draw && !e.visible && moved) this.show(r.id, e);
-      else this.host.touchStroke(r.id, e.visible ? 'point' : 'shadow', e.ink);
+      this.host.touchStroke(r.id, e.visible ? 'point' : 'shadow', e.ink);
     } else if (this.nav.owns(r.id) && this.nav.move(r.id, r.x, r.y, r.t)) {
       const s = this.nav.step;
       this.host.camera('panBy', r.id, s.dx, s.dy, 0);
@@ -229,11 +267,10 @@ class Pipeline implements InkPipeline {
   private touchEnd(r: PointerRecord): void {
     const e = this.live.get(r.id);
     const canceled = r.type === 'cancel';
-    const wasDrawing = e?.role === Role.Draw;
-    if (e?.ink && wasDrawing && !canceled) this.push(e.ink, r);
+    const ink = e && inked(e.role) ? e.ink : null;
+    if (ink && !canceled) this.push(ink, r);
     const bits = this.filter.touchEnd(r.id, r.t, canceled);
-    if (e?.ink && wasDrawing && !canceled && !e.visible && (bits & End.Held) === 0) this.show(r.id, e);
-    if (e?.ink && wasDrawing && (bits & End.Held) !== 0) this.hold(r.id, e.ink);
+    if (ink && (bits & End.Held) !== 0) this.hold(r.id, ink, (bits & End.Hidden) !== 0);
     this.drain(r.t);
     if (this.nav.owns(r.id)) {
       const v = this.nav.end(r.id, r.t);
@@ -261,9 +298,13 @@ class Pipeline implements InkPipeline {
     ink.builder.push({ x: this.page.x, y: this.page.y, time: r.t, pointerType: 'touch' });
   }
 
-  private hold(id: number, ink: TouchInk): void {
+  /** A lifted stroke waits for its commit. A dot shows now, unless `hidden`: a pen is in use and a palm bounces so. */
+  private hold(id: number, ink: TouchInk, hidden: boolean): void {
     const e = this.live.get(id);
-    if (e && !e.visible) this.hidden.add(id);
+    if (e && !e.visible) {
+      if (hidden) this.hidden.add(id);
+      else this.show(id, e);
+    }
     ink.strokes ??= ink.builder.finish();
     this.held.set(id, ink);
     this.host.touchStroke(id, 'hold', ink);
@@ -296,7 +337,7 @@ class Pipeline implements InkPipeline {
       if (e) e.ink = null;
     }
     if (bits & Fx.Promote && e) this.show(id, e);
-    if (bits & Fx.Hold && e?.ink) this.hold(id, e.ink);
+    if (bits & Fx.Hold && e?.ink) this.hold(id, e.ink, !e.visible);
     if (bits & Fx.Commit) this.commit(id, e, ink);
     if (bits & Fx.Uncommit) {
       const done = this.committed.get(id);
@@ -309,7 +350,10 @@ class Pipeline implements InkPipeline {
 
   private commit(id: number, e: Entry | undefined, ink: TouchInk | null): void {
     if (!ink) return;
-    if (this.hidden.delete(id)) this.host.touchStroke(id, 'show', ink);
+    if (this.hidden.delete(id) || (e?.ink === ink && !e.visible)) {
+      if (e) e.visible = true;
+      this.host.touchStroke(id, 'show', ink);
+    }
     ink.strokes ??= ink.builder.finish();
     this.host.touchStroke(id, 'commit', ink);
     this.held.delete(id);
@@ -319,8 +363,19 @@ class Pipeline implements InkPipeline {
   }
 
   private start(id: number, role: Role, e: Entry, t: number): void {
-    if (role === Role.Scroll) this.nav.beginScroll(id, e.x, e.y, t);
-    else if (role === Role.Nav) this.navStarts.push(id);
+    if (role === Role.Nav) {
+      this.navStarts.push(id);
+      return;
+    }
+    if (role !== Role.Scroll) return;
+    // Start from where the contact crossed slop and move the camera by the rest at once, so nothing is lost while
+    // the filter waited for the contact to settle.
+    const dx = e.x - e.x0;
+    const dy = e.y - e.y0;
+    const d = Math.hypot(dx, dy);
+    const k = d > 0 ? Math.min(1, (SLOP_MM * this.pxPerMm) / d) : 1;
+    this.nav.beginScroll(id, e.x0 + dx * k, e.y0 + dy * k, t);
+    if (this.nav.move(id, e.x, e.y, t)) this.host.camera('panBy', id, this.nav.step.dx, this.nav.step.dy, 0);
   }
 
   private beginPinch(t: number): void {
