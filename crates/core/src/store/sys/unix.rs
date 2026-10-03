@@ -306,6 +306,7 @@ pub(crate) fn try_lock(path: &Path) -> Result<Option<File>, FsError> {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(false)
             .mode(0o644)
             .open(path)
             .map_err(|err| classify(&err, FsOp::Create, path))?,
