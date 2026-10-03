@@ -6,7 +6,8 @@
     align-items: center;
     gap: var(--space-3);
     block-size: var(--size-title-bar);
-    padding-inline-start: var(--space-4);
+    /* The end keeps the theme toggle's pressed fill off the window edge, as far in as it sits from the top. */
+    padding-inline: var(--space-4) var(--space-2);
     overflow: hidden;
     border-block-end: 1px solid var(--color-border-subtle);
     background: var(--color-surface-app);

@@ -88,6 +88,14 @@ describe('the title bar items', () => {
     expect(back().getAttribute('aria-keyshortcuts')).toBe('Alt+ArrowLeft');
   });
 
+  it('keeps the theme toggle off the window edge, as far in as it sits from the top', async () => {
+    await renderApp();
+    const bar = banner().getBoundingClientRect();
+    const toggle = within(banner()).getByRole('switch', { name: 'Dark mode' }).getBoundingClientRect();
+    expect(bar.right - toggle.right).toBeGreaterThan(0);
+    expect(Math.abs(bar.right - toggle.right - (toggle.top - bar.top))).toBeLessThan(1);
+  });
+
   it('fits the narrowest medium window, with the arrows and the theme toggle still in the bar', async () => {
     await setViewport(600, 700);
     try {
