@@ -198,6 +198,59 @@ fn strokes_still_being_drawn_become_strokes() {
     }
 }
 
+#[test]
+fn a_recovered_version_keeps_the_segments_its_save_wrote() {
+    use crate::store::gc::{collect_garbage, RefSet};
+    use crate::store::history::list_versions;
+
+    let mut sim = Sim::new(fast());
+    sim.draw(1);
+    sim.flush();
+    let (fs, codec, _) = sim.crash(MemCrash::PowerCut);
+    assert_eq!(
+        recover(&fs, &codec, Some(page_dir())),
+        RecoveryOutcome::Replayed { txns: 1, strokes: 0 }
+    );
+    let dir = page_dir();
+    let files = crate::store::PageFiles {
+        fs: &fs,
+        codec: &codec,
+        dir: &dir,
+    };
+    let recovered = on_disk(&fs, &codec, &dir);
+    let saved: Vec<_> = recovered.ink.segments().iter().map(|s| s.id).collect();
+    let versions = list_versions(&files, &crate::limits::Limits::default())
+        .unwrap()
+        .versions;
+    let entry = versions.iter().find(|v| v.revision == recovered.revision.id).unwrap();
+    assert_eq!(
+        entry.segments, saved,
+        "the entry lists the segments of the saved page.json"
+    );
+    // A later save compacts the recovered segment away, and garbage collection must still leave it to the version.
+    let store = store(&fs, &codec, clock());
+    let loaded = store.load(&dir).unwrap();
+    let request = SaveRequest {
+        page: &loaded.page,
+        pending: &[],
+        through_seq: 0,
+        base_stamp: Some(loaded.stamp),
+        journal: None,
+        compaction: CompactionPlan::Major,
+    };
+    let compacted = store.save(&dir, request).unwrap();
+    assert!(saved.iter().any(|id| compacted.segments.iter().all(|s| s.id != *id)));
+    let day = Duration::from_secs(86_400);
+    let later = clock().now().saturating_add(day * 365);
+    let report = collect_garbage(&files, &RefSet::default(), later, day * 30).unwrap();
+    for id in &saved {
+        assert!(
+            !report.segments.contains(id),
+            "segment {id} of the recovered version was deleted"
+        );
+    }
+}
+
 /// A saved page with one unsaved edit in its journal, crashed, and `change` done to the files afterward.
 fn crashed_with(change: impl FnOnce(&MemFs, &RegistryCodec, &Page)) -> (MemFs, RegistryCodec, Vec<Page>) {
     let mut sim = Sim::new(fast());

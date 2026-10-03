@@ -144,7 +144,3 @@ A timed recovery of the after build took 82 ms. Waiting for the journal lock too
 ### Crash safety
 
 All 807 tests of the workspace passed, and all 666 of `opennote-core` with every feature. They include the crash scenarios on the fault-injecting file system and the power cuts. `2026-10-02-kill-harness-core-100-recovery.json` holds 100 kills of the core workload with seed 20261003, after all of these changes, with no failures. 48 writers were killed at a random moment, 27 just after a save step, and 25 at an armed fail point, of which 11 were reached. The hostile reader held files 2,835 times.
-
-### What is left
-
-The entry of a recovered version in `versions.json` lists the page's segments from before the recovery save, without the segment that save wrote. Garbage collection keeps the segments that `page.json` and the version entries list, so once a later save compacts that segment away, it may delete a segment the version needs. The entry should list the saved segments, as a normal save's does. These changes keep the old list, so recovery writes the same files as before.

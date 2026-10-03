@@ -133,10 +133,11 @@ pub fn save_recovered(
         .save_hooked(plan.dir, request, &mut save_begin)
         .map_err(core_error)?;
     fail_point!("recovery.saved");
-    // The version needs the page's fields and its segment list, not its strokes, which take milliseconds to
-    // copy and free after a long journal.
+    // The version needs the page's fields and the segment list the save wrote, not its strokes, which take
+    // milliseconds to copy and free after a long journal. Its entry lists those segments, so garbage collection
+    // keeps every segment the version's page.json names, including the one this save added.
     let mut saved = without_strokes(page);
-    saved.ink.commit(0, page.ink.segments().to_vec(), page.ink.dead_bytes());
+    saved.ink.commit(0, outcome.segments.clone(), outcome.dead_bytes);
     saved.revision = outcome.revision.clone();
     let files = PageFiles {
         fs: ctx.fs,
