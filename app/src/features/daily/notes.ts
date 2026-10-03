@@ -18,7 +18,11 @@ export async function dailyNotebook(notes: NotesService): Promise<NodeId | null>
 }
 
 /** The notebook's section for these notes. It is made when `create` is set and the notebook has none. */
-export async function dailySection(notes: NotesService, notebook: NodeId, create: boolean): Promise<NodeSummary | null> {
+export async function dailySection(
+  notes: NotesService,
+  notebook: NodeId,
+  create: boolean,
+): Promise<NodeSummary | null> {
   const title = t('qolSearch.daily.sectionTitle');
   const found = (await notes.listChildren(notebook)).find((node) => node.kind === 'section' && node.title === title);
   if (found || !create) return found ?? null;
@@ -29,7 +33,9 @@ export async function dailySection(notes: NotesService, notebook: NodeId, create
 export async function existingTitles(notes: NotesService, notebook: NodeId): Promise<Set<string>> {
   const section = await dailySection(notes, notebook, false);
   if (!section) return new Set();
-  return new Set((await notes.listChildren(section.id)).filter((node) => node.kind === 'page').map((node) => node.title));
+  return new Set(
+    (await notes.listChildren(section.id)).filter((node) => node.kind === 'page').map((node) => node.title),
+  );
 }
 
 /** Makes the note for the day from its template, if it does not exist yet. Returns the page. */

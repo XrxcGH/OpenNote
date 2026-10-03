@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
 // The graph view and the Connections list. Pages are dots and links are lines, for a notebook, for every notebook, or
 // for the pages within one to three links of the open page. The picture is for the eye; the Connections list says the
 // same in words, for the keyboard and for screen readers, and pages no link reaches have a list of their own.
@@ -19,7 +20,17 @@ const WIDTH = 720;
 const HEIGHT = 420;
 const EMPTY: LinkGraphData = { pages: [], edges: [], orphans: [], broken: 0 };
 
-function Pick({ label, value, options, onChange }: { label: string; value: string; options: { value: string; text: string }[]; onChange(value: string): void }) {
+function Pick({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; text: string }[];
+  onChange(value: string): void;
+}) {
   return (
     <label className={styles.pick}>
       <span>{label}</span>
@@ -69,8 +80,7 @@ export default function GraphView({ onClose }: OverlayProps) {
   useEffect(() => {
     let live = true;
     const extras = maybeSearchClient()?.extras;
-    if (!extras) return setData(EMPTY);
-    setData(null);
+    if (!extras) return;
     void Promise.all([
       extras.linkGraph(scope === 'notebook' ? (workspace?.notebookId ?? null) : null),
       extras.pageFacts(null),
@@ -88,7 +98,9 @@ export default function GraphView({ onClose }: OverlayProps) {
     };
   }, [scope, depth, current, workspace?.notebookId]);
 
-  const shown = useMemo(() => drawn(data ?? EMPTY, facts, filter, near), [data, facts, filter, near]);
+  const hasExtras = maybeSearchClient()?.extras !== undefined;
+  const graph = hasExtras ? data : EMPTY;
+  const shown = useMemo(() => drawn(graph ?? EMPTY, facts, filter, near), [graph, facts, filter, near]);
   const kept = useMemo(() => limitNodes(shown.pages.length, shown.edges), [shown]);
   const view = useMemo(() => {
     const at = new Map(kept.map((old, index) => [old, index]));
@@ -103,7 +115,7 @@ export default function GraphView({ onClose }: OverlayProps) {
 
   useEffect(() => {
     const extras = maybeSearchClient()?.extras;
-    if (!extras || !selected) return setLinks(null);
+    if (!extras || !selected) return;
     let live = true;
     extras
       .connections(selected)
@@ -114,7 +126,7 @@ export default function GraphView({ onClose }: OverlayProps) {
     };
   }, [selected]);
 
-  const titleOf = (page: string) => data?.pages.find((candidate) => candidate.page === page)?.title ?? page;
+  const titleOf = (page: string) => graph?.pages.find((candidate) => candidate.page === page)?.title ?? page;
   const select = (page: string) => {
     setSelected(page);
     announce(t('qolSearch.graph.selected', { title: titleOf(page) }));
@@ -127,7 +139,13 @@ export default function GraphView({ onClose }: OverlayProps) {
   const touching = new Set(view.edges.filter(([a, b]) => a === selectedAt || b === selectedAt).flat());
   const sections = [...new Set([...facts.values()].map((fact) => fact.section))];
   const tags = [...new Set([...facts.values()].flatMap((fact) => fact.tags))].sort();
-  const names = [...new Set([...facts.values()].flatMap((fact) => ((fact.properties as { fields?: { name: string }[] } | undefined)?.fields ?? []).map((f) => f.name)))].sort();
+  const names = [
+    ...new Set(
+      [...facts.values()].flatMap((fact) =>
+        ((fact.properties as { fields?: { name: string }[] } | undefined)?.fields ?? []).map((f) => f.name),
+      ),
+    ),
+  ].sort();
   const w = WIDTH / zoom;
   const h = HEIGHT / zoom;
   const any = { value: '', text: t('qolSearch.collections.any') };
@@ -159,21 +177,50 @@ export default function GraphView({ onClose }: OverlayProps) {
             onChange={(value) => setDepth(Number(value))}
           />
         )}
-        <Pick label={t('qolSearch.collections.tag')} value={filter.tag} options={[any, ...tags.map((tag) => ({ value: tag, text: tag }))]} onChange={(tag) => setFilter({ ...filter, tag })} />
-        <Pick label={t('qolSearch.collections.section')} value={filter.section} options={[any, ...sections.map((id) => ({ value: id, text: sectionNames.get(id) ?? id }))]} onChange={(section) => setFilter({ ...filter, section })} />
-        <Pick label={t('qolSearch.collections.property')} value={filter.property} options={[any, ...names.map((name) => ({ value: name, text: name }))]} onChange={(property) => setFilter({ ...filter, property })} />
-        {filter.property && <TextField label={t('qolSearch.collections.value')} value={filter.propertyValue} onChange={(propertyValue) => setFilter({ ...filter, propertyValue })} />}
+        <Pick
+          label={t('qolSearch.collections.tag')}
+          value={filter.tag}
+          options={[any, ...tags.map((tag) => ({ value: tag, text: tag }))]}
+          onChange={(tag) => setFilter({ ...filter, tag })}
+        />
+        <Pick
+          label={t('qolSearch.collections.section')}
+          value={filter.section}
+          options={[any, ...sections.map((id) => ({ value: id, text: sectionNames.get(id) ?? id }))]}
+          onChange={(section) => setFilter({ ...filter, section })}
+        />
+        <Pick
+          label={t('qolSearch.collections.property')}
+          value={filter.property}
+          options={[any, ...names.map((name) => ({ value: name, text: name }))]}
+          onChange={(property) => setFilter({ ...filter, property })}
+        />
+        {filter.property && (
+          <TextField
+            label={t('qolSearch.collections.value')}
+            value={filter.propertyValue}
+            onChange={(propertyValue) => setFilter({ ...filter, propertyValue })}
+          />
+        )}
         <div className={styles.zoom}>
-          <Button variant="secondary" aria-label={t('qolSearch.graph.zoomIn')} onClick={() => setZoom((z) => Math.min(4, z * 1.4))}>
+          <Button
+            variant="secondary"
+            aria-label={t('qolSearch.graph.zoomIn')}
+            onClick={() => setZoom((z) => Math.min(4, z * 1.4))}
+          >
             +
           </Button>
-          <Button variant="secondary" aria-label={t('qolSearch.graph.zoomOut')} onClick={() => setZoom((z) => Math.max(0.5, z / 1.4))}>
+          <Button
+            variant="secondary"
+            aria-label={t('qolSearch.graph.zoomOut')}
+            onClick={() => setZoom((z) => Math.max(0.5, z / 1.4))}
+          >
             −
           </Button>
         </div>
       </div>
       <p role="status" className={styles.note}>
-        {data === null
+        {graph === null
           ? t('qolSearch.collections.loading')
           : t('qolSearch.graph.summary', { pages: view.pages.length, links: view.edges.length })}
         {shown.pages.length > MAX_NODES ? ` ${t('qolSearch.graph.cut', { count: MAX_NODES })}` : ''}
@@ -199,7 +246,13 @@ export default function GraphView({ onClose }: OverlayProps) {
           const isSelected = index === selectedAt;
           const label = isSelected || touching.has(index) || view.pages.length <= 30;
           return (
-            <g key={page.page} className={styles.node} data-selected={isSelected ? 'true' : undefined} onClick={() => select(page.page)} onDoubleClick={() => open(page.page)}>
+            <g
+              key={page.page}
+              className={styles.node}
+              data-selected={isSelected ? 'true' : undefined}
+              onClick={() => select(page.page)}
+              onDoubleClick={() => open(page.page)}
+            >
               <circle cx={points[index].x} cy={points[index].y} r={isSelected ? 9 : page.page === current ? 8 : 6} />
               {label && (
                 <text x={points[index].x + 11} y={points[index].y + 4}>
@@ -215,7 +268,10 @@ export default function GraphView({ onClose }: OverlayProps) {
         <Pick
           label={t('qolSearch.graph.pageLabel')}
           value={selected ?? ''}
-          options={[{ value: '', text: t('qolSearch.graph.choose') }, ...view.pages.map((page) => ({ value: page.page, text: page.title || t('tree.page.noneTitle') }))]}
+          options={[
+            { value: '', text: t('qolSearch.graph.choose') },
+            ...view.pages.map((page) => ({ value: page.page, text: page.title || t('tree.page.noneTitle') })),
+          ]}
           onChange={(value) => value && select(value)}
         />
         {selected && links && (

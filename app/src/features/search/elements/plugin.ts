@@ -1,8 +1,8 @@
 // Element tags and links in the text editor (Phase 8). A paragraph, heading, or list item can carry a tag such as
 // "To do" and an ID that a link points at. The page editor keeps these as node attributes, but it writes only the
-// Markdown, so this plugin loads the attributes from the block's data, shows each tag as a badge with an icon and a
-// name, and writes the IDs, tags, and checked boxes back with `patchBlock` after a change. Blocks that have no IDs,
-// tags, or links stay as they were: the plugin writes nothing for them.
+// Markdown. So this plugin loads the attributes from the block data and shows each tag as a badge with an icon and a
+// name. After a change it writes the IDs, tags, and checked boxes back with `patchBlock`. A block that has no IDs,
+// tags, or links stays as it was, because the plugin writes nothing for it.
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';

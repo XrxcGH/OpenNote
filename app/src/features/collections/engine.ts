@@ -117,7 +117,8 @@ export function satisfies(field: Field | undefined, condition: Condition): boole
   }
 }
 
-const hasTag = (tags: readonly string[], wanted: string) => tags.some((tag) => tag === wanted || tag.startsWith(`${wanted}/`));
+const hasTag = (tags: readonly string[], wanted: string) =>
+  tags.some((tag) => tag === wanted || tag.startsWith(`${wanted}/`));
 
 /** Whether the page belongs in the collection. `found` holds the pages a search found, or null when it has no words. */
 export function matches(row: Row, def: CollectionDef, found: ReadonlySet<string> | null): boolean {
@@ -158,7 +159,11 @@ function weekStart(iso: string): string {
 }
 
 /** The group a row belongs to: its value for the property, or for a date, its day, week, or month. */
-export function groupKey(row: Row, def: Pick<CollectionDef, 'groupBy' | 'groupDate'>, words: { none: string; yes: string; no: string }) {
+export function groupKey(
+  row: Row,
+  def: Pick<CollectionDef, 'groupBy' | 'groupDate'>,
+  words: { none: string; yes: string; no: string },
+) {
   const field = fieldNamed(row.fields, def.groupBy);
   if (!field || field.value === null || field.value === '') return { key: '~', label: words.none };
   if (field.type === 'date' && typeof field.value === 'string') {
@@ -179,7 +184,11 @@ export interface Group {
 }
 
 /** The rows in groups, in the order of their keys. No property to group by gives one group with no label. */
-export function groupRows(rows: readonly Row[], def: CollectionDef, words: { none: string; yes: string; no: string }): Group[] {
+export function groupRows(
+  rows: readonly Row[],
+  def: CollectionDef,
+  words: { none: string; yes: string; no: string },
+): Group[] {
   if (!def.groupBy) return [{ key: '', label: '', rows: [...rows] }];
   const groups = new Map<string, Group>();
   for (const row of rows) {
@@ -188,12 +197,22 @@ export function groupRows(rows: readonly Row[], def: CollectionDef, words: { non
     group.rows.push(row);
     groups.set(key, group);
   }
-  return [...groups.values()].sort((a, b) => (a.key === '~' ? 1 : b.key === '~' ? -1 : a.key.localeCompare(b.key, undefined, { numeric: true })));
+  return [...groups.values()].sort((a, b) =>
+    a.key === '~' ? 1 : b.key === '~' ? -1 : a.key.localeCompare(b.key, undefined, { numeric: true }),
+  );
 }
 
 /** The fields with one set by name. A field the page lacks is added with the given type. */
-export function withValue(fields: readonly Field[], name: string, type: Field['type'], value: Field['value'], label?: string): Field[] {
+export function withValue(
+  fields: readonly Field[],
+  name: string,
+  type: Field['type'],
+  value: Field['value'],
+  label?: string,
+): Field[] {
   const found = fieldNamed(fields, name);
   if (!found) return [...fields, { id: `${name}-${fields.length}`, name, type, value, ...(label ? { label } : {}) }];
-  return fields.map((field) => (field === found ? { ...field, value, ...(label === undefined ? {} : { label }) } : field));
+  return fields.map((field) =>
+    field === found ? { ...field, value, ...(label === undefined ? {} : { label }) } : field,
+  );
 }

@@ -26,7 +26,9 @@ function clean(raw: unknown): CollectionDef | null {
     conditions,
     view: VIEW_KINDS.includes(item.view as never) ? (item.view as CollectionDef['view']) : 'table',
     groupBy: text(item.groupBy),
-    groupDate: (['day', 'week', 'month'] as const).includes(item.groupDate as DateGroup) ? (item.groupDate as DateGroup) : 'week',
+    groupDate: (['day', 'week', 'month'] as const).includes(item.groupDate as DateGroup)
+      ? (item.groupDate as DateGroup)
+      : 'week',
     sortBy: text(item.sortBy),
     sortDir: item.sortDir === 'desc' ? 'desc' : 'asc',
     dateField: text(item.dateField),

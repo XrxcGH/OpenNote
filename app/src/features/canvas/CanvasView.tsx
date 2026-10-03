@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
 // The canvas of the open page: an open board of cards (pages, notes, images, PDFs, web addresses, and groups)
 // joined by labeled arrows. Cards move by dragging or with the arrow keys, Enter opens one, and the Connect form
 // makes arrows without a pointer. The board is saved in the page, so it goes wherever the notebook goes.
@@ -14,12 +15,38 @@ import { t } from '../../strings/t';
 import { Button, Dialog, TextField, announce, showToast } from '../../ui';
 import { maybeSearchClient, openAndReveal } from '../search';
 import styles from './canvas.module.css';
-import { CARD_KINDS, CARD_SIZE, align, cardKind, cardText, center, edgePoint, emptyCanvas, exportJson, importJson, pageOf, place, readCanvas, removeCards, viewPatch } from './model';
+import {
+  CARD_KINDS,
+  CARD_SIZE,
+  align,
+  cardKind,
+  cardText,
+  center,
+  edgePoint,
+  emptyCanvas,
+  exportJson,
+  importJson,
+  pageOf,
+  place,
+  readCanvas,
+  removeCards,
+  viewPatch,
+} from './model';
 import type { Alignment, Canvas, CanvasNode, CardKind } from './model';
 
 const WEB = /^https?:\/\//i;
 
-function Pick({ label, value, options, onChange }: { label: string; value: string; options: { value: string; text: string }[]; onChange(value: string): void }) {
+function Pick({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; text: string }[];
+  onChange(value: string): void;
+}) {
   return (
     <label className={styles.pick}>
       <span>{label}</span>
@@ -96,21 +123,31 @@ export default function CanvasView({ onClose }: OverlayProps) {
     const ids = canvas.nodes.map(pageOf).filter((id): id is string => id !== null && !titles.has(id));
     if (ids.length === 0) return;
     void Promise.all(ids.map((id) => notes.get(id as NodeId))).then((nodes) =>
-      setTitles((was) => new Map([...was, ...nodes.flatMap((node, at) => (node ? [[ids[at], node.title] as const] : []))])),
+      setTitles(
+        (was) => new Map([...was, ...nodes.flatMap((node, at) => (node ? [[ids[at], node.title] as const] : []))]),
+      ),
     );
   }, [canvas.nodes, titles]);
 
   useEffect(() => {
     const client = maybeSearchClient();
-    if (kind !== 'page' || entry.trim() === '' || !client) return setFound([]);
+    if (kind !== 'page' || entry.trim() === '' || !client) return;
     let live = true;
-    const timeout = setTimeout(() => void client.suggestPages(entry, 5).then((list) => live && setFound(list)).catch(() => undefined), 150);
+    const timeout = setTimeout(
+      () =>
+        void client
+          .suggestPages(entry, 5)
+          .then((list) => live && setFound(list))
+          .catch(() => undefined),
+      150,
+    );
     return () => {
       live = false;
       clearTimeout(timeout);
     };
   }, [kind, entry]);
 
+  const suggestions = kind === 'page' && entry.trim() !== '' ? found : [];
   const add = (node: Pick<CanvasNode, 'type'> & Partial<CanvasNode>) => {
     const created: CanvasNode = { id: newId(), ...place(canvas), ...CARD_SIZE, ...node };
     change({ ...canvas, nodes: [...canvas.nodes, created] });
@@ -121,20 +158,35 @@ export default function CanvasView({ onClose }: OverlayProps) {
   const addFromEntry = () => {
     const value = entry.trim();
     if (kind === 'note') add({ type: 'text', text: value || t('qolSearch.canvas.newNote') });
-    else if (kind === 'group') add({ type: 'group', label: value || t('qolSearch.canvas.newGroup'), width: 360, height: 220 });
+    else if (kind === 'group')
+      add({ type: 'group', label: value || t('qolSearch.canvas.newGroup'), width: 360, height: 220 });
     else if (kind === 'web' && value) add({ type: 'link', url: WEB.test(value) ? value : `https://${value}` });
     else if ((kind === 'image' || kind === 'pdf') && value) add({ type: 'file', file: value });
   };
   const pick = (page: PageSuggestion) => add({ type: 'file', file: `opennote://page/${page.page}`, label: page.title });
 
   const move = (id: string, dx: number, dy: number, now = true) =>
-    change({ ...canvas, nodes: canvas.nodes.map((node) => (node.id === id ? { ...node, x: Math.round(node.x + dx), y: Math.round(node.y + dy) } : node)) }, now);
+    change(
+      {
+        ...canvas,
+        nodes: canvas.nodes.map((node) =>
+          node.id === id ? { ...node, x: Math.round(node.x + dx), y: Math.round(node.y + dy) } : node,
+        ),
+      },
+      now,
+    );
   const drag = useRef<{ id: string; x: number; y: number } | null>(null);
   const onDown = (event: PointerEvent<HTMLElement>, node: CanvasNode) => {
     if ((event.target as HTMLElement).closest('button, textarea, input')) return;
     drag.current = { id: node.id, x: event.clientX, y: event.clientY };
     event.currentTarget.setPointerCapture(event.pointerId);
-    setSelection((was) => (event.shiftKey || event.ctrlKey ? (was.includes(node.id) ? was.filter((id) => id !== node.id) : [...was, node.id]) : [node.id]));
+    setSelection((was) =>
+      event.shiftKey || event.ctrlKey
+        ? was.includes(node.id)
+          ? was.filter((id) => id !== node.id)
+          : [...was, node.id]
+        : [node.id],
+    );
   };
   const onMove = (event: PointerEvent<HTMLElement>) => {
     const d = drag.current;
@@ -164,7 +216,12 @@ export default function CanvasView({ onClose }: OverlayProps) {
   const onKey = (event: KeyboardEvent<HTMLElement>, node: CanvasNode) => {
     if ((event.target as HTMLElement).closest('textarea, input')) return;
     const step = event.shiftKey ? 50 : 10;
-    const arrows: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    const arrows: Record<string, [number, number]> = {
+      ArrowLeft: [-step, 0],
+      ArrowRight: [step, 0],
+      ArrowUp: [0, -step],
+      ArrowDown: [0, step],
+    };
     const delta = arrows[event.key];
     if (delta) {
       event.preventDefault();
@@ -180,14 +237,37 @@ export default function CanvasView({ onClose }: OverlayProps) {
   };
   const editText = (node: CanvasNode, value: string) =>
     change(
-      { ...canvas, nodes: canvas.nodes.map((n) => (n.id !== node.id ? n : n.type === 'text' ? { ...n, text: value } : n.type === 'link' ? { ...n, url: value } : { ...n, label: value })) },
+      {
+        ...canvas,
+        nodes: canvas.nodes.map((n) =>
+          n.id !== node.id
+            ? n
+            : n.type === 'text'
+              ? { ...n, text: value }
+              : n.type === 'link'
+                ? { ...n, url: value }
+                : { ...n, label: value },
+        ),
+      },
       false,
     );
-  const names = useMemo(() => new Map(canvas.nodes.map((node) => [node.id, cardText(node, titles) || t(`qolSearch.canvas.kinds.${cardKind(node)}`)])), [canvas.nodes, titles]);
+  const names = useMemo(
+    () =>
+      new Map(
+        canvas.nodes.map((node) => [node.id, cardText(node, titles) || t(`qolSearch.canvas.kinds.${cardKind(node)}`)]),
+      ),
+    [canvas.nodes, titles],
+  );
 
   const connect = () => {
     if (!from || !to || from === to) return;
-    change({ ...canvas, edges: [...canvas.edges, { id: newId(), fromNode: from, toNode: to, toEnd: 'arrow', ...(label.trim() ? { label: label.trim() } : {}) }] });
+    change({
+      ...canvas,
+      edges: [
+        ...canvas.edges,
+        { id: newId(), fromNode: from, toNode: to, toEnd: 'arrow', ...(label.trim() ? { label: label.trim() } : {}) },
+      ],
+    });
     setLabel('');
     announce(t('qolSearch.canvas.connected', { from: names.get(from) ?? '', to: names.get(to) ?? '' }));
   };
@@ -197,7 +277,10 @@ export default function CanvasView({ onClose }: OverlayProps) {
   const height = Math.max(420, ...canvas.nodes.map((node) => node.y + node.height + 80));
   const nodeOf = (id: string) => canvas.nodes.find((node) => node.id === id);
   const cards = canvas.nodes.map((node) => ({ id: node.id, text: names.get(node.id) ?? '' }));
-  const cardOptions = [{ value: '', text: t('qolSearch.canvas.chooseCard') }, ...cards.map((card) => ({ value: card.id, text: card.text.slice(0, 60) }))];
+  const cardOptions = [
+    { value: '', text: t('qolSearch.canvas.chooseCard') },
+    ...cards.map((card) => ({ value: card.id, text: card.text.slice(0, 60) })),
+  ];
 
   return (
     <Dialog
@@ -212,17 +295,30 @@ export default function CanvasView({ onClose }: OverlayProps) {
       {pageId && ready && (
         <>
           <div className={styles.tools}>
-            <Pick label={t('qolSearch.canvas.addKind')} value={kind} options={CARD_KINDS.map((value) => ({ value, text: t(`qolSearch.canvas.kinds.${value}`) }))} onChange={(value) => { setKind(value as CardKind); setEntry(''); }} />
-            <TextField label={t(`qolSearch.canvas.entry.${kind}`)} value={entry} onChange={setEntry} onCommit={addFromEntry} />
+            <Pick
+              label={t('qolSearch.canvas.addKind')}
+              value={kind}
+              options={CARD_KINDS.map((value) => ({ value, text: t(`qolSearch.canvas.kinds.${value}`) }))}
+              onChange={(value) => {
+                setKind(value as CardKind);
+                setEntry('');
+              }}
+            />
+            <TextField
+              label={t(`qolSearch.canvas.entry.${kind}`)}
+              value={entry}
+              onChange={setEntry}
+              onCommit={addFromEntry}
+            />
             {kind !== 'page' && (
               <Button variant="secondary" onClick={addFromEntry}>
                 {t('qolSearch.canvas.add')}
               </Button>
             )}
           </div>
-          {found.length > 0 && (
+          {suggestions.length > 0 && (
             <ul className={styles.found} aria-label={t('qolSearch.properties.pages')}>
-              {found.map((page) => (
+              {suggestions.map((page) => (
                 <li key={page.page}>
                   <button type="button" className={styles.link} onClick={() => pick(page)}>
                     {page.title}
@@ -245,7 +341,14 @@ export default function CanvasView({ onClose }: OverlayProps) {
                 {t(`qolSearch.canvas.align.${mode}`)}
               </Button>
             ))}
-            <Button variant="quiet" disabled={selection.length === 0} onClick={() => { change(removeCards(canvas, selection)); setSelection([]); }}>
+            <Button
+              variant="quiet"
+              disabled={selection.length === 0}
+              onClick={() => {
+                change(removeCards(canvas, selection));
+                setSelection([]);
+              }}
+            >
               {t('qolSearch.canvas.deleteSelected')}
             </Button>
             <span className={styles.note}>{t('qolSearch.canvas.selected', { count: selection.length })}</span>
@@ -254,7 +357,15 @@ export default function CanvasView({ onClose }: OverlayProps) {
             <div className={styles.surface} style={{ inlineSize: width, blockSize: height }}>
               <svg className={styles.arrows} width={width} height={height} aria-hidden="true">
                 <defs>
-                  <marker id="canvas-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                  <marker
+                    id="canvas-arrow"
+                    viewBox="0 0 10 10"
+                    refX="9"
+                    refY="5"
+                    markerWidth="8"
+                    markerHeight="8"
+                    orient="auto-start-reverse"
+                  >
                     <path d="M0 0 L10 5 L0 10 z" fill="currentColor" />
                   </marker>
                 </defs>
@@ -289,7 +400,12 @@ export default function CanvasView({ onClose }: OverlayProps) {
                     role="group"
                     tabIndex={0}
                     aria-label={`${t(`qolSearch.canvas.kinds.${type}`)}: ${text}${chosen ? `, ${t('qolSearch.canvas.chosen')}` : ''}`}
-                    style={{ insetInlineStart: node.x, insetBlockStart: node.y, inlineSize: node.width, blockSize: node.height }}
+                    style={{
+                      insetInlineStart: node.x,
+                      insetBlockStart: node.y,
+                      inlineSize: node.width,
+                      blockSize: node.height,
+                    }}
                     onPointerDown={(event) => onDown(event, node)}
                     onPointerMove={onMove}
                     onPointerUp={onUp}
@@ -297,7 +413,19 @@ export default function CanvasView({ onClose }: OverlayProps) {
                   >
                     <span className={styles.kind}>{t(`qolSearch.canvas.kinds.${type}`)}</span>
                     {editing === node.id && type !== 'page' ? (
-                      <textarea className={styles.edit} aria-label={t('qolSearch.canvas.editText')} value={type === 'note' ? (node.text ?? '') : type === 'web' ? (node.url ?? '') : (node.label ?? '')} onChange={(event) => editText(node, event.target.value)} onBlur={() => { send(); setEditing(null); }} autoFocus />
+                      <textarea
+                        className={styles.edit}
+                        aria-label={t('qolSearch.canvas.editText')}
+                        value={
+                          type === 'note' ? (node.text ?? '') : type === 'web' ? (node.url ?? '') : (node.label ?? '')
+                        }
+                        onChange={(event) => editText(node, event.target.value)}
+                        onBlur={() => {
+                          send();
+                          setEditing(null);
+                        }}
+                        autoFocus
+                      />
                     ) : (
                       <span className={styles.text}>{text}</span>
                     )}
@@ -320,7 +448,13 @@ export default function CanvasView({ onClose }: OverlayProps) {
           </div>
           <details className={styles.json}>
             <summary>{t('qolSearch.canvas.jsonTitle')}</summary>
-            <textarea className={styles.edit} rows={5} aria-label={t('qolSearch.canvas.jsonTitle')} value={json} onChange={(event) => setJson(event.target.value)} />
+            <textarea
+              className={styles.edit}
+              rows={5}
+              aria-label={t('qolSearch.canvas.jsonTitle')}
+              value={json}
+              onChange={(event) => setJson(event.target.value)}
+            />
             <div className={styles.tools}>
               <Button variant="secondary" onClick={() => setJson(exportJson(canvas))}>
                 {t('qolSearch.canvas.export')}

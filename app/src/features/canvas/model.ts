@@ -75,7 +75,8 @@ export function cardText(node: CanvasNode, titles: ReadonlyMap<string, string>):
   }
 }
 
-const finite = (value: unknown, fallback: number) => (typeof value === 'number' && Number.isFinite(value) ? value : fallback);
+const finite = (value: unknown, fallback: number) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 const text = (value: unknown) => (typeof value === 'string' ? value : undefined);
 
 /** The canvas in a page's `view`, tolerant of anything else that may be there. */
@@ -119,7 +120,12 @@ export function parseCanvas(raw: unknown): Canvas {
     if (!ids.has(edge.fromNode) || !ids.has(edge.toNode)) continue;
     edgeIds.add(edge.id);
     const label = text(edge.label);
-    out.edges.push({ id: edge.id, fromNode: edge.fromNode, toNode: edge.toNode, ...(label ? { label: label.slice(0, 200) } : {}) });
+    out.edges.push({
+      id: edge.id,
+      fromNode: edge.fromNode,
+      toNode: edge.toNode,
+      ...(label ? { label: label.slice(0, 200) } : {}),
+    });
   }
   return out;
 }
@@ -173,7 +179,9 @@ export function align(canvas: Canvas, ids: readonly string[], mode: Alignment): 
     const columns = Math.ceil(Math.sqrt(chosen.length));
     const cellW = Math.max(...chosen.map((node) => node.width)) + GAP;
     const cellH = Math.max(...chosen.map((node) => node.height)) + GAP;
-    chosen.forEach((node, index) => moved.set(node.id, { x: startX + (index % columns) * cellW, y: startY + Math.floor(index / columns) * cellH }));
+    chosen.forEach((node, index) =>
+      moved.set(node.id, { x: startX + (index % columns) * cellW, y: startY + Math.floor(index / columns) * cellH }),
+    );
   }
   return { ...canvas, nodes: canvas.nodes.map((node) => ({ ...node, ...(moved.get(node.id) ?? {}) })) };
 }

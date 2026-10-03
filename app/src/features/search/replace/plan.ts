@@ -9,10 +9,7 @@ export interface ReplaceOptions {
 }
 
 /** Where a piece of text sits in a block. */
-export type Field =
-  | { kind: 'text' }
-  | { kind: 'cell'; row: string; column: string }
-  | { kind: 'alt' };
+export type Field = { kind: 'text' } | { kind: 'cell'; row: string; column: string } | { kind: 'alt' };
 
 export interface Match {
   /** Unique within a plan. */
@@ -53,7 +50,11 @@ export function findMatches(text: string, find: string, options: ReplaceOptions)
 }
 
 /** The text with the chosen matches replaced. `chosen` holds the matches' start offsets. */
-export function replaceAt(text: string, matches: readonly { start: number; end: number }[], replacement: string): string {
+export function replaceAt(
+  text: string,
+  matches: readonly { start: number; end: number }[],
+  replacement: string,
+): string {
   let out = text;
   for (const { start, end } of [...matches].sort((a, b) => b.start - a.start)) {
     out = out.slice(0, start) + replacement + out.slice(end);
@@ -63,12 +64,14 @@ export function replaceAt(text: string, matches: readonly { start: number; end: 
 
 function fieldTexts(block: BlockJson): { field: Field; text: string }[] {
   const data = block.data;
-  if (block.type === 'text' && typeof data.markdown === 'string') return [{ field: { kind: 'text' }, text: data.markdown }];
+  if (block.type === 'text' && typeof data.markdown === 'string')
+    return [{ field: { kind: 'text' }, text: data.markdown }];
   if (block.type === 'table' && Array.isArray(data.rows)) {
     const cells: { field: Field; text: string }[] = [];
     for (const row of data.rows as { id: string; cells?: Record<string, { markdown?: string }> }[]) {
       for (const [column, cell] of Object.entries(row.cells ?? {})) {
-        if (typeof cell?.markdown === 'string') cells.push({ field: { kind: 'cell', row: row.id, column }, text: cell.markdown });
+        if (typeof cell?.markdown === 'string')
+          cells.push({ field: { kind: 'cell', row: row.id, column }, text: cell.markdown });
       }
     }
     return cells;

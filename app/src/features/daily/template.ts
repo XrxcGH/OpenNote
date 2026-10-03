@@ -14,7 +14,15 @@ export const DEFAULT_TEMPLATES: Templates = {
 };
 
 /** The placeholders a template may use, for the editor's help line. */
-export const PLACEHOLDERS = ['{date}', '{longDate}', '{weekday}', '{week}', '{weekYear}', '{monthName}', '{year}'] as const;
+export const PLACEHOLDERS = [
+  '{date}',
+  '{longDate}',
+  '{weekday}',
+  '{week}',
+  '{weekYear}',
+  '{monthName}',
+  '{year}',
+] as const;
 
 const STORAGE_KEY = 'opennote.daily.templates';
 
@@ -23,7 +31,8 @@ export function loadTemplates(): Templates {
     const raw: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
     if (raw && typeof raw === 'object') {
       const saved = raw as Partial<Record<DailyKind, unknown>>;
-      const pick = (kind: DailyKind) => (typeof saved[kind] === 'string' ? (saved[kind] as string) : DEFAULT_TEMPLATES[kind]);
+      const pick = (kind: DailyKind) =>
+        typeof saved[kind] === 'string' ? (saved[kind] as string) : DEFAULT_TEMPLATES[kind];
       return { day: pick('day'), week: pick('week'), month: pick('month'), year: pick('year') };
     }
   } catch {

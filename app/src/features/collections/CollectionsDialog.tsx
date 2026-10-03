@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
 // Collections: saved views of pages chosen by a search, a tag, a section, or property values, shown as a table, a
 // list, a board, a calendar, or a gallery. The rules fold open above the pages. Editing a property in a view changes
 // the page.
@@ -42,13 +43,10 @@ function Pick({
 
 function useFacts(version: number): PageFact[] | null {
   const [facts, setFacts] = useState<PageFact[] | null>(null);
+  const extras = maybeSearchClient()?.extras;
   useEffect(() => {
     let current = true;
-    const extras = maybeSearchClient()?.extras;
-    if (!extras) {
-      setFacts([]);
-      return;
-    }
+    if (!extras) return;
     extras
       .pageFacts(null)
       .then((list) => current && setFacts(list))
@@ -56,8 +54,8 @@ function useFacts(version: number): PageFact[] | null {
     return () => {
       current = false;
     };
-  }, [version]);
-  return facts;
+  }, [version, extras]);
+  return extras ? facts : [];
 }
 
 function useChoices(): { tags: TagNode[]; sections: { id: string; title: string }[] } {
@@ -65,7 +63,10 @@ function useChoices(): { tags: TagNode[]; sections: { id: string; title: string 
   const [sections, setSections] = useState<{ id: string; title: string }[]>([]);
   useEffect(() => {
     let current = true;
-    void maybeSearchClient()?.tagTree().then((list) => current && setTags(list)).catch(() => undefined);
+    void maybeSearchClient()
+      ?.tagTree()
+      .then((list) => current && setTags(list))
+      .catch(() => undefined);
     const { notes } = commandContext('palette');
     void (async () => {
       const found: { id: string; title: string }[] = [];
@@ -95,18 +96,21 @@ export default function CollectionsDialog({ onClose }: OverlayProps) {
   const { tags, sections } = useChoices();
   const def = list.find((item) => item.id === selected) ?? null;
 
-  const update = useCallback((patch: Partial<CollectionDef>) => {
-    setList((was) => {
-      const next = was.map((item) => (item.id === selected ? { ...item, ...patch } : item));
-      saveCollections(next);
-      return next;
-    });
-  }, [selected]);
+  const update = useCallback(
+    (patch: Partial<CollectionDef>) => {
+      setList((was) => {
+        const next = was.map((item) => (item.id === selected ? { ...item, ...patch } : item));
+        saveCollections(next);
+        return next;
+      });
+    },
+    [selected],
+  );
 
   useEffect(() => {
     const text = def?.text.trim() ?? '';
     const client = maybeSearchClient();
-    if (!text || !client) return setFound(null);
+    if (!text || !client) return;
     let current = true;
     const timer = setTimeout(() => {
       client
@@ -121,10 +125,24 @@ export default function CollectionsDialog({ onClose }: OverlayProps) {
   }, [def?.text]);
 
   const rows = useMemo(() => (facts ?? []).map(toRow), [facts]);
-  const shown = useMemo(() => (def ? sortRows(rows.filter((row) => matches(row, def, found)), def) : []), [rows, def, found]);
+  const pagesFound = def?.text.trim() ? found : null;
+  const shown = useMemo(
+    () =>
+      def
+        ? sortRows(
+            rows.filter((row) => matches(row, def, pagesFound)),
+            def,
+          )
+        : [],
+    [rows, def, pagesFound],
+  );
   const names = useMemo(() => propertyNames(shown), [shown]);
   const allNames = useMemo(() => propertyNames(rows), [rows]);
-  const words = { none: t('qolSearch.collections.noValue'), yes: t('qolSearch.collections.yes'), no: t('qolSearch.collections.no') };
+  const words = {
+    none: t('qolSearch.collections.noValue'),
+    yes: t('qolSearch.collections.yes'),
+    no: t('qolSearch.collections.no'),
+  };
   const groups = useMemo(() => (def ? groupRows(shown, def, words) : []), [shown, def]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const create = () => {
@@ -153,9 +171,15 @@ export default function CollectionsDialog({ onClose }: OverlayProps) {
       .catch(() => showToast({ message: t('qolSearch.collections.editFailed'), tone: 'danger' }));
   };
   const sort = (name: string) =>
-    update(def?.sortBy === name ? { sortDir: def.sortDir === 'asc' ? 'desc' : 'asc' } : { sortBy: name, sortDir: 'asc' });
+    update(
+      def?.sortBy === name ? { sortDir: def.sortDir === 'asc' ? 'desc' : 'asc' } : { sortBy: name, sortDir: 'asc' },
+    );
   const setCondition = (at: number, patch: Partial<Condition>) =>
-    update({ conditions: (def?.conditions ?? []).map((condition, index) => (index === at ? { ...condition, ...patch } : condition)) });
+    update({
+      conditions: (def?.conditions ?? []).map((condition, index) =>
+        index === at ? { ...condition, ...patch } : condition,
+      ),
+    });
 
   const View = def ? VIEWS[def.view] : null;
   const none = { value: '', text: t('qolSearch.collections.any') };
@@ -210,36 +234,71 @@ export default function CollectionsDialog({ onClose }: OverlayProps) {
           />
           {def.conditions.map((condition, at) => (
             <div key={at} className={styles.condition}>
-              <Pick label={t('qolSearch.collections.property')} value={condition.name} options={propertyOptions} onChange={(name) => setCondition(at, { name })} />
+              <Pick
+                label={t('qolSearch.collections.property')}
+                value={condition.name}
+                options={propertyOptions}
+                onChange={(name) => setCondition(at, { name })}
+              />
               <Pick
                 label={t('qolSearch.collections.operator')}
                 value={condition.op}
                 options={OPERATORS.map((op) => ({ value: op, text: t(`qolSearch.collections.operators.${op}`) }))}
                 onChange={(op) => setCondition(at, { op: op as Condition['op'] })}
               />
-              <TextField label={t('qolSearch.collections.value')} value={condition.value} onChange={(value) => setCondition(at, { value })} />
-              <Button variant="quiet" onClick={() => update({ conditions: def.conditions.filter((_, index) => index !== at) })}>
+              <TextField
+                label={t('qolSearch.collections.value')}
+                value={condition.value}
+                onChange={(value) => setCondition(at, { value })}
+              />
+              <Button
+                variant="quiet"
+                onClick={() => update({ conditions: def.conditions.filter((_, index) => index !== at) })}
+              >
                 {t('qolSearch.collections.removeRule')}
               </Button>
             </div>
           ))}
-          <Button variant="secondary" onClick={() => update({ conditions: [...def.conditions, { name: allNames[0] ?? '', op: 'is', value: '' }] })}>
+          <Button
+            variant="secondary"
+            onClick={() =>
+              update({ conditions: [...def.conditions, { name: allNames[0] ?? '', op: 'is', value: '' }] })
+            }
+          >
             {t('qolSearch.collections.addRule')}
           </Button>
-          <Pick label={t('qolSearch.collections.groupBy')} value={def.groupBy} options={propertyOptions} onChange={(groupBy) => update({ groupBy })} />
+          <Pick
+            label={t('qolSearch.collections.groupBy')}
+            value={def.groupBy}
+            options={propertyOptions}
+            onChange={(groupBy) => update({ groupBy })}
+          />
           <Pick
             label={t('qolSearch.collections.groupDate')}
             value={def.groupDate}
-            options={(['day', 'week', 'month'] as const).map((value) => ({ value, text: t(`qolSearch.collections.dateGroups.${value}`) }))}
+            options={(['day', 'week', 'month'] as const).map((value) => ({
+              value,
+              text: t(`qolSearch.collections.dateGroups.${value}`),
+            }))}
             onChange={(groupDate) => update({ groupDate: groupDate as CollectionDef['groupDate'] })}
           />
-          <Pick label={t('qolSearch.collections.dateField')} value={def.dateField} options={propertyOptions} onChange={(dateField) => update({ dateField })} />
+          <Pick
+            label={t('qolSearch.collections.dateField')}
+            value={def.dateField}
+            options={propertyOptions}
+            onChange={(dateField) => update({ dateField })}
+          />
         </div>
       )}
       {def && (
         <div className={styles.views} role="group" aria-label={t('qolSearch.collections.showAs')}>
           {VIEW_KINDS.map((kind) => (
-            <Button key={kind} variant={def.view === kind ? 'primary' : 'secondary'} aria-pressed={def.view === kind} onClick={() => update({ view: kind })}>
+            <Button
+              key={kind}
+              variant={def.view === kind ? 'primary' : 'secondary'}
+              aria-pressed={def.view === kind}
+              onClick={() => update({ view: kind })}
+            >
               {t(`qolSearch.collections.views.${kind}`)}
             </Button>
           ))}
@@ -248,7 +307,9 @@ export default function CollectionsDialog({ onClose }: OverlayProps) {
       {def && facts === null && <p className={styles.note}>{t('qolSearch.collections.loading')}</p>}
       {def && facts !== null && (
         <p role="status" className={styles.note}>
-          {shown.length === 0 ? t('qolSearch.collections.nothing') : t('qolSearch.collections.pages', { count: shown.length })}
+          {shown.length === 0
+            ? t('qolSearch.collections.nothing')
+            : t('qolSearch.collections.pages', { count: shown.length })}
         </p>
       )}
       {def && View && shown.length > 0 && (
@@ -257,4 +318,3 @@ export default function CollectionsDialog({ onClose }: OverlayProps) {
     </Dialog>
   );
 }
-

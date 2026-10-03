@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
 // The properties header of a page: a button that folds a list of typed fields open or shut. Each field shows an icon
 // and its name, so no field is told apart by an icon alone. Changes are saved to the page as they are made.
 import { CalendarBlankIcon } from '@phosphor-icons/react/dist/csr/CalendarBlank';
@@ -170,7 +171,8 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
       latest.current = next;
       setFields(next);
       if (timer.current) clearTimeout(timer.current);
-      const send = () => void page.send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] }).catch(() => undefined);
+      const send = () =>
+        void page.send({ edits: [{ edit: 'setPage', view: viewPatch(latest.current) }] }).catch(() => undefined);
       if (now) send();
       else timer.current = setTimeout(send, 500);
     },
@@ -226,12 +228,17 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
                   <Icon aria-hidden={true} />
                   <input
                     className={styles.nameInput}
-                    aria-label={t('qolSearch.properties.nameOf', { type: t(`qolSearch.properties.types.${field.type}`) })}
+                    aria-label={t('qolSearch.properties.nameOf', {
+                      type: t(`qolSearch.properties.types.${field.type}`),
+                    })}
                     value={field.name}
                     onChange={(event) => change(field.id, { name: event.target.value })}
                   />
                 </span>
-                <Value field={field} onChange={(patch) => change(field.id, patch, field.type !== 'text' && field.type !== 'number')} />
+                <Value
+                  field={field}
+                  onChange={(patch) => change(field.id, patch, field.type !== 'text' && field.type !== 'number')}
+                />
                 {field.type === 'choice' && (
                   <input
                     className={styles.input}
@@ -240,7 +247,10 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
                     defaultValue={(field.options ?? []).join(', ')}
                     onChange={(event) =>
                       change(field.id, {
-                        options: event.target.value.split(',').map((option) => option.trim()).filter(Boolean),
+                        options: event.target.value
+                          .split(',')
+                          .map((option) => option.trim())
+                          .filter(Boolean),
                       })
                     }
                   />
@@ -248,7 +258,12 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
                 <Button
                   variant="quiet"
                   aria-label={t('qolSearch.properties.remove', { name: field.name })}
-                  onClick={() => save(latest.current.filter((other) => other.id !== field.id), true)}
+                  onClick={() =>
+                    save(
+                      latest.current.filter((other) => other.id !== field.id),
+                      true,
+                    )
+                  }
                 >
                   {t('qolSearch.properties.removeShort')}
                 </Button>

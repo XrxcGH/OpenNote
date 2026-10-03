@@ -13,5 +13,7 @@ export function DailyButton({ presentation }: { presentation: 'full' | 'icon' | 
   if (presentation === 'menuItem') {
     return <TitleBarMenuItem label={t('qolSearch.commands.dailyOpen')} command="daily.open" onPress={run} />;
   }
-  return <IconButton label={t('qolSearch.commands.dailyOpen')} icon={CalendarCheckIcon} command="daily.open" onPress={run} />;
+  return (
+    <IconButton label={t('qolSearch.commands.dailyOpen')} icon={CalendarCheckIcon} command="daily.open" onPress={run} />
+  );
 }

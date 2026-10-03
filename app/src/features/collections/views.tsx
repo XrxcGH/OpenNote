@@ -29,11 +29,23 @@ function Cell({ row, name, onEdit }: { row: Row; name: string; onEdit: ViewProps
   const label = t('qolSearch.collections.cellLabel', { name, title: row.title });
   if (!field) return null;
   if (field.type === 'checkbox') {
-    return <input type="checkbox" checked={field.value === true} aria-label={label} onChange={(e) => onEdit(row, name, field, e.target.checked)} />;
+    return (
+      <input
+        type="checkbox"
+        checked={field.value === true}
+        aria-label={label}
+        onChange={(e) => onEdit(row, name, field, e.target.checked)}
+      />
+    );
   }
   if (field.type === 'choice') {
     return (
-      <select className={styles.cell} aria-label={label} value={typeof field.value === 'string' ? field.value : ''} onChange={(e) => onEdit(row, name, field, e.target.value || null)}>
+      <select
+        className={styles.cell}
+        aria-label={label}
+        value={typeof field.value === 'string' ? field.value : ''}
+        onChange={(e) => onEdit(row, name, field, e.target.value || null)}
+      >
         <option value="">{t('qolSearch.properties.none')}</option>
         {(field.options ?? []).map((option) => (
           <option key={option}>{option}</option>
@@ -60,7 +72,8 @@ function Cell({ row, name, onEdit }: { row: Row; name: string; onEdit: ViewProps
 
 export function TableView({ groups, names, def, onOpen, onEdit, onSort }: ViewProps) {
   const columns = names.slice(0, 6);
-  const sorted = (name: string) => (def.sortBy === name ? (def.sortDir === 'asc' ? 'ascending' : 'descending') : 'none');
+  const sorted = (name: string) =>
+    def.sortBy === name ? (def.sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
   return (
     <div className={styles.scroll}>
       <table className={styles.table}>
@@ -81,7 +94,8 @@ export function TableView({ groups, names, def, onOpen, onEdit, onSort }: ViewPr
             {group.label && (
               <tr>
                 <th colSpan={columns.length + 1} scope="colgroup" className={styles.groupRow}>
-                  {group.label} <span className={styles.muted}>{t('qolSearch.collections.count', { count: group.rows.length })}</span>
+                  {group.label}{' '}
+                  <span className={styles.muted}>{t('qolSearch.collections.count', { count: group.rows.length })}</span>
                 </th>
               </tr>
             )}
@@ -108,11 +122,7 @@ export function TableView({ groups, names, def, onOpen, onEdit, onSort }: ViewPr
 
 function Summary({ row, names }: { row: Row; names: string[] }) {
   const parts = names.map((name) => [name, show(row, name)] as const).filter(([, value]) => value !== '');
-  return (
-    <span className={styles.muted}>
-      {parts.map(([name, value]) => `${name}: ${value}`).join(' · ')}
-    </span>
-  );
+  return <span className={styles.muted}>{parts.map(([name, value]) => `${name}: ${value}`).join(' · ')}</span>;
 }
 
 export function ListView({ groups, names, onOpen }: ViewProps) {
@@ -162,7 +172,9 @@ export function GalleryView({ groups, names, onOpen }: ViewProps) {
 export function BoardView({ groups, names, def, onOpen, onEdit }: ViewProps) {
   const [over, setOver] = useState<string | null>(null);
   if (!def.groupBy) return <p className={styles.note}>{t('qolSearch.collections.boardNeedsGroup')}</p>;
-  const movable = !groups.some((group) => group.rows.some((row) => fieldNamed(row.fields, def.groupBy)?.type === 'date'));
+  const movable = !groups.some((group) =>
+    group.rows.some((row) => fieldNamed(row.fields, def.groupBy)?.type === 'date'),
+  );
   const move = (row: Row, group: Group | undefined) => {
     const field = fieldNamed(row.fields, def.groupBy);
     if (movable && group) onEdit(row, def.groupBy, field, group.key === '~' ? null : group.label);
@@ -189,7 +201,8 @@ export function BoardView({ groups, names, def, onOpen, onEdit }: ViewProps) {
           }}
         >
           <h3 className={styles.groupTitle}>
-            {group.label} <span className={styles.muted}>{t('qolSearch.collections.count', { count: group.rows.length })}</span>
+            {group.label}{' '}
+            <span className={styles.muted}>{t('qolSearch.collections.count', { count: group.rows.length })}</span>
           </h3>
           {group.rows.map((row) => (
             <div
@@ -207,7 +220,12 @@ export function BoardView({ groups, names, def, onOpen, onEdit }: ViewProps) {
                   className={styles.cell}
                   aria-label={t('qolSearch.collections.moveTo', { title: row.title })}
                   value={group.key}
-                  onChange={(event) => move(row, groups.find((g) => g.key === event.target.value))}
+                  onChange={(event) =>
+                    move(
+                      row,
+                      groups.find((g) => g.key === event.target.value),
+                    )
+                  }
                 >
                   {groups.map((g) => (
                     <option key={g.key} value={g.key}>
@@ -229,10 +247,14 @@ const iso = (date: Date) =>
 
 export function CalendarView({ rows, names, def, onOpen }: ViewProps) {
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
-  const dateField = def.dateField || names.find((name) => rows.some((row) => fieldNamed(row.fields, name)?.type === 'date')) || '';
+  const dateField =
+    def.dateField || names.find((name) => rows.some((row) => fieldNamed(row.fields, name)?.type === 'date')) || '';
   if (!dateField) return <p className={styles.note}>{t('qolSearch.collections.calendarNeedsDate')}</p>;
   const start = new Date(month.getFullYear(), month.getMonth(), 1 - month.getDay());
-  const days = Array.from({ length: 42 }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
+  const days = Array.from(
+    { length: 42 },
+    (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i),
+  );
   const byDay = new Map<string, Row[]>();
   for (const row of rows) {
     const value = show(row, dateField);
@@ -253,7 +275,11 @@ export function CalendarView({ rows, names, def, onOpen }: ViewProps) {
       </div>
       <div className={styles.calendar}>
         {days.map((day) => (
-          <div key={iso(day)} className={styles.day} data-outside={day.getMonth() === month.getMonth() ? undefined : 'true'}>
+          <div
+            key={iso(day)}
+            className={styles.day}
+            data-outside={day.getMonth() === month.getMonth() ? undefined : 'true'}
+          >
             <span className={styles.muted}>{day.getDate()}</span>
             {(byDay.get(iso(day)) ?? []).map((row) => (
               <button key={row.page} type="button" className={styles.link} onClick={() => onOpen(row)}>

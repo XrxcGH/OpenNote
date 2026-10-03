@@ -21,11 +21,18 @@ function sequence(seed: number): () => number {
 }
 
 /** Places `count` nodes in a `width` by `height` box. `edges` are pairs of node numbers. */
-export function layoutGraph(count: number, edges: readonly (readonly [number, number])[], width: number, height: number): Point[] {
+export function layoutGraph(
+  count: number,
+  edges: readonly (readonly [number, number])[],
+  width: number,
+  height: number,
+): Point[] {
   if (count === 0) return [];
   const random = sequence(count * 7919 + edges.length);
   const points: Point[] = Array.from({ length: count }, () =>
-    count === 1 ? { x: width / 2, y: height / 2 } : { x: width * (0.1 + 0.8 * random()), y: height * (0.1 + 0.8 * random()) },
+    count === 1
+      ? { x: width / 2, y: height / 2 }
+      : { x: width * (0.1 + 0.8 * random()), y: height * (0.1 + 0.8 * random()) },
   );
   if (count === 1) return points;
   const area = width * height;

@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { Canvas, CanvasNode } from './model';
-import { align, cardKind, cardText, edgePoint, exportJson, importJson, pageOf, parseCanvas, readCanvas, removeCards, viewPatch } from './model';
+import {
+  align,
+  cardKind,
+  cardText,
+  edgePoint,
+  exportJson,
+  importJson,
+  pageOf,
+  parseCanvas,
+  readCanvas,
+  removeCards,
+  viewPatch,
+} from './model';
 
 const node = (id: string, x = 0, y = 0, extra: Partial<CanvasNode> = {}): CanvasNode => ({
   id,

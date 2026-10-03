@@ -13,7 +13,7 @@ import type { MediaKind } from '../../../services/search/types';
 import { maybeSearchClient } from '../client';
 
 /** Recorded for a picture with no words in it, so it is not read again at every visit. */
-const NO_WORDS = '​';
+const NO_WORDS = String.fromCharCode(0x200b);
 const START_DELAY_MS = 2500;
 
 export interface MediaText {

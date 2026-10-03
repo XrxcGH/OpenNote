@@ -39,7 +39,9 @@ export function listElements(doc: PMNode): ElementRef[] {
  * touches, but not an element that only surrounds the whole range.
  */
 export function elementsBetween(doc: PMNode, from: number, to: number): ElementRef[] {
-  const touched = listElements(doc).filter((ref) => ref.pos < Math.max(to, from + 1) && ref.pos + ref.node.nodeSize > from);
+  const touched = listElements(doc).filter(
+    (ref) => ref.pos < Math.max(to, from + 1) && ref.pos + ref.node.nodeSize > from,
+  );
   return touched.filter((ref) => {
     const end = ref.pos + ref.node.nodeSize;
     const surrounds = from > ref.pos && to < end;

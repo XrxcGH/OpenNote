@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { parseTextBlock } from '../../../editor/markdown';
-import { applyLineData, elementsBetween, emptyLineData, ensureIds, lineDataOf, listElements, patchFor, readLineData } from './model';
+import {
+  applyLineData,
+  elementsBetween,
+  emptyLineData,
+  ensureIds,
+  lineDataOf,
+  listElements,
+  patchFor,
+  readLineData,
+} from './model';
 import { EditorState } from '@tiptap/pm/state';
 
 const stateFor = (markdown: string) => EditorState.create({ doc: parseTextBlock(markdown) });
@@ -10,7 +19,12 @@ const newId = () => `id${String(++counter).padStart(4, '0')}`;
 describe('text elements', () => {
   it('lists paragraphs and list items, and not the first paragraph of an item', () => {
     const doc = parseTextBlock('First\n\n- one\n- two\n\nLast');
-    expect(listElements(doc).map((ref) => ref.node.type.name)).toEqual(['paragraph', 'listItem', 'listItem', 'paragraph']);
+    expect(listElements(doc).map((ref) => ref.node.type.name)).toEqual([
+      'paragraph',
+      'listItem',
+      'listItem',
+      'paragraph',
+    ]);
   });
 
   it('takes the innermost element for a caret', () => {

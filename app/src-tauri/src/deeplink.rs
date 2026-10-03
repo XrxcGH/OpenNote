@@ -5,9 +5,9 @@
 //! asks for it with the `launchLink` search method. A link only ever opens a page: this module reads nothing else
 //! from it.
 //!
-//! The protocol is registered for the current user (`HKCU\Software\Classes\opennote`), not for the machine, and
-//! only by a release build that does not run from a portable folder, so a development build never takes the
-//! link away from the installed app and a portable copy leaves nothing behind.
+//! The protocol is registered for the current user (`HKCU\Software\Classes\opennote`), not for the machine.
+//! Only a release build registers it, and only when it does not run from a portable folder. A development build
+//! never takes the link away from the installed app, and a portable copy leaves nothing behind.
 
 use std::sync::Mutex;
 

@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
 // Replace across the notebooks: type the words and what should take their place, and every place that holds them is
 // listed with a few words around it. Each can be left out. Nothing changes until Replace, and one Undo puts every
 // page back. Words that only appear in recognized handwriting or in a picture are listed too, but not changed,
@@ -48,11 +49,26 @@ async function makePlan(find: string, options: ReplaceOptions, signal: { stale: 
   return { matches, unchanged, truncated: pageIds.length > MAX_PAGES };
 }
 
-function Row({ match, replacement, kept, onToggle }: { match: Match; replacement: string; kept: boolean; onToggle(): void }) {
+function Row({
+  match,
+  replacement,
+  kept,
+  onToggle,
+}: {
+  match: Match;
+  replacement: string;
+  kept: boolean;
+  onToggle(): void;
+}) {
   return (
     <li className={styles.replaceRow}>
       <label className={styles.replaceLabel}>
-        <input type="checkbox" checked={kept} onChange={onToggle} aria-label={t('qolSearch.replace.keep', { title: match.pageTitle })} />
+        <input
+          type="checkbox"
+          checked={kept}
+          onChange={onToggle}
+          aria-label={t('qolSearch.replace.keep', { title: match.pageTitle })}
+        />
         <span className={styles.replaceText}>
           {match.before}
           <del className={styles.replaceOld}>{match.found}</del>
@@ -69,16 +85,13 @@ export default function ReplaceDialog({ onClose, query = '' }: OverlayProps & { 
   const [replacement, setReplacement] = useState('');
   const [matchCase, setMatchCase] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
-  const [plan, setPlan] = useState<Plan | null>(null);
+  const [planned, setPlan] = useState<Plan | null>(null);
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     const signal = { stale: false };
-    if (find.trim() === '') {
-      setPlan(null);
-      return;
-    }
+    if (find.trim() === '') return;
     const timer = setTimeout(() => {
       void makePlan(find, { matchCase, wholeWord }, signal)
         .then((made) => {
@@ -94,6 +107,7 @@ export default function ReplaceDialog({ onClose, query = '' }: OverlayProps & { 
     };
   }, [find, matchCase, wholeWord]);
 
+  const plan = find.trim() === '' ? null : planned;
   const chosen = useMemo(() => plan?.matches.filter((match) => !skipped.has(match.id)) ?? [], [plan, skipped]);
   const pages = new Set(chosen.map((match) => match.page)).size;
   const byPage = useMemo(() => {
@@ -158,7 +172,9 @@ export default function ReplaceDialog({ onClose, query = '' }: OverlayProps & { 
         <div className={styles.replaceList}>
           {byPage.map((group) => (
             <section key={group[0].page} className={styles.paneSection}>
-              <h3 className={styles.paneSectionHeading}>{t('qolSearch.replace.page', { title: group[0].pageTitle, count: group.length })}</h3>
+              <h3 className={styles.paneSectionHeading}>
+                {t('qolSearch.replace.page', { title: group[0].pageTitle, count: group.length })}
+              </h3>
               <ul className={styles.linkList}>
                 {group.map((match) => (
                   <Row

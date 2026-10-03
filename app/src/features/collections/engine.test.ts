@@ -16,18 +16,27 @@ const fact = (title: string, fields: unknown[], tags: string[] = [], section = '
 
 const rows = [
   toRow(
-    fact('Essay', [
-      { id: 'a', name: 'Course', type: 'choice', value: 'Bio 201' },
-      { id: 'b', name: 'Due', type: 'date', value: '2026-10-07' },
-      { id: 'c', name: 'Pages', type: 'number', value: 9 },
-    ], ['school/bio']),
+    fact(
+      'Essay',
+      [
+        { id: 'a', name: 'Course', type: 'choice', value: 'Bio 201' },
+        { id: 'b', name: 'Due', type: 'date', value: '2026-10-07' },
+        { id: 'c', name: 'Pages', type: 'number', value: 9 },
+      ],
+      ['school/bio'],
+    ),
   ),
   toRow(
-    fact('Lab report', [
-      { id: 'a', name: 'Course', type: 'choice', value: 'Bio 201' },
-      { id: 'b', name: 'Due', type: 'date', value: '2026-10-14' },
-      { id: 'c', name: 'Pages', type: 'number', value: 12 },
-    ], ['school/bio'], 's2'),
+    fact(
+      'Lab report',
+      [
+        { id: 'a', name: 'Course', type: 'choice', value: 'Bio 201' },
+        { id: 'b', name: 'Due', type: 'date', value: '2026-10-14' },
+        { id: 'c', name: 'Pages', type: 'number', value: 12 },
+      ],
+      ['school/bio'],
+      's2',
+    ),
   ),
   toRow(fact('Groceries', [], ['home'])),
 ];

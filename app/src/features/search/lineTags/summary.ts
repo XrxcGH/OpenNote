@@ -43,14 +43,23 @@ export function linesOf(block: TaggedBlock): TaggedLine[] {
   const checked = new Set(block.checked);
   let task = -1;
   for (const ref of listElements(parseTextBlock(block.markdown))) {
-    const isTask = ref.node.type.name === 'listItem' && ref.node.attrs.checked !== null && ref.node.attrs.checked !== undefined;
+    const isTask =
+      ref.node.type.name === 'listItem' && ref.node.attrs.checked !== null && ref.node.attrs.checked !== undefined;
     if (isTask) task += 1;
     const id = block.ids[ref.index] ?? null;
     const tags = id ? (block.tags[id] ?? []) : [];
     const hasTodo = tags.includes(TODO);
     const openTask = isTask && ref.node.attrs.checked === false;
     if (tags.length === 0 && !openTask) continue;
-    const box: Box | null = hasTodo ? (id && checked.has(id) ? 'done' : 'open') : isTask ? (openTask ? 'open' : 'done') : null;
+    const box: Box | null = hasTodo
+      ? id && checked.has(id)
+        ? 'done'
+        : 'open'
+      : isTask
+        ? openTask
+          ? 'open'
+          : 'done'
+        : null;
     lines.push({
       key: `${block.block}:${ref.index}`,
       page: block.page,
@@ -102,7 +111,9 @@ export function groupLines(lines: readonly TaggedLine[], by: GroupBy, openLabel:
     } else if (line.tags.length === 0) add('~', openLabel, line, '~');
     else line.tags.forEach((tag) => add(tag, tagName(tag), line, ''));
   }
-  const sorted = [...groups.values()].sort((a, b) => (by === 'date' ? b.key.localeCompare(a.key) : a.key.localeCompare(b.key)));
+  const sorted = [...groups.values()].sort((a, b) =>
+    by === 'date' ? b.key.localeCompare(a.key) : a.key.localeCompare(b.key),
+  );
   return sorted;
 }
 

@@ -82,7 +82,9 @@ export function noteTitle(kind: DailyKind, day: Ymd): string {
 /** Six rows of seven days that cover the month, starting on the first day of the week. */
 export function monthGrid(year: number, month: number, weekStart: 0 | 1): Ymd[][] {
   const first = startOfWeek({ y: year, m: month, d: 1 }, weekStart);
-  return Array.from({ length: 6 }, (_row, row) => Array.from({ length: 7 }, (_cell, col) => addDays(first, row * 7 + col)));
+  return Array.from({ length: 6 }, (_row, row) =>
+    Array.from({ length: 7 }, (_cell, col) => addDays(first, row * 7 + col)),
+  );
 }
 
 /** The calendar day of a Unix time in milliseconds, in the local time zone. */

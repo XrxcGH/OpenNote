@@ -66,7 +66,8 @@ export function compareValues(a: Field | undefined, b: Field | undefined): numbe
   const left = a as Field;
   const right = b as Field;
   if (left.type === 'number' && right.type === 'number') return (left.value as number) - (right.value as number);
-  if (left.type === 'checkbox' && right.type === 'checkbox') return Number(right.value === true) - Number(left.value === true);
+  if (left.type === 'checkbox' && right.type === 'checkbox')
+    return Number(right.value === true) - Number(left.value === true);
   return String(left.type === 'page' ? left.label : left.value).localeCompare(
     String(right.type === 'page' ? right.label : right.value),
     undefined,

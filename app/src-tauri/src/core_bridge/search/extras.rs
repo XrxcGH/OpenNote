@@ -1,7 +1,7 @@
-//! The search methods added in Beta 4: the link a launch carried, page facts for collections and the calendar,
-//! tagged lines, and the link graph. They are methods of the same `search_call` command, so the command list stays
-//! as it was. Reading a page file here never opens a page session, so it cannot disturb a page being edited, and a
-//! page in an encrypted section is never read.
+//! The search methods added in Beta 4. They answer for the link a launch carried, for page facts (collections, the
+//! calendar, and the graph filters), for tagged lines, and for the link graph. They are methods of the same
+//! `search_call` command, so the command list stays as it was. Reading a page file here never opens a page
+//! session, so it cannot disturb a page being edited, and a page in an encrypted section is never read.
 
 use std::collections::{BTreeMap, HashSet};
 use std::sync::Arc;

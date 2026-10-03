@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
 // The Tags pane: the lines people tagged, and their open checkboxes, from the page, the section, the notebook, or
 // every notebook, grouped by tag, by page, or by date. A To do line checks off in place. Create summary page saves
 // the groups as a page of their own, each line linked back to where it came from.
@@ -75,18 +76,15 @@ export default function TagsPane({ onClose }: OverlayProps) {
 
   const scopeRef = useMemo((): ScopeRef | null => {
     if (scope === 'all') return { kind: 'all' };
-    const id = scope === 'page' ? workspace?.pageId : scope === 'section' ? workspace?.sectionId : workspace?.notebookId;
+    const id =
+      scope === 'page' ? workspace?.pageId : scope === 'section' ? workspace?.sectionId : workspace?.notebookId;
     return id ? { kind: scope, id } : null;
   }, [scope, workspace?.pageId, workspace?.sectionId, workspace?.notebookId]);
 
   useEffect(() => {
     let current = true;
     const extras = maybeSearchClient()?.extras;
-    if (!extras || !scopeRef) {
-      setLines([]);
-      return;
-    }
-    setLines(null);
+    if (!extras || !scopeRef) return;
     extras
       .taggedBlocks(scopeRef)
       .then((blocks) => current && setLines(linesOfBlocks(blocks)))
@@ -96,7 +94,11 @@ export default function TagsPane({ onClose }: OverlayProps) {
     };
   }, [scopeRef, version]);
 
-  const groups = useMemo(() => groupLines(lines ?? [], by, t('qolSearch.tagsPane.openBoxes')), [lines, by]);
+  const usable = maybeSearchClient()?.extras !== undefined && scopeRef !== null;
+  const groups = useMemo(
+    () => groupLines(usable ? (lines ?? []) : [], by, t('qolSearch.tagsPane.openBoxes')),
+    [lines, by, usable],
+  );
 
   const open = (line: TaggedLine) => {
     onClose();
@@ -107,7 +109,9 @@ export default function TagsPane({ onClose }: OverlayProps) {
     try {
       await setLineBox(commandContext('palette').platform.pages, line, line.box !== 'done');
       setVersion((was) => was + 1);
-      announce(t(line.box === 'done' ? 'qolSearch.tagsPane.reopened' : 'qolSearch.tagsPane.checked', { text: line.text }));
+      announce(
+        t(line.box === 'done' ? 'qolSearch.tagsPane.reopened' : 'qolSearch.tagsPane.checked', { text: line.text }),
+      );
     } catch {
       showToast({ message: t('qolSearch.tagsPane.checkFailed'), tone: 'danger' });
     }
@@ -117,7 +121,12 @@ export default function TagsPane({ onClose }: OverlayProps) {
     const { notes } = commandContext('palette');
     const parent = (workspace?.sectionId ?? null) as NodeId | null;
     try {
-      const made = await createSummaryPage(notes, commandContext('palette').platform.pages, parent, summaryMarkdown(groups));
+      const made = await createSummaryPage(
+        notes,
+        commandContext('palette').platform.pages,
+        parent,
+        summaryMarkdown(groups),
+      );
       showToast({ message: t('qolSearch.tagsPane.summaryMade', { title: made.title }) });
       onClose();
     } catch {
@@ -143,7 +152,13 @@ export default function TagsPane({ onClose }: OverlayProps) {
       onDismiss={onClose}
     >
       <div className={styles.controls}>
-        <Choice<ScopeKind> label={t('qolSearch.tagsPane.lookIn')} value={scope} values={SCOPES} name={scopeName} onChange={setScope} />
+        <Choice<ScopeKind>
+          label={t('qolSearch.tagsPane.lookIn')}
+          value={scope}
+          values={SCOPES}
+          name={scopeName}
+          onChange={setScope}
+        />
         <Choice<GroupBy>
           label={t('qolSearch.tagsPane.groupBy')}
           value={by}
@@ -153,13 +168,14 @@ export default function TagsPane({ onClose }: OverlayProps) {
         />
       </div>
       {scope !== 'all' && scopeRef === null && <p className={styles.note}>{t('qolSearch.tagsPane.noPlace')}</p>}
-      {lines === null && <p className={styles.note}>{t('qolSearch.tagsPane.loading')}</p>}
-      {lines?.length === 0 && scopeRef !== null && <p className={styles.note}>{t('qolSearch.tagsPane.none')}</p>}
+      {usable && lines === null && <p className={styles.note}>{t('qolSearch.tagsPane.loading')}</p>}
+      {usable && lines?.length === 0 && <p className={styles.note}>{t('qolSearch.tagsPane.none')}</p>}
       <div className={styles.groups}>
         {groups.map((group) => (
           <section key={group.key} className={styles.group}>
             <h3 className={styles.groupTitle}>
-              {group.label} <span className={styles.count}>{t('qolSearch.tagsPane.count', { count: group.lines.length })}</span>
+              {group.label}{' '}
+              <span className={styles.count}>{t('qolSearch.tagsPane.count', { count: group.lines.length })}</span>
             </h3>
             <ul className={styles.lines}>
               {group.lines.map((line) => (

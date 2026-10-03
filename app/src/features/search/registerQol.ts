@@ -1,5 +1,5 @@
-// The Beta 4 additions to search and linking (one registration file for the lane): copy link, line tags and their
-// summary, the daily note, collections, the graph, the canvas, and replace. This file loads at start-up, so it holds
+// The Beta 4 additions to search and linking, in one registration file for the lane: copy link, the line tags, the
+// tag summary, the properties header, and replace. This file loads at start-up, so it holds
 // definitions only; the panels and the editor code load when first used.
 import { isEnabled } from '../../app/flags';
 import { getLocation } from '../../app/location';
@@ -125,7 +125,7 @@ commands.register(
     title: 'qolSearch.commands.replace',
     keywords: 'qolSearch.commands.keywords.replace',
     category: 'navigation',
-    keys: [chord('Ctrl+Shift+H')],
+    keys: [chord('Ctrl+Alt+H')],
     presetKeys: { onenote: [chord('Ctrl+H')] },
     allowInTextInput: true,
     flag: 'search.replace',

@@ -1,4 +1,5 @@
-// The daily notes calendar: a month of days, each with a dot and a count when pages were made on it. Arrow keys move
+// checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
+// The daily notes calendar: a month of days. A day with pages shows a dot and a count. Arrow keys move
 // by day and week, Page Up and Page Down by month, and Today comes back to the current day. Enter opens the note for
 // the day, making it from its template when it does not exist yet.
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -120,7 +121,11 @@ export default function DailyCalendar({ onClose }: OverlayProps) {
       onDismiss={onClose}
     >
       <div className={styles.header}>
-        <Button variant="quiet" aria-label={t('qolSearch.daily.previousMonth')} onClick={() => go(addMonths(cursor, -1))}>
+        <Button
+          variant="quiet"
+          aria-label={t('qolSearch.daily.previousMonth')}
+          onClick={() => go(addMonths(cursor, -1))}
+        >
           {t('qolSearch.daily.previous')}
         </Button>
         <h3 className={styles.month} id="daily-month" aria-live="polite">

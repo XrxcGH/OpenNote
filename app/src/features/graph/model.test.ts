@@ -61,8 +61,24 @@ describe('graph model', () => {
   });
 
   it('lays nodes out inside the box, the same way every time', () => {
-    const first = layoutGraph(4, [[0, 1], [1, 2]], 600, 400);
-    const second = layoutGraph(4, [[0, 1], [1, 2]], 600, 400);
+    const first = layoutGraph(
+      4,
+      [
+        [0, 1],
+        [1, 2],
+      ],
+      600,
+      400,
+    );
+    const second = layoutGraph(
+      4,
+      [
+        [0, 1],
+        [1, 2],
+      ],
+      600,
+      400,
+    );
     expect(first).toEqual(second);
     for (const { x, y } of first) {
       expect(x).toBeGreaterThanOrEqual(12);
@@ -74,7 +90,12 @@ describe('graph model', () => {
   });
 
   it('keeps the best connected pages when there are too many', () => {
-    const edges: [number, number][] = [[3, 4], [3, 5], [3, 6], [4, 5]];
+    const edges: [number, number][] = [
+      [3, 4],
+      [3, 5],
+      [3, 6],
+      [4, 5],
+    ];
     expect(limitNodes(8, edges, 3)).toEqual([3, 4, 5]);
     expect(limitNodes(2, edges, 3)).toEqual([0, 1]);
   });

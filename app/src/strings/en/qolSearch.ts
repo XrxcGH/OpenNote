@@ -95,7 +95,8 @@ export const qolSearch = {
     zoomOut: 'Zoom out',
     summary: '{pages, plural, one {# page} other {# pages}} and {links, plural, one {# link} other {# links}}.',
     cut: 'Showing the {count} best connected pages.',
-    picture: 'Graph of {pages, plural, one {# page} other {# pages}} joined by {links, plural, one {# link} other {# links}}.',
+    picture:
+      'Graph of {pages, plural, one {# page} other {# pages}} joined by {links, plural, one {# link} other {# links}}.',
     selected: '{title} selected.',
     connections: 'Connections',
     pageLabel: 'Page',
@@ -221,12 +222,13 @@ export const qolSearch = {
     truncated: 'Showing the first {count} pages.',
     page: '{title}, {count, plural, one {# match} other {# matches}}',
     keep: 'Replace this match on {title}',
-    run: '{count, plural, =0 {Replace} one {Replace # match} other {Replace # matches}}',
+    run: 'Replace {count, plural, one {# match} other {# matches}}',
     done: 'Replaced {count, plural, one {# match} other {# matches}} on {pages, plural, one {# page} other {# pages}}.',
     undo: 'Undo',
     undone: 'Put back {count, plural, one {# change} other {# changes}}.',
     unchangedTitle: 'Not changed',
     unchanged:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       '{count, plural, one {# more place holds} other {# more places hold}} these words in recognized handwriting or in a picture. They stay as drawn.',
   },
   daily: {

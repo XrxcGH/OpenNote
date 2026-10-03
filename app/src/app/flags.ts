@@ -85,12 +85,7 @@ type Phase6FlagId =
 type ExprFlagId = 'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows';
 /** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */
 type Phase8FlagId =
-  | 'search.panel'
-  | 'search.switcher'
-  | 'search.links'
-  | 'search.backlinks'
-  | 'search.tags'
-  | QolSearchFlagId;
+  'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags' | QolSearchFlagId;
 /** The Beta 4 search and linking additions, which features/search/flags.ts defines. */
 type QolSearchFlagId =
   | 'search.lineTags'

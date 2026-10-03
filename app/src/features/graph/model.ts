@@ -48,7 +48,12 @@ export function passes(fact: PageFact | undefined, filter: GraphFilter): boolean
  * The pages and links to draw. `only` limits the graph to a neighborhood. Links between pages that both stay are
  * kept, one line for each pair however many links join them.
  */
-export function drawn(data: LinkGraphData, facts: ReadonlyMap<string, PageFact>, filter: GraphFilter, only: ReadonlySet<string> | null): Drawn {
+export function drawn(
+  data: LinkGraphData,
+  facts: ReadonlyMap<string, PageFact>,
+  filter: GraphFilter,
+  only: ReadonlySet<string> | null,
+): Drawn {
   const pages = data.pages.filter((page) => (!only || only.has(page.page)) && passes(facts.get(page.page), filter));
   const at = new Map(pages.map((page, index) => [page.page, index]));
   const seen = new Set<string>();

@@ -3,7 +3,10 @@ import { formatLink, linkInArgs, parseLink } from './url';
 
 describe('opennote links', () => {
   it('round-trips a page link and a paragraph link', () => {
-    expect(parseLink(formatLink('01hzx3k9q7m2v5c8d4e6f0abcd'))).toEqual({ page: '01hzx3k9q7m2v5c8d4e6f0abcd', target: null });
+    expect(parseLink(formatLink('01hzx3k9q7m2v5c8d4e6f0abcd'))).toEqual({
+      page: '01hzx3k9q7m2v5c8d4e6f0abcd',
+      target: null,
+    });
     const link = formatLink('01hzx3k9q7m2v5c8d4e6f0abcd', '01hzx3k9q7m2v5c8d4e6f0wxyz');
     expect(link).toBe('opennote://page/01hzx3k9q7m2v5c8d4e6f0abcd/01hzx3k9q7m2v5c8d4e6f0wxyz');
     expect(parseLink(link)).toEqual({ page: '01hzx3k9q7m2v5c8d4e6f0abcd', target: '01hzx3k9q7m2v5c8d4e6f0wxyz' });

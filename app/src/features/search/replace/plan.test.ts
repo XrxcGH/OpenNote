@@ -15,7 +15,14 @@ function page(): PageJson {
     view: {},
     assets: {},
     blocks: [
-      { id: 'b1', type: 'text', order: 'a', created: stamp, modified: stamp, data: { markdown: 'Cat and cat and concatenate' } },
+      {
+        id: 'b1',
+        type: 'text',
+        order: 'a',
+        created: stamp,
+        modified: stamp,
+        data: { markdown: 'Cat and cat and concatenate' },
+      },
       {
         id: 'b2',
         type: 'table',

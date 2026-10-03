@@ -1,4 +1,4 @@
-// The line tags (Phase 8, Line tags and tag summary). Nine tags sit on Ctrl+1 to Ctrl+9 in the OneNote set, as in
+// The line tags (Phase 8). Nine tags sit on Ctrl+1 to Ctrl+9 in the OneNote set, as in
 // OneNote. "To do" is a checkbox; the others are labels. Any other name is a custom tag. Every tag shows an icon and
 // its name, never a color alone.
 import { fold } from '../../../services/search/text';
