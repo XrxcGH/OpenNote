@@ -49,6 +49,8 @@ const frame = (page: Page) => page.evaluate(() => new Promise((done) => requestA
 export async function placeCaret(page: Page, box: Locator, caret: Caret): Promise<void> {
   await box.click({ position: { x: 8, y: 8 } });
   await box.evaluate((root, caret) => {
+    // Focus first: it can mount the editor, which replaces the text nodes the caret would go in.
+    (root as HTMLElement).focus();
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes: Text[] = [];
     while (walker.nextNode()) nodes.push(walker.currentNode as Text);
@@ -68,7 +70,6 @@ export async function placeCaret(page: Page, box: Locator, caret: Caret): Promis
       const space = node.data.indexOf(' ', Math.floor(left));
       offset = space < 0 ? node.length : space + 1;
     }
-    (root as HTMLElement).focus();
     getSelection()!.collapse(node, offset);
     node.parentElement!.scrollIntoView({ block: 'center' });
   }, caret);
