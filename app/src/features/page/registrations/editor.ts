@@ -415,14 +415,6 @@ commandBar.register({
   priority: 24,
   flag: 'page.styles',
 });
-contextMenus.register({
-  id: 'editor.styles.notebook',
-  menu: 'tree.notebook',
-  command: 'styles.edit',
-  group: 'styles',
-  order: 50,
-  flag: 'page.styles',
-});
 onNavigate(() => {
   if (!isEnabled('page.styles') || shownNotebookId() === null) return;
   void import('../styles/store').then(({ applyShownStyles, installNotebookStyles }) => {
