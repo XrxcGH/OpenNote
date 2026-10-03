@@ -11,6 +11,7 @@ import type { MessageKey } from '../../strings/t';
 import { announce, Button, Switch } from '../../ui';
 import styles from './intel.module.css';
 import { intelState } from './choices';
+import PlusSection from './PlusSection';
 import { loadIntel, ON_DEVICE_FEATURES, refreshStatus, setFeature } from './runtime';
 import type { OnDeviceFeature } from './runtime';
 
@@ -118,6 +119,7 @@ export default function IntelSection() {
           <FeatureRow key={feature} feature={feature} />
         ))}
       </ul>
+      <PlusSection />
     </div>
   );
 }
