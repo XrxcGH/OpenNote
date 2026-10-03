@@ -6,5 +6,6 @@ export * from './export';
 export * from './layout';
 export * from './pagination';
 export * from './paper';
+export * from './pdf';
 export * from './print';
 export * from './zoom';
