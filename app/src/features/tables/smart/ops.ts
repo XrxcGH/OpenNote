@@ -7,7 +7,7 @@ import { tableSchema } from '../../../editor/schema/schema';
 import type { TableData } from '../../../editor/schema/specs';
 import { t } from '../../../strings/t';
 import type { TableExtraHost } from '../../page';
-import { chartConfigFor, sortedIndices, toCanonical } from '../engine';
+import { chartConfigFor, checkFormulaInput, formatValue, sortedIndices, toCanonical } from '../engine';
 import type { ChartKind, ColumnType, FilterOp, Locale, TotalKind } from '../engine';
 import type { ChartSmart, SmartData } from './data';
 import { withColumn } from './data';
@@ -229,4 +229,56 @@ export async function changeChart(inst: SmartInstance, id: string, change: Parti
   const smart = inst.smart();
   const charts = smart.charts.map((chart) => (chart.id === id ? { ...chart, ...change } : chart));
   await inst.commit({ ...smart, charts });
+}
+
+/** The problem with a formula typed for a whole column, in words, or null when it reads. */
+export function calculatedProblem(text: string, locale: Locale): string | null {
+  const typed = text.trim().replace(/^=/, '').trim();
+  if (typed === '') return t('smart.calculated.empty');
+  const checked = checkFormulaInput(typed, locale);
+  return typeof checked === 'string' ? null : t('smart.calculated.problem', { message: checked.message });
+}
+
+/** Puts one formula in every data cell of a column, so each row calculates from its own values. */
+export async function setCalculated(inst: SmartInstance, column: number, text: string): Promise<boolean> {
+  if (calculatedProblem(text, inst.locale) !== null) return false;
+  const formula = `=${text.trim().replace(/^=/, '').trim()}`;
+  const model = inst.model();
+  const markdown = serializeCell(tableSchema.nodes.paragraph.create(null, tableSchema.text(formula)), inst.host.cache);
+  const done = await inst.host.apply((data) => {
+    const id = data.columns[column]?.id;
+    if (!id || data.rows.length <= model.offset) return null;
+    const rows = data.rows.map((row, r) =>
+      r < model.offset ? row : { ...row, cells: { ...row.cells, [id]: { markdown } } },
+    );
+    return { ...data, rows };
+  });
+  if (done) inst.host.announce(t('smart.calculated.done', { column: model.names[column] }));
+  return done;
+}
+
+/** Turns a calculated column back into plain values: each formula cell keeps the number or text it showed. */
+export async function clearCalculated(inst: SmartInstance, column: number): Promise<boolean> {
+  const model = inst.model();
+  const done = await inst.host.apply((data) => {
+    const id = data.columns[column]?.id;
+    if (!id) return null;
+    let changed = false;
+    const rows = data.rows.map((row, r) => {
+      if (r < model.offset) return row;
+      const source = row.cells[id]?.markdown ?? '';
+      if (!parseCell(source).textContent.startsWith('=')) return row;
+      const cell = model.table.rows[r - model.offset]?.cells[column];
+      const shown = cell ? formatValue(cell.value, model.table.columns[column], inst.locale) : '';
+      changed = true;
+      const markdown =
+        shown === ''
+          ? ''
+          : serializeCell(tableSchema.nodes.paragraph.create(null, tableSchema.text(shown)), inst.host.cache);
+      return { ...row, cells: { ...row.cells, [id]: { markdown } } };
+    });
+    return changed ? { ...data, rows } : null;
+  });
+  if (done) inst.host.announce(t('smart.calculated.cleared', { column: model.names[column] }));
+  return done;
 }

@@ -17,6 +17,7 @@ import { panelRenderer } from '../panels/kinds';
 import { blockRenderers, editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
 import { shownQueue } from '../sync/shown';
+import { currentTable } from '../tables/current';
 import { later } from '../tables/later';
 
 interface Spec {
@@ -293,3 +294,20 @@ editingSettingsParts.register({
   flag: 'math.quickMath',
   load: () => import('../../math').then((math) => ({ default: math.QuickMathSetting })),
 });
+
+// Calculated columns in smart tables: the Data menu on the table's strip has the same two actions.
+for (const [id, title, run] of [
+  ['table.calculatedColumn', 'smart.calculated.menu', 'calculated'],
+  ['table.clearCalculated', 'smart.calculated.clear', 'clearCalculated'],
+] as const) {
+  commands.register({
+    id,
+    title,
+    keywords: 'smart.calculated.keywords',
+    category: 'table',
+    icon: 'Function',
+    flag: 'tables.calculated',
+    when: () => currentTable.get() !== null,
+    run: async () => void (await (await import('../../tables')).runSmartCommand({ run })),
+  });
+}

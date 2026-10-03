@@ -196,6 +196,20 @@ export const smart = {
     filledRight: 'Filled right.',
     keywords: 'table sort filter format total fill formula spreadsheet column',
   },
+  calculated: {
+    menu: 'Calculated column…',
+    clear: 'Turn calculated column into values',
+    title: 'Calculated column',
+    description:
+      'Each row works out the formula from its own values. Write column names in square brackets, like [Price] * [Quantity].',
+    label: 'Formula for {column}',
+    confirm: 'Calculate',
+    empty: 'Write a formula, such as [Price] * [Quantity].',
+    problem: 'The formula cannot be read: {message}',
+    done: 'Every row in {column} is now calculated.',
+    cleared: '{column} now holds plain values.',
+    keywords: 'calculated column formula every row',
+  },
   chart: {
     insert: 'Insert chart',
     insertKeywords: 'chart graph plot bar line pie area scatter table data',
