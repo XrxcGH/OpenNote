@@ -11,24 +11,38 @@ import { brandColor } from './paint';
 import type { InkSurface } from './surface';
 
 export interface LassoGesture {
+  /** Every point the pen gave. */
   readonly points: Vec[];
+  /** Adds the pen's points. */
+  add(points: readonly Vec[]): void;
+  /** The shape the lasso selects by: the free path, or the rectangle from the first point to the last. */
+  path(): Vec[];
   draw(surface: InkSurface): void;
 }
 
-export function startLasso(): LassoGesture {
+/** The rectangle from one corner to the opposite one. */
+export function rectangleOf(a: Vec, b: Vec): Vec[] {
+  return [a, { x: b.x, y: a.y }, b, { x: a.x, y: b.y }];
+}
+
+export function startLasso(shape: 'free' | 'rectangle' = 'free'): LassoGesture {
   const points: Vec[] = [];
+  const path = () => (shape === 'rectangle' && points.length > 1 ? rectangleOf(points[0], points.at(-1)!) : points);
   return {
     points,
+    add: (more) => void points.push(...more),
+    path,
     draw(surface) {
+      const outline = path();
       const ctx = surface.liveContext();
-      if (!ctx || points.length < 2) return;
+      if (!ctx || outline.length < 2) return;
       const zoom = surface.cameraNow().zoom;
       ctx.lineWidth = 1.5 / zoom;
       ctx.setLineDash([6 / zoom, 4 / zoom]);
       ctx.strokeStyle = brandColor('indigo', surface.scheme());
       ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      for (const p of points) ctx.lineTo(p.x, p.y);
+      ctx.moveTo(outline[0].x, outline[0].y);
+      for (const p of outline) ctx.lineTo(p.x, p.y);
       ctx.closePath();
       ctx.stroke();
       ctx.setLineDash([]);
@@ -66,12 +80,13 @@ function filterFromSettings(): LassoFilter {
 
 export function finishLasso(gesture: LassoGesture, surface: InkSurface, host: InkHost): void {
   surface.clearLive();
-  if (gesture.points.length < 3) {
+  const path = gesture.path();
+  if (path.length < 3) {
     host.select({ blocks: [], strokes: [] });
     return;
   }
   const zoom = surface.cameraNow().zoom;
-  const items = lassoAll(surface.index, blockItems(host), gesture.points, {
+  const items = lassoAll(surface.index, blockItems(host), path, {
     filter: filterFromSettings(),
     mode: getSettings().ink.lasso.inside,
     pixel: 1 / zoom,

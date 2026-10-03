@@ -8,8 +8,11 @@ import { getSettings } from '../../../state/settings';
 import type { CameraOp, InkPipeline, PipelineHost, PointerRecord, TouchInk } from '../input/pipeline';
 import type { TouchStrokePhase } from '../input/pipeline';
 import { createStrokeBuilder } from '../input/strokeBuilder';
+import { applyHold, holdFor } from '../snap';
+import type { Hold } from '../snap';
 import type { InkHost, InkPointerTool } from './host';
-import { activeSlot, drawState, styleOf } from './state';
+import { snapToolsNow } from './snapTools';
+import { activeSlot, drawState, styleOf, writesInk } from './state';
 import type { InkSurface } from './surface';
 
 type Palm = typeof import('./palm');
@@ -47,10 +50,14 @@ export class TouchTool {
   };
   private readonly snapshots = new Map<number, { left: number; top: number; zoom: number }>();
   private readonly shown = new Map<number, TouchInk>();
+  /** What the snap tools hold each touch stroke to. */
+  private readonly holds = new Map<number, Hold>();
   private pipeline: InkPipeline | null = null;
   private tick: ReturnType<typeof setInterval> | null = null;
   // The palm filter is the largest part of ink input, so it loads in its own chunk, right after the ink view.
   private palm: Palm | null = null;
+  /** Hears the two- and three-finger double taps. */
+  onGesture: ((kind: 'undo' | 'redo') => void) | null = null;
 
   constructor(
     private readonly host: InkHost,
@@ -100,7 +107,7 @@ export class TouchTool {
   private active(): boolean {
     const surface = this.surfaceOf();
     if (!surface || surface.readOnly || !this.palm) return false;
-    return drawState.get().tool === 'pen' && isEnabled('ink.core') && isEnabled('ink.palm');
+    return writesInk(drawState.get().tool) && isEnabled('ink.core') && isEnabled('ink.palm');
   }
 
   /**
@@ -143,19 +150,34 @@ export class TouchTool {
         const at = this.host.viewport.get()?.toWorld(r.x, r.y) ?? { x: 0, y: 0 };
         out.x = at.x;
         out.y = at.y;
+        this.snap(r.id, r.type, out);
       },
       touchStroke: (id, phase, ink) => this.touchStroke(id, phase, ink),
       camera: (op, id, a, b, c) => this.camera(op, id, a, b, c),
       tap: () => undefined,
       contextMenu: () => undefined,
       // A silent gesture takes back one the filter delivered just before a pen arrived; neither shows feedback here.
-      gesture: (kind, _silent) => {
-        if (!isEnabled('ink.gestures')) return;
-        const queue = this.host.queue.get();
-        void (kind === 'undo' ? queue?.undo() : queue?.redo());
-      },
+      gesture: (kind, _silent) => this.onGesture?.(kind),
       touchPolicy: () => undefined,
     };
+  }
+
+  /** Holds a touch stroke to the ruler, protractor, or grid, the way the pen's strokes are. */
+  private snap(id: number, type: PointerRecord['type'], out: { x: number; y: number }): void {
+    const tools = snapToolsNow(this.host.viewport.get()?.camera().zoom ?? 1);
+    if (type === 'up' || type === 'cancel') {
+      const hold = this.holds.get(id);
+      this.holds.delete(id);
+      if (tools && hold) Object.assign(out, applyHold(tools, hold, out));
+      return;
+    }
+    if (!tools) return;
+    let hold = this.holds.get(id);
+    if (!hold) {
+      hold = holdFor(tools, out);
+      this.holds.set(id, hold);
+    }
+    Object.assign(out, applyHold(tools, hold, out));
   }
 
   private builder() {

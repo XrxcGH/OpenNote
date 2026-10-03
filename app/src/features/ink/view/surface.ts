@@ -26,6 +26,12 @@ import { fillOf, outlineOf, strokePath } from './paint';
 import type { PenStyle } from './state';
 import { INK_MARGIN, TileLayer } from './tiles';
 
+/** Strokes to take out and strokes to put in, in the same step as another change. */
+export interface Follow {
+  readonly remove: readonly string[];
+  readonly add: readonly InkStroke[];
+}
+
 export interface SurfaceParts {
   readonly page: OpenPage;
   readonly viewport: InkViewport;
@@ -97,6 +103,11 @@ export class InkSurface {
     );
     this.load();
     this.setCamera(this.camera);
+  }
+
+  /** The page's ink layer block, or null before its first stroke. */
+  get layerBlock(): string | null {
+    return this.layerId;
   }
 
   /** Strokes whose outlines still wait to be built in idle time. */
@@ -285,13 +296,60 @@ export class InkSurface {
     return this.send({ edits: [{ edit: 'removeStrokes', strokes: [...ids] }], coalesce }, () => this.show(gone));
   }
 
-  /** Moves, resizes, or rotates strokes; blocks move in the same step through `edits`. */
-  transform(ids: readonly string[], matrix: Matrix, edits: Edit[] = []): Promise<boolean> {
+  /**
+   * Moves, resizes, or rotates strokes; blocks move in the same step through `edits`. `follow` swaps other strokes in
+   * the same step, such as the connectors that stay attached to a shape that moved.
+   */
+  transform(ids: readonly string[], matrix: Matrix, edits: Edit[] = [], follow?: Follow): Promise<boolean> {
     const before = this.strokes(ids);
     this.show(before.map((stroke) => ({ ...stroke, transform: compose(matrix, stroke.transform ?? IDENTITY_M) })));
     const strokeEdits: Edit[] =
       ids.length > 0 ? [{ edit: 'transformStrokes', strokes: [...ids], matrix: [...matrix] as StrokeMatrix }] : [];
-    return this.send({ edits: [...strokeEdits, ...edits] }, () => this.show(before));
+    const swapped = follow ? this.swap(follow) : null;
+    const batch: EditBatch = { edits: [...strokeEdits, ...edits, ...(swapped?.edits ?? [])] };
+    if (follow && follow.add.length > 0) batch.strokes = this.records(follow.add);
+    return this.send(batch, () => {
+      this.show(before);
+      swapped?.undo();
+    });
+  }
+
+  /** Moves each stroke by its own matrix, as one step: tidying handwriting moves every word a little differently. */
+  transformEach(moves: readonly { id: string; matrix: Matrix }[]): Promise<boolean> {
+    const before = this.strokes(moves.map((move) => move.id));
+    const matrixOf = new Map(moves.map((move) => [move.id, move.matrix]));
+    this.show(
+      before.map((stroke) => ({
+        ...stroke,
+        transform: compose(matrixOf.get(stroke.id) ?? IDENTITY_M, stroke.transform ?? IDENTITY_M),
+      })),
+    );
+    const edits: Edit[] = moves.map((move) => ({
+      edit: 'transformStrokes',
+      strokes: [move.id],
+      matrix: [...move.matrix] as StrokeMatrix,
+    }));
+    return this.send({ edits }, () => this.show(before));
+  }
+
+  /** Swaps strokes for others in one step: a reshaped shape, or the connectors that follow a shape. */
+  replace(follow: Follow): Promise<boolean> {
+    const swapped = this.swap(follow);
+    const batch: EditBatch = { edits: swapped.edits };
+    if (follow.add.length > 0) batch.strokes = this.records(follow.add);
+    return this.send(batch, swapped.undo);
+  }
+
+  private swap(follow: Follow): { edits: Edit[]; undo: () => void } {
+    const gone = this.hide(follow.remove);
+    this.show(follow.add);
+    return {
+      edits: follow.remove.length > 0 ? [{ edit: 'removeStrokes', strokes: [...follow.remove] }] : [],
+      undo: () => {
+        this.hide(follow.add.map((stroke) => stroke.id));
+        this.show(gone);
+      },
+    };
   }
 
   restyle(ids: readonly string[], next: readonly InkStroke[], style: StrokeStyleEdit): Promise<boolean> {

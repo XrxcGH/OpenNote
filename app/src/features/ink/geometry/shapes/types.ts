@@ -3,7 +3,18 @@
 
 import type { Vec } from '../types';
 
-export type ShapeKind = 'line' | 'arrow' | 'rectangle' | 'triangle' | 'circle' | 'ellipse';
+export type ShapeKind =
+  | 'line'
+  | 'arrow'
+  | 'rectangle'
+  | 'triangle'
+  | 'circle'
+  | 'ellipse'
+  | 'polygon'
+  | 'star'
+  | 'arc'
+  | 'curvedArrow'
+  | 'doubleArrow';
 
 export type Shape =
   | { readonly kind: 'line'; readonly from: Vec; readonly to: Vec }
@@ -23,6 +34,46 @@ export type Shape =
       readonly rx: number;
       readonly ry: number;
       readonly rotation: number;
+    }
+  /** A regular polygon of 5 or more sides; `rotation` is the direction of the first corner. */
+  | {
+      readonly kind: 'polygon';
+      readonly sides: number;
+      readonly center: Vec;
+      readonly radius: number;
+      readonly rotation: number;
+    }
+  /** A star with `points` tips; `rotation` is the direction of the first tip. */
+  | {
+      readonly kind: 'star';
+      readonly points: number;
+      readonly center: Vec;
+      readonly outer: number;
+      readonly inner: number;
+      readonly rotation: number;
+    }
+  /** Part of a circle: from angle `start` (radians) around by `sweep`, which is negative for a turn the other way. */
+  | {
+      readonly kind: 'arc';
+      readonly center: Vec;
+      readonly radius: number;
+      readonly start: number;
+      readonly sweep: number;
+    }
+  | {
+      readonly kind: 'curvedArrow';
+      readonly center: Vec;
+      readonly radius: number;
+      readonly start: number;
+      readonly sweep: number;
+      readonly barbs: readonly [Vec, Vec];
+    }
+  | {
+      readonly kind: 'doubleArrow';
+      readonly from: Vec;
+      readonly to: Vec;
+      readonly barbsFrom: readonly [Vec, Vec];
+      readonly barbsTo: readonly [Vec, Vec];
     };
 
 export interface ShapeMatch {
@@ -38,6 +89,11 @@ export interface RecognizeOptions {
   readonly minSize?: number;
   /** The stroke's width, which sizes an arrow's head. Defaults to 2. */
   readonly width?: number;
+  /**
+   * Also look for pentagons, hexagons, stars, arcs, curved arrows, and double arrows. Only a stroke held to snap, or
+   * one read back to give a shape its handles, asks for these: in ordinary writing a curve is a letter.
+   */
+  readonly extra?: boolean;
 }
 
 /** A shape that fits a stroke. The ratio is the fit error over what recognition accepts: under 1 is accepted. */
@@ -54,4 +110,9 @@ export const SIMPLICITY: Record<ShapeKind, number> = {
   ellipse: 3,
   triangle: 4,
   rectangle: 5,
+  doubleArrow: 2,
+  arc: 3,
+  curvedArrow: 3,
+  polygon: 6,
+  star: 7,
 };

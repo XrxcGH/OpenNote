@@ -15,6 +15,8 @@ Import the core from `index.ts`. `flags.ts` holds the ink flags and `loadInkView
 | [input/gestures](input/gestures/README.md) | Scribble to erase, circle and tap, and two-finger and three-finger double taps                                                             |
 | [edits](edits/README.md)                   | Erase sessions for a whole gesture, and the eraser and lasso filters                                                                       |
 | [selection](selection/README.md)           | The lasso over blocks, and over ink and blocks together                                                                                    |
+| [anchor](anchor/README.md)                 | Anchors that tie ink to the words it was drawn with, and the rules that find the words again after an edit                                 |
+| [snap](snap/README.md)                     | The ruler, the protractor, and snap to grid                                                                                                |
 | [space](space/README.md)                   | What moves when space is inserted                                                                                                          |
 | [zoombox](zoombox/README.md)               | The zoom writing box: strip and box coordinates, and moving the box along the line                                                         |
 | [engine/tiles](engine/tiles/README.md)     | The tile cache planner: which tiles to draw, invalidate, and give back                                                                     |
@@ -47,4 +49,6 @@ Each folder's README ends with what the page view must do for that part. The sha
 - `surface.ts` is one page's ink. An overlay over the viewport holds the tile layer (`tiles.ts`) and a live canvas for the stroke in progress, the eraser, and the lasso. Its chrome layer holds the lasso frame.
 - Every change shows at once and goes through the page's sync queue. New strokes ride in a batch's `strokes` as ink records, so the core saves them to the page's ink segments and they join the undo history. `OpenPage.ink` brings them back at open and after undo and redo.
 - The palm filter loads in its own chunk (`palm.ts`), and the touch tool feeds it pen hover and contact.
+- `more.ts` registers everything the later features add, each behind its own flag: the canvas lock, the hover circle, Insert space, the snap widgets, shape handles and libraries, replay, the zoom writing box, anchoring, the handwriting tools, and the pen edits of typed text. Those that need the page's text editor, the recognizer, the recordings, or the sheets of a paginated page reach them through optional members of the host (`text`, `handwriting`, `audio`, `sheets`).
+- Choices that belong to one device (the hover circle, the canvas lock, the snap tools, and each pen's buttons, pressure curve, and steady pen) live in `prefs.ts`, in the browser storage of this device.
 - Test builds expose `inkSeed` and `inkStats` hooks for the 10,000-stroke benchmark in [docs/perf/phase-5.md](../../../../docs/perf/phase-5.md).

@@ -19,6 +19,8 @@ const TOOL_LABELS: Record<Exclude<DrawTool, 'pen'>, MessageKey> = {
   eraser: 'ink.tools.eraser',
   partialEraser: 'ink.tools.partialEraser',
   lasso: 'ink.tools.lasso',
+  insertSpace: 'ink.tools.insertSpace',
+  writing: 'ink.tools.writing',
 };
 
 function pick(tool: DrawTool, slot?: string): void {
@@ -30,10 +32,14 @@ export function DrawTools({ toolProps }: CommandBarComponentProps) {
   const tool = useStore(drawState, (state) => state.tool);
   const erasers = useFlag('ink.erasers');
   const lasso = useFlag('ink.lasso');
+  const space = useFlag('ink.insertSpace');
+  const writing = useFlag('ink.handwriting');
   const shown: Exclude<DrawTool, 'pen'>[] = [
     'select',
     ...(erasers ? (['eraser', 'partialEraser'] as const) : []),
     ...(lasso ? (['lasso'] as const) : []),
+    ...(space ? (['insertSpace'] as const) : []),
+    ...(writing ? (['writing'] as const) : []),
   ];
   return (
     <div className={styles.group} role="group" aria-label={t('ink.tools.group')}>
@@ -69,7 +75,7 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
   const state = useStore(drawState, (s) => s);
   const slots = useSettings((settings) => settings.ink.pens);
   const active = activeSlot(state);
-  const onPen = state.tool === 'pen';
+  const onPen = state.tool === 'pen' || state.tool === 'writing';
 
   const chooseColor = async (anchor: HTMLElement) => {
     if (!active) return;

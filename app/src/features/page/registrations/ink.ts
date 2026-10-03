@@ -34,6 +34,28 @@ function start(): void {
         selection: selection.pageSelection,
         select: selection.selectOnPage,
         objectCommand: (command) => shownMedia.get()?.objects.command(command),
+        handwriting: {
+          recognize: (strokes) => import('./inkSeams').then((seams) => seams.recognize(strokes)),
+          tidy: (strokes, recognition, operation) =>
+            import('./inkSeams').then((seams) => seams.tidy(strokes, recognition, operation)),
+        },
+        text: {
+          hit: (x, y) => import('./inkSeams').then((seams) => seams.hit(x, y)),
+          words: (block, a, b) => import('./inkSeams').then((seams) => seams.words(block, a, b)),
+          remove: (block, from, to) => import('./inkSeams').then((seams) => seams.remove(block, from, to)),
+          insert: (block, pos, text) => import('./inkSeams').then((seams) => seams.insert(block, pos, text)),
+          split: (block, pos) => import('./inkSeams').then((seams) => seams.split(block, pos)),
+          select: (block, from, to) => import('./inkSeams').then((seams) => seams.select(block, from, to)),
+          undo: (block) => import('./inkSeams').then((seams) => seams.undoText(block)),
+        },
+        audio: {
+          playFrom: (ids) => import('../audio/stamps').then((stamps) => stamps.playFromInk(ids)),
+          pause: () =>
+            void import('../audio/playback').then((playback) => {
+              if (playback.playbackUi.get().status?.state === 'playing') void playback.toggle();
+            }),
+          setSpeed: (speed) => void import('../audio/playback').then((playback) => playback.setSpeed(speed)),
+        },
       });
     })
     .catch(() => undefined);

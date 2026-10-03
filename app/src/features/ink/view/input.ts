@@ -6,15 +6,16 @@ import { newId } from '../../../editor/ids';
 import { isEnabled } from '../../../app/flags';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
+import type { MessageKey } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { createPartialEraseSession, createStrokeEraseSession } from '../edits/eraseSession';
 import type { PartialEraseSession, StrokeEraseSession } from '../edits/eraseSession';
 import { eraserSkip, ERASE_ALL } from '../edits/filters';
 import type { EraserFilter } from '../edits/filters';
-import { recognizeShape } from '../geometry/shapes';
+import { applyReshape, pivotOf, recognizeShape, reshapeFor } from '../geometry/shapes';
 import type { ShapeMatch } from '../geometry/shapes';
 import type { InkPoint, Vec } from '../geometry/types';
-import { DEFAULT_PEN_BUTTONS, resolvePenAction, suppressContextMenu } from './../input/buttons';
+import { resolvePenAction, suppressContextMenu } from './../input/buttons';
 import type { PenAction } from '../input/buttons';
 import { createStrokeBuilder } from '../input/strokeBuilder';
 import type { StrokeBuilder } from '../input/strokeBuilder';
@@ -24,8 +25,20 @@ import { mmToPage } from '../pens/tools';
 import { brandColor } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
+import { shapePoints } from '../geometry/shapes';
+import { snapConnector } from './shapeEdit';
+import { SpaceGesture } from './space';
+import { applyHold, holdFor } from '../snap';
+import type { Hold } from '../snap';
+import { showProtractorAngle, snapToolsNow } from './snapTools';
 import type { LassoGesture } from './lasso';
-import { activeSlot, drawState, styleOf } from './state';
+import { createStrokeHooks, setStrokeHooks } from './strokeHooks';
+import type { StrokeHooks } from './strokeHooks';
+import { createGestures } from './gestures';
+import type { Gestures } from './gestures';
+import { buttonsOf, notePen, penKeyOf } from './prefs';
+import { penFeel } from './penFeel';
+import { activeSlot, chooseTool, drawState, penSlots, styleOf, writesInk } from './state';
 import type { PenStyle } from './state';
 import type { InkSurface } from './surface';
 import { focusPage } from './touch';
@@ -35,13 +48,24 @@ const STROKE_ERASER_PX = 6;
 /** Moving less than this, in screen pixels, counts as holding still for hold-to-shape. */
 const HOLD_SLOP_PX = 3;
 
-type Mode = 'ink' | 'erase' | 'partial' | 'lasso';
+type Mode = 'ink' | 'erase' | 'partial' | 'lasso' | 'space' | 'idle';
 
 interface InkGesture {
   readonly mode: Mode;
   readonly pointerId: number;
   readonly style: PenStyle;
   readonly release: () => void;
+  /** True when the toolbar's tool made this gesture, and not a pen button. */
+  readonly fromTool: boolean;
+  /** What this pen's side button or eraser end asked for, or null for the tip. */
+  readonly action: PenAction | null;
+  /** The pen's key, for its own pressure curve and steady pen. */
+  readonly pen: string;
+  /** When the contact began, where, and how far it has moved, in screen pixels: a tap is short and still. */
+  t0?: number;
+  x0: number;
+  y0: number;
+  travel: number;
   lastTime: number;
   lastX: number;
   lastY: number;
@@ -49,26 +73,43 @@ interface InkGesture {
   erase?: StrokeEraseSession;
   partial?: PartialEraseSession<InkStroke>;
   lasso?: LassoGesture;
+  space?: SpaceGesture;
+  /** What the ruler, protractor, or grid holds this stroke to, set by its first sample. */
+  snapHold?: Hold;
   radius: number;
-  hold?: { x: number; y: number; at: number; timer: ReturnType<typeof setInterval> | null; shape: ShapeMatch | null };
+  hold?: {
+    x: number;
+    y: number;
+    at: number;
+    timer: ReturnType<typeof setInterval> | null;
+    shape: ShapeMatch | null;
+    /** Where the pen rested when the shape snapped, and the middle the shape grows and turns about. */
+    snapAt?: Vec;
+    pivot?: Vec;
+    /** The shape after the pen moved on without lifting, or null while it is as it snapped. */
+    live?: Vec[] | null;
+  };
   last?: Vec;
 }
 
-const DRAW_TOOLS = new Set(['pen', 'eraser', 'partialEraser', 'lasso']);
+const DRAW_TOOLS = new Set(['pen', 'writing', 'eraser', 'partialEraser', 'lasso', 'insertSpace']);
 
 function modeFor(action: PenAction | null): Mode | null {
   if (action === null) {
     const tool = drawState.get().tool;
-    if (tool === 'pen') return 'ink';
+    if (writesInk(tool)) return 'ink';
     if (tool === 'eraser') return 'erase';
     if (tool === 'partialEraser') return 'partial';
     if (tool === 'lasso') return 'lasso';
+    if (tool === 'insertSpace') return 'space';
     return null;
   }
   if (action === 'strokeEraser' || action === 'highlighterEraser') return 'erase';
   if (action === 'partialEraser') return 'partial';
   if (action === 'lasso') return 'lasso';
-  return null;
+  if (action === 'lastHighlighter') return 'ink';
+  // Pan and the right-click menu belong to the page view, and 'none' claims the contact and does nothing.
+  return action === 'none' ? 'idle' : null;
 }
 
 function eraserFilter(action: PenAction | null): EraserFilter {
@@ -77,6 +118,17 @@ function eraserFilter(action: PenAction | null): EraserFilter {
   if (erases === 'all') return ERASE_ALL;
   if (erases === 'highlighter' || erases === 'pens') return { kind: erases };
   return { kind: 'tool', tool: erases };
+}
+
+/** A sample held to the ruler's edge, the protractor's steps, or the grid, when one of those is on. */
+function snapped(g: InkGesture, surface: InkSurface, sample: RawSample): RawSample {
+  if (g.mode !== 'ink') return sample;
+  const tools = snapToolsNow(surface.cameraNow().zoom);
+  if (!tools) return sample;
+  g.snapHold ??= holdFor(tools, sample);
+  const at = applyHold(tools, g.snapHold, sample);
+  if (g.snapHold.kind === 'protractor') showProtractorAngle(g.snapHold.origin, at);
+  return at.x === sample.x && at.y === sample.y ? sample : { ...sample, x: at.x, y: at.y };
 }
 
 function sampleOf(event: PointerEvent, ctx: { toWorld(x: number, y: number): Vec }): RawSample {
@@ -104,6 +156,9 @@ export function createPenTool(
   destroy(): void;
 } {
   let gesture: InkGesture | null = null;
+  const gestures: Gestures = createGestures(host);
+  const hooks: StrokeHooks = createStrokeHooks(host, surfaceOf);
+  setStrokeHooks(hooks);
   let lastEnd = 0;
   let lastAction: PenAction | null = null;
   const target = () => host.viewport.get()?.viewport ?? null;
@@ -120,7 +175,13 @@ export function createPenTool(
       g.lastTime = event.timeStamp;
       g.lastX = event.clientX;
       g.lastY = event.clientY;
-      samples.push(sampleOf(event, ctx));
+      if (g.t0 === undefined) {
+        g.t0 = event.timeStamp;
+        g.x0 = event.clientX;
+        g.y0 = event.clientY;
+      }
+      g.travel = Math.max(g.travel, Math.hypot(event.clientX - g.x0, event.clientY - g.y0));
+      samples.push(snapped(g, surface, sampleOf(event, ctx)));
     }
     if (samples.length === 0) return;
     const predicted = events.at(-1)?.getPredictedEvents?.() ?? [];
@@ -128,7 +189,7 @@ export function createPenTool(
       g,
       surface,
       samples,
-      predicted.map((e) => sampleOf(e, ctx)),
+      predicted.map((e) => snapped(g, surface, sampleOf(e, ctx))),
     );
   };
 
@@ -151,7 +212,7 @@ export function createPenTool(
     g.release();
     if (!surface) return;
     surface.setPenDown(false);
-    if (commit) void finish(g, surface, host);
+    if (commit) void finish(g, surface, host, gestures, hooks);
     else cancel(g, surface);
   };
 
@@ -175,13 +236,15 @@ export function createPenTool(
       const surface = surfaceOf();
       if (!surface || surface.readOnly || event.pointerType === 'touch' || !isEnabled('ink.core')) return false;
       if (event.pointerType === 'mouse' && event.button !== 0) return false;
-      const buttons = isEnabled('ink.penButtons') ? resolvePenAction(event, DEFAULT_PEN_BUTTONS) : null;
+      const buttons = isEnabled('ink.penButtons') ? resolvePenAction(event, buttonsOf(penKeyOf(event))) : null;
       if (buttons && buttons.action !== null) return modeFor(buttons.action) !== null;
       return DRAW_TOOLS.has(drawState.get().tool) && ctx.activeTool !== 'select';
     },
     down(event, ctx) {
       const surface = surfaceOf()!;
-      const buttons = isEnabled('ink.penButtons') ? resolvePenAction(event, DEFAULT_PEN_BUTTONS) : null;
+      const pen = penKeyOf(event);
+      if (event.pointerType === 'pen') notePen(pen);
+      const buttons = isEnabled('ink.penButtons') ? resolvePenAction(event, buttonsOf(pen)) : null;
       const action = buttons?.action ?? null;
       lastAction = action;
       const mode = modeFor(action) ?? 'ink';
@@ -189,7 +252,8 @@ export function createPenTool(
       const viewport = host.viewport.get();
       focusPage(viewport?.viewport);
       const release = viewport?.holdCamera('pen') ?? (() => undefined);
-      gesture = begin(mode, event, ctx, surface, release, eraserFilter(action));
+      gestures.down(ctx.toWorld(event.clientX, event.clientY));
+      gesture = begin(mode, event, ctx, surface, release, eraserFilter(action), action, pen, host);
       surface.setPenDown(true);
       target()?.addEventListener('pointerrawupdate', onRaw);
       take([event], ctx);
@@ -211,6 +275,9 @@ export function createPenTool(
     tool,
     destroy() {
       end(false);
+      gestures.destroy();
+      hooks.destroy();
+      setStrokeHooks(null);
       document.removeEventListener('contextmenu', onContextMenu, { capture: true });
     },
   };
@@ -223,14 +290,25 @@ function begin(
   surface: InkSurface,
   release: () => void,
   filter: EraserFilter,
+  action: PenAction | null,
+  pen: string,
+  host: InkHost,
 ): InkGesture {
   const zoom = ctx.camera.zoom;
-  const style = styleOf(activeSlot());
+  // A side button set to the last highlighter writes with the highlighter pen while it is held.
+  const highlighter = action === 'lastHighlighter' ? penSlots().find((slot) => slot.tool === 'highlighter') : undefined;
+  const style = styleOf(highlighter ?? activeSlot());
   const g: InkGesture = {
     mode,
     pointerId: event.pointerId,
     style,
     release,
+    fromTool: action === null,
+    action,
+    pen,
+    x0: 0,
+    y0: 0,
+    travel: 0,
     lastTime: -Infinity,
     lastX: NaN,
     lastY: NaN,
@@ -246,6 +324,7 @@ function begin(
       block: surface.layerFor(),
       newId: () => newId(),
       timeOrigin: Date.now() - performance.now(),
+      ...penFeel(pen, zoom),
     });
     const shapes = getSettings().ink.shapes;
     if (isEnabled('ink.shapes') && shapes.hold && style.tool !== 'highlighter') {
@@ -258,8 +337,10 @@ function begin(
   } else if (mode === 'partial') {
     g.partial = createPartialEraseSession<InkStroke>(surface.index, () => newId(), { skip });
     g.radius = mmToPage(getSettings().ink.eraser.size) / 2;
-  } else {
-    g.lasso = startLasso();
+  } else if (mode === 'lasso') {
+    g.lasso = startLasso(getSettings().ink.lasso.shape);
+  } else if (mode === 'space') {
+    g.space = new SpaceGesture(host, surface, ctx.toWorld(event.clientX, event.clientY).y);
   }
   return g;
 }
@@ -270,8 +351,15 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
     for (const sample of samples) g.builder.push(sample);
     if (g.hold) {
       const zoom = surface.cameraNow().zoom;
-      if (Math.hypot(last.x - g.hold.x, last.y - g.hold.y) * zoom > HOLD_SLOP_PX) {
-        g.hold = { ...g.hold, x: last.x, y: last.y, at: performance.now(), shape: null };
+      const hold = g.hold;
+      if (hold.shape && hold.snapAt && hold.pivot) {
+        // Keep holding the snapped shape and move: it grows and turns with the pen until the pen lifts.
+        const moved = Math.hypot(last.x - hold.snapAt.x, last.y - hold.snapAt.y) * zoom > HOLD_SLOP_PX;
+        hold.live = moved
+          ? applyReshape(hold.shape.points, hold.pivot, reshapeFor(hold.pivot, hold.snapAt, last))
+          : null;
+      } else if (Math.hypot(last.x - hold.x, last.y - hold.y) * zoom > HOLD_SLOP_PX) {
+        g.hold = { ...hold, x: last.x, y: last.y, at: performance.now(), shape: null };
       }
     }
     if (g.hold?.shape) return drawShape(g, surface);
@@ -280,6 +368,10 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
     return;
   }
   const points: Vec[] = samples.map((s) => ({ x: s.x, y: s.y }));
+  if (g.space) {
+    g.space.update(last.y);
+    return;
+  }
   if (g.erase) {
     const gone = g.erase.move(points, g.radius);
     if (gone.length > 0) surface.preview(gone, []);
@@ -287,7 +379,7 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
     const change = g.partial.move(points, g.radius);
     if (change.removed.length + change.added.length > 0) surface.preview(change.removed, change.added);
   } else if (g.lasso) {
-    g.lasso.points.push(...points);
+    g.lasso.add(points);
     g.lasso.draw(surface);
   }
   g.last = last;
@@ -312,16 +404,23 @@ function holdCheck(g: InkGesture, surface: InkSurface, holdMs: number): void {
   const points = g.builder.points;
   if (points.length < 4) return;
   const zoom = surface.cameraNow().zoom;
-  const match = recognizeShape(points, { minSize: 16 / zoom, width: g.style.width });
+  const match = recognizeShape(points, {
+    minSize: 16 / zoom,
+    width: g.style.width,
+    extra: isEnabled('ink.shapeTools'),
+  });
   if (!match) return;
   hold.shape = match;
+  hold.snapAt = { x: hold.x, y: hold.y };
+  hold.pivot = pivotOf(match.points);
+  hold.live = null;
   drawShape(g, surface);
-  announce(t('ink.shapes.made', { shape: match.shape.kind }));
+  announce(t('ink.shapes.made', { shape: t(`ink.shapes.names.${match.shape.kind}` as MessageKey) }));
 }
 
 function drawShape(g: InkGesture, surface: InkSurface): void {
   const shape = g.hold?.shape;
-  if (shape) surface.drawLive(shape.points, g.style, true);
+  if (shape) surface.drawLive(g.hold?.live ?? shape.points, g.style, true);
 }
 
 /** The stroke a shape makes: the shape's exact points, with no pressure, so the width stays even. */
@@ -329,26 +428,55 @@ function asShape(stroke: InkStroke, match: ShapeMatch): InkStroke {
   return { ...stroke, points: match.points.map((p) => ({ x: p.x, y: p.y })) };
 }
 
-async function finish(g: InkGesture, surface: InkSurface, host: InkHost): Promise<void> {
+async function finish(
+  g: InkGesture,
+  surface: InkSurface,
+  host: InkHost,
+  gestures: Gestures,
+  hooks: StrokeHooks,
+): Promise<void> {
   if (g.builder) {
     let strokes = g.builder.finish();
+    const taken = await gestures.ended(
+      { strokes, tool: g.style.tool, endAt: g.lastTime, downAt: g.t0 ?? g.lastTime, travelPx: g.travel },
+      surface,
+    );
+    if (taken) return;
+    if (strokes.length === 1 && (await hooks.before(strokes[0], surface))) {
+      surface.clearLive();
+      return;
+    }
     const shapes = getSettings().ink.shapes;
     const held = g.hold?.shape ?? null;
     if (strokes.length === 1 && isEnabled('ink.shapes')) {
       const zoom = surface.cameraNow().zoom;
       const match =
-        held ??
+        (held && g.hold?.live ? { ...held, points: g.hold.live } : held) ??
         (shapes.inkToShape && g.style.tool !== 'highlighter'
           ? recognizeShape(strokes[0].points, { minSize: 16 / zoom, width: g.style.width })
           : null);
-      if (match) strokes = [asShape(strokes[0], match)];
+      if (match) {
+        // A connector drawn to a shape ends on the shape's outline, and stays attached when the shape moves.
+        const placed = g.hold?.live ? match.shape : snapConnector(match.shape, surface);
+        strokes = [
+          asShape(
+            strokes[0],
+            placed === match.shape ? match : { ...match, shape: placed, points: shapePoints(placed) },
+          ),
+        ];
+      }
     }
-    const pending = surface.add(strokes);
+    const anchored = hooks.anchor(strokes, surface);
+    const pending = anchored ? surface.add(anchored.strokes, anchored.edits) : surface.add(strokes);
     surface.clearLive();
-    await pending;
+    if (await pending) hooks.after(anchored?.strokes ?? strokes, drawState.get().tool);
     return;
   }
   surface.clearLive();
+  // The eraser can hand the pen back to the tool it came from, as soon as the pen lifts.
+  if ((g.erase || g.partial) && g.fromTool && getSettings().ink.eraser.returnToLastTool) {
+    chooseTool(drawState.get().previous);
+  }
   if (g.erase) {
     const ids = g.erase.commit();
     const gone = surface.strokes(ids);
@@ -378,6 +506,8 @@ async function finish(g: InkGesture, surface: InkSurface, host: InkHost): Promis
     });
   } else if (g.lasso) {
     finishLasso(g.lasso, surface, host);
+  } else if (g.space) {
+    await g.space.commit();
   }
 }
 
@@ -385,5 +515,6 @@ function cancel(g: InkGesture, surface: InkSurface): void {
   surface.clearLive();
   if (g.erase) g.erase.cancel();
   if (g.partial) g.partial.cancel();
+  g.space?.cancel();
   surface.endPreview();
 }

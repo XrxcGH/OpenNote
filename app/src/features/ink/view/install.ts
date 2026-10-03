@@ -4,10 +4,12 @@ import { isEnabled } from '../../../app/flags';
 import type { CommandDef } from '../../../commands/types';
 import { commandBar, commands, settingsSections } from '../../../registries';
 import { getSettings, settingsStore, updateSettings } from '../../../state/settings';
+import { createStore } from '../../../state/store';
 import { applyToPoint } from '../geometry/matrix';
 import type { Stroke } from '../geometry/types';
 import type { InkHost } from './host';
 import { DrawPens, DrawTools } from './DrawBar';
+import { handleTouchGesture } from './gestures';
 import { registerExportStrokes } from './exportSource';
 import { createPenTool } from './input';
 import { TouchTool } from './touch';
@@ -16,9 +18,13 @@ import type { SelectionFrame } from './selection';
 import { chooseTool, drawState, routerTool } from './state';
 import type { DrawTool } from './state';
 import { InkSurface } from './surface';
+import { installMore } from './more';
 import { installInkTestHooks } from './testHooks';
 
 let current: { surface: InkSurface; frame: SelectionFrame; stop: () => void } | null = null;
+
+/** The ink surface of the shown page, as a store, for the parts that sit beside the pen tool and follow the page. */
+export const surfaceStore = createStore<InkSurface | null>(null, 'ink surface');
 
 /** The ink surface of the page that is shown, for tests and the benchmark. */
 export function shownSurface(): InkSurface | null {
@@ -47,6 +53,7 @@ function follow(host: InkHost): () => void {
     if (same) return;
     current?.stop();
     current = null;
+    surfaceStore.set(null);
     if (!page || !viewport || !queue || !isEnabled('ink.core')) return;
     const surface = new InkSurface({ page, viewport, queue, layer: host.layer.get() });
     const frame = attachSelectionFrame(host, surface);
@@ -58,6 +65,7 @@ function follow(host: InkHost): () => void {
         surface.destroy();
       },
     };
+    surfaceStore.set(surface);
   };
   const stops = [host.page.subscribe(sync), host.viewport.subscribe(sync), host.queue.subscribe(sync)];
   sync();
@@ -65,6 +73,7 @@ function follow(host: InkHost): () => void {
     stops.forEach((stop) => stop());
     current?.stop();
     current = null;
+    surfaceStore.set(null);
   };
 }
 
@@ -82,6 +91,7 @@ export function installInk(host: InkHost): () => void {
   installInkTestHooks(() => current?.surface ?? null);
   const pen = createPenTool(host, () => current?.surface ?? null);
   const touch = new TouchTool(host, () => current?.surface ?? null);
+  touch.onGesture = (kind) => handleTouchGesture(host, kind);
   const stops: (() => void)[] = [
     host.registerPointerTool(pen.tool),
     host.registerPointerTool(touch.tool),
@@ -90,6 +100,7 @@ export function installInk(host: InkHost): () => void {
     () => touch.destroy(),
     drawState.subscribe(() => host.setActiveTool(routerTool(drawState.get()))),
     follow(host),
+    installMore({ host, surface: () => current?.surface ?? null, surfaces: surfaceStore }),
     registerExportStrokes(() => current?.surface ?? null),
     // New settings take effect at the next touch.
     settingsStore.subscribe(() => touch.reset()),

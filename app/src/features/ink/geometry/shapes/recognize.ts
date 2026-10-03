@@ -6,6 +6,7 @@ import { distance, pointSegmentDistanceSq, polylineLength, segmentsIntersect } f
 import { resample, simplify } from '../simplify';
 import type { Vec } from '../types';
 import { arrowCandidate } from './arrow';
+import { arcCandidate, closedExtras, curvedArrowCandidate, doubleArrowCandidate } from './extra';
 import { ELLIPSE_TOLERANCE, ellipseShape, fitEllipse } from './ellipse';
 import { shapePoints } from './generate';
 import { fitLine, LINE_TOLERANCE, snapSegment } from './lines';
@@ -124,7 +125,7 @@ function pickBest(candidates: readonly Candidate[]): Candidate | null {
  * confidence from 0.5 (barely accepted) to 1 (exact). Lines snap to 15 degree steps near horizontal and vertical.
  */
 export function recognizeShape(points: readonly Vec[], options: RecognizeOptions = {}): ShapeMatch | null {
-  const { minSize = DEFAULT_MIN_SIZE, width = DEFAULT_WIDTH } = options;
+  const { minSize = DEFAULT_MIN_SIZE, width = DEFAULT_WIDTH, extra = false } = options;
   const clean = withoutRepeats(points);
   const box = boundsOf(clean);
   const diagonal = Math.hypot(box.maxX - box.minX, box.maxY - box.minY);
@@ -136,6 +137,17 @@ export function recognizeShape(points: readonly Vec[], options: RecognizeOptions
     : [lineCandidate(clean, resample(clean, SAMPLES)), arrowCandidate(clean, diagonal, width)].filter(
         (c) => c !== null,
       );
+  if (extra) {
+    if (outline) candidates.push(...closedExtras(outline));
+    else {
+      const more = [
+        doubleArrowCandidate(clean, diagonal, width),
+        curvedArrowCandidate(clean, diagonal, width),
+        arcCandidate(clean),
+      ];
+      candidates.push(...more.filter((c) => c !== null));
+    }
+  }
   const best = pickBest(candidates);
   if (!best) return null;
   return { shape: best.shape, points: shapePoints(best.shape), confidence: 1 - Math.min(1, best.ratio) / 2 };

@@ -2,6 +2,8 @@
 // import, so features/page/registrations/ink.ts hands them over when it installs the ink view. The types here are the
 // parts the ink view uses, so the page view's real objects fit them as they are.
 import type { BlockJson, EditBatch, OpenPage, TxnAck } from '../../../services/pages/types';
+import type { InkRecognition, InkStroke as IntelStroke, TidyOperation, TidyPlan } from '../../../services/intel';
+import type { Sheets } from '../space';
 
 export interface InkCamera {
   readonly zoom: number;
@@ -67,6 +69,20 @@ export interface Watched<T> {
   subscribe(listener: () => void): () => void;
 }
 
+/** Typed text under the pen: where a point falls, the words around it, and the edits the pen can ask for. */
+export interface TextEditing {
+  /** The text block under a client point, with the editor position there. */
+  hit(clientX: number, clientY: number): Promise<{ block: string; pos: number; top: number; bottom: number } | null>;
+  /** The whole words between two positions of one paragraph, with the space that goes with them. */
+  words(block: string, a: number, b: number): Promise<{ from: number; to: number; text: string } | null>;
+  remove(block: string, from: number, to: number): Promise<boolean>;
+  insert(block: string, pos: number, text: string): Promise<boolean>;
+  split(block: string, pos: number): Promise<boolean>;
+  select(block: string, from: number, to: number): Promise<boolean>;
+  /** Undoes the last text edit of a block. */
+  undo(block: string): Promise<void>;
+}
+
 /** The page view's seams, as features/page/registrations/ink.ts passes them. */
 export interface InkHost {
   registerPointerTool(def: InkPointerTool): () => void;
@@ -79,4 +95,21 @@ export interface InkHost {
   select(next: InkSelection, options?: { announce?: boolean }): void;
   /** Runs one of Phase 4's object commands on the selected blocks. */
   objectCommand(command: 'delete'): void;
+  /** Reading and tidying handwriting through the on-device recognizer. Absent when the page has none to offer. */
+  handwriting?: {
+    /** Null when the person said not now, or reading failed. */
+    recognize(strokes: IntelStroke[]): Promise<InkRecognition | null>;
+    tidy(strokes: IntelStroke[], recognition: InkRecognition, operation: TidyOperation): Promise<TidyPlan | null>;
+  };
+  /** Editing the typed text where the pen is. Absent when the page has no text editor to offer. */
+  text?: TextEditing;
+  /** The page's recordings, so replay can play the sound along. Absent when the page has none to offer. */
+  audio?: {
+    /** Plays the recording from the moment the first of these strokes was written. False when there is none. */
+    playFrom(ids: readonly string[]): Promise<boolean>;
+    pause(): void;
+    setSpeed?(speed: number): void;
+  };
+  /** The sheets of a paginated page, so pushed content lands on the next sheet. Absent in the flow and freeform views. */
+  sheets?(): Sheets | null;
 }

@@ -9,19 +9,21 @@ import type { Rgba } from '../pens/palette';
 import { DEFAULT_WIDTH_MM, mmToPage } from '../pens/tools';
 
 /** What the pointer does on the page. 'select' is Phase 4's own tool: typing, and selecting blocks. */
-export type DrawTool = 'select' | 'pen' | 'eraser' | 'partialEraser' | 'lasso';
+export type DrawTool = 'select' | 'pen' | 'writing' | 'eraser' | 'partialEraser' | 'lasso' | 'insertSpace';
 
 export interface DrawState {
   readonly tool: DrawTool;
+  /** The tool chosen before this one, which the eraser can go back to when the pen lifts. */
+  readonly previous: DrawTool;
   /** The pen slot the pen tool draws with. */
   readonly slot: string;
 }
 
-export const drawState = createStore<DrawState>({ tool: 'select', slot: 'p1' }, 'ink draw state');
+export const drawState = createStore<DrawState>({ tool: 'select', previous: 'select', slot: 'p1' }, 'ink draw state');
 
 /** The router's tool ID for a draw tool: pens report their slot's tool, so other parts can tell ink from select. */
 export function routerTool(state: DrawState): string {
-  return state.tool === 'pen' ? (activeSlot(state)?.tool ?? 'pen') : state.tool;
+  return state.tool === 'pen' || state.tool === 'writing' ? (activeSlot(state)?.tool ?? 'pen') : state.tool;
 }
 
 export function penSlots(): readonly PenSlot[] {
@@ -59,5 +61,12 @@ export function updateSlot(id: string, change: Partial<Pick<PenSlot, 'color' | '
 }
 
 export function chooseTool(tool: DrawTool, slot?: string): void {
-  drawState.set((state) => ({ tool, slot: slot ?? state.slot }));
+  drawState.set((state) => ({
+    tool,
+    previous: state.tool === tool ? state.previous : state.tool,
+    slot: slot ?? state.slot,
+  }));
 }
+
+/** True for the tools that write ink with the pen's slot. */
+export const writesInk = (tool: DrawTool): boolean => tool === 'pen' || tool === 'writing';

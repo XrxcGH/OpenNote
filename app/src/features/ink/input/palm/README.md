@@ -55,28 +55,28 @@ Real pen evidence is `hover`, `down`, `move`, `up`, and `cancel`. A `leave` from
 
 `score.ts` adds the terms that hold now. It recomputes them from the contact's features, never accumulating, at its own events, at ages 25 to 500 ms, and for all contacts when a pen arrives, a pen goes down, or a touch lands or lifts.
 
-| Id  | Evidence                                                                                       | Points                           |
-| --- | ---------------------------------------------------------------------------------------------- | -------------------------------- |
-| E1  | Palm size: 20 mm long or 15 mm across; 24 mm where the digitizer reports one radius in 4 mm steps | +4                            |
-| E2  | Large: 14 to 20 mm, a thumb or flat finger                                                     | +1                               |
-| E3  | Fingertip: 11 mm or less                                                                       | -1                               |
-| E4  | Grew 4 mm, or 40% past a fingertip                                                             | +2                               |
-| E5  | In the hand region of any anchor, where it is now                                              | +3 near or down; +2 or +1 recent |
-| E6  | Far side of the tip, or 80 mm outside the region, once the side is known                       | -2                               |
-| E7  | The pen was down when it landed, or it rested 300 ms in the hand region while the pen was down | +2                               |
-| E8  | Landed within 400 ms of a pen lift or leave; within 1 s. Once the side is known, only in, or near the hand | +2; +1                |
-| E9  | Landed first: young and still when a pen arrived                                               | +2                               |
-| E10 | Still at 150 ms; at 500 ms. In finger drawing, the drawing contact past 500 ms that never moved on | +1; +2                       |
-| E11 | Swipe, once it has moved on: 3 mm straight in 200 ms; 8 mm and not large; never inside the hand region near the pen | -2; -3      |
-| E12 | A palm within 70 mm                                                                            | +2                               |
-| E13 | Another contact landed within 12 mm (a split palm), or drifts with a latched palm beside it    | +2                               |
-| E14 | Three landings within 300 ms and 90 mm                                                         | +2                               |
-| E15 | Grip: landed within 5 mm of an edge and stays there, still for 500 ms, or elongated and still  | +3                               |
-| E16 | The OS says palm: a touch `pointercancel` under managed touch, or a native hint                | Latch                            |
-| E17 | The size of a learned passive stylus tip                                                       | -2                               |
-| E18 | Its own palm: a resting contact in the region anchored at it                                   | -2                               |
-| E19 | Lifted as a tap                                                                                | -1                               |
-| E20 | Sensitivity low, standard, high                                                                | -1, 0, +1                        |
+| Id  | Evidence                                                                                                            | Points                           |
+| --- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| E1  | Palm size: 20 mm long or 15 mm across; 24 mm where the digitizer reports one radius in 4 mm steps                   | +4                               |
+| E2  | Large: 14 to 20 mm, a thumb or flat finger                                                                          | +1                               |
+| E3  | Fingertip: 11 mm or less                                                                                            | -1                               |
+| E4  | Grew 4 mm, or 40% past a fingertip                                                                                  | +2                               |
+| E5  | In the hand region of any anchor, where it is now                                                                   | +3 near or down; +2 or +1 recent |
+| E6  | Far side of the tip, or 80 mm outside the region, once the side is known                                            | -2                               |
+| E7  | The pen was down when it landed, or it rested 300 ms in the hand region while the pen was down                      | +2                               |
+| E8  | Landed within 400 ms of a pen lift or leave; within 1 s. Once the side is known, only in, or near the hand          | +2; +1                           |
+| E9  | Landed first: young and still when a pen arrived                                                                    | +2                               |
+| E10 | Still at 150 ms; at 500 ms. In finger drawing, the drawing contact past 500 ms that never moved on                  | +1; +2                           |
+| E11 | Swipe, once it has moved on: 3 mm straight in 200 ms; 8 mm and not large; never inside the hand region near the pen | -2; -3                           |
+| E12 | A palm within 70 mm                                                                                                 | +2                               |
+| E13 | Another contact landed within 12 mm (a split palm), or drifts with a latched palm beside it                         | +2                               |
+| E14 | Three landings within 300 ms and 90 mm                                                                              | +2                               |
+| E15 | Grip: landed within 5 mm of an edge and stays there, still for 500 ms, or elongated and still                       | +3                               |
+| E16 | The OS says palm: a touch `pointercancel` under managed touch, or a native hint                                     | Latch                            |
+| E17 | The size of a learned passive stylus tip                                                                            | -2                               |
+| E18 | Its own palm: a resting contact in the region anchored at it                                                        | -2                               |
+| E19 | Lifted as a tap                                                                                                     | -1                               |
+| E20 | Sensitivity low, standard, high                                                                                     | -1, 0, +1                        |
 
 Sizes count only when the digitizer reports real sizes (the profile's `touchSize`, or learned in the session), and then E1 and E4 count in every presence. A score of 4 or more latches palm, and a score of 0 or less is a finger.
 
