@@ -10,7 +10,7 @@ use crate::{
     args::{self, Args},
     boot,
     instance::{self, InstanceGuard, InstanceOutcome},
-    paths::{Paths, PROFILE_DIR_VAR},
+    paths::{self, Paths, PROFILE_DIR_VAR},
     perf,
     updater::{self, GuardOutcome},
     window::webview::{self, RuntimeCheck},
@@ -61,7 +61,11 @@ impl Steps for System {
     }
 
     fn resolve_paths(&self) -> std::io::Result<Paths> {
-        let paths = Paths::resolve(std::env::var_os(PROFILE_DIR_VAR).map(Into::into))?;
+        let program_dir = std::env::current_exe().ok().and_then(|exe| exe.parent().map(std::path::Path::to_path_buf));
+        let paths = Paths::resolve(paths::profile_override(
+            std::env::var_os(PROFILE_DIR_VAR).map(Into::into),
+            program_dir.as_deref(),
+        ))?;
         // Logging starts as soon as it has a folder, so the steps after this one are on record.
         let profile = std::env::var_os("USERPROFILE")
             .map(std::path::PathBuf::from)
