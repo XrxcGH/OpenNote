@@ -1,5 +1,6 @@
-// Turns the paginator's plan for a flow page into what views and export need: where every line, row, and block ends
-// up, which part of each block sits on which sheet, and how to map a position before the spacers to one after.
+// Turns the paginator's plan for a flow page into what views and export need. It finds where every line, row, and
+// block ends up and which part of each block sits on which sheet. It also maps a position before the spacers to
+// one after.
 
 import { EPS, sheetAt, type SheetGeometry } from '../pagination/geometry';
 import { paginate } from '../pagination/paginate';

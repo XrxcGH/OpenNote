@@ -5,3 +5,4 @@
 export * from './layout';
 export * from './pagination';
 export * from './paper';
+export * from './zoom';

@@ -1,5 +1,5 @@
-// Small JSON helpers for the view settings: values as they sit in page.json, the 0.01 rounding of format spec 2.3,
-// and JSON merge patch (RFC 7396), which is how a change to the view is stored (format spec 6.2).
+// Small JSON helpers for the view settings. They cover values as they sit in page.json, the 0.01 rounding of format
+// spec 2.3, and JSON merge patch (RFC 7396). A change to the view is stored as a merge patch (format spec 6.2).
 
 export type Json = null | boolean | number | string | readonly Json[] | { readonly [key: string]: Json };
 export type JsonObject = { readonly [key: string]: Json };

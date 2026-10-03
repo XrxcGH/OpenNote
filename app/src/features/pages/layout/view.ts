@@ -1,6 +1,6 @@
-// A page's view settings (format spec 5.4): layout, mode, paper, and background. This reads them from page.json
-// without failing (a bad value falls back to its default and is reported), keeps unknown keys and unknown enum
-// values as the format requires, and writes them back with every default left out.
+// A page's view settings (format spec 5.4): layout, mode, paper, and background. Reading never fails: a bad value
+// falls back to its default and is reported. Unknown keys and unknown enum values are kept, as the format requires.
+// Writing leaves out every default.
 
 import { PAPER_SIZES, type Margins, type Orientation, type PaperSizeName } from '../pagination/geometry';
 import { DEFAULT_SPACING } from '../paper/patterns';

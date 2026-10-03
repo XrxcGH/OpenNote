@@ -1,5 +1,5 @@
-// The geometry a page's view settings stand for: the sheet, the geometry the flow of text lays out in, the text
-// column, and the background in the form the paper generators draw. Everything here is pure.
+// The geometry a page's view settings stand for: the sheet, the sheet the flow of text lays out in, the text column,
+// and the background in the form the paper generators draw. Everything here is pure.
 
 import { contentBox, sheetGeometry, type SheetGeometry } from '../pagination/geometry';
 import { flowGeometry } from '../paper/patterns';
