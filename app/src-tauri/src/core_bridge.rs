@@ -2,10 +2,12 @@
 //! bridge for its notes service; WP0 of Phase 4 builds the part pages need, so typed text reaches the core and
 //! survives a restart.
 //!
-//! Until the storage-backed notes service lands (`storage.core`), the interface's pages come from Phase 2's notes
-//! snapshot, whose IDs the core doesn't know. The bridge keeps their content in one notebook of its own, under
-//! `%LOCALAPPDATA%\OpenNote\phase4`, and a small map from each interface page ID to the core page that holds it.
-//! The core starts the first time a page opens, so start-up doesn't wait for it.
+//! Until the storage-backed notes service lands, the interface's pages come from Phase 2's notes snapshot, whose IDs
+//! the core doesn't know. The bridge keeps their content in one notebook of its own, `Pages`, in the notes folder
+//! that setup chose, and a small map from each interface page ID to the core page that holds it under
+//! `%LOCALAPPDATA%\OpenNote\phase4`, beside the snapshot whose IDs it maps. Without a notes folder, and for a
+//! profile that already keeps its `Pages` there, the notebook stays under `phase4` too. The core starts the first
+//! time a page opens, so start-up doesn't wait for it.
 //!
 //! WP2 adds the history commands and turns the core's events into `core:*` events for the interface, with the
 //! interface's page IDs.
@@ -38,8 +40,11 @@ use tauri::{ipc::Response, AppHandle, Emitter, Manager, State};
 use crate::{
     ipc::{codes, IpcError, IpcResult},
     paths::Paths,
-    settings::file::write_atomic,
+    settings::{file::write_atomic, SettingsStore},
 };
+
+/// The folder of the bridge's notebook, inside the notebook's parent.
+const NOTEBOOK: &str = "Pages";
 
 /// How long the exit flush may take before the journals keep the rest for the next start (core plan 9.3).
 const EXIT_FLUSH: Duration = Duration::from_secs(5);
@@ -90,7 +95,10 @@ impl EventSink for AppEvents {
 
 /// The managed state behind the page commands.
 pub struct CoreBridge {
+    /// This device's files: the core's own data and the page map.
     root: PathBuf,
+    /// The notes folder from settings, which the first page open reads before the core starts.
+    notes_folder: OnceLock<PathBuf>,
     state: Mutex<Option<Result<Bridge, String>>>,
     relay: Arc<Relay>,
 }
@@ -131,15 +139,16 @@ fn revision_id(text: &str) -> IpcResult<RevisionId> {
 }
 
 impl Bridge {
-    fn start(root: &Path, relay: Arc<Relay>) -> Result<Bridge, IpcError> {
+    fn start(root: &Path, parent: &Path, relay: Arc<Relay>) -> Result<Bridge, IpcError> {
         let config =
             CoreConfig::production(root.join("core"), env!("CARGO_PKG_VERSION").to_owned()).map_err(internal)?;
         let core = Core::start(config, Arc::new(AppEvents(relay.clone())), None).map_err(internal)?;
-        let dir = root.join("Pages");
+        let dir = parent.join(NOTEBOOK);
         let notebook = if dir.join("notebook.json").exists() {
             core.open_notebook(&dir)
         } else {
-            core.create_notebook(root, "Pages")
+            fs::create_dir_all(parent).map_err(internal)?;
+            core.create_notebook(parent, NOTEBOOK)
         }
         .map_err(internal)?;
         let section = match notebook.tree().sections.first() {
@@ -222,16 +231,33 @@ impl CoreBridge {
     fn at(root: PathBuf) -> CoreBridge {
         CoreBridge {
             root,
+            notes_folder: OnceLock::new(),
             state: Mutex::new(None),
             relay: Arc::default(),
         }
+    }
+
+    /// Puts the notebook in the notes folder, if the core hasn't started yet. The first call wins.
+    fn use_notes_folder(&self, folder: Option<String>) {
+        if let Some(folder) = folder.filter(|folder| !folder.is_empty()) {
+            let _ = self.notes_folder.set(PathBuf::from(folder));
+        }
+    }
+
+    /// Where the notebook goes: where a profile already keeps it, else the notes folder, else this device's files.
+    fn notebook_parent(&self) -> PathBuf {
+        if self.root.join(NOTEBOOK).join("notebook.json").exists() {
+            return self.root.clone();
+        }
+        self.notes_folder.get().cloned().unwrap_or_else(|| self.root.clone())
     }
 
     /// Runs `work` on the bridge, starting the core first if it hasn't started.
     fn with<T>(&self, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         if state.is_none() {
-            *state = Some(Bridge::start(&self.root, self.relay.clone()).map_err(|error| error.message));
+            let parent = self.notebook_parent();
+            *state = Some(Bridge::start(&self.root, &parent, self.relay.clone()).map_err(|error| error.message));
         }
         match state.as_mut() {
             Some(Ok(bridge)) => work(bridge),
@@ -289,6 +315,7 @@ pub async fn page_open(
     client: String,
     viewport: Option<Rect>,
 ) -> IpcResult<Response> {
+    bridge.use_notes_folder(app.state::<SettingsStore>().get().storage.notes_folder);
     bridge.relay.emit.get_or_init(|| {
         Box::new(move |name, payload| {
             if let Err(error) = app.emit(name, payload) {
@@ -500,6 +527,51 @@ mod tests {
             .expect("the second run");
         again.shutdown();
         assert_eq!(text, "Cells divide");
+    }
+
+    #[test]
+    fn the_notebook_goes_in_the_notes_folder_and_the_map_stays_on_this_device() {
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let (local, notes) = (dir.path().join("local"), dir.path().join("Documents").join("OpenNote"));
+        let start = || {
+            let bridge = CoreBridge::at(local.clone());
+            bridge.use_notes_folder(Some(notes.display().to_string()));
+            bridge
+        };
+        let bridge = start();
+        bridge
+            .with(|bridge| {
+                let handle = bridge.handle("p-notes", "main-1")?;
+                insert(&handle, 1, "Kept in the notes folder");
+                Ok(())
+            })
+            .expect("the first run");
+        bridge.shutdown();
+        assert!(notes.join(NOTEBOOK).join("notebook.json").is_file());
+        assert!(local.join("pages.json").is_file());
+        assert!(!local.join(NOTEBOOK).exists());
+        let again = start();
+        let text = again
+            .with(|bridge| Ok(text_of(&bridge.handle("p-notes", "main-1")?)))
+            .expect("the second run");
+        again.shutdown();
+        assert_eq!(text, "Kept in the notes folder");
+    }
+
+    #[test]
+    fn a_profile_that_keeps_its_notebook_on_this_device_keeps_it_there() {
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let (local, notes) = (dir.path().join("local"), dir.path().join("Notes"));
+        let bridge = CoreBridge::at(local.clone());
+        let first = bridge.with(|bridge| bridge.core_page("p-old")).expect("the old layout");
+        bridge.shutdown();
+        let again = CoreBridge::at(local.clone());
+        again.use_notes_folder(Some(notes.display().to_string()));
+        assert_eq!(again.notebook_parent(), local);
+        let same = again.with(|bridge| bridge.core_page("p-old")).expect("the same page");
+        again.shutdown();
+        assert_eq!(same, first);
+        assert!(!notes.exists());
     }
 
     #[test]

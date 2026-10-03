@@ -1,8 +1,8 @@
 // Chooses the notes service and makes it available to components (ARCHITECTURE.md section 12.5). Phase 2 uses the
 // in-memory service, seeded from the notes snapshot when there is one. Without one, the web platform and the dev
-// channel start from the sample library, and a real profile starts empty. Test builds save the snapshot behind
-// notes.memorySnapshot; a real profile without it keeps nothing and says so (the service is volatile). Phase 3's
-// storage-backed service takes over behind storage.core.
+// channel start from the sample library, and a real profile starts empty. Every build saves the snapshot behind
+// storage.core, which is on by default, and test builds also behind notes.memorySnapshot; a real profile without
+// either keeps nothing and says so (the service is volatile). Page content is kept by the core, in the notes folder.
 //
 // The first loadInitial starts here, before React renders, so the tree and the last page arrive in one call.
 
@@ -65,7 +65,8 @@ export function initialTree(
 }
 
 export async function createNotesService(platform: Platform): Promise<NotesService> {
-  const snapshot = isEnabled('notes.memorySnapshot') ? (platform.notesSnapshot ?? undefined) : undefined;
+  const keeps = isEnabled('storage.core') || isEnabled('notes.memorySnapshot');
+  const snapshot = keeps ? (platform.notesSnapshot ?? undefined) : undefined;
   // A real profile without the snapshot has nothing that keeps the notes, so the service must not say they're saved.
   const volatile = !snapshot && platform.kind === 'tauri';
   const service = createMemoryNotesService({ seed: await seedFrom(platform), snapshot, volatile });

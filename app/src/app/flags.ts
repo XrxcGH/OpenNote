@@ -25,7 +25,7 @@ export type FlagId =
   | 'settings.recording'
   | 'settings.privacyAndAi'
   | 'bottomBar.recent'
-  /** Phase 3's switch to the storage-backed notes service. */
+  /** Notes kept on disk in every build: the library file and the core's pages in the notes folder. */
   | 'storage.core'
   | Phase4FlagId
   | Phase5FlagId;
@@ -105,7 +105,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('settings.recording', 'The Recording section of Settings.', off),
   flag('settings.privacyAndAi', 'The Privacy and smart features section of Settings.', off),
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', off),
-  flag('storage.core', "Phase 3's storage-backed notes service.", off),
+  flag('storage.core', 'Keep notes on disk: the notebook list in the library file, pages in the notes folder.', on),
   ...PAGE_FLAGS,
 ];
 

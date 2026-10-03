@@ -38,7 +38,7 @@ export function createTauriPlatform(boot: BootData): Platform {
     clipboard: createTauriClipboard(),
     images,
     speech: createTauriSpeech(),
-    notesSnapshot: isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
+    notesSnapshot: isEnabled('storage.core') || isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
     perf: createTauriPerf(),
     log: tauriLog,
   };

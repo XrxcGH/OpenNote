@@ -6,8 +6,8 @@ import type { FlagDef, FlagId } from '../../app/flags';
 export type PageFlagId = Extract<FlagId, `page.${string}` | 'editor.spelling' | 'editor.readAloud'>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
-/** On in development and nightly builds, off in Beta and Stable until the feature is done. */
-const building = { dev: true, nightly: true, beta: false, stable: false };
+/** On in development, nightly, and Beta builds, for testers; off in Stable until the feature is done. */
+const building = { dev: true, nightly: true, beta: true, stable: false };
 const off = { dev: false, nightly: false, beta: false, stable: false };
 
 const flag = (id: PageFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({

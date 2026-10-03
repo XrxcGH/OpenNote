@@ -55,7 +55,7 @@ describe('the notes service on a real profile', () => {
 });
 
 describe('what the notes service says about saving on a real profile', () => {
-  it("doesn't claim notes are saved when nothing keeps them (beta and stable, where the snapshot is off)", async () => {
+  it("doesn't claim notes are saved when nothing keeps them (the platform has no snapshot)", async () => {
     const { notes } = await titles(realProfile('stable'));
     expect(notes.saveStatus()).toBe('saved');
     expect(notes.hasUnsavedChanges()).toBe(false);
@@ -73,16 +73,20 @@ describe('what the notes service says about saving on a real profile', () => {
     expect(notes.saveStatus()).toBe('error');
   });
 
-  it('saves to the snapshot, and reports saved, where the snapshot is on (dev and nightly)', async () => {
-    const saves: string[] = [];
-    const snapshot = {
-      load: () => Promise.resolve(null),
-      save: (json: string) => (saves.push(json), Promise.resolve()),
-    };
-    const { notes } = await titles(realProfile('nightly', snapshot));
-    await notes.create({ kind: 'notebook', placement: { parentId: null, beforeId: null }, title: 'Thesis' });
-    await notes.flush();
-    expect(notes.saveStatus()).toBe('saved');
-    expect(JSON.parse(saves[0]).notebooks.map((node: { title: string }) => node.title)).toEqual(['Thesis']);
-  });
+  it.each(['nightly', 'beta', 'stable'] as const)(
+    'saves to the snapshot, and reports saved, on the %s channel (storage.core is on)',
+    async (channel) => {
+      const saves: string[] = [];
+      const snapshot = {
+        load: () => Promise.resolve(null),
+        save: (json: string) => (saves.push(json), Promise.resolve()),
+      };
+      const { notes } = await titles(realProfile(channel, snapshot));
+      await notes.create({ kind: 'notebook', placement: { parentId: null, beforeId: null }, title: 'Thesis' });
+      await notes.flush();
+      expect(notes.saveStatus()).toBe('saved');
+      expect(notes.hasUnsavedChanges()).toBe(false);
+      expect(JSON.parse(saves[0]).notebooks.map((node: { title: string }) => node.title)).toEqual(['Thesis']);
+    },
+  );
 });
