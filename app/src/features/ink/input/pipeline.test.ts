@@ -81,8 +81,8 @@ describe('the ink pipeline', () => {
     p.setInkToolActive(true);
     p.handle(rec('down', 'touch', 5, 0, 50, 50));
     expect(calls).toContain('ink 5 shadow');
-    p.handle(rec('move', 'touch', 5, 10, 52, 50));
-    p.handle(rec('up', 'touch', 5, 20, 54, 50, 0));
+    p.handle(rec('move', 'touch', 5, 60, 52, 50));
+    p.handle(rec('up', 'touch', 5, 70, 54, 50, 0));
     const ink = ['ink 5 shadow', 'ink 5 show', 'ink 5 point', 'ink 5 commit'];
     expect(calls.filter((c) => c.startsWith('ink 5'))).toEqual(ink);
   });

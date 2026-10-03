@@ -44,6 +44,9 @@ export interface ReplayResult {
   readonly penSamplesExpected: number;
   /** Pen strokes whose stored first point is not the first contact sample, through a real stroke builder. */
   readonly penStrokesBroken: number;
+  /** Pen strokes during which the camera moved, between their first sample and their lift: the host maps a stroke's
+   * points with the camera at contact, so such a stroke lands offset from the tip. */
+  readonly penCameraMoved: number;
   readonly gestures: { readonly kind: 'undo' | 'redo'; readonly t: number; readonly silent: boolean }[];
   readonly policies: TouchPolicy[];
   readonly cssPxPerMm: number;
@@ -76,11 +79,15 @@ class RecordingHost implements PipelineHost {
   now = 0;
   penSamples = 0;
   penStrokesBroken = 0;
+  penCameraMoved = 0;
   readonly contacts = new Map<number, ContactOutcome>();
   readonly gestures: { kind: 'undo' | 'redo'; t: number; silent: boolean }[] = [];
   readonly policies: TouchPolicy[] = [];
   private strokeIds = 0;
-  private readonly pens = new Map<number, { builder: StrokeBuilder; x: number; y: number }>();
+  private readonly pens = new Map<
+    number,
+    { builder: StrokeBuilder; x: number; y: number; cam: [number, number, number]; moved: boolean }
+  >();
 
   constructor(private readonly slopPx: number) {}
 
@@ -96,14 +103,41 @@ class RecordingHost implements PipelineHost {
   /** Each pen stroke goes through a real stroke builder, whose first stored point must be the first contact sample. */
   penSample(r: PointerRecord): void {
     this.penSamples++;
-    if (r.type === 'down') this.pens.set(r.id, { builder: this.touchBuilder(), x: r.x, y: r.y });
+    if (r.type === 'down') {
+      this.pens.set(r.id, { builder: this.touchBuilder(), x: r.x, y: r.y, cam: this.view(), moved: false });
+    }
     const pen = this.pens.get(r.id);
     if (!pen) return;
+    this.watchPens();
     pen.builder.push({ x: r.x, y: r.y, time: r.t, pointerType: 'pen', pressure: r.p, tiltX: r.tiltX, tiltY: r.tiltY });
     if (r.type !== 'up') return;
     this.pens.delete(r.id);
+    if (pen.moved) this.penCameraMoved++;
     const first = pen.builder.finish()[0]?.points[0];
     if (!first || Math.abs(first.x - pen.x) > 0.01 || Math.abs(first.y - pen.y) > 0.01) this.penStrokesBroken++;
+  }
+
+  /** The page camera: the sum of every contact's pan after reverts, and the product of their zooms. */
+  private view(): [number, number, number] {
+    let x = 0;
+    let y = 0;
+    let z = 1;
+    for (const c of this.contacts.values()) {
+      x += c.camX;
+      y += c.camY;
+      z *= c.zoom;
+    }
+    return [x, y, z];
+  }
+
+  /** Marks every pen stroke in progress whose camera changed since its first sample. */
+  private watchPens(): void {
+    if (this.pens.size === 0) return;
+    const [x, y, z] = this.view();
+    for (const pen of this.pens.values()) {
+      const [x0, y0, z0] = pen.cam;
+      if (Math.abs(x - x0) > 0.01 || Math.abs(y - y0) > 0.01 || Math.abs(z - z0) > 1e-6) pen.moved = true;
+    }
   }
 
   touchBuilder() {
@@ -157,6 +191,7 @@ class RecordingHost implements PipelineHost {
     const moved = Math.hypot(c.camX, c.camY) > this.slopPx || Math.abs(c.zoom - 1) > 0.01;
     if (moved && Number.isNaN(c.movedAt)) c.movedAt = this.now;
     if (op === 'panBy' && Number.isNaN(c.startedAt)) c.startedAt = this.now;
+    this.watchPens();
   }
 
   tap(id: number, allowed: boolean): void {
@@ -274,6 +309,7 @@ export function replaySession(session: Session, options: ReplayOptions = {}): Re
     penSamples: host.penSamples,
     penSamplesExpected: expected,
     penStrokesBroken: host.penStrokesBroken,
+    penCameraMoved: host.penCameraMoved,
     gestures: host.gestures,
     policies: host.policies,
     cssPxPerMm: session.header.screen.cssPxPerMm,

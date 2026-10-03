@@ -41,6 +41,8 @@ export const F = {
   Voted: 8192,
   /** Its touch ink shows: it moved like a stroke rather than like a palm settling. */
   Shown: 32768,
+  /** Latched palm on where and when it landed alone (E5, E8): a far-side swipe may reopen it. */
+  SoftLatch: 65536,
 } as const;
 
 /** Verdicts. */

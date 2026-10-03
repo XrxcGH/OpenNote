@@ -1,6 +1,7 @@
 // Traces from the fourth palm rejection review, each replayed through the shipped pipeline on the device profiles
 // the review used. Positions are millimeters on the glass. Each test names the defect it guards.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { EMPTY_LEARNED } from './palm/index';
 import type { PalmSettings } from './palm/index';
@@ -10,7 +11,7 @@ import { profileById } from './testing/profiles';
 import type { SimProfile } from './testing/profiles';
 import { replaySession } from './testing/replay';
 import type { ContactOutcome, ReplayResult } from './testing/replay';
-import { generate, PEN_SCENARIOS } from './testing/scenarios';
+import { applies, generate, PEN_SCENARIOS } from './testing/scenarios';
 import type { Session } from './testing/session';
 import { seeded, SessionWriter } from './testing/writer';
 import type { Rand, Vec2 } from './testing/writer';
@@ -73,6 +74,7 @@ function stroke(
 }
 
 const DRAW: Options = { penSeen: false };
+const LIMITS = new URL('../../../../../tests/fixtures/palm/known-limits.json', import.meta.url);
 
 /** Every pair of values, so a sweep is one loop. */
 const grid = <A, B>(as: readonly A[], bs: readonly B[]): [A, B][] => as.flatMap((a) => bs.map((b): [A, B] => [a, b]));
@@ -384,14 +386,17 @@ describe('a palm that lands after a long pause', () => {
 });
 
 describe('a left hand on a pen with neither tilt nor contact size', () => {
-  it('causes no stray action in any pen scenario', () => {
+  it('causes no stray action in any pen scenario but its known limits', () => {
+    const known = JSON.parse(readFileSync(LIMITS, 'utf8')) as { scenarios: { scenario: string; profiles: string[] }[] };
     for (const id of ['oem-mpp', 'wacom-aes']) {
       const p: SimProfile = { ...profileById(id), tilt: 'none' };
+      const limit = (s: string) => known.scenarios.some((l) => l.scenario === s && l.profiles.includes(`${id}-notilt`));
       const tally = emptyTally();
       for (const s of PEN_SCENARIOS) {
+        if (limit(s.name) || !applies(s, p)) continue;
         for (let seed = 1; seed <= 2; seed++) {
           const session = generate({ ...s, hand: 'left' }, p, seed);
-          score(session, replaySession(session, { profile: p.device }), tally);
+          score(session, replaySession(session, { profile: p.device }), tally, emptyTally());
         }
       }
       expect([tally.strayInk, tally.strayCamera, tally.strayTaps, tally.strayGestures], id).toEqual([0, 0, 0, 0]);

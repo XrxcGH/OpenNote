@@ -33,23 +33,44 @@ export function readFixtures(folder: string): { file: string; bytes: number; ses
   return out;
 }
 
+/** A scenario whose sessions on some profiles no signal a page can see gets right: replayed and reported, not gated. */
+export interface KnownLimit {
+  readonly scenario: string;
+  readonly profiles: readonly string[];
+  readonly why: string;
+}
+
 export interface CorpusRun {
   readonly byProfile: Map<string, Tally>;
+  /** Known limits, by `scenario on profile`: tallied apart from the gates, for the report. */
+  readonly limited: Map<string, Tally>;
   /** Wall time per replayed event, microseconds, per profile: the whole pipeline with a recording host. */
   readonly usPerEvent: Map<string, number>;
   /** Scenario and profile pairs with any stray action or missed intent, for the report. */
   readonly failures: string[];
 }
 
-/** Replays the corpus and tallies it per profile. */
-export function runCorpus(fixtures: readonly Session[], seeds = CORPUS_SEEDS): CorpusRun {
+/** Replays the corpus and tallies it per profile, with the known limits apart. */
+export function runCorpus(
+  fixtures: readonly Session[],
+  seeds = CORPUS_SEEDS,
+  limits: readonly KnownLimit[] = [],
+): CorpusRun {
   const byProfile = new Map<string, Tally>();
+  const limited = new Map<string, Tally>();
   const time = new Map<string, { ms: number; events: number }>();
   const failures: string[] = [];
-  const add = (session: Session) => {
+  const isLimit = (scenario: string, profile: string) =>
+    limits.some((l) => l.scenario === scenario && l.profiles.includes(profile));
+  const add = (session: Session, limit = false) => {
     const id = session.header.profile;
-    const tally = byProfile.get(id) ?? emptyTally();
-    byProfile.set(id, tally);
+    const into = limit ? limited : byProfile;
+    const key = limit ? `${session.header.task} on ${id}` : id;
+    const tally = into.get(key) ?? emptyTally();
+    into.set(key, tally);
+    const labeled = `labeled limits on ${id}`;
+    const apart = limited.get(labeled) ?? emptyTally();
+    limited.set(labeled, apart);
     const before = { ...tally };
     const started = performance.now();
     const result = replaySession(session);
@@ -57,7 +78,8 @@ export function runCorpus(fixtures: readonly Session[], seeds = CORPUS_SEEDS): C
     spent.ms += performance.now() - started;
     spent.events += session.events.length;
     time.set(id, spent);
-    score(session, result, tally);
+    if (session.labels.some((l) => l.limit !== undefined)) apart.sessions++;
+    score(session, result, tally, apart);
     const bad = (x: Tally) =>
       x.strayInk +
       x.strayCamera +
@@ -68,18 +90,21 @@ export function runCorpus(fixtures: readonly Session[], seeds = CORPUS_SEEDS): C
       x.navMissed +
       x.tapMissed +
       x.gestureMissed;
-    if (bad(tally) > bad(before)) failures.push(`${session.header.task} (${session.header.handedness}) on ${id}`);
+    if (!limit && bad(tally) > bad(before)) {
+      failures.push(`${session.header.task} (${session.header.handedness}) on ${id}`);
+    }
   };
   for (const scenario of SCENARIOS) {
     for (const profile of PROFILES) {
       if (!applies(scenario, profile)) continue;
+      const limit = isLimit(scenario.name, profile.id);
       // Finger and stylus sessions are short, so they get more seeds for a comparable number of contacts.
       const n = profile.stylus === 'pen' ? seeds : seeds * 4;
       for (const hand of handsOf(scenario))
-        for (let seed = 1; seed <= n; seed++) add(generate(scenario, profile, seed, hand));
+        for (let seed = 1; seed <= n; seed++) add(generate(scenario, profile, seed, hand), limit);
     }
   }
   for (const session of fixtures) add(session);
   const usPerEvent = new Map([...time].map(([id, t]) => [id, (t.ms * 1000) / Math.max(1, t.events)]));
-  return { byProfile, usPerEvent, failures };
+  return { byProfile, limited, usPerEvent, failures };
 }

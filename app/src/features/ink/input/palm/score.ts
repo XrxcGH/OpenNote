@@ -102,8 +102,10 @@ function sizeTerms(c: ContactTable, i: number, x: ScoreContext): number {
   // A palm is a palm in any presence once sizes are known to be real: it never scrolls or taps.
   if (!judged && !real) return s;
   const scale = x.sensitivity < 0 ? K.LOW_SENSITIVITY_SIZE : 1;
-  // A digitizer that reports one radius (iPadOS) gives width equal to height, so the minor axis says nothing there.
-  if (major >= K.PALM_MAJOR_MM * scale || (c.asym && c.minorMax[i] >= K.PALM_MINOR_MM * scale)) {
+  // A digitizer that reports one radius (iPadOS) gives width equal to height, so the minor axis says nothing there, and
+  // it rounds up by a step: an 18 mm thumb reads 20 mm, so a palm there starts one step higher.
+  const palmMajor = K.PALM_MAJOR_MM * scale + (c.asym ? 0 : K.RADIUS_STEP_MM);
+  if (major >= palmMajor || (c.asym && c.minorMax[i] >= K.PALM_MINOR_MM * scale)) {
     c.why[i] |= E.PalmSize;
     return s + 4;
   }
@@ -129,9 +131,10 @@ function sizeTerms(c: ContactTable, i: number, x: ScoreContext): number {
  */
 function regionTerms(c: ContactTable, i: number, x: ScoreContext): number {
   if (x.penCtx && x.tipValid) {
-    // Once the pen has left, a hand whose side is still unknown may come back on either side.
+    // Once the pen has left, a hand whose side is still unknown may come back on either side. A contact that has
+    // traveled further than a palm slides as it re-plants is no hand coming back where the next line starts.
     const either = x.presence === P.Recent && !x.hand.seeded;
-    if (inPenHand(x, c.x[i], c.y[i], either)) {
+    if (inPenHand(x, c.x[i], c.y[i], either, c.disp[i] < K.LINE_ANCHOR_TRAVEL_MM)) {
       c.why[i] |= E.HandRegion;
       if (x.presence >= P.Near) return 3;
       return x.sinceEvidence < K.RECENT_STRONG_MS ? 2 : 1;
@@ -155,9 +158,9 @@ function regionTerms(c: ContactTable, i: number, x: ScoreContext): number {
  * Whether a point (mm) lies in the hand of the pen: at its last position, at the start of the line being written, or
  * at that start one line down, where the hand rests to begin the next line.
  */
-export function inPenHand(x: ScoreContext, px: number, py: number, anySide = false): boolean {
+export function inPenHand(x: ScoreContext, px: number, py: number, anySide = false, lines = true): boolean {
   if (handAt(x.hand, px, py, x.tipX, x.tipY, anySide)) return true;
-  if (!x.lineValid) return false;
+  if (!x.lineValid || !lines) return false;
   return (
     handAt(x.hand, px, py, x.lineX, x.lineY, anySide) || handAt(x.hand, px, py, x.lineX, x.lineY + K.LINE_MM, anySide)
   );
@@ -198,9 +201,13 @@ function timingTerms(c: ContactTable, i: number, x: ScoreContext): number {
   const motion = c.motion(i);
   // A palm slides with the writing hand between words, so motion in the hand region is no swipe while the pen is near.
   const handSlide = (c.why[i] & E.HandRegion) !== 0 && x.presence >= P.Near;
-  // Still now, on the glass or against the pen: a palm drifts while it settles, then rests.
+  // Still now, on the glass or against the pen: a palm drifts while it settles, then rests. In finger drawing the
+  // contact that holds the draw slot is judged too once it is past a long press and never moved on like a stroke.
   const still = c.stillFor(i, x.t);
-  if (x.penCtx && i !== x.drawSlot && age >= K.STILL_EARLY_MS && still >= K.RECENT_STILL_MS) {
+  const judged = x.penCtx
+    ? i !== x.drawSlot
+    : x.drawMode && i === x.drawSlot && age >= K.STILL_LATE_MS && !c.movedOn(i);
+  if (judged && age >= K.STILL_EARLY_MS && still >= K.RECENT_STILL_MS) {
     s += age >= K.STILL_LATE_MS && still >= K.STILL_LONG_MS ? 2 : 1;
     c.why[i] |= E.Still;
   }
@@ -235,6 +242,10 @@ function neighborTerms(c: ContactTable, i: number, x: ScoreContext): number {
     if (c.cls[j] === 2 && i !== x.drawSlot && c.dist(i, j) <= K.CLUSTER_MM) nearPalm = true;
     const together = Math.abs(c.t0[i] - c.t0[j]) <= K.BURST_MS;
     if (together && K.len(c.x0[i] - c.x0[j], c.y0[i] - c.y0[j]) <= K.SPLIT_MM) split = true;
+    // A part of a latched palm: beside it, and drifting with it the same way and as far.
+    if (c.cls[j] === 2 && i !== x.drawSlot && c.dist(i, j) <= K.CLUSTER_MM && together && driftsWith(c, i, j)) {
+      split = true;
+    }
     const resting =
       c.cls[j] === 2 || c.role[j] === 1 || c.disp[j] < K.WEAK_TRAVEL_MM || c.stillFor(j, x.t) >= K.RECENT_STILL_MS;
     if (x.drawMode && resting && x.touchHand.membership(c.x[j], c.y[j], c.x[i], c.y[i]) >= 0.5) ownPalm = true;
@@ -257,6 +268,18 @@ function neighborTerms(c: ContactTable, i: number, x: ScoreContext): number {
     c.why[i] |= E.Burst;
   }
   return s;
+}
+
+/** Two contacts that both moved 2 mm or more, in one direction and by about as much: one hand. */
+function driftsWith(c: ContactTable, i: number, j: number): boolean {
+  const ax = c.x[i] - c.x0[i];
+  const ay = c.y[i] - c.y0[i];
+  const bx = c.x[j] - c.x0[j];
+  const by = c.y[j] - c.y0[j];
+  const la = K.len(ax, ay);
+  const lb = K.len(bx, by);
+  if (la < K.WEAK_TRAVEL_MM || lb < K.WEAK_TRAVEL_MM) return false;
+  return K.len(ax - bx, ay - by) <= K.DRIFT_TOGETHER * (la > lb ? la : lb);
 }
 
 function burst(c: ContactTable, i: number, x: ScoreContext): boolean {

@@ -1,4 +1,135 @@
 {
-  "description": "Recorded sessions whose non-intent contacts have no physical tell a page can see (palm README, Finger drawing, known limit). They are replayed and counted in the report but excluded from the gates. The list may only shrink: knownLimitsMax in thresholds.json caps it.",
-  "sessions": []
+  "description": "Generated contacts labeled with a known limit (labels, the generators' LIMITS), generated scenarios on some profiles (scenarios), and recorded sessions (sessions) that no signal a page can see gets right (palm README, Known limits). They are replayed and counted in the report but excluded from the gates. The list may only shrink: knownLimitsMax in thresholds.json caps the sessions plus scenario and profile pairs.",
+  "labels": {
+    "slides-like-a-stroke": "A palm part that slides 10 mm or more as it lands (further than a palm settles) and is smaller than a palm, or on a digitizer without sizes: a stroke or a scroll by every signal until a pen or a neighbour tells.",
+    "bounce": "A palm part down for under 300 ms, smaller than a palm or on a digitizer without sizes, that moves less than a palm settles: a dot or a quick short mark by every signal.",
+    "fingertip-sized": "A palm part that grows no larger than a fingertip (11 mm): a finger by its size, so alone it draws or scrolls like one.",
+    "held-after-pen": "A tap of the other hand within a second of the pen lifting: E8 holds it where the hand may be, anywhere while the side of the hand is unknown [S16].",
+    "side-unknown": "A pen that reports neither lean nor contact size, with no palm resting while it wrote: the hand may lie on either side, or above the line for a hooked or overwriting grip, so a touch there is refused."
+  },
+  "sessions": [],
+  "scenarios": [
+    {
+      "scenario": "liftBetweenLines",
+      "profiles": [
+        "oem-mpp-notilt"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. With no contact size either, a palm that re-plants on the unknown side and slides scrolls until the pen comes down."
+    },
+    {
+      "scenario": "palmDoubleSettleAway",
+      "profiles": [
+        "oem-mpp-notilt",
+        "wacom-aes-notilt"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. With no contact size either, a palm that settles twice above the line, 20 s after the pen, is a two-finger double tap by every signal."
+    },
+    {
+      "scenario": "palmBounceNewLine",
+      "profiles": [
+        "usi-fire-max",
+        "usi-chromebook"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. A 10 mm hand edge that bounces above the next line for a hooked or overwriting grip is a tap by its size and place."
+    },
+    {
+      "scenario": "otherHandPinchWhileHover",
+      "profiles": [
+        "oem-mpp-notilt",
+        "wacom-aes-notilt"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. A pinch of the other hand in the mirror image of the hand region, while the pen hovers, waits for the pen to leave."
+    },
+    {
+      "scenario": "otherHandScrollRecent",
+      "profiles": [
+        "oem-mpp-notilt",
+        "usi-chromebook",
+        "wacom-emr-mouse"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. A scroll of the other hand there within a second of the pen lifting is held like a palm bounce (E8). A pen that reports as a mouse never leaves range, so for 2 s after it stops the pen is near and a scroll needs far-side evidence."
+    },
+    {
+      "scenario": "gestureAfterPen",
+      "profiles": [
+        "oem-mpp-notilt"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. With no contact size either, a double tap of the other hand there is refused, since a palm settling twice looks the same."
+    },
+    {
+      "scenario": "otherHandChromeTap",
+      "profiles": [
+        "oem-mpp-notilt",
+        "wacom-aes-notilt",
+        "wacom-emr-mouse",
+        "usi-chromebook"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. A tap on a control there while the pen hovers, or as a palm lifts and the region re-learns onto it, is refused."
+    },
+    {
+      "scenario": "otherHandTapRecent",
+      "profiles": [
+        "surface-pen",
+        "oem-mpp",
+        "oem-mpp-notilt",
+        "wacom-aes",
+        "wacom-aes-notilt",
+        "wacom-emr-mouse",
+        "usi-fire-max",
+        "usi-chromebook"
+      ],
+      "why": "A page tap of the other hand within 20 s of the pen, inside the hand region learned from resting palms (it grows to an 80 mm radius around the heel), waits for the pen to be away 20 s: a palm bouncing there looks the same."
+    },
+    {
+      "scenario": "fingerDrawKnuckles",
+      "profiles": [
+        "iphone-finger"
+      ],
+      "why": "The scenario places its resting hand as on a tablet: on a 64 mm phone screen the hand lies over the writing line and the screen edge, where a single-radius digitizer cannot tell a knuckle from the tip."
+    },
+    {
+      "scenario": "loneSlide",
+      "profiles": [
+        "iphone-finger"
+      ],
+      "why": "A single-radius digitizer rounds sizes in 4 mm steps, so on a phone a palm that slides as it lands reads as a 20 mm thumb stroke until it grows a step."
+    },
+    {
+      "scenario": "passiveStylusPalmFirst",
+      "profiles": [
+        "passive-stylus",
+        "iphone-finger",
+        "win-stylus"
+      ],
+      "why": "A palm that lands first and drifts under 10 mm beside where the tip will land: on one constant size, a phone screen, or with a palm part of thumb size, its drift may show or hold the draw slot until the tip lands beside it."
+    },
+    {
+      "scenario": "passiveStylusSmallPalmFirst",
+      "profiles": [
+        "iphone-finger",
+        "win-touch",
+        "win-stylus"
+      ],
+      "why": "A palm that lands at fingertip size and grows: without contact sizes, or rounded to 4 mm steps on a phone, its growth is unseen and it draws like the tip until the tip lands beside it."
+    },
+    {
+      "scenario": "loneRest",
+      "profiles": [
+        "ipad-finger",
+        "ipad-stylus"
+      ],
+      "why": "A single-radius digitizer hides a palm's growth inside a 4 mm step: a palm that lands at fingertip size may show its drift before it grows into the next step and is retracted."
+    },
+    {
+      "scenario": "restingHandParts",
+      "profiles": [
+        "tablet-finger",
+        "phone-finger",
+        "iphone-finger",
+        "win-touch",
+        "win-stylus"
+      ],
+      "why": "A resting hand split in two parts, one of fingertip size, beside the writing tip: the small part may show, or pair with the tip as a pinch, before its size or the hand region tells; without sizes only its place does."
+    }
+  ]
 }

@@ -40,6 +40,26 @@ const K = { ...thresholds };
 
 const mirror = (s: HandShape, left: boolean): HandShape => (left ? { ox: -s.ox, oy: s.oy, r: s.r } : s);
 
+/**
+ * A palm latched on this evidence alone rests only on where and when it landed: in the hand region (E5), beside the
+ * resting palm (E12), just after the pen (E8), with finger evidence besides.
+ */
+const SOFT =
+  E.HandRegion |
+  E.AfterPen |
+  E.NearPalm |
+  E.Fingertip |
+  E.Tap |
+  E.Swipe |
+  E.FarSide |
+  E.StylusTip |
+  E.OwnPalm |
+  E.Sensitivity;
+
+/** A swipe that has left the hand region, or runs on the far side of the tip. */
+const swipedAway = (why: number): boolean =>
+  (why & E.Swipe) !== 0 && ((why & E.FarSide) !== 0 || (why & E.HandRegion) === 0);
+
 export class Core {
   settings: PalmSettings = DEFAULT_PALM_SETTINGS;
   profile: DeviceProfile = UNKNOWN_PROFILE;
@@ -72,6 +92,8 @@ export class Core {
   private lineDir = 0;
   /** Votes for the side of the writing hand from contacts that rested while the pen was down: + right, - left. */
   sideVotes = 0;
+  /** Votes for the side of the drawing hand in finger drawing, from palms that lay on the side not yet assumed. */
+  touchVotes = 0;
   /** The earliest time a live contact reaches its next checkpoint. */
   dueAt = Infinity;
   /** Learned passive stylus tip: running sum and count of committed stroke sizes. */
@@ -196,17 +218,43 @@ export class Core {
     const c = this.c;
     const s = scoreContact(c, i, this.x);
     if (!Number.isNaN(c.tAction[i]) && this.x.t - c.tAction[i] >= K.CONFIRM_MS) c.confirmed[i] = 1;
-    if (c.cls[i] === Cls.Palm) return;
+    if (c.cls[i] === Cls.Palm) {
+      // Any palm evidence beyond where and when it landed settles the verdict for good.
+      if ((c.flags[i] & F.SoftLatch) === 0) return;
+      if ((c.why[i] & ~SOFT) !== 0) c.flags[i] &= ~F.SoftLatch;
+      else if (swipedAway(c.why[i]) && s <= K.FINGER_SCORE) this.reopen(i);
+      return;
+    }
     const judged = this.x.penCtx || this.x.drawMode || (c.why[i] & (E.OsPalm | E.PalmSize)) !== 0;
     if (!judged) return;
     const role = c.role[i];
-    const grip = (c.why[i] & E.Grip) !== 0 && (role === Role.Draw || role === Role.Shadow || role === Role.Pend);
-    if (s >= K.PALM_SCORE || grip) {
+    const inked = role === Role.Draw || role === Role.Shadow || role === Role.Pend;
+    const grip = (c.why[i] & E.Grip) !== 0 && inked;
+    // Ink whose contact grew like a palm and never moved on like a stroke: a palm that showed before its size told.
+    const grown = (c.why[i] & E.Growth) !== 0 && inked && !c.movedOn(i);
+    if (s >= K.PALM_SCORE || grip || grown) {
       if (c.confirmed[i] === 1 && (c.why[i] & HARD) === 0) return;
       this.latchPalm(i);
     } else {
       c.cls[i] = s <= K.FINGER_SCORE ? Cls.Finger : Cls.Unsure;
     }
+  }
+
+  /**
+   * A palm latched on soft evidence alone (where and when it landed) that then swipes out of the hand region or on the
+   * far side of the tip: the other hand's scroll landed where the hand might have been. It may scroll after all.
+   */
+  private reopen(i: number): void {
+    const c = this.c;
+    c.cls[i] = Cls.Unsure;
+    c.flags[i] &= ~F.SoftLatch;
+    if (c.flags[i] & F.HandHeld) {
+      c.flags[i] &= ~F.HandHeld;
+      this.handLive--;
+      if (this.x.t > this.handLift) this.handLift = this.x.t;
+    }
+    const managed = !this.x.drawMode && this.x.presence !== P.Down && (c.flags[i] & F.Chrome) === 0;
+    if (managed && c.role[i] === Role.Ignore && c.started[i] === 0) this.setRole(i, Role.Scroll, 0);
   }
 
   rescoreAll(): void {
@@ -245,6 +293,7 @@ export class Core {
     if (c.cls[i] === Cls.Palm) return;
     c.cls[i] = Cls.Palm;
     c.flags[i] |= F.Suppress;
+    if ((c.why[i] & ~SOFT) === 0 && this.x.penCtx) c.flags[i] |= F.SoftLatch;
     if (this.x.penCtx && (c.flags[i] & F.HandHeld) === 0) {
       c.flags[i] |= F.HandHeld;
       this.handLive++;
@@ -321,9 +370,13 @@ export class Core {
   showIfReady(i: number): void {
     const c = this.c;
     if ((c.flags[i] & F.Shown) !== 0 || c.disp[i] < K.SHOW_MM) return;
+    // A contact that grows as it moves is a palm settling, however far it slides: its size tells before it shows.
+    const grew = c.majorMax[i] - c.major0[i];
+    if ((c.why[i] & E.Growth) !== 0 || (grew >= K.SETTLE_GROW_MM && this.x.t - c.t0[i] < K.SETTLED_AT_MS)) return;
     const tip =
       c.sizeMode === SizeMode.Real &&
       (c.flags[i] & F.Sized) !== 0 &&
+      this.x.t - c.t0[i] >= K.SHOW_TIP_MS &&
       c.majorMax[i] <= K.FINGERTIP_MAJOR_MM &&
       c.majorMax[i] - c.major0[i] < K.SHOW_GROW_MM;
     if (!tip && !this.movesOn(i)) return;
@@ -384,14 +437,13 @@ export class Core {
       return 0;
     }
     // A dot (a contact that never moved) is the most ambiguous ink: a palm that bounces before the pen arrives looks
-    // the same. While a pen is in use it waits the late-retract window unseen, so a pen that arrives then drops it.
-    // Otherwise it shows at its lift when the digitizer reports real sizes, which tell a palm; without them it shows
-    // when it commits.
+    // the same. With the pen used in the last 20 s, or without real sizes to tell a palm, it stays unseen until it
+    // commits; a pen that arrives within a second after that still takes it back (late retract). Every stroke commits
+    // `graceMs` after its lift.
     const dot = c.disp[i] < K.WEAK_TRAVEL_MM;
-    const penLately = pens.sessionPen || t - pens.lastEvidence < K.RECENT_MS;
-    const hold = dot && penLately ? Math.max(this.settings.graceMs, K.LATE_RETRACT_MS) : this.settings.graceMs;
+    const penLately = t - pens.lastEvidence < K.RECENT_MS;
     const hidden = dot && (penLately || c.sizeMode !== SizeMode.Real);
-    if (this.holds.add(c.id[i], c.t0[i], t + hold, c.x0[i], c.y0[i]) >= 0)
+    if (this.holds.add(c.id[i], c.t0[i], t + this.settings.graceMs, c.x0[i], c.y0[i]) >= 0)
       return hidden ? End.Held | End.Hidden : End.Held;
     this.fx.push(c.id[i], Role.Ignore, Fx.Commit, c.why[i]);
     return 0;
@@ -429,12 +481,29 @@ export class Core {
     const mx = c.sumDx[i] / c.sumN[i];
     const my = c.sumDy[i] / c.sumN[i];
     if ((c.flags[i] & F.RelValid) === 0) {
-      this.touchHand.learn(mx, my);
+      this.learnTouchHand(mx, my);
       return;
     }
     // A palm the size or the system confirmed tells the side of the hand at once; any other votes once.
     if ((c.flags[i] & F.Voted) === 0) this.voteSide(mx, my, hard ? K.SIDE_VOTES : 1);
     this.hand.learn(mx, my);
+  }
+
+  /**
+   * Learns the drawing hand from a palm's mean offset from the drawing contact. A palm on the side not assumed votes,
+   * and two votes flip the region, unless the setting pins it.
+   */
+  private learnTouchHand(mx: number, my: number): void {
+    const h = this.touchHand;
+    if (Math.abs(mx) > 10 && Math.sign(mx) !== Math.sign(h.ox) && !h.pinned) {
+      this.touchVotes = K.clamp(this.touchVotes + Math.sign(mx), -K.SIDE_VOTES, K.SIDE_VOTES);
+      if (Math.abs(this.touchVotes) >= K.SIDE_VOTES) {
+        h.flip();
+        this.touchVotes = 0;
+      }
+      return;
+    }
+    h.learn(mx, my);
   }
 
   /** Releases a contact's slot and its bookkeeping. */
@@ -453,17 +522,22 @@ export class Core {
     c.free(i);
   }
 
-  /** Seeds the hand regions from learned state, the setting, and the system handedness. */
+  /**
+   * Seeds the hand regions from learned state, the setting, and the system handedness. The system's handedness is only
+   * a prior for the side: Windows always reports one, right unless changed, so it never counts as knowing the side.
+   * Only the setting or learned state does; until a lean, side votes, or learning confirm it, both sides count.
+   */
   seedHands(): void {
     const set = this.settings.handedness;
     const left = set === 'left' || (set === 'auto' && this.profile.systemHandedness === 'left');
     const explicit = set !== 'auto';
     const saved = this.learnedIn ? (left ? this.learnedIn.hand.left : this.learnedIn.hand.right) : null;
     this.hand.set(saved ?? mirror(K.PEN_HAND, left), explicit);
-    this.hand.seeded = saved !== null || explicit || this.profile.systemHandedness !== null;
+    this.hand.seeded = saved !== null || explicit;
     const touch = this.learnedIn?.touchHand ?? mirror(K.TOUCH_HAND, left);
     this.touchHand.set(touch, explicit);
-    this.touchHand.either = !explicit && !this.learnedIn?.touchHand && this.profile.systemHandedness === null;
+    this.touchHand.either = !explicit && !this.learnedIn?.touchHand;
+    this.sideVotes = this.touchVotes = 0;
   }
 
   learned(): LearnedState {

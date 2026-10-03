@@ -1,7 +1,10 @@
 // The ink input pipeline: one wiring module that the page view and the replayer share, so the accuracy the replayer
 // measures is the accuracy of the shipped wiring. It owns the palm filter, the multi-tap detector, `touchNav`, and
 // the provisional touch stroke builders, and tells the host what to draw, commit, retract, scroll, and allow.
-// A pen sample goes straight to the host before anything else runs: nothing here gates or delays a pen.
+//
+// A pen sample reaches the host in the call that delivers it: nothing here gates or delays a pen. A pen down first lets
+// the filter end a touch scroll, so the camera it reverts is in place before the stroke's first point is mapped.
+//
 // A touch stroke stays hidden until the filter shows it (`Promote`) or it lifts, so a hand edge that lands first and
 // settles never flashes ink; a real stroke then shows with its whole path. A dot shows at its lift, unless the filter
 // keeps it hidden until it commits (a pen about, or no contact sizes to tell a palm bounce).
@@ -77,10 +80,13 @@ export interface InkPipeline {
 /** Multi-tap waits this long after pen evidence. */
 const TAP_AFTER_PEN_MS = 1000;
 const LONG_PRESS_MS = 500;
-/** A gesture delivered this soon before a pen arrives in the tap's hand region is taken back, like ink [S16]. */
+/**
+ * A gesture delivered this soon before a pen arrives in the tap's hand region is taken back, like ink [S16], when one
+ * of its taps was itself a likely palm. Undo, then rewrite where the taps were, is the normal flow.
+ */
 const GESTURE_RETRACT_MS = 1000;
-/** Fingers of a tap sit at least this far apart on a device that has seen a pen but reports no contact size. */
-const TAP_SPACING_NO_SIZE_MM = 25;
+/** Lifts of tap fingers remembered for the gesture they make. */
+const TAP_LIFTS = 8;
 /** One-finger scroll starts from the point where it crossed slop, so the wait for it to settle loses no motion. */
 const SLOP_MM = 1.5;
 
@@ -117,9 +123,14 @@ class Pipeline implements InkPipeline {
   /** A Wacom pen with Windows Ink off arrives as a mouse; it still writes, so it is still a pen. */
   private readonly penAsMouse: boolean;
   /** The last gesture delivered, where its taps landed (mm), and when, so a pen that arrives can take it back. */
-  private lastGesture: { kind: 'undo' | 'redo'; t: number; x: number; y: number } | null = null;
+  private lastGesture: { kind: 'undo' | 'redo'; t: number; x: number; y: number; palm: boolean } | null = null;
   private tapX = 0;
   private tapY = 0;
+  /** Contacts fed to the multi-tap detector, and when the last few of them lifted and whether each was a palm. */
+  private readonly tapIds = new Set<number>();
+  private readonly liftT = new Float64Array(TAP_LIFTS).fill(-Infinity);
+  private readonly liftPalm = new Uint8Array(TAP_LIFTS);
+  private liftNext = 0;
 
   constructor(
     private readonly host: PipelineHost,
@@ -128,7 +139,7 @@ class Pipeline implements InkPipeline {
     learned?: LearnedState,
   ) {
     this.filter = createPalmFilter(settings, profile, learned);
-    this.pxPerMm = resolvePxPerMm(profile.pxPerMm, learned?.pxPerMmCalibrated);
+    this.pxPerMm = resolvePxPerMm(profile.pxPerMm, learned?.pxPerMmCalibrated, profile.platform);
     this.penAsMouse = profile.id === 'windows-pen-as-mouse';
     this.syncPolicy();
   }
@@ -152,7 +163,7 @@ class Pipeline implements InkPipeline {
     const gesture = this.taps.poll(t);
     if (gesture) {
       this.host.gesture(gesture, false);
-      this.lastGesture = { kind: gesture, t, x: this.tapX, y: this.tapY };
+      this.lastGesture = { kind: gesture, t, x: this.tapX, y: this.tapY, palm: this.palmTaps(t) };
     }
     for (const [id, e] of this.live) {
       if (e.pressAsked || t - e.t0 < LONG_PRESS_MS) continue;
@@ -180,7 +191,11 @@ class Pipeline implements InkPipeline {
 
   private pen(r: PointerRecord): void {
     const contact = r.buttons !== 0 || r.type === 'down' || r.type === 'up';
-    if (contact && r.type !== 'cancel' && r.type !== 'leave') this.host.penSample(r);
+    const sample = contact && r.type !== 'cancel' && r.type !== 'leave';
+    // A down that ends a touch scroll reverts the camera first (the filter call is constant time), so the stroke maps
+    // its first point with the camera it keeps. Every other sample goes to the host before anything else runs.
+    const down = r.type === 'down';
+    if (sample && !down) this.host.penSample(r);
     const signal = r.type === 'move' ? (r.buttons !== 0 ? 'move' : 'hover') : r.type === 'down' ? 'down' : r.type;
     this.filter.pen(signal, r.id, r.t, r.x, r.y, r.tiltX, r.tiltY);
     if (signal !== 'leave') {
@@ -189,13 +204,22 @@ class Pipeline implements InkPipeline {
       this.takeBackGesture(r.t);
     }
     this.drain(r.t);
+    if (sample && down) this.host.penSample(r);
   }
 
-  /** A pen arrived just after a gesture, in the hand region where its taps landed: they were a palm. */
+  /** Whether a tap finger that lifted in the last second was a likely palm. */
+  private palmTaps(t: number): boolean {
+    for (let k = 0; k < TAP_LIFTS; k++) {
+      if (t - this.liftT[k] <= GESTURE_RETRACT_MS && this.liftPalm[k] === 1) return true;
+    }
+    return false;
+  }
+
+  /** A pen arrived just after a gesture, in the hand region where its taps landed, and a tap scored as a palm. */
   private takeBackGesture(t: number): void {
     const g = this.lastGesture;
     if (!g) return;
-    if (t - g.t > GESTURE_RETRACT_MS) {
+    if (t - g.t > GESTURE_RETRACT_MS || !g.palm) {
       this.lastGesture = null;
       return;
     }
@@ -229,15 +253,18 @@ class Pipeline implements InkPipeline {
     this.live.set(r.id, e);
     if (inked(role)) this.beginInk(r, e);
     this.drain(r.t);
+    // Multi-tap hears every landing once the pen has been still for a second and is not near: undo works 1 s after
+    // the pen is put down, as on the checklist. A palm verdict voids its group.
     const presence = f.presence(r.t);
-    const quiet = (presence === 'away' || presence === 'absent') && r.t - this.lastPen >= TAP_AFTER_PEN_MS;
+    const quiet = presence !== 'down' && presence !== 'near' && r.t - this.lastPen >= TAP_AFTER_PEN_MS;
     if (!quiet || r.surface !== 'page' || e.suppressed) return;
-    // With a pen about and no contact size, a palm that settles twice looks like a two-finger double tap: its parts
-    // sit close together, where the hand rests.
+    // With no contact size on a device that has seen a pen, a palm that settles twice looks like a two-finger double
+    // tap, and only where it lands tells. In the writing hand's region of the last pen position or of the line being
+    // written, on either side while the side is unknown, it is no tap. With sizes, its size voids the group.
     const guarded = f.penSeen() && !f.sizesReal();
     if (guarded && f.inHand(r.x, r.y)) return;
     const k = 1 / this.pxPerMm;
-    this.taps.setMinSpacing(guarded ? TAP_SPACING_NO_SIZE_MM : 0);
+    this.tapIds.add(r.id);
     this.taps.down(r.id, r.x * k, r.y * k, r.w > 1 ? r.w * k : 0, r.h > 1 ? r.h * k : 0, r.t);
     this.tapX = r.x * k;
     this.tapY = r.y * k;
@@ -270,6 +297,11 @@ class Pipeline implements InkPipeline {
     const ink = e && inked(e.role) ? e.ink : null;
     if (ink && !canceled) this.push(ink, r);
     const bits = this.filter.touchEnd(r.id, r.t, canceled);
+    if (this.tapIds.delete(r.id)) {
+      this.liftT[this.liftNext] = r.t;
+      this.liftPalm[this.liftNext] = this.filter.palmTap(r.id) ? 1 : 0;
+      this.liftNext = (this.liftNext + 1) % TAP_LIFTS;
+    }
     if (ink && (bits & End.Held) !== 0) this.hold(r.id, ink, (bits & End.Hidden) !== 0);
     this.drain(r.t);
     if (this.nav.owns(r.id)) {

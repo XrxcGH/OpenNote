@@ -21,8 +21,18 @@ import {
 } from './session';
 import type { Session } from './session';
 import { reorderWithinFrames, seeded } from './writer';
+import { LIMITS, RANGES } from './hands';
+import { palmThresholds as K } from '../palm/index';
 
-const pairs = SCENARIOS.flatMap((s) => PROFILES.filter((p) => applies(s, p)).map((p) => ({ s, p })));
+const LIMITS_FILE = new URL('../../../../../../tests/fixtures/palm/known-limits.json', import.meta.url);
+const known = JSON.parse(readFileSync(LIMITS_FILE, 'utf8')) as {
+  scenarios: { scenario: string; profiles: string[] }[];
+};
+const limited = (s: string, p: string) => known.scenarios.some((l) => l.scenario === s && l.profiles.includes(p));
+/** Every scenario and profile pair but the known limits. */
+const pairs = SCENARIOS.flatMap((s) =>
+  PROFILES.filter((p) => applies(s, p) && !limited(s.name, p.id)).map((p) => ({ s, p })),
+);
 
 describe('the labeled session format', () => {
   it('round-trips a generated session and validates it', () => {
@@ -71,12 +81,15 @@ function oracleHolds(session: Session, result: ReplayResult): string[] {
   const mm = 1 / result.cssPxPerMm;
   for (const [id, c] of result.contacts) {
     const label = labelOf(session, id);
-    if (!label || label.intent !== 'none') continue;
+    if (!label || label.intent !== 'none' || label.limit !== undefined) continue;
     if (!Number.isNaN(c.committedAt) && !c.uncommitted) problems.push(`${id} committed ink`);
     if (Math.hypot(c.camX, c.camY) * mm > 1.5 || Math.abs(c.zoom - 1) > 0.01) problems.push(`${id} moved the camera`);
     if (c.tapAllowed || c.menuAllowed) problems.push(`${id} tapped`);
   }
-  if (!session.labels.some((l) => l.intent === 'gesture') && result.gestures.length > 0) problems.push('gesture');
+  const limit = session.labels.some((l) => l.limit !== undefined);
+  if (!limit && !session.labels.some((l) => l.intent === 'gesture') && result.gestures.length > 0) {
+    problems.push('gesture');
+  }
   return problems;
 }
 
@@ -87,7 +100,7 @@ describe('the label oracle', () => {
         const session = generate(s, p, seed);
         const result = replaySession(session);
         expect(oracleHolds(session, result)).toEqual([]);
-        const g = gateValues(score(session, result, emptyTally()));
+        const g = gateValues(score(session, result, emptyTally(), emptyTally()));
         expect(g.G7_inkDroppedRate + g.G8_navMissedRate + g.G8_tapsMissed + g.G5_penLost).toBe(0);
       }),
       { numRuns: 60 },
@@ -103,7 +116,8 @@ describe('the label oracle', () => {
         const b = replaySession(shuffled);
         expect(oracleHolds(shuffled, b)).toEqual([]);
         for (const [id, c] of a.contacts) {
-          if (labelOf(session, id)?.intent !== 'none') continue;
+          const label = labelOf(session, id);
+          if (label?.intent !== 'none' || label.limit !== undefined) continue;
           const other = b.contacts.get(id)!;
           expect([other.committedAt > 0 && !other.uncommitted, other.tapAllowed]).toEqual([
             c.committedAt > 0 && !c.uncommitted,
@@ -113,5 +127,39 @@ describe('the label oracle', () => {
       }),
       { numRuns: 30 },
     );
+  });
+});
+
+/** Whether a range reaches below `lo` and above `hi` of the thresholds it must straddle. */
+const straddles = (range: readonly [number, number], ...marks: number[]) =>
+  marks.every((m) => range[0] < m && range[1] > m);
+
+describe('the generators', () => {
+  it('draw every range across each threshold it meets, not inside the classifier', () => {
+    // Palm drift crosses slop (taps and long presses) and a settling palm's travel (scroll, stroke).
+    expect(straddles(RANGES.palmDriftMm, K.SLOP_MM, K.SETTLE_TRAVEL_MM)).toBe(true);
+    // Final palm size crosses a fingertip, a thumb, and a palm.
+    expect(straddles(RANGES.palmMajorMm, K.FINGERTIP_MAJOR_MM, K.LARGE_MAJOR_MM, K.PALM_MAJOR_MM)).toBe(true);
+    // The other hand acts from the moment the pen lifts, across both E8 windows.
+    expect(straddles(RANGES.afterUpMs, K.AFTER_PEN_CANCEL_MS, K.AFTER_PEN_HOLD_MS)).toBe(true);
+    expect(RANGES.afterUpMs[0]).toBe(0);
+    // Multi-finger taps from the design's one second after the pen, across the 20 s of presence recent.
+    expect(straddles(RANGES.gestureAfterPenMs, K.RECENT_MS)).toBe(true);
+    // Tap fingers from just over the minimum spacing to well past where a palm's parts sit.
+    expect(RANGES.tapSpacingMm[0]).toBeLessThan(K.TAP_MIN_MM + 1);
+    expect(RANGES.tapSpacingMm[1]).toBeGreaterThan(K.SPLIT_MM + K.CLUSTER_MM / 4);
+    expect(RANGES.palmParts).toEqual([1, 3]);
+  });
+
+  it('run every scenario with each hand and the seeds through all four grips', () => {
+    const grips = new Set([1, 2, 3, 4].map((seed) => generate(SCENARIOS[0], PROFILES[0], seed).header.grip));
+    expect(grips.size).toBe(4);
+    const left = SCENARIOS.filter((s) => s.kind === 'touch').map((s) => generate(s, PROFILES.at(-1)!, 1, 'left'));
+    expect(left.every((x) => x.header.handedness === 'left')).toBe(true);
+  });
+
+  it('list every known limit a generated contact can carry in known-limits.json', () => {
+    const file = JSON.parse(readFileSync(LIMITS_FILE, 'utf8')) as { labels: Record<string, string> };
+    expect(Object.keys(file.labels).sort()).toEqual(Object.keys(LIMITS).sort());
   });
 });

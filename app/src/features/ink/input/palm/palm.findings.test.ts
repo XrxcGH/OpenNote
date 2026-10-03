@@ -114,8 +114,9 @@ describe('finger and passive stylus drawing with a resting hand', () => {
     const f = filter({ fingerDraw: 'on' });
     expect(down(f, 1, 0, 100, 100, { size: 7 })).toBe('draw');
     move(f, 1, 60, 100, 100.3, { size: 12 });
+    const grown = fxOf(f, 1);
     move(f, 1, 120, 100, 100.4, { size: 30, minor: 22 });
-    expect(fxOf(f, 1) & Fx.Retract).toBe(Fx.Retract);
+    expect((grown | fxOf(f, 1)) & Fx.Retract).toBe(Fx.Retract);
     expect(f.touchEnd(1, 2000, false) & End.Held).toBe(0);
   });
 

@@ -8,6 +8,8 @@
 export const PALM_MAJOR_MM = 20;
 /** E1 [V]. */
 export const PALM_MINOR_MM = 15;
+/** A digitizer that reports one radius rounds it up by up to this step (UIKit), so E1 starts one step higher there. */
+export const RADIUS_STEP_MM = 4;
 /** E2: a thumb or a flat finger, never rejected on size alone. */
 export const LARGE_MAJOR_MM = 14;
 /** E3 [V]: a fingertip or a stylus tip. */
@@ -55,6 +57,11 @@ export const SIDE_REACH_MM = 80;
 export const SIDE_LONG_MS = 600;
 /** Pen anchors besides the tip: the start of the line being written, and that start one line down. */
 export const LINE_MM = 10;
+/**
+ * A contact that has traveled this far is no palm re-planting where the next line starts, which slides up to about
+ * 20 mm: the line anchors no longer count it as the hand. The pen tip's own region still does.
+ */
+export const LINE_ANCHOR_TRAVEL_MM = 25;
 /** A pen down this far back from the last lift, along the line, starts a new line. */
 export const LINE_JUMP_MM = 30;
 /** A contact held this long while the pen is down teaches the hand region. */
@@ -93,6 +100,8 @@ export const RECENT_STRONG_MS = 5000;
 export const CLUSTER_MM = 70;
 /** E13 [V]: adjacent fingertips sit 15 mm or more apart, so two closer contacts are one split blob. */
 export const SPLIT_MM = 12;
+/** E13 also holds for a contact that drifts with a latched palm beside it: their moves differ by under this share. */
+export const DRIFT_TOGETHER = 0.4;
 /** E14 [V]: this many landings within the time and distance below. */
 export const BURST_COUNT = 3;
 export const BURST_MS = 300;
@@ -133,7 +142,9 @@ export const WEAK_SCORE = 2;
  * real sizes, and otherwise once it moves like a stroke rather than like a palm that drifts while it settles. Else it
  * shows at its lift.
  */
-export const SHOW_MM = 0.5;
+export const SHOW_MM = 1;
+/** A fingertip shows that early once it is this old, so a palm landing small has begun to grow. */
+export const SHOW_TIP_MS = 50;
 /** A fingertip whose size grew less than this since it landed has not grown like a settling palm. */
 export const SHOW_GROW_MM = 1;
 /**
@@ -176,13 +187,10 @@ export const PINCH_BONUS = -3;
 /** A pan or scroll that began this recently is reverted when the pen goes down. */
 export const NAV_REVERT_MS = 500;
 /**
- * On a device that has seen a pen, one-finger scroll waits until its contact is this old with a steady size, or has
- * traveled this far, so a palm that settles never moves the page. The wait loses no motion.
+ * On a device that has seen a pen, a contact that grew this much since it landed waits until it has settled
+ * (`SETTLED_AT_MS`) to scroll or pan, so a palm's size tells first.
  */
-export const SCROLL_SETTLE_MS = 100;
-export const SCROLL_SETTLE_MM = 4.5;
-/** A size that has not changed for this long is steady. */
-export const SIZE_STEADY_MS = 50;
+export const SETTLE_GROW_MM = 2;
 
 // Holds and commits.
 /** Touch ink committed this long before a pen arrives, inside its hand region, is taken back [S16]. */
@@ -211,6 +219,8 @@ export const PRUNE_MS = 10_000;
 // Units and capacity.
 /** [V] CSS px per mm when nothing better is known: iPad, Surface at 150%, and Android at 160 dp/in give 5.2 to 6.3. */
 export const DEFAULT_PX_PER_MM = 5.2;
+/** Android's 160 dp per inch is 6.3 CSS px per mm. */
+export const ANDROID_PX_PER_MM = 6.3;
 export const MIN_PX_PER_MM = 2;
 export const MAX_PX_PER_MM = 20;
 /** Size mode is decided after this many contacts report one identical size. */

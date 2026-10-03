@@ -1,12 +1,77 @@
 // A seeded model of a writing hand and of handwriting. The pen plan writes words along lines, hovering between words
 // and leaving range between lines. The hand places palm heel, pinky, and knuckle contacts relative to the pen tip by
 // handedness and grip, with physical sizes, growth after landing, drift of the centroid while a palm settles, and
-// splitting into several contacts. Its parameters straddle the classifier's thresholds rather than sit on one side of
-// them: palms land from 8 to 30 mm and drift 2 to 8 mm, and the other hand lands anywhere outside the writing hand.
+// splitting into several contacts. Its ranges (`RANGES`) straddle every classifier threshold they meet rather than sit
+// on one side of them, and a test holds them to that. Palms grow to 10 to 60 mm and drift 0 to 20 mm. The other hand
+// lands anywhere outside the writing hand from the moment the pen lifts.
 
+import { palmThresholds } from '../palm/index';
 import type { Grip } from './session';
+import type { SimProfile } from './profiles';
 import type { Rand, SessionWriter, Vec2 } from './writer';
 import { between } from './writer';
+
+/**
+ * The generators' ranges, each across the thresholds it meets, as a test checks. Drift crosses slop and a settling
+ * palm's travel. Size crosses a fingertip, a thumb, and a palm. The time after the pen lifts crosses both E8 windows.
+ * Tap spacing reaches the spacing of a palm's parts.
+ */
+export const RANGES = {
+  palmDriftMm: [0, 20],
+  palmMajorMm: [10, 60],
+  /** Other-hand scroll, tap, and pinch, after the pen lifts. */
+  afterUpMs: [0, 5000],
+  /** Multi-finger taps, after the pen's last event: the design waits a second. */
+  gestureAfterPenMs: [1000, 30_000],
+  tapSpacingMm: [15.5, 40],
+  palmParts: [1, 3],
+} as const;
+
+/**
+ * The known limits a generated contact can fall under (palm README, "Known limits"), each the design's own bound of
+ * what a page can see. A contact so labeled has no tell: its faults, and intents lost beside it, are reported apart
+ * from the gates. known-limits.json lists the same reasons.
+ */
+export const LIMITS = {
+  'slides-like-a-stroke':
+    'A palm part that slides 10 mm or more as it lands (further than a palm settles) and is smaller than a palm, ' +
+    'or on a digitizer without sizes: a stroke or a scroll by every signal until a pen or a neighbour tells.',
+  bounce:
+    'A palm part down for under 300 ms, smaller than a palm or on a digitizer without sizes, that moves less than ' +
+    'a palm settles: a dot or a quick short mark by every signal.',
+  'fingertip-sized':
+    'A palm part that grows no larger than a fingertip (11 mm): a finger by its size, so alone it draws or scrolls ' +
+    'like one.',
+  'held-after-pen':
+    'A tap of the other hand within a second of the pen lifting: E8 holds it where the hand may be, anywhere while ' +
+    'the side of the hand is unknown [S16].',
+  'side-unknown':
+    'A pen that reports neither lean nor contact size, with no palm resting while it wrote: the hand may lie on ' +
+    'either side, or above the line for a hooked or overwriting grip, so a touch there is refused.',
+} as const;
+export type Limit = keyof typeof LIMITS;
+
+const { FINGERTIP_MAJOR_MM, PALM_MAJOR_MM, RADIUS_STEP_MM, SETTLE_TRAVEL_MM } = palmThresholds;
+/** The longest touch that is a bounce. */
+const BOUNCE_MS = 300;
+
+const sizeless = (p: SimProfile) => p.size === 'none' || p.size === 'constant';
+
+/**
+ * The limit a palm part falls under, if any: it slides like a stroke, or bounces like a dot, and is smaller than a palm
+ * or on a digitizer that cannot tell.
+ */
+export function palmLimit(p: SimProfile, s: PalmShape, scale: number, ms: number): Limit | undefined {
+  const actual = sizeAt(s, 0, ms, scale)[0];
+  // A digitizer that reports one radius rounds it in steps, and tells a palm one step higher.
+  const quantized = p.size === 'quantized';
+  const size = quantized ? Math.round(actual / RADIUS_STEP_MM) * RADIUS_STEP_MM : actual;
+  const palmAt = quantized ? PALM_MAJOR_MM + RADIUS_STEP_MM : PALM_MAJOR_MM;
+  if (!sizeless(p) && size >= palmAt) return undefined;
+  if (s.drift >= SETTLE_TRAVEL_MM) return 'slides-like-a-stroke';
+  if (ms < BOUNCE_MS) return 'bounce';
+  return !sizeless(p) && size <= FINGERTIP_MAJOR_MM ? 'fingertip-sized' : undefined;
+}
 
 export interface PenPlan {
   readonly strokes: readonly (readonly [number, number])[];
@@ -125,13 +190,15 @@ export interface PalmShape {
   readonly drift: number;
 }
 
-export function palmShape(r: Rand, grows = false): PalmShape {
+export function palmShape(r: Rand, grows = false, drift: readonly [number, number] = RANGES.palmDriftMm): PalmShape {
+  const major = between(r, ...RANGES.palmMajorMm);
+  const initial = Math.min(major, grows ? between(r, 7, 11) : between(r, 8, 30));
   return {
-    major: between(r, 35, 60),
-    minor: between(r, 25, 40),
-    initial: grows ? between(r, 7, 11) : between(r, 8, 30),
+    major,
+    minor: major * between(r, 0.6, 0.8),
+    initial,
     growMs: between(r, 60, 250),
-    drift: between(r, 2, 8),
+    drift: between(r, ...drift),
   };
 }
 
@@ -171,6 +238,8 @@ export interface PalmOptions {
   readonly surface?: 'page' | 'chrome';
   /** Spread of the parts' landing times, ms. */
   readonly spread?: number;
+  /** How far the centroid drifts while it settles, mm. */
+  readonly drift?: readonly [number, number];
 }
 
 /**
@@ -178,11 +247,12 @@ export interface PalmOptions {
  * Returns the contact ids.
  */
 export function palm(w: SessionWriter, r: Rand, o: PalmOptions): number[] {
-  const shape = palmShape(r, o.grows);
+  const shape = palmShape(r, o.grows, o.drift);
   const dir = awayFrom(r, o.offset);
   const ids: number[] = [];
   const mirror = o.offset[0] < 0 ? -1 : 1;
-  const parts = Math.max(1, Math.min(3, o.parts ?? 1));
+  const [few, many] = RANGES.palmParts;
+  const parts = Math.max(few, Math.min(many, o.parts ?? few + Math.floor(r() * (many - few + 1))));
   for (let k = 0; k < parts; k++) {
     const part = PALM_PARTS[k];
     const t0 = o.t0 + (k === 0 ? 0 : between(r, 0, o.spread ?? 150));
@@ -198,6 +268,7 @@ export function palm(w: SessionWriter, r: Rand, o: PalmOptions): number[] {
       size: (t) => sizeAt(shape, t0, t, part.scale),
       cls: k === 2 ? 'wrist' : 'palm',
       intent: 'none',
+      limit: palmLimit(w.profile, shape, part.scale, o.t1 - t0),
       surface: o.surface,
       cancelAt: w.osCancel(t0),
       stepMs: 14,

@@ -164,6 +164,8 @@ export interface Label {
   readonly to: number;
   readonly cls: LabelClass;
   readonly intent: Intent;
+  /** A known limit (`LIMITS`): no signal a page can see tells this contact apart. */
+  readonly limit?: string;
 }
 
 export interface Expect {

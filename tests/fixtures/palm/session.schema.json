@@ -121,6 +121,10 @@
       "properties": {
         "type": { "const": "label" },
         "id": { "type": "integer" },
+        "limit": {
+          "type": "string",
+          "description": "A known limit (known-limits.json, labels): the contact has no tell a page can see. Its faults, and lost intents beside it, are reported apart from the gates."
+        },
         "from": { "type": "number" },
         "to": { "type": "number" },
         "cls": {

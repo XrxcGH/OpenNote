@@ -33,8 +33,9 @@ export interface Tally {
   /** G4: taps or menus from non-intent contacts, and gestures nobody meant. */
   strayTaps: number;
   strayGestures: number;
-  /** G5: pen samples not passed straight to the tool. */
+  /** G5: pen samples not passed straight to the tool; pen strokes during which the camera moved. */
   penLost: number;
+  penCameraMoved: number;
   /** G7: intended touch ink dropped or truncated. */
   inkDropped: number;
   inkTruncated: number;
@@ -47,6 +48,12 @@ export interface Tally {
   /** G10: commit delay of intended touch ink, ms, with presence absent and otherwise. */
   commitDelayAbsent: number;
   commitDelay: number;
+  /**
+   * G12: from an intended stroke's first 1 mm of motion to its first visible ink, ms, with presence absent on a
+   * digitizer that reports real contact sizes. Without sizes, or with one radius rounded in 4 mm steps, a stroke shows
+   * once it moves like one (a known limit).
+   */
+  firstInkDelays: number[];
 }
 
 export const emptyTally = (): Tally => ({
@@ -69,6 +76,7 @@ export const emptyTally = (): Tally => ({
   strayTaps: 0,
   strayGestures: 0,
   penLost: 0,
+  penCameraMoved: 0,
   inkDropped: 0,
   inkTruncated: 0,
   navMissed: 0,
@@ -77,19 +85,30 @@ export const emptyTally = (): Tally => ({
   navDelays: [],
   commitDelayAbsent: 0,
   commitDelay: 0,
+  firstInkDelays: [],
 });
 
 const SLOP_MM = 1.5;
+/** A stroke has begun to move once it is this far from where it landed, past sensor jitter. */
+const MOVE_MM = 1;
 
-/** When each touch contact first moved past slop, and how many samples it had, coalesced ones included. */
-function contactTracks(s: Session): Map<number, { slopAt: number; samples: number }> {
-  const out = new Map<number, { slopAt: number; samples: number; x0: number; y0: number }>();
+interface Track {
+  slopAt: number;
+  moveAt: number;
+  samples: number;
+  x0: number;
+  y0: number;
+}
+
+/** When each touch contact first moved 1 mm and past slop, and how many samples it had, coalesced ones included. */
+function contactTracks(s: Session): Map<number, Track> {
+  const out = new Map<number, Track>();
   const k = 1 / s.header.screen.cssPxPerMm;
   for (const e of s.events) {
     if (e.pt !== 'touch' || e.id === undefined) continue;
     let c = out.get(e.id);
     if (!c) {
-      c = { slopAt: Number.NaN, samples: 0, x0: e.x ?? 0, y0: e.y ?? 0 };
+      c = { slopAt: Number.NaN, moveAt: Number.NaN, samples: 0, x0: e.x ?? 0, y0: e.y ?? 0 };
       out.set(e.id, c);
     }
     if (e.type !== 'pointerdown' && e.type !== 'pointermove') continue;
@@ -101,28 +120,45 @@ function contactTracks(s: Session): Map<number, { slopAt: number; samples: numbe
       c.samples++;
       const d = Math.hypot((x - c.x0) * k, (y - c.y0) * k);
       if (Number.isNaN(c.slopAt) && d >= SLOP_MM && e.type === 'pointermove') c.slopAt = t;
+      if (Number.isNaN(c.moveAt) && d >= MOVE_MM && e.type === 'pointermove') c.moveAt = t;
     }
   }
   return out;
 }
 
-/** Scores one replayed session into a tally. */
-export function score(session: Session, result: ReplayResult, into: Tally = emptyTally()): Tally {
-  const t = into;
+/** A known-limit contact (labeled `limit`) whose time overlaps [from - 1 s, to]: the intent may be lost to it. */
+function besideLimit(session: Session, from: number, to: number): boolean {
+  return session.labels.some((l) => l.limit !== undefined && l.from <= to && l.to >= from - 1000);
+}
+
+/**
+ * Scores one replayed session into a tally. With `limited`, the faults of contacts labeled with a known limit, and the
+ * intents lost beside one, go there instead, for the report.
+ */
+export function score(session: Session, result: ReplayResult, into: Tally = emptyTally(), limited?: Tally): Tally {
+  const main = into;
+  let t = main;
   const mm = 1 / result.cssPxPerMm;
   const penSession =
     session.header.settings.fingerDraw !== 'on' && session.labels.some((l) => l.cls === 'pen' && l.id < 100);
-  const absent = PROFILES.find((p) => p.id === session.header.profile)?.device.penDigitizer === false;
+  const sim = PROFILES.find((p) => p.id === session.header.profile);
+  const absent = sim?.device.penDigitizer === false;
+  // G12 holds where sizes tell a fingertip at once: real sizes, not one radius rounded in 4 mm steps.
+  const sized = sim?.device.touchSize === true && sim.size === 'real';
   const tracks = contactTracks(session);
   t.sessions++;
   t.penStrokes += session.labels.filter((l) => l.cls === 'pen' && l.id < 100).length;
   t.penLost += Math.max(0, result.penSamplesExpected - result.penSamples) + result.penStrokesBroken;
+  t.penCameraMoved += result.penCameraMoved;
   const gestureMeant = session.labels.some((l) => l.intent === 'gesture');
-  if (!gestureMeant) t.strayGestures += result.gestures.length;
-  else if (result.gestures.length === 0) t.gestureMissed++;
+  const gestureLimit = limited && session.labels.some((l) => l.limit !== undefined) ? limited : t;
+  if (!gestureMeant) gestureLimit.strayGestures += result.gestures.length;
+  else if (result.gestures.length === 0) gestureLimit.gestureMissed++;
   for (const [id, c] of result.contacts) {
     const label = labelOf(session, id);
     if (!label) continue;
+    const excused = label.intent === 'none' ? label.limit !== undefined : besideLimit(session, c.start, c.end);
+    t = limited && excused ? limited : main;
     const residual = Math.hypot(c.camX, c.camY) * mm > SLOP_MM || Math.abs(c.zoom - 1) > 0.01;
     const inkKept = !Number.isNaN(c.committedAt) && !c.uncommitted;
     if (label.intent === 'none') {
@@ -156,6 +192,9 @@ export function score(session: Session, result: ReplayResult, into: Tally = empt
         const delay = c.committedAt - c.end;
         if (absent) t.commitDelayAbsent = Math.max(t.commitDelayAbsent, delay);
         else t.commitDelay = Math.max(t.commitDelay, delay);
+        if (absent && sized && track && !Number.isNaN(track.moveAt) && track.moveAt < c.end) {
+          t.firstInkDelays.push(Math.max(0, c.firstShown - track.moveAt));
+        }
       }
     } else if (label.intent === 'scroll' || label.intent === 'pan' || label.intent === 'zoom') {
       t.intendedNav++;
@@ -168,7 +207,7 @@ export function score(session: Session, result: ReplayResult, into: Tally = empt
       t.intendedGestures++;
     }
   }
-  return t;
+  return main;
 }
 
 /** The upper end of the Wilson 95% interval for k events in n trials. */
@@ -206,6 +245,7 @@ export function gateValues(t: Tally): Record<string, number> {
     G3_revertedMs: t.revertedMs,
     G4_strayTaps: t.strayTaps + t.strayGestures,
     G5_penLost: t.penLost,
+    G5_penCameraMoved: t.penCameraMoved,
     G7_inkDroppedRate: t.intendedInk === 0 ? 0 : t.inkDropped / t.intendedInk,
     G7_inkTruncated: t.inkTruncated,
     G8_navMissedRate: t.intendedNav === 0 ? 0 : t.navMissed / t.intendedNav,
@@ -214,6 +254,7 @@ export function gateValues(t: Tally): Record<string, number> {
     G10_commitDelayAbsent: t.commitDelayAbsent,
     G10_commitDelay: t.commitDelay,
     G11_strayPerStroke: strayPerStroke(t),
+    G12_firstInkP95: percentile(t.firstInkDelays, 0.95),
   };
 }
 
@@ -221,6 +262,7 @@ export function merge(a: Tally, b: Tally): Tally {
   const out = emptyTally();
   for (const key of Object.keys(out) as (keyof Tally)[]) {
     if (key === 'navDelays') out.navDelays = [...a.navDelays, ...b.navDelays];
+    else if (key === 'firstInkDelays') out.firstInkDelays = [...a.firstInkDelays, ...b.firstInkDelays];
     else if (
       key === 'strayShownMs' ||
       key === 'commitDelay' ||

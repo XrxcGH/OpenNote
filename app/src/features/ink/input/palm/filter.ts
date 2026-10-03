@@ -8,6 +8,7 @@ import {
   decideDown as decideDown_,
   decideEnd as decideEnd_,
   afterMove as afterMove_,
+  expirePend as expirePend_,
   freezeNav as freezeNav_,
   pressAllowed as pressAllowed_,
 } from './decide';
@@ -15,6 +16,7 @@ import { End as End_, Fx as Fx_, Role as Role_ } from './effects';
 import type { Effects } from './effects';
 import { leanOf as leanOf_ } from './handRegion';
 import { P as P_, PRESENCE_NAMES, penContext as penContext_ } from './presence';
+import { E as E_ } from './score';
 import type { PenSignal, Presence } from './presence';
 import { sanitizeLearned, sanitizeProfile, sanitizeSettings } from './settings';
 import type { DeviceProfile, LearnedState, PalmSettings } from './settings';
@@ -31,6 +33,7 @@ const End = { ...End_ };
 const decideDown = decideDown_;
 const decideEnd = decideEnd_;
 const afterMove = afterMove_;
+const expirePend = expirePend_;
 const freezeNav = freezeNav_;
 const pressAllowed = pressAllowed_;
 const Fx = { ...Fx_ };
@@ -38,6 +41,7 @@ const Role = { ...Role_ };
 const leanOf = leanOf_;
 const P = { ...P_ };
 const penContext = penContext_;
+const E = { ...E_ };
 
 /** A plain copy, so hot loops read fields rather than module bindings. */
 const K = { ...thresholds };
@@ -86,6 +90,11 @@ export interface PalmFilter {
   explain(id: number): number;
   /** The live contact's role, or Ignore for an unknown id. */
   roleOf(id: number): RoleCode;
+  /**
+   * Whether a tap finger was a likely palm: in the hand region and scoring 1 or more, without the burst (E14) that the
+   * fingers of a multi-finger tap make by themselves. It reads a live contact, and the one the last `touchEnd` ended.
+   */
+  palmTap(id: number): boolean;
   /** Whether a point (client CSS px) lies in the writing hand of the pen's last position or of the line written. */
   inHand(x: number, y: number): boolean;
   /** Whether a pen has been seen on this device, and whether its touch digitizer reports real contact sizes. */
@@ -97,6 +106,10 @@ export interface PalmFilter {
 class Filter implements PalmFilter {
   private readonly core = new Core();
   private readonly lean = { x: 0, y: 0 };
+  /** The contact the last `touchEnd` ended, and its score and evidence as it lifted. */
+  private endedId = -1;
+  private endedScore = 0;
+  private endedWhy = 0;
 
   constructor(settings: Partial<PalmSettings>, profile: Partial<DeviceProfile>, learned?: LearnedState) {
     this.core.settings = sanitizeSettings(settings);
@@ -117,7 +130,7 @@ class Filter implements PalmFilter {
     const core = this.core;
     core.profile = sanitizeProfile(profile);
     if (learned) core.learnedIn = sanitizeLearned(learned);
-    core.pxPerMm = resolvePxPerMm(core.profile.pxPerMm, core.learnedIn?.pxPerMmCalibrated);
+    core.pxPerMm = resolvePxPerMm(core.profile.pxPerMm, core.learnedIn?.pxPerMmCalibrated, core.profile.platform);
     core.pens.watchdogMs = core.profile.hoverWatchdogMs;
     if (core.learnedIn?.penSeen) core.pens.penSeen = true;
     // The native seam knows whether the digitizer reports contact sizes; the session learns it otherwise.
@@ -254,6 +267,9 @@ class Filter implements PalmFilter {
     core.prepare(t, p);
     core.rescore(i);
     const bits = decideEnd(core, i, t, p);
+    this.endedId = id;
+    this.endedScore = c.score[i];
+    this.endedWhy = c.why[i];
     core.learnHand(i, t);
     core.release(i, t);
     if (c.live > 0) {
@@ -330,7 +346,12 @@ class Filter implements PalmFilter {
     core.fx.count = 0;
     core.settle(t);
     this.prune(t);
-    if (core.c.live === 0 || !core.due(t)) return;
+    if (core.c.live === 0) return;
+    if (core.pendA >= 0) {
+      core.prepare(t, core.presenceAt(t));
+      expirePend(core);
+    }
+    if (!core.due(t)) return;
     core.prepare(t, core.presenceAt(t));
     core.checkpoints(t);
   }
@@ -363,6 +384,16 @@ class Filter implements PalmFilter {
   roleOf(id: number): RoleCode {
     const i = this.core.c.find(id);
     return i < 0 ? Role.Ignore : (this.core.c.role[i] as RoleCode);
+  }
+
+  palmTap(id: number): boolean {
+    const c = this.core.c;
+    const i = c.find(id);
+    const ended = i < 0 && id === this.endedId;
+    const s = i >= 0 ? c.score[i] : ended ? this.endedScore : 0;
+    const why = i >= 0 ? c.why[i] : ended ? this.endedWhy : 0;
+    // E14 weighs 2.
+    return (why & E.HandRegion) !== 0 && s - ((why & E.Burst) !== 0 ? 2 : 0) >= 1;
   }
 
   inHand(x: number, y: number): boolean {

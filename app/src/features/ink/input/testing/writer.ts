@@ -40,6 +40,8 @@ export interface TouchSpec {
   /** The end event is lost. */
   readonly lostEnd?: boolean;
   readonly stepMs?: number;
+  /** A known limit the contact falls under (`LIMITS` in hands.ts). */
+  readonly limit?: string;
 }
 
 export interface WriterOptions {
@@ -62,8 +64,9 @@ export class SessionWriter {
   readonly labels: Label[] = [];
   private order = 0;
   private nextTouch = 100;
-  /** Pen-down intervals, for devices that deliver no new touch while the pen is down. */
+  /** Pen-down intervals, for devices that deliver no new touch while the pen is down, and pen hover intervals. */
   private readonly downs: [number, number][] = [];
+  private readonly ranges: [number, number][] = [];
   penStrokes = 0;
 
   constructor(
@@ -111,6 +114,7 @@ export class SessionWriter {
   hover(t0: number, t1: number, at: (t: number) => Vec2, id = 1): void {
     const p = this.profile;
     if (p.stylus !== 'pen' || p.hover === 'none') return;
+    this.ranges.push([t0, t1]);
     const step = 1000 / this.rate;
     const tilt = p.hoverTilt ? this.tilt() : {};
     const lost = t1 - t0 > 200 && this.rand() < p.proximityLoss ? between(this.rand, t0, t1 - 100) : Number.NaN;
@@ -203,6 +207,9 @@ export class SessionWriter {
   touch(spec: TouchSpec): number {
     const p = this.profile;
     if (p.blocksTouchWhileDown && this.downs.some(([a, b]) => spec.t0 >= a && spec.t0 <= b)) return -1;
+    if (p.blocksTouchInRange && [...this.downs, ...this.ranges].some(([a, b]) => spec.t0 >= a && spec.t0 <= b)) {
+      return -1;
+    }
     const id = this.nextTouch++;
     const step = spec.stepMs ?? 12;
     const end = spec.cancelAt !== undefined && spec.cancelAt < spec.t1 ? spec.cancelAt : spec.t1;
@@ -233,7 +240,8 @@ export class SessionWriter {
       const type = end === spec.cancelAt ? 'pointercancel' : 'pointerup';
       this.emit({ t: end, type, id, pt: 'touch', x: this.px(x), y: this.px(y), w: 1, h: 1, p: 0, b: 0, bs: 0, target });
     }
-    this.labels.push({ type: 'label', id, from: spec.t0, to: end, cls: spec.cls, intent: spec.intent });
+    const label = { type: 'label', id, from: spec.t0, to: end, cls: spec.cls, intent: spec.intent } as const;
+    this.labels.push(spec.limit ? { ...label, limit: spec.limit } : label);
     return id;
   }
 

@@ -10,6 +10,7 @@
     "G3_revertedMs": 0,
     "G4_strayTaps": 0,
     "G5_penLost": 0,
+    "G5_penCameraMoved": 0,
     "G7_inkDroppedRate": 0.001,
     "G7_inkTruncated": 0,
     "G8_navMissedRate": 0.01,
@@ -17,7 +18,8 @@
     "G9_navDelayP95": 600,
     "G10_commitDelayAbsent": 0,
     "G10_commitDelay": 532,
-    "G11_strayPerStroke": 0.016
+    "G11_strayPerStroke": 0.016,
+    "G12_firstInkP95": 60
   },
   "baseline": {
     "surface-pen": {
@@ -31,14 +33,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 108,
+      "G9_navDelayP95": 96,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "slim-pen-2": {
       "G1_strayInk": 0,
@@ -51,6 +55,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -58,7 +63,8 @@
       "G9_navDelayP95": 96,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "oem-mpp": {
       "G1_strayInk": 0,
@@ -71,14 +77,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 72,
+      "G9_navDelayP95": 228,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "oem-mpp-notilt": {
       "G1_strayInk": 0,
@@ -91,14 +99,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 108,
+      "G9_navDelayP95": 228,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "wacom-aes": {
       "G1_strayInk": 0,
@@ -111,14 +121,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 96,
+      "G9_navDelayP95": 228,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "wacom-aes-notilt": {
       "G1_strayInk": 0,
@@ -131,14 +143,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 84,
+      "G9_navDelayP95": 228,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "wacom-emr": {
       "G1_strayInk": 0,
@@ -151,14 +165,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 96,
+      "G9_navDelayP95": 108,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "wacom-emr-mouse": {
       "G1_strayInk": 0,
@@ -171,14 +187,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 96,
+      "G9_navDelayP95": 216,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "s-pen": {
       "G1_strayInk": 0,
@@ -191,14 +209,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 72,
+      "G9_navDelayP95": 84,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "pencil-1": {
       "G1_strayInk": 0,
@@ -211,6 +231,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -218,7 +239,8 @@
       "G9_navDelayP95": 84,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "pencil-2-hover": {
       "G1_strayInk": 0,
@@ -231,6 +253,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -238,7 +261,8 @@
       "G9_navDelayP95": 84,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "pencil-usb-c": {
       "G1_strayInk": 0,
@@ -251,6 +275,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -258,7 +283,8 @@
       "G9_navDelayP95": 84,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "pencil-usb-c-hover": {
       "G1_strayInk": 0,
@@ -271,14 +297,16 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 60,
+      "G9_navDelayP95": 72,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "pencil-pro": {
       "G1_strayInk": 0,
@@ -291,6 +319,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -298,7 +327,8 @@
       "G9_navDelayP95": 84,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "usi-fire-max": {
       "G1_strayInk": 0,
@@ -311,6 +341,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -318,7 +349,8 @@
       "G9_navDelayP95": 96,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "usi-chromebook": {
       "G1_strayInk": 0,
@@ -331,6 +363,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -338,7 +371,8 @@
       "G9_navDelayP95": 96,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 532,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "passive-stylus": {
       "G1_strayInk": 0,
@@ -351,6 +385,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -358,7 +393,8 @@
       "G9_navDelayP95": 36,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 0,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 50
     },
     "tablet-finger": {
       "G1_strayInk": 0,
@@ -371,6 +407,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -378,7 +415,8 @@
       "G9_navDelayP95": 36,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 0,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 53.1407
     },
     "phone-finger": {
       "G1_strayInk": 0,
@@ -391,6 +429,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -398,7 +437,30 @@
       "G9_navDelayP95": 24,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 0,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 40
+    },
+    "iphone-finger": {
+      "G1_strayInk": 0,
+      "G2_strayShownPen": 0,
+      "G2_strayShownTouchRate": 0,
+      "G2_strayShownMs": 0,
+      "G3_strayCamera": 0,
+      "G3_revertedCamera": 0,
+      "G3_revertedPeakMm": 0,
+      "G3_revertedMs": 0,
+      "G4_strayTaps": 0,
+      "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
+      "G7_inkDroppedRate": 0,
+      "G7_inkTruncated": 0,
+      "G8_navMissedRate": 0,
+      "G8_tapsMissed": 0,
+      "G9_navDelayP95": 24,
+      "G10_commitDelayAbsent": 0,
+      "G10_commitDelay": 0,
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "ipad-finger": {
       "G1_strayInk": 0,
@@ -411,6 +473,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -418,7 +481,8 @@
       "G9_navDelayP95": 24,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 0,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "ipad-stylus": {
       "G1_strayInk": 0,
@@ -431,6 +495,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -438,7 +503,8 @@
       "G9_navDelayP95": 24,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 0,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "win-touch": {
       "G1_strayInk": 0,
@@ -451,6 +517,7 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
@@ -458,7 +525,8 @@
       "G9_navDelayP95": 36,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 0,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     },
     "win-stylus": {
       "G1_strayInk": 0,
@@ -471,15 +539,17 @@
       "G3_revertedMs": 0,
       "G4_strayTaps": 0,
       "G5_penLost": 0,
+      "G5_penCameraMoved": 0,
       "G7_inkDroppedRate": 0,
       "G7_inkTruncated": 0,
       "G8_navMissedRate": 0,
       "G8_tapsMissed": 0,
-      "G9_navDelayP95": 24,
+      "G9_navDelayP95": 36,
       "G10_commitDelayAbsent": 0,
       "G10_commitDelay": 0,
-      "G11_strayPerStroke": 0
+      "G11_strayPerStroke": 0,
+      "G12_firstInkP95": 0
     }
   },
-  "knownLimitsMax": 0
+  "knownLimitsMax": 38
 }
