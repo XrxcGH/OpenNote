@@ -10,6 +10,7 @@ These files hold the first runs of measurements M3, M5, and M6 and of the kill h
 - [Phase 3 exit-gate runs](#phase-3-exit-gate-runs)
 - [Phase 3 performance follow-up](#phase-3-performance-follow-up)
 - [Recovery within its gate](#recovery-within-its-gate)
+- [Recovered versions keep their segments](#recovered-versions-keep-their-segments)
 
 ## The machine
 
@@ -144,3 +145,11 @@ A timed recovery of the after build took 82 ms. Waiting for the journal lock too
 ### Crash safety
 
 All 807 tests of the workspace passed, and all 666 of `opennote-core` with every feature. They include the crash scenarios on the fault-injecting file system and the power cuts. `2026-10-02-kill-harness-core-100-recovery.json` holds 100 kills of the core workload with seed 20261003, after all of these changes, with no failures. 48 writers were killed at a random moment, 27 just after a save step, and 25 at an armed fail point, of which 11 were reached. The hostile reader held files 2,835 times.
+
+## Recovered versions keep their segments
+
+The history version that recovery writes used to list the page's segments from before the recovery save, without the segment that save wrote. Garbage collection keeps only the segments that `page.json` and the version entries list. So once a later save compacted that segment away, it could be deleted while the version still needed it. The entry now lists the segments of the saved `page.json`, as a normal save's does. A test recovers a stroke, compacts the page, and checks that garbage collection keeps the version's segments.
+
+These ran on 2 October 2026 on the same Surface Laptop Studio 2, on `phase-3` with `p3-perf` merged in and this fix. All 821 tests of the workspace passed, and all 680 of `opennote-core` with every feature. `2026-10-02-kill-harness-core-100-history.json` holds 100 kills of the core workload with seed 20261004, with no failures. 52 writers were killed at a random moment, 25 just after a save step, and 23 at an armed fail point, of which 5 were reached. The hostile reader held files 2,643 times.
+
+One store benchmark built with `perf` ran while other programs kept the processor busy. Its times were up to twice the earlier ones, and recovery took 152 ms. A run right after, with the processor about 9% busy, took 79 ms for `store.recovery.journal_4mib.max` against the gate of 100. Opening the budget page took 15 ms at the 95th percentile, and saving it after one stroke took 17. So the merge and the fix kept recovery within its gate.
