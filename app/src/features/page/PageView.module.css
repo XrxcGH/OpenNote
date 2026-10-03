@@ -48,29 +48,9 @@
     text-align: center;
   }
 
+  /* The drawing above the "no page" sentence: a little company, with the sentence below it keeping the meaning. */
   .art {
-    inline-size: min(12rem, 60%);
-    block-size: auto;
-    fill: none;
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .artFrame {
-    stroke: var(--color-border-control);
-  }
-
-  .artSky {
-    stroke: var(--color-status-warning);
-  }
-
-  .artCandle {
-    stroke: var(--color-accent-clay);
-  }
-
-  .artPlant {
-    stroke: var(--color-accent-primary);
+    margin-block-start: var(--space-5);
   }
 
   /* With the editor on, the page fills the region and its viewport scrolls (ARCHITECTURE.md section 5.1). */
@@ -93,10 +73,6 @@
   @media (forced-colors: active) {
     .title::after {
       background: CanvasText;
-    }
-
-    .art g {
-      stroke: CanvasText;
     }
   }
 }

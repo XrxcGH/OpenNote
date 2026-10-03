@@ -72,6 +72,25 @@ describe('page and ink tokens for Phases 4 and 5', () => {
     kinds.forEach((kind) => expect(tokens.forcedColors).toHaveProperty([`code.${kind}`], 'CanvasText'));
   });
 
+  it('defines the warm accents and the ambient sky in both themes, with forced colors for each', () => {
+    const accents = ['candle', 'candleSubtle', 'dusk', 'duskSubtle', 'night', 'nightSubtle'];
+    const ambient = ['canvasTop', 'canvasBottom', 'spark'];
+    accents.forEach((key) => {
+      expect(tokens.color.light.accent).toHaveProperty(key);
+      expect(tokens.color.dark.accent).toHaveProperty(key);
+      expect(tokens.forcedColors).toHaveProperty([`accent.${key}`], key.endsWith('Subtle') ? 'Canvas' : 'CanvasText');
+    });
+    expect(Object.keys(tokens.color.light.ambient)).toEqual(ambient);
+    expect(Object.keys(tokens.color.dark.ambient)).toEqual(ambient);
+    ambient.forEach((key) => expect(tokens.forcedColors).toHaveProperty([`ambient.${key}`], 'Canvas'));
+  });
+
+  it('keeps the ambient wash close to the canvas, so it never competes with the page', () => {
+    const ceilings = tokens.contrast.filter((pair) => 'max' in pair);
+    expect(ceilings.map((pair) => pair.fg)).toEqual(['ambient.canvasTop', 'ambient.canvasBottom']);
+    ceilings.forEach((pair) => expect(pair).toMatchObject({ bg: 'surface.sunken', max: 1.3 }));
+  });
+
   it('keeps palm rejection and shape timings in milliseconds for code', () => {
     const { interaction } = tokens;
     expect(interaction.palmWatchdogMs).toBeGreaterThan(interaction.palmGraceMs);

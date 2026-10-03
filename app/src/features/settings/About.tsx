@@ -2,9 +2,11 @@
 // It also has the note about this phase's temporary notes and, in development and nightly builds, the flags.
 
 import { isEnabled } from '../../app/flags';
+import { Logo } from '../../shell/titlebar/Logo';
 import { useUpdaterStatus } from '../../state/updater';
 import { t } from '../../strings/t';
-import { Button, confirm, showToast } from '../../ui';
+import { useResolvedTheme } from '../../theme/theme';
+import { Button, InkStroke, Window, confirm, showToast } from '../../ui';
 import { ExperimentalFlags } from './AboutFlags';
 import { host } from './host';
 import styles from './SettingsView.module.css';
@@ -63,10 +65,27 @@ function Actions() {
   );
 }
 
+/** The logo mark with the window beside it, under the heading's ink stroke. */
+function Mark() {
+  const theme = useResolvedTheme();
+  return (
+    <>
+      <InkStroke className={styles.stroke} />
+      <div className={styles.mark}>
+        <span className={styles.logoMark}>
+          <Logo />
+        </span>
+        <Window sky={theme === 'dark' ? 'night' : 'day'} height={64} />
+      </div>
+    </>
+  );
+}
+
 export default function About() {
   const { channel } = host().boot;
   return (
     <>
+      <Mark />
       <Facts />
       <Actions />
       {isEnabled('notes.memorySnapshot') && <p className={styles.help}>{t('settings.about.snapshot')}</p>}

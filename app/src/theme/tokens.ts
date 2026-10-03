@@ -3,7 +3,7 @@
 export const tokens = {
   "meta": {
     "name": "OpenNote design tokens",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Single source of truth for OpenNote's look and motion. See docs/BRAND.md for how each token is used. CHECKS validates contrast and motion limits."
   },
   "color": {
@@ -34,7 +34,13 @@ export const tokens = {
         "primaryHover": "#325C42",
         "primaryPressed": "#2A4D38",
         "primarySubtle": "#E2ECE1",
-        "clay": "#A9502F"
+        "clay": "#A9502F",
+        "candle": "#9A5410",
+        "candleSubtle": "#F8EBD3",
+        "dusk": "#9C4559",
+        "duskSubtle": "#F6E4E4",
+        "night": "#4A5590",
+        "nightSubtle": "#E8EAF3"
       },
       "status": {
         "success": "#35704A",
@@ -47,6 +53,11 @@ export const tokens = {
       },
       "selection": {
         "highlight": "#F4DE93"
+      },
+      "ambient": {
+        "canvasTop": "#FFF4DF",
+        "canvasBottom": "#EAE3D8",
+        "spark": "#F2CF8A"
       },
       "caption": {
         "closeHover": "#C42B1C",
@@ -90,7 +101,13 @@ export const tokens = {
         "primaryHover": "#A2CEAE",
         "primaryPressed": "#7DB28C",
         "primarySubtle": "#2E3B30",
-        "clay": "#E59372"
+        "clay": "#E59372",
+        "candle": "#F0A860",
+        "candleSubtle": "#3A2C1C",
+        "dusk": "#EBA0B2",
+        "duskSubtle": "#3A2A30",
+        "night": "#A9B4EC",
+        "nightSubtle": "#1F2233"
       },
       "status": {
         "success": "#8FC29D",
@@ -103,6 +120,11 @@ export const tokens = {
       },
       "selection": {
         "highlight": "#52451F"
+      },
+      "ambient": {
+        "canvasTop": "#1D1F2C",
+        "canvasBottom": "#2E2430",
+        "spark": "#E7D9B0"
       },
       "caption": {
         "closeHover": "#C42B1C",
@@ -140,6 +162,15 @@ export const tokens = {
     "accent.primaryPressed": "Highlight",
     "accent.primarySubtle": "Canvas",
     "accent.clay": "CanvasText",
+    "accent.candle": "CanvasText",
+    "accent.candleSubtle": "Canvas",
+    "accent.dusk": "CanvasText",
+    "accent.duskSubtle": "Canvas",
+    "accent.night": "CanvasText",
+    "accent.nightSubtle": "Canvas",
+    "ambient.canvasTop": "Canvas",
+    "ambient.canvasBottom": "Canvas",
+    "ambient.spark": "Canvas",
     "status.success": "CanvasText",
     "status.warning": "CanvasText",
     "status.danger": "CanvasText",
@@ -567,6 +598,201 @@ export const tokens = {
       "bg": "ink.highlighters.Lilac",
       "over": "surface.page",
       "min": 7
+    },
+    {
+      "fg": "accent.candle",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.candle",
+      "bg": "surface.app",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.candle",
+      "bg": "surface.raised",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.candle",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.candle",
+      "bg": "accent.candleSubtle",
+      "min": 4.5
+    },
+    {
+      "fg": "text.primary",
+      "bg": "accent.candleSubtle",
+      "min": 7
+    },
+    {
+      "fg": "text.muted",
+      "bg": "accent.candleSubtle",
+      "min": 4.5
+    },
+    {
+      "fg": "border.control",
+      "bg": "accent.candleSubtle",
+      "min": 3
+    },
+    {
+      "fg": "accent.dusk",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.dusk",
+      "bg": "surface.app",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.dusk",
+      "bg": "surface.raised",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.dusk",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.dusk",
+      "bg": "accent.duskSubtle",
+      "min": 4.5
+    },
+    {
+      "fg": "text.primary",
+      "bg": "accent.duskSubtle",
+      "min": 7
+    },
+    {
+      "fg": "text.muted",
+      "bg": "accent.duskSubtle",
+      "min": 4.5
+    },
+    {
+      "fg": "border.control",
+      "bg": "accent.duskSubtle",
+      "min": 3
+    },
+    {
+      "fg": "accent.night",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.night",
+      "bg": "surface.app",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.night",
+      "bg": "surface.raised",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.night",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.night",
+      "bg": "accent.nightSubtle",
+      "min": 4.5
+    },
+    {
+      "fg": "text.primary",
+      "bg": "accent.nightSubtle",
+      "min": 7
+    },
+    {
+      "fg": "text.muted",
+      "bg": "accent.nightSubtle",
+      "min": 4.5
+    },
+    {
+      "fg": "border.control",
+      "bg": "accent.nightSubtle",
+      "min": 3
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ambient.canvasTop",
+      "min": 7
+    },
+    {
+      "fg": "text.secondary",
+      "bg": "ambient.canvasTop",
+      "min": 4.5
+    },
+    {
+      "fg": "text.muted",
+      "bg": "ambient.canvasTop",
+      "min": 4.5
+    },
+    {
+      "fg": "text.link",
+      "bg": "ambient.canvasTop",
+      "min": 4.5
+    },
+    {
+      "fg": "focus.ring",
+      "bg": "ambient.canvasTop",
+      "min": 3
+    },
+    {
+      "fg": "border.control",
+      "bg": "ambient.canvasTop",
+      "min": 3
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ambient.canvasBottom",
+      "min": 7
+    },
+    {
+      "fg": "text.secondary",
+      "bg": "ambient.canvasBottom",
+      "min": 4.5
+    },
+    {
+      "fg": "text.muted",
+      "bg": "ambient.canvasBottom",
+      "min": 4.5
+    },
+    {
+      "fg": "text.link",
+      "bg": "ambient.canvasBottom",
+      "min": 4.5
+    },
+    {
+      "fg": "focus.ring",
+      "bg": "ambient.canvasBottom",
+      "min": 3
+    },
+    {
+      "fg": "border.control",
+      "bg": "ambient.canvasBottom",
+      "min": 3
+    },
+    {
+      "fg": "status.success",
+      "bg": "surface.app",
+      "min": 4.5
+    },
+    {
+      "fg": "ambient.canvasTop",
+      "bg": "surface.sunken",
+      "max": 1.3
+    },
+    {
+      "fg": "ambient.canvasBottom",
+      "bg": "surface.sunken",
+      "max": 1.3
     }
   ],
   "ink": {

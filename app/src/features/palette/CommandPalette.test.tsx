@@ -103,6 +103,26 @@ describe('the quick switcher', () => {
     await waitFor(() => expect(getLocation()).toMatchObject({ view: 'workspace', pageId: 'p-mitosis' }));
   });
 
+  it('shows the notebook color as a small hidden dot before a page, and adds nothing to its name', async () => {
+    await renderApp();
+    const box = await openWith('Ctrl+O');
+    await typeInto(box, 'mitosis');
+    const option = await screen.findByRole('option', { name: /Mitosis/ });
+    const dot = option.querySelector('span[style*="--ink-fern"]');
+    expect(dot?.getAttribute('aria-hidden')).toBe('true');
+    expect(dot?.textContent).toBe('');
+    expect(option.getAttribute('aria-label')).toBeNull();
+    // The dot hangs in front: the title's text and the detail under it start at the same place.
+    const left = (node: Node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return Math.round(range.getBoundingClientRect().left);
+    };
+    const title = left(dot?.parentElement?.lastChild as Node);
+    expect(left(option.querySelector('[id$="-detail"]') as Node)).toBe(title);
+    expect(left(dot as Node) - title).toBeLessThan(0);
+  });
+
   it('lists recent pages first when nothing is typed', async () => {
     await renderApp();
     navigate({ view: 'workspace', notebookId: id('n-biology'), sectionId: id('s-lectures'), pageId: id('p-meiosis') });

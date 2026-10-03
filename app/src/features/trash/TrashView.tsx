@@ -12,7 +12,7 @@ import { registerRegionMain } from '../../shell/regions';
 import { useStore } from '../../state/store';
 import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
-import { Button, ProgressBar, useContextMenu, useDelayedFlag } from '../../ui';
+import { Button, EmptyArt, ProgressBar, useContextMenu, useDelayedFlag } from '../../ui';
 import { titleOf } from '../tree';
 import { restoreTrashItem, trashStore } from './restore';
 import styles from './TrashView.module.css';
@@ -86,7 +86,12 @@ export function TrashView() {
       <h1 ref={heading} tabIndex={-1}>
         {t('tree.trash.title')}
       </h1>
-      {items?.length === 0 && <p className={styles.empty}>{t('tree.trash.empty')}</p>}
+      {items?.length === 0 && (
+        <>
+          <EmptyArt kind="trash" className={styles.art} />
+          <p className={styles.empty}>{t('tree.trash.empty')}</p>
+        </>
+      )}
       {items && items.length > 0 && (
         <ul ref={list} className={styles.list} aria-label={t('tree.trash.title')}>
           {items.map((item) => (

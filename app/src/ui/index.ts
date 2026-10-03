@@ -11,6 +11,19 @@ export { Dialog, confirm } from './Dialog';
 export { useDismiss } from './dismiss';
 export type { DialogAction, DialogProps } from './Dialog';
 export { FocusScope } from './FocusScope';
+export {
+  Books,
+  Candle,
+  DeskScene,
+  EmptyArt,
+  Glint,
+  InkStroke,
+  Notebook,
+  Plant,
+  StarField,
+  Window,
+} from './illustrations';
+export type { ArtProps, EmptyKind, Sky } from './illustrations';
 export { useDelayedFlag, useLayer, useLongPress } from './hooks';
 export type { PointerHandlers, PressEvent } from './hooks';
 export type { IconName, IconProps } from './icons';

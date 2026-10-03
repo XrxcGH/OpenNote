@@ -179,6 +179,24 @@ describe('empty states and accessibility', () => {
     await expect.poll(() => screen.queryByText('No notebooks yet. Choose New notebook to start one.')).toBeTruthy();
   });
 
+  it('puts a bookshelf above the no-notebooks sentence, hidden from screen readers', async () => {
+    const { container } = await renderApp({ fixture: 'empty' });
+    const sentence = await screen.findByText('No notebooks yet. Choose New notebook to start one.');
+    const art = container.querySelector('svg[viewBox="0 0 110 52"]');
+    expect(art?.getAttribute('aria-hidden')).toBe('true');
+    expect((art as Node).compareDocumentPosition(sentence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The empty pane has its own drawing, so the footer's plant leaves it alone.
+    expect(container.querySelector('svg[viewBox="0 0 48 66"]')).toBeNull();
+  });
+
+  it('keeps a small plant in the notebooks pane footer beside Trash, hidden from screen readers', async () => {
+    const { container } = await renderApp();
+    await screen.findByRole('button', { name: 'Trash' });
+    const plant = container.querySelector('svg[viewBox="0 0 48 66"]');
+    expect(plant?.getAttribute('aria-hidden')).toBe('true');
+    expect(plant?.closest('div')?.contains(screen.getByRole('button', { name: 'Trash' }))).toBe(true);
+  });
+
   for (const theme of ['light', 'dark'] as const) {
     for (const density of ['mouse', 'touch'] as const) {
       it(`has no axe violations in the ${theme} theme with ${density} density`, async () => {

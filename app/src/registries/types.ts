@@ -134,6 +134,8 @@ export interface PaletteResult {
   group: 'commands' | 'notebooks' | 'sections' | 'pages' | (string & {});
   title: string;
   detail?: string;
+  /** The pen name of the notebook color to show as a small chip before the title, as the tree does. */
+  ink?: string;
   keys?: readonly Chord[];
   checked?: boolean;
   /** Shown, but not run: a command whose `enabled` is false. */

@@ -48,6 +48,20 @@ describe('the first step', () => {
     await expectNoAxeViolations(container);
   });
 
+  it('shows the desk by the window between the sentence and the note, hidden from screen readers', async () => {
+    const { container } = await renderApp(firstRun());
+    await form(/Welcome to OpenNote/);
+    const desk = container.querySelector('svg[viewBox="0 0 240 150"]');
+    expect(desk?.getAttribute('aria-hidden')).toBe('true');
+    expect(desk?.getAttribute('focusable')).toBe('false');
+    const sentence = screen.getByText(/OpenNote is a notebook for typing/);
+    const note = screen.getByText(/Setup takes about a minute/);
+    expect(sentence.compareDocumentPosition(desk as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect((desk as Node).compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The heading signs off with the ink stroke, a 56 by 8 drawing that is also hidden.
+    expect(container.querySelector('svg[viewBox="0 0 56 8"][aria-hidden="true"]')).toBeTruthy();
+  });
+
   it('stays out of the way when setup is done', async () => {
     await renderApp();
     expect(getLocation().view).toBe('workspace');

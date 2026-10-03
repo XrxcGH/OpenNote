@@ -6,7 +6,7 @@
 import type { ThemePreference } from '../../platform/types';
 import { useOs } from '../../state/os';
 import { t } from '../../strings/t';
-import { RadioCard, RadioGroup } from '../../ui';
+import { Glint, RadioCard, RadioGroup } from '../../ui';
 import styles from './ThemeCards.module.css';
 
 const CHOICES = [
@@ -22,10 +22,17 @@ export interface ThemeCardsProps {
   systemCaption?: string;
 }
 
-/** A small app window in one theme: a title bar, a sidebar, and a page with lines of text. */
-function Mini({ theme }: { theme: 'light' | 'dark' }) {
+/**
+ * A small app window in one theme: a title bar, a sidebar, and a page with lines of text, and in the corner a low
+ * sun for Light or a moon and stars for Dark. In Match Windows each half keeps its own mark at its own edge.
+ */
+function Mini({ theme, corner = 'end' }: { theme: 'light' | 'dark'; corner?: 'start' | 'end' }) {
   return (
     <span data-theme-scope={theme} className={styles.mini}>
+      <Glint
+        kind={theme === 'light' ? 'sun' : 'moon'}
+        className={corner === 'end' ? styles.glintEnd : styles.glintStart}
+      />
       <span className={styles.bar} />
       <span className={styles.body}>
         <span className={styles.side}>
@@ -48,7 +55,7 @@ function Preview({ choice }: { choice: ThemePreference }) {
   if (choice !== 'system') return <Mini theme={choice} />;
   return (
     <span className={styles.split}>
-      <Mini theme="light" />
+      <Mini theme="light" corner="start" />
       <Mini theme="dark" />
     </span>
   );
