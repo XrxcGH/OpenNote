@@ -62,10 +62,9 @@ fn fail_points_inside_the_save_primitives_are_reached() {
         let dir = tempfile::tempdir().unwrap();
         let (output, summary) = run(dir.path(), "fs", 2, &["--failpoint", point]);
         assert!(output.status.success(), "{point}: {:?}", failures(&summary));
-        assert!(
-            summary["fail_points_reached"].as_u64().unwrap() >= 1,
-            "{point} was never reached"
-        );
+        // The writer runs until it reaches the point, so every iteration must.
+        let reached = summary["fail_points_reached"].as_u64().unwrap();
+        assert_eq!(reached, 2, "{point} was reached in {reached} of 2 iterations");
     }
 }
 
