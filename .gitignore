@@ -14,3 +14,4 @@ tests/e2e/.drivers/
 tests/e2e/logs/
 tests/ui/report/
 tests/ui/results/
+tests/perf/typing/results/

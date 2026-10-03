@@ -19,6 +19,7 @@
     "test:ui:update": "npm run app:build:test && playwright test --config tests/ui/playwright.config.ts --update-snapshots",
     "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/smoke/**/*.spec.ts\"",
     "perf:startup": "node tests/perf/startup.ts",
+    "perf:typing": "npm run app:build:test && playwright test --config tests/perf/typing/playwright.config.ts",
     "bundle:check": "node app/scripts/check-bundle.ts",
     "app:typecheck": "tsc -p app/tsconfig.json && tsc -p app/scripts/tsconfig.json",
     "tokens": "node app/scripts/build-tokens.ts",
