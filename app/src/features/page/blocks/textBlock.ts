@@ -5,6 +5,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { createBlockEditor } from '../../../editor/extensions/kit';
+import { highlightStatic } from '../../../editor/highlight';
 import { parseTextBlock } from '../../../editor/markdown';
 import { renderStatic } from '../../../editor/schema/dom';
 import type { BlockId, BlockJson } from '../../../services/pages/types';
@@ -155,9 +156,15 @@ class TextBlockView implements LazyBlockView {
     if (this.rendered || this.editor) return;
     this.rendered = true;
     this.doc ??= parseTextBlock(this.markdown);
-    renderStatic(this.doc, this.editRoot);
+    this.drawStatic(this.doc);
     this.editRoot.style.minBlockSize = '';
     blockLaidOut(this.block.id);
+  }
+
+  /** Draws the static text. Its code is colored in idle time, so it looks the same before an editor mounts. */
+  private drawStatic(doc: PMNode): void {
+    renderStatic(doc, this.editRoot);
+    if (this.ctx.host.flag('page.codeHighlight')) void highlightStatic(this.editRoot, doc).catch(() => undefined);
   }
 
   update(next: BlockJson): void {
@@ -212,7 +219,7 @@ class TextBlockView implements LazyBlockView {
     restoreAttributes(this.editRoot, this.saved);
     if (name) this.editRoot.setAttribute('aria-label', name);
     this.editRoot.style.minBlockSize = '';
-    renderStatic(this.doc, this.editRoot);
+    this.drawStatic(this.doc);
   }
 
   private readonly onUpdate = () => {

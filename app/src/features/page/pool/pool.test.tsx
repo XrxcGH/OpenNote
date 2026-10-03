@@ -5,6 +5,7 @@
 // - The pool keeps its cap, and its demotion and idle mounts hold back while a screen reader runs.
 import { afterEach, describe, expect, it } from 'vitest';
 import { initFlags } from '../../../app/flags';
+import { tokenClass } from '../../../editor/highlight/plugin';
 import { createMemoryPageService } from '../../../services/pages/memory';
 import type { PageFixture } from '../../../services/pages/memory';
 import type { BlockJson } from '../../../services/pages/types';
@@ -110,6 +111,15 @@ describe('static text', () => {
     const root = mounted.layer.view(mounted.layer.blocks()[2]!.id)!.editRoot!;
     expect(root.getAttribute('contenteditable')).toBeNull();
     expect(root.textContent).toBe('Paragraph 2 of the long page.');
+  });
+
+  it('colors a static code block in idle time, with no editor mounted', { timeout: 30_000 }, async () => {
+    const mounted = await open(textPageFixture('```js\nconst a = 1;\n```'), { height: 0 });
+    const root = mounted.layer.view(mounted.layer.blocks()[0]!.id)!.editRoot!;
+    const keyword = () => root.querySelector(`pre > code .${tokenClass('keyword')}`)?.textContent;
+    await expect.poll(keyword, { timeout: 25_000 }).toBe('const');
+    expect(root.getAttribute('contenteditable')).toBeNull();
+    expect(root.querySelector('pre > code')?.textContent).toBe('const a = 1;');
   });
 
   // Idle time is scarce when several agents share the machine, so this one waits longer.
