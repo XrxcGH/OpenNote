@@ -2,7 +2,7 @@
 // The timing helpers in ../bench.ts run each operation many times and judge it by its best run.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { expectWithinBudget, flushResults, measure, record } from '../bench';
+import { expectBelow, expectWithinBudget, flushResults, measure, record } from '../bench';
 import { capsulesAlong, eraseStrokes } from './erase';
 import { generatePage } from './fixtures';
 import { hitCapsules, hitPoint } from './hitTest';
@@ -34,7 +34,7 @@ describe(`a page of ${STROKES} strokes`, () => {
       measure(() => createStrokeIndex(strokes), 5, 1),
       NOTE,
     );
-    expect(timing.best).toBeLessThan(500);
+    expectBelow(timing, 500);
   });
 
   it('answers a point hit under the budget', () => {

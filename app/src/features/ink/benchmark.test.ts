@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { encodeRecord } from '../../core/ink/codec';
 import type { InkRecord } from '../../core/ink/codec';
-import { expectWithinBudget, flushResults, measure, record } from './bench';
+import { expectBelow, expectWithinBudget, flushResults, measure, record } from './bench';
 import { createPartialEraseSession, createStrokeEraseSession, LASSO_EVERYTHING } from './edits';
 import { inkBounds, invalidate, planTiles, tileBudget } from './engine/tiles';
 import type { TileInfo } from './engine/tiles';
@@ -30,7 +30,6 @@ import { planInsertSpace } from './space';
 
 const STROKES = 10_000;
 const NOTE = '10,000 strokes of 80 points';
-const ceiling = (ms: number, took: { best: number }) => expect(took.best).toBeLessThan(ms);
 
 // Page-open work on 10,000 strokes takes seconds on a busy machine, which is longer than the default test timeout.
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
@@ -65,7 +64,7 @@ describe(`stroke records for a page of ${STROKES} strokes`, () => {
       measure(() => strokes.map(recordFromStroke), 3, 1),
       NOTE,
     );
-    ceiling(30_000, took);
+    expectBelow(took, 10_000);
   });
 
   it('reads every record header into an index without decoding points', () => {
@@ -78,23 +77,23 @@ describe(`stroke records for a page of ${STROKES} strokes`, () => {
       7,
       2,
     );
-    ceiling(2000, record('Index every record from its header', took, NOTE));
+    expectBelow(record('Index every record from its header', took, NOTE), 500);
   });
 
   it('decodes the strokes of one viewport', () => {
     const viewport = records.slice(0, 1500);
     const took = measure(() => viewport.forEach((r) => r.kind === 'stroke' && strokeFromRecord(r.stroke)), 7, 2);
-    ceiling(2000, record('Decode 1,500 strokes', took, '1,500 records of 80 points'));
+    expectBelow(record('Decode 1,500 strokes', took, '1,500 records of 80 points'), 1000);
   });
 
   it('decodes and folds every record, as a page open that reads it all would', () => {
     const took = measure(() => foldRecords(records), 3, 1);
-    ceiling(30_000, record('Decode and fold every record', took, NOTE));
+    expectBelow(record('Decode and fold every record', took, NOTE), 10_000);
   });
 
   it('serializes every record to bytes', () => {
     const took = measure(() => records.forEach(encodeRecord), 3, 1);
-    ceiling(30_000, record('Frame every record as bytes', took, NOTE));
+    expectBelow(record('Frame every record as bytes', took, NOTE), 5000);
   });
 });
 
@@ -268,6 +267,6 @@ describe('the pen path', () => {
   it('checks 10,000 strokes for a scribble in well under a second', () => {
     const { strokes } = generatePage(STROKES, 42);
     const took = measure(() => strokes.forEach((s) => detectScribble(s.points)), 5, 1);
-    ceiling(10_000, record('Check 10,000 strokes for a scribble', took, NOTE));
+    expectBelow(record('Check 10,000 strokes for a scribble', took, NOTE), 2000);
   });
 });
