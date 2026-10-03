@@ -260,6 +260,14 @@ export interface TaggedBlock {
   checked: string[];
 }
 
+/** A block whose text holds some words. */
+export interface TextHit {
+  page: PageId;
+  title: string;
+  block: BlockId;
+  kind: string;
+}
+
 export interface GraphPage {
   page: PageId;
   title: string;
@@ -310,6 +318,8 @@ export interface SearchExtras {
   pageFacts(notebook?: string | null): Promise<PageFact[]>;
   /** The text blocks in a scope that carry line tags or an open checkbox. */
   taggedBlocks(scope: ScopeRef): Promise<TaggedBlock[]>;
+  /** The blocks whose text holds the words anywhere inside, ignoring case: a literal search, for replace. */
+  findText(needle: string, limit?: number): Promise<TextHit[]>;
   /** The pages of a notebook, or of all notebooks, and the links between them. */
   linkGraph(notebook?: string | null): Promise<LinkGraphData>;
   /** The pages within `depth` links (1 to 3) of a page, in either direction. */

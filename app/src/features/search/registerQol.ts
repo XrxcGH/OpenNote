@@ -104,3 +104,18 @@ contextMenus.register({
   order: 40,
   flag: 'search.lineTags',
 });
+
+// ---- Replace across the notebooks ----------------------------------------------------------------------------------
+commands.register(
+  defineCommand({
+    id: 'search.replace',
+    title: 'qolSearch.commands.replace',
+    keywords: 'qolSearch.commands.keywords.replace',
+    category: 'navigation',
+    keys: [chord('Ctrl+Shift+H')],
+    presetKeys: { onenote: [chord('Ctrl+H')] },
+    allowInTextInput: true,
+    flag: 'search.replace',
+    run: () => import('./replace/open').then((module) => module.openReplace()),
+  }),
+);

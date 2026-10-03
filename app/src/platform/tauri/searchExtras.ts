@@ -6,6 +6,7 @@ import type {
   PageFact,
   SearchExtras,
   TaggedBlock,
+  TextHit,
 } from '../../services/search/types';
 
 type Call = <T>(method: string, args?: Record<string, unknown>) => Promise<T>;
@@ -15,6 +16,7 @@ export function createTauriSearchExtras(call: Call): SearchExtras {
     launchLink: () => call<string | null>('launchLink'),
     pageFacts: (notebook) => call<PageFact[]>('pageFacts', { notebook: notebook ?? null }),
     taggedBlocks: (scope) => call<TaggedBlock[]>('taggedBlocks', { scope }),
+    findText: (needle, limit) => call<TextHit[]>('findText', { needle, limit }),
     linkGraph: (notebook) => call<LinkGraphData>('graph', { notebook: notebook ?? null }),
     neighbors: (page, depth) => call<Neighbor[]>('neighbors', { page, depth }),
     connections: (page) => call<Connections>('connections', { page }),

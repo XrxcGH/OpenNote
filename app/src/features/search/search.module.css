@@ -310,4 +310,38 @@
     align-items: center;
     gap: var(--space-3);
   }
+
+  /* Replace across the notebooks: each match with its neighbors, the old words struck and the new ones underlined. */
+  .replaceList {
+    display: grid;
+    gap: var(--space-3);
+    max-block-size: 50vh;
+    overflow-y: auto;
+  }
+
+  .replaceRow {
+    list-style: none;
+  }
+
+  .replaceLabel {
+    display: flex;
+    gap: var(--space-2);
+    align-items: baseline;
+    cursor: pointer;
+  }
+
+  .replaceText {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .replaceOld {
+    color: var(--color-text-secondary);
+    text-decoration: line-through;
+  }
+
+  .replaceNew {
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+  }
 }

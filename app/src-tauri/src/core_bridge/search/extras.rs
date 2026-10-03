@@ -39,6 +39,13 @@ struct NotebookArgs {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct FindArgs {
+    needle: String,
+    limit: Option<usize>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct NeighborArgs {
     page: String,
     depth: Option<u8>,
@@ -149,6 +156,17 @@ impl Hub {
                 let request: ScopeArgs = args(value)?;
                 let candidates = lock_index(&shared).tag_candidates(request.scope).map_err(search_error)?;
                 Ok(self.tagged_blocks(&candidates))
+            }
+            "findText" => {
+                let request: FindArgs = args(value)?;
+                if request.needle.trim().is_empty() {
+                    return Ok(json!([]));
+                }
+                let limit = request.limit.unwrap_or(2000).min(5000);
+                let hits = lock_index(&shared)
+                    .blocks_containing(&request.needle, limit)
+                    .map_err(search_error)?;
+                serde_json::to_value(hits).map_err(internal)
             }
             "graph" => {
                 let request: NotebookArgs = args(value).unwrap_or_default();

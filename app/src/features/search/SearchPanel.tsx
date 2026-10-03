@@ -5,6 +5,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, RefObject } from 'react';
+import { isEnabled } from '../../app/flags';
 import { commandContext } from '../../commands/registry';
 import type { SearchHit, SearchResponse, TagNode } from '../../services/search/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
@@ -14,6 +15,7 @@ import { Button, Dialog, Switch, TextField, announce } from '../../ui';
 import { maybeSearchClient } from './client';
 import { Highlighted } from './Highlighted';
 import { openPage } from './locate';
+import { openReplace } from './replace/open';
 import { deleteSaved, loadSaved, saveSearch } from './saved';
 import type { SavedSearch } from './saved';
 import styles from './search.module.css';
@@ -350,6 +352,13 @@ export default function SearchPanel({ query: initial = '', onClose }: SearchPane
         <Notes response={response} />
         <FilterBar filters={filters} tags={tags} set={set} />
         <SavedBar current={{ name: '', text, ...filters }} onPick={fromSaved} />
+        {isEnabled('search.replace') && (
+          <div className={styles.saved}>
+            <Button variant="quiet" onClick={() => openReplace(text)}>
+              {t('qolSearch.replace.open')}
+            </Button>
+          </div>
+        )}
         <div className={styles.body}>
           <Results
             id={listId}

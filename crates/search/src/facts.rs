@@ -45,7 +45,49 @@ pub enum Scope {
     All,
 }
 
+/// A block whose text holds some words.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TextHit {
+    /// The page.
+    pub page: PageId,
+    /// Its title.
+    pub title: String,
+    /// The block.
+    pub block: String,
+    /// The kind of block: `text`, `tables`, `images`, `files`, `ink`, or `other`.
+    pub kind: String,
+}
+
 impl SearchIndex {
+    /// The blocks whose text holds `needle` anywhere, ignoring ASCII case, in page order. This is a literal
+    /// search for replace, not the word search of [`SearchIndex::search`]: `cat` finds `concatenate`.
+    pub fn blocks_containing(&self, needle: &str, limit: usize) -> Result<Vec<TextHit>> {
+        let mut statement = self.conn.prepare_cached(
+            "SELECT p.id, p.title, b.id, b.kind FROM blocks b JOIN pages p ON p.rid = b.page
+             WHERE instr(lower(b.text), lower(?1)) > 0 ORDER BY p.rid, b.ord LIMIT ?2",
+        )?;
+        let rows = statement.query_map(rusqlite::params![needle, i64::try_from(limit).unwrap_or(i64::MAX)], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?;
+        let mut hits = Vec::new();
+        for row in rows {
+            let (page, title, block, kind) = row?;
+            hits.push(TextHit {
+                page: parse_id(&page)?,
+                title,
+                block,
+                kind,
+            });
+        }
+        Ok(hits)
+    }
+
     /// Every page of a notebook, or of all notebooks with `None`, in the order the index holds them.
     pub fn page_facts(&self, notebook: Option<NotebookId>) -> Result<Vec<PageFact>> {
         self.facts_where(notebook.map(|id| ("notebook", id.to_string())), false)

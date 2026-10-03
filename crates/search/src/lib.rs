@@ -55,7 +55,7 @@ mod write;
 pub use core_source::{stamps_from_tree, CorePageSource, CoreSlot};
 pub use doc::{BlockKind, BlockText, PageDoc};
 pub use error::{Result, SearchError};
-pub use facts::{PageFact, Scope};
+pub use facts::{PageFact, Scope, TextHit};
 pub use fuzzy::{FuzzyMatch, MatchKind};
 pub use graph::{Backlink, HeadingRef, LinkEdit, LinkTarget, OutgoingLink, PageSuggestion};
 pub use index::{IndexedPage, SearchIndex};
