@@ -30,6 +30,7 @@ import { Objects } from './objects/objects';
 import { createObjectsTool } from './objects/objectsTool';
 import type { PageLayout } from './layout/actions';
 import { attachPageMedia } from './images/attach';
+import { shownPage as shownOpenPage } from './history/shown';
 import { createEditorPool, shownPool } from './pool/pool';
 import type { PagePool } from './pool/pool';
 import { createSelectTool } from './pool/selectTool';
@@ -148,12 +149,14 @@ function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
   shownQueue.set(mounted.sync);
   shownPool.set(mounted.pool);
   shownLayer.set(mounted.layer);
+  shownOpenPage.set(mounted.page);
   setGeometrySource((block) => mounted.layer.view(block)?.element ?? null, mounted.viewport);
   return () => {
     if (shownQueue.get() !== mounted.sync) return;
     shownQueue.set(null);
     shownPool.set(null);
     shownLayer.set(null);
+    shownOpenPage.set(null);
     shownViewport.set(null);
     shownPage.set(null);
     shownFitWidth.set(null);

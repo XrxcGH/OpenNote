@@ -1,0 +1,58 @@
+/* Read aloud (ARCHITECTURE.md section 19): the bar above the page and the spoken word's highlight. */
+@layer components {
+  .host {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--layer-sticky);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-raised);
+  }
+
+  .progress {
+    min-inline-size: 6ch;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .field {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    font-size: var(--type-small-size);
+  }
+
+  .select {
+    min-block-size: var(--size-target-min);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .message {
+    margin: 0;
+  }
+
+  :global(::highlight(read-aloud)) {
+    background-color: var(--color-accent-primary-subtle);
+    color: inherit;
+  }
+
+  @media (forced-colors: active) {
+    :global(::highlight(read-aloud)) {
+      background-color: Highlight;
+      color: HighlightText;
+    }
+  }
+}
