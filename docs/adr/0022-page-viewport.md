@@ -1,6 +1,6 @@
 # ADR 0022: The page viewport: native scrolling, app touch panning, and the camera
 
-- Status: Proposed, pending spike S5 plus the re-measured typing and frame numbers
+- Status: Proposed, pending spike S5 on real touch hardware. The typing and frame numbers are re-measured in [docs/perf/phase-4.md](../perf/phase-4.md)
 - Date: 2026-10-02
 
 ## Context
