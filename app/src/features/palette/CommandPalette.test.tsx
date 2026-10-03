@@ -56,14 +56,15 @@ describe('the command palette', () => {
     opener.remove();
   });
 
-  it('announces how many results there are, then "No results"', async () => {
+  it('announces how many results there are, then says "No results." in the list too', async () => {
     await renderApp();
     const box = await openWith('Ctrl+K');
     await typeInto(box, 'dark');
     await waitFor(() => expect(announcements().at(-1)).toMatch(/^\d+ results?$/), { timeout: 3000 });
     await typeInto(box, 'zzqx');
-    await waitFor(() => expect(announcements().at(-1)).toBe('No results'), { timeout: 3000 });
+    await waitFor(() => expect(announcements().at(-1)).toBe('No results.'), { timeout: 3000 });
     expect(screen.queryAllByRole('option')).toHaveLength(0);
+    expect(within(screen.getByRole('dialog')).getByText('No results.')).toBeVisible();
   });
 
   it('moves with the arrow keys, closes on Escape, and Ctrl+K again closes it', async () => {

@@ -59,6 +59,18 @@
     overscroll-behavior: contain;
   }
 
+  /* An empty list takes no room, so the line that says nothing matched sits where the first result would. */
+  .list:empty {
+    display: none;
+  }
+
+  /* Padded like an option, so its text starts where the results' titles do. */
+  .empty {
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    color: var(--color-text-secondary);
+  }
+
   .group {
     display: grid;
   }

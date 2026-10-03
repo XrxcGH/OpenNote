@@ -72,28 +72,34 @@ export function ResultList({ id, ranked, activeIndex, onHover, onChoose }: Resul
   const starts = ranked.groups.map((_, g) =>
     ranked.groups.slice(0, g).reduce((count, group) => count + group.results.length, 0),
   );
+  // Once every provider has answered, an empty list says so where the results would be. The announcer has told
+  // screen readers already, so the line isn't a live region.
+  const empty = ranked.settled && ranked.flat.length === 0;
   return (
-    <div role="listbox" id={id} aria-label={t('palette.results')} className={styles.list}>
-      {ranked.groups.map((group, g) => (
-        <div key={group.id} role="group" aria-labelledby={`${id}-group-${group.id}`} className={styles.group}>
-          <div role="presentation" id={`${id}-group-${group.id}`} className={styles.groupLabel}>
-            {t(GROUP_LABELS[group.id] ?? 'palette.groups.other')}
+    <>
+      <div role="listbox" id={id} aria-label={t('palette.results')} className={styles.list}>
+        {ranked.groups.map((group, g) => (
+          <div key={group.id} role="group" aria-labelledby={`${id}-group-${group.id}`} className={styles.group}>
+            <div role="presentation" id={`${id}-group-${group.id}`} className={styles.groupLabel}>
+              {t(GROUP_LABELS[group.id] ?? 'palette.groups.other')}
+            </div>
+            {group.results.map((result, i) => {
+              const at = starts[g] + i;
+              return (
+                <Option
+                  key={result.id}
+                  result={result}
+                  id={optionId(id, at)}
+                  active={at === activeIndex}
+                  onHover={() => onHover(at)}
+                  onChoose={() => onChoose(result)}
+                />
+              );
+            })}
           </div>
-          {group.results.map((result, i) => {
-            const at = starts[g] + i;
-            return (
-              <Option
-                key={result.id}
-                result={result}
-                id={optionId(id, at)}
-                active={at === activeIndex}
-                onHover={() => onHover(at)}
-                onChoose={() => onChoose(result)}
-              />
-            );
-          })}
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      {empty && <p className={styles.empty}>{t('palette.none')}</p>}
+    </>
   );
 }
