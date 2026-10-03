@@ -14,6 +14,7 @@ import { createBlockLayer } from './blocks/blockLayer';
 import { markDraft, syncOf } from './blocks/textBlock';
 import type { BlockLayer } from './blocks/types';
 import { createEditorHost } from './editorHost';
+import { shownPage } from './history/shown';
 import { createEditorPool, shownPool } from './pool/pool';
 import type { StaticPool } from './pool/pool';
 import { blockLaidOut, setGeometrySource } from './seams/geometry';
@@ -102,6 +103,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const shown = options.shown ?? true;
   if (shown) {
     shownViewport.set(viewport);
+    shownPage.set(page);
     shownQueue.set(sync);
     shownPool.set(pool);
     setGeometrySource((block) => layer.view(block)?.element ?? null);
@@ -128,6 +130,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
         shownQueue.set(null);
         shownPool.set(null);
         shownViewport.set(null);
+        shownPage.set(null);
         setGeometrySource(null);
       }
       await page.close().catch(() => undefined);
