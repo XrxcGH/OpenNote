@@ -52,7 +52,16 @@ export function textColorItems(current: string | null): MenuItemSpec[] {
   return [
     ...pens.map((pen) => radio(pen, t(`commands.colors.${pen}` as MessageKey), current === pen)),
     { ...radio('none', t('editor.colorMenu.automatic'), current === null), separatorBefore: true },
+    { id: 'custom', label: t('editor.colorMenu.custom'), kind: 'radio', checked: current?.startsWith('#') ?? false },
   ];
+}
+
+/** A color from the text color menu: a pen, null for Automatic, or a custom one asked for. */
+async function chosenColor(chosen: string, current: string | null): Promise<string | null | undefined> {
+  if (chosen === 'none') return null;
+  if (chosen !== 'custom') return chosen;
+  const { chooseCustomColor } = await import('../styles/CustomColor');
+  return (await chooseCustomColor(current?.startsWith('#') ? current : '#')) ?? undefined;
 }
 
 export function highlightItems(current: string | null | undefined): MenuItemSpec[] {
@@ -90,8 +99,10 @@ export function turnIntoItems(current: BlockKind | null): MenuItemSpec[] {
 
 async function chooseAndRun(editor: Editor, id: string, args: EditorCommandArgs): Promise<void> {
   if (id === 'format.textColor' && args.color === undefined) {
-    const chosen = await pick(editor, t('editor.colorMenu.label'), textColorItems(textColorAt(editor.state)));
-    if (chosen) runEditorCommand(editor, id, { color: chosen === 'none' ? null : chosen });
+    const current = textColorAt(editor.state);
+    const chosen = await pick(editor, t('editor.colorMenu.label'), textColorItems(current));
+    const color = chosen ? await chosenColor(chosen, current) : undefined;
+    if (color !== undefined) runEditorCommand(editor, id, { color });
     return;
   }
   if (id === 'format.textSize' && args.size === undefined) {
@@ -140,8 +151,8 @@ export async function setBlocksColor(color: string | null | undefined, ctx: Comm
   if (value === undefined) {
     const anchor = document.activeElement instanceof HTMLElement ? document.activeElement : document.body;
     const chosen = await openMenu({ label: t('editor.colorMenu.label'), items: textColorItems(null), anchor });
-    if (!chosen) return;
-    value = chosen === 'none' ? null : chosen;
+    value = chosen ? await chosenColor(chosen, null) : undefined;
+    if (value === undefined) return;
   }
   for (const block of blocks) {
     const editor = pool.editor(block) ?? pool.mount(block, null, 'target');

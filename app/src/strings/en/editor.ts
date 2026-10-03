@@ -143,6 +143,7 @@ export const editor = {
   colorMenu: {
     label: 'Text color',
     custom: 'Custom color…',
+    apply: 'Apply color',
     automatic: 'Automatic',
   },
   sizeMenu: 'Text size',
@@ -266,6 +267,7 @@ export const editor = {
     previewDark: 'Preview on a dark page',
     defaultColor: 'Default',
     contrast: 'This color is hard to read on {theme, select, dark {dark} other {light}} pages.',
+    save: 'Save styles',
     saved: 'Text styles saved.',
     saveFailed: 'The text styles couldn’t be saved. Try again.',
     noNotebook: 'Open a page to change its notebook’s text styles.',

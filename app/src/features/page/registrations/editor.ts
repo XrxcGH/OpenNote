@@ -2,7 +2,9 @@
 // on the Home and Insert tabs, and the page.text and page.link menus. This file loads at start-up, so it holds
 // only definitions. Running a command loads formattingBar/commands.ts; checked states read the selection directly.
 import type { Editor } from '@tiptap/core';
+import { isEnabled } from '../../../app/flags';
 import type { FlagId } from '../../../app/flags';
+import { getLocation, onNavigate } from '../../../app/location';
 import { menuItemsFor } from '../../../commands/menus';
 import { commandContext, defineCommand } from '../../../commands/registry';
 import type { CommandCategory, CommandContext, CommandId } from '../../../commands/types';
@@ -389,3 +391,46 @@ editingSettingsParts.register({
   flag: 'page.typingHelpers',
   load: () => import('../settings/EditingAutoCorrect'),
 });
+
+// Text styles: the dialog, and the shown notebook's styles as variables on the document.
+commands.register(
+  defineCommand({
+    id: 'styles.edit',
+    title: 'editor.commands.textStyles',
+    keywords: 'editor.keywords.block',
+    category: 'format',
+    flag: 'page.styles',
+    run: async (ctx) => {
+      const notebook = ctx.target?.kind === 'node' ? ctx.target.id : undefined;
+      await (await import('../styles/TextStylesDialog')).openTextStyles(notebook);
+    },
+  }),
+);
+commandBar.register({
+  id: 'editor.styles.edit',
+  tab: 'home',
+  group: 'styles',
+  command: 'styles.edit',
+  priority: 24,
+  flag: 'page.styles',
+});
+contextMenus.register({
+  id: 'editor.styles.notebook',
+  menu: 'tree.notebook',
+  command: 'styles.edit',
+  group: 'styles',
+  order: 50,
+  flag: 'page.styles',
+});
+onNavigate(() => {
+  if (!isEnabled('page.styles') || shownNotebookId() === null) return;
+  void import('../styles/store').then(({ applyShownStyles, installNotebookStyles }) => {
+    installNotebookStyles();
+    applyShownStyles();
+  });
+});
+
+function shownNotebookId(): string | null {
+  const location = getLocation();
+  return location.view === 'workspace' ? location.notebookId : null;
+}
