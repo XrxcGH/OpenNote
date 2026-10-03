@@ -62,6 +62,8 @@
     "allow-history-restore",
     "allow-history-restore-blocks",
     "allow-history-name",
+    "allow-page-add-strokes",
+    "allow-page-read-strokes",
     "allow-clipboard-facts",
     "allow-clipboard-read",
     "allow-image-import",

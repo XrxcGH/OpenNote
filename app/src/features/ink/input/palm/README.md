@@ -178,7 +178,7 @@ The learned state holds `penSeen`, the hand regions, the stylus tip size, and th
 | `pen(signal, pointerId, time, x, y, tiltX, tiltY)` | Every pen event from window-level listeners. A `hover` is a `pointermove` with no buttons; `leave` is `pointerleave` on the document root |
 | `touchDown`, `touchMove`, `touchEnd`               | Every touch event on the page or on controls                                                                                              |
 | `system(signal, time)`                             | Window blur, page hidden, page switch, or a pen capture lost while the pen is down. Never the capture release after a `pointerup`         |
-| `tick(time)`                                       | Every 100 ms while `needsTick()`, and at `nextDue()`                                                                                                        |
+| `tick(time)`                                       | Every 100 ms while `needsTick()`, and at `nextDue()`                                                                                      |
 | `hint(kind, time, x, y)`                           | A native palm hint                                                                                                                        |
 
 Budgets, checked in `benchmark.test.ts`: a pen event at most 1 µs, a touch event with 10 contacts down at most 5 µs, a tick at most 10 µs, 100,000 mixed events at most 60 ms, and no allocation per event. Contacts, pens, holds, and effects live in typed arrays, and hot modules copy their thresholds into plain local objects. `docs/perf/phase-5-core.md` records the numbers.

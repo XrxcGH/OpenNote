@@ -30,7 +30,15 @@ export interface DecodedEnvelope {
 /** The JSON part of a frame (crates/core/src/wire/frames.rs, FrameInfo). */
 export interface FrameInfo {
   seq: number;
-  changes: { pageFields: boolean; blocksChanged: string[]; blocksRemoved: string[]; assetsChanged: string[] };
+  changes: {
+    pageFields: boolean;
+    blocksChanged: string[];
+    blocksRemoved: string[];
+    assetsChanged: string[];
+    strokesAdded?: string[];
+    strokesRemoved?: string[];
+    strokesChanged?: string[];
+  };
   ui: unknown;
   texts: Record<string, string>;
   blocks: Record<string, unknown>[];
@@ -41,6 +49,8 @@ export interface FrameInfo {
   canUndo: boolean;
   canRedo: boolean;
   strokes: number;
+  /** Phase 5: the stroke records after the JSON, the added and changed strokes as they are now. */
+  records?: Uint8Array;
 }
 
 const HEADER = 24;
@@ -70,5 +80,6 @@ export function decodeEnvelope(buffer: ArrayBuffer): DecodedEnvelope {
 
 export function decodeFrame(buffer: ArrayBuffer): FrameInfo {
   const length = new DataView(buffer).getUint32(0, true);
-  return JSON.parse(decoder.decode(new Uint8Array(buffer, 4, length))) as FrameInfo;
+  const info = JSON.parse(decoder.decode(new Uint8Array(buffer, 4, length))) as FrameInfo;
+  return { ...info, records: new Uint8Array(buffer, 4 + length) };
 }

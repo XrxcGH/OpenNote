@@ -10,12 +10,12 @@ This folder holds the logic of editing gestures that remove or cut ink: the stro
 
 ## Public API
 
-| Name                                                           | Use                                                           |
-| -------------------------------------------------------------- | ------------------------------------------------------------- |
+| Name                                                           | Use                                                                       |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `createStrokeEraseSession(index, options?)`                    | `move(samples, radius)`, `preview(point, radius)`, `commit()`, `cancel()` |
-| `createPartialEraseSession(index, newId, options?)`            | `move`, `parts`, `isGone`, `checkpoint`, `commit`, `cancel`             |
-| `eraserSkip(filter, locked?)`, `eraserAccepts(filter, stroke)` | The eraser's `skip` option                                    |
-| `lassoSkip(filter, extra?)`, `strokeKind(stroke)`              | The lasso's `skip` option                                     |
+| `createPartialEraseSession(index, newId, options?)`            | `move`, `parts`, `isGone`, `checkpoint`, `commit`, `cancel`               |
+| `eraserSkip(filter, locked?)`, `eraserAccepts(filter, stroke)` | The eraser's `skip` option                                                |
+| `lassoSkip(filter, extra?)`, `strokeKind(stroke)`              | The lasso's `skip` option                                                 |
 
 ## What the interface needs
 

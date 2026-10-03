@@ -3,6 +3,7 @@
 // core's `core:*` events become frames, external changes, and read-only notices for the page they name.
 import type { CoreClient, DecodedEnvelope, FrameInfo } from '../../core/client';
 import type { ImagesClient, IpcError } from '../../platform/types';
+import { inkListeners } from './ink';
 import { PageServiceError } from './types';
 import type {
   AppliedFrame,
@@ -58,6 +59,12 @@ export function toFrame(info: FrameInfo): AppliedFrame {
     ui: (info.ui as AppliedFrame['ui']) ?? null,
     canUndo: info.canUndo,
     canRedo: info.canRedo,
+    ink: {
+      added: info.changes.strokesAdded ?? [],
+      removed: info.changes.strokesRemoved ?? [],
+      changed: info.changes.strokesChanged ?? [],
+      records: info.records ?? new Uint8Array(0),
+    },
   };
 }
 
@@ -258,7 +265,12 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
         external: listeners<ExternalChange>(),
       };
       const heard = events(session, listeners<AppliedFrame>());
-      const frame = (info: FrameInfo | null) => (info ? toFrame(info) : null);
+      const ink = inkListeners();
+      const frame = (info: FrameInfo | null) => {
+        const made = info ? toFrame(info) : null;
+        ink.emit(made?.ink);
+        return made;
+      };
       return {
         id: pageId,
         client: name,
@@ -266,17 +278,25 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
         readOnly: envelope.readOnly ? readOnlyInfo(envelope.session.readOnly ?? 'readOnly') : null,
         // Phase 3's core takes spliceText (P3-10); an older core would refuse it as invalid.
         supportsSplice: true,
+        ink: {
+          records: envelope.ink,
+          more: envelope.moreInk,
+          readAll: () => turn(() => client.pageReadStrokes(pageId, name)).catch(rejectAs),
+          onChange: ink.add,
+        },
         send: (batch) =>
-          numbered((clientSeq) =>
-            client.pageApply({
+          numbered((clientSeq) => {
+            const request = {
               page: pageId,
               client: name,
               clientSeq,
               coalesce: batch.coalesce ?? null,
               ui: batch.ui ?? null,
               edits: batch.edits,
-            }),
-          ).catch(rejectAs),
+            };
+            // Phase 5: new strokes go with page_add_strokes, after the batch's edits in the same transaction.
+            return batch.strokes ? client.pageAddStrokes(request, batch.strokes) : client.pageApply(request);
+          }).catch(rejectAs),
         undo: () => turn(() => client.pageUndo(pageId, name)).then(frame, rejectAs),
         redo: () => turn(() => client.pageRedo(pageId, name)).then(frame, rejectAs),
         saveNow: () => turn(() => client.pageSaveNow(pageId)).catch(rejectAs),

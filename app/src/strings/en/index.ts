@@ -23,6 +23,7 @@ import { code } from './code';
 import { spelling } from './spelling';
 import { readAloud } from './readAloud';
 import { history } from './history';
+import { ink } from './ink';
 
 export const en = {
   common,
@@ -48,4 +49,5 @@ export const en = {
   spelling,
   readAloud,
   history,
+  ink,
 } as const;

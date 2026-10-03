@@ -171,3 +171,49 @@ describe('the Tauri page service’s events', () => {
     expect(readOnly).toHaveBeenCalledWith({ reason: 'readOnlyFile', action: 'makeEditable' });
   });
 });
+
+describe('ink through the Tauri page service', () => {
+  it('sends new strokes with page_add_strokes and tells listeners what undo did to the ink', async () => {
+    const opened = envelope([block('b1', 'x')]);
+    const { core, calls } = fakeCore([{ ...opened, ink: new Uint8Array([1, 2, 3]), moreInk: true }]);
+    const extra = core as unknown as Record<string, unknown>;
+    const added = vi.fn(() => Promise.resolve({ seq: 4, orderKeys: {}, canUndo: true, canRedo: false }));
+    const records = new Uint8Array([9, 9]);
+    extra.pageAddStrokes = added;
+    extra.pageReadStrokes = vi.fn(() => Promise.resolve(records));
+    extra.pageUndo = vi.fn(() =>
+      Promise.resolve({
+        seq: 5,
+        changes: { pageFields: false, blocksChanged: [], blocksRemoved: [], assetsChanged: [], strokesRemoved: ['s1'] },
+        ui: null,
+        texts: {},
+        blocks: [],
+        title: null,
+        tags: null,
+        view: null,
+        assets: [],
+        canUndo: false,
+        canRedo: true,
+        strokes: 0,
+        records: new Uint8Array(),
+      }),
+    );
+    const page = await createTauriPageService(core, {} as ImagesClient).open('p1', { viewport: null });
+    expect([...page.ink!.records]).toEqual([1, 2, 3]);
+    expect(page.ink!.more).toBe(true);
+    expect(await page.ink!.readAll()).toBe(records);
+
+    await page.send({ edits: [{ edit: 'removeStrokes', strokes: ['s0'] }], strokes: records });
+    expect(added).toHaveBeenCalledWith(
+      expect.objectContaining({ clientSeq: 4, edits: [{ edit: 'removeStrokes', strokes: ['s0'] }] }),
+      records,
+    );
+    expect(calls.pageApply).not.toHaveBeenCalled();
+
+    const heard = vi.fn();
+    page.ink!.onChange(heard);
+    const frame = await page.undo();
+    expect(frame?.ink?.removed).toEqual(['s1']);
+    expect(heard).toHaveBeenCalledWith(expect.objectContaining({ removed: ['s1'] }));
+  });
+});

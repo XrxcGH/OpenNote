@@ -6,6 +6,7 @@
 // a fast scroll, and a sharper set after a big zoom-in. Priority 3 refills stale tiles the person cannot see.
 // Priority 0 is hand-off and erase redraws, which come from invalidation and not from here.
 
+import { intersects } from '../../geometry/bounds';
 import type { Bounds, Vec } from '../../geometry/types';
 import {
   eachTile,
@@ -101,6 +102,9 @@ function chooseScale(input: PlanInput): { scale: number; sharpen: number | null 
   const shown = input.shownScale;
   if (shown === null) return { scale: wanted, sharpen: null };
   if (input.zoomStill) return { scale: scaleChanged(shown, wanted) ? wanted : shown, sharpen: null };
+  // A zoom out at the shown scale would want the view's tiles with the square of the zoom factor, so once that is
+  // more than the budget holds, the plan moves to the wanted scale, which always fits.
+  if (rangeCount(tilesIn(input.viewport, shown)) > input.budget.maxTiles) return { scale: wanted, sharpen: null };
   // During a zoom gesture no new jobs start, except when the shown tiles fall below half the wanted resolution.
   return { scale: shown, sharpen: shown < wanted / 2 ? wanted : null };
 }
@@ -126,6 +130,7 @@ class Planner {
   private readonly jobs: TileJob[] = [];
   private readonly empty: TileJob[] = [];
   private readonly wanted = new Set<string>();
+  private readonly visible = new Set<string>();
   private missingVisible = false;
 
   constructor(private readonly input: PlanInput) {}
@@ -135,6 +140,7 @@ class Planner {
     const id = tileId(scale, tx, ty);
     if (this.wanted.has(id)) return;
     this.wanted.add(id);
+    if (priority === 1) this.visible.add(id);
     const { tiles, revision, hasInk } = this.input;
     const info = tiles.get(id);
     if (isFresh(info, revision)) return;
@@ -153,8 +159,15 @@ class Planner {
     });
   }
 
-  result(): { jobs: TileJob[]; empty: TileJob[]; wanted: ReadonlySet<string>; missingVisible: boolean } {
-    return { jobs: this.jobs, empty: this.empty, wanted: this.wanted, missingVisible: this.missingVisible };
+  result(): {
+    jobs: TileJob[];
+    empty: TileJob[];
+    wanted: ReadonlySet<string>;
+    visible: ReadonlySet<string>;
+    missingVisible: boolean;
+  } {
+    const { jobs, empty, wanted, visible, missingVisible } = this;
+    return { jobs, empty, wanted, visible, missingVisible };
   }
 }
 
@@ -178,18 +191,29 @@ interface Evictions {
 }
 
 /**
- * Chooses the tiles to give back. Tiles at another scale go once the plan's set covers the view. Tiles that nothing
- * wants go, oldest first, when the total is over budget. Wanted tiles are never evicted.
+ * Chooses the tiles to give back. Tiles at another scale go once the plan's set covers the view; until then the ones
+ * on screen stay and count as visible, so the view never drops to the overview at a scale switch. Tiles that nothing
+ * wants go, oldest first, when the total is over budget. Wanted tiles are never evicted. The room left counts the
+ * wanted tiles that will be held: those held now and the visible ones, but not missing ring or refill tiles, which
+ * the trim drops when they don't fit.
  */
-function chooseEvictions(input: PlanInput, scale: number, wanted: ReadonlySet<string>, covered: boolean): Evictions {
+function chooseEvictions(
+  input: PlanInput,
+  scale: number,
+  wanted: ReadonlySet<string>,
+  covered: boolean,
+  reserved: number,
+): Evictions {
   const evict: string[] = [];
   let kept: TileInfo[] = [];
+  let onScreen = 0;
   for (const [id, info] of input.tiles) {
     if (wanted.has(id)) continue;
     if (info.scale !== scale && covered) evict.push(id);
+    else if (info.scale !== scale && intersects(tileBounds(info.tx, info.ty, info.scale), input.viewport)) onScreen++;
     else kept.push(info);
   }
-  const room = Math.max(0, input.budget.maxTiles - wanted.size);
+  const room = Math.max(0, input.budget.maxTiles - reserved - onScreen);
   if (kept.length > room) {
     kept.sort((a, b) => a.lastUsed - b.lastUsed);
     for (const info of kept.slice(0, kept.length - room)) evict.push(tileId(info.scale, info.tx, info.ty));
@@ -241,7 +265,11 @@ export function planTiles(input: PlanInput): TilePlan {
   }
   const core = planner.result();
   const covered = !core.missingVisible && sharpen === null;
-  const { evict, kept } = chooseEvictions(input, scale, core.wanted, covered);
+  let reserved = 0;
+  for (const id of core.wanted) {
+    if (input.tiles.has(id) || core.visible.has(id)) reserved++;
+  }
+  const { evict, kept } = chooseEvictions(input, scale, core.wanted, covered, reserved);
   if (!input.penDown) wantStale(planner, kept, scale, input.revision);
   const all = planner.result();
   const ordered = orderJobs(all.jobs, input.viewport);

@@ -7,7 +7,7 @@ import type { DecodedEnvelope, FrameInfo } from './wire';
 export type { DecodedEnvelope, FrameInfo, SessionInfo } from './wire';
 
 /** Calls a Tauri command. Binary answers arrive as an ArrayBuffer. */
-export type CoreInvoke = (command: string, args?: Record<string, unknown>) => Promise<unknown>;
+export type CoreInvoke = (command: string, args?: Record<string, unknown> | Uint8Array) => Promise<unknown>;
 /** Hears a `core:*` event. The returned function stops listening. */
 export type CoreListen = (event: string, handler: (payload: unknown) => void) => () => void;
 
@@ -58,8 +58,22 @@ export interface CoreClient {
   /** One transaction of the client, so it takes the client's next sequence number. */
   historyRestoreBlocks(request: CoreRestoreBlocksRequest): Promise<CoreTxnAck>;
   historyName(page: string, client: string, revision: string, name: string | null, keep: boolean): Promise<void>;
+  /** Phase 5: new strokes after the request's edits, as one transaction (page_add_strokes). */
+  pageAddStrokes(request: CoreTxnRequest, records: Uint8Array): Promise<CoreTxnAck>;
+  /** Phase 5: every live stroke of the page, as ink records. */
+  pageReadStrokes(page: string, client: string): Promise<Uint8Array>;
   /** Hears a `core:*` event, or nothing where the client has no `listen`. */
   onEvent(event: string, handler: (payload: unknown) => void): () => void;
+}
+
+/** The body of page_add_strokes: the JSON's length as 4 bytes, the JSON, and the records (see ink_bridge.rs). */
+export function strokesBody(header: Record<string, unknown>, records: Uint8Array): Uint8Array {
+  const json = new TextEncoder().encode(JSON.stringify(header));
+  const body = new Uint8Array(4 + json.length + records.length);
+  new DataView(body.buffer).setUint32(0, json.length, true);
+  body.set(json, 4);
+  body.set(records, 4 + json.length);
+  return body;
 }
 
 function bytesOf(answer: unknown): ArrayBuffer {
@@ -107,6 +121,13 @@ export function createCoreClient(deps: { invoke: CoreInvoke; listen?: CoreListen
       ordered(request.page, () => deps.invoke('history_restore_blocks', { ...request }) as Promise<CoreTxnAck>),
     historyName: (page, client, revision, name, keep) =>
       ordered(page, async () => void (await deps.invoke('history_name', { page, client, revision, name, keep }))),
+    pageAddStrokes: (request, records) =>
+      ordered(
+        request.page,
+        () => deps.invoke('page_add_strokes', strokesBody({ ...request }, records)) as Promise<CoreTxnAck>,
+      ),
+    pageReadStrokes: (page, client) =>
+      ordered(page, async () => new Uint8Array(bytesOf(await deps.invoke('page_read_strokes', { page, client })))),
     onEvent: (event, handler) => deps.listen?.(event, handler) ?? (() => undefined),
   };
 }
