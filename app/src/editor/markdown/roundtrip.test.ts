@@ -1,11 +1,11 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { documents, markdownSource } from './arbitrary';
+import { documents, markdownSource, propertyRuns } from './arbitrary';
 import { parseTextBlock } from './parse';
 import { serializeTextBlock } from './serialize';
 
-// 400 runs keep the suite quick. Set FC_RUNS=100000 for the nightly depth of the Phase 4 design.
-const RUNS = Number(process.env.FC_RUNS ?? 400);
+// 400 runs here, 1,000 in CI, and FC_RUNS=100000 for the nightly depth of the Phase 4 design.
+const RUNS = propertyRuns(400);
 const TIMEOUT = 600_000;
 const { doc, block } = documents();
 

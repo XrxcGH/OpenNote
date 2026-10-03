@@ -33,9 +33,21 @@ export function diffMarkdown(before: string, after: string): MarkdownSplice | nu
   };
 }
 
-const encoder = new TextEncoder();
-
-/** The UTF-8 byte offset of an index in UTF-16 units in `text`. */
+/**
+ * The UTF-8 byte offset of an index in UTF-16 units in `text`, counted without encoding. A lone surrogate counts 3
+ * bytes, as the U+FFFD that `TextEncoder` writes for it.
+ */
 export function utf8Offset(text: string, utf16Index: number): number {
-  return encoder.encode(text.slice(0, utf16Index)).length;
+  const end = Math.min(Math.max(0, utf16Index), text.length);
+  let bytes = 0;
+  for (let i = 0; i < end; i++) {
+    const code = text.charCodeAt(i);
+    if (code < 0x80) bytes += 1;
+    else if (code < 0x800) bytes += 2;
+    else if (isHigh(code) && i + 1 < end && isLow(text.charCodeAt(i + 1))) {
+      bytes += 4;
+      i++;
+    } else bytes += 3;
+  }
+  return bytes;
 }

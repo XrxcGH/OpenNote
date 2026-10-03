@@ -56,6 +56,8 @@ const HREFS = [
   'mailto:a@example.com',
   'opennote:page/01m3sabc31y0rfa24eeh6j4ky4#01m3sabc32dwqknfawtgwtsgcj',
   'ftp://example.com/file',
+  'file:///C:/notes/a.txt',
+  'tel:+15551234',
   'notes.md',
   'https://example.com/caf\u00e9',
 ];
@@ -245,3 +247,13 @@ export const markdownSource: fc.Arbitrary<string> = fc
     { maxLength: 40 },
   )
   .map((parts) => parts.join(''));
+
+/**
+ * How many runs a property gets: `FC_RUNS` when set (100,000 in the nightly job), 1,000 in CI as the Phase 4 plan
+ * asks of every pull request, and `local` on a developer's machine, where several suites share the processor.
+ */
+export function propertyRuns(local: number): number {
+  const forced = Number(process.env.FC_RUNS);
+  if (Number.isInteger(forced) && forced > 0) return forced;
+  return process.env.CI ? Math.max(1000, local) : local;
+}

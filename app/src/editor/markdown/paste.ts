@@ -3,10 +3,9 @@
 import type { Token } from 'markdown-it';
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { TITLE } from './escape';
-import { serializeInline } from './inline';
 import { buildDoc, createMarkdown } from './parse';
 import { inlineNodes } from './parseInline';
+import { serializeCellParagraph } from './serialize';
 import { textSchema } from '../schema/schema';
 import { newId as makeId } from '../ids';
 import { DEFAULT_COLUMN_WIDTH } from '../schema/specs';
@@ -22,19 +21,21 @@ const MARKER_LINE = /^ {0,3}(?:#{1,6}(?:\s|$)|[-*+]\s|\d{1,9}[.)]\s|>|```|~~~)/m
 const LINK = /\[[^\]\n]+\]\([^)\s]+\)/;
 const STRONG_PAIR = /\*\*[^*\n]+\*\*/;
 const ONLY_URL = /^\s*(?:https?|ftp):\/\/\S+\s*$/i;
+/** A GFM table's head row, then its delimiter row, such as `| --- | :-: |`. */
+const TABLE_HEAD = /^[^\n]*\|[^\n]*\n {0,3}\|?(?: *:?-+:? *\|)+(?: *:?-+:? *)?$/m;
 
 /**
  * Text looks like Markdown when at least one line starts with a heading, list, quote, or fence marker, or the text
- * has a Markdown link or a pair of `**`. A single line that holds only a web address is not Markdown.
+ * has a Markdown link, a pair of `**`, or a table's head. A single line that holds only a web address is not.
  */
 export function looksLikeMarkdown(text: string): boolean {
   if (ONLY_URL.test(text)) return false;
-  return MARKER_LINE.test(text) || LINK.test(text) || STRONG_PAIR.test(text);
+  return MARKER_LINE.test(text) || LINK.test(text) || STRONG_PAIR.test(text) || TABLE_HEAD.test(text);
 }
 
+/** A cell's canonical Markdown, as `serializeCell` writes it, so a table block's first edit changes nothing. */
 function cellMarkdownFrom(inline: Token | undefined): string {
-  const content = inlineNodes(inline?.children ?? []);
-  return serializeInline(nodes.paragraph.create(null, content), TITLE).trim();
+  return serializeCellParagraph(nodes.paragraph.create(null, inlineNodes(inline?.children ?? [])));
 }
 
 /** Table data from the tokens between `table_open` and `table_close`. */

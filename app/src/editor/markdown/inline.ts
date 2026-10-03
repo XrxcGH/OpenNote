@@ -1,16 +1,23 @@
 // The canonical Markdown of one paragraph, heading, or title (SPEC 7.3, 7.6, and 7.7). Text is escaped as one line
 // of code points, so that an escape depends on the text around it and never on how marks split that text.
-import { Fragment } from '@tiptap/pm/model';
+import { Fragment, Mark } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { LABEL, escapeCodePoints } from './escape';
+import { LABEL, cleanText, escapeCodePoints } from './escape';
 import type { EscapeMode, Seams } from './escape';
 import { collectLeaves, dropEdgeBreaks, isCode, trimMarkEdges } from './leaves';
 import type { Leaf } from './leaves';
 import { parseInlineNodes } from './parse';
 import { planRanges } from './marksPlan';
 import type { Plan, Range } from './marksPlan';
-import { closeToken, decideStyles, formatDestination, isPlainHighlight, openToken } from './marksStyle';
+import {
+  closeToken,
+  decideStyles,
+  destinationText,
+  formatDestination,
+  isPlainHighlight,
+  openToken,
+} from './marksStyle';
 import type { Style } from './marksStyle';
 
 /** A placeholder in the escape view for what is not escaped text: code spans, images, and math. */
@@ -26,9 +33,13 @@ export function codeSpan(text: string): string {
   return padded ? `${fence} ${text} ${fence}` : `${fence}${text}${fence}`;
 }
 
+/** An image description as one line, cleaned like any other text that leaves the editor (SPEC 7.7). */
+const altText = (alt: string) => cleanText(alt).replace(/\s*\n\s*/g, ' ');
+
+/** An image or inline math. */
 function atomSource(node: PMNode): string {
-  if (node.type.name === 'mathInline') return `$${node.attrs.source as string}$`;
-  const alt = escapeCodePoints(Array.from((node.attrs.alt as string).replace(/\s*\n\s*/g, ' ')), LABEL).join('');
+  if (node.type.name === 'mathInline') return `$${cleanText(node.attrs.source as string)}$`;
+  const alt = escapeCodePoints(Array.from(altText(node.attrs.alt as string)), LABEL).join('');
   return `![${alt}](${formatDestination(node.attrs.src as string)})`;
 }
 
@@ -87,12 +98,27 @@ function bangIsBare(text: string): boolean {
   return text.endsWith('!') && slashes % 2 === 0;
 }
 
+/** Attributes as the writer writes them: their text cleaned of what Markdown never holds. */
+function writtenAttrs(attrs: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  const out = { ...attrs };
+  for (const key of ['href', 'src']) if (typeof out[key] === 'string') out[key] = destinationText(out[key]);
+  if (typeof out.alt === 'string') out.alt = altText(out.alt);
+  if (typeof out.source === 'string') out.source = cleanText(out.source);
+  return out;
+}
+
+/** The same marks in textSchema, which the reader builds. Editors use their own schema instance. */
+function readerMarks(marks: readonly Mark[]): readonly Mark[] {
+  return Mark.setFrom(marks.map((mark) => textSchema.marks[mark.type.name].create(writtenAttrs(mark.attrs))));
+}
+
 /** The nodes that the leaves stand for, to check that the written text reads back as the same content. */
 function expectedNodes(leaves: readonly Leaf[]): PMNode[] {
   return leaves.map((leaf) => {
-    if (leaf.kind === 'atom') return leaf.node;
-    if (leaf.kind === 'break') return textSchema.nodes.hardBreak.create(null, null, leaf.marks);
-    return textSchema.text(leaf.text, leaf.marks);
+    const marks = readerMarks(leaf.marks);
+    if (leaf.kind === 'break') return textSchema.nodes.hardBreak.create(null, null, marks);
+    if (leaf.kind === 'text') return textSchema.text(leaf.text, marks);
+    return textSchema.nodes[leaf.node.type.name].create(writtenAttrs(leaf.node.attrs), null, marks);
   });
 }
 

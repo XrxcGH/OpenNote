@@ -7,11 +7,12 @@ import type { MarkdownIt as Md, Token } from 'markdown-it';
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { CALLOUT_TYPE_PATTERN, LANGUAGE_PATTERN } from '../schema/specs';
+import { CALLOUT_TYPE_PATTERN, LANGUAGE_PATTERN, isBlockedHref } from '../schema/specs';
 import { inlineNodes } from './parseInline';
 import { highlightPlugin, mathPlugin } from './rules';
 
 const { nodes } = textSchema;
+const DATA_IMAGE = /^data:image\/(?:gif|png|jpeg|webp);/i;
 
 /** One markdown-it instance: CommonMark, strikethrough, highlights, and math. The paste parser also turns tables on. */
 export function createMarkdown(tables = false): Md {
@@ -22,6 +23,8 @@ export function createMarkdown(tables = false): Md {
   // Links are kept as written: no percent-encoding, no punycode. The writer and the reader then agree.
   md.normalizeLink = (url) => url;
   md.normalizeLinkText = (text) => text;
+  // SPEC 7.5 keeps links with any scheme, `file:` included, except the few the schema blocks. Data images stay.
+  md.validateLink = (url) => !isBlockedHref(url) || DATA_IMAGE.test(url);
   return md;
 }
 
@@ -128,9 +131,31 @@ function readQuote(c: Cursor): PMNode[] {
   return [make('callout', { type: head.type, fold: head.fold }, [title, ...first, ...body])];
 }
 
+/**
+ * A table inside a list or quote, which only the paste parser reads: each row becomes a paragraph with its cells
+ * apart. A text block holds no tables (SPEC 6.3), and a table at the top level becomes a table block instead.
+ */
+function readTableRows(c: Cursor): PMNode[] {
+  const rows: PMNode[] = [];
+  let cells: PMNode[][] = [];
+  for (c.i++; c.i < c.tokens.length && c.tokens[c.i].type !== 'table_close'; c.i++) {
+    const token = c.tokens[c.i];
+    if (token.type === 'tr_open') cells = [];
+    else if (token.type === 'inline') cells.push(inlineNodes(token.children ?? []));
+    else if (token.type === 'tr_close') {
+      const content = cells.flatMap((cell, i) => (i === 0 ? cell : [textSchema.text(' | '), ...cell]));
+      rows.push(make('paragraph', null, content));
+    }
+  }
+  c.i++;
+  return rows;
+}
+
 function readBlock(c: Cursor): PMNode[] {
   const token = c.tokens[c.i];
   switch (token.type) {
+    case 'table_open':
+      return readTableRows(c);
     case 'paragraph_open':
       c.i += 3;
       return [paragraph(c.tokens[c.i - 2])];
@@ -180,6 +205,11 @@ function readBlocks(c: Cursor): PMNode[] {
 export function buildDoc(tokens: readonly Token[], md: Md): PMNode {
   const blocks = readBlocks({ tokens, md, i: 0 });
   return nodes.doc.createAndFill(null, Fragment.from(blocks)) ?? (nodes.doc.createAndFill() as PMNode);
+}
+
+/** The blocks of a piece of Markdown, with no empty paragraph added when there are none. Throws on parser errors. */
+export function parseBlocks(markdown: string): PMNode[] {
+  return readBlocks({ tokens: dialect.parse(markdown, {}), md: dialect, i: 0 });
 }
 
 /** The inline nodes of a line of Markdown, for checking what the writer produced. */

@@ -8,7 +8,7 @@ import { shape } from '../shape';
 
 const read = (markdown: string) => shape(parseTextBlock(markdown));
 
-describe('parsing OpenNote Markdown', () => {
+describe('parsing OpenNote Markdown blocks', () => {
   it('reads task items, checked or not, in any list', () => {
     expect(read('- [ ] open\n- [x] done\n- [X] shout\n- plain')).toBe(
       'doc(bulletList(listItem[checked=false](paragraph("open")), listItem[checked=true](paragraph("done")), ' +
@@ -40,12 +40,28 @@ describe('parsing OpenNote Markdown', () => {
       'doc(callout[type=tip](calloutTitle("Title"), paragraph("body line")))',
     );
   });
+});
 
+describe('parsing marks, atoms, and other syntax', () => {
   it('reads highlights in the default color and in the named ones', () => {
     expect(read('==honey== and <mark data-color="mint">mint</mark> and <mark>plain</mark>')).toBe(
       'doc(paragraph(highlight("honey"), " and ", highlightmint("mint"), " and ", highlight("plain")))',
     );
     expect(read('a == b')).toBe('doc(paragraph("a == b"))');
+  });
+
+  it('opens == only before text and closes it only after text, inside words too (SPEC 7.3)', () => {
+    expect(read('in==side==word and x==.==y')).toBe(
+      'doc(paragraph("in", highlight("side"), "word and x", highlight("."), "y"))',
+    );
+    expect(read('==open ==')).toBe('doc(paragraph("==open =="))');
+    expect(read('== closed==')).toBe('doc(paragraph("== closed=="))');
+  });
+
+  it('reads $ as math only when it opens and closes like a delimiter', () => {
+    expect(read('$x$ and $ y$ and $z $ and $5 and $6')).toBe(
+      'doc(paragraph(mathInline[source=x], " and $ y$ and $z $ and $5 and $6"))',
+    );
   });
 
   it('reads the allowed HTML tags as marks, and any other HTML as text', () => {
