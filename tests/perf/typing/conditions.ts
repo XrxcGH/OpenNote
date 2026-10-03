@@ -2,6 +2,7 @@
 // the web build and puts the caret where the keys go. The web platform serves the page fixture the address names
 // (?fixture=twentyPage) as every page, so each condition opens Lectures, then Membranes.
 
+import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import type { PageFixtureName } from '../../../app/src/services/pages/fixtures';
 
@@ -19,7 +20,35 @@ export interface Condition {
   prepare(page: Page): Promise<void>;
 }
 
-/** Opens the page fixture's copy of Membranes and waits for its text. */
+/** The text blocks' editing roots. Each is static text until a press or focus mounts its editor in place. */
+const TEXT_BLOCKS = '[data-scope="editor"][data-block]';
+
+/**
+ * Waits until the page is ready for a person to type in. A text box exists as an empty wrapper well before its
+ * text is drawn: blocks draw when they are near the viewport or in idle time. The chunks the page's commands wait
+ * for load in idle time too. A slow machine can be seconds from either when the first box appears.
+ */
+async function waitForPage(page: Page): Promise<void> {
+  await page.locator('html[data-page-commands="ready"]').waitFor({ state: 'attached', timeout: 30_000 });
+  await page
+    .waitForFunction(
+      (selector) => {
+        const blocks = [...document.querySelectorAll(selector)];
+        return blocks.length > 0 && blocks.every((block) => block.firstChild !== null);
+      },
+      TEXT_BLOCKS,
+      { timeout: 30_000 },
+    )
+    .catch(async (error: unknown) => {
+      const drawn = await page.evaluate((selector) => {
+        const blocks = [...document.querySelectorAll(selector)];
+        return `${blocks.filter((block) => block.firstChild !== null).length} of ${blocks.length}`;
+      }, TEXT_BLOCKS);
+      throw new Error(`The page's text blocks were not all drawn (${drawn}).`, { cause: error });
+    });
+}
+
+/** Opens the page fixture's copy of Membranes and waits until its text is drawn and its commands are loaded. */
 export async function openFixture(page: Page, fixture: PageFixtureName): Promise<void> {
   await page.goto(`/?fixture=${fixture}`);
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
@@ -28,28 +57,37 @@ export async function openFixture(page: Page, fixture: PageFixtureName): Promise
     .getByRole('textbox', { name: /^(Page text|Text box 1)/ })
     .first()
     .waitFor();
+  await waitForPage(page);
 }
 
-/** The longest text box on the page: the 20-page note on every 20-page fixture. */
+/**
+ * The text block with the most text: the 20-page note on every 20-page fixture. The page title is a text box too,
+ * but it isn't a block, and it is what a search over every text box finds while the note is still undrawn.
+ */
 async function longestBox(page: Page): Promise<Locator> {
-  const index = await page.evaluate(() => {
-    const boxes = [...document.querySelectorAll('[role="textbox"][contenteditable]')];
-    const lengths = boxes.map((box) => box.textContent?.length ?? 0);
-    return lengths.indexOf(Math.max(...lengths));
-  });
-  return page.locator('[role="textbox"][contenteditable]').nth(index);
+  const id = await page.evaluate((selector) => {
+    const blocks = [...document.querySelectorAll<HTMLElement>(selector)];
+    const lengths = blocks.map((block) => block.textContent?.length ?? 0);
+    return blocks[lengths.indexOf(Math.max(...lengths))]?.dataset.block ?? null;
+  }, TEXT_BLOCKS);
+  if (id === null) throw new Error('The page has no text block.');
+  return page.locator(`${TEXT_BLOCKS}[data-block=${JSON.stringify(id)}]`);
 }
 
 const frame = (page: Page) => page.evaluate(() => new Promise((done) => requestAnimationFrame(done)));
 
 /**
  * Focuses a text box and puts the caret at its start, middle, or end, after a space for the middle so typing
- * makes a new word. The editor reads the DOM selection, as it does after a click.
+ * makes a new word. The editor reads the DOM selection, as it does after a click. It returns once the box's editor
+ * is mounted and holds both focus and the caret, and says so if it can't.
  */
 export async function placeCaret(page: Page, box: Locator, caret: Caret): Promise<void> {
   await box.click({ position: { x: 8, y: 8 } });
+  // The press mounts the editor in place of the static text, which replaces the text nodes the caret goes in.
+  await expect(box, 'The press did not mount the text box editor').toHaveAttribute('contenteditable', 'true', {
+    timeout: 15_000,
+  });
   await box.evaluate((root, caret) => {
-    // Focus first: it can mount the editor, which replaces the text nodes the caret would go in.
     (root as HTMLElement).focus();
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes: Text[] = [];
@@ -75,6 +113,10 @@ export async function placeCaret(page: Page, box: Locator, caret: Caret): Promis
   }, caret);
   await frame(page);
   await frame(page);
+  const placed = await box.evaluate(
+    (root) => root.contains(getSelection()?.anchorNode ?? null) && root.contains(document.activeElement),
+  );
+  if (!placed) throw new Error(`The caret is not in the text box it was placed in: ${await caretContext(page)}`);
 }
 
 /** Where the caret sits, for the message of a wait that ran out. */
@@ -85,6 +127,7 @@ async function caretContext(page: Page): Promise<string> {
     const block = element?.closest('p, li, pre, h1, h2, h3, h4, h5, h6, td, th');
     return JSON.stringify({
       editable: element?.closest('[contenteditable="true"]') !== null,
+      inTitle: element?.closest('[data-page-title]') !== null,
       block: block?.tagName ?? null,
       textEnd: block?.textContent?.slice(-60) ?? null,
       codeBlocks: document.querySelectorAll('pre code').length,
