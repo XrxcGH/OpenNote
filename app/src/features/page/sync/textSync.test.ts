@@ -162,3 +162,17 @@ describe('the edits a flush sends', () => {
     expect(rig.sent()[1]).toEqual({ edits: [{ edit: 'moveBlock', block: A, frame: { y: 10 } }] });
   });
 });
+
+describe('a new text box', () => {
+  it('takes the order key the core chose, so a block inserted after it shows below it', async () => {
+    const rig = await syncRig(syncPage(['Oct 3, 2026']));
+    const draft = blockId(9);
+    rig.mount(draft, '', { block: { id: draft, type: 'text' } });
+    rig.type(draft, 'Typed');
+    await tick(150);
+    const held = (await rig.held()).blocks.find((block) => block.id === draft);
+    expect(held?.data.markdown).toBe('Typed');
+    expect(rig.orders[draft]).toBe(held?.order);
+    expect(rig.orders[draft] > 'a0').toBe(true);
+  });
+});
