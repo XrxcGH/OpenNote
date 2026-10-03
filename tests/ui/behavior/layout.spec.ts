@@ -84,6 +84,28 @@ test.describe('geometry', () => {
   });
 });
 
+// The built app splits its CSS into several files. The layer order (styles/layers.css) has to hold whichever file
+// loads first, or base rules beat the component and state rules.
+test.describe('cascade layers in the built app', () => {
+  test('a keyboard-focused tree row draws its focus ring inside the row', async ({ page }) => {
+    await open(page, 'wide');
+    await page.getByRole('treeitem', { name: 'Lectures' }).focus();
+    await page.keyboard.press('ArrowDown');
+    const offset = await page.evaluate(() => {
+      const row = document.activeElement;
+      return row?.getAttribute('role') === 'treeitem' ? getComputedStyle(row).outlineOffset : 'not a tree row';
+    });
+    expect(offset).toBe('-2px');
+  });
+
+  test('touch density makes the title bar buttons 44 px targets, like the tree rows', async ({ page }) => {
+    await open(page, 'wide');
+    await page.evaluate(() => (document.documentElement.dataset.density = 'touch'));
+    const box = await page.getByRole('button', { name: 'Go back' }).boundingBox();
+    expect(box?.height).toBe(44);
+  });
+});
+
 test.describe('without a pointer', () => {
   test('a splitter resizes with the arrow keys and collapses with Enter', async ({ page }) => {
     await open(page, 'wide');
