@@ -25,6 +25,12 @@
     margin-block-start: calc(var(--type-small-line) + var(--space-2));
   }
 
+  /* On the Settings page the tables don't scroll on their own, but keep the dialog's space between them. */
+  .groups {
+    display: grid;
+    gap: var(--space-6);
+  }
+
   /* Positioned, so the visually hidden table heads stay inside the scroller instead of stretching the dialog. The
      height leaves room for the dialog's title, filter and Close button in a short window: 344 px is the title bar
      40, the dialog layer's padding 32, the dialog's padding and border 50, the title 28, the description 22, the
