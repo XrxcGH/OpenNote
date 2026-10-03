@@ -26,6 +26,8 @@ struct Progress {
 pub struct Health {
     progress: Mutex<Progress>,
     changed: Condvar,
+    /// Whether `progress.error` is set, readable without the lock. It changes only while the lock is held, so
+    /// a waiter that the change wakes already sees it.
     degraded: AtomicBool,
 }
 
@@ -57,14 +59,20 @@ impl Health {
 
     /// Records a write failure. Returns whether the journal was writable until now.
     pub fn set_error(&self, err: FsError) -> bool {
-        self.update(|p| p.error = Some(err));
-        !self.degraded.swap(true, Ordering::SeqCst)
+        let mut first = false;
+        self.update(|p| {
+            p.error = Some(err);
+            first = !self.degraded.swap(true, Ordering::SeqCst);
+        });
+        first
     }
 
     /// The journal can be written again.
     pub fn clear_error(&self) {
-        self.update(|p| p.error = None);
-        self.degraded.store(false, Ordering::SeqCst);
+        self.update(|p| {
+            p.error = None;
+            self.degraded.store(false, Ordering::SeqCst);
+        });
     }
 
     /// The last write failure, while the journal can't be written.

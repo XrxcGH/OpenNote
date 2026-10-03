@@ -20,6 +20,13 @@ use crate::workload::{Verifier, Workload};
 /// How long a writer may run before an armed fail point counts as not reached.
 const FAIL_POINT_WAIT: Duration = Duration::from_secs(4);
 
+/// How long a writer sent to the fail point `--failpoint` names may print nothing before it counts as stuck.
+const REACH_SILENCE: Duration = Duration::from_secs(30);
+
+/// The longest a writer may run towards the fail point `--failpoint` names, for a point its workload never
+/// reaches although it keeps working.
+const REACH_LIMIT: Duration = Duration::from_secs(120);
+
 /// What `run` does.
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -48,6 +55,9 @@ pub enum Kill {
     After(u64),
     /// Aborts the n-th time it reaches a fail point, or is killed if it never does.
     FailPoint(String, u64),
+    /// Aborts the n-th time it reaches the fail point `--failpoint` names. It runs until then however slow the
+    /// machine is, and is killed only if it stops printing for `REACH_SILENCE`, or after `REACH_LIMIT`.
+    Reach(String, u64),
     /// Killed this many microseconds after its first save step.
     AfterSave(u64),
 }
@@ -59,7 +69,7 @@ impl Kill {
         let points = config.workload.fail_points();
         if let Some(name) = &config.fail_point {
             let max = points.iter().find(|(p, _)| p == name).map_or(3, |(_, max)| *max);
-            return Kill::FailPoint(name.clone(), rng.range(1..max + 1));
+            return Kill::Reach(name.clone(), rng.range(1..max + 1));
         }
         match rng.below(4) {
             0 | 1 => Kill::After(rng.range(10..801)),
@@ -185,7 +195,7 @@ fn tally(summary: &mut Summary, kill: &Kill, outcome: &Outcome) {
     match kill {
         Kill::After(_) => summary.killed_at_random += 1,
         Kill::AfterSave(_) => summary.killed_after_save += 1,
-        Kill::FailPoint(..) => summary.fail_points_armed += 1,
+        Kill::FailPoint(..) | Kill::Reach(..) => summary.fail_points_armed += 1,
     }
     summary.fail_points_reached += u64::from(outcome.fail_point_reached);
     summary.acks += outcome.markers.acks.values().sum::<u64>();
@@ -217,7 +227,7 @@ fn run_writer(exe: &std::path::Path, config: &Config, iteration: u64, kill: &Kil
     if config.sabotage {
         command.arg("--sabotage");
     }
-    if let Kill::FailPoint(name, nth) = kill {
+    if let Kill::FailPoint(name, nth) | Kill::Reach(name, nth) = kill {
         command.env(failpoint::ENV_VAR, format!("{name}:{nth}"));
     }
     let started = Instant::now();
@@ -241,10 +251,14 @@ fn run_writer(exe: &std::path::Path, config: &Config, iteration: u64, kill: &Kil
 }
 
 /// Stops the writer as `kill` says. Returns whether it was killed, rather than stopping by itself.
+///
+/// A writer sent to reach a fail point gets a fresh `REACH_SILENCE` with every line it prints, so whether it
+/// reaches the point doesn't depend on how fast the machine is.
 fn stop(child: &mut Child, kill: &Kill, started: Instant, lines: &Receiver<String>, markers: &mut Markers) -> bool {
-    let deadline = match kill {
+    let mut deadline = match kill {
         Kill::After(ms) => started + Duration::from_millis(*ms),
         Kill::FailPoint(..) | Kill::AfterSave(_) => started + FAIL_POINT_WAIT,
+        Kill::Reach(..) => started + REACH_SILENCE,
     };
     loop {
         if matches!(child.try_wait(), Ok(Some(_))) {
@@ -258,6 +272,9 @@ fn stop(child: &mut Child, kill: &Kill, started: Instant, lines: &Receiver<Strin
             Ok(line) => line,
             Err(RecvTimeoutError::Timeout | RecvTimeoutError::Disconnected) => continue,
         };
+        if let Kill::Reach(..) = kill {
+            deadline = (Instant::now() + REACH_SILENCE).min(started + REACH_LIMIT);
+        }
         let saved = markers.take(&line) == Kind::Save;
         if let (true, Kill::AfterSave(micros)) = (saved, kill) {
             spin(Duration::from_micros(*micros));

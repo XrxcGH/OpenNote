@@ -19,6 +19,7 @@ use opennote_core::ops::apply::OpsApplier;
 use opennote_core::session::core::{Core, CoreConfig, MemoryCaps};
 use opennote_core::session::notebook::{NodePlacement, NodeRef, NotebookHandle, ParentRef};
 use opennote_core::session::page::{read_page_dir, PageHandle};
+use opennote_core::store::failpoint;
 use opennote_core::store::layout::NotebookLayout;
 use opennote_core::store::std_fs::StdFs;
 use opennote_core::testing::fakes::NullSink;
@@ -64,6 +65,10 @@ pub const FAIL_POINTS: [(&str, u64); 33] = [
     ("gc.deleted", 3),
     ("migration.backup.written", 1),
 ];
+
+/// The fail point just after the sabotaged writer damages a page. A test arms it to stop the writer with the
+/// damage done, however slow the machine is, rather than hoping a random kill lands after it.
+pub const SABOTAGE_POINT: &str = "corew.sabotage.damaged";
 
 /// A device for the harness.
 fn device() -> DeviceRef {
@@ -195,6 +200,7 @@ pub fn write(paths: &Paths, seed: u64, iteration: u64, sabotage: bool) -> Result
         step(&mut sessions, &notebook, &manifest, &mut tree, &action, &clock, &client)?;
         if sabotage {
             damage(&manifest)?;
+            failpoint::hit(SABOTAGE_POINT);
         }
     }
     loop {

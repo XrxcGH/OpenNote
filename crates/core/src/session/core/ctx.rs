@@ -129,9 +129,18 @@ impl CoreCtx {
 
     /// Refunds bytes of the shared undo budget.
     pub(crate) fn release_undo(&self, bytes: usize) {
-        let _ = self
-            .undo_bytes
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| Some(v.saturating_sub(bytes)));
+        // A compare-exchange loop rather than `fetch_update`, which newer toolchains deprecate.
+        let mut current = self.undo_bytes.load(Ordering::SeqCst);
+        loop {
+            let next = current.saturating_sub(bytes);
+            match self
+                .undo_bytes
+                .compare_exchange_weak(current, next, Ordering::SeqCst, Ordering::SeqCst)
+            {
+                Ok(_) => break,
+                Err(seen) => current = seen,
+            }
+        }
     }
 
     /// Keeps undo stacks within their shared budget: over it, the oldest entries of the least recently used
