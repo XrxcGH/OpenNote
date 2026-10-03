@@ -62,17 +62,24 @@ describe('pen buttons', () => {
 });
 
 describe('the pen press-and-hold menu', () => {
-  const state = { pointerType: 'pen', strokeActive: false, holdTimerRunning: false, sinceStrokeEnd: 1000 };
+  const state = { pointerType: 'pen', gestureActive: false, holdTimerRunning: false, sinceGestureEnd: 1000 };
 
-  it('is prevented while a stroke is down, while the snap timer runs, and for 300 ms after a stroke', () => {
-    expect(suppressContextMenu({ ...state, strokeActive: true })).toBe(true);
+  it('is prevented while a gesture is down, while the snap timer runs, and for 300 ms after one', () => {
+    expect(suppressContextMenu({ ...state, gestureActive: true })).toBe(true);
     expect(suppressContextMenu({ ...state, holdTimerRunning: true })).toBe(true);
-    expect(suppressContextMenu({ ...state, sinceStrokeEnd: 299 })).toBe(true);
-    expect(suppressContextMenu({ ...state, sinceStrokeEnd: 300 })).toBe(false);
+    expect(suppressContextMenu({ ...state, sinceGestureEnd: 299 })).toBe(true);
+    expect(suppressContextMenu({ ...state, sinceGestureEnd: 300 })).toBe(false);
+  });
+
+  it('is prevented after a barrel lasso, eraser, or pan, and opens for a barrel set to the menu', () => {
+    const lasso = resolvePenAction({ pointerType: 'pen', button: 2, buttons: 2 }, DEFAULT_PEN_BUTTONS);
+    expect(lasso.action).toBe('lasso');
+    expect(suppressContextMenu({ ...state, sinceGestureEnd: 5, action: lasso.action })).toBe(true);
+    expect(suppressContextMenu({ ...state, gestureActive: true, action: 'rightClickMenu' })).toBe(false);
   });
 
   it('is left alone for the mouse and touch', () => {
-    expect(suppressContextMenu({ ...state, pointerType: 'mouse', strokeActive: true })).toBe(false);
-    expect(suppressContextMenu({ ...state, pointerType: 'touch', sinceStrokeEnd: 0 })).toBe(false);
+    expect(suppressContextMenu({ ...state, pointerType: 'mouse', gestureActive: true })).toBe(false);
+    expect(suppressContextMenu({ ...state, pointerType: 'touch', sinceGestureEnd: 0 })).toBe(false);
   });
 });

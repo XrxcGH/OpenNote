@@ -93,19 +93,25 @@ export function buttonsForPen(
 
 export interface ContextMenuState {
   readonly pointerType: string;
-  /** True while a pen ink stroke is down. */
-  readonly strokeActive: boolean;
+  /** True while a pen gesture the router claimed is down: ink, an eraser, a lasso, a pan, or any barrel action. */
+  readonly gestureActive: boolean;
   /** True while the hold-to-snap timer runs. */
   readonly holdTimerRunning: boolean;
-  /** Milliseconds since the last pen ink stroke ended. */
-  readonly sinceStrokeEnd: number;
+  /** Milliseconds since the last claimed pen gesture ended. */
+  readonly sinceGestureEnd: number;
+  /** The action resolved at that gesture's `pointerdown`. Only a barrel set to `rightClickMenu` lets the menu open. */
+  readonly action?: PenAction | null;
 }
 
-/** How long after a stroke the pen's press-and-hold menu stays off, because people rest the pen as they think. */
+/** How long after a gesture the pen's press-and-hold menu stays off, because people rest the pen as they think. */
 export const CONTEXT_MENU_QUIET_MS = 300;
 
-/** True when a `contextmenu` event from a pen should be prevented: Windows makes one from a press and hold. */
+/**
+ * True when a `contextmenu` event from a pen should be prevented. Windows makes one from a press and hold, and a
+ * barrel-button contact is a right-button press, so the menu would follow every barrel lasso, eraser, or pan.
+ */
 export function suppressContextMenu(state: ContextMenuState): boolean {
   if (state.pointerType !== 'pen') return false;
-  return state.strokeActive || state.holdTimerRunning || state.sinceStrokeEnd < CONTEXT_MENU_QUIET_MS;
+  if (state.action === 'rightClickMenu') return false;
+  return state.gestureActive || state.holdTimerRunning || state.sinceGestureEnd < CONTEXT_MENU_QUIET_MS;
 }
