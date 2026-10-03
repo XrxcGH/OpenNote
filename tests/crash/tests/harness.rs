@@ -78,6 +78,20 @@ fn core_writers_killed_during_saves_lose_nothing() {
 #[test]
 fn the_harness_catches_a_core_writer_that_damages_pages() {
     let dir = tempfile::tempdir().unwrap();
-    let (output, summary) = run(dir.path(), "core", 5, &["--sabotage", "--no-hostile"]);
+    let (output, summary) = run(
+        dir.path(),
+        "core",
+        5,
+        &["--sabotage", "--failpoint", "corew.sabotage.damaged", "--no-hostile"],
+    );
     assert_eq!(output.status.code(), Some(1), "{:?}", failures(&summary));
+    // The writer runs until it has damaged a page, so the check after the first iteration must catch it.
+    let failures = failures(&summary);
+    assert_eq!(failures.len(), 1);
+    assert!(failures[0].starts_with("iteration 0 "), "{failures:?}");
+    assert!(
+        failures[0].contains("(I1)") && failures[0].contains("page.invalid"),
+        "{failures:?}"
+    );
+    assert_eq!(summary["fail_points_reached"], 1);
 }
