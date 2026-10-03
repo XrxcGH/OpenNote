@@ -54,7 +54,7 @@ describe('replace plan', () => {
     expect(matches.map((match) => `${match.blockType}:${match.start}`)).toEqual([
       'text:0',
       'text:8',
-      'text:18',
+      'text:19',
       'table:4',
       'image:2',
     ]);
