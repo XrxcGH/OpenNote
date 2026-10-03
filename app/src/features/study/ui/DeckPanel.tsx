@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce, confirm } from '../../../ui';
 import { useStore } from '../../../state/store';
-import { dayKey, isDayKey } from '../deck/dates';
+import { dayKey, daysBetween, isDayKey } from '../deck/dates';
 import { exportDeck } from '../io/save';
 import {
   changeDeck,
@@ -52,6 +52,9 @@ function ExamLine({ deck }: { deck: Deck }) {
       </label>
       {deck.exam && deck.exam < today ? <p className={styles.note}>{t('study.exam.past')}</p> : null}
       {deck.exam && deck.exam === today ? <p className={styles.note}>{t('study.exam.today')}</p> : null}
+      {deck.exam && deck.exam > today ? (
+        <p className={styles.note}>{t('study.exam.daysLeft', { count: daysBetween(today, deck.exam) })}</p>
+      ) : null}
       {target ? (
         <p className={styles.note}>{t('study.exam.target', { perDay: target.perDay, daysLeft: target.daysLeft })}</p>
       ) : null}

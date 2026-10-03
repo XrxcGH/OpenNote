@@ -145,3 +145,11 @@ export function syncInlineDeck(pageId: string, title: string, inline: readonly C
     deck.cards.every((card, index) => JSON.stringify(card) === JSON.stringify(cards[index]));
   if (!same) putDeck({ ...(deck ?? { id }), id, name: title, cards });
 }
+
+/** Sets or clears a deck's exam day. */
+export function setDeckExam(deckId: string, day: string | null): void {
+  changeDeck(deckId, (deck) => {
+    const { exam: _old, ...rest } = deck;
+    return day ? { ...rest, exam: day } : rest;
+  });
+}

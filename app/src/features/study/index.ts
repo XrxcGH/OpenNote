@@ -3,7 +3,7 @@
 export { dayKey, daysBetween, isDayKey } from './deck/dates';
 export { requestCards } from './deck/request';
 export { cardRequest } from './deck/request';
-export { decksStore, createDeck, deckById, pageDeckId, syncInlineDeck } from './deck/library';
+export { decksStore, createDeck, deckById, pageDeckId, setDeckExam, syncInlineDeck } from './deck/library';
 export { inlineCards } from './deck/inline';
 export { DeckPanel } from './ui/DeckPanel';
 export type { Card, Deck } from './deck/types';

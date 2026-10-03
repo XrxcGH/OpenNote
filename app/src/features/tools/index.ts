@@ -10,3 +10,5 @@ export { INSERT_EVENT } from './flags';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { TOOLS, isToolId } from './ui/tools';
 export type { ToolId } from './ui/tools';
+export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
+export { setPageItems } from './ui/upcomingStores';

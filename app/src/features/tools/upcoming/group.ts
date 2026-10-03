@@ -6,6 +6,13 @@
 import { addDays, compareDates, compareDues, startOfWeek, type Due, type Weekday } from './date';
 import { dateIn, dueInstant } from './zone';
 
+/** How a to-do repeats. 'schedule' keeps its rhythm; 'afterFinish' counts from the day it was finished. */
+export interface Repeat {
+  every: number;
+  unit: 'day' | 'week';
+  mode: 'schedule' | 'afterFinish';
+}
+
 export interface UpcomingItem {
   id: string;
   title: string;
@@ -14,6 +21,12 @@ export interface UpcomingItem {
   done: boolean;
   /** A task is something to finish, and an event is something that happens at a time. The default is a task. */
   kind?: 'task' | 'event';
+  /** Set on a to-do that repeats. Finishing or skipping it makes the next one. */
+  repeat?: Repeat;
+  /** The calendar file the item came from, so an update from that file can replace it. */
+  source?: string;
+  /** Set on an item read from a line of a page. The page owns it, so Upcoming shows it and does not change it. */
+  page?: { id: string; title: string; block: string; line: number };
 }
 
 export type UpcomingGroupId = 'overdue' | 'today' | 'thisWeek' | 'later';

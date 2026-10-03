@@ -11,6 +11,7 @@ import type { MessageKey } from '../../../strings/t';
 import { announce } from '../../../ui';
 import type { IconName } from '../../../ui/icons';
 import { targetEditor } from '../formattingBar/target';
+import type { MountedPage } from '../mount';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
 import { panelRenderer } from '../panels/kinds';
 import { blockRenderers, slashItems } from '../registries';
@@ -152,46 +153,88 @@ addCommand({
   run: () => makeCards(true),
 });
 
-// Inline flashcards: a line "Question :: Answer" or a line with {{blanks}} is a card in the page's deck. The page is
-// read when its blocks change; the study code loads only when a page has such a line, or had one a moment ago.
-const INLINE_LINE = / :: |\{\{[^{}]+?\}\}/;
+// Watching the text of the shown page. The study and productivity features read lines of the page, so one watcher
+// serves them: it runs `run` when a block changes (a moment later, and every few seconds as a fallback), but only
+// loads anything when some block has a line that `test` matches, or had one a moment ago.
+function watchText(
+  mounted: MountedPage,
+  test: RegExp,
+  run: (blocks: { id: string; markdown: string }[], found: boolean) => void,
+): () => void {
+  let last = '';
+  let had = false;
+  let timer: number | undefined;
+  const scan = () => {
+    const blocks = mounted.layer
+      .blocks()
+      .filter((block) => block.type === 'text')
+      .map((block) => ({ id: block.id, markdown: String(block.data.markdown ?? '') }));
+    const found = blocks.some((block) => test.test(block.markdown));
+    if (!found && !had) return;
+    const key = found ? JSON.stringify(blocks) : '';
+    if (key === last) return;
+    last = key;
+    had = found;
+    run(blocks, found);
+  };
+  const schedule = () => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(scan, 800);
+  };
+  const stop = mounted.layer.onChange(schedule);
+  const poll = window.setInterval(scan, 4000);
+  schedule();
+  return () => {
+    stop();
+    window.clearTimeout(timer);
+    window.clearInterval(poll);
+  };
+}
 
+// Inline flashcards: a line "Question :: Answer" or a line with {{blanks}} is a card in the page's deck.
 mountedPageHooks.register({
   id: 'study.inline',
-  attach(mounted) {
-    if (!isEnabled('study.cards')) return () => undefined;
-    let last = '';
-    let had = false;
-    let timer: number | undefined;
-    const scan = () => {
-      const blocks = mounted.layer
-        .blocks()
-        .filter((block) => block.type === 'text')
-        .map((block) => ({ id: block.id, markdown: String(block.data.markdown ?? '') }));
-      const has = blocks.some((block) => INLINE_LINE.test(block.markdown));
-      if (!has && !had) return;
-      const key = has ? JSON.stringify(blocks) : '';
-      if (key === last) return;
-      last = key;
-      void import('../../study').then(({ inlineCards, syncInlineDeck }) => {
-        syncInlineDeck(mounted.page.id, mounted.page.initial.title, inlineCards(blocks));
-        had = has;
-      });
-    };
-    const schedule = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(scan, 800);
-    };
-    const stop = mounted.layer.onChange(schedule);
-    const poll = window.setInterval(scan, 4000);
-    schedule();
-    return () => {
-      stop();
-      window.clearTimeout(timer);
-      window.clearInterval(poll);
-    };
-  },
+  attach: (mounted) =>
+    isEnabled('study.cards')
+      ? watchText(mounted, / :: |\{\{[^{}]+?\}\}/, (blocks) => {
+          void import('../../study').then(({ inlineCards, syncInlineDeck }) =>
+            syncInlineDeck(mounted.page.id, mounted.page.initial.title, inlineCards(blocks)),
+          );
+        })
+      : () => undefined,
 });
+
+// Due dates on checkboxes and tagged lines feed Upcoming.
+mountedPageHooks.register({
+  id: 'tools.dueDates',
+  attach: (mounted) =>
+    isEnabled('tools.dueDates')
+      ? watchText(mounted, /\[[ xX]\]|#(?:todo|task|due|deadline)\b/i, (blocks) => {
+          const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          void import('../../tools').then(({ setPageItems }) =>
+            setPageItems({ id: mounted.page.id, title: mounted.page.initial.title }, blocks, {
+              now: Date.now(),
+              timeZone: zone,
+            }),
+          );
+        })
+      : () => undefined,
+});
+
+// Reminders: every half minute, if the person has turned them on, items that have come due are announced once.
+if (typeof window !== 'undefined') {
+  const remindersOn = (): boolean => {
+    try {
+      return JSON.parse(window.localStorage.getItem('opennote.tools.reminders') ?? 'null')?.on === true;
+    } catch {
+      return false;
+    }
+  };
+  window.setInterval(() => {
+    if (isEnabled('tools.reminders') && remindersOn())
+      void import('../../tools').then((tools) => tools.runReminderCheck());
+  }, 30_000);
+}
 
 // Study tools in their own windows: the unit converter and the reference tables open from the palette.
 for (const [tool, flag, title, keywords, icon] of [

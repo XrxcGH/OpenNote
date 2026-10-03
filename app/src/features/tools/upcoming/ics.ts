@@ -21,6 +21,10 @@ export interface IcsComponent {
   exceptions: IcsTime[];
   /** Set on an edited occurrence of a repeating series. It says which occurrence this one replaces. */
   replaces: IcsTime | null;
+  /** When an event ends, if the file says. */
+  end?: IcsTime;
+  /** Where an event is, such as a room. */
+  location?: string;
 }
 
 export interface IcsCalendar {
@@ -94,6 +98,8 @@ function build(open: Open, index: number): IcsComponent | null {
   const rrule = when !== null && value('RRULE') !== undefined ? parseRule(value('RRULE') ?? '') : null;
   const done =
     status === 'COMPLETED' || value('COMPLETED') !== undefined || value('PERCENT-COMPLETE')?.trim() === '100';
+  const end = kind === 'event' ? timeOf(props, 'DTEND') : null;
+  const location = unescapeText(value('LOCATION') ?? '').trim();
   return {
     kind,
     uid: value('UID')?.trim() || `ics-${index + 1}`,
@@ -108,6 +114,8 @@ function build(open: Open, index: number): IcsComponent | null {
       .flatMap((p) => p.value.split(',').map((v) => parseIcsTime(v, p.params)))
       .filter((t): t is IcsTime => t !== null),
     replaces: timeOf(props, 'RECURRENCE-ID'),
+    ...(end ? { end } : {}),
+    ...(location ? { location } : {}),
   };
 }
 
