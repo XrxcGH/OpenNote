@@ -71,7 +71,9 @@ export function runCorpus(fixtures: readonly Session[], seeds = CORPUS_SEEDS): C
   for (const scenario of SCENARIOS) {
     for (const profile of PROFILES) {
       if (!applies(scenario, profile)) continue;
-      for (let seed = 1; seed <= seeds; seed++) add(generate(scenario, profile, seed));
+      // Finger and stylus sessions are short, so they get more seeds for a comparable number of contacts.
+      const n = profile.stylus === 'pen' ? seeds : seeds * 4;
+      for (let seed = 1; seed <= n; seed++) add(generate(scenario, profile, seed));
     }
   }
   for (const session of fixtures) add(session);

@@ -318,6 +318,8 @@ Performance tests compare against the budgets in BRAND.md and fail the build if 
 
 Benchmarks and crash measurements run from an optimized build, because a debug build is several times slower and its times mean nothing. The `perf` profile in `Cargo.toml` builds them optimized, with line tables for profilers. Run them with `cargo perf bench <suite> <dir>` and `cargo crashtest measure <m3|m5|m6|all> --dir <dir>`, two aliases in `.cargo/config.toml`. Both commands refuse a debug build unless they get `--debug`.
 
+The palm rejection checklist in [testing/palm-rejection.md](testing/palm-rejection.md) runs on each pen and touch device in the matrix below.
+
 The keyboard and screen reader checklist uses Narrator and NVDA with no mouse. It covers creating a notebook, writing, and formatting a page, inserting a table, and chart, searching, recording audio, and exporting a PDF.
 
 ## 7. Device test matrix
@@ -326,6 +328,12 @@ The keyboard and screen reader checklist uses Narrator and NVDA with no mouse. I
 |---|---|---|
 | Reference laptop | 4 cores, 8 GB memory, integrated graphics, 1080p at 125% | Every performance budget is measured here |
 | Pen tablet PC | Surface Pro, Surface Laptop Studio | Windows pen, touch, and palm rejection |
+| Other Windows pens | Wacom AES laptop (ThinkPad), an OEM MPP laptop, a Wacom EMR tablet with Windows Ink on and off | Palm rejection without the Surface firmware's help, hover dropouts, a pen reported as a mouse |
+| iPad with Apple Pencil | An iPad without hover and Pencil 1 or USB-C; an M2 or later iPad Pro with Pencil 2 or Pro | No-hover pens, no pressure on Pencil USB-C, WebKit hover and coalesced events |
+| Android pen tablet | Galaxy Tab with S Pen; a Chromebook or Android 13 tablet with a USI pen | Long hover, the Android 13 palm rejector |
+| Fire Max 11 | Amazon Fire Max 11 with a USI 2.0 pen | Fire OS 8 is Android 11: no system palm rejector, so the app's filter carries it |
+| Passive stylus | A rubber or disc stylus on any tablet | A stylus that reports as touch, with the hand resting |
+| Phone | Any Android phone or iPhone | Finger drawing with no pen at all, grip at the screen edge |
 | Drawing tablet | Wacom Intuos or One | Pen without a touchscreen |
 | Touch laptop | Any touch-screen laptop | Finger input and scrolling |
 | High-resolution screen | 4K at 150% or 200% scaling | Sharp rendering and layout at high scaling |
