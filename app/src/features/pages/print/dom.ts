@@ -5,19 +5,22 @@
 import type { Rect } from '../pagination/geometry';
 import type { BlockMeasure, Box } from '../pagination/types';
 
-/** A line box from one run of text on one line. */
+/** A place in the DOM where a line starts: in a text node, or before a picture or a task box. */
+interface LineStart {
+  readonly node: Node;
+  readonly offset: number;
+}
+
+/** A box on one line: one run of text, or one picture or task box. */
 interface Fragment {
   readonly seq: number;
   readonly top: number;
   readonly bottom: number;
-  readonly node: Text;
-  readonly offset: number;
+  readonly start: LineStart;
 }
 
-interface LineStart {
-  readonly node: Text;
-  readonly offset: number;
-}
+/** Inline elements that take room on a line with no text in them. */
+const REPLACED = 'img, svg, .box';
 
 interface Lines {
   readonly boxes: Box[];
@@ -30,14 +33,27 @@ function lineHeightOf(el: Element): number {
   return Number.isFinite(value) ? value : parseFloat(style.fontSize) * 1.2;
 }
 
-/** The text nodes of an element that show something, in document order. */
-function textNodes(root: Element): Text[] {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const nodes: Text[] = [];
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-    if ((n as Text).data.trim() !== '') nodes.push(n as Text);
-  }
-  return nodes;
+/** The text nodes that show something and the inline pictures and task boxes of an element, in document order. */
+function piecesOf(root: Element): (Text | Element)[] {
+  const pieces: (Text | Element)[] = [];
+  const visit = (node: Node): void => {
+    for (let child = node.firstChild; child; child = child.nextSibling) {
+      if (child instanceof Text) {
+        if (child.data.trim() !== '') pieces.push(child);
+      } else if (child instanceof Element) {
+        if (child.matches(REPLACED)) pieces.push(child);
+        else visit(child);
+      }
+    }
+  };
+  visit(root);
+  return pieces;
+}
+
+/** The place right before a node, as its parent and index. */
+function before(node: Node): LineStart {
+  const parent = node.parentNode as Node;
+  return { node: parent, offset: Array.prototype.indexOf.call(parent.childNodes, node) };
 }
 
 /** The first rect of a character, or null when it takes no room, as a collapsed space does. */
@@ -77,19 +93,35 @@ function startOffset(node: Text, line: number, rects: readonly DOMRect[]): numbe
   return lo;
 }
 
-function fragmentsOf(node: Text, seq: { n: number }, origin: DOMRect): Fragment[] {
+/**
+ * The fragments of a run of text, one for each line it is on, each as tall as its line height. Text in `sub` and `sup`
+ * has a line height of 0, so a fragment is never less tall than the glyphs that show.
+ */
+function textFragments(node: Text, seq: { n: number }, origin: DOMRect): Fragment[] {
   const range = document.createRange();
   range.selectNodeContents(node);
   const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0 || r.height > 0);
   const lh = node.parentElement ? lineHeightOf(node.parentElement) : 0;
   return rects.map((r, i) => {
     const mid = (r.top + r.bottom) / 2 - origin.top;
+    const half = Math.max(lh, r.height) / 2;
     seq.n += 1;
-    return { seq: seq.n, top: mid - lh / 2, bottom: mid + lh / 2, node, offset: startOffset(node, i, rects) };
+    return { seq: seq.n, top: mid - half, bottom: mid + half, start: { node, offset: startOffset(node, i, rects) } };
   });
 }
 
-/** Groups fragments that share a line: their boxes overlap by more than half of the smaller one. */
+/** A picture or task box on a line, as tall as it is drawn. A tall picture makes its whole line that tall. */
+function elementFragment(el: Element, seq: { n: number }, origin: DOMRect): Fragment[] {
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) return [];
+  seq.n += 1;
+  return [{ seq: seq.n, top: r.top - origin.top, bottom: r.bottom - origin.top, start: before(el) }];
+}
+
+/**
+ * Groups fragments that share a line. A fragment joins the line so far when their boxes overlap by more than half of
+ * the smaller one, or when its middle lies inside the line, as a raised or lowered run of text does.
+ */
 function clusterLines(fragments: readonly Fragment[]): Fragment[][] {
   const sorted = [...fragments].sort((a, b) => a.top - b.top || a.seq - b.seq);
   const clusters: { top: number; bottom: number; members: Fragment[] }[] = [];
@@ -97,7 +129,8 @@ function clusterLines(fragments: readonly Fragment[]): Fragment[][] {
     const last = clusters.at(-1);
     const overlap = last ? Math.min(last.bottom, f.bottom) - Math.max(last.top, f.top) : 0;
     const smaller = last ? Math.min(last.bottom - last.top, f.bottom - f.top) : 0;
-    if (last && overlap > smaller / 2) {
+    const mid = (f.top + f.bottom) / 2;
+    if (last && (overlap > smaller / 2 || (mid > last.top && mid < last.bottom))) {
       last.top = Math.min(last.top, f.top);
       last.bottom = Math.max(last.bottom, f.bottom);
       last.members.push(f);
@@ -109,7 +142,9 @@ function clusterLines(fragments: readonly Fragment[]): Fragment[][] {
 /** The lines of an element: a box for each, and where in the text it starts. */
 function linesOf(content: Element, origin: DOMRect): Lines {
   const seq = { n: 0 };
-  const fragments = textNodes(content).flatMap((n) => fragmentsOf(n, seq, origin));
+  const fragments = piecesOf(content).flatMap((piece) =>
+    piece instanceof Text ? textFragments(piece, seq, origin) : elementFragment(piece, seq, origin),
+  );
   const boxes: Box[] = [];
   const starts: LineStart[] = [];
   for (const members of clusterLines(fragments)) {
@@ -117,7 +152,7 @@ function linesOf(content: Element, origin: DOMRect): Lines {
     const top = Math.min(...members.map((m) => m.top));
     const bottom = Math.max(...members.map((m) => m.bottom));
     boxes.push({ top, height: bottom - top });
-    starts.push({ node: first.node, offset: first.offset });
+    starts.push(first.start);
   }
   return { boxes, starts };
 }
@@ -181,7 +216,9 @@ export class FlowMeasurer {
 
   /**
    * The part of a text unit from line `from` up to, not including, line `to`, as HTML. The unit's own element and every
-   * element above the range are copied around it, so the slice keeps its list, quote, or code block.
+   * element above the range are copied around it, so the slice keeps its list, quote, or code block. An element that
+   * a line starts goes whole to the slice that line begins. So no slice ends with an empty list item, and a task box
+   * or a picture at the start of a line stays with it.
    */
   slice(id: string, from: number, to: number): string {
     const el = this.unit(id);
@@ -190,14 +227,39 @@ export class FlowMeasurer {
     if (!el || !content || !lines) return el?.innerHTML ?? '';
     const range = document.createRange();
     const start = lines.starts[from];
-    range.setStart(start.node, start.offset);
+    const first = from === 0 ? { node: content, offset: 0 } : hoist(start, content);
+    range.setStart(first.node, first.offset);
     const end = lines.starts[to];
-    if (end) range.setEnd(end.node, end.offset);
-    else range.setEndAfter(content.lastChild ?? content);
+    if (end) {
+      const last = hoist(end, content);
+      range.setEnd(last.node, last.offset);
+    } else range.setEndAfter(content.lastChild ?? content);
     const wrapper = wrapFragment(range, content);
     if (/^(UL|OL)$/.test(content.tagName)) fixList(content, start, wrapper);
     return wrapper.outerHTML;
   }
+}
+
+/** True when nothing shows in an element before a place in it: no text, picture, or task box. */
+function nothingBefore(el: Element, at: LineStart): boolean {
+  const range = document.createRange();
+  range.setStart(el, 0);
+  range.setEnd(at.node, at.offset);
+  return range.toString().trim() === '' && !range.cloneContents().querySelector(REPLACED);
+}
+
+/**
+ * Moves a place out of each element below `content` that it is at the very start of, to right before that element.
+ * A range from or to that place then holds the element whole or not at all, never a copy cut at its start.
+ */
+function hoist(at: LineStart, content: Element): LineStart {
+  let place = at;
+  let el = at.node instanceof Element ? at.node : at.node.parentElement;
+  while (el && el !== content && content.contains(el) && nothingBefore(el, place)) {
+    place = before(el);
+    el = el.parentElement;
+  }
+  return place;
 }
 
 /** Copies the range's contents inside shallow copies of its ancestors up to and including `content`. */

@@ -6,10 +6,10 @@ This folder turns a page into the document that prints: one box for each sheet, 
 
 1. `pageUnits` splits the page into units: each top-level element of a text block, each table, and each image or drawing. A heading must stay with what follows it, so it is a unit of its own. Floating blocks are their own units.
 2. `measureDocument` builds a document with the flow in its column and the floating blocks where they sit, with no sheets. The window loads it.
-3. `FlowMeasurer` reads the layout: a box for every line of text (and where in the text it starts), every table row, and every other unit.
+3. `FlowMeasurer` reads the layout: a box for every line of text (and where in the text it starts), every table row, and every other unit. A line is as tall as its tallest text, picture, or task box, and a superscript or subscript is part of the line it sits on.
 4. `planPage` paginates the flow and places the floating blocks, with the same paginator as the screen.
 5. `planPrint` picks the sheets that print, sizes the printed box, and fills in headers and footers.
-6. `printDocument` puts each slice on its sheet at its planned position. A paragraph cut between sheets is copied into two pieces with the browser's own range copy. A table cut between sheets becomes two tables, and the second starts with the header rows again.
+6. `printDocument` puts each slice on its sheet at its planned position. A paragraph cut between sheets is copied into two pieces with the browser's own range copy. An element a line starts, such as a list item, goes whole to the sheet of that line. A table cut between sheets becomes two tables, and the second starts with the header rows again.
 7. The window shows that document, and the host prints it with `PrintToPdf`.
 
 `preparePrint` does steps 1 to 6 in one call, and `showDocument` does step 7's loading. `browser.ts` is the script that a print window loads, and it puts both on `window.OpenNotePrint`.
