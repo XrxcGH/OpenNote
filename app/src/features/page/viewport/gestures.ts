@@ -79,7 +79,9 @@ class Gestures implements GestureTool {
   ) {}
 
   accepts(event: PointerEvent): boolean {
-    if (this.viewport.held()) return false;
+    // Grips and handles are the objects tool's, even for touch.
+    if (this.viewport.held() || (event.target instanceof Element && event.target.closest('[data-handle]')))
+      return false;
     if (event.pointerType === 'touch') return true;
     if (event.pointerType === 'pen') return event.button === BARREL || (event.buttons & 2) !== 0;
     return event.pointerType === 'mouse' && event.button === MIDDLE;

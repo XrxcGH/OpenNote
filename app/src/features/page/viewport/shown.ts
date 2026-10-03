@@ -19,7 +19,25 @@ export interface PageActions {
   readingAvailable(): boolean;
   reading(): boolean;
   setReading(on: boolean): void;
+  /** Runs an object command on the selected blocks. */
+  objectCommand(command: ObjectCommandId): void;
+  objectEnabled(command: ObjectCommandId): boolean;
 }
+
+/** The object commands, by their command ID's last part. */
+export type ObjectCommandId =
+  | 'bringToFront'
+  | 'sendToBack'
+  | 'bringForward'
+  | 'sendBackward'
+  | 'edit'
+  | 'delete'
+  | 'lock'
+  | 'lockPosition'
+  | 'unlock'
+  | 'float'
+  | 'putInFlow'
+  | 'sizeAndPosition';
 
 /** The shown page's actions, set while a page is shown. */
 export const shownPage = createStore<PageActions | null>(null, 'page actions');

@@ -50,7 +50,10 @@ export function setActiveTool(id: string): void {
 
 /** What the router needs from the page it routes for. */
 export interface RouterHost {
+  /** Where pointers press: the viewport and the chrome layer beside it. */
   readonly element: HTMLElement;
+  /** What captures a claimed pointer: the viewport. Defaults to `element`. */
+  readonly captureElement?: HTMLElement;
   camera(): Camera;
   toWorld(clientX: number, clientY: number): Point;
   blockAt(point: Point): BlockId | null;
@@ -80,7 +83,7 @@ export function createRouter(host: RouterHost): () => void {
     blockAt: (point) => host.blockAt(point),
     capture(pointerId) {
       try {
-        host.element.setPointerCapture(pointerId);
+        (host.captureElement ?? host.element).setPointerCapture(pointerId);
       } catch {
         // A pointer that already ended can't be captured; its up event follows.
       }

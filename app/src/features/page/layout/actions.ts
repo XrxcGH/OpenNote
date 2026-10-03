@@ -32,7 +32,7 @@ export interface LayoutParts {
   readonly reading: boolean;
 }
 
-export interface PageLayout extends PageActions {
+export interface PageLayout extends Omit<PageActions, 'objectCommand' | 'objectEnabled'> {
   /** A press on empty page that didn't move: a caret on a freeform page, the flow's end on a flow page. */
   pressEmpty(point: Point): void;
   /** Undo or another window changed the view. */

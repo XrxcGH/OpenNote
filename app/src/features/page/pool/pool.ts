@@ -4,6 +4,7 @@
 // the least recently used editor that is off screen, unfocused, and has nothing unsent. While a screen reader runs,
 // nothing mounts in idle time and nothing demotes, because replacing DOM under a virtual cursor would move it.
 import type { Editor } from '@tiptap/core';
+import { Selection } from '@tiptap/pm/state';
 import type { BlockId } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { placeAtPoint } from './point';
@@ -90,8 +91,9 @@ function place(editor: Editor, target: MountTarget, entry: Entry): void {
     editor.commands.setTextSelection({ from: clamp(entry.remembered.anchor), to: clamp(entry.remembered.head) });
     return editor.view.focus();
   }
-  editor.commands.focus(target.kind === 'end' ? 'end' : 'start', { scrollIntoView: false });
-  // Tiptap focuses in the next frame; the person's next key must land in this editor.
+  // Not Tiptap's focus command: it focuses again in the next frame, which would undo an Escape made meanwhile.
+  const { doc, tr } = editor.state;
+  editor.view.dispatch(tr.setSelection(target.kind === 'end' ? Selection.atEnd(doc) : Selection.atStart(doc)));
   editor.view.focus();
 }
 

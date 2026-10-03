@@ -18,6 +18,14 @@ import { createEditorHost } from './editorHost';
 import { createFlow } from './layout/flow';
 import type { Flow } from './layout/flow';
 import { createPageLayout } from './layout/actions';
+import { createChrome } from './chrome/chrome';
+import type { Chrome } from './chrome/chrome';
+import { openObjectMenu } from './chrome/menu';
+import { openSizeAndPosition } from './chrome/sizePosition';
+import { registerEscapeToObjects } from './objects/escape';
+import { installObjectKeys } from './objects/keys';
+import { Objects } from './objects/objects';
+import { createObjectsTool } from './objects/objectsTool';
 import type { PageLayout } from './layout/actions';
 import { createEditorPool, shownPool } from './pool/pool';
 import type { PagePool } from './pool/pool';
@@ -49,6 +57,8 @@ export interface MountedPage {
   readonly host: EditorHost;
   readonly title: TitleBand | null;
   readonly layout: PageLayout;
+  readonly objects: Objects;
+  readonly chrome: Chrome;
   /** Flushes, closes the page, and removes the view. */
   destroy(): Promise<void>;
 }
@@ -89,10 +99,11 @@ function blockAt(viewport: PageViewport, point: Point): BlockId | null {
   return wrapper?.dataset.blockId ?? null;
 }
 
-/** Routes the page's pointers: Phase 4's tools for this page, and every registered one. */
-function routePointers(viewport: PageViewport, tools: readonly PointerToolDef[]): () => void {
+/** Routes the page's pointers, on the viewport and the chrome: Phase 4's tools for this page, and every registered one. */
+function routePointers(container: HTMLElement, viewport: PageViewport, tools: readonly PointerToolDef[]): () => void {
   return createRouter({
-    element: viewport.viewport,
+    element: container,
+    captureElement: viewport.viewport,
     camera: () => viewport.camera(),
     toWorld: (x, y) => viewport.toWorld(x, y),
     blockAt: (point) => blockAt(viewport, point),
@@ -100,10 +111,33 @@ function routePointers(viewport: PageViewport, tools: readonly PointerToolDef[])
   });
 }
 
+/** The object menu from right-click, a long press, Shift+F10, or the Menu key on a block's wrapper or grip. */
+function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockLayer): () => void {
+  const onMenu = (event: MouseEvent) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const handle = target?.closest<HTMLElement>('[data-handle]');
+    const wrapper = target?.closest<HTMLElement>('[data-block-id]');
+    const block = handle?.dataset.block ?? wrapper?.dataset.blockId;
+    if (!block || !layer.block(block) || target?.closest('[data-scope="editor"]')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (!objects.selected().includes(block)) objects.select([block], { focus: true });
+    const keyboard = event.clientX === 0 && event.clientY === 0;
+    const anchor = keyboard ? (layer.view(block)?.element ?? { x: 0, y: 0 }) : { x: event.clientX, y: event.clientY };
+    void openObjectMenu(objects, anchor);
+  };
+  container.addEventListener('contextmenu', onMenu);
+  return () => container.removeEventListener('contextmenu', onMenu);
+}
+
 /** Points the shown page's stores at this view. Returns a function that clears them if they still point here. */
 function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
   shownViewport.set(mounted.viewport);
-  shownPage.set(mounted.layout);
+  shownPage.set({
+    ...mounted.layout,
+    objectCommand: (command) => mounted.objects.command(command),
+    objectEnabled: (command) => mounted.objects.enabled(command),
+  });
   shownFitWidth.set(() => mounted.flow.fitWidth());
   shownQueue.set(mounted.sync);
   shownPool.set(mounted.pool);
@@ -159,6 +193,7 @@ function titleBand(world: HTMLElement, parts: TitleParts, options: MountOptions)
 }
 
 export function mountPage(container: HTMLElement, page: OpenPage, options: MountOptions): MountedPage {
+  registerEscapeToObjects();
   const cache = createMarkdownCache();
   const viewport = createViewport(container, options.classNames);
   const flow = createFlow(viewport);
@@ -167,7 +202,11 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   flow.setReading(reading);
   restoreView(page.id, viewport);
   const pool = createEditorPool();
-  const host = createEditorHost(options.host);
+  let objects: Objects | null = null;
+  const host = createEditorHost({
+    selectBlocks: (blocks, reason) => objects?.selectBlocks(blocks, reason),
+    ...options.host,
+  });
   const frames = frameContext(pool, () => layer, {
     setPageFields(fields) {
       if (fields.view) {
@@ -186,12 +225,27 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const title = titleBand(viewport.world, { page, sync, layer, pool }, options);
   const compact = options.compact ?? false;
   const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, compact, reading });
+  const chrome = createChrome({ container, viewport, layer, pool });
+  objects = new Objects({
+    page,
+    sync,
+    layer,
+    pool,
+    viewport,
+    openMenu: (anchor) => void openObjectMenu(objects!, anchor),
+    openSizeAndPosition: (block) => openSizeAndPosition(container, objects!, layer, block),
+  });
   const gestures = createGestureTool(viewport);
   const select = createSelectTool(pool, { world: viewport.world, pressEmpty: (point) => layout.pressEmpty(point) });
-  const mounted = { page, viewport, flow, layer, pool, sync, cache, host, title, layout };
+  const objectsTool = createObjectsTool({ objects, layer, viewport, chrome });
+  const mounted = { page, viewport, flow, layer, pool, sync, cache, host, title, layout, objects, chrome };
   const stops = [
     rememberView(page.id, viewport),
-    routePointers(viewport, [gestures, select]),
+    routePointers(container, viewport, [gestures, objectsTool, select]),
+    installObjectKeys(viewport.world, objects, layer),
+    objectMenus(container, objects, layer),
+    () => chrome.destroy(),
+    () => objects?.destroy(),
     () => layout.stop(),
     () => title?.destroy(),
     () => gestures.destroy(),

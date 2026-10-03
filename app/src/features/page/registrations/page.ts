@@ -2,7 +2,9 @@
 // the object commands. Ctrl+wheel over the page zooms it too, and Ctrl+=, Ctrl+-, and Ctrl+0 keep changing the
 // interface text size. Each command reaches the shown page through a light store, so start-up loads none of it.
 import { registerPageCommand } from '../keys';
+import type { MessageKey } from '../../../strings/t';
 import { shownPage } from '../viewport/shown';
+import type { ObjectCommandId } from '../viewport/shown';
 import { canFitPageWidth, canZoomPage, fitPageWidth, resetPageZoom, stepPageZoom } from '../zoom';
 
 const ZOOM = [
@@ -50,3 +52,29 @@ registerPageCommand({
     page?.setReading(!page.reading());
   },
 });
+
+const OBJECT_COMMANDS: readonly { id: ObjectCommandId; title: MessageKey; keywords: MessageKey }[] = [
+  { id: 'bringToFront', title: 'page.object.bringToFront', keywords: 'page.object.arrangeKeywords' },
+  { id: 'sendToBack', title: 'page.object.sendToBack', keywords: 'page.object.arrangeKeywords' },
+  { id: 'bringForward', title: 'page.object.bringForward', keywords: 'page.object.arrangeKeywords' },
+  { id: 'sendBackward', title: 'page.object.sendBackward', keywords: 'page.object.arrangeKeywords' },
+  { id: 'edit', title: 'page.object.edit', keywords: 'page.object.editKeywords' },
+  { id: 'delete', title: 'page.object.delete', keywords: 'page.object.deleteKeywords' },
+  { id: 'lock', title: 'page.object.lock', keywords: 'page.object.lockKeywords' },
+  { id: 'lockPosition', title: 'page.object.lockPosition', keywords: 'page.object.lockKeywords' },
+  { id: 'unlock', title: 'page.object.unlock', keywords: 'page.object.lockKeywords' },
+  { id: 'float', title: 'page.object.float', keywords: 'page.object.floatKeywords' },
+  { id: 'putInFlow', title: 'page.object.putInFlow', keywords: 'page.object.floatKeywords' },
+  { id: 'sizeAndPosition', title: 'page.object.sizeAndPosition', keywords: 'page.object.sizeKeywords' },
+];
+
+for (const { id, title, keywords } of OBJECT_COMMANDS) {
+  registerPageCommand({
+    id: `object.${id}`,
+    title,
+    keywords,
+    category: 'object',
+    enabled: () => shown()?.objectEnabled(id) ?? false,
+    run: () => shown()?.objectCommand(id),
+  });
+}
