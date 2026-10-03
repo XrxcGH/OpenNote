@@ -123,8 +123,11 @@ export const PAGE_KEYS = {
   'table.deleteColumn': scoped('editor.table', [], { allowInTextInput: true }),
   'table.deleteTable': scoped('editor.table', [], { allowInTextInput: true }),
   'table.headerRow': scoped('editor.table', [], { allowInTextInput: true }),
-  'table.moveRowUp': scoped('editor.table', [], { allowInTextInput: true }),
-  'table.moveRowDown': scoped('editor.table', [], { allowInTextInput: true }),
+  'table.moveRowUp': scoped('editor.table', ['Alt+Shift+Up'], { refines: 'outline.moveUp', allowInTextInput: true }),
+  'table.moveRowDown': scoped('editor.table', ['Alt+Shift+Down'], {
+    refines: 'outline.moveDown',
+    allowInTextInput: true,
+  }),
   'table.columnWidth': scoped('editor.table', [], { allowInTextInput: true }),
   'table.select': scoped('editor.table', [], { allowInTextInput: true }),
   'code.setLanguage': scoped('editor.code', [], { allowInTextInput: true }),

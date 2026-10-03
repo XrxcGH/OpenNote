@@ -9,6 +9,7 @@ import { beforeExit } from '../../registries';
 import type { PageViewMode } from '../../platform/bindings/PageViewMode';
 import type { AppliedFrame, BlockId, BlockJson, OpenPage } from '../../services/pages/types';
 import { osStore } from '../../state/os';
+import { createStore } from '../../state/store';
 import { announce } from '../../ui';
 import { createBlockLayer } from './blocks/blockLayer';
 import type { PageBlockLayer } from './blocks/blockLayer';
@@ -47,6 +48,9 @@ import { createTitle } from './title/title';
 import type { TitleBand } from './title/title';
 import { createViewport, shownViewport } from './viewport/viewport';
 import type { PageViewport } from './viewport/viewport';
+
+/** The shown page's block layer, for commands that add or remove whole blocks, such as Insert table. */
+export const shownLayer = createStore<PageBlockLayer | null>(null, 'page block layer');
 
 export interface MountedPage {
   readonly page: OpenPage;
@@ -143,11 +147,13 @@ function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
   shownFitWidth.set(() => mounted.flow.fitWidth());
   shownQueue.set(mounted.sync);
   shownPool.set(mounted.pool);
+  shownLayer.set(mounted.layer);
   setGeometrySource((block) => mounted.layer.view(block)?.element ?? null, mounted.viewport);
   return () => {
     if (shownQueue.get() !== mounted.sync) return;
     shownQueue.set(null);
     shownPool.set(null);
+    shownLayer.set(null);
     shownViewport.set(null);
     shownPage.set(null);
     shownFitWidth.set(null);
