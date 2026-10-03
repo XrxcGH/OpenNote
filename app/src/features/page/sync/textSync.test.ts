@@ -134,9 +134,10 @@ describe('the edits a flush sends', () => {
   it('sends the text as typed, then an automatic change as a step of its own', async () => {
     const rig = await syncRig(syncPage(['']));
     const editor = rig.editors.get(A)!;
-    rig.type(A, 'teh');
+    // As the editor does it: the comma is typed first, and the correction follows in its own transaction.
+    rig.type(A, 'teh,');
     const { tr } = editor.state;
-    tr.insertText('the,', 1, 4).setMeta(META_AUTO_CHANGE, { from: 4, to: 4, text: ',' });
+    tr.insertText('the', 1, 4).setMeta(META_AUTO_CHANGE, { from: 1, to: 4, text: 'the' });
     editor.view.dispatch(tr);
     await tick(0);
     expect(rig.sent().map((batch) => batch.coalesce?.kind ?? null)).toEqual(['typing', null]);

@@ -7,6 +7,7 @@ import '../registrations/editor';
 import '../registrations/sync';
 import { commandForKey } from '../../../commands/dispatcher';
 import { executeCommand } from '../../../commands/registry';
+import { typeInto } from '../../../editor/commands/testing';
 import { createMarkdownCache, serializeTextBlock } from '../../../editor/markdown';
 import { commands } from '../../../registries';
 import { DEFAULT_SETTINGS, settingsStore } from '../../../state/settings';
@@ -17,6 +18,9 @@ import { md } from '../test/builders';
 import { textPageFixture } from '../test/fixtures';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
+
+/** A blank line between two blocks of Markdown. */
+const BLANK = String.fromCharCode(10, 10);
 
 afterEach(async () => {
   await cleanupPages();
@@ -260,7 +264,34 @@ describe('the keys', () => {
 });
 
 describe('automatic changes', () => {
-  // WP0's sync coalesces every transaction as typing. WP2's sync sends META_AUTO_CHANGE as its own step, and the
-  // editor tests already check that each conversion is its own transaction with that meta.
-  it.todo('undo in one step, leaving the typed characters, once WP2’s sync separates automatic changes');
+  it('undo in one step, leaving the typed characters', async () => {
+    const { page, block } = await open('First line[]');
+    const editor = page.mounted.pool.editor(block)!;
+    editor.commands.splitBlock();
+    typeInto(editor, '## Head');
+    await page.mounted.sync.flushAll('command');
+    expect(page.sent().map((batch) => batch.coalesce?.kind ?? null)).toEqual(['typing', null, 'typing']);
+    const heading = ['First line', '## Head'].join(BLANK);
+    expect(page.markdown(block)).toBe(heading);
+    await page.mounted.sync.undo();
+    expect(page.markdown(block)).toBe(['First line', '##'].join(BLANK));
+    // The heading goes back to the characters as typed: a paragraph that starts with the marker.
+    await page.mounted.sync.undo();
+    expect(editor.state.doc.lastChild?.type.name).toBe('paragraph');
+    expect(editor.state.doc.lastChild?.textContent).toBe('## ');
+    await page.mounted.sync.undo();
+    expect(page.markdown(block)).toBe('First line');
+  });
+
+  it('keep an AutoCorrect replacement apart from the typing before it', async () => {
+    const { page, block } = await open('[]');
+    const editor = page.mounted.pool.editor(block)!;
+    typeInto(editor, 'teh cat');
+    await page.mounted.sync.flushAll('command');
+    expect(page.markdown(block)).toBe('the cat');
+    await page.mounted.sync.undo();
+    expect(editor.state.doc.textContent).toBe('the ');
+    await page.mounted.sync.undo();
+    expect(editor.state.doc.textContent).toBe('teh ');
+  });
 });

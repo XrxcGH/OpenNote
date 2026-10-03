@@ -12,11 +12,9 @@
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Selection, Transaction } from '@tiptap/pm/state';
-import { Transform } from '@tiptap/pm/transform';
 import { diffMarkdown, serializeTextBlock, utf8Offset } from '../../../editor/markdown';
 import type { MarkdownCache } from '../../../editor/markdown';
 import { META_AUTO_CHANGE, META_COMMAND, META_HIGHLIGHT, META_REMOTE } from '../../../editor/meta';
-import type { AutoChangeMeta } from '../../../editor/meta';
 import type { TableData } from '../../../editor/schema/specs';
 import { PageServiceError } from '../../../services/pages/types';
 import type { BlockId, Edit, EditBatch, NewBlock, UiSelection } from '../../../services/pages/types';
@@ -98,14 +96,6 @@ function changedRange(tr: Transaction): { from: number; to: number } {
     });
   }
   return from <= to ? { from, to } : { from: tr.selection.from, to: tr.selection.from };
-}
-
-/** The document as typed, before the automatic change replaced the typed text (section 10.3). */
-function typedAs(doc: PMNode, auto: AutoChangeMeta): PMNode {
-  const transform = new Transform(doc);
-  if (!auto.text) return transform.delete(auto.from, auto.to).doc;
-  const marks = doc.resolve(auto.from).marks();
-  return transform.replaceWith(auto.from, auto.to, doc.type.schema.text(auto.text, marks)).doc;
 }
 
 class Sync implements TextSyncHandle {
@@ -269,8 +259,7 @@ class Sync implements TextSyncHandle {
       if (range) this.pending!.range = { from: tr.mapping.map(range.from, -1), to: tr.mapping.map(range.to, 1) };
       return;
     }
-    const auto = tr.getMeta(META_AUTO_CHANGE) as AutoChangeMeta | undefined;
-    if (auto) this.automatic(tr, auto, previous);
+    if (tr.getMeta(META_AUTO_CHANGE)) this.automatic(tr, previous);
     else if (tr.getMeta('uiEvent') || tr.getMeta(META_COMMAND) || this.source.structural(tr.before, tr.doc)) {
       void this.cut(tr.before, previous);
       void this.enqueue(tr.doc, { before: this.ui(previous), after: this.ui(this.lastSelection) }, null);
@@ -293,10 +282,11 @@ class Sync implements TextSyncHandle {
   }
 
   /** The text as typed goes as typing, then the automatic change as a step of its own (section 10.3). */
-  private automatic(tr: Transaction, auto: AutoChangeMeta, previous: Selection): void {
-    const typedDoc = typedAs(tr.before, auto);
-    const at = Math.min(auto.from + auto.text.length, typedDoc.content.size);
-    const typedSelection: UiSelection = { kind: 'text', block: this.block, anchor: at, head: at };
+  private automatic(tr: Transaction, previous: Selection): void {
+    // The editor types the character first and changes the text in a transaction of its own (autoChange.ts), so
+    // the document before the change is the text as typed.
+    const typedDoc = tr.before;
+    const typedSelection = this.ui(previous);
     const target = this.source.target(tr.before, previous);
     const before = this.pending?.before ?? this.ui(previous);
     const typingTarget = this.pending?.target ?? target;

@@ -10,7 +10,11 @@ export const META_AUTO_CHANGE = 'opennote.autoChange';
 /** A decoration-only transaction, such as spelling or code highlighting. The sync ignores it. */
 export const META_HIGHLIGHT = 'opennote.highlight';
 
-/** The value of META_AUTO_CHANGE: the range the change replaced and the text it typed there. */
+/**
+ * The value of META_AUTO_CHANGE: the range of the typed text that the change replaced, and the text it put there
+ * (empty when it only removed a marker). The typed character is in the document before this transaction, from a
+ * transaction of its own, so the document before the change is the text as typed.
+ */
 export interface AutoChangeMeta {
   from: number;
   to: number;
