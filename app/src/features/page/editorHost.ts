@@ -6,6 +6,7 @@ import { getSettings } from '../../state/settings';
 import { osStore } from '../../state/os';
 import { announce, openMenu } from '../../ui';
 import { selectOnPage } from './seams/selectionStore';
+import { pageSpelling } from './spelling/current';
 
 function editingView(): EditingSettingsView {
   const editing = getSettings().editing;
@@ -25,7 +26,7 @@ export function createEditorHost(overrides: Partial<EditorHost> = {}): EditorHos
     announce,
     openMenu: ({ label, items, anchor }) => openMenu({ label, items, anchor }),
     screenReader: () => osStore.get().screenReader,
-    spelling: () => null,
+    spelling: pageSpelling,
     selectBlocks: (blocks) => selectOnPage({ blocks, strokes: [] }, { announce: true }),
     ...overrides,
   };
