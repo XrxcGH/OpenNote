@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { contentTop, paperDimensions, sheetGeometry } from './geometry';
-import { belowBreak, inkBounds, sheetCount, sheetPieces, sheetSpan } from './freeform';
+import { belowBreak, inkBounds, sheetCount, sheetPieces, sheetSpan, sheetsAfterWriting } from './freeform';
 
 const LETTER = sheetGeometry(paperDimensions('letter', 'portrait'));
 const A4 = sheetGeometry(paperDimensions('a4', 'portrait'));
@@ -70,5 +70,17 @@ describe('sheets of a stroke', () => {
 
   it('has no bounds without points', () => {
     expect(inkBounds([], 4)).toBeNull();
+  });
+});
+
+describe('writing past the last sheet', () => {
+  const g = sheetGeometry(paperDimensions('letter', 'portrait'));
+
+  it('adds the sheet the pen lands on, and any between', () => {
+    expect(sheetsAfterWriting(g, 2, 100)).toBe(2);
+    expect(sheetsAfterWriting(g, 2, g.height * 2 - 1)).toBe(2);
+    expect(sheetsAfterWriting(g, 2, g.height * 2 + 5)).toBe(3);
+    expect(sheetsAfterWriting(g, 2, g.height * 4 + 5)).toBe(5);
+    expect(sheetsAfterWriting(g, 1, -50)).toBe(1);
   });
 });

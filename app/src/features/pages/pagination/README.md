@@ -20,6 +20,7 @@ All of it is re-exported from `features/pages`.
 | `sheetTop`, `contentTop`, `contentBottom`, `contentBox`, `sheetAt`, `flowSheetAt`, `inGap` | Where a sheet and its content box are, and which sheet a y lies on                                 |
 | `sheetSpan(g, box)`, `sheetPieces(g, box)`, `sheetCount(g, bottoms)`, `belowBreak(g, box)` | Which sheets a floating block reaches, the part on each, and where "Move below page break" puts it |
 | `inkBounds(points, width)`                                                                 | The box around a stroke                                                                            |
+| `sheetsAfterWriting(g, sheets, y)` | The sheet count once the pen writes at `y`: writing past the last sheet adds the sheet it lands on, with the same background |
 | `printSheet(size, pagePt?)`, `CHROMIUM_PAGES_PT`, `POINTS_PER_UNIT`                        | The sheet box that print uses, never larger than the page Chromium writes (ADR 0006, rule 2)       |
 
 ## Rules

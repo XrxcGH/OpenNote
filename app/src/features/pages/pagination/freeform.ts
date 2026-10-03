@@ -50,6 +50,14 @@ export function sheetCount(g: SheetGeometry, bottoms: readonly number[]): number
   return Math.max(1, Math.ceil((lowest - EPS) / g.height));
 }
 
+/**
+ * The sheets a page has once something is written at `y`. Writing below the last sheet adds the sheet it falls on, and
+ * any between, each with the same background, so the pen never draws into the gap where no paper is.
+ */
+export function sheetsAfterWriting(g: SheetGeometry, sheets: number, y: number): number {
+  return Math.max(sheets, sheetAt(g, y) + 1);
+}
+
 /** The y for "Move below page break": the top of the content box of the sheet after the one the box starts on. */
 export function belowBreak(g: SheetGeometry, box: Rect): number {
   return contentTop(g, sheetSpan(g, box).first + 1);
