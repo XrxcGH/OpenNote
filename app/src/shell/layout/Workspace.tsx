@@ -8,6 +8,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { useLayout } from '../../state/layout';
 import { sessionStore } from '../../state/session';
 import { shallowEqual, useStore } from '../../state/store';
+import { StarField } from '../../ui';
 import { useRegion } from '../regions';
 import { NotebooksColumn, PagesColumn } from './Panes';
 import { columnWidth, solvePanes } from './solvePanes';
@@ -65,6 +66,7 @@ export function Workspace(props: WorkspaceSlots) {
         data-region={page['data-region']}
         ref={pageRef}
       >
+        <StarField />
         {props.page}
       </main>
       {compact && <div className={styles.bottomBar}>{props.bottomBar}</div>}

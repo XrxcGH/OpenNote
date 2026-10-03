@@ -77,13 +77,16 @@ export function locationOf(entry: NodeEntry): Location {
 
 const GROUPS = { notebook: 'notebooks', section: 'sections', page: 'pages' } as const;
 
-function resultFor(entry: NodeEntry, points: number): PaletteResult {
+function resultFor(entry: NodeEntry, points: number, inks: ReadonlyMap<NodeId, string>): PaletteResult {
   const { node, path } = entry;
+  // A page shows its notebook's color, and a notebook its own; sections and groups have their own dots in the tree.
+  const ink = node.kind === 'page' || node.kind === 'notebook' ? inks.get(entry.notebookId) : undefined;
   return {
     id: `node:${node.id}`,
     group: GROUPS[node.kind as keyof typeof GROUPS],
     title: node.title,
     detail: path.length ? path.join(', ') : undefined,
+    ink,
     score: points,
     run: () => navigate(locationOf(entry), { focus: 'target' }),
   };
@@ -106,9 +109,11 @@ export function nodesProvider(options: { id: string; pagesOnly: boolean }): Pale
     async search(query, signal) {
       const entries = await nodeIndex(commandContext('palette').notes);
       if (signal.aborted) return [];
+      const inks = new Map<NodeId, string>();
+      for (const { node } of entries) if (node.kind === 'notebook' && node.color) inks.set(node.id, node.color);
       return entries
         .filter((entry) => kinds.has(entry.node.kind))
-        .map((entry) => resultFor(entry, pointsFor(entry, query, { everyPage: options.pagesOnly })));
+        .map((entry) => resultFor(entry, pointsFor(entry, query, { everyPage: options.pagesOnly }), inks));
     },
   };
 }

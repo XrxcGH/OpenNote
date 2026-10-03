@@ -21,7 +21,11 @@ This guide defines how OpenNote looks, moves, sounds, and behaves. The [screen w
 
 ## 1. Personality
 
-OpenNote should feel like a good desk by a window: warm paper, a pen that writes well, and nothing shouting for attention. People spend hours in a note app, often while listening to a lecture or a meeting. The interface stays calm and gets out of the way.
+OpenNote should feel like a good desk by a window: warm paper, a pen that writes well, and nothing shouting for attention.
+
+By day, soft light falls across the desk; in the evening a candle is lit and the window fills with dusk and stars. A few small drawings and warm accents carry that feeling, and they always sit beside the work, never on it.
+
+People spend hours in a note app, often while listening to a lecture or a meeting. The interface stays calm and gets out of the way.
 
 | We are | We are not |
 |---|---|
@@ -62,7 +66,7 @@ Rules of thumb:
 
 ## 4. Color
 
-The palette is warm paper, walnut ink, a moss green accent, and a clay secondary accent. It deliberately avoids the light-blue-on-black look of developer tools. Every pairing below is checked by CHECKS: body text reaches at least 7:1 contrast and secondary text at least 4.5:1.
+The palette is warm paper, walnut ink, moss, and clay, with candlelight, dusk and night-sky tones for ambience. It deliberately avoids the light-blue-on-black look of developer tools. Every pairing below is checked by CHECKS: body text reaches at least 7:1 contrast and secondary text at least 4.5:1.
 
 ### Surfaces and text
 
@@ -92,6 +96,41 @@ The palette is warm paper, walnut ink, a moss green accent, and a clay secondary
 | `status.warning` | `#855B0C` | `#E7BA62` | Warnings |
 | `status.success` | `#35704A` | `#8FC29D` | Saved, synced |
 | `selection.highlight` | `#F4DE93` honey | `#52451F` | Selected text |
+
+### Warm accents and ambient light
+
+Three small accent families and one ambient group give the shell its warmth. Each color has one job, so the extra color doesn't turn into noise:
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `accent.candle` | `#9A5410` | `#F0A860` | The sun icon, a candle flame, lamplight |
+| `accent.candleSubtle` | `#F8EBD3` | `#3A2C1C` | Warm paper: notebook pages in drawings and the top of the day window's sky |
+| `accent.dusk` | `#9C4559` | `#EBA0B2` | Sunset line art, dusk accents |
+| `accent.duskSubtle` | `#F6E4E4` | `#3A2A30` | A soft rose surface behind a dusk accent; drawings use `art.dusk` |
+| `accent.night` | `#4A5590` | `#A9B4EC` | The moon icon, night line art |
+| `accent.nightSubtle` | `#E8EAF3` | `#1F2233` | The upper night sky in the evening window |
+| `ambient.canvasTop` | `#FFF0D4` window light | `#1B2036` night sky | The pool of light from the window's corner by day; the top of the evening sky |
+| `ambient.canvasBottom` | `#EAE3D8` (the sunken color) | `#33243A` dusk | Bottom of the evening sky, above the sunset band |
+| `ambient.glow` | `#FCE4B8` window light on the desk | `#45302C` sunset | The warmest light on the canvas: the patch of window light by day, the low sunset band in the evening |
+| `ambient.spark` | `#F2CF8A` sun disc | `#E7D9B0` starlight | The sun disc and stars only, never text |
+
+Candle, dusk, and night are never status colors and never fill a button, so candle can't be mistaken for `status.warning`. They also never stand alone as a signal.
+
+The ambient washes stay calm: CHECKS holds `ambient.canvasTop`, `ambient.canvasBottom`, and `ambient.glow` to at most 1.5:1 against `surface.sunken` (a `max` ceiling on a contrast pair). The ceiling was 1.3 until the evening sky gained its sunset band, which sits just under 1.5. Every text pairing on these tones keeps the same targets as on the canvas, and the washes only ever show around the page card, never behind text. Under Windows contrast themes the accents become the system text color, and the fills and ambient tokens become the system canvas, so the gradients flatten and the stars disappear.
+
+### Drawing tints
+
+The drawings get their color from five soft tints, one for each motif color, so a drawing is never outlines alone. They are fills only: never text, never a button, and never a signal.
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `art.moss` | `#C8DCC6` | `#3E5A46` | Leaves, vines, the day window's hills, a moss spine |
+| `art.clay` | `#EDC3AF` | `#6A4332` | Pots and the candle dish |
+| `art.candle` | `#F5D59C` | `#6A4E27` | The glow around a flame, the sunset band, an amber spine |
+| `art.dusk` | `#EDC0C9` | `#62404D` | The rose of the sunset band, the evening hills, a rose spine |
+| `art.night` | `#C7CEEA` | `#383F6C` | The night window's horizon, an indigo spine |
+
+A notebook's pages use `accent.candleSubtle` as warm paper, and the night window's upper sky uses `accent.nightSubtle`. The lines on top stay `border.control`, so a fill never hides an edge. Under Windows contrast themes the tints become the system canvas, and the drawings go back to plain outlines.
 
 ### Ink colors
 
@@ -182,15 +221,50 @@ Panes resize by dragging, and collapse with a button or keyboard shortcut. Pagin
 
 Corners are gently rounded: 4 for small elements, 8 for buttons and inputs, 12 for cards, and panels, 16 for dialogs. Pills use a full radius.
 
-Depth comes from warm, soft shadows in three steps (`elevation.1` to `elevation.3`), never from glowing edges. Menus use step 2, dialogs step 3. Dark theme relies on lighter surfaces rather than shadows. Blur and frosted-glass effects are not used because they cost battery and frame time.
+Depth comes from warm, soft shadows in three steps (`elevation.1` to `elevation.3`), never from glowing edges. Menus use step 2, dialogs step 3. Dark theme relies on lighter surfaces rather than shadows. Blur and frosted-glass effects are not used because they cost battery and frame time. Glows are drawn as flat radial gradients, never blur.
 
 ## 8. Icons, logo, and illustration
 
-Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut.
+### Icons
+
+Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels, switching to Fill for an active toggle. Custom icons, such as the pen tools, follow the same 1.5-pixel line style. Menu items pair icons with text; icon-only buttons always have a tooltip with the name and shortcut. A button that shows its name gets a tooltip only to add its shortcut, never one that repeats its label.
+
+### Logo
 
 The logo is a folded page with a moss-green ink stroke ending in a clay pen tip: see [`brand/logo-mark.svg`](../brand/logo-mark.svg) and [`brand/app-icon.svg`](../brand/app-icon.svg). Keep clear space of half the mark's width around it, and don't recolor, stretch or add effects.
 
-Illustrations appear only in empty states, onboarding and error screens. Draw them with OpenNote's own pen engine, so they look handwritten, in two or three token colors with plenty of empty paper. No 3D renders, gradient blobs, stock photos, or mascots.
+### Illustrations
+
+Illustrations appear in onboarding, empty states, error screens, the theme previews, Settings > About and the notebooks pane footer. A pane or card has at most one, and none is larger than the welcome desk at 360 by 225 pixels. The motif set is a window with a vine along its frame, a plant and vine, candles, books, a sunset, and stars with a moon.
+
+| Drawing | Shown at | Holds |
+|---|---|---|
+| Welcome desk | 360 by 225 (drawn at 240 by 150) | The window with its vine, a plant on the sill, four stacked books, an open notebook, and two candles of different heights |
+| Empty states | 176 pixels wide | A shelf of books with a small potted plant; an open notebook and a candle; four books and a candle |
+| About | The window, 112 pixels tall | The sunset or the moon and stars, and the vine |
+| Notebooks pane footer | The plant, 42 by 50 | A clay pot with a short vine trailing to the left |
+
+A drawing never moves to a pane that has none, and the extra motifs live inside the drawings above, never as new decoration.
+
+- They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors.
+- Lines are `border.control`. Fills come from the five drawing tints and warm paper, so every book has a colored spine, every pot is filled, and every flame has a warm glow.
+- The day window holds a sunset band behind the sun, and the evening window a crescent moon with a few stars, by theme.
+- Each is under 6 KB of markup, hidden from screen readers, and never sits behind text.
+
+### Drawing geometry
+
+- Things in a drawing obey gravity. Books, pots, the notebook, and the candles stand on their shelf, desk, or sill line. None sinks into its line or floats above it. A leaning book stands on its lower corner and rests against its neighbor. Each book in a stack rests on the one below it, and an open notebook rests on its spine. A trailing vine lies on its surface, never below it. The component tests check all of these.
+- Nothing crowds another shape, such as a star against a leaf or the sun against a window bar. The window vine keeps at least 4 units from the stars and the moon, and the two candles' dishes don't overlap.
+- A drawing set above left-aligned text is cropped to its content, so its shelf starts where the text starts.
+- Every line stays inside its drawing's box at any drawn size, stroke width included, so no edge is clipped.
+
+### The ambient canvas
+
+- The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The card itself stays plain paper.
+- By day, warm light pools from the window's top corner, and a soft patch of it, wider than it is tall, lies on the desk. The patch stops growing at 420 by 300 pixels, so a wide window doesn't stretch it. The setup backdrop keeps only the pool, so the steps stay calm.
+- In the evening, the sky deepens from night indigo through dusk to a low sunset band at the horizon. Twenty-five stars sit at the top, 0.75 to 1.25 pixels in radius at 45 to 70 percent opacity, with three larger ones, up to 1.8 pixels, at up to 80 percent. They are drawn at 1:1 at any width, and each stays above the card's top edge, at least 5 pixels clear of it, so none looks like a speck on the card.
+
+No 3D renders, gradient blobs, stock photos, or mascots.
 
 ## 9. Motion
 
@@ -216,6 +290,7 @@ Hard rules:
 - Animations never block input. Clicking during a transition acts at once. The one exception is the theme crossfade: for its 200 ms, clicks don't reach the page, though keyboard shortcuts still work.
 - Loading shows nothing for the first 300 ms, then a quiet progress bar. Skeleton screens don't shimmer.
 - The recording dot pulses slowly (2-second cycle). It is the only looping animation.
+- Illustrations fade in once over `fast` and never loop. Candles don't flicker and stars don't twinkle.
 
 When Windows "Animation effects" is off, or the operating system asks for reduced motion, movement becomes a 100 ms crossfade and the recording dot stops pulsing.
 
@@ -249,12 +324,15 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 | Page canvas | Paper backgrounds (plain, lined, dot grid, graph, Cornell) drawn with `border.subtle`. Page breaks are dashed lines with the page number in `text.muted`. |
 | Recording bar | Pinned above the page, with a pulsing dot, elapsed time, and pause and stop buttons. Timestamps link to ink and text. |
 | Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch, with a hidden description of how to reach Light, Dark, and Match Windows. |
+| Choice cards | A radio group of cards. The cards of one choice share one width, and a row that wraps splits evenly, never leaving one card alone. |
 | Theme cards | Three cards in a radio group named "Theme", each with a small live preview that screen readers and Tab skip. Holding an arrow key moves one step. |
+| Empty states | One small drawing above one plain sentence, on a page card. The sentence carries the meaning; the drawing is only company. |
+| Ambient canvas | The desk behind the page card: window light in Daylight, a dusk sky with a few stars in Evening. Static, painted once, and kept within 1.3:1 of `surface.sunken`. Flat under Windows contrast themes. |
 | Sync status | A small icon with a text tooltip in the title bar: saved, syncing, offline, or needs attention. Never a blocking dialog. |
 | Dialogs | Title, one-sentence explanation, then actions (primary on the right). Escape closes. Focus returns to where it was. |
 | Update notice | A small "Update ready" chip in the title bar, with release notes on hover or tap. "Restart to update" applies it; otherwise it applies the next time the app closes. Never a pop-up, never mid-task. |
 | Toasts | Bottom center, one at a time, with an Undo action for destructive changes. |
-| Command palette | Ctrl+K opens a searchable list of every command, with shortcuts. |
+| Command palette | Ctrl+K opens a searchable list of every command, with shortcuts. With no matches it says "No results." where the results would be. |
 
 ## 12. Accessibility
 
@@ -278,6 +356,7 @@ Every pull request that changes UI goes through automated accessibility tests an
 - Bouncy or elastic easing, parallax, auto-playing media, and confetti.
 - Spinners that appear instantly, skeleton shimmer and fake progress.
 - Icon-only toolbars without tooltips; gray text that fails contrast.
+- Wallpapers, textures, or decoration behind text or the writing surface; twinkling, flickering, or drifting decoration; illustrations in menus, dialogs, or toasts.
 - Dark patterns: pre-checked upsells, hidden "No thanks" links, nagging sign-in prompts.
 - AI features that start on their own or send data without saying so.
 

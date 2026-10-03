@@ -1,5 +1,6 @@
-/* First-run setup (ARCHITECTURE.md section 17.2): a centered card on the app surface. In compact it fills the
-   window with 16 px margins, its cards stack, and Back and Continue stay in a footer that is always visible. */
+/* First-run setup (ARCHITECTURE.md section 17.2): a centered card on the app surface, with the window light of the
+   day or the evening sky behind it. In compact it fills the window with 16 px margins, its cards stack, and Back and
+   Continue stay in a footer that is always visible. */
 @layer components {
   .screen {
     display: grid;
@@ -7,6 +8,23 @@
     min-block-size: calc(100dvh - var(--size-title-bar));
     padding: var(--space-5);
     background: var(--color-surface-app);
+  }
+
+  /* Window light. By day, a warm pool falls from the top corner. In the evening, a dusk sky ends in a low sunset
+     band. It paints the backdrop, never the card, and stays close to the surface (BRAND.md section 4). The patch of
+     light on the desk belongs to the page canvas, so the setup steps stay calm. */
+  .screen {
+    background:
+      radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
+      var(--color-surface-app);
+  }
+
+  :global(:root[data-theme='dark']) .screen {
+    background:
+      /* The last of the sunset, low on the horizon. */
+      radial-gradient(ellipse 130% 28% at 50% 100%, var(--color-ambient-glow), transparent),
+      /* Night at the top, deepening through dusk toward the horizon. */
+        linear-gradient(to bottom, var(--color-ambient-canvas-top) 10%, var(--color-ambient-canvas-bottom) 88%);
   }
 
   .card {
@@ -21,14 +39,34 @@
     box-shadow: var(--elevation-2);
   }
 
+  /* The scroll padding brings a control that Tab reaches below the fold in with room for its focus ring. */
   .content {
     overflow-y: auto;
     padding: var(--space-8) var(--space-8) var(--space-5);
+    scroll-padding-block: var(--space-3);
   }
 
   .step {
     display: grid;
     gap: var(--space-6);
+  }
+
+  /* In setup the theme cards grow past their Settings width to fill the column. The row's outer edges then meet
+     the edges of the buttons below, and the row centers under the centered heading. Settings keeps its row
+     start-aligned with the text above it. */
+  .look [role='radiogroup'] {
+    justify-content: center;
+  }
+
+  .look [role='radiogroup'] > [role='radio'] {
+    max-inline-size: none;
+  }
+
+  /* At first run the Match Windows caption says why it is preselected, which takes two lines in a row of cards.
+     Choosing another card puts back the one-line caption. Every caption keeps room for two lines, so the row
+     doesn't jump. Stacked in compact, each caption has the width for one line. */
+  :global(:root:not([data-size-class='compact'])) .look [role='radiogroup'] > [role='radio'] {
+    grid-template-rows: auto auto minmax(calc(2 * var(--type-small-line)), auto);
   }
 
   .header {
@@ -55,6 +93,20 @@
   .subtitle {
     margin: 0;
     color: var(--color-text-secondary);
+  }
+
+  /* The welcome step: the title stays where every other step has it, the note sits at the bottom, and the desk is
+     centered in the room between them. */
+  .welcome {
+    grid-template-rows: auto 1fr auto;
+    min-block-size: 100%;
+    text-align: center;
+  }
+
+  .scene {
+    display: grid;
+    align-content: center;
+    justify-items: center;
   }
 
   .note {
@@ -115,6 +167,12 @@
     align-content: start;
   }
 
+  /* The notebook color chips share the width evenly, so every chip is the same size. */
+  .chips :where([role='radiogroup']) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-9) * 2), 1fr));
+  }
+
   :global(:root[data-size-class='compact']) .screen {
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
@@ -135,6 +193,10 @@
 
 @layer forced {
   @media (forced-colors: active) {
+    .screen {
+      background-image: none;
+    }
+
     .card {
       border-color: ButtonBorder;
     }

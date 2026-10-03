@@ -9,9 +9,12 @@
     gap: var(--space-7);
   }
 
+  /* The three cards share a row until the window is compact, shrinking from their full width together. Their height
+     is their content's, so the card's padding is the same above the preview and below the caption. */
   .cards [role='radio'] {
-    inline-size: var(--size-theme-card);
-    min-block-size: var(--size-theme-card);
+    flex: 1 1 0;
+    min-inline-size: 0;
+    max-inline-size: var(--size-theme-card);
     align-content: start;
   }
 
@@ -21,8 +24,8 @@
   }
 
   :global(:root[data-size-class='compact']) .cards [role='radio'] {
-    inline-size: auto;
-    min-block-size: 0;
+    flex: none;
+    max-inline-size: none;
   }
 
   .note {
@@ -33,6 +36,7 @@
   }
 
   .mini {
+    position: relative;
     display: grid;
     grid-template-rows: var(--space-3) 1fr;
     block-size: calc(var(--size-theme-card) / 2);
@@ -40,6 +44,22 @@
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background: var(--color-surface-app);
+  }
+
+  /* A mark in a bottom corner, below the lines of the page and the sidebar, so it never sits on them. */
+  .glintEnd,
+  .glintStart {
+    position: absolute;
+    inset-block-end: var(--space-3);
+    opacity: 0.8;
+  }
+
+  .glintEnd {
+    inset-inline-end: var(--space-3);
+  }
+
+  .glintStart {
+    inset-inline-start: var(--space-3);
   }
 
   .bar {
@@ -123,6 +143,11 @@
 
     .mini {
       border-color: CanvasText;
+    }
+
+    .glintEnd,
+    .glintStart {
+      display: none;
     }
 
     .cards [role='radio'][aria-checked='true'] {

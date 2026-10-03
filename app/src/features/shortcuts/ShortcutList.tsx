@@ -74,7 +74,7 @@ export function ShortcutList({ scrolls = false, level = 3 }: { scrolls?: boolean
         {anyChanged && <Button onClick={resetAll}>{t('shortcuts.resetAll')}</Button>}
       </div>
       <div
-        className={scrolls ? styles.scroll : undefined}
+        className={scrolls ? styles.scroll : styles.groups}
         role={scrolls ? 'region' : undefined}
         aria-label={scrolls ? t('shortcuts.tables') : undefined}
         tabIndex={scrolls ? 0 : undefined}

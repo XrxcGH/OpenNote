@@ -1,0 +1,202 @@
+/* The drawings (docs/BRAND.md section 8): small, quiet line art in the 1.5 px style of the icons. Every color is a
+   token. Lines are border.control, so they read below the text. Fills come from the five soft drawing tints, the paper
+   tint, and the ambient spark. Nothing here loops, and nothing sits behind text. */
+@layer components {
+  .art {
+    display: block;
+    flex: none;
+    /* A drawing shrinks with a narrow window, and keeps its proportions. */
+    max-inline-size: 100%;
+    block-size: auto;
+    fill: none;
+    stroke: var(--color-border-control);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    /* One quiet fade-in when it appears, and no more (BRAND.md section 9). */
+    animation: arrive var(--motion-duration-fast) var(--motion-easing-enter) both;
+  }
+
+  /* The line stays 1.5 CSS px at every size, so a drawing scaled to a corner matches the icons. */
+  .art :is(path, circle, ellipse, rect, line, polyline) {
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Soft fills from the five drawing tints (art.*), so a drawing has color as well as lines. Moss is for leaves and
+     covers, clay for a pot or dish, candle for warm light, dusk for rose spines and hills, and night for indigo.
+     Paper is the pale warm page of a notebook. Stroke only where the drawing needs an outline. */
+  .fillMoss {
+    fill: var(--color-art-moss);
+  }
+
+  .fillClay {
+    fill: var(--color-art-clay);
+  }
+
+  .fillCandle {
+    fill: var(--color-art-candle);
+  }
+
+  .fillDusk {
+    fill: var(--color-art-dusk);
+  }
+
+  .fillNight {
+    fill: var(--color-art-night);
+  }
+
+  .fillPaper {
+    fill: var(--color-accent-candle-subtle);
+  }
+
+  /* The window sky: paper light into a candle and dusk sunset band by day, deep night into indigo in the evening. */
+  .stopPaper {
+    stop-color: var(--color-accent-candle-subtle);
+  }
+
+  .stopCandle {
+    stop-color: var(--color-art-candle);
+  }
+
+  .stopDusk {
+    stop-color: var(--color-art-dusk);
+  }
+
+  .stopDeep {
+    stop-color: var(--color-accent-night-subtle);
+  }
+
+  .stopNight {
+    stop-color: var(--color-art-night);
+  }
+
+  .spark {
+    fill: var(--color-ambient-spark);
+    stroke: none;
+  }
+
+  /* The sun and the flame are warm light with a candle-colored edge; the moon has a night-colored one. */
+  .sun {
+    fill: var(--color-ambient-spark);
+    stroke: var(--color-accent-candle);
+  }
+
+  .moon {
+    fill: var(--color-ambient-spark);
+    stroke: var(--color-accent-night);
+  }
+
+  /* Zero-length strokes: the round cap makes each a dot, which is how the window's stars are drawn. */
+  .dots {
+    stroke: var(--color-ambient-spark);
+    stroke-width: 2.4;
+  }
+
+  .dot {
+    fill: var(--color-accent-clay);
+    stroke: none;
+  }
+
+  /* Accent lines: the moss of the logo's ink, its clay pen tip, and the light of a candle. */
+  .moss {
+    stroke: var(--color-accent-primary);
+  }
+
+  .clay {
+    stroke: var(--color-accent-clay);
+  }
+
+  .candle {
+    stroke: var(--color-accent-candle);
+  }
+
+  .dusk {
+    stroke: var(--color-accent-dusk);
+  }
+
+  .night {
+    stroke: var(--color-accent-night);
+  }
+
+  /* The warm glow around a flame is a flat radial gradient in the candle tint inside the drawing, never a blur. */
+  .glow stop {
+    stop-color: var(--color-art-candle);
+  }
+
+  .halo {
+    stroke: none;
+  }
+
+  /* The sign-off stroke under a heading: moss ink with a clay dot, like the logo. */
+  .stroke {
+    display: block;
+    fill: none;
+    stroke: var(--color-accent-primary);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    animation: arrive var(--motion-duration-fast) var(--motion-easing-enter) both;
+  }
+
+  .stroke :is(path, circle) {
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Twenty-five stars on the evening sky. They are pinned to the top of the scrolling canvas, above the page card. */
+  .stars {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: calc(var(--layer-base) - 1);
+    display: none;
+    inline-size: 100%;
+    /* Drawn at 1:1 at any width. A wider canvas centers the field instead of scaling it. The page card's top edge
+       stays 32 px down at any width, so no star drifts onto it. */
+    max-inline-size: 1280px;
+    block-size: 160px;
+    margin-inline: auto;
+    margin-block-end: -160px;
+    pointer-events: none;
+    fill: var(--color-ambient-spark);
+    stroke: none;
+    animation: arrive var(--motion-duration-fast) var(--motion-easing-enter) both;
+  }
+
+  :global(:root[data-theme='dark']) .stars {
+    display: block;
+  }
+
+  /* "Always paper white" lights the whole page area, so there is no night sky to put them in. */
+  :global(:root[data-page-color='paper']) .stars {
+    display: none;
+  }
+
+  @keyframes arrive {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :is(.art, .stroke, .stars) {
+      animation: none;
+    }
+  }
+
+  :global(:root[data-motion='reduce']) :is(.art, .stroke, .stars) {
+    animation: none;
+  }
+}
+
+/* A Windows contrast theme gets plain outlines in the system text color: no fills, no glow, and no stars. */
+@layer forced {
+  @media (forced-colors: active) {
+    .art :is(path, circle, ellipse, rect, line, polyline),
+    .stroke :is(path, circle) {
+      fill: none;
+      stroke: CanvasText;
+    }
+
+    :is(.stars, .dots, .halo) {
+      display: none;
+    }
+  }
+}

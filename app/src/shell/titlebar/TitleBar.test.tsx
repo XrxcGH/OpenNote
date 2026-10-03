@@ -63,6 +63,18 @@ describe('the title bar items', () => {
     await expect.poll(() => document.title).toBe('Mitosis - OpenNote');
   });
 
+  it('marks only the notebook in the breadcrumb with its color, as the tree does', async () => {
+    await renderApp();
+    act(() => navigate(mitosis));
+    const crumbs = await screen.findByRole('list', { name: 'Current location' });
+    await expect.poll(() => within(crumbs).queryAllByRole('listitem').length).toBe(3);
+    const items = within(crumbs).getAllByRole('listitem');
+    expect(items[0].hasAttribute('data-ink')).toBe(true);
+    expect((items[0] as HTMLElement).style.getPropertyValue('--crumb-ink')).toBe('var(--ink-fern)');
+    expect(items[1].hasAttribute('data-ink')).toBe(false);
+    expect(items[2].hasAttribute('data-ink')).toBe(false);
+  });
+
   it('steps back and forward with the arrows, which say when there is nowhere to go', async () => {
     await renderApp();
     const back = () => within(banner()).getByRole('button', { name: 'Go back' });
@@ -74,6 +86,14 @@ describe('the title bar items', () => {
     await expect.poll(() => forward().getAttribute('aria-disabled')).toBeNull();
     expect(back().getAttribute('aria-disabled')).toBe('true');
     expect(back().getAttribute('aria-keyshortcuts')).toBe('Alt+ArrowLeft');
+  });
+
+  it('keeps the theme toggle off the window edge, as far in as it sits from the top', async () => {
+    await renderApp();
+    const bar = banner().getBoundingClientRect();
+    const toggle = within(banner()).getByRole('switch', { name: 'Dark mode' }).getBoundingClientRect();
+    expect(bar.right - toggle.right).toBeGreaterThan(0);
+    expect(Math.abs(bar.right - toggle.right - (toggle.top - bar.top))).toBeLessThan(1);
   });
 
   it('fits the narrowest medium window, with the arrows and the theme toggle still in the bar', async () => {

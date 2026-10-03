@@ -31,9 +31,12 @@ describe('the Trash view', () => {
     expect((await notes.get('p-mitosis' as NodeId))?.parentId).toBe('s-lectures');
   });
 
-  it('says so when Trash is empty', async () => {
-    await renderApp({ boot: { state: { location: { view: 'trash' } } } });
-    await screen.findByText('Trash is empty.');
+  it('says so when Trash is empty, with a candle and books above the sentence', async () => {
+    const { container } = await renderApp({ boot: { state: { location: { view: 'trash' } } } });
+    const sentence = await screen.findByText('Trash is empty.');
+    const art = container.querySelector('section svg[viewBox="0 0 110 54"]');
+    expect(art?.getAttribute('aria-hidden')).toBe('true');
+    expect((art as Node).compareDocumentPosition(sentence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('restores from the context menu', async () => {

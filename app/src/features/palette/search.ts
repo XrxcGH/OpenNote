@@ -18,9 +18,11 @@ export interface Ranked {
   readonly flat: readonly PaletteResult[];
   /** How many results the providers found, before the limit. */
   readonly total: number;
+  /** Whether every provider has answered, so an empty list means nothing matched rather than not yet. */
+  readonly settled: boolean;
 }
 
-export const NO_RESULTS: Ranked = { groups: [], flat: [], total: 0 };
+export const NO_RESULTS: Ranked = { groups: [], flat: [], total: 0, settled: false };
 
 /** The best results by score, grouped. Ties keep the order the providers gave. */
 export function rank(results: readonly PaletteResult[], limit = RESULT_LIMIT): Ranked {
@@ -32,7 +34,7 @@ export function rank(results: readonly PaletteResult[], limit = RESULT_LIMIT): R
     .map(({ result }) => result);
   const order = [...new Set(best.map((result) => result.group))];
   const groups = order.map((id) => ({ id, results: best.filter((result) => result.group === id) }));
-  return { groups, flat: groups.flatMap((group) => group.results), total: found.length };
+  return { groups, flat: groups.flatMap((group) => group.results), total: found.length, settled: true };
 }
 
 export function providersFor(providers: readonly PaletteProvider[], filter: PaletteFilterId): PaletteProvider[] {
@@ -68,9 +70,10 @@ export class PaletteSearch {
     const controller = new AbortController();
     this.controller = controller;
     const found: PaletteResult[] = [];
+    let waiting = 0;
     const publish = () => {
       if (controller.signal.aborted) return;
-      this.ranked = rank(this.adjust([...found], query));
+      this.ranked = { ...rank(this.adjust([...found], query)), settled: waiting === 0 };
       this.listeners.forEach((listener) => listener());
     };
     const later: Promise<void>[] = [];
@@ -78,15 +81,20 @@ export class PaletteSearch {
       try {
         const answer = provider.search(query, controller.signal);
         if (!isPromise(answer)) found.push(...answer);
-        else
+        else {
+          waiting += 1;
           later.push(
             answer
               .then(
                 (list) => void found.push(...list),
                 () => undefined,
               )
-              .then(publish),
+              .then(() => {
+                waiting -= 1;
+                publish();
+              }),
           );
+        }
       } catch {
         // Left out; the other providers still answer.
       }

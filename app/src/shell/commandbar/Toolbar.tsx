@@ -43,23 +43,29 @@ function Tool({ entry }: { entry: BarEntry }) {
     event.preventDefault();
     void showMenu(entry, event.currentTarget, setMenuOpen);
   };
-  return (
-    <Tooltip label={label} shortcut={keys[0] ? formatChord(keys[0]) : null}>
-      <button
-        type="button"
-        {...TOOL_PROPS}
-        className={styles.tool}
-        aria-disabled={disabled || undefined}
-        aria-pressed={item.presentation === 'toggle' ? Boolean(checked) : undefined}
-        aria-haspopup={item.menu ? 'menu' : undefined}
-        aria-expanded={item.menu ? menuOpen : undefined}
-        aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
-        onClick={onClick}
-        onContextMenu={onContextMenu}
-      >
-        {label}
-      </button>
+  const button = (
+    <button
+      type="button"
+      {...TOOL_PROPS}
+      className={styles.tool}
+      aria-disabled={disabled || undefined}
+      aria-pressed={item.presentation === 'toggle' ? Boolean(checked) : undefined}
+      aria-haspopup={item.menu ? 'menu' : undefined}
+      aria-expanded={item.menu ? menuOpen : undefined}
+      aria-keyshortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
+      onClick={onClick}
+      onContextMenu={onContextMenu}
+    >
+      {label}
+    </button>
+  );
+  // The button shows its label, so a tooltip only earns its place when it adds the shortcut.
+  return keys[0] ? (
+    <Tooltip label={label} shortcut={formatChord(keys[0])}>
+      {button}
     </Tooltip>
+  ) : (
+    button
   );
 }
 

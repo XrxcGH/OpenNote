@@ -23,7 +23,7 @@ export const palette = {
     other: 'More results',
   },
   count: '{count, plural, one {# result} other {# results}}',
-  none: 'No results',
+  none: 'No results.',
   many: 'More than 100 results',
   createPage: 'Create page "{title}"',
   noMatchCreate: 'No pages match. Press Enter to create "{title}".',

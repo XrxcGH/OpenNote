@@ -5,6 +5,18 @@
     gap: var(--space-6);
   }
 
+  /* The two shortcut sets are one choice, so their cards share one width and the descriptions wrap inside. In
+     compact they stack. */
+  .section > [role='radiogroup'] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-inline-size: 44rem;
+  }
+
+  :global(:root[data-size-class='compact']) .section > [role='radiogroup'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .list {
     display: grid;
     gap: var(--space-5);
@@ -14,18 +26,45 @@
   .toolbar {
     display: flex;
     flex-wrap: wrap;
-    align-items: end;
+    align-items: start;
     justify-content: space-between;
     gap: var(--space-4);
   }
 
-  .scroll {
+  /* The switch and the Reset all button line up with the field's input, under its label line, not with the help
+     text below it. */
+  .toolbar > :not(:first-child) {
+    margin-block-start: calc(var(--type-small-line) + var(--space-2));
+  }
+
+  /* The switch's hover area pads it by 8 px and a 1 px border. When the switch ends the row, the area hangs out
+     past the end, so its track lines up with the tables' end edge, as Settings does at the start edge. */
+  .toolbar > [role='switch']:last-child {
+    margin-inline-end: calc(-1 * (var(--space-3) + 1px));
+  }
+
+  /* On the Settings page the tables don't scroll on their own, but keep the dialog's space between them. Positioned,
+     so the visually hidden table heads stay inside the Settings scroller. Unpositioned, they escaped it and made the
+     whole window scrollable. */
+  .groups {
+    position: relative;
     display: grid;
     gap: var(--space-6);
-    max-block-size: 55vh;
+  }
+
+  /* Positioned, so the visually hidden table heads stay inside the scroller instead of stretching the dialog. In a
+     short window the height leaves room for the rest of the dialog, which takes 344 px. The title bar takes 40 and
+     the dialog layer's padding 32. The dialog's padding with its border takes 50, its title 28, and its
+     description 22. The filter row takes 76, the Close button 32, and four 16 px gaps 64. The scroll padding
+     brings a control that Tab reaches below the fold in with room for its focus ring. */
+  .scroll {
+    position: relative;
+    display: grid;
+    gap: var(--space-6);
+    max-block-size: min(55vh, calc(100dvh - 344px));
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding-inline-end: var(--space-2);
+    scroll-padding-block: var(--space-3);
   }
 
   .scroll:focus-visible {
@@ -51,6 +90,17 @@
     table-layout: fixed;
   }
 
+  /* The columns set the widths, so a row whose key field spans the keys and actions cells moves no other row. The
+     names wrap more gracefully than the keys, so the keys get the room: two chords fit on one line, and no key cap
+     runs into the Change button. The actions column holds Change and Reset side by side. */
+  .nameColumn {
+    inline-size: 33%;
+  }
+
+  .actionsColumn {
+    inline-size: 10rem;
+  }
+
   .table th,
   .table td {
     padding: var(--space-2) var(--space-3);
@@ -60,7 +110,6 @@
   }
 
   .name {
-    inline-size: 50%;
     font-weight: var(--font-weight-regular);
   }
 
@@ -76,16 +125,19 @@
   }
 
   .actions {
-    inline-size: 11rem;
     white-space: nowrap;
     text-align: end;
   }
 
-  .chords {
+  .chords,
+  .chord {
     display: inline-flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-2);
+  }
+
+  .chords {
+    flex-wrap: wrap;
   }
 
   .or {

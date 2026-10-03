@@ -90,7 +90,11 @@ export function ThemeToggle() {
           keyShortcuts={keys.length ? ariaKeyShortcuts(keys) : undefined}
           onChange={() => setThemePreference(toggledPreference(shown), 'toggle')}
         >
-          {dark ? <MoonIcon weight="fill" aria-hidden="true" /> : <SunIcon aria-hidden="true" />}
+          {dark ? (
+            <MoonIcon className={styles.moon} weight="fill" aria-hidden="true" />
+          ) : (
+            <SunIcon className={styles.sun} aria-hidden="true" />
+          )}
         </Switch>
       </Tooltip>
       <span id={descriptionId} className={styles.hidden}>

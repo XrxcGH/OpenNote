@@ -1,5 +1,7 @@
 /* The cascade layer order for every style sheet (ARCHITECTURE.md section 4.6). A later layer wins over an earlier
-   one, whatever the selector's specificity. This file loads first, so the order is fixed before any rule.
+   one, whatever the selector's specificity. This file loads first in development. A build splits the CSS into
+   several files, and the layer-order plugin (app/scripts/layer-order.ts) starts each one with this statement.
+   The layers, lowest first:
    - tokens: design values
    - base: element defaults
    - components: CSS modules

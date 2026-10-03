@@ -56,14 +56,15 @@ describe('the command palette', () => {
     opener.remove();
   });
 
-  it('announces how many results there are, then "No results"', async () => {
+  it('announces how many results there are, then says "No results." in the list too', async () => {
     await renderApp();
     const box = await openWith('Ctrl+K');
     await typeInto(box, 'dark');
     await waitFor(() => expect(announcements().at(-1)).toMatch(/^\d+ results?$/), { timeout: 3000 });
     await typeInto(box, 'zzqx');
-    await waitFor(() => expect(announcements().at(-1)).toBe('No results'), { timeout: 3000 });
+    await waitFor(() => expect(announcements().at(-1)).toBe('No results.'), { timeout: 3000 });
     expect(screen.queryAllByRole('option')).toHaveLength(0);
+    expect(within(screen.getByRole('dialog')).getByText('No results.')).toBeVisible();
   });
 
   it('moves with the arrow keys, closes on Escape, and Ctrl+K again closes it', async () => {
@@ -101,6 +102,34 @@ describe('the quick switcher', () => {
     await screen.findByRole('option', { name: /Mitosis/ });
     await userEvent.keyboard('{Enter}');
     await waitFor(() => expect(getLocation()).toMatchObject({ view: 'workspace', pageId: 'p-mitosis' }));
+  });
+
+  it('shows the notebook color as a small hidden dot before a page, and adds nothing to its name', async () => {
+    await renderApp();
+    const box = await openWith('Ctrl+O');
+    await typeInto(box, 'mitosis');
+    // Each letter searches again, and a slow machine lists Mitosis for a part of the word before the list is rebuilt
+    // for all of it. The count is announced once every provider has answered for the whole word, so the option
+    // that is measured is the one that stays.
+    await waitFor(() => expect(announcements().at(-1)).toMatch(/^\d+ results?$/), { timeout: 3000 });
+    const option = screen.getByRole('option', { name: /Mitosis/ });
+    const dot = option.querySelector('span[style*="--ink-fern"]');
+    expect(dot?.getAttribute('aria-hidden')).toBe('true');
+    expect(dot?.textContent).toBe('');
+    expect(option.getAttribute('aria-label')).toBeNull();
+    // The dot hangs in front: the title's text and the detail under it start at the same place, and the dot ends
+    // before them. The text is measured as a range; the dot has no text, so it is measured as the box it is (an
+    // empty element's range has no size, and where browsers put it differs).
+    const textLeft = (node: Node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return Math.round(range.getBoundingClientRect().left);
+    };
+    const title = textLeft(dot?.parentElement?.lastChild as Node);
+    expect(textLeft(option.querySelector('[id$="-detail"]') as Node)).toBe(title);
+    const dotBox = (dot as Element).getBoundingClientRect();
+    expect(dotBox.width).toBeGreaterThan(0);
+    expect(Math.round(dotBox.right)).toBeLessThanOrEqual(title);
   });
 
   it('lists recent pages first when nothing is typed', async () => {

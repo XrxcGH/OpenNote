@@ -50,8 +50,10 @@ describe('PaletteSearch', () => {
     const search = new PaletteSearch();
     search.run('x', [now, broken, later(10, 'slow')]);
     expect(search.get().flat.map((r) => r.id)).toEqual(['now']);
+    expect(search.get().settled).toBe(false);
     const ranked = await search.settled();
     expect(ranked.flat.map((r) => r.id)).toEqual(['slow', 'now']);
+    expect(ranked.settled).toBe(true);
   });
 
   it('drops answers that arrive after a newer query', async () => {

@@ -11,9 +11,8 @@ import type { NodeId, NodeSummary } from '../../services/notes';
 import { registerRegionMain } from '../../shell/regions';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
-import { ProgressBar, useDelayedFlag } from '../../ui';
+import { EmptyArt, ProgressBar, useDelayedFlag } from '../../ui';
 import { titleOf, useTreeNode } from '../tree';
-import { EmptyPageArt } from './EmptyPageArt';
 import { TitleSlot, useTitleBand } from './title/TitleSlot';
 import styles from './PageView.module.css';
 import { usePageZoom } from './zoom';
@@ -80,7 +79,7 @@ export function PageView() {
       {page && !editing && <p className={styles.note}>{t('tree.page.empty')}</p>}
       {!page && !loading && (
         <div className={styles.empty}>
-          <EmptyPageArt />
+          <EmptyArt kind="page" className={styles.art} />
           <p className={styles.note}>{t('tree.page.none')}</p>
         </div>
       )}
