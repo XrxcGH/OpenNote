@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import { cdp } from 'vitest/browser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderUi } from '../../test';
+import { drawn } from '../../test/drawing';
 import { Books, Candle, DeskScene, EmptyArt, Glint, InkStroke, Notebook, Plant, StarField, Window } from './index';
 
 const MOTIFS = {
@@ -31,8 +32,6 @@ function colorOf(value: string): string {
   return computed;
 }
 
-const drawn = (container: HTMLElement) => container.querySelector('svg') as SVGSVGElement;
-
 afterEach(() => {
   document.documentElement.removeAttribute('data-theme');
 });
@@ -59,119 +58,31 @@ describe('every drawing', () => {
     });
   }
 
-  it('is never wider than the desk scene or taller than it', () => {
-    const { container } = renderUi(<DeskScene sky="day" />);
-    const box = drawn(container).getBoundingClientRect();
-    expect(box.width).toBeLessThanOrEqual(240);
-    expect(box.height).toBeLessThanOrEqual(150);
+  it('shows the desk at one and a half times its drawn size, the empty states at 176 px, and a 50 px plant', () => {
+    const size = (element: ReactElement) => {
+      const { container, unmount } = renderUi(element);
+      const box = drawn(container).getBoundingClientRect();
+      unmount();
+      return [box.width, box.height];
+    };
+    expect(size(<DeskScene sky="day" />)).toEqual([360, 225]);
+    for (const kind of ['notebooks', 'page', 'trash'] as const) expect(size(<EmptyArt kind={kind} />)[0]).toBe(176);
+    expect(size(<Plant />)).toEqual([42, 50]);
   });
+
+  for (const [name, element] of Object.entries(MOTIFS).filter(([name]) => name !== 'Star field')) {
+    it(`${name} is never wider than the desk scene or taller than it`, () => {
+      const box = drawn(renderUi(element).container).getBoundingClientRect();
+      expect(box.width).toBeLessThanOrEqual(360);
+      expect(box.height).toBeLessThanOrEqual(225);
+    });
+  }
 
   it('draws its lines 1.5 px wide at any size', () => {
     const { container } = renderUi(<Plant />);
     const line = container.querySelector('path') as SVGPathElement;
     expect(getComputedStyle(line).strokeWidth).toBe('1.5px');
     expect(getComputedStyle(line).vectorEffect).toBe('non-scaling-stroke');
-  });
-});
-
-/** Points along a shape's outline in its own coordinates, before its own transform. */
-const along = (shape: SVGGeometryElement, steps = 400) =>
-  Array.from({ length: steps + 1 }, (_, i) =>
-    DOMPoint.fromPoint(shape.getPointAtLength((i / steps) * shape.getTotalLength())),
-  );
-
-/** Points along a shape's outline in its drawing's own coordinates (the viewBox), after every transform. */
-function outline(shape: SVGGeometryElement, steps = 400): DOMPoint[] {
-  const svg = shape.ownerSVGElement as SVGSVGElement;
-  const toDrawing = (svg.getScreenCTM() as DOMMatrix).inverse().multiply(shape.getScreenCTM() as DOMMatrix);
-  return along(shape, steps).map((p) => p.matrixTransform(toDrawing));
-}
-
-/** The outline of one shape, or of every shape in a group. */
-const pointsOf = (thing: Element) =>
-  (thing instanceof SVGGeometryElement
-    ? [thing]
-    : [...thing.querySelectorAll<SVGGeometryElement>('path, circle')]
-  ).flatMap((shape) => outline(shape));
-
-/** An empty state's shelf is the first line in its drawing. */
-const shelfOf = (svg: SVGSVGElement) => svg.querySelector('g > path') as SVGGeometryElement;
-
-/** The top of a shelf or desk at a given x, from its outline. */
-function surface(line: SVGGeometryElement): (x: number) => number {
-  const points = outline(line, 1000);
-  return (x) => Math.min(...points.filter((p) => Math.abs(p.x - x) <= 0.5).map((p) => p.y));
-}
-
-/** Things stand on a line: no point dips below it, and the lowest one is within a unit of it, so nothing floats. */
-function expectStandsOn(points: DOMPoint[], at: (x: number) => number) {
-  const gaps = points.map((p) => at(p.x) - p.y);
-  expect(Math.min(...gaps)).toBeGreaterThanOrEqual(-0.01);
-  expect(Math.min(...gaps)).toBeLessThan(1);
-}
-
-describe('where things stand', () => {
-  it('leans the third book on its bottom-left corner against the moss book, above the shelf', () => {
-    const svg = drawn(renderUi(<EmptyArt kind="notebooks" />).container);
-    const leaning = svg.querySelector('path[transform]') as SVGGeometryElement;
-    const upright = leaning.previousElementSibling as SVGGeometryElement;
-    const shelf = surface(shelfOf(svg));
-    const lean = outline(leaning);
-    expectStandsOn(lean, shelf);
-    // Its lowest point is the bottom-left corner, and the bottom-right corner is lifted off the shelf.
-    const lowest = lean.reduce((a, b) => (b.y > a.y ? b : a));
-    expect([lowest.x, lowest.y]).toEqual([lean[0].x, lean[0].y]);
-    // It rests on the moss book without passing into it: no outline point of one is inside the other. Both are
-    // compared in their shared parent's coordinates, where the moss book has no transform of its own.
-    const tilt = (leaning.transform.baseVal.consolidate() as SVGTransform).matrix;
-    const leaningEdge = along(leaning).map((p) => p.matrixTransform(tilt));
-    const uprightEdge = along(upright);
-    expect(leaningEdge.filter((p) => upright.isPointInFill(p))).toEqual([]);
-    expect(uprightEdge.filter((p) => leaning.isPointInFill(p.matrixTransform(tilt.inverse())))).toEqual([]);
-    let touch = Infinity;
-    for (const a of leaningEdge) for (const b of uprightEdge) touch = Math.min(touch, Math.hypot(a.x - b.x, a.y - b.y));
-    expect(touch).toBeLessThan(0.3);
-  });
-
-  it.each(['notebooks', 'page', 'trash'] as const)('stands everything in the %s drawing on the shelf', (kind) => {
-    const svg = drawn(renderUi(<EmptyArt kind={kind} />).container);
-    const shelf = surface(shelfOf(svg));
-    // The shelf drawing's objects are single shapes; the others are a drawing and a candle, each in a group.
-    const things = svg.querySelectorAll(kind === 'notebooks' ? 'g > path:not(:first-child)' : 'g g');
-    // Each object near the shelf (a book, the pot, the notebook, the stack, the candle) stands on it, never below it.
-    const near = [...things].map(pointsOf).filter((points) => points.some((p) => shelf(p.x) - p.y < 1));
-    for (const points of near) expectStandsOn(points, shelf);
-    expect(near).toHaveLength(kind === 'notebooks' ? 4 : 2);
-  });
-
-  it('stands the books, notebook and candle on the desk, and the plant on the window sill', () => {
-    const svg = drawn(renderUi(<DeskScene sky="day" />).container);
-    const [frame, plant, books, notebook, candle] = [...svg.querySelectorAll(':scope > g')];
-    const desk = surface(svg.querySelector(':scope > path') as SVGGeometryElement);
-    for (const thing of [books, notebook, candle]) expectStandsOn(pointsOf(thing), desk);
-    const sill = outline(frame.querySelector('path:last-child') as SVGGeometryElement);
-    const sillTop = Math.min(...sill.map((p) => p.y));
-    // Every part of the plant stands on the sill without passing into it. That includes the vine's tail.
-    expectStandsOn(pointsOf(plant), () => sillTop);
-  });
-});
-
-describe('where things meet', () => {
-  it("keeps the plant's left leaf clear of the window's middle bar", () => {
-    const svg = drawn(renderUi(<DeskScene sky="day" />).container);
-    const [frame, plant] = [...svg.querySelectorAll(':scope > g')];
-    const bars = outline(frame.querySelector('path[d^="M50"]') as SVGGeometryElement, 1000);
-    const leftLeaf = outline(plant.querySelectorAll<SVGGeometryElement>('path')[4]);
-    let gap = Infinity;
-    for (const a of leftLeaf) for (const b of bars) gap = Math.min(gap, Math.hypot(a.x - b.x, a.y - b.y));
-    // Two 1.5 px strokes meet at 1.5 units apart; 3 leaves a clear line of sky between them.
-    expect(gap).toBeGreaterThan(3);
-  });
-
-  it("sets the candle's body down in its dish, not above it", () => {
-    const paths = drawn(renderUi(<Candle />).container).querySelectorAll<SVGGeometryElement>('path');
-    const [body, saucer] = [paths[2], paths[4]];
-    expectStandsOn(outline(body), surface(saucer));
   });
 });
 
@@ -234,8 +145,10 @@ describe('in color', () => {
       return found;
     };
     // Every book has its own colored spine, never the paper behind it.
-    const spines = fills(<Books />, 'path[class]').slice(0, 3);
-    expect(spines).toEqual(['--color-art-dusk', '--color-art-moss', '--color-art-night'].map(colorOf));
+    const spines = fills(<Books />, 'path[class]').slice(0, 4);
+    expect(spines).toEqual(
+      ['--color-art-dusk', '--color-art-moss', '--color-art-night', '--color-art-candle'].map(colorOf),
+    );
     // The pot and the candle dish are clay, and the leaves are moss.
     expect(fills(<Plant />, 'path')[0]).toBe(colorOf('--color-art-clay'));
     expect(fills(<Plant />, 'g g path')).toContain(colorOf('--color-art-moss'));
@@ -256,45 +169,6 @@ describe('in color', () => {
       const tints = ['moss', 'clay', 'candle', 'dusk', 'night'].map((tint) => colorOf(`--color-art-${tint}`));
       expect(new Set(tints).size).toBe(5);
       expect(tints).not.toContain(paper);
-    }
-  });
-});
-
-describe('inside their boxes', () => {
-  it.each([64, 103])('keeps every window line, stroke and all, inside the drawing at %i px tall', (height) => {
-    const svg = drawn(renderUi(<Window sky="day" height={height} />).container);
-    const box = svg.getBoundingClientRect();
-    for (const shape of svg.querySelectorAll<SVGGeometryElement>('path, circle')) {
-      const style = getComputedStyle(shape);
-      // Lines don't scale, so half of each one's width reaches past its path by the same number of pixels.
-      const half = style.stroke === 'none' ? 0 : parseFloat(style.strokeWidth) / 2;
-      const edge = shape.getBoundingClientRect();
-      expect(edge.left - half).toBeGreaterThanOrEqual(box.left);
-      expect(edge.top - half).toBeGreaterThanOrEqual(box.top);
-      expect(edge.right + half).toBeLessThanOrEqual(box.right);
-      expect(edge.bottom + half).toBeLessThanOrEqual(box.bottom);
-    }
-  });
-
-  it("keeps every star at least 5 px clear of the page card's top edge, however wide the canvas", () => {
-    document.documentElement.dataset.theme = 'dark';
-    // The page card starts one --space-8 margin down the canvas.
-    const card = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-8'));
-    expect(card).toBe(32);
-    for (const width of [600, 1280, 1920, 2560]) {
-      const { container, unmount } = renderUi(
-        <div style={{ inlineSize: width }}>
-          <StarField />
-        </div>,
-      );
-      const top = drawn(container).getBoundingClientRect().top;
-      for (const star of container.querySelectorAll('circle')) {
-        const dot = star.getBoundingClientRect();
-        // Above the edge, or below it where the card covers it, by 5 px either way.
-        const clear = Math.max(card - (dot.bottom - top), dot.top - top - card);
-        expect(clear, `the star at x ${star.getAttribute('cx')} on a ${width} px canvas`).toBeGreaterThanOrEqual(5);
-      }
-      unmount();
     }
   });
 });

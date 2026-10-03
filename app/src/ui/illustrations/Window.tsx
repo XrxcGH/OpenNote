@@ -1,7 +1,9 @@
 // An arched window, 100 x 103: a sunset sky by day, and stars with a crescent moon in the evening. The sill and the
 // panes are lines. The sky is a soft gradient from the tints. By day, paper light turns to a candle and dusk band
-// at the hills. In the evening, deep night lightens to indigo at the horizon. The hills, the sun, and the
-// moon are flat fills from the tokens, and the stars are dots.
+// at the hills. In the evening, deep night lightens to indigo at the horizon.
+//
+// The hills, the sun, and the moon are flat fills from the tokens, and the stars are dots. A moss vine twines in
+// and out of the frame down the left of the arch, with seven small leaves.
 
 import { useId } from 'react';
 import { Art } from './Art';
@@ -27,6 +29,21 @@ const STOPS = {
     [0.9, styles.stopNight],
   ],
 } as const;
+
+/** The vine along the arch, and its leaves as one path: each leaf is two curves from its stem to its tip. */
+const VINE = [
+  'M37.5 3.8C35.9 5.2 31.7 10.2 28 12.3 24.3 14.4 18 13.6 15.4 16.4 12.9 19.2 14.6 25.5 12.7 29.3',
+  '10.8 33.1 5 35.9 4.2 39.4 3.4 42.9 7.9 47.5 8.1 50.4 8.3 53.4 5.9 55.9 5.5 57',
+].join(' ');
+const LEAVES = [
+  'M37.5 3.8Q40.5 6.7 42.4 2.9Q39.3 0 37.5 3.8Z',
+  'M28 12.3Q26.7 16.7 31.2 17.4Q32.5 13 28 12.3Z',
+  'M15.4 16.4Q15.5 11.9 11 12.4Q10.9 16.9 15.4 16.4Z',
+  'M12.7 29.3Q16.7 31.5 18.3 27.3Q14.4 25.1 12.7 29.3Z',
+  'M4.2 39.4Q8.5 38.7 7 34.7Q2.6 35.3 4.2 39.4Z',
+  'M8.1 50.4Q9.5 54.6 13.3 52.3Q11.8 48.2 8.1 50.4Z',
+  'M5.5 57Q2.6 60.3 6.4 62.4Q9.3 59.1 5.5 57Z',
+].join('');
 
 function Heavens({ sky }: { sky: Sky }) {
   if (sky === 'day') return <circle className={styles.sun} cx="72" cy="72" r="9.5" />;
@@ -56,6 +73,8 @@ export function WindowArt({ sky }: { sky: Sky }) {
         d="M7 78C20 73.5 30 80 46 76.5S72 72 93 77.5L93 95.3H7Z"
       />
       <path d="M50 4.2V96M6 56.4C30 55.6 70 57.2 94 56.2" />
+      <path className={styles.moss} d={VINE} />
+      <path className={`${styles.fillMoss} ${styles.moss}`} d={LEAVES} />
       <path d="M1.5 96.5H98.5V101.5H1.5Z" />
     </>
   );

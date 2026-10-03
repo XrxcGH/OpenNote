@@ -234,7 +234,16 @@ The logo is a folded page with a moss-green ink stroke ending in a clay pen tip:
 
 ### Illustrations
 
-Illustrations appear in onboarding, empty states, error screens, the theme previews, Settings > About and the notebooks pane footer. A pane or card has at most one, and none is larger than 240 by 150 pixels. The motif set is a window, a plant and vine, a candle, books, a sunset, and stars with a moon.
+Illustrations appear in onboarding, empty states, error screens, the theme previews, Settings > About and the notebooks pane footer. A pane or card has at most one, and none is larger than the welcome desk at 360 by 225 pixels. The motif set is a window with a vine along its frame, a plant and vine, candles, books, a sunset, and stars with a moon.
+
+| Drawing | Shown at | Holds |
+|---|---|---|
+| Welcome desk | 360 by 225 (drawn at 240 by 150) | The window with its vine, a plant on the sill, four stacked books, an open notebook, and two candles of different heights |
+| Empty states | 176 pixels wide | A shelf of books with a small potted plant; an open notebook and a candle; four books and a candle |
+| About | The window, 112 pixels tall | The sunset or the moon and stars, and the vine |
+| Notebooks pane footer | The plant, 42 by 50 | A clay pot with a short vine trailing to the left |
+
+A drawing never moves to a pane that has none, and the extra motifs live inside the drawings above, never as new decoration.
 
 - They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors.
 - Lines are `border.control`. Fills come from the five drawing tints and warm paper, so every book has a colored spine, every pot is filled, and every flame has a warm glow.
@@ -243,8 +252,8 @@ Illustrations appear in onboarding, empty states, error screens, the theme previ
 
 ### Drawing geometry
 
-- Things in a drawing obey gravity. Books, pots, the notebook, and the candle stand on their shelf, desk, or sill line. None sinks into its line or floats above it. A leaning book stands on its lower corner and rests against its neighbor. The component tests check both.
-- Nothing crowds another shape, such as a star against a leaf or the sun against a window bar.
+- Things in a drawing obey gravity. Books, pots, the notebook, and the candles stand on their shelf, desk, or sill line. None sinks into its line or floats above it. A leaning book stands on its lower corner and rests against its neighbor. Each book in a stack rests on the one below it, and an open notebook rests on its spine. A trailing vine lies on its surface, never below it. The component tests check all of these.
+- Nothing crowds another shape, such as a star against a leaf or the sun against a window bar. The window vine keeps at least 4 units from the stars and the moon, and the two candles' dishes don't overlap.
 - A drawing set above left-aligned text is cropped to its content, so its shelf starts where the text starts.
 - Every line stays inside its drawing's box at any drawn size, stroke width included, so no edge is clipped.
 - The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The stars are drawn at 1:1 at any width, and each stays at least 5 pixels clear of the card's top edge, so none looks like a speck on the card.

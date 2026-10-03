@@ -134,7 +134,7 @@ test('keeps the plant out of the way in the compact layout', async ({ page }) =>
   await openScreen(page, byId('workspace.sample'), { size: 'compact', theme: 'light' });
   const shown = await page.evaluate(
     () =>
-      [...document.querySelectorAll('svg[viewBox="0 0 48 66"]')].filter((svg) => svg.getBoundingClientRect().width > 0)
+      [...document.querySelectorAll('svg[viewBox="0 0 56 66"]')].filter((svg) => svg.getBoundingClientRect().width > 0)
         .length,
   );
   expect(shown).toBe(0);
