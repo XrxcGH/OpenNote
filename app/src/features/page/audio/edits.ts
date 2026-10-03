@@ -2,6 +2,7 @@
 // files alone; the new entry takes the old one's place in the block, the page is saved, and only then do the old
 // files go (crates/media/src/edit/README.md). Flags and text marks name the recording by its ID, which the edit
 // keeps, so they still find their audio.
+import { isEnabled } from '../../../app/flags';
 import { enhancedTracks, Flags, withoutEnhanced } from '../../../core/audio';
 import type { RecordingEntry, SplitHalf } from '../../../core/audio';
 import type { Edit } from '../../../services/pages/types';
@@ -74,8 +75,9 @@ export async function splitRecording(
     flags.moveToSplit(entry.id, [first.entry, second.entry]);
     const [one, two] = [first.entry, second.entry].map((half) => flags.into(withoutEnhanced(half)));
     await writeEntry(pageId, block, one, { track: 'finished', drop: entry });
-    await insertRecordingBlock(two, { after: block, track: 'finished' });
+    const secondBlock = await insertRecordingBlock(two, { after: block, track: 'finished' });
     await moveMarks(entry.id, [first.entry, second.entry]);
+    await withTranscripts((module) => module.afterSplit(entry.id, two.id, positionNs, secondBlock));
     await shownOpenPage.get()?.saveNow();
     await deleteAudioFiles(dir, entry);
     announce(t('audioMore.split.done', { first: clockNs(first.durationNs), second: clockNs(second.durationNs) }));
@@ -93,7 +95,26 @@ export async function trimSilence(block: string, pageId: string, entry: Recordin
     const edited = await audio.trimSilence(dir, entry);
     if (!edited) return void announce(t('audio.announce.nothingToTrim'));
     await replace(block, pageId, entry, edited.entry);
+    // What was said later now starts earlier by the silence cut from the start.
+    const head = firstCaptureNs(edited.entry) - firstCaptureNs(entry);
+    if (head > 0) await withTranscripts((module) => module.afterTrim(entry.id, head));
     announce(t('audio.announce.trimmed', { time: clockNs(edited.durationNs) }));
+  } catch (error) {
+    showToast({ message: describeError(error), tone: 'danger' });
+  }
+}
+
+/** The capture time of the first sound a recording holds. */
+function firstCaptureNs(entry: RecordingEntry): number {
+  const starts = entry.tracks.flatMap((track) => track.timeline.anchors.slice(0, 1).map((anchor) => anchor.timeNs));
+  return starts.length > 0 ? Math.min(...starts) : 0;
+}
+
+/** Runs a change to the transcript, if the page has transcripts. A failure there never undoes the audio edit. */
+async function withTranscripts(work: (module: typeof import('./transcripts/actions')) => Promise<void>) {
+  if (!isEnabled('transcripts.block')) return;
+  try {
+    await work(await import('./transcripts/actions'));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
   }
@@ -119,14 +140,19 @@ export async function removePart(block: string, pageId: string, entry: Recording
     partStarts.delete(entry.id);
     await replace(block, pageId, entry, edited.entry);
     // The removed words go from the transcript, and the page's saved versions, which could bring the part back, go.
-    await purgeRemoved(pageId);
+    await purgeRemoved(pageId, entry.id, startNs, endNs);
     announce(t('audio.announce.trimmed', { time: clockNs(edited.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
   }
 }
 
-/** Everything besides the audio that a removed part must leave. The page's saved versions could bring it back. */
-async function purgeRemoved(pageId: string): Promise<void> {
+/**
+ * Everything besides the audio that a removed part must leave: its words in the transcript, which is saved first, and
+ * then the page's saved versions, which could bring the part back.
+ */
+async function purgeRemoved(pageId: string, recording: string, startNs: number, endNs: number): Promise<void> {
+  await withTranscripts((module) => module.afterRemoval(recording, startNs, endNs));
+  await shownOpenPage.get()?.saveNow();
   await (await moreClient()).purgeHistory(pageId).catch(() => undefined);
 }

@@ -3,7 +3,7 @@
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
 import { useRef } from 'react';
 import { useFlag } from '../../../app/flags';
-import { audioIsRemoved, enhancedTracks } from '../../../core/audio';
+import { audioIsRemoved, enhancedTracks, extrasOf } from '../../../core/audio';
 import type { RecordingEntry } from '../../../core/audio';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
@@ -63,6 +63,44 @@ function enhanceItem({ block, entry, pageId }: Props): MenuItemSpec {
   };
 }
 
+function transcriptItems({ block, entry, pageId }: Props): MenuItemSpec[] {
+  const actions = () => import('./transcripts/actions');
+  const items: MenuItemSpec[] = [
+    {
+      id: 'transcribe',
+      label: t('audioMore.menu.transcribe'),
+      separatorBefore: true,
+      onSelect: () => void actions().then((module) => module.makeTranscript(block, entry)),
+    },
+    {
+      id: 'addTranscript',
+      label: t('audioMore.menu.importTranscript'),
+      onSelect: () => void actions().then((module) => module.addFromText(block, entry)),
+    },
+  ];
+  if (enhancedTracks(entry).length === 0) return items;
+  const using = extrasOf(entry).transcribeWith === 'enhanced' ? 'enhanced' : 'original';
+  const choose = (transcribeWith: 'original' | 'enhanced') => () =>
+    void import('./enhance').then((module) => module.chooseAudio(block, pageId, entry, { transcribeWith }));
+  return [
+    ...items,
+    {
+      id: 'fromOriginal',
+      kind: 'radio',
+      checked: using === 'original',
+      label: t('audioMore.menu.fromOriginal'),
+      onSelect: choose('original'),
+    },
+    {
+      id: 'fromEnhanced',
+      kind: 'radio',
+      checked: using === 'enhanced',
+      label: t('audioMore.menu.fromEnhanced'),
+      onSelect: choose('enhanced'),
+    },
+  ];
+}
+
 function exportItems({ entry, pageId }: Props): MenuItemSpec[] {
   const save = (format: 'wav' | 'opus') => () =>
     void import('./exportAudio').then((module) => module.exportRecording(pageId, entry, format));
@@ -77,10 +115,12 @@ export function MoreMenu(props: Props) {
   const trim = useFlag('audio.trim');
   const enhance = useFlag('audio.enhance');
   const exporting = useFlag('audio.export');
+  const transcripts = useFlag('transcripts.block');
   const anchor = useRef<HTMLSpanElement>(null);
   const items = [
     ...(trim ? editItems(props) : []),
     ...(enhance ? [enhanceItem(props)] : []),
+    ...(transcripts ? transcriptItems(props) : []),
     ...(exporting ? exportItems(props) : []),
   ];
   if (items.length === 0 || audioIsRemoved(entry)) return null;

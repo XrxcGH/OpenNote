@@ -75,7 +75,14 @@ async function entryEdits(page: string, entry: RecordingEntry, change: TrackChan
   return edits;
 }
 
-function insertEdit(id: BlockId, entry: RecordingEntry, anchor?: BlockId): InsertEdit {
+/** What a new block of a type the core doesn't know holds: its type, its data, and the readable copy. */
+export interface ExtSpec {
+  type: string;
+  data: Record<string, unknown>;
+  fallback: BlockJson['fallback'];
+}
+
+function insertEdit(id: BlockId, spec: ExtSpec, anchor?: BlockId): InsertEdit {
   const layer = shownLayer.get();
   const from = anchor ?? shownPool.get()?.active()?.block ?? null;
   const source = from && layer?.view(from);
@@ -91,9 +98,9 @@ function insertEdit(id: BlockId, entry: RecordingEntry, anchor?: BlockId): Inser
     edit: 'insertBlock',
     block: {
       id,
-      type: RECORDING_TYPE,
-      data: { recording: entry.id },
-      fallback: fallbackFor(),
+      type: spec.type,
+      data: spec.data,
+      fallback: spec.fallback,
       ...(frame ? { frame } : {}),
     },
     ...(after ? { after } : {}),
@@ -110,7 +117,7 @@ async function sendInsert(
   entry: RecordingEntry,
   options: InsertOptions = {},
 ): Promise<{ edit: InsertEdit; ack: TxnAck }> {
-  const edit = insertEdit(id, entry, options.after);
+  const edit = insertEdit(id, recordingSpec(entry), options.after);
   const entryEditsOf = await entryEdits(pageId() ?? '', entry, { track: options.track ?? 'growing' });
   try {
     return { edit, ack: await queue.send({ edits: [edit, ...entryEditsOf] }) };
@@ -126,7 +133,7 @@ function showBlock(id: BlockId, edit: InsertEdit, ack: TxnAck): void {
   const { block } = edit;
   shownLayer.get()?.upsert({
     id,
-    type: RECORDING_TYPE,
+    type: block.type,
     order: ack.orderKeys[id] ?? 'zz',
     created: now,
     modified: now,
@@ -134,6 +141,22 @@ function showBlock(id: BlockId, edit: InsertEdit, ack: TxnAck): void {
     ...(block.frame ? { frame: block.frame } : {}),
     ...(block.fallback ? { fallback: block.fallback } : {}),
   });
+}
+
+const recordingSpec = (entry: RecordingEntry): ExtSpec => ({
+  type: RECORDING_TYPE,
+  data: { recording: entry.id },
+  fallback: fallbackFor(),
+});
+
+/** Adds a block of another type of ours, such as a transcript, after a block. Its content is the block's own data. */
+export async function insertExtBlock(spec: ExtSpec, after?: BlockId): Promise<BlockId> {
+  const queue = shownQueue.get();
+  if (!queue || !shownLayer.get()) throw new Error('No page is shown.');
+  const id: BlockId = newId();
+  const edit = insertEdit(id, spec, after);
+  showBlock(id, edit, await queue.send({ edits: [edit] }));
+  return id;
 }
 
 /** Where a new recording block goes, and whether its files are still being written (the default). */
