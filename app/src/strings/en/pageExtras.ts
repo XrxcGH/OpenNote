@@ -165,6 +165,15 @@ export const pageExtras = {
     doneSkipped:
       '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}} {skipped, plural, one {# image or drawing stays on this page.} other {# images and drawings stay on this page.}}',
   },
+  source: {
+    command: 'Show page as Markdown',
+    keywords: 'markdown source text raw view edit syntax',
+    label: 'Markdown source of the page',
+    hint: 'Markdown source. Images and other objects are comment lines; leave them where they are.',
+    back: 'Back to the page',
+    on: 'Showing the Markdown source.',
+    off: 'Back on the page.',
+  },
   attach: {
     command: 'Attach file',
     keywords: 'attach file document word excel powerpoint pdf insert',

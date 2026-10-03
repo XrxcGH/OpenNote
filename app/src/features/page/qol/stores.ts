@@ -8,6 +8,9 @@ import { createStore } from '../../../state/store';
  */
 export const readingLock = createStore<boolean>(false, 'page reading lock');
 
+/** The Markdown source view while it is open: its text, and where the caret is in it. Null when the page shows. */
+export const sourceState = createStore<{ text: string; caret: number } | null>(null, 'page markdown source');
+
 export interface FindRequest {
   open: boolean;
   /** Whether the Replace row shows. */

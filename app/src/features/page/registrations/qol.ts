@@ -13,7 +13,7 @@ import { targetEditor } from '../formattingBar/target';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
 import { editingSettingsParts, slashItems } from '../registries';
 import { oneImageSelected } from '../images/shown';
-import { openFind, readingLock } from '../qol/stores';
+import { openFind, readingLock, sourceState } from '../qol/stores';
 import { shownIsTemplate } from '../templates/state';
 import { pageExtrasPrefs, setPrefs } from '../qol/prefs';
 
@@ -217,6 +217,21 @@ register({
   when: shown,
   run: () => void templates().then((module) => module.newPageInSeries()),
 });
+// The Markdown source view.
+register({
+  id: 'page.markdownSource',
+  title: 'pageExtras.source.command',
+  keywords: 'pageExtras.source.keywords',
+  category: 'view',
+  keys: [chord('Ctrl+Alt+M')],
+  scope: 'page',
+  allowInTextInput: true,
+  flag: 'page.markdownSource',
+  when: shown,
+  checked: () => sourceState.get() !== null,
+  run: () => void import('../source/controller').then((module) => module.toggleSource()),
+});
+
 // Attachments.
 const attachments = () => import('../attachments/commands');
 const oneFileSelected = (): boolean => {
@@ -339,6 +354,14 @@ pageCreated.register({
 const bar = (item: Omit<CommandBarItem, 'id'>): CommandBarItem => ({ id: `qol.${item.command}`, ...item });
 [
   bar({ tab: 'view', group: 'pageTools', command: 'page.toc', priority: 30, presentation: 'toggle', flag: 'page.toc' }),
+  bar({
+    tab: 'view',
+    group: 'pageTools',
+    command: 'page.markdownSource',
+    priority: 28,
+    presentation: 'toggle',
+    flag: 'page.markdownSource',
+  }),
   bar({
     tab: 'view',
     group: 'pageTools',

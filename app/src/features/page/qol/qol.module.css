@@ -215,6 +215,25 @@
   }
 
   /* The Markdown source view. */
+  .sourceWrap {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .sourceBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-1) var(--space-4);
+    border-block-end: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
   .source {
     position: relative;
     flex: 1;

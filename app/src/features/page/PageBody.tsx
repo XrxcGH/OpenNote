@@ -11,6 +11,7 @@ import { t } from '../../strings/t';
 import { mountPage } from './mount';
 import type { MountedPage } from './mount';
 import extrasStyles from './qol/qol.module.css';
+import { sourceState } from './qol/stores';
 import styles from './PageView.module.css';
 import { pagesClient, pageView } from './runtime';
 import paneStyles from './readingOrder/pane.module.css';
@@ -23,7 +24,7 @@ const LAYERS = { viewport: '', world: '', underlay: '' };
 /** The Find bar, the status line, and the table of contents load after the page. */
 const PageExtras = lazy(() => import('./qol/PageExtras'));
 
-function Extras({ mounted, slot }: { mounted: MountedPage; slot: 'top' | 'bottom' | 'side' }) {
+function Extras({ mounted, slot }: { mounted: MountedPage; slot: 'top' | 'source' | 'bottom' | 'side' }) {
   return (
     <Suspense fallback={null}>
       <PageExtras mounted={mounted} slot={slot} />
@@ -53,6 +54,7 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
   const [mounted, setMounted] = useState<MountedPage | null>(null);
   const paneWanted = useStore(readingOrderOpen, (open) => open);
   const paneAllowed = useFlag('page.readingOrder');
+  const sourceOn = useStore(sourceState, (state) => state !== null);
   const paneOpen = paneWanted && paneAllowed;
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +102,8 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
       <div className={paneStyles.row}>
         <div className={extrasStyles.column}>
           {mounted && <Extras mounted={mounted} slot="top" />}
-          <div ref={host} className={styles.body} />
+          {mounted && <Extras mounted={mounted} slot="source" />}
+          <div ref={host} className={styles.body} hidden={sourceOn} />
           {mounted && <Extras mounted={mounted} slot="bottom" />}
         </div>
         {mounted && paneOpen && <ReadingOrderPane mounted={mounted} onClose={() => readingOrderOpen.set(false)} />}
