@@ -1,5 +1,6 @@
 // Convert handwriting to text (Phase 12): reads the selected strokes on this device and adds the words to the page
 // as text, below the last block. The ink stays ink. Loads on first use.
+import { isEnabled } from '../../../app/flags';
 import { newId } from '../../../editor/ids';
 import { escapeParagraphText } from '../../../editor/markdown';
 import { t } from '../../../strings/t';
@@ -24,10 +25,18 @@ export async function handwritingToText(): Promise<void> {
   const mounted = shownMedia.get();
   const ids = pageSelection.get().strokes;
   if (!mounted || ids.length === 0) return;
-  const { readHandwriting, registerInkStrokeSource, hasInkStrokeSource } = await intel();
+  const { readHandwriting, readHandwritingWords, reviewHandwriting, registerInkStrokeSource, hasInkStrokeSource } =
+    await intel();
   if (!hasInkStrokeSource()) registerInkStrokeSource(inkSource);
   announce(t('intel.handwriting.working'));
-  const lines = await readHandwriting(ids);
+  // With the extras on, symbols and formulas are tidied and unsure words are reviewed before anything is added.
+  let lines: string[] | null;
+  if (isEnabled('intel.handwritingExtras')) {
+    const recognition = await readHandwritingWords(ids);
+    lines = recognition === null ? null : await reviewHandwriting(recognition);
+  } else {
+    lines = await readHandwriting(ids);
+  }
   if (lines === null) return;
   if (lines.length === 0) {
     showToast({ message: t('intel.handwriting.none') });

@@ -43,13 +43,22 @@ export async function readHandwriting(
   ids: readonly string[],
   options: HandwritingOptions = {},
 ): Promise<string[] | null> {
+  const recognition = await readHandwritingWords(ids, options);
+  return recognition === null ? null : linesOf(recognition);
+}
+
+/** Like `readHandwriting`, but with every word and its other readings, for the review of unsure words. */
+export async function readHandwritingWords(
+  ids: readonly string[],
+  options: HandwritingOptions = {},
+): Promise<InkRecognition | null> {
   if (!source) return null;
   if (!(await (options.ensureOn ?? (() => askToTurnOn('handwriting')))())) return null;
   try {
     const strokes = await source.strokes(ids);
-    if (strokes.length === 0) return [];
+    if (strokes.length === 0) return { lines: [] };
     const client = await (options.client ?? intelClient)();
-    return linesOf(await client.recognizeInk(strokes, { kind: 'writing' }));
+    return await client.recognizeInk(strokes, { kind: 'writing' });
   } catch (error) {
     reportProblem(error, 'handwriting');
     return null;
