@@ -19,6 +19,7 @@ import { sheetGeometry } from '../pagination/geometry';
 import { flow, type Spec } from '../pagination/flowFixture';
 import { boundsFor, clampView, zoomAt } from '../zoom';
 import { closeBrowser, openBrowser } from './edgeSurface';
+import type { PdfExportResult } from '../pdf/job';
 import { printPage } from './run';
 import { longPage, pngDataUri } from './samples';
 
@@ -149,7 +150,7 @@ describe.skipIf(!FULL)('PDF export through Edge', () => {
     'prepares, prints and checks a page of %i blocks',
     async (blocks) => {
       const page = longPage(blocks);
-      const runs = [];
+      const runs: PdfExportResult[] = [];
       // The first run also starts the browser's print path, so it is not counted.
       for (let i = 0; i < 4; i += 1) runs.push((await printPage(browser, page, {}, images)).result);
       const counted = runs.slice(1);

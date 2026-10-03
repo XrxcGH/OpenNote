@@ -7,6 +7,8 @@ The pure parts of Phase 6, "Page views and export". Everything here works on pag
 | [`layout`](layout/README.md)         | Reads and writes a page's `view` (paper, margins, mode, background), derives the sheet geometry, and plans where blocks land              |
 | [`pagination`](pagination/README.md) | Sheet geometry and the paginator: where sheets start, with the rules for headings, lines, tables, and breaks                              |
 | [`paper`](paper/README.md)           | Plain, ruled, grid, dot, isometric, Cornell, staff, and template backgrounds as vector paths and SVG                                      |
+| [`reading`](reading/README.md) | Reading aids: the line focus band, page tints, spacing, line width, and syllable breaks. Display only |
+| [`slides`](slides/README.md) | Present as slides: a page split at its headings or divider lines |
 | [`zoom`](zoom/README.md)             | Zoom steps, gestures, fitting, view limits, switching between infinite and paginated view, and sheet navigation                           |
 | [`export`](export/README.md)         | Markdown and HTML export of a page, and the ink shapes both use                                                                           |
 | [`print`](print/README.md)           | Turns a page into the document that prints, one box for each sheet                                                                        |
