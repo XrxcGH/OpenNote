@@ -1,0 +1,168 @@
+/*
+ * What WP4's node views and decorations draw inside a text editor: task checkboxes, callout controls, fold
+ * buttons, math source, and image chips. Text colors follow BRAND.md's ink rule: a custom color is lightened in
+ * the dark theme until it reads at 4.5:1 on the page.
+ */
+@layer components {
+  .task {
+    position: relative;
+    list-style: none;
+  }
+
+  .taskBox {
+    position: absolute;
+    inset-inline-start: -1.5em;
+    inset-block-start: var(--space-1);
+    display: inline-flex;
+    align-items: center;
+    block-size: 1lh;
+    user-select: none;
+  }
+
+  .taskBox input {
+    inline-size: 1em;
+    block-size: 1em;
+    margin: 0;
+    accent-color: var(--color-accent-primary);
+    cursor: pointer;
+  }
+
+  .taskBox input:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .taskBody > p {
+    margin-block: var(--space-1);
+  }
+
+  .task[data-checked='true'] > .taskBody > p {
+    color: var(--color-text-secondary);
+  }
+
+  .callout {
+    position: relative;
+  }
+
+  .calloutBody > p {
+    margin-block: var(--space-1) 0;
+  }
+
+  .callout[data-fold='-'] > .calloutBody > :not([data-callout-title]),
+  :global([data-scope~='editor']) [data-callout][data-fold='-']:not(.callout) > :not([data-callout-title]) {
+    display: none;
+  }
+
+  .calloutControls {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-end: var(--space-1);
+    display: flex;
+    gap: var(--space-1);
+    user-select: none;
+  }
+
+  .calloutType,
+  .foldButton {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: var(--size-chrome-hit);
+    min-block-size: var(--size-chrome-hit);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .calloutType::before {
+    content: '';
+    inline-size: 0.6em;
+    block-size: 0.6em;
+    border-radius: 50%;
+    background: var(--callout, var(--color-border-control));
+  }
+
+  .foldButton::before {
+    content: '\25BE';
+    transition: rotate var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+
+  .foldButton[aria-expanded='false']::before {
+    rotate: -90deg;
+  }
+
+  .calloutType:hover,
+  .foldButton:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .calloutType:focus-visible,
+  .foldButton:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .mathInline,
+  .mathBlock {
+    font-family: var(--font-mono);
+    color: var(--color-text-secondary);
+  }
+
+  .mathBlock {
+    display: block;
+    margin-block: var(--space-3);
+    white-space: pre-wrap;
+  }
+
+  .mathField {
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  textarea.mathField {
+    display: block;
+    inline-size: 100%;
+    min-block-size: 3lh;
+  }
+
+  .imageChip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-sunken);
+    font-size: var(--type-small-size);
+  }
+
+  /* A custom text color reads its value from the attribute, and the dark theme lightens it to stay legible. */
+  :global(.ProseMirror) span[data-color^='#'],
+  :global([data-scope~='editor']) span[data-color^='#'] {
+    color: attr(data-color type(<color>), currentcolor);
+  }
+
+  :global(:is([data-theme='dark'], [data-theme-scope='dark']))
+    :is(:global(.ProseMirror), :global([data-scope~='editor']))
+    span[data-color^='#'] {
+    /* checks-disable-next-line brand-consistency: lightens the person's own color for dark pages; no token can */
+    color: oklch(from attr(data-color type(<color>), currentcolor) max(l, 0.74) c h);
+  }
+
+  @media (forced-colors: active) {
+    .calloutType::before {
+      background: CanvasText;
+    }
+
+    :global(.ProseMirror) span[data-color^='#'] {
+      color: CanvasText;
+    }
+  }
+}
