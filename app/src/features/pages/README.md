@@ -23,3 +23,9 @@ Import from `features/pages`, not from a folder inside it.
 ## One layout for screen and paper
 
 The paginator in `pagination` is the only place that decides where a sheet ends. The page view asks it through `layout`, and print asks it through `print`. A page break, a keep-together block, a repeated table header, and the two-line minimum therefore land in the same place on screen and in the PDF (ADR 0006).
+
+## Not built here
+
+- **Lock entry** (FEATURES.md, Phase 6). The format has no page-level lock or history entry for it. Format spec 6.1 has only a lock on each block. It needs a format decision first, then the notes service.
+- **Anything that draws or listens.** That means the page view, the print dialog, the reading panel, the elements pane, the gallery view, and the slide player. The README of each folder ends with what its wiring needs.
+- **The WebView2 side of PDF export.** The host opens the hidden print window and calls `PrintToPdf`. The timings, memory, and fidelity there still need the checks that ADR 0006 lists, on the reference laptop and a Surface Pro.
