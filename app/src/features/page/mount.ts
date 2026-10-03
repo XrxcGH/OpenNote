@@ -8,7 +8,7 @@ import { createMarkdownCache } from '../../editor/markdown';
 import type { MarkdownCache } from '../../editor/markdown';
 import { META_REMOTE } from '../../editor/meta';
 import { beforeExit } from '../../registries';
-import type { AppliedFrame, BlockJson, OpenPage } from '../../services/pages/types';
+import type { AppliedFrame, BlockId, BlockJson, OpenPage } from '../../services/pages/types';
 import { announce } from '../../ui';
 import { createBlockLayer } from './blocks/blockLayer';
 import { markDraft, syncOf } from './blocks/textBlock';
@@ -21,8 +21,12 @@ import { acceptRemoteText, createSyncQueue, shownQueue } from './sync';
 import type { FrameContext, SyncQueue } from './sync';
 import { clampZoom, fitWidthZoom, zoomPercent } from './viewport/camera';
 import { shownFitWidth } from './viewport/shown';
+import { createGestureTool } from './viewport/gestures';
+import { createRouter } from './viewport/router';
+import type { PointerToolDef } from './viewport/router';
 import { createViewport, shownViewport } from './viewport/viewport';
 import type { PageViewport } from './viewport/viewport';
+import type { Point } from './viewport/camera';
 import layoutStyles from './layout/layout.module.css';
 import { pageView, savePageView } from './runtime';
 import { t } from '../../strings/t';
@@ -143,6 +147,25 @@ function fitWidth(viewport: PageViewport, flow: HTMLElement): number {
   return fitWidthZoom(right + flow.offsetLeft, viewport.camera().viewport.w);
 }
 
+/** The block under a point in page units: a hit test, so only at pointer down. */
+function blockAt(viewport: PageViewport, point: Point): BlockId | null {
+  const client = viewport.toClient(point.x, point.y);
+  const hit = viewport.viewport.ownerDocument.elementFromPoint(client.x, client.y);
+  const wrapper = hit && viewport.world.contains(hit) ? hit.closest<HTMLElement>('[data-block-id]') : null;
+  return wrapper?.dataset.blockId ?? null;
+}
+
+/** Routes the page's pointers: Phase 4's tools for this page, and every registered one. */
+function routePointers(viewport: PageViewport, tools: readonly PointerToolDef[]): () => void {
+  return createRouter({
+    element: viewport.viewport,
+    camera: () => viewport.camera(),
+    toWorld: (x, y) => viewport.toWorld(x, y),
+    blockAt: (point) => blockAt(viewport, point),
+    tools,
+  });
+}
+
 export function mountPage(container: HTMLElement, page: OpenPage, options: MountOptions): MountedPage {
   const cache = createMarkdownCache();
   const viewport = createViewport(container, options.classNames);
@@ -163,6 +186,8 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   layer.apply(page.initial);
   if (!page.readOnly && !page.initial.blocks.some((block) => block.type === 'text')) layer.upsert(draftTextBlock());
   const stopView = followView(page, viewport);
+  const gestures = createGestureTool(viewport);
+  const stopRouter = routePointers(viewport, [gestures]);
   const shown = options.shown ?? true;
   if (shown) {
     shownViewport.set(viewport);
@@ -188,6 +213,8 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
       stopExit();
       await sync.flushAll('pageSwitch').catch(() => undefined);
       stopView();
+      stopRouter();
+      gestures.destroy();
       stopFlow();
       layer.destroy();
       viewport.destroy();
