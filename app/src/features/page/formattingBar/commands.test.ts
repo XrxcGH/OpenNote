@@ -248,3 +248,9 @@ describe('the keys', () => {
     expect(commandForKey(usPress('Ctrl+K', target))?.id).not.toBe('format.link');
   });
 });
+
+describe('automatic changes', () => {
+  // WP0's sync coalesces every transaction as typing. WP2's sync sends META_AUTO_CHANGE as its own step, and the
+  // editor tests already check that each conversion is its own transaction with that meta.
+  it.todo('undo in one step, leaving the typed characters, once WP2’s sync separates automatic changes');
+});

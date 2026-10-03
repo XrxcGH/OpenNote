@@ -104,3 +104,13 @@ export function mountEditor(source: string, host: TestHost = testHost()): TestEd
     },
   };
 }
+
+/** Types text one character at a time, as the browser reports it: through handleTextInput, else inserted. */
+export function typeInto(editor: Editor, text: string): void {
+  for (const char of text) {
+    const { view } = editor;
+    const { from, to } = view.state.selection;
+    const handled = view.someProp('handleTextInput', (handle) => handle(view, from, to, char, () => view.state.tr));
+    if (!handled) view.dispatch(view.state.tr.insertText(char, from, to));
+  }
+}
