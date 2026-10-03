@@ -9,5 +9,6 @@ export * from './paper';
 export * from './pdf';
 export * from './print';
 export * from './reading';
+export * from './selection';
 export * from './slides';
 export * from './zoom';
