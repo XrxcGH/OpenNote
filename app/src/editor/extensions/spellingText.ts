@@ -206,6 +206,11 @@ export class SpellingHighlights {
     return this.entries.get(element)?.ranges ?? [];
   }
 
+  /** Forgets elements that left the document, such as the static text an editor replaced when it mounted. */
+  prune(): void {
+    for (const element of [...this.entries.keys()]) if (!element.isConnected) this.drop(element, true);
+  }
+
   /** Forgets every element inside `root`, or every element. */
   clear(root?: Element): void {
     for (const element of [...this.entries.keys()]) {

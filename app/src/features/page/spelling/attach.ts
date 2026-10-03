@@ -23,8 +23,11 @@ function scan(elements: readonly Element[], engine: SpellingEngine, viewport: El
   engine.check(rest, 'idle');
 }
 
+// A text block's root has the ProseMirror class with or without an editor, for the same look. Only a mounted
+// editor has `contenteditable`, and it reports its own changes; static text is checked here, also when it renders
+// late or comes back after its editor is demoted.
 const textblocksIn = (node: Node): Element[] => {
-  if (!(node instanceof Element) || node.closest('.ProseMirror')) return [];
+  if (!(node instanceof Element) || node.closest('.ProseMirror[contenteditable]')) return [];
   return node.matches(TEXTBLOCK_SELECTOR) ? [node] : [...node.querySelectorAll(TEXTBLOCK_SELECTOR)];
 };
 

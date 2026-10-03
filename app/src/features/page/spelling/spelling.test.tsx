@@ -1,4 +1,5 @@
 // Spell check on a page in the browser: squiggles on static and mounted text, typing, F7, and the spelling menu.
+import type { Editor } from '@tiptap/core';
 import { screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -38,6 +39,16 @@ function countingClient(): SpellingClient {
 }
 
 const shownWords = () => [...(CSS.highlights.get(HIGHLIGHT_NAME) ?? [])].map((range) => range.toString()).sort();
+
+/**
+ * Mounts the first block's editor with the caret at its start. Mounting replaces the static text's elements, and
+ * the editor puts their squiggles back a task later, so this waits for them.
+ */
+async function mountFirst(page: Awaited<ReturnType<typeof renderPage>>): Promise<Editor> {
+  const editor = page.mounted.pool.mount(FIRST, { kind: 'start' }, 'target')!;
+  await expect.poll(() => spellingHighlights.shownIn(editor.view.dom).length).toBeGreaterThan(0);
+  return editor;
+}
 
 let detach: (() => void) | null = null;
 let stopEscape: (() => void) | null = null;
@@ -80,16 +91,17 @@ describe('spelling squiggles', () => {
     });
     detach = attachShownPage();
     await expect.poll(shownWords).toEqual(['recieve', 'teh', 'wich']);
-    const refresh = vi.spyOn(spellingHighlights, 'refresh');
-    const editor = page.mounted.pool.editor(FIRST)!;
+    const editor = await mountFirst(page);
     expect(editor.view.dom.getAttribute('spellcheck')).toBe('false');
+    const refresh = vi.spyOn(spellingHighlights, 'refresh');
     editor.commands.insertContentAt(1, 'So ');
     expect(refresh).not.toHaveBeenCalled();
     await expect.poll(() => refresh.mock.calls.length).toBeGreaterThan(0);
     expect(shownWords()).toEqual(['recieve', 'teh', 'wich']);
     const before = checks.length;
-    await page.type(SECOND, ' Teh end');
-    await expect.poll(shownWords, { timeout: 3000 }).toEqual(['Teh', 'recieve', 'teh', 'wich']);
+    // A misspelling AutoCorrect leaves alone: it fixes "teh" as it is typed, before any check.
+    await page.type(SECOND, ' Freind end');
+    await expect.poll(shownWords, { timeout: 3000 }).toEqual(['Freind', 'recieve', 'teh', 'wich']);
     expect(checks.length).toBeGreaterThan(before);
     refresh.mockRestore();
   });
@@ -101,7 +113,7 @@ describe('spelling squiggles', () => {
     });
     detach = attachShownPage();
     await expect.poll(shownWords).toEqual(['recieve', 'teh', 'wich']);
-    page.mounted.pool.mount(FIRST, { kind: 'start' }, 'target');
+    await mountFirst(page);
     const selected = () => document.getSelection()?.toString();
     const step = async (direction: 1 | -1, word: string) => {
       const opened = moveToError(direction);
@@ -123,7 +135,7 @@ describe('spelling squiggles', () => {
     const page = await renderPage({ fixture: textPageFixture('I recieve mail.'), flags: { 'editor.spelling': true } });
     detach = attachShownPage();
     await expect.poll(shownWords).toEqual(['recieve']);
-    page.mounted.pool.mount(FIRST, { kind: 'start' }, 'target');
+    await mountFirst(page);
     const opened = moveToError(1);
     const menu = await screen.findByRole('menu', { name: 'Spelling' });
     expect(screen.getByRole('menuitem', { name: 'receive' })).toBeTruthy();
@@ -139,7 +151,7 @@ describe('spelling squiggles', () => {
     const page = await renderPage({ fixture: textPageFixture('Teh end.'), flags: { 'editor.spelling': true } });
     detach = attachShownPage();
     await expect.poll(shownWords).toEqual(['Teh']);
-    page.mounted.pool.mount(FIRST, { kind: 'start' }, 'target');
+    await mountFirst(page);
     const opened = moveToError(1);
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Add to dictionary' }));
     await opened;

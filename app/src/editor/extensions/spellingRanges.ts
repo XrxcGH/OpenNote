@@ -69,6 +69,8 @@ function spellingPlugin(host: EditorHost): Plugin {
         const head = selection.empty ? selection.head : -1;
         const block = view.dom.getAttribute('data-block') ?? '';
         if (!typed) spellingHighlights.setGuard(null);
+        // Mounting in place replaced the static text's elements; their squiggles go before the new ones show.
+        if (all) spellingHighlights.prune();
         if (range) {
           eachTextblock(view, range.from, range.to, (element, pos, node) => {
             if (typed && head > pos && head < pos + node.nodeSize) spellingHighlights.setGuard(element, head - pos - 1);
