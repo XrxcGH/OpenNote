@@ -1,11 +1,12 @@
 // Geometry on every registered screen state (tests/ui/screens/*.ts). Nothing spills past the window, the window
 // itself never scrolls, and a dialog never scrolls around its own content. Every focus ring that Tab shows is
-// whole. A centered button's content sits within 1 px of its middle. A screenshot review found these defects by
-// eye, and the checks keep them fixed.
+// whole. A centered button's or card's content sits within 1 px of its middle. No table cell's content runs past
+// the cell, a wrapped choice leaves no card alone on its last row, and the cards of one choice share one width. A
+// screenshot review found these defects by eye, and the checks keep them fixed.
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { loadScreens, openScreen } from '../screens';
+import { loadScreens, openScreen, settle } from '../screens';
 import type { ScreenState, SizeClass } from '../screens';
 
 const screens = await loadScreens();
@@ -16,6 +17,9 @@ const SHORT = { width: 820, height: 620 };
 
 /** The most Tab presses a focus walk takes on one screen. */
 const TAB_STOPS = 40;
+
+// A long screen, such as the shortcut list, takes about 25 s for its 40 Tab stops and its measures.
+test.describe.configure({ timeout: 60_000 });
 
 interface Geometry {
   sideways: number;
@@ -60,7 +64,9 @@ function measure(page: Page): Promise<Geometry> {
         box.bottom - (box.height - button.clientTop - button.clientHeight) - parseFloat(style.paddingBottom);
       const dx = (content.left + content.right) / 2 - (left + right) / 2;
       const dy = (content.top + content.bottom) / 2 - (top + bottom) / 2;
-      const centersX = style.justifyContent === 'center';
+      // A grid card, such as a text size choice, centers its label with justify-items.
+      const centersX =
+        style.justifyContent === 'center' || (style.display.includes('grid') && style.justifyItems === 'center');
       const centersY = style.alignItems === 'center';
       if ((centersX && Math.abs(dx) > 1) || (centersY && Math.abs(dy) > 1)) {
         offCenter.push(`${name(button)}: ${dx.toFixed(1)}, ${dy.toFixed(1)} px off center`);
@@ -73,6 +79,48 @@ function measure(page: Page): Promise<Geometry> {
       dialogs,
       offCenter,
     };
+  });
+}
+
+interface SideBySide {
+  /** Table cell contents that run past their cell, such as a key cap under the next column's button. */
+  spills: string[];
+  /** Choices that wrap and leave a last row less than half as full as the first, such as 175% and 200% alone. */
+  lonely: string[];
+  /** Choices in the main content whose cards differ in width, so their edges don't line up. */
+  ragged: string[];
+}
+
+/** Measures what sits side by side: each table cell's contents, and the cards of each choice. */
+function measureSideBySide(page: Page): Promise<SideBySide> {
+  return page.evaluate(() => {
+    const shown = (el: Element) => el.getBoundingClientRect().width > 1 && el.getBoundingClientRect().height > 1;
+    const spills: string[] = [];
+    for (const cell of [...document.querySelectorAll('td, th')].filter(shown)) {
+      const box = cell.getBoundingClientRect();
+      const over = Math.max(
+        0,
+        ...[...cell.querySelectorAll('*')].map((child) => {
+          const rect = child.getBoundingClientRect();
+          return rect.width ? Math.max(rect.right - box.right, box.left - rect.left) : 0;
+        }),
+      );
+      if (over > 0.5) spills.push(`${cell.textContent?.trim().slice(0, 40)}: ${over.toFixed(1)} px past its cell`);
+    }
+    const lonely: string[] = [];
+    const ragged: string[] = [];
+    for (const group of document.querySelectorAll('[role="radiogroup"]')) {
+      const cards = [...group.querySelectorAll('[role="radio"]')].filter(shown).map((c) => c.getBoundingClientRect());
+      const label = group.getAttribute('aria-label') ?? '';
+      const tops = [...new Set(cards.map((card) => Math.round(card.top)))];
+      const rows = tops.map((top) => cards.filter((card) => Math.round(card.top) === top).length);
+      if (rows.length > 1 && rows[rows.length - 1] * 2 < rows[0]) lonely.push(`${label}: rows of ${rows.join(' + ')}`);
+      const widths = cards.map((card) => card.width);
+      if (group.closest('main') && Math.max(...widths) - Math.min(...widths) > 1) {
+        ragged.push(`${label}: ${widths.map((width) => width.toFixed(0)).join(', ')} px`);
+      }
+    }
+    return { spills, lonely, ragged };
   });
 }
 
@@ -167,6 +215,10 @@ async function expectSound(page: Page, screen: ScreenState) {
     }
   }
   expect(geometry.offCenter, `off-center button content on ${screen.id}`).toEqual([]);
+  const sideBySide = await measureSideBySide(page);
+  expect(sideBySide.spills, `table cell contents past their cells on ${screen.id}`).toEqual([]);
+  expect(sideBySide.lonely, `choices wrapping to a near-empty last row on ${screen.id}`).toEqual([]);
+  expect(sideBySide.ragged, `choices with cards of different widths on ${screen.id}`).toEqual([]);
   expect(await focusWalk(page), `cut focus rings on ${screen.id}`).toEqual([]);
 }
 
@@ -201,5 +253,34 @@ test('the setup theme cards center under the step heading within 1 px', async ({
       return middle - (title.left + title.right) / 2;
     });
     expect(Math.abs(offset)).toBeLessThanOrEqual(1);
+  }
+});
+
+test('the setup theme cards meet the footer edges and keep their height when the choice changes', async ({ page }) => {
+  const look = screens.find((screen) => screen.id === 'setup.look');
+  if (!look) throw new Error('The setup.look screen is not registered.');
+  const row = () =>
+    page.evaluate(() => {
+      const cards = [...document.querySelectorAll('[role="radiogroup"] [role="radio"]')].map((card) =>
+        card.getBoundingClientRect(),
+      );
+      const footer = [...document.querySelectorAll('button')]
+        .filter((button) => ['Back', 'Continue'].includes(button.textContent?.trim() ?? ''))
+        .map((button) => button.getBoundingClientRect());
+      return {
+        start: Math.min(...cards.map((card) => card.left)) - Math.min(...footer.map((button) => button.left)),
+        end: Math.max(...cards.map((card) => card.right)) - Math.max(...footer.map((button) => button.right)),
+        height: Math.max(...cards.map((card) => card.height)),
+      };
+    });
+  for (const size of ['expanded', 'wide'] as const) {
+    await openScreen(page, look, { size, theme: 'light' });
+    const before = await row();
+    expect(Math.abs(before.start), 'the cards start where Back does').toBeLessThanOrEqual(1);
+    expect(Math.abs(before.end), 'the cards end where Continue does').toBeLessThanOrEqual(1);
+    // The Match Windows caption that says why it was preselected gives way to a one-line caption.
+    await page.getByRole('radio', { name: /Dark/ }).click();
+    await settle(page);
+    expect(Math.abs((await row()).height - before.height), 'the row jumps').toBeLessThanOrEqual(0.5);
   }
 });
