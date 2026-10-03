@@ -2,6 +2,10 @@
 // so parallel work never edits the same strings file.
 
 export const moreInterop = {
+  snip: {
+    offer: 'You copied a screenshot. Add it to this page?',
+    add: 'Add to page',
+  },
   setup: {
     title: 'Bring in your notes',
     subtitle: 'If your notes live in another app, OpenNote can bring them over. Nothing changes in the other app.',

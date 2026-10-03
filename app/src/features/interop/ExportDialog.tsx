@@ -22,7 +22,17 @@ export interface ExportDialogProps {
   target: ExportTarget;
 }
 
-const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx', 'pptx', 'xlsx', 'csv'];
+const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx'];
+const OFFICE_FORMATS: readonly ExportFormat[] = ['pptx', 'xlsx', 'csv'];
+
+/** The choices to show: the PDF and the Office choices appear when their flags are on. */
+function exportFormats(): readonly ExportFormat[] {
+  return [
+    ...FORMATS,
+    ...(isEnabled('interop.officeFormats') ? OFFICE_FORMATS : []),
+    ...(isEnabled('interop.exportPdf') ? (['pdf'] as const) : []),
+  ];
+}
 
 const formatLabel = (format: ExportFormat) =>
   ({
@@ -89,7 +99,7 @@ function Options({
         value={state.format}
         onChange={(format) => flow.setFormat(format)}
       >
-        {(isEnabled('interop.exportPdf') ? [...FORMATS, 'pdf' as const] : FORMATS).map((format) => (
+        {exportFormats().map((format) => (
           <RadioCard<ExportFormat>
             key={format}
             value={format}

@@ -8,6 +8,8 @@ import { PAGE_FLAGS } from '../features/page/flags';
 import { PAGES_FLAGS } from '../features/pages/flags';
 import { AUDIO_FLAGS } from '../features/audio/flags';
 import { INTEROP_FLAGS } from '../features/interop/flags';
+import { INTEGRATIONS_FLAGS } from '../features/integrations/flags';
+import type { IntegrationsFlagId } from '../features/integrations/flags';
 import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { EXPR_FLAGS } from '../features/tools/flags';
@@ -70,7 +72,8 @@ type Phase4FlagId =
   | 'page.imageRenditions'
   | 'page.heicImport'
   | 'editor.spelling'
-  | 'editor.readAloud';
+  | 'editor.readAloud'
+  | IntegrationsFlagId;
 
 /** Phase 6: page views and export (features/pages/flags.ts). */
 type Phase6FlagId =
@@ -170,6 +173,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...SEARCH_FLAGS,
   ...AUDIO_FLAGS,
   ...INTEROP_FLAGS,
+  ...INTEGRATIONS_FLAGS,
   ...INTEL_FLAGS,
   ...DIAGNOSTICS_FLAGS,
 ];
