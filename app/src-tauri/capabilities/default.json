@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Permissions for the main window: Tauri's core defaults and each app command by name. No plugin permissions.",
-  "windows": ["main", "tool-*"],
+  "windows": ["main", "tool-*", "page-*", "capture"],
   "permissions": [
     "core:default",
     "allow-settings-update",
@@ -106,6 +106,7 @@
     "allow-page-add-strokes",
     "allow-page-read-strokes",
     "allow-search-call",
+    "allow-shellqol-call",
     "allow-clipboard-facts",
     "allow-clipboard-read",
     "allow-image-import",

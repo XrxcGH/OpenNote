@@ -85,6 +85,8 @@ pub(crate) fn summary(info: NodeInfo) -> NodeSummary {
         created: info.created.to_rfc3339(),
         modified: info.modified.to_rfc3339(),
         read_only: info.read_only,
+        pinned: info.pinned,
+        archived: info.archived,
     }
 }
 

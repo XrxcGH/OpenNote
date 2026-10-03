@@ -62,6 +62,23 @@ impl Page {
         }
     }
 
+    /// The page as plain text for a side-by-side comparison: the title, then each text block as its Markdown, and
+    /// a short stand-in for blocks that hold no text.
+    pub fn plain_text(&self) -> String {
+        let mut parts = vec![self.title.clone()];
+        for block in self.blocks.iter() {
+            match &block.data {
+                super::BlockData::Text(text) => parts.push(text.markdown.to_string()),
+                super::BlockData::Image(_) => parts.push("[image]".to_owned()),
+                super::BlockData::Ink(_) => parts.push("[handwriting]".to_owned()),
+                super::BlockData::Table(_) => parts.push("[table]".to_owned()),
+                super::BlockData::File(_) => parts.push("[file]".to_owned()),
+                super::BlockData::Other(_) => {}
+            }
+        }
+        parts.join("\n\n")
+    }
+
     /// Block IDs in reading order (spec 6.2), with `view.reading_order` first.
     pub fn reading_order(&self) -> Vec<BlockId> {
         self.blocks.reading_order(&self.view.reading_order)

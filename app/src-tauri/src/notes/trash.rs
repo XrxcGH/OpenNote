@@ -76,6 +76,8 @@ fn trashed_node(id: String, kind: &'static str, parent: Option<String>, title: S
         created: at.to_owned(),
         modified: at.to_owned(),
         read_only: false,
+        pinned: false,
+        archived: false,
     }
 }
 

@@ -30,6 +30,7 @@ opennote-interop = { path = "../../crates/interop" }
 opennote-media = { path = "../../crates/media", features = ["opus"] }
 opennote-search = { path = "../../crates/search" }
 opennote-updater = { path = "../../crates/updater" }
+notify = "8.2.0"
 semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -62,7 +63,9 @@ features = [
   "Win32_System_LibraryLoader",
   "Win32_System_Memory",
   "Win32_System_Ole",
+  "Win32_System_Power",
   "Win32_System_Registry",
+  "Win32_System_Time",
   "Win32_System_Threading",
   "Win32_System_Variant",
   "Win32_UI_Accessibility",

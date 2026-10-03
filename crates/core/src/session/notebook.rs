@@ -244,6 +244,16 @@ impl NotebookHandle {
         Ok(())
     }
 
+    /// Archives or restores a group, section, or page. It is not part of the tree's undo history.
+    pub fn set_archived(&self, node: NodeRef, archived: bool) -> Result<(), CoreError> {
+        self.change(false, |t| t.store.set_archived(node, archived))
+    }
+
+    /// Archives or restores the notebook itself.
+    pub fn set_notebook_archived(&self, archived: bool) -> Result<(), CoreError> {
+        self.change(false, |t| t.store.set_notebook_archived(archived))
+    }
+
     /// Changes a node's color or pin.
     pub fn set_props(&self, node: NodeRef, props: NodeProps) -> Result<(), CoreError> {
         let before = self.props_of(node)?;

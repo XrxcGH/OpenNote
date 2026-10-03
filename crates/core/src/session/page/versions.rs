@@ -194,13 +194,18 @@ impl PageSession {
         Ok(found)
     }
 
-    fn conflict_page(&self, rev: RevisionId) -> Result<(PathBuf, Vec<u8>, Page), CoreError> {
+    pub(crate) fn conflict_page(&self, rev: RevisionId) -> Result<(PathBuf, Vec<u8>, Page), CoreError> {
         let dir = self.dir();
         let path = NotebookLayout::conflict_path(&dir, rev);
         let bytes = self.ctx.fs.read(&path, self.ctx.limits.page_json_bytes)?;
         let read = self.ctx.codec.read_page(&bytes, &self.ctx.limits)?;
         let page = self.with_ink(&dir, read.page)?;
         Ok((path, bytes, page))
+    }
+
+    /// The page as it is now, as plain text.
+    pub(crate) fn current_text(&self) -> String {
+        self.state().page.plain_text()
     }
 
     /// The other version of a conflict, read-only.

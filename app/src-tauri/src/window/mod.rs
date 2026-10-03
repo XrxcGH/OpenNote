@@ -192,6 +192,13 @@ pub fn show(app: &AppHandle) {
 /// Brings the main window forward for a second launch, and passes its arguments to the interface as
 /// `window://forwarded-args`.
 pub fn receive_forwarded(app: &AppHandle, args: Vec<String>) {
+    // The jump list's "New quick note" opens the capture window and leaves the main window where it is.
+    if args.iter().any(|arg| arg == crate::shellqol::QUICK_NOTE_ARG) {
+        if let Err(error) = crate::shellqol::windows_ops::open_capture(app) {
+            log::warn!("Couldn't open quick capture: {error}");
+        }
+        return;
+    }
     if let Some(window) = app.get_webview_window(MAIN) {
         let _ = window.unminimize();
         let _ = window.show();

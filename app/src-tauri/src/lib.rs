@@ -26,6 +26,7 @@ pub mod page_export;
 pub mod paths;
 pub mod perf;
 pub mod settings;
+pub mod shellqol;
 pub mod shell;
 pub mod speech;
 pub mod spelling;
@@ -113,6 +114,7 @@ pub fn run(context: EarlyContext) {
                 .on_forwarded(move |forwarded| window::receive_forwarded(&handle, forwarded.args));
             window::caption::init(app.handle());
             window::create(app.handle())?;
+            shellqol::start(app.handle());
             Ok(())
         })
         .invoke_handler(commands())
@@ -243,6 +245,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         ink_bridge::page_add_strokes,
         ink_bridge::page_read_strokes,
         core_bridge::search::search_call,
+        shellqol::shellqol_call,
         clipboard::clipboard_facts,
         clipboard::clipboard_read,
         images::import::image_import,

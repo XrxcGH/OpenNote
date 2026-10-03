@@ -288,6 +288,16 @@ impl PageHandle {
         self.session.conflicts()
     }
 
+    /// The page as it is now, as plain text, for a side-by-side view of a conflict.
+    pub fn text(&self) -> String {
+        self.session.current_text()
+    }
+
+    /// The other version of a conflict as plain text.
+    pub fn conflict_text(&self, rev: RevisionId) -> Result<String, CoreError> {
+        self.session.conflict_page(rev).map(|(_, _, page)| page.plain_text())
+    }
+
     /// The other version of a conflict, read-only.
     pub fn open_conflict(&self, rev: RevisionId) -> Result<Envelope, CoreError> {
         self.session.open_conflict(rev)
