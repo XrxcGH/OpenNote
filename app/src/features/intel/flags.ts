@@ -22,4 +22,12 @@ export const INTEL_FLAGS: readonly FlagDef[] = [
   flag('intel.summaries', 'Summaries and keywords.', everywhere),
   flag('intel.handwriting', 'Handwriting to text, from the selected ink.', building),
   flag('intel.searchText', 'Text in images and handwriting, for search.', building),
+  flag('intel.models', 'Model downloads with consent, and the speech model picker.', building),
+  flag('intel.vocabulary', 'A custom vocabulary for transcripts, kept for each notebook.', building),
+  flag('intel.background', 'The activity panel for background work, with pause and limits.', building),
+  flag('intel.backgroundOcr', 'Read the text in new images in the background.', building),
+  flag('intel.handwritingExtras', 'Special characters, chemistry, and alternatives for handwriting.', building),
+  flag('intel.meaning', 'Find by meaning, and Related pages.', building),
+  flag('intel.ask', 'Ask your notes, with the pages it used.', building),
+  flag('intel.writing', 'Writing tools: proofread, rewrite, shorten, make a list, tidy structure.', building),
 ];

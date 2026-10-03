@@ -6,6 +6,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import { useFlag } from '../../app/flags';
 import { useUpdaterStatus } from '../../state/updater';
 import { usePageExtrasPrefs } from '../page';
+import { useModelDownloadsLastRan } from '../intel';
 import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Switch, announce, confirm, showToast } from '../../ui';
@@ -44,6 +45,7 @@ function NetworkUse() {
   const offline = useOffline();
   const lastCheck = useUpdaterStatus((status) => status.lastCheck);
   const { reportEndpoint, reportSentUnix } = usePrivacy();
+  const modelsLastRan = useModelDownloadsLastRan();
   const sent = reportSentUnix === null ? null : new Date(reportSentUnix * 1000).toISOString();
   const titlesFlag = useFlag('page.linkTitles');
   const titlesOn = usePageExtrasPrefs((prefs) => prefs.linkTitles);
@@ -64,6 +66,12 @@ function NetworkUse() {
           title={t('diagnostics.privacy.use.reports')}
           detail={t('diagnostics.privacy.use.reportsDetail')}
           status={reportEndpoint ? lastRan(sent) : t('diagnostics.privacy.use.reportsNoAddress')}
+          offline={offline}
+        />
+        <Use
+          title={t('intelPlus.models.privacyTitle')}
+          detail={t('intelPlus.models.privacyDetail')}
+          status={lastRan(modelsLastRan)}
           offline={offline}
         />
         <Use

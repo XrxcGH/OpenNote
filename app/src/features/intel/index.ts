@@ -10,3 +10,11 @@ export const loadSettingsSection = () => import('./SettingsSection');
 
 /** The client, the choices, the commands' work, and the seam for search. */
 export const loadApi = () => import('./api');
+
+/** The smart features step of first-run setup, and what finishing it does. */
+export const loadSmartFeaturesStep = () => import('./setup/SmartFeaturesStep');
+export const commitSmartFeatures = (...args: Parameters<typeof import('./setup/commit').commitSmartFeatures>) =>
+  import('./setup/commit').then((module) => module.commitSmartFeatures(...args));
+
+/** When a model download last started, for the Privacy panel. */
+export { useModelDownloadsLastRan } from './models/lastRan';

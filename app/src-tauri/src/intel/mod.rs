@@ -28,6 +28,9 @@ use crate::{
     settings::file::write_json,
 };
 
+mod ext;
+mod models;
+
 #[cfg(test)]
 mod tests;
 
@@ -97,6 +100,7 @@ struct Inner {
     /// Made on first use, so start-up does not wait for Windows to list engines.
     engines: OnceLock<RwLock<Engines>>,
     hub: SpeechHub,
+    ext: ext::Ext,
 }
 
 /// The app's on-device intelligence: the person's choices, the engines behind them, and the read-aloud hub.
@@ -110,11 +114,13 @@ impl IntelState {
 
     fn at(file: PathBuf) -> IntelState {
         let settings = load(&file);
+        let ext = ext::Ext::new(file.parent().unwrap_or_else(|| Path::new(".")));
         IntelState(Arc::new(Inner {
             file,
             settings: Mutex::new(settings),
             engines: OnceLock::new(),
             hub: SpeechHub::new(),
+            ext,
         }))
     }
 
@@ -369,4 +375,14 @@ pub async fn intel_read_aloud_cancel(state: State<'_, IntelState>, session_id: S
 pub async fn intel_clip_audio(state: State<'_, IntelState>, clip_id: String) -> IpcResult<Response> {
     let state = state.inner().clone();
     blocking(move || state.clip_audio(&clip_id).map(Response::new)).await
+}
+
+/// Model downloads and the device store (see `ext.rs`). One command, so a new method adds no permission.
+#[tauri::command]
+pub async fn intel_ext_call(state: State<'_, IntelState>, request: ext::ExtRequest) -> IpcResult<serde_json::Value> {
+    let ext = state.0.ext.clone();
+    match spawn_blocking(move || ext.call(&request, crate::hardening::offline(), crate::hardening::safe_mode())).await {
+        Ok(result) => result,
+        Err(error) => Err(IpcError::new(codes::INTERNAL, error.to_string())),
+    }
 }

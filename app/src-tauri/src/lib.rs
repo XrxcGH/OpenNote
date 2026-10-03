@@ -314,5 +314,6 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_extras::attach::attachment_import,
         page_extras::attach::attachment_open,
         page_extras::attach::attachment_stop,
+        intel::intel_ext_call,
     ]
 }

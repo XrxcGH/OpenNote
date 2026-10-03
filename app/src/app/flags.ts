@@ -131,7 +131,20 @@ type QolSearchFlagId =
   | 'graph.view'
   | 'canvas.cards';
 /** Phase 12's flags, which features/intel/flags.ts defines. */
-type IntelFlagId = 'intel.ocr' | 'intel.readAloud' | 'intel.summaries' | 'intel.handwriting' | 'intel.searchText';
+type IntelFlagId =
+  | 'intel.ocr'
+  | 'intel.readAloud'
+  | 'intel.summaries'
+  | 'intel.handwriting'
+  | 'intel.searchText'
+  | 'intel.models'
+  | 'intel.vocabulary'
+  | 'intel.background'
+  | 'intel.backgroundOcr'
+  | 'intel.handwritingExtras'
+  | 'intel.meaning'
+  | 'intel.ask'
+  | 'intel.writing';
 
 type Phase5FlagId =
   | 'ink.core'
@@ -224,7 +237,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('notes.memorySnapshot', 'Keep the Phase 2 notes in a temporary snapshot file.', testBuilds),
   flag('commandBar.insert', 'The Insert tab of the command bar.', betaBuilds),
   flag('commandBar.draw', 'The Draw tab of the command bar.', on),
-  flag('setup.smartFeatures', 'The smart features step of setup.', off),
+  flag('setup.smartFeatures', 'The smart features step of setup.', betaBuilds),
   flag('setup.import', 'The step of setup that brings in notes from other apps.', on),
   flag('settings.penAndInk', 'The Pen and ink section of Settings.', off),
   flag('settings.recording', 'The Recording section of Settings.', on),

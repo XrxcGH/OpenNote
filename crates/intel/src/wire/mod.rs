@@ -37,7 +37,7 @@ pub use crate::ocr::OcrResult;
 pub use crate::speech::{SpeechInfo, Voice};
 pub use crate::summarize::{ActionItem, Chapter, Keyword, Summary};
 pub use crate::tidy::TidyPlan;
-pub use crate::vocabulary::Offer;
+pub use crate::vocabulary::{Change, Corrected, Offer};
 
 /// Where the pixels of an image come from.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -187,6 +187,23 @@ impl VocabularyOfferRequest {
     /// name [`Vocabulary`] itself.
     pub fn offer(&self, engines: &Engines) -> Result<Option<Offer>, IntelError> {
         engines.vocabulary_offer(&Vocabulary::parse(&self.vocabulary), &self.original, &self.fixed)
+    }
+}
+
+/// A request to fix a transcript's text with a custom vocabulary. It needs no engine, because it only replaces words.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VocabularyCorrectRequest {
+    /// The vocabulary in its plain-text form.
+    pub vocabulary: String,
+    /// The transcript text to fix.
+    pub text: String,
+}
+
+impl VocabularyCorrectRequest {
+    /// The text with each listed mishearing replaced, and the replacements made.
+    pub fn correct(&self) -> Corrected {
+        Vocabulary::parse(&self.vocabulary).correct(&self.text)
     }
 }
 

@@ -19,6 +19,8 @@ import type {
   Summary,
   Voice,
 } from './types';
+import { createFakeExt } from './extFake';
+import type { FakeExt } from './extFake';
 import type { IntelCommands, IntelTransport } from './transport';
 
 export interface FakeIntelOptions {
@@ -37,6 +39,8 @@ export interface FakeIntelTransport extends IntelTransport {
   readonly calls: string[];
   /** Turns features on or off, as the settings screen does. */
   setSettings(patch: Partial<IntelSettings>): void;
+  /** The device store and model downloads (ext.ts). */
+  readonly ext: FakeExt;
 }
 
 const WORD_MS = 300;
@@ -318,15 +322,18 @@ function speechHandlers(state: FakeState): Pick<Handlers, SpeechCommands> {
 export function createFakeIntelTransport(options: FakeIntelOptions = {}): FakeIntelTransport {
   const calls: string[] = [];
   const state = createState(options);
+  const ext = createFakeExt();
   const handlers: Handlers = {
     ...statusHandlers(state, options),
     ...recognitionHandlers(state, options),
     ...textHandlers(state),
     ...transcriptHandlers(state),
     ...speechHandlers(state),
+    intel_ext_call: ({ request }) => ext.handle(request),
   };
   return {
     calls,
+    ext,
     setSettings: (patch) => Object.assign(state.settings, patch),
     invoke: async (command, args) => {
       calls.push(command);
