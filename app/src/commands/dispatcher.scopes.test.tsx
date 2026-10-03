@@ -127,7 +127,7 @@ describe('text fields, dialogs, repeats, and flags', () => {
   it('repeat only commands that allow it, skip flags that are off, and leave key capture alone', () => {
     add('toggle', { keys: [chord('Ctrl+Shift+D')] });
     add('move', { keys: [chord('Ctrl+Shift+Up')], allowRepeat: true });
-    add('flagged', { keys: [chord('Ctrl+Alt+B')], flag: 'storage.core' });
+    add('flagged', { keys: [chord('Ctrl+Alt+B')], flag: 'commandBar.insert' });
     expect(run(document.body, 'D', 'KeyD', 'ctrl shift', true)).toBeNull();
     expect(run(document.body, 'ArrowUp', 'ArrowUp', 'ctrl shift', true)).toBe('test.move');
     expect(run(document.body, 'b', 'KeyB', 'ctrl alt')).toBeNull();
