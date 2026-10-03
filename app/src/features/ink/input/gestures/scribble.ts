@@ -2,11 +2,11 @@
 // strokes under it instead of adding a stroke. The detector looks at the shape of one path. Whether it covers ink is a
 // second step, `scribbleTargets`, and a scribble that covers none stays as ink, since it may be shading.
 
-import { boundsOf } from '../../geometry/bounds';
+import { boundsOf, strokeBounds } from '../../geometry/bounds';
 import { lassoSelect } from '../../geometry/lasso';
 import { distance, polylineLength } from '../../geometry/primitives';
 import type { StrokeIndex } from '../../geometry/strokeIndex';
-import type { InkPoint, Stroke, Vec } from '../../geometry/types';
+import type { InkPoint, InkTool, Stroke, Vec } from '../../geometry/types';
 
 export interface ScribbleOptions {
   /** The path must be at least this many times the diagonal of its box. */
@@ -19,11 +19,19 @@ export interface ScribbleOptions {
   readonly minSwing: number;
   /** A path with a smaller extent than this, in page units, is a mark and not a scribble. */
   readonly minExtent: number;
+  /**
+   * The stroke's tool. Only a pen or a pencil scribbles: a highlighter, a marker, or a brush going back and forth
+   * over words is coloring them in.
+   */
+  readonly tool?: InkTool;
 }
+
+const SCRIBBLE_TOOLS: ReadonlySet<InkTool> = new Set(['pen', 'pencil']);
 
 export const DEFAULT_SCRIBBLE: ScribbleOptions = {
   minPathRatio: 3,
-  minReversals: 4,
+  // Six turns: a retraced capital M or a run of tally marks turns four times.
+  minReversals: 6,
   maxDurationMs: 2000,
   minSwing: 0.25,
   minExtent: 12,
@@ -105,6 +113,7 @@ export function detectScribble(
   options: Partial<ScribbleOptions> = {},
 ): ScribbleMatch | null {
   const o = { ...DEFAULT_SCRIBBLE, ...options };
+  if (!SCRIBBLE_TOOLS.has(o.tool ?? 'pen')) return null;
   if (points.length < 2 * o.minReversals) return null;
   const duration = elapsed(points);
   if (duration !== null && duration >= o.maxDurationMs) return null;
@@ -124,19 +133,34 @@ export interface ScribbleTargetOptions {
   /** The share of a stroke's length that must lie under the scribble. Defaults to 0.3. */
   readonly share?: number;
   readonly skip?: (stroke: Stroke) => boolean;
+  /** The ink erased must reach across this share of the scribble's longer side. Defaults to 0.25. */
+  readonly cover?: number;
 }
 
 export const SCRIBBLE_SHARE = 0.3;
+export const SCRIBBLE_COVER = 0.25;
 
-/** The strokes a scribble erases: those with at least 30 percent of their length inside its hull. */
+/**
+ * The strokes a scribble erases: those with at least 30 percent of their length inside its hull, when together they
+ * reach across a quarter of the scribble.
+ */
 export function scribbleTargets(
   index: StrokeIndex,
   match: ScribbleMatch,
   options: ScribbleTargetOptions = {},
 ): string[] {
-  return lassoSelect(index, match.hull, {
+  const targets = lassoSelect(index, match.hull, {
     mode: 'mostly',
     threshold: options.share ?? SCRIBBLE_SHARE,
     skip: options.skip,
   });
+  // A scribble over an i-dot or a short descender is a letter written there, so a few tiny marks are never erased.
+  const hull = boundsOf(match.hull);
+  const side = Math.max(hull.maxX - hull.minX, hull.maxY - hull.minY);
+  let reach = 0;
+  for (const id of targets) {
+    const box = strokeBounds(index.get(id)!);
+    reach += Math.max(box.maxX - box.minX, box.maxY - box.minY);
+  }
+  return reach >= side * (options.cover ?? SCRIBBLE_COVER) ? targets : [];
 }
