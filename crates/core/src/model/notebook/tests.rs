@@ -26,6 +26,7 @@ fn section(n: u64, group: Option<u64>, order: &str) -> SectionNode {
         pages: Vec::new(),
         access: Access::ReadWrite,
         encrypted: false,
+        archived: false,
     }
 }
 
@@ -41,6 +42,7 @@ fn tree(groups: Vec<Group>, sections: Vec<SectionNode>) -> NotebookTree {
         sections,
         access: Access::ReadWrite,
         notices: Vec::new(),
+        archived: false,
     }
 }
 
@@ -95,6 +97,7 @@ fn finds_sections_and_pages() {
         order: OrderKey::parse("a0").unwrap(),
         level: 0,
         pinned: false,
+        archived: false,
         color: None,
         created: Timestamp::EPOCH,
         modified: None,
@@ -120,6 +123,7 @@ fn serializes_for_the_interface() {
         order: OrderKey::parse("a0").unwrap(),
         level: 1,
         pinned: true,
+        archived: false,
         color: None,
         created: Timestamp::EPOCH,
         modified: None,

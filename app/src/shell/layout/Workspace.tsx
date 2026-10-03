@@ -6,6 +6,7 @@
 import { useMemo } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useLayout } from '../../state/layout';
+import { qolStore } from '../../state/qol';
 import { sessionStore } from '../../state/session';
 import { shallowEqual, useStore } from '../../state/store';
 import { StarField } from '../../ui';
@@ -45,6 +46,8 @@ export function Workspace(props: WorkspaceSlots) {
   const { sizeClass, compactScreen } = useLayout((state) => state, shallowEqual);
   const page = useRegion('page');
   const compact = sizeClass === 'compact';
+  // Focus mode hides the panes and the command bar, and the page stands alone under the title bar.
+  const focus = useStore(qolStore, (state) => state.focusMode);
   const style = {
     '--pane-notebooks': `${columnWidth(layout.notebooks)}px`,
     '--pane-pages': `${columnWidth(layout.pages)}px`,
@@ -53,7 +56,7 @@ export function Workspace(props: WorkspaceSlots) {
   useWorkspaceFocus(layout, sizeClass, compactScreen);
   const pageRef = usePageScrollMemory(page.ref);
   return (
-    <div className={styles.workspace} style={style} data-workspace="">
+    <div className={styles.workspace} style={style} data-workspace="" data-focus={focus ? '' : undefined}>
       <div className={styles.titleBar}>{props.titleBar}</div>
       {compact && <div className={styles.appBar}>{props.appBar}</div>}
       <div className={styles.commandBar}>{props.commandBar}</div>

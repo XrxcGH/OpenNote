@@ -8,6 +8,7 @@ import type { MenuId } from '../../registries/types';
 import { currentNotesService, isNotesError, NOT_KEPT } from '../../services/notes';
 import { t } from '../../strings/t';
 import { treeCommands } from './commands';
+import { registerQolMenus } from './qolMenus';
 import { SaveStatus } from './SaveStatus';
 
 for (const def of treeCommands) commands.register(def);
@@ -72,6 +73,8 @@ for (const [menu, entries] of Object.entries(MENUS) as [MenuId, readonly Entry[]
     });
   });
 }
+
+registerQolMenus();
 
 const HOME: readonly (readonly [CommandId, number])[] = [
   ['notes.newPage', 100],

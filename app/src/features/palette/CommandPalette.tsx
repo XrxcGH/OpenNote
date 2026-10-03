@@ -51,10 +51,16 @@ export default function CommandPalette({ mode, onClose }: PaletteProps) {
     ArrowUp: () => move(-1),
     PageDown: () => moveTo(Math.min(index + PAGE_STEP, ranked.flat.length - 1)),
     PageUp: () => moveTo(Math.max(index - PAGE_STEP, 0)),
-    // Ctrl+Enter opens in a new tab once tabs exist; until then it opens the result as Enter does.
+    // Ctrl+Enter opens a page or section in a new tab; a result that is not a place opens as Enter does.
     Enter: () => choose(active),
   };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && event.ctrlKey && active?.openInTab && !active.disabled) {
+      event.preventDefault();
+      onClose();
+      void active.openInTab();
+      return;
+    }
     const action = keys[event.key];
     if (!action || event.nativeEvent.isComposing || event.altKey) return;
     event.preventDefault();

@@ -8,6 +8,7 @@ import type { SetupStepProps } from '../../../registries';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { Button, RadioCard, RadioGroup, TextField, announce } from '../../../ui';
+import { CloudNotice, useCloud } from '../../qol';
 import { getHost } from '../runtime';
 import styles from '../SetupView.module.css';
 import { StepHeader } from '../StepHeader';
@@ -164,6 +165,12 @@ function FirstNotebook({ props }: { props: SetupStepProps }) {
   );
 }
 
+/** A notice when the chosen folder is in a sync service, with the offer to keep it on this device. */
+function CloudFolder({ folder }: { folder: string }) {
+  const info = useCloud(folder);
+  return info ? <CloudNotice folder={folder} info={info} /> : null;
+}
+
 export default function StorageStep(props: SetupStepProps) {
   const install = useStorageDefaults(props);
   const message = useFolderCheck(props);
@@ -171,6 +178,7 @@ export default function StorageStep(props: SetupStepProps) {
     <div className={styles.step}>
       <StepHeader {...props} title={t('setup.steps.storage')} subtitle={t('setup.storage.subtitle')} />
       <NotesFolder props={props} message={message} />
+      {props.draft.storage && <CloudFolder folder={props.draft.storage.notesFolder} />}
       <AppChoice props={props} install={install} />
       <FirstNotebook props={props} />
     </div>

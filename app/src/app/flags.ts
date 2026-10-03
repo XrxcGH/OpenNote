@@ -15,6 +15,7 @@ import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { EXPR_FLAGS } from '../features/tools/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
+import { QOL_FLAGS } from '../features/qol/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -52,7 +53,8 @@ export type FlagId =
   | Phase8FlagId
   | Phase9FlagId
   | IntelFlagId
-  | Phase13FlagId;
+  | Phase13FlagId
+  | QolFlagId;
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -199,6 +201,29 @@ type Phase13FlagId =
   | 'diagnostics.feedback'
   | 'diagnostics.safeStart';
 
+/** The shell and storage quality-of-life features; features/qol/flags.ts defines them. */
+type QolFlagId =
+  | 'qol.multiSelect'
+  | 'qol.pins'
+  | 'qol.tabs'
+  | 'qol.recentlyClosed'
+  | 'qol.dock'
+  | 'qol.scheduledBackups'
+  | 'qol.externalEdits'
+  | 'qol.cloudFolders'
+  | 'qol.openFolder'
+  | 'qol.checkNotebook'
+  | 'qol.quickCapture'
+  | 'qol.focusMode'
+  | 'qol.miniWindow'
+  | 'qol.lowPower'
+  | 'qol.archive'
+  | 'qol.home'
+  | 'qol.shortcuts'
+  | 'qol.onenoteKeys'
+  | 'qol.conflicts'
+  | 'qol.a11yCheck';
+
 export interface FlagDef {
   id: FlagId;
   /** For the About section in development and nightly builds. */
@@ -254,6 +279,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INTEGRATIONS_FLAGS,
   ...INTEL_FLAGS,
   ...DIAGNOSTICS_FLAGS,
+  ...QOL_FLAGS,
 ];
 
 interface FlagState {

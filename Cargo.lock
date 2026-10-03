@@ -2809,6 +2809,7 @@ dependencies = [
  "crc32fast",
  "flate2",
  "log",
+ "notify",
  "opennote-core",
  "opennote-crashreport",
  "opennote-diagnostics",

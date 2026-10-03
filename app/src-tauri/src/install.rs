@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri::{AppHandle, Manager, State, WebviewWindow};
 
-pub use shortcut::create_shortcut;
+pub use shortcut::{create_link, create_shortcut, set_jump_list};
 
 use crate::{
     ipc::{IpcError, IpcResult},

@@ -26,7 +26,9 @@ use crate::session::page::save::Why;
 use crate::store::fs::Fs;
 use crate::store::history::Retention;
 use crate::store::layout::{DataLayout, NotebookLayout};
-use crate::store::notebook_store::{create_notebook, read_notebook_file, CanonicalFormats, TreeFormats};
+use crate::store::notebook_store::{
+    convert_to_notebook, create_notebook, read_notebook_file, CanonicalFormats, TreeFormats,
+};
 use crate::store::std_fs::StdFs;
 use crate::time::{Clock, SystemClock};
 
@@ -320,6 +322,13 @@ impl Core {
         let env = self.inner.ctx.tree_env();
         let dir = create_notebook(&env, parent_dir, title)?;
         self.open_notebook(&dir)
+    }
+
+    /// Turns an existing folder into a notebook where it is, then opens it. Nothing else in the folder changes.
+    pub fn convert_folder(&self, dir: &Path, title: &str) -> Result<NotebookHandle, CoreError> {
+        let env = self.inner.ctx.tree_env();
+        convert_to_notebook(&env, dir, title)?;
+        self.open_notebook(dir)
     }
 
     /// Opens the notebook at `dir`: its lock, recovery, the scan, and the tree. A notebook already open

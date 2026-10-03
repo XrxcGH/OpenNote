@@ -55,6 +55,10 @@ pub struct NodeSummary {
     pub created: String,
     pub modified: String,
     pub read_only: bool,
+    /// A pinned page. Always false for the rest.
+    pub pinned: bool,
+    /// Hidden from the tree until "Show archived".
+    pub archived: bool,
 }
 
 /// The contract's `LibraryInfo`.

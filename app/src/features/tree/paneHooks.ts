@@ -7,6 +7,7 @@ import { useNotes } from '../../services/notes';
 import type { NodeId } from '../../services/notes';
 import { registerRegionMain } from '../../shell/regions';
 import { sessionStore } from '../../state/session';
+import { qolStore } from '../../state/qol';
 import { shallowEqual, useStore } from '../../state/store';
 import { tokens } from '../../theme/tokens';
 import { useDensity } from '../../state/layout';
@@ -35,12 +36,14 @@ export function useTreeStart(): void {
 export function useNotebookRows(): readonly Row[] {
   const source = useStore(treeStore, pickRowSource, shallowEqual);
   const expanded = useStore(sessionStore, pickExpanded);
-  return useMemo(() => notebookRows(source, new Set(expanded)), [source, expanded]);
+  const showArchived = useStore(qolStore, (state) => state.showArchived);
+  return useMemo(() => notebookRows(source, new Set(expanded), showArchived), [source, expanded, showArchived]);
 }
 
 export function usePageRows(sectionId: NodeId | null): readonly Row[] {
   const source = useStore(treeStore, pickRowSource, shallowEqual);
-  return useMemo(() => pageRows(source, sectionId), [source, sectionId]);
+  const showArchived = useStore(qolStore, (state) => state.showArchived);
+  return useMemo(() => pageRows(source, sectionId, showArchived), [source, sectionId, showArchived]);
 }
 
 export function useSelected(tree: TreeId): NodeId | null {

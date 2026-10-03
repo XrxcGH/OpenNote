@@ -169,6 +169,7 @@ fn page_node(id: &str, title: &str, level: u8, state: PageNodeState) -> PageNode
         order: OrderKey::parse("a0").unwrap(),
         level,
         pinned: false,
+        archived: false,
         color: None,
         created: Timestamp::EPOCH,
         modified: None,
@@ -188,6 +189,7 @@ fn section_node(id: &str, title: &str, group: GroupId, pages: Vec<PageNode>) -> 
         pages,
         access: Access::ReadWrite,
         encrypted: false,
+        archived: false,
     }
 }
 
@@ -232,6 +234,7 @@ fn tree() -> NotebookTree {
         ],
         access: Access::ReadWrite,
         notices: Vec::new(),
+        archived: false,
     }
 }
 

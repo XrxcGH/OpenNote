@@ -3,6 +3,7 @@
 
 import type { NodeId, NodeSummary } from '../../services/notes';
 import { sessionStore } from '../../state/session';
+import { qolStore } from '../../state/qol';
 import { notebookRows, pageRows } from './rows';
 import type { Row } from './rows';
 import { treeOf } from './store';
@@ -29,7 +30,9 @@ export function siblingOrParent(rows: readonly Row[], id: NodeId): NodeId | null
 export function focusTargetAfterRemoval(state: TreeState, node: NodeSummary): FocusTarget | null {
   const tree = treeOf(node);
   const rows =
-    tree === 'pages' ? pageRows(state, node.parentId) : notebookRows(state, new Set(sessionStore.get().expanded));
+    tree === 'pages'
+      ? pageRows(state, node.parentId, qolStore.get().showArchived)
+      : notebookRows(state, new Set(sessionStore.get().expanded), qolStore.get().showArchived);
   const id = siblingOrParent(rows, node.id);
   if (id) return { tree, id };
   return node.kind === 'page' && node.parentId ? { tree: 'notebooks', id: node.parentId } : null;

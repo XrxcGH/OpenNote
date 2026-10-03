@@ -4,3 +4,7 @@
 
 export { normalize, score } from './score';
 export { addSwitcherProvider } from './switcher';
+
+// Every notebook, section, and page, for the Home page.
+export { locationOf, nodeIndex } from './nodes';
+export type { NodeEntry } from './nodes';

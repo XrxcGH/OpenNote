@@ -1,0 +1,44 @@
+@layer components {
+  .capture {
+    display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    gap: var(--space-2);
+    block-size: 100vh;
+    padding: var(--space-4);
+    background: var(--color-surface-app);
+    color: var(--color-text-primary);
+  }
+
+  .label {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .text {
+    min-block-size: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+    color: inherit;
+    font-family: var(--font-reading);
+    font-size: inherit;
+    resize: none;
+  }
+
+  .text:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .help,
+  .error {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+}

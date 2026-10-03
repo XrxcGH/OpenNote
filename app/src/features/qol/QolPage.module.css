@@ -1,0 +1,40 @@
+@layer components {
+  .focusExit {
+    position: fixed;
+    inset-block-start: calc(var(--size-title-bar) + var(--space-2));
+    inset-inline-end: var(--space-4);
+    z-index: var(--layer-dropdown);
+    opacity: 0.7;
+    transition: opacity var(--motion-duration-base) var(--motion-easing-standard);
+  }
+
+  .focusExit:hover,
+  .focusExit:focus-within {
+    opacity: 1;
+  }
+
+  .notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin: var(--space-3) var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-accent-dusk-subtle);
+    color: var(--color-text-primary);
+  }
+
+  .notice p {
+    flex: 1;
+    min-inline-size: 12rem;
+    margin: 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
