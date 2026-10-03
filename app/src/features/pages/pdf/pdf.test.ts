@@ -4,6 +4,7 @@ import { exportFileName, fileStem } from './filename';
 import { inspectPdf } from './inspect';
 import { checkPdf, exportPdf, type PrintSurface } from './job';
 import { PdfName, PdfRef, PdfString, readObjects } from './objects';
+import { settle } from '../print/dom';
 import type { PrepareResult } from '../print/prepare';
 import type { PrintPlan } from '../print/sheets';
 
@@ -287,5 +288,39 @@ describe('the export job', () => {
       'pageSize',
       'variableFonts',
     ]);
+  });
+});
+
+describe('the export job when a step never ends', () => {
+  it('stops a step that never ends when the signal fires or its time is up, and closes the surface', async () => {
+    const never = () => new Promise<never>(() => undefined);
+    const stuck = fakeSurface(new Uint8Array());
+    stuck.surface.prepare = never;
+    const controller = new AbortController();
+    const run = exportPdf(stuck.surface, { input: INPUT, signal: controller.signal });
+    setTimeout(() => controller.abort(), 5);
+    await expect(run).rejects.toMatchObject({ name: 'AbortError' });
+    expect(stuck.log).toEqual(['dispose']);
+
+    const slow = fakeSurface(new Uint8Array());
+    slow.surface.toPdf = never;
+    const late = exportPdf(slow.surface, { input: INPUT, timeouts: { render: 10 } });
+    await expect(late).rejects.toMatchObject({ name: 'TimeoutError' });
+    expect(slow.log).toEqual(['prepare', 'dispose']);
+
+    // A window that will not close either still ends the job, with the error that stopped it.
+    const dead = fakeSurface(new Uint8Array());
+    dead.surface.prepare = never;
+    dead.surface.dispose = never;
+    const ended = exportPdf(dead.surface, { input: INPUT, timeouts: { prepare: 10, dispose: 10 } });
+    await expect(ended).rejects.toMatchObject({ name: 'TimeoutError' });
+  });
+
+  it('measures a document whose image never loads, after a time limit', async () => {
+    const doc = {
+      fonts: { ready: Promise.resolve() },
+      images: [{ complete: false, decode: () => new Promise<never>(() => undefined) }, { complete: true }],
+    } as unknown as Document;
+    await expect(settle(doc, 10)).resolves.toBeUndefined();
   });
 });

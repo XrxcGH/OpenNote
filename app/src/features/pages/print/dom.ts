@@ -249,9 +249,25 @@ function fixList(original: Element, start: LineStart, wrapper: Element): void {
   }
 }
 
-/** Waits until the fonts and images of a document are ready, so measuring sees the final layout. */
-export async function settle(doc: Document): Promise<void> {
-  await doc.fonts?.ready;
-  const pending = Array.from(doc.images, (img) => (img.complete ? null : img.decode().catch(() => undefined)));
-  await Promise.all(pending);
+/** How long `settle` waits for the fonts, and for each image, in milliseconds. */
+export const SETTLE_WAIT = 10_000;
+
+/** Waits for the promise, or for `ms`, whichever ends first. Either way it resolves. */
+async function within(work: Promise<unknown> | undefined, ms: number): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<void>((resolve) => (timer = setTimeout(resolve, ms)));
+  try {
+    await Promise.race([work?.catch(() => undefined), late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Waits until the fonts and images of a document are ready, so measuring sees the final layout. An image that never
+ * loads is given up on after `wait` milliseconds, and measured as it stands.
+ */
+export async function settle(doc: Document, wait = SETTLE_WAIT): Promise<void> {
+  await within(doc.fonts?.ready, wait);
+  await Promise.all(Array.from(doc.images, (img) => (img.complete ? null : within(img.decode(), wait))));
 }

@@ -1,7 +1,7 @@
 // The PDF export job. A page goes to a print surface (a hidden window, ADR 0006), which measures it, plans the sheets
 // with the paginator, and shows the print document. The surface prints that to PDF, and the job checks the file against
-// the plan before it hands the bytes back. It runs in the background: every step is a promise, and an abort signal
-// stops it between steps.
+// the plan before it hands the bytes back. It runs in the background, and every step is a promise. An abort signal or a
+// step's time limit stops the job at once and closes the surface, without waiting for the step.
 
 import type { PrepareInput, PrepareResult } from '../print/prepare';
 import type { PrintPlan } from '../print/sheets';
@@ -40,7 +40,19 @@ export interface PdfExportRequest {
   readonly outline?: boolean;
   readonly signal?: AbortSignal;
   readonly onProgress?: (progress: PdfProgress) => void;
+  /** Time limits for the surface's steps. Defaults to `PDF_TIMEOUTS`. */
+  readonly timeouts?: Partial<PdfTimeouts>;
 }
+
+/** How long each step of the surface may take, in milliseconds, before the job stops with a `TimeoutError`. */
+export interface PdfTimeouts {
+  readonly prepare: number;
+  readonly render: number;
+  readonly dispose: number;
+}
+
+/** Generous limits: a long page takes seconds to prepare and render, and a stuck window takes forever. */
+export const PDF_TIMEOUTS: PdfTimeouts = { prepare: 180_000, render: 600_000, dispose: 15_000 };
 
 export type ProblemKind =
   'pageCount' | 'pageSize' | 'untagged' | 'noLanguage' | 'noText' | 'variableFonts' | 'blankPage';
@@ -71,8 +83,29 @@ const SIZE_TOLERANCE = 0.5;
 /** The coarsest step of the sizes Chromium writes: four device pixels at 300 dpi (0.96 points), with room to spare. */
 const GRID = 1.5;
 
+const abortError = () => new DOMException('The export was stopped.', 'AbortError');
+
 function aborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted) throw new DOMException('The export was stopped.', 'AbortError');
+  if (signal?.aborted) throw abortError();
+}
+
+/**
+ * The step's result, unless the signal fires or `ms` pass first. Then it rejects with an `AbortError` or a
+ * `TimeoutError` at once, and the step is left to settle on its own.
+ */
+function bounded<T>(work: Promise<T>, signal: AbortSignal | undefined, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let stop: (() => void) | undefined;
+  const limit = new Promise<never>((_, reject) => {
+    stop = () => reject(abortError());
+    timer = setTimeout(() => reject(new DOMException('The export took too long.', 'TimeoutError')), ms);
+    signal?.addEventListener('abort', stop, { once: true });
+    if (signal?.aborted) stop();
+  });
+  return Promise.race([work, limit]).finally(() => {
+    clearTimeout(timer);
+    if (stop) signal?.removeEventListener('abort', stop);
+  });
 }
 
 /** Checks the file against the plan and the options. Problems that are errors mean the file is wrong. */
@@ -115,8 +148,9 @@ export function checkPdf(info: PdfInfo, plan: PrintPlan, options: PdfRenderOptio
 }
 
 /**
- * Exports a page to PDF through a print surface. The surface is closed when the job ends, even when it fails.
- * Throws an `AbortError` if the signal fires, and any error the surface throws.
+ * Exports a page to PDF through a print surface. The surface is closed when the job ends, whether it succeeds, fails,
+ * or stops mid-step. Throws an `AbortError` if the signal fires, a `TimeoutError` if a step passes its limit, and any
+ * error the surface throws.
  */
 export async function exportPdf(surface: PrintSurface, request: PdfExportRequest): Promise<PdfExportResult> {
   const { signal, onProgress } = request;
@@ -126,20 +160,24 @@ export async function exportPdf(surface: PrintSurface, request: PdfExportRequest
     background: request.input.print?.background !== false,
   };
   const mark = (stage: PdfStage, fraction: number) => onProgress?.({ stage, fraction });
+  const limits = { ...PDF_TIMEOUTS, ...request.timeouts };
   let closed = false;
+  const close = () => {
+    closed = true;
+    return bounded(surface.dispose(), undefined, limits.dispose);
+  };
   try {
     aborted(signal);
     mark('prepare', 0);
     const t0 = performance.now();
-    const prepared = await surface.prepare(request.input);
+    const prepared = await bounded(surface.prepare(request.input), signal, limits.prepare);
     aborted(signal);
     mark('render', 0.3);
     const t1 = performance.now();
-    const bytes = await surface.toPdf(options);
+    const bytes = await bounded(surface.toPdf(options), signal, limits.render);
     // Close the print window before reading the file: a window that is still open competes for the processor with
     // the reader, and the file is all that is needed from here on.
-    closed = true;
-    await surface.dispose();
+    await close();
     aborted(signal);
     mark('verify', 0.9);
     const t2 = performance.now();
@@ -156,6 +194,8 @@ export async function exportPdf(surface: PrintSurface, request: PdfExportRequest
       timings: { prepare: t1 - t0, render: t2 - t1, verify: t3 - t2 },
     };
   } finally {
-    if (!closed) await surface.dispose();
+    // The job has failed or stopped, perhaps with a step still running. Close the window anyway, and keep the error
+    // that stopped the job rather than one from closing.
+    if (!closed) await close().catch(() => undefined);
   }
 }
