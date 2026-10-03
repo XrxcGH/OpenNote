@@ -5,11 +5,11 @@
 import { EditorState, TextSelection } from '@tiptap/pm/state';
 import type { Transaction } from '@tiptap/pm/state';
 import { afterEach, describe, expect, it } from 'vitest';
-import { pageFixture } from '../../services/pages/fixtures';
+import { pageFixture } from '../../../services/pages/fixtures';
 import type { Editor } from '@tiptap/core';
-import { testHost } from '../commands/testing';
-import { parseTextBlock } from '../markdown';
-import { createBlockEditor } from './kit';
+import { testHost } from '../../../editor/commands/testing';
+import { parseTextBlock } from '../../../editor/markdown';
+import { createBlockEditor } from '../../../editor/extensions/kit';
 
 let mounted: Editor | null = null;
 afterEach(() => {
