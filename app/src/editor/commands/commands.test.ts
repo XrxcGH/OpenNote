@@ -75,8 +75,8 @@ describe('Turn into', () => {
   });
 
   it('wraps in a callout with an empty title, and unwraps', () => {
-    expect(applyTo('[Words]', turnInto('callout'))).toBe('> [!note]\n>\n> Words');
-    expect(applyTo('> [!note]\n>\n> [Words]', toggleKind('callout'))).toBe('Words');
+    expect(applyTo('[Words]', turnInto('callout'))).toBe('> [!note]\n> Words');
+    expect(applyTo('> [!note]\n> [Words]', toggleKind('callout'))).toBe('Words');
   });
 
   it('toggles a list kind the selection already is back to text', () => {

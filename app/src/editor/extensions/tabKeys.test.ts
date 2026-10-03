@@ -68,8 +68,10 @@ describe('Tab', () => {
     expect(page.editor.state.doc.textContent).toBe('one\t two');
   });
 
-  it('gives way in code blocks', () => {
+  it('gives way in code blocks, where Tab indents the line', () => {
     const page = mount('```\nco[]de\n```');
-    expect(press(page.editor, 'Tab')).toBe(false);
+    expect(press(page.editor, 'Tab')).toBe(true);
+    expect(page.editor.state.doc.textContent).not.toContain('\t');
+    expect(page.editor.state.doc.textContent).toMatch(/^ +code$/);
   });
 });

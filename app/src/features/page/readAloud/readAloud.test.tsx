@@ -137,8 +137,7 @@ describe('read aloud', () => {
       fixture: textPageFixture('Skip this.\n\nStart here please.\n\nThen this.'),
       flags: { 'editor.readAloud': true },
     });
-    const editor = page.mounted.pool.editor('01k6f0000000000000000t0001')!;
-    page.mounted.pool.mount('01k6f0000000000000000t0001', { kind: 'start' }, 'target');
+    const editor = page.mounted.pool.mount('01k6f0000000000000000t0001', { kind: 'start' }, 'target')!;
     const at = editor.state.doc.content.size;
     let caret = 0;
     editor.state.doc.descendants((node, pos) => {

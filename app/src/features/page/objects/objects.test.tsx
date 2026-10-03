@@ -183,7 +183,8 @@ describe('object commands', () => {
     expect(mounted.objects.enabled('bringToFront')).toBe(true);
     mounted.objects.command('bringToFront');
     await expect.poll(() => edits().at(-1)).toEqual<Edit>({ edit: 'moveBlock', block: ids[0], after: ids[1] });
-    mounted.objects.select([ids[1]]);
+    // The page applies the move, so the block that moved is now the one in front.
+    await expect.poll(() => mounted.objects.enabled('bringToFront')).toBe(false);
     mounted.objects.command('bringToFront');
     expect(announcements().at(-1)).toBe('Already in front');
   });

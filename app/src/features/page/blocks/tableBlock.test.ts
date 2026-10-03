@@ -96,7 +96,9 @@ describe('the table block', () => {
     const { page } = await tablePage(data);
     await page.type(TABLE, '!');
     const last = page.sent().at(-1)!;
-    expect(last.coalesce).toEqual({ kind: 'typing', target: TABLE });
+    // Typing groups by cell: the target is the table, the row, and the column.
+    const cell: unknown = expect.stringMatching(new RegExp(`^${TABLE}/[^/]+/[^/]+$`));
+    expect(last.coalesce).toEqual({ kind: 'typing', target: cell });
     expect(last.edits[0]).toMatchObject({ edit: 'patchBlock', block: TABLE });
     const after = held(page, data);
     const lastRow = after.rows.at(-1)!;

@@ -97,7 +97,7 @@ const CASES: Partial<Record<PageCommandId | 'link.remove' | 'link.edit', Case>> 
   'block.toggleCheck': { before: '- [x] one[]', after: '- [ ] one' },
   'block.quote': { before: 'one[]', after: '> one' },
   'block.codeBlock': { before: '**one**[]', after: '```\none\n```' },
-  'block.callout': { before: 'one[]', after: '> [!note]\n>\n> one' },
+  'block.callout': { before: 'one[]', after: '> [!note]\n> one' },
   'block.divider': { before: 'one[]', after: 'one\n\n---' },
   'block.turnInto': { before: '- one[]', after: '### one', args: { kind: 'heading3' } },
   'insert.date': { before: 'On []', after: 'On Sep 30, 2026' },

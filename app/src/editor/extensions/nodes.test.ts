@@ -97,7 +97,7 @@ describe('callouts', () => {
     page.root.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!.click();
     await Promise.resolve();
     await Promise.resolve();
-    expect(page.markdown()).toBe('> [!tip] Title\n>\n> Text');
+    expect(page.markdown()).toBe('> [!tip] Title\n> Text');
   });
 
   it('fold with a real button that changes the Markdown', () => {
@@ -106,7 +106,7 @@ describe('callouts', () => {
     expect(fold.getAttribute('aria-label')).toBe('Collapse Title');
     expect(fold.getAttribute('aria-expanded')).toBe('true');
     fold.click();
-    expect(page.markdown()).toBe('> [!note]- Title\n>\n> Body');
+    expect(page.markdown()).toBe('> [!note]- Title\n> Body');
     const after = page.root.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
     expect(after.getAttribute('aria-expanded')).toBe('false');
     expect(after.getAttribute('aria-label')).toBe('Expand Title');
