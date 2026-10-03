@@ -1,6 +1,6 @@
 # Transcripts
 
-A recording's transcript, on the page. It is part of [audio recording](../README.md): a block of type `ext:org.opennote/transcript` after the recording, whose `data` is a `TranscriptData` (`model.ts`). Every time in it is a position in the recording's audio, in milliseconds, so a click on a line is a seek.
+A recording's transcript, on the page. It is part of [audio recording](../README.md): a block of type `ext:org.opennote/transcript` after the recording, and a `TranscriptData` (`model.ts`) in the page's view. Every time in it is a position in the recording's audio, in milliseconds, so a click on a line is a seek.
 
 ## Contents
 
@@ -33,7 +33,7 @@ A recording's transcript, on the page. It is part of [audio recording](../README
 
 ## How a transcript is kept
 
-The core can't edit a block of a type it doesn't know, but it patches one: a change is a `patchBlock` step with the new `data` and a new `fallback`. The fallback is the transcript as plain text, which is what search indexes and what a reader that doesn't know the block shows. So the words are searchable, and one undo takes a change back.
+The core can't edit the data of a block of a type it doesn't know, but it edits and keeps the page's view. So the transcript is in the view, under `transcripts`, by the recording it belongs to, and each change is a `setPage` step that one undo takes back. The block only says where the transcript sits, and its fallback is the transcript as plain text. The fallback is what search indexes, and what a reader that doesn't know the block shows. A fallback can't change either, so a change puts a new block with the new text where the old one was. Editing words waits for Done before it does that, so the page isn't rebuilt under the person's hands.
 
 ## Flags
 

@@ -117,7 +117,8 @@ describe('the host commands', () => {
     expect(calls[0].command).toBe('audio_storage_scan');
     expect(calls[1]).toMatchObject({ command: 'audio_meeting_poll', args: { enabled: true, neverFor: ['zoom'] } });
     expect(calls[2].command).toBe('audio_import_file');
-    expect(calls[2].args).toBe(bytes);
+    expect(calls[2].args).toBeInstanceOf(Uint8Array);
+    expect((calls[2].args as Uint8Array).byteLength).toBe(4);
     const header = (calls[2].options as { headers: Record<string, string> }).headers['x-opennote-import'];
     expect(header).toMatch(/^[\x20-\x7e]+$/);
     expect(JSON.parse(decodeURIComponent(header))).toEqual({ assetsDir: 'C:/notes/assets', name: 'talk é.mp3' });

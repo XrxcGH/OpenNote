@@ -22,10 +22,19 @@ import {
 } from './actions';
 import { clockMs, nextSpeaker, renameSpeaker, setLineSpeaker, setLineText, speakerName, speakersOf } from './model';
 import type { Chapter, Line, TranscriptData } from './model';
-import { dataOf, lineSelection, rememberSpeakerName, saveTranscript, speakerWord } from './store';
+import {
+  lineSelection,
+  recordingOf,
+  refreshText,
+  rememberSpeakerName,
+  saveTranscript,
+  speakerWord,
+  transcripts,
+} from './store';
 import styles from './transcripts.module.css';
 
-type Save = (next: TranscriptData) => Promise<void>;
+/** Saves a change. With `refresh` false, the text search sees waits until editing is done. */
+type Save = (next: TranscriptData, refresh?: boolean) => Promise<void>;
 
 const EMPTY: ReadonlySet<string> = new Set();
 
@@ -71,7 +80,7 @@ function LineRow(props: {
             onChange={(event) => {
               const value = event.target.value;
               const speaker = value === '' ? undefined : value === 'new' ? nextSpeaker(data) : Number(value);
-              void props.save(setLineSpeaker(data, line.id, speaker));
+              void props.save(setLineSpeaker(data, line.id, speaker), false);
             }}
           >
             <option value="">{t('audioMore.transcript.nobody')}</option>
@@ -90,7 +99,8 @@ function LineRow(props: {
             defaultValue={line.text}
             rows={Math.max(1, Math.ceil(line.text.length / 70))}
             onBlur={(event) => {
-              if (event.target.value !== line.text) void props.save(setLineText(data, line.id, event.target.value));
+              if (event.target.value !== line.text)
+                void props.save(setLineText(data, line.id, event.target.value), false);
             }}
           />
         ) : (
@@ -215,7 +225,8 @@ function ChapterList({ chapters, recording }: { chapters: readonly Chapter[]; re
 }
 
 export function TranscriptView({ block }: { block: BlockJson }) {
-  const data = dataOf(block);
+  const recording = recordingOf(block);
+  const data = useStore(transcripts, (held) => (recording ? (held.get(recording) ?? null) : null));
   const position = useStore(playbackUi, (state) =>
     data && state.recording === data.recording ? (state.status?.positionNs ?? null) : null,
   );
@@ -233,9 +244,9 @@ export function TranscriptView({ block }: { block: BlockJson }) {
   const recapOn = useFlag('transcripts.recap');
   const headingId = useId();
   if (!data) return <p className={styles.help}>{t('audioMore.transcript.noLines')}</p>;
-  const save: Save = async (next) => {
+  const save: Save = async (next, refresh = true) => {
     try {
-      await saveTranscript(block.id, data, next);
+      await saveTranscript(block.id, data, next, refresh);
     } catch (error) {
       showToast({ message: describeError(error), tone: 'danger' });
     }
@@ -288,7 +299,14 @@ export function TranscriptView({ block }: { block: BlockJson }) {
               {t('audioMore.transcript.copyRecap')}
             </Button>
           )}
-          <Button variant="secondary" aria-pressed={editing} onClick={() => setEditing(!editing)}>
+          <Button
+            variant="secondary"
+            aria-pressed={editing}
+            onClick={() => {
+              if (editing) void refreshText(block.id);
+              setEditing(!editing);
+            }}
+          >
             {t(editing ? 'audioMore.transcript.doneEditing' : 'audioMore.transcript.edit')}
           </Button>
         </div>

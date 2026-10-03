@@ -78,7 +78,7 @@ export function moreOver(invoke: RawInvoke): AudioMore {
     purgeHistory: (page) => call('purge_history', { page }),
     exportAudio: (assetsDir, entry, dest, format) => call('export', { assetsDir, entry, dest, format }),
     importFile: (assetsDir, name, bytes) =>
-      invoke('audio_import_file', bytes, {
+      invoke('audio_import_file', new Uint8Array(bytes), {
         headers: { 'x-opennote-import': encodeURIComponent(JSON.stringify({ assetsDir, name })) },
       }) as Promise<{ entry: RecordingEntry; durationNs: number }>,
     meetingPoll: (enabled, neverFor, recording) => call('meeting_poll', { enabled, neverFor, recording }),

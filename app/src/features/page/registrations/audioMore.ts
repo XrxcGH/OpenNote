@@ -9,6 +9,7 @@ import type { CommandDef } from '../../../commands/types';
 import { commands, settingsSections } from '../../../registries';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
+import { shownPage as shownOpenPage } from '../history/shown';
 import { installDropWatch } from '../audio/drop';
 import { installMomentLinks } from '../audio/momentLinks';
 import { isRunning, recordingChoices, recordingUi } from '../audio/state';
@@ -132,6 +133,15 @@ blockRenderers.register({
   flag: 'transcripts.block',
   create: (block, ctx) =>
     lazyBlockView(block, ctx, () => import('../audio/transcripts/blockRenderer'), t('audioMore.transcript.heading')),
+});
+
+// A page with recordings or transcripts gets its transcripts, so a command can find them before a block draws.
+shownOpenPage.subscribe(() => {
+  const page = shownOpenPage.get();
+  const view = page?.initial.view as { recordings?: unknown; transcripts?: unknown } | null | undefined;
+  if (page && (view?.transcripts || view?.recordings)) {
+    void import('../audio/transcripts/store').then((module) => module.adoptTranscripts(page));
+  }
 });
 
 // The meeting prompt's watch starts only when the person has turned it on, so a PC that never does loads nothing.

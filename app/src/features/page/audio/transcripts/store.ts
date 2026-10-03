@@ -1,14 +1,21 @@
-// The transcripts of the shown page: finding a recording's transcript block, making one, and saving a change. A change
-// is a `patchBlock` step that carries the new data and the new readable copy, so search indexes what the transcript
-// says now, and one undo takes the change back.
-import type { BlockId, BlockJson } from '../../../../services/pages/types';
+// The transcripts of the shown page. The core can't edit the data of a block of a type it doesn't know, but it edits
+// and keeps the page's view, so a transcript is kept there, under `transcripts`, by the recording it belongs to. Its
+// block only says where it sits, as the recording's block does. The block's fallback text is the transcript as plain
+// text: it is what search indexes. A fallback can't change either, so a change that should reach search puts a new
+// block, with the new text, where the old one was.
+import { newId } from '../../../../editor/ids';
+import type { BlockId, BlockJson, Edit, NewBlock, OpenPage } from '../../../../services/pages/types';
 import { createStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
-import { insertExtBlock } from '../blocks';
 import { shownLayer } from '../../mount';
 import { shownQueue } from '../../sync/shown';
-import { markdownOf, TRANSCRIPT_TYPE } from './model';
+import { insertExtBlock } from '../blocks';
+import { markdownOf } from './model';
 import type { SpeakerWord, TranscriptData } from './model';
+import { TRANSCRIPT_TYPE } from './moment';
+
+/** The transcripts of the shown page, by recording. */
+export const transcripts = createStore<ReadonlyMap<string, TranscriptData>>(new Map(), 'transcripts');
 
 /** The lines the person ticked in a transcript, so the key and the button copy the same ones. */
 export const lineSelection = createStore<{ block: BlockId | null; ids: ReadonlySet<string>; includeSpeaker: boolean }>(
@@ -18,23 +25,60 @@ export const lineSelection = createStore<{ block: BlockId | null; ids: ReadonlyS
 
 export const speakerWord: SpeakerWord = (n) => t('audioMore.transcript.speaker', { n });
 
-/** Whether a value read from a block looks like a transcript. */
-function isTranscript(value: unknown): value is TranscriptData {
+/** Whether a value read from a page view looks like a transcript, with the members an older copy lacks filled in. */
+function normalize(value: unknown): TranscriptData | null {
   const data = value as Partial<TranscriptData> | null;
-  return (
-    !!data &&
-    typeof data.recording === 'string' &&
-    Array.isArray(data.lines) &&
-    typeof data.speakers === 'object' &&
-    data.speakers !== null
+  if (!data || typeof data.recording !== 'string' || !Array.isArray(data.lines)) return null;
+  // A name set to null was removed by a merge patch.
+  const names = Object.entries(data.speakers ?? {}).filter(
+    (entry): entry is [string, string] => typeof entry[1] === 'string',
+  );
+  return {
+    recording: data.recording,
+    language: data.language ?? null,
+    summary: data.summary ?? '',
+    lines: data.lines,
+    speakers: Object.fromEntries(names),
+    chapters: data.chapters ?? [],
+    source: data.source ?? 'imported',
+  };
+}
+
+/** The transcripts a page view holds. */
+export function transcriptsOf(view: unknown): TranscriptData[] {
+  const held = (view as { transcripts?: Record<string, unknown> } | null | undefined)?.transcripts;
+  return held && typeof held === 'object' ? Object.values(held).flatMap((value) => normalize(value) ?? []) : [];
+}
+
+let adopted: { page: string; stop: () => void } | null = null;
+
+/** Takes the page's transcripts, and follows its changes, such as an undo, until another page is adopted. */
+export function adoptTranscripts(page: OpenPage): void {
+  if (adopted?.page === page.id) return;
+  adopted?.stop();
+  transcripts.set(new Map(transcriptsOf(page.initial.view).map((data) => [data.recording, data])));
+  const stop = page.onFrame((frame) => {
+    const changed = transcriptsOf(frame.page?.view);
+    if (changed.length > 0) hold(changed);
+  });
+  adopted = { page: page.id, stop };
+}
+
+function hold(changed: readonly TranscriptData[]): void {
+  transcripts.set(
+    (held) => new Map([...held, ...changed.map((data): [string, TranscriptData] => [data.recording, data])]),
   );
 }
 
-/** The transcript a block holds, with the members an older copy lacks filled in. */
+export const transcriptData = (recording: string): TranscriptData | null => transcripts.get().get(recording) ?? null;
+
+export const recordingOf = (block: BlockJson): string | null =>
+  typeof block.data['recording'] === 'string' ? block.data['recording'] : null;
+
+/** The transcript a block stands for. */
 export function dataOf(block: BlockJson): TranscriptData | null {
-  const raw = block.data as unknown;
-  if (!isTranscript(raw)) return null;
-  return { ...raw, summary: raw.summary ?? '', chapters: raw.chapters ?? [], language: raw.language ?? null };
+  const recording = recordingOf(block);
+  return recording ? transcriptData(recording) : null;
 }
 
 /** The transcript blocks of the shown page. */
@@ -43,40 +87,73 @@ export const transcriptBlocks = (): BlockJson[] =>
 
 /** The block that holds a recording's transcript. */
 export const transcriptOf = (recording: string): BlockJson | null =>
-  transcriptBlocks().find((block) => dataOf(block)?.recording === recording) ?? null;
+  transcriptBlocks().find((block) => recordingOf(block) === recording) ?? null;
 
 const fallbackOf = (data: TranscriptData) => ({ markdown: markdownOf(data, speakerWord) });
 
-/** Adds a transcript block after the recording's block. */
-export function addTranscript(data: TranscriptData, after: BlockId): Promise<BlockId> {
-  return insertExtBlock(
-    { type: TRANSCRIPT_TYPE, data: data as unknown as Record<string, unknown>, fallback: fallbackOf(data) },
-    after,
-  );
-}
-
 /** Names that a speaker no longer has are sent as null, because a merge patch keeps what it isn't told to drop. */
-function patchOf(previous: TranscriptData, next: TranscriptData): Record<string, unknown> {
-  const gone = Object.fromEntries(Object.keys(previous.speakers).map((key) => [key, null]));
-  return { ...next, speakers: { ...gone, ...next.speakers } };
+function viewEdit(previous: TranscriptData | null, next: TranscriptData): Edit {
+  const gone = Object.fromEntries(Object.keys(previous?.speakers ?? {}).map((key) => [key, null]));
+  const value = { ...next, speakers: { ...gone, ...next.speakers } };
+  return { edit: 'setPage', view: { transcripts: { [next.recording]: value } } };
 }
 
-/** Saves a change to a transcript. */
-export async function saveTranscript(block: BlockId, previous: TranscriptData, next: TranscriptData): Promise<void> {
+/** Adds a transcript after the recording's block. */
+export async function addTranscript(data: TranscriptData, after: BlockId): Promise<BlockId> {
+  const spec = { type: TRANSCRIPT_TYPE, data: { recording: data.recording }, fallback: fallbackOf(data) };
+  const id = await insertExtBlock(spec, after, [viewEdit(null, data)]);
+  hold([data]);
+  return id;
+}
+
+/**
+ * Saves a change to a transcript. With `refresh`, the block is put again with the new text for search, which ends an
+ * edit in progress, so the changes of editing words wait until the person is done.
+ */
+export async function saveTranscript(
+  block: BlockId,
+  previous: TranscriptData,
+  next: TranscriptData,
+  refresh = true,
+): Promise<void> {
   const queue = shownQueue.get();
   const layer = shownLayer.get();
   if (!queue || !layer) throw new Error('No page is shown.');
-  const fallback = fallbackOf(next);
-  await queue.send({ edits: [{ edit: 'patchBlock', block, data: patchOf(previous, next), fallback }] });
-  const held = layer.block(block);
-  if (held) {
-    layer.upsert({
-      ...held,
-      data: next as unknown as BlockJson['data'],
-      fallback,
-      modified: new Date().toISOString(),
-    });
+  hold([next]);
+  const edits: Edit[] = [viewEdit(previous, next)];
+  const old = layer.block(block);
+  if (!refresh || !old) {
+    await queue.send({ edits });
+    return;
   }
+  const id = newId();
+  const fallback = fallbackOf(next);
+  const made = {
+    id,
+    type: TRANSCRIPT_TYPE,
+    data: { recording: next.recording },
+    fallback,
+    ...(old.frame ? { frame: old.frame } : {}),
+  };
+  const ack = await queue.send({
+    edits: [
+      { edit: 'insertBlock', block: made as unknown as NewBlock, before: block },
+      { edit: 'deleteBlocks', blocks: [block] },
+      ...edits,
+    ],
+  });
+  const now = new Date().toISOString();
+  layer.upsert({ ...made, order: ack.orderKeys[id] ?? old.order, created: now, modified: now } as unknown as BlockJson);
+  layer.remove(block);
+  const picked = lineSelection.get();
+  if (picked.block === block) lineSelection.set({ ...picked, block: id });
+}
+
+/** Puts the block again with the transcript's text as it is now, so search finds the words the person just edited. */
+export async function refreshText(block: BlockId): Promise<void> {
+  const held = shownLayer.get()?.block(block);
+  const data = held && dataOf(held);
+  if (data) await saveTranscript(block, data, data);
 }
 
 /** The names the person gave speakers before, newest first, for suggesting them in a later recording. */

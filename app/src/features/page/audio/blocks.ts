@@ -149,13 +149,13 @@ const recordingSpec = (entry: RecordingEntry): ExtSpec => ({
   fallback: fallbackFor(),
 });
 
-/** Adds a block of another type of ours, such as a transcript, after a block. Its content is the block's own data. */
-export async function insertExtBlock(spec: ExtSpec, after?: BlockId): Promise<BlockId> {
+/** Adds a block of another type of ours, such as a transcript, after a block, with other steps in the same change. */
+export async function insertExtBlock(spec: ExtSpec, after?: BlockId, also: Edit[] = []): Promise<BlockId> {
   const queue = shownQueue.get();
   if (!queue || !shownLayer.get()) throw new Error('No page is shown.');
   const id: BlockId = newId();
   const edit = insertEdit(id, spec, after);
-  showBlock(id, edit, await queue.send({ edits: [edit] }));
+  showBlock(id, edit, await queue.send({ edits: [edit, ...also] }));
   return id;
 }
 
