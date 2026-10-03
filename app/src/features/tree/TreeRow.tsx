@@ -6,6 +6,7 @@
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { PushPinIcon } from '@phosphor-icons/react/dist/csr/PushPin';
 import { memo, useId, useRef } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
 import type { NodeSummary } from '../../services/notes';
@@ -22,6 +23,8 @@ export interface TreeRowProps {
   readonly tree: TreeId;
   readonly row: Row;
   readonly selected: boolean;
+  /** Part of a selection of several rows. */
+  readonly multi?: boolean;
   /** The roving row, with tabindex 0. */
   readonly focused: boolean;
   readonly renaming: Renaming | null;
@@ -36,7 +39,8 @@ export interface TreeRowProps {
 /** "Section, color Fern", or "Subpage, Sep 28, 2026". */
 export function describeNode(node: NodeSummary): string {
   if (node.kind === 'page') {
-    return t('tree.describe.page', { level: String(node.pageLevel), date: formatDate(node.modified) });
+    const page = t('tree.describe.page', { level: String(node.pageLevel), date: formatDate(node.modified) });
+    return node.pinned ? `${page} ${t('qol.pin.describe')}` : page;
   }
   if (!node.color) return t('tree.describe.kind', { kind: node.kind });
   return t('tree.describe.colored', { kind: node.kind, color: t(`tree.colors.${node.color}`) });
@@ -70,7 +74,7 @@ function Twisty({ row, onToggle }: { row: Row; onToggle(row: Row): void }) {
 }
 
 function TreeRowView(props: TreeRowProps) {
-  const { tree, row, selected, focused, renaming, top } = props;
+  const { tree, row, selected, multi, focused, renaming, top } = props;
   const { node } = row;
   const id = useId();
   const element = useRef<HTMLDivElement>(null);
@@ -84,6 +88,8 @@ function TreeRowView(props: TreeRowProps) {
       data-kind={node.kind}
       data-node-id={node.id}
       data-windowed={top === undefined ? undefined : ''}
+      data-multi={multi ? '' : undefined}
+      data-archived={node.archived ? '' : undefined}
       style={style}
       aria-level={row.level}
       aria-posinset={row.posinset}
@@ -119,6 +125,7 @@ function TreeRowView(props: TreeRowProps) {
       <span id={`${id}-description`} hidden>
         {describeNode(node)}
       </span>
+      {node.pinned && !renaming && <PushPinIcon aria-hidden className={styles.pin} weight="fill" />}
       <span className={styles.more}>
         <IconButton
           label={t('tree.menu.more', { title })}

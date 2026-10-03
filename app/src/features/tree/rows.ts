@@ -27,10 +27,12 @@ function hasChildren(state: RowSource, node: NodeSummary): boolean {
 }
 
 /** Notebooks, section groups, and sections, with the open containers' children under them. */
-export function notebookRows(state: RowSource, expanded: ReadonlySet<string>): Row[] {
+export function notebookRows(state: RowSource, expanded: ReadonlySet<string>, showArchived = true): Row[] {
   const rows: Row[] = [];
   const walk = (parent: string, level: number, parentId: NodeId | null) => {
-    const ids = (state.children[parent] ?? []).filter((id) => state.nodes[id]);
+    const ids = (state.children[parent] ?? []).filter(
+      (id) => state.nodes[id] && (showArchived || !state.nodes[id].archived),
+    );
     ids.forEach((id, i) => {
       const node = state.nodes[id];
       const container = node.kind !== 'section';
@@ -52,10 +54,26 @@ export function notebookRows(state: RowSource, expanded: ReadonlySet<string>): R
   return rows;
 }
 
+/** The pages with archived ones left out, and their subpages with them, unless archived items are shown. */
+function visiblePages(pages: readonly NodeSummary[], showArchived: boolean): NodeSummary[] {
+  if (showArchived) return [...pages];
+  const kept: NodeSummary[] = [];
+  let skipBelow = Infinity;
+  for (const page of pages) {
+    if (page.pageLevel > skipBelow) continue;
+    skipBelow = page.archived ? page.pageLevel : Infinity;
+    if (!page.archived) kept.push(page);
+  }
+  return kept;
+}
+
 /** A section's pages. Each subpage's parent is the nearest page before it one level up. */
-export function pageRows(state: RowSource, sectionId: NodeId | null): Row[] {
+export function pageRows(state: RowSource, sectionId: NodeId | null, showArchived = true): Row[] {
   if (!sectionId) return [];
-  const pages = (state.children[sectionId] ?? []).map((id) => state.nodes[id]).filter(Boolean);
+  const pages = visiblePages(
+    (state.children[sectionId] ?? []).map((id) => state.nodes[id]).filter(Boolean),
+    showArchived,
+  );
   const parents: (NodeId | null)[] = [];
   const stack: NodeSummary[] = [];
   for (const page of pages) {
