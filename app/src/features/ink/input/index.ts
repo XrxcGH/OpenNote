@@ -4,20 +4,7 @@ export { normalizeSample, tiltFromAngles } from './samples';
 export type { PointerKind, RawSample } from './samples';
 export { createStrokeBuilder } from './strokeBuilder';
 export type { StrokeBuilder, StrokeBuilderOptions } from './strokeBuilder';
-export { createPalmFilter, DEFAULT_PALM_SETTINGS, MAX_GRACE_MS, MIN_GRACE_MS } from './palm';
-export type {
-  HeldFate,
-  HeldStroke,
-  PalmFilter,
-  PalmSettings,
-  PenSignal,
-  PenState,
-  Surface,
-  TouchContact,
-  TouchDecision,
-  TouchEnd,
-  TouchRole,
-} from './palm';
+export * from './palm/index';
 export {
   BARREL_CHOICES,
   buttonsForPen,

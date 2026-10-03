@@ -16,7 +16,7 @@ import { createSpatialIndex } from './geometry/spatialIndex';
 import { createStrokeIndex } from './geometry/strokeIndex';
 import type { StrokeIndex } from './geometry/strokeIndex';
 import type { Bounds, Stroke } from './geometry/types';
-import { createPalmFilter } from './input/palm';
+import { createPalmFilter } from './input/palm/index';
 import { detectScribble } from './input/gestures/scribble';
 import { createStrokeBuilder } from './input/strokeBuilder';
 import type { RawSample } from './input/samples';
@@ -253,11 +253,11 @@ describe('the pen path', () => {
 
   it('filters 2,000 touch and pen events under the budget', () => {
     const took = measure(() => {
-      const palm = createPalmFilter({ drawWithTouch: true });
+      const palm = createPalmFilter({ fingerDraw: 'on' });
       for (let i = 0; i < 500; i++) {
-        palm.pen(i % 3 ? 'hover' : 'leave', i * 8);
-        palm.touchDown({ id: i, time: i * 8 + 1, width: 14, height: 14, surface: 'page' });
-        palm.touchMove(i);
+        palm.pen(i % 3 ? 'hover' : 'leave', 1, i * 8, 400, 300, 20, 25);
+        palm.touchDown(i, i * 8 + 1, 600, 500, 14, 14, 0, 'page');
+        palm.touchMove(i, i * 8 + 2, 602, 500, 14, 14, 0);
         palm.touchEnd(i, i * 8 + 4, false);
       }
     });

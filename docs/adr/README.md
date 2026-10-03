@@ -58,3 +58,4 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0014](0014-notes-service-contract.md) | Define a narrow notes service contract between the shell and storage, with a shared test suite, and the changes that let Phase 3's format serve it | Proposed, to be accepted jointly by the Phase 2 and Phase 3 owners | 2026-09-30 |
 | [0015](0015-app-lifecycle.md) | Hold one process per profile, start in a fixed order before Tauri, and send every close through one exit handshake | Proposed | 2026-09-30 |
 | [0016](0016-phase-2-test-stack.md) | Test in layers: Vitest, Vitest browser mode, Playwright, and WebdriverIO with tauri-driver, on installed browsers | Proposed | 2026-09-30 |
+| [0027](0027-palm-rejection.md) | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices | Accepted | 2026-10-03 |
