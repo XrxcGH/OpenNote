@@ -30,6 +30,7 @@ import { pageViews } from './pageViews';
 import { smart } from './smart';
 import { search } from './search';
 import { audio } from './audio';
+import { audioMore } from './audioMore';
 import { interop } from './interop';
 import { intel } from './intel';
 
@@ -64,6 +65,7 @@ export const en = {
   smart,
   search,
   audio,
+  audioMore,
   interop,
   intel,
 } as const;
