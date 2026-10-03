@@ -9,7 +9,7 @@ import { t } from '../../../strings/t';
 import type { TableExtraHost } from '../../page';
 import { chartConfigFor, checkFormulaInput, formatValue, sortedIndices, toCanonical } from '../engine';
 import type { ChartKind, ColumnType, FilterOp, Locale, TotalKind } from '../engine';
-import type { ChartSmart, SmartData } from './data';
+import type { ChartSmart, SmartData, ViewSmart } from './data';
 import { withColumn } from './data';
 import { filledText } from './fill';
 import type { SmartModel } from './model';
@@ -281,4 +281,29 @@ export async function clearCalculated(inst: SmartInstance, column: number): Prom
   });
   if (done) inst.host.announce(t('smart.calculated.cleared', { column: model.names[column] }));
   return done;
+}
+
+/** Writes new text in one cell, by engine row and column, as one undo step. Used when a card moves. */
+export async function setCellText(inst: SmartInstance, row: number, column: number, text: string): Promise<boolean> {
+  const model = inst.model();
+  return inst.host.apply((data) => {
+    const id = data.columns[column]?.id;
+    const target = data.rows[row + model.offset];
+    if (!id || !target) return null;
+    const markdown =
+      text === ''
+        ? ''
+        : serializeCell(tableSchema.nodes.paragraph.create(null, tableSchema.text(text)), inst.host.cache);
+    if (target.cells[id]?.markdown === markdown) return null;
+    const rows = data.rows.map((one) =>
+      one === target ? { ...one, cells: { ...one.cells, [id]: { markdown } } } : one,
+    );
+    return { ...data, rows };
+  });
+}
+
+/** Chooses a view of the table, or with null goes back to the table alone. */
+export async function chooseView(inst: SmartInstance, view: ViewSmart | null): Promise<void> {
+  const { view: _old, ...rest } = inst.smart();
+  await inst.commit(view ? { ...rest, view } : rest);
 }

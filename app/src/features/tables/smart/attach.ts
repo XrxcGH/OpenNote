@@ -21,7 +21,7 @@ import { appLocale } from './locale';
 import { chartMenu, dataMenu, CHART_KINDS } from './menu';
 import type { SmartModel } from './model';
 import { buildModel } from './model';
-import { changeChart, filterBy, removeChart } from './ops';
+import { changeChart, chooseView, filterBy, removeChart, setCellText } from './ops';
 import { autoSummary, factsOf } from './ChartAccess';
 import type { Range, SmartInstance } from './ops';
 
@@ -185,6 +185,16 @@ class SmartTable implements SmartInstance, TableExtraHandle {
       chartMenu: (id, anchor) => void this.openChartMenu(id, anchor),
       removeChart: (id) => void removeChart(this, id),
       chartSummary: (id, text) => void changeChart(this, id, { summary: text ?? undefined }),
+      views: this.host.flag('tables.views')
+        ? {
+            model: shown,
+            locale: this.locale,
+            view: smart.view,
+            choose: (view) => void chooseView(this, view),
+            setCell: (row, column, text) => setCellText(this, row, column, text),
+            announce: (text) => this.host.announce(text),
+          }
+        : null,
     };
     this.root.render(createElement(Chrome, props));
   }

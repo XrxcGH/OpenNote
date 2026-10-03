@@ -8,6 +8,8 @@ import { t } from '../../../strings/t';
 import type { ChartKind, ChartSpec } from '../engine';
 import { ChartAccess } from './ChartAccess';
 import { drawChart } from './draw';
+import { Views } from './Views';
+import type { ViewsProps } from './Views';
 import styles from './smart.module.css';
 
 export interface ChartItem {
@@ -35,6 +37,8 @@ export interface ChromeProps {
   chartMenu(id: string, anchor: HTMLElement): void;
   removeChart(id: string): void;
   chartSummary(id: string, text: string | null): void;
+  /** Other views of the table, or null when they are off. */
+  views: ViewsProps | null;
 }
 
 const NOTE_KEYS = {
@@ -156,6 +160,7 @@ export function Chrome(props: ChromeProps) {
           </ul>
         ) : null}
       </div>
+      {props.views && (props.active || props.views.view) ? <Views {...props.views} /> : null}
       {props.charts.length > 0 ? (
         <div className={styles.charts}>
           {props.charts.map((item) => (
