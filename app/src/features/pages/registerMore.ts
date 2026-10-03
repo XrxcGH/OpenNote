@@ -217,3 +217,21 @@ command({
   run: (ctx) => import('./ui/imageCommands').then((m) => m.copyImage(ctx)),
 });
 menuItems('pages.export', 'pages.exportSelection', 'selection', ['pages.exportSelection', 'pages.copyImage']);
+
+// ---- Present the whole page with a laser pointer and ink that fades -------------------------------------------------------
+command({
+  id: 'pages.presentPage',
+  title: 'pagesPlus.commands.presentPage',
+  keywords: 'pagesPlus.commands.presentKeywords',
+  keys: [chord('Shift+F5')],
+  flag: 'pages.laser',
+  run: (ctx) => import('./ui/presentCommands').then((m) => m.presentWholePage(ctx)),
+});
+commandBar.register({
+  tab: 'view',
+  id: 'pages.bar.presentPage',
+  group: 'output',
+  command: 'pages.presentPage',
+  priority: 34,
+  flag: 'pages.laser',
+});

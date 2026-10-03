@@ -220,3 +220,40 @@
     background: var(--color-surface-page);
   }
 }
+
+@layer components {
+  .presentView {
+    position: relative;
+    overflow: auto;
+    min-block-size: 0;
+    display: grid;
+    align-items: start;
+    justify-items: center;
+  }
+
+  .presentSheet {
+    position: relative;
+    margin-block: auto;
+    background: var(--color-surface-page);
+  }
+
+  .presentPicture {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    user-select: none;
+  }
+
+  .presentMarks {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .presentMarks[data-tool='move'] {
+    pointer-events: none;
+  }
+}
