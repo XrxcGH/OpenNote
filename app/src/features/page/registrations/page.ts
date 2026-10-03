@@ -3,7 +3,7 @@
 // interface text size. Each command reaches the shown page through a light store, so start-up loads none of it.
 import { registerPageCommand } from '../keys';
 import type { MessageKey } from '../../../strings/t';
-import { shownPage } from '../viewport/shown';
+import { readingOrderOpen, shownPage } from '../viewport/shown';
 import type { ObjectCommandId } from '../viewport/shown';
 import { canFitPageWidth, canZoomPage, fitPageWidth, resetPageZoom, stepPageZoom } from '../zoom';
 
@@ -51,6 +51,16 @@ registerPageCommand({
     const page = shown();
     page?.setReading(!page.reading());
   },
+});
+
+registerPageCommand({
+  id: 'page.readingOrderPane',
+  title: 'page.commands.readingOrderPane',
+  keywords: 'page.commands.readingOrderPaneKeywords',
+  category: 'view',
+  flag: 'page.readingOrder',
+  enabled: () => shown() !== null,
+  run: () => readingOrderOpen.set((open) => !open),
 });
 
 const OBJECT_COMMANDS: readonly { id: ObjectCommandId; title: MessageKey; keywords: MessageKey }[] = [

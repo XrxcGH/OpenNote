@@ -206,7 +206,9 @@ class TextBlockView implements LazyBlockView {
     editor.destroy();
     this.editor = null;
     this.sync = null;
+    const name = this.editRoot.getAttribute('aria-label');
     restoreAttributes(this.editRoot, this.saved);
+    if (name) this.editRoot.setAttribute('aria-label', name);
     this.editRoot.style.minBlockSize = '';
     renderStatic(this.doc, this.editRoot);
   }

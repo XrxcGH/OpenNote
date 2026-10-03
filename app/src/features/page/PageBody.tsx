@@ -2,12 +2,18 @@
 // sync code stay out of the start-up bundle. They mount imperatively, so React never re-renders on a keystroke.
 
 import { useEffect, useRef, useState } from 'react';
+import { useFlag } from '../../app/flags';
 import { getSizeClass } from '../../state/layout';
+import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { mountPage } from './mount';
 import styles from './PageView.module.css';
 import { pagesClient, pageView } from './runtime';
+import type { MountedPage } from './mount';
+import paneStyles from './readingOrder/pane.module.css';
+import { ReadingOrderPane } from './readingOrder/ReadingOrderPane';
 import { takeTitleFocus, TitlePlaceholder } from './title/TitlePlaceholder';
+import { readingOrderOpen } from './viewport/shown';
 
 const LAYERS = { viewport: '', world: '', underlay: '' };
 
@@ -22,7 +28,10 @@ export default function PageBody({ pageId, title, changed }: PageBodyProps) {
   const host = useRef<HTMLDivElement>(null);
   const placeholder = useRef<HTMLHeadingElement | null>(null);
   const [failed, setFailed] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [mounted, setMounted] = useState<MountedPage | null>(null);
+  const paneWanted = useStore(readingOrderOpen, (open) => open);
+  const paneAllowed = useFlag('page.readingOrder');
+  const paneOpen = paneWanted && paneAllowed;
   useEffect(() => {
     let cancelled = false;
     let destroy: (() => Promise<void>) | null = null;
@@ -38,7 +47,7 @@ export default function PageBody({ pageId, title, changed }: PageBodyProps) {
         });
         destroy = mounted.destroy;
         if (takeTitleFocus(placeholder.current)) mounted.title?.heading.focus();
-        setReady(true);
+        setMounted(mounted);
       })
       .catch(() => !cancelled && setFailed(true));
     return () => {
@@ -51,8 +60,11 @@ export default function PageBody({ pageId, title, changed }: PageBodyProps) {
   return (
     <>
       {failed && <p role="alert">{t('page.openFailed')}</p>}
-      {!ready && !failed && <TitlePlaceholder ref={placeholder} title={title} changed={changed} />}
-      <div ref={host} className={styles.body} />
+      {!mounted && !failed && <TitlePlaceholder ref={placeholder} title={title} changed={changed} />}
+      <div className={paneStyles.row}>
+        <div ref={host} className={styles.body} />
+        {mounted && paneOpen && <ReadingOrderPane mounted={mounted} onClose={() => readingOrderOpen.set(false)} />}
+      </div>
     </>
   );
 }

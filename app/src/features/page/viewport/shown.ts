@@ -39,6 +39,9 @@ export type ObjectCommandId =
   | 'putInFlow'
   | 'sizeAndPosition';
 
+/** Whether the Reading order pane is open beside the shown page. */
+export const readingOrderOpen = createStore<boolean>(false, 'page reading order pane');
+
 /** The shown page's actions, set while a page is shown. */
 export const shownPage = createStore<PageActions | null>(null, 'page actions');
 

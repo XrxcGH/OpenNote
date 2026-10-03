@@ -6,6 +6,7 @@
 import type { BlockId, BlockJson, PageJson } from '../../../services/pages/types';
 import type { PagePool } from '../pool/pool';
 import { byOrder, readingOrder } from '../readingOrder/order';
+import { nameBlocks } from '../readingOrder/names';
 import { pinnedReorder } from '../readingOrder/pinned';
 import { rendererFor } from './renderers';
 import { isFloating, isLazy } from './textBlock';
@@ -161,6 +162,7 @@ class Layer implements PageBlockLayer {
     floating.sort((a, b) => byOrder(a.block, b.block));
     floating.forEach(({ view }, rank) => (view.element.style.zIndex = String(rank + 1)));
     for (const { block, view } of this.entries.values()) if (!isFloating(block)) view.element.style.zIndex = '';
+    nameBlocks(this.blocks(), (id) => this.view(id));
   }
 
   private unrendered(): LazyBlockView[] {
