@@ -9,6 +9,7 @@ import type { MarkdownCache } from '../../editor/markdown';
 import { META_REMOTE } from '../../editor/meta';
 import { beforeExit } from '../../registries';
 import type { AppliedFrame, BlockJson, OpenPage } from '../../services/pages/types';
+import { createStore } from '../../state/store';
 import { announce } from '../../ui';
 import { createBlockLayer } from './blocks/blockLayer';
 import { markDraft, syncOf } from './blocks/textBlock';
@@ -21,6 +22,9 @@ import { acceptRemoteText, createSyncQueue, shownQueue } from './sync';
 import type { FrameContext, SyncQueue } from './sync';
 import { createViewport, shownViewport } from './viewport/viewport';
 import type { PageViewportApi } from './viewport/viewport';
+
+/** The shown page's block layer, for commands that add or remove whole blocks, such as Insert table. */
+export const shownLayer = createStore<BlockLayer | null>(null, 'page block layer');
 
 export interface MountedPage {
   readonly page: OpenPage;
@@ -104,6 +108,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     shownViewport.set(viewport);
     shownQueue.set(sync);
     shownPool.set(pool);
+    shownLayer.set(layer);
     setGeometrySource((block) => layer.view(block)?.element ?? null);
   }
   const stopExit = beforeExit.register({
@@ -127,6 +132,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
       if (shown && shownQueue.get() === sync) {
         shownQueue.set(null);
         shownPool.set(null);
+        shownLayer.set(null);
         shownViewport.set(null);
         setGeometrySource(null);
       }
