@@ -144,3 +144,42 @@ export function selectArea(page: ExportPage, lasso: Lasso, options: SelectOption
     clip: mode === 'exact' ? lasso : null,
   };
 }
+
+/** The blocks and strokes a person has already picked, such as the page's lasso selection. */
+export interface Chosen {
+  readonly blocks: readonly string[];
+  readonly strokes: readonly string[];
+}
+
+/**
+ * The selection for items that are already chosen, which is what the lasso leaves behind. It is a smart selection: the
+ * bounds are the box around exactly those items, and nothing else that happens to lie in the box comes along.
+ */
+export function selectChosen(page: ExportPage, chosen: Chosen, options: SelectOptions = {}): Selection | null {
+  const wantedBlocks = new Set(chosen.blocks);
+  const wantedStrokes = new Set(chosen.strokes);
+  let content: Rect | null = null;
+  const blocks: string[] = [];
+  for (const block of page.blocks) {
+    if (block.type === 'ink' || !wantedBlocks.has(block.id)) continue;
+    const box = blockBox(block, options.boxes);
+    if (!box) continue;
+    blocks.push(block.id);
+    content = unionBox(content, box);
+  }
+  const strokes: string[] = [];
+  const shapes = [];
+  for (const stroke of page.strokes) {
+    if (!wantedStrokes.has(stroke.id)) continue;
+    const origin = inkOrigin(page, stroke.block, options.placements);
+    const shape = strokeShape(stroke, origin.x, origin.y);
+    if (!shape) continue;
+    strokes.push(stroke.id);
+    shapes.push(shape);
+  }
+  content = unionBox(content, inkExtent(shapes));
+  if (!content) return null;
+  const bounds = roundBox(content);
+  const crop = cropOf(bounds, options.padding ?? DEFAULT_PADDING, options.minSize ?? MIN_CROP);
+  return { mode: 'smart', blocks, strokes, bounds, crop, clip: null };
+}

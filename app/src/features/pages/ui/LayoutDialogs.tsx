@@ -15,6 +15,7 @@ import {
   writeLayoutFile,
 } from '../layout';
 import type { LayoutTemplate } from '../layout';
+import { fileSafe, pickTextFile, saveFile } from '../host/files';
 import { savedLayouts } from '../live/layoutStore';
 import styles from './pagesUi.module.css';
 
@@ -78,30 +79,11 @@ export interface TemplatesDialogProps {
 }
 
 async function shareFile(platform: Platform, layout: LayoutTemplate): Promise<void> {
-  const base = layout.name.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'layout';
-  const path = await platform.exports.pickSave({
-    suggested: `${base}${LAYOUT_EXTENSION}`,
+  await saveFile(platform, {
+    suggested: `${fileSafe(layout.name, 'layout')}${LAYOUT_EXTENSION}`,
     label: t('pagesPlus.layouts.templates.fileLabel'),
     extension: LAYOUT_EXTENSION.slice(1),
-  });
-  if (path === null) return;
-  await platform.exports.write(path, [{ path: '', bytes: new TextEncoder().encode(writeLayoutFile(layout)) }]);
-  showToast({ message: t('pagesPlus.layouts.templates.fileSaved', { name: path.split(/[\\/]/).pop() ?? base }) });
-}
-
-/** Asks the person for a layout file and reads its text. Resolves to null when none is chosen. */
-function pickFile(): Promise<string | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = `${LAYOUT_EXTENSION},application/json`;
-    input.addEventListener('change', () => {
-      const file = input.files?.[0];
-      if (file) file.text().then(resolve, () => resolve(null));
-      else resolve(null);
-    });
-    input.addEventListener('cancel', () => resolve(null));
-    input.click();
+    bytes: new TextEncoder().encode(writeLayoutFile(layout)),
   });
 }
 
@@ -123,7 +105,7 @@ export function TemplatesDialog(props: TemplatesDialogProps) {
     showToast({ message: t('pagesPlus.layouts.templates.saved', { name: clean }) });
   };
   const importFile = async () => {
-    const text = await pickFile();
+    const text = await pickTextFile(`${LAYOUT_EXTENSION},application/json`);
     if (text === null) return;
     const read = readLayoutFile(text);
     if (!read.ok) return setMessage(t(`pagesPlus.layouts.templates.${read.error}`));

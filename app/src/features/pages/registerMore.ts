@@ -5,7 +5,7 @@ import { chord, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
 import { commandBar, commands, contextMenus } from '../../registries';
 import type { MenuId } from '../../registries/types';
-import { shownMounted } from '../page';
+import { pageSelection, shownMounted } from '../page';
 import type { MessageKey } from '../../strings/t';
 import type { FlagId } from '../../app/flags';
 
@@ -165,4 +165,38 @@ commandBar.register({
   priority: 55,
   presentation: 'toggle',
   flag: 'pages.sheets',
+});
+
+// ---- The elements library: Save as element, and a library to browse, search, share, and insert from ----------------------
+command({
+  id: 'pages.elements.library',
+  title: 'pagesPlus.commands.elementsLibrary',
+  keywords: 'pagesPlus.commands.elementsKeywords',
+  flag: 'pages.elements',
+  when: () => true,
+  run: (ctx) => import('./ui/elementCommands').then((m) => m.openElementsLibrary(ctx)),
+});
+command({
+  id: 'pages.elements.save',
+  title: 'pagesPlus.commands.saveElement',
+  keywords: 'pagesPlus.commands.elementsKeywords',
+  flag: 'pages.elements',
+  enabled: () => pageSelection.get().blocks.length + pageSelection.get().strokes.length > 0,
+  run: (ctx) => import('./ui/elementCommands').then((m) => m.saveSelectionAsElement(ctx)),
+});
+commandBar.register({
+  tab: 'view',
+  id: 'pages.bar.elements',
+  group: 'output',
+  command: 'pages.elements.library',
+  priority: 33,
+  flag: 'pages.elements',
+});
+commandBar.register({
+  tab: 'view',
+  id: 'pages.bar.saveElement',
+  group: 'output',
+  command: 'pages.elements.save',
+  priority: 32,
+  flag: 'pages.elements',
 });
