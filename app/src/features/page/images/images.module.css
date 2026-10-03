@@ -1,0 +1,208 @@
+@layer components {
+  .image {
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    touch-action: none;
+  }
+
+  .image:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .frame {
+    position: relative;
+    max-inline-size: 100%;
+    overflow: clip;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+  }
+
+  .picture {
+    position: absolute;
+    max-inline-size: none;
+    user-select: none;
+    image-orientation: from-image;
+  }
+
+  .placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: var(--space-2);
+    border: 1px dashed var(--color-border-control);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .selected .frame {
+    outline: 2px solid var(--color-accent-clay);
+    outline-offset: 1px;
+  }
+
+  .handle {
+    position: absolute;
+    inline-size: var(--size-chrome-hit);
+    block-size: var(--size-chrome-hit);
+    margin: calc(var(--size-chrome-hit) / -2);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    touch-action: none;
+  }
+
+  .handle::after {
+    content: '';
+    position: absolute;
+    inset: calc(50% - 5px);
+    border: 2px solid var(--color-accent-clay);
+    border-radius: 2px;
+    background: var(--color-surface-page);
+  }
+
+  .handle:focus-visible::after {
+    outline: 2px solid var(--color-focus-ring);
+  }
+
+  .n,
+  .s {
+    left: 50%;
+    cursor: ns-resize;
+  }
+
+  .e,
+  .w {
+    top: 50%;
+    cursor: ew-resize;
+  }
+
+  .n,
+  .ne,
+  .nw {
+    top: 0;
+  }
+
+  .s,
+  .se,
+  .sw {
+    top: 100%;
+  }
+
+  .w,
+  .nw,
+  .sw {
+    left: 0;
+  }
+
+  .e,
+  .ne,
+  .se {
+    left: 100%;
+  }
+
+  .ne,
+  .sw {
+    cursor: nesw-resize;
+  }
+
+  .nw,
+  .se {
+    cursor: nwse-resize;
+  }
+
+  .badge {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-start: var(--space-1);
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+  }
+
+  .toolbar {
+    position: absolute;
+    inset-block-end: calc(100% + var(--space-2));
+    inset-inline-start: 0;
+    z-index: var(--layer-page-chrome);
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+    white-space: nowrap;
+  }
+
+  .toolbar button {
+    min-block-size: var(--size-chrome-hit);
+    padding: 0 var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-caption-size);
+  }
+
+  .toolbar button:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .toolbar button:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+  }
+
+  .cropping .frame {
+    overflow: visible;
+  }
+
+  .cropping .picture {
+    opacity: 0.35;
+  }
+
+  .cropWindow {
+    position: absolute;
+    overflow: clip;
+    outline: 2px solid var(--color-accent-clay);
+  }
+
+  .cropWindow .picture {
+    opacity: 1;
+  }
+
+  .progress {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+    z-index: var(--layer-page-chrome);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    box-shadow: var(--elevation-2);
+  }
+
+  .progress progress {
+    display: block;
+    inline-size: 160px;
+    accent-color: var(--color-accent-clay);
+  }
+
+  @media (forced-colors: active) {
+    .handle::after,
+    .cropWindow {
+      border-color: Highlight;
+      outline-color: Highlight;
+    }
+  }
+}

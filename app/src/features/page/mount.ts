@@ -28,6 +28,7 @@ import { installObjectKeys } from './objects/keys';
 import { Objects } from './objects/objects';
 import { createObjectsTool } from './objects/objectsTool';
 import type { PageLayout } from './layout/actions';
+import { attachPageMedia } from './images/attach';
 import { createEditorPool, shownPool } from './pool/pool';
 import type { PagePool } from './pool/pool';
 import { createSelectTool } from './pool/selectTool';
@@ -263,9 +264,10 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     }),
   ];
   pool.watch(viewport.viewport);
-  return {
+  const result: MountedPage = {
     ...mounted,
     async destroy() {
+      detachMedia();
       await sync.flushAll('pageSwitch').catch(() => undefined);
       // Long pages remember their blocks' heights, so the next open holds their places before they render.
       const heights = layer.heights();
@@ -278,4 +280,6 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
       await page.close().catch(() => undefined);
     },
   };
+  const detachMedia = attachPageMedia(result, container, options.shown !== false);
+  return result;
 }

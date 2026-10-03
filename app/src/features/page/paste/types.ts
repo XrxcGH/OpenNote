@@ -1,6 +1,7 @@
 // What the paste pipeline takes in and gives back. It is pure: the page feature reads the clipboard, resolves the
 // image requests through the import queue, and applies the pieces (Phase 4 design, section 15).
 import type { PastedPiece } from '../../../editor/markdown/paste';
+import type { ClipboardFacts } from '../../../platform/types';
 
 /** What the clipboard held, as far as the pipeline can tell (Phase 4 design, 15.3). */
 export type PasteSource = 'word' | 'onenote' | 'gdocs' | 'excel' | 'vscode' | 'web' | 'markdown' | 'plain';
@@ -12,11 +13,17 @@ export interface PasteInput {
   readonly text?: string | null;
   /** The page a browser copy came from (http or https), when the clipboard facts give one. */
   readonly sourceUrl?: string | null;
+  /** The clipboard facts, when their text hash matched this paste. */
+  readonly facts?: ClipboardFacts | null;
+  readonly files?: readonly File[];
+  readonly target?: 'text' | 'cell' | 'code' | 'page';
 }
 
 export interface PasteOptions {
   /** Makes IDs for table rows and columns. Defaults to ULIDs (SPEC 2.4). */
   readonly newId?: () => string;
+  /** Ctrl+Shift+V: the plain text, one paragraph for each line, with no Markdown parsing. */
+  readonly plain?: boolean;
 }
 
 export type { TableData } from '../../../editor/schema/specs';
@@ -34,7 +41,8 @@ export interface ImageRequest {
 }
 
 export interface PasteResult {
-  readonly source: PasteSource;
+  /** A built-in PasteSource, or the id of a source another phase registered. */
+  readonly source: PasteSource | (string & {});
   readonly pieces: readonly PastedPiece[];
   /** Every distinct image in the text pieces, in document order. */
   readonly images: readonly ImageRequest[];

@@ -2,6 +2,7 @@
 // and lists written as paragraphs that carry `mso-list: l0 level2`. This rebuilds real nested lists and turns
 // character styles into tags.
 import { removeAll, rename, textOf } from '../dom';
+import { mapColors } from './colors';
 import { dropFormattingAttributes, dropUnwanted, fixNestedLists, styleToTags } from './common';
 
 const LIST_STYLE = /mso-list\s*:\s*(?:l\d+\s+)?level(\d+)/i;
@@ -80,6 +81,7 @@ export function normalizeWord(body: HTMLElement): void {
   renameTitles(body);
   rebuildLists(body);
   fixNestedLists(body);
+  mapColors(body);
   styleToTags(body);
   dropFormattingAttributes(body);
 }

@@ -26,10 +26,11 @@ export function unwrap(element: Element): void {
 }
 
 /** Wraps the children of an element in a new element with the given tag. */
-export function wrapChildren(element: Element, tag: string): void {
+export function wrapChildren(element: Element, tag: string): Element {
   const wrapper = element.ownerDocument.createElement(tag);
   wrapper.append(...Array.from(element.childNodes));
   element.append(wrapper);
+  return wrapper;
 }
 
 /** Replaces an element by another with the given tag and the same children. */

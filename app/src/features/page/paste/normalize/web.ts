@@ -1,54 +1,13 @@
-// The smaller normalizers: OneNote, Google Docs, and web pages (Phase 4 design, 15.4). Each is a pure function from
-// an inert document body to the same body, tested against captured fixtures.
+// Web pages (Phase 4 ARCHITECTURE.md sections 15.3 and 15.4): structure stays, and fonts, colors, classes, page
+// chrome, hidden elements, and tracking pixels go. Relative links resolve against the source address.
 import { removeAll, rename, unwrap } from '../dom';
 import type { PasteInput } from '../types';
-import { breaksToNewlines, dropFormattingAttributes, dropUnwanted, fixNestedLists, styleToTags } from './common';
-
-/** OneNote writes a To Do tag as a small image whose description names it, and its state when it is checked. */
-function todoState(alt: string): boolean | null {
-  if (!/^\s*(?:to[\s-]?do|task|checkbox)\b/i.test(alt)) return null;
-  return /\b(?:checked|done|complete|completed|ticked)\b/i.test(alt);
-}
-
-function asTaskItem(image: HTMLImageElement, checked: boolean): void {
-  const host = image.closest('li, p, div');
-  image.remove();
-  if (!host) return;
-  if (host.tagName === 'LI') {
-    host.setAttribute('data-checked', String(checked));
-    return;
-  }
-  const list = host.ownerDocument.createElement('ul');
-  const item = host.ownerDocument.createElement('li');
-  item.setAttribute('data-checked', String(checked));
-  item.append(...Array.from(host.childNodes));
-  list.append(item);
-  host.replaceWith(list);
-}
-
-/** Outline `div`s need no flattening, because the schema reads them as plain containers. To Do tags become tasks. */
-export function normalizeOneNote(body: HTMLElement): void {
-  dropUnwanted(body);
-  body.querySelectorAll('img').forEach((image) => {
-    const state = todoState(image.getAttribute('alt') ?? '');
-    if (state !== null) asTaskItem(image, state);
-  });
-  fixNestedLists(body);
-  styleToTags(body);
-  dropFormattingAttributes(body);
-}
-
-/** Google Docs wraps the whole paste in `<b id="docs-internal-guid-...">` and puts formatting in inline styles. */
-export function normalizeGoogleDocs(body: HTMLElement): void {
-  dropUnwanted(body);
-  body.querySelectorAll('[id^="docs-internal-guid-"]').forEach(unwrap);
-  removeAll(body, 'br.Apple-interchange-newline');
-  fixNestedLists(body);
-  styleToTags(body);
-  dropFormattingAttributes(body);
-}
+import { breaksToNewlines, dropUnwanted, fixNestedLists } from './common';
 
 const WEB_CHROME = 'nav, footer, aside, form, button, select, input, textarea, svg, canvas, video, audio, dialog';
+/** Wiki and article furniture that a selection picks up: edit links, citation marks, and print-only notes. */
+const WEB_NOISE =
+  '.mw-editsection, sup.reference, .noprint, [role="navigation"], [role="banner"], [role="contentinfo"]';
 const HIDDEN = '[hidden], [aria-hidden="true"]';
 const HIDDEN_STYLE = /display\s*:\s*none|visibility\s*:\s*hidden/i;
 
@@ -107,6 +66,7 @@ export function normalizeWeb(body: HTMLElement, input: PasteInput): void {
   dropPageHeaders(body);
   markTaskBoxes(body);
   removeAll(body, WEB_CHROME);
+  removeAll(body, WEB_NOISE);
   removeAll(body, HIDDEN);
   body.querySelectorAll('mark').forEach(unwrap);
   body.querySelectorAll('[style]').forEach((element) => {

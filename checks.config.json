@@ -4,6 +4,7 @@
     "app/dist/**",
     "app/src-tauri/gen/**",
     "app/src/features/page/paste/fixtures/**",
+    "tests/fixtures/clipboard/**",
     "app/src/platform/bindings/*.ts",
     "app/src/theme/tokens.css",
     "app/src/theme/tokens.ts",

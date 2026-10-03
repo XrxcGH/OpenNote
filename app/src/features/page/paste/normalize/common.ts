@@ -1,5 +1,6 @@
 // Steps that more than one source shares. Word, OneNote, and Google Docs carry formatting in `style` attributes. The
-// schema reads tags only, so those styles become tags here. Fonts, sizes, and colors are dropped (design, 15.3).
+// schema reads tags only, so those styles become tags here. Fonts and sizes are dropped; colors.ts maps colors
+// (design, 15.3).
 import { removeAll, removeComments, wrapChildren } from '../dom';
 
 const UNWANTED = 'script, style, meta, link, title, template, noscript, iframe, object, embed, xml, head';
@@ -24,12 +25,11 @@ const STYLE_RULES: readonly StyleRule[] = [
   { tag: 's', test: /text-decoration(?:-line)?\s*:[^;]*line-through/i, already: 's, del, strike' },
   { tag: 'sub', test: /vertical-align\s*:\s*sub\b/i, already: 'sub' },
   { tag: 'sup', test: /vertical-align\s*:\s*super\b/i, already: 'sup' },
-  { tag: 'mark', test: /mso-highlight\s*:\s*(?!none)/i, already: 'mark' },
 ];
 
 /**
- * Turns the formatting in `style` attributes into tags: bold, italic, underline, strike, subscript, superscript, and
- * Word's highlight. A link keeps its own look, so an underline on a link is not turned into a mark.
+ * Turns the formatting in `style` attributes into tags: bold, italic, underline, strike, subscript, and superscript.
+ * A link keeps its own look, so an underline on a link is not turned into a mark.
  */
 export function styleToTags(root: HTMLElement): void {
   root.querySelectorAll<HTMLElement>('[style]').forEach((element) => {

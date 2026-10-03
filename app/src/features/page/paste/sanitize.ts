@@ -5,20 +5,19 @@ import { DOMParser as PMDOMParser, Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { newId as makeId } from '../../../editor/ids';
 import { textSchema } from '../../../editor/schema/schema';
-import { classifyHtml } from './classify';
+import type { PasteInput as RegistryInput } from '../registries';
 import { parseHtml } from './dom';
 import { collectImageRequests, dropUnknownImages } from './images';
-import { dropFormattingAttributes, dropUnwanted } from './normalize/common';
-import { normalizeGoogleDocs, normalizeOneNote, normalizeWeb } from './normalize/sources';
-import { normalizeWord } from './normalize/word';
+import { codePieces, codeText } from './normalize/vscode';
 import { joinBrokenLines } from './pdf';
+import { detectSource } from './sources';
 import { looksLikeMarkdown, parsePastedMarkdown, plainTextPieces } from '../../../editor/markdown/paste';
 import { extractTables, tableMarker } from './tables';
 import { tidyDoc } from './tidy';
 import { MAX_HTML_LENGTH } from './types';
-import type { ImageRequest, PasteInput, PasteOptions, PasteResult, PasteSource, PastedPiece, TableData } from './types';
+import type { ImageRequest, PasteInput, PasteOptions, PasteResult, PastedPiece, TableData } from './types';
 
-const { nodes, marks } = textSchema;
+const { nodes } = textSchema;
 
 /** Splits a parsed document at the marker paragraphs that stand for tables. */
 function splitPieces(doc: PMNode, tables: readonly TableData[]): PastedPiece[] {
@@ -41,30 +40,19 @@ function splitPieces(doc: PMNode, tables: readonly TableData[]): PastedPiece[] {
   return pieces;
 }
 
-function normalizeBody(source: PasteSource, body: HTMLElement, input: PasteInput): void {
-  switch (source) {
-    case 'word':
-      return normalizeWord(body);
-    case 'onenote':
-      return normalizeOneNote(body);
-    case 'gdocs':
-      return normalizeGoogleDocs(body);
-    case 'excel':
-      dropUnwanted(body);
-      return dropFormattingAttributes(body);
-    default:
-      return normalizeWeb(body, input);
-  }
-}
-
-/** Code from an editor: several lines make a code block, and one line is inline code. */
-function codePieces(text: string): PastedPiece[] {
-  const source = text.replace(/\r\n?/g, '\n').replace(/\n+$/, '');
-  if (source.trim() === '') return [];
-  const block = source.includes('\n')
-    ? nodes.codeBlock.create(null, textSchema.text(source))
-    : nodes.paragraph.create(null, textSchema.text(source, [marks.code.create()]));
-  return [{ kind: 'text', doc: nodes.doc.create(null, block) }];
+/** The input as the paste source registry reads it. A source address given on its own joins the facts. */
+export function registryInput(input: PasteInput): RegistryInput {
+  const base = input.facts ?? null;
+  const sourceUrl = input.sourceUrl ?? base?.sourceUrl ?? null;
+  const facts =
+    base || sourceUrl ? { sequence: 0, textSha256: null, hasOneNote: false, wordImages: [], ...base, sourceUrl } : null;
+  return {
+    html: input.html ?? null,
+    text: input.text ?? null,
+    files: input.files ?? [],
+    facts,
+    target: input.target ?? 'text',
+  };
 }
 
 function imagesOf(pieces: readonly PastedPiece[]): ImageRequest[] {
@@ -76,13 +64,16 @@ function imagesOf(pieces: readonly PastedPiece[]): ImageRequest[] {
 }
 
 function fromHtml(html: string, input: PasteInput, newId: () => string): PasteResult | null {
-  const source = classifyHtml(html);
-  const body = parseHtml(html).body;
+  const doc = parseHtml(html);
+  const body = doc.body;
+  const forRegistry = { ...registryInput(input), html };
+  const def = detectSource(forRegistry, doc);
+  const source = def?.id ?? 'web';
   if (source === 'vscode') {
-    const pieces = codePieces(input.text ?? body.textContent ?? '');
+    const pieces = codePieces(input.text ?? codeText(body));
     return pieces.length === 0 ? null : { source, pieces, images: [], plainFallback: false, joinedText: null };
   }
-  normalizeBody(source, body, input);
+  def?.normalize(doc, forRegistry);
   dropUnknownImages(body);
   const tables = extractTables(body, newId);
   const pieces = splitPieces(PMDOMParser.fromSchema(textSchema).parse(body), tables);
@@ -104,6 +95,15 @@ function fromText(text: string, newId: () => string, plainFallback: boolean): Pa
  */
 export function sanitizePaste(input: PasteInput, options: PasteOptions = {}): PasteResult {
   const newId = options.newId ?? (() => makeId());
+  if (options.plain) {
+    return {
+      source: 'plain',
+      pieces: plainTextPieces(input.text ?? ''),
+      images: [],
+      plainFallback: false,
+      joinedText: null,
+    };
+  }
   const html = input.html?.trim() ? input.html : null;
   const tooLarge = html !== null && html.length > MAX_HTML_LENGTH;
   if (html !== null && !tooLarge) {
