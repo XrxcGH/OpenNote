@@ -15,6 +15,7 @@ import { slotsForTool } from '../pens/palette';
 import { selectionFrame } from '../selection/lassoItems';
 import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
+import { anchorSelection, detachSelection } from './anchoring';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
 import { startReplay } from './replay';
 import { followersForMatrix } from './shapeEdit';
@@ -128,6 +129,12 @@ class FrameView implements SelectionFrame {
               'spacing',
               () => void tidySelection(host, surface, { kind: 'evenSpacing' }),
             ],
+          ] as [MessageKey, string, () => void][])
+        : []),
+      ...(isEnabled('ink.anchoring')
+        ? ([
+            ['ink.anchor.anchor', 'anchor', () => void anchorSelection(host, surface)],
+            ['ink.anchor.detach', 'detach', () => void detachSelection(host, surface)],
           ] as [MessageKey, string, () => void][])
         : []),
       ...(isEnabled('ink.replay')

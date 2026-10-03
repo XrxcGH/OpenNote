@@ -4,6 +4,8 @@ import type { InkStroke } from '../model/types';
 import { createGridWatch } from './gridTable';
 import { createWritingPen } from './handwriting';
 import type { InkHost } from './host';
+import { anchorStrokes, autoAnchor } from './anchoring';
+import type { Anchored } from './anchoring';
 import { penEdit } from './penEditing';
 import type { DrawTool } from './state';
 import type { InkSurface } from './surface';
@@ -15,6 +17,10 @@ export function createStrokeHooks(host: InkHost, surfaceOf: () => InkSurface | n
     /** Before the stroke is added: true when it edited typed text, so it is not added as ink. */
     before(stroke: InkStroke, surface: InkSurface): Promise<boolean> {
       return penEdit(host, surface, stroke);
+    },
+    /** Ink drawn on typed text goes into an anchored block, so it follows the words. Null when it is not on text. */
+    anchor(strokes: readonly InkStroke[], surface: InkSurface): Anchored | null {
+      return autoAnchor() && !surface.readOnly ? anchorStrokes(host, surface, strokes) : null;
     },
     /** After the strokes were added. */
     after(strokes: readonly InkStroke[], tool: DrawTool): void {

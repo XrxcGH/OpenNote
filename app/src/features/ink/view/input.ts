@@ -465,9 +465,10 @@ async function finish(
         ];
       }
     }
-    const pending = surface.add(strokes);
+    const anchored = hooks.anchor(strokes, surface);
+    const pending = anchored ? surface.add(anchored.strokes, anchored.edits) : surface.add(strokes);
     surface.clearLive();
-    if (await pending) hooks.after(strokes, drawState.get().tool);
+    if (await pending) hooks.after(anchored?.strokes ?? strokes, drawState.get().tool);
     return;
   }
   surface.clearLive();

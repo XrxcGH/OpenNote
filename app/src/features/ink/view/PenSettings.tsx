@@ -222,6 +222,7 @@ export default function PenSettings() {
   const gestures = useFlag('ink.gestures');
   const hover = useFlag('ink.hover');
   const zoomBox = useFlag('ink.zoomBox');
+  const anchoring = useFlag('ink.anchoring');
   const hovering = useStore(inkPrefs, (state) => state.hover);
   return (
     <section aria-labelledby="ink-settings">
@@ -246,6 +247,13 @@ export default function PenSettings() {
       </RadioGroup>
       <p>{t('ink.settings.fingerDrawHint')}</p>
       {gestures && <Gestures />}
+      {anchoring && (
+        <Switch
+          label={t('ink.anchor.auto')}
+          checked={ink.anchorToText}
+          onChange={(anchorToText) => void updateSettings({ ink: { anchorToText } })}
+        />
+      )}
       {hover && (
         <Switch label={t('ink.settings.hover')} checked={hovering} onChange={(on) => setPrefs({ hover: on })} />
       )}

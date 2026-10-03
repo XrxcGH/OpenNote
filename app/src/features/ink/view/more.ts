@@ -5,6 +5,7 @@ import type { Chord, CommandDef } from '../../../commands/types';
 import type { MessageKey } from '../../../strings/t';
 import { commandBar, commands } from '../../../registries';
 import { toggleCanvasLock, installCanvasLock } from './canvasLock';
+import { anchorSelection, detachSelection, installAnchoring } from './anchoring';
 import { describeDrawing } from './describe';
 import { convertSelection, tidySelection } from './handwriting';
 import { EDIT_GESTURES } from './penEditing';
@@ -91,6 +92,7 @@ export function installMore(context: MoreContext): () => void {
     installShapeHandles(host, surfaces),
     installReplay(host, surfaces),
     installZoomBox(host, surfaces),
+    installAnchoring(host, surfaces),
   ];
   const defs: CommandDef[] = [
     {
@@ -222,6 +224,39 @@ export function installMore(context: MoreContext): () => void {
       flag: 'ink.zoomBox',
       checked: () => inkPrefs.get().zoomBox,
       run: toggleZoomBox,
+    },
+    {
+      id: 'ink.anchor',
+      title: 'ink.anchor.anchor',
+      keywords: 'ink.anchor.keywords',
+      category: 'editing',
+      flag: 'ink.anchoring',
+      when: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void anchorSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.detach',
+      title: 'ink.anchor.detach',
+      keywords: 'ink.anchor.keywords',
+      category: 'editing',
+      flag: 'ink.anchoring',
+      when: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void detachSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.anchorToText',
+      title: 'ink.anchor.auto',
+      keywords: 'ink.anchor.keywords',
+      category: 'editing',
+      flag: 'ink.anchoring',
+      checked: () => getSettings().ink.anchorToText,
+      run: () => void updateSettings({ ink: { anchorToText: !getSettings().ink.anchorToText } }),
     },
     gestureCommand('scribbleErase'),
     gestureCommand('circleSelect'),

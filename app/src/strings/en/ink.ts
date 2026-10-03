@@ -68,6 +68,16 @@ export const ink = {
     notSaved: "That ink wasn't saved. Try again.",
   },
   ask: { cancel: 'Cancel' },
+  anchor: {
+    anchor: 'Anchor to text',
+    detach: 'Detach from text',
+    auto: 'Ink drawn on text follows the words',
+    keywords: 'anchor ink text follow words underline circle margin note attach detach',
+    anchored: 'Ink anchored to the words under it',
+    detached: 'Ink detached from the text',
+    notOnText: 'That ink is not on any typed text.',
+    noneToDetach: 'None of the selected ink is anchored to text.',
+  },
   zoomBox: {
     title: 'Zoom writing box',
     keywords: 'zoom writing box strip magnified write large small handwriting',
