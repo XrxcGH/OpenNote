@@ -314,6 +314,24 @@ export class InkSurface {
     });
   }
 
+  /** Moves each stroke by its own matrix, as one step: tidying handwriting moves every word a little differently. */
+  transformEach(moves: readonly { id: string; matrix: Matrix }[]): Promise<boolean> {
+    const before = this.strokes(moves.map((move) => move.id));
+    const matrixOf = new Map(moves.map((move) => [move.id, move.matrix]));
+    this.show(
+      before.map((stroke) => ({
+        ...stroke,
+        transform: compose(matrixOf.get(stroke.id) ?? IDENTITY_M, stroke.transform ?? IDENTITY_M),
+      })),
+    );
+    const edits: Edit[] = moves.map((move) => ({
+      edit: 'transformStrokes',
+      strokes: [move.id],
+      matrix: [...move.matrix] as StrokeMatrix,
+    }));
+    return this.send({ edits }, () => this.show(before));
+  }
+
   /** Swaps strokes for others in one step: a reshaped shape, or the connectors that follow a shape. */
   replace(follow: Follow): Promise<boolean> {
     const swapped = this.swap(follow);

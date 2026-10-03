@@ -75,7 +75,7 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
   const state = useStore(drawState, (s) => s);
   const slots = useSettings((settings) => settings.ink.pens);
   const active = activeSlot(state);
-  const onPen = state.tool === 'pen';
+  const onPen = state.tool === 'pen' || state.tool === 'writing';
 
   const chooseColor = async (anchor: HTMLElement) => {
     if (!active) return;

@@ -32,6 +32,8 @@ import { applyHold, holdFor } from '../snap';
 import type { Hold } from '../snap';
 import { showProtractorAngle, snapToolsNow } from './snapTools';
 import type { LassoGesture } from './lasso';
+import { createStrokeHooks, setStrokeHooks } from './strokeHooks';
+import type { StrokeHooks } from './strokeHooks';
 import { createGestures } from './gestures';
 import type { Gestures } from './gestures';
 import { buttonsOf, inkPrefs, notePen, penDevice, penKeyOf } from './prefs';
@@ -179,6 +181,8 @@ export function createPenTool(
 } {
   let gesture: InkGesture | null = null;
   const gestures: Gestures = createGestures(host);
+  const hooks: StrokeHooks = createStrokeHooks(host, surfaceOf);
+  setStrokeHooks(hooks);
   let lastEnd = 0;
   let lastAction: PenAction | null = null;
   const target = () => host.viewport.get()?.viewport ?? null;
@@ -232,7 +236,7 @@ export function createPenTool(
     g.release();
     if (!surface) return;
     surface.setPenDown(false);
-    if (commit) void finish(g, surface, host, gestures);
+    if (commit) void finish(g, surface, host, gestures, hooks);
     else cancel(g, surface);
   };
 
@@ -296,6 +300,8 @@ export function createPenTool(
     destroy() {
       end(false);
       gestures.destroy();
+      hooks.destroy();
+      setStrokeHooks(null);
       document.removeEventListener('contextmenu', onContextMenu, { capture: true });
     },
   };
@@ -446,7 +452,13 @@ function asShape(stroke: InkStroke, match: ShapeMatch): InkStroke {
   return { ...stroke, points: match.points.map((p) => ({ x: p.x, y: p.y })) };
 }
 
-async function finish(g: InkGesture, surface: InkSurface, host: InkHost, gestures: Gestures): Promise<void> {
+async function finish(
+  g: InkGesture,
+  surface: InkSurface,
+  host: InkHost,
+  gestures: Gestures,
+  hooks: StrokeHooks,
+): Promise<void> {
   if (g.builder) {
     let strokes = g.builder.finish();
     const taken = await gestures.ended(
@@ -454,6 +466,10 @@ async function finish(g: InkGesture, surface: InkSurface, host: InkHost, gesture
       surface,
     );
     if (taken) return;
+    if (strokes.length === 1 && (await hooks.before(strokes[0], surface))) {
+      surface.clearLive();
+      return;
+    }
     const shapes = getSettings().ink.shapes;
     const held = g.hold?.shape ?? null;
     if (strokes.length === 1 && isEnabled('ink.shapes')) {
@@ -476,7 +492,7 @@ async function finish(g: InkGesture, surface: InkSurface, host: InkHost, gesture
     }
     const pending = surface.add(strokes);
     surface.clearLive();
-    await pending;
+    if (await pending) hooks.after(strokes, drawState.get().tool);
     return;
   }
   surface.clearLive();

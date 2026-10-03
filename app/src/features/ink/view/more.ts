@@ -6,6 +6,11 @@ import type { MessageKey } from '../../../strings/t';
 import { commandBar, commands } from '../../../registries';
 import { toggleCanvasLock, installCanvasLock } from './canvasLock';
 import { describeDrawing } from './describe';
+import { convertSelection, tidySelection } from './handwriting';
+import { EDIT_GESTURES } from './penEditing';
+import type { EditGesture } from './penEditing';
+import { chooseTool, drawState } from './state';
+import { strokeHooks } from './strokeHooks';
 import { getSettings, updateSettings } from '../../../state/settings';
 import { DrawOptions } from './DrawOptions';
 import { DrawSnap } from './DrawSnap';
@@ -43,6 +48,24 @@ const gestureCommand = (key: GestureKey): CommandDef => ({
   flag: 'ink.gestures',
   checked: () => getSettings().ink.gestures[key],
   run: () => void updateSettings({ ink: { gestures: { [key]: !getSettings().ink.gestures[key] } } }),
+});
+
+const EDIT_TITLES: Record<EditGesture, MessageKey> = {
+  strike: 'ink.penEdit.strikeThrough',
+  space: 'ink.penEdit.addSpace',
+  split: 'ink.penEdit.splitParagraph',
+  circle: 'ink.penEdit.circleSelect',
+};
+
+/** Each pen edit of typed text has its own switch in the command list. */
+const penEditCommand = (which: EditGesture): CommandDef => ({
+  id: `ink.penEdit.${which}`,
+  title: EDIT_TITLES[which],
+  keywords: 'ink.penEdit.keywords',
+  category: 'editing',
+  flag: 'ink.penEditing',
+  checked: () => inkPrefs.get().penEdit[which],
+  run: () => setPrefs({ penEdit: { ...inkPrefs.get().penEdit, [which]: !inkPrefs.get().penEdit[which] } }),
 });
 
 /** The ruler, the protractor, and the grid are switches, so each is a command with a checked state. */
@@ -132,6 +155,60 @@ export function installMore(context: MoreContext): () => void {
       run: () => {
         const current = surface();
         if (current) startReplay(host, current);
+      },
+    },
+    ...EDIT_GESTURES.map(penEditCommand),
+    {
+      id: 'ink.writing',
+      title: 'ink.tools.writing',
+      keywords: 'ink.handwriting.writingKeywords',
+      category: 'editing',
+      flag: 'ink.handwriting',
+      checked: () => drawState.get().tool === 'writing',
+      run: () => chooseTool('writing'),
+    },
+    {
+      id: 'ink.writing.showInk',
+      title: 'ink.handwriting.showInk',
+      keywords: 'ink.handwriting.writingKeywords',
+      category: 'editing',
+      flag: 'ink.handwriting',
+      run: () => strokeHooks()?.toggleWrittenInk(),
+    },
+    {
+      id: 'ink.handwriting.convert',
+      title: 'ink.handwriting.convert',
+      keywords: 'ink.handwriting.convertKeywords',
+      category: 'editing',
+      flag: 'ink.handwriting',
+      when: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void convertSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.handwriting.straighten',
+      title: 'ink.handwriting.straighten',
+      keywords: 'ink.handwriting.tidyKeywords',
+      category: 'editing',
+      flag: 'ink.handwriting',
+      when: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void tidySelection(host, current, { kind: 'straighten' });
+      },
+    },
+    {
+      id: 'ink.handwriting.evenSpacing',
+      title: 'ink.handwriting.evenSpacing',
+      keywords: 'ink.handwriting.tidyKeywords',
+      category: 'editing',
+      flag: 'ink.handwriting',
+      when: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void tidySelection(host, current, { kind: 'evenSpacing' });
       },
     },
     gestureCommand('scribbleErase'),

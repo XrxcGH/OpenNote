@@ -120,4 +120,21 @@
     background: var(--color-surface-app);
     white-space: nowrap;
   }
+
+  /* The handle on the right side of the lasso's frame: drag it to rewrap handwriting to a new width. */
+  :global(.ink-selection-frame) [data-ink-side] {
+    position: absolute;
+    inset-block-start: calc(50% - var(--space-5) / 2);
+    inset-inline-end: calc(var(--space-5) / -2);
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    border: 1px solid var(--color-accent-primary);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    cursor: ew-resize;
+  }
+
+  :global(.ink-selection-frame) [data-ink-side]:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  }
 }

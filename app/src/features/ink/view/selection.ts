@@ -15,6 +15,7 @@ import { slotsForTool } from '../pens/palette';
 import { selectionFrame } from '../selection/lassoItems';
 import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
+import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
 import { startReplay } from './replay';
 import { followersForMatrix } from './shapeEdit';
 import { labelsIn } from './shapeLibrary';
@@ -35,6 +36,9 @@ const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
 };
 
 interface Drag {
+  /** Dragging the right side handle, which rewraps handwriting to a new width. */
+  side?: boolean;
+  width?: number;
   pointerId: number;
   start: { x: number; y: number };
   corner: Corner | null;
@@ -97,6 +101,7 @@ class FrameView implements SelectionFrame {
   private readonly frame: HTMLDivElement;
   private readonly mover: HTMLButtonElement;
   private readonly bar: HTMLDivElement;
+  private side: HTMLButtonElement | null = null;
   private readonly stops: (() => void)[];
   private drag: Drag | null = null;
   private had = 0;
@@ -110,12 +115,33 @@ class FrameView implements SelectionFrame {
       ['ink.selection.recolor', 'recolor', () => void this.recolorMenu()],
       ['ink.selection.thicker', 'thicker', () => void this.widths(THICKER)],
       ['ink.selection.thinner', 'thinner', () => void this.widths(THINNER)],
+      ...(handwritingAvailable(host)
+        ? ([
+            ['ink.handwriting.convert', 'convert', () => void convertSelection(host, surface)],
+            [
+              'ink.handwriting.straighten',
+              'straighten',
+              () => void tidySelection(host, surface, { kind: 'straighten' }),
+            ],
+            [
+              'ink.handwriting.evenSpacing',
+              'spacing',
+              () => void tidySelection(host, surface, { kind: 'evenSpacing' }),
+            ],
+          ] as [MessageKey, string, () => void][])
+        : []),
       ...(isEnabled('ink.replay')
         ? ([['ink.replay.title', 'replay', () => startReplay(host, surface)]] as [MessageKey, string, () => void][])
         : []),
     ]);
     ({ frame: this.frame, mover: this.mover, bar: this.bar } = parts);
     this.frame.addEventListener('keydown', this.onKey);
+    this.frame.addEventListener('contextmenu', this.onContext);
+    if (handwritingAvailable(host)) {
+      this.side = button(surface.chrome.ownerDocument, t('ink.handwriting.reflowHandle'));
+      this.side.dataset.inkSide = '';
+      this.frame.append(this.side);
+    }
     surface.chrome.append(this.frame);
     this.stops = [host.selection.subscribe(() => this.selectionChanged()), surface.onChange(() => this.place())];
     this.place();
@@ -124,16 +150,22 @@ class FrameView implements SelectionFrame {
   down(event: PointerEvent): void {
     const target = event.target as HTMLElement;
     const box = this.box();
-    if (!box || event.button !== 0 || !(target === this.mover || target.dataset.inkCorner)) return;
+    const side = target === this.side && this.side !== null;
+    if (!box || event.button !== 0 || !(target === this.mover || target.dataset.inkCorner || side)) return;
     const start = this.host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? { x: 0, y: 0 };
     const corner = (target.dataset.inkCorner as Corner | undefined) ?? null;
-    this.drag = { pointerId: event.pointerId, start, corner, box, matrix: IDENTITY };
+    this.drag = { pointerId: event.pointerId, start, corner, box, matrix: IDENTITY, side };
   }
 
   move(event: PointerEvent): void {
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointerId) return;
     const at = this.host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? drag.start;
+    if (drag.side) {
+      drag.width = Math.max(MIN_SIZE, at.x - drag.box.minX);
+      this.frame.style.width = `${drag.width * this.surface.cameraNow().zoom + 8}px`;
+      return;
+    }
     drag.matrix = drag.corner
       ? resizeMatrix(drag.box, drag.corner, at)
       : translation(at.x - drag.start.x, at.y - drag.start.y);
@@ -144,6 +176,11 @@ class FrameView implements SelectionFrame {
     const drag = this.drag;
     if (!drag || event.pointerId !== drag.pointerId) return;
     this.drag = null;
+    if (drag.side) {
+      this.place();
+      if (drag.width) void tidySelection(this.host, this.surface, { kind: 'reflow', width: drag.width });
+      return;
+    }
     if (drag.matrix.some((v, i) => v !== IDENTITY[i])) void this.apply(drag.matrix);
   }
 
@@ -312,6 +349,22 @@ class FrameView implements SelectionFrame {
       { palette: entry.slot, color: [...entry.light] },
     );
   }
+
+  /** The same actions as the bar, at the pointer, for a right click or a long press on the selection. */
+  private readonly onContext = (event: MouseEvent) => {
+    event.preventDefault();
+    const actions = [...this.bar.querySelectorAll<HTMLButtonElement>('button')];
+    void openMenu({
+      label: t('ink.selection.frame'),
+      anchor: { x: event.clientX, y: event.clientY },
+      returnFocus: this.mover,
+      items: actions.map((action) => ({
+        id: action.dataset.inkAction ?? action.textContent ?? '',
+        label: action.textContent ?? '',
+        onSelect: () => action.click(),
+      })),
+    });
+  };
 
   private readonly onKey = (event: KeyboardEvent) => {
     if (this.selection().strokes.length === 0) return;
