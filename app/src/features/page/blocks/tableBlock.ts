@@ -33,6 +33,7 @@ import { currentTable } from '../tables/current';
 import type { TableHandle } from '../tables/current';
 import type { InnerView } from '../tables/lazyView';
 import { attachColumnHandles } from '../tables/columnResize';
+import '../tables/commands';
 import { TableToolbar } from '../tables/TableToolbar';
 import tableStyles from '../tables/tables.module.css';
 import styles from './blocks.module.css';
