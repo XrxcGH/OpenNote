@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { densify } from '../geometry/simplify';
 import type { Vec } from '../geometry/types';
 import { circle } from '../input/gestures/corpus';
-import { findGrid, linesOf } from './gridTable';
+import { findGrid, linesOf, tableData } from './gridTable';
 import type { GridLine } from './gridTable';
 import { isUnsure } from './handwriting';
 import { classifyEdit, LINE_HEIGHT } from './penEditing';
@@ -64,5 +64,16 @@ describe('the writing pen', () => {
   it('marks a word as unsure when the recognizer has another reading', () => {
     expect(isUnsure({ alternates: ['hello'] })).toBe(true);
     expect(isUnsure({ alternates: [] })).toBe(false);
+  });
+});
+
+describe('the table a grid becomes', () => {
+  it('has the grid rows and columns, each cell empty, at the width the grid drew', () => {
+    const data = tableData({ rows: 3, columns: 2, width: 400 });
+    expect(data.columns).toHaveLength(2);
+    expect(data.columns.every((column) => column.width === 200)).toBe(true);
+    expect(data.rows).toHaveLength(3);
+    expect(Object.keys(data.rows[0].cells)).toEqual(data.columns.map((column) => column.id));
+    expect(data.rows[1].cells[data.columns[0].id]).toEqual({ markdown: '' });
   });
 });

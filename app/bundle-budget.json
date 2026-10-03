@@ -1,5 +1,5 @@
 {
-  "startup": { "jsKb": 228, "cssKb": 19 },
+  "startup": { "jsKb": 236, "cssKb": 19 },
   "after": {
     "within": [
       "features/page/",
@@ -27,6 +27,7 @@
     "features/tables": 40,
     "features/search/links": 190,
     "features/page": 40,
+    "features/ink/view/install": 110,
     "features/palette": 40,
     "features/settings": 40,
     "features/setup": 40,

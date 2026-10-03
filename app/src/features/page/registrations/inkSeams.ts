@@ -5,7 +5,6 @@ import type { Editor } from '@tiptap/core';
 import type { InkRecognition, InkStroke, TidyOperation, TidyPlan } from '../../../services/intel';
 import { shownPool } from '../pool/shown';
 import { shownMedia } from '../images/shown';
-import { syncOf } from '../blocks/textBlock';
 
 const intel = () => import('../../intel').then((module) => module.loadApi());
 
@@ -105,6 +104,8 @@ export function select(block: string, from: number, to: number): boolean {
 /** Undoes the last step once the editor has handed its text to the page, so the undo takes that edit and no other. */
 export async function undoText(block: string): Promise<void> {
   const editor = editorOf(block);
+  // The text block's code loads only when a text edit is undone, so it stays out of the start-up bundle.
+  const { syncOf } = await import('../blocks/textBlock');
   const sync = editor ? syncOf(editor) : null;
   await sync?.flush('command');
   await shownMedia.get()?.sync.undo();

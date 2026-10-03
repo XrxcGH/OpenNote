@@ -3,7 +3,7 @@
 // Phase 12, reached through the host's `handwriting` seam. The ink always stays: converting adds text beside it, and the
 // writing pen only fades the strokes, so the words are one tap from coming back.
 import { newId } from '../../../editor/ids';
-import { escapeParagraphText } from '../../../editor/markdown';
+import { escapeParagraphText } from '../../../editor/markdown/escape';
 import { isEnabled } from '../../../app/flags';
 import type { InkLine, InkRecognition, InkStroke as IntelStroke, TidyOperation } from '../../../services/intel';
 import type { Edit } from '../../../services/pages/types';

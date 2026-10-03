@@ -3,7 +3,7 @@
 // one undo step. Handwriting inside the cells stays where it is, as ink. The drawn lines are read as lines and
 // rectangles by the shape recognizer, and the table is built by the editor's own table data.
 import { newId } from '../../../editor/ids';
-import { newTableData } from '../../../editor/table/mapping';
+import type { TableData } from '../../../editor/schema/specs';
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
@@ -110,6 +110,15 @@ export function findGrid(lines: readonly GridLine[]): Grid | null {
   };
 }
 
+/** A table block's data (spec 6.3) with a column for each grid column, as wide as the grid drew them. */
+export function tableData(grid: Pick<Grid, 'rows' | 'columns' | 'width'>): TableData {
+  const width = Math.min(2000, Math.max(40, Math.round(grid.width / Math.max(1, grid.columns))));
+  const columns = Array.from({ length: Math.max(1, grid.columns) }, () => ({ id: newId(), width }));
+  const cells = Object.fromEntries(columns.map((column) => [column.id, { markdown: '' }]));
+  const rows = Array.from({ length: Math.max(1, grid.rows) }, () => ({ id: newId(), cells: { ...cells } }));
+  return { header: false, columns, rows };
+}
+
 export function createGridWatch(host: InkHost, surfaceOf: () => InkSurface | null) {
   let lines: GridLine[] = [];
   let offered = '';
@@ -126,7 +135,7 @@ export function createGridWatch(host: InkHost, surfaceOf: () => InkSurface | nul
           id: newId(),
           type: 'table',
           frame: { x: grid.x, y: grid.y, w: Math.max(80, grid.width) },
-          data: { ...newTableData(grid.columns, grid.rows, false) },
+          data: { ...tableData(grid) },
         },
       },
     ];
