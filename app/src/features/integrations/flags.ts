@@ -1,0 +1,33 @@
+// Flags of the extra import, export, and integration features (docs/FEATURES.md, Phase 11 and later). Each one works
+// from its first screen to its result, so they are on in every channel. app/flags.ts joins this list to the others.
+import type { FlagDef } from '../../app/flags';
+
+export type IntegrationsFlagId =
+  | 'interop.officeFormats'
+  | 'interop.snip'
+  | 'interop.openFiles'
+  | 'interop.sendToFolder'
+  | 'interop.share'
+  | 'api.local';
+
+const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
+const on = { dev: true, nightly: true, beta: true, stable: true };
+
+const flag = (id: IntegrationsFlagId, description: string): FlagDef => ({
+  id,
+  description,
+  issue: `${ISSUES}${encodeURIComponent(id)}`,
+  enabled: on,
+});
+
+export const INTEGRATIONS_FLAGS: readonly FlagDef[] = [
+  flag('interop.officeFormats', 'Excel, PowerPoint, and CSV choices in Export.'),
+  flag('interop.snip', 'Offer to add a screenshot from the Snipping Tool to the open page.'),
+  flag('interop.openFiles', 'Open a single Markdown or text file as a page that saves back to the file.'),
+  flag('interop.sendToFolder', 'Send a copy of a page, section, or notebook to a folder, with favorites.'),
+  flag('interop.share', 'Share a page, section, or notebook as one file that opens as a new notebook.'),
+  flag(
+    'api.local',
+    'The local API on this PC, with app permissions, an access log, the opennote tool, and the MCP server.',
+  ),
+];

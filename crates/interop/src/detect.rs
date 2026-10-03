@@ -27,7 +27,7 @@ pub enum SourceKind {
     Notion,
     /// Evernote export files (`.enex`).
     Evernote,
-    /// Word files (`.docx`), including OneNote's exports.
+    /// Word files (`.docx`) and OpenDocument text (`.odt`), including OneNote's exports.
     Word,
     /// Web page archives (`.mht`), including OneNote's exports.
     WebArchive,
@@ -43,6 +43,14 @@ pub enum SourceKind {
     TextBundle,
     /// The database of the Windows Sticky Notes app (`plum.sqlite`).
     StickyNotes,
+    /// Excel workbooks (`.xlsx`), each sheet a table page.
+    Spreadsheet,
+    /// PowerPoint presentations (`.pptx`), each slide a page.
+    Presentation,
+    /// Email files (`.eml`), each message a page.
+    Email,
+    /// Kindle `My Clippings.txt` and Readwise CSV exports.
+    Highlights,
     /// OneNote's own section and notebook files (`.one`, `.onepkg`), which this version cannot read.
     OneNoteFile,
 }
@@ -62,6 +70,10 @@ impl SourceKind {
             SourceKind::GoogleKeep => "Google Keep export",
             SourceKind::TextBundle => "Bear export",
             SourceKind::StickyNotes => "Windows Sticky Notes",
+            SourceKind::Spreadsheet => "Excel workbooks",
+            SourceKind::Presentation => "PowerPoint presentations",
+            SourceKind::Email => "Email files",
+            SourceKind::Highlights => "Kindle and Readwise highlights",
             SourceKind::OneNoteFile => "OneNote files",
         }
     }
@@ -80,6 +92,8 @@ pub struct Detected {
     pub zipped: bool,
     /// What to do instead, when the source cannot be imported.
     pub advice: Option<String>,
+    /// Whether the file is locked with a password, which the import needs.
+    pub needs_password: bool,
 }
 
 const ONENOTE_ADVICE: &str = "OneNote keeps notebooks in its own binary files, which OpenNote cannot open yet. In \
@@ -98,13 +112,17 @@ pub fn detect(path: &Path) -> Result<Detected> {
     let ext = extension(path);
     match ext.as_str() {
         "zip" => detect_zip(path),
+        "opennote" => detect_share(path),
         "one" | "onepkg" | "onetoc2" => Ok(onenote_files()),
         "sqlite" | "sqlite3" | "db" => detect_database(path),
         "snt" => Err(InteropError::unsupported(file_name(path), STICKY_ADVICE)),
-        "doc" | "rtf" | "odt" | "pages" | "wpd" => Err(InteropError::unsupported(
+        "doc" | "rtf" | "pages" | "wpd" => Err(InteropError::unsupported(
             file_name(path),
             "Save the document as .docx in its own app, then import that file.",
         )),
+        "txt" | "text" | "csv" if holds_highlights(path, &ext) => {
+            Ok(detected(SourceKind::Highlights, SourceKind::Highlights.label()))
+        }
         _ => by_extension(&ext).ok_or_else(|| {
             let hint = if starts_with(path, b"%PDF") {
                 "PDF files are added to a page, not imported as notes."
@@ -128,6 +146,23 @@ fn detect_database(path: &Path) -> Result<Detected> {
     ))
 }
 
+/// A shared OpenNote file: a ZIP archive of Markdown notes, or the same locked with a password.
+fn detect_share(path: &Path) -> Result<Detected> {
+    if starts_with(path, crate::lock::MAGIC) {
+        return Ok(Detected {
+            kind: SourceKind::Markdown,
+            label: "Shared OpenNote file (locked)".to_owned(),
+            supported: true,
+            zipped: true,
+            advice: None,
+            needs_password: true,
+        });
+    }
+    let mut found = detect_zip(path)?;
+    found.label = "Shared OpenNote file".to_owned();
+    Ok(found)
+}
+
 fn onenote_files() -> Detected {
     Detected {
         kind: SourceKind::OneNoteFile,
@@ -135,6 +170,7 @@ fn onenote_files() -> Detected {
         supported: false,
         zipped: false,
         advice: Some(ONENOTE_ADVICE.to_owned()),
+        needs_password: false,
     }
 }
 
@@ -145,6 +181,21 @@ fn detected(kind: SourceKind, label: impl Into<String>) -> Detected {
         supported: true,
         zipped: false,
         advice: None,
+        needs_password: false,
+    }
+}
+
+/// Whether a text or CSV file is a Kindle clippings file or a Readwise export, from its first few kilobytes.
+fn holds_highlights(path: &Path, ext: &str) -> bool {
+    let mut head = vec![0u8; 8192];
+    let Ok(read) = File::open(path).and_then(|mut f| f.read(&mut head)) else {
+        return false;
+    };
+    let text = String::from_utf8_lossy(&head[..read]).replace("\r\n", "\n");
+    if ext == "csv" {
+        crate::import::is_readwise(&text)
+    } else {
+        crate::import::is_kindle(&text)
     }
 }
 
@@ -152,11 +203,14 @@ fn by_extension(ext: &str) -> Option<Detected> {
     let kind = match ext {
         "md" | "markdown" => SourceKind::Markdown,
         "enex" => SourceKind::Evernote,
-        "docx" | "docm" => SourceKind::Word,
+        "docx" | "docm" | "odt" | "ott" => SourceKind::Word,
         "mht" | "mhtml" => SourceKind::WebArchive,
         "html" | "htm" => SourceKind::Html,
         "txt" | "text" => SourceKind::Text,
         "csv" | "tsv" => SourceKind::Csv,
+        "xlsx" | "xlsm" => SourceKind::Spreadsheet,
+        "pptx" | "pptm" => SourceKind::Presentation,
+        "eml" => SourceKind::Email,
         _ => return None,
     };
     Some(detected(kind, kind.label()))
@@ -206,12 +260,15 @@ impl Survey {
     fn majority(&self) -> Option<SourceKind> {
         let candidates = [
             (SourceKind::Markdown, self.count(&["md", "markdown"])),
-            (SourceKind::Word, self.count(&["docx", "docm"])),
+            (SourceKind::Word, self.count(&["docx", "docm", "odt", "ott"])),
             (SourceKind::WebArchive, self.count(&["mht", "mhtml"])),
             (SourceKind::Html, self.count(&["html", "htm"])),
             (SourceKind::Evernote, self.count(&["enex"])),
             (SourceKind::Text, self.count(&["txt", "text"])),
             (SourceKind::Csv, self.count(&["csv", "tsv"])),
+            (SourceKind::Spreadsheet, self.count(&["xlsx", "xlsm"])),
+            (SourceKind::Presentation, self.count(&["pptx", "pptm"])),
+            (SourceKind::Email, self.count(&["eml"])),
         ];
         let best = candidates.iter().map(|(_, n)| *n).max().unwrap_or(0);
         candidates.iter().find(|(_, n)| *n == best && best > 0).map(|(k, _)| *k)
@@ -324,6 +381,7 @@ fn detect_zip(path: &Path) -> Result<Detected> {
             supported: true,
             zipped: false,
             advice: None,
+            needs_password: false,
         });
     }
     let markdown_or_csv = survey.count(&["md", "markdown", "csv"]);
@@ -348,6 +406,7 @@ fn detect_zip(path: &Path) -> Result<Detected> {
             supported: true,
             zipped: true,
             advice: None,
+            needs_password: false,
         }),
         None => Err(InteropError::unsupported(
             file_name(path),
@@ -391,7 +450,7 @@ const LEFTOVER_AGE: Duration = Duration::from_secs(12 * 60 * 60);
 ///
 /// It first deletes the temporary folders of earlier imports that were killed before they could.
 pub fn prepare(path: &Path, control: &Control) -> Result<Prepared> {
-    if !path.is_file() || extension(path) != "zip" {
+    if !path.is_file() || !matches!(extension(path).as_str(), "zip" | "opennote") {
         return Ok(Prepared {
             root: path.to_path_buf(),
             skipped: Vec::new(),

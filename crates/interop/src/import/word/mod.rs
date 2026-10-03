@@ -56,10 +56,14 @@ impl FileConverter for WordConverter {
     }
 
     fn extensions(&self) -> &'static [&'static str] {
-        &["docx", "docm"]
+        &["docx", "docm", "odt", "ott"]
     }
 
     fn convert(&self, path: &Path, env: &ImportEnv<'_>) -> Result<Converted> {
+        let ext = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase());
+        if matches!(ext.as_deref(), Some("odt" | "ott")) {
+            return super::odt::convert(path, env);
+        }
         let file = File::open(path).map_err(|e| InteropError::io(path, e))?;
         let archive = ZipArchive::new(BufReader::new(file), package::limits()).map_err(|e| relabel(e, path))?;
         let stem = path

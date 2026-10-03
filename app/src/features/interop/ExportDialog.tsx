@@ -10,6 +10,7 @@ import { t } from '../../strings/t';
 import { Button, Dialog, RadioCard, RadioGroup, announce } from '../../ui';
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
+import { SendExtras } from './SendExtras';
 import type { ExportFlow, ExportState } from './exportFlow';
 import type { ExportTarget } from './exportTarget';
 import styles from './Interop.module.css';
@@ -23,6 +24,16 @@ export interface ExportDialogProps {
 }
 
 const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx'];
+const OFFICE_FORMATS: readonly ExportFormat[] = ['pptx', 'xlsx', 'csv'];
+
+/** The choices to show: the PDF and the Office choices appear when their flags are on. */
+function exportFormats(): readonly ExportFormat[] {
+  return [
+    ...FORMATS,
+    ...(isEnabled('interop.officeFormats') ? OFFICE_FORMATS : []),
+    ...(isEnabled('interop.exportPdf') ? (['pdf'] as const) : []),
+  ];
+}
 
 const formatLabel = (format: ExportFormat) =>
   ({
@@ -31,6 +42,9 @@ const formatLabel = (format: ExportFormat) =>
     htmlSingle: t('interop.export.formats.htmlSingle'),
     docx: t('interop.export.formats.docx'),
     pdf: t('interop.export.formats.pdf'),
+    pptx: t('interop.export.formats.pptx'),
+    xlsx: t('interop.export.formats.xlsx'),
+    csv: t('interop.export.formats.csv'),
   })[format];
 
 const formatHint = (format: ExportFormat) =>
@@ -40,6 +54,9 @@ const formatHint = (format: ExportFormat) =>
     htmlSingle: t('interop.export.formats.htmlSingleHint'),
     docx: t('interop.export.formats.docxHint'),
     pdf: t('interop.export.formats.pdfHint'),
+    pptx: t('interop.export.formats.pptxHint'),
+    xlsx: t('interop.export.formats.xlsxHint'),
+    csv: t('interop.export.formats.csvHint'),
   })[format];
 
 function scopeLabel(scope: ExportScope, name: string): string {
@@ -83,7 +100,7 @@ function Options({
         value={state.format}
         onChange={(format) => flow.setFormat(format)}
       >
-        {(isEnabled('interop.exportPdf') ? [...FORMATS, 'pdf' as const] : FORMATS).map((format) => (
+        {exportFormats().map((format) => (
           <RadioCard<ExportFormat>
             key={format}
             value={format}
@@ -103,6 +120,7 @@ function Options({
           {state.folder ? t('interop.export.changeFolder') : t('interop.export.chooseFolder')}
         </Button>
       </div>
+      <SendExtras flow={flow} folder={state.folder} />
       {state.error && (
         <p role="alert" className={styles.error}>
           {exportErrorText(state.error)}

@@ -148,3 +148,29 @@ describe('importing a source', () => {
     expect(interop.log.canceled).toHaveLength(1);
   });
 });
+
+describe('saving the import report', () => {
+  it('asks for a folder and asks the host to write the report there', async () => {
+    const web = createWebInterop();
+    const calls: { op: string; args?: Record<string, unknown> }[] = [];
+    const interop = {
+      ...web,
+      more: <T>(op: string, args?: Record<string, unknown>) => {
+        calls.push({ op, args });
+        return Promise.resolve({ path: 'C:/Users/Sample/Documents/OpenNote import report.md' } as T);
+      },
+    };
+    const notes = createMemoryNotesService({ seed: 'empty' });
+    const flow = createImportFlow({ interop, notes, announce: () => undefined });
+    const detach = flow.attach();
+    await flow.chooseFile();
+    await flow.start();
+    await flow.saveReport();
+    const state = flow.state.get();
+    expect(calls).toHaveLength(1);
+    expect(calls[0].op).toBe('save_report');
+    expect(calls[0].args?.folder).toBe('C:\\Users\\Sample\\Documents');
+    expect(state.step === 'done' && state.reportFile).toContain('OpenNote import report.md');
+    detach();
+  });
+});

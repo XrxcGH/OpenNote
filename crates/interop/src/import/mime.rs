@@ -32,6 +32,12 @@ pub struct Message {
     pub subject: Option<String>,
     /// The `Date` header as written.
     pub date: Option<String>,
+    /// The `From` header, decoded.
+    pub from: Option<String>,
+    /// The `To` header, decoded.
+    pub to: Option<String>,
+    /// The `Cc` header, decoded.
+    pub cc: Option<String>,
     /// The parts that are not containers, in order.
     pub parts: Vec<Part>,
     /// The `start` parameter of a `multipart/related` message: the Content-ID of the main part.
@@ -47,6 +53,9 @@ pub fn parse(bytes: &[u8]) -> Message {
     let (headers, body) = split_headers(bytes);
     message.subject = header(&headers, "subject").map(|s| decode_words(&s));
     message.date = header(&headers, "date");
+    message.from = header(&headers, "from").map(|s| decode_words(&s));
+    message.to = header(&headers, "to").map(|s| decode_words(&s));
+    message.cc = header(&headers, "cc").map(|s| decode_words(&s));
     if let Some(start) = header(&headers, "content-type").and_then(|ct| param(&ct, "start")) {
         message.start = Some(start.trim_matches(['<', '>']).to_owned());
     }

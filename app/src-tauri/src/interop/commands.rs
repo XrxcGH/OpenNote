@@ -257,6 +257,7 @@ pub async fn interop_import(
             Ok(restore::tree_of(&handle))
         })?;
         let (lost_pages, skipped) = report.loss_counts();
+        jobs::remember_report(&job, report.to_markdown());
         Ok(ImportDone {
             tree,
             pages: report.pages.len(),
@@ -407,6 +408,7 @@ mod tests {
     fn a_dry_run_answers_with_the_names_the_interface_reads() {
         let mut preview = Preview {
             detected: Detected {
+                needs_password: false,
                 kind: SourceKind::GoogleKeep,
                 label: "Google Keep export".to_owned(),
                 supported: true,

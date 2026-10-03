@@ -28,6 +28,7 @@ export function createTauriInterop(): InteropClient {
     exportTo: (job, request) => call('interop_export', { job, request }),
     cancel: (job) => void call('interop_cancel', { job }).catch(() => undefined),
     reveal: (path) => call('interop_reveal', { path }),
+    more: <T>(op: string, args?: Record<string, unknown>) => call<T>('interop_more', { op, args: args ?? {} }),
     onProgress(listener) {
       let stopped = false;
       let stop: (() => void) | null = null;

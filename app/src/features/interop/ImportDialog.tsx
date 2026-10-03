@@ -116,6 +116,10 @@ function Done({ state }: { state: Extract<ImportState, { step: 'done' }> }) {
           <p>{t('interop.import.done.summary', { pages: result.pages, title: notebook.title })}</p>
           {result.lostPages > 0 && <p>{t('interop.import.done.changed', { lost: result.lostPages })}</p>}
           {result.losses.length > 0 && <LossList losses={result.losses} />}
+          {state.reportFile && (
+            <p role="status">{t('moreInterop.report.savedTo', { name: fileName(state.reportFile) })}</p>
+          )}
+          {state.reportError && <p role="alert">{t('moreInterop.report.failed')}</p>}
         </>
       )}
     </div>
@@ -225,6 +229,16 @@ export default function ImportDialog({ interop, notes, onClose }: ImportDialogPr
           ...(state.undone
             ? []
             : [
+                ...(interop.more
+                  ? [
+                      {
+                        id: 'saveReport',
+                        label: t('moreInterop.report.save'),
+                        variant: 'quiet' as const,
+                        onPress: () => flow.saveReport(),
+                      },
+                    ]
+                  : []),
                 {
                   id: 'undo',
                   label: t('interop.import.done.undo'),

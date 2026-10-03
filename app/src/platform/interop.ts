@@ -18,6 +18,10 @@ export type SourceKind =
   | 'googleKeep'
   | 'textBundle'
   | 'stickyNotes'
+  | 'spreadsheet'
+  | 'presentation'
+  | 'email'
+  | 'highlights'
   | 'oneNoteFile';
 
 /** What a file, folder, or archive is. */
@@ -94,7 +98,7 @@ export interface ImportResult {
   skipped: number;
 }
 
-export type ExportFormat = 'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf';
+export type ExportFormat = 'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv';
 export type ExportScope = 'notebook' | 'section' | 'page';
 
 export interface ExportRequest {
@@ -106,6 +110,8 @@ export interface ExportRequest {
   sections: { title: string; pages: { ui: string; title: string; level: number }[] }[];
   /** The folder the export goes into; the export makes its own folder or file inside. */
   folder: string;
+  /** A file an earlier export made, which this one replaces ("Update the copy"). Only for formats that make one file. */
+  replace?: string;
 }
 
 export interface ExportResult {
@@ -160,5 +166,10 @@ export interface InteropClient {
   cancel(job: string): void;
   /** Shows a file or folder in Explorer. */
   reveal(path: string): Promise<void>;
+  /**
+   * Runs one of the host's extra operations by name, such as `save_report` or `send_to_folder`. The desktop app has
+   * them all; a host that lacks one leaves this out, and the features that need it stay hidden.
+   */
+  more?<T>(op: string, args?: Record<string, unknown>): Promise<T>;
   onProgress(listener: (event: JobEvent) => void): Unsubscribe;
 }

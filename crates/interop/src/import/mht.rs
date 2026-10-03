@@ -59,13 +59,13 @@ impl FileConverter for MhtConverter {
 }
 
 /// Resources of a message, found by the names a page uses for them.
-struct Resources<'a> {
+pub(super) struct Resources<'a> {
     by_name: HashMap<String, &'a Part>,
     by_file: HashMap<String, &'a Part>,
 }
 
 impl<'a> Resources<'a> {
-    fn new(parts: &'a [Part], main: &Part) -> Resources<'a> {
+    pub(super) fn new(parts: &'a [Part], main: &Part) -> Resources<'a> {
         let mut resources = Resources {
             by_name: HashMap::new(),
             by_file: HashMap::new(),
@@ -91,7 +91,7 @@ impl<'a> Resources<'a> {
     }
 
     /// The resource a page address names: the whole address first, then only the file name.
-    fn find(&self, src: &str) -> Option<&'a Part> {
+    pub(super) fn find(&self, src: &str) -> Option<&'a Part> {
         let key = normalize(src);
         self.by_name
             .get(&key)
@@ -106,7 +106,7 @@ fn normalize(address: &str) -> String {
         .replace('\\', "/")
 }
 
-fn file_of(address: &str) -> Option<String> {
+pub(super) fn file_of(address: &str) -> Option<String> {
     let cleaned = address.split(['#', '?']).next().unwrap_or("");
     let name = super::scan::percent_decode(cleaned).replace('\\', "/");
     let file = name.rsplit('/').next()?.to_lowercase();
@@ -189,7 +189,11 @@ fn main_part(message: &mime::Message) -> Option<&Part> {
 }
 
 /// Puts the pictures the page used into its assets. Returns how many were placed and how many could not be.
-fn place_images(blocks: &mut [Block], builder: &mut PageBuilder<'_>, used: &[(String, &Part)]) -> (usize, usize) {
+pub(super) fn place_images(
+    blocks: &mut [Block],
+    builder: &mut PageBuilder<'_>,
+    used: &[(String, &Part)],
+) -> (usize, usize) {
     let mut cache: HashMap<String, Option<String>> = HashMap::new();
     let (mut placed, mut lost) = (0, 0);
     visit_inlines_mut(blocks, &mut |inlines| {

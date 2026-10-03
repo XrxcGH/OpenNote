@@ -2917,6 +2917,7 @@ dependencies = [
  "crc32fast",
  "encoding_rs",
  "flate2",
+ "getrandom 0.3.4",
  "md-5",
  "opennote-core",
  "opennote-interop",

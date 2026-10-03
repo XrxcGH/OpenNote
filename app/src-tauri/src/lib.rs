@@ -290,6 +290,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         interop::commands::interop_cancel,
         interop::commands::interop_export,
         interop::commands::interop_reveal,
+        interop::more::interop_more,
         intel::intel_settings_get,
         intel::intel_settings_set,
         intel::intel_status,

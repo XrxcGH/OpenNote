@@ -41,6 +41,11 @@ export type ImportState =
       firstSection: NodeSummary | null;
       firstPage: NodeSummary | null;
       undone: boolean;
+      /** The name of the import job, which the host keeps the report under. */
+      job: string;
+      /** Where the saved report went, once the person has saved it. */
+      reportFile?: string;
+      reportError?: boolean;
     }
   | { step: 'failed'; error: IpcError; path: string; preview: ImportPreview | null; reportPage: boolean };
 
@@ -65,6 +70,8 @@ export interface ImportFlow {
   retry(): void;
   /** Moves the new notebook to the Trash. */
   undo(): Promise<void>;
+  /** Asks for a folder and saves the import report there as a Markdown file. */
+  saveReport(): Promise<void>;
   /** True while the host is working, so closing the dialog must cancel first. */
   running(): boolean;
   /** Listens for progress while the dialog is open. The returned function stops listening and cancels any job. */
@@ -122,6 +129,7 @@ async function finishImport(run: Run, result: ImportResult): Promise<void> {
   const { interop, notes } = run.deps;
   run.job = null;
   const importing = run.state.get();
+  const job = importing.step === 'importing' ? importing.job : '';
   if (importing.step === 'importing') run.state.set({ ...importing, building: true, progress: null });
   const added = result.tree.notebookId
     ? await findImportedNodes(notes, result.tree)
@@ -134,6 +142,7 @@ async function finishImport(run: Run, result: ImportResult): Promise<void> {
     firstSection: added.firstSection,
     firstPage: added.firstPage,
     undone: false,
+    job,
   });
 }
 
@@ -188,6 +197,22 @@ async function undo(run: Run): Promise<void> {
   run.state.set({ ...current, undone: true });
 }
 
+/** Asks for a folder and writes the import report there as a Markdown file. */
+async function saveReport(run: Run): Promise<void> {
+  const current = run.state.get();
+  const { interop } = run.deps;
+  if (current.step !== 'done' || !interop.more) return;
+  const folder = await interop.pick('folder', null);
+  if (!folder) return;
+  try {
+    const saved = await interop.more<{ path: string }>('save_report', { job: current.job, folder });
+    run.state.set({ ...current, reportFile: saved.path, reportError: false });
+    run.deps.announce(t('moreInterop.report.saved'));
+  } catch {
+    run.state.set({ ...current, reportError: true });
+  }
+}
+
 export function createImportFlow(deps: ImportFlowDeps): ImportFlow {
   const state = createFlowState<ImportState>({ step: 'choose' });
   const run: Run = { deps, state, job: null };
@@ -221,6 +246,7 @@ export function createImportFlow(deps: ImportFlowDeps): ImportFlow {
     },
     retry: () => retry(run),
     undo: () => undo(run),
+    saveReport: () => saveReport(run),
     running: () => run.job !== null,
     attach() {
       const stop = deps.interop.onProgress((event) => onProgress(run, event));
