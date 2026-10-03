@@ -368,3 +368,17 @@ export function bibliography(sources: readonly Source[], style: StyleId): string
   const ordered = bibliographyOrder(sources, style);
   return ordered.map((source, index) => STYLES[style].reference(source, index + 1)).join('\n\n');
 }
+
+const htmlOf = (markdown: string): string =>
+  markdown
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+/** The bibliography as HTML paragraphs, which the editor takes in with the titles in italics. */
+export function bibliographyHtml(sources: readonly Source[], style: StyleId): string {
+  return bibliographyOrder(sources, style)
+    .map((source, index) => `<p>${htmlOf(STYLES[style].reference(source, index + 1))}</p>`)
+    .join('');
+}

@@ -375,3 +375,37 @@ for (const [id, title, hidden] of [
     run: () => setAllTape(hidden),
   });
 }
+
+// Mind maps: a block that turns an outline into a map and a map into an outline.
+blockRenderers.register(
+  panelRenderer({
+    type: 'mindmap',
+    label: 'study.mindmap.block',
+    flag: 'math.mindMaps',
+    load: async () => {
+      const { mountMindMap } = await import('../../math');
+      return { mount: (container, props) => mountMindMap(container, props) };
+    },
+  }),
+);
+
+addCommand({
+  id: 'insert.mindmap',
+  title: 'study.mindmap.insert',
+  keywords: 'study.mindmap.insertKeywords',
+  icon: 'TreeStructure',
+  flag: 'math.mindMaps',
+  slash: { group: 'advanced', order: 32 },
+  bar: { group: 'math', priority: 37 },
+  run: async () => {
+    const { newNode, parseOutline, toOutline } = await import('../../math');
+    const { insertPanelBlock } = await import('../panels/insertPanel');
+    // A selected list or outline becomes the map; with nothing selected the map starts with one main idea.
+    const editor = targetEditor();
+    const { from, to } = editor?.state.selection ?? { from: 0, to: 0 };
+    const selected = editor && from !== to ? editor.state.doc.textBetween(from, to, '\n') : '';
+    const map = parseOutline(selected, t('study.mindmap.mainIdea')) ?? newNode(t('study.mindmap.mainIdea'));
+    const id = await insertPanelBlock('mindmap', { root: map }, toOutline(map));
+    if (id) announce(t('study.mindmap.inserted'));
+  },
+});

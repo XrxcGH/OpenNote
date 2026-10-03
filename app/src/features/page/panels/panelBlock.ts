@@ -24,8 +24,9 @@ export function createPanelInner(
     block: latest.id,
     data: latest.data,
     readOnly: ctx.page.readOnly !== null,
-    patch: (data) => {
-      void ctx.sync.send({ edits: [{ edit: 'patchBlock', block: latest.id, data }] });
+    patch: (data, fallback) => {
+      const edit = { edit: 'patchBlock' as const, block: latest.id, data };
+      void ctx.sync.send({ edits: [fallback === undefined ? edit : { ...edit, fallback: { markdown: fallback } }] });
     },
     announce: (text) => ctx.host.announce(text),
   });

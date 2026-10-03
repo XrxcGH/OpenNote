@@ -11,8 +11,8 @@ export interface PanelProps {
   block: string;
   data: Record<string, unknown>;
   readOnly: boolean;
-  /** Merges `data` into the block's data as one undo step. */
-  patch(data: Record<string, unknown>): void;
+  /** Merges `data` into the block's data as one undo step. `fallback` replaces the block's fallback text. */
+  patch(data: Record<string, unknown>, fallback?: string): void;
   announce(text: string): void;
 }
 

@@ -11,3 +11,6 @@ export { readGraph, writeGraph } from './graph/source';
 export type { GraphSource } from './graph/source';
 export { applyQuickMath, browserLocale, quickMathEnabled, setQuickMathEnabled } from './quickMath';
 export { default as QuickMathSetting } from './QuickMathSetting';
+export { mountMindMap } from './mindmap/mount';
+export { newNode, parseOutline, toOutline } from './mindmap/tree';
+export type { MapNode } from './mindmap/tree';

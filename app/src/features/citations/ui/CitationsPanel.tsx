@@ -12,7 +12,7 @@ import { parseBibtex, parseRis, toBibtex, toRis } from '../bibtex';
 import { SOURCE_TYPES, blankSource, parsePeople, personText } from '../model';
 import type { Source, SourceType } from '../model';
 import { addSources, removeSource, saveSource, setStyle, sourcesOf, sourcesStore, styleStore, SHARED } from '../store';
-import { STYLES, STYLE_IDS, bibliography } from '../styles';
+import { STYLES, STYLE_IDS, bibliography, bibliographyHtml } from '../styles';
 import type { StyleId } from '../styles';
 import { readZotero } from '../zotero';
 import { saveText } from './save';
@@ -246,7 +246,15 @@ export function CitationsPanel() {
           </div>
           <div className={styles.buttons}>
             <Button
-              onClick={() => announce(t(insertIntoPage(text) ? 'study.citations.inserted' : 'study.citations.noPage'))}
+              onClick={() =>
+                announce(
+                  t(
+                    insertIntoPage(bibliographyHtml(sources, style))
+                      ? 'study.citations.inserted'
+                      : 'study.citations.noPage',
+                  ),
+                )
+              }
             >
               {t('study.citations.insertBibliography')}
             </Button>
