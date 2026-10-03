@@ -3,6 +3,7 @@
 // and Enter apply it as one command; Remove takes the link off and keeps the words; Escape closes it.
 import type { Editor } from '@tiptap/core';
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { runEditorCommand } from '../../../editor/commands/catalog';
 import { linkAt, normalizeHref } from '../../../editor/commands/links';
@@ -138,6 +139,7 @@ export function openLinkPopover(editor: Editor, typed?: () => string): Promise<v
         resolve();
       });
     };
-    root.render(<LinkPopover editor={editor} anchor={anchor} onClose={close} typed={typed} />);
+    // Mounted before this returns, so the keys held while the chunk loaded reach the field before any more arrive.
+    flushSync(() => root.render(<LinkPopover editor={editor} anchor={anchor} onClose={close} typed={typed} />));
   });
 }
