@@ -97,6 +97,43 @@ describe('the Tauri page service', () => {
     expect(reloaded).toHaveBeenCalledWith({ action: 'reloaded' });
   });
 
+  it('numbers an edit only when the core takes it, so a refused edit leaves its number for the next', async () => {
+    const { core, calls } = fakeCore([envelope([])]);
+    calls.pageApply.mockImplementationOnce(() => Promise.reject({ code: 'invalid', message: 'Too long.' }));
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    const refused = page.send({ edits: [] });
+    const next = page.send({ edits: [] });
+    await expect(refused).rejects.toMatchObject({ code: 'invalid' });
+    await next;
+    await page.send({ edits: [] });
+    const seqs = (calls.pageApply.mock.calls as unknown as [{ clientSeq: number }][]).map(([r]) => r.clientSeq);
+    expect(seqs).toEqual([4, 4, 5]);
+  });
+
+  it('keeps edits, undo, and restores in the order they were asked for', async () => {
+    const { core, calls } = fakeCore([envelope([])]);
+    const order: string[] = [];
+    calls.pageApply.mockImplementation(() => {
+      order.push('apply');
+      return Promise.resolve({ seq: 1, orderKeys: {}, canUndo: true, canRedo: false });
+    });
+    Object.assign(calls, { pageUndo: vi.fn(() => (order.push('undo'), Promise.resolve(null))) });
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await Promise.all([page.send({ edits: [] }), page.undo(), page.send({ edits: [] })]);
+    expect(order).toEqual(['apply', 'undo', 'apply']);
+  });
+
+  it('takes the core’s number again after an edit arrives out of order', async () => {
+    const reopened = envelope([]);
+    reopened.session = { ...reopened.session, clientSeq: 7 };
+    const { core, calls } = fakeCore([envelope([]), reopened]);
+    calls.pageApply.mockImplementationOnce(() => Promise.reject({ code: 'outOfOrder', message: 'Expected 8.' }));
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await expect(page.send({ edits: [] })).rejects.toMatchObject({ code: 'outOfOrder', resync: true });
+    await page.send({ edits: [] });
+    expect(calls.pageApply.mock.calls.at(-1)).toMatchObject([{ clientSeq: 8 }]);
+  });
+
   it('turns the core’s events for the page into frames, external changes, and read-only notices', async () => {
     const { core, emit } = fakeCore([envelope([block('a', 'One')]), envelope([block('a', 'Two')])]);
     const page = await createTauriPageService(core, images).open('p1', { viewport: null });
