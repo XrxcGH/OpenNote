@@ -38,16 +38,27 @@ import type { PageCommandId } from '../keys';
 
 const formatting = () => import('../formattingBar/commands');
 
-// The formatting commands and the link popover load in idle time once a page is shown. Without this the first
-// Ctrl+B or Ctrl+K waited for its chunk, and whatever was typed in the meantime came out unformatted or was held.
+// The chunks the page's commands wait for load in idle time once a page is shown. Without this the first Ctrl+B or
+// Ctrl+K waited for its chunk, and whatever was typed in the meantime came out unformatted or was held. The page
+// says when they are all loaded (data-page-commands on the root), so a test can wait for it instead of a guess.
+const warmChunks: readonly (() => Promise<unknown>)[] = [
+  formatting,
+  () => import('../linkPopover/LinkPopover'),
+  () => import('../slash/slashMenu'),
+  () => import('../formattingBar/folds'),
+  () => import('../formattingBar/merge'),
+];
 let warmed = false;
 shownQueue.subscribe(() => {
   if (warmed || !shownQueue.get()) return;
   warmed = true;
   const whenIdle = (run: () => void) =>
     typeof requestIdleCallback === 'function' ? requestIdleCallback(run, { timeout: 2000 }) : setTimeout(run, 200);
-  whenIdle(() => void formatting().catch(() => undefined));
-  whenIdle(() => void import('../linkPopover/LinkPopover').catch(() => undefined));
+  whenIdle(() => {
+    void Promise.all(warmChunks.map((load) => load().catch(() => undefined))).then(() => {
+      document.documentElement.dataset.pageCommands = 'ready';
+    });
+  });
 });
 
 interface EditorCommand {
