@@ -118,11 +118,16 @@ describe('circle and tap', () => {
   });
 });
 
-function fingersTap(detector: MultiTapDetector, start: number, count: number, hold = 100) {
-  for (let id = 0; id < count; id++) detector.down(id, id * 30, 0, start + id * 10);
-  let result: ReturnType<MultiTapDetector['up']> = null;
-  for (let id = 0; id < count; id++) result = detector.up(id, start + hold + id * 5);
-  return result;
+/** Lands `count` fingers 25 mm apart, lifts them, and polls once the confirm window has passed. */
+function fingersTap(detector: MultiTapDetector, start: number, count: number, hold = 100, size = 9) {
+  for (let id = 0; id < count; id++) detector.down(id, id * 25, 0, size, size, start + id * 10);
+  let last = start;
+  for (let id = 0; id < count; id++) {
+    last = start + hold + id * 5;
+    detector.up(id, last, false);
+  }
+  expect(detector.poll(last + 149)).toBeNull();
+  return detector.poll(last + 150);
 }
 
 describe('multi-finger double taps', () => {
@@ -150,18 +155,71 @@ describe('multi-finger double taps', () => {
     expect(fingersTap(held, 300, 2, 260)).toBeNull();
     const moved = createMultiTapDetector();
     fingersTap(moved, 0, 2);
-    moved.down(0, 0, 0, 300);
-    moved.down(1, 30, 0, 310);
-    moved.move(1, 30, 11);
-    moved.up(0, 380);
-    expect(moved.up(1, 390)).toBeNull();
+    moved.down(0, 0, 0, 9, 9, 300);
+    moved.down(1, 30, 0, 9, 9, 310);
+    moved.move(1, 30, 2.5);
+    moved.up(0, 380, false);
+    moved.up(1, 390, false);
+    expect(moved.poll(600)).toBeNull();
     const late = createMultiTapDetector();
-    late.down(0, 0, 0, 0);
-    late.down(1, 30, 0, 200);
-    late.up(0, 220);
-    expect(late.up(1, 240)).toBeNull();
+    late.down(0, 0, 0, 9, 9, 0);
+    late.down(1, 30, 0, 9, 9, 200);
+    late.up(0, 220, false);
+    late.up(1, 240, false);
+    expect(late.poll(500)).toBeNull();
+  });
+});
+
+describe('multi-finger double taps and the palm', () => {
+  it('never fires for a palm that hops twice, a cancel, or fingers at the wrong spacing', () => {
+    const palm = createMultiTapDetector();
+    fingersTap(palm, 0, 2, 100, 30);
+    expect(fingersTap(palm, 300, 2, 100, 30)).toBeNull();
+    const knuckles = createMultiTapDetector();
+    for (const start of [0, 300]) {
+      knuckles.down(1, 0, 0, 0, 0, start);
+      knuckles.down(2, 8, 0, 0, 0, start + 20);
+      knuckles.up(1, start + 100, false);
+      knuckles.up(2, start + 110, false);
+    }
+    expect(knuckles.poll(800)).toBeNull();
+    const canceled = createMultiTapDetector();
+    fingersTap(canceled, 0, 2);
+    canceled.down(0, 0, 0, 9, 9, 300);
+    canceled.down(1, 25, 0, 9, 9, 310);
+    canceled.up(0, 380, true);
+    canceled.up(1, 390, false);
+    expect(canceled.poll(700)).toBeNull();
   });
 
+  it('is not wedged by a finger whose lift never comes', () => {
+    const detector = createMultiTapDetector();
+    detector.down(9, 0, 0, 9, 9, 0);
+    expect(fingersTap(detector, 5000, 2)).toBeNull();
+    expect(fingersTap(detector, 5300, 2)).toBe('undo');
+  });
+
+  it('drops a pending result for a pen event or a palm verdict in the confirm window', () => {
+    const pen = createMultiTapDetector();
+    fingersTap(pen, 0, 2);
+    pen.down(0, 0, 0, 9, 9, 300);
+    pen.down(1, 25, 0, 9, 9, 305);
+    pen.up(0, 400, false);
+    pen.up(1, 405, false);
+    pen.cancel();
+    expect(pen.poll(600)).toBeNull();
+    const palm = createMultiTapDetector();
+    fingersTap(palm, 0, 2);
+    palm.down(0, 0, 0, 9, 9, 300);
+    palm.down(1, 25, 0, 9, 9, 305);
+    palm.up(0, 400, false);
+    palm.up(1, 405, false);
+    palm.voidContact(1);
+    expect(palm.poll(600)).toBeNull();
+  });
+});
+
+describe('multi-finger double taps over time', () => {
   it('starts over after the gesture, and when cancelled', () => {
     const detector = createMultiTapDetector();
     fingersTap(detector, 0, 2);
@@ -184,7 +242,7 @@ describe('multi-finger double taps', () => {
       fc.property(
         fc.array(
           fc.tuple(
-            fc.constantFrom('down', 'move', 'up'),
+            fc.constantFrom('down', 'move', 'up', 'cancel', 'poll'),
             fc.integer({ min: 0, max: 3 }),
             fc.integer({ min: 0, max: 300 }),
           ),
@@ -195,9 +253,10 @@ describe('multi-finger double taps', () => {
           let now = 0;
           for (const [kind, id, dt] of events) {
             now += dt;
-            if (kind === 'down') detector.down(id, seededRandom(now)() * 20, 0, now);
-            else if (kind === 'move') detector.move(id, 0, seededRandom(now + 1)() * 30);
-            else detector.up(id, now);
+            if (kind === 'down') detector.down(id, seededRandom(now)() * 60, 0, 9, 9, now);
+            else if (kind === 'move') detector.move(id, 0, seededRandom(now + 1)() * 3);
+            else if (kind === 'poll') detector.poll(now);
+            else detector.up(id, now, kind === 'cancel');
           }
         },
       ),
