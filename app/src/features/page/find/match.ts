@@ -1,4 +1,4 @@
-// Finding text on a page (FEATURES.md, Find and replace on a page). Matching is on the text of one textblock at a
+// Finding text on a page. Matching is on the text of one textblock at a
 // time, so a match never spans two paragraphs. This file has the matching and the replacing in a document; the
 // page-wide search is in search.ts, and the highlights are in highlights.ts.
 import type { Node as PMNode } from '@tiptap/pm/model';

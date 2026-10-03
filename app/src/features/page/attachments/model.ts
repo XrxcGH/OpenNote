@@ -1,4 +1,4 @@
-// Attached files (FEATURES.md, Attachments that save back): the logic with no page in it. An attachment is a `file`
+// Attached files: the logic with no page in it. An attachment is a `file`
 // block that names an asset of the page. Opening one edits a copy in its own app; each change that app saves comes
 // back as a new asset, and the block is pointed at it in one step, so the page always holds the latest version and
 // undo brings back the one before.

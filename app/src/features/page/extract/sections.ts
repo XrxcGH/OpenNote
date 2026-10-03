@@ -1,4 +1,4 @@
-// Extract, merge, and split (FEATURES.md, Extract and merge pages): the logic on blocks and Markdown. Splitting a
+// Extract, merge, and split: the logic on blocks and Markdown. Splitting a
 // page at its headings gives one section per heading of the page's least level; merging joins pages with each
 // title as a heading. Neither changes the pages it reads: they make new pages, so nothing is lost.
 import { Fragment } from '@tiptap/pm/model';
@@ -103,7 +103,7 @@ export function mergeBlocks(pages: readonly { title: string; blocks: readonly Bl
   const out: NewBlock[] = [];
   for (const page of pages) {
     const title = page.title.replace(/\s+/g, ' ').trim();
-    out.push({ id: newId(), type: 'text', data: { markdown: `# ${title.replace(/^#+\s*/, '') || '​'}` } });
+    out.push({ id: newId(), type: 'text', data: { markdown: `# ${title.replace(/^#+\s*/, '') || 'Untitled page'}` } });
     out.push(...copyBlocks(page.blocks));
   }
   return out;

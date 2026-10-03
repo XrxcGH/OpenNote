@@ -1,4 +1,4 @@
-// Typewriter scrolling (FEATURES.md, Typewriter scrolling): while the person types, the line with the caret stays
+// Typewriter scrolling: while the person types, the line with the caret stays
 // at one height, centered by default, and the page moves under it. It is off by default. With reduced motion on,
 // the page jumps instead of gliding. Pointer selections and scrolling by hand are left alone: only typing and
 // keys move the page.

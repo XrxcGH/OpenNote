@@ -1,4 +1,4 @@
-// The table of contents (FEATURES.md, Table of contents): the headings of a typed page, in reading order. A heading
+// The table of contents: the headings of a typed page, in reading order. A heading
 // is a heading node of a text box; its text is what the page shows, without formatting marks.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { BlockId } from '../../../services/pages/types';

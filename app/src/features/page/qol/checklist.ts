@@ -1,6 +1,6 @@
-// Checklist extras (FEATURES.md, Checklist shortcuts): Check all and Uncheck all for a list, finished items kept in
-// place, moved to the bottom, or hidden, and the count of finished items. A list is checked the way the schema
-// stores it: a list item whose `checked` attribute is true or false. Plain list items have none.
+// Checklist extras: Check all and Uncheck all for a list. Finished items can stay in place, move to the bottom, or
+// be hidden, and a count says how many are done. A list is checked the way the schema stores it: a list item whose
+// `checked` attribute is true or false. Plain list items have none.
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { Transaction } from '@tiptap/pm/state';

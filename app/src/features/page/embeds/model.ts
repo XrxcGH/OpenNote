@@ -1,4 +1,4 @@
-// Page embeds (FEATURES.md, Page embeds): a paragraph that holds only `![[Page]]` or `![[Page#Heading]]` shows that
+// Page embeds: a paragraph that holds only `![[Page]]` or `![[Page#Heading]]` shows that
 // page, or the text box with that heading, live under it. The Markdown keeps the plain text, like [[page links]], so
 // the format does not change and a reader that does not know embeds shows the line as text.
 import type { Node as PMNode } from '@tiptap/pm/model';

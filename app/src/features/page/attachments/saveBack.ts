@@ -1,4 +1,4 @@
-// Saving back (FEATURES.md, Attachments that save back): when the app that opened an attachment saves a change, the
+// Saving back: when the app that opened an attachment saves a change, the
 // shell imports the new file as an asset and tells the page. This points the page's attachment at it in one step,
 // so Ctrl+Z brings back the version before. When the page closes, the shell stops watching its copies.
 import { commandContext } from '../../../commands/registry';

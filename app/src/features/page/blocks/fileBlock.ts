@@ -1,4 +1,4 @@
-// The attachment block (FEATURES.md, Attachments that save back; format block type `file`): a card with the file's type,
+// The attachment block: a card with the file's type,
 // name, and size, shown as an icon or, for plain text, with its first lines. Opening it hands a copy to the file's own
 // app, and the shell saves each change that app makes back into the page's assets (attachments/saveBack.ts). The block
 // is selected like an image, moves like any object, and opens with Enter, a double click, or its Open button.

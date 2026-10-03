@@ -1,8 +1,8 @@
-// The Find bar (FEATURES.md, Find and replace on a page): Ctrl+F finds, Ctrl+H also replaces. It sits over the top of
-// the page, counts the matches in a live status, highlights them on the page, and moves between them with Enter,
-// Shift+Enter, F3, and Shift+F3. Replace and Replace all change the page as one step, so one Ctrl+Z undoes them.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+// The Find bar: Ctrl+F finds, Ctrl+H also replaces. It sits over the top of the page, counts the matches in a live
+// status, and highlights them on the page. Enter, Shift+Enter, F3, and Shift+F3 move between them. Replace and
+// Replace all change the page as one step, so one Ctrl+Z undoes them.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 import { useFlag } from '../../../app/flags';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
@@ -10,6 +10,7 @@ import { announce, Button, Switch, TextField } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { closeFind, findRequest } from '../qol/stores';
 import styles from '../qol/qol.module.css';
+import type { FindOptions } from './match';
 import { clearHighlights, collectMatches, highlight, replaceMatches, reveal } from './search';
 import type { FindMatch } from './search';
 
@@ -24,35 +25,29 @@ function selectedWord(mounted: MountedPage): string {
   return text.length <= 100 && !text.includes('\n') ? text : '';
 }
 
-export function FindBar({ mounted }: { mounted: MountedPage }) {
-  const enabled = useFlag('page.findReplace');
-  const request = useStore(findRequest, (value) => value);
-  const open = enabled && request.open;
-  const [query, setQuery] = useState('');
-  const [replacement, setReplacement] = useState('');
-  const [caseSensitive, setCaseSensitive] = useState(false);
-  const [wholeWord, setWholeWord] = useState(false);
-  const [matches, setMatches] = useState<FindMatch[]>([]);
-  const [current, setCurrent] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
-  const wantReveal = useRef(false);
-  const options = useMemo(() => ({ caseSensitive, wholeWord }), [caseSensitive, wholeWord]);
-  const editable = !mounted.page.readOnly;
-
-  // Opening, or asking again, puts the caret in the Find field, with the selected word in it.
+/** Opening, or asking again, puts the caret in the Find field, with the selected word in it. */
+function useOpenFocus(mounted: MountedPage, open: boolean, nonce: number, root: RefObject<HTMLDivElement | null>) {
+  const [word, setWord] = useState('');
   useEffect(() => {
     if (!open) return;
-    const word = selectedWord(mounted);
     // The word goes in on the next tick, so the field is filled before it is selected.
-    const filled = word ? window.setTimeout(() => setQuery(word), 0) : 0;
+    const found = selectedWord(mounted);
+    const filled = found ? window.setTimeout(() => setWord(found), 0) : 0;
     const input = root.current?.querySelector('input');
     input?.focus();
     input?.select();
     return () => window.clearTimeout(filled);
     // Only a new request matters here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [request.nonce, open]);
+  }, [nonce, open]);
+  return word;
+}
 
+/** The matches for the query, kept up to date while the page changes, and drawn on the page. */
+function useMatches(mounted: MountedPage, open: boolean, query: string, options: FindOptions) {
+  const [matches, setMatches] = useState<FindMatch[]>([]);
+  const [current, setCurrent] = useState(0);
+  const wantReveal = useRef(false);
   const refresh = useCallback(() => {
     const next = collectMatches(mounted, query, options);
     setMatches(next);
@@ -90,30 +85,22 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
     wantReveal.current = true;
     setCurrent((at) => (at + step + matches.length) % matches.length);
   };
+  return { matches, current, setCurrent, go, refresh };
+}
 
-  const close = () => {
-    const match = matches[current];
-    closeFind();
-    // The caret goes to the match that was current, so typing carries on from there.
-    if (match) mounted.pool.mount(match.block, { kind: 'selection', anchor: match.from, head: match.to }, 'target');
-  };
+interface RowProps {
+  query: string;
+  onQuery(next: string): void;
+  options: FindOptions;
+  onOptions(next: FindOptions): void;
+  matches: readonly FindMatch[];
+  current: number;
+  go(step: number): void;
+  close(): void;
+}
 
-  const replace = async (all: boolean) => {
-    const list = all ? matches : matches.slice(current, current + 1);
-    const count = await replaceMatches(mounted, list, query, replacement).catch(() => 0);
-    announce(count > 0 ? t('pageExtras.find.replaced', { count }) : t('pageExtras.find.none'));
-    refresh();
-  };
-
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'F3' || (event.key === 'Enter' && event.shiftKey)) {
-      event.preventDefault();
-      event.stopPropagation();
-      go(event.shiftKey ? -1 : 1);
-    }
-  };
-
-  if (!open) return null;
+function FindRow(props: RowProps) {
+  const { query, matches, current, go, close, options } = props;
   const status =
     query === ''
       ? ''
@@ -121,21 +108,12 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
         ? t('pageExtras.find.none')
         : t('pageExtras.find.count', { index: current + 1, total: matches.length });
   return (
-    <div
-      ref={root}
-      className={styles.find}
-      role="search"
-      aria-label={t('pageExtras.find.bar')}
-      onKeyDownCapture={onKeyDown}
-    >
+    <>
       <div className={styles.findField}>
         <TextField
           label={t('pageExtras.find.label')}
           value={query}
-          onChange={(next) => {
-            setQuery(next);
-            setCurrent(0);
-          }}
+          onChange={props.onQuery}
           onCommit={() => go(1)}
           onCancel={close}
         />
@@ -150,33 +128,125 @@ export function FindBar({ mounted }: { mounted: MountedPage }) {
         <span className={styles.findCount} role="status">
           {status}
         </span>
-        <Switch label={t('pageExtras.find.matchCase')} checked={caseSensitive} onChange={setCaseSensitive} />
-        <Switch label={t('pageExtras.find.wholeWord')} checked={wholeWord} onChange={setWholeWord} />
+        <Switch
+          label={t('pageExtras.find.matchCase')}
+          checked={options.caseSensitive}
+          onChange={(caseSensitive) => props.onOptions({ ...options, caseSensitive })}
+        />
+        <Switch
+          label={t('pageExtras.find.wholeWord')}
+          checked={options.wholeWord}
+          onChange={(wholeWord) => props.onOptions({ ...options, wholeWord })}
+        />
         <Button variant="quiet" onClick={close}>
           {t('pageExtras.find.close')}
         </Button>
       </div>
+    </>
+  );
+}
+
+interface ReplaceProps {
+  value: string;
+  onChange(next: string): void;
+  enabled: boolean;
+  empty: boolean;
+  replace(all: boolean): void;
+  close(): void;
+}
+
+function ReplaceRow({ value, onChange, enabled, empty, replace, close }: ReplaceProps) {
+  return (
+    <>
+      <div className={styles.findField}>
+        <TextField
+          label={t('pageExtras.find.replaceLabel')}
+          value={value}
+          onChange={onChange}
+          onCommit={() => replace(false)}
+          onCancel={close}
+          readOnly={!enabled}
+        />
+      </div>
+      <div className={styles.findRow}>
+        <Button onClick={() => replace(false)} disabled={empty || !enabled}>
+          {t('pageExtras.find.replaceOne')}
+        </Button>
+        <Button onClick={() => replace(true)} disabled={empty || !enabled}>
+          {t('pageExtras.find.replaceAll')}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+export function FindBar({ mounted }: { mounted: MountedPage }) {
+  const enabled = useFlag('page.findReplace');
+  const request = useStore(findRequest, (value) => value);
+  const open = enabled && request.open;
+  const [typed, setTyped] = useState('');
+  const [replacement, setReplacement] = useState('');
+  const [options, setOptions] = useState<FindOptions>({ caseSensitive: false, wholeWord: false });
+  const root = useRef<HTMLDivElement>(null);
+  const selected = useOpenFocus(mounted, open, request.nonce, root);
+  // A word picked up from the selection replaces what was typed, once, when the bar opens.
+  const [seen, setSeen] = useState('');
+  if (selected !== seen) {
+    setSeen(selected);
+    if (selected) setTyped(selected);
+  }
+  const { matches, current, setCurrent, go, refresh } = useMatches(mounted, open, typed, options);
+
+  const close = () => {
+    const match = matches[current];
+    closeFind();
+    // The caret goes to the match that was current, so typing carries on from there.
+    if (match) mounted.pool.mount(match.block, { kind: 'selection', anchor: match.from, head: match.to }, 'target');
+  };
+  const replace = async (all: boolean) => {
+    const list = all ? matches : matches.slice(current, current + 1);
+    const count = await replaceMatches(mounted, list, typed, replacement).catch(() => 0);
+    announce(count > 0 ? t('pageExtras.find.replaced', { count }) : t('pageExtras.find.none'));
+    refresh();
+  };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'F3' && !(event.key === 'Enter' && event.shiftKey)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    go(event.shiftKey ? -1 : 1);
+  };
+
+  if (!open) return null;
+  return (
+    <div
+      ref={root}
+      className={styles.find}
+      role="search"
+      aria-label={t('pageExtras.find.bar')}
+      onKeyDownCapture={onKeyDown}
+    >
+      <FindRow
+        query={typed}
+        onQuery={(next) => {
+          setTyped(next);
+          setCurrent(0);
+        }}
+        options={options}
+        onOptions={setOptions}
+        matches={matches}
+        current={current}
+        go={go}
+        close={close}
+      />
       {request.replace && (
-        <>
-          <div className={styles.findField}>
-            <TextField
-              label={t('pageExtras.find.replaceLabel')}
-              value={replacement}
-              onChange={setReplacement}
-              onCommit={() => void replace(false)}
-              onCancel={close}
-              readOnly={!editable}
-            />
-          </div>
-          <div className={styles.findRow}>
-            <Button onClick={() => void replace(false)} disabled={matches.length === 0 || !editable}>
-              {t('pageExtras.find.replaceOne')}
-            </Button>
-            <Button onClick={() => void replace(true)} disabled={matches.length === 0 || !editable}>
-              {t('pageExtras.find.replaceAll')}
-            </Button>
-          </div>
-        </>
+        <ReplaceRow
+          value={replacement}
+          onChange={setReplacement}
+          enabled={!mounted.page.readOnly}
+          empty={matches.length === 0}
+          replace={(all) => void replace(all)}
+          close={close}
+        />
       )}
     </div>
   );

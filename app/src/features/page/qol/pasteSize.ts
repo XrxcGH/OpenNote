@@ -1,4 +1,4 @@
-// Screenshot paste size (FEATURES.md, Screenshot paste size): a pasted screenshot or image comes in at its actual
+// Screenshot paste size: a pasted screenshot or image comes in at its actual
 // size on this display, fits the column, or asks. "Actual size" counts the display's scaling, so a screenshot taken
 // at 150% looks as it did on screen. Any image can switch size afterwards from its toolbar.
 import { t } from '../../../strings/t';

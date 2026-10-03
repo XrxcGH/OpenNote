@@ -1,6 +1,6 @@
 // What Extract, Merge, and Split do. They make new pages through the notes service and fill them through the page
-// service, and they leave the pages they read as they were; Extract is the one that changes the page it is on,
-// replacing the extracted text with a link to the new page. They load when a command first runs.
+// service. They leave the pages they read as they were, except that Extract replaces the extracted text with a link
+// to the new page. They load when a command first runs.
 import { commandContext } from '../../../commands/registry';
 import { fromChange, runCommand } from '../../../editor/commands/command';
 import { newId } from '../../../editor/ids';
@@ -111,7 +111,7 @@ export async function splitPage(): Promise<void> {
   showToast({
     message:
       result.skipped > 0
-        ? t('pageExtras.split.doneSkipped', { count, skipped: result.skipped })
+        ? `${t('pageExtras.split.done', { count })} ${t('pageExtras.split.skipped', { skipped: result.skipped })}`
         : t('pageExtras.split.done', { count }),
   });
 }

@@ -1,4 +1,4 @@
-// Link titles on paste (FEATURES.md, Link titles on paste). Off by default. When on, pasting a lone web address
+// Link titles on paste. Off by default. When on, pasting a lone web address
 // asks the site for its page title in Rust and shows the title as the link text. That request tells the site this
 // PC's network address, so Settings says so, the Privacy panel lists it, and it never runs while Work offline is
 // on. The replacement is its own undo step: one Ctrl+Z brings back the bare address.

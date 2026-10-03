@@ -1,4 +1,4 @@
-// Word count and reading time (FEATURES.md, Word count and reading time). The text of a page or a selection is
+// Word count and reading time. The text of a page or a selection is
 // counted by words as the person reads them, so a hyphenated word or an apostrophe stays one word, and the
 // Markdown around the words does not count.
 

@@ -1,5 +1,5 @@
 // The quality-of-life features of typed notes and the page chrome (owner: the typed-notes lane): Reading mode, word
-// count, checklist extras, find and replace, the table of contents, templates, series pages, the Markdown source,
+// count, checklist extras, finding text, the table of contents, templates, series pages, the Markdown source,
 // attachments, text wrap, and their settings. Each namespace file has one owner, so parallel work never edits the
 // same file.
 
@@ -73,7 +73,8 @@ export const pageExtras = {
   linkTitles: {
     title: 'Link titles',
     on: 'Show the page title when I paste a web address',
-    help: 'This asks the site for its page title. The site sees this PC’s network address and the request, and nothing else. It never runs while Work offline is on, and never for addresses on your own network.',
+    help: 'This asks the site for its page title. The site sees this PC’s network address and the request.',
+    helpLimits: 'It never runs while Work offline is on, and never for addresses on your own network.',
     privacyTitle: 'Link titles on paste',
     privacyDetail:
       'Asks a site for its page title when you paste its address, only if you turned this on in Settings, then Editing.',
@@ -162,8 +163,7 @@ export const pageExtras = {
     none: 'This page has no headings to split at.',
     untitled: 'Untitled section',
     done: '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}}',
-    doneSkipped:
-      '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}} {skipped, plural, one {# image or drawing stays on this page.} other {# images and drawings stay on this page.}}',
+    skipped: '{skipped, plural, one {# object stays on this page.} other {# objects stay on this page.}}',
   },
   embed: {
     loading: 'Loading the embedded page.',

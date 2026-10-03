@@ -4,6 +4,8 @@
 import type { FlagDef, FlagId } from '../../app/flags';
 import { QOL_PAGE_FLAGS } from './qolFlags';
 
+export type { QolPageFlagId } from './qolFlags';
+
 export type PageFlagId = Extract<FlagId, `page.${string}` | 'editor.spelling' | 'editor.readAloud'>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';

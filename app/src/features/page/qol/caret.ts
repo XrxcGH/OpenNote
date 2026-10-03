@@ -1,8 +1,8 @@
-// Thicker caret (FEATURES.md, Thicker caret). The caret's width and blinking follow the Windows text cursor
+// Thicker caret. The caret's width and blinking follow the Windows text cursor
 // settings, which the shell reads, with a 1 to 6 px choice in Settings and a steady caret that does not blink.
 // A browser draws its own caret one pixel wide and always blinking, so when the wanted caret differs, the page
 // hides that one and draws its own: one thin element that follows the selection. With Windows' own default
-// (one pixel, blinking) nothing changes. The colour is the text colour, so it reads in every theme.
+// (one pixel, blinking) nothing changes. The color is the text color, so it reads in every theme.
 import type { CaretMetrics } from '../../../platform/types';
 import { commandContext } from '../../../commands/registry';
 import { osStore } from '../../../state/os';

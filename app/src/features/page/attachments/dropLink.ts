@@ -1,4 +1,4 @@
-// Links dropped from a browser (FEATURES.md, Drag and drop): dragging a link or an address from a browser onto a page
+// Links dropped from a browser: dragging a link or an address from a browser onto a page
 // makes a link, with the link's own text when the browser sent it. Files go through attach.ts.
 
 export interface DroppedLink {

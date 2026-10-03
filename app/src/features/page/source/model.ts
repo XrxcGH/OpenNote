@@ -1,4 +1,4 @@
-// The Markdown source view (FEATURES.md, Markdown source view): a typed page as one piece of Markdown. Each block
+// The Markdown source view: a typed page as one piece of Markdown. Each block
 // starts at a marker comment such as `<!-- text a1b2 -->`. A text box's Markdown follows its marker; images, tables,
 // ink, and other objects are only their marker, a placeholder that stays where it is. Reading the source back
 // compares each text box with what it was and makes the smallest changes: it edits the boxes whose Markdown changed,
@@ -152,7 +152,7 @@ function inline(text: string): Token[] {
   return out;
 }
 
-/** One line of source as coloured pieces, which together are exactly the line. */
+/** One line of source as colored pieces, which together are exactly the line. */
 export function tokenizeLine(line: string): Token[] {
   if (parseMarker(line)) return [{ text: line, kind: 'placeholder' }];
   const heading = /^(#{1,6}\s)(.*)$/.exec(line);

@@ -5,7 +5,7 @@
 import type { Channel } from '../platform/bindings/Channel';
 import { INK_FLAGS } from '../features/ink/flags';
 import { PAGE_FLAGS } from '../features/page/flags';
-import type { QolPageFlagId } from '../features/page/qolFlags';
+import type { QolPageFlagId } from '../features/page/flags';
 import { PAGES_FLAGS } from '../features/pages/flags';
 import { AUDIO_FLAGS } from '../features/audio/flags';
 import { INTEROP_FLAGS } from '../features/interop/flags';

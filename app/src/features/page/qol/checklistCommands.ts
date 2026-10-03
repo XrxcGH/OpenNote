@@ -1,4 +1,4 @@
-// What the checklist commands do (FEATURES.md, Checklist shortcuts): Check all and Uncheck all for the list at the
+// What the checklist commands do: Check all and Uncheck all for the list at the
 // caret, and the choice for finished items of the text box it is in. The choice is kept in the box's data, so it
 // goes with the page and every device shows the same list.
 import { fromChange, runCommand } from '../../../editor/commands/command';

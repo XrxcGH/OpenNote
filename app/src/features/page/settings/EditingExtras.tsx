@@ -124,6 +124,7 @@ function LinkTitlesPart() {
       <h3>{t('pageExtras.linkTitles.title')}</h3>
       <Switch label={t('pageExtras.linkTitles.on')} checked={on} onChange={(linkTitles) => setPrefs({ linkTitles })} />
       <p className={styles.help}>{t('pageExtras.linkTitles.help')}</p>
+      <p className={styles.help}>{t('pageExtras.linkTitles.helpLimits')}</p>
     </>
   );
 }

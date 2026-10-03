@@ -7,11 +7,11 @@
   /* The page's own caret: one thin element that follows the selection (qol/caret.ts). */
   .caret {
     position: fixed;
-    z-index: 50;
+    z-index: var(--layer-page-chrome);
     inline-size: var(--caret-width, 2px);
     background: var(--caret-color, currentcolor);
     pointer-events: none;
-    animation: blink var(--caret-blink, 1060ms) steps(1, end) infinite;
+    animation: blink var(--caret-blink) steps(1, end) infinite;
   }
 
   .caret[data-steady] {

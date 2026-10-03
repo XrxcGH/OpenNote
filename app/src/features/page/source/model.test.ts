@@ -96,7 +96,7 @@ describe('Markdown source', () => {
   });
 });
 
-describe('colouring', () => {
+describe('coloring', () => {
   const text = (line: string) =>
     tokenizeLine(line)
       .map((t) => t.text)

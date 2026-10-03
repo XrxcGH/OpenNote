@@ -1,5 +1,5 @@
-// The Markdown source view: the page as one piece of Markdown in a text area, with a coloured copy of the same text
-// behind it, so the colours follow every key without a second editor. Blocks other than text are comment lines that
+// The Markdown source view: the page as one piece of Markdown in a text area, with a colored copy of the same text
+// behind it, so the colors follow every key without a second editor. Blocks other than text are comment lines that
 // stay where they are. Escape, or the button, goes back to the page and keeps the caret.
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
@@ -13,7 +13,7 @@ import { readingLock, sourceState } from '../qol/stores';
 import { closeSource } from './controller';
 import { tokenizeLine } from './model';
 
-/** Past this size the colours are left out, so typing in a very long page stays quick. */
+/** Past this size the colors are left out, so typing in a very long page stays quick. */
 const COLOUR_LIMIT = 200_000;
 
 const KIND_CLASS = {
@@ -35,12 +35,12 @@ export function SourceView({ mounted }: { mounted: MountedPage }) {
   const input = useRef<HTMLTextAreaElement>(null);
   const opened = useRef(false);
   const text = state?.text ?? '';
-  const colours = useMemo(
+  const colors = useMemo(
     () => (text.length > COLOUR_LIMIT ? null : text.split('\n').map((line) => tokenizeLine(line))),
     [text],
   );
 
-  // The text area is as tall as its text, so the view scrolls as one and the coloured copy lines up.
+  // The text area is as tall as its text, so the view scrolls as one and the colored copy lines up.
   useLayoutEffect(() => {
     const area = input.current;
     if (!area) return;
@@ -87,9 +87,9 @@ export function SourceView({ mounted }: { mounted: MountedPage }) {
       </div>
       <div className={styles.source}>
         <div className={styles.sourceBox}>
-          {colours && (
+          {colors && (
             <pre className={styles.sourceLayer} aria-hidden="true">
-              {colours.map((tokens, index) => (
+              {colors.map((tokens, index) => (
                 <span key={index}>
                   {tokens.map((token, at) => (
                     <span key={at} className={KIND_CLASS[token.kind]}>
@@ -104,7 +104,7 @@ export function SourceView({ mounted }: { mounted: MountedPage }) {
           <textarea
             ref={input}
             className={styles.sourceInput}
-            style={colours ? undefined : { color: 'var(--color-text-primary)' }}
+            style={colors ? undefined : { color: 'var(--color-text-primary)' }}
             value={state.text}
             spellCheck={false}
             readOnly={mounted.page.readOnly !== null || locked}

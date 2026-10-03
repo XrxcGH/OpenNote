@@ -1,5 +1,5 @@
-// Reading mode (FEATURES.md, Reading mode): a lock that makes the shown page read-only. The text and table editors
-// read the lock through their extension, images and objects read the store, and the ink view honours the same
+// Reading mode: a lock that makes the shown page read-only. The text and table editors
+// read the lock through their extension, images and objects read the store, and the ink view honors the same
 // store (readingLock). This module applies it to what is already mounted: every editor, the title, and the page's
 // own marker, and it says so clearly. A page opens unlocked, and leaving the page lifts the lock.
 import { t } from '../../../strings/t';

@@ -1,4 +1,4 @@
-// Page templates and series pages (FEATURES.md, Page templates and Series pages). A template is an ordinary page,
+// Page templates and series pages. A template is an ordinary page,
 // marked with the tag "template". Its text and tables are copied into a new page or into the page being written,
 // with {{date}}, {{time}}, {{title}}, and {{cursor}} filled in. A series page copies the structure of the last page
 // in the series: its headings and its checklists, with the unfinished items carried forward if the person wants.

@@ -1,4 +1,4 @@
-// Alt text first draft (FEATURES.md, Alt text): the words recognized in an image, offered as a draft the person
+// Alt text first draft: the words recognized in an image, offered as a draft the person
 // edits. Recognition runs on this device and asks first, through the intelligence feature, so nothing starts on its
 // own. Loads when the Alt text dialog's button is pressed.
 import { isEnabled } from '../../../app/flags';

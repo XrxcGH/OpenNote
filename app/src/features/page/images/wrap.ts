@@ -1,4 +1,4 @@
-// Wrapping text around an image (FEATURES.md, Wrap text around images). In a flow page an image can sit left or right
+// Wrapping text around an image. In a flow page an image can sit left or right
 // with the text wrapping around it, stay in the line beside other images, or stand alone as it always has. The mode
 // and the gap to the text are kept in the image block's data as `wrap` and `wrapGap`: the format keeps keys it does
 // not know, so they travel with the page. Floating images ignore them, because they sit at their own frame.
