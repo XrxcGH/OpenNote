@@ -967,7 +967,7 @@ export const tokens = {
     "palette": 680,
     "paletteTop": 90,
     "setupCardWidth": 720,
-    "setupCardHeight": 600,
+    "setupCardHeight": 672,
     "settingsNav": 240,
     "bottomBar": 64,
     "menuMinWidth": 208,

@@ -37,7 +37,7 @@ Keep-out zones that apply to every desktop screen:
 
 ![First run, step 2: three theme cards, with Match Windows selected](images/01-first-run-look.svg)
 
-Setup has five short steps in a centered 720 × 600 card:
+Setup has five short steps in a centered 720 × 672 card:
 
 1. **Welcome:** what OpenNote is, in one sentence.
 2. **Choose your look:** Light, Dark, or Match Windows (shown above). Match Windows is selected in advance, with a caption that names the Windows setting, and clicking a card repaints the whole screen at once.
