@@ -5,6 +5,7 @@ import {
   MARGIN_PRESETS,
   PAPER_SIZES,
   clampMargins,
+  clampPaper,
   paperDimensions,
   type Margins,
   type Orientation,
@@ -58,8 +59,9 @@ export function setPaperSize(view: PageViewSpec, size: Exclude<PaperSizeName, 'c
 
 /** Sets any size. The labels follow the dimensions, so a size that matches a standard one gets its name. */
 export function setCustomPaper(view: PageViewSpec, width: number, height: number): PageViewSpec {
-  const label = describePaper(width, height);
-  return withPaper(view, { ...label, width, height });
+  const size = clampPaper({ width, height });
+  const label = describePaper(size.width, size.height);
+  return withPaper(view, { ...label, ...size });
 }
 
 /**

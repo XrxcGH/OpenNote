@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { contentBottom, contentTop, sheetAt } from '../pagination/geometry';
+import { MAX_SHEETS, contentBottom, contentTop, sheetAt } from '../pagination/geometry';
 import { atom, flow, pageBreak, placed, table, text, type Spec } from '../pagination/flowFixture';
 import { setBackground, setContentWidth, setLayout, setMargins, setMode, setPaperSize } from './edit';
 import { displayY, naturalY, planFlow, slicesBySheet } from './flow';
@@ -198,6 +198,16 @@ describe('planning a page', () => {
   });
 
   it('gives an empty page one sheet', () => {
-    expect(planPage(LETTER, {})).toMatchObject({ sheets: 1, flow: null });
+    expect(planPage(LETTER, {})).toMatchObject({ sheets: 1, cut: 0, flow: null });
+  });
+
+  it('plans at most MAX_SHEETS sheets and counts the rest as cut', () => {
+    // A block at the format's largest y is about 9,470 Letter sheets down, and a tall image in the flow as many.
+    const floating = [{ id: 'far', rect: { x: 0, y: 9_999_000, w: 10, h: 10 } }];
+    const { blocks, measure } = flow([text('a', 2), atom('tall', 9_000_000)], 72);
+    const page = planPage(LETTER, { flow: { blocks, measure }, floating });
+    expect(page.sheets).toBe(MAX_SHEETS);
+    expect(page.bySheet).toHaveLength(MAX_SHEETS);
+    expect(page.cut).toBe(Math.ceil((9_999_000 + 10) / 1056) - MAX_SHEETS);
   });
 });

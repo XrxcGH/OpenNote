@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { PAPER_SIZES } from '../pagination/geometry';
+import { MAX_PAPER, MIN_PAPER, PAPER_SIZES } from '../pagination/geometry';
 import { fixtureJson } from '../formatFixtures';
 import { applyPatch, mergeLayers, type JsonObject } from './json';
 import {
@@ -142,6 +142,19 @@ describe('changing a view', () => {
     expect(turned.paper).toMatchObject({ width: 1056, height: 816, margins: [120, 48, 72, 96] });
     expect(setOrientation(turned, 'landscape')).toEqual(turned);
     expect(setOrientation(turned, 'portrait').paper.margins).toEqual([48, 72, 96, 120]);
+  });
+
+  it('falls back to the default paper for a size no printer takes, and keeps a custom size in range', () => {
+    for (const paper of [
+      { width: 0.5, height: 1056 },
+      { width: 816, height: 100_000 },
+    ]) {
+      const { view, warnings } = readView({ paper });
+      expect(view.paper).toMatchObject({ width: 816, height: 1056 });
+      expect(warnings).toEqual([{ kind: 'paperSize', path: 'paper' }]);
+    }
+    expect(setCustomPaper(DEFAULT_VIEW, 10, 1e9).paper).toMatchObject({ width: MIN_PAPER, height: MAX_PAPER });
+    expect(setCustomPaper(DEFAULT_VIEW, Number.NaN, 300).paper).toMatchObject({ width: 816, height: 300 });
   });
 
   it('names a custom size that matches a standard one, and keeps margins within the sheet', () => {

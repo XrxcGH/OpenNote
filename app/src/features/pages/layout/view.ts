@@ -2,7 +2,7 @@
 // falls back to its default and is reported. Unknown keys and unknown enum values are kept, as the format requires.
 // Writing leaves out every default.
 
-import { PAPER_SIZES, type Margins, type Orientation, type PaperSizeName } from '../pagination/geometry';
+import { PAPER_SIZES, paperInRange, type Margins, type Orientation, type PaperSizeName } from '../pagination/geometry';
 import { DEFAULT_SPACING } from '../paper/patterns';
 import { geometry, isObject, round2, sameNumber, type Json, type JsonObject } from './json';
 
@@ -82,7 +82,7 @@ export function defaultPaperFor(region: string | undefined): PaperSpec {
   return { ...DEFAULT_PAPER, size: letter ? 'letter' : 'a4', width: size.width, height: size.height };
 }
 
-export type ViewWarningKind = 'badValue' | 'noArea' | 'badMargins';
+export type ViewWarningKind = 'badValue' | 'noArea' | 'paperSize' | 'badMargins';
 
 export interface ViewWarning {
   readonly kind: ViewWarningKind;
@@ -128,8 +128,10 @@ class Reader {
     const orientation = this.str(source, 'orientation', 'paper.', DEFAULT_PAPER.orientation);
     let width = this.num(source, 'width', 'paper.', DEFAULT_PAPER.width);
     let height = this.num(source, 'height', 'paper.', DEFAULT_PAPER.height);
-    if (width <= 0 || height <= 0) {
-      this.warnings.push({ kind: 'noArea', path: 'paper' });
+    if (width <= 0 || height <= 0 || !paperInRange({ width, height })) {
+      // A paper of no area, or one far smaller or larger than any printer takes, would plan millions of sheets or
+      // pattern marks.
+      this.warnings.push({ kind: width <= 0 || height <= 0 ? 'noArea' : 'paperSize', path: 'paper' });
       width = DEFAULT_PAPER.width;
       height = DEFAULT_PAPER.height;
     }

@@ -121,10 +121,15 @@ export function planFlow(
   return { plan, pieces, slices: slicesOf(plan, pieces, counts), shifts };
 }
 
-/** The slices on each sheet, in reading order. Every sheet has an entry, empty when nothing lands on it. */
-export function slicesBySheet(flow: FlowPlan): FlowSlice[][] {
-  const sheets = Array.from({ length: flow.plan.sheets }, (): FlowSlice[] => []);
-  for (const slice of flow.slices) sheets[Math.min(slice.sheet, sheets.length - 1)].push(slice);
+/**
+ * The slices on each sheet, in reading order. Every sheet up to `limit` has an entry, empty when nothing lands on it,
+ * and slices past it are left out.
+ */
+export function slicesBySheet(flow: FlowPlan, limit = flow.plan.sheets): FlowSlice[][] {
+  const sheets = Array.from({ length: Math.min(flow.plan.sheets, limit) }, (): FlowSlice[] => []);
+  for (const slice of flow.slices) {
+    if (slice.sheet < limit) sheets[Math.min(slice.sheet, sheets.length - 1)].push(slice);
+  }
   return sheets;
 }
 

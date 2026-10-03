@@ -33,7 +33,8 @@ All of it is re-exported from `features/pages`.
 
 - A flow page's text column is the whole content box, or `contentWidth` centered in it when that is narrower. Infinite and paginated view use the same column, so switching never rewraps text and nothing moves under the pointer. (The format's "reading width" is therefore the content box width.)
 - Print and export paginate every page, so a page in infinite view still exports on its paper.
-- `planPage` takes the larger sheet count of the flow and the floating blocks.
+- `planPage` takes the larger sheet count of the flow and the floating blocks, up to `MAX_SHEETS` (2,000). It reports the sheets past that as `cut`.
+- Paper sides stay between `MIN_PAPER` and `MAX_PAPER` (1 and 200 inches). `readView` falls back to the default paper for a size outside that range, and `setCustomPaper` moves each side into it.
 - Turning the paper turns the margins with it, so the same edge keeps the same margin.
 - A value that returns to its default becomes `null` in the patch, as the format requires.
 

@@ -50,6 +50,26 @@ export interface CustomSize {
   readonly height: number;
 }
 
+/** The smallest paper side the app accepts, in page units: 1 inch. */
+export const MIN_PAPER = 96;
+/** The largest paper side the app accepts: 200 inches, the largest page Chromium prints. */
+export const MAX_PAPER = 19_200;
+/** The most sheets a page plans and prints. Anything below the last of them is left out, with a warning. */
+export const MAX_SHEETS = 2_000;
+
+/** True when both sides of the paper are between MIN_PAPER and MAX_PAPER. */
+export function paperInRange(size: CustomSize): boolean {
+  const ok = (side: number) => side >= MIN_PAPER && side <= MAX_PAPER;
+  return ok(size.width) && ok(size.height);
+}
+
+/** The paper with each side moved between MIN_PAPER and MAX_PAPER. Anything that is not a number becomes Letter. */
+export function clampPaper(size: CustomSize): CustomSize {
+  const side = (value: number, fallback: number) =>
+    Number.isFinite(value) ? Math.min(Math.max(value, MIN_PAPER), MAX_PAPER) : fallback;
+  return { width: side(size.width, PAPER_SIZES.letter.width), height: side(size.height, PAPER_SIZES.letter.height) };
+}
+
 /** The page size in page units, as oriented. A custom or unknown size uses the given fallback dimensions. */
 export function paperDimensions(size: PaperSizeName, orientation: Orientation, custom?: CustomSize): CustomSize {
   const base = size === 'custom' ? (custom ?? PAPER_SIZES.letter) : PAPER_SIZES[size];

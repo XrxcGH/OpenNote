@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { contentBox, paperDimensions, sheetGeometry, type SheetGeometry } from '../pagination/geometry';
+import { MAX_PAPER, contentBox, paperDimensions, sheetGeometry, type SheetGeometry } from '../pagination/geometry';
+import { MAX_DOTS } from './basic';
 import { horizontal, leaning, points, segments, vertical } from './pathData';
 import { infinitePaths, paperPaths, spacingOf } from './patterns';
 import { PRESETS, SPACINGS, withSpacing } from './presets';
@@ -114,6 +115,14 @@ describe('dot grid', () => {
         expect(y).toBeLessThanOrEqual(box.y + box.h + TOLERANCE);
       }
     }
+  });
+
+  it('keeps every k-th crossing on the largest paper, so a sheet never holds more than MAX_DOTS', () => {
+    const g = sheetGeometry({ width: MAX_PAPER, height: MAX_PAPER });
+    const dots = points(paperPaths({ pattern: 'dots', spacing: 8 }, g).dots);
+    expect(dots.length).toBeLessThanOrEqual(MAX_DOTS);
+    expect(dots.length).toBeGreaterThan(MAX_DOTS / 4);
+    expect(dots[1][0] - dots[0][0]).toBeCloseTo(8 * 6);
   });
 });
 

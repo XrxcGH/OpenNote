@@ -127,7 +127,7 @@ export async function preparePrint(doc: Document, input: PrepareInput): Promise<
     floating,
     options: { minLines: input.minLines },
   });
-  const print = planPrint(layout.sheet, plan.sheets, input.print);
+  const print = planPrint(layout.sheet, plan.sheets + plan.cut, input.print);
   const planEnd = performance.now();
   const unitTops = new Map([...measured].map(([id, m]) => [id, { top: m.top, first: m.first }] as const));
   const html = printDocument(setup, print, {

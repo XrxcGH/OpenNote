@@ -8,7 +8,7 @@ import { planPage } from '../layout/plan';
 import { setMargins, setPaperSize } from '../layout/edit';
 import { DEFAULT_VIEW } from '../layout/view';
 import { flow as fakeFlow, type Spec } from '../pagination/flowFixture';
-import { contentBottom, contentTop } from '../pagination/geometry';
+import { MAX_SHEETS, contentBottom, contentTop } from '../pagination/geometry';
 import { lecturePage } from '../testing/samples';
 import { measureDocument, printDocument, type DocumentSetup } from './document';
 import { bandBox, fillBand, fillTemplate } from './headerFooter';
@@ -83,6 +83,14 @@ describe('headers and footers', () => {
 
 describe('the print plan', () => {
   const letter = pageLayout(DEFAULT_VIEW).sheet;
+
+  it('prints at most MAX_SHEETS sheets, and says so', () => {
+    const plan = planPrint(letter, 10_000_000);
+    expect(plan.total).toBe(MAX_SHEETS);
+    expect(plan.sheets).toHaveLength(MAX_SHEETS);
+    expect(plan.warnings).toEqual([{ kind: 'tooManySheets', limit: MAX_SHEETS }]);
+    expect(planPrint(letter, 3).warnings).toEqual([]);
+  });
 
   it('uses the paper as the sheet box where Chromium writes the same page', () => {
     const plan = planPrint(letter, 3);

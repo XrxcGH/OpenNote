@@ -4,6 +4,7 @@
 
 import {
   CHROMIUM_PAGES_PT,
+  MAX_SHEETS,
   POINTS_PER_UNIT,
   printSheet,
   type CustomSize,
@@ -40,7 +41,9 @@ export interface PrintSheet {
 
 export type PrintWarning =
   | { readonly kind: 'range'; readonly error: RangeError }
-  | { readonly kind: 'marginTooSmall'; readonly band: 'header' | 'footer' };
+  | { readonly kind: 'marginTooSmall'; readonly band: 'header' | 'footer' }
+  /** The page needs more than `limit` sheets. Only the first `limit` print. */
+  | { readonly kind: 'tooManySheets'; readonly limit: number };
 
 export interface PrintPlan {
   /** The paper in page units. */
@@ -73,10 +76,12 @@ export function chromiumPageFor(paper: CustomSize): CustomSize | undefined {
   return undefined;
 }
 
-export function planPrint(g: SheetGeometry, totalSheets: number, options: PrintOptions = {}): PrintPlan {
+export function planPrint(g: SheetGeometry, sheetsNeeded: number, options: PrintOptions = {}): PrintPlan {
   const paper = { width: g.width, height: g.height };
   const box = printSheet(paper, options.pagePt ?? chromiumPageFor(paper));
   const warnings: PrintWarning[] = [];
+  const totalSheets = Math.min(sheetsNeeded, MAX_SHEETS);
+  if (sheetsNeeded > MAX_SHEETS) warnings.push({ kind: 'tooManySheets', limit: MAX_SHEETS });
   const parsed = parsePageRange(options.range ?? '', totalSheets, options.parity);
   const picked =
     parsed.error === 'syntax' || parsed.error === 'empty'
