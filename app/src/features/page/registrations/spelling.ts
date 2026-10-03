@@ -43,10 +43,13 @@ shownQueue.subscribe(() => {
   detach?.();
   detach = null;
   if (!shownQueue.get() || !isEnabled('editor.spelling')) return;
-  void load().then((spelling) => {
-    chunk = spelling;
-    if (turn === shown) detach = spelling.attachShownPage();
-  });
+  // A chunk that fails to load leaves the page without spelling marks; the commands report their own failures.
+  void load()
+    .then((spelling) => {
+      chunk = spelling;
+      if (turn === shown) detach = spelling.attachShownPage();
+    })
+    .catch(() => undefined);
 });
 if (typeof window !== 'undefined') {
   window.addEventListener('contextmenu', (event) => void chunk?.spellingContextMenu(event), true);

@@ -282,8 +282,9 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
       const heights = layer.heights();
       if (Object.keys(heights).length > LONG_PAGE_BLOCKS) savePageView(page.id, { heights });
       stops.reverse().forEach((stop) => stop());
-      pool.destroy();
+      // The views go first: each one detaches its sync from its editor before the pool destroys what is left.
       layer.destroy();
+      pool.destroy();
       flow.stop();
       viewport.destroy();
       await page.close().catch(() => undefined);
