@@ -7,6 +7,7 @@ import type { EraserEndAction } from '../../../platform/bindings/EraserEndAction
 import type { FingerDraw } from '../../../platform/bindings/FingerDraw';
 import type { Handedness } from '../../../platform/bindings/Handedness';
 import type { PenCurve } from '../../../platform/bindings/PenCurve';
+import type { PenDevice } from '../../../platform/bindings/PenDevice';
 import { updateSettings, useSettings } from '../../../state/settings';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
@@ -69,123 +70,135 @@ function Gestures() {
   );
 }
 
+type PenChange = Parameters<typeof updatePen>[1];
+
+/** Which pen the choices below belong to, when more than one pen has touched the screen. */
+function PenPicker({ keys, value }: { keys: readonly string[]; value: string }) {
+  if (keys.length < 2) return null;
+  return (
+    <RadioGroup<string> label={t('ink.settings.pen')} value={value} onChange={(next) => setPrefs({ lastPen: next })}>
+      {keys.map((id, index) => (
+        <RadioCard<string>
+          key={id}
+          value={id}
+          label={id === 'default' ? t('ink.settings.penDefault') : t('ink.settings.penNumber', { number: index })}
+        />
+      ))}
+    </RadioGroup>
+  );
+}
+
+/** What the pen's side button and eraser end do. */
+function ButtonChoices({ pen, set }: { pen: PenDevice; set: (change: PenChange) => void }) {
+  return (
+    <div role="group" aria-label={t('ink.settings.penButtons')}>
+      <h3>{t('ink.settings.penButtons')}</h3>
+      <RadioGroup<BarrelAction>
+        label={t('ink.settings.barrel')}
+        value={pen.barrel}
+        onChange={(barrel) => set({ barrel })}
+      >
+        {BARRELS.map(([id, label]) => (
+          <RadioCard<BarrelAction> key={id} value={id} label={t(label)} />
+        ))}
+      </RadioGroup>
+      <RadioGroup<EraserEndAction>
+        label={t('ink.settings.eraserEnd')}
+        value={pen.eraserEnd}
+        onChange={(eraserEnd) => set({ eraserEnd })}
+      >
+        {ERASER_ENDS.map(([id, label]) => (
+          <RadioCard<EraserEndAction> key={id} value={id} label={t(label)} />
+        ))}
+      </RadioGroup>
+      <p>{t('ink.settings.penButtonsHint')}</p>
+    </div>
+  );
+}
+
+/** The two ends of a custom curve, as light-touch and firm-touch sliders. */
+function CustomCurve({ pen, set }: { pen: PenDevice; set: (change: PenChange) => void }) {
+  const custom = pen.customCurve ?? [0.33, 0.33, 0.67, 0.67];
+  const slider = (label: MessageKey, value: number, change: (next: number) => PenChange) => (
+    <label>
+      {t(label)}
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.05}
+        value={value}
+        onChange={(event) => set(change(Number(event.target.value)))}
+      />
+    </label>
+  );
+  return (
+    <>
+      {slider('ink.settings.curveLight', custom[1], (y) => ({ customCurve: [0.33, y, 0.67, custom[3]] }))}
+      {slider('ink.settings.curveHeavy', custom[3], (y) => ({ customCurve: [0.33, custom[1], 0.67, y] }))}
+    </>
+  );
+}
+
+/** The pen's pressure curve, its thinnest line, and the steady pen, with a stroke to show the curve. */
+function PressureChoices({ pen, set }: { pen: PenDevice; set: (change: PenChange) => void }) {
+  return (
+    <div role="group" aria-label={t('ink.settings.pressure')}>
+      <h3>{t('ink.settings.pressure')}</h3>
+      <RadioGroup<PenCurve> label={t('ink.settings.pressure')} value={pen.curve} onChange={(curve) => set({ curve })}>
+        {CURVES.map(([id, label]) => (
+          <RadioCard<PenCurve> key={id} value={id} label={t(label)} />
+        ))}
+      </RadioGroup>
+      {pen.curve === 'custom' && <CustomCurve pen={pen} set={set} />}
+      <RadioGroup<string>
+        label={t('ink.settings.minWidth')}
+        value={String(pen.minWidth)}
+        onChange={(value) => set({ minWidth: Number(value) })}
+      >
+        {MIN_WIDTHS.map((value) => (
+          <RadioCard<string>
+            key={value}
+            value={String(value)}
+            label={t('ink.settings.minWidthValue', { percent: Math.round(value * 100) })}
+          />
+        ))}
+      </RadioGroup>
+      <p>{t('ink.settings.pressureHint')}</p>
+      <CurvePreview pen={pen} label={t('ink.settings.preview')} />
+      <Switch
+        label={t('ink.settings.steady')}
+        checked={pen.steady > 0}
+        onChange={(on) => set({ steady: on ? 5 : 0 })}
+      />
+      <p>{t('ink.settings.steadyHint')}</p>
+      {pen.steady > 0 && (
+        <RadioGroup<string>
+          label={t('ink.settings.steadyStrength')}
+          value={String(pen.steady)}
+          onChange={(value) => set({ steady: Number(value) })}
+        >
+          {STEADY.map(([value, label]) => (
+            <RadioCard<string> key={value} value={value} label={t(label)} />
+          ))}
+        </RadioGroup>
+      )}
+    </div>
+  );
+}
+
 function PenChoices() {
   const buttons = useFlag('ink.penButtons');
   const feel = useFlag('ink.steadyPen');
   const prefs = useStore(inkPrefs, (state) => state);
   const key = prefs.lastPen;
   const pen = penDevice(key, prefs);
-  const set = (change: Parameters<typeof updatePen>[1]) => updatePen(key, change);
-  const custom = pen.customCurve ?? [0.33, 0.33, 0.67, 0.67];
+  const set = (change: PenChange) => updatePen(key, change);
   return (
     <>
-      {prefs.seenPens.length > 1 && (
-        <RadioGroup<string> label={t('ink.settings.pen')} value={key} onChange={(next) => setPrefs({ lastPen: next })}>
-          {prefs.seenPens.map((id, index) => (
-            <RadioCard<string>
-              key={id}
-              value={id}
-              label={id === 'default' ? t('ink.settings.penDefault') : t('ink.settings.penNumber', { number: index })}
-            />
-          ))}
-        </RadioGroup>
-      )}
-      {buttons && (
-        <div role="group" aria-label={t('ink.settings.penButtons')}>
-          <h3>{t('ink.settings.penButtons')}</h3>
-          <RadioGroup<BarrelAction>
-            label={t('ink.settings.barrel')}
-            value={pen.barrel}
-            onChange={(barrel) => set({ barrel })}
-          >
-            {BARRELS.map(([id, label]) => (
-              <RadioCard<BarrelAction> key={id} value={id} label={t(label)} />
-            ))}
-          </RadioGroup>
-          <RadioGroup<EraserEndAction>
-            label={t('ink.settings.eraserEnd')}
-            value={pen.eraserEnd}
-            onChange={(eraserEnd) => set({ eraserEnd })}
-          >
-            {ERASER_ENDS.map(([id, label]) => (
-              <RadioCard<EraserEndAction> key={id} value={id} label={t(label)} />
-            ))}
-          </RadioGroup>
-          <p>{t('ink.settings.penButtonsHint')}</p>
-        </div>
-      )}
-      {feel && (
-        <div role="group" aria-label={t('ink.settings.pressure')}>
-          <h3>{t('ink.settings.pressure')}</h3>
-          <RadioGroup<PenCurve>
-            label={t('ink.settings.pressure')}
-            value={pen.curve}
-            onChange={(curve) => set({ curve })}
-          >
-            {CURVES.map(([id, label]) => (
-              <RadioCard<PenCurve> key={id} value={id} label={t(label)} />
-            ))}
-          </RadioGroup>
-          {pen.curve === 'custom' && (
-            <>
-              <label>
-                {t('ink.settings.curveLight')}
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={custom[1]}
-                  onChange={(event) => set({ customCurve: [0.33, Number(event.target.value), 0.67, custom[3]] })}
-                />
-              </label>
-              <label>
-                {t('ink.settings.curveHeavy')}
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={custom[3]}
-                  onChange={(event) => set({ customCurve: [0.33, custom[1], 0.67, Number(event.target.value)] })}
-                />
-              </label>
-            </>
-          )}
-          <RadioGroup<string>
-            label={t('ink.settings.minWidth')}
-            value={String(pen.minWidth)}
-            onChange={(value) => set({ minWidth: Number(value) })}
-          >
-            {MIN_WIDTHS.map((value) => (
-              <RadioCard<string>
-                key={value}
-                value={String(value)}
-                label={t('ink.settings.minWidthValue', { percent: Math.round(value * 100) })}
-              />
-            ))}
-          </RadioGroup>
-          <p>{t('ink.settings.pressureHint')}</p>
-          <CurvePreview pen={pen} label={t('ink.settings.preview')} />
-          <Switch
-            label={t('ink.settings.steady')}
-            checked={pen.steady > 0}
-            onChange={(on) => set({ steady: on ? 5 : 0 })}
-          />
-          <p>{t('ink.settings.steadyHint')}</p>
-          {pen.steady > 0 && (
-            <RadioGroup<string>
-              label={t('ink.settings.steadyStrength')}
-              value={String(pen.steady)}
-              onChange={(value) => set({ steady: Number(value) })}
-            >
-              {STEADY.map(([value, label]) => (
-                <RadioCard<string> key={value} value={value} label={t(label)} />
-              ))}
-            </RadioGroup>
-          )}
-        </div>
-      )}
+      <PenPicker keys={prefs.seenPens} value={key} />
+      {buttons && <ButtonChoices pen={pen} set={set} />}
+      {feel && <PressureChoices pen={pen} set={set} />}
     </>
   );
 }

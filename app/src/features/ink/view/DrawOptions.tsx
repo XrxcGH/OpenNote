@@ -5,9 +5,11 @@ import { useFlag } from '../../../app/flags';
 import type { LassoPick } from '../../../platform/bindings/LassoPick';
 import type { CommandBarComponentProps } from '../../../registries/types';
 import { updateSettings, useSettings } from '../../../state/settings';
+import type { Settings } from '../../../platform/types';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, openMenu } from '../../../ui';
+import type { MenuItemSpec } from '../../../ui';
 import styles from './view.module.css';
 
 type Erases = 'all' | 'highlighter' | 'pens' | 'pen' | 'pencil';
@@ -38,91 +40,86 @@ export function togglePick(picks: readonly LassoPick[], pick: LassoPick): LassoP
   return next.length === 0 || next.length === EVERYTHING.length ? [] : EVERYTHING.filter((p) => next.includes(p));
 }
 
+type InkSettings = Settings['ink'];
+
+/** The eraser menu: which ink it takes, and whether it hands the pen back. */
+function eraserItems(ink: InkSettings): MenuItemSpec[] {
+  const choices = ERASER_CHOICES.map(([id, label]): MenuItemSpec => {
+    const choose = () => {
+      void updateSettings({ ink: { eraser: { erases: id } } });
+      announce(t(label));
+    };
+    return { id, label: t(label), kind: 'radio', checked: ink.eraser.erases === id, onSelect: choose };
+  });
+  const toggle = () => void updateSettings({ ink: { eraser: { returnToLastTool: !ink.eraser.returnToLastTool } } });
+  return [
+    ...choices,
+    {
+      id: 'returnToLastTool',
+      label: t('ink.options.returnToLast'),
+      kind: 'checkbox',
+      checked: ink.eraser.returnToLastTool,
+      separatorBefore: true,
+      onSelect: toggle,
+    },
+  ];
+}
+
+/** The lasso menu: its shape, then what it picks up. */
+function lassoItems(ink: InkSettings): MenuItemSpec[] {
+  const picks = ink.lasso.picks.length === 0 ? EVERYTHING : ink.lasso.picks;
+  const shapes = (['free', 'rectangle'] as const).map((shape): MenuItemSpec => ({
+    id: shape,
+    label: t(shape === 'free' ? 'ink.options.lassoFree' : 'ink.options.lassoRectangle'),
+    kind: 'radio',
+    checked: ink.lasso.shape === shape,
+    onSelect: () => void updateSettings({ ink: { lasso: { shape } } }),
+  }));
+  const kinds = LASSO_PICKS.map(([pick, label], index): MenuItemSpec => ({
+    id: pick,
+    label: t(label),
+    kind: 'checkbox',
+    checked: picks.includes(pick),
+    separatorBefore: index === 0,
+    onSelect: () => void updateSettings({ ink: { lasso: { picks: togglePick(ink.lasso.picks, pick) } } }),
+  }));
+  return [...shapes, ...kinds];
+}
+
+function MenuButton(props: CommandBarComponentProps & { label: string; data: string; items: () => MenuItemSpec[] }) {
+  const { toolProps, label, data, items } = props;
+  const open = (anchor: HTMLElement) => void openMenu({ label, anchor, returnFocus: anchor, items: items() });
+  return (
+    <button
+      type="button"
+      {...toolProps}
+      className={styles.tool}
+      aria-haspopup="menu"
+      data-ink-options={data}
+      onClick={(event) => open(event.currentTarget)}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function DrawOptions({ toolProps }: CommandBarComponentProps) {
   const erasers = useFlag('ink.erasers');
   const lasso = useFlag('ink.lasso');
   const ink = useSettings((settings) => settings.ink);
-
-  const eraserMenu = async (anchor: HTMLElement) => {
-    await openMenu({
-      label: t('ink.options.eraserType'),
-      anchor,
-      returnFocus: anchor,
-      items: [
-        ...ERASER_CHOICES.map(([id, label]) => ({
-          id,
-          label: t(label),
-          kind: 'radio' as const,
-          checked: ink.eraser.erases === id,
-          onSelect: () => {
-            void updateSettings({ ink: { eraser: { erases: id } } });
-            announce(t(label));
-          },
-        })),
-        {
-          id: 'returnToLastTool',
-          label: t('ink.options.returnToLast'),
-          kind: 'checkbox' as const,
-          checked: ink.eraser.returnToLastTool,
-          separatorBefore: true,
-          onSelect: () => void updateSettings({ ink: { eraser: { returnToLastTool: !ink.eraser.returnToLastTool } } }),
-        },
-      ],
-    });
-  };
-
-  const lassoMenu = async (anchor: HTMLElement) => {
-    const picks = ink.lasso.picks.length === 0 ? EVERYTHING : ink.lasso.picks;
-    await openMenu({
-      label: t('ink.options.lasso'),
-      anchor,
-      returnFocus: anchor,
-      items: [
-        ...(['free', 'rectangle'] as const).map((shape) => ({
-          id: shape,
-          label: t(shape === 'free' ? 'ink.options.lassoFree' : 'ink.options.lassoRectangle'),
-          kind: 'radio' as const,
-          checked: ink.lasso.shape === shape,
-          onSelect: () => void updateSettings({ ink: { lasso: { shape } } }),
-        })),
-        ...LASSO_PICKS.map(([pick, label], index) => ({
-          id: pick,
-          label: t(label),
-          kind: 'checkbox' as const,
-          checked: picks.includes(pick),
-          separatorBefore: index === 0,
-          onSelect: () => void updateSettings({ ink: { lasso: { picks: togglePick(ink.lasso.picks, pick) } } }),
-        })),
-      ],
-    });
-  };
-
   if (!erasers && !lasso) return null;
   return (
     <div className={styles.group} role="group" aria-label={t('ink.options.group')}>
       {erasers && (
-        <button
-          type="button"
-          {...toolProps}
-          className={styles.tool}
-          aria-haspopup="menu"
-          data-ink-eraser-options=""
-          onClick={(event) => void eraserMenu(event.currentTarget)}
-        >
-          {t('ink.options.eraserType')}
-        </button>
+        <MenuButton
+          toolProps={toolProps}
+          label={t('ink.options.eraserType')}
+          data="eraser"
+          items={() => eraserItems(ink)}
+        />
       )}
       {lasso && (
-        <button
-          type="button"
-          {...toolProps}
-          className={styles.tool}
-          aria-haspopup="menu"
-          data-ink-lasso-options=""
-          onClick={(event) => void lassoMenu(event.currentTarget)}
-        >
-          {t('ink.options.lasso')}
-        </button>
+        <MenuButton toolProps={toolProps} label={t('ink.options.lasso')} data="lasso" items={() => lassoItems(ink)} />
       )}
     </div>
   );

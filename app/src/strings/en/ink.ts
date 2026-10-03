@@ -42,7 +42,20 @@ export const ink = {
   shapes: {
     inkToShape: 'Ink to shape',
     keywords: 'shape recognition line rectangle circle arrow snap',
-    made: '{shape, select, line {Line} arrow {Arrow} rectangle {Rectangle} circle {Circle} polygon {Polygon} star {Star} arc {Arc} curvedArrow {Curved arrow} doubleArrow {Double arrow} other {Shape}}',
+    made: '{shape}',
+    names: {
+      line: 'Line',
+      arrow: 'Arrow',
+      rectangle: 'Rectangle',
+      triangle: 'Triangle',
+      circle: 'Circle',
+      ellipse: 'Ellipse',
+      polygon: 'Polygon',
+      star: 'Star',
+      arc: 'Arc',
+      curvedArrow: 'Curved arrow',
+      doubleArrow: 'Double arrow',
+    },
   },
   selection: {
     frame: 'Selected ink and text',
@@ -201,8 +214,8 @@ export const ink = {
     heightHelp: 'A negative number closes a gap.',
     insert: 'Insert',
     invalid: 'Enter a number of millimeters, such as 10 or -10.',
-    inserted:
-      '{moved, plural, one {# item moved} other {# items moved}}{locked, plural, =0 {} one {, 1 locked item stays in place} other {, # locked items stay in place}}',
+    inserted: '{moved, plural, one {# item moved} other {# items moved}}',
+    lockedStay: '{locked, plural, one {# locked item stays in place} other {# locked items stay in place}}',
     none: 'No space was inserted.',
     nothing: 'There is nothing below the line to move.',
   },

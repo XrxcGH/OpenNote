@@ -182,7 +182,7 @@ class HandleLayer {
         pointerEvents: 'auto',
         cursor: 'crosshair',
         touchAction: 'none',
-        zIndex: '2',
+        zIndex: 'var(--layer-page-chrome)',
       });
       this.surface.chrome.append(button);
       this.buttons.push(button);

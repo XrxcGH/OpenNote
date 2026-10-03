@@ -85,7 +85,10 @@ export async function commitSpace(host: InkHost, surface: InkSurface, y: number,
   }
   const saved = await surface.transform(planned.strokes, planned.matrix, edits);
   if (!saved) for (const block of before) layer?.upsert(block);
-  else announce(t('ink.space.inserted', { moved, locked: planned.lockedStay }));
+  else {
+    const kept = planned.lockedStay > 0 ? ` ${t('ink.space.lockedStay', { locked: planned.lockedStay })}` : '';
+    announce(`${t('ink.space.inserted', { moved })}.${kept}`);
+  }
 }
 
 /** The drag of an Insert space gesture. */
@@ -114,8 +117,10 @@ export class SpaceGesture {
       const right = left + viewport.w / zoom;
       ctx.lineWidth = 1.5 / zoom;
       ctx.strokeStyle = brandColor('indigo', surface.scheme());
-      ctx.fillStyle = `color-mix(in srgb, ${brandColor('indigo', surface.scheme())} 12%, transparent)`;
+      ctx.fillStyle = brandColor('indigo', surface.scheme());
+      ctx.globalAlpha = 0.12;
       ctx.fillRect(left, Math.min(this.y, this.y + planned.dy), right - left, Math.abs(planned.dy));
+      ctx.globalAlpha = 1;
       ctx.setLineDash([8 / zoom, 5 / zoom]);
       for (const at of [this.y, this.y + planned.dy]) {
         ctx.beginPath();

@@ -85,7 +85,7 @@ class ZoomBoxView {
       borderTop: '2px solid var(--color-accent-primary)',
       background: 'var(--color-surface-app)',
       pointerEvents: 'auto',
-      zIndex: '3',
+      zIndex: 'var(--layer-page-chrome)',
       boxSizing: 'border-box',
     });
     this.canvas = doc.createElement('canvas');
@@ -133,7 +133,7 @@ class ZoomBoxView {
       border: '2px solid var(--color-accent-primary)',
       borderRadius: 'var(--radius-sm)',
       background: 'color-mix(in srgb, var(--color-accent-primary) 8%, transparent)',
-      zIndex: '2',
+      zIndex: 'var(--layer-page-chrome)',
     });
     surface.chrome.append(this.marker, this.element);
     this.box = this.start();

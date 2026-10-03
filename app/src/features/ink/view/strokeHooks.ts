@@ -1,5 +1,6 @@
-// What happens around a finished pen stroke beyond storing it: a pen edit of typed text may take the stroke, the writing
-// pen reads the words a moment after, and a grid drawn in lines is offered as a table. input.ts calls these two points.
+// What happens around a finished pen stroke beyond storing it. A pen edit of typed text may take the stroke. Ink on
+// text may go into an anchored block. The writing pen reads the words a moment after. A grid drawn in lines is offered
+// as a table. input.ts calls the hooks at two points.
 import type { InkStroke } from '../model/types';
 import { createGridWatch } from './gridTable';
 import { createWritingPen } from './handwriting';

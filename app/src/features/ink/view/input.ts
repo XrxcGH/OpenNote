@@ -6,6 +6,7 @@ import { newId } from '../../../editor/ids';
 import { isEnabled } from '../../../app/flags';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
+import type { MessageKey } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { createPartialEraseSession, createStrokeEraseSession } from '../edits/eraseSession';
 import type { PartialEraseSession, StrokeEraseSession } from '../edits/eraseSession';
@@ -414,7 +415,7 @@ function holdCheck(g: InkGesture, surface: InkSurface, holdMs: number): void {
   hold.pivot = pivotOf(match.points);
   hold.live = null;
   drawShape(g, surface);
-  announce(t('ink.shapes.made', { shape: match.shape.kind }));
+  announce(t('ink.shapes.made', { shape: t(`ink.shapes.names.${match.shape.kind}` as MessageKey) }));
 }
 
 function drawShape(g: InkGesture, surface: InkSurface): void {

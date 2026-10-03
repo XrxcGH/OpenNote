@@ -79,7 +79,7 @@ class ReplayBar {
       borderRadius: 'var(--radius-md)',
       background: 'var(--color-surface-app)',
       pointerEvents: 'auto',
-      zIndex: '4',
+      zIndex: 'var(--layer-page-chrome)',
       maxWidth: 'calc(100% - 16px)',
       flexWrap: 'wrap',
     });
@@ -261,7 +261,7 @@ class ReplayBar {
 
 let open: ReplayBar | null = null;
 
-/** Replays the selected ink, or all of the page's when nothing is selected. */
+/** Replays the selected ink, or all the page's when nothing is selected. */
 export function startReplay(host: InkHost, surface: InkSurface): void {
   if (!isEnabled('ink.replay')) return;
   open?.close();

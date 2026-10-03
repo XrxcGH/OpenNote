@@ -5,7 +5,6 @@
 import type { Vec } from '../types';
 import { headBarbs } from './arrow';
 import { polygonCorners, sampleArc, sampleEllipse, shapePoints, starCorners } from './generate';
-import type { Shape } from './types';
 
 export type LibraryGroup = 'basic' | 'flowchart' | 'network' | 'entity';
 
@@ -72,171 +71,156 @@ const diamond = (c: Vec, w: number, h: number): Vec[] => [
   { x: c.x, y: c.y - h / 2 },
 ];
 
-/** The polylines of a library shape, centered on `center` and about `size` wide and `size` times `aspect` tall. */
-export function libraryShape(id: string, center: Vec, size: number): Vec[][] {
-  const w = size;
-  const h = size * 0.62;
-  const line = (shape: Shape): Vec[][] => [shapePoints(shape)];
-  switch (id) {
-    case 'line':
-      return line({
-        kind: 'line',
-        from: { x: center.x - w / 2, y: center.y },
-        to: { x: center.x + w / 2, y: center.y },
-      });
-    case 'arrow': {
-      const from = { x: center.x - w / 2, y: center.y };
-      const tip = { x: center.x + w / 2, y: center.y };
-      return line({ kind: 'arrow', from, tip, barbs: headBarbs(tip, { x: 1, y: 0 }, 22) });
-    }
-    case 'doubleArrow': {
-      const from = { x: center.x - w / 2, y: center.y };
-      const to = { x: center.x + w / 2, y: center.y };
-      return line({
-        kind: 'doubleArrow',
-        from,
-        to,
-        barbsFrom: headBarbs(from, { x: -1, y: 0 }, 22),
-        barbsTo: headBarbs(to, { x: 1, y: 0 }, 22),
-      });
-    }
-    case 'curvedArrow': {
-      const radius = w * 0.45;
-      const body = sampleArc({ x: center.x, y: center.y + radius * 0.4 }, radius, Math.PI * 1.1, Math.PI * 0.8);
-      const tip = body[body.length - 1];
-      const back = body[body.length - 4];
-      const direction = { x: tip.x - back.x, y: tip.y - back.y };
-      const length = Math.hypot(direction.x, direction.y) || 1;
-      return line({
-        kind: 'curvedArrow',
-        center: { x: center.x, y: center.y + radius * 0.4 },
-        radius,
-        start: Math.PI * 1.1,
-        sweep: Math.PI * 0.8,
-        barbs: headBarbs(tip, { x: direction.x / length, y: direction.y / length }, 22),
-      });
-    }
-    case 'rectangle':
-    case 'process':
-    case 'entity':
-      return [rect(center, w, h)];
-    case 'weakEntity':
-      return [rect(center, w, h), rect(center, w - 14, h - 14)];
-    case 'circle':
-      return line({ kind: 'circle', center, radius: h / 2 + 6 });
-    case 'ellipse':
-    case 'attribute':
-      return line({ kind: 'ellipse', center, rx: w / 2, ry: h / 2, rotation: 0 });
-    case 'triangle':
-      return line({
-        kind: 'triangle',
-        corners: [
-          { x: center.x, y: center.y - h / 2 },
-          { x: center.x + w / 2, y: center.y + h / 2 },
-          { x: center.x - w / 2, y: center.y + h / 2 },
-        ],
-        variant: 'general',
-      });
-    case 'pentagon':
-      return [polygonCorners(center, h / 2 + 8, 5, -Math.PI / 2)];
-    case 'hexagon':
-      return [polygonCorners(center, h / 2 + 8, 6, 0)];
-    case 'star':
-      return [starCorners(center, h / 2 + 10, (h / 2 + 10) * 0.42, 5, -Math.PI / 2)];
-    case 'decision':
-    case 'relationship':
-      return [diamond(center, w, h * 1.1)];
-    case 'terminator':
-      return [roundedRect(center, w, h * 0.7, h)];
-    case 'data': {
-      const skew = h * 0.35;
-      return [
-        [
-          { x: center.x - w / 2 + skew, y: center.y - h / 2 },
-          { x: center.x + w / 2 + skew, y: center.y - h / 2 },
-          { x: center.x + w / 2 - skew, y: center.y + h / 2 },
-          { x: center.x - w / 2 - skew, y: center.y + h / 2 },
-          { x: center.x - w / 2 + skew, y: center.y - h / 2 },
-        ],
-      ];
-    }
-    case 'document': {
-      // The bottom edge is a wave, drawn from the right corner back to the left.
-      const wave = Array.from({ length: 25 }, (_, i) => {
-        const t = i / 24;
-        return { x: center.x + w / 2 - t * w, y: center.y + h / 2 - 4 + Math.sin(t * Math.PI * 2) * 5 };
-      });
-      return [
-        [
-          { x: center.x - w / 2, y: wave[24].y },
-          { x: center.x - w / 2, y: center.y - h / 2 },
-          { x: center.x + w / 2, y: center.y - h / 2 },
-          ...wave,
-        ],
-      ];
-    }
-    case 'database': {
-      const rx = w / 2;
-      const ry = h / 5;
-      const top = center.y - h / 2 + ry;
-      const bottom = center.y + h / 2 - ry;
-      return [
-        sampleEllipse({ x: center.x, y: top }, rx, ry, 0),
-        [
-          { x: center.x - rx, y: top },
-          { x: center.x - rx, y: bottom },
-          ...sampleArc({ x: center.x, y: bottom }, rx, Math.PI, -Math.PI).map((p) => ({
-            x: p.x,
-            y: bottom + (p.y - bottom) * (ry / rx),
-          })),
-          { x: center.x + rx, y: top },
-        ],
-      ];
-    }
-    case 'cloud': {
-      const bumps = 7;
-      const points: Vec[] = [];
-      for (let i = 0; i < bumps; i++) {
-        const a0 = (i / bumps) * Math.PI * 2;
-        const a1 = ((i + 1) / bumps) * Math.PI * 2;
-        const from = { x: center.x + (w / 2) * Math.cos(a0), y: center.y + (h / 2) * Math.sin(a0) };
-        const to = { x: center.x + (w / 2) * Math.cos(a1), y: center.y + (h / 2) * Math.sin(a1) };
-        const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-        const out = { x: mid.x - center.x, y: mid.y - center.y };
-        const push = 0.28;
-        const middle = { x: mid.x + out.x * push, y: mid.y + out.y * push };
-        points.push(from, ...quadratic(from, middle, to, 8));
-      }
-      points.push(points[0]);
-      return [points];
-    }
-    case 'server':
-      return [
-        rect(center, w * 0.6, h * 1.2),
-        [
-          { x: center.x - w * 0.3, y: center.y - h * 0.2 },
-          { x: center.x + w * 0.3, y: center.y - h * 0.2 },
-        ],
-        [
-          { x: center.x - w * 0.3, y: center.y + h * 0.2 },
-          { x: center.x + w * 0.3, y: center.y + h * 0.2 },
-        ],
-      ];
-    case 'router':
-      return [
-        polygonCorners(center, h / 2 + 10, 6, 0),
-        [
-          { x: center.x - h * 0.3, y: center.y },
-          { x: center.x + h * 0.3, y: center.y },
-        ],
-        [
-          { x: center.x, y: center.y - h * 0.3 },
-          { x: center.x, y: center.y + h * 0.3 },
-        ],
-      ];
-    default:
-      return [];
+type Builder = (c: Vec, w: number, h: number) => Vec[][];
+
+const alongX = (c: Vec, w: number): [Vec, Vec] => [
+  { x: c.x - w / 2, y: c.y },
+  { x: c.x + w / 2, y: c.y },
+];
+
+const arrow: Builder = (c, w) => {
+  const [from, tip] = alongX(c, w);
+  return [shapePoints({ kind: 'arrow', from, tip, barbs: headBarbs(tip, { x: 1, y: 0 }, 22) })];
+};
+
+const doubleArrow: Builder = (c, w) => {
+  const [from, to] = alongX(c, w);
+  const barbsFrom = headBarbs(from, { x: -1, y: 0 }, 22);
+  const barbsTo = headBarbs(to, { x: 1, y: 0 }, 22);
+  return [shapePoints({ kind: 'doubleArrow', from, to, barbsFrom, barbsTo })];
+};
+
+const curvedArrow: Builder = (c, w) => {
+  const radius = w * 0.45;
+  const center = { x: c.x, y: c.y + radius * 0.4 };
+  const body = sampleArc(center, radius, Math.PI * 1.1, Math.PI * 0.8);
+  const tip = body[body.length - 1];
+  const back = body[body.length - 4];
+  const length = Math.hypot(tip.x - back.x, tip.y - back.y) || 1;
+  const direction = { x: (tip.x - back.x) / length, y: (tip.y - back.y) / length };
+  const barbs = headBarbs(tip, direction, 22);
+  return [shapePoints({ kind: 'curvedArrow', center, radius, start: Math.PI * 1.1, sweep: Math.PI * 0.8, barbs })];
+};
+
+const triangle: Builder = (c, w, h) => [
+  shapePoints({
+    kind: 'triangle',
+    corners: [
+      { x: c.x, y: c.y - h / 2 },
+      { x: c.x + w / 2, y: c.y + h / 2 },
+      { x: c.x - w / 2, y: c.y + h / 2 },
+    ],
+    variant: 'general',
+  }),
+];
+
+const parallelogram: Builder = (c, w, h) => {
+  const skew = h * 0.35;
+  return [
+    [
+      { x: c.x - w / 2 + skew, y: c.y - h / 2 },
+      { x: c.x + w / 2 + skew, y: c.y - h / 2 },
+      { x: c.x + w / 2 - skew, y: c.y + h / 2 },
+      { x: c.x - w / 2 - skew, y: c.y + h / 2 },
+      { x: c.x - w / 2 + skew, y: c.y - h / 2 },
+    ],
+  ];
+};
+
+/** A page with a wave for its bottom edge, drawn from the right corner back to the left. */
+const documentPage: Builder = (c, w, h) => {
+  const wave = Array.from({ length: 25 }, (_, i) => {
+    const t = i / 24;
+    return { x: c.x + w / 2 - t * w, y: c.y + h / 2 - 4 + Math.sin(t * Math.PI * 2) * 5 };
+  });
+  const left = c.x - w / 2;
+  return [[{ x: left, y: wave[24].y }, { x: left, y: c.y - h / 2 }, { x: c.x + w / 2, y: c.y - h / 2 }, ...wave]];
+};
+
+/** A can: the top ellipse, and the sides with a rounded bottom. */
+const database: Builder = (c, w, h) => {
+  const rx = w / 2;
+  const ry = h / 5;
+  const top = c.y - h / 2 + ry;
+  const bottom = c.y + h / 2 - ry;
+  const belly = sampleArc({ x: c.x, y: bottom }, rx, Math.PI, -Math.PI).map((p) => ({
+    x: p.x,
+    y: bottom + (p.y - bottom) * (ry / rx),
+  }));
+  return [
+    sampleEllipse({ x: c.x, y: top }, rx, ry, 0),
+    [{ x: c.x - rx, y: top }, { x: c.x - rx, y: bottom }, ...belly, { x: c.x + rx, y: top }],
+  ];
+};
+
+/** A cloud: seven bumps around an ellipse, each a curve pushed outward. */
+const cloud: Builder = (c, w, h) => {
+  const bumps = 7;
+  const points: Vec[] = [];
+  for (let i = 0; i < bumps; i++) {
+    const a0 = (i / bumps) * Math.PI * 2;
+    const a1 = ((i + 1) / bumps) * Math.PI * 2;
+    const from = { x: c.x + (w / 2) * Math.cos(a0), y: c.y + (h / 2) * Math.sin(a0) };
+    const to = { x: c.x + (w / 2) * Math.cos(a1), y: c.y + (h / 2) * Math.sin(a1) };
+    const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+    const middle = { x: mid.x + (mid.x - c.x) * 0.28, y: mid.y + (mid.y - c.y) * 0.28 };
+    points.push(from, ...quadratic(from, middle, to, 8));
   }
+  points.push(points[0]);
+  return [points];
+};
+
+const server: Builder = (c, w, h) => {
+  const half = w * 0.3;
+  const bar = (y: number): Vec[] => [
+    { x: c.x - half, y },
+    { x: c.x + half, y },
+  ];
+  return [rect(c, w * 0.6, h * 1.2), bar(c.y - h * 0.2), bar(c.y + h * 0.2)];
+};
+
+const router: Builder = (c, _w, h) => [
+  polygonCorners(c, h / 2 + 10, 6, 0),
+  [
+    { x: c.x - h * 0.3, y: c.y },
+    { x: c.x + h * 0.3, y: c.y },
+  ],
+  [
+    { x: c.x, y: c.y - h * 0.3 },
+    { x: c.x, y: c.y + h * 0.3 },
+  ],
+];
+
+const BUILDERS: Readonly<Record<string, Builder>> = {
+  line: (c, w) => [alongX(c, w)],
+  arrow,
+  doubleArrow,
+  curvedArrow,
+  rectangle: (c, w, h) => [rect(c, w, h)],
+  process: (c, w, h) => [rect(c, w, h)],
+  entity: (c, w, h) => [rect(c, w, h)],
+  weakEntity: (c, w, h) => [rect(c, w, h), rect(c, w - 14, h - 14)],
+  circle: (c, _w, h) => [shapePoints({ kind: 'circle', center: c, radius: h / 2 + 6 })],
+  ellipse: (c, w, h) => [shapePoints({ kind: 'ellipse', center: c, rx: w / 2, ry: h / 2, rotation: 0 })],
+  attribute: (c, w, h) => [shapePoints({ kind: 'ellipse', center: c, rx: w / 2, ry: h / 2, rotation: 0 })],
+  triangle,
+  pentagon: (c, _w, h) => [polygonCorners(c, h / 2 + 8, 5, -Math.PI / 2)],
+  hexagon: (c, _w, h) => [polygonCorners(c, h / 2 + 8, 6, 0)],
+  star: (c, _w, h) => [starCorners(c, h / 2 + 10, (h / 2 + 10) * 0.42, 5, -Math.PI / 2)],
+  decision: (c, w, h) => [diamond(c, w, h * 1.1)],
+  relationship: (c, w, h) => [diamond(c, w, h * 1.1)],
+  terminator: (c, w, h) => [roundedRect(c, w, h * 0.7, h)],
+  data: parallelogram,
+  document: documentPage,
+  database,
+  cloud,
+  server,
+  router,
+};
+
+/** The polylines of a library shape, centered on `center` and about `size` wide and 0.62 times that tall. */
+export function libraryShape(id: string, center: Vec, size: number): Vec[][] {
+  return BUILDERS[id]?.(center, size, size * 0.62) ?? [];
 }
 
 function quadratic(a: Vec, control: Vec, b: Vec, steps: number): Vec[] {

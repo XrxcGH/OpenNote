@@ -43,6 +43,11 @@ export function snapToolsNow(zoom: number): SnapTools | null {
 
 type Which = 'ruler' | 'protractor';
 
+/** A widget moved to a place on the screen, turned about it, with its own anchor point `(ax, ay)` on that place. */
+function placement(x: number, y: number, angle: number, ax: number, ay: number): string {
+  return `translate(${x}px, ${y}px) rotate(${angle}rad) translate(${-ax}px, ${-ay}px)`;
+}
+
 interface Widget {
   readonly which: Which;
   readonly element: HTMLDivElement;
@@ -164,7 +169,7 @@ class SnapLayer {
       display: on && prefs.ruler ? '' : 'none',
       width: `${w}px`,
       height: `${h}px`,
-      transform: `translate(${ruler.cx * zoom - scrollX}px, ${ruler.cy * zoom - scrollY}px) rotate(${ruler.angle}rad) translate(${-w / 2}px, ${-h / 2}px)`,
+      transform: placement(ruler.cx * zoom - scrollX, ruler.cy * zoom - scrollY, ruler.angle, w / 2, h / 2),
       backgroundImage: [
         'linear-gradient(90deg, currentColor 1px, transparent 1px)',
         'linear-gradient(90deg, currentColor 1px, transparent 1px)',
@@ -183,7 +188,13 @@ class SnapLayer {
       display: on && prefs.protractor ? '' : 'none',
       width: `${pw}px`,
       height: `${ph}px`,
-      transform: `translate(${protractor.cx * zoom - scrollX}px, ${protractor.cy * zoom - scrollY}px) rotate(${protractor.angle}rad) translate(${-pw / 2}px, ${-ph}px)`,
+      transform: placement(
+        protractor.cx * zoom - scrollX,
+        protractor.cy * zoom - scrollY,
+        protractor.angle,
+        pw / 2,
+        ph,
+      ),
       borderRadius: `${pw}px ${pw}px 0 0`,
       backgroundImage: `repeating-conic-gradient(from 270deg at 50% 100%, currentColor 0 0.4deg, transparent 0.4deg 10deg)`,
       backgroundSize: '100% 100%',

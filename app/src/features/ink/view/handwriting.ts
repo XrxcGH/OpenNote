@@ -130,10 +130,63 @@ const lineBox = (line: InkLine): Bounds => ({
   maxY: line.bounds.y + line.bounds.height,
 });
 
+/** Where the page shows a line on the screen, for finding the typed text under it. */
+function clientOf(surface: InkSurface, x: number, y: number): { x: number; y: number } {
+  const camera = surface.cameraNow();
+  return {
+    x: camera.viewport.x + x * camera.zoom - camera.scrollX,
+    y: camera.viewport.y + y * camera.zoom - camera.scrollY,
+  };
+}
+
+/** A thin amber line under each word the recognizer was unsure of. */
+function underlinesFor(surface: InkSurface, line: InkLine): InkStroke[] {
+  const amber = paletteByName('amber');
+  if (!amber) return [];
+  return line.words.filter(isUnsure).map((word) => {
+    const y = word.bounds.y + word.bounds.height + 2;
+    return {
+      id: newId(),
+      tool: 'pen',
+      width: 1.5,
+      startTime: Date.now(),
+      points: [
+        { x: word.bounds.x, y },
+        { x: word.bounds.x + word.bounds.width, y },
+      ],
+      block: surface.layerFor(),
+      slot: amber.slot,
+      color: amber.light,
+    } satisfies InkStroke;
+  });
+}
+
+/** The edit that fades a stroke to a trace behind its words. */
+const fadeEdit = (stroke: InkStroke): Edit => ({
+  edit: 'restyleStrokes',
+  strokes: [stroke.id],
+  style: { color: [stroke.color[0], stroke.color[1], stroke.color[2], FADED_ALPHA] },
+});
+
+/**
+ * What a recognized line becomes: words written in a gap of typed text go into that text, and any others become a text
+ * box where they were written. Returns the text box's edit, or null when the words went into the text.
+ */
+async function placeLine(host: InkHost, surface: InkSurface, line: InkLine): Promise<Edit | null | undefined> {
+  const text = line.text.trim();
+  if (!text) return undefined;
+  const box = lineBox(line);
+  const at = clientOf(surface, box.minX, (box.minY + box.maxY) / 2);
+  const inside = await host.text?.hit(at.x, at.y);
+  if (inside && (await host.text?.insert(inside.block, inside.pos, `${text} `))) return null;
+  const frame = { x: box.minX, y: box.minY, w: Math.max(80, box.maxX - box.minX + 24) };
+  return insertText(escapeParagraphText(text), frame);
+}
+
 export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | null) {
   let pending: string[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;
-  /** Strokes this pen faded, so a tap on Show written ink can bring them back. */
+  /** Strokes this pen faded, so Show written ink can bring them back. */
   const faded = new Map<string, InkStroke>();
 
   const run = async () => {
@@ -147,70 +200,29 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     if (!recognition || recognition.lines.length === 0) return;
     const edits: Edit[] = [];
     const underlines: InkStroke[] = [];
-    const amber = paletteByName('amber');
-    const camera = surface.cameraNow();
     for (const line of recognition.lines) {
-      const text = line.text.trim();
-      if (!text) continue;
-      const box = lineBox(line);
-      // Written in a gap of typed text, the words go into the text there; anywhere else they become a text box.
-      const at = await host.text?.hit(
-        camera.viewport.x + box.minX * camera.zoom - camera.scrollX,
-        camera.viewport.y + ((box.minY + box.maxY) / 2) * camera.zoom - camera.scrollY,
-      );
-      if (at && (await host.text?.insert(at.block, at.pos, `${text} `))) continue;
-      edits.push(
-        insertText(escapeParagraphText(text), { x: box.minX, y: box.minY, w: Math.max(80, box.maxX - box.minX + 24) }),
-      );
-      if (amber) {
-        for (const word of line.words.filter(isUnsure)) {
-          const y = word.bounds.y + word.bounds.height + 2;
-          underlines.push({
-            id: newId(),
-            tool: 'pen',
-            width: 1.5,
-            startTime: Date.now(),
-            points: [
-              { x: word.bounds.x, y },
-              { x: word.bounds.x + word.bounds.width, y },
-            ],
-            block: surface.layerFor(),
-            slot: amber.slot,
-            color: amber.light,
-          });
-        }
+      const placed = await placeLine(host, surface, line);
+      if (placed) {
+        edits.push(placed);
+        underlines.push(...underlinesFor(surface, line));
       }
     }
-    // The ink stays, faint, behind the words.
-    const next = strokes.map((stroke) => ({
-      ...stroke,
-      color: [stroke.color[0], stroke.color[1], stroke.color[2], FADED_ALPHA] as const,
-    }));
     for (const stroke of strokes) faded.set(stroke.id, stroke);
     const batch = {
-      edits: [
-        ...edits,
-        ...strokes.map((stroke): Edit => ({
-          edit: 'restyleStrokes',
-          strokes: [stroke.id],
-          style: { color: [stroke.color[0], stroke.color[1], stroke.color[2], FADED_ALPHA] },
-        })),
-      ],
+      edits: [...edits, ...strokes.map(fadeEdit)],
       ...(underlines.length > 0 ? { strokes: surface.records(underlines) } : {}),
     };
-    surface.show([...next, ...underlines]);
+    surface.show([
+      ...strokes.map((s) => ({ ...s, color: [s.color[0], s.color[1], s.color[2], FADED_ALPHA] as const })),
+      ...underlines,
+    ]);
     const ok = await surface.send(batch, () => {
       surface.show(strokes);
       surface.hide(underlines.map((u) => u.id));
     });
-    if (ok) {
-      announce(t('ink.handwriting.written', { count: recognition.lines.length }));
-      showToast({
-        id: 'ink-written',
-        message: t('ink.handwriting.written', { count: recognition.lines.length }),
-        action: { label: t('ink.gestures.undo'), run: () => queue.undo() },
-      });
-    }
+    if (!ok) return;
+    const message = t('ink.handwriting.written', { count: recognition.lines.length });
+    showToast({ id: 'ink-written', message, action: { label: t('ink.gestures.undo'), run: () => queue.undo() } });
   };
 
   return {

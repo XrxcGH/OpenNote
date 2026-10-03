@@ -1,7 +1,7 @@
-// Shape libraries and text in shapes. Inserting a library shape adds ordinary shape strokes at the middle of the view in
-// the current pen's color and width, and selects them. "Add text to shape" puts an empty text box inside the selected
-// shape, and a text box that lies inside a shape moves with it: nothing is stored for that, the boxes are found by where
-// they sit, so the shape and its label can never come apart.
+// Shape libraries and text in shapes. Inserting a library shape adds ordinary shape strokes at the middle of the view.
+// They take the current pen's color and width, and they are selected. "Add text to shape" puts an empty text box inside
+// the selected shape. A text box inside a shape moves with it. Nothing is stored for that: the boxes are found by where
+// they sit, so a shape and its label can never come apart.
 import { newId } from '../../../editor/ids';
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';

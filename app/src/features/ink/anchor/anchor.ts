@@ -1,7 +1,7 @@
-// Ink that stays with its text (spec 8.1). Underlines, circles, and margin notes are tied to the words they were drawn
-// with: an anchor holds the text block, the place in its displayed text as a count of code points, a quote of the words
-// around that place, and how far the ink sits from it. After the text is edited the quote finds the place again, and the
-// ink moves by however far the place moved. These are the pure rules; the page view reads the places off the screen.
+// Ink that stays with its text (spec 8.1). Underlines, circles, and margin notes are tied to the words they touch.
+// An anchor holds the text block, the place in its displayed text as a count of code points, and a quote of the words
+// around that place. It also holds how far the ink sits from the place. After an edit the quote finds the place again,
+// and the ink moves as far as the place moved. These are the pure rules; the page view reads places off the screen.
 
 /** The words around an anchored place, in the style of a web text-quote selector. */
 export interface Quote {

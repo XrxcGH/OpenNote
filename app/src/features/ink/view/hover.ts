@@ -36,7 +36,12 @@ export function installHover(surfaceOf: () => InkSurface | null): () => void {
       circle = doc.createElement('div');
       circle.dataset.inkHover = '';
       circle.setAttribute('aria-hidden', 'true');
-      Object.assign(circle.style, { position: 'absolute', pointerEvents: 'none', borderRadius: '50%', zIndex: '3' });
+      Object.assign(circle.style, {
+        position: 'absolute',
+        pointerEvents: 'none',
+        borderRadius: '50%',
+        zIndex: 'var(--layer-page-chrome)',
+      });
       surface.chrome.append(circle);
     }
     const rect = surface.chrome.getBoundingClientRect();
