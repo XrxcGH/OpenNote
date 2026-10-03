@@ -11,4 +11,37 @@
     font-family: var(--font-reading);
     font-size: var(--type-note-size);
   }
+
+  /* A floating text box with no stored width is as wide as its content, from 120 to 600 units (section 6.3). */
+  .autoWidth {
+    inline-size: max-content;
+    min-inline-size: 120px;
+    max-inline-size: 600px;
+  }
+
+  /* A stored width is honored, but never below 120 units. */
+  .setWidth {
+    min-inline-size: 120px;
+  }
+
+  /* The compact Reading view (section 6.6): every block in reading order in one column with 24-unit margins.
+     Frames are inline styles, so ignoring them here needs !important. */
+  .reading {
+    margin-inline: var(--space-6);
+    inline-size: auto;
+  }
+
+  .reading > * {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    inline-size: auto !important;
+    max-inline-size: 100%;
+    margin-block-end: var(--space-6);
+  }
+
+  .reading img {
+    max-inline-size: 100%;
+    block-size: auto;
+  }
 }

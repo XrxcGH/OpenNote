@@ -69,7 +69,8 @@ describe('createBlockEditor', () => {
     const doc = parseTextBlock('# Title\n\nSome **bold** text');
     const editor = createBlockEditor(root, doc, { kind: 'text', block: 'b1', host });
     expect(root.textContent).not.toContain('static');
-    expect(root.querySelector('[contenteditable="true"]')?.getAttribute('data-block')).toBe('b1');
+    expect(root.getAttribute('contenteditable')).toBe('true');
+    expect(root.getAttribute('data-block')).toBe('b1');
     editor.commands.insertContentAt(editor.state.doc.content.size - 1, '!');
     expect(serializeTextBlock(editor.state.doc, createMarkdownCache())).toBe('# Title\n\nSome **bold** text!');
     editor.destroy();

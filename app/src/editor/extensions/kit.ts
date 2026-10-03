@@ -140,9 +140,9 @@ export function buildKit(options: KitOptions): AnyExtension[] {
  * the block's wrapper, its accessible name, and the caret's place on the page stay the same.
  */
 export function createBlockEditor(root: HTMLElement, doc: PMNode, options: KitOptions): Editor {
-  root.replaceChildren();
   return new Editor({
-    element: root,
+    // The mount form: `root` itself becomes the editable, and its static children are replaced in the same task.
+    element: { mount: root },
     extensions: buildKit(options),
     content: doc.toJSON(),
     injectCSS: false,
