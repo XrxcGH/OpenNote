@@ -12,6 +12,11 @@
     font-size: var(--type-note-size);
   }
 
+  /* The compact size class's switch between the Reading view and the canvas, above the blocks. */
+  .viewSwitch {
+    margin: 0 0 var(--space-4) var(--space-6);
+  }
+
   /* A floating text box with no stored width is as wide as its content, from 120 to 600 units (section 6.3). */
   .autoWidth {
     inline-size: max-content;

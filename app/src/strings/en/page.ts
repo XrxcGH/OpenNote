@@ -23,8 +23,6 @@ export const page = {
     table: 'Table',
     unknown: 'A {type} block that this version can’t show yet',
     roleText: 'text box',
-    roleImage: 'image',
-    roleTable: 'table',
     floatingName: 'Text box {index} of {count}',
     flowName: 'Page text',
     flowPartName: 'Page text, part {index} of {count}',
@@ -91,7 +89,6 @@ export const page = {
   selection: {
     count: '{count, plural, one {# item selected.} other {# items selected.}}',
     badge: '{count, plural, one {# selected} other {# selected}}',
-    none: 'Nothing selected.',
     allBlocks: 'Selected every block on the page.',
   },
   order: {

@@ -63,26 +63,27 @@ registerPageCommand({
   run: () => readingOrderOpen.set((open) => !open),
 });
 
-const OBJECT_COMMANDS: readonly { id: ObjectCommandId; title: MessageKey; keywords: MessageKey }[] = [
-  { id: 'bringToFront', title: 'page.object.bringToFront', keywords: 'page.object.arrangeKeywords' },
-  { id: 'sendToBack', title: 'page.object.sendToBack', keywords: 'page.object.arrangeKeywords' },
-  { id: 'bringForward', title: 'page.object.bringForward', keywords: 'page.object.arrangeKeywords' },
-  { id: 'sendBackward', title: 'page.object.sendBackward', keywords: 'page.object.arrangeKeywords' },
-  { id: 'edit', title: 'page.object.edit', keywords: 'page.object.editKeywords' },
-  { id: 'delete', title: 'page.object.delete', keywords: 'page.object.deleteKeywords' },
-  { id: 'lock', title: 'page.object.lock', keywords: 'page.object.lockKeywords' },
-  { id: 'lockPosition', title: 'page.object.lockPosition', keywords: 'page.object.lockKeywords' },
-  { id: 'unlock', title: 'page.object.unlock', keywords: 'page.object.lockKeywords' },
-  { id: 'float', title: 'page.object.float', keywords: 'page.object.floatKeywords' },
-  { id: 'putInFlow', title: 'page.object.putInFlow', keywords: 'page.object.floatKeywords' },
-  { id: 'sizeAndPosition', title: 'page.object.sizeAndPosition', keywords: 'page.object.sizeKeywords' },
-];
+/** Each object command by its keyword group; its title is page.object.<id>. A table keeps start-up small. */
+const OBJECT_COMMANDS: Readonly<Record<ObjectCommandId, 'arrange' | 'edit' | 'delete' | 'lock' | 'float' | 'size'>> = {
+  bringToFront: 'arrange',
+  sendToBack: 'arrange',
+  bringForward: 'arrange',
+  sendBackward: 'arrange',
+  edit: 'edit',
+  delete: 'delete',
+  lock: 'lock',
+  lockPosition: 'lock',
+  unlock: 'lock',
+  float: 'float',
+  putInFlow: 'float',
+  sizeAndPosition: 'size',
+};
 
-for (const { id, title, keywords } of OBJECT_COMMANDS) {
+for (const [id, group] of Object.entries(OBJECT_COMMANDS) as [ObjectCommandId, string][]) {
   registerPageCommand({
     id: `object.${id}`,
-    title,
-    keywords,
+    title: `page.object.${id}`,
+    keywords: `page.object.${group}Keywords` as MessageKey,
     category: 'object',
     enabled: () => shown()?.objectEnabled(id) ?? false,
     run: () => shown()?.objectCommand(id),

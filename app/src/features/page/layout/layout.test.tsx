@@ -106,7 +106,11 @@ describe('page layout', () => {
     const [first, second] = mounted.layer.blocks().map((block) => mounted.layer.view(block.id)!.element);
     expect(first!.textContent).toBe('Left');
     expect(first!.getBoundingClientRect().bottom).toBeLessThanOrEqual(second!.getBoundingClientRect().top);
-    mounted.layout.setReading(false);
+    const canvas = mounted.viewport.world.querySelector('button')!;
+    expect(canvas.textContent).toBe('Canvas');
+    canvas.click();
+    expect(mounted.layout.reading()).toBe(false);
+    expect(canvas.textContent).toBe('Reading view');
     expect(second!.getBoundingClientRect().left).toBeGreaterThan(first!.getBoundingClientRect().right);
   });
 });

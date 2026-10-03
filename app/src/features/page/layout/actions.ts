@@ -4,7 +4,7 @@
 import { newId } from '../../../editor/ids';
 import type { BlockId, BlockJson, OpenPage, PageViewJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { announce } from '../../../ui';
+import { announce, buttonClass } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { DISCARD_DRAFT, markDraft, markEphemeral } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
@@ -13,6 +13,8 @@ import { savePageView } from '../runtime';
 import type { SyncQueue } from '../sync';
 import type { Point } from '../viewport/camera';
 import type { PageActions } from '../viewport/shown';
+import { isFloating } from '../blocks/textBlock';
+import styles from './layout.module.css';
 import type { PageViewport } from '../viewport/viewport';
 import type { Flow } from './flow';
 
@@ -50,6 +52,14 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
   });
   const onDiscard = (event: Event) => layer.remove((event as CustomEvent<BlockId>).detail);
   flow.element.addEventListener(DISCARD_DRAFT, onDiscard);
+  const switcher =
+    parts.compact && layer.blocks().some(isFloating)
+      ? viewSwitch(
+          flow,
+          () => reading,
+          () => self,
+        )
+      : null;
 
   /** The block a new floating block goes after: before the ink layer, else after the last floating block. */
   const insertAfter = (): BlockId | undefined => {
@@ -83,7 +93,7 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     return { x: camera.scrollX / camera.zoom + 48, y: camera.scrollY / camera.zoom + 24 };
   };
 
-  return {
+  const self: PageLayout = {
     newTextBox: () => caretAt(newTextBoxPoint(), true),
     pressEmpty(point) {
       if (page.readOnly) return;
@@ -108,6 +118,7 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
       if (reading === on) return;
       reading = on;
       flow.setReading(on);
+      switcher?.update();
       savePageView(page.id, { view: on ? 'reading' : 'canvas' });
       announce(t(on ? 'page.reading.nowReading' : 'page.reading.nowCanvas'));
     },
@@ -117,7 +128,28 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     },
     stop() {
       stopActive();
+      switcher?.element.remove();
       flow.element.removeEventListener(DISCARD_DRAFT, onDiscard);
     },
   };
+  return self;
+}
+
+/** The compact size class's "Canvas" button, which switches a page with floating blocks out of the Reading view. */
+function viewSwitch(
+  flow: Flow,
+  reading: () => boolean,
+  layout: () => PageLayout,
+): { element: HTMLButtonElement; update(): void } {
+  const element = flow.element.ownerDocument.createElement('button');
+  element.type = 'button';
+  element.className = buttonClass('secondary', styles.viewSwitch);
+  const update = () => {
+    element.textContent = t(reading() ? 'page.reading.toCanvas' : 'page.reading.toReading');
+    element.setAttribute('aria-pressed', String(!reading()));
+  };
+  element.addEventListener('click', () => layout().setReading(!reading()));
+  update();
+  flow.element.before(element);
+  return { element, update };
 }
