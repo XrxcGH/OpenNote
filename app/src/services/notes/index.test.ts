@@ -7,7 +7,8 @@ import type { Channel } from '../../app/flags';
 import type { Platform } from '../../platform/types';
 import { createTestPlatform } from '../../test/platform';
 import { createNotesService } from '.';
-import type { NodeId } from '.';
+import type { NodeId, NotesEvent } from '.';
+import type { NotesCoreClient } from './core/service';
 
 /** A real profile: the Tauri platform, where the snapshot is there only when the flag is on. */
 function realProfile(channel: Channel, snapshot: Platform['notesSnapshot'] = null): Platform {
@@ -89,4 +90,39 @@ describe('what the notes service says about saving on a real profile', () => {
       expect(JSON.parse(saves[0]).notebooks.map((node: { title: string }) => node.title)).toEqual(['Thesis']);
     },
   );
+});
+
+describe('the notes service over the core', () => {
+  it('serves a platform that has the notes bridge, through its commands and events', async () => {
+    const calls: string[] = [];
+    let send: ((event: NotesEvent) => void) | null = null;
+    const notesCore: NotesCoreClient = {
+      invoke: (command) => {
+        calls.push(command);
+        if (command === 'notes_list_notebooks') {
+          return Promise.resolve([{ id: 'n-1', kind: 'notebook', title: 'Thesis', color: '#ff0000' }]);
+        }
+        if (command === 'notes_rename') return Promise.reject({ code: 'invalid-name', message: 'x', field: 'empty' });
+        return Promise.resolve({ library: { folder: 'Notes', readOnly: false }, notebooks: [], children: {} });
+      },
+      listen: (handler) => {
+        send = handler;
+        return () => (send = null);
+      },
+    };
+    const platform = { ...realProfile('beta'), notesCore };
+    initFlags('beta');
+    const notes = await createNotesService(platform);
+    const [notebook] = await notes.listNotebooks();
+    expect(notebook).toMatchObject({ title: 'Thesis', color: null });
+    await expect(notes.rename('n-1' as NodeId, '')).rejects.toMatchObject({ code: 'invalid-name', reason: 'empty' });
+    const events: NotesEvent[] = [];
+    const stop = notes.watch((event) => events.push(event));
+    send!({ type: 'reset' });
+    stop();
+    expect(send).toBeNull();
+    expect(events).toContainEqual({ type: 'reset' });
+    expect(calls).toContain('notes_load_initial');
+    expect(notes.hasUnsavedChanges()).toBe(false);
+  });
 });

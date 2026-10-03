@@ -179,6 +179,13 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Rust tests
         run: cargo test --workspace
+      - name: The notes contract suite against the app's notes bridge and the core
+        # The suite runs the notes harness example over stdin and stdout.
+        shell: bash
+        run: |
+          cargo build -p opennote --example notes_harness
+          export OPENNOTE_NOTES_HARNESS="$PWD/target/debug/examples/notes_harness.exe"
+          npx vitest run --config app/vitest.config.ts --project unit app/src/services/notes/core
       - name: Core lints and tests with every feature
         run: |
           cargo clippy -p opennote-core --all-targets --all-features -- -D warnings
