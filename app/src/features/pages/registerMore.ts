@@ -1,6 +1,6 @@
-// The pages area's second pass of commands, menu items, and bar items, in one file so the first pass (register.ts)
-// stays as it was: layout templates and spacing, the sheet navigator, accessible PDF, the elements library, selection
-// export, presenting with a laser, and syllable marks. Each command loads its code on first use.
+// The pages area's second pass of commands, menu items, and bar items, in one file. The first pass (register.ts) stays as
+// it was. This one adds layout templates and spacing, the sheet navigator, and accessible PDF. It also adds the elements
+// library, selection export, presenting with a laser, and syllable marks. Each command loads its code on first use.
 import { chord, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
 import { commandBar, commands, contextMenus } from '../../registries';

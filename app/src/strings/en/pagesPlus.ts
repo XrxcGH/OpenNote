@@ -1,6 +1,6 @@
-// More page layouts, sheets, and export (the pages area's second pass): layout templates, the sheet navigator, accessible
-// PDF, the elements library, selection export, presenting with a laser pointer, and syllable marks. Each namespace file
-// has one owner, so parallel work never edits the same file.
+// More page layouts, sheets, and export (the pages area's second pass): layout templates, the sheet navigator,
+// accessible PDF, the elements library, selection export, presenting with a laser pointer, and syllable marks.
+// Each namespace file has one owner, so parallel work never edits the same file.
 
 export const pagesPlus = {
   commands: {
@@ -36,7 +36,7 @@ export const pagesPlus = {
   reading: {
     syllables: 'Show syllables',
     syllablesHelp:
-      'Colors every second syllable of long English words, so a word shows where it divides. The page itself is not changed.',
+      'Colors every second syllable of long English words to show where they divide. The page is not changed.',
   },
   present: {
     title: 'Presenting the page',
@@ -55,7 +55,7 @@ export const pagesPlus = {
   pdf: {
     accessible: 'Accessible PDF',
     accessibleHelp:
-      'Adds headings, lists, tables, reading order, picture descriptions, the page’s language, and bookmarks, so a screen reader can follow the file.',
+      'Adds headings, lists, tables, reading order, picture descriptions, and bookmarks for screen readers.',
   },
   elements: {
     save: {

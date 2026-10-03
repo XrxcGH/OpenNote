@@ -2,7 +2,7 @@
 import type { ExportPage } from '../export/source';
 import type { Selection } from './select';
 
-/** The words of the selected text blocks, flattened and cut short: the description a Word picture carries. */
+/** The words of the selected text blocks as one cut-short line: the description that a Word picture carries. */
 export function selectionText(page: ExportPage, selection: Selection, max = 600): string {
   const chosen = new Set(selection.blocks);
   const words = page.blocks

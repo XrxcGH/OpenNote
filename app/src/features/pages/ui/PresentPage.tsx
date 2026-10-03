@@ -3,7 +3,7 @@
 // over it and fade by themselves. A finger, a pen, and a mouse all work: a laser follows the pointer, and ink is drawn
 // while it is down. The Move tool hands a touch screen back its scrolling.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 import { announce, Button } from '../../../ui';
 import { t } from '../../../strings/t';
 import type { Picture } from '../host/picture';
@@ -39,7 +39,7 @@ interface Colors {
 function readColors(element: HTMLElement): Colors {
   const style = getComputedStyle(element);
   const read = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
-  return { laser: read('--color-accent-clay', '#A9502F'), ink: read('--color-accent-night', '#4A5590') };
+  return { laser: read('--color-accent-clay', 'CanvasText'), ink: read('--color-accent-night', 'CanvasText') };
 }
 
 function paint(canvas: HTMLCanvasElement, marks: Marks, colors: Colors, now: number): void {
@@ -161,17 +161,8 @@ function createOverlay(element: HTMLCanvasElement) {
 
 type Overlay = ReturnType<typeof createOverlay>;
 
-export function PresentPage({ picture, close }: PresentPageProps) {
-  const stage = useRef<HTMLDivElement>(null);
-  const view = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const [tool, setTool] = useState<Tool>('laser');
-  const [width, setWidth] = useState(0);
-  const overlay = useRef<Overlay | null>(null);
-  const clear = () => overlay.current?.clear();
-  const url = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(picture.svg)}`, [picture.svg]);
-
-  // Full screen, and focus back where it was when the show ends.
+/** Goes full screen when the stage shows, and puts focus back where it was when the show ends. */
+function useFullScreen(stage: RefObject<HTMLDivElement | null>): void {
   useEffect(() => {
     const element = stage.current;
     const opener = document.activeElement as HTMLElement | null;
@@ -181,8 +172,12 @@ export function PresentPage({ picture, close }: PresentPageProps) {
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
       opener?.focus?.();
     };
-  }, []);
-  // The marks are drawn on the canvas for as long as the stage shows.
+  }, [stage]);
+}
+
+/** The marks are drawn on the canvas for as long as the stage shows. */
+function useOverlay(canvas: RefObject<HTMLCanvasElement | null>): RefObject<Overlay | null> {
+  const overlay = useRef<Overlay | null>(null);
   useEffect(() => {
     if (!canvas.current) return;
     overlay.current = createOverlay(canvas.current);
@@ -190,8 +185,13 @@ export function PresentPage({ picture, close }: PresentPageProps) {
       overlay.current?.destroy();
       overlay.current = null;
     };
-  }, []);
-  // The page is as wide as the window.
+  }, [canvas]);
+  return overlay;
+}
+
+/** How wide the window is, so the page is as wide as the window. */
+function useWidth(view: RefObject<HTMLDivElement | null>): number {
+  const [width, setWidth] = useState(0);
   useEffect(() => {
     const element = view.current;
     if (!element) return;
@@ -200,41 +200,91 @@ export function PresentPage({ picture, close }: PresentPageProps) {
     const observer = new ResizeObserver(fit);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [view]);
+  return width;
+}
 
-  const choose = (next: Tool) => {
-    setTool(next);
-    announce(t(`pagesPlus.present.tools.${next}`));
+interface Actions {
+  choose(tool: Tool): void;
+  clear(): void;
+  close(): void;
+  scroll(screens: number): void;
+  edge(where: 'top' | 'bottom'): void;
+}
+
+/** The keys of the show: a tool, clear, leave, and scrolling. */
+function keyHandler(actions: Actions) {
+  const keys: Record<string, () => void> = {
+    l: () => actions.choose('laser'),
+    p: () => actions.choose('ink'),
+    m: () => actions.choose('move'),
+    c: actions.clear,
+    Escape: actions.close,
+    PageDown: () => actions.scroll(1),
+    ' ': () => actions.scroll(1),
+    ArrowDown: () => actions.scroll(0.4),
+    PageUp: () => actions.scroll(-1),
+    ArrowUp: () => actions.scroll(-0.4),
+    Home: () => actions.edge('top'),
+    End: () => actions.edge('bottom'),
   };
-  const scroll = (screens: number) => {
-    const element = view.current;
-    if (element) element.scrollBy({ top: element.clientHeight * 0.85 * screens, behavior: 'smooth' });
-  };
-  const onKeyDown = (event: KeyboardEvent) => {
+  return (event: KeyboardEvent) => {
+    // A focused button keeps Space and Enter for itself.
     if (event.target instanceof HTMLButtonElement && (event.key === ' ' || event.key === 'Enter')) return;
-    const keys: Record<string, () => void> = {
-      l: () => choose('laser'),
-      p: () => choose('ink'),
-      m: () => choose('move'),
-      c: clear,
-      Escape: close,
-      PageDown: () => scroll(1),
-      ' ': () => scroll(1),
-      ArrowDown: () => scroll(0.4),
-      PageUp: () => scroll(-1),
-      ArrowUp: () => scroll(-0.4),
-      Home: () => view.current?.scrollTo({ top: 0, behavior: 'smooth' }),
-      End: () => view.current?.scrollTo({ top: view.current.scrollHeight, behavior: 'smooth' }),
-    };
     const run = keys[event.key.length === 1 ? event.key.toLowerCase() : event.key];
     if (!run) return;
     event.preventDefault();
     event.stopPropagation();
     run();
   };
+}
 
+function Toolbar({ tool, actions }: { tool: Tool; actions: Actions }) {
+  return (
+    <div className={styles.stageBar} role="toolbar" aria-label={t('pagesPlus.present.tool')}>
+      {TOOLS.map(({ id, label, key }) => (
+        <Button
+          key={id}
+          variant={tool === id ? 'primary' : 'quiet'}
+          aria-pressed={tool === id}
+          onClick={() => actions.choose(id)}
+        >
+          {t('pagesPlus.present.withKey', { name: t(`pagesPlus.present.tools.${label}`), key })}
+        </Button>
+      ))}
+      <Button variant="quiet" onClick={actions.clear}>
+        {t('pagesPlus.present.withKey', { name: t('pagesPlus.present.clear'), key: 'C' })}
+      </Button>
+      <span className={styles.stageHelp}>{t('pagesPlus.present.help')}</span>
+      <Button variant="quiet" onClick={actions.close}>
+        {t('pagesPlus.present.exit')}
+      </Button>
+    </div>
+  );
+}
+
+export function PresentPage({ picture, close }: PresentPageProps) {
+  const stage = useRef<HTMLDivElement>(null);
+  const view = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [tool, setTool] = useState<Tool>('laser');
+  const overlay = useOverlay(canvas);
+  const width = useWidth(view);
+  useFullScreen(stage);
+  const url = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(picture.svg)}`, [picture.svg]);
+  const actions: Actions = {
+    choose: (next) => {
+      setTool(next);
+      announce(t(`pagesPlus.present.tools.${next}`));
+    },
+    clear: () => overlay.current?.clear(),
+    close,
+    scroll: (screens) =>
+      view.current?.scrollBy({ top: view.current.clientHeight * 0.85 * screens, behavior: 'smooth' }),
+    edge: (where) =>
+      view.current?.scrollTo({ top: where === 'top' ? 0 : view.current.scrollHeight, behavior: 'smooth' }),
+  };
   const scale = width > 0 ? width / picture.width : 1;
-  const box = { width: picture.width * scale, height: picture.height * scale };
   return (
     <div
       ref={stage}
@@ -243,10 +293,10 @@ export function PresentPage({ picture, close }: PresentPageProps) {
       aria-modal="true"
       aria-label={t('pagesPlus.present.title')}
       tabIndex={-1}
-      onKeyDown={onKeyDown}
+      onKeyDown={(event) => keyHandler(actions)(event)}
     >
       <div ref={view} className={styles.presentView}>
-        <div className={styles.presentSheet} style={box}>
+        <div className={styles.presentSheet} style={{ width: picture.width * scale, height: picture.height * scale }}>
           <img className={styles.presentPicture} src={url} alt={t('pageViews.image.preview')} draggable={false} />
           <canvas
             ref={canvas}
@@ -261,25 +311,7 @@ export function PresentPage({ picture, close }: PresentPageProps) {
           />
         </div>
       </div>
-      <div className={styles.stageBar} role="toolbar" aria-label={t('pagesPlus.present.tool')}>
-        {TOOLS.map(({ id, label, key }) => (
-          <Button
-            key={id}
-            variant={tool === id ? 'primary' : 'quiet'}
-            aria-pressed={tool === id}
-            onClick={() => choose(id)}
-          >
-            {t('pagesPlus.present.withKey', { name: t(`pagesPlus.present.tools.${label}`), key })}
-          </Button>
-        ))}
-        <Button variant="quiet" onClick={clear}>
-          {t('pagesPlus.present.withKey', { name: t('pagesPlus.present.clear'), key: 'C' })}
-        </Button>
-        <span className={styles.stageHelp}>{t('pagesPlus.present.help')}</span>
-        <Button variant="quiet" onClick={close}>
-          {t('pagesPlus.present.exit')}
-        </Button>
-      </div>
+      <Toolbar tool={tool} actions={actions} />
     </div>
   );
 }

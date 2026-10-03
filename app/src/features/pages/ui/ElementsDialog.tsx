@@ -159,7 +159,8 @@ function Card({
 
 const whole = (library: ElementLibrary) => library;
 
-export function ElementsDialog({ platform, close }: { platform: Platform; close(): void }) {
+/** The library's folder and search, the inline editor for new folders and renames, and the changes it makes. */
+function useBrowser() {
   const library = useStore(elementLibrary, whole);
   const [folder, setFolder] = useState('');
   const [query, setQuery] = useState('');
@@ -169,8 +170,7 @@ export function ElementsDialog({ platform, close }: { platform: Platform; close(
   const searching = query.trim() !== '';
   const listing = useMemo(() => listFolder(library, folder), [library, folder]);
   const found = useMemo(() => (searching ? searchElements(library, query) : []), [library, query, searching]);
-  const entries = searching ? found : listing.entries;
-  const apply = async (change: (l: typeof library) => LibraryResult) => {
+  const apply = async (change: (l: ElementLibrary) => LibraryResult) => {
     const changed = await changeLibrary(change);
     setMessage(changed.error ? errorText(changed.error) : null);
     if (!changed.error || changed.error === 'notSaved') setEditing(null);
@@ -180,30 +180,158 @@ export function ElementsDialog({ platform, close }: { platform: Platform; close(
     if (editing.kind === 'folder') void apply((l) => createFolder(l, folder, text));
     else void apply((l) => renameElement(l, editing.id, text));
   };
-  const importFile = async () => {
-    const source = await pickTextFile(`${ELEMENT_EXTENSION},application/json`);
-    if (source === null) return;
-    const read = readElementFile(source);
-    if (!read.ok) return setMessage(errorText(read.error));
-    await apply((l) =>
-      addElement(l, {
-        id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-        name: read.name,
-        folder,
-        created: new Date().toISOString(),
-        element: read.element,
-      }),
-    );
-    showToast({
-      message:
-        t('pagesPlus.elements.library.imported', { name: read.name }) +
-        (read.warnings.length > 0
-          ? ` ${t('pagesPlus.elements.library.importSkipped', { count: read.warnings.length })}`
-          : ''),
-    });
+  const startEdit = (next: Editing) => {
+    setText(next.kind === 'rename' ? next.value : '');
+    setEditing(next);
   };
+  const entries = searching ? found : listing.entries;
+  return {
+    library,
+    folder,
+    setFolder,
+    query,
+    setQuery,
+    editing,
+    setEditing,
+    text,
+    setText,
+    message,
+    setMessage,
+    searching,
+    listing,
+    entries,
+    apply,
+    commit,
+    startEdit,
+  };
+}
+type Browser = ReturnType<typeof useBrowser>;
+
+/** Reads an element file and adds it to the shown folder. */
+async function importFile(browser: Browser): Promise<void> {
+  const source = await pickTextFile(`${ELEMENT_EXTENSION},application/json`);
+  if (source === null) return;
+  const read = readElementFile(source);
+  if (!read.ok) return browser.setMessage(errorText(read.error));
+  await browser.apply((l) =>
+    addElement(l, {
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      name: read.name,
+      folder: browser.folder,
+      created: new Date().toISOString(),
+      element: read.element,
+    }),
+  );
+  const skipped =
+    read.warnings.length > 0
+      ? ` ${t('pagesPlus.elements.library.importSkipped', { count: read.warnings.length })}`
+      : '';
+  showToast({ message: t('pagesPlus.elements.library.imported', { name: read.name }) + skipped });
+}
+
+/** The way up, where the person is, and the buttons for a new folder and an import. */
+function Toolbar({ browser }: { browser: Browser }) {
+  const { folder, searching } = browser;
   const parts = folder === '' ? [] : folder.split('/');
-  const empty = library.entries.length === 0 && allFolders(library).length === 0;
+  return (
+    <div className={styles.buttons}>
+      {!searching && folder !== '' ? (
+        <Button variant="quiet" onClick={() => browser.setFolder(parts.slice(0, -1).join('/'))}>
+          {t('pagesPlus.elements.library.up')}
+        </Button>
+      ) : null}
+      <span className={styles.hint} aria-live="polite">
+        {[t('pagesPlus.elements.library.root'), ...parts].join(' / ')}
+      </span>
+      <Button variant="secondary" onClick={() => browser.startEdit({ kind: 'folder' })}>
+        {t('pagesPlus.elements.library.newFolder')}
+      </Button>
+      <Button variant="secondary" onClick={() => void importFile(browser)}>
+        {t('pagesPlus.elements.library.import')}
+      </Button>
+    </div>
+  );
+}
+
+/** The field for a new folder's name or an element's new name. */
+function EditRow({ browser, editing }: { browser: Browser; editing: Editing }) {
+  const folder = editing.kind === 'folder';
+  return (
+    <div className={styles.buttons}>
+      <TextField
+        label={t(folder ? 'pagesPlus.elements.library.folderName' : 'pagesPlus.elements.library.renameField')}
+        value={browser.text}
+        onChange={browser.setText}
+        onCommit={browser.commit}
+        onCancel={() => browser.setEditing(null)}
+        autoSelect
+      />
+      <Button variant="primary" onClick={browser.commit}>
+        {t(folder ? 'pagesPlus.elements.library.create' : 'pagesPlus.elements.library.renameApply')}
+      </Button>
+    </div>
+  );
+}
+
+/** The folders inside the shown one, to open or delete (what is inside moves up). */
+function Folders({ browser }: { browser: Browser }) {
+  return (
+    <ul className={styles.items}>
+      {browser.listing.folders.map((path) => {
+        const name = path.split('/').at(-1) ?? path;
+        return (
+          <li key={path} className={styles.item}>
+            <Button
+              variant="quiet"
+              aria-label={t('pagesPlus.elements.library.openFolder', { name })}
+              onClick={() => browser.setFolder(path)}
+            >
+              {name}
+            </Button>
+            <Button
+              variant="quiet"
+              aria-label={t('pagesPlus.elements.library.deleteFolderLabel', { name })}
+              onClick={() => void browser.apply((l) => removeFolder(l, path, 'keep'))}
+            >
+              {t('pagesPlus.elements.library.delete')}
+            </Button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function Results({ browser, platform, close }: { browser: Browser; platform: Platform; close(): void }) {
+  const { entries, searching, query, library } = browser;
+  if (entries.length === 0) {
+    const empty = library.entries.length === 0 && allFolders(library).length === 0;
+    const text = searching
+      ? t('pagesPlus.elements.library.noMatch', { query })
+      : empty
+        ? t('pagesPlus.elements.library.empty')
+        : '';
+    return <p className={styles.hint}>{text}</p>;
+  }
+  return (
+    <ul className={styles.cards}>
+      {entries.map((entry) => (
+        <Card
+          key={entry.id}
+          entry={entry}
+          platform={platform}
+          close={close}
+          report={browser.setMessage}
+          edit={browser.startEdit}
+        />
+      ))}
+    </ul>
+  );
+}
+
+export function ElementsDialog({ platform, close }: { platform: Platform; close(): void }) {
+  const browser = useBrowser();
+  const { editing, message, searching, listing } = browser;
   return (
     <Dialog
       title={t('pagesPlus.elements.library.title')}
@@ -213,107 +341,16 @@ export function ElementsDialog({ platform, close }: { platform: Platform; close(
       actions={[{ id: 'close', label: t('pagesPlus.elements.library.close'), variant: 'primary', onPress: close }]}
     >
       <div className={styles.form}>
-        <TextField label={t('pagesPlus.elements.library.search')} value={query} onChange={setQuery} />
-        <div className={styles.buttons}>
-          {!searching && folder !== '' ? (
-            <Button variant="quiet" onClick={() => setFolder(parts.slice(0, -1).join('/'))}>
-              {t('pagesPlus.elements.library.up')}
-            </Button>
-          ) : null}
-          <span className={styles.hint} aria-live="polite">
-            {[t('pagesPlus.elements.library.root'), ...parts].join(' / ')}
-          </span>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setText('');
-              setEditing({ kind: 'folder' });
-            }}
-          >
-            {t('pagesPlus.elements.library.newFolder')}
-          </Button>
-          <Button variant="secondary" onClick={() => void importFile()}>
-            {t('pagesPlus.elements.library.import')}
-          </Button>
-        </div>
-        {editing ? (
-          <div className={styles.buttons}>
-            <TextField
-              label={t(
-                editing.kind === 'folder'
-                  ? 'pagesPlus.elements.library.folderName'
-                  : 'pagesPlus.elements.library.renameField',
-              )}
-              value={text}
-              onChange={setText}
-              onCommit={commit}
-              onCancel={() => setEditing(null)}
-              autoSelect
-            />
-            <Button variant="primary" onClick={commit}>
-              {t(
-                editing.kind === 'folder'
-                  ? 'pagesPlus.elements.library.create'
-                  : 'pagesPlus.elements.library.renameApply',
-              )}
-            </Button>
-          </div>
-        ) : null}
+        <TextField label={t('pagesPlus.elements.library.search')} value={browser.query} onChange={browser.setQuery} />
+        <Toolbar browser={browser} />
+        {editing ? <EditRow browser={browser} editing={editing} /> : null}
         {message ? (
           <p className={styles.error} role="alert">
             {message}
           </p>
         ) : null}
-        {!searching && listing.folders.length > 0 ? (
-          <ul className={styles.items}>
-            {listing.folders.map((path) => {
-              const name = path.split('/').at(-1) ?? path;
-              return (
-                <li key={path} className={styles.item}>
-                  <Button
-                    variant="quiet"
-                    aria-label={t('pagesPlus.elements.library.openFolder', { name })}
-                    onClick={() => setFolder(path)}
-                  >
-                    {name}
-                  </Button>
-                  <Button
-                    variant="quiet"
-                    aria-label={t('pagesPlus.elements.library.deleteFolderLabel', { name })}
-                    onClick={() => void apply((l) => removeFolder(l, path, 'keep'))}
-                  >
-                    {t('pagesPlus.elements.library.delete')}
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-        {entries.length > 0 ? (
-          <ul className={styles.cards}>
-            {entries.map((entry) => (
-              <Card
-                key={entry.id}
-                entry={entry}
-                platform={platform}
-                close={close}
-                report={setMessage}
-                edit={(next) => {
-                  setText(next.kind === 'rename' ? next.value : '');
-                  setEditing(next);
-                }}
-              />
-            ))}
-          </ul>
-        ) : (
-          <p className={styles.hint}>
-            {searching
-              ? t('pagesPlus.elements.library.noMatch', { query })
-              : empty
-                ? t('pagesPlus.elements.library.empty')
-                : ''}
-          </p>
-        )}
+        {!searching && listing.folders.length > 0 ? <Folders browser={browser} /> : null}
+        <Results browser={browser} platform={platform} close={close} />
       </div>
     </Dialog>
   );
