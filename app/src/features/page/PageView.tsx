@@ -62,7 +62,7 @@ export function PageView() {
       style={zoom === 100 ? undefined : { zoom: zoom / 100 }}
     >
       {showProgress && <ProgressBar label={t('tree.loading.page')} />}
-      {shown ? <header className={styles.header}>{titleBlock}</header> : titleBlock}
+      {shown ? <div className={styles.header}>{titleBlock}</div> : titleBlock}
       {shown && (
         <Suspense fallback={null}>
           <PageBody key={page.id} pageId={page.id} />

@@ -52,6 +52,14 @@ export const SETTLE_MS = 150;
 /** Ctrl+wheel and touchpad pinches zoom by e^(-deltaY x this). One mouse notch is about 22%. */
 const WHEEL_ZOOM_RATE = 0.0025;
 
+/** Calls `listener` when `element` resizes. Does nothing where ResizeObserver is missing (jsdom). */
+export function observeResize(element: HTMLElement, listener: () => void): () => void {
+  if (typeof ResizeObserver === 'undefined') return () => undefined;
+  const observer = new ResizeObserver(listener);
+  observer.observe(element);
+  return () => observer.disconnect();
+}
+
 function layer(classNames: string, parent: HTMLElement): HTMLElement {
   const element = parent.ownerDocument.createElement('div');
   element.className = classNames;
@@ -84,7 +92,7 @@ class Viewport implements PageViewport {
   private readonly cameraListeners = new Set<(camera: Camera) => void>();
   private readonly gestureListeners = new Set<(phase: 'start' | 'end', kind: GestureKind) => void>();
   private readonly gestures = new Set<GestureKind>();
-  private readonly observer: ResizeObserver;
+  private readonly stopObserving: () => void;
   private rect: DOMRect;
   private zoom = 1;
   private scroll = { x: 0, y: 0 };
@@ -106,8 +114,7 @@ class Viewport implements PageViewport {
     this.underlay = layer(`${styles.underlay} ${classNames.underlay}`, this.world);
     this.view = host.ownerDocument.defaultView ?? window;
     this.rect = this.viewport.getBoundingClientRect();
-    this.observer = new ResizeObserver(this.onResize);
-    this.observer.observe(this.viewport);
+    this.stopObserving = observeResize(this.viewport, this.onResize);
     this.viewport.addEventListener('scroll', this.onScroll, { passive: true });
     this.viewport.addEventListener('scrollend', this.onScrollEnd, { passive: true });
     this.viewport.addEventListener('wheel', this.onWheel, { passive: false });
@@ -223,7 +230,7 @@ class Viewport implements PageViewport {
   }
 
   destroy(): void {
-    this.observer.disconnect();
+    this.stopObserving();
     if (this.frame) cancelAnimationFrame(this.frame);
     if (this.resizeFrame) cancelAnimationFrame(this.resizeFrame);
     this.view.clearTimeout(this.settleTimer);

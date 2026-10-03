@@ -24,7 +24,7 @@ import { shownFitWidth } from './viewport/shown';
 import { createGestureTool } from './viewport/gestures';
 import { createRouter } from './viewport/router';
 import type { PointerToolDef } from './viewport/router';
-import { createViewport, shownViewport } from './viewport/viewport';
+import { createViewport, observeResize, shownViewport } from './viewport/viewport';
 import type { PageViewport } from './viewport/viewport';
 import type { Point } from './viewport/camera';
 import layoutStyles from './layout/layout.module.css';
@@ -97,17 +97,16 @@ function createFlow(viewport: PageViewport): { flow: HTMLElement; stop(): void }
   viewport.world.append(flow);
   let frame = 0;
   // The world grows in the next frame: growing it from the observer would make the observer loop.
-  const observer = new ResizeObserver(() => {
+  const stopObserving = observeResize(flow, () => {
     frame ||= requestAnimationFrame(() => {
       frame = 0;
       viewport.setContent({ w: flow.offsetLeft + flow.offsetWidth, h: flow.offsetTop + flow.offsetHeight });
     });
   });
-  observer.observe(flow);
   return {
     flow,
     stop() {
-      observer.disconnect();
+      stopObserving();
       cancelAnimationFrame(frame);
     },
   };
