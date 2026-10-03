@@ -32,10 +32,11 @@ function outline(result: PasteResult): string[] {
 describe('a paste from Word', () => {
   const result = paste({ html: word, text: 'Lab report' });
 
-  it('is told apart by its header and keeps structure, not fonts or colors', () => {
+  it('is told apart by its header and keeps structure and colors, not fonts', () => {
     expect(result.source).toBe('word');
     const [text] = outline(result);
-    expect(text).toContain('heading[level=1]("Lab report")');
+    // Word's heading blue is near the Indigo pen (design, 15.3).
+    expect(text).toContain('heading[level=1](textColorindigo("Lab report"))');
     expect(text).toContain(
       'paragraph("Results were ", bold("clearly"), " better, see ", linkhttps://example.com/data("the data"), ".")',
     );
@@ -81,7 +82,7 @@ describe('a paste from OneNote', () => {
     expect(result.source).toBe('onenote');
     expect(outline(result)).toEqual([
       'doc(paragraph(bold("Meeting notes")), bulletList(listItem[checked=false](paragraph("Send the agenda")), ' +
-        'listItem[checked=true](paragraph("Book the room"))), paragraph(italic("Bring"), " the printouts"), ' +
+        'listItem[checked=true](paragraph("Book the room"))), paragraph(italic(textColorbrick("Bring")), textColorbrick(" the printouts")), ' +
         'bulletList(listItem(paragraph("Budget review")), listItem(paragraph("Hiring"))))',
     ]);
     expect(result.images).toEqual([]);
