@@ -34,8 +34,8 @@ describe('flags', () => {
     initFlags('nightly', { 'storage.core': true }, { 'storage.core': false, 'trash.view': false });
     expect(isEnabled('storage.core')).toBe(false);
     expect(isEnabled('trash.view')).toBe(false);
-    initFlags('beta', { 'updates.betaChannel': true, 'storage.core': false });
-    expect(isEnabled('updates.betaChannel')).toBe(false);
+    initFlags('beta', { 'install.uninstallEntry': true, 'storage.core': false });
+    expect(isEnabled('install.uninstallEntry')).toBe(false);
     expect(isEnabled('storage.core')).toBe(true);
   });
 

@@ -142,7 +142,11 @@ const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>
 
 export const FLAGS: readonly FlagDef[] = [
   flag('window.snapLayouts', 'The Snap Layouts flyout on the Maximize button, if the spike passes.', betaBuilds),
-  flag('shell.customFrame', 'The custom title bar with its own caption buttons, instead of the native frame.', betaBuilds),
+  flag(
+    'shell.customFrame',
+    'The custom title bar with its own caption buttons, instead of the native frame.',
+    betaBuilds,
+  ),
   flag('install.uninstallEntry', 'A per-user entry in Installed apps.', off),
   flag('updates.meteredCheck', 'Wait for an unmetered network before downloading an update.', off),
   flag('updates.resume', 'Resume a download that stopped partway.', off),
