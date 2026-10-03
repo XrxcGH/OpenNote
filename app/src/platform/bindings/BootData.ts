@@ -9,4 +9,23 @@ import type { Settings } from "./Settings";
 import type { ThemeName } from "./ThemeName";
 import type { UpdaterStatus } from "./UpdaterStatus";
 
-export type BootData = { bootVersion: 1, version: string, channel: Channel, architecture: Architecture, firstRun: boolean, settings: Settings, settingsReadOnly: boolean, state: DeviceState, os: OsAppearance, resolvedTheme: ThemeName, webview2Version: string, install: InstallStatus, updater: UpdaterStatus, flagOverrides: { [key in string]?: boolean }, notices: Array<Notice>, perf: { processStartEpochMs: number, }, };
+/**
+ * The boot payload, matching the interface's `BootData`.
+ */
+export type BootData = { bootVersion: 1, version: string, channel: Channel, architecture: Architecture, 
+/**
+ * `settings.json` didn't exist.
+ */
+firstRun: boolean, settings: Settings, 
+/**
+ * A newer schema's `minWriterSchema` forbids writing the settings file.
+ */
+settingsReadOnly: boolean, state: DeviceState, os: OsAppearance, 
+/**
+ * The theme Rust used for the window color.
+ */
+resolvedTheme: ThemeName, webview2Version: string, install: InstallStatus, updater: UpdaterStatus, 
+/**
+ * Feature flag overrides, in development and nightly builds only.
+ */
+flagOverrides: { [key in string]: boolean }, notices: Array<Notice>, perf: { processStartEpochMs: number, }, };

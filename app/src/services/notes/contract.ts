@@ -16,18 +16,25 @@
 //
 // - Kinds: a move or create that breaks these rules or makes a cycle changes nothing and rejects (invalid-move).
 //
+// - Kinds: section groups nest at most 4 deep, so a create or move that nests them deeper rejects (invalid-move).
+//
 // - Levels: a section's first page has level 0. Each page is at most one level below the page before it.
 //
 // - Levels: a page's subpages are the pages right after it with a higher level. They move and go to Trash with it.
 //
 // - Levels: a moved page block rises to fit after the page before it. setPageLevel shifts subpages too.
 //
-// - Names: titles are trimmed and 1 to 200 characters. Pages never have a color.
+// - Names: titles are trimmed and 1 to 200 characters. Pages never have a color, and colors are pen names only.
 //
 // - Trash: trash returns the roots in display order. restore puts each root back before its old next sibling.
 //
-// - Trash: without that sibling, restore puts the root at the end. Without the parent, it goes into a new
-//   notebook named after the old parent, and a page also gets a section of that name.
+// - Trash: without that sibling, restore puts the root at the end. Without the parent, sections and groups go to
+//   the end of their notebook. A page goes into a new section at the end of its notebook, named after the old
+//   one. A group that would nest too deep also goes to the end of its notebook.
+//
+// - Trash: while a notebook is in Trash, the items trashed from inside it are hidden and can't be restored.
+//
+// - Trash: restore(receipt) restores what is left of the receipt, and rejects when nothing is.
 //
 // - Errors: every method rejects only with NotesError.
 

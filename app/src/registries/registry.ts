@@ -9,6 +9,8 @@ export interface Registry<T extends { readonly id: string }> {
   get(id: string): T | undefined;
   /** In registration order. Consumers sort, and filter by flag. */
   list(): readonly T[];
+  /** Swaps every item for the given ones, for tests that need a bare registry. Returns a function that restores them. */
+  replaceAll(next: readonly T[]): () => void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -33,6 +35,16 @@ export function createRegistry<T extends { readonly id: string }>(name: string):
     },
     get: (id) => items.get(id),
     list: () => snapshot,
+    replaceAll(next) {
+      const before = [...items.values()];
+      const swap = (list: readonly T[]) => {
+        items.clear();
+        list.forEach((item) => items.set(item.id, item));
+        changed();
+      };
+      swap(next);
+      return () => swap(before);
+    },
     subscribe(listener) {
       listeners.add(listener);
       return () => void listeners.delete(listener);

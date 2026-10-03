@@ -1,0 +1,64 @@
+/* Text fields (BRAND.md section 11): a sunken fill with a control outline, the label above, and help or error
+   text below. An error also changes the outline, but the error text is what says it, so color is never alone.
+   The field follows density through --target-size. */
+@layer components {
+  .field {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .label {
+    color: var(--color-text-primary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--type-small-line);
+  }
+
+  .input {
+    box-sizing: border-box;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .input[readonly] {
+    border-color: var(--color-border-subtle);
+    background: transparent;
+    color: var(--color-text-secondary);
+  }
+
+  .help,
+  .error {
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .help {
+    color: var(--color-text-secondary);
+  }
+
+  .error {
+    color: var(--color-status-danger);
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .input,
+    .input[aria-invalid='true'] {
+      border-color: ButtonBorder;
+    }
+
+    .input[aria-invalid='true'] {
+      border-width: 2px;
+    }
+  }
+}

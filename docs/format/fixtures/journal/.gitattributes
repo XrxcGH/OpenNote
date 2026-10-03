@@ -1,0 +1,3 @@
+# Journal files are binary: never convert their line endings.
+*.wal binary
+*.bin binary

@@ -1,0 +1,527 @@
+{
+  "cases": [
+    {
+      "about": "Flowing blocks read in order key order",
+      "expected": ["01m3sa111800000000000007qg", "01m3sa120g0000000000000fez", "01m3sa12zr0000000000000q6e"],
+      "name": "flowing-by-order-key",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 1"
+            },
+            "id": "01m3sa111800000000000007qg",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 2"
+            },
+            "id": "01m3sa120g0000000000000fez",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a1",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 3"
+            },
+            "id": "01m3sa12zr0000000000000q6e",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a2",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {}
+      }
+    },
+    {
+      "about": "Two blocks with the same order key read in ID order",
+      "expected": ["01m3sa13z00000000000000yxx", "01m3sa14y800000000000016nc"],
+      "name": "order-key-ties-by-id",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 4"
+            },
+            "id": "01m3sa13z00000000000000yxx",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 5"
+            },
+            "id": "01m3sa14y800000000000016nc",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {}
+      }
+    },
+    {
+      "about": "Flowing blocks read first, then floating blocks, whatever their order keys",
+      "expected": ["01m3sa120g0000000000000fez", "01m3sa12zr0000000000000q6e", "01m3sa111800000000000007qg"],
+      "name": "flowing-before-floating",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 1"
+            },
+            "frame": {
+              "w": 120,
+              "x": 10,
+              "y": 10
+            },
+            "id": "01m3sa111800000000000007qg",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 2"
+            },
+            "id": "01m3sa120g0000000000000fez",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a1",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 3"
+            },
+            "id": "01m3sa12zr0000000000000q6e",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a2",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {}
+      }
+    },
+    {
+      "about": "Floating blocks read in rows: a row takes blocks up to 8 units below its first block, left to right",
+      "expected": ["01m3sa120g0000000000000fez", "01m3sa111800000000000007qg", "01m3sa12zr0000000000000q6e", "01m3sa13z00000000000000yxx"],
+      "name": "floating-rows",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 1"
+            },
+            "frame": {
+              "w": 120,
+              "x": 300,
+              "y": 100
+            },
+            "id": "01m3sa111800000000000007qg",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 2"
+            },
+            "frame": {
+              "w": 120,
+              "x": 100,
+              "y": 104
+            },
+            "id": "01m3sa120g0000000000000fez",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a1",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 3"
+            },
+            "frame": {
+              "w": 120,
+              "x": 400,
+              "y": 108.5
+            },
+            "id": "01m3sa12zr0000000000000q6e",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a2",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 4"
+            },
+            "frame": {
+              "w": 120,
+              "x": 50,
+              "y": 200
+            },
+            "id": "01m3sa13z00000000000000yxx",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a3",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {}
+      }
+    },
+    {
+      "about": "The 8 units are measured from the first block of the row",
+      "expected": ["01m3sa111800000000000007qg", "01m3sa120g0000000000000fez", "01m3sa12zr0000000000000q6e"],
+      "name": "rows-start-at-the-first-block",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 1"
+            },
+            "frame": {
+              "w": 120,
+              "x": 0,
+              "y": 0
+            },
+            "id": "01m3sa111800000000000007qg",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 2"
+            },
+            "frame": {
+              "w": 120,
+              "x": 500,
+              "y": 4
+            },
+            "id": "01m3sa120g0000000000000fez",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a1",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 3"
+            },
+            "frame": {
+              "w": 120,
+              "x": 100,
+              "y": 10
+            },
+            "id": "01m3sa12zr0000000000000q6e",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a2",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {}
+      }
+    },
+    {
+      "about": "Floating blocks at one position read in order key order",
+      "expected": ["01m3sa15xg0000000000001ecv", "01m3sa16wr0000000000001p4a"],
+      "name": "same-position-ties-by-order-key",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 6"
+            },
+            "frame": {
+              "w": 120,
+              "x": 20,
+              "y": 50
+            },
+            "id": "01m3sa15xg0000000000001ecv",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 7"
+            },
+            "frame": {
+              "w": 120,
+              "x": 20,
+              "y": 50
+            },
+            "id": "01m3sa16wr0000000000001p4a",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a1",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {}
+      }
+    },
+    {
+      "about": "The blocks of view.readingOrder come first, in that order, then the others as usual",
+      "expected": ["01m3sa13z00000000000000yxx", "01m3sa12zr0000000000000q6e", "01m3sa111800000000000007qg", "01m3sa120g0000000000000fez"],
+      "name": "reading-order-first",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 1"
+            },
+            "id": "01m3sa111800000000000007qg",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 2"
+            },
+            "id": "01m3sa120g0000000000000fez",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a1",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 3"
+            },
+            "frame": {
+              "w": 120,
+              "x": 10,
+              "y": 10
+            },
+            "id": "01m3sa12zr0000000000000q6e",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a2",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 4"
+            },
+            "id": "01m3sa13z00000000000000yxx",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a3",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {
+          "readingOrder": ["01m3sa13z00000000000000yxx", "01m3sa12zr0000000000000q6e"]
+        }
+      }
+    },
+    {
+      "about": "An ID that names no block, or repeats, is ignored",
+      "expected": ["01m3sa12zr0000000000000q6e", "01m3sa120g0000000000000fez", "01m3sa111800000000000007qg"],
+      "name": "reading-order-ignores-unknown-and-repeated-ids",
+      "page": {
+        "blocks": [
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 1"
+            },
+            "id": "01m3sa111800000000000007qg",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a0",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 2"
+            },
+            "id": "01m3sa120g0000000000000fez",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a1",
+            "type": "text"
+          },
+          {
+            "created": "2026-09-30T14:03:25.001Z",
+            "data": {
+              "markdown": "Block 3"
+            },
+            "id": "01m3sa12zr0000000000000q6e",
+            "modified": "2026-09-30T14:05:40.020Z",
+            "order": "a2",
+            "type": "text"
+          }
+        ],
+        "created": "2026-09-30T14:03:22.114Z",
+        "formatVersion": 1,
+        "id": "01m3sawez0000000000006sg1x",
+        "kind": "opennote.page",
+        "minReaderVersion": 1,
+        "modified": "2026-09-30T14:07:40.412Z",
+        "revision": {
+          "ancestors": [],
+          "device": {
+            "id": "01m1e34qm04rx4vfj1927vgwgm",
+            "label": "Windows device GWGM"
+          },
+          "id": "01m3sawfy8000000000006sqsc",
+          "parents": [],
+          "savedAt": "2026-09-30T14:07:40.520Z",
+          "writer": "OpenNote 0.4.0 (windows)"
+        },
+        "title": "Reading order",
+        "view": {
+          "readingOrder": ["01m3sa12zr0000000000000q6e", "01m3sa40qr000000000000qxke", "01m3sa12zr0000000000000q6e", "01m3sa120g0000000000000fez"]
+        }
+      }
+    }
+  ]
+}

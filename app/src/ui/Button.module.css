@@ -1,0 +1,151 @@
+/* Buttons (BRAND.md section 11). Hover and press change the background in 100 ms, and a press scales to 0.98
+   (BRAND.md section 9). Every target follows density through --target-size. Disabled buttons, including
+   aria-disabled ones that stay focusable, use muted text and no fill. */
+@layer components {
+  .button,
+  .iconButton {
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      background-color var(--motion-duration-quick) var(--motion-easing-standard),
+      scale var(--motion-duration-quick) var(--motion-easing-standard);
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-5);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+  }
+
+  .button:active:not(:disabled, [aria-disabled='true']),
+  .iconButton:active:not(:disabled, [aria-disabled='true']) {
+    scale: 0.98;
+  }
+
+  .secondary {
+    border-color: var(--color-border-control);
+  }
+
+  .secondary:hover,
+  .quiet:hover,
+  .danger:hover,
+  .iconButton:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .primary {
+    border-color: var(--color-accent-primary);
+    background: var(--color-accent-primary);
+    color: var(--color-text-on-accent);
+  }
+
+  .primary:hover {
+    border-color: var(--color-accent-primary-hover);
+    background: var(--color-accent-primary-hover);
+  }
+
+  .primary:active {
+    border-color: var(--color-accent-primary-pressed);
+    background: var(--color-accent-primary-pressed);
+  }
+
+  .quiet {
+    padding-inline: var(--space-3);
+    color: var(--color-text-link);
+  }
+
+  .danger {
+    color: var(--color-status-danger);
+  }
+
+  /* Confirmations fill the danger button, so the choice reads as serious. */
+  .danger[data-fill] {
+    border-color: var(--color-status-danger);
+    background: var(--color-status-danger);
+    color: var(--color-text-on-accent);
+  }
+
+  .iconButton {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: var(--target-size);
+    block-size: var(--target-size);
+    padding: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .iconButton:hover,
+  .iconButton[aria-pressed='true'],
+  .iconButton[aria-expanded='true'] {
+    color: var(--color-text-primary);
+  }
+
+  .iconButton[aria-pressed='true'] {
+    background: var(--color-accent-primary-subtle);
+  }
+
+  .iconButton svg {
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+  }
+
+  .button:disabled,
+  .button[aria-disabled='true'],
+  .iconButton:disabled,
+  .iconButton[aria-disabled='true'] {
+    border-color: var(--color-border-subtle);
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: default;
+  }
+}
+
+@layer states {
+  @media (prefers-reduced-motion: reduce) {
+    .button,
+    .iconButton {
+      transition-property: background-color;
+    }
+
+    .button:active,
+    .iconButton:active {
+      scale: none;
+    }
+  }
+
+  :root[data-motion='reduce'] :is(.button, .iconButton):active {
+    scale: none;
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .button {
+      border-color: ButtonBorder;
+    }
+
+    .iconButton[aria-pressed='true'] {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
+    }
+
+    .button:disabled,
+    .button[aria-disabled='true'],
+    .iconButton:disabled,
+    .iconButton[aria-disabled='true'] {
+      color: GrayText;
+    }
+  }
+}

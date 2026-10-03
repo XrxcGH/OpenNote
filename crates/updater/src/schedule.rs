@@ -54,9 +54,139 @@ pub fn backoff(failures: u32) -> Duration {
     }
 }
 
+/// The longest the scheduler thread sleeps at once. It wakes at least this often and compares the wall clock
+/// with the next check, so a check that fell due while the PC slept runs soon after it wakes.
+pub const TICK: Duration = Duration::from_secs(60);
+
+/// A random wait from zero to [`MAX_JITTER`], from the standard library's per-process random hash keys.
+pub fn random_jitter() -> Duration {
+    use std::hash::{BuildHasher, Hasher};
+    let random = std::collections::hash_map::RandomState::new().build_hasher().finish();
+    Duration::from_secs(random % (MAX_JITTER.as_secs() + 1))
+}
+
+/// When the next automatic check runs. Automatic checks start at the first `app_ready`; the "Only check when I
+/// ask" setting stops them.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Scheduler {
+    next: Option<SystemTime>,
+    failures: u32,
+}
+
+impl Scheduler {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// The next automatic check, if any is planned.
+    pub fn next(&self) -> Option<SystemTime> {
+        self.next
+    }
+
+    /// Checks 30 s after the first `app_ready`, or when a back-off saved by an earlier run ends.
+    pub fn start(&mut self, now: SystemTime, backoff_until: Option<SystemTime>) {
+        let first = now + FIRST_CHECK_DELAY;
+        self.next = Some(backoff_until.map_or(first, |until| until.max(first)));
+    }
+
+    /// Stops automatic checks, for "Only check when I ask".
+    pub fn stop(&mut self) {
+        self.next = None;
+    }
+
+    pub fn is_due(&self, now: SystemTime) -> bool {
+        self.next.is_some_and(|next| now >= next)
+    }
+
+    /// How long to sleep before looking again: until the next check, and at most one [`TICK`].
+    pub fn sleep_for(&self, now: SystemTime) -> Duration {
+        let until_next = self.next.map(|next| next.duration_since(now).unwrap_or_default());
+        until_next.map_or(TICK, |wait| wait.min(TICK))
+    }
+
+    /// A check worked: the next one is 6 hours and `jitter` later.
+    pub fn succeeded(&mut self, now: SystemTime, jitter: Duration) {
+        self.failures = 0;
+        if self.next.is_some() {
+            self.next = Some(now + CHECK_INTERVAL + jitter);
+        }
+    }
+
+    /// A check failed: back off 1 hour, then 2, then 6. Returns when the next check runs, if automatic checks
+    /// are on.
+    pub fn failed(&mut self, now: SystemTime) -> Option<SystemTime> {
+        self.failures += 1;
+        if self.next.is_some() {
+            self.next = Some(now + backoff(self.failures));
+        }
+        self.next
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::time::UNIX_EPOCH;
+
+    fn at(seconds: u64) -> SystemTime {
+        UNIX_EPOCH + Duration::from_secs(1_792_000_000 + seconds)
+    }
+
+    #[test]
+    fn checks_30_seconds_after_ready_then_every_6_hours() {
+        let mut scheduler = Scheduler::new();
+        assert!(!scheduler.is_due(at(0)) && scheduler.next().is_none());
+        scheduler.start(at(0), None);
+        assert!(!scheduler.is_due(at(29)));
+        assert!(scheduler.is_due(at(30)));
+        scheduler.succeeded(at(30), Duration::from_secs(90));
+        assert_eq!(scheduler.next(), Some(at(30 + 6 * 3600 + 90)));
+        assert!(!scheduler.is_due(at(6 * 3600)));
+    }
+
+    #[test]
+    fn a_check_due_during_sleep_runs_at_the_next_tick() {
+        let mut scheduler = Scheduler::new();
+        scheduler.start(at(0), None);
+        scheduler.succeeded(at(30), Duration::ZERO);
+        assert_eq!(scheduler.sleep_for(at(40)), TICK, "never sleeps longer than one tick");
+        assert_eq!(scheduler.sleep_for(at(30 + 6 * 3600 - 5)), Duration::from_secs(5));
+        let woke = at(30 + 9 * 3600);
+        assert!(scheduler.is_due(woke), "the PC slept past the check");
+        assert_eq!(scheduler.sleep_for(woke), Duration::ZERO);
+    }
+
+    #[test]
+    fn failed_checks_back_off_and_success_resets() {
+        let mut scheduler = Scheduler::new();
+        scheduler.start(at(0), None);
+        assert_eq!(scheduler.failed(at(30)), Some(at(30 + 3600)));
+        assert_eq!(scheduler.failed(at(3630)), Some(at(3630 + 7200)));
+        assert_eq!(scheduler.failed(at(10_830)), Some(at(10_830 + 6 * 3600)));
+        scheduler.succeeded(at(40_000), Duration::ZERO);
+        assert_eq!(scheduler.failed(at(50_000)), Some(at(50_000 + 3600)));
+    }
+
+    #[test]
+    fn honors_a_saved_back_off_and_the_manual_setting() {
+        let mut scheduler = Scheduler::new();
+        scheduler.start(at(0), Some(at(7200)));
+        assert!(!scheduler.is_due(at(3600)) && scheduler.is_due(at(7200)));
+        scheduler.start(at(0), Some(at(5)));
+        assert_eq!(scheduler.next(), Some(at(30)));
+        scheduler.stop();
+        assert!(!scheduler.is_due(at(1_000_000)));
+        scheduler.succeeded(at(10), Duration::ZERO);
+        assert_eq!(scheduler.failed(at(20)), None, "manual mode never schedules a check");
+    }
+
+    #[test]
+    fn jitter_stays_within_10_minutes() {
+        for _ in 0..200 {
+            assert!(random_jitter() <= MAX_JITTER);
+        }
+    }
 
     #[test]
     fn backs_off_one_then_two_then_six_hours() {

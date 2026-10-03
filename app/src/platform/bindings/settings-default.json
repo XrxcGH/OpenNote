@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "minWriterSchema": 1,
+  "appearance": {
+    "theme": "system",
+    "pageColor": "matchTheme",
+    "textSize": 100,
+    "uiScale": 100,
+    "motion": "system",
+    "density": "auto"
+  },
+  "storage": {
+    "notesFolder": null
+  },
+  "startup": {
+    "openLastPage": true
+  },
+  "shortcuts": {},
+  "keymap": {
+    "preset": "default"
+  },
+  "updates": {
+    "install": "auto",
+    "channel": "stable",
+    "skippedVersion": null
+  },
+  "setup": {
+    "completedSteps": []
+  },
+  "experimental": {
+    "flags": {}
+  },
+  "editing": {
+    "markdownShortcuts": true,
+    "slashMenu": true,
+    "formattingBar": "touchAndPen",
+    "newPageDateTime": true,
+    "autocorrect": {
+      "enabled": true,
+      "entries": []
+    },
+    "paste": {
+      "sourceLink": "ask",
+      "saveWebImages": true,
+      "joinPdfLines": true
+    },
+    "spelling": {
+      "enabled": true,
+      "languages": [],
+      "personalWords": [],
+      "ignoreUppercase": true,
+      "ignoreWithDigits": true
+    },
+    "readAloud": {
+      "voice": null,
+      "rate": 1.0,
+      "readCode": false
+    },
+    "history": {
+      "keep": "year"
+    }
+  },
+  "ink": {
+    "pens": [
+      {
+        "id": "p1",
+        "tool": "pen",
+        "color": "ink",
+        "width": 0.5,
+        "pressure": true
+      },
+      {
+        "id": "p2",
+        "tool": "pen",
+        "color": "indigo",
+        "width": 0.5,
+        "pressure": true
+      },
+      {
+        "id": "p3",
+        "tool": "pen",
+        "color": "brick",
+        "width": 0.5,
+        "pressure": true
+      },
+      {
+        "id": "p4",
+        "tool": "pen",
+        "color": "fern",
+        "width": 0.7,
+        "pressure": true
+      },
+      {
+        "id": "p5",
+        "tool": "pencil",
+        "color": "walnut",
+        "width": 0.7,
+        "pressure": true
+      },
+      {
+        "id": "h1",
+        "tool": "highlighter",
+        "color": "honey",
+        "width": 4.0
+      },
+      {
+        "id": "h2",
+        "tool": "highlighter",
+        "color": "mint",
+        "width": 4.0
+      }
+    ],
+    "penSelectsAndTypes": false,
+    "handedness": "right",
+    "touch": {
+      "draws": false,
+      "palmGraceMs": 500,
+      "twoFingerScrollNearPen": true
+    },
+    "eraser": {
+      "mode": "stroke",
+      "size": 4,
+      "erases": "all",
+      "returnToLastTool": false,
+      "showTarget": true
+    },
+    "lasso": {
+      "shape": "free",
+      "picks": [
+        "ink",
+        "highlighter",
+        "text",
+        "images",
+        "shapes"
+      ],
+      "inside": "mostly"
+    },
+    "shapes": {
+      "hold": true,
+      "holdMs": 500,
+      "inkToShape": false
+    },
+    "gestures": {
+      "scribbleErase": true,
+      "circleSelect": true,
+      "twoFingerUndo": true,
+      "threeFingerRedo": true
+    },
+    "anchorToText": true,
+    "zoomBox": {
+      "magnification": 3,
+      "autoAdvance": true
+    },
+    "contrastInk": "keepLegible",
+    "lowLatency": "auto"
+  }
+}

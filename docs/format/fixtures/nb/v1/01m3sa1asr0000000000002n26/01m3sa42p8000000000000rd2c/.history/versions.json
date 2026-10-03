@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.history",
+  "page": "01m3sa42p8000000000000rd2c",
+  "versions": [
+    {
+      "revision": "01m3saa5100000000000028g0n",
+      "savedAt": "2026-09-30T14:06:10.020Z",
+      "reason": "closed",
+      "name": "Before the lab",
+      "device": {
+        "id": "01m1e34qm04rx4vfj1927vgwgm",
+        "label": "Windows device GWGM"
+      },
+      "bytes": 975,
+      "segments": ["01m3sag9a8000000000003s2dw"]
+    }
+  ]
+}

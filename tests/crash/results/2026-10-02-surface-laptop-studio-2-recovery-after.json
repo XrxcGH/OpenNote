@@ -1,0 +1,54 @@
+{
+  "machine": "Surface Laptop Studio 2",
+  "reference_laptop": false,
+  "results": [
+    {
+      "name": "store.open.budget_page.p95",
+      "unit": "ms",
+      "value": 17.906200000000002,
+      "gate": 25.0
+    },
+    {
+      "name": "store.open.budget_page.p50",
+      "unit": "ms",
+      "value": 14.5999,
+      "gate": null
+    },
+    {
+      "name": "store.save.one_stroke.p95",
+      "unit": "ms",
+      "value": 19.4147,
+      "gate": 25.0
+    },
+    {
+      "name": "store.save.one_stroke.p50",
+      "unit": "ms",
+      "value": 15.596,
+      "gate": null
+    },
+    {
+      "name": "store.save.base_snapshot.p95",
+      "unit": "ms",
+      "value": 2.9103000000000003,
+      "gate": null
+    },
+    {
+      "name": "store.journal.append_flush.p99",
+      "unit": "ms",
+      "value": 1.268,
+      "gate": 30.0
+    },
+    {
+      "name": "store.journal.append_flush.p50",
+      "unit": "ms",
+      "value": 0.6219,
+      "gate": null
+    },
+    {
+      "name": "store.recovery.journal_4mib.max",
+      "unit": "ms",
+      "value": 84.8565,
+      "gate": 100.0
+    }
+  ]
+}

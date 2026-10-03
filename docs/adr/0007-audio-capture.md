@@ -5,9 +5,9 @@
 
 ## Context
 
-Phase 9 records the microphone, and optionally system audio for meetings, while a person writes and draws. Every stroke and text change gets a timestamp, so tapping it plays that moment. The [development plan](../../DEVELOPMENT.md#phase-9-audio-recording) sets two limits. Timestamps must stay within 100 ms of the audio after a 3-hour recording, and a crash must never lose more than 1 second of audio. The plan names cpal for capture and Opus for storage.
+Phase 9 records the microphone, and optionally system audio for meetings, while a person writes and draws. Every stroke and text change gets a timestamp, so tapping it plays that moment. The [development plan](../DEVELOPMENT.md#phase-9-audio-recording) sets two limits. Timestamps must stay within 100 ms of the audio after a 3-hour recording, and a crash must never lose more than 1 second of audio. The plan names cpal for capture and Opus for storage.
 
-This architecture decision record (ADR) reports [spike 4 of Phase 1](../../DEVELOPMENT.md#phase-1-spikes), which asked whether cpal can record the microphone and system audio at the same time. On Windows, system audio comes from WASAPI loopback, which captures what an output device plays. The risks were clock drift between the two sources, gaps in loopback, and whether Opus can be built and keep up.
+This architecture decision record (ADR) reports [spike 4 of Phase 1](../DEVELOPMENT.md#phase-1-spikes), which asked whether cpal can record the microphone and system audio at the same time. On Windows, system audio comes from WASAPI loopback, which captures what an output device plays. The risks were clock drift between the two sources, gaps in loopback, and whether Opus can be built and keep up.
 
 ## Decision
 

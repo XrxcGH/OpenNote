@@ -9,7 +9,7 @@ import { modifiability } from '../rules/modifiability.ts';
 import { brandConsistency } from '../rules/brand-consistency.ts';
 import { brandTokens, contrastRatio } from '../rules/brand-tokens.ts';
 import { usability } from '../rules/usability.ts';
-import { findBrowser, layout } from '../rules/layout.ts';
+import { browserArgs, findBrowser, layout } from '../rules/layout.ts';
 import { letterCase } from '../text.ts';
 import { splitCode } from '../comments.ts';
 import { globToRegExp } from '../glob.ts';
@@ -212,4 +212,11 @@ test('layout finds overlap, off-center text, and edge crowding', { skip: !findBr
   assert.match(messages, /off horizontal center/);
   assert.match(messages, /minimum is 11px/);
   assert.match(messages, /closer than 4px to the edge/);
+});
+
+test('layout keeps the headless browser profile inside the folder it deletes', () => {
+  const args = browserArgs('/tmp/checks-layout-abc');
+  const profile = args.find((arg) => arg.startsWith('--user-data-dir='));
+  assert.ok(profile, 'without --user-data-dir, headless Edge leaves a new profile in the temp folder');
+  assert.ok(profile.includes('checks-layout-abc'));
 });

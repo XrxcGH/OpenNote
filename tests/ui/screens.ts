@@ -71,4 +71,27 @@ export async function openScreen(page: Page, screen: ScreenState, where: { size:
   );
   await page.goto(screen.path ?? '/');
   await screen.prepare?.(page);
+  await settle(page);
+}
+
+/**
+ * Waits until nothing on the page is animating. Dialogs, menus, and popovers fade and slide in, and axe, the focus
+ * walk, and the screenshots read the page as it is at that moment. Mid-fade, the colors blend with what is behind,
+ * and axe reported text contrast the finished dialog does not have. Animations that never end, such as a spinner,
+ * are left out.
+ */
+export async function settle(page: Page) {
+  await page.evaluate(async () => {
+    const frame = () => new Promise<void>((done) => requestAnimationFrame(() => done()));
+    await frame();
+    // Finishing one animation can start another, so look again until nothing is left, with a limit.
+    for (let round = 0; round < 10; round += 1) {
+      const running = document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity);
+      if (running.length === 0) return;
+      await Promise.allSettled(running.map((animation) => animation.finished));
+      await frame();
+    }
+  });
 }

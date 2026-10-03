@@ -1,36 +1,45 @@
 // Checks every feature's registrations together (ARCHITECTURE.md section 7.1). Ids are unique, and every command
 // that a bar item or menu item names exists. Chords are canonical, and default chords don't collide in
-// overlapping scopes. Items that later packages register join these checks automatically.
+// overlapping scopes in either shortcut set, unless one command refines the other. Items that later packages
+// register join these checks automatically.
 
 import { describe, expect, it } from 'vitest';
 import '../features';
+import { defaultConflicts, scopeDepth, setKeys } from '../commands/keymap';
 import { isChordText } from '../commands/registry';
-import type { KeyScope } from '../commands/types';
+import { chordProblem } from '../commands/reserved';
+import type { Chord } from '../commands/types';
 import { FLAGS } from '../app/flags';
 import {
   beforeExit,
+  pageCreated,
   commandBar,
   commands,
   contextMenus,
   paletteProviders,
   settingsSections,
   setupSteps,
+  shortcutListSections,
   titleBarItems,
 } from '.';
 
-/** Scopes that can be active at the same time as the given one. */
-const OVERLAPS: Record<KeyScope, readonly KeyScope[]> = {
-  global: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree', 'palette', 'dialog'],
-  workspace: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree'],
-  tree: ['global', 'workspace', 'tree', 'notebooksTree', 'pagesTree'],
-  notebooksTree: ['global', 'workspace', 'tree', 'notebooksTree'],
-  pagesTree: ['global', 'workspace', 'tree', 'pagesTree'],
-  palette: ['global', 'palette'],
-  dialog: ['global', 'dialog'],
-};
-
-/** Ctrl+1 to Ctrl+9 are kept for tags in Phase 8. */
+/** Ctrl+1 to Ctrl+9 are kept for tags in Phase 8, in both shortcut sets. */
 const RESERVED_FOR_LATER = Array.from({ length: 9 }, (_, i) => `Ctrl+${i + 1}`);
+const REGISTRIES = [
+  commands,
+  commandBar,
+  contextMenus,
+  settingsSections,
+  setupSteps,
+  titleBarItems,
+  paletteProviders,
+  beforeExit,
+  pageCreated,
+  shortcutListSections,
+];
+
+const allDefaults = (): Chord[] =>
+  commands.list().flatMap((def) => [...(def.keys ?? []), ...Object.values(def.presetKeys ?? {}).flat()]);
 
 describe('registrations', () => {
   it('registers at least the theme feature', () => {
@@ -39,42 +48,15 @@ describe('registrations', () => {
 
   it('names only commands that exist', () => {
     const named = [...commandBar.list(), ...contextMenus.list()].map((item) => item.command);
-    expect(named.filter((id) => !commands.get(id))).toEqual([]);
+    const refined = commands.list().flatMap((def) => (def.refines ? [def.refines] : []));
+    expect([...named, ...refined].filter((id) => !commands.get(id))).toEqual([]);
   });
 
   it('has unique ids across each registry', () => {
-    for (const registry of [
-      commands,
-      commandBar,
-      contextMenus,
-      settingsSections,
-      setupSteps,
-      titleBarItems,
-      paletteProviders,
-      beforeExit,
-    ]) {
+    for (const registry of REGISTRIES) {
       const ids = registry.list().map((item) => item.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
-  });
-
-  it('uses canonical chords, and keeps Ctrl+1 to Ctrl+9 free', () => {
-    const all = commands.list().flatMap((def) => [...(def.keys ?? []), ...Object.values(def.presetKeys ?? {}).flat()]);
-    expect(all.filter((chord) => !isChordText(chord))).toEqual([]);
-    expect(all.filter((chord) => RESERVED_FOR_LATER.includes(chord))).toEqual([]);
-  });
-
-  it('has no two default chords in overlapping scopes', () => {
-    const bound = commands
-      .list()
-      .flatMap((def) => (def.keys ?? []).map((chord) => ({ id: def.id, chord, scope: def.scope ?? 'global' })));
-    const clashes = bound.flatMap((a, i) =>
-      bound
-        .slice(i + 1)
-        .filter((b) => a.chord === b.chord && OVERLAPS[a.scope].includes(b.scope))
-        .map((b) => `${a.chord}: ${a.id} and ${b.id}`),
-    );
-    expect(clashes).toEqual([]);
   });
 
   it('gives every flag a description and an issue link', () => {
@@ -82,5 +64,35 @@ describe('registrations', () => {
       expect(flag.description.length, flag.id).toBeGreaterThan(0);
       expect(flag.issue, flag.id).toMatch(/^https:\/\/github\.com\/XrxcGH\/OpenNote\/issues/);
     }
+  });
+});
+
+describe('default shortcuts', () => {
+  it('uses canonical chords, and keeps Ctrl+1 to Ctrl+9 free', () => {
+    expect(allDefaults().filter((chord) => !isChordText(chord))).toEqual([]);
+    expect(allDefaults().filter((chord) => RESERVED_FOR_LATER.includes(chord))).toEqual([]);
+  });
+
+  it('never gives a changeable command a reserved chord', () => {
+    const changeable = commands.list().filter((def) => def.customizable !== false);
+    const bad = changeable.flatMap((def) =>
+      [...setKeys(def, 'default'), ...setKeys(def, 'onenote')]
+        .filter((chord) => chordProblem(chord))
+        .map((chord) => `${def.id}: ${chord}`),
+    );
+    expect(bad).toEqual([]);
+  });
+
+  it('has no two default chords in overlapping scopes, in either shortcut set', () => {
+    expect(defaultConflicts('default')).toEqual([]);
+    expect(defaultConflicts('onenote')).toEqual([]);
+  });
+
+  it('refines only less specific commands', () => {
+    const wrong = commands.list().filter((def) => {
+      const refined = def.refines && commands.get(def.refines);
+      return refined && scopeDepth(def.scope) <= scopeDepth(refined.scope);
+    });
+    expect(wrong.map((def) => def.id)).toEqual([]);
   });
 });

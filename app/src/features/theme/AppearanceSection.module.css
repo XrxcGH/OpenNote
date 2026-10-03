@@ -1,0 +1,41 @@
+/* The Appearance section: one group per setting, stacked, with the label above its choices. */
+@layer components {
+  .section {
+    display: grid;
+    gap: var(--space-8);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .label {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .group :where([role='radiogroup']) {
+    gap: var(--space-3);
+  }
+}
+
+/* A selected choice keeps a visible mark when Windows replaces the colors. */
+@layer forced {
+  @media (forced-colors: active) {
+    .group [role='radio'][aria-checked='true'] {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+}

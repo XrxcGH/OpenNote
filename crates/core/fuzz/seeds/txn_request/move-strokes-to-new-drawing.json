@@ -1,0 +1,1 @@
+ {"page":"01m3sa12426sg32pmtyffjaqcf","client":"main-1","clientSeq":1,"edits":[{"edit":"insertBlock","block":{"id":"01m3sb2q8k4r6t9v1w3x5y7z0b","type":"ink","frame":{"x":96,"y":600,"w":400,"h":300},"data":{"role":"drawing"}}},{"edit":"moveStrokesToBlock","strokes":["01m3sa8wb93eknedj0qexh7af2"],"block":"01m3sb2q8k4r6t9v1w3x5y7z0b"}]}

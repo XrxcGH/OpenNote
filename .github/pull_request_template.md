@@ -9,7 +9,7 @@ GitHub closes the issue on merge only when the pull request targets main.
 
 <!--
 Name the branch this pull request targets and the phase items it covers, from
-https://github.com/XrxcGH/OpenNote/blob/main/DEVELOPMENT.md#5-phases
+https://github.com/XrxcGH/OpenNote/blob/main/docs/DEVELOPMENT.md#5-phases
 For a fix outside any phase, target main, and write "None" for the phase items.
 -->
 

@@ -1,5 +1,7 @@
-// Validates brand/tokens.json: every theme defines the same tokens, text meets its contrast
-// target in every theme, and motion stays within the limits set in BRAND.md.
+// Validates brand/tokens.json. Every theme defines the same tokens, and text meets its contrast target in every
+// theme. The forced-colors map names system colors for existing tokens, and motion stays within the limits set in
+// docs/BRAND.md. Contrast pairs may name pens and highlighters (ink.pens.<Name>, ink.highlighters.<Name>), which
+// resolve to their light or dark value per theme. A pair may also composite a translucent background over a color.
 
 import type { Finding, Rule, SourceFile } from '../types.ts';
 import { numberSetting } from '../config.ts';
@@ -9,19 +11,37 @@ interface ContrastPair {
   fg: string;
   bg: string;
   min: number;
+  /** Composites a translucent `bg`, such as a highlighter, over this color first. */
+  over?: string;
 }
 
-interface Tokens {
+interface InkColor {
+  name: string;
+  [theme: string]: string;
+}
+
+export interface Tokens {
   color: Record<string, Record<string, unknown>>;
   contrast?: ContrastPair[];
+  forcedColors?: Record<string, unknown>;
+  ink?: { pens?: InkColor[]; highlighters?: InkColor[] };
   motion?: { duration?: Record<string, number> };
 }
 
 const HEX = /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
+const INK = /^ink\.(pens|highlighters)\.(.+)$/;
+
+/** The CSS system color keywords a Windows contrast theme supplies (CSS Color Module Level 4). */
+export const SYSTEM_COLORS: readonly string[] = [
+  'AccentColor AccentColorText ActiveText ButtonBorder ButtonFace ButtonText Canvas CanvasText Field FieldText',
+  'GrayText Highlight HighlightText LinkText Mark MarkText SelectedItem SelectedItemText VisitedText',
+]
+  .join(' ')
+  .split(' ');
 
 export const brandTokens: Rule = {
   id: 'brand-tokens',
-  description: 'Design tokens: theme parity, valid colors, WCAG contrast and motion limits.',
+  description: 'Design tokens: theme parity, valid colors, WCAG contrast, forced colors, and motion limits.',
   appliesTo: (file) => file.path.endsWith('brand/tokens.json'),
   check(file, ctx) {
     const report = reporter('brand-tokens', file);
@@ -32,7 +52,12 @@ export const brandTokens: Rule = {
       return [report(1, `Invalid JSON: ${(error as Error).message}`)];
     }
     const maxMs = numberSetting(ctx.settings, 'maxDurationMs', 400);
-    return [...themeFindings(file, tokens), ...contrastFindings(file, tokens), ...motionFindings(file, tokens, maxMs)];
+    return [
+      ...themeFindings(file, tokens),
+      ...contrastFindings(file, tokens),
+      ...forcedColorFindings(file, tokens),
+      ...motionFindings(file, tokens, maxMs),
+    ];
   },
 };
 
@@ -68,7 +93,7 @@ function themeFindings(file: SourceFile, tokens: Tokens): Finding[] {
         findings.push(
           report(
             lineOf(file, value),
-            `"${theme.name}.${key}" is pure black or white. BRAND.md uses softer tones.`,
+            `"${theme.name}.${key}" is pure black or white. The brand guide (docs/BRAND.md) uses softer tones.`,
             'warning',
           ),
         );
@@ -78,30 +103,55 @@ function themeFindings(file: SourceFile, tokens: Tokens): Finding[] {
   return findings;
 }
 
+/** A color path's value in one theme: a color token, or a pen or highlighter by name. */
+export function resolveColor(tokens: Tokens, theme: string, path: string): string | undefined {
+  const ink = INK.exec(path);
+  const value = ink
+    ? tokens.ink?.[ink[1] as 'pens' | 'highlighters']?.find((entry) => entry.name === ink[2])?.[theme]
+    : flatten(tokens.color?.[theme] ?? {}).get(path);
+  return typeof value === 'string' ? value : undefined;
+}
+
 function contrastFindings(file: SourceFile, tokens: Tokens): Finding[] {
   const report = reporter('brand-tokens', file);
   const findings: Finding[] = [];
-  for (const [themeName, values] of Object.entries(tokens.color ?? {})) {
-    const flat = flatten(values);
+  for (const theme of Object.keys(tokens.color ?? {})) {
     for (const pair of tokens.contrast ?? []) {
-      const fg = flat.get(pair.fg);
-      const bg = flat.get(pair.bg);
+      const [fg, bg] = [resolveColor(tokens, theme, pair.fg), resolveColor(tokens, theme, pair.bg)];
+      const under = pair.over === undefined ? undefined : resolveColor(tokens, theme, pair.over);
       const line = lineOf(file, `"${pair.fg}"`);
-      if (typeof fg !== 'string' || typeof bg !== 'string') {
-        findings.push(report(line, `Contrast pair ${pair.fg} on ${pair.bg} doesn't exist in theme "${themeName}".`));
+      if (fg === undefined || bg === undefined || (pair.over !== undefined && under === undefined)) {
+        findings.push(report(line, `Contrast pair ${describe(pair)} doesn't exist in theme "${theme}".`));
         continue;
       }
-      const ratio = contrastRatio(fg, bg);
+      const ratio = contrastRatio(fg, bg, under);
       if (ratio < pair.min)
         findings.push(
-          report(
-            line,
-            `${themeName}: ${pair.fg} on ${pair.bg} has contrast ${ratio.toFixed(2)}:1, needs ${pair.min}:1.`,
-          ),
+          report(line, `${theme}: ${describe(pair)} has contrast ${ratio.toFixed(2)}:1, needs ${pair.min}:1.`),
         );
     }
   }
   return findings;
+}
+
+function describe(pair: ContrastPair): string {
+  return pair.over ? `${pair.fg} on ${pair.bg} over ${pair.over}` : `${pair.fg} on ${pair.bg}`;
+}
+
+/** Every key names a color token, and every value is a CSS system color keyword. */
+function forcedColorFindings(file: SourceFile, tokens: Tokens): Finding[] {
+  const report = reporter('brand-tokens', file);
+  const known = new Set(Object.values(tokens.color ?? {}).flatMap((theme) => [...flatten(theme).keys()]));
+  return Object.entries(tokens.forcedColors ?? {}).flatMap(([path, value]) => {
+    const line = lineOf(file, `"${path}": "${String(value)}"`);
+    const findings: Finding[] = [];
+    if (!known.has(path)) findings.push(report(line, `forcedColors names "${path}", which isn't a color token.`));
+    if (typeof value !== 'string' || !SYSTEM_COLORS.includes(value))
+      findings.push(
+        report(line, `forcedColors "${path}" must be a CSS system color such as Canvas or Highlight, not ${value}.`),
+      );
+    return findings;
+  });
 }
 
 function motionFindings(file: SourceFile, tokens: Tokens, maxMs: number): Finding[] {
@@ -116,14 +166,21 @@ function lineOf(file: SourceFile, needle: string): number {
   return index === -1 ? 1 : index + 1;
 }
 
-/** WCAG 2 contrast ratio. A translucent foreground is blended over the background first. */
-export function contrastRatio(fgHex: string, bgHex: string): number {
-  const bg = rgb(bgHex);
-  const fgRaw = rgb(fgHex);
-  const alpha = fgHex.length === 9 ? parseInt(fgHex.slice(7, 9), 16) / 255 : 1;
-  const fg = fgRaw.map((c, i) => c * alpha + bg[i] * (1 - alpha));
+/**
+ * WCAG 2 contrast ratio. A translucent foreground is blended over the background first. With `under`, a
+ * translucent background (a highlighter, for example) is first blended over that opaque color.
+ */
+export function contrastRatio(fgHex: string, bgHex: string, under?: string): number {
+  const bg = under === undefined ? rgb(bgHex) : blend(bgHex, rgb(under));
+  const fg = blend(fgHex, bg);
   const [l1, l2] = [luminance(fg), luminance(bg)].sort((a, b) => b - a);
   return (l1 + 0.05) / (l2 + 0.05);
+}
+
+/** A color painted over opaque channels, blended by its alpha when it has one. */
+function blend(topHex: string, bottom: number[]): number[] {
+  const alpha = topHex.length === 9 ? parseInt(topHex.slice(7, 9), 16) / 255 : 1;
+  return rgb(topHex).map((c, i) => c * alpha + bottom[i] * (1 - alpha));
 }
 
 function rgb(hex: string): number[] {

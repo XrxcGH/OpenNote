@@ -18,9 +18,12 @@ OpenNote welcomes bug reports, fixes, features, documentation, and design work. 
 
 These documents describe how OpenNote is planned and built:
 
-- [DEVELOPMENT.md](DEVELOPMENT.md): the phases, technology choices, tests, and working agreements.
-- [BRAND.md](BRAND.md): colors, type, motion, voice, accessibility, and performance budgets.
-- [CHECKS.md](CHECKS.md): the quality gate every file change must pass.
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): the phases, technology choices, tests, and working agreements.
+- [docs/BRAND.md](docs/BRAND.md): colors, type, motion, voice, accessibility, and performance budgets.
+- [docs/CHECKS.md](docs/CHECKS.md): the quality gate every file change must pass.
+- [Project wiki](https://github.com/XrxcGH/OpenNote/wiki): the user guide, development updates, and the developer guide.
+
+The [documentation index](docs/README.md) lists every document in `docs/`. The [repository map](README.md#repository-map) shows where each part of the code lives.
 
 For a small fix, you can open a pull request right away. For a new feature, open an issue first, so we can agree that it fits the current phase before you write code.
 
@@ -59,6 +62,9 @@ Also run `npm run setup-hooks` once, so CHECKS runs before each commit.
 | `npm run app:build` | Regenerates the design tokens and builds the UI into `app/dist`. |
 | `npm run app:test` | Runs the UI tests with Vitest. |
 | `npm run app:typecheck` | Type-checks the UI and its build scripts. |
+| `npm run test:components` | Runs the component tests in the installed Edge or Chrome. |
+| `npm run test:ui` | Builds the UI with the web platform and runs the Playwright screen and accessibility tests. |
+| `npm run test:e2e` | Runs the end-to-end specs against the built app, which need `tauri-driver` and `msedgedriver` (see `tests/e2e/harness.ts`). They skip when a tool is missing. |
 | `npm test` | Runs the CHECKS tests and the UI tests. |
 | `npm run lint` | Lints TypeScript and JavaScript with ESLint. |
 | `npm run typecheck` | Type-checks all TypeScript: CHECKS, the wireframe generator, and the app. |
@@ -75,9 +81,21 @@ Also run `npm run setup-hooks` once, so CHECKS runs before each commit.
 
 The Rust checks use `cargo` directly, as the [quality gate](#quality-gate) shows.
 
+### Running the app with its own data
+
+The app keeps its files in `%APPDATA%\OpenNote` (settings) and `%LOCALAPPDATA%\OpenNote` (device state, logs, and the WebView2 data). These environment variables change how a run behaves, which is how the tests keep away from your real settings:
+
+| Variable | What it does |
+|---|---|
+| `OPENNOTE_PROFILE_DIR=<folder>` | Puts every file under `<folder>` (`roaming`, `local`, and `Documents`), and gives the run its own instance lock, so several runs can start side by side. |
+| `OPENNOTE_PERF_LOG=<file>` | Writes the start-up marks as JSON lines: `processCreated`, `mainEntered`, `settingsLoaded`, `windowCreated`, `windowShown` (with the window's color), `webviewCreated`, then the interface's `firstPaint` (with the theme it painted), `shellReady`, and `pageReady`. |
+| `OPENNOTE_FLAGS=<id>=1,<id>=0` | Turns feature flags on or off, in development and nightly builds only. |
+
+The log is `logs\opennote.log` in the local folder. It keeps five files of 1 MB and never holds note content.
+
 ## Branches and pull requests
 
-Each phase in [DEVELOPMENT.md](DEVELOPMENT.md#5-phases) is developed on its own branch, named `phase-N`. For example, Phase 2 lives on `phase-2`. When the phase meets its exit gate, a pull request merges `phase-N` into `main` with a merge commit, so each commit stays in the history.
+Each phase in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#5-phases) is developed on its own branch, named `phase-N`. For example, Phase 2 lives on `phase-2`. When the phase meets its exit gate, a pull request merges `phase-N` into `main` with a merge commit, so each commit stays in the history.
 
 For your own change, create a short-lived branch off the phase branch in progress, usually the highest-numbered one. Then open a pull request into that phase branch. A fix that isn't part of any phase, such as a typo or an urgent bug, branches off `main` and targets `main`. If you can't push to the repository, fork it, push your branch to the fork, and open the pull request from there.
 
@@ -98,8 +116,8 @@ Write the subject line in the imperative mood, under about 72 characters, with n
 Keep the page scroll position when switching themes
 
 Switching themes rebuilt the page view and scrolled back to the top.
-The view now keeps its scroll offset across the style swap, as BRAND.md
-requires for theme changes.
+The view now keeps its scroll offset across the style swap, as the brand
+guide requires for theme changes.
 
 Fixes #42
 ```
@@ -108,7 +126,7 @@ Fixes #42
 
 Continuous integration (CI) runs on every pull request, on Windows and Ubuntu. A pull request can merge only when all of these pass:
 
-1. CHECKS on the changed files. See [CHECKS.md](CHECKS.md) for the rules, and for how to suppress a finding with a reason when a rule is wrong.
+1. CHECKS on the changed files. See [docs/CHECKS.md](docs/CHECKS.md) for the rules, and for how to suppress a finding with a reason when a rule is wrong.
 2. Lint and format checks: ESLint and Prettier for TypeScript, and Clippy and rustfmt for Rust.
 3. Type checks for all TypeScript code.
 4. Tests: the UI tests, the CHECKS tests, and the Rust tests.
@@ -136,13 +154,13 @@ cargo test --workspace
 
 To fix formatting instead of reporting it, run `npm run format` or `cargo fmt --all`. CI treats every Clippy warning as an error.
 
-Every bug fix adds a test that fails without the fix. Every TODO in code links to an issue. A feature is finished only when it meets the [definition of done](DEVELOPMENT.md#11-definition-of-done).
+Every bug fix adds a test that fails without the fix. Every TODO in code links to an issue. A feature is finished only when it meets the [definition of done](docs/DEVELOPMENT.md#11-definition-of-done).
 
 ## Design tokens
 
 UI code uses design tokens only. Colors, fonts, font sizes, motion, and layers all come from the generated files in `app/src/theme/`. The CHECKS `brand-consistency` rule rejects raw values in `app/src`.
 
-To change how OpenNote looks, edit `brand/tokens.json`, and then run `npm run tokens`. Commit the edited JSON and the regenerated files together. Never edit the generated files by hand, because the next run overwrites them. The `brand-tokens` rule confirms that both themes still define every token and meet their contrast targets. See [Using the tokens](BRAND.md#14-using-the-tokens) for details.
+To change how OpenNote looks, edit `brand/tokens.json`, and then run `npm run tokens`. Commit the edited JSON and the regenerated files together. Never edit the generated files by hand, because the next run overwrites them. The `brand-tokens` rule confirms that both themes still define every token and meet their contrast targets. See [Using the tokens](docs/BRAND.md#14-using-the-tokens) for details.
 
 ## Big changes and decision records
 

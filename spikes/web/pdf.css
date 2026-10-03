@@ -1,4 +1,4 @@
-/* PDF export spike: paper sheets on a desk (BRAND.md section 6), and print rules that turn each sheet into
+/* PDF export spike: paper sheets on a desk (docs/BRAND.md section 6), and print rules that turn each sheet into
    exactly one PDF page. The @page size comes from pdf.ts, because it changes with the paper. */
 
 * {

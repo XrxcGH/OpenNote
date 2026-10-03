@@ -1,0 +1,54 @@
+[package]
+name = "opennote-core"
+version = "0.1.0"
+description = "OpenNote's document model, note file format, storage, journal, and undo history"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "opennote_core"
+
+[features]
+default = []
+# Fakes, generators, and the in-memory and fault-injecting file systems, for tests in this crate and others.
+testing = ["dep:proptest"]
+# Entry points for the fuzz targets in crates/core/fuzz.
+fuzzing = ["testing"]
+# Named crash points for the kill harness. Compiled out without this feature.
+failpoints = []
+# The folder watcher for changes made outside the app.
+watch = ["dep:notify"]
+
+[dependencies]
+crc32fast = "1.5.2"
+flate2 = "1.1.10"
+getrandom = "0.3.4"
+notify = { version = "8.2.0", optional = true }
+proptest = { version = "1.11.0", optional = true }
+serde = { version = "1.0.229", features = ["derive", "rc"] }
+serde_json = { version = "1.0.151", features = ["float_roundtrip"] }
+sha2 = "0.10.9"
+thiserror = "2.0.21"
+unicode-normalization = "0.1.25"
+unicode-properties = { version = "0.1.4", default-features = false, features = ["general-category"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+  "Win32_Foundation",
+  "Win32_Storage_FileSystem",
+  "Win32_System_IO",
+  "Win32_System_Threading",
+  "Win32_Security",
+  "Wdk_System_SystemInformation",
+] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.189"
+
+[dev-dependencies]
+# The crate's own tests use its testing and fuzzing modules.
+opennote-core = { path = ".", features = ["testing", "fuzzing"] }
+proptest = "1.11.0"
+tempfile = "3.27.0"

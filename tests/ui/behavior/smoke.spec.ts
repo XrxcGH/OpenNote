@@ -6,8 +6,8 @@ import { expect, test } from '../fixtures';
 test('opens the workspace and switches the theme', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByText('Biology 101')).toBeVisible();
-  await page.getByRole('button', { name: 'Lectures' }).click();
-  await page.getByRole('button', { name: 'Mitosis' }).click();
+  await page.getByRole('treeitem', { name: 'Lectures' }).click();
+  await page.getByRole('treeitem', { name: 'Mitosis' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Mitosis' })).toBeVisible();
 
   const toggle = page.getByRole('switch', { name: 'Dark mode' });

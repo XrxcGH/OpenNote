@@ -16,8 +16,6 @@ pub enum UpdateError {
     Io(std::io::Error),
     /// Swapping the exe failed; the previous copy is back in place.
     Swap(String),
-    /// A skeleton method the updater work package hasn't filled in yet.
-    NotImplemented(&'static str),
 }
 
 impl UpdateError {
@@ -29,7 +27,7 @@ impl UpdateError {
             Self::Fetch(_) => "unreachable",
             Self::Manifest(_) | Self::Verify(_) => "verifyFailed",
             Self::Swap(_) => "swapFailed",
-            Self::Io(_) | Self::NotImplemented(_) => "unknown",
+            Self::Io(_) => "unknown",
         }
     }
 }
@@ -46,7 +44,6 @@ impl fmt::Display for UpdateError {
             Self::Verify(reason) => write!(f, "the update failed verification: {reason}"),
             Self::Io(error) => write!(f, "couldn't read or write the update files: {error}"),
             Self::Swap(reason) => write!(f, "couldn't install the update: {reason}"),
-            Self::NotImplemented(what) => write!(f, "{what} isn't implemented yet"),
         }
     }
 }
@@ -85,7 +82,6 @@ mod tests {
             (UpdateError::Manifest("x".into()), "verifyFailed"),
             (UpdateError::Verify("x".into()), "verifyFailed"),
             (UpdateError::Swap("x".into()), "swapFailed"),
-            (UpdateError::NotImplemented("x"), "unknown"),
         ];
         for (error, code) in cases {
             assert_eq!(error.code(), code, "{error}");

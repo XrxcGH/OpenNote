@@ -1,0 +1,13 @@
+/* Interface size (FEATURES.md, Phase 2): the sidebars, toolbars, and menus scale from 90% to 150% without
+   changing the page's zoom. The title bar keeps its size, because its keep-out zones are measured in DIPs
+   (ARCHITECTURE.md section 10.4). Other chrome, such as the compact bottom bar, opts in with data-ui-scale.
+   At 100%, zoom is 1 and changes nothing. */
+@layer states {
+  [data-region='commandBar'],
+  [data-region='notebooks'],
+  [data-region='pages'],
+  [data-ui-scale],
+  [role='menu'] > * {
+    zoom: var(--ui-scale, 1);
+  }
+}
