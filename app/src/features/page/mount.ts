@@ -48,6 +48,7 @@ import { shownFitWidth, shownPage } from './viewport/shown';
 import { createTitle } from './title/title';
 import type { TitleBand } from './title/title';
 import { createViewport, shownViewport } from './viewport/viewport';
+import { attachMountedPageHooks, shownMounted } from './pagesApi';
 import type { PageViewport } from './viewport/viewport';
 
 /** The shown page's block layer, for commands that add or remove whole blocks, such as Insert table. */
@@ -139,6 +140,7 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
 
 /** Points the shown page's stores at this view. Returns a function that clears them if they still point here. */
 function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
+  shownMounted.set(mounted as MountedPage);
   // A selection belongs to the page it was made on: the page before this one may have left a block selected.
   if (pageSelection.get().blocks.length + pageSelection.get().strokes.length > 0) {
     selectOnPage({ blocks: [], strokes: [] });
@@ -157,6 +159,7 @@ function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
   setGeometrySource((block) => mounted.layer.view(block)?.element ?? null, mounted.viewport);
   return () => {
     if (shownQueue.get() !== mounted.sync) return;
+    shownMounted.set(null);
     shownQueue.set(null);
     shownPool.set(null);
     shownLayer.set(null);
@@ -280,6 +283,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const result: MountedPage = {
     ...mounted,
     async destroy() {
+      detachHooks();
       detachMedia();
       await sync.flushAll('pageSwitch').catch(() => undefined);
       // Long pages remember their blocks' heights, so the next open holds their places before they render.
@@ -295,5 +299,6 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     },
   };
   const detachMedia = attachPageMedia(result, container, options.shown !== false);
+  const detachHooks = options.shown === false ? () => undefined : attachMountedPageHooks(result);
   return result;
 }

@@ -12,6 +12,7 @@ import type { WebLifecycle } from './lifecycle';
 import { createWebLog } from './log';
 import { createWebOs } from './os';
 import { createWebClipboard } from './clipboard';
+import { createWebExports } from './exports';
 import { createWebImages } from './images';
 import { createWebPages } from './pages';
 import { createWebSpeech } from './speech';
@@ -66,6 +67,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     spelling: createWebSpelling(),
     clipboard: createWebClipboard(),
     images: createWebImages(),
+    exports: createWebExports(),
     speech: createWebSpeech(),
     notesSnapshot: createWebSnapshot(options.fixture ?? 'sample'),
     perf: createWebPerf(),

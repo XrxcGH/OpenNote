@@ -2,6 +2,7 @@
 
 import { isEnabled } from '../../app/flags';
 import type { BootData, Platform } from '../types';
+import { createTauriExports } from './exports';
 import { createTauriInstall } from './install';
 import { createTauriClipboard } from './clipboard';
 import { createTauriImages } from './images';
@@ -37,6 +38,7 @@ export function createTauriPlatform(boot: BootData): Platform {
     spelling: createTauriSpelling(),
     clipboard: createTauriClipboard(),
     images,
+    exports: createTauriExports(),
     speech: createTauriSpeech(),
     notesSnapshot: isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
     perf: createTauriPerf(),

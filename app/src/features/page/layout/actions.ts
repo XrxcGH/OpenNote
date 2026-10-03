@@ -18,6 +18,18 @@ import styles from './layout.module.css';
 import type { PageViewport } from '../viewport/viewport';
 import type { Flow } from './flow';
 
+/** An RFC 7396 merge patch over a view: null removes a key, an object merges, anything else replaces. */
+function mergePatch(view: PageViewJson, patch: Record<string, unknown>): PageViewJson {
+  const out: Record<string, unknown> = { ...view };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) delete out[key];
+    else if (typeof value === 'object' && !Array.isArray(value) && typeof out[key] === 'object' && out[key] !== null) {
+      out[key] = mergePatch(out[key] as PageViewJson, value as Record<string, unknown>);
+    } else out[key] = value;
+  }
+  return out as PageViewJson;
+}
+
 /** A new text box goes this far below the block it follows. */
 export const BELOW_GAP = 16;
 /** Half a Normal line: a tapped caret's first line is centered on the tap. */
@@ -39,6 +51,12 @@ export interface PageLayout extends Omit<PageActions, 'objectCommand' | 'objectE
   pressEmpty(point: Point): void;
   /** Undo or another window changed the view. */
   setView(view: PageViewJson): void;
+  /** The page's view as this window knows it now, with Phase 6's fields (mode, paper, background). */
+  view(): PageViewJson;
+  /** Calls `listener` after any change to the view, from this window, undo, or another window. */
+  onView(listener: (view: PageViewJson) => void): () => void;
+  /** Records a view change made by Phase 6's page setup: the page sends the patch, and the flow follows. */
+  patchView(patch: Record<string, unknown>): void;
   stop(): void;
 }
 
@@ -47,6 +65,7 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
   let view: PageViewJson = { ...page.initial.view };
   let reading = parts.reading;
   let lastFocused: BlockId | null = null;
+  const viewListeners = new Set<(view: PageViewJson) => void>();
   const stopActive = pool.onActiveChange((block) => {
     if (block) lastFocused = block;
   });
@@ -109,6 +128,7 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
       if ((view.layout ?? 'freeform') === layout) return;
       view = { ...view, layout };
       flow.setView(view);
+      viewListeners.forEach((listener) => listener(view));
       void sync.send({ edits: [{ edit: 'setPage', view: { layout } }] });
       announce(t(layout === 'flow' ? 'page.layout.nowFlow' : 'page.layout.nowFreeform'));
     },
@@ -125,6 +145,18 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     setView(next) {
       view = { ...view, ...next };
       flow.setView(view);
+      viewListeners.forEach((listener) => listener(view));
+    },
+    view: () => view,
+    onView(listener) {
+      viewListeners.add(listener);
+      return () => void viewListeners.delete(listener);
+    },
+    patchView(patch) {
+      view = mergePatch(view, patch);
+      flow.setView(view);
+      viewListeners.forEach((listener) => listener(view));
+      void sync.send({ edits: [{ edit: 'setPage', view: patch }] });
     },
     stop() {
       stopActive();

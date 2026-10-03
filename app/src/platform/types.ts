@@ -82,6 +82,7 @@ export interface Platform {
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
   readonly images: ImagesClient;
+  readonly exports: ExportsClient;
   /** Null unless the read-aloud fallback is built. */
   readonly speech: SpeechClient | null;
   /** Phase 2 only, behind notes.memorySnapshot. */
@@ -211,6 +212,25 @@ export interface ImagesClient {
   importBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
   importUrl(page: string, url: string): Promise<ImportedAsset>;
   importClip(page: string, token: string): Promise<ImportedAsset>;
+}
+
+/** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */
+/**
+ * Printing a page to PDF and saving what an export makes (Phase 6, ADR 0006). The desktop app prints in a hidden
+ * WebView2 window; the web platform's fake prints nothing and writes a stand-in file, so the interface runs in tests.
+ */
+export interface ExportsClient {
+  /** Opens the hidden print window on a `PrepareInput` (as JSON) and returns the `PrepareResult` it planned. */
+  printPrepare(job: string, input: unknown): Promise<unknown>;
+  /** Prints the window's document to PDF. The size is the first sheet's box in inches. */
+  printRender(job: string, size: { width: number; height: number }, background: boolean): Promise<Uint8Array>;
+  printClose(job: string): Promise<void>;
+  /** Shows the Save dialog. Resolves to the chosen path, or null when the person cancels. */
+  pickSave(request: { suggested: string; label: string; extension: string }): Promise<string | null>;
+  /** Writes the file at a chosen path and any files beside it (paths relative to its folder). */
+  write(path: string, files: readonly { path: string; bytes: Uint8Array }[]): Promise<void>;
+  /** Opens a file this session exported in its default app, or shows it in File Explorer. */
+  open(path: string, reveal: boolean): Promise<void>;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */

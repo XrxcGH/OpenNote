@@ -30,7 +30,10 @@ export type MenuId =
   | 'history.change'
   | 'page.ink'
   | 'ink.penSlot'
-  | 'ink.palette';
+  | 'ink.palette'
+  | 'pages.paper'
+  | 'pages.background'
+  | 'pages.export';
 
 /**
  * Props of a command bar item that draws itself, such as Phase 5's pen swatches (AMENDMENTS.md, Phase 5 P2-4).

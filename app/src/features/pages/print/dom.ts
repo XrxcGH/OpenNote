@@ -6,7 +6,7 @@ import type { Rect } from '../pagination/geometry';
 import type { BlockMeasure, Box } from '../pagination/types';
 
 /** A place in the DOM where a line starts: in a text node, or before a picture or a task box. */
-interface LineStart {
+export interface LineStart {
   readonly node: Node;
   readonly offset: number;
 }
@@ -22,7 +22,7 @@ interface Fragment {
 /** Inline elements that take room on a line with no text in them. */
 const REPLACED = 'img, svg, .box';
 
-interface Lines {
+export interface Lines {
   readonly boxes: Box[];
   readonly starts: LineStart[];
 }
@@ -140,7 +140,7 @@ function clusterLines(fragments: readonly Fragment[]): Fragment[][] {
 }
 
 /** The lines of an element: a box for each, and where in the text it starts. */
-function linesOf(content: Element, origin: DOMRect): Lines {
+export function linesOf(content: Element, origin: DOMRect): Lines {
   const seq = { n: 0 };
   const fragments = piecesOf(content).flatMap((piece) =>
     piece instanceof Text ? textFragments(piece, seq, origin) : elementFragment(piece, seq, origin),

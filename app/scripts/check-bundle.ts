@@ -63,7 +63,8 @@ export function groups(manifest: Manifest, budget: Budget): Group[] {
   const keys = Object.keys(manifest);
   const startup = staticClosure(
     manifest,
-    keys.filter((key) => manifest[key].isEntry),
+    // print.html is the hidden print window's page; it never loads with the app.
+    keys.filter((key) => manifest[key].isEntry && key !== 'print.html'),
   );
   const startupChunks = [...startup].map((key) => manifest[key]);
   const result: Group[] = [
