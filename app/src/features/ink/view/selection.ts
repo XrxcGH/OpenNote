@@ -2,7 +2,7 @@
 // deletes, recolors, and makes the ink thicker or thinner. Text and images the lasso held move with the ink. The
 // frame is a group of real buttons, so a keyboard reaches each part: arrow keys move, Delete deletes, and Escape
 // lets go of the selection.
-import type { Edit } from '../../../services/pages/types';
+import type { BlockJson, Edit } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, buttonClass, openMenu } from '../../../ui';
@@ -241,11 +241,25 @@ class FrameView implements SelectionFrame {
     this.place();
   }
 
+  /**
+   * Saves a move or resize. Moved text boxes and images take their new frames in the page view at once, as the ink
+   * does, and go back if the core refuses the step.
+   */
   private async apply(matrix: Matrix): Promise<void> {
     const ids = [...this.selection().strokes];
+    const edits = this.blockEdits(matrix);
     this.surface.endPreview();
     this.showBlocks(null);
-    await this.surface.transform(ids, matrix, this.blockEdits(matrix));
+    const layer = this.host.layer.get();
+    const before: BlockJson[] = [];
+    for (const edit of edits) {
+      const block = edit.edit === 'moveBlock' ? layer?.block(edit.block) : null;
+      if (!block || edit.edit !== 'moveBlock') continue;
+      before.push(block);
+      layer?.upsert({ ...block, frame: edit.frame ?? undefined });
+    }
+    const saved = await this.surface.transform(ids, matrix, edits);
+    if (!saved) for (const block of before) layer?.upsert(block);
     this.place();
   }
 

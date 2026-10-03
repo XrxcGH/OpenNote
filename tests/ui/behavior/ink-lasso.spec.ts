@@ -44,3 +44,26 @@ test('keeps the selection bar inside the page view next to its right edge', asyn
   });
   expect(sideways).toBeLessThanOrEqual(1);
 });
+
+test('moves a text box with the ink the lasso takes', async ({ page }) => {
+  await openPage(page);
+  const view = (await page.locator('[data-ink-overlay]').boundingBox())!;
+  await choose(page, 'Select and type');
+  await page.mouse.click(view.x + 150, view.y + 520);
+  await page.keyboard.type('Spindle fibers');
+  await page.mouse.click(view.x + 600, view.y + 680);
+  const text = page.locator('[role="textbox"]', { hasText: 'Spindle fibers' });
+  await expect(text).toBeVisible();
+  const before = (await text.boundingBox())!;
+  const under = before.y - view.y + before.height + 16;
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, under], [330, under + 4]));
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(240, (before.y - view.y + under) / 2, 190, (under - (before.y - view.y)) / 2 + 40));
+  const move = page.getByRole('button', { name: 'Move the selection' });
+  await expect(move).toBeFocused();
+  await page.keyboard.press('Shift+ArrowRight');
+  await page.keyboard.press('Shift+ArrowDown');
+  await expect.poll(async () => (await text.boundingBox())!.x).toBeGreaterThan(before.x + 5);
+  expect((await text.boundingBox())!.y).toBeGreaterThan(before.y + 5);
+});
