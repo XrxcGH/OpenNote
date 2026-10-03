@@ -1,0 +1,98 @@
+/* The page gallery: a grid of page thumbnails with a caption under each. */
+@layer components {
+  .toolbar {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    padding-block-end: var(--space-2);
+  }
+
+  .count {
+    margin-inline-end: auto;
+    font-size: var(--type-caption-size);
+    color: var(--color-text-secondary);
+  }
+
+  .scroller {
+    max-block-size: min(60vh, 40rem);
+    min-block-size: 12rem;
+    overflow: auto;
+    padding: var(--space-1);
+  }
+
+  .grid {
+    position: relative;
+    outline: none;
+  }
+
+  .cell {
+    position: absolute;
+    display: grid;
+    grid-template-rows: auto auto auto;
+    align-content: start;
+    gap: var(--space-1);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+  }
+
+  .cell:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .thumbBox {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    box-shadow: var(--elevation-1);
+  }
+
+  .cell[data-selected] .thumbBox {
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 2px var(--color-accent-primary);
+  }
+
+  .thumbScale {
+    transform-origin: 0 0;
+  }
+
+  .thumb {
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .thumbFrame {
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+    pointer-events: none;
+  }
+
+  .title {
+    overflow: hidden;
+    font-size: var(--type-body-size);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .date {
+    font-size: var(--type-caption-size);
+    color: var(--color-text-muted);
+  }
+
+  .dropBar {
+    position: absolute;
+    inline-size: 3px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent-primary);
+    pointer-events: none;
+  }
+
+  .empty {
+    margin: 0;
+    padding: var(--space-6) 0;
+    color: var(--color-text-secondary);
+  }
+}

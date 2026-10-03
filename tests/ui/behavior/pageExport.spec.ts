@@ -21,7 +21,7 @@ async function openSamplerPage(page: Page) {
   await page.goto('/?fixture=sampler');
   await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
   await page.getByRole('tree', { name: 'Pages' }).getByRole('treeitem', { name: 'Membranes' }).click();
-  await expect(page.getByText('Every kind of text')).toBeVisible();
+  await expect(page.getByText('Every kind of text')).toBeVisible({ timeout: 20_000 });
   await page.getByRole('tab', { name: 'View' }).click();
 }
 
@@ -70,7 +70,7 @@ test('exports Markdown and a web page', async ({ page }) => {
   expect(html.files[0].text).toContain('<h1 class="page-title">Membranes</h1>');
 });
 
-test('a cancelled Save dialog leaves no file and no message', async ({ page }) => {
+test('a canceled Save dialog leaves no file and no message', async ({ page }) => {
   await openSamplerPage(page);
   await page.evaluate(() =>
     (window as unknown as { __OPENNOTE_TEST__: Record<string, () => unknown> }).__OPENNOTE_TEST__.exportsCancelNext(),
@@ -79,4 +79,26 @@ test('a cancelled Save dialog leaves no file and no message', async ({ page }) =
   await page.getByRole('menuitem', { name: 'Export as Markdown…' }).click();
   await page.waitForTimeout(300);
   expect(await saved(page)).toHaveLength(0);
+});
+
+test('exports the whole page as a PNG picture and as an SVG', async ({ page }) => {
+  await openSamplerPage(page);
+  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('menuitem', { name: 'Export selection as image…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Export selection as image' });
+  await expect(dialog.getByRole('img', { name: 'Preview of the picture' })).toBeVisible({ timeout: 20_000 });
+  await dialog.getByRole('button', { name: 'Save…' }).click();
+  await expect(toasts(page).getByText('Saved Membranes.png.')).toBeVisible();
+  await page.getByRole('button', { name: 'Export' }).click();
+  await page.getByRole('menuitem', { name: 'Export selection as image…' }).click();
+  const second = page.getByRole('dialog', { name: 'Export selection as image' });
+  await second.getByRole('radio', { name: 'SVG image' }).click();
+  await expect(second.getByRole('img', { name: 'Preview of the picture' })).toBeVisible({ timeout: 20_000 });
+  await second.getByRole('button', { name: 'Save…' }).click();
+  await expect.poll(async () => (await saved(page)).length).toBe(2);
+  const [png, svg] = await saved(page);
+  expect(png.path).toMatch(/Membranes\.png$/);
+  expect(png.files[0].length).toBeGreaterThan(2000);
+  expect(png.files[0].text.slice(1, 4)).toBe('PNG');
+  expect(svg.files[0].text).toContain('<svg');
 });

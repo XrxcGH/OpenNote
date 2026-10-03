@@ -87,3 +87,70 @@
     font-size: var(--type-caption-size);
   }
 }
+
+@layer components {
+  /* Present as slides: a full-window stage with the slide scaled to fit, and quiet controls along the bottom. */
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-dialog, 60);
+    display: grid;
+    grid-template-rows: 1fr auto;
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+  }
+
+  .stageView {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slideFrame {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 1280px;
+    block-size: 720px;
+    border: 0;
+    background: var(--color-surface-page);
+    border-radius: var(--radius-lg);
+    transform-origin: 0 0;
+    pointer-events: none;
+  }
+
+  .stageBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--type-caption-size);
+    color: var(--color-text-secondary);
+  }
+
+  .stageBar button {
+    color: inherit;
+  }
+
+  .stageHelp {
+    margin-inline-start: auto;
+  }
+
+  .stageEmpty {
+    display: grid;
+    place-items: center;
+    block-size: 100%;
+    font-size: var(--type-body-size);
+  }
+}
+
+@layer components {
+  .pictureFrame {
+    max-inline-size: 100%;
+    max-block-size: 22rem;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+  }
+}

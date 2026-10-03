@@ -27,7 +27,7 @@ export async function exportText(ctx: CommandContext, kind: 'markdown' | 'html')
   try {
     const client = ctx.platform.exports;
     const outcome = await (kind === 'markdown' ? exportMarkdownFile(client, source) : exportHtmlFile(client, source));
-    if (outcome.status === 'cancelled') return;
+    if (outcome.status === 'canceled') return;
     showToast({
       message: t('pageViews.files.saved', { name: outcome.name }),
       action: { label: t('pageViews.print.openFile'), run: () => client.open(outcome.path, true) },

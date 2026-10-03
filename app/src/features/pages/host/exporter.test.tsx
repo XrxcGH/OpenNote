@@ -73,11 +73,11 @@ describe('exportPdfFile', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
-  it('does nothing when the Save dialog is cancelled', async () => {
+  it('does nothing when the Save dialog is canceled', async () => {
     const prepare = vi.fn();
     const { client, writes } = recording({ pickSave: async () => null, printPrepare: prepare });
     const outcome = await exportPdfFile(client, source(3), { print: {} });
-    expect(outcome.status).toBe('cancelled');
+    expect(outcome.status).toBe('canceled');
     expect(prepare).not.toHaveBeenCalled();
     expect(writes).toHaveLength(0);
   });

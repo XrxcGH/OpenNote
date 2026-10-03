@@ -7,6 +7,7 @@ import type { Platform } from '../../../platform/types';
 import { t } from '../../../strings/t';
 import { Button, Dialog, ProgressBar, RadioCard, RadioGroup, Switch, TextField, showToast } from '../../../ui';
 import { exportPdfFile, PdfCheckError, prepareInput } from '../host/exporter';
+import type { PdfOutcome } from '../host/exporter';
 import type { PageSource } from '../host/source';
 import { parsePageRange, preparePrint } from '../print';
 import type { Parity, PrepareResult, PrintOptions } from '../print';
@@ -104,22 +105,37 @@ const parityKey = {
 /** The limitations of WebView2's printing that the dialog already says, so a saved file doesn't repeat them. */
 const KNOWN = new Set(['untagged', 'noLanguage', 'variableFonts']);
 
-export function PrintDialog({ source, platform, mode, close }: PrintDialogProps) {
-  const [form, setForm] = useState<Form>({ range: '', parity: 'all', header: '', footer: '', background: true });
-  const [sheet, setSheet] = useState(0);
-  const [working, setWorking] = useState<{ stage: string; fraction: number } | null>(null);
-  const abort = useRef<AbortController | null>(null);
-  const options = useMemo(() => toOptions(form), [form]);
-  const preview = usePreview(source, options);
-  const printed = preview.status === 'ready' ? preview.result.plan.sheets.length : 0;
-  const total = preview.status === 'ready' ? preview.result.sheets : 0;
-  const rangeError = preview.status === 'ready' && parsePageRange(form.range, total, form.parity).error !== undefined;
-  const shown = Math.min(sheet, Math.max(0, printed - 1));
-  const set = <K extends keyof Form>(key: K, value: Form[K]) => {
-    setSheet(0);
-    setForm((before) => ({ ...before, [key]: value }));
-  };
+interface Working {
+  readonly stage: string;
+  readonly fraction: number;
+}
 
+/** Tells the person how an export that did not finish ended. */
+function reportFailure(error: unknown, platform: Platform): void {
+  const name = error instanceof Error ? error.name : '';
+  const code = (error as { code?: string }).code;
+  if (name === 'AbortError') return void showToast({ message: t('pageViews.print.stopped') });
+  if (name === 'TimeoutError') return void showToast({ message: t('pageViews.print.timedOut'), tone: 'danger' });
+  if (code === 'notImplemented') return void showToast({ message: t('pageViews.print.unavailable'), tone: 'danger' });
+  platform.log('error', `PDF export failed: ${error instanceof PdfCheckError ? error.message : String(error)}`);
+  showToast({ message: t('pageViews.print.failed'), tone: 'danger' });
+}
+
+/** Tells the person where the PDF went, and what to know about it. */
+function reportSaved(outcome: Extract<PdfOutcome, { status: 'saved' }>, platform: Platform): void {
+  const extra = outcome.problems.find((problem) => !KNOWN.has(problem.kind));
+  const message = t('pageViews.print.done', { name: outcome.name });
+  showToast({
+    message: extra ? `${message} ${t(`pageViews.print.problem.${extra.kind}`)}` : message,
+    action: { label: t('pageViews.print.openFile'), run: () => platform.exports.open(outcome.path, true) },
+  });
+}
+
+/** Runs the export with progress, and stops it when asked. */
+function useExport(props: PrintDialogProps, options: PrintOptions) {
+  const { source, platform, mode, close } = props;
+  const [working, setWorking] = useState<Working | null>(null);
+  const abort = useRef<AbortController | null>(null);
   const run = async () => {
     const controller = new AbortController();
     abort.current = controller;
@@ -130,128 +146,135 @@ export function PrintDialog({ source, platform, mode, close }: PrintDialogProps)
         signal: controller.signal,
         onProgress: (progress) => setWorking({ stage: progress.stage, fraction: progress.fraction }),
       });
-      if (outcome.status === 'cancelled') return setWorking(null);
+      if (outcome.status === 'canceled') return setWorking(null);
       close();
-      const extra = outcome.problems.find((problem) => !KNOWN.has(problem.kind));
-      const message = t('pageViews.print.done', { name: outcome.name });
-      showToast({
-        message: extra ? `${message} ${t(`pageViews.print.problem.${extra.kind}`)}` : message,
-        action: { label: t('pageViews.print.openFile'), run: () => platform.exports.open(outcome.path, true) },
-      });
+      reportSaved(outcome, platform);
       if (mode === 'print') await platform.exports.open(outcome.path, false).catch(() => undefined);
     } catch (error) {
       setWorking(null);
-      const name = error instanceof Error ? error.name : '';
-      const code = (error as { code?: string }).code;
-      if (name === 'AbortError') showToast({ message: t('pageViews.print.stopped') });
-      else if (name === 'TimeoutError') showToast({ message: t('pageViews.print.timedOut'), tone: 'danger' });
-      else if (code === 'notImplemented') showToast({ message: t('pageViews.print.unavailable'), tone: 'danger' });
-      else {
-        platform.log('error', `PDF export failed: ${error instanceof PdfCheckError ? error.message : String(error)}`);
-        showToast({ message: t('pageViews.print.failed'), tone: 'danger' });
-      }
+      reportFailure(error, platform);
     } finally {
       abort.current = null;
     }
   };
+  return { working, run, stop: () => abort.current?.abort() };
+}
 
-  const title = t(mode === 'print' ? 'pageViews.print.title' : 'pageViews.print.exportTitle');
-  const paper = preview.status === 'ready' ? preview.result.plan.paper : null;
+interface FieldsProps {
+  readonly form: Form;
+  readonly total: number;
+  readonly rangeError: boolean;
+  set<K extends keyof Form>(key: K, value: Form[K]): void;
+}
+
+function Fields({ form, total, rangeError, set }: FieldsProps) {
+  const error = rangeError ? t('pageViews.print.badRange', { sheets: total }) : undefined;
+  const fields = { title: '{title}', page: '{page}', pages: '{pages}', date: '{date}' };
+  return (
+    <div className={styles.form}>
+      <TextField
+        label={t('pageViews.print.range')}
+        value={form.range}
+        onChange={(value) => set('range', value)}
+        help={t('pageViews.print.rangePlaceholder')}
+        error={error}
+      />
+      <RadioGroup label={t('pageViews.print.parity')} value={form.parity} onChange={(value) => set('parity', value)}>
+        {PARITIES.map((parity) => (
+          <RadioCard key={parity} value={parity} label={t(parityKey[parity])} />
+        ))}
+      </RadioGroup>
+      <div className={styles.cols}>
+        <TextField label={t('pageViews.print.header')} value={form.header} onChange={(v) => set('header', v)} />
+        <TextField label={t('pageViews.print.footer')} value={form.footer} onChange={(v) => set('footer', v)} />
+      </div>
+      <p className={styles.hint}>{t('pageViews.print.headerHint', fields)}</p>
+      <Switch
+        label={t('pageViews.print.paperPattern')}
+        checked={form.background}
+        onChange={(value) => set('background', value)}
+      />
+    </div>
+  );
+}
+
+const inches = (units: number) => Math.round((units / 96) * 100) / 100;
+
+/** The sheet the PDF will have, with arrows to look at the others. */
+function PreviewPane({ preview, sheet, setSheet }: { preview: Preview; sheet: number; setSheet(n: number): void }) {
+  if (preview.status !== 'ready') {
+    const failed = preview.status === 'failed';
+    const key = failed ? 'pageViews.print.previewFailed' : 'pageViews.print.previewing';
+    return <p className={failed ? styles.error : styles.hint}>{t(key)}</p>;
+  }
+  const { result } = preview;
+  const printed = result.plan.sheets.length;
+  const shown = Math.min(sheet, Math.max(0, printed - 1));
+  const { paper } = result.plan;
+  const size = `${inches(paper.width)} × ${inches(paper.height)} in`;
+  return (
+    <>
+      <SheetPreview result={result} sheet={shown} />
+      <div className={styles.stepper}>
+        <Button variant="quiet" disabled={shown === 0} onClick={() => setSheet(shown - 1)}>
+          {t('pageViews.slides.previous')}
+        </Button>
+        <span>{t('pageViews.status.sheetCount', { sheet: shown + 1, sheets: printed })}</span>
+        <Button variant="quiet" disabled={shown >= printed - 1} onClick={() => setSheet(shown + 1)}>
+          {t('pageViews.slides.next')}
+        </Button>
+      </div>
+      <p className={styles.hint}>{t('pageViews.print.sheetCount', { count: printed, paper: size })}</p>
+    </>
+  );
+}
+
+function Progress({ working }: { working: Working }) {
+  return (
+    <div className={styles.progress}>
+      <ProgressBar label={t('pageViews.print.working')} value={working.fraction} />
+      <p className={styles.hint}>{t(`pageViews.print.stage.${working.stage as 'prepare' | 'render' | 'verify'}`)}</p>
+    </div>
+  );
+}
+
+export function PrintDialog(props: PrintDialogProps) {
+  const { source, mode, close } = props;
+  const [form, setForm] = useState<Form>({ range: '', parity: 'all', header: '', footer: '', background: true });
+  const [sheet, setSheet] = useState(0);
+  const options = useMemo(() => toOptions(form), [form]);
+  const preview = usePreview(source, options);
+  const { working, run, stop } = useExport(props, options);
+  const total = preview.status === 'ready' ? preview.result.sheets : 0;
+  const rangeError = preview.status === 'ready' && parsePageRange(form.range, total, form.parity).error !== undefined;
+  const set = <K extends keyof Form>(key: K, value: Form[K]) => {
+    setSheet(0);
+    setForm((before) => ({ ...before, [key]: value }));
+  };
+  const go = {
+    id: 'go',
+    label: t(mode === 'print' ? 'pageViews.print.print' : 'pageViews.print.export'),
+    variant: 'primary' as const,
+    onPress: () => (preview.status === 'ready' && !rangeError ? run() : undefined),
+  };
   const actions = working
-    ? [
-        {
-          id: 'stop',
-          label: t('pageViews.print.stop'),
-          variant: 'secondary' as const,
-          onPress: () => abort.current?.abort(),
-        },
-      ]
-    : [
-        { id: 'cancel', label: t('pageViews.print.cancel'), variant: 'secondary' as const, onPress: close },
-        {
-          id: 'go',
-          label: t(mode === 'print' ? 'pageViews.print.print' : 'pageViews.print.export'),
-          variant: 'primary' as const,
-          onPress: () => {
-            if (preview.status === 'ready' && !rangeError) void run();
-          },
-        },
-      ];
-
+    ? [{ id: 'stop', label: t('pageViews.print.stop'), variant: 'secondary' as const, onPress: stop }]
+    : [{ id: 'cancel', label: t('pageViews.print.cancel'), variant: 'secondary' as const, onPress: close }, go];
   return (
     <Dialog
-      title={title}
+      title={t(mode === 'print' ? 'pageViews.print.title' : 'pageViews.print.exportTitle')}
       description={t('pageViews.print.description')}
       size="large"
       actions={actions}
-      onDismiss={() => (working ? abort.current?.abort() : close())}
+      onDismiss={() => (working ? stop() : close())}
     >
       {working ? (
-        <div className={styles.progress}>
-          <ProgressBar label={t('pageViews.print.working')} value={working.fraction} />
-          <p className={styles.hint}>
-            {t(`pageViews.print.stage.${working.stage as 'prepare' | 'render' | 'verify'}`)}
-          </p>
-        </div>
+        <Progress working={working} />
       ) : (
         <div className={styles.split}>
-          <div className={styles.form}>
-            <TextField
-              label={t('pageViews.print.range')}
-              value={form.range}
-              onChange={(value) => set('range', value)}
-              help={t('pageViews.print.rangePlaceholder')}
-              error={rangeError ? t('pageViews.print.badRange', { sheets: total }) : undefined}
-            />
-            <RadioGroup
-              label={t('pageViews.print.parity')}
-              value={form.parity}
-              onChange={(value) => set('parity', value)}
-            >
-              {PARITIES.map((parity) => (
-                <RadioCard key={parity} value={parity} label={t(parityKey[parity])} />
-              ))}
-            </RadioGroup>
-            <div className={styles.cols}>
-              <TextField label={t('pageViews.print.header')} value={form.header} onChange={(v) => set('header', v)} />
-              <TextField label={t('pageViews.print.footer')} value={form.footer} onChange={(v) => set('footer', v)} />
-            </div>
-            <p className={styles.hint}>
-              {t('pageViews.print.headerHint', { title: '{title}', page: '{page}', pages: '{pages}', date: '{date}' })}
-            </p>
-            <Switch
-              label={t('pageViews.print.paperPattern')}
-              checked={form.background}
-              onChange={(value) => set('background', value)}
-            />
-          </div>
+          <Fields form={form} total={total} rangeError={rangeError} set={set} />
           <div className={styles.preview} aria-live="polite">
-            {preview.status === 'ready' ? (
-              <>
-                <SheetPreview result={preview.result} sheet={shown} />
-                <div className={styles.stepper}>
-                  <Button variant="quiet" disabled={shown === 0} onClick={() => setSheet(shown - 1)}>
-                    {t('pageViews.slides.previous')}
-                  </Button>
-                  <span>{t('pageViews.status.sheetCount', { sheet: shown + 1, sheets: printed })}</span>
-                  <Button variant="quiet" disabled={shown >= printed - 1} onClick={() => setSheet(shown + 1)}>
-                    {t('pageViews.slides.next')}
-                  </Button>
-                </div>
-                <p className={styles.hint}>
-                  {t('pageViews.print.sheetCount', {
-                    count: printed,
-                    paper: paper
-                      ? `${Math.round((paper.width / 96) * 100) / 100} × ${Math.round((paper.height / 96) * 100) / 100} in`
-                      : '',
-                  })}
-                </p>
-              </>
-            ) : (
-              <p className={preview.status === 'failed' ? styles.error : styles.hint}>
-                {t(preview.status === 'failed' ? 'pageViews.print.previewFailed' : 'pageViews.print.previewing')}
-              </p>
-            )}
+            <PreviewPane preview={preview} sheet={sheet} setSheet={setSheet} />
           </div>
         </div>
       )}

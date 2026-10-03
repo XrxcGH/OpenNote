@@ -1,13 +1,13 @@
 //! Printing a page to PDF and saving what an export makes (Phase 6; ADR 0006, `docs/adr/0006-pdf-export.md`).
 //!
 //! A PDF export runs in a second WebView that is never shown. `print_prepare` opens it on `print.html` and hands it
-//! the page; the window measures the page, plans the sheets with the paginator the screen uses, shows the print
+//! the page. The window measures the page, plans the sheets with the paginator the screen uses, shows the print
 //! document, and reports the plan through an event. `print_render` then calls WebView2's `PrintToPdf` on that
-//! window and returns the file's bytes, and `print_close` closes it. Nothing here runs in the main window, so
-//! typing and drawing never wait for an export.
+//! window and returns the file's bytes. `print_close` closes it. Nothing here runs in the main window, so typing
+//! and drawing never wait for an export.
 //!
-//! The interface never names a path. `export_pick_save` shows Windows' Save dialog and remembers the chosen path,
-//! and `export_write` writes only to a path the person chose that way, plus files inside the same folder.
+//! The interface never names a path. `export_pick_save` shows Windows' Save dialog and remembers the chosen path.
+//! `export_write` writes only to a path the person chose that way, plus files inside the same folder.
 
 use std::{
     collections::HashSet,

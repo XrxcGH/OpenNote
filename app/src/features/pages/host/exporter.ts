@@ -83,7 +83,7 @@ export function prepareInput(source: PageSource, print: PrintOptions): PrepareIn
 }
 
 export type PdfOutcome =
-  | { readonly status: 'cancelled' }
+  | { readonly status: 'canceled' }
   | {
       readonly status: 'saved';
       readonly path: string;
@@ -103,7 +103,7 @@ export class PdfCheckError extends Error {
 const baseName = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
 /**
- * Exports the page to a PDF the person names. Resolves with `cancelled` when the Save dialog is cancelled. Rejects with
+ * Exports the page to a PDF the person names. Resolves with `canceled` when the Save dialog is canceled. Rejects with
  * an `AbortError` when stopped, a `TimeoutError` when a step takes too long, a `PdfCheckError` when the file does not
  * match the plan, and the shell's error otherwise.
  */
@@ -114,7 +114,7 @@ export async function exportPdfFile(
 ): Promise<PdfOutcome> {
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'pdf');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.pdfLabel'), extension: 'pdf' });
-  if (path === null) return { status: 'cancelled' };
+  if (path === null) return { status: 'canceled' };
   const job = newJobId();
   const result: PdfExportResult = await exportPdf(createPrintSurface(client, job), {
     input: prepareInput(source, options.print),
@@ -137,7 +137,7 @@ export async function exportPdfFile(
 }
 
 export type TextOutcome =
-  { readonly status: 'cancelled' } | { readonly status: 'saved'; readonly path: string; readonly name: string };
+  { readonly status: 'canceled' } | { readonly status: 'saved'; readonly path: string; readonly name: string };
 
 /** An asset's bytes, or null when it can't be read. */
 async function assetBytes(url: string): Promise<Uint8Array | null> {
@@ -176,7 +176,7 @@ function stemOf(path: string): string {
 export async function exportMarkdownFile(client: ExportsClient, source: PageSource): Promise<TextOutcome> {
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'md');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.markdownLabel'), extension: 'md' });
-  if (path === null) return { status: 'cancelled' };
+  if (path === null) return { status: 'canceled' };
   const folder = `${stemOf(path)}_files`;
   const ink = hasInk(source.page) ? pageInkSvg(source) : null;
   const made = exportMarkdown(source.page, {
@@ -201,7 +201,7 @@ export async function exportMarkdownFile(client: ExportsClient, source: PageSour
 export async function exportHtmlFile(client: ExportsClient, source: PageSource): Promise<TextOutcome> {
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'html');
   const path = await client.pickSave({ suggested, label: t('pageViews.files.htmlLabel'), extension: 'html' });
-  if (path === null) return { status: 'cancelled' };
+  if (path === null) return { status: 'canceled' };
   const uris = new Map<string, string>();
   await Promise.all(
     Object.values(source.page.assets).map(async (asset) => {

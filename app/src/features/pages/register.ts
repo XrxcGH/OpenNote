@@ -57,6 +57,36 @@ command({
   run: (ctx) => loadExport().then((m) => m.exportText(ctx, 'html')),
 });
 
+command({
+  id: 'pages.exportImage',
+  title: 'pageViews.commands.exportImage',
+  flag: 'pages.exportImage',
+  run: (ctx) => import('./ui/imageCommands').then((m) => m.exportImage(ctx)),
+});
+command({
+  id: 'pages.readingAids',
+  title: 'pageViews.commands.readingAids',
+  keywords: 'pageViews.commands.readingKeywords',
+  flag: 'pages.reading',
+  run: () => import('./ui/readingCommands').then((m) => m.openReadingAids()),
+});
+command({
+  id: 'pages.gallery',
+  title: 'pageViews.commands.gallery',
+  keywords: 'pageViews.commands.galleryKeywords',
+  flag: 'pages.gallery',
+  when: () => true,
+  run: (ctx) => import('./ui/galleryCommands').then((m) => m.openGallery(ctx)),
+});
+command({
+  id: 'pages.present',
+  title: 'pageViews.commands.present',
+  keywords: 'pageViews.commands.presentKeywords',
+  keys: [chord('F5')],
+  flag: 'pages.slides',
+  run: (ctx) => import('./ui/slideCommands').then((m) => m.presentPage(ctx)),
+});
+
 // ---- The View tab: page view, layout, paper, background, zoom -----------------------------------------------------
 const MODES = [
   ['canvas', 'infinite', 'pageViews.commands.canvas'],
@@ -214,6 +244,7 @@ menuItems(
 );
 menuItems('pages.export', 'pages.pdf', 'file', ['pages.print', 'pages.exportPdf']);
 menuItems('pages.export', 'pages.exportText', 'text', ['pages.exportMarkdown', 'pages.exportHtml']);
+menuItems('pages.export', 'pages.exportImage', 'image', ['pages.exportImage']);
 
 const bar = (item: Omit<CommandBarItem, 'tab'>): void => {
   commandBar.register({ tab: 'view', ...item });
@@ -273,6 +304,9 @@ bar({ id: 'pages.bar.zoomIn', group: 'zoom', command: 'page.zoomIn', priority: 5
 bar({ id: 'pages.bar.zoom100', group: 'zoom', command: 'page.zoom100', priority: 40 });
 bar({ id: 'pages.bar.fitWidth', group: 'zoom', command: 'page.zoomFitWidth', priority: 45 });
 bar({ id: 'pages.bar.fitSheet', group: 'zoom', command: 'pages.fitSheet', priority: 45, flag: 'pages.view' });
+bar({ id: 'pages.bar.reading', group: 'reading', command: 'pages.readingAids', priority: 30, flag: 'pages.reading' });
+bar({ id: 'pages.bar.gallery', group: 'output', command: 'pages.gallery', priority: 35, flag: 'pages.gallery' });
+bar({ id: 'pages.bar.present', group: 'output', command: 'pages.present', priority: 35, flag: 'pages.slides' });
 bar({
   id: 'pages.bar.export',
   group: 'output',
@@ -281,6 +315,23 @@ bar({
   presentation: 'menu',
   menu: 'pages.export',
   flag: 'pages.pdf',
+});
+
+/**
+ * The bar reads a command's checked and enabled state when it renders, and the view's state changes on its own (the page
+ * view attaches after the bar first draws, and undo changes the view), so a change tells the bar to read again. The
+ * commands registry is what the bar watches, so a command that comes and goes right away does it.
+ */
+const refresher = defineCommand({
+  id: 'pages.refresh',
+  title: 'pageViews.commands.keywords',
+  category: 'view',
+  palette: false,
+  when: () => false,
+  run: () => undefined,
+});
+pagesViewEpoch.subscribe(() => {
+  commands.register(refresher)();
 });
 
 // ---- Attaching to the page view ------------------------------------------------------------------------------------

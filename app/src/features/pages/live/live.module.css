@@ -79,4 +79,18 @@
     pointer-events: none;
     z-index: var(--layer-page-chrome);
   }
+
+  /* The reading focus band: everything outside the lit lines dims. It never takes the pointer. */
+  .focusLayer {
+    position: absolute;
+    inset: 0;
+    z-index: var(--layer-ink-live);
+    pointer-events: none;
+  }
+
+  .dim {
+    position: absolute;
+    inset-inline-start: 0;
+    background: color-mix(in srgb, var(--color-surface-page) 82%, transparent);
+  }
 }

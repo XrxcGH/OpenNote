@@ -22,6 +22,7 @@ import { lightTheme } from '../export';
 import { paperStyle } from '../print';
 import { currentSheet, fitSheet, openingZoom } from '../zoom';
 import { createPaginator } from './paginate';
+import { attachReading } from './reading';
 import type { Paginator } from './paginate';
 import styles from './live.module.css';
 import { pagesViewEpoch, shownPagesView } from './shown';
@@ -61,6 +62,7 @@ class PagesView {
   private readonly paperLayer: HTMLElement;
   private readonly counter: HTMLElement;
   private readonly paginator: Paginator;
+  private reading: ReturnType<typeof attachReading> | null = null;
   private readonly stops: (() => void)[] = [];
   private sheets = 1;
   private frame = 0;
@@ -105,10 +107,12 @@ class PagesView {
       }),
       mounted.viewport.onCamera(() => this.updateCounter()),
     );
+    this.reading = attachReading(mounted, () => this.spec.mode === 'paginated');
     this.apply();
   }
 
   stop(): void {
+    this.reading?.stop();
     this.stops.forEach((stop) => stop());
     cancelAnimationFrame(this.frame);
     this.paginator.stop();
@@ -184,7 +188,7 @@ class PagesView {
       viewport.setZoom(zoom);
       viewport.scrollTo(0, at * sheet.height * zoom);
     },
-    readingAids: () => undefined,
+    readingAids: () => void import('../ui/readingCommands').then((m) => m.openReadingAids()),
   };
 
   private setSheets(count: number): void {
@@ -214,6 +218,7 @@ class PagesView {
       this.drawInfinitePaper();
     }
     this.lastMode = paginated ? 'paginated' : 'infinite';
+    this.reading?.refresh();
     this.updateCounter();
   }
 
@@ -242,14 +247,12 @@ class PagesView {
     this.paperKey = key;
     const parts: string[] = [];
     for (let k = 0; k < count; k += 1) {
-      parts.push(
-        `<div class="${styles.sheet}" style="inset-block-start:${k * sheet.height}px;inline-size:${sheet.width}px;block-size:${sheet.height}px">${paper}</div>`,
-      );
+      const box = `inset-block-start:${k * sheet.height}px;inline-size:${sheet.width}px;block-size:${sheet.height}px`;
+      parts.push(`<div class="${styles.sheet}" style="${box}">${paper}</div>`);
     }
     for (let k = 1; k < count; k += 1) {
-      parts.push(
-        `<div class="${styles.edge}" style="inset-block-start:${k * sheet.height - GAP_HALF}px;block-size:${2 * GAP_HALF}px;inline-size:${sheet.width}px"></div>`,
-      );
+      const box = `inset-block-start:${k * sheet.height - GAP_HALF}px;block-size:${2 * GAP_HALF}px;inline-size:${sheet.width}px`;
+      parts.push(`<div class="${styles.edge}" style="${box}"></div>`);
     }
     this.sheetsLayer.innerHTML = parts.join('');
     this.sheetsLayer.style.inlineSize = `${sheet.width}px`;

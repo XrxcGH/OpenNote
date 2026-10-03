@@ -30,6 +30,25 @@ function mergePatch(view: PageViewJson, patch: Record<string, unknown>): PageVie
   return out as PageViewJson;
 }
 
+/** The page's view in this window, the flow that follows it, and the listeners that hear each change. */
+function viewChannel(initial: PageViewJson, flow: Flow) {
+  let view: PageViewJson = initial;
+  const listeners = new Set<(view: PageViewJson) => void>();
+  return {
+    get: () => view,
+    /** Replaces the view, moves the flow to it, and tells the listeners. */
+    set(next: PageViewJson) {
+      view = next;
+      flow.setView(view);
+      listeners.forEach((listener) => listener(view));
+    },
+    listen(listener: (view: PageViewJson) => void) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  };
+}
+
 /** A new text box goes this far below the block it follows. */
 export const BELOW_GAP = 16;
 /** Half a Normal line: a tapped caret's first line is centered on the tap. */
@@ -62,10 +81,9 @@ export interface PageLayout extends Omit<PageActions, 'objectCommand' | 'objectE
 
 export function createPageLayout(parts: LayoutParts): PageLayout {
   const { page, sync, layer, pool, flow, viewport } = parts;
-  let view: PageViewJson = { ...page.initial.view };
+  const channel = viewChannel({ ...page.initial.view }, flow);
   let reading = parts.reading;
   let lastFocused: BlockId | null = null;
-  const viewListeners = new Set<(view: PageViewJson) => void>();
   const stopActive = pool.onActiveChange((block) => {
     if (block) lastFocused = block;
   });
@@ -116,19 +134,17 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     newTextBox: () => caretAt(newTextBoxPoint(), true),
     pressEmpty(point) {
       if (page.readOnly) return;
-      if (reading || view.layout === 'flow') {
+      if (reading || channel.get().layout === 'flow') {
         const last = [...layer.blocks()].reverse().find((block) => block.type === 'text' && !block.frame?.y);
         if (last) return void pool.mount(last.id, { kind: 'end' }, 'target');
         return caretAt(point, false);
       }
       caretAt({ x: point.x, y: point.y - HALF_LINE }, true);
     },
-    layout: () => (view.layout === 'flow' ? 'flow' : 'freeform'),
+    layout: () => (channel.get().layout === 'flow' ? 'flow' : 'freeform'),
     setLayout(layout) {
-      if ((view.layout ?? 'freeform') === layout) return;
-      view = { ...view, layout };
-      flow.setView(view);
-      viewListeners.forEach((listener) => listener(view));
+      if ((channel.get().layout ?? 'freeform') === layout) return;
+      channel.set({ ...channel.get(), layout });
       void sync.send({ edits: [{ edit: 'setPage', view: { layout } }] });
       announce(t(layout === 'flow' ? 'page.layout.nowFlow' : 'page.layout.nowFreeform'));
     },
@@ -142,20 +158,11 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
       savePageView(page.id, { view: on ? 'reading' : 'canvas' });
       announce(t(on ? 'page.reading.nowReading' : 'page.reading.nowCanvas'));
     },
-    setView(next) {
-      view = { ...view, ...next };
-      flow.setView(view);
-      viewListeners.forEach((listener) => listener(view));
-    },
-    view: () => view,
-    onView(listener) {
-      viewListeners.add(listener);
-      return () => void viewListeners.delete(listener);
-    },
+    setView: (next) => channel.set({ ...channel.get(), ...next }),
+    view: channel.get,
+    onView: channel.listen,
     patchView(patch) {
-      view = mergePatch(view, patch);
-      flow.setView(view);
-      viewListeners.forEach((listener) => listener(view));
+      channel.set(mergePatch(channel.get(), patch));
       void sync.send({ edits: [{ edit: 'setPage', view: patch }] });
     },
     stop() {
