@@ -121,8 +121,8 @@ describe('IconButton', () => {
     );
     const border = (name: string) => getComputedStyle(screen.getByRole('button', { name })).borderTopColor;
     expect(border('Unavailable')).toBe(border('Settings'));
-    expect(border('Unavailable')).toBe('rgba(0, 0, 0, 0)');
-    expect(border('Bordered')).not.toBe('rgba(0, 0, 0, 0)');
+    // A disabled secondary button keeps a faint border, so the enabled icon button's is the transparent one.
+    expect(border('Bordered')).not.toBe(border('Settings'));
   });
 
   it('is named by its label and gives its command’s shortcut to assistive technology', () => {
