@@ -210,6 +210,23 @@ describe('in both themes', () => {
   });
 });
 
+describe('inside their boxes', () => {
+  it.each([64, 103])('keeps every window line, stroke and all, inside the drawing at %i px tall', (height) => {
+    const svg = drawn(renderUi(<Window sky="day" height={height} />).container);
+    const box = svg.getBoundingClientRect();
+    for (const shape of svg.querySelectorAll<SVGGeometryElement>('path, circle')) {
+      const style = getComputedStyle(shape);
+      // Lines don't scale, so half of each one's width reaches past its path by the same number of pixels.
+      const half = style.stroke === 'none' ? 0 : parseFloat(style.strokeWidth) / 2;
+      const edge = shape.getBoundingClientRect();
+      expect(edge.left - half).toBeGreaterThanOrEqual(box.left);
+      expect(edge.top - half).toBeGreaterThanOrEqual(box.top);
+      expect(edge.right + half).toBeLessThanOrEqual(box.right);
+      expect(edge.bottom + half).toBeLessThanOrEqual(box.bottom);
+    }
+  });
+});
+
 describe('motion', () => {
   it('fades in once over the fast duration and never loops', () => {
     const { container } = renderUi(<DeskScene sky="day" />);
