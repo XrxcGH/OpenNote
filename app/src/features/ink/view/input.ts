@@ -381,6 +381,12 @@ function cancel(g: InkGesture, surface: InkSurface): void {
 // ---- touch ----
 
 type Palm = typeof import('./palm');
+
+/** The palm filter's settings: the stored ink settings, with the writing hand and finger choice as Settings sets them. */
+function palmSettings(palm: Palm) {
+  const ink = getSettings().ink;
+  return { ...palm.palmSettingsFromInk(ink), handedness: ink.handedness, fingerDraw: ink.touch.finger };
+}
 const loadPalm = (): Promise<Palm> => import('./palm');
 
 /** The touch tool: every touch on the page goes through the palm filter while an ink tool is active. */
@@ -492,7 +498,7 @@ export function createTouchTool(host: InkHost, surfaceOf: () => InkSurface | nul
         },
         touchPolicy: () => undefined,
       },
-      palm!.palmSettingsFromInk(getSettings().ink),
+      palmSettings(palm!),
       { platform: 'windows' },
     );
     made.setInkToolActive(true);

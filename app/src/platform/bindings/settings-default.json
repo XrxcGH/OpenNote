@@ -114,6 +114,7 @@
     "handedness": "right",
     "touch": {
       "draws": false,
+      "finger": "auto",
       "palmGraceMs": 500,
       "twoFingerScrollNearPen": true
     },

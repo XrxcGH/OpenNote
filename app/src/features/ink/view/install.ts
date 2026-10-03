@@ -2,8 +2,8 @@
 // surface for the page that is shown. features/page/registrations/ink.ts calls it once, after start-up.
 import { isEnabled } from '../../../app/flags';
 import type { CommandDef } from '../../../commands/types';
-import { commandBar, commands } from '../../../registries';
-import { getSettings, updateSettings } from '../../../state/settings';
+import { commandBar, commands, settingsSections } from '../../../registries';
+import { getSettings, settingsStore, updateSettings } from '../../../state/settings';
 import type { InkHost } from './host';
 import { DrawPens, DrawTools } from './DrawBar';
 import { createPenTool, createTouchTool } from './input';
@@ -71,6 +71,16 @@ export function installInk(host: InkHost): () => void {
     () => touch.destroy(),
     drawState.subscribe(() => host.setActiveTool(routerTool(drawState.get()))),
     follow(host),
+    // New settings take effect at the next touch.
+    settingsStore.subscribe(() => touch.reset()),
+    settingsSections.register({
+      id: 'penAndTouch',
+      title: 'ink.settings.title',
+      icon: 'Hand',
+      order: 26,
+      flag: 'ink.palm',
+      load: () => import('./PenSettings'),
+    }),
   ];
   const defs: CommandDef[] = [
     tool('ink.select', 'ink.tools.select', 'select', 'ink.core'),
