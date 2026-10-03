@@ -16,12 +16,12 @@ const flag = (id: InkFlagId, description: string, enabled: FlagDef['enabled']): 
 });
 
 export const INK_FLAGS: readonly FlagDef[] = [
-  flag('ink.core', 'Pens, pencil, and highlighter, saved with the page, with undo and cached tiles.', on),
-  flag('ink.erasers', 'The stroke eraser and the partial eraser.', on),
-  flag('ink.lasso', 'The lasso: move, resize, recolor, and delete ink with text.', on),
-  flag('ink.shapes', 'Shape recognition: hold to snap, and Ink to shape.', on),
-  flag('ink.palm', 'Palm rejection for touch, and drawing with a finger.', on),
-  flag('ink.penButtons', "The pen's eraser end and barrel button.", on),
+  flag('ink.core', 'Pens and highlighters.', on),
+  flag('ink.erasers', 'Erasers.', on),
+  flag('ink.lasso', 'The lasso.', on),
+  flag('ink.shapes', 'Shapes.', on),
+  flag('ink.palm', 'Palm rejection.', on),
+  flag('ink.penButtons', 'Pen buttons.', on),
   // ink.gestures, ink.anchoring, ink.insertSpace, ink.zoomBox, ink.steadyPen, ink.describe, ink.delegatedTrail,
   // ink.nativeTrail, ink.openSnapshot, and dev.penRecorder aren't built yet, so they have no entry and stay off.
 ];
