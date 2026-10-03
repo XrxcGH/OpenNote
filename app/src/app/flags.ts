@@ -97,9 +97,9 @@ type Phase6FlagId =
   | 'pages.syllables';
 /** Smart tables, charts, math, and the study tool windows (Phases 7 and 10). */
 type ExprFlagId =
-  'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows' | QolFlagId;
+  'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows' | ToolsQolFlagId;
 /** The quality-of-life flags of the tables, math, study, and tools lane (features/tools/flags.ts). */
-type QolFlagId =
+type ToolsQolFlagId =
   | 'tables.calculated'
   | 'tables.views'
   | 'tables.chartTable'
