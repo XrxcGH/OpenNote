@@ -5,6 +5,7 @@ import { generatePage, lineStroke } from '../geometry/fixtures';
 import { createStrokeIndex } from '../geometry/strokeIndex';
 import { transformStrokes } from '../geometry/transform';
 import { planInsertSpace, spaceAmount } from './insertSpace';
+import { sheetPush } from './sheets';
 
 const page = () =>
   createStrokeIndex([
@@ -103,5 +104,24 @@ describe('insert space under random pages', () => {
       }),
       { numRuns: 20 },
     );
+  });
+});
+
+describe('insert space across sheets', () => {
+  const sheets = { height: 1000, margin: 50 };
+
+  it('leaves an item that stays on its sheet', () => {
+    expect(sheetPush(100, 200, sheets)).toBe(0);
+    expect(sheetPush(1100, 200, sheets)).toBe(0);
+  });
+
+  it('moves an item that would cross the bottom margin to the top of the next sheet', () => {
+    expect(sheetPush(900, 100, sheets)).toBe(1050 - 900);
+    expect(sheetPush(1900, 100, sheets)).toBe(2050 - 1900);
+  });
+
+  it('leaves an item taller than a sheet, and pages with no sheets', () => {
+    expect(sheetPush(900, 2000, sheets)).toBe(0);
+    expect(sheetPush(900, 100, { height: 0, margin: 0 })).toBe(0);
   });
 });

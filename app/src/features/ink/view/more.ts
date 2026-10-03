@@ -2,13 +2,18 @@
 // sit beside the pen tool. install.ts calls it once, so the rest of the view stays as it was. Each feature adds its
 // own block here, behind its own flag.
 import type { Chord, CommandDef } from '../../../commands/types';
+import type { MessageKey } from '../../../strings/t';
 import { commandBar, commands } from '../../../registries';
 import { toggleCanvasLock, installCanvasLock } from './canvasLock';
 import { describeDrawing } from './describe';
 import { getSettings, updateSettings } from '../../../state/settings';
 import { DrawOptions } from './DrawOptions';
+import { DrawSnap } from './DrawSnap';
+import type { Store } from '../../../state/store';
 import type { InkHost } from './host';
 import { installHover } from './hover';
+import { insertSpaceByHeight } from './space';
+import { installSnapTools } from './snapTools';
 import { inkPrefs, setPrefs } from './prefs';
 import type { InkSurface } from './surface';
 
@@ -16,6 +21,8 @@ import type { InkSurface } from './surface';
 export interface MoreContext {
   readonly host: InkHost;
   readonly surface: () => InkSurface | null;
+  /** The same surface as a store, for the parts that follow the page. */
+  readonly surfaces: Store<InkSurface | null>;
 }
 
 const chord = (value: string) => value as Chord;
@@ -33,9 +40,20 @@ const gestureCommand = (key: GestureKey): CommandDef => ({
   run: () => void updateSettings({ ink: { gestures: { [key]: !getSettings().ink.gestures[key] } } }),
 });
 
+/** The ruler, the protractor, and the grid are switches, so each is a command with a checked state. */
+const snapCommand = (key: 'ruler' | 'protractor' | 'gridSnap', title: MessageKey): CommandDef => ({
+  id: `ink.snap.${key}`,
+  title,
+  keywords: 'ink.snap.keywords',
+  category: 'view',
+  flag: 'ink.snapTools',
+  checked: () => inkPrefs.get()[key],
+  run: () => setPrefs({ [key]: !inkPrefs.get()[key] }),
+});
+
 export function installMore(context: MoreContext): () => void {
-  const { host, surface } = context;
-  const stops: (() => void)[] = [installHover(surface), installCanvasLock(host)];
+  const { host, surface, surfaces } = context;
+  const stops: (() => void)[] = [installHover(surface), installCanvasLock(host), installSnapTools(host, surfaces)];
   const defs: CommandDef[] = [
     {
       id: 'ink.canvasLock',
@@ -67,6 +85,20 @@ export function installMore(context: MoreContext): () => void {
         if (current) void describeDrawing(host, current);
       },
     },
+    {
+      id: 'ink.insertSpace',
+      title: 'ink.space.title',
+      keywords: 'ink.space.keywords',
+      category: 'insert',
+      flag: 'ink.insertSpace',
+      run: () => {
+        const current = surface();
+        if (current) void insertSpaceByHeight(host, current);
+      },
+    },
+    snapCommand('ruler', 'ink.snap.ruler'),
+    snapCommand('protractor', 'ink.snap.protractor'),
+    snapCommand('gridSnap', 'ink.snap.grid'),
     gestureCommand('scribbleErase'),
     gestureCommand('circleSelect'),
     gestureCommand('twoFingerUndo'),
@@ -85,6 +117,16 @@ export function installMore(context: MoreContext): () => void {
       flag: 'ink.erasers',
     }),
     commandBar.register({
+      id: 'ink.snap',
+      tab: 'draw',
+      group: 'snap',
+      command: 'ink.snap.ruler',
+      priority: 45,
+      presentation: 'component',
+      Component: DrawSnap,
+      flag: 'ink.snapTools',
+    }),
+    commandBar.register({
       id: 'ink.canvasLock',
       tab: 'draw',
       group: 'view',
@@ -92,6 +134,15 @@ export function installMore(context: MoreContext): () => void {
       priority: 40,
       presentation: 'toggle',
       flag: 'ink.canvasLock',
+    }),
+    commandBar.register({
+      id: 'ink.insertSpace',
+      tab: 'draw',
+      group: 'tools',
+      command: 'ink.insertSpace',
+      priority: 30,
+      presentation: 'button',
+      flag: 'ink.insertSpace',
     }),
     commandBar.register({
       id: 'ink.describe',

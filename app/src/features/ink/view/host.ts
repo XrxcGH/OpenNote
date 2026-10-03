@@ -2,6 +2,7 @@
 // import, so features/page/registrations/ink.ts hands them over when it installs the ink view. The types here are the
 // parts the ink view uses, so the page view's real objects fit them as they are.
 import type { BlockJson, EditBatch, OpenPage, TxnAck } from '../../../services/pages/types';
+import type { Sheets } from '../space';
 
 export interface InkCamera {
   readonly zoom: number;
@@ -79,4 +80,6 @@ export interface InkHost {
   select(next: InkSelection, options?: { announce?: boolean }): void;
   /** Runs one of Phase 4's object commands on the selected blocks. */
   objectCommand(command: 'delete'): void;
+  /** The sheets of a paginated page, so pushed content lands on the next sheet. Absent in the flow and freeform views. */
+  sheets?(): Sheets | null;
 }

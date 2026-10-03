@@ -25,6 +25,10 @@ import { mmToPage } from '../pens/tools';
 import { brandColor } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
+import { SpaceGesture } from './space';
+import { applyHold, holdFor } from '../snap';
+import type { Hold } from '../snap';
+import { showProtractorAngle, snapToolsNow } from './snapTools';
 import type { LassoGesture } from './lasso';
 import { createGestures } from './gestures';
 import type { Gestures } from './gestures';
@@ -39,7 +43,7 @@ const STROKE_ERASER_PX = 6;
 /** Moving less than this, in screen pixels, counts as holding still for hold-to-shape. */
 const HOLD_SLOP_PX = 3;
 
-type Mode = 'ink' | 'erase' | 'partial' | 'lasso' | 'idle';
+type Mode = 'ink' | 'erase' | 'partial' | 'lasso' | 'space' | 'idle';
 
 interface InkGesture {
   readonly mode: Mode;
@@ -64,6 +68,9 @@ interface InkGesture {
   erase?: StrokeEraseSession;
   partial?: PartialEraseSession<InkStroke>;
   lasso?: LassoGesture;
+  space?: SpaceGesture;
+  /** What the ruler, protractor, or grid holds this stroke to, set by its first sample. */
+  snapHold?: Hold;
   radius: number;
   hold?: { x: number; y: number; at: number; timer: ReturnType<typeof setInterval> | null; shape: ShapeMatch | null };
   last?: Vec;
@@ -94,7 +101,7 @@ export function penFeel(
   return { pressureTable: table, ...(device.steady > 0 ? { steady: { strength: device.steady, zoom } } : {}) };
 }
 
-const DRAW_TOOLS = new Set(['pen', 'writing', 'eraser', 'partialEraser', 'lasso']);
+const DRAW_TOOLS = new Set(['pen', 'writing', 'eraser', 'partialEraser', 'lasso', 'insertSpace']);
 
 function modeFor(action: PenAction | null): Mode | null {
   if (action === null) {
@@ -103,6 +110,7 @@ function modeFor(action: PenAction | null): Mode | null {
     if (tool === 'eraser') return 'erase';
     if (tool === 'partialEraser') return 'partial';
     if (tool === 'lasso') return 'lasso';
+    if (tool === 'insertSpace') return 'space';
     return null;
   }
   if (action === 'strokeEraser' || action === 'highlighterEraser') return 'erase';
@@ -119,6 +127,17 @@ function eraserFilter(action: PenAction | null): EraserFilter {
   if (erases === 'all') return ERASE_ALL;
   if (erases === 'highlighter' || erases === 'pens') return { kind: erases };
   return { kind: 'tool', tool: erases };
+}
+
+/** A sample held to the ruler's edge, the protractor's steps, or the grid, when one of those is on. */
+function snapped(g: InkGesture, surface: InkSurface, sample: RawSample): RawSample {
+  if (g.mode !== 'ink') return sample;
+  const tools = snapToolsNow(surface.cameraNow().zoom);
+  if (!tools) return sample;
+  g.snapHold ??= holdFor(tools, sample);
+  const at = applyHold(tools, g.snapHold, sample);
+  if (g.snapHold.kind === 'protractor') showProtractorAngle(g.snapHold.origin, at);
+  return at.x === sample.x && at.y === sample.y ? sample : { ...sample, x: at.x, y: at.y };
 }
 
 function sampleOf(event: PointerEvent, ctx: { toWorld(x: number, y: number): Vec }): RawSample {
@@ -169,7 +188,7 @@ export function createPenTool(
         g.y0 = event.clientY;
       }
       g.travel = Math.max(g.travel, Math.hypot(event.clientX - g.x0, event.clientY - g.y0));
-      samples.push(sampleOf(event, ctx));
+      samples.push(snapped(g, surface, sampleOf(event, ctx)));
     }
     if (samples.length === 0) return;
     const predicted = events.at(-1)?.getPredictedEvents?.() ?? [];
@@ -177,7 +196,7 @@ export function createPenTool(
       g,
       surface,
       samples,
-      predicted.map((e) => sampleOf(e, ctx)),
+      predicted.map((e) => snapped(g, surface, sampleOf(e, ctx))),
     );
   };
 
@@ -241,7 +260,7 @@ export function createPenTool(
       focusPage(viewport?.viewport);
       const release = viewport?.holdCamera('pen') ?? (() => undefined);
       gestures.down(ctx.toWorld(event.clientX, event.clientY));
-      gesture = begin(mode, event, ctx, surface, release, eraserFilter(action), action, pen);
+      gesture = begin(mode, event, ctx, surface, release, eraserFilter(action), action, pen, host);
       surface.setPenDown(true);
       target()?.addEventListener('pointerrawupdate', onRaw);
       take([event], ctx);
@@ -278,6 +297,7 @@ function begin(
   filter: EraserFilter,
   action: PenAction | null,
   pen: string,
+  host: InkHost,
 ): InkGesture {
   const zoom = ctx.camera.zoom;
   // A side button set to the last highlighter writes with the highlighter pen while it is held.
@@ -324,6 +344,8 @@ function begin(
     g.radius = mmToPage(getSettings().ink.eraser.size) / 2;
   } else if (mode === 'lasso') {
     g.lasso = startLasso(getSettings().ink.lasso.shape);
+  } else if (mode === 'space') {
+    g.space = new SpaceGesture(host, surface, ctx.toWorld(event.clientX, event.clientY).y);
   }
   return g;
 }
@@ -344,6 +366,10 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
     return;
   }
   const points: Vec[] = samples.map((s) => ({ x: s.x, y: s.y }));
+  if (g.space) {
+    g.space.update(last.y);
+    return;
+  }
   if (g.erase) {
     const gone = g.erase.move(points, g.radius);
     if (gone.length > 0) surface.preview(gone, []);
@@ -451,6 +477,8 @@ async function finish(g: InkGesture, surface: InkSurface, host: InkHost, gesture
     });
   } else if (g.lasso) {
     finishLasso(g.lasso, surface, host);
+  } else if (g.space) {
+    await g.space.commit();
   }
 }
 
@@ -458,5 +486,6 @@ function cancel(g: InkGesture, surface: InkSurface): void {
   surface.clearLive();
   if (g.erase) g.erase.cancel();
   if (g.partial) g.partial.cancel();
+  g.space?.cancel();
   surface.endPreview();
 }

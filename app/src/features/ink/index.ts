@@ -8,5 +8,6 @@ export * from './model';
 export * from './input';
 export * from './pens';
 export * from './selection';
+export * from './snap';
 export * from './space';
 export * from './zoombox';
