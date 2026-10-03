@@ -73,6 +73,13 @@ describe('paper colors', () => {
     expect(paperSvg(paperPaths(unknown, LETTER), SHEET, unknown, STYLE)).toContain('var(--color-border-subtle)');
   });
 
+  it('uses the rule color for a color named like an Object property', () => {
+    for (const color of ['constructor', '__proto__', 'toString']) {
+      const bg = { pattern: 'grid', color };
+      expect(paperSvg(paperPaths(bg, LETTER), SHEET, bg, STYLE)).toContain('var(--color-border-subtle)');
+    }
+  });
+
   it('takes a custom hexadecimal color only in its strict form', () => {
     // checks-disable-next-line brand-consistency: a custom pen color is data stored in a page, not a style choice
     const pen = '#336699';

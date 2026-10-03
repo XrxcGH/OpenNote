@@ -7,6 +7,7 @@
 // rule 1).
 
 import { tokens } from '../../../theme/tokens';
+import { own } from '../layout/json';
 
 export interface StyleSpec {
   readonly font?: string;
@@ -117,7 +118,7 @@ class Styler {
 
   private color(value: string | undefined, fallback: string): string {
     if (value === undefined) return fallback;
-    return HEX.test(value) ? value : (this.theme.pens[value.toLowerCase()] ?? fallback);
+    return HEX.test(value) ? value : (own(this.theme.pens, value.toLowerCase()) ?? fallback);
   }
 
   /** A style with the notebook's values over the defaults. */

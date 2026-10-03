@@ -14,6 +14,8 @@ const SIZES: [string, SheetGeometry][] = [
   ['A5 landscape', A5_LANDSCAPE],
 ];
 const TOLERANCE = 0.011;
+/** Names a plain object inherits. A page that uses one as a pattern or a color must not reach Object.prototype. */
+const OBJECT_KEYS = ['constructor', '__proto__', 'toString'];
 
 describe('plain paper', () => {
   it('draws nothing, and so does a pattern this version does not know', () => {
@@ -21,6 +23,14 @@ describe('plain paper', () => {
       const paths = paperPaths({ pattern }, LETTER);
       expect([paths.rules, paths.strong, paths.dots, paths.margin]).toEqual(['', '', '', '']);
       expect(paths.labels).toEqual([]);
+    }
+  });
+
+  it('treats a pattern named like an Object property as one it does not know', () => {
+    for (const pattern of OBJECT_KEYS) {
+      expect(spacingOf({ pattern, spacing: 20 })).toBe(20);
+      expect(paperPaths({ pattern }, LETTER).rules).toBe('');
+      expect(infinitePaths({ pattern }, { x: 0, y: 0, w: 816, h: 1056 }, LETTER).rules).toBe('');
     }
   });
 });

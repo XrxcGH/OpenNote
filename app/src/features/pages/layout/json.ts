@@ -11,6 +11,14 @@ export function isObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/**
+ * The value a record holds under `key` itself, never one it inherits. A key read from a file, such as `constructor`
+ * or `__proto__`, must not reach Object.prototype through a plain object.
+ */
+export function own<T>(record: Readonly<Record<string, T>> | undefined, key: string): T | undefined {
+  return record !== undefined && Object.hasOwn(record, key) ? record[key] : undefined;
+}
+
 /** A geometry value as the format writes it: rounded to 0.01, with no negative zero. */
 export function round2(value: number): number {
   const rounded = Math.round(value * 100) / 100;

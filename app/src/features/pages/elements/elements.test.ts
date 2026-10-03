@@ -338,6 +338,20 @@ describe('the element file', () => {
     expect(bad.ok && bad.warnings[0].kind).toBe('assetDropped');
   });
 
+  it('finds only the assets the file holds, whatever their IDs are called', () => {
+    const image = (asset: string) => ({ type: 'image', asset, alt: '', frame: { x: 0, y: 0, w: 10, h: 10 } });
+    const source = wrap((e) => {
+      e.blocks = [image('toString'), image('constructor'), image('__proto__')];
+    }).replace('"assets":{', '"assets":{"__proto__":{"mime":"image/png","data":"AAAA","name":"p.png"},');
+    const read = readElementFile(source);
+    expect(read.ok && read.warnings).toEqual([
+      { kind: 'blockDropped', index: 0 },
+      { kind: 'blockDropped', index: 1 },
+    ]);
+    expect(read.ok && read.element.blocks).toEqual([image('__proto__')].map((b) => ({ ...b, decorative: false })));
+    expect(read.ok && Object.keys(read.element.assets)).toContain('__proto__');
+  });
+
   it('never throws, whatever the file holds', () => {
     fc.assert(
       fc.property(fc.jsonValue(), (value) => {

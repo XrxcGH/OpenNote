@@ -7,7 +7,7 @@ import { drawingOrder, strokeShape } from '../export/ink';
 import { escapeAttr, xmlSafe } from '../export/markdown';
 import { readingOrder } from '../export/order';
 import type { ExportAsset, ExportBlock, ExportPage } from '../export/source';
-import { round2 } from '../layout/json';
+import { own, round2 } from '../layout/json';
 import { cropPage, CROP_INK, type CropOptions } from './crop';
 import type { Selection } from './select';
 
@@ -32,7 +32,7 @@ const num = (n: number): string => String(round2(n));
 
 function imageTag(block: ExportBlock & { type: 'image' }, page: ExportPage, url: string): string {
   const f = block.frame!;
-  const asset = page.assets[block.asset];
+  const asset = own(page.assets, block.asset);
   const w = f.w ?? asset?.width ?? 0;
   const h = f.h ?? asset?.height ?? 0;
   const turn = f.rotate ? ` transform="rotate(${num(f.rotate)} ${num(f.x! + w / 2)} ${num(f.y! + h / 2)})"` : '';
@@ -69,7 +69,7 @@ export function selectionSvg(page: ExportPage, selection: Selection, options: Sv
   for (const block of order) {
     if (block.type === 'ink' || !block.frame || block.frame.x === undefined) continue;
     if (block.type === 'image') {
-      const asset = cropped.assets[block.asset];
+      const asset = own(cropped.assets, block.asset);
       const url = asset ? options.assetUrl(asset) : null;
       if (url !== null) parts.push(imageTag(block, cropped, url));
     } else if (options.text !== 'omit') {

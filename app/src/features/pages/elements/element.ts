@@ -5,7 +5,7 @@
 
 import type { ExportAsset, ExportBlock, ExportPage, ExportStroke, Frame } from '../export/source';
 import { setCustomPaper, setLayout, setMode } from '../layout/edit';
-import { round2 } from '../layout/json';
+import { own, round2 } from '../layout/json';
 import { DEFAULT_VIEW } from '../layout/view';
 import { cropPage } from '../selection/crop';
 import { selectionSvg, type SvgOptions } from '../selection/svg';
@@ -113,7 +113,7 @@ export function makeElement(page: ExportPage, selection: Selection, options: Mak
       continue;
     }
     if (made.type === 'image') {
-      const asset = cropped.assets[made.asset];
+      const asset = own(cropped.assets, made.asset);
       const data = asset ? options.assetData(asset) : null;
       if (!asset || data === null) {
         skipped += 1;

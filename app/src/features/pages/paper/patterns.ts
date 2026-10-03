@@ -2,6 +2,7 @@
 // canvas. Patterns fill the content box and ruled lines span the sheet's width, so the margins stay visibly blank.
 // Infinite view draws the same patterns without breaks, in step with sheet 0, so no line jumps when the view changes.
 
+import { own } from '../layout/json';
 import { contentBox, EPS, sheetAt, type Rect, type SheetGeometry } from '../pagination/geometry';
 import { dots, grid, isometric, ruled, staves } from './basic';
 import { Canvas, wholeCells } from './canvas';
@@ -23,7 +24,7 @@ const SPACING_LIMITS: Readonly<Record<string, readonly [number, number]>> = {
 
 /** The spacing to draw with: the page's own, kept within the range for its pattern, or the default. */
 export function spacingOf(background: PageBackground): number {
-  const [lo, hi] = SPACING_LIMITS[background.pattern] ?? [4, 200];
+  const [lo, hi] = own(SPACING_LIMITS, background.pattern) ?? [4, 200];
   const value = background.spacing;
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(Math.max(value, lo), hi) : DEFAULT_SPACING;
 }

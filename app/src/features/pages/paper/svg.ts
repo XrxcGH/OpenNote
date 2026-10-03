@@ -2,6 +2,7 @@
 // They leave as CSS custom properties, so the markup follows the theme on screen and prints with the light values.
 
 import type { Rect } from '../pagination/geometry';
+import { own } from '../layout/json';
 import { fmt } from './canvas';
 import { STROKE, type PageBackground, type PaperLabel, type PaperPaths } from './types';
 
@@ -50,7 +51,7 @@ function inkOf(bg: PageBackground, style: PaperStyle): Ink {
   const plain = { rule: tokenVar(style.tokens.rule), strong: tokenVar(style.tokens.strong), opacity: 1 };
   const color = bg.color;
   if (color === undefined || color === 'rule') return plain;
-  const pen = style.palette?.[color];
+  const pen = own(style.palette, color);
   if (pen !== undefined) return { rule: tokenVar(pen), strong: tokenVar(pen), opacity: PEN_OPACITY };
   if (HEX.test(color)) return { rule: color, strong: color, opacity: PEN_OPACITY };
   return plain;

@@ -2,6 +2,7 @@
 // with header cells, attachments as links, and ink as an inline vector drawing. The HTML export and the print
 // document share it, so the page reads the same everywhere. Browsers tag this markup when they print it to PDF.
 
+import { own } from '../layout/json';
 import { inkShapes, inkExtent, inkSvg } from './ink';
 import {
   escapeAttr,
@@ -61,7 +62,7 @@ export function htmlOptions(cx: BlockContext): HtmlOptions {
     labels: { done: cx.labels.done, open: cx.labels.open },
     image: (destination) => {
       const id = /^asset:(.+)$/.exec(destination)?.[1];
-      const asset = id === undefined ? undefined : cx.page.assets[id];
+      const asset = id === undefined ? undefined : own(cx.page.assets, id);
       return asset ? cx.assetUrl(asset) : null;
     },
   };
@@ -80,7 +81,7 @@ function size(frame: ExportBlock['frame']): string {
 }
 
 function image(block: ExportBlock & { type: 'image' }, cx: BlockContext): string {
-  const asset = cx.page.assets[block.asset];
+  const asset = own(cx.page.assets, block.asset);
   const src = asset ? cx.assetUrl(asset) : null;
   const missing = `<p class="missing">${escapeHtml(block.decorative ? '' : block.alt)}</p>`;
   if (!asset || src === null) return block.decorative || block.alt === '' ? '' : missing;
@@ -92,7 +93,7 @@ function image(block: ExportBlock & { type: 'image' }, cx: BlockContext): string
 }
 
 function file(block: ExportBlock & { type: 'file' }, cx: BlockContext): string {
-  const asset = cx.page.assets[block.asset];
+  const asset = own(cx.page.assets, block.asset);
   if (!asset) return '';
   const href = cx.assetUrl(asset);
   const name = escapeHtml(asset.name);
@@ -104,7 +105,7 @@ function table(block: TableBlock, cx: BlockContext): string {
   const cell = (tag: 'th' | 'td', markdown: string) =>
     `<${tag}${tag === 'th' ? ' scope="col"' : ''}>${renderInlineHtml(parseInline(markdown), options)}</${tag}>`;
   const row = (r: TableBlock['rows'][number], tag: 'th' | 'td') =>
-    `<tr>${block.columns.map((c) => cell(tag, r.cells[c.id] ?? '')).join('')}</tr>`;
+    `<tr>${block.columns.map((c) => cell(tag, own(r.cells, c.id) ?? '')).join('')}</tr>`;
   const [first, ...rest] = block.rows;
   const head = block.header && first ? `<thead>${row(first, 'th')}</thead>\n` : '';
   const body = (block.header && first ? rest : block.rows).map((r) => row(r, 'td')).join('\n');

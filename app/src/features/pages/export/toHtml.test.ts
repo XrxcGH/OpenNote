@@ -93,6 +93,25 @@ describe('HTML export of assets and tables', () => {
     expect(exportHtml(p, { assetUrl: () => null }).assets).toEqual([]);
   });
 
+  it('finds only the assets and cells a page holds, whatever their IDs are called', () => {
+    const p = page({
+      // JSON.parse makes `__proto__` an ordinary key, as reading page.json does.
+      assets: JSON.parse('{"__proto__": {"file": "proto.png", "mime": "image/png", "name": "Proto.png"}}') as object,
+      blocks: [
+        block('f', 'a0', 'file', { asset: 'constructor' }),
+        block('g', 'a1', 'file', { asset: '__proto__' }),
+        block('i', 'a2', 'image', { asset: 'toString', alt: 'Missing' }),
+        block('t', 'a3', 'table', { header: false, columns: [{ id: 'constructor', width: 50 }], rows: [{ id: 'r' }] }),
+      ],
+    });
+    const { html } = exportHtml(p);
+    expect(html).toContain('<p class="attachment"><a href="assets/proto.png">Proto.png</a></p>');
+    expect(html.match(/class="attachment"/g)).toHaveLength(1);
+    expect(html).toContain('<p class="missing">Missing</p>');
+    expect(html).toContain('<td></td>');
+    expect(Object.getPrototypeOf(p.assets)).toBeNull();
+  });
+
   it('writes tables with header cells, column widths, and inline Markdown in the cells', () => {
     const p = page({
       blocks: [

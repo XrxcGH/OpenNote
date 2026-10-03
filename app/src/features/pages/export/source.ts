@@ -184,7 +184,8 @@ function readBlocks(raw: Json | undefined): ExportBlock[] {
 }
 
 function readAssets(raw: Json | undefined): Record<string, ExportAsset> {
-  const out: Record<string, ExportAsset> = {};
+  // No prototype, so an asset ID such as `__proto__` is an entry like any other.
+  const out: Record<string, ExportAsset> = Object.create(null) as Record<string, ExportAsset>;
   if (!isObject(raw)) return out;
   for (const [id, a] of Object.entries(raw)) {
     if (!isObject(a) || typeof a.file !== 'string') continue;

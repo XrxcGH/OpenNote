@@ -77,7 +77,7 @@ function blockOf(raw: Json | undefined, assets: Record<string, ElementAsset>): E
   if (raw.type === 'image') {
     const asset = text(raw.asset, 64);
     const alt = text(raw.alt, 2_000);
-    if (asset === null || alt === null || !(asset in assets)) return null;
+    if (asset === null || alt === null || !Object.hasOwn(assets, asset)) return null;
     return { type: 'image', asset, alt, decorative: raw.decorative === true, frame };
   }
   if (raw.type === 'table' && Array.isArray(raw.columns) && Array.isArray(raw.rows) && raw.rows.length <= LIMITS.rows) {
@@ -156,7 +156,8 @@ export function readElementFile(source: string): ElementFileRead {
   if (el.blocks.length > LIMITS.blocks || el.strokes.length > LIMITS.strokes) return { ok: false, error: 'tooBig' };
   const warnings: ElementFileWarning[] = [];
 
-  const assets: Record<string, ElementAsset> = {};
+  // No prototype, so an asset ID such as `__proto__` is an entry like any other.
+  const assets: Record<string, ElementAsset> = Object.create(null) as Record<string, ElementAsset>;
   const rawAssets = isObject(el.assets) ? Object.entries(el.assets) : [];
   if (rawAssets.length > LIMITS.assets) return { ok: false, error: 'tooBig' };
   rawAssets.forEach(([id, a], index) => {

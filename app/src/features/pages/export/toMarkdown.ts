@@ -2,6 +2,7 @@
 // blocks come in reading order. Text is copied as it is and tables become GFM tables. Images link to their asset
 // files, and drawings add their description. Element IDs, tags, and styles are left out so the text stays clean.
 
+import { own } from '../layout/json';
 import { escapeText, oneLine, rewriteLinks, writeDestination } from './escape';
 import { readingOrder } from './order';
 import type { ExportBlock, ExportPage, TableBlock } from './source';
@@ -56,7 +57,7 @@ class Exporter {
   ) {}
 
   private assetDestination(id: string): string {
-    const file = this.page.assets[id]?.file;
+    const file = own(this.page.assets, id)?.file;
     if (file === undefined) return `asset:${id}`;
     const path = this.o.assetPath ? this.o.assetPath(id, file) : `assets/${file}`;
     if (path === null) return `asset:${id}`;
@@ -68,7 +69,7 @@ class Exporter {
     return rewriteLinks(markdown, {
       page: (id) => this.o.pagePath?.(id) ?? null,
       asset: (id) => {
-        const file = this.page.assets[id]?.file;
+        const file = own(this.page.assets, id)?.file;
         if (file === undefined) return null;
         const path = this.o.assetPath ? this.o.assetPath(id, file) : `assets/${file}`;
         if (path !== null) this.used.add(id);
@@ -88,7 +89,7 @@ class Exporter {
       case 'image':
         return `![${block.decorative ? '' : this.description(block.alt)}](${this.assetDestination(block.asset)})`;
       case 'file': {
-        const name = this.page.assets[block.asset]?.name ?? block.asset;
+        const name = own(this.page.assets, block.asset)?.name ?? block.asset;
         return `[${this.description(name)}](${this.assetDestination(block.asset)})`;
       }
       case 'table':
@@ -109,7 +110,7 @@ class Exporter {
     if (table.columns.length === 0) return null;
     const line = (cells: readonly string[]) => `| ${cells.join(' | ')} |`;
     const cellsOf = (row: TableBlock['rows'][number]) =>
-      table.columns.map((c) => tableCell(this.rewrite(row.cells[c.id] ?? '')));
+      table.columns.map((c) => tableCell(this.rewrite(own(row.cells, c.id) ?? '')));
     const [first, ...rest] = table.rows;
     const header = table.header && first ? cellsOf(first) : table.columns.map(() => '');
     const body = table.header && first ? rest : table.rows;
