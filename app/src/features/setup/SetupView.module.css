@@ -51,6 +51,12 @@
     gap: var(--space-6);
   }
 
+  /* The theme cards stop growing at their full width, so the row centers under the centered heading. Settings
+     keeps its row start-aligned with the text above it. */
+  .look [role='radiogroup'] {
+    justify-content: center;
+  }
+
   .header {
     display: grid;
     gap: var(--space-3);
