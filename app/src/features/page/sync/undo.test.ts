@@ -30,6 +30,8 @@ describe('applying frames', () => {
     expect([change.from, change.to]).toEqual([5, 10]);
     expect(change.content.firstChild?.textContent).toBe('Two, changed');
     expect(minimalReplacement(before, parseTextBlock('One\n\nTwo\n\nThree'))).toBeNull();
+    expect(minimalReplacement(parseTextBlock('a **b**'), parseTextBlock('a b'))).not.toBeNull();
+    expect(minimalReplacement(parseTextBlock('# a'), parseTextBlock('## a'))).not.toBeNull();
   });
 
   it('keeps unchanged paragraphs in the editor, updates other blocks, and restores the selection', async () => {

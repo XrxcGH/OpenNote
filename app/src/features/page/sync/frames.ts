@@ -25,9 +25,27 @@ export const WORKER_PARSE_BYTES = 64 * 1024;
 
 const markdownOf = (block: BlockJson) => (typeof block.data.markdown === 'string' ? block.data.markdown : '');
 
-/** Two nodes from any schema instance are the same when their JSON is. */
+const sameValue = (a: unknown, b: unknown) =>
+  a === b || (typeof a === 'object' && typeof b === 'object' && JSON.stringify(a) === JSON.stringify(b));
+
+function sameAttrs(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => sameValue(a[key], b[key]));
+}
+
+/**
+ * Two nodes from any schema instance are the same when their types, attributes, marks, and text are. It walks
+ * both trees once, so an undo in a long note compares its paragraphs without serializing them.
+ */
 function sameNode(a: PMNode, b: PMNode): boolean {
-  return a.type.name === b.type.name && a.nodeSize === b.nodeSize && JSON.stringify(a) === JSON.stringify(b);
+  if (a.type.name !== b.type.name || a.nodeSize !== b.nodeSize || a.childCount !== b.childCount) return false;
+  if (a.text !== b.text || !sameAttrs(a.attrs, b.attrs) || a.marks.length !== b.marks.length) return false;
+  for (let i = 0; i < a.marks.length; i++) {
+    const [x, y] = [a.marks[i], b.marks[i]];
+    if (x.type.name !== y.type.name || !sameAttrs(x.attrs, y.attrs)) return false;
+  }
+  for (let i = 0; i < a.childCount; i++) if (!sameNode(a.child(i), b.child(i))) return false;
+  return true;
 }
 
 /**
