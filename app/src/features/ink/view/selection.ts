@@ -15,7 +15,7 @@ import { slotsForTool } from '../pens/palette';
 import { selectionFrame } from '../selection/lassoItems';
 import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
-import { anchorSelection, detachSelection } from './anchoring';
+import { anchorOffsetEdits, anchorSelection, detachSelection } from './anchoring';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
 import { startReplay } from './replay';
 import { followersForMatrix } from './shapeEdit';
@@ -318,8 +318,12 @@ class FrameView implements SelectionFrame {
       layer?.upsert({ ...block, frame: edit.frame ?? undefined });
     }
     const follow = followersForMatrix(this.surface, ids, matrix);
-    const saved = await this.surface.transform(ids, matrix, edits, follow);
-    if (!saved) for (const block of before) layer?.upsert(block);
+    const anchors = anchorOffsetEdits(this.host, this.surface, ids, matrix);
+    const saved = await this.surface.transform(ids, matrix, [...edits, ...anchors.edits], follow);
+    if (!saved) {
+      for (const block of before) layer?.upsert(block);
+      anchors.restore();
+    }
     this.place();
   }
 

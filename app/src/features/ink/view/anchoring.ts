@@ -274,6 +274,44 @@ export function anchorStrokes(
   };
 }
 
+/**
+ * The edits that keep anchored ink where the person put it. Moving or resizing anchored ink changes how far it sits from
+ * its words, so the new offset is saved with the move. `restore` puts the page's copy of the blocks back if the move fails.
+ */
+export function anchorOffsetEdits(
+  host: InkHost,
+  surface: InkSurface,
+  ids: readonly string[],
+  matrix: Matrix,
+): { edits: Edit[]; restore: () => void } {
+  const layer = host.layer.get();
+  const edits: Edit[] = [];
+  const before: BlockJson[] = [];
+  if (!layer || !isEnabled('ink.anchoring')) return { edits, restore: () => undefined };
+  const moved = new Set(ids);
+  const everything = [...surface.index.all()] as InkStroke[];
+  for (const block of new Set(surface.strokes(ids).map((stroke) => stroke.block))) {
+    const held = layer.block(block);
+    const anchor = held ? readAnchor(held.data) : null;
+    if (!held || !anchor) continue;
+    const strokes = everything.filter((stroke) => stroke.block === block);
+    const from = strokes.map(strokeBounds).reduce(union);
+    const to = strokes
+      .map((stroke) =>
+        strokeBounds(
+          moved.has(stroke.id) ? { ...stroke, transform: compose(matrix, stroke.transform ?? IDENTITY) } : stroke,
+        ),
+      )
+      .reduce(union);
+    const dx = anchor.dx + (to.minX - from.minX);
+    const dy = anchor.dy + (to.minY - from.minY);
+    edits.push({ edit: 'patchBlock', block, data: { anchor: { dx, dy } } });
+    before.push(held);
+    layer.upsert({ ...held, data: { ...held.data, anchor: { ...(held.data.anchor as object), dx, dy } } });
+  }
+  return { edits, restore: () => before.forEach((held) => layer.upsert(held)) };
+}
+
 /** Whether new ink drawn on typed text is tied to it on its own. */
 export const autoAnchor = (): boolean => isEnabled('ink.anchoring') && getSettings().ink.anchorToText;
 
