@@ -2,4 +2,5 @@
 // erasers, the lasso, and the Draw tab on top of this core; until then it is the only export.
 
 export * from './geometry';
+export * from './model';
 export * from './pens';
