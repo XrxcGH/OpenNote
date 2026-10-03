@@ -10,16 +10,21 @@ interface Context {
   readonly last: boolean;
   readonly before: string | undefined;
   readonly after: string | undefined;
-  readonly rest: readonly string[];
+  /** The whole text, and where this character is in it, so a check can read ahead without copying. */
+  readonly chars: readonly string[];
+  readonly index: number;
   readonly afterDigits: boolean;
 }
 
-/** True when the characters after a `&` make a character reference: an optional `#`, letters or digits, then `;`. */
-function isReference(rest: readonly string[]): boolean {
-  const body = rest[0] === '#' ? rest.slice(1) : rest;
-  let n = 0;
-  while (n < body.length && /[A-Za-z0-9]/.test(body[n])) n += 1;
-  return n > 0 && body[n] === ';';
+/**
+ * True when the characters after the `&` at `at` make a character reference: an optional `#`, letters or digits, then
+ * `;`. It reads in place, so escaping stays linear in the length of the text.
+ */
+function isReference(chars: readonly string[], at: number): boolean {
+  const start = chars[at + 1] === '#' ? at + 2 : at + 1;
+  let n = start;
+  while (n < chars.length && /[A-Za-z0-9]/.test(chars[n])) n += 1;
+  return n > start && chars[n] === ';';
 }
 
 const ALWAYS = new Set(['\\', '`', '*', '~', '$', '[', ']', '{', '<', '|']);
@@ -31,7 +36,7 @@ function escapedChar(c: string, cx: Context): string {
   if (ALWAYS.has(c)) return `\\${c}`;
   if (c === '_' && !(isWord(cx.before) && isWord(cx.after))) return '\\_';
   if (c === '=' && (cx.first || cx.before === '=' || cx.after === '=')) return '\\=';
-  if (c === '&' && isReference(cx.rest)) return '\\&';
+  if (c === '&' && isReference(cx.chars, cx.index)) return '\\&';
   if (c === '#' && (cx.before === undefined || /\s/.test(cx.before))) return '\\#';
   if ((c === '>' || c === '-' || c === '+') && cx.first) return `\\${c}`;
   if ((c === '.' || c === ')') && cx.afterDigits) return `\\${c}`;
@@ -64,7 +69,8 @@ export function escapeText(text: string, atLineStart: boolean): string {
       last: after === undefined || after === '\n',
       before: chars[i - 1],
       after,
-      rest: chars.slice(i + 1),
+      chars,
+      index: i,
       afterDigits: before >= 1 && before <= 9 && digits === null,
     });
   });

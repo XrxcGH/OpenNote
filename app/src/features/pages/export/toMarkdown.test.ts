@@ -25,6 +25,16 @@ describe('escaping text', () => {
     expect(oneLine('a\r\nb\nc')).toBe('a b c');
   });
 
+  it('escapes long text in linear time', () => {
+    // 50,000 characters took about 15 seconds when each character copied the rest of the text.
+    const text = 'a&amp; b'.repeat(6_250);
+    const started = performance.now();
+    const escaped = escapeText(text, true);
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(escaped).toBe('a\\&amp; b'.repeat(6_250));
+    expect(escapeText('&#; &#x1F; &; &a', false)).toBe('&#; \\&#x1F; &; &a');
+  });
+
   it('writes destinations bare when it can, and in angle brackets when it cannot', () => {
     expect(writeDestination('assets/a-b.png')).toBe('assets/a-b.png');
     expect(writeDestination('assets/a b (1).png')).toBe('<assets/a b (1).png>');
