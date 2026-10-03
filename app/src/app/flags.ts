@@ -157,7 +157,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('commandBar.insert', 'The Insert tab of the command bar.', betaBuilds),
   flag('commandBar.draw', 'The Draw tab of the command bar.', on),
   flag('setup.smartFeatures', 'The smart features step of setup.', off),
-  flag('setup.import', 'The step of setup that brings in notes from other apps.', off),
+  flag('setup.import', 'The step of setup that brings in notes from other apps.', on),
   flag('settings.penAndInk', 'The Pen and ink section of Settings.', off),
   flag('settings.recording', 'The Recording section of Settings.', off),
   flag('settings.privacyAndAi', 'The Privacy and smart features section of Settings.', off),
