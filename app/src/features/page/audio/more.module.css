@@ -44,4 +44,59 @@
     flex-wrap: wrap;
     gap: var(--space-2);
   }
+
+  .list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 50vh;
+    overflow-y: auto;
+  }
+
+  .item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .itemText {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+
+  .prompt {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .region {
+    position: relative;
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .regionImage {
+    display: block;
+    max-inline-size: min(100%, 60rem);
+    max-block-size: 55vh;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .regionBox {
+    position: absolute;
+    border: var(--size-focus-ring-width) solid var(--color-accent-primary);
+    background: color-mix(in srgb, var(--color-accent-primary) 18%, transparent);
+    pointer-events: none;
+  }
 }

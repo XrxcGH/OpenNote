@@ -5,6 +5,7 @@ export * from './clock';
 export * from './flags';
 export * from './host';
 export * from './meter';
+export * from './more';
 export * from './playback';
 export * from './positions';
 export * from './recording';

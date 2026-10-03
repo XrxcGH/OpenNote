@@ -3,6 +3,7 @@
 // know, so the entry, which changes as the recording runs, is kept in the page's view under `recordings`
 // (crates/media/src/README.md, "What the note format needs"). Every change to an entry is a `setPage` step.
 import { commandContext } from '../../../commands/registry';
+import { enhancedTracks } from '../../../core/audio';
 import type { RecordingEntry } from '../../../core/audio';
 import { newId } from '../../../editor/ids';
 import type { BlockId, BlockJson, Edit, Frame, NewBlock, TxnAck } from '../../../services/pages/types';
@@ -36,7 +37,9 @@ export function pageId(): string | null {
  * the last flag going takes `flags` with it.
  */
 function entryEdit(entry: RecordingEntry): Edit {
-  return { edit: 'setPage', view: { recordings: { [entry.id]: { flags: null, ...entry } } } };
+  // The members a screen adds are sent as null when the entry lacks them, which removes them.
+  const gone = { flags: null, enhanced: null, listen: null, transcribeWith: null, audioRemoved: null, snaps: null };
+  return { edit: 'setPage', view: { recordings: { [entry.id]: { ...gone, ...entry } } } };
 }
 
 /** Which of an entry's tracks the page's asset table must list, for a host that keeps them as assets. */
@@ -46,8 +49,10 @@ export interface TrackChange {
    * files are still being written; `finished` that they are closed.
    */
   track?: 'growing' | 'finished';
-  /** The entry this one replaces: its tracks leave the table. */
+  /** The entry this one replaces: its tracks, and those of its enhanced copy, leave the table. */
   drop?: RecordingEntry;
+  /** The entry's enhanced copy is new: the table lists its tracks too. */
+  enhanced?: boolean;
 }
 
 /** The steps that save an entry, and keep the page's asset table in step with its tracks. */
@@ -55,19 +60,25 @@ async function entryEdits(page: string, entry: RecordingEntry, change: TrackChan
   const edits = [entryEdit(entry)];
   const audio = commandContext('commandBar').platform.audio;
   if (!audio.keepsAssets) return edits;
-  for (const track of change.drop?.tracks ?? []) edits.push({ edit: 'removeAsset', asset: track.asset });
+  const dropped = change.drop ? [...change.drop.tracks, ...enhancedTracks(change.drop)] : [];
+  for (const track of dropped) edits.push({ edit: 'removeAsset', asset: track.asset });
+  // The page must hold the tracks before the edit that lists them.
   if (change.track) {
-    // The page must hold the tracks before the edit that lists them.
     await audio.adoptTracks(await audio.assetsDir(page), entry, change.track === 'growing');
     for (const track of entry.tracks) edits.push({ edit: 'addAsset', asset: track.asset });
+  }
+  const copy = enhancedTracks(entry);
+  if (change.enhanced && copy.length > 0) {
+    await audio.adoptTracks(await audio.assetsDir(page), { ...entry, tracks: copy }, false);
+    for (const track of copy) edits.push({ edit: 'addAsset', asset: track.asset });
   }
   return edits;
 }
 
-function insertEdit(id: BlockId, entry: RecordingEntry): InsertEdit {
+function insertEdit(id: BlockId, entry: RecordingEntry, anchor?: BlockId): InsertEdit {
   const layer = shownLayer.get();
-  const active = shownPool.get()?.active() ?? null;
-  const source = active && layer?.view(active.block);
+  const from = anchor ?? shownPool.get()?.active()?.block ?? null;
+  const source = from && layer?.view(from);
   const floating = Boolean(source && source.element.style.left !== '');
   let frame: Frame | undefined;
   if (source && floating) {
@@ -75,7 +86,7 @@ function insertEdit(id: BlockId, entry: RecordingEntry): InsertEdit {
     frame = { x: rect.x, y: rect.y + rect.h + 16 };
   }
   const blocks = layer?.blocks() ?? [];
-  const after = active?.block ?? blocks[blocks.length - 1]?.id;
+  const after = from ?? blocks[blocks.length - 1]?.id;
   return {
     edit: 'insertBlock',
     block: {
@@ -97,9 +108,10 @@ async function sendInsert(
   queue: SyncQueue,
   id: BlockId,
   entry: RecordingEntry,
+  options: InsertOptions = {},
 ): Promise<{ edit: InsertEdit; ack: TxnAck }> {
-  const edit = insertEdit(id, entry);
-  const entryEditsOf = await entryEdits(pageId() ?? '', entry, { track: 'growing' });
+  const edit = insertEdit(id, entry, options.after);
+  const entryEditsOf = await entryEdits(pageId() ?? '', entry, { track: options.track ?? 'growing' });
   try {
     return { edit, ack: await queue.send({ edits: [edit, ...entryEditsOf] }) };
   } catch (error) {
@@ -124,12 +136,18 @@ function showBlock(id: BlockId, edit: InsertEdit, ack: TxnAck): void {
   });
 }
 
+/** Where a new recording block goes, and whether its files are still being written (the default). */
+export interface InsertOptions {
+  after?: BlockId;
+  track?: 'growing' | 'finished';
+}
+
 /** Adds the recording's block after the block with the caret, or at the end. It doesn't move the caret. */
-export async function insertRecordingBlock(entry: RecordingEntry): Promise<BlockId> {
+export async function insertRecordingBlock(entry: RecordingEntry, options?: InsertOptions): Promise<BlockId> {
   const queue = shownQueue.get();
   if (!queue || !shownLayer.get()) throw new Error('No page is shown.');
   const id: BlockId = newId();
-  const { edit, ack } = await sendInsert(queue, id, entry);
+  const { edit, ack } = await sendInsert(queue, id, entry, options);
   setEntries([entry]);
   showBlock(id, edit, ack);
   return id;

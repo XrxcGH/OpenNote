@@ -6,7 +6,7 @@ import { useFlag } from '../../../app/flags';
 import type { DeviceInfo } from '../../../core/audio';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { Switch } from '../../../ui';
+import { Button, Switch } from '../../../ui';
 import { platformAudio } from './controller';
 import styles from './more.module.css';
 import { chooseRecording, recordingChoices } from './state';
@@ -31,6 +31,7 @@ export default function RecordingSettings() {
   const devices = useInputs();
   const system = useFlag('audio.systemAudio');
   const meeting = useFlag('audio.meetingPrompt');
+  const storage = useFlag('audio.storage');
   const [micId, qualityId, systemHelp, meetingHelp] = [useId(), useId(), useId(), useId()];
   const known = devices.some((device) => device.id === choices.microphone);
   return (
@@ -90,6 +91,19 @@ export default function RecordingSettings() {
             {t('audioMore.settings.meetingHelp')} {t('audio.options.consent')}
           </p>
         </>
+      )}
+      {storage && (
+        <div className={styles.field}>
+          <div className={styles.actions}>
+            <Button
+              variant="secondary"
+              onClick={() => void import('./openStorage').then((module) => module.openStorage())}
+            >
+              {t('audioMore.settings.storage')}
+            </Button>
+          </div>
+          <p className={styles.help}>{t('audioMore.settings.storageHelp')}</p>
+        </div>
       )}
     </div>
   );

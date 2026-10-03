@@ -36,6 +36,11 @@ function paint(): void {
   const next = new Set<HTMLElement>();
   const ranges: Range[] = [];
   for (const entry of highlight) {
+    if (entry.target.type === 'item') {
+      const snap = layer?.view(entry.target.id)?.element;
+      if (snap) next.add(snap);
+      continue;
+    }
     if (entry.target.type !== 'text') continue;
     const { block, from, to } = entry.target;
     const element = layer?.view(block)?.element;

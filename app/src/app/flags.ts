@@ -108,7 +108,22 @@ type Phase5FlagId =
 
 /** Phase 9's flags; features/audio/flags.ts defines them. */
 type Phase9FlagId =
-  'audio.record' | 'audio.stamps' | 'audio.flags' | 'audio.trim' | 'audio.systemAudio' | 'audio.meetingPrompt';
+  | 'audio.record'
+  | 'audio.stamps'
+  | 'audio.flags'
+  | 'audio.trim'
+  | 'audio.systemAudio'
+  | 'audio.meetingPrompt'
+  | 'audio.enhance'
+  | 'audio.storage'
+  | 'audio.snap'
+  | 'audio.import'
+  | 'audio.export'
+  | 'transcripts.block'
+  | 'transcripts.speakers'
+  | 'transcripts.notes'
+  | 'transcripts.actions'
+  | 'transcripts.recap';
 /** Phase 13: the Privacy panel, Work offline, crash reports, the self-check, feedback, and safe start. */
 type Phase13FlagId =
   | 'privacy.panel'

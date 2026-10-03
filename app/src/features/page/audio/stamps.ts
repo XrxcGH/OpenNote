@@ -8,7 +8,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Transaction } from '@tiptap/pm/state';
 import { isEnabled } from '../../../app/flags';
-import { strokeEntries, TapRecognizer, tapPlays, TextMarks } from '../../../core/audio';
+import { extrasOf, strokeEntries, TapRecognizer, tapPlays, TextMarks } from '../../../core/audio';
 import type { StampEntry, StrokeTime, TextMarksData } from '../../../core/audio';
 import { META_REMOTE } from '../../../editor/meta';
 import { t } from '../../../strings/t';
@@ -140,8 +140,43 @@ export async function playFromInk(ids: readonly string[] = pageSelection.get().s
   return true;
 }
 
+/** The screen snaps of the page's recordings as stamps, so a snap lights up while its moment plays. */
+export function snapEntries(): StampEntry[] {
+  return [...recordingEntries.get().values()].flatMap((entry) =>
+    (extrasOf(entry).snaps ?? []).map((one) => ({
+      recording: entry.id,
+      startNs: one.captureNs,
+      endNs: one.captureNs,
+      target: { type: 'item' as const, id: one.block },
+    })),
+  );
+}
+addStampSource(snapEntries);
+
+/** The recording and moment a block (a screen snap) was added at, if it was added while recording. */
+function snapOf(block: string): { recording: string; captureNs: number } | null {
+  for (const entry of recordingEntries.get().values()) {
+    const one = extrasOf(entry).snaps?.find((snap) => snap.block === block);
+    if (one) return { recording: entry.id, captureNs: one.captureNs };
+  }
+  return null;
+}
+
+/** Plays the recording from the moment a screen snap was taken. */
+async function playFromSnap(block: string): Promise<boolean> {
+  const snap = snapOf(block);
+  const holder = snap && recordingBlocks().find((candidate) => dataOf(candidate)?.entry.id === snap.recording);
+  const page = shownOpenPage.get()?.id;
+  if (!snap || !holder || !page || !(await openFor(holder, page))) return false;
+  await playAtCapture(snap.captureNs);
+  const started = dataOf(holder)?.entry.startedNs ?? 0;
+  announce(t('audio.announce.playingFrom', { time: clockNs(snap.captureNs - started) }));
+  return true;
+}
+
 /** Plays the recording from the moment the text at `offset` of the block was written. */
 export async function playFromText(block: string, offset?: number): Promise<boolean> {
+  if (snapOf(block)) return playFromSnap(block);
   const marks = marksOf(block);
   const first = marks?.marks[0];
   if (!marks || !first) {
@@ -184,7 +219,9 @@ function playFromTap(block: string): void {
   // The press before the tap has already put the caret in the word, so the caret says which word it was.
   setTimeout(() => {
     const at = caret();
-    if (at?.block === block && marksOf(block)?.markAt(at.offset)) void playFromText(block, at.offset);
+    if (snapOf(block) || (at?.block === block && marksOf(block)?.markAt(at.offset))) {
+      void playFromText(block, at?.block === block ? at.offset : undefined);
+    }
   }, 0);
 }
 

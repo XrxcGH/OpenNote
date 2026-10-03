@@ -9,3 +9,10 @@ export function clock(totalMs: number): string {
 }
 
 export const clockNs = (ns: number) => clock(ns / 1e6);
+
+/** Such as 640 KB or 12.3 MB. */
+export function bytesText(bytes: number): string {
+  if (bytes < 1000 * 1000) return `${Math.max(1, Math.round(bytes / 1000))} KB`;
+  if (bytes < 1000 * 1000 * 1000) return `${(bytes / 1e6).toFixed(bytes < 1e8 ? 1 : 0)} MB`;
+  return `${(bytes / 1e9).toFixed(1)} GB`;
+}

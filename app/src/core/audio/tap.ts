@@ -50,7 +50,11 @@ export class TapRecognizer {
       return null;
     }
     const before = this.last;
-    if (before && sample.at - before.at <= doubleMs && Math.hypot(sample.x - before.x, sample.y - before.y) <= doubleMove) {
+    if (
+      before &&
+      sample.at - before.at <= doubleMs &&
+      Math.hypot(sample.x - before.x, sample.y - before.y) <= doubleMove
+    ) {
       this.last = null;
       return 'double';
     }
