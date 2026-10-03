@@ -51,7 +51,7 @@
     gap: var(--space-6);
   }
 
-  /* The theme cards grow past their Settings width to fill the setup card's column, so the row's outer edges meet
+  /* In setup the theme cards grow past their Settings width to fill the column. The row's outer edges then meet
      the edges of the buttons below, and the row centers under the centered heading. Settings keeps its row
      start-aligned with the text above it. */
   .look [role='radiogroup'] {

@@ -1,8 +1,10 @@
 // Geometry on every registered screen state (tests/ui/screens/*.ts). Nothing spills past the window, the window
 // itself never scrolls, and a dialog never scrolls around its own content. Every focus ring that Tab shows is
-// whole. A centered button's or card's content sits within 1 px of its middle. No table cell's content runs past
-// the cell, a wrapped choice leaves no card alone on its last row, and the cards of one choice share one width. A
-// screenshot review found these defects by eye, and the checks keep them fixed.
+// whole. A centered button's or card's content sits within 1 px of its middle.
+//
+// Side by side, no table cell's content runs past the cell, a wrapped choice leaves no card alone on its last row,
+// and the cards of one choice share one width. Screenshot reviews found these defects by eye; the checks keep
+// them fixed.
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
@@ -73,12 +75,8 @@ function measure(page: Page): Promise<Geometry> {
       }
     }
     const root = document.documentElement;
-    return {
-      sideways: root.scrollWidth - window.innerWidth,
-      downward: root.scrollHeight - window.innerHeight,
-      dialogs,
-      offCenter,
-    };
+    const sideways = root.scrollWidth - window.innerWidth;
+    return { sideways, downward: root.scrollHeight - window.innerHeight, dialogs, offCenter };
   });
 }
 
