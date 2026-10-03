@@ -4,6 +4,7 @@
 
 export * from './elements';
 export * from './export';
+export * from './gallery';
 export * from './layout';
 export * from './pagination';
 export * from './paper';

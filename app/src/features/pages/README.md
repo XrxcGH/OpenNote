@@ -4,6 +4,7 @@ The pure parts of Phase 6, "Page views and export". Everything here works on pag
 
 | Folder                               | What it does                                                                                                                              |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| [`gallery`](gallery/README.md) | The page gallery: the thumbnail grid, keyboard movement, the drop slot, and page reordering |
 | [`layout`](layout/README.md)         | Reads and writes a page's `view` (paper, margins, mode, background), derives the sheet geometry, and plans where blocks land              |
 | [`pagination`](pagination/README.md) | Sheet geometry and the paginator: where sheets start, with the rules for headings, lines, tables, and breaks                              |
 | [`paper`](paper/README.md)           | Plain, ruled, grid, dot, isometric, Cornell, staff, and template backgrounds as vector paths and SVG                                      |
