@@ -57,7 +57,7 @@ describe('the slash menu', () => {
     typeInto(editor, '/');
     await vi.waitFor(() => expect(listbox()).not.toBeNull());
     expect(editor.view.dom.getAttribute('aria-controls')).toBe(listbox()!.id);
-    expect(editor.view.dom.getAttribute('aria-expanded')).toBe('true');
+    expect(editor.view.dom.getAttribute('aria-haspopup')).toBe('listbox');
     expect(editor.view.dom.getAttribute('aria-activedescendant')).toBe(listbox()!.querySelector('[role="option"]')!.id);
   });
 
@@ -85,7 +85,7 @@ describe('the slash menu', () => {
     expect(press(editor, 'Escape')).toBe(true);
     expect(listbox()).toBeNull();
     expect(editor.state.doc.textContent).toBe('/x');
-    expect(editor.view.dom.getAttribute('aria-expanded')).toBe('false');
+    expect(editor.view.dom.hasAttribute('aria-haspopup')).toBe(false);
   });
 
   it('stays closed in the middle of a line and in code', async () => {

@@ -1,6 +1,8 @@
 // The slash menu (ARCHITECTURE.md section 17.1; owner: WP4): a listbox of options in the top layer, under the "/".
-// The editor keeps focus and gets aria-controls, aria-expanded, and aria-activedescendant while it's open. NVDA
-// doesn't reliably follow aria-activedescendant in rich text, so each highlighted option is also announced
+// The editor keeps focus and gets aria-controls, aria-haspopup, and aria-activedescendant while it's open. A
+// textbox can't take aria-expanded, so the menu doesn't use it.
+//
+// NVDA doesn't reliably follow aria-activedescendant in rich text, so each highlighted option is also announced
 // ("Heading 2, 3 of 14."), and so is the result count after typing pauses ("5 results.").
 //
 // Choosing an item removes the "/" and the filter, then runs the item's command.
@@ -52,6 +54,8 @@ class SlashMenu implements SlashMenuUi {
     this.list.setAttribute('role', 'listbox');
     this.list.setAttribute('aria-label', t('editor.slash.label'));
     this.list.setAttribute('popover', 'manual');
+    // A long list scrolls, so it is focusable; the editor keeps focus, and Tab chooses an item.
+    this.list.tabIndex = 0;
     // Choosing with the pointer keeps focus in the editor.
     this.list.addEventListener('pointerdown', (event) => event.preventDefault());
     this.list.addEventListener('click', (event) => {
@@ -62,7 +66,7 @@ class SlashMenu implements SlashMenuUi {
     (this.list as HTMLElement & { showPopover?(): void }).showPopover?.();
     const editable = session.view.dom;
     editable.setAttribute('aria-controls', this.id);
-    editable.setAttribute('aria-expanded', 'true');
+    editable.setAttribute('aria-haspopup', 'listbox');
     this.update();
   }
 
@@ -154,7 +158,7 @@ class SlashMenu implements SlashMenuUi {
     const editable = this.session.view.dom;
     editable.removeAttribute('aria-controls');
     editable.removeAttribute('aria-activedescendant');
-    editable.setAttribute('aria-expanded', 'false');
+    editable.removeAttribute('aria-haspopup');
     this.list.remove();
   }
 }

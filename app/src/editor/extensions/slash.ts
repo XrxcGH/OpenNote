@@ -119,8 +119,9 @@ function slashPlugin(host: EditorHost): Plugin<SlashState | null> {
           owner.ui = null;
           return;
         }
-        if (before && owner.ui) {
-          owner.ui.update();
+        if (before) {
+          // The page's menu reads the filter as it attaches, so a session it hasn't reached yet waits.
+          owner.ui?.update();
           return;
         }
         const session = makeSession(view, now, owner);

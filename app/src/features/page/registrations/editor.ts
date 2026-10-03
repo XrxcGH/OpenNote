@@ -28,6 +28,7 @@ import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
 import { editMenu, registerAppMenu } from '../../../ui/appMenu';
 import { targetEditor } from '../formattingBar/target';
+import { getSettings } from '../../../state/settings';
 import { registerPageCommand } from '../keys';
 import { editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
@@ -433,4 +434,29 @@ onNavigate(() => {
 function shownNotebookId(): string | null {
   const location = getLocation();
   return location.view === 'workspace' ? location.notebookId : null;
+}
+
+// The formatting bar follows touch and pen selections in text boxes, or every selection with the setting at Always.
+if (typeof document !== 'undefined') {
+  let pointer = 'mouse';
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  document.addEventListener('pointerdown', (event) => void (pointer = event.pointerType), true);
+  document.addEventListener('selectionchange', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => void showBarForSelection(pointer), 250);
+  });
+}
+
+async function showBarForSelection(pointer: string): Promise<void> {
+  const setting = getSettings().editing.formattingBar;
+  if (setting === 'never' || !isEnabled('page.formattingBar')) return;
+  if (setting === 'touchAndPen' && pointer !== 'touch' && pointer !== 'pen') return;
+  const selection = document.getSelection();
+  const inEditor = selection?.anchorNode?.parentElement?.closest('[data-scope~="editor"]');
+  const bar = await import('../formattingBar/bar');
+  if (!selection || selection.isCollapsed || !selection.rangeCount || !inEditor) {
+    bar.closeFormattingBar();
+    return;
+  }
+  bar.showFormattingBar(selection.getRangeAt(0).getBoundingClientRect());
 }
