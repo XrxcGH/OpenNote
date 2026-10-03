@@ -8,7 +8,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Transaction } from '@tiptap/pm/state';
 import { isEnabled } from '../../../app/flags';
-import { strokeEntries, TextMarks } from '../../../core/audio';
+import { strokeEntries, TapRecognizer, tapPlays, TextMarks } from '../../../core/audio';
 import type { StampEntry, StrokeTime, TextMarksData } from '../../../core/audio';
 import { META_REMOTE } from '../../../editor/meta';
 import { t } from '../../../strings/t';
@@ -24,6 +24,7 @@ import { recordingEntries } from './entries';
 import { stampNow } from './controller';
 import { clockNs } from './format';
 import { addStampSource, openFor, playAtCapture } from './playback';
+import { playbackOpen } from './state';
 
 /** The marks of the shown page's text blocks, by block. A page switch starts a new set. */
 let marksByBlock = new Map<string, TextMarks>();
@@ -171,12 +172,32 @@ export async function playFromCaret(): Promise<boolean> {
 
 let clicks: (() => void) | null = null;
 
-/** Alt+click on text plays the recording from the moment it was written. */
+/** The block that holds an event's target, if the target is in one. */
+const blockOf = (event: Event): string | undefined =>
+  (event.target as Element | null)?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+
+/**
+ * Plays from the word the caret has just landed in, if that word was written during a recording. A tap on a word
+ * with no time stamp is only a tap, so it says nothing.
+ */
+function playFromTap(block: string): void {
+  // The press before the tap has already put the caret in the word, so the caret says which word it was.
+  setTimeout(() => {
+    const at = caret();
+    if (at?.block === block && marksOf(block)?.markAt(at.offset)) void playFromText(block, at.offset);
+  }, 0);
+}
+
+/**
+ * Alt+click, and a tap of a pen or a finger, on text plays the recording from the moment it was written. A tap
+ * plays when a recording is open for listening, and a double tap plays at any time, so a single tap can still place
+ * the caret to type.
+ */
 export function installTapToHear(): void {
   if (clicks || typeof document === 'undefined') return;
   const onClick = (event: MouseEvent) => {
     if (!event.altKey || event.button !== 0 || !isEnabled('audio.stamps')) return;
-    const block = (event.target as Element | null)?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+    const block = blockOf(event);
     if (!block) return;
     // The press before the click has already put the caret in the word, so the caret says which word it was.
     setTimeout(() => {
@@ -184,8 +205,32 @@ export function installTapToHear(): void {
       void playFromText(block, at?.block === block ? at.offset : undefined);
     }, 0);
   };
+  const taps = new TapRecognizer();
+  const sample = (event: PointerEvent) => ({
+    id: event.pointerId,
+    type: event.pointerType,
+    x: event.clientX,
+    y: event.clientY,
+    at: event.timeStamp,
+  });
+  const onDown = (event: PointerEvent) => taps.press(sample(event));
+  const onUp = (event: PointerEvent) => {
+    const kind = taps.release(sample(event));
+    if (!kind || !isEnabled('audio.stamps') || !tapPlays(kind, playbackOpen.get())) return;
+    const block = blockOf(event);
+    if (block) playFromTap(block);
+  };
+  const onCancel = () => taps.cancel();
   document.addEventListener('click', onClick, true);
-  clicks = () => document.removeEventListener('click', onClick, true);
+  document.addEventListener('pointerdown', onDown, true);
+  document.addEventListener('pointerup', onUp, true);
+  document.addEventListener('pointercancel', onCancel, true);
+  clicks = () => {
+    document.removeEventListener('click', onClick, true);
+    document.removeEventListener('pointerdown', onDown, true);
+    document.removeEventListener('pointerup', onUp, true);
+    document.removeEventListener('pointercancel', onCancel, true);
+  };
 }
 
 /** Stops everything this module watches. */
