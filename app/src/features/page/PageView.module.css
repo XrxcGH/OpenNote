@@ -20,4 +20,13 @@
     font-size: var(--type-note-size);
     line-height: var(--type-note-line);
   }
+
+  /* The drawing above the "no page" sentence: a little company, with the sentence below it keeping the meaning. */
+  .page .art {
+    margin-block-start: var(--space-5);
+  }
+
+  .page .art + .none {
+    margin-block-start: var(--space-4);
+  }
 }

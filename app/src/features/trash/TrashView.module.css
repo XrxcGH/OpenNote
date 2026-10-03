@@ -1,14 +1,26 @@
-/* The Trash view: a list of deleted items in the page area, each with its Restore button. */
+/* The Trash view: a list of deleted items in the page area, each with its Restore button. Like a page, it sits on a
+   paper card over the desk. */
 @layer components {
   .trash {
     inline-size: min(100% - 2 * var(--space-8), var(--size-reading-measure));
     margin: var(--space-8) auto;
+    padding: var(--space-10);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-page);
+    box-shadow: var(--elevation-2);
   }
 
+  /* The heading's focus ring hugs its text instead of running the width of the card. */
   .trash h1 {
+    inline-size: fit-content;
+    max-inline-size: 100%;
     margin: 0 0 var(--space-5);
     font-size: var(--type-title1-size);
     line-height: var(--type-title1-line);
+  }
+
+  .art {
+    margin-block-end: var(--space-4);
   }
 
   .list {
@@ -44,10 +56,16 @@
     white-space: nowrap;
   }
 
-  .note,
-  .empty {
+  .note {
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
+  }
+
+  .empty {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-note-size);
+    line-height: var(--type-note-line);
   }
 }

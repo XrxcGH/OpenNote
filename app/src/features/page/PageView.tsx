@@ -9,7 +9,7 @@ import type { NodeId, NodeSummary } from '../../services/notes';
 import { registerRegionMain } from '../../shell/regions';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
-import { ProgressBar, useDelayedFlag } from '../../ui';
+import { EmptyArt, ProgressBar, useDelayedFlag } from '../../ui';
 import { titleOf, useTreeNode } from '../tree';
 import styles from './PageView.module.css';
 import { usePageZoom } from './zoom';
@@ -54,7 +54,12 @@ export function PageView() {
           <p>{t('tree.page.empty')}</p>
         </>
       ) : (
-        !loading && <p>{t('tree.page.none')}</p>
+        !loading && (
+          <>
+            <EmptyArt kind="page" className={styles.art} />
+            <p className={styles.none}>{t('tree.page.none')}</p>
+          </>
+        )
       )}
     </article>
   );

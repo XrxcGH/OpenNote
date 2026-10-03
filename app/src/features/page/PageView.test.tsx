@@ -11,6 +11,15 @@ describe('the page placeholder', () => {
     expect(screen.getByText('Choose a page to see it here.')).toBeTruthy();
   });
 
+  it('puts a small drawing above the prompt, hidden from screen readers, and none on an open page', async () => {
+    const { container } = await renderApp();
+    const prompt = await screen.findByText('Choose a page to see it here.');
+    const art = container.querySelector('article svg[viewBox="0 0 120 54"]');
+    expect(art?.getAttribute('aria-hidden')).toBe('true');
+    expect(art?.getAttribute('focusable')).toBe('false');
+    expect((art as Node).compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('shows the open page as a heading that Enter in the tree moves focus to', async () => {
     await renderApp();
     const notebooks = await screen.findByRole('tree', { name: 'Notebooks' });
