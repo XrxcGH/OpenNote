@@ -32,6 +32,8 @@ export interface ChartSmart {
   stacked?: boolean;
   patterns?: boolean;
   title?: string;
+  /** The words that describe the chart, when the person wrote their own instead of the automatic summary. */
+  summary?: string;
   /** Data rows (counted from 0 without the header) the chart reads, or all of them. */
   rows?: { from: number; to: number };
 }
@@ -76,6 +78,7 @@ function readChart(raw: unknown): ChartSmart | null {
   if (typeof raw.stacked === 'boolean') chart.stacked = raw.stacked;
   if (typeof raw.patterns === 'boolean') chart.patterns = raw.patterns;
   if (typeof raw.title === 'string') chart.title = raw.title.slice(0, 200);
+  if (typeof raw.summary === 'string' && raw.summary.trim() !== '') chart.summary = raw.summary.slice(0, 1000);
   const rows = raw.rows;
   if (isRecord(rows) && Number.isInteger(rows.from) && Number.isInteger(rows.to)) {
     chart.rows = { from: rows.from as number, to: rows.to as number };

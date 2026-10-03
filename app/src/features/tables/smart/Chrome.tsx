@@ -2,9 +2,11 @@
 // says what a filter leaves out, lists the column totals, and holds the Data menu. Everything on it is also a
 // command in the palette. Charts redraw whenever the table's data changes.
 import { useEffect, useRef } from 'react';
+import { isEnabled } from '../../../app/flags';
 import { Button } from '../../../ui';
 import { t } from '../../../strings/t';
 import type { ChartKind, ChartSpec } from '../engine';
+import { ChartAccess } from './ChartAccess';
 import { drawChart } from './draw';
 import styles from './smart.module.css';
 
@@ -16,6 +18,10 @@ export interface ChartItem {
   spec: ChartSpec | null;
   patterns: boolean;
   summary: string;
+  /** The automatic summary, which stands in until the person writes their own. */
+  automatic: string;
+  /** True when the summary was written by the person. */
+  custom: boolean;
 }
 
 export interface ChromeProps {
@@ -28,6 +34,7 @@ export interface ChromeProps {
   clearFilter(): void;
   chartMenu(id: string, anchor: HTMLElement): void;
   removeChart(id: string): void;
+  chartSummary(id: string, text: string | null): void;
 }
 
 const NOTE_KEYS = {
@@ -66,7 +73,21 @@ function Chart({ item, props }: { item: ChartItem; props: ChromeProps }) {
       </div>
       {spec ? (
         <>
-          <Canvas spec={spec} summary={item.summary} />
+          {isEnabled('tables.chartTable') ? (
+            <ChartAccess
+              id={item.id}
+              kind={item.kind}
+              spec={spec}
+              summary={item.summary}
+              automatic={item.automatic}
+              custom={item.custom}
+              setSummary={props.chartSummary}
+            >
+              <Canvas spec={spec} summary={item.summary} />
+            </ChartAccess>
+          ) : (
+            <Canvas spec={spec} summary={item.summary} />
+          )}
           {spec.legend.length > 0 ? (
             <ul className={styles.legend} aria-label={t('smart.chart.legend')}>
               {spec.legend.map((entry) => (

@@ -17,3 +17,5 @@ export {
 export type { PatternDef, PatternKind, Slot, SymbolName } from './palette';
 export { realizePlot } from './types';
 export type { ChartSpec, LegendEntry, MarkSpec, PieSlice, PlotMarks, PlotOptions, SeriesStyle } from './types';
+export { dataTable, describeChart, moveStep, stepAt } from './describe';
+export type { ChartFacts, Extreme, Step, Trend } from './describe';
