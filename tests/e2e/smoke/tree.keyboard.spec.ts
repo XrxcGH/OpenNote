@@ -26,14 +26,20 @@ async function expectFocusedRow(browser: Browser, title: string): Promise<void> 
     .then(() => true)
     .catch(() => false);
   if (reached) return;
-  const state = await browser.execute(() => ({
-    focus: `${document.activeElement?.tagName} ${document.activeElement?.getAttribute('aria-label') ?? ''}`,
-    field: document.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')?.value ?? null,
-    rows: [...document.querySelectorAll('[role="treeitem"]')].map(
-      (row) => document.getElementById(row.getAttribute('aria-labelledby') ?? '')?.textContent,
-    ),
-    status: document.querySelector('[role="status"]')?.textContent ?? null,
-  }));
+  const state = await browser.execute(() => {
+    const active = document.activeElement;
+    return {
+      focus: active
+        ? `${active.tagName} role=${active.getAttribute('role')} class=${String(active.className).slice(0, 40)} region=${active.closest('[data-region]')?.getAttribute('data-region')} text=${active.textContent?.slice(0, 30)}`
+        : 'none',
+      size: `${innerWidth}x${innerHeight} ${document.documentElement.dataset.sizeClass}`,
+      field: document.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')?.value ?? null,
+      rows: [...document.querySelectorAll('[role="treeitem"]')].map(
+        (row) => document.getElementById(row.getAttribute('aria-labelledby') ?? '')?.textContent,
+      ),
+      status: document.querySelector('[role="status"]')?.textContent ?? null,
+    };
+  });
   assert.fail(`Focus never reached the "${title}" row: ${JSON.stringify(state)}`);
 }
 
