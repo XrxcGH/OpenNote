@@ -112,6 +112,15 @@ describe('the quick switcher', () => {
     expect(dot?.getAttribute('aria-hidden')).toBe('true');
     expect(dot?.textContent).toBe('');
     expect(option.getAttribute('aria-label')).toBeNull();
+    // The dot hangs in front: the title's text and the detail under it start at the same place.
+    const left = (node: Node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return Math.round(range.getBoundingClientRect().left);
+    };
+    const title = left(dot?.parentElement?.lastChild as Node);
+    expect(left(option.querySelector('[id$="-detail"]') as Node)).toBe(title);
+    expect(left(dot as Node) - title).toBeLessThan(0);
   });
 
   it('lists recent pages first when nothing is typed', async () => {

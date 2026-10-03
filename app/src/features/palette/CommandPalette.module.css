@@ -114,6 +114,16 @@
     forced-color-adjust: none;
   }
 
+  /* The dot hangs in front, so a wrapped title and the detail under it start where the title's text starts. */
+  .optionTitle:has(.ink),
+  .option:has(.ink) .detail {
+    padding-inline-start: calc(2 * var(--space-3));
+  }
+
+  .optionTitle:has(.ink) {
+    text-indent: calc(-2 * var(--space-3));
+  }
+
   .keys {
     color: var(--color-text-secondary);
     font-family: var(--font-ui);
