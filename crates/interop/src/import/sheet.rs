@@ -92,7 +92,7 @@ pub(super) fn table_content(text: &str, title: String, simplified: Option<(&str,
 
 /// How many rows, the header among them, become the table: at most [`MAX_TABLE_ROWS`] after the header, and only
 /// as many as fit in [`MAX_TABLE_BYTES`].
-fn rows_that_fit(rows: &[Vec<String>]) -> usize {
+pub(super) fn rows_that_fit(rows: &[Vec<String>]) -> usize {
     let mut bytes = 0usize;
     for (n, row) in rows.iter().enumerate().take(MAX_TABLE_ROWS + 1) {
         bytes += CELL_COST + row.iter().map(|cell| cell.len() + CELL_COST).sum::<usize>();

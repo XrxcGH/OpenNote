@@ -43,6 +43,8 @@ pub enum SourceKind {
     TextBundle,
     /// The database of the Windows Sticky Notes app (`plum.sqlite`).
     StickyNotes,
+    /// Excel workbooks (`.xlsx`), each sheet a table page.
+    Spreadsheet,
     /// OneNote's own section and notebook files (`.one`, `.onepkg`), which this version cannot read.
     OneNoteFile,
 }
@@ -62,6 +64,7 @@ impl SourceKind {
             SourceKind::GoogleKeep => "Google Keep export",
             SourceKind::TextBundle => "Bear export",
             SourceKind::StickyNotes => "Windows Sticky Notes",
+            SourceKind::Spreadsheet => "Excel workbooks",
             SourceKind::OneNoteFile => "OneNote files",
         }
     }
@@ -157,6 +160,7 @@ fn by_extension(ext: &str) -> Option<Detected> {
         "html" | "htm" => SourceKind::Html,
         "txt" | "text" => SourceKind::Text,
         "csv" | "tsv" => SourceKind::Csv,
+        "xlsx" | "xlsm" => SourceKind::Spreadsheet,
         _ => return None,
     };
     Some(detected(kind, kind.label()))
@@ -212,6 +216,7 @@ impl Survey {
             (SourceKind::Evernote, self.count(&["enex"])),
             (SourceKind::Text, self.count(&["txt", "text"])),
             (SourceKind::Csv, self.count(&["csv", "tsv"])),
+            (SourceKind::Spreadsheet, self.count(&["xlsx", "xlsm"])),
         ];
         let best = candidates.iter().map(|(_, n)| *n).max().unwrap_or(0);
         candidates.iter().find(|(_, n)| *n == best && best > 0).map(|(k, _)| *k)

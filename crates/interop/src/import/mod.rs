@@ -30,6 +30,7 @@ mod sticky;
 mod tags;
 mod textbundle;
 mod word;
+mod xlsx;
 mod xmltree;
 mod zipxml;
 
@@ -49,3 +50,4 @@ pub use sticky::{
 };
 pub use textbundle::{import_textbundle_folder, is_bundle_name};
 pub use word::{import_docx, import_docx_with, WordPages};
+pub use xlsx::import_xlsx;

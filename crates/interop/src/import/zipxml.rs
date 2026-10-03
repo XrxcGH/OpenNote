@@ -49,6 +49,7 @@ impl Parts<BufReader<File>> {
 
 impl<R: Read + Seek> Parts<R> {
     /// Opens an archive that is already in a reader.
+    #[allow(dead_code)]
     pub fn from_reader(reader: R) -> Result<Parts<R>> {
         let archive = ZipArchive::new(
             reader,

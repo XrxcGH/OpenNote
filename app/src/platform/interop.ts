@@ -18,6 +18,7 @@ export type SourceKind =
   | 'googleKeep'
   | 'textBundle'
   | 'stickyNotes'
+  | 'spreadsheet'
   | 'oneNoteFile';
 
 /** What a file, folder, or archive is. */
