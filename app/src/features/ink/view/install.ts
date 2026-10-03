@@ -16,6 +16,7 @@ import type { SelectionFrame } from './selection';
 import { chooseTool, drawState, routerTool } from './state';
 import type { DrawTool } from './state';
 import { InkSurface } from './surface';
+import { installMore } from './more';
 import { installInkTestHooks } from './testHooks';
 
 let current: { surface: InkSurface; frame: SelectionFrame; stop: () => void } | null = null;
@@ -90,6 +91,7 @@ export function installInk(host: InkHost): () => void {
     () => touch.destroy(),
     drawState.subscribe(() => host.setActiveTool(routerTool(drawState.get()))),
     follow(host),
+    installMore({ host, surface: () => current?.surface ?? null }),
     registerExportStrokes(() => current?.surface ?? null),
     // New settings take effect at the next touch.
     settingsStore.subscribe(() => touch.reset()),

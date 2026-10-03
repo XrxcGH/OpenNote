@@ -25,7 +25,7 @@ import { brandColor } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
 import type { LassoGesture } from './lasso';
-import { activeSlot, drawState, styleOf } from './state';
+import { activeSlot, chooseTool, drawState, styleOf } from './state';
 import type { PenStyle } from './state';
 import type { InkSurface } from './surface';
 import { focusPage } from './touch';
@@ -42,6 +42,8 @@ interface InkGesture {
   readonly pointerId: number;
   readonly style: PenStyle;
   readonly release: () => void;
+  /** True when the toolbar's tool made this gesture, and not a pen button. */
+  readonly fromTool: boolean;
   lastTime: number;
   lastX: number;
   lastY: number;
@@ -189,7 +191,7 @@ export function createPenTool(
       const viewport = host.viewport.get();
       focusPage(viewport?.viewport);
       const release = viewport?.holdCamera('pen') ?? (() => undefined);
-      gesture = begin(mode, event, ctx, surface, release, eraserFilter(action));
+      gesture = begin(mode, event, ctx, surface, release, eraserFilter(action), action === null);
       surface.setPenDown(true);
       target()?.addEventListener('pointerrawupdate', onRaw);
       take([event], ctx);
@@ -223,6 +225,7 @@ function begin(
   surface: InkSurface,
   release: () => void,
   filter: EraserFilter,
+  fromTool: boolean,
 ): InkGesture {
   const zoom = ctx.camera.zoom;
   const style = styleOf(activeSlot());
@@ -231,6 +234,7 @@ function begin(
     pointerId: event.pointerId,
     style,
     release,
+    fromTool,
     lastTime: -Infinity,
     lastX: NaN,
     lastY: NaN,
@@ -259,7 +263,7 @@ function begin(
     g.partial = createPartialEraseSession<InkStroke>(surface.index, () => newId(), { skip });
     g.radius = mmToPage(getSettings().ink.eraser.size) / 2;
   } else {
-    g.lasso = startLasso();
+    g.lasso = startLasso(getSettings().ink.lasso.shape);
   }
   return g;
 }
@@ -287,7 +291,7 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
     const change = g.partial.move(points, g.radius);
     if (change.removed.length + change.added.length > 0) surface.preview(change.removed, change.added);
   } else if (g.lasso) {
-    g.lasso.points.push(...points);
+    g.lasso.add(points);
     g.lasso.draw(surface);
   }
   g.last = last;
@@ -349,6 +353,10 @@ async function finish(g: InkGesture, surface: InkSurface, host: InkHost): Promis
     return;
   }
   surface.clearLive();
+  // The eraser can hand the pen back to the tool it came from, as soon as the pen lifts.
+  if ((g.erase || g.partial) && g.fromTool && getSettings().ink.eraser.returnToLastTool) {
+    chooseTool(drawState.get().previous);
+  }
   if (g.erase) {
     const ids = g.erase.commit();
     const gone = surface.strokes(ids);

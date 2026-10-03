@@ -14,7 +14,7 @@ const original = settingsStore.get();
 
 afterEach(() => {
   settingsStore.set(original);
-  drawState.set({ tool: 'select', slot: 'p1' });
+  drawState.set({ tool: 'select', previous: 'select', slot: 'p1' });
 });
 
 describe('the Draw tab', () => {

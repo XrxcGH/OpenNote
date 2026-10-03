@@ -99,6 +99,11 @@ export class InkSurface {
     this.setCamera(this.camera);
   }
 
+  /** The page's ink layer block, or null before its first stroke. */
+  get layerBlock(): string | null {
+    return this.layerId;
+  }
+
   /** Strokes whose outlines still wait to be built in idle time. */
   get warmingLeft(): number {
     return this.warming?.length ?? 0;
