@@ -20,6 +20,9 @@ base64 = "0.22.1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+base64 = "0.23.1"
+crc32fast = "1.5.2"
+flate2 = "1.1.10"
 log.workspace = true
 opennote-core = { path = "../../crates/core" }
 opennote-crashreport = { path = "../../crates/crashreport" }
@@ -30,6 +33,8 @@ opennote-interop = { path = "../../crates/interop" }
 opennote-media = { path = "../../crates/media", features = ["opus"] }
 opennote-search = { path = "../../crates/search" }
 opennote-updater = { path = "../../crates/updater" }
+# Phase 10: Anki packages are zip files that hold a SQLite collection, with the same SQLite build as the search crate.
+rusqlite = { version = "0.40.2", features = ["bundled"] }
 semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -37,6 +42,7 @@ sha2.workspace = true
 tauri = { version = "2", features = [] }
 # Web images for paste (Phase 4 ARCHITECTURE.md section 12.2), with the same TLS stack and version as the updater.
 ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default"] }
+tempfile.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"

@@ -145,6 +145,8 @@ export const study = {
     exportSkipped:
       '{count, plural, one {# image card was} other {# image cards were}} left out of the CSV, which holds only text.',
     exportFailed: 'The deck could not be saved.',
+    csvLabel: 'CSV file',
+    ankiLabel: 'Anki package',
   },
   converter: { title: 'Unit converter' },
   reference: { title: 'Reference tables' },

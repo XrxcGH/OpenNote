@@ -125,6 +125,8 @@
     "allow-export-write",
     "allow-export-open",
     "allow-tool-window-open",
+    "allow-study-anki-read",
+    "allow-study-anki-write",
     "allow-interop-pick",
     "allow-interop-detect",
     "allow-interop-local-sources",

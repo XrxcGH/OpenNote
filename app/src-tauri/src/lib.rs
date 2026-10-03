@@ -30,6 +30,7 @@ pub mod shell;
 pub mod speech;
 pub mod spelling;
 pub mod state;
+pub mod study;
 pub mod theme_tokens;
 pub mod tool_windows;
 pub mod updater;
@@ -262,6 +263,8 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_export::export_write,
         page_export::export_open,
         tool_windows::tool_window_open,
+        study::study_anki_read,
+        study::study_anki_write,
         interop::commands::interop_pick,
         interop::commands::interop_detect,
         interop::commands::interop_local_sources,
