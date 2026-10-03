@@ -25,6 +25,8 @@ import { mmToPage } from '../pens/tools';
 import { brandColor } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
+import { shapePoints } from '../geometry/shapes';
+import { snapConnector } from './shapeEdit';
 import { SpaceGesture } from './space';
 import { applyHold, holdFor } from '../snap';
 import type { Hold } from '../snap';
@@ -371,7 +373,9 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
       if (hold.shape && hold.snapAt && hold.pivot) {
         // Keep holding the snapped shape and move: it grows and turns with the pen until the pen lifts.
         const moved = Math.hypot(last.x - hold.snapAt.x, last.y - hold.snapAt.y) * zoom > HOLD_SLOP_PX;
-        hold.live = moved ? applyReshape(hold.shape.points, hold.pivot, reshapeFor(hold.pivot, hold.snapAt, last)) : null;
+        hold.live = moved
+          ? applyReshape(hold.shape.points, hold.pivot, reshapeFor(hold.pivot, hold.snapAt, last))
+          : null;
       } else if (Math.hypot(last.x - hold.x, last.y - hold.y) * zoom > HOLD_SLOP_PX) {
         g.hold = { ...hold, x: last.x, y: last.y, at: performance.now(), shape: null };
       }
@@ -459,7 +463,16 @@ async function finish(g: InkGesture, surface: InkSurface, host: InkHost, gesture
         (shapes.inkToShape && g.style.tool !== 'highlighter'
           ? recognizeShape(strokes[0].points, { minSize: 16 / zoom, width: g.style.width })
           : null);
-      if (match) strokes = [asShape(strokes[0], match)];
+      if (match) {
+        // A connector drawn to a shape ends on the shape's outline, and stays attached when the shape moves.
+        const placed = g.hold?.live ? match.shape : snapConnector(match.shape, surface);
+        strokes = [
+          asShape(
+            strokes[0],
+            placed === match.shape ? match : { ...match, shape: placed, points: shapePoints(placed) },
+          ),
+        ];
+      }
     }
     const pending = surface.add(strokes);
     surface.clearLive();

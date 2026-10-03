@@ -11,7 +11,11 @@ import { DrawOptions } from './DrawOptions';
 import { DrawSnap } from './DrawSnap';
 import type { Store } from '../../../state/store';
 import type { InkHost } from './host';
+import { setViewContext } from './context';
+import { DrawShapes } from './DrawShapes';
 import { installHover } from './hover';
+import { installShapeHandles } from './shapeEdit';
+import { addTextToShape } from './shapeLibrary';
 import { insertSpaceByHeight } from './space';
 import { installSnapTools } from './snapTools';
 import { inkPrefs, setPrefs } from './prefs';
@@ -53,7 +57,14 @@ const snapCommand = (key: 'ruler' | 'protractor' | 'gridSnap', title: MessageKey
 
 export function installMore(context: MoreContext): () => void {
   const { host, surface, surfaces } = context;
-  const stops: (() => void)[] = [installHover(surface), installCanvasLock(host), installSnapTools(host, surfaces)];
+  setViewContext({ host, surface });
+  const stops: (() => void)[] = [
+    () => setViewContext(null),
+    installHover(surface),
+    installCanvasLock(host),
+    installSnapTools(host, surfaces),
+    installShapeHandles(host, surfaces),
+  ];
   const defs: CommandDef[] = [
     {
       id: 'ink.canvasLock',
@@ -99,6 +110,17 @@ export function installMore(context: MoreContext): () => void {
     snapCommand('ruler', 'ink.snap.ruler'),
     snapCommand('protractor', 'ink.snap.protractor'),
     snapCommand('gridSnap', 'ink.snap.grid'),
+    {
+      id: 'ink.addShapeText',
+      title: 'ink.library.addTextTitle',
+      keywords: 'ink.library.keywords',
+      category: 'insert',
+      flag: 'ink.shapeTools',
+      run: () => {
+        const current = surface();
+        if (current) void addTextToShape(host, current);
+      },
+    },
     gestureCommand('scribbleErase'),
     gestureCommand('circleSelect'),
     gestureCommand('twoFingerUndo'),
@@ -125,6 +147,16 @@ export function installMore(context: MoreContext): () => void {
       presentation: 'component',
       Component: DrawSnap,
       flag: 'ink.snapTools',
+    }),
+    commandBar.register({
+      id: 'ink.library',
+      tab: 'draw',
+      group: 'shapes',
+      command: 'ink.addShapeText',
+      priority: 55,
+      presentation: 'component',
+      Component: DrawShapes,
+      flag: 'ink.shapeTools',
     }),
     commandBar.register({
       id: 'ink.canvasLock',

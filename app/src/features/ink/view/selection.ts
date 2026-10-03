@@ -14,6 +14,8 @@ import { slotsForTool } from '../pens/palette';
 import { selectionFrame } from '../selection/lassoItems';
 import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
+import { followersForMatrix } from './shapeEdit';
+import { labelsIn } from './shapeLibrary';
 import type { InkSurface } from './surface';
 
 type Corner = 'nw' | 'ne' | 'se' | 'sw';
@@ -210,7 +212,7 @@ class FrameView implements SelectionFrame {
   /** Blocks move with the ink: floating ones get a new frame; ones in the flow stay where the flow puts them. */
   private blockEdits(matrix: Matrix): Edit[] {
     const layer = this.host.layer.get();
-    return this.selection().blocks.flatMap((id): Edit[] => {
+    return this.movingBlocks().flatMap((id): Edit[] => {
       const block = layer?.block(id);
       const f = block?.frame;
       if (!block || f?.x === undefined || f.y === undefined || block.lock) return [];
@@ -220,9 +222,15 @@ class FrameView implements SelectionFrame {
     });
   }
 
+  /** The selected blocks, and the text boxes that sit inside a selected shape, which move with it. */
+  private movingBlocks(): string[] {
+    const selection = this.selection();
+    return [...new Set([...selection.blocks, ...labelsIn(this.host, this.surface, selection.strokes)])];
+  }
+
   private showBlocks(matrix: Matrix | null): void {
     const layer = this.host.layer.get();
-    for (const id of this.selection().blocks) {
+    for (const id of this.movingBlocks()) {
       const element = layer?.view(id)?.element;
       if (!element) continue;
       element.style.transformOrigin = '0 0';
@@ -233,10 +241,12 @@ class FrameView implements SelectionFrame {
   private preview(matrix: Matrix): void {
     const strokes = this.selected();
     const moved = strokes.map((s) => ({ ...s, transform: compose(matrix, s.transform ?? IDENTITY) }));
-    this.surface.preview(
+    const follow = followersForMatrix(
+      this.surface,
       strokes.map((s) => s.id),
-      moved,
+      matrix,
     );
+    this.surface.preview([...strokes.map((s) => s.id), ...follow.remove], [...moved, ...follow.add]);
     this.showBlocks(matrix);
     this.place();
   }
@@ -258,7 +268,8 @@ class FrameView implements SelectionFrame {
       before.push(block);
       layer?.upsert({ ...block, frame: edit.frame ?? undefined });
     }
-    const saved = await this.surface.transform(ids, matrix, edits);
+    const follow = followersForMatrix(this.surface, ids, matrix);
+    const saved = await this.surface.transform(ids, matrix, edits, follow);
     if (!saved) for (const block of before) layer?.upsert(block);
     this.place();
   }
