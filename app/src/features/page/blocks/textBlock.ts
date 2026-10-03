@@ -11,6 +11,7 @@ import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { PagePool } from '../pool/pool';
 import { pageView } from '../runtime';
+import { blockLaidOut } from '../seams/geometry';
 import { attachTextSync } from '../sync';
 import type { PendingInsert, TextSyncHandle } from '../sync';
 import layoutStyles from '../layout/layout.module.css';
@@ -156,6 +157,7 @@ class TextBlockView implements LazyBlockView {
     this.doc ??= parseTextBlock(this.markdown);
     renderStatic(this.doc, this.editRoot);
     this.editRoot.style.minBlockSize = '';
+    blockLaidOut(this.block.id);
   }
 
   update(next: BlockJson): void {
@@ -215,6 +217,7 @@ class TextBlockView implements LazyBlockView {
 
   private readonly onUpdate = () => {
     this.touched = true;
+    blockLaidOut(this.block.id);
   };
 
   private readonly onBlur = () => {

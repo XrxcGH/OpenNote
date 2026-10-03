@@ -142,7 +142,7 @@ function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
   shownFitWidth.set(() => mounted.flow.fitWidth());
   shownQueue.set(mounted.sync);
   shownPool.set(mounted.pool);
-  setGeometrySource((block) => mounted.layer.view(block)?.element ?? null);
+  setGeometrySource((block) => mounted.layer.view(block)?.element ?? null, mounted.viewport);
   return () => {
     if (shownQueue.get() !== mounted.sync) return;
     shownQueue.set(null);
