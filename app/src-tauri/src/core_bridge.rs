@@ -349,14 +349,17 @@ impl CoreBridge {
     }
 }
 
-/// The notes folder that settings name, if setup has chosen one.
+/// The notes folder that settings name, if setup has chosen one. A test build asked for the sample library uses
+/// the folder setup proposes until then.
 pub(crate) fn notes_folder(app: &AppHandle) -> Option<PathBuf> {
-    app.state::<SettingsStore>()
+    let chosen = app
+        .state::<SettingsStore>()
         .get()
         .storage
         .notes_folder
         .filter(|folder| !folder.is_empty())
-        .map(PathBuf::from)
+        .map(PathBuf::from);
+    chosen.or_else(|| crate::notes::migrate::seeding().then(|| app.state::<Paths>().documents.join("OpenNote")))
 }
 
 /// Runs a notes command for the app: its events go to the window, in the notes folder from settings.

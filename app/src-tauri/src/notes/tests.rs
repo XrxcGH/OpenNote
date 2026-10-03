@@ -619,3 +619,38 @@ fn a_beta_one_profile_moves_into_notebooks_once_with_a_backup() {
         .join(format!("{} (2)", crate::notes::migrate::BACKUP_DIR))
         .exists());
 }
+
+#[test]
+fn the_sample_library_of_test_builds_matches_the_fixture() {
+    let lib = Lib::new();
+    let folder = lib.notes.clone();
+    lib.bridge
+        .notes(Some(folder.clone()), |bridge| {
+            crate::notes::migrate::make_library(bridge, &folder, crate::notes::migrate::SAMPLE)
+                .map_err(|error| crate::ipc::IpcError::new("io", error))
+        })
+        .expect("the samples");
+    assert_eq!(
+        lib.titles(None),
+        ["Biology 101", "Work", "Personal", "Recipes", "Travel"]
+    );
+    let biology = lib.ok("notes_list_notebooks", json!({}))[0]["id"]
+        .as_str()
+        .expect("an id")
+        .to_owned();
+    assert_eq!(lib.titles(Some(&biology)), ["Lectures", "Labs", "Exam prep"]);
+    let lectures = lib.ok("notes_list_children", json!({ "parentId": biology }))[0]["id"]
+        .as_str()
+        .expect("an id")
+        .to_owned();
+    assert_eq!(
+        lib.titles(Some(&lectures)),
+        [
+            "Cell structure:0",
+            "Membranes:1",
+            "Mitosis:0",
+            "Meiosis:0",
+            "Photosynthesis:0"
+        ]
+    );
+}

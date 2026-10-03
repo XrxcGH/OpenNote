@@ -223,6 +223,47 @@ fn migrate(bridge: &mut Bridge, root: &Path, folder: Option<&Path>) -> Result<Re
     Ok(report)
 }
 
+/// The sample library of development and test builds (app/src/services/notes/fixtures.ts, `sample`).
+pub(crate) const SAMPLE: &str = include_str!("sample.json");
+
+/// The environment variable that asks a development or test build to start an empty library with the samples.
+pub const SEED_VARIABLE: &str = "OPENNOTE_NOTES_SEED";
+
+/// Makes the sample library in `folder` when a development or end-to-end test build asks for it with
+/// `OPENNOTE_NOTES_SEED=sample` and the library is empty, as the in-memory service's dev channel did.
+pub(crate) fn seed_sample(bridge: &mut Bridge, folder: &Path) {
+    if !seeding() || !bridge.core.library().notebooks.is_empty() {
+        return;
+    }
+    if let Err(error) = make_library(bridge, folder, SAMPLE) {
+        ::log::warn!("Couldn't make the sample library: {error}");
+    }
+}
+
+/// Whether this is a development or test build that was asked for the sample library.
+pub(crate) fn seeding() -> bool {
+    let asked = std::env::var(SEED_VARIABLE).is_ok_and(|seed| seed == "sample");
+    asked && (cfg!(debug_assertions) || cfg!(feature = "test-endpoints"))
+}
+
+/// Makes the notebooks of snapshot-shaped JSON in `folder`.
+pub(crate) fn make_library(bridge: &mut Bridge, folder: &Path, json: &str) -> Result<Report, String> {
+    let snapshot: Snapshot = serde_json::from_str(json).map_err(|e| e.to_string())?;
+    fs::create_dir_all(folder).map_err(|e| e.to_string())?;
+    let mut migration = Migration {
+        bridge,
+        folder: folder.to_path_buf(),
+        old: None,
+        map: BTreeMap::new(),
+        made: HashMap::new(),
+        report: Report::default(),
+    };
+    for notebook in &snapshot.notebooks {
+        migration.notebook(notebook).map_err(|e| e.to_string())?;
+    }
+    Ok(migration.report)
+}
+
 impl Migration<'_> {
     fn notebook(&mut self, node: &SnapNode) -> Result<NotebookHandle, CoreError> {
         let title = clean_title(&node.title, "Untitled notebook");

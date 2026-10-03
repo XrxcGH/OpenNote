@@ -215,6 +215,7 @@ impl Bridge {
             ::log::warn!("Couldn't keep the notes folder in the library: {error}");
         }
         self.open_folder_notebooks(&folder);
+        migrate::seed_sample(self, &folder);
     }
 
     /// Opens every notebook of the library whose folder is there.

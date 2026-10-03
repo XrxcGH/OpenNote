@@ -228,7 +228,9 @@ export async function launchApp(options: LaunchOptions = {}): Promise<AppSession
     if (!options.profileDir) rmSync(profileDir, { recursive: true, force: true });
   };
   const stamp = Date.now();
-  const env = { ...process.env, OPENNOTE_PROFILE_DIR: profileDir, ...options.env };
+  // The core keeps the notes, so a ready profile asks the test build for the sample library in its notes folder.
+  const seed = options.profile === 'fresh' ? {} : { OPENNOTE_NOTES_SEED: 'sample' };
+  const env = { ...process.env, OPENNOTE_PROFILE_DIR: profileDir, ...seed, ...options.env };
   const { driver, port } = await startDriver(found.tauriDriver, found.edgeDriver, env, stamp);
   let browser: Browser;
   try {
