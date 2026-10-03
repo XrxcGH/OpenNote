@@ -91,7 +91,28 @@ type Phase6FlagId =
   | 'pages.laser'
   | 'pages.syllables';
 /** Smart tables, charts, math, and the study tool windows (Phases 7 and 10). */
-type ExprFlagId = 'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows';
+type ExprFlagId =
+  'tables.smart' | 'tables.charts' | 'math.latex' | 'math.grapher' | 'math.actions' | 'tools.windows' | QolFlagId;
+/** The quality-of-life flags of the tables, math, study, and tools lane (features/tools/flags.ts). */
+type QolFlagId =
+  | 'tables.calculated'
+  | 'tables.views'
+  | 'tables.chartTable'
+  | 'math.quickMath'
+  | 'math.notes'
+  | 'math.diagrams'
+  | 'math.mindMaps'
+  | 'study.cards'
+  | 'study.import'
+  | 'study.tape'
+  | 'tools.converter'
+  | 'tools.reference'
+  | 'tools.dictionary'
+  | 'tools.exams'
+  | 'tools.timetable'
+  | 'tools.dueDates'
+  | 'tools.reminders'
+  | 'tools.citations';
 /** Phase 8's flags: search, links, linked pages, and tags. Their definitions are in features/search/flags.ts. */
 type Phase8FlagId = 'search.panel' | 'search.switcher' | 'search.links' | 'search.backlinks' | 'search.tags';
 /** Phase 12's flags, which features/intel/flags.ts defines. */

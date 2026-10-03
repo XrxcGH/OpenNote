@@ -2,7 +2,8 @@
 // focus last, in the column with the caret.
 import type { ChartKind, ColumnType, TotalKind } from '../engine';
 import { focusedSmart } from './attach';
-import { addChart, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
+import { calculatedColumn } from './calculated';
+import { addChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import type { FilterMode } from './ops';
 
 export type SmartCommand =
@@ -12,7 +13,9 @@ export type SmartCommand =
   | { run: 'format'; type: ColumnType | null }
   | { run: 'decimals'; by: 1 | -1 }
   | { run: 'total'; total: TotalKind | null }
-  | { run: 'chart'; kind: ChartKind };
+  | { run: 'chart'; kind: ChartKind }
+  | { run: 'calculated' }
+  | { run: 'clearCalculated' };
 
 /** Runs a command on the table with focus. False when there is none or the command had nothing to do. */
 export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
@@ -34,5 +37,9 @@ export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
       return setTotal(inst, column, command.total);
     case 'chart':
       return addChart(inst, command.kind);
+    case 'calculated':
+      return calculatedColumn(inst, column);
+    case 'clearCalculated':
+      return clearCalculated(inst, column);
   }
 }

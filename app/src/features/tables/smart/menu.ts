@@ -3,7 +3,9 @@
 import { t } from '../../../strings/t';
 import type { MenuItemSpec } from '../../../ui';
 import type { ChartKind, ColumnType, TotalKind } from '../engine';
-import { addChart, changeChart, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
+import { isEnabled } from '../../../app/flags';
+import { addChart, changeChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
+import { calculatedColumn } from './calculated';
 import type { ColumnSmart } from './data';
 import type { SmartInstance } from './ops';
 
@@ -159,10 +161,25 @@ export function dataMenu(inst: SmartInstance): MenuItemSpec[] {
     filterItem(ctx),
     formatItem(ctx),
     totalItem(ctx),
+    ...(isEnabled('tables.calculated')
+      ? [
+          {
+            id: 'calculated',
+            label: t('smart.calculated.menu'),
+            separatorBefore: true,
+            onSelect: run(() => calculatedColumn(inst, column)),
+          },
+          {
+            id: 'clearCalculated',
+            label: t('smart.calculated.clear'),
+            onSelect: run(() => clearCalculated(inst, column)),
+          },
+        ]
+      : []),
     {
       id: 'fillDown',
       label: t('smart.table.fillDown'),
-      separatorBefore: true,
+      separatorBefore: !isEnabled('tables.calculated'),
       onSelect: run(() => fill(inst, 'down')),
     },
     { id: 'fillRight', label: t('smart.table.fillRight'), onSelect: run(() => fill(inst, 'right')) },

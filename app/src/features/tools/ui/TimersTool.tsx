@@ -7,6 +7,7 @@ import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
 import { createTimers, restoreTimerSet, systemClock } from '../timers';
 import type { TimerConfig, TimerKind, TimerView, Timers } from '../timers';
+import { showNotice } from './notify';
 import { loadStored, saveStored } from './storage';
 import styles from './tools.module.css';
 
@@ -178,6 +179,7 @@ export function TimersTool() {
       if (view.status === 'done' && !finished.current.has(view.id)) {
         finished.current.add(view.id);
         announce(t('smart.tools.timers.finished', { name: view.label }));
+        showNotice(t('study.reminders.timer'), view.label);
       } else if (view.status !== 'done') finished.current.delete(view.id);
     }
   });

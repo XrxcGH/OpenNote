@@ -16,7 +16,7 @@ export {
 } from './date';
 export type { CivilDate, ClockTime, Due, Weekday } from './date';
 export { classifyDue, groupUpcoming } from './group';
-export type { GroupContext, GroupOptions, UpcomingGroupId, UpcomingGroups, UpcomingItem } from './group';
+export type { GroupContext, GroupOptions, Repeat, UpcomingGroupId, UpcomingGroups, UpcomingItem } from './group';
 export { parseIcs } from './ics';
 export type { IcsCalendar, IcsComponent } from './ics';
 export { MAX_OCCURRENCES, icsToItems } from './icsItems';
@@ -25,3 +25,17 @@ export type { DateRange } from './recurrence';
 export { findDue, parseDue } from './parseDue';
 export type { FoundDue, ParseContext, ParseFailure, ParseResult } from './parseDue';
 export { dateIn, dueAt, dueInstant, isValidTimeZone, toInstant, wallTime } from './zone';
+export {
+  classesOn,
+  clockText,
+  daysLeft,
+  examsAhead,
+  followingItem,
+  isRepeat,
+  minutesOfText,
+  nextClass,
+  nextDue,
+  planIcsImport,
+  updateFromFile,
+} from './productivity';
+export type { ClassSlot, Exam, IcsPlan } from './productivity';

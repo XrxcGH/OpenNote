@@ -21,7 +21,8 @@ import { appLocale } from './locale';
 import { chartMenu, dataMenu, CHART_KINDS } from './menu';
 import type { SmartModel } from './model';
 import { buildModel } from './model';
-import { filterBy, removeChart } from './ops';
+import { changeChart, chooseView, filterBy, removeChart, setCellText } from './ops';
+import { autoSummary, factsOf } from './ChartAccess';
 import type { Range, SmartInstance } from './ops';
 
 const SETTLE_MS = 120;
@@ -71,13 +72,19 @@ function chartItems(model: SmartModel, smart: SmartData, locale: ReturnType<type
       chart.title ??
       (spec ? t('smart.chart.defaultTitle', { values: names, category: spec.data.xName }) : kindName(chart.kind));
     const points = spec?.data.series[0]?.points.length ?? 0;
+    const facts = spec ? factsOf(chart.kind, spec) : null;
+    const automatic = facts
+      ? autoSummary(facts, kindName(chart.kind), title)
+      : t('smart.chart.summary', { kind: kindName(chart.kind), title, count: points });
     return {
       id: chart.id,
       kind: chart.kind,
       title,
       spec,
       patterns: chart.patterns === true,
-      summary: t('smart.chart.summary', { kind: kindName(chart.kind), title, count: points }),
+      summary: chart.summary ?? automatic,
+      automatic,
+      custom: chart.summary !== undefined,
     };
   });
 }
@@ -177,6 +184,17 @@ class SmartTable implements SmartInstance, TableExtraHandle {
       clearFilter: () => void filterBy(this, 'clear'),
       chartMenu: (id, anchor) => void this.openChartMenu(id, anchor),
       removeChart: (id) => void removeChart(this, id),
+      chartSummary: (id, text) => void changeChart(this, id, { summary: text ?? undefined }),
+      views: this.host.flag('tables.views')
+        ? {
+            model: shown,
+            locale: this.locale,
+            view: smart.view,
+            choose: (view) => void chooseView(this, view),
+            setCell: (row, column, text) => setCellText(this, row, column, text),
+            announce: (text) => this.host.announce(text),
+          }
+        : null,
     };
     this.root.render(createElement(Chrome, props));
   }

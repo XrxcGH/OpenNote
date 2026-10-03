@@ -32,14 +32,33 @@ export interface ChartSmart {
   stacked?: boolean;
   patterns?: boolean;
   title?: string;
+  /** The words that describe the chart, when the person wrote their own instead of the automatic summary. */
+  summary?: string;
   /** Data rows (counted from 0 without the header) the chart reads, or all of them. */
   rows?: { from: number; to: number };
+}
+
+export type ViewKind = 'board' | 'calendar' | 'gallery' | 'timeline';
+export const VIEW_KINDS: readonly ViewKind[] = ['board', 'calendar', 'gallery', 'timeline'];
+
+/** Another way to look at the table: which view, and the columns it reads, by ID. Without one, the table shows. */
+export interface ViewSmart {
+  kind: ViewKind;
+  /** The column that sorts cards into lanes on a board. */
+  group?: string;
+  /** The column of dates for a calendar, or the start of a timeline. */
+  date?: string;
+  /** The end date of a timeline. */
+  end?: string;
+  /** The column whose text names each card. */
+  title?: string;
 }
 
 export interface SmartData {
   columns: Record<string, ColumnSmart>;
   filters: FilterSmart[];
   charts: ChartSmart[];
+  view?: ViewSmart;
 }
 
 export const EMPTY_SMART: SmartData = Object.freeze({ columns: {}, filters: [], charts: [] }) as SmartData;
@@ -76,11 +95,21 @@ function readChart(raw: unknown): ChartSmart | null {
   if (typeof raw.stacked === 'boolean') chart.stacked = raw.stacked;
   if (typeof raw.patterns === 'boolean') chart.patterns = raw.patterns;
   if (typeof raw.title === 'string') chart.title = raw.title.slice(0, 200);
+  if (typeof raw.summary === 'string' && raw.summary.trim() !== '') chart.summary = raw.summary.slice(0, 1000);
   const rows = raw.rows;
   if (isRecord(rows) && Number.isInteger(rows.from) && Number.isInteger(rows.to)) {
     chart.rows = { from: rows.from as number, to: rows.to as number };
   }
   return chart;
+}
+
+function readView(raw: unknown): ViewSmart | null {
+  if (!isRecord(raw) || !VIEW_KINDS.includes(raw.kind as ViewKind)) return null;
+  const view: ViewSmart = { kind: raw.kind as ViewKind };
+  for (const key of ['group', 'date', 'end', 'title'] as const) {
+    if (typeof raw[key] === 'string' && raw[key] !== '') view[key] = raw[key];
+  }
+  return view;
 }
 
 /** Reads `data.smart`, ignoring whatever it cannot understand and keeping the rest. */
@@ -102,12 +131,17 @@ export function readSmart(data: Record<string, unknown> | undefined): SmartData 
     return [filter];
   });
   const charts = (Array.isArray(raw.charts) ? raw.charts : []).flatMap((value) => readChart(value) ?? []);
-  return { columns, filters, charts };
+  const view = readView(raw.view);
+  return { columns, filters, charts, ...(view ? { view } : {}) };
 }
 
 /** The merge patch that stores `smart`: the whole object, or null when nothing is left. */
 export function smartPatch(smart: SmartData): Record<string, unknown> {
-  const empty = Object.keys(smart.columns).length === 0 && smart.filters.length === 0 && smart.charts.length === 0;
+  const empty =
+    Object.keys(smart.columns).length === 0 &&
+    smart.filters.length === 0 &&
+    smart.charts.length === 0 &&
+    smart.view === undefined;
   return { smart: empty ? null : smart };
 }
 
@@ -118,6 +152,7 @@ export function pruneSmart(smart: SmartData, columnIds: readonly string[]): Smar
     columns: Object.fromEntries(Object.entries(smart.columns).filter(([id]) => keep.has(id))),
     filters: smart.filters.filter((filter) => keep.has(filter.column)),
     charts: smart.charts,
+    ...(smart.view ? { view: smart.view } : {}),
   };
 }
 

@@ -34,6 +34,7 @@ import { audio } from './audio';
 import { interop } from './interop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
+import { study } from './study';
 
 export const en = {
   common,
@@ -70,4 +71,5 @@ export const en = {
   interop,
   intel,
   pageExtras,
+  study,
 } as const;
