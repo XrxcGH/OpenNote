@@ -19,10 +19,15 @@
     gap: var(--space-4);
   }
 
+  /* Positioned, so the visually hidden table heads stay inside the scroller instead of stretching the dialog. The
+     height leaves room for the dialog's title, filter and Close button in a short window: 344 px is the title bar
+     40, the dialog layer's padding 32, the dialog's padding and border 50, the title 28, the description 22, the
+     filter row 76, the actions 32, and four 16 px gaps. */
   .scroll {
+    position: relative;
     display: grid;
     gap: var(--space-6);
-    max-block-size: 55vh;
+    max-block-size: min(55vh, calc(100dvh - 344px));
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-inline-end: var(--space-2);
