@@ -3,6 +3,7 @@
 // and Enter apply it as one command; Remove takes the link off and keeps the words; Escape closes it.
 import type { Editor } from '@tiptap/core';
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { runEditorCommand } from '../../../editor/commands/catalog';
 import { linkAt, normalizeHref } from '../../../editor/commands/links';
@@ -15,6 +16,8 @@ export interface LinkPopoverProps {
   editor: Editor;
   anchor: HTMLElement;
   onClose(): void;
+  /** Ends holding the keys typed while the popover loaded, and returns them for the address field. */
+  typed?: () => string;
 }
 
 /** What the address field says is wrong, or undefined when it can be saved. */
@@ -46,14 +49,21 @@ function useLinkForm(editor: Editor, onClose: () => void) {
   return { existing, href, setHref, text, setText, showsText, error, save, remove };
 }
 
-export function LinkPopover({ editor, anchor, onClose }: LinkPopoverProps) {
+export function LinkPopover({ editor, anchor, onClose, typed }: LinkPopoverProps) {
   const { existing, href, setHref, text, setText, showsText, error, save, remove } = useLinkForm(editor, onClose);
   const anchorRef = useRef<HTMLElement | null>(anchor);
   const form = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    form.current?.querySelector('input')?.focus();
-  }, []);
+    const field = form.current?.querySelector('input');
+    field?.focus();
+    const early = typed?.();
+    if (field && early) {
+      // Into the field at once, so keys that arrive before React renders again follow these.
+      field.value += early;
+      setHref(field.value);
+    }
+  }, [typed, setHref]);
 
   return (
     <Popover anchor={anchorRef} label={t('editor.link.dialog')} open onClose={onClose}>
@@ -112,7 +122,7 @@ function selectionAnchor(editor: Editor): HTMLElement {
 }
 
 /** Opens the popover over the editor's selection. Resolves when it closes; focus goes back to the text. */
-export function openLinkPopover(editor: Editor): Promise<void> {
+export function openLinkPopover(editor: Editor, typed?: () => string): Promise<void> {
   const anchor = selectionAnchor(editor);
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
@@ -129,6 +139,7 @@ export function openLinkPopover(editor: Editor): Promise<void> {
         resolve();
       });
     };
-    root.render(<LinkPopover editor={editor} anchor={anchor} onClose={close} />);
+    // Mounted before this returns, so the keys held while the chunk loaded reach the field before any more arrive.
+    flushSync(() => root.render(<LinkPopover editor={editor} anchor={anchor} onClose={close} typed={typed} />));
   });
 }

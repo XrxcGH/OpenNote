@@ -32,6 +32,8 @@ import styles from './content.module.css';
 interface PluginValue {
   folded: readonly number[];
   decorations: DecorationSet;
+  /** Fold nodes the last change touched, whose buttons may need their names updated. */
+  touched: readonly number[];
 }
 
 /** The name a fold button and its announcements use: the heading's or item's own words. */
@@ -65,6 +67,9 @@ function toggle(view: EditorView, host: EditorHost, pos: number): void {
   host.announce(isFolded ? t('editor.fold.expanded', { name }) : t('editor.fold.folded', { name, count }));
 }
 
+const buttonLabel = (node: PMNode, kind: FoldKind, folded: boolean) =>
+  t(folded ? 'editor.fold.expand' : 'editor.fold.collapse', { name: foldName(node, kind) });
+
 function button(host: EditorHost, node: PMNode, kind: FoldKind, folded: boolean) {
   return (view: EditorView, getPos: () => number | undefined): HTMLElement => {
     const element = document.createElement('button');
@@ -72,9 +77,8 @@ function button(host: EditorHost, node: PMNode, kind: FoldKind, folded: boolean)
     element.className = styles.foldButton;
     element.contentEditable = 'false';
     element.tabIndex = -1;
-    const name = foldName(node, kind);
     element.setAttribute('aria-expanded', String(!folded));
-    element.setAttribute('aria-label', t(folded ? 'editor.fold.expand' : 'editor.fold.collapse', { name }));
+    element.setAttribute('aria-label', buttonLabel(node, kind, folded));
     element.dataset.folded = String(folded);
     element.addEventListener('pointerdown', (event) => event.preventDefault());
     element.addEventListener('click', () => {
@@ -94,7 +98,9 @@ function widgetFor(host: EditorHost, doc: PMNode, pos: number, folded: ReadonlyS
   const on = folded.has(pos);
   return Decoration.widget(kind === 'heading' ? pos : pos + 1, button(host, node, kind, on), {
     side: -1,
-    key: `fold:${kind}:${on}:${foldName(node, kind)}`,
+    // No name in the key: typing in a heading or item keeps its button, and relabel() renames it. A new button on
+    // every key restyled and relaid the whole note, several ms a key in a long outline.
+    key: `fold:${kind}:${on}`,
     ignoreSelection: true,
     stopEvent: () => true,
     fold: true,
@@ -186,7 +192,7 @@ function update(
   previous: DecorationSet,
   folded: readonly number[],
   extra: Iterable<number> = [],
-): DecorationSet {
+): Omit<PluginValue, 'folded'> {
   const doc = tr.doc;
   let set = previous.map(tr.mapping, doc);
   const targets = tr.docChanged ? touched(tr) : new Set<number>();
@@ -203,7 +209,23 @@ function update(
     if (widget) fresh.push(widget);
   }
   set = set.remove(stale);
-  return set.add(doc, fresh);
+  return { decorations: set.add(doc, fresh), touched: [...targets] };
+}
+
+/** Renames the buttons of the fold nodes a change touched, in place, when their words changed. */
+function relabel(view: EditorView, positions: readonly number[]): void {
+  const folded = foldKey.getState(view.state)?.folded ?? [];
+  for (const pos of positions) {
+    const node = view.state.doc.nodeAt(pos);
+    const kind = foldableAt(view.state.doc, pos);
+    const dom = view.nodeDOM(pos);
+    if (!node || !kind || !(dom instanceof HTMLElement)) continue;
+    // A heading's button sits just before it; a list item's sits inside it, first.
+    const element = kind === 'heading' ? dom.previousElementSibling : dom.firstElementChild;
+    if (!element?.classList.contains(styles.foldButton)) continue;
+    const label = buttonLabel(node, kind, folded.includes(pos));
+    if (element.getAttribute('aria-label') !== label) element.setAttribute('aria-label', label);
+  }
 }
 
 function apply(host: EditorHost, tr: Transaction, value: PluginValue, state: EditorState): PluginValue {
@@ -215,11 +237,11 @@ function apply(host: EditorHost, tr: Transaction, value: PluginValue, state: Edi
       ...set.filter((pos) => !value.folded.includes(pos)),
       ...value.folded.filter((pos) => !set.includes(pos)),
     ];
-    return { folded: set, decorations: update(host, tr, value.decorations, set, flipped) };
+    return { folded: set, ...update(host, tr, value.decorations, set, flipped) };
   }
   if (!tr.docChanged) {
     rememberFolds(state.doc, value.folded);
-    return value;
+    return value.touched.length ? { ...value, touched: [] } : value;
   }
   const folded = value.folded
     .map((pos) => tr.mapping.mapResult(pos, 1))
@@ -227,7 +249,7 @@ function apply(host: EditorHost, tr: Transaction, value: PluginValue, state: Edi
     .map((result) => result.pos)
     .filter((pos) => foldableAt(state.doc, pos) !== null);
   rememberFolds(state.doc, folded);
-  return { folded, decorations: update(host, tr, value.decorations, folded) };
+  return { folded, ...update(host, tr, value.decorations, folded) };
 }
 
 function foldingPlugin(host: EditorHost): Plugin<PluginValue> {
@@ -236,7 +258,7 @@ function foldingPlugin(host: EditorHost): Plugin<PluginValue> {
     state: {
       init: (_config, state) => {
         rememberFolds(state.doc, []);
-        return { folded: [], decorations: build(host, state.doc, []) };
+        return { folded: [], decorations: build(host, state.doc, []), touched: [] };
       },
       apply: (tr, value, _old, state) => apply(host, tr, value, state),
     },
@@ -258,6 +280,8 @@ function foldingPlugin(host: EditorHost): Plugin<PluginValue> {
       view.dom.dispatchEvent(new CustomEvent(FOLDS_REQUEST_EVENT, { bubbles: true, detail: request }));
       return {
         update(_view, previous) {
+          const value = foldKey.getState(view.state) as unknown as PluginValue | undefined;
+          if (value && value !== (foldKey.getState(previous) as unknown)) relabel(view, value.touched);
           const before = foldKey.getState(previous)?.folded;
           const now = foldKey.getState(view.state)?.folded;
           if (before === now || !now) return;

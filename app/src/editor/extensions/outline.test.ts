@@ -81,6 +81,25 @@ describe('folding', () => {
     expect(page.root.querySelector('li')?.hasAttribute('aria-expanded')).toBe(false);
   });
 
+  it('keeps each button while its heading or item is typed in, and renames it', () => {
+    const page = mount('## Light[]\n\nText\n\n- item\n  - child');
+    const [heading, item] = buttons(page);
+    page.editor.commands.insertContent(' reactions');
+    let itemAt = -1;
+    page.editor.state.doc.descendants((node, pos) => {
+      if (itemAt < 0 && node.type.name === 'listItem') itemAt = pos;
+    });
+    // The end of "item": the item, its paragraph, then four letters.
+    page.editor.commands.setTextSelection(itemAt + 6);
+    page.editor.commands.insertContent('s');
+    expect(buttons(page)[0]).toBe(heading);
+    expect(buttons(page)[1]).toBe(item);
+    expect(buttons(page).map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Collapse Light reactions',
+      'Collapse items',
+    ]);
+  });
+
   it('hides the section when folded, announces it, and shows it again', () => {
     const page = mount('## Light reactions\n\nOne\n\nTwo\n\n## Next');
     buttons(page)[0].click();

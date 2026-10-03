@@ -1,6 +1,6 @@
 # ADR 0020: The typed notes editor
 
-- Status: Proposed
+- Status: Proposed. The 20-page note types within 16 ms on the Surface Laptop Studio 2 ([docs/perf/phase-4.md](../perf/phase-4.md)); the reference laptop run, the outline, and the owner's approval remain
 - Date: 2026-10-02
 
 ## Context

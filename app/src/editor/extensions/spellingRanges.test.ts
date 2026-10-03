@@ -79,6 +79,18 @@ describe('spelling highlights', () => {
     expect(highlights.ranges(element).map(String)).toEqual(['recieve']);
   });
 
+  it('keeps the ranges that typing moved with the text, so the page is not repainted', () => {
+    const highlights = new SpellingHighlights();
+    const element = paragraph('a teh cat');
+    highlights.refresh(element, service({ 'a teh cat': [{ start: 2, length: 3 }] }), false);
+    const [before] = highlights.ranges(element);
+    (element.firstChild as Text).insertData(0, 'big ');
+    highlights.refresh(element, service({}), false);
+    expect(highlights.ranges(element)).toEqual([before]);
+    expect(highlights.ranges(element)[0]).toBe(before);
+    expect(String(before)).toBe('teh');
+  });
+
   it('leaves the word at the caret alone until the caret leaves it', () => {
     const highlights = new SpellingHighlights();
     const element = paragraph('a teh');

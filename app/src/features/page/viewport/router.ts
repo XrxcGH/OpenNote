@@ -150,12 +150,19 @@ export function createRouter(host: RouterHost): () => void {
     (entry.owner ? [entry.owner] : entry.watchers).forEach((tool) => tool.cancel?.(ctx));
   };
 
+  const lost = (event: PointerEvent) => {
+    // Touch and pen pointers start captured by what they pressed. Moving the capture to the viewport takes it from
+    // that element, which fires lostpointercapture there: no reason to stop, or a touch pan would end at once.
+    if (event.target !== (host.captureElement ?? host.element)) return;
+    cancel(event);
+  };
+
   const handlers: Record<(typeof EVENTS)[number], (event: PointerEvent) => void> = {
     pointerdown: down,
     pointermove: move,
     pointerup: up,
     pointercancel: cancel,
-    lostpointercapture: cancel,
+    lostpointercapture: lost,
   };
   for (const type of EVENTS) host.element.addEventListener(type, handlers[type], { capture: true });
   return () => {

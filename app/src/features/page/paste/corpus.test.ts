@@ -19,7 +19,8 @@ const ROOT = [resolve('tests/fixtures/clipboard'), resolve('../tests/fixtures/cl
 const update = !!process.env.UPDATE_CORPUS;
 
 function tableMarkdown(table: TableData): string {
-  const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  // A backslash is escaped with the pipe, or one before a pipe would read as that pipe's escape.
+  const cell = (text: string) => text.replace(/[\\|]/g, '\\$&').replace(/\n/g, ' ');
   const lines = table.rows.map(
     (row) => `| ${table.columns.map((column) => cell(row.cells[column.id]?.markdown ?? '')).join(' | ')} |`,
   );

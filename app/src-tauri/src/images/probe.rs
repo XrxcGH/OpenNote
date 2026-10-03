@@ -247,7 +247,13 @@ mod tests {
         ] {
             let bytes = fixture(name);
             let raw = header::read(header::sniff(&bytes), &bytes).map(|raw| (raw.width, raw.height));
-            assert_eq!(super::super::wic::frame_size(&bytes), raw, "{name}");
+            let wic = super::super::wic::frame_size(&bytes);
+            // Windows ships the WebP decoder as an optional extension, which a CI runner may lack. No codec is no
+            // answer, not a disagreement, so only an answer is compared.
+            if wic.is_none() && name.ends_with(".webp") {
+                continue;
+            }
+            assert_eq!(wic, raw, "{name}");
         }
     }
 }

@@ -16,10 +16,12 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 ## Quality
 
 - [CHECKS.md](CHECKS.md): the quality gate every file change must pass, with its rules and settings.
+- [testing/keyboard-and-screen-reader.md](testing/keyboard-and-screen-reader.md): the checklist a person runs at each phase exit and before each beta, with a screen reader and no mouse.
+- [perf/phase-4.md](perf/phase-4.md): how Phase 4's typing speed was measured, the numbers, and what is still over budget.
 
 ## Decisions
 
-- [adr/README.md](adr/README.md): the architecture decision records (ADRs), with how to write one and the list of decisions so far.
+- [adr/README.md](adr/README.md): the architecture decision records (ADRs), with how to write one and the list of decisions so far, including Phase 4's typed notes decisions (0020 to 0026).
 
 ## File format
 
@@ -28,6 +30,10 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 ## Releasing
 
 - [RELEASING.md](RELEASING.md): the maintainer guide to signing keys, version numbers, cutting a release, and rolling one back.
+
+## Help
+
+- [help/moving-between-blocks.md](help/moving-between-blocks.md): the keys that move between text, images, tables, and code on a page, for the user guide.
 
 ## Elsewhere in the repository
 

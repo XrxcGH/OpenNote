@@ -97,6 +97,34 @@ export function turnIntoItems(current: BlockKind | null): MenuItemSpec[] {
   return BLOCK_KINDS.map((kind) => radio(kind, t(KIND_TITLES[kind]), current === kind));
 }
 
+/**
+ * Holds what is typed while a popover loads. Without it, the first letters of an address typed straight after
+ * Ctrl+K reach the text and replace the selected words. The popover takes the letters into its field.
+ */
+function holdTyping(): () => string {
+  let held = '';
+  const hold = (event: KeyboardEvent) => {
+    if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+    if (event.key.length === 1) held += event.key;
+    else if (event.key === 'Backspace') held = held.slice(0, -1);
+    else if (event.key !== 'Enter') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  const stop = () => window.removeEventListener('keydown', hold, { capture: true });
+  window.addEventListener('keydown', hold, { capture: true });
+  // Typing is never held for long, even if the popover never opens.
+  const timer = setTimeout(stop, 2_000);
+  let released = false;
+  return () => {
+    clearTimeout(timer);
+    stop();
+    if (released) return '';
+    released = true;
+    return held;
+  };
+}
+
 async function chooseAndRun(editor: Editor, id: string, args: EditorCommandArgs): Promise<void> {
   if (id === 'format.textColor' && args.color === undefined) {
     const current = textColorAt(editor.state);
@@ -116,8 +144,13 @@ async function chooseAndRun(editor: Editor, id: string, args: EditorCommandArgs)
     return;
   }
   if (id === 'format.link' && args.href === undefined) {
-    const { openLinkPopover } = await import('../linkPopover/LinkPopover');
-    return openLinkPopover(editor);
+    const typed = holdTyping();
+    try {
+      const { openLinkPopover } = await import('../linkPopover/LinkPopover');
+      return await openLinkPopover(editor, typed);
+    } finally {
+      typed();
+    }
   }
   runEditorCommand(editor, id, args);
 }

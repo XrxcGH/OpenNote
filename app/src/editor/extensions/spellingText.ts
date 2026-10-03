@@ -92,6 +92,16 @@ function supportsHighlights(): boolean {
   return typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight !== 'undefined';
 }
 
+const sameRanges = (a: readonly Range[], b: readonly Range[]) =>
+  a.length === b.length &&
+  a.every(
+    (range, i) =>
+      range.startContainer === b[i].startContainer &&
+      range.startOffset === b[i].startOffset &&
+      range.endContainer === b[i].endContainer &&
+      range.endOffset === b[i].endOffset,
+  );
+
 /** The page's squiggles, by textblock element. */
 export class SpellingHighlights {
   private readonly entries = new Map<Element, Entry>();
@@ -111,10 +121,17 @@ export class SpellingHighlights {
 
   /** Shows `errors` over the element's text, skipping the guarded word. */
   show(element: Element, extracted: TextblockText, errors: readonly SpellRange[], waiting = false): void {
-    this.drop(element);
     const guard = this.guard?.element === element ? this.guard.offset : -1;
     const shown = errors.filter((error) => guard < error.start || guard > error.start + error.length);
     const ranges = shown.flatMap((error) => rangeOver(extracted, error.start, error.length) ?? []);
+    // Typing moves the live ranges with the text, so they usually match already. Changing a highlight's ranges
+    // repaints the whole page in Chromium, 17 ms a key with 200 squiggles in view, so unchanged ones stay put.
+    const old = this.entries.get(element);
+    if (old && sameRanges(old.ranges, ranges)) {
+      this.entries.set(element, { text: extracted.text, errors, ranges: old.ranges, waiting });
+      return;
+    }
+    this.drop(element);
     const highlight = this.registry();
     ranges.forEach((range) => highlight?.add(range));
     this.entries.set(element, { text: extracted.text, errors, ranges, waiting });
