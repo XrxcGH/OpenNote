@@ -14,6 +14,7 @@ import { createBlockLayer } from './blocks/blockLayer';
 import { markDraft, syncOf } from './blocks/textBlock';
 import type { BlockLayer } from './blocks/types';
 import { createEditorHost } from './editorHost';
+import { attachPageMedia } from './images/attach';
 import { createEditorPool, shownPool } from './pool/pool';
 import type { StaticPool } from './pool/pool';
 import { blockLaidOut, setGeometrySource } from './seams/geometry';
@@ -111,7 +112,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     order: 10,
     run: () => sync.flushAll('exit').then(() => ({ ok: true }) as const),
   });
-  return {
+  const mounted: MountedPage = {
     page,
     viewport,
     layer,
@@ -121,6 +122,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     host,
     async destroy() {
       stopExit();
+      detachMedia();
       await sync.flushAll('pageSwitch').catch(() => undefined);
       layer.destroy();
       viewport.destroy();
@@ -133,4 +135,6 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
       await page.close().catch(() => undefined);
     },
   };
+  const detachMedia = attachPageMedia(mounted, container, shown);
+  return mounted;
 }
