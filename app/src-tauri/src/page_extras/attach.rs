@@ -40,8 +40,35 @@ pub const SAVED_EVENT: &str = "attachment://saved";
 
 /// Types that run code when opened. They can be attached and kept, but not opened from a note.
 const BLOCKED: &[&str] = &[
-    "exe", "com", "scr", "pif", "bat", "cmd", "msi", "msp", "ps1", "psm1", "vbs", "vbe", "js", "jse", "wsf", "wsh",
-    "hta", "lnk", "url", "reg", "dll", "cpl", "jar", "appx", "msix", "gadget", "inf", "scf", "application",
+    "exe",
+    "com",
+    "scr",
+    "pif",
+    "bat",
+    "cmd",
+    "msi",
+    "msp",
+    "ps1",
+    "psm1",
+    "vbs",
+    "vbe",
+    "js",
+    "jse",
+    "wsf",
+    "wsh",
+    "hta",
+    "lnk",
+    "url",
+    "reg",
+    "dll",
+    "cpl",
+    "jar",
+    "appx",
+    "msix",
+    "gadget",
+    "inf",
+    "scf",
+    "application",
 ];
 
 #[derive(Debug, Deserialize)]
@@ -290,7 +317,14 @@ mod tests {
         for name in ["setup.EXE", "run.bat", "a.ps1", "shortcut.lnk", "x.JS"] {
             assert!(is_blocked(name), "{name}");
         }
-        for name in ["notes.docx", "sheet.xlsx", "slides.pptx", "scan.pdf", "readme", "archive.zip"] {
+        for name in [
+            "notes.docx",
+            "sheet.xlsx",
+            "slides.pptx",
+            "scan.pdf",
+            "readme",
+            "archive.zip",
+        ] {
             assert!(!is_blocked(name), "{name}");
         }
     }

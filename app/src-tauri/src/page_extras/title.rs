@@ -122,7 +122,10 @@ mod tests {
     #[test]
     fn reads_the_title_and_cleans_it() {
         let html = b"<html><head><TITLE lang=en>\n  Mitosis &amp; meiosis &#8211; Biology\n</TITLE></head>";
-        assert_eq!(title_from_html(html).as_deref(), Some("Mitosis & meiosis \u{2013} Biology"));
+        assert_eq!(
+            title_from_html(html).as_deref(),
+            Some("Mitosis & meiosis \u{2013} Biology")
+        );
     }
 
     #[test]
@@ -140,6 +143,9 @@ mod tests {
     #[test]
     fn a_long_title_is_cut() {
         let html = format!("<title>{}</title>", "a".repeat(500));
-        assert_eq!(title_from_html(html.as_bytes()).unwrap().chars().count(), MAX_TITLE_CHARS);
+        assert_eq!(
+            title_from_html(html.as_bytes()).unwrap().chars().count(),
+            MAX_TITLE_CHARS
+        );
     }
 }

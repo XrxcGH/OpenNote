@@ -266,7 +266,7 @@ class TextBlockView implements LazyBlockView, LiveText {
     const parts: string[] = [];
     if (counting) parts.push(t('pageExtras.checklist.count', { done, total }));
     if (mode === 'hide' && done > 0) parts.push(t('pageExtras.checklist.hidden', { count: done }));
-    this.setDoneLine(parts.length > 0 ? parts.join(' · ') : null, mode === 'hide' && done > 0);
+    this.setDoneLine(parts.length > 0 ? parts.join(' Â· ') : null, mode === 'hide' && done > 0);
   }
 
   private setDoneLine(text: string | null, toggle = false): void {
