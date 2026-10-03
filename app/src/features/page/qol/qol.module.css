@@ -198,6 +198,22 @@
     font-size: var(--type-note-size);
   }
 
+  /* The pick lists in the Merge pages dialog. */
+  .pickList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 18rem;
+    overflow: auto;
+  }
+
+  .pickRow {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-2) var(--space-1);
+  }
+
   /* The Markdown source view. */
   .source {
     position: relative;

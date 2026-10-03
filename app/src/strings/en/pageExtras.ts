@@ -140,6 +140,31 @@ export const pageExtras = {
     untitled: 'Series',
     carry: 'Carry unfinished checkboxes forward in a new page in a series',
   },
+  extract: {
+    command: 'Extract selection to a new page',
+    keywords: 'extract move selection new page link split out',
+    nothingSelected: 'Select some text first.',
+    untitled: 'Extracted text',
+    done: 'Moved the text to “{title}” and left a link.',
+  },
+  merge: {
+    command: 'Merge pages',
+    keywords: 'merge join combine pages headings',
+    dialogTitle: 'Merge pages',
+    dialogDescription: 'Pick the pages in this section to join into a new page. Each title becomes a heading.',
+    action: '{count, plural, one {Merge # page} other {Merge # pages}}',
+    title: '{first} and {count, plural, one {# more} other {# more}}',
+    done: 'Joined {count} pages into a new page.',
+  },
+  split: {
+    command: 'Split page at headings',
+    keywords: 'split page headings sections separate pages',
+    none: 'This page has no headings to split at.',
+    untitled: 'Untitled section',
+    done: '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}}',
+    doneSkipped:
+      '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}} {skipped, plural, one {# image or drawing stays on this page.} other {# images and drawings stay on this page.}}',
+  },
   altDraft: {
     button: 'Use text from the image',
     help: 'Reads the words in the image on this device and adds them as a draft to edit.',

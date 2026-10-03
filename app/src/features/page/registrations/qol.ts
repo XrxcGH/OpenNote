@@ -215,6 +215,36 @@ register({
   when: shown,
   run: () => void templates().then((module) => module.newPageInSeries()),
 });
+// Extract, merge, and split.
+const extract = () => import('../extract/commands');
+register({
+  id: 'page.extractSelection',
+  title: 'pageExtras.extract.command',
+  keywords: 'pageExtras.extract.keywords',
+  category: 'editing',
+  scope: 'editor',
+  flag: 'page.extractMerge',
+  when: () => targetEditor() !== null,
+  run: () => void extract().then((module) => module.extractSelection()),
+});
+register({
+  id: 'page.mergePages',
+  title: 'pageExtras.merge.command',
+  keywords: 'pageExtras.merge.keywords',
+  category: 'notebooks',
+  flag: 'page.extractMerge',
+  when: shown,
+  run: () => void extract().then((module) => module.mergePages()),
+});
+register({
+  id: 'page.splitAtHeadings',
+  title: 'pageExtras.split.command',
+  keywords: 'pageExtras.split.keywords',
+  category: 'notebooks',
+  flag: 'page.extractMerge',
+  when: shown,
+  run: () => void extract().then((module) => module.splitPage()),
+});
 pageCreated.register({
   id: 'qol.templates',
   order: 5,
