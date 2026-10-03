@@ -16,7 +16,7 @@ export { reparseRange } from './reparse';
 export type { PastedPiece } from './paste';
 export { looksLikeMarkdown, parsePastedMarkdown } from './paste';
 export type { ParseRequest, ParseResponse } from './worker';
-export { parseInWorker } from './worker';
+export { MAIN_THREAD_PARSE_LIMIT, parseInWorker } from './worker';
 export { escapeParagraphText, PARAGRAPH, TITLE } from './escape';
 export { serializeInline } from './inline';
 export { createMarkdown, buildDoc } from './parse';
