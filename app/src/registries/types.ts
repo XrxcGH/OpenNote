@@ -168,6 +168,16 @@ export interface ShortcutListSectionDef {
 }
 
 /**
+ * Where print and export (Phase 6) read a page's handwriting. Phase 5's ink view registers one for the shown page, so
+ * neither feature imports the other.
+ */
+export interface ExportInkSource {
+  readonly id: string;
+  /** The page's live strokes as ink segment records (format spec 8.3), or null when this source doesn't hold it. */
+  records(pageId: string): Promise<Uint8Array | null>;
+}
+
+/**
  * What a beforeExit hook answers. A refusal can carry `message`, a sentence the hook built, in place of the reason
  * key's text. It can also offer `closeAnyway`, which makes the hook let the next close through at the cost of what
  * it protects. The toast then has a "Close anyway" action, so a refusal that can't clear itself, such as notes

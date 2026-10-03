@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { CHANNEL_PRESSURE, encodePoints, encodeRecords } from '../../../core/ink/codec';
-import { exportStrokeSources } from '../../pages';
+import { exportInkSources } from '../../../registries';
 import { registerExportStrokes } from './exportSource';
 import type { InkSurface } from './surface';
 
@@ -42,22 +42,17 @@ afterEach(() => {
   stop = null;
 });
 
-describe('ink as an export stroke source', () => {
-  it('gives export the shown page’s strokes in page units', async () => {
+describe('ink as an export ink source', () => {
+  it('gives export the shown page’s strokes as segment records', async () => {
     stop = registerExportStrokes(() => surfaceFor(PAGE));
-    const [source] = exportStrokeSources.list();
-    const [stroke] = await source!.strokes(PAGE);
-    expect(stroke).toMatchObject({ block: LAYER, tool: 2, color: [255, 220, 0, 128], width: 12 });
-    expect(Array.from(stroke!.x)).toEqual([10, 20]);
-    expect(Array.from(stroke!.y)).toEqual([20, 30]);
-    expect(Array.from(stroke!.pressure ?? [])).toEqual([1, 0]);
+    expect(await exportInkSources.list()[0]!.records(PAGE)).toEqual(records());
   });
 
   it('gives nothing for a page that isn’t shown, or with no page shown', async () => {
     stop = registerExportStrokes(() => surfaceFor(PAGE));
-    expect(await exportStrokeSources.list()[0]!.strokes('01k6f00000000000000000p002')).toEqual([]);
+    expect(await exportInkSources.list()[0]!.records('01k6f00000000000000000p002')).toBeNull();
     stop();
     stop = registerExportStrokes(() => null);
-    expect(await exportStrokeSources.list()[0]!.strokes(PAGE)).toEqual([]);
+    expect(await exportInkSources.list()[0]!.records(PAGE)).toBeNull();
   });
 });

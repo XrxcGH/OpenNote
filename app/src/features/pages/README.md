@@ -39,7 +39,7 @@ Phase 6's screen and shell side lives in the folders `host`, `live`, `ui`, and `
 
 The shell side is `app/src-tauri/src/page_export.rs`: `print_prepare`, `print_render`, `print_close`, `export_pick_save`, `export_write`, and `export_open`. A PDF is made by `PrintToPdf` on a hidden second window, and a save goes through the Windows Save dialog.
 
-Handwriting reaches export through `exportStrokeSources` in `host/strokes.ts`. Phase 5's ink feature registers a source that returns a page's live strokes; until then a page exports without ink.
+Handwriting reaches export through the app's `exportInkSources` registry, which `host/strokes.ts` reads. Phase 5's ink view registers a source that returns the shown page's live strokes as segment records, and export decodes them into page units.
 
 ## Not built yet
 

@@ -1,20 +1,21 @@
-// Where export gets a page's handwriting. The pages feature doesn't know how ink is stored: Phase 5's ink feature
-// registers a source that returns the live strokes of a page in page units, and export draws them as vector shapes.
-import { createRegistry } from '../../../registries';
-import type { ExportStroke } from '../export';
+// Where export gets a page's handwriting. The pages feature doesn't know how ink is kept: Phase 5's ink view registers
+// an export ink source (registries) that returns a page's live strokes as segment records, and export decodes them
+// into page units and draws them as vector shapes.
+import { decodeRecords } from '../../../core/ink/codec';
+import { exportInkSources } from '../../../registries';
+import { exportStrokes, type ExportStroke } from '../export';
 
-export interface ExportStrokeSource {
-  readonly id: string;
-  /** The strokes of one page, as they are now. */
-  strokes(pageId: string): Promise<readonly ExportStroke[]>;
-}
-
-export const exportStrokeSources = createRegistry<ExportStrokeSource>('export stroke sources');
-
-/** Every registered source's strokes for a page. A source that fails leaves its strokes out. */
+/** Every registered source's strokes for a page. A source that fails, or holds records that can't be read, adds none. */
 export async function collectStrokes(pageId: string): Promise<ExportStroke[]> {
   const lists = await Promise.all(
-    exportStrokeSources.list().map((source) => source.strokes(pageId).catch(() => [] as readonly ExportStroke[])),
+    exportInkSources.list().map(async (source) => {
+      try {
+        const records = await source.records(pageId);
+        return records ? exportStrokes(decodeRecords(records, { verify: false })) : [];
+      } catch {
+        return [];
+      }
+    }),
   );
   return lists.flat();
 }

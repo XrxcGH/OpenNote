@@ -14,5 +14,3 @@ export * from './reading';
 export * from './selection';
 export * from './slides';
 export * from './zoom';
-export { exportStrokeSources } from './host/strokes';
-export type { ExportStrokeSource } from './host/strokes';
