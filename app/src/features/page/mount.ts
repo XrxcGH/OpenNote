@@ -19,12 +19,17 @@ import type { StaticPool } from './pool/pool';
 import { blockLaidOut, setGeometrySource } from './seams/geometry';
 import { acceptRemoteText, createSyncQueue, shownQueue } from './sync';
 import type { FrameContext, SyncQueue } from './sync';
+import { clampZoom, fitWidthZoom, zoomPercent } from './viewport/camera';
+import { shownFitWidth } from './viewport/shown';
 import { createViewport, shownViewport } from './viewport/viewport';
-import type { PageViewportApi } from './viewport/viewport';
+import type { PageViewport } from './viewport/viewport';
+import layoutStyles from './layout/layout.module.css';
+import { pageView, savePageView } from './runtime';
+import { t } from '../../strings/t';
 
 export interface MountedPage {
   readonly page: OpenPage;
-  readonly viewport: PageViewportApi;
+  readonly viewport: PageViewport;
   readonly layer: BlockLayer;
   readonly pool: StaticPool;
   readonly sync: SyncQueue;
@@ -81,14 +86,72 @@ function draftTextBlock(): BlockJson {
   return markDraft(block, { block: { id, type: 'text' } });
 }
 
+/** The flow column: every block wrapper, in reading order. Floating blocks inside it sit at their frames. */
+function createFlow(viewport: PageViewport): { flow: HTMLElement; stop(): void } {
+  const flow = viewport.world.ownerDocument.createElement('div');
+  flow.className = layoutStyles.flow;
+  viewport.world.append(flow);
+  let frame = 0;
+  // The world grows in the next frame: growing it from the observer would make the observer loop.
+  const observer = new ResizeObserver(() => {
+    frame ||= requestAnimationFrame(() => {
+      frame = 0;
+      viewport.setContent({ w: flow.offsetLeft + flow.offsetWidth, h: flow.offsetTop + flow.offsetHeight });
+    });
+  });
+  observer.observe(flow);
+  return {
+    flow,
+    stop() {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    },
+  };
+}
+
+/** Puts the page back where it was last shown on this device, and remembers where it is when it settles. */
+function followView(page: OpenPage, viewport: PageViewport): () => void {
+  const saved = pageView(page.id);
+  if (saved) {
+    const zoom = clampZoom(saved.zoom);
+    const seen = viewport.camera().viewport;
+    viewport.zoomAt(zoom, { x: seen.x, y: seen.y }, 'commandZoom');
+    // Blocks below the viewport may not have their heights yet, so the world makes room for the saved place first.
+    viewport.setContent({ w: (saved.scrollX + seen.w) / zoom, h: (saved.scrollY + seen.h) / zoom });
+    viewport.scrollTo(saved.scrollX, saved.scrollY);
+  }
+  const stopCamera = viewport.onCamera((camera) => {
+    if (camera.gesture) return;
+    savePageView(page.id, { scrollX: camera.scrollX, scrollY: camera.scrollY, zoom: camera.zoom });
+  });
+  const stopGesture = viewport.onGesture((phase, kind) => {
+    if (phase !== 'end' || (kind !== 'pinch' && kind !== 'wheelZoom')) return;
+    announce(t('page.zoom.announce', { percent: zoomPercent(viewport.camera().zoom) }));
+  });
+  return () => {
+    stopCamera();
+    stopGesture();
+  };
+}
+
+/** The zoom that fits the widest content, at least the flow column, to the viewport. */
+function fitWidth(viewport: PageViewport, flow: HTMLElement): number {
+  let right = flow.offsetLeft + flow.offsetWidth;
+  for (const element of flow.children) {
+    if (element instanceof HTMLElement) right = Math.max(right, element.offsetLeft + element.offsetWidth);
+  }
+  return fitWidthZoom(right + flow.offsetLeft, viewport.camera().viewport.w);
+}
+
 export function mountPage(container: HTMLElement, page: OpenPage, options: MountOptions): MountedPage {
   const cache = createMarkdownCache();
   const viewport = createViewport(container, options.classNames);
+  const { flow, stop: stopFlow } = createFlow(viewport);
   const pool = createEditorPool();
   const host = createEditorHost(options.host);
   const frames = frameContext(pool, () => layer, options);
   const sync = createSyncQueue({ page, cache, frames, announce });
-  const layer = createBlockLayer(viewport.world, {
+  const layer = createBlockLayer(flow, {
     page,
     host,
     viewport,
@@ -99,9 +162,11 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   });
   layer.apply(page.initial);
   if (!page.readOnly && !page.initial.blocks.some((block) => block.type === 'text')) layer.upsert(draftTextBlock());
+  const stopView = followView(page, viewport);
   const shown = options.shown ?? true;
   if (shown) {
     shownViewport.set(viewport);
+    shownFitWidth.set(() => fitWidth(viewport, flow));
     shownQueue.set(sync);
     shownPool.set(pool);
     setGeometrySource((block) => layer.view(block)?.element ?? null);
@@ -122,12 +187,15 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     async destroy() {
       stopExit();
       await sync.flushAll('pageSwitch').catch(() => undefined);
+      stopView();
+      stopFlow();
       layer.destroy();
       viewport.destroy();
       if (shown && shownQueue.get() === sync) {
         shownQueue.set(null);
         shownPool.set(null);
         shownViewport.set(null);
+        shownFitWidth.set(null);
         setGeometrySource(null);
       }
       await page.close().catch(() => undefined);

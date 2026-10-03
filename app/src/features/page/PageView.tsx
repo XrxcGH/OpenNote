@@ -42,22 +42,28 @@ export function PageView() {
   const { page, loading } = usePage(location.view === 'workspace' ? location.pageId : null);
   const heading = useRef<HTMLHeadingElement>(null);
   const showProgress = useDelayedFlag(loading);
-  const zoom = usePageZoom(page?.id ?? null);
   const editing = useFlag('page.editor');
+  const shown = editing && page !== null;
+  const zoom = usePageZoom(shown ? null : (page?.id ?? null));
   useEffect(() => registerRegionMain('page', () => heading.current), []);
+  const titleBlock = (
+    <>
+      <h1 ref={heading} tabIndex={-1} className={styles.title}>
+        {page ? titleOf(page) : t('tree.page.noneTitle')}
+      </h1>
+      {page && <p className={styles.changed}>{t('tree.page.changed', { date: formatDate(page.modified) })}</p>}
+    </>
+  );
   return (
     <article
-      className={styles.page}
+      className={shown ? styles.editing : styles.page}
       data-scope="page"
       aria-busy={loading || undefined}
       style={zoom === 100 ? undefined : { zoom: zoom / 100 }}
     >
       {showProgress && <ProgressBar label={t('tree.loading.page')} />}
-      <h1 ref={heading} tabIndex={-1} className={styles.title}>
-        {page ? titleOf(page) : t('tree.page.noneTitle')}
-      </h1>
-      {page && <p className={styles.changed}>{t('tree.page.changed', { date: formatDate(page.modified) })}</p>}
-      {page && editing && (
+      {shown ? <header className={styles.header}>{titleBlock}</header> : titleBlock}
+      {shown && (
         <Suspense fallback={null}>
           <PageBody key={page.id} pageId={page.id} />
         </Suspense>

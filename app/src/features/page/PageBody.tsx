@@ -7,7 +7,7 @@ import { mountPage } from './mount';
 import styles from './PageView.module.css';
 import { pagesClient } from './runtime';
 
-const LAYERS = { viewport: styles.viewport, world: styles.world, underlay: styles.underlay };
+const LAYERS = { viewport: '', world: '', underlay: '' };
 
 export default function PageBody({ pageId }: { pageId: string }) {
   const host = useRef<HTMLDivElement>(null);

@@ -6,6 +6,7 @@ export const page = {
     in: 'Zoom page in',
     out: 'Zoom page out',
     reset: 'Actual page size',
+    fitWidth: 'Fit page to width',
     keywords: 'zoom page magnify bigger smaller scale',
     announce: 'Page zoom {percent} percent.',
   },
