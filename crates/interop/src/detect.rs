@@ -92,6 +92,8 @@ pub struct Detected {
     pub zipped: bool,
     /// What to do instead, when the source cannot be imported.
     pub advice: Option<String>,
+    /// Whether the file is locked with a password, which the import needs.
+    pub needs_password: bool,
 }
 
 const ONENOTE_ADVICE: &str = "OneNote keeps notebooks in its own binary files, which OpenNote cannot open yet. In \
@@ -110,6 +112,7 @@ pub fn detect(path: &Path) -> Result<Detected> {
     let ext = extension(path);
     match ext.as_str() {
         "zip" => detect_zip(path),
+        "opennote" => detect_share(path),
         "one" | "onepkg" | "onetoc2" => Ok(onenote_files()),
         "sqlite" | "sqlite3" | "db" => detect_database(path),
         "snt" => Err(InteropError::unsupported(file_name(path), STICKY_ADVICE)),
@@ -143,6 +146,23 @@ fn detect_database(path: &Path) -> Result<Detected> {
     ))
 }
 
+/// A shared OpenNote file: a ZIP archive of Markdown notes, or the same locked with a password.
+fn detect_share(path: &Path) -> Result<Detected> {
+    if starts_with(path, crate::lock::MAGIC) {
+        return Ok(Detected {
+            kind: SourceKind::Markdown,
+            label: "Shared OpenNote file (locked)".to_owned(),
+            supported: true,
+            zipped: true,
+            advice: None,
+            needs_password: true,
+        });
+    }
+    let mut found = detect_zip(path)?;
+    found.label = "Shared OpenNote file".to_owned();
+    Ok(found)
+}
+
 fn onenote_files() -> Detected {
     Detected {
         kind: SourceKind::OneNoteFile,
@@ -150,6 +170,7 @@ fn onenote_files() -> Detected {
         supported: false,
         zipped: false,
         advice: Some(ONENOTE_ADVICE.to_owned()),
+        needs_password: false,
     }
 }
 
@@ -160,6 +181,7 @@ fn detected(kind: SourceKind, label: impl Into<String>) -> Detected {
         supported: true,
         zipped: false,
         advice: None,
+        needs_password: false,
     }
 }
 
@@ -359,6 +381,7 @@ fn detect_zip(path: &Path) -> Result<Detected> {
             supported: true,
             zipped: false,
             advice: None,
+            needs_password: false,
         });
     }
     let markdown_or_csv = survey.count(&["md", "markdown", "csv"]);
@@ -383,6 +406,7 @@ fn detect_zip(path: &Path) -> Result<Detected> {
             supported: true,
             zipped: true,
             advice: None,
+            needs_password: false,
         }),
         None => Err(InteropError::unsupported(
             file_name(path),
@@ -426,7 +450,7 @@ const LEFTOVER_AGE: Duration = Duration::from_secs(12 * 60 * 60);
 ///
 /// It first deletes the temporary folders of earlier imports that were killed before they could.
 pub fn prepare(path: &Path, control: &Control) -> Result<Prepared> {
-    if !path.is_file() || extension(path) != "zip" {
+    if !path.is_file() || !matches!(extension(path).as_str(), "zip" | "opennote") {
         return Ok(Prepared {
             root: path.to_path_buf(),
             skipped: Vec::new(),

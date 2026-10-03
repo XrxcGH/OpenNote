@@ -4,7 +4,7 @@
 //! Both send progress events through the control in the [`ImportEnv`] and stop when it is canceled.
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use opennote_core::model::{NotebookFile, SectionFile};
 use opennote_core::store::layout::NotebookLayout;
@@ -26,7 +26,7 @@ use crate::sink::{with_sink, ImportEnv, ImportSink, ImportedPage};
 use crate::tree::SectionBuilder;
 
 /// What to import and how.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ImportOptions {
     /// The kind of source, when the person chose it. `None` detects it.
     pub kind: Option<SourceKind>,
@@ -34,6 +34,8 @@ pub struct ImportOptions {
     pub word_pages: WordPages,
     /// Whether to add an "Import report" page to the notebook that summarizes what was lost.
     pub report_page: bool,
+    /// The password of a locked shared file.
+    pub password: Option<String>,
 }
 
 /// Imports a file, folder, or ZIP archive into a new notebook and returns the report.
@@ -68,6 +70,8 @@ fn run(path: &Path, options: &ImportOptions, env: &ImportEnv<'_>, sink: &mut dyn
         return Err(InteropError::unsupported(found.label, why));
     }
     env.control.checkpoint()?;
+    let unlocked = unlock_share(path, &found, options)?;
+    let path = unlocked.as_ref().map_or(path, |u| u.path.as_path());
     let prepared = prepare(path, &env.control)?;
     with_sink(sink, |sink| {
         let mut deferred = Deferred {
@@ -92,7 +96,33 @@ fn fallback(kind: SourceKind) -> Detected {
         supported: true,
         zipped: false,
         advice: None,
+        needs_password: false,
     }
+}
+
+/// A locked shared file, opened into a temporary file that goes away with this value.
+struct Unlocked {
+    _dir: tempfile::TempDir,
+    path: PathBuf,
+}
+
+/// Opens a locked shared file with the password in the options. `None` when the file is not locked.
+fn unlock_share(path: &Path, found: &Detected, options: &ImportOptions) -> Result<Option<Unlocked>> {
+    if !found.needs_password {
+        return Ok(None);
+    }
+    let Some(password) = options.password.as_deref().filter(|p| !p.is_empty()) else {
+        return Err(InteropError::unsupported(
+            found.label.clone(),
+            "Type the password to open this file.",
+        ));
+    };
+    let bytes = std::fs::read(path).map_err(|e| InteropError::io(path, e))?;
+    let plain = crate::lock::unlock(password, &bytes)?;
+    let dir = tempfile::tempdir().map_err(|e| InteropError::io(std::env::temp_dir(), e))?;
+    let out = dir.path().join(path.file_name().unwrap_or_default());
+    std::fs::write(&out, plain).map_err(|e| InteropError::io(&out, e))?;
+    Ok(Some(Unlocked { _dir: dir, path: out }))
 }
 
 fn dispatch(
@@ -209,6 +239,23 @@ pub fn preview(path: &Path, options: &ImportOptions, env: &ImportEnv<'_>) -> Res
         Some(kind) => fallback(kind),
         None => detect(path)?,
     };
+    if detected.needs_password && options.password.as_deref().is_none_or(str::is_empty) {
+        // A locked file shows nothing before the password is typed.
+        let title = path
+            .file_stem()
+            .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+        return Ok(Preview {
+            report: Report::new(crate::report::ReportKind::Import, detected.label.clone()),
+            detected,
+            notebook_title: title,
+            sections: Vec::new(),
+            pages: 0,
+            blocks: 0,
+            assets: 0,
+            asset_bytes: 0,
+            losses: Vec::new(),
+        });
+    }
     let what = format!(
         "Check {}",
         path.file_name()

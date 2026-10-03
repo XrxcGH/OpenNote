@@ -21,6 +21,7 @@ pub mod frontmatter;
 pub mod html;
 pub mod import;
 pub mod job;
+pub mod lock;
 pub mod page_builder;
 pub mod palette;
 pub mod report;
@@ -39,7 +40,7 @@ pub use disk::{DiskSink, DiskSource};
 pub use error::{InteropError, Result};
 pub use export::{
     export_docx, export_docx_with, export_files, export_files_with, export_html_single, export_pdf_bundle, export_pptx,
-    export_tables, Exported, Format, NoPdfRenderer, PdfRenderer, Scope, TableFormat,
+    export_share, export_tables, Exported, Format, NoPdfRenderer, PdfRenderer, Scope, TableFormat,
 };
 pub use import::{
     import_csv, import_docx, import_docx_with, import_eml, import_enex, import_enex_reader, import_highlights,
