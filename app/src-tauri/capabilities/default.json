@@ -150,6 +150,11 @@
     "allow-intel-read-aloud-start",
     "allow-intel-read-aloud-next",
     "allow-intel-read-aloud-cancel",
-    "allow-intel-clip-audio"
+    "allow-intel-clip-audio",
+    "allow-page-extras-caret",
+    "allow-page-extras-link-title",
+    "allow-attachment-import",
+    "allow-attachment-open",
+    "allow-attachment-stop"
   ]
 }

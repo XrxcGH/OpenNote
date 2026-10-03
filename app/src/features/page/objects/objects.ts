@@ -9,6 +9,7 @@ import { announce, showToast } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { isFloating } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
+import { readingLock } from '../qol/stores';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import type { SyncQueue } from '../sync';
 import type { ObjectCommandId } from '../viewport/shown';
@@ -74,7 +75,7 @@ export class Objects {
   enabled(command: ObjectCommand): boolean {
     const blocks = this.selected();
     const first = blocks[0] ? this.parts.layer.block(blocks[0]) : null;
-    if (!first || this.parts.page.readOnly) return command === 'edit' && first !== null;
+    if (!first || this.parts.page.readOnly || readingLock.get()) return command === 'edit' && first !== null;
     switch (command) {
       case 'bringToFront':
       case 'sendToBack':
@@ -103,6 +104,7 @@ export class Objects {
     const blocks = this.selected();
     if (blocks.length === 0) return announce(t('page.object.nothingSelected'));
     if (command === 'edit') return this.edit(blocks[0]!);
+    if (readingLock.get()) return announce(t('pageExtras.lock.blocked'));
     if (command === 'delete') return this.remove(blocks);
     if (command === 'sizeAndPosition') return this.parts.openSizeAndPosition(blocks[0]!);
     if (command === 'lock' || command === 'lockPosition' || command === 'unlock') return this.lock(blocks, command);

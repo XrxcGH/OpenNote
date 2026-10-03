@@ -10,6 +10,7 @@ import { arrowStep, trackDrag } from '../images/drag';
 import type { Crop, Handle, Rect } from '../images/geometry';
 import { cropOf, FREEFORM_MAX_WIDTH, HANDLES, heightFor, initialSize, resizeRect } from '../images/geometry';
 import { shownImageIds } from '../images/shown';
+import { readingLock } from '../qol/stores';
 import styles from '../images/images.module.css';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import blockStyles from './blocks.module.css';
@@ -120,6 +121,7 @@ class ImageView implements BlockView, ImageHandle {
         this.render();
       }),
       pageSelection.subscribe(() => this.refreshChrome()),
+      readingLock.subscribe(() => this.refreshChrome()),
     );
     shownImages.set(this.id, this);
     shownImageIds.add(this.id);
@@ -182,7 +184,7 @@ class ImageView implements BlockView, ImageHandle {
 
   private editable(): boolean {
     const { lock } = this.current;
-    return !this.ctx.reading && !this.ctx.page.readOnly && lock !== 'all' && lock !== 'position';
+    return !this.ctx.reading && !this.ctx.page.readOnly && !readingLock.get() && lock !== 'all' && lock !== 'position';
   }
 
   private render(): void {

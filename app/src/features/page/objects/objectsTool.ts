@@ -10,6 +10,7 @@ import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { isFloating } from '../blocks/textBlock';
+import { readingLock } from '../qol/stores';
 import type { Chrome } from '../chrome/chrome';
 import type { Point } from '../viewport/camera';
 import type { PointerToolDef, RouterContext } from '../viewport/router';
@@ -63,7 +64,7 @@ class ObjectsTool implements PointerToolDef {
   constructor(private readonly parts: ObjectsToolParts) {}
 
   accepts(event: PointerEvent, ctx: RouterContext): boolean {
-    if (ctx.activeTool !== 'select' || event.button !== 0) return false;
+    if (ctx.activeTool !== 'select' || event.button !== 0 || readingLock.get()) return false;
     if (handleOf(event)) return true;
     return event.pointerType !== 'touch' && emptyPage(event, this.parts.viewport.world);
   }

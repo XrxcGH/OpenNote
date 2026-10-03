@@ -17,6 +17,7 @@ import { createWebOs } from './os';
 import { createWebClipboard } from './clipboard';
 import { createWebExports } from './exports';
 import { createWebImages } from './images';
+import { createWebPageExtras } from './pageExtras';
 import { createWebPages } from './pages';
 import { createWebSpeech } from './speech';
 import { createWebSpelling } from './spelling';
@@ -76,6 +77,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     spelling: createWebSpelling(),
     clipboard: createWebClipboard(),
     images: createWebImages(),
+    pageExtras: createWebPageExtras(),
     exports: createWebExports(),
     audio: createWebAudio(),
     speech: createWebSpeech(),

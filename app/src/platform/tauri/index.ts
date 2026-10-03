@@ -9,6 +9,7 @@ import { createTauriInstall } from './install';
 import { createTauriInterop } from './interop';
 import { createTauriClipboard } from './clipboard';
 import { createTauriImages } from './images';
+import { createTauriPageExtras } from './pageExtras';
 import { createTauriNotesCore } from './notes';
 import { createTauriPages } from './pages';
 import { createTauriSpeech } from './speech';
@@ -45,6 +46,7 @@ export function createTauriPlatform(boot: BootData): Platform {
     spelling: createTauriSpelling(),
     clipboard: createTauriClipboard(),
     images,
+    pageExtras: createTauriPageExtras(),
     exports: createTauriExports(),
     audio: createTauriAudio(),
     speech: createTauriSpeech(),

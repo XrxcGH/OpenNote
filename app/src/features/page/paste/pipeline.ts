@@ -14,6 +14,7 @@ import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { assetTable } from '../images/assets';
+import { offerActualSize, pasteSizeChoice, sizingFor } from '../qol/pasteSize';
 import type { Placement } from '../images/insert';
 import {
   currentBlock,
@@ -281,12 +282,14 @@ async function addImages(
   place: Placement,
 ): Promise<void> {
   const { imported, linked } = await importAll(mounted, requests, facts, saveWebImages);
-  const images = imageEdits(mounted, imported, place);
+  const choice = pasteSizeChoice(mounted);
+  const images = imageEdits(mounted, imported, place, sizingFor(choice));
   const links = linked.length > 0 ? blockEdits(mounted, [imageLinks(linked)], place) : { edits: [], blocks: [] };
   const edits = [...images.edits, ...links.edits.map((edit) => afterLast(edit, images.blocks))];
   if (edits.length === 0) return;
   const ack = await mounted.sync.send({ edits });
   showInserted(mounted, edits, ack.orderKeys);
+  if (choice === 'ask') offerActualSize(mounted, images.blocks);
 }
 
 /** Runs one paste or drop on a page view. */
@@ -321,7 +324,7 @@ export async function runPaste(
     const place = request.point
       ? placementAfter(mounted, null, request.point)
       : placementAfter(mounted, blockId, undefined);
-    await insertImages(mounted, fileItems(files), place);
+    await insertImages(mounted, fileItems(files), place, pasteSizeChoice(mounted));
     return;
   }
   if (others > 0 && !request.html && !request.text) {
