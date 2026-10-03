@@ -253,6 +253,24 @@ describe('the export job', () => {
     expect(log.at(-1)).toBe('dispose');
   });
 
+  it('allows a page a little larger than the plan, because Chromium rounds up, but never a smaller one', async () => {
+    const info = await inspectPdf(buildPdf(SAMPLE));
+    const opts = { tagged: true, outline: true, background: true };
+    const sized = (dw: number, dh: number) => ({
+      ...info,
+      pages: [{ ...info.pages[0], width: 612 + dw, height: 792 + dh }],
+    });
+    const kinds = (dw: number, dh: number) =>
+      checkPdf(sized(dw, dh), PLAN(1), opts)
+        .filter((p) => p.severity === 'error')
+        .map((p) => p.kind);
+    expect(kinds(0, 0)).toEqual([]);
+    expect(kinds(0.12, 0.96)).toEqual([]);
+    expect(kinds(-0.4, 0)).toEqual([]);
+    expect(kinds(-0.6, 0)).toEqual(['pageSize']);
+    expect(kinds(0, 2)).toEqual(['pageSize']);
+  });
+
   it('finds a file that does not match the plan', async () => {
     const info = await inspectPdf(buildPdf(SAMPLE));
     const opts = { tagged: true, outline: true, background: true };

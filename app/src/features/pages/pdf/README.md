@@ -16,7 +16,7 @@ Re-exported from `features/pages`.
 
 ## What the checks find
 
-- **Errors:** the page count differs from the sheets the plan printed, or a page is not the size of the sheet box.
+- **Errors:** the page count differs from the sheets the plan printed, or a page is smaller than the sheet box by more than half a point (the content would shrink to fit) or larger by more than 1.5 points. Chromium rounds a page up to a grid of 0.96 points, so a page a little larger than its sheet is normal.
 - **Warnings:** the file has no structure tags or no language although tags were asked for, or fonts are embedded as Type 3 glyph outlines, as variable fonts become (ADR 0006, rule 3).
 
 An export that has errors is not saved without telling the person. A warning is shown in the export report.

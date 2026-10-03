@@ -63,8 +63,13 @@ export interface PdfExportResult {
 }
 
 const POINTS = 0.75;
-/** How far a page may differ from the plan, in points. Chromium rounds page sizes to hundredths of a point. */
+/**
+ * How far a page may be smaller than the plan, in points. A smaller page shrinks the content to fit (ADR 0006, rule 2).
+ * Chromium rounds a page up to its own grid, so a page may also be larger, by up to `GRID`.
+ */
 const SIZE_TOLERANCE = 0.5;
+/** The coarsest step of the sizes Chromium writes: four device pixels at 300 dpi (0.96 points), with room to spare. */
+const GRID = 1.5;
 
 function aborted(signal: AbortSignal | undefined): void {
   if (signal?.aborted) throw new DOMException('The export was stopped.', 'AbortError');
@@ -83,7 +88,8 @@ export function checkPdf(info: PdfInfo, plan: PrintPlan, options: PdfRenderOptio
   const wide = plan.box.width * POINTS;
   const tall = plan.box.height * POINTS;
   info.pages.forEach((page, i) => {
-    if (Math.abs(page.width - wide) > SIZE_TOLERANCE || Math.abs(page.height - tall) > SIZE_TOLERANCE) {
+    const off = (got: number, want: number) => want - got > SIZE_TOLERANCE || got - want > GRID;
+    if (off(page.width, wide) || off(page.height, tall)) {
       problems.push({
         kind: 'pageSize',
         severity: 'error',
