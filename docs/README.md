@@ -17,6 +17,10 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 
 - [CHECKS.md](CHECKS.md): the quality gate every file change must pass, with its rules and settings.
 
+## Performance
+
+- [perf/phase-5-core.md](perf/phase-5-core.md): the 10,000-stroke benchmark of the ink core, with its method and numbers.
+
 ## Decisions
 
 - [adr/README.md](adr/README.md): the architecture decision records (ADRs), with how to write one and the list of decisions so far.

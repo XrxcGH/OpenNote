@@ -1,7 +1,8 @@
 // The 10,000-stroke budget (DEVELOPMENT.md phase 5): hit testing and the lasso each finish in under 10 ms.
-// Each operation runs many times, so one garbage-collection pause cannot decide the result.
+// The timing helpers in ../bench.ts run each operation many times and judge it by its best run.
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { expectWithinBudget, flushResults, measure, record } from '../bench';
 import { capsulesAlong, eraseStrokes } from './erase';
 import { generatePage } from './fixtures';
 import { hitCapsules, hitPoint } from './hitTest';
@@ -11,38 +12,9 @@ import { createStrokeIndex } from './strokeIndex';
 import type { StrokeIndex } from './strokeIndex';
 
 const STROKES = 10_000;
-const BUDGET_MS = 10;
-const RUNS = 31;
-/** How many times the budget the median run may take, to allow for a busy machine. */
-const LOAD_ALLOWANCE = 3;
-/** Runs before timing starts, so the engine has compiled the code, as it has after a few pen strokes. */
-const WARMUP = 8;
+const NOTE = '10,000 strokes of 80 points';
 
-interface Timing {
-  readonly best: number;
-  readonly median: number;
-}
-
-function measure(run: (i: number) => void): Timing {
-  for (let i = 0; i < WARMUP; i++) run(i);
-  const times: number[] = [];
-  for (let i = 0; i < RUNS; i++) {
-    const started = performance.now();
-    run(WARMUP + i);
-    times.push(performance.now() - started);
-  }
-  times.sort((a, b) => a - b);
-  return { best: times[0], median: times[Math.floor(RUNS / 2)] };
-}
-
-/**
- * The best run must meet the budget, so other processes on a shared machine cannot fail the test. The median
- * must stay within a few times the budget, so a slowdown that hits every run still fails it.
- */
-function expectWithinBudget({ best, median }: Timing): void {
-  expect(best).toBeLessThan(BUDGET_MS);
-  expect(median).toBeLessThan(BUDGET_MS * LOAD_ALLOWANCE);
-}
+afterAll(() => flushResults('geometry'));
 
 describe(`a page of ${STROKES} strokes`, () => {
   const { width, height, strokes } = generatePage(STROKES, 42);
@@ -56,27 +28,34 @@ describe(`a page of ${STROKES} strokes`, () => {
     expect(index.size).toBe(STROKES);
   });
 
+  it('builds the index from the strokes', () => {
+    const timing = record(
+      'Build the stroke index',
+      measure(() => createStrokeIndex(strokes), 5, 1),
+      NOTE,
+    );
+    expect(timing.best).toBeLessThan(500);
+  });
+
   it('answers a point hit under the budget', () => {
     const took = measure((i) => hitPoint(index, { x: (i * 157) % width, y: (i * 911) % height }, 4));
-    expectWithinBudget(took);
+    expectWithinBudget(record('Point hit', took, NOTE));
   });
 
   it('answers an eraser sweep of capsules under the budget', () => {
     const took = measure((i) => {
       const from = { x: (i * 131) % width, y: (i * 719) % height };
-      const path = capsulesAlong(
-        [
-          from,
-          { x: from.x + 12, y: from.y + 4 },
-          { x: from.x + 20, y: from.y + 14 },
-          { x: from.x + 26, y: from.y + 30 },
-        ],
-        12,
-      );
+      const samples = [
+        from,
+        { x: from.x + 12, y: from.y + 4 },
+        { x: from.x + 20, y: from.y + 14 },
+        { x: from.x + 26, y: from.y + 30 },
+      ];
+      const path = capsulesAlong(samples, 12);
       hitCapsules(index, path);
       eraseStrokes(index, path);
     });
-    expectWithinBudget(took);
+    expectWithinBudget(record('Stroke eraser sweep', took, `${NOTE}, 12 unit radius`));
   });
 
   it('cuts strokes with the partial eraser under the budget', () => {
@@ -85,7 +64,7 @@ describe(`a page of ${STROKES} strokes`, () => {
       const at = { x: (i * 131) % width, y: (i * 719) % height };
       partialErase(index, capsulesAlong([at, { x: at.x + 30, y: at.y + 10 }], 8), () => `cut${next++}`);
     });
-    expectWithinBudget(took);
+    expectWithinBudget(record('Partial eraser sweep', took, `${NOTE}, 8 unit radius`));
   });
 });
 
@@ -98,7 +77,7 @@ describe(`a lasso on a page of ${STROKES} strokes`, () => {
       const top = (i * 433) % (height - 2000);
       lassoSelect(index, rectanglePath({ x: 800, y: top }, { x: width - 800, y: top + 1600 }), { pixel: 1 });
     });
-    expectWithinBudget(took);
+    expectWithinBudget(record('Lasso over a wide area', took, `${NOTE}, 2,400 by 1,600 units`));
   });
 
   it('runs as a curved loop under the budget', () => {
@@ -110,7 +89,7 @@ describe(`a lasso on a page of ${STROKES} strokes`, () => {
     const took = measure(() => {
       selected = lassoSelect(index, loop, { pixel: 1 });
     });
-    expectWithinBudget(took);
+    expectWithinBudget(record('Lasso as a curved loop', took, `${NOTE}, ${selected.length} selected`));
     expect(selected.length).toBeGreaterThan(100);
   });
 });
