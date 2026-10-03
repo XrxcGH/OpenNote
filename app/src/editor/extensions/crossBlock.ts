@@ -49,7 +49,10 @@ function neighbor(wrapper: HTMLElement, direction: -1 | 1): HTMLElement | null {
   return blocks[blocks.indexOf(wrapper) + direction] ?? null;
 }
 
-const editableIn = (wrapper: HTMLElement) => wrapper.querySelector<HTMLElement>('[contenteditable="true"]');
+// A block's editing root is editable only while its editor is mounted; before that it is the same element with the
+// textbox role, and focusing it mounts the editor.
+const editableIn = (wrapper: HTMLElement) =>
+  wrapper.querySelector<HTMLElement>('[contenteditable="true"], [role="textbox"][data-scope="editor"]');
 const isTextBlock = (wrapper: HTMLElement) =>
   editableIn(wrapper)?.getAttribute('role') === 'textbox' && !wrapper.querySelector('table');
 

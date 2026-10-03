@@ -31,7 +31,8 @@ async function open(texts: readonly string[], floating = false) {
   const fixture = blocksFixture(texts, floating);
   const page = await renderPage({ fixture });
   const ids = fixture.page.blocks.map((block) => block.id);
-  const editor = (index: number) => page.mounted.pool.editor(ids[index])!;
+  // The pool mounts editors as they are needed, so the test asks for each one it presses keys in.
+  const editor = (index: number) => page.mounted.pool.mount(ids[index], null, 'focus')!;
   return { page, ids, editor };
 }
 
@@ -94,6 +95,8 @@ describe('keys between blocks', () => {
     await page.mounted.sync.flushAll('command');
     expect(page.markdown(ids[0])).toBe('onetwo');
     const batch = page.sent().find((sent) => sent.edits.some((edit) => edit.edit === 'deleteBlocks'));
-    expect(batch?.edits.map((edit) => edit.edit)).toEqual(['setText', 'deleteBlocks']);
+    // The text goes as a splice when the core takes them, and as the whole text otherwise.
+    const textEdit: unknown = expect.stringMatching(/^(setText|spliceText)$/);
+    expect(batch?.edits.map((edit) => edit.edit)).toEqual([textEdit, 'deleteBlocks']);
   });
 });
