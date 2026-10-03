@@ -144,14 +144,46 @@ describe('errors', () => {
     await expect(platform.install.status()).rejects.toMatchObject({ code: 'notImplemented' });
   });
 
-  it('rejects the clients of later phases as notImplemented, and reports no dictation', async () => {
-    await expect(platform.pages.load('p1')).rejects.toMatchObject({ code: 'notImplemented' });
-    await expect(platform.spelling.suggest('teh', 'en-US')).rejects.toMatchObject({ code: 'notImplemented' });
-    await expect(platform.clipboard.readText()).rejects.toMatchObject({ code: 'notImplemented' });
-    await expect(platform.images.add(new Blob())).rejects.toMatchObject({ code: 'notImplemented' });
-    await expect(platform.speech.available('en-US')).resolves.toBe(false);
+  it('sends the Phase 4 clients to their commands, and has no speech client until the fallback is built', async () => {
+    answers['spell_suggest'] = ['the'];
+    await expect(platform.spelling.suggest('teh', ['en-US'])).resolves.toEqual(['the']);
+    expect(last()).toEqual({ command: 'spell_suggest', args: { word: 'teh', languages: ['en-US'] } });
+    answers['clipboard_facts'] = { code: 'notImplemented', message: 'later' };
+    await expect(platform.clipboard.facts()).rejects.toMatchObject({ code: 'notImplemented' });
+    answers['image_import_url'] = { code: 'notImplemented', message: 'later' };
+    await expect(platform.images.importUrl('p1', 'https://example.com/a.png')).rejects.toMatchObject({
+      code: 'notImplemented',
+    });
+    expect(last()).toEqual({ command: 'image_import_url', args: { page: 'p1', url: 'https://example.com/a.png' } });
+    expect(platform.speech).toBeNull();
+  });
+
+  it('opens a page through the core and sends edits with growing client sequence numbers', async () => {
+    answers['page_open'] = envelope({ page: 'p1', clientSeq: 4, readOnly: null }, { id: 'p1', title: 'T', blocks: [] });
+    answers['page_apply'] = { seq: 1, orderKeys: {}, canUndo: true, canRedo: false };
+    const page = await platform.pages.open('p1', { viewport: null });
+    expect(page.initial).toMatchObject({ id: 'p1', title: 'T', blocks: [], tags: [] });
+    await page.send({ edits: [{ edit: 'setText', block: 'b1', markdown: 'Hi' }] });
+    expect(last()).toMatchObject({ command: 'page_apply', args: { page: 'p1', client: page.client, clientSeq: 5 } });
+    answers['page_undo'] = new ArrayBuffer(0);
+    await expect(page.undo()).resolves.toBeNull();
   });
 });
+
+/** A page envelope as crates/core/src/wire/envelope.rs writes it. */
+function envelope(session: object, pageJson: object): ArrayBuffer {
+  const encode = (value: object) => new TextEncoder().encode(JSON.stringify(value));
+  const pad = (bytes: Uint8Array) => Math.ceil(bytes.length / 8) * 8;
+  const [a, b] = [encode(session), encode(pageJson)];
+  const out = new Uint8Array(24 + pad(a) + pad(b));
+  const view = new DataView(out.buffer);
+  out.set(new TextEncoder().encode('ONPE'));
+  view.setUint16(4, 1, true);
+  [a.length, b.length, 0, 0].forEach((value, i) => view.setUint32(8 + i * 4, value, true));
+  out.set(a, 24);
+  out.set(b, 24 + pad(a));
+  return out.buffer;
+}
 
 describe('events', () => {
   it('hears the events Rust emits, by name', async () => {

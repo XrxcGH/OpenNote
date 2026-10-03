@@ -2,6 +2,7 @@
 // platform/tauri implements it over Tauri commands and events. platform/web implements it with in-memory fakes,
 // so the whole interface also runs in a plain browser for development and tests.
 
+import type { ImportedAsset, PageService } from '../services/pages/types';
 import type { MessageKey } from '../strings/t';
 import type { BootData } from './bindings/BootData';
 import type { CaptionLayout } from './bindings/CaptionLayout';
@@ -77,12 +78,12 @@ export interface Platform {
   readonly install: InstallClient;
   readonly updater: UpdaterClient;
   readonly shell: ShellClient;
-  /** Page content. The shell keeps pages in memory until Phase 3 stores them. */
-  readonly pages: PageService;
+  readonly pages: PagesClient;
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
-  readonly images: ImageClient;
-  readonly speech: SpeechClient;
+  readonly images: ImagesClient;
+  /** Null unless the read-aloud fallback is built. */
+  readonly speech: SpeechClient | null;
   /** Phase 2 only, behind notes.memorySnapshot. */
   readonly notesSnapshot: NotesSnapshotClient | null;
   readonly perf: PerfClient;
@@ -168,38 +169,55 @@ export interface PerfClient {
   mark(name: PerfMark, detail?: string): void;
 }
 
-// The clients below are the seam for Phases 3 to 9. Phase 2 defines their shapes and their web fakes, and the
-// Tauri platform rejects each call with the code notImplemented until the phase that builds the host side.
-// A phase that needs more methods adds them here, with a fake and a stub, and keeps the existing ones.
+// The clients of Phase 4 (PLAN.md section 3.12, P2-10). Each has one file per platform: platform/tauri/<client>.ts
+// calls the shell's commands, and platform/web/<client>.ts is an in-memory fake. A phase that needs more methods
+// adds them here, with a fake and a wrapper, and keeps the existing ones.
 
-/** Page content as the page editor stores it, serialized. */
-export interface PageService {
-  /** The stored content, or null for a page with none yet. */
-  load(pageId: string): Promise<string | null>;
-  save(pageId: string, content: string): Promise<void>;
-}
+/** Pages through Phase 3's core: open a page, then edit it through the OpenPage (WP2). */
+export type PagesClient = PageService;
 
+/** The Windows Spell Checking API in the shell (WP7). Ranges are in UTF-16 units. */
 export interface SpellingClient {
-  /** The words that aren't in the dictionary for `language`, such as `en-US`. */
-  misspelled(words: readonly string[], language: string): Promise<string[]>;
-  suggest(word: string, language: string): Promise<string[]>;
-  addToDictionary(word: string): Promise<void>;
+  languages(): Promise<{ tag: string; name: string; isDefault: boolean }[]>;
+  check(
+    items: readonly { id: string; text: string }[],
+    languages: readonly string[],
+  ): Promise<{ id: string; errors: { start: number; length: number }[] }[]>;
+  suggest(word: string, languages: readonly string[]): Promise<string[]>;
+  addWord(word: string): Promise<void>;
+  removeWord(word: string): Promise<void>;
 }
 
+/** What the clipboard holds besides what the browser's paste event gives (WP5). */
+export interface ClipboardFacts {
+  sequence: number;
+  textSha256: string | null;
+  sourceUrl: string | null;
+  hasOneNote: boolean;
+  wordImages: { src: string; token: string }[];
+}
+export interface ClipboardContent extends ClipboardFacts {
+  html: string | null;
+  text: string | null;
+  imageBmp: ArrayBuffer | null;
+}
 export interface ClipboardClient {
-  readText(): Promise<string>;
-  writeText(text: string): Promise<void>;
+  facts(): Promise<ClipboardFacts>;
+  read(): Promise<ClipboardContent>;
 }
 
-export interface ImageClient {
-  /** Stores an image from a file, a paste, or a drop, and returns the address the page shows it from. */
-  add(image: Blob): Promise<{ id: string; url: string }>;
-  remove(id: string): Promise<void>;
+/** Image import: the shell probes each image and stores it as an asset of the page (WP5). */
+export interface ImagesClient {
+  importBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
+  importUrl(page: string, url: string): Promise<ImportedAsset>;
+  importClip(page: string, token: string): Promise<ImportedAsset>;
 }
 
+/** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */
 export interface SpeechClient {
-  /** Whether dictation can start for `language` on this device. */
-  available(language: string): Promise<boolean>;
-  /** Starts dictation. Text arrives through the listener until the returned function stops it. */
-  start(language: string, onText: (text: string, final: boolean) => void): Promise<() => void>;
+  voices(): Promise<{ id: string; name: string; language: string }[]>;
+  synthesize(
+    text: string,
+    voice: string,
+  ): Promise<{ wav: ArrayBuffer; boundaries: { ms: number; start: number; length: number }[] }>;
 }

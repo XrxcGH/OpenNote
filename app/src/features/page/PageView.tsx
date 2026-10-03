@@ -1,8 +1,10 @@
-// The Phase 2 page placeholder (ARCHITECTURE.md section 13): the open page's title as a heading that Enter in the
-// tree moves focus to, when it was last changed, and a line that says writing and drawing come later. With no
-// page open, a heading, and a prompt to choose one. Page content arrives in Phase 4.
+// The page view (ARCHITECTURE.md section 5; owner after WP0: WP3). The open page's title is a heading that Enter
+// in the tree moves focus to. With page.editor on, the page's blocks follow it in the viewport, and typing goes
+// to the core through the sync queue; with it off, the Phase 2 placeholder stays. With no page open, a quiet
+// empty state says how to start.
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useFlag } from '../../app/flags';
 import { useLocation } from '../../app/location';
 import { useNotes } from '../../services/notes';
 import type { NodeId, NodeSummary } from '../../services/notes';
@@ -11,8 +13,13 @@ import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
 import { ProgressBar, useDelayedFlag } from '../../ui';
 import { titleOf, useTreeNode } from '../tree';
+import { EmptyPageArt } from './EmptyPageArt';
+import { TitleSlot, useTitleBand } from './title/TitleSlot';
 import styles from './PageView.module.css';
 import { usePageZoom } from './zoom';
+
+/** The editor, Markdown, and sync code load in the page chunk, after start-up. */
+const PageBody = lazy(() => import('./PageBody'));
 
 /** The page from the tree store, else from the service, which happens for a page the tree hasn't listed yet. */
 function usePage(pageId: NodeId | null): { page: NodeSummary | null; loading: boolean } {
@@ -36,25 +43,46 @@ export function PageView() {
   const { page, loading } = usePage(location.view === 'workspace' ? location.pageId : null);
   const heading = useRef<HTMLHeadingElement>(null);
   const showProgress = useDelayedFlag(loading);
-  const zoom = usePageZoom(page?.id ?? null);
-  useEffect(() => registerRegionMain('page', () => heading.current), []);
+  const editing = useFlag('page.editor');
+  const shown = editing && page !== null;
+  const zoom = usePageZoom(shown ? null : (page?.id ?? null));
+  const title = page ? titleOf(page) : t('tree.page.noneTitle');
+  const changed = page ? t('tree.page.changed', { date: formatDate(page.modified) }) : null;
+  // With the editor on, the heading is the title band's. It is one element that moves into each page's world.
+  const band = useTitleBand();
+  useEffect(
+    () => registerRegionMain('page', () => heading.current ?? (shown ? band.querySelector('h1') : null)),
+    [band, shown],
+  );
   return (
     <article
-      className={styles.page}
+      className={shown ? styles.editing : styles.page}
+      data-scope="page"
       aria-busy={loading || undefined}
       style={zoom === 100 ? undefined : { zoom: zoom / 100 }}
     >
       {showProgress && <ProgressBar label={t('tree.loading.page')} />}
-      <h1 ref={heading} tabIndex={-1}>
-        {page ? titleOf(page) : t('tree.page.noneTitle')}
-      </h1>
-      {page ? (
+      {shown ? (
         <>
-          <p>{t('tree.page.changed', { date: formatDate(page.modified) })}</p>
-          <p>{t('tree.page.empty')}</p>
+          <TitleSlot band={band} title={title} changed={changed} />
+          <Suspense fallback={null}>
+            <PageBody key={page.id} pageId={page.id} title={title} changed={changed} band={band} />
+          </Suspense>
         </>
       ) : (
-        !loading && <p>{t('tree.page.none')}</p>
+        <>
+          <h1 ref={heading} tabIndex={-1} className={styles.title}>
+            {title}
+          </h1>
+          {changed && <p className={styles.changed}>{changed}</p>}
+        </>
+      )}
+      {page && !editing && <p className={styles.note}>{t('tree.page.empty')}</p>}
+      {!page && !loading && (
+        <div className={styles.empty}>
+          <EmptyPageArt />
+          <p className={styles.note}>{t('tree.page.none')}</p>
+        </div>
       )}
     </article>
   );

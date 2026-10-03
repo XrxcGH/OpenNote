@@ -1,0 +1,48 @@
+// Grammar loaders for the languages in languages.ts (owner: WP6). Each grammar is its own small chunk, which
+// loads the first time a page shows code in that language. This module is part of the lazy highlight chunk.
+import type { LanguageFn } from 'highlight.js';
+
+type Loader = () => Promise<{ default: LanguageFn }>;
+
+export const GRAMMARS: Readonly<Record<string, Loader>> = {
+  bash: () => import('highlight.js/lib/languages/bash'),
+  c: () => import('highlight.js/lib/languages/c'),
+  cpp: () => import('highlight.js/lib/languages/cpp'),
+  csharp: () => import('highlight.js/lib/languages/csharp'),
+  css: () => import('highlight.js/lib/languages/css'),
+  dart: () => import('highlight.js/lib/languages/dart'),
+  diff: () => import('highlight.js/lib/languages/diff'),
+  dockerfile: () => import('highlight.js/lib/languages/dockerfile'),
+  elixir: () => import('highlight.js/lib/languages/elixir'),
+  fsharp: () => import('highlight.js/lib/languages/fsharp'),
+  go: () => import('highlight.js/lib/languages/go'),
+  graphql: () => import('highlight.js/lib/languages/graphql'),
+  haskell: () => import('highlight.js/lib/languages/haskell'),
+  xml: () => import('highlight.js/lib/languages/xml'),
+  ini: () => import('highlight.js/lib/languages/ini'),
+  java: () => import('highlight.js/lib/languages/java'),
+  javascript: () => import('highlight.js/lib/languages/javascript'),
+  json: () => import('highlight.js/lib/languages/json'),
+  julia: () => import('highlight.js/lib/languages/julia'),
+  kotlin: () => import('highlight.js/lib/languages/kotlin'),
+  latex: () => import('highlight.js/lib/languages/latex'),
+  lua: () => import('highlight.js/lib/languages/lua'),
+  makefile: () => import('highlight.js/lib/languages/makefile'),
+  markdown: () => import('highlight.js/lib/languages/markdown'),
+  matlab: () => import('highlight.js/lib/languages/matlab'),
+  objectivec: () => import('highlight.js/lib/languages/objectivec'),
+  perl: () => import('highlight.js/lib/languages/perl'),
+  php: () => import('highlight.js/lib/languages/php'),
+  powershell: () => import('highlight.js/lib/languages/powershell'),
+  python: () => import('highlight.js/lib/languages/python'),
+  r: () => import('highlight.js/lib/languages/r'),
+  ruby: () => import('highlight.js/lib/languages/ruby'),
+  rust: () => import('highlight.js/lib/languages/rust'),
+  scala: () => import('highlight.js/lib/languages/scala'),
+  scss: () => import('highlight.js/lib/languages/scss'),
+  sql: () => import('highlight.js/lib/languages/sql'),
+  swift: () => import('highlight.js/lib/languages/swift'),
+  typescript: () => import('highlight.js/lib/languages/typescript'),
+  vbnet: () => import('highlight.js/lib/languages/vbnet'),
+  yaml: () => import('highlight.js/lib/languages/yaml'),
+};

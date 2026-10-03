@@ -1,0 +1,54 @@
+<!doctype html>
+<!--
+  Spike S1 (Phase 4 PLAN.md section 11; ADR 0023): do NVDA and Narrator report a CSS Custom Highlight of type
+  spelling-error the way they report a browser squiggle? Open this page in Edge 154 or later (WebView2 uses the same
+  engine), start the screen reader, and read the paragraph by word and by character in browse mode and in the
+  editable copy. Note whether "misspelled" (or "spelling error") is announced on "recieve" and "wich", once with the
+  highlight alone and once with the aria-invalid fallback (the checkbox). Record the result in ADR 0023.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>S1: spelling highlights and screen readers</title>
+    <style>
+      ::highlight(spelling-error) { text-decoration: underline wavy #a8342a; }
+      [aria-invalid='spelling'] { text-decoration: underline wavy #a8342a; }
+      body { font: 18px/1.5 system-ui; margin: 2rem; max-width: 40rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Spelling highlights</h1>
+    <p id="static">I recieve the mail wich comes on Monday.</p>
+    <div id="editable" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="Text">
+      <p>I recieve the mail wich comes on Monday.</p>
+    </div>
+    <label><input id="fallback" type="checkbox" /> Add the aria-invalid fallback</label>
+    <script>
+      const words = ['recieve', 'wich'];
+      function ranges(root) {
+        const out = [];
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+          for (const word of words) {
+            const at = node.data.indexOf(word);
+            if (at < 0) continue;
+            const range = document.createRange();
+            range.setStart(node, at);
+            range.setEnd(node, at + word.length);
+            out.push(range);
+          }
+        }
+        return out;
+      }
+      const highlight = new Highlight(...ranges(document.getElementById('static')), ...ranges(document.getElementById('editable')));
+      highlight.type = 'spelling-error';
+      CSS.highlights.set('spelling-error', highlight);
+      document.getElementById('fallback').addEventListener('change', (event) => {
+        const editable = document.getElementById('editable').firstElementChild;
+        editable.innerHTML = event.target.checked
+          ? 'I <span aria-invalid="spelling">recieve</span> the mail <span aria-invalid="spelling">wich</span> comes on Monday.'
+          : 'I recieve the mail wich comes on Monday.';
+      });
+    </script>
+  </body>
+</html>

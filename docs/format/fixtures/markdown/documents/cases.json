@@ -254,6 +254,200 @@
           }
         ]
       ]
+    },
+    {
+      "name": "callouts with folds",
+      "markdown": "> [!warning]- Folded with a title\n> Hidden until opened.\n\n> [!question]+\n> Open, with no title.\n\n> [!info] A list first\n>\n> - First point",
+      "document": [
+        {
+          "type": "callout",
+          "callout": "warning",
+          "fold": "folded",
+          "title": [{"text": "Folded with a title", "marks": []}],
+          "blocks": [{"type": "paragraph", "content": [{"text": "Hidden until opened.", "marks": []}]}]
+        },
+        {
+          "type": "callout",
+          "callout": "question",
+          "fold": "open",
+          "title": [],
+          "blocks": [{"type": "paragraph", "content": [{"text": "Open, with no title.", "marks": []}]}]
+        },
+        {
+          "type": "callout",
+          "callout": "info",
+          "fold": null,
+          "title": [{"text": "A list first", "marks": []}],
+          "blocks": [
+            {
+              "type": "list",
+              "ordered": false,
+              "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "First point", "marks": []}]}]}]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "every mark overlap",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": [{"link": "https://example.com"}]},
+            {"text": "two", "marks": [{"link": "https://example.com"}, "strong"]},
+            {"text": " three", "marks": ["strong"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["strong"]},
+            {"text": "two", "marks": ["strong", "emphasis"]},
+            {"text": " three", "marks": ["emphasis"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["emphasis"]},
+            {"text": "two", "marks": ["emphasis", "strike"]},
+            {"text": " three", "marks": ["strike"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["strike"]},
+            {"text": "two", "marks": ["strike", "underline"]},
+            {"text": " three", "marks": ["underline"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["underline"]},
+            {"text": "two", "marks": ["underline", "highlight"]},
+            {"text": " three", "marks": ["highlight"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["highlight"]},
+            {"text": "two", "marks": ["highlight", {"color": "brick"}]},
+            {"text": " three", "marks": [{"color": "brick"}]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": [{"color": "brick"}]},
+            {"text": "two", "marks": [{"color": "brick"}, {"size": "small"}]},
+            {"text": " three", "marks": [{"size": "small"}]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": [{"size": "small"}]},
+            {"text": "two", "marks": [{"size": "small"}, "sub"]},
+            {"text": " three", "marks": ["sub"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["sub"]},
+            {"text": "two", "marks": ["sub", "code"]},
+            {"text": " three", "marks": ["code"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["sup"]},
+            {"text": "two", "marks": ["sup", "code"]},
+            {"text": " three", "marks": ["code"]}
+          ]
+        }
+      ],
+      "markdown": "[one **two**](https://example.com)<strong> three</strong>\n\n**one *two***<em> three</em>\n\n*one ~~two~~*<del> three</del>\n\n~~one <u>two</u>~~<u> three</u>\n\n<u>one ==two==</u><mark> three</mark>\n\n==one <span data-color=\"brick\">two</span>==<span data-color=\"brick\"> three</span>\n\n<span data-color=\"brick\">one <span data-size=\"small\">two</span></span><span data-size=\"small\"> three</span>\n\n<span data-size=\"small\">one <sub>two</sub></span><sub> three</sub>\n\n<sub>one `two`</sub>` three`\n\n<sup>one `two`</sup>` three`"
+    },
+    {
+      "name": "flanking fallbacks",
+      "markdown": "a<strong>(b)</strong>c\n\n<em>\"quoted\"</em>x\n\na<del>(s)</del>c\n\nx==.==y",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [{"text": "a", "marks": []}, {"text": "(b)", "marks": ["strong"]}, {"text": "c", "marks": []}]
+        },
+        {"type": "paragraph", "content": [{"text": "\"quoted\"", "marks": ["emphasis"]}, {"text": "x", "marks": []}]},
+        {
+          "type": "paragraph",
+          "content": [{"text": "a", "marks": []}, {"text": "(s)", "marks": ["strike"]}, {"text": "c", "marks": []}]
+        },
+        {
+          "type": "paragraph",
+          "content": [{"text": "x", "marks": []}, {"text": ".", "marks": ["highlight"]}, {"text": "y", "marks": []}]
+        }
+      ]
+    },
+    {
+      "name": "adjacent lists of two kinds inside an item and a quote",
+      "markdown": "- Fruit\n\n  - Apples\n\n  1. Pears\n\n> - Inside\n>\n> 1. A quote",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {
+              "task": null,
+              "blocks": [
+                {"type": "paragraph", "content": [{"text": "Fruit", "marks": []}]},
+                {
+                  "type": "list",
+                  "ordered": false,
+                  "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+                },
+                {
+                  "type": "list",
+                  "ordered": true,
+                  "start": 1,
+                  "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "quote",
+          "blocks": [
+            {
+              "type": "list",
+              "ordered": false,
+              "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Inside", "marks": []}]}]}]
+            },
+            {
+              "type": "list",
+              "ordered": true,
+              "start": 1,
+              "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "A quote", "marks": []}]}]}]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "math atoms",
+      "markdown": "$$\n\\frac{a}{b} = c\n$$\n\nThe area is $\\pi r^2$ and costs \\$5.",
+      "document": [
+        {"type": "math", "source": "\\frac{a}{b} = c"},
+        {
+          "type": "paragraph",
+          "content": [{"text": "The area is ", "marks": []}, {"math": "\\pi r^2"}, {"text": " and costs $5.", "marks": []}]
+        }
+      ]
     }
   ]
 }

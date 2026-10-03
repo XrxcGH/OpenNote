@@ -35,6 +35,38 @@ describe('check-bundle', () => {
     ]);
   });
 
+  it('counts a group that loads after another one without what that one loads', () => {
+    const manifest: Manifest = {
+      'index.html': { file: 'assets/index.js', isEntry: true },
+      'src/features/page/PageBody.tsx': {
+        file: 'assets/page.js',
+        src: 'src/features/page/PageBody.tsx',
+        isDynamicEntry: true,
+        imports: ['_editor.js'],
+      },
+      '_editor.js': { file: 'assets/editor.js' },
+      'src/features/page/history/chunk.ts': {
+        file: 'assets/history.js',
+        src: 'src/features/page/history/chunk.ts',
+        isDynamicEntry: true,
+        imports: ['_editor.js', '_diff.js'],
+      },
+      '_diff.js': { file: 'assets/diff.js' },
+      'src/features/palette/Palette.tsx': {
+        file: 'assets/palette.js',
+        src: 'src/features/palette/Palette.tsx',
+        isDynamicEntry: true,
+        imports: ['_editor.js'],
+      },
+    };
+    const budget: Budget = { ...BUDGET, after: { within: 'features/page/', entry: 'features/page/PageBody' } };
+    expect(groups(manifest, budget).slice(2)).toEqual([
+      { name: 'src/features/page/PageBody.tsx', files: ['assets/page.js', 'assets/editor.js'], limitKb: 3 },
+      { name: 'src/features/page/history/chunk.ts', files: ['assets/history.js', 'assets/diff.js'], limitKb: 3 },
+      { name: 'src/features/palette/Palette.tsx', files: ['assets/palette.js', 'assets/editor.js'], limitKb: 2 },
+    ]);
+  });
+
   it('measures gzipped sizes and reports groups over their limit', () => {
     const dist = mkdtempSync(join(tmpdir(), 'bundle-'));
     writeFileSync(join(dist, 'small.js'), 'export {};');

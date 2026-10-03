@@ -6,7 +6,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import opennote from './eslint/rules.js';
 
-const TESTS = ['app/src/**/*.test.{ts,tsx}', 'app/src/test/**'];
+const TESTS = ['app/src/**/*.test.{ts,tsx}', 'app/src/test/**', 'app/src/features/page/test/**'];
 
 export default tseslint.config(
   {
@@ -37,6 +37,7 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'opennote/feature-boundaries': 'error',
       'opennote/ui-boundaries': 'error',
+      'opennote/editor-boundaries': 'error',
       'opennote/no-theme-key': 'error',
       'no-restricted-imports': [
         'error',

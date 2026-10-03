@@ -1,0 +1,90 @@
+@layer components {
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-end: var(--space-3);
+  }
+
+  .label {
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .textarea {
+    inline-size: 100%;
+    min-block-size: 6lh;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+    resize: vertical;
+  }
+
+  .textarea:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .textarea:disabled {
+    color: var(--color-text-muted);
+  }
+
+  .help {
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .check {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-block-size: var(--size-chrome-hit);
+  }
+
+  .check input {
+    inline-size: 18px;
+    block-size: 18px;
+    accent-color: var(--color-accent-clay);
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .fields legend {
+    margin-block-end: var(--space-1);
+    font-weight: 600;
+  }
+
+  .number {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .number input {
+    inline-size: 100%;
+    min-block-size: var(--size-chrome-hit);
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .number input:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+  }
+
+  .reset {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

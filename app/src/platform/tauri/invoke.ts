@@ -26,6 +26,8 @@ import type {
   UpdaterStatus,
 } from '../types';
 import type { ExitResult } from '../bindings/ExitResult';
+import type { ImportedAsset, PageRect } from '../../services/pages/types';
+import type { ClipboardFacts } from '../types';
 
 type None = Record<string, never>;
 
@@ -61,6 +63,36 @@ export interface Commands {
   updater_skip: { args: { version: string }; result: null };
   updater_unskip: { args: None; result: null };
   updater_go_back: { args: None; result: null };
+  // Phase 4: pages through Phase 3's core, and the clients of PLAN.md section 3.12.
+  page_open: { args: { page: string; client: string; viewport: PageRect | null }; result: ArrayBuffer };
+  page_apply: { args: Record<string, unknown>; result: unknown };
+  page_undo: { args: { page: string; client: string }; result: ArrayBuffer };
+  page_redo: { args: { page: string; client: string }; result: ArrayBuffer };
+  page_save_now: { args: { page: string }; result: null };
+  page_close: { args: { page: string; client: string }; result: null };
+  clipboard_facts: { args: None; result: ClipboardFacts };
+  clipboard_read: { args: None; result: ArrayBuffer };
+  image_import_url: { args: { page: string; url: string }; result: ImportedAsset };
+  image_import_clip: { args: { page: string; token: string }; result: ImportedAsset };
+  spell_languages: { args: None; result: { tag: string; name: string; isDefault: boolean }[] };
+  spell_check: {
+    args: { items: readonly { id: string; text: string }[]; languages: readonly string[] };
+    result: { id: string; errors: { start: number; length: number }[] }[];
+  };
+  spell_suggest: { args: { word: string; languages: readonly string[] }; result: string[] };
+  spell_add_word: { args: { word: string }; result: null };
+  spell_remove_word: { args: { word: string }; result: null };
+  speech_voices: { args: None; result: { id: string; name: string; language: string }[] };
+  speech_synthesize: { args: { text: string; voice: string }; result: ArrayBuffer };
+}
+
+/** A command that takes its input as a raw body with a JSON header, such as image_import. */
+export async function invokeBody<T>(command: string, body: ArrayBuffer, header: string, value: unknown): Promise<T> {
+  try {
+    return await tauriInvoke<T>(command, new Uint8Array(body), { headers: { [header]: JSON.stringify(value) } });
+  } catch (error) {
+    throw toIpcError(error);
+  }
 }
 
 /** Every app event and its payload. */
