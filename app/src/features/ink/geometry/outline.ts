@@ -29,6 +29,11 @@ const PRESETS: Record<InkTool, Preset> = {
   brush: { thinning: 0.6, smoothing: 0.5, streamline: 0 },
 };
 
+/** How strongly pressure thins the stroke for a tool: 0 for a uniform line, up to 1. */
+export function toolThinning(tool: InkTool): number {
+  return (PRESETS[tool] ?? PRESETS.pen).thinning;
+}
+
 /** Pencil width grows up to this many times as the pencil lies down toward the page. */
 export const PENCIL_MAX_TILT_WIDTH = 2.2;
 /** Pencil opacity falls from the first to the second as it lies down. */

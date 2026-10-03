@@ -27,7 +27,15 @@ export {
   widthScale,
 } from './matrix';
 
-export { outlinePath, pencilOpacity, pencilWidthFactor, strokeOutline } from './outline';
+export {
+  outlinePath,
+  pencilOpacity,
+  pencilWidthFactor,
+  PENCIL_MAX_TILT_WIDTH,
+  strokeOutline,
+  tiltFraction,
+  toolThinning,
+} from './outline';
 export type { OutlineOptions } from './outline';
 export {
   applyPressureTable,
