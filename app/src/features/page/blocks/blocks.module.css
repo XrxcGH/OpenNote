@@ -30,6 +30,17 @@
     caret-color: var(--color-accent-clay);
   }
 
+  /*
+   * ADR 0005's first rule, applied per textblock (ARCHITECTURE.md section 5.7): a key press repaints only the
+   * block it changes, so a 20-page note paints like a short one. List markers, checkboxes, and fold buttons are
+   * siblings of the paragraph, outside its containment. The clip margin keeps the caret and italic overhang
+   * visible at a block's edges.
+   */
+  .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
+    contain: paint;
+    overflow-clip-margin: 4px;
+  }
+
   /* An empty text box invites writing, in muted text that is never part of the note. */
   .text :global(.ProseMirror) > p:only-child:has(> br:only-child)::before {
     content: var(--placeholder);
@@ -44,8 +55,10 @@
   }
 
   /* The first block of text keeps this with and without an editor: an editor's widgets, such as a heading's fold
-     button, don't count as the first child. */
-  .text :global(.ProseMirror) > :nth-child(1 of :not(:global(.ProseMirror-widget))) {
+     button, don't count as the first child. The selectors are the cheap form of `:nth-child(1 of ...)`: with
+     that one, every widget the editor redrew restyled all of a long note's blocks, 3.5 ms a key. */
+  .text :global(.ProseMirror) > :first-child,
+  .text :global(.ProseMirror) > :global(.ProseMirror-widget):first-child + * {
     margin-block-start: 0;
   }
 
