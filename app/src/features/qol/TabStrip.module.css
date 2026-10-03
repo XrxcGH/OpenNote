@@ -1,0 +1,61 @@
+/* The tab strip above the page. It sticks to the top of the page area, so it stays while the page scrolls. */
+@layer components {
+  .strip {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2) 0;
+    overflow-x: auto;
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-app);
+  }
+
+  .tab {
+    display: flex;
+    flex: 0 1 12rem;
+    align-items: center;
+    min-inline-size: 0;
+    border: 1px solid transparent;
+    border-block-end: none;
+    border-start-start-radius: var(--radius-md);
+    border-start-end-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+  }
+
+  .tab[data-active] {
+    border-color: var(--color-border-subtle);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+  }
+
+  .tab:not([data-active]):hover {
+    background: var(--color-surface-hover);
+  }
+
+  .title {
+    flex: 1;
+    min-inline-size: 0;
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3) var(--space-1);
+    overflow: hidden;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+  }
+
+  .title:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  :global(:root[data-density='touch']) .title {
+    min-block-size: var(--size-target-touch);
+  }
+}

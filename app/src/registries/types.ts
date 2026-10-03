@@ -15,6 +15,7 @@ export type MenuId =
   | 'tree.sectionGroup'
   | 'tree.section'
   | 'tree.page'
+  | 'tree.sort'
   | 'splitter.notebooks'
   | 'splitter.pages'
   | 'view.paneWidths'
@@ -146,6 +147,8 @@ export interface PaletteResult {
   icon?: IconName;
   score: number;
   run(): void | Promise<void>;
+  /** Ctrl+Enter: opens the result in a new tab, for results that are places in the workspace. */
+  openInTab?(): void | Promise<void>;
 }
 
 export interface PaletteProvider {

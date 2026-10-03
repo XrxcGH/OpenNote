@@ -15,6 +15,7 @@ const GROUP_LABELS: Record<string, MessageKey> = {
   notebooks: 'palette.groups.notebooks',
   sections: 'palette.groups.sections',
   pages: 'palette.groups.pages',
+  closed: 'qol.tabs.group',
   matches: 'search.groups.matches',
 };
 
