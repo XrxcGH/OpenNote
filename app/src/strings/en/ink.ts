@@ -68,6 +68,17 @@ export const ink = {
     notSaved: "That ink wasn't saved. Try again.",
   },
   ask: { cancel: 'Cancel' },
+  zoomBox: {
+    title: 'Zoom writing box',
+    keywords: 'zoom writing box strip magnified write large small handwriting',
+    label: 'Zoom writing box. Write here, and the ink lands small on the page. Arrow keys move the box.',
+    next: 'Next',
+    newLine: 'New line',
+    close: 'Close',
+    on: 'Zoom writing box on, line {line}.',
+    wrapped: 'New line',
+    newLineAnnounced: 'New line',
+  },
   penEdit: {
     strikeThrough: 'Strike through words to delete them',
     addSpace: 'Draw a line between words to add a space',

@@ -20,6 +20,7 @@ import { setViewContext } from './context';
 import { DrawShapes } from './DrawShapes';
 import { installHover } from './hover';
 import { installReplay, startReplay } from './replay';
+import { installZoomBox, toggleZoomBox } from './zoomBox';
 import { installShapeHandles } from './shapeEdit';
 import { addTextToShape } from './shapeLibrary';
 import { insertSpaceByHeight } from './space';
@@ -89,6 +90,7 @@ export function installMore(context: MoreContext): () => void {
     installSnapTools(host, surfaces),
     installShapeHandles(host, surfaces),
     installReplay(host, surfaces),
+    installZoomBox(host, surfaces),
   ];
   const defs: CommandDef[] = [
     {
@@ -211,6 +213,16 @@ export function installMore(context: MoreContext): () => void {
         if (current) void tidySelection(host, current, { kind: 'evenSpacing' });
       },
     },
+    {
+      id: 'ink.zoomBox',
+      title: 'ink.zoomBox.title',
+      keywords: 'ink.zoomBox.keywords',
+      category: 'view',
+      keys: [chord('Ctrl+Alt+Shift+Z')],
+      flag: 'ink.zoomBox',
+      checked: () => inkPrefs.get().zoomBox,
+      run: toggleZoomBox,
+    },
     gestureCommand('scribbleErase'),
     gestureCommand('circleSelect'),
     gestureCommand('twoFingerUndo'),
@@ -256,6 +268,15 @@ export function installMore(context: MoreContext): () => void {
       priority: 25,
       presentation: 'button',
       flag: 'ink.replay',
+    }),
+    commandBar.register({
+      id: 'ink.zoomBox',
+      tab: 'draw',
+      group: 'view',
+      command: 'ink.zoomBox',
+      priority: 35,
+      presentation: 'toggle',
+      flag: 'ink.zoomBox',
     }),
     commandBar.register({
       id: 'ink.canvasLock',

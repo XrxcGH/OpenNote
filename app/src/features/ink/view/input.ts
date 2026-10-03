@@ -20,7 +20,6 @@ import { createStrokeBuilder } from '../input/strokeBuilder';
 import type { StrokeBuilder } from '../input/strokeBuilder';
 import type { RawSample } from '../input/samples';
 import type { InkStroke } from '../model/types';
-import { buildPressureTable } from '../geometry/pressure';
 import { mmToPage } from '../pens/tools';
 import { brandColor } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
@@ -36,7 +35,8 @@ import { createStrokeHooks, setStrokeHooks } from './strokeHooks';
 import type { StrokeHooks } from './strokeHooks';
 import { createGestures } from './gestures';
 import type { Gestures } from './gestures';
-import { buttonsOf, inkPrefs, notePen, penDevice, penKeyOf } from './prefs';
+import { buttonsOf, notePen, penKeyOf } from './prefs';
+import { penFeel } from './penFeel';
 import { activeSlot, chooseTool, drawState, penSlots, styleOf, writesInk } from './state';
 import type { PenStyle } from './state';
 import type { InkSurface } from './surface';
@@ -89,31 +89,6 @@ interface InkGesture {
     live?: Vec[] | null;
   };
   last?: Vec;
-}
-
-/** The pen's own pressure table and steady pen, once the person has chosen them. Without a choice, none. */
-const tables = new Map<string, Float32Array>();
-
-export function penFeel(
-  pen: string,
-  zoom: number,
-): { pressureTable?: Float32Array; steady?: { strength: number; zoom: number } } {
-  if (!isEnabled('ink.steadyPen')) return {};
-  const prefs = inkPrefs.get();
-  if (!prefs.pens[pen] && !prefs.pens.default) return {};
-  const device = penDevice(pen, prefs);
-  const key = JSON.stringify([device.curve, device.customCurve, device.minWidth]);
-  let table = tables.get(key);
-  if (!table) {
-    const c = device.customCurve;
-    table = buildPressureTable({
-      curve: device.curve,
-      custom: c ? { x1: c[0], y1: c[1], x2: c[2], y2: c[3] } : undefined,
-      minimum: device.minWidth,
-    });
-    tables.set(key, table);
-  }
-  return { pressureTable: table, ...(device.steady > 0 ? { steady: { strength: device.steady, zoom } } : {}) };
 }
 
 const DRAW_TOOLS = new Set(['pen', 'writing', 'eraser', 'partialEraser', 'lasso', 'insertSpace']);
