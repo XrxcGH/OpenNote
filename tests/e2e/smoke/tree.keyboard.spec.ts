@@ -16,6 +16,27 @@ const focusedRow = (browser: Browser) =>
     return document.getElementById(row.getAttribute('aria-labelledby') ?? '')?.textContent ?? null;
   });
 
+/**
+ * Waits until the focused tree row is `title`. When it never is, the failure says where focus is, what the rename
+ * field holds, and which rows exist, because "timed out" alone doesn't say which step went wrong.
+ */
+async function expectFocusedRow(browser: Browser, title: string): Promise<void> {
+  const reached = await browser
+    .waitUntil(async () => (await focusedRow(browser)) === title, { timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (reached) return;
+  const state = await browser.execute(() => ({
+    focus: `${document.activeElement?.tagName} ${document.activeElement?.getAttribute('aria-label') ?? ''}`,
+    field: document.querySelector<HTMLInputElement>('input[aria-label^="Rename"]')?.value ?? null,
+    rows: [...document.querySelectorAll('[role="treeitem"]')].map(
+      (row) => document.getElementById(row.getAttribute('aria-labelledby') ?? '')?.textContent,
+    ),
+    status: document.querySelector('[role="status"]')?.textContent ?? null,
+  }));
+  assert.fail(`Focus never reached the "${title}" row: ${JSON.stringify(state)}`);
+}
+
 /** Presses the keys together, in order, and releases them in reverse, as a person holds a chord. */
 async function chord(browser: Browser, ...keys: string[]): Promise<void> {
   const action = browser.action('key');
@@ -54,19 +75,24 @@ describe('the tree with the keyboard alone', { skip: skipReason() }, () => {
     const { browser } = session;
     await chord(browser, Key.F2);
     await browser.$('input[aria-label="Rename Mitosis"]').waitForExist({ timeout: 5_000 });
+    // Keys go to the field only once it holds focus.
+    await browser.waitUntil(
+      async () => browser.execute(() => document.activeElement?.getAttribute('aria-label') === 'Rename Mitosis'),
+      { timeout: 5_000 },
+    );
     await chord(browser, Key.Ctrl, 'a');
     await browser.keys(['Cell division', Key.Enter]);
-    await browser.waitUntil(async () => (await focusedRow(browser)) === 'Cell division', { timeout: 5_000 });
+    await expectFocusedRow(browser, 'Cell division');
   });
 
   it('deletes with Delete, focuses the neighbor, and undoes with Ctrl+Z', async () => {
     const { browser } = session;
     await chord(browser, Key.Delete);
-    await browser.waitUntil(async () => (await focusedRow(browser)) === 'Meiosis', { timeout: 5_000 });
+    await expectFocusedRow(browser, 'Meiosis');
     const toast = browser.$('[role="status"][aria-label="Notifications"]');
     await toast.waitUntil(async () => (await toast.getText()).includes('Moved "Cell division" to Trash.'));
     await chord(browser, Key.Ctrl, 'z');
-    await browser.waitUntil(async () => (await focusedRow(browser)) === 'Cell division', { timeout: 5_000 });
+    await expectFocusedRow(browser, 'Cell division');
   });
 
   it('moves a row down with Ctrl+Shift+Down and keeps focus on it', async () => {
