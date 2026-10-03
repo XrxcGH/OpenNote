@@ -352,8 +352,9 @@ fn save_dialog(_owner: isize, _suggested: &str, _label: &str, _extension: &str) 
     Err(IpcError::not_implemented("export_pick_save"))
 }
 
-/// The header of `export_write` (percent-encoded JSON): the path the Save dialog returned, and the files in the body, one after the
-/// other. The first part is the file at `path`. Each later part is a path relative to that file's folder.
+/// The header of `export_write` (percent-encoded JSON). It holds the path the Save dialog returned, and the files in
+/// the body, one after the other. The first part is the file at `path`. Each later part is a path relative to that
+/// file's folder.
 #[derive(Debug, Deserialize)]
 struct WriteHeader {
     path: String,

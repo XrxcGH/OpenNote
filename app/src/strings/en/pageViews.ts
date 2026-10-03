@@ -67,7 +67,7 @@ export const pageViews = {
     title: 'Reading aids',
     description: 'These change how the page looks on this device. They never change the note or what you print.',
     focus: 'Line focus',
-    focusSizes: { off: 'Off', one: 'One line', three: 'Three lines', five: 'Five lines' },
+    focusSizes: { off: 'Off', one: '1 line', three: '3 lines', five: '5 lines' },
     tint: 'Page tint',
     tints: { none: 'None', cream: 'Cream', sepia: 'Sepia', gray: 'Gray' },
     wordSpace: 'Space between words',

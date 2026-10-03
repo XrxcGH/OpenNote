@@ -78,7 +78,7 @@ function pageLines(mounted: MountedPage): LineBox[] {
   return lines.sort((a, b) => a.top - b.top);
 }
 
-/** Applies the aids to a mounted page and keeps the focus band following the reader. Returns a function that undoes it. */
+/** Applies the aids to a mounted page and keeps the focus band following the reader. `stop` undoes it. */
 export function attachReading(mounted: MountedPage, paginated: () => boolean): { refresh(): void; stop(): void } {
   const { world } = mounted.viewport;
   const doc = world.ownerDocument;

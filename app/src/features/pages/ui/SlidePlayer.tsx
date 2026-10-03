@@ -1,5 +1,6 @@
-// Present as slides: the page's slides one at a time on a full-window stage. The slide is the page's own HTML in a frame
-// the size of a slide, scaled to fit the window. Arrow keys, Page Up and Page Down, and Space move, and Escape leaves.
+// Present as slides: the page's slides one at a time on a full-window stage. The slide is the page's own HTML in a
+// frame the size of a slide, scaled to fit the window. Arrow keys, Page Up and Page Down, and Space move, and Escape
+// leaves.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, RefObject } from 'react';
 import { announce, Button, Switch } from '../../../ui';
@@ -66,7 +67,8 @@ function useShow(source: PageSource, startBlock: string | null): Show {
   );
   const body = slides[index] ? slideHtml(slides[index], cx, titles[index]) : '';
   const head = `<meta charset="utf-8"><style>${css}</style>`;
-  const srcDoc = `<!doctype html><html lang="${source.page.language}"><head>${head}</head><body><main>${body}</main></body></html>`;
+  const lang = source.page.language;
+  const srcDoc = `<!doctype html><html lang="${lang}"><head>${head}</head><body><main>${body}</main></body></html>`;
   useEffect(() => {
     if (slides.length > 0) announce(t('pageViews.slides.gone', { n: index + 1, title: titles[index] }));
   }, [index, slides.length, titles]);

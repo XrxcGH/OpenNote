@@ -251,7 +251,8 @@ class PagesView {
       parts.push(`<div class="${styles.sheet}" style="${box}">${paper}</div>`);
     }
     for (let k = 1; k < count; k += 1) {
-      const box = `inset-block-start:${k * sheet.height - GAP_HALF}px;block-size:${2 * GAP_HALF}px;inline-size:${sheet.width}px`;
+      const top = k * sheet.height - GAP_HALF;
+      const box = `inset-block-start:${top}px;block-size:${2 * GAP_HALF}px;inline-size:${sheet.width}px`;
       parts.push(`<div class="${styles.edge}" style="${box}"></div>`);
     }
     this.sheetsLayer.innerHTML = parts.join('');

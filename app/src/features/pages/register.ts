@@ -186,7 +186,7 @@ for (const preset of BACKGROUNDS) {
   });
 }
 
-// ---- Menus and the command bar ---------------------------------------------------------------------------------------
+// ---- Menus and the command bar -------------------------------------------------------------------------------
 function menuCommand(
   id: `pages.${string}`,
   title: MessageKey,
@@ -318,9 +318,9 @@ bar({
 });
 
 /**
- * The bar reads a command's checked and enabled state when it renders, and the view's state changes on its own (the page
- * view attaches after the bar first draws, and undo changes the view), so a change tells the bar to read again. The
- * commands registry is what the bar watches, so a command that comes and goes right away does it.
+ * The bar reads a command's checked and enabled state when it renders. The view's state changes on its own, because
+ * the page view attaches after the bar first draws and undo changes the view. So a change tells the bar to read again.
+ * The bar watches the commands registry, so a command that comes and goes right away does it.
  */
 const refresher = defineCommand({
   id: 'pages.refresh',

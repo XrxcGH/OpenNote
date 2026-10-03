@@ -1,4 +1,4 @@
-/* eslint-disable opennote/feature-boundaries -- This test mounts the real page assembly, so it uses the page feature's own test harness. */
+/* eslint-disable opennote/feature-boundaries -- This test mounts the real page assembly with the page feature's harness. */
 // The paginated view on a real page assembly, in a real browser: switching the mode saves one view change, the sheets
 // appear, and no line of text lands in the gap between two sheets or in a sheet's margin.
 import { afterEach, describe, expect, it } from 'vitest';

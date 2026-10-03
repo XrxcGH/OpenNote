@@ -105,8 +105,8 @@ export async function svgToPng(picture: Picture, scale: number): Promise<Blob> {
   const width = Math.round(picture.width * scale);
   const height = Math.round(picture.height * scale);
   if (width > MAX_PIXELS || height > MAX_PIXELS) throw new RangeError('The picture is too large at this resolution.');
-  // A data URL, not a blob URL: Chromium marks a canvas as tainted after it draws an SVG with embedded HTML from a blob,
-  // and the picture could not be read back. The same SVG from a data URL is drawn clean.
+  // A data URL, not a blob URL. Chromium marks a canvas as tainted after it draws an SVG with embedded HTML from a
+  // blob, and the picture can't be read back. The same SVG from a data URL is drawn clean.
   const image = new Image();
   image.decoding = 'async';
   image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(picture.svg)}`;
