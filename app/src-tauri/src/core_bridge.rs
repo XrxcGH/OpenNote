@@ -336,11 +336,6 @@ impl CoreBridge {
         }
     }
 
-    /// The open page of an interface page for a client, opened on first use, for Phase 5's ink commands.
-    pub(crate) fn page_for(&self, page: &str, client: &str) -> IpcResult<PageHandle> {
-        self.with(|bridge| bridge.handle(page, client))
-    }
-
     /// Saves every page and stops the core. The app calls it on exit.
     pub fn shutdown(&self) {
         *self.relay.trees.lock().unwrap_or_else(PoisonError::into_inner) = None;
