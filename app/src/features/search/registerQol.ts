@@ -1,9 +1,11 @@
 // The Beta 4 additions to search and linking (one registration file for the lane): copy link, line tags and their
 // summary, the daily note, collections, the graph, the canvas, and replace. This file loads at start-up, so it holds
 // definitions only; the panels and the editor code load when first used.
+import { isEnabled } from '../../app/flags';
 import { getLocation } from '../../app/location';
 import { chord, defineCommand } from '../../commands/registry';
 import { commands, contextMenus } from '../../registries';
+import { mountedPageHooks } from '../page';
 import { copyLinkText } from './deeplink/copy';
 import { formatLink } from './deeplink/url';
 import { runElementAction } from './elements/events';
@@ -130,3 +132,21 @@ commands.register(
     run: () => import('./replace/open').then((module) => module.openReplace()),
   }),
 );
+
+// ---- Page properties -----------------------------------------------------------------------------------------------
+// The header joins every page view that mounts. Its code loads with the first one.
+mountedPageHooks.register({
+  id: 'search.properties',
+  attach(mounted) {
+    if (!isEnabled('search.properties')) return () => undefined;
+    let stop: () => void = () => undefined;
+    let gone = false;
+    void import('./properties/mount').then((module) => {
+      if (!gone) stop = module.mountProperties(mounted);
+    });
+    return () => {
+      gone = true;
+      stop();
+    };
+  },
+});
