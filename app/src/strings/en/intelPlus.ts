@@ -148,8 +148,7 @@ export const intelPlus = {
   handwriting: {
     reviewTitle: 'Check the handwriting',
     reviewBody:
-      '{count, plural, =0 {Every word looks clear.} one {# word is underlined because it may be wrong.} ' +
-      'other {# words are underlined because they may be wrong.}}',
+      '{count, plural, =0 {Every word looks clear.} one {# word may be wrong.} other {# words may be wrong.}}',
     reviewHelp:
       'Choose an underlined word to see other readings. Symbols and chemical formulas are tidied when you insert.',
     alternatives: 'Other readings',
@@ -233,10 +232,8 @@ export const intelPlus = {
       tidy: 'Tidy structure',
     },
     keywords: 'writing proofread rewrite shorten list tidy grammar spelling edit',
-    reviewBody:
-      '{count, plural, =0 {No changes to suggest.} one {# change is marked.} other {# changes are marked.}} ' +
-      'Nothing is replaced until you accept.',
-    legend: 'Added words are underlined. Removed words are crossed out.',
+    reviewBody: '{count, plural, =0 {No changes to suggest.} one {# change is marked.} other {# changes are marked.}}',
+    legend: 'Added words are underlined. Removed words are crossed out. Nothing is replaced until you accept.',
     addedStart: 'Added: ',
     addedEnd: ' End of added text.',
     removedStart: 'Removed: ',
