@@ -37,6 +37,9 @@ describe('changing a shortcut', () => {
     const dialog = await openList();
     const { row, field } = await startChange(dialog, 'Toggle dark mode');
     expect(field.getAttribute('data-key-capture')).toBe('');
+    // The field takes the empty actions cell too, so its placeholder fits in a narrow window.
+    expect((field.closest('td') as HTMLTableCellElement).colSpan).toBe(2);
+    expect(field.scrollWidth).toBeLessThanOrEqual(field.clientWidth);
     expect(row.textContent).toContain('Press the new shortcut. Escape cancels, and Backspace removes it.');
     await pressChord('Ctrl+Alt+J');
     await waitFor(() => expect(shortcutsOf('theme.toggle')).toEqual(['Ctrl+Alt+J']));

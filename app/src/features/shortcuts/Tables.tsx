@@ -34,8 +34,9 @@ function CommandRow({ row }: { row: ShortcutRow }) {
         {row.title}
         {row.moved && <span className={styles.note}>{row.moved}</span>}
       </th>
-      <td>
-        {changing ? (
+      {changing ? (
+        // While it listens, the field takes the empty actions cell too, so its prompt and hint have room.
+        <td colSpan={2}>
           <KeyCapture
             row={row}
             onDone={() => {
@@ -43,26 +44,30 @@ function CommandRow({ row }: { row: ShortcutRow }) {
               setChanging(false);
             }}
           />
-        ) : (
-          <ChordList chords={row.keys} />
-        )}
-      </td>
-      <td ref={actions} className={styles.actions}>
-        {row.customizable && !changing && (
-          <Button
-            variant="quiet"
-            aria-label={t('shortcuts.changeLabel', { command: row.title })}
-            onClick={() => setChanging(true)}
-          >
-            {t('shortcuts.change')}
-          </Button>
-        )}
-        {row.changed && !changing && (
-          <Button variant="quiet" aria-label={t('shortcuts.resetLabel', { command: row.title })} onClick={reset}>
-            {t('shortcuts.reset')}
-          </Button>
-        )}
-      </td>
+        </td>
+      ) : (
+        <>
+          <td>
+            <ChordList chords={row.keys} />
+          </td>
+          <td ref={actions} className={styles.actions}>
+            {row.customizable && (
+              <Button
+                variant="quiet"
+                aria-label={t('shortcuts.changeLabel', { command: row.title })}
+                onClick={() => setChanging(true)}
+              >
+                {t('shortcuts.change')}
+              </Button>
+            )}
+            {row.changed && (
+              <Button variant="quiet" aria-label={t('shortcuts.resetLabel', { command: row.title })} onClick={reset}>
+                {t('shortcuts.reset')}
+              </Button>
+            )}
+          </td>
+        </>
+      )}
     </tr>
   );
 }
@@ -74,6 +79,11 @@ export function CommandTable({ group, level }: { group: ShortcutGroup; level: He
     <section className={styles.group}>
       <Heading id={id}>{t(group.title)}</Heading>
       <table aria-labelledby={id} className={styles.table}>
+        <colgroup>
+          <col className={styles.nameColumn} />
+          <col />
+          <col className={styles.actionsColumn} />
+        </colgroup>
         <thead className={styles.visuallyHidden}>
           <tr>
             <th scope="col">{t('shortcuts.commandColumn')}</th>
