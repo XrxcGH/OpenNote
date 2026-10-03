@@ -5,18 +5,16 @@ import { parseSheet } from '../ui/sheetCommands';
 import { THUMBNAILS, createStrip } from './strip';
 import type { StripHost } from './strip';
 
-function host(
-  sheets: number,
-  current = 0,
-): StripHost & { goTo: ReturnType<typeof vi.fn>; add: ReturnType<typeof vi.fn> } {
-  return {
+function host(sheets: number, current = 0) {
+  const spies = { goTo: vi.fn<(sheet: number) => void>(), add: vi.fn<() => void>() };
+  const strip: StripHost = {
     sheets: () => sheets,
     current: () => current,
     paper: () => '<svg viewBox="0 0 8 10"></svg>',
     aspect: () => 0.8,
-    goTo: vi.fn(),
-    add: vi.fn(),
+    ...spies,
   };
+  return Object.assign(strip, spies);
 }
 
 describe('the sheet strip', () => {
