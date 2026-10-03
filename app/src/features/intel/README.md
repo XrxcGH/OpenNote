@@ -45,8 +45,8 @@ Read aloud keeps the browser's voices while its switch is off. With it on, the p
 | `intel.ocr`         | Copy text from image, in all its places           | On                       |
 | `intel.readAloud`   | The on-device engine for read aloud               | On                       |
 | `intel.summaries`   | Summarize this page                               | On                       |
-| `intel.handwriting` | Convert handwriting to text, and its Settings row | Off, until the pen layer |
-| `intel.searchText`  | The seam for search                               | Development and nightly  |
+| `intel.handwriting` | Convert handwriting to text, and its Settings row | Development, nightly, and Beta |
+| `intel.searchText`  | The seam for search (nothing in search calls it yet) | Development, nightly, and Beta |
 
 ## Missing pieces
 
@@ -56,7 +56,7 @@ Read aloud keeps the browser's voices while its switch is off. With it on, the p
 
 ## Seams for other parts of the app
 
-- The pen layer calls `registerInkStrokeSource({ strokes(ids) })` once it can turn stroke IDs into points, with each stroke's own transform applied. Then it turns on the `intel.handwriting` flag.
+- The Convert handwriting to text command (features/page/intel/handwriting.ts) registers the stroke source on first use: the shown page's strokes, each with its own transform applied, from features/page/seams/inkStrokes.ts.
 - Search calls `searchTextInImage(blob)` and `searchTextInInk(strokes)`. Each returns the text with a box for every word, or `null` when the feature is off, the flag is off, or the computer lacks what it needs. Neither asks the person anything.
 
 ## Tests

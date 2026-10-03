@@ -25,11 +25,11 @@ pub const FLAG: &str = "shell.customFrame";
 /// native frame back. Development builds load the page from a dev server, so this leaves room for a slow start.
 pub const REPORT_DEADLINE: Duration = Duration::from_secs(4);
 
-/// Whether the flag is on: its channel default (off everywhere until the manual checks pass), then the
+/// Whether the flag is on: its channel default (on in every build but Stable, as in the interface), then the
 /// overrides in order, the last one that names the flag winning. Overrides apply only to development and nightly
 /// builds, as in the interface's `initFlags`.
 pub fn is_enabled(channel: Channel, overrides: &[&BTreeMap<String, bool>]) -> bool {
-    let default = false;
+    let default = !matches!(channel, Channel::Stable);
     if !matches!(channel, Channel::Dev | Channel::Nightly) {
         return default;
     }
@@ -145,25 +145,29 @@ mod tests {
     }
 
     #[test]
-    fn is_off_by_default_in_every_channel() {
-        for channel in [Channel::Dev, Channel::Nightly, Channel::Beta, Channel::Stable] {
-            assert!(!is_enabled(channel, &[]));
-            assert!(!is_enabled(channel, &[&BTreeMap::new()]));
+    fn is_on_by_default_in_every_channel_but_stable() {
+        for channel in [Channel::Dev, Channel::Nightly, Channel::Beta] {
+            assert!(is_enabled(channel, &[]));
+            assert!(is_enabled(channel, &[&BTreeMap::new()]));
         }
+        assert!(!is_enabled(Channel::Stable, &[]));
     }
 
     #[test]
     fn follows_overrides_in_development_and_nightly_builds_only() {
         assert!(is_enabled(Channel::Dev, &[&flags(true)]));
         assert!(is_enabled(Channel::Nightly, &[&flags(true)]));
-        assert!(!is_enabled(Channel::Beta, &[&flags(true)]));
+        assert!(!is_enabled(Channel::Dev, &[&flags(false)]));
+        assert!(is_enabled(Channel::Beta, &[&flags(false)]));
         assert!(!is_enabled(Channel::Stable, &[&flags(true)]));
     }
 
     #[test]
-    fn starts_undecorated_only_when_the_boot_overrides_or_settings_ask_for_it() {
+    fn starts_undecorated_unless_stable_or_the_boot_overrides_or_settings_say_no() {
         let none = BTreeMap::new();
-        assert!(!at_start(Channel::Dev, &none, &none));
+        assert!(at_start(Channel::Dev, &none, &none));
+        assert!(at_start(Channel::Beta, &none, &none));
+        assert!(!at_start(Channel::Dev, &flags(false), &none));
         assert!(at_start(Channel::Dev, &flags(true), &none));
         assert!(at_start(Channel::Nightly, &none, &flags(true)));
         assert!(!at_start(Channel::Dev, &flags(true), &flags(false)));

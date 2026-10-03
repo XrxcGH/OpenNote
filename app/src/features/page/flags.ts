@@ -31,7 +31,7 @@ export const PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.readingOrder', 'The Reading order pane.', building),
   flag('page.history', 'Compare versions, restoring parts, named versions, and deleting history.', building),
   flag('page.imageRenditions', 'Display-size image renditions, if spike S3 needs them.', off),
-  flag('page.heicImport', 'Converting HEIC and TIFF images at import.', off),
+  flag('page.heicImport', 'Converting HEIC and TIFF images at import.', building),
   flag('editor.spelling', 'Spell check and its settings.', building),
   flag('editor.readAloud', 'Read aloud.', building),
 ];
