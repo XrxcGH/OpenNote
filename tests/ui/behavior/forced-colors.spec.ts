@@ -26,3 +26,31 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect(colors.toggle).toBe(colors.highlight);
   });
 }
+
+// A Windows contrast theme gets a flat canvas, no stars, and plain outlines in the text color (BRAND.md section 4).
+for (const colorScheme of ['light', 'dark'] as const) {
+  test(`draws plain outlines on a flat canvas in forced colors, ${colorScheme}`, async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active', colorScheme });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1, name: 'No page open' })).toBeVisible();
+    const seen = await page.evaluate(() => {
+      const probe = document.body.appendChild(document.createElement('div'));
+      probe.style.color = 'CanvasText';
+      const text = getComputedStyle(probe).color;
+      const art = document.querySelector('article svg[aria-hidden="true"]') as SVGElement;
+      const line = art.querySelector('path') as SVGPathElement;
+      const stars = document.querySelector('svg[viewBox="0 0 1280 160"]') as SVGElement;
+      return {
+        text,
+        stroke: getComputedStyle(line).stroke,
+        fill: getComputedStyle(line).fill,
+        canvas: getComputedStyle(stars.parentElement as HTMLElement).backgroundImage,
+        stars: getComputedStyle(stars).display,
+      };
+    });
+    expect(seen.stroke).toBe(seen.text);
+    expect(seen.fill).toBe('none');
+    expect(seen.canvas).toBe('none');
+    expect(seen.stars).toBe('none');
+  });
+}
