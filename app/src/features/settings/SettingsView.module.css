@@ -128,7 +128,9 @@
     gap: var(--space-6);
   }
 
+  /* A block, so no text line under it pushes the mark above the window's middle. */
   .logoMark svg {
+    display: block;
     inline-size: var(--space-10);
     block-size: var(--space-10);
   }

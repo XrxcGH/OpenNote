@@ -14,7 +14,7 @@ describe('the page placeholder', () => {
   it('puts a small drawing above the prompt, hidden from screen readers, and none on an open page', async () => {
     const { container } = await renderApp();
     const prompt = await screen.findByText('Choose a page to see it here.');
-    const art = container.querySelector('article svg[viewBox="0 0 120 54"]');
+    const art = container.querySelector('article svg[viewBox="0 0 110 54"]');
     expect(art?.getAttribute('aria-hidden')).toBe('true');
     expect(art?.getAttribute('focusable')).toBe('false');
     expect((art as Node).compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

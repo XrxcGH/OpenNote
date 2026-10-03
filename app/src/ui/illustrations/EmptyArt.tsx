@@ -1,4 +1,4 @@
-// The drawing above the sentence of an empty state: 120 px wide, about 50 px tall, and different for each place.
+// The drawing above the sentence of an empty state: 110 px wide, about 50 px tall, and different for each place.
 // "No notebooks yet" gets a bookshelf with a leaning book and a sprig. "No page open" gets an open notebook with a
 // candle beside it. "Trash is empty" gets a candle beside a tidy stack of books. The sentence keeps the meaning,
 // and the drawing is only company.
@@ -47,11 +47,12 @@ function Shelf() {
 }
 
 export function EmptyArt({ kind, className }: ArtProps & { kind: EmptyKind }) {
-  // Each drawing is cropped to its content, so there is no empty paper above it.
+  // Each drawing is cropped to its content, so there is no empty paper above it, and its shelf starts where the
+  // sentence below it starts.
   const shelf = kind === 'notebooks';
   return (
-    <Art width={120} height={shelf ? 52 : 54} className={className}>
-      <g transform={`translate(0 ${shelf ? -22 : -20})`}>
+    <Art width={110} height={shelf ? 52 : 54} className={className}>
+      <g transform={`translate(-5 ${shelf ? -22 : -20})`}>
         <path d={SHELF} />
         {shelf && <Shelf />}
         {kind === 'page' && (

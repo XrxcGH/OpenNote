@@ -34,7 +34,7 @@ describe('the Trash view', () => {
   it('says so when Trash is empty, with a candle and books above the sentence', async () => {
     const { container } = await renderApp({ boot: { state: { location: { view: 'trash' } } } });
     const sentence = await screen.findByText('Trash is empty.');
-    const art = container.querySelector('section svg[viewBox="0 0 120 54"]');
+    const art = container.querySelector('section svg[viewBox="0 0 110 54"]');
     expect(art?.getAttribute('aria-hidden')).toBe('true');
     expect((art as Node).compareDocumentPosition(sentence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

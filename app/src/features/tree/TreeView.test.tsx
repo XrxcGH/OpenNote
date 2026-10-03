@@ -182,7 +182,7 @@ describe('empty states and accessibility', () => {
   it('puts a bookshelf above the no-notebooks sentence, hidden from screen readers', async () => {
     const { container } = await renderApp({ fixture: 'empty' });
     const sentence = await screen.findByText('No notebooks yet. Choose New notebook to start one.');
-    const art = container.querySelector('svg[viewBox="0 0 120 52"]');
+    const art = container.querySelector('svg[viewBox="0 0 110 52"]');
     expect(art?.getAttribute('aria-hidden')).toBe('true');
     expect((art as Node).compareDocumentPosition(sentence) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The empty pane has its own drawing, so the footer's plant leaves it alone.

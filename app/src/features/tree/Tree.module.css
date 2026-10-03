@@ -268,8 +268,10 @@
   }
 
   @container (min-width: 200px) {
+    /* Inset from the end about as far as the Trash icon is from the start. */
     .footer .plant {
       display: block;
+      margin-inline-end: var(--space-2);
     }
   }
 
