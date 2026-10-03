@@ -129,11 +129,15 @@
     text-align: end;
   }
 
-  .chords {
+  .chords,
+  .chord {
     display: inline-flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-2);
+  }
+
+  .chords {
+    flex-wrap: wrap;
   }
 
   .or {
