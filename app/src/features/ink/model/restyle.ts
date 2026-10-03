@@ -34,6 +34,7 @@ export function recolor(strokes: readonly InkStroke[], picked: PickedColor, kind
 /** The stroke's nominal width after a scale, kept so that its drawn width stays between 0.1 and 24 mm. */
 export function scaledWidth(stroke: InkStroke, factor: number): number {
   const drawn = stroke.transform ? widthScale(stroke.transform) : 1;
+  if (!(drawn > 0) || !Number.isFinite(drawn)) return stroke.width;
   const low = mmToPage(MIN_WIDTH_MM) / drawn;
   const high = mmToPage(MAX_WIDTH_MM) / drawn;
   return Math.min(high, Math.max(low, stroke.width * factor));
@@ -48,6 +49,7 @@ export function scaleWidths(strokes: readonly InkStroke[], factor: number): InkS
 export function setDrawnWidth(strokes: readonly InkStroke[], drawn: number): InkStroke[] {
   return strokes.map((stroke) => {
     const scale = stroke.transform ? widthScale(stroke.transform) : 1;
+    if (!(scale > 0) || !Number.isFinite(scale)) return stroke;
     return { ...stroke, width: scaledWidth({ ...stroke, width: drawn / scale }, 1) };
   });
 }

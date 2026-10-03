@@ -9,6 +9,7 @@ import {
   decodePoints,
   encodePoints,
   MAX_POINTS,
+  PointError,
 } from '../../../core/ink/codec';
 import type { Point, Stroke as StrokeRecord } from '../../../core/ink/codec';
 import { grow, transformBounds } from '../geometry/bounds';
@@ -109,10 +110,11 @@ function quantizePoints(stroke: InkStroke, channels: number, startMs: number): P
 }
 
 /**
- * Encodes a stroke as a record. Throws a `PointError` when the stroke has no points or more than 200,000, so a
- * caller that cannot rule that out checks `canEncode` first.
+ * Encodes a stroke as a record. Throws a `PointError` when the stroke has no points or more than 200,000, or a number
+ * that is not finite, so a caller that cannot rule that out checks `canEncode` first.
  */
 export function recordFromStroke(stroke: InkStroke): StrokeRecord {
+  if (!finiteStroke(stroke)) throw new PointError(`stroke ${stroke.id} has a value that is not a number`);
   const channels = channelsOf(stroke.points);
   const start = startMillis(stroke, channels);
   const quantized = quantizePoints(stroke, channels, start);
@@ -137,9 +139,18 @@ export function recordFromStroke(stroke: InkStroke): StrokeRecord {
   };
 }
 
-/** True when a stroke can be a record: it has points, and not more than a record holds. */
+/** Whether every number a record stores is finite: a NaN or an Infinity would encode, and the codec refuses it later. */
+function finiteStroke(stroke: InkStroke): boolean {
+  const finite = (v: number | undefined) => v === undefined || Number.isFinite(v);
+  if (!Number.isFinite(stroke.width) || !(stroke.transform ?? []).every((v) => Number.isFinite(v))) return false;
+  return stroke.points.every(
+    (p) => finite(p.x) && finite(p.y) && finite(p.pressure) && finite(p.tiltX) && finite(p.tiltY) && finite(p.time),
+  );
+}
+
+/** True when a stroke can be a record: it has points, not more than a record holds, and only finite numbers. */
 export function canEncode(stroke: InkStroke): boolean {
-  return stroke.points.length >= 1 && stroke.points.length <= MAX_POINTS;
+  return stroke.points.length >= 1 && stroke.points.length <= MAX_POINTS && finiteStroke(stroke);
 }
 
 /**

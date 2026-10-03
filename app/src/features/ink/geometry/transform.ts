@@ -53,7 +53,8 @@ export function selectionBounds(strokes: readonly Stroke[]): Bounds | null {
 export function boxToBox(from: Bounds, to: Bounds): Matrix | null {
   const w = from.maxX - from.minX;
   const h = from.maxY - from.minY;
-  if (w <= 0 || h <= 0) return null;
+  // A target with no area would give a matrix with no area: strokes that draw with width 0 and widths that divide by it.
+  if (w <= 0 || h <= 0 || !(to.maxX - to.minX > 0) || !(to.maxY - to.minY > 0)) return null;
   const scale = scaling((to.maxX - to.minX) / w, (to.maxY - to.minY) / h, { x: from.minX, y: from.minY });
   return compose(translation(to.minX - from.minX, to.minY - from.minY), scale);
 }
