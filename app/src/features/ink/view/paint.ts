@@ -2,7 +2,7 @@
 // as long as the stroke object lives; strokes never change, so a new object means new ink. Highlighters go below the
 // other strokes, as the format says, and carry their 40 percent alpha in their color.
 import { applyToPoint, widthScale } from '../geometry/matrix';
-import { outlinePath, pencilOpacity, strokeOutline } from '../geometry/outline';
+import { pencilOpacity, strokeOutline } from '../geometry/outline';
 import type { InkPoint, InkTool } from '../geometry/types';
 import type { InkStroke } from '../model/types';
 import { resolveColor, toCss } from '../pens/palette';
@@ -17,9 +17,19 @@ export function pagePointsOf(stroke: InkStroke): readonly InkPoint[] {
   return stroke.points.map((point) => ({ ...point, ...applyToPoint(m, point) }));
 }
 
+/**
+ * The filled outline of points as a Path2D, built point by point: a string path would be built and parsed again for
+ * every stroke, which dominated opening a page of 10,000 strokes. The outline is dense enough that straight edges
+ * between its points look as smooth as the curves of `outlinePath` at any zoom the page has.
+ */
 export function outlineOf(points: readonly InkPoint[], tool: InkTool, width: number, complete = true): Path2D {
   const outline = strokeOutline(points, { tool, width, complete });
-  return new Path2D(outlinePath(outline));
+  const path = new Path2D();
+  if (outline.length < 2) return path;
+  path.moveTo(outline[0].x, outline[0].y);
+  for (let i = 1; i < outline.length; i++) path.lineTo(outline[i].x, outline[i].y);
+  path.closePath();
+  return path;
 }
 
 export function strokePath(stroke: InkStroke): Path2D {

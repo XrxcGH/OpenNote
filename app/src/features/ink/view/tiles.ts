@@ -12,13 +12,15 @@ import type { ColorScheme } from '../pens/palette';
 import type { InkCamera } from './host';
 import { paintStrokes } from './paint';
 
-/** Ink reaches this far past a stroke's centerline box, in page units: half the widest pen, rounded up. */
+/** The most ink can reach past a stroke's centerline box, in page units: half the widest pen, rounded up. */
 export const INK_MARGIN = 48;
 /** The drawing slice per frame, in milliseconds. */
 const SLICE_MS = 6;
 
 export interface TileSource {
   query(box: Bounds): InkStroke[];
+  /** How far the widest stroke shown reaches past its centerline box, in page units; at most INK_MARGIN. */
+  margin(): number;
   scheme(): ColorScheme;
   penDown(): boolean;
 }
@@ -32,6 +34,9 @@ export interface TileStats {
   readonly held: number;
   readonly drawn: number;
   readonly pending: number;
+  /** The slowest tile drawn and the slowest plan, in milliseconds. */
+  readonly slowestTileMs: number;
+  readonly slowestPlanMs: number;
 }
 
 export class TileLayer {
@@ -45,6 +50,8 @@ export class TileLayer {
   private queued = 0;
   private drawn = 0;
   private pending = 0;
+  private slowestTileMs = 0;
+  private slowestPlanMs = 0;
   private stillTimer: ReturnType<typeof setTimeout> | null = null;
   private zoomStill = true;
   private lastZoom = 0;
@@ -76,7 +83,7 @@ export class TileLayer {
 
   /** Makes every tile that meets the box stale. Visible ones redraw now, so new ink shows in this frame. */
   invalidate(box: Bounds, now = true): void {
-    const reach = grow(box, INK_MARGIN);
+    const reach = grow(box, this.source.margin());
     for (const tile of this.tiles.values()) {
       const { scale, tx, ty } = tile.info;
       if (intersects(tileBounds(tx, ty, scale), reach)) tile.info = { ...tile.info, revision: -1 };
@@ -92,7 +99,8 @@ export class TileLayer {
   }
 
   stats(): TileStats {
-    return { held: this.tiles.size, drawn: this.drawn, pending: this.pending };
+    const { drawn, pending, slowestTileMs, slowestPlanMs } = this;
+    return { held: this.tiles.size, drawn, pending, slowestTileMs, slowestPlanMs };
   }
 
   destroy(): void {
@@ -123,6 +131,7 @@ export class TileLayer {
     const scale = camera.zoom * camera.dpr;
     const infos = new Map([...this.tiles].map(([id, tile]) => [id, tile.info]));
     this.frame += 1;
+    const planning = performance.now();
     const plan = planTiles({
       viewport,
       zoom: camera.zoom,
@@ -134,8 +143,9 @@ export class TileLayer {
       penDown: this.source.penDown(),
       budget: tileBudget({ visibleTiles: visibleTileCount(viewport, scale) }),
       frame: this.frame,
-      hasInk: (rect) => this.source.query(grow(rect, INK_MARGIN)).length > 0,
+      hasInk: (rect) => this.source.query(grow(rect, this.source.margin())).length > 0,
     });
+    this.slowestPlanMs = Math.max(this.slowestPlanMs, performance.now() - planning);
     this.shownScale = plan.scale;
     for (const id of plan.evict) this.evict(id);
     for (const job of plan.empty) this.store(job, null);
@@ -175,6 +185,7 @@ export class TileLayer {
   }
 
   private draw(job: TileJob): void {
+    const started = performance.now();
     const canvas = this.tiles.get(job.id)?.canvas ?? this.pool.pop() ?? this.make();
     const span = tileSpan(job.scale);
     Object.assign(canvas.style, {
@@ -189,11 +200,12 @@ export class TileLayer {
       ctx.clearRect(0, 0, TILE_PX, TILE_PX);
       ctx.setTransform(job.scale, 0, 0, job.scale, -job.tx * TILE_PX, -job.ty * TILE_PX);
       const box = tileBounds(job.tx, job.ty, job.scale);
-      paintStrokes(ctx, this.source.query(grow(box, INK_MARGIN)), this.source.scheme());
+      paintStrokes(ctx, this.source.query(grow(box, this.source.margin())), this.source.scheme());
     }
     if (!canvas.parentElement) this.element.append(canvas);
     this.drawn += 1;
     this.store(job, canvas);
+    this.slowestTileMs = Math.max(this.slowestTileMs, performance.now() - started);
   }
 
   private make(): HTMLCanvasElement {

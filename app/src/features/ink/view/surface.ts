@@ -14,14 +14,15 @@ import { currentTheme } from '../../../theme/theme';
 import { showToast } from '../../../ui';
 import { intersects, strokeBounds, union } from '../geometry/bounds';
 import { compose } from '../geometry/matrix';
-import { createStrokeIndex } from '../geometry/strokeIndex';
+import { createStrokeIndex, halfWidth } from '../geometry/strokeIndex';
 import type { StrokeIndex } from '../geometry/strokeIndex';
 import type { Bounds, Matrix } from '../geometry/types';
 import { recordFromStroke, strokeFromRecord } from '../model/convert';
 import type { InkStroke } from '../model/types';
 import type { ColorScheme } from '../pens/palette';
+import { maxWidthFactor } from '../pens/width';
 import type { InkBlockLayer, InkCamera, InkQueue, InkViewport } from './host';
-import { fillOf, outlineOf } from './paint';
+import { fillOf, outlineOf, strokePath } from './paint';
 import type { PenStyle } from './state';
 import { INK_MARGIN, TileLayer } from './tiles';
 
@@ -49,6 +50,9 @@ export class InkSurface {
   private down = false;
   private size = { w: 0, h: 0, dpr: 0 };
   private extent: Bounds | null = null;
+  private warming: InkStroke[] | null = null;
+  /** How far the widest stroke shown reaches past its centerline box: tiles query no farther. */
+  private reach = 1;
   private readonly listeners = new Set<() => void>();
   /** A gesture's view of the ink before the core has it: strokes it hides, and strokes it shows outside the index. */
   private readonly hidden = new Set<string>();
@@ -71,6 +75,7 @@ export class InkSurface {
     viewport.viewport.after(this.overlay);
     this.tiles = new TileLayer(this.overlay, {
       query: (box) => this.query(box),
+      margin: () => this.reach,
       scheme: () => this.scheme(),
       penDown: () => this.down,
     });
@@ -92,6 +97,11 @@ export class InkSurface {
     );
     this.load();
     this.setCamera(this.camera);
+  }
+
+  /** Strokes whose outlines still wait to be built in idle time. */
+  get warmingLeft(): number {
+    return this.warming?.length ?? 0;
   }
 
   get readOnly(): boolean {
@@ -163,6 +173,7 @@ export class InkSurface {
       if (stroke) add(strokeBounds(stroke));
       this.extra.delete(id);
     }
+    this.widen(show);
     for (const stroke of show) {
       this.extra.set(stroke.id, stroke);
       add(strokeBounds(stroke));
@@ -214,6 +225,7 @@ export class InkSurface {
   /** Puts strokes in the picture (or replaces them) and redraws what they touch. */
   show(strokes: readonly InkStroke[]): void {
     let box: Bounds | null = null;
+    this.widen(strokes);
     for (const stroke of strokes) {
       const before = this.index.get(stroke.id);
       if (before) box = box ? union(box, strokeBounds(before)) : strokeBounds(before);
@@ -235,6 +247,13 @@ export class InkSurface {
     }
     if (box) this.changed(box);
     return gone;
+  }
+
+  private widen(strokes: Iterable<InkStroke>): void {
+    for (const stroke of strokes) {
+      const reach = halfWidth(stroke) * maxWidthFactor(stroke.tool) + 1;
+      if (reach > this.reach) this.reach = Math.min(INK_MARGIN, reach);
+    }
   }
 
   private changed(box: Bounds): void {
@@ -317,6 +336,7 @@ export class InkSurface {
   }
 
   destroy(): void {
+    this.warming = null;
     this.stops.splice(0).forEach((stop) => stop());
     this.tiles.destroy();
     this.overlay.remove();
@@ -349,8 +369,38 @@ export class InkSurface {
       }
     }
     for (const stroke of strokes) this.index.put(stroke);
+    this.widen(strokes);
+    this.warm(strokes);
     const box = strokes.reduce<Bounds | null>((acc, s) => (acc ? union(acc, strokeBounds(s)) : strokeBounds(s)), null);
     if (box) this.changed(box);
+  }
+
+  /**
+   * Builds the outlines of loaded strokes in idle time, nearest the view first, so a scroll into a dense page only
+   * fills paths and never shapes them inside a frame.
+   */
+  private warm(strokes: readonly InkStroke[]): void {
+    const { scrollX, scrollY, zoom, viewport } = this.camera;
+    const cx = (scrollX + viewport.w / 2) / zoom;
+    const cy = (scrollY + viewport.h / 2) / zoom;
+    const near = (s: InkStroke) => {
+      const b = strokeBounds(s);
+      return Math.abs((b.minX + b.maxX) / 2 - cx) + Math.abs((b.minY + b.maxY) / 2 - cy);
+    };
+    const queue = [...(this.warming ?? []), ...strokes].sort((a, b) => near(b) - near(a));
+    const start = this.warming === null;
+    this.warming = queue;
+    if (!start) return;
+    const step = (deadline?: IdleDeadline) => {
+      const list = this.warming;
+      if (!list) return;
+      // At least a few milliseconds each time: while the page animates, idle time can stay near zero.
+      const until = performance.now() + Math.max(3, Math.min(8, deadline?.timeRemaining() ?? 8));
+      while (list.length > 0 && performance.now() < until) strokePath(list.pop()!);
+      if (list.length === 0) this.warming = null;
+      else idle(step);
+    };
+    idle(step);
   }
 
   private setCamera(camera: InkCamera): void {
@@ -379,6 +429,16 @@ export class InkSurface {
 }
 
 const IDENTITY_M: Matrix = [1, 0, 0, 1, 0, 0];
+
+type IdleWindow = Window & {
+  requestIdleCallback?: (callback: (deadline: IdleDeadline) => void, options?: { timeout: number }) => number;
+};
+
+function idle(callback: (deadline?: IdleDeadline) => void): void {
+  const view = window as IdleWindow;
+  if (view.requestIdleCallback) view.requestIdleCallback(callback, { timeout: 100 });
+  else setTimeout(callback, 16);
+}
 
 function notSaved(): void {
   showToast({ id: 'ink-not-saved', message: t('ink.errors.notSaved'), tone: 'danger' });

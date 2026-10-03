@@ -12,6 +12,7 @@ import type { SelectionFrame } from './selection';
 import { chooseTool, drawState, routerTool } from './state';
 import type { DrawTool } from './state';
 import { InkSurface } from './surface';
+import { installInkTestHooks } from './testHooks';
 
 let current: { surface: InkSurface; frame: SelectionFrame; stop: () => void } | null = null;
 
@@ -61,6 +62,7 @@ const tool = (id: `ink.${string}`, title: CommandDef['title'], to: DrawTool, fla
 });
 
 export function installInk(host: InkHost): () => void {
+  installInkTestHooks(() => current?.surface ?? null);
   const pen = createPenTool(host, () => current?.surface ?? null);
   const touch = createTouchTool(host, () => current?.surface ?? null);
   const stops: (() => void)[] = [
