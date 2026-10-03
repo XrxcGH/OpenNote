@@ -12,23 +12,24 @@ A break is a `SheetBreak` before a block, before one line of a text block, or be
 
 All of it is re-exported from `features/pages`.
 
-| Name                                                                                       | Purpose                                                                                            |
-| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `paginate(g, blocks, measure, options?)`                                                   | The `Plan` for a flow on sheets of geometry `g`                                                    |
-| `sheetGeometry(size, margins)`, `paperDimensions(name, orientation, custom?)`              | A `SheetGeometry` from a paper size and margins                                                    |
-| `PAPER_SIZES`, `MARGIN_PRESETS`, `clampMargins`, `MIN_MARGIN`, `GAP_HALF`                  | Letter, A4, A5, Legal, Tabloid, the margin presets, and their limits                               |
-| `sheetTop`, `contentTop`, `contentBottom`, `contentBox`, `sheetAt`, `flowSheetAt`, `inGap` | Where a sheet and its content box are, and which sheet a y lies on                                 |
-| `sheetSpan(g, box)`, `sheetPieces(g, box)`, `sheetCount(g, bottoms)`, `belowBreak(g, box)` | Which sheets a floating block reaches, the part on each, and where "Move below page break" puts it |
-| `inkBounds(points, width)`                                                                 | The box around a stroke                                                                            |
-| `sheetsAfterWriting(g, sheets, y)` | The sheet count once the pen writes at `y`: writing past the last sheet adds the sheet it lands on, with the same background |
-| `printSheet(size, pagePt?)`, `CHROMIUM_PAGES_PT`, `POINTS_PER_UNIT`                        | The sheet box that print uses, never larger than the page Chromium writes (ADR 0006, rule 2)       |
+| Name                                                                                       | Purpose                                                                                                                      |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `paginate(g, blocks, measure, options?)`                                                   | The `Plan` for a flow on sheets of geometry `g`                                                                              |
+| `sheetGeometry(size, margins)`, `paperDimensions(name, orientation, custom?)`              | A `SheetGeometry` from a paper size and margins                                                                              |
+| `PAPER_SIZES`, `MARGIN_PRESETS`, `clampMargins`, `MIN_MARGIN`, `MIN_CONTENT`, `GAP_HALF`   | Letter, A4, A5, Legal, Tabloid, the margin presets, and their limits                                                         |
+| `sheetTop`, `contentTop`, `contentBottom`, `contentBox`, `sheetAt`, `flowSheetAt`, `inGap` | Where a sheet and its content box are, and which sheet a y lies on                                                           |
+| `sheetSpan(g, box)`, `sheetPieces(g, box)`, `sheetCount(g, bottoms)`, `belowBreak(g, box)` | Which sheets a floating block reaches, the part on each, and where "Move below page break" puts it                           |
+| `inkBounds(points, width)`                                                                 | The box around a stroke                                                                                                      |
+| `sheetsAfterWriting(g, sheets, y)`                                                         | The sheet count once the pen writes at `y`: writing past the last sheet adds the sheet it lands on, with the same background |
+| `printSheet(size, pagePt?)`, `CHROMIUM_PAGES_PT`, `POINTS_PER_UNIT`                        | The sheet box that print uses, never larger than the page Chromium writes (ADR 0006, rule 2)                                 |
 
 ## Rules
 
 - A heading never ends a sheet. It moves with the first lines of what follows it, and a run of headings moves together.
 - A paragraph splits between lines, and never leaves fewer than `minLines` (default 2) alone at the bottom or the top of a sheet. A paragraph of three lines or fewer never splits.
-- A table splits between rows, repeats its header rows on the new sheet, and keeps the header with the first body row. A table that fits on one sheet moves whole, unless keep together is off. A table taller than a sheet gives way and splits.
-- An image or other atom never splits. One taller than a content box is clipped and reported as `tooTall`.
+- A table splits between rows, repeats its header rows on the new sheet, and keeps the header with the first body row. A table that fits on one sheet moves whole, unless keep together is off. A table taller than a sheet gives way and splits. A header that leaves the row after a break no room does not repeat.
+- An image or other atom never splits. One taller than a content box is clipped and reported as `tooTall`. A piece a break has moved to the top of a sheet never moves again.
+- Margins always leave a content box of at least `MIN_CONTENT` (48 units). Paper too small for one keeps its whole flow on one sheet and reports `noRoom`.
 - A manual break starts a new sheet and takes no room. A break at the very bottom of a sheet adds no blank sheet, and two breaks in a row leave one. A break at the end counts a sheet.
 - A floating block or ink stroke across a sheet edge is drawn on both sheets, clipped at each edge, and flagged so the interface can offer to move it.
 

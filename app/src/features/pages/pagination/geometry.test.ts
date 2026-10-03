@@ -44,6 +44,18 @@ describe('sheet geometry', () => {
     expect(sheetGeometry({ width: 816, height: 1056 }, MARGIN_PRESETS.narrow).margins).toEqual([48, 48, 48, 48]);
   });
 
+  it('always leaves a content box of at least 48 units', () => {
+    // Half the paper each would leave no content box at all, and the paginator nothing to fill.
+    expect(clampMargins([600, 72, 600, 72], 816, 1056)).toEqual([504, 72, 504, 72]);
+    const small = sheetGeometry({ width: 300, height: 144 });
+    expect(small.margins).toEqual([48, 72, 48, 72]);
+    expect(contentBox(small, 0).h).toBe(48);
+    // Uneven margins give up room in proportion to how far each is above the smallest margin.
+    const [top, , bottom] = clampMargins([1000, 24, 500, 24], 816, 1056);
+    expect(top + bottom).toBeCloseTo(1056 - 48);
+    expect(top - 24).toBeCloseTo(((528 - 24) / (500 - 24)) * (bottom - 24));
+  });
+
   it('finds the sheet of a y, and the sheet a flowing item could sit on', () => {
     expect(sheetAt(LETTER, 0)).toBe(0);
     expect(sheetAt(LETTER, 1055.9)).toBe(0);

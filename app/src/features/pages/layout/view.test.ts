@@ -149,7 +149,8 @@ describe('changing a view', () => {
     expect(describePaper(1056, 816)).toEqual({ size: 'letter', orientation: 'landscape' });
     expect(describePaper(480, 672)).toEqual({ size: 'custom', orientation: 'portrait' });
     const tiny = setMargins(setCustomPaper(DEFAULT_VIEW, 200, 300), [500, 500, 500, 500]);
-    expect(tiny.paper.margins).toEqual([150, 100, 150, 100]);
+    // Margins leave a 48-unit content box, so the paginator always has room.
+    expect(tiny.paper.margins).toEqual([126, 76, 126, 76]);
   });
 
   it('keeps spacing in the range of the pattern', () => {

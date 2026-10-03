@@ -58,9 +58,14 @@ export interface SheetBreak {
   readonly headerHeight: number;
 }
 
+/**
+ * Something the plan could not do. A `tooTall` piece is taller than a content box, so it is clipped at the bottom.
+ * With `noRoom`, the margins leave no content box, so the whole flow stays on one sheet. With `stopped`, the paginator
+ * made more breaks than any flow needs and stopped before `block`. That is a safety net for a bug, and the rest of the
+ * flow stays where it is.
+ */
 export interface PlanWarning {
-  /** A piece of content is taller than a sheet's content box, so it is clipped at the bottom. */
-  readonly kind: 'tooTall';
+  readonly kind: 'tooTall' | 'noRoom' | 'stopped';
   readonly block: string;
   readonly sheet: number;
 }

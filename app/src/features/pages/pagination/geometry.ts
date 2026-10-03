@@ -56,11 +56,30 @@ export function paperDimensions(size: PaperSizeName, orientation: Orientation, c
   return orientation === 'landscape' ? { width: base.height, height: base.width } : { ...base };
 }
 
-/** Keeps each margin between MIN_MARGIN and half the paper in that direction. */
+/** Margins always leave a content box at least this tall and wide, so the paginator always has room to fill. */
+export const MIN_CONTENT = 48;
+
+/**
+ * Keeps two opposite margins between MIN_MARGIN and half the paper. When they leave less than MIN_CONTENT between
+ * them, each gives up part of its excess over MIN_MARGIN, in proportion. Paper below 2 × MIN_MARGIN + MIN_CONTENT
+ * keeps MIN_MARGIN on each side, and its smaller content box is the paginator's to report.
+ */
+function marginPair(first: number, second: number, size: number): [number, number] {
+  const side = (value: number) => Math.min(Math.max(value, MIN_MARGIN), size / 2);
+  const a = side(first);
+  const b = side(second);
+  const over = a + b - Math.max(size - MIN_CONTENT, 2 * MIN_MARGIN);
+  if (over <= 0) return [a, b];
+  const spare = a + b - 2 * MIN_MARGIN;
+  return [a - (over * (a - MIN_MARGIN)) / spare, b - (over * (b - MIN_MARGIN)) / spare];
+}
+
+/** Keeps each margin between MIN_MARGIN and half the paper, with a content box of at least MIN_CONTENT between. */
 export function clampMargins(margins: Margins, width: number, height: number): Margins {
   const [top, right, bottom, left] = margins;
-  const side = (value: number, limit: number) => Math.min(Math.max(value, MIN_MARGIN), limit / 2);
-  return [side(top, height), side(right, width), side(bottom, height), side(left, width)];
+  const [t, b] = marginPair(top, bottom, height);
+  const [l, r] = marginPair(left, right, width);
+  return [t, r, b, l];
 }
 
 export function sheetGeometry(size: CustomSize, margins: Margins = MARGIN_PRESETS.normal): SheetGeometry {

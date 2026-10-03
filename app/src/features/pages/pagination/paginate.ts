@@ -20,6 +20,8 @@ interface State {
   sheet: number;
   /** The first piece on that sheet. A break never goes before it, or the sheet would stay empty. */
   start: number;
+  /** The piece the last break moved to the top of a sheet, or -1. It is as high as it can go, so it stays. */
+  opened: number;
   readonly breaks: SheetBreak[];
   readonly warnings: PlanWarning[];
   readonly forcedDone: Set<number>;
@@ -45,18 +47,22 @@ interface Start {
 function startSheet(g: SheetGeometry, units: readonly Unit[], st: State, at: Start): void {
   const unit = units[at.index];
   const gap = Math.max(0, contentTop(g, at.dest) - (unit.top + st.shift));
-  const push = gap + unit.header;
+  // A repeated header that leaves the row no room is dropped, so the row gets the whole content box.
+  const room = contentBottom(g, at.dest) - contentTop(g, at.dest);
+  const header = unit.header + (unit.bottom - unit.top) > room + EPS ? 0 : unit.header;
+  const push = gap + header;
   st.breaks.push({
     sheet: at.dest,
     pos: unit.pos,
     push,
     forced: at.forced,
-    repeatHeader: unit.header > 0,
-    headerHeight: unit.header,
+    repeatHeader: header > 0,
+    headerHeight: header,
   });
   st.shift += push;
   st.sheet = at.dest;
   st.start = at.index;
+  st.opened = at.index;
 }
 
 /** A manual break: the piece starts `forced` sheets after the last one, or where it already lies if that is later. */
@@ -76,11 +82,13 @@ function place(g: SheetGeometry, units: readonly Unit[], i: number, st: State): 
   }
   const top = unit.top + st.shift;
   const bottom = unit.bottom + st.shift;
-  const k = Math.max(st.sheet, flowSheetAt(g, top));
+  // A piece a break just moved to the top of its sheet stays there: another break would only repeat this one.
+  const opened = i === st.opened;
+  const k = opened ? st.sheet : Math.max(st.sheet, flowSheetAt(g, top));
   const inBand = k > st.sheet && top < contentTop(g, k) - EPS;
   const overflow = bottom > contentBottom(g, k) + EPS;
   const atTop = top <= contentTop(g, k) + EPS;
-  if (inBand || (overflow && !atTop)) {
+  if (!opened && (inBand || (overflow && !atTop))) {
     const dest = inBand ? k : k + 1;
     const j = dest === st.sheet + 1 ? findBreak(units, i, st.start) : i;
     startSheet(g, units, st, { index: j, dest, forced: false });
@@ -104,9 +112,24 @@ export function paginate(
   options: PaginateOptions = {},
 ): Plan {
   const { units, trailing } = buildUnits(blocks, measure, options.minLines ?? 2);
-  const st: State = { shift: 0, sheet: 0, start: 0, breaks: [], warnings: [], forcedDone: new Set() };
+  const st: State = { shift: 0, sheet: 0, start: 0, opened: -1, breaks: [], warnings: [], forcedDone: new Set() };
+  if (contentBottom(g, 0) - contentTop(g, 0) <= EPS) {
+    // With no content box, every piece would start a sheet of its own forever.
+    const last = units.at(-1);
+    st.warnings.push({ kind: 'noRoom', block: units[0]?.block ?? '', sheet: 0 });
+    return { sheets: 1, breaks: [], warnings: st.warnings, end: last ? last.bottom : contentTop(g, 0) };
+  }
+  // Each break the paginator chooses goes before a later piece than the last one did. Each piece also has at most
+  // one manual break. So a flow never needs more than two breaks a piece.
+  const maxBreaks = 2 * units.length + 16;
   let i = 0;
-  while (i < units.length) i = place(g, units, i, st);
+  while (i < units.length) {
+    if (st.breaks.length > maxBreaks) {
+      st.warnings.push({ kind: 'stopped', block: units[i].block, sheet: st.sheet });
+      break;
+    }
+    i = place(g, units, i, st);
+  }
   const sheets = st.sheet + 1 + trailing;
   const last = units.at(-1);
   const end = trailing > 0 || !last ? contentTop(g, sheets - 1) : last.bottom + st.shift;

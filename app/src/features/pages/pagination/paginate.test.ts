@@ -136,6 +136,52 @@ describe('paginate a table by row', () => {
     const { plan } = run(LETTER, [text('a', 36), table('t', 10, { headerRows: 1, together: false })]);
     expect(plan.breaks.map((b) => b.pos)).toEqual([{ kind: 'block', block: 't' }]);
   });
+
+  /** A table at the top of sheet 0 whose rows have the given heights. */
+  function tallRows(g: SheetGeometry, heights: readonly number[], headerRows = 1) {
+    let y = g.margins[0];
+    const rows = heights.map((height) => {
+      const row = { top: y, height };
+      y += height;
+      return row;
+    });
+    const block = { id: 't', kind: 'table', headerRows } as const;
+    return paginate(g, [block], () => ({ top: g.margins[0], height: y - g.margins[0], rows }));
+  }
+
+  it('drops the repeated header when the header and the row after a break overflow a sheet', () => {
+    // The 912-unit content box holds the header or a row with the header, never both at 500 units each.
+    const plan = tallRows(LETTER, [500, 500, 500]);
+    expect(plan.breaks.map((b) => [b.sheet, b.repeatHeader, b.headerHeight])).toEqual([
+      [1, false, 0],
+      [2, false, 0],
+    ]);
+    expect(plan.sheets).toBe(3);
+    expect(plan.warnings).toEqual([]);
+  });
+
+  it('never moves a row that a break put at the top of a sheet again', () => {
+    // A5 landscape has a 415-unit content box. The header fits with no row, and the tall row fits nowhere.
+    const g = sheetGeometry(paperDimensions('a5', 'landscape'));
+    const plan = tallRows(g, [60, 30, 600, 30]);
+    expect(plan.breaks.map((b) => [b.sheet, b.pos, b.repeatHeader])).toEqual([
+      [1, { kind: 'row', block: 't', row: 2 }, false],
+    ]);
+    expect(plan.warnings).toEqual([{ kind: 'tooTall', block: 't', sheet: 1 }]);
+    expect(plan.sheets).toBe(3);
+  });
+});
+
+describe('paginate with no content box', () => {
+  it('keeps the flow on one sheet and reports it', () => {
+    const g = { width: 300, height: 144, margins: [72, 72, 72, 72] } as const;
+    const { blocks, measure } = flow([text('p', 3)], 72);
+    expect(paginate(g, blocks, measure)).toMatchObject({
+      sheets: 1,
+      breaks: [],
+      warnings: [{ kind: 'noRoom', block: 'p', sheet: 0 }],
+    });
+  });
 });
 
 describe('paginate images and other atoms', () => {
