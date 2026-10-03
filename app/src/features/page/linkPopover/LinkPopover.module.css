@@ -1,0 +1,21 @@
+/* The link popover: two labeled fields and the actions, on the popover surface. */
+@layer components {
+  .form {
+    display: grid;
+    gap: var(--space-3);
+    inline-size: min(22rem, calc(100vw - 2 * var(--space-4)));
+    padding: var(--space-3);
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+
+  .anchor {
+    position: fixed;
+    pointer-events: none;
+    visibility: hidden;
+  }
+}
