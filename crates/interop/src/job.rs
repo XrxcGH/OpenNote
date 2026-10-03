@@ -15,7 +15,7 @@ use crate::detect::{detect, prepare, Detected, SourceKind};
 use crate::doc::parse::{parse, SoftBreaks};
 use crate::error::{InteropError, Result};
 use crate::import::{
-    import_csv, import_docx_with, import_eml, import_enex, import_html_folder, import_keep_folder,
+    import_csv, import_docx_with, import_eml, import_enex, import_highlights, import_html_folder, import_keep_folder,
     import_markdown_folder, import_mht, import_pptx, import_sticky_notes, import_text_folder, import_textbundle_folder,
     import_xlsx, WordPages,
 };
@@ -113,6 +113,7 @@ fn dispatch(
         SourceKind::Spreadsheet => import_xlsx(root, env, sink),
         SourceKind::Presentation => import_pptx(root, env, sink),
         SourceKind::Email => import_eml(root, env, sink),
+        SourceKind::Highlights => import_highlights(root, env, sink),
         SourceKind::GoogleKeep => import_keep_folder(root, env, sink),
         SourceKind::TextBundle => import_textbundle_folder(root, env, sink),
         SourceKind::StickyNotes => import_sticky_notes(root, env, sink),

@@ -49,6 +49,8 @@ pub enum SourceKind {
     Presentation,
     /// Email files (`.eml`), each message a page.
     Email,
+    /// Kindle `My Clippings.txt` and Readwise CSV exports.
+    Highlights,
     /// OneNote's own section and notebook files (`.one`, `.onepkg`), which this version cannot read.
     OneNoteFile,
 }
@@ -71,6 +73,7 @@ impl SourceKind {
             SourceKind::Spreadsheet => "Excel workbooks",
             SourceKind::Presentation => "PowerPoint presentations",
             SourceKind::Email => "Email files",
+            SourceKind::Highlights => "Kindle and Readwise highlights",
             SourceKind::OneNoteFile => "OneNote files",
         }
     }
@@ -114,6 +117,9 @@ pub fn detect(path: &Path) -> Result<Detected> {
             file_name(path),
             "Save the document as .docx in its own app, then import that file.",
         )),
+        "txt" | "text" | "csv" if holds_highlights(path, &ext) => {
+            Ok(detected(SourceKind::Highlights, SourceKind::Highlights.label()))
+        }
         _ => by_extension(&ext).ok_or_else(|| {
             let hint = if starts_with(path, b"%PDF") {
                 "PDF files are added to a page, not imported as notes."
@@ -154,6 +160,20 @@ fn detected(kind: SourceKind, label: impl Into<String>) -> Detected {
         supported: true,
         zipped: false,
         advice: None,
+    }
+}
+
+/// Whether a text or CSV file is a Kindle clippings file or a Readwise export, from its first few kilobytes.
+fn holds_highlights(path: &Path, ext: &str) -> bool {
+    let mut head = vec![0u8; 8192];
+    let Ok(read) = File::open(path).and_then(|mut f| f.read(&mut head)) else {
+        return false;
+    };
+    let text = String::from_utf8_lossy(&head[..read]).replace("\r\n", "\n");
+    if ext == "csv" {
+        crate::import::is_readwise(&text)
+    } else {
+        crate::import::is_kindle(&text)
     }
 }
 

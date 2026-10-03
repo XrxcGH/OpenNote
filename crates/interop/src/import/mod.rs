@@ -11,6 +11,7 @@ mod enex_xml;
 mod enml;
 mod files;
 mod folder;
+mod highlights;
 mod html;
 mod html_note;
 mod htmltree;
@@ -38,6 +39,8 @@ mod zipxml;
 
 pub use eml::import_eml;
 pub use enex::{import_enex, import_enex_reader};
+pub use highlights::import_highlights;
+pub(crate) use highlights::{is_kindle, is_readwise};
 pub use html::import_html_folder;
 pub use keep::{import_keep_folder, looks_like_keep};
 pub use logseq::import_logseq_folder;

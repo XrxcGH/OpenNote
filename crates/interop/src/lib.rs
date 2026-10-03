@@ -42,10 +42,10 @@ pub use export::{
     export_tables, Exported, Format, NoPdfRenderer, PdfRenderer, Scope, TableFormat,
 };
 pub use import::{
-    import_csv, import_docx, import_docx_with, import_eml, import_enex, import_enex_reader, import_html_folder,
-    import_keep_folder, import_logseq_folder, import_markdown_folder, import_mht, import_notion_folder, import_pptx,
-    import_sticky_notes, import_text_folder, import_textbundle_folder, import_xlsx, sticky_notes_database, Flavor,
-    WordPages,
+    import_csv, import_docx, import_docx_with, import_eml, import_enex, import_enex_reader, import_highlights,
+    import_html_folder, import_keep_folder, import_logseq_folder, import_markdown_folder, import_mht,
+    import_notion_folder, import_pptx, import_sticky_notes, import_text_folder, import_textbundle_folder, import_xlsx,
+    sticky_notes_database, Flavor, WordPages,
 };
 pub use job::{import, preview, ImportOptions, Preview, PreviewSection};
 pub use report::{Entry, LossGroup, Outcome, PageReport, Report, ReportKind};

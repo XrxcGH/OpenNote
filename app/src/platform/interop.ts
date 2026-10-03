@@ -21,6 +21,7 @@ export type SourceKind =
   | 'spreadsheet'
   | 'presentation'
   | 'email'
+  | 'highlights'
   | 'oneNoteFile';
 
 /** What a file, folder, or archive is. */
