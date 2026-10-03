@@ -8,8 +8,8 @@ import { planFlow } from '../layout';
 import type { PageLayout } from '../layout';
 import { sheetAt } from '../pagination';
 import type { BlockMeasure, FlowBlock, SheetBreak } from '../pagination';
-import { linesOf } from '../print';
-import type { LineStart } from '../print';
+import { linesOf } from '../print/dom';
+import type { LineStart } from '../print/dom';
 import { clearEditorSpacers, insertStaticSpacers, positionOf, removeStaticSpacers, setEditorSpacers } from './spacers';
 import type { EditorSpacers } from './spacers';
 

@@ -9,8 +9,11 @@ import { Button, Dialog, ProgressBar, RadioCard, RadioGroup, Switch, TextField, 
 import { exportPdfFile, PdfCheckError, prepareInput } from '../host/exporter';
 import type { PdfOutcome } from '../host/exporter';
 import type { PageSource } from '../host/source';
-import { parsePageRange, preparePrint } from '../print';
-import type { Parity, PrepareResult, PrintOptions } from '../print';
+import { parsePageRange } from '../print/range';
+import type { Parity } from '../print/range';
+import { preparePrint } from '../print/prepare';
+import type { PrepareResult } from '../print/prepare';
+import type { PrintOptions } from '../print/sheets';
 import styles from './pagesUi.module.css';
 
 export interface PrintDialogProps {

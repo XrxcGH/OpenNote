@@ -6,7 +6,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import type { LineStart } from '../print';
+import type { LineStart } from '../print/dom';
 import styles from './live.module.css';
 
 /** What an editor shows: room above some top-level elements, and spacers at places inside the text. */

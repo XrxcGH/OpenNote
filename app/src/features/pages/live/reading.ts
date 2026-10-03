@@ -14,7 +14,7 @@ import {
   writeReading,
 } from '../reading';
 import type { LineBox, ReadingAids } from '../reading';
-import { linesOf } from '../print';
+import { linesOf } from '../print/dom';
 import styles from './live.module.css';
 
 const KEY = 'opennote.readingAids';
