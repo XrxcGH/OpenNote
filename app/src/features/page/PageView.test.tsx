@@ -42,7 +42,8 @@ describe('the page view', () => {
     box.focus();
     await userEvent.keyboard('Cells divide');
     const sent = () => (platform.pages as MemoryPageService).sent('p-mitosis').flatMap((batch) => batch.edits);
-    await expect.poll(() => JSON.stringify(sent().at(-1))).toContain('Cells divide');
+    const held = () => (platform.pages as MemoryPageService).held('p-mitosis')?.blocks[0]?.data.markdown;
+    await expect.poll(held).toBe('Cells divide');
     expect(sent()[0]).toMatchObject({ edit: 'insertBlock', block: { type: 'text' } });
   });
 });

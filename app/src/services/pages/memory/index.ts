@@ -24,6 +24,8 @@ export interface MemoryPageServiceOptions {
 
 export type MemoryPageService = PageService & {
   sent(page: PageId): readonly EditBatch[];
+  /** The page as the service holds it now, after every edit, undo, and redo. */
+  held(page: PageId): PageJson | null;
   /** Makes a page read-only, or writable again with null, and tells its clients, as `core:read-only` does. */
   setReadOnly(page: PageId, info: ReadOnlyInfo | null): void;
   /** Replaces a page as another app would on disk, and tells its clients, as `core:external-change` does. */
@@ -69,6 +71,10 @@ export function createMemoryPageService(
       return Promise.resolve(openClient(state, `main-${++clients}`, splices, copy));
     },
     sent: (page) => pages.get(page)?.sent ?? [],
+    held: (page) => {
+      const state = pages.get(page);
+      return state ? structuredClone(state.page) : null;
+    },
     setReadOnly(page, info) {
       const state = pages.get(page);
       if (!state) return;
