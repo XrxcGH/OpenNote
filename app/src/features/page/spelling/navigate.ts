@@ -12,7 +12,7 @@ import {
 import type { SpellRange } from '../../../editor/extensions/spellingText';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import type { EditorPool } from '../pool/pool';
 import { shownViewport } from '../viewport/viewport';
 import { spellingEngine } from './current';

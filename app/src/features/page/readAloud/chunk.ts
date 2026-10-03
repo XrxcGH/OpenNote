@@ -8,7 +8,7 @@ import { osStore } from '../../../state/os';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import { shownViewport } from '../viewport/viewport';
 import { createWebSpeechEngine } from './engine';
 import type { SpeechEngine } from './engine';

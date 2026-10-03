@@ -2,7 +2,7 @@
 // bar, the palette, or a menu, it is the editor that had focus last. This module is light, because the start-up
 // registrations read it for `when` and checked states.
 import type { Editor } from '@tiptap/core';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import type { EditorPool } from '../pool/pool';
 
 let watched: EditorPool | null = null;

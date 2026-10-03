@@ -9,7 +9,7 @@ import { META_COMMAND } from '../../../editor/meta';
 import type { BlockId, OpenPage } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
 
 /** Where the top-level node `index` starts and ends in `doc`, or the end of the doc for one past the last. */

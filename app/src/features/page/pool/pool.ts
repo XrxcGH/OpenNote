@@ -6,7 +6,6 @@
 import type { Editor } from '@tiptap/core';
 import { Selection } from '@tiptap/pm/state';
 import type { BlockId } from '../../../services/pages/types';
-import { createStore } from '../../../state/store';
 import { placeAtPoint } from './point';
 
 export type MountTarget =
@@ -29,8 +28,7 @@ export interface EditorPool {
   setScreenReader(on: boolean): void;
 }
 
-/** The pool of the page that is shown. Commands run on its active editor. */
-export const shownPool = createStore<EditorPool | null>(null, 'page editor pool');
+export { shownPool } from './shown';
 
 /** At most this many unfocused editors stay mounted (ADR 0005, spike S3). */
 export const POOL_CAP = 16;

@@ -6,7 +6,7 @@ import { TextSelection } from '@tiptap/pm/state';
 import { canJoin } from '@tiptap/pm/transform';
 import type { MergeBlocksDetail } from '../../../editor/commands/state';
 import { META_COMMAND } from '../../../editor/meta';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import { appendToNextBatch } from '../sync/shown';
 
 /** Moves `block`'s content to the end of `previous`, joining the two textblocks that meet. */

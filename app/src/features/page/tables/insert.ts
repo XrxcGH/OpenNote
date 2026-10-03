@@ -12,7 +12,7 @@ import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { syncOf } from '../blocks/textBlock';
 import { shownLayer } from '../mount';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import { acceptRemoteText, shownQueue } from '../sync';
 import { whenViewReady } from './lazyView';
 

@@ -12,7 +12,7 @@ import { META_COMMAND } from '../../../editor/meta';
 import { t } from '../../../strings/t';
 import { announce, editMenu, openMenu } from '../../../ui';
 import type { MenuAnchor, MenuItemSpec } from '../../../ui';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import { spellingEngine } from './current';
 import type { SpellingEngine } from './engine';
 

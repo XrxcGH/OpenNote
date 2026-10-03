@@ -24,7 +24,7 @@ import { openMenu, showToast } from '../../../ui';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import type { CommandContext } from '../../../commands/types';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import { pageSelection } from '../seams/selectionStore';
 import { targetEditor } from './target';
 

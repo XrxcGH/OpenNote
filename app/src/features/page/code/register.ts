@@ -4,7 +4,7 @@
 import type { Editor } from '@tiptap/core';
 import { commands } from '../../../registries';
 import { pageCommandDef } from '../keys';
-import { shownPool } from '../pool/pool';
+import { shownPool } from '../pool/shown';
 import { lateRefines } from '../tables/refines';
 import { leaveCodeBlock, openCodeLanguage } from './commands';
 
