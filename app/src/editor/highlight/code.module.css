@@ -1,0 +1,90 @@
+/*
+ * Code blocks (ARCHITECTURE.md section 14; owner: WP6): the language button, and the colors of highlighted code.
+ * Each color is a code token from brand/tokens.json, 4.5:1 or more on the code background in both themes. In
+ * forced colors every token is CanvasText, so code reads as plain text there.
+ */
+@layer components {
+  .block {
+    position: relative;
+  }
+
+  /* The button sits in the block's corner, out of the flow, so the block's box is the same before it mounts. */
+  .language {
+    position: absolute;
+    inset-block-start: var(--space-1);
+    inset-inline-end: var(--space-1);
+    padding: 0 var(--space-2);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .language:hover {
+    border-color: var(--color-border-subtle);
+    background: var(--color-surface-hover);
+  }
+
+  .language:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .keyword {
+    color: var(--color-code-keyword);
+  }
+
+  .string {
+    color: var(--color-code-string);
+  }
+
+  .number {
+    color: var(--color-code-number);
+  }
+
+  .comment {
+    color: var(--color-code-comment);
+    font-style: italic;
+  }
+
+  .function {
+    color: var(--color-code-function);
+  }
+
+  .type {
+    color: var(--color-code-type);
+  }
+
+  .variable {
+    color: var(--color-code-variable);
+  }
+
+  .punctuation {
+    color: var(--color-code-punctuation);
+  }
+
+  .deletion {
+    color: var(--color-status-danger);
+  }
+
+  .emphasis {
+    font-style: italic;
+  }
+
+  .strong {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  @media (forced-colors: active) {
+    .language {
+      border-color: ButtonText;
+      background: ButtonFace;
+      color: ButtonText;
+    }
+  }
+}

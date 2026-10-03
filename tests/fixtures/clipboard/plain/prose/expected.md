@@ -1,0 +1,7 @@
+<!-- source: plain -->
+
+Cells divide in two ways. Mitosis makes two identical cells, and meiosis makes four cells with half the chromosomes.
+
+Both start after the DNA is copied. The cell checks the copy before it divides.
+
+Read more at https://example.org/cell-division before the lab.

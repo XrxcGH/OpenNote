@@ -4,9 +4,12 @@
 pub mod appearance;
 pub mod args;
 pub mod boot;
+pub mod clipboard;
 pub mod command_list;
+pub mod core_bridge;
 pub mod early;
 pub mod events;
+pub mod images;
 pub mod install;
 pub mod instance;
 pub mod ipc;
@@ -17,6 +20,8 @@ pub mod paths;
 pub mod perf;
 pub mod settings;
 pub mod shell;
+pub mod speech;
+pub mod spelling;
 pub mod state;
 pub mod theme_tokens;
 pub mod updater;
@@ -71,7 +76,9 @@ pub fn run(context: EarlyContext) {
         flag_overrides: boot::flag_overrides(&std::env::var("OPENNOTE_FLAGS").unwrap_or_default()),
     };
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
-    let app = tauri::Builder::default()
+    let pages = core_bridge::CoreBridge::new(&paths);
+    let builder = images::register_renditions(tauri::Builder::default());
+    let app = builder
         .manage(loaded.store)
         .manage(state)
         .manage(hooks)
@@ -79,6 +86,9 @@ pub fn run(context: EarlyContext) {
         .manage(launch)
         .manage(paths)
         .manage(ExitState::default())
+        .manage(pages)
+        .manage(clipboard::ClipTokens::default())
+        .manage(spelling::SpellService)
         // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
         .manage(instance)
         .setup(|app| {
@@ -95,6 +105,7 @@ pub fn run(context: EarlyContext) {
     app.run(|app, event| {
         if let tauri::RunEvent::Exit = event {
             flush_files(app);
+            app.state::<core_bridge::CoreBridge>().shutdown();
         }
     });
 }
@@ -142,5 +153,28 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         updater::updater_go_back,
         notes_snapshot::notes_snapshot_load,
         notes_snapshot::notes_snapshot_save,
+        core_bridge::page_open,
+        core_bridge::page_apply,
+        core_bridge::page_undo,
+        core_bridge::page_redo,
+        core_bridge::page_save_now,
+        core_bridge::page_close,
+        core_bridge::history_list,
+        core_bridge::history_open,
+        core_bridge::history_restore,
+        core_bridge::history_restore_blocks,
+        core_bridge::history_name,
+        clipboard::clipboard_facts,
+        clipboard::clipboard_read,
+        images::import::image_import,
+        images::web::image_import_url,
+        images::import::image_import_clip,
+        spelling::spell_languages,
+        spelling::spell_check,
+        spelling::spell_suggest,
+        spelling::spell_add_word,
+        spelling::spell_remove_word,
+        speech::speech_voices,
+        speech::speech_synthesize,
     ]
 }

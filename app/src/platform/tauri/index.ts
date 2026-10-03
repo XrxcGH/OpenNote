@@ -3,7 +3,11 @@
 import { isEnabled } from '../../app/flags';
 import type { BootData, Platform } from '../types';
 import { createTauriInstall } from './install';
-import { tauriClipboard, tauriImages, tauriPages, tauriSpeech, tauriSpelling } from './future';
+import { createTauriClipboard } from './clipboard';
+import { createTauriImages } from './images';
+import { createTauriPages } from './pages';
+import { createTauriSpeech } from './speech';
+import { createTauriSpelling } from './spelling';
 import { createTauriLifecycle } from './lifecycle';
 import { tauriLog } from './log';
 import { createTauriOs } from './os';
@@ -17,6 +21,7 @@ import { createTauriWindow } from './window';
 
 /** Call after initFlags, so the notes snapshot follows its flag. */
 export function createTauriPlatform(boot: BootData): Platform {
+  const images = createTauriImages();
   return {
     kind: 'tauri',
     boot,
@@ -28,11 +33,11 @@ export function createTauriPlatform(boot: BootData): Platform {
     install: createTauriInstall(),
     updater: createTauriUpdater(boot.updater),
     shell: createTauriShell(),
-    pages: tauriPages,
-    spelling: tauriSpelling,
-    clipboard: tauriClipboard,
-    images: tauriImages,
-    speech: tauriSpeech,
+    pages: createTauriPages(images),
+    spelling: createTauriSpelling(),
+    clipboard: createTauriClipboard(),
+    images,
+    speech: createTauriSpeech(),
     notesSnapshot: isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
     perf: createTauriPerf(),
     log: tauriLog,

@@ -1,0 +1,307 @@
+@layer components {
+  .block {
+    position: relative;
+    margin-block-end: var(--space-4);
+    border-radius: var(--radius-sm);
+  }
+
+  .block:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .floating {
+    position: absolute;
+    margin: 0;
+  }
+
+  .text {
+    color: var(--color-text-primary);
+    font-family: var(--font-reading);
+    font-size: var(--type-note-size);
+    line-height: var(--type-note-line);
+  }
+
+  .text :global(.ProseMirror) {
+    min-block-size: 1lh;
+    outline: none;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    caret-color: var(--color-accent-clay);
+  }
+
+  /*
+   * ADR 0005's first rule, applied per textblock (ARCHITECTURE.md section 5.7): a key press repaints only the
+   * block it changes, so a 20-page note paints like a short one. List markers, checkboxes, and fold buttons are
+   * siblings of the paragraph, outside its containment. The clip margin keeps the caret and italic overhang
+   * visible at a block's edges.
+   */
+  .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
+    contain: paint;
+    overflow-clip-margin: 4px;
+  }
+
+  /* An empty text box invites writing, in muted text that is never part of the note. */
+  .text :global(.ProseMirror) > p:only-child:has(> br:only-child)::before {
+    content: var(--placeholder);
+    float: inline-start;
+    block-size: 0;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .text :global(.ProseMirror) ::selection {
+    background: var(--color-selection-highlight);
+  }
+
+  /* The first block of text keeps this with and without an editor: an editor's widgets, such as a heading's fold
+     button, don't count as the first child. The selectors are the cheap form of `:nth-child(1 of ...)`: with
+     that one, every widget the editor redrew restyled all of a long note's blocks, 3.5 ms a key. */
+  .text :global(.ProseMirror) > :first-child,
+  .text :global(.ProseMirror) > :global(.ProseMirror-widget):first-child + * {
+    margin-block-start: 0;
+  }
+
+  .text :global(.ProseMirror) h1,
+  .text :global(.ProseMirror) h2,
+  .text :global(.ProseMirror) h3 {
+    color: var(--color-text-primary);
+    font-family: var(--font-reading);
+    line-height: 1.25;
+  }
+
+  .text :global(.ProseMirror) h2 {
+    padding-block-end: var(--space-1);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .text :global(.ProseMirror) a {
+    color: var(--color-accent-primary);
+  }
+
+  .text :global(.ProseMirror) blockquote {
+    margin-inline: 0;
+    padding-inline-start: var(--space-4);
+    border-inline-start: 3px solid var(--color-accent-clay);
+    color: var(--color-text-secondary);
+  }
+
+  .text :global(.ProseMirror) mark {
+    padding-inline: 0.1em;
+    border-radius: 2px;
+    background: var(--color-selection-highlight);
+    color: inherit;
+  }
+
+  /* The other highlighters are the pens' colors, washed out like a highlighter on paper (BRAND.md section 4). */
+  .text :global(.ProseMirror) mark[data-color='mint'] {
+    background: color-mix(in srgb, var(--ink-fern) 22%, transparent);
+  }
+
+  .text :global(.ProseMirror) mark[data-color='rose'] {
+    background: color-mix(in srgb, var(--ink-brick) 20%, transparent);
+  }
+
+  .text :global(.ProseMirror) mark[data-color='apricot'] {
+    background: color-mix(in srgb, var(--ink-amber) 24%, transparent);
+  }
+
+  .text :global(.ProseMirror) mark[data-color='lilac'] {
+    background: color-mix(in srgb, var(--ink-plum) 20%, transparent);
+  }
+
+  .text :global(.ProseMirror) span[data-color='ink'] {
+    color: var(--ink-ink);
+  }
+
+  .text :global(.ProseMirror) span[data-color='indigo'] {
+    color: var(--ink-indigo);
+  }
+
+  .text :global(.ProseMirror) span[data-color='brick'] {
+    color: var(--ink-brick);
+  }
+
+  .text :global(.ProseMirror) span[data-color='fern'] {
+    color: var(--ink-fern);
+  }
+
+  .text :global(.ProseMirror) span[data-color='plum'] {
+    color: var(--ink-plum);
+  }
+
+  .text :global(.ProseMirror) span[data-color='amber'] {
+    color: var(--ink-amber);
+  }
+
+  .text :global(.ProseMirror) span[data-color='walnut'] {
+    color: var(--ink-walnut);
+  }
+
+  .text :global(.ProseMirror) span[data-size='small'] {
+    font-size: 0.85em;
+  }
+
+  .text :global(.ProseMirror) span[data-size='large'] {
+    font-size: 1.25em;
+  }
+
+  .text :global(.ProseMirror) span[data-size='xlarge'] {
+    font-size: 1.5em;
+  }
+
+  .text :global(.ProseMirror) :is(ul, ol) {
+    margin-block: var(--space-2);
+    padding-inline-start: 1.5em;
+  }
+
+  .text :global(.ProseMirror) li > p {
+    margin-block: var(--space-1);
+  }
+
+  .text :global(.ProseMirror) li::marker {
+    color: var(--color-accent-clay);
+  }
+
+  .text :global(.ProseMirror) li[data-checked]::marker {
+    content: '\2610\00a0\00a0';
+    color: var(--color-text-secondary);
+  }
+
+  .text :global(.ProseMirror) li[data-checked='true']::marker {
+    content: '\2611\00a0\00a0';
+    color: var(--color-accent-primary);
+  }
+
+  .text :global(.ProseMirror) li[data-checked='true'] > p {
+    color: var(--color-text-secondary);
+  }
+
+  /*
+   * Callouts: a soft card tinted by its type, with the type's color on its edge and beside its title. The title
+   * names the type in words, so color is never the only signal.
+   */
+  .text :global(.ProseMirror) [data-callout] {
+    --callout: var(--color-border-control);
+    margin-block: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    border-inline-start: 3px solid var(--callout);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--callout) 8%, var(--color-surface-page));
+  }
+
+  .text :global(.ProseMirror) [data-callout] > p {
+    margin-block: var(--space-1) 0;
+  }
+
+  .text :global(.ProseMirror) [data-callout-title] {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .text :global(.ProseMirror) [data-callout-title]::before {
+    content: '';
+    flex: none;
+    inline-size: 0.55em;
+    block-size: 0.55em;
+    border-radius: 50%;
+    background: var(--callout);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='note'], [data-callout='info']) {
+    --callout: var(--ink-indigo);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='tip'], [data-callout='success']) {
+    --callout: var(--color-accent-primary);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='important'], [data-callout='example']) {
+    --callout: var(--ink-amber);
+  }
+
+  .text :global(.ProseMirror) [data-callout='question'] {
+    --callout: var(--ink-plum);
+  }
+
+  .text :global(.ProseMirror) :is([data-callout='warning'], [data-callout='caution']) {
+    --callout: var(--color-accent-clay);
+  }
+
+  .text :global(.ProseMirror) [data-callout='danger'] {
+    --callout: var(--color-status-danger);
+  }
+
+  .text :global(.ProseMirror) [data-callout='quote'] {
+    --callout: var(--ink-walnut);
+  }
+
+  @media (forced-colors: active) {
+    .text :global(.ProseMirror) [data-callout] {
+      border-inline-start-color: CanvasText;
+      background: Canvas;
+    }
+
+    .text :global(.ProseMirror) [data-callout-title]::before {
+      background: CanvasText;
+    }
+  }
+
+  .text :global(.ProseMirror) pre,
+  .text :global(.ProseMirror) code {
+    font-family: var(--font-mono);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+  }
+
+  .text :global(.ProseMirror) pre {
+    padding: var(--space-3) var(--space-4);
+    overflow-x: auto;
+  }
+
+  .text :global(.ProseMirror) hr {
+    border: 0;
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  /*
+   * Math in static text. An editor's math view shows the source in a code element; static text has only the
+   * empty element with the source in an attribute, so math vanished until an editor mounted. Generated content
+   * shows the same source, in the same style, and screen readers read it.
+   */
+  .text :global(.ProseMirror) :is([data-math-block], [data-math]):empty::before {
+    font-family: var(--font-mono);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+  }
+
+  .text :global(.ProseMirror) [data-math-block]:empty {
+    display: block;
+    margin-block: var(--space-3);
+    color: var(--color-text-secondary);
+    white-space: pre-wrap;
+  }
+
+  .text :global(.ProseMirror) [data-math-block]:empty::before {
+    content: '$$\A' attr(data-math-block) '\A$$';
+  }
+
+  .text :global(.ProseMirror) [data-math]:empty {
+    color: var(--color-text-secondary);
+  }
+
+  .text :global(.ProseMirror) [data-math]:empty::before {
+    content: '$' attr(data-math) '$';
+  }
+
+  .unknown {
+    padding: var(--space-3) var(--space-4);
+    border: 1px dashed var(--color-border-control);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-sunken);
+    font-size: var(--type-note-size);
+  }
+}

@@ -28,6 +28,8 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 tauri = { version = "2", features = [] }
+# Web images for paste (Phase 4 ARCHITECTURE.md section 12.2), with the same TLS stack and version as the updater.
+ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default"] }
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
@@ -39,14 +41,18 @@ features = [
   "Networking_Connectivity",
   "UI_ViewManagement",
   "Win32_Foundation",
+  "Win32_Globalization",
   "Win32_Graphics_Dwm",
   "Win32_Graphics_Gdi",
+  "Win32_Graphics_Imaging",
   "Win32_Security",
   "Win32_Storage_FileSystem",
   "Win32_System_Com",
   "Win32_System_Com_StructuredStorage",
   "Win32_System_DataExchange",
   "Win32_System_LibraryLoader",
+  "Win32_System_Memory",
+  "Win32_System_Ole",
   "Win32_System_Registry",
   "Win32_System_Threading",
   "Win32_System_Variant",

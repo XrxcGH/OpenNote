@@ -14,6 +14,15 @@ import { theme } from './theme';
 import { updates } from './updates';
 import { errors } from './errors';
 import { keys } from './keys';
+import { pageSync } from './pageSync';
+import { editor } from './editor';
+import { images } from './images';
+import { paste } from './paste';
+import { tables } from './tables';
+import { code } from './code';
+import { spelling } from './spelling';
+import { readAloud } from './readAloud';
+import { history } from './history';
 
 export const en = {
   common,
@@ -30,4 +39,13 @@ export const en = {
   updates,
   errors,
   keys,
+  pageSync,
+  editor,
+  images,
+  paste,
+  tables,
+  code,
+  spelling,
+  readAloud,
+  history,
 } as const;
