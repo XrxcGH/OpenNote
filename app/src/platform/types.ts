@@ -2,6 +2,7 @@
 // platform/tauri implements it over Tauri commands and events. platform/web implements it with in-memory fakes,
 // so the whole interface also runs in a plain browser for development and tests.
 
+import type { NotesCoreClient } from '../services/notes/core/service';
 import type { ImportedAsset, PageService } from '../services/pages/types';
 import type { MessageKey } from '../strings/t';
 import type { BootData } from './bindings/BootData';
@@ -86,6 +87,8 @@ export interface Platform {
   readonly speech: SpeechClient | null;
   /** Phase 2 only, behind notes.memorySnapshot. */
   readonly notesSnapshot: NotesSnapshotClient | null;
+  /** The notes bridge over the core, which keeps the tree in the notes folder. Null on the web platform. */
+  readonly notesCore: NotesCoreClient | null;
   readonly perf: PerfClient;
   log(level: LogLevel, message: string): void;
 }

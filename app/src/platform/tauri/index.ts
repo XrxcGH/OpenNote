@@ -5,6 +5,7 @@ import type { BootData, Platform } from '../types';
 import { createTauriInstall } from './install';
 import { createTauriClipboard } from './clipboard';
 import { createTauriImages } from './images';
+import { createTauriNotesCore } from './notes';
 import { createTauriPages } from './pages';
 import { createTauriSpeech } from './speech';
 import { createTauriSpelling } from './spelling';
@@ -19,7 +20,7 @@ import { createTauriState } from './state';
 import { createTauriUpdater } from './updater';
 import { createTauriWindow } from './window';
 
-/** Call after initFlags, so the notes snapshot follows its flag. */
+/** Call after initFlags, so the notes service follows its flags. */
 export function createTauriPlatform(boot: BootData): Platform {
   const images = createTauriImages();
   return {
@@ -38,7 +39,9 @@ export function createTauriPlatform(boot: BootData): Platform {
     clipboard: createTauriClipboard(),
     images,
     speech: createTauriSpeech(),
-    notesSnapshot: isEnabled('storage.core') || isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
+    // With storage.core, the core keeps the notes; the Phase 2 snapshot is only for a build without it.
+    notesSnapshot: !isEnabled('storage.core') && isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
+    notesCore: isEnabled('storage.core') ? createTauriNotesCore() : null,
     perf: createTauriPerf(),
     log: tauriLog,
   };

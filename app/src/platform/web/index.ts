@@ -68,6 +68,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     images: createWebImages(),
     speech: createWebSpeech(),
     notesSnapshot: createWebSnapshot(options.fixture ?? 'sample'),
+    notesCore: null,
     perf: createWebPerf(),
     log: log.log,
     setOs: os.set,
