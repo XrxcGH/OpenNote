@@ -56,6 +56,8 @@ const HREFS = [
   'mailto:a@example.com',
   'opennote:page/01m3sabc31y0rfa24eeh6j4ky4#01m3sabc32dwqknfawtgwtsgcj',
   'ftp://example.com/file',
+  'file:///C:/notes/a.txt',
+  'tel:+15551234',
   'notes.md',
   'https://example.com/caf\u00e9',
 ];

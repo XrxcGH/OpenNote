@@ -7,11 +7,12 @@ import type { MarkdownIt as Md, Token } from 'markdown-it';
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { CALLOUT_TYPE_PATTERN, LANGUAGE_PATTERN } from '../schema/specs';
+import { CALLOUT_TYPE_PATTERN, LANGUAGE_PATTERN, isBlockedHref } from '../schema/specs';
 import { inlineNodes } from './parseInline';
 import { highlightPlugin, mathPlugin } from './rules';
 
 const { nodes } = textSchema;
+const DATA_IMAGE = /^data:image\/(?:gif|png|jpeg|webp);/i;
 
 /** One markdown-it instance: CommonMark, strikethrough, highlights, and math. The paste parser also turns tables on. */
 export function createMarkdown(tables = false): Md {
@@ -22,6 +23,8 @@ export function createMarkdown(tables = false): Md {
   // Links are kept as written: no percent-encoding, no punycode. The writer and the reader then agree.
   md.normalizeLink = (url) => url;
   md.normalizeLinkText = (text) => text;
+  // SPEC 7.5 keeps links with any scheme, `file:` included, except the few the schema blocks. Data images stay.
+  md.validateLink = (url) => !isBlockedHref(url) || DATA_IMAGE.test(url);
   return md;
 }
 
