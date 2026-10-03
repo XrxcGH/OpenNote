@@ -15,6 +15,7 @@ pub mod instance;
 pub mod ipc;
 pub mod lifecycle;
 pub mod log;
+pub mod notes;
 pub mod notes_snapshot;
 pub mod paths;
 pub mod perf;
@@ -153,6 +154,22 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         updater::updater_go_back,
         notes_snapshot::notes_snapshot_load,
         notes_snapshot::notes_snapshot_save,
+        notes::notes_load_initial,
+        notes::notes_list_notebooks,
+        notes::notes_list_children,
+        notes::notes_get,
+        notes::notes_create,
+        notes::notes_rename,
+        notes::notes_set_color,
+        notes::notes_move,
+        notes::notes_set_page_level,
+        notes::notes_trash,
+        notes::notes_restore,
+        notes::notes_list_trash,
+        notes::notes_restore_from_trash,
+        notes::notes_purge,
+        notes::notes_status,
+        notes::notes_flush,
         core_bridge::page_open,
         core_bridge::page_apply,
         core_bridge::page_undo,

@@ -1,22 +1,19 @@
-//! Phase 3's core behind the page commands (core plan 11.1; Phase 4 PLAN.md section 3.13). Phase 3 planned this
-//! bridge for its notes service; WP0 of Phase 4 builds the part pages need, so typed text reaches the core and
-//! survives a restart.
+//! Phase 3's core behind the app's notes and page commands (core plan 11.1; Phase 4 PLAN.md section 3.13).
 //!
-//! Until the storage-backed notes service lands, the interface's pages come from Phase 2's notes snapshot, whose IDs
-//! the core doesn't know. The bridge keeps their content in one notebook of its own, `Pages`, in the notes folder
-//! that setup chose, and a small map from each interface page ID to the core page that holds it under
-//! `%LOCALAPPDATA%\OpenNote\phase4`, beside the snapshot whose IDs it maps. Without a notes folder, and for a
-//! profile that already keeps its `Pages` there, the notebook stays under `phase4` too. The core starts the first
-//! time a page opens, so start-up doesn't wait for it.
+//! One core serves both. The notes commands in [`crate::notes`] keep the tree of notebooks, section groups,
+//! sections, and pages in the notes folder that setup chose, in the note format: one folder per notebook with its
+//! `notebook.json`, its sections, and its pages (docs/format/README.md section 3). The page commands here open and
+//! edit those pages by their IDs, which are the tree's node IDs. Only the core's device-local data, such as the
+//! journals and the library's order of notebooks, stays under `%LOCALAPPDATA%\OpenNote\core`.
 //!
-//! WP2 adds the history commands and turns the core's events into `core:*` events for the interface, with the
-//! interface's page IDs.
+//! The core starts with the first command, which is the tree's first load, and a beta 1 profile is migrated then
+//! (see [`crate::notes::migrate`]).
 
 use std::{
-    collections::{BTreeMap, HashMap},
-    fs, io,
+    collections::HashMap,
+    fs,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex, OnceLock, PoisonError},
+    sync::{mpsc, Arc, Mutex, OnceLock, PoisonError},
     time::Duration,
 };
 
@@ -29,42 +26,49 @@ use opennote_core::{
     session::{
         core::{Core, CoreConfig},
         events::{CoreEvent, EventSink},
-        notebook::{NodePlacement, NotebookHandle, ParentRef},
         page::{PageHandle, RestoreResult, TxnAck},
     },
-    BlockId, ClientId, CoreError, PageId, RevisionId, SectionId,
+    BlockId, ClientId, CoreError, NotebookId, PageId, RevisionId,
 };
 use serde_json::Value;
 use tauri::{ipc::Response, AppHandle, Emitter, Manager, State};
 
 use crate::{
     ipc::{codes, IpcError, IpcResult},
+    notes::NotesState,
     paths::Paths,
-    settings::{file::write_atomic, SettingsStore},
+    settings::SettingsStore,
 };
-
-/// The folder of the bridge's notebook, inside the notebook's parent.
-const NOTEBOOK: &str = "Pages";
 
 /// How long the exit flush may take before the journals keep the rest for the next start (core plan 9.3).
 const EXIT_FLUSH: Duration = Duration::from_secs(5);
 
-/// The longest page ID the commands take. The interface's page IDs are far shorter.
+/// The longest page ID the commands take. Page IDs are 26 characters.
 const MAX_PAGE_ID: usize = 128;
 
 /// What the interface hears when the core can't start. The cause, which can name local paths, goes to the log.
-const NOT_STARTED: &str = "OpenNote couldn't open its pages. Try again in a moment.";
+const NOT_STARTED: &str = "OpenNote couldn't open its notes. Try again in a moment.";
 
 /// Sends one event to the interface.
-type Emit = Box<dyn Fn(&'static str, Value) + Send + Sync>;
+pub type Emit = Box<dyn Fn(&'static str, Value) + Send + Sync>;
 
-/// Where the core's page events go: the app, once a page has opened, under the interface's page IDs. It holds the
-/// app behind a closure, so unit tests never link the windowing code an `AppHandle` drags in.
+/// Where the core's events go: the app, once the interface has called a command. It holds the app behind a
+/// closure, so unit tests and the notes harness never link the windowing code an `AppHandle` drags in. Tree
+/// changes the core makes on its own, such as a page's title copy after a save, go to a worker that turns them
+/// into notes events.
 #[derive(Default)]
-struct Relay {
+pub struct Relay {
     emit: OnceLock<Emit>,
-    /// Core page ID to interface page ID.
-    pages: Mutex<HashMap<PageId, String>>,
+    trees: Mutex<Option<mpsc::Sender<NotebookId>>>,
+}
+
+impl Relay {
+    /// Sends an event to the interface, if it is listening.
+    pub(crate) fn send(&self, name: &'static str, payload: Value) {
+        if let Some(emit) = self.emit.get() {
+            emit(name, payload);
+        }
+    }
 }
 
 /// The core's events, as `core:*` events for the interface (core plan 11.2).
@@ -75,51 +79,47 @@ impl EventSink for AppEvents {
         if let CoreEvent::SaveFailed { .. } = &event {
             ::log::warn!("The core couldn't save a page: {event:?}");
         }
-        let (name, page) = match &event {
-            CoreEvent::TxnApplied { page, .. } => ("core:txn-applied", *page),
-            CoreEvent::ExternalChange { page, .. } => ("core:external-change", *page),
-            CoreEvent::ReadOnly { page, .. } => ("core:read-only", *page),
-            CoreEvent::Saved { page, .. } => ("core:saved", *page),
-            CoreEvent::SaveFailed { page, .. } => ("core:save-failed", *page),
+        if let CoreEvent::TreeChanged { notebook } = &event {
+            if let Some(trees) = self.0.trees.lock().unwrap_or_else(PoisonError::into_inner).as_ref() {
+                let _ = trees.send(*notebook);
+            }
+            return;
+        }
+        let name = match &event {
+            CoreEvent::TxnApplied { .. } => "core:txn-applied",
+            CoreEvent::ExternalChange { .. } => "core:external-change",
+            CoreEvent::ReadOnly { .. } => "core:read-only",
+            CoreEvent::Saved { .. } => "core:saved",
+            CoreEvent::SaveFailed { .. } => "core:save-failed",
             _ => return,
         };
-        let Some(emit) = self.0.emit.get() else {
+        let Ok(payload) = serde_json::to_value(&event) else {
             return;
         };
-        let pages = self.0.pages.lock().unwrap_or_else(PoisonError::into_inner);
-        let Some(ui) = pages.get(&page).cloned() else {
-            return;
-        };
-        drop(pages);
-        let Ok(mut payload) = serde_json::to_value(&event) else {
-            return;
-        };
-        payload["page"] = Value::String(ui);
-        emit(name, payload);
+        self.0.send(name, payload);
     }
 }
 
-/// The managed state behind the page commands.
+/// The managed state behind the notes and page commands.
 pub struct CoreBridge {
-    /// This device's files: the core's own data and the page map.
+    /// This device's files, `%LOCALAPPDATA%\OpenNote`: the core's own data and a beta 1 profile's files.
     root: PathBuf,
-    /// The notes folder from settings, which the first page open reads before the core starts.
-    notes_folder: OnceLock<PathBuf>,
     /// The started bridge. A start that failed leaves it empty, so the next command tries again.
-    state: Mutex<Option<Bridge>>,
+    state: Arc<Mutex<Option<Bridge>>>,
     relay: Arc<Relay>,
 }
 
-struct Bridge {
-    core: Core,
-    notebook: NotebookHandle,
-    section: SectionId,
-    map_file: PathBuf,
-    /// Interface page ID to core page ID.
-    map: BTreeMap<String, String>,
-    /// Open pages by core page and client.
-    open: HashMap<(PageId, ClientId), PageHandle>,
-    relay: Arc<Relay>,
+/// The started core with what the commands keep beside it.
+pub struct Bridge {
+    pub(crate) core: Core,
+    /// This device's files.
+    pub(crate) root: PathBuf,
+    /// Open pages by page and client.
+    pub(crate) open: HashMap<(PageId, ClientId), PageHandle>,
+    /// The notebook each open page was opened in.
+    homes: HashMap<(PageId, ClientId), NotebookId>,
+    pub(crate) notes: NotesState,
+    pub(crate) relay: Arc<Relay>,
 }
 
 fn internal(error: impl std::fmt::Display) -> IpcError {
@@ -131,7 +131,7 @@ fn invalid(field: &str, error: impl std::fmt::Display) -> IpcError {
 }
 
 /// A core error with the code the page service reads: an edit's own code, `readOnly`, `notFound`, or internal.
-fn core_error(error: CoreError) -> IpcError {
+pub(crate) fn core_error(error: CoreError) -> IpcError {
     let code = match &error {
         CoreError::Edit(edit) => edit.code(),
         CoreError::ReadOnly(_) => "readOnly",
@@ -145,9 +145,8 @@ fn revision_id(text: &str) -> IpcResult<RevisionId> {
     RevisionId::parse(text).map_err(|error| invalid("revision", error))
 }
 
-/// Checks a page argument: a short, plain ID, as the interface's page IDs are, so nothing else becomes a key of the
-/// page map.
-fn check_page(page: &str) -> IpcResult<()> {
+/// Checks a page argument: a short, plain ID, as page IDs are.
+pub(crate) fn check_page(page: &str) -> IpcResult<()> {
     let plain = page
         .bytes()
         .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_');
@@ -157,111 +156,61 @@ fn check_page(page: &str) -> IpcResult<()> {
     Ok(())
 }
 
-/// The page map, or an empty one when there is no file yet. Any other failure stops the start, so a map that can't
-/// be read now is never replaced by one without its pages.
-fn read_map(file: &Path) -> Result<BTreeMap<String, String>, IpcError> {
-    match fs::read_to_string(file) {
-        Ok(text) => serde_json::from_str(&text)
-            .map_err(|error| internal(format!("The page map at {} can't be read: {error}", file.display()))),
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(BTreeMap::new()),
-        Err(error) => Err(internal(format!(
-            "The page map at {} can't be read: {error}",
-            file.display()
-        ))),
+/// The core's device-local data folder. A beta 1 profile kept it under `phase4`; it moves to `core` once, so the
+/// device, the journals, and the library stay as they were.
+fn data_dir(root: &Path) -> PathBuf {
+    let data = root.join("core");
+    let old = root.join("phase4").join("core");
+    if !data.exists() && old.is_dir() {
+        if let Err(error) = fs::rename(&old, &data) {
+            ::log::warn!("Couldn't move the core's data from phase4: {error}");
+            return old;
+        }
     }
+    data
 }
 
 impl Bridge {
-    fn start(root: &Path, parent: &Path, relay: Arc<Relay>) -> Result<Bridge, IpcError> {
-        // The map goes first, so a map that can't be read stops the start before the core holds the notebook.
-        let map_file = root.join("pages.json");
-        let map = read_map(&map_file)?;
-        let config =
-            CoreConfig::production(root.join("core"), env!("CARGO_PKG_VERSION").to_owned()).map_err(internal)?;
+    fn start(root: &Path, relay: Arc<Relay>) -> Result<Bridge, IpcError> {
+        let config = CoreConfig::production(data_dir(root), env!("CARGO_PKG_VERSION").to_owned()).map_err(internal)?;
         let core = Core::start(config, Arc::new(AppEvents(relay.clone())), None).map_err(internal)?;
-        let dir = parent.join(NOTEBOOK);
-        let notebook = if dir.join("notebook.json").exists() {
-            core.open_notebook(&dir)
-        } else {
-            fs::create_dir_all(parent).map_err(internal)?;
-            core.create_notebook(parent, NOTEBOOK)
-        }
-        .map_err(internal)?;
-        let section = match notebook.tree().sections.first() {
-            Some(section) => section.id,
-            None => {
-                let at = NodePlacement {
-                    parent: ParentRef::Notebook,
-                    before: None,
-                };
-                notebook.create_section("Pages", at).map_err(internal)?
-            }
-        };
         Ok(Bridge {
             core,
-            notebook,
-            section,
-            map_file,
-            map,
+            root: root.to_path_buf(),
             open: HashMap::new(),
+            homes: HashMap::new(),
+            notes: NotesState::default(),
             relay,
         })
     }
 
-    /// Lets the core's events for a core page reach the interface under its page ID.
-    fn relay_page(&self, ui: &str, core: PageId) {
-        let mut pages = self.relay.pages.lock().unwrap_or_else(PoisonError::into_inner);
-        pages.entry(core).or_insert_with(|| ui.to_owned());
-    }
-
-    /// The core page that holds an interface page, made the first time it opens. The map holds a new page only once
-    /// the file does, so a page whose mapping wasn't written isn't typed into.
-    fn core_page(&mut self, page: &str) -> IpcResult<PageId> {
-        check_page(page)?;
-        if let Some(id) = self.map.get(page) {
-            return PageId::parse(id).map_err(|error| invalid("page", error));
-        }
-        let at = NodePlacement {
-            parent: ParentRef::Section(self.section),
-            before: None,
-        };
-        let id = self.notebook.create_page(self.section, at).map_err(internal)?;
-        let mut next = self.map.clone();
-        next.insert(page.to_owned(), id.to_string());
-        let json = serde_json::to_vec_pretty(&next).map_err(internal)?;
-        write_atomic(&self.map_file, &json)?;
-        self.map = next;
-        Ok(id)
-    }
-
-    /// The client's open session of a page, for every command but page_open: only page_open makes a page.
-    fn open_handle(&self, page: &str, client: &str) -> IpcResult<PageHandle> {
+    /// The client's open session of a page, for every command but page_open.
+    pub(crate) fn open_handle(&self, page: &str, client: &str) -> IpcResult<PageHandle> {
         check_page(page)?;
         let not_open = || IpcError::new("notFound", "This page isn't open.");
-        let id = self
-            .map
-            .get(page)
-            .and_then(|id| PageId::parse(id).ok())
-            .ok_or_else(not_open)?;
+        let id = PageId::parse(page).map_err(|_| not_open())?;
         let client = ClientId::parse(client).map_err(|error| invalid("client", error))?;
         self.open.get(&(id, client)).cloned().ok_or_else(not_open)
     }
 
-    /// The client's session of a page, opened and made first when needed (page_open).
-    fn handle(&mut self, page: &str, client: &str) -> IpcResult<PageHandle> {
-        let id = self.core_page(page)?;
-        self.relay_page(page, id);
+    /// The client's session of a page, opened when needed (page_open). The page must be in an open notebook.
+    pub(crate) fn handle(&mut self, page: &str, client: &str) -> IpcResult<PageHandle> {
+        check_page(page)?;
+        let missing = || IpcError::new("notFound", "This page isn't in any notebook.");
+        let id = PageId::parse(page).map_err(|_| missing())?;
         let client = ClientId::parse(client).map_err(|error| invalid("client", error))?;
         if let Some(handle) = self.open.get(&(id, client.clone())) {
             return Ok(handle.clone());
         }
-        let handle = self.notebook.open_page(id, client.clone()).map_err(internal)?;
+        let (notebook, _) = self.core.find_node(id.0).ok_or_else(missing)?;
+        let handle = notebook.open_page(id, client.clone()).map_err(core_error)?;
+        self.homes.insert((id, client.clone()), notebook.id());
         self.open.insert((id, client), handle.clone());
         Ok(handle)
     }
 
     fn open_handles(&self, page: &str) -> Vec<PageHandle> {
-        let Some(id) = self.map.get(page).and_then(|id| PageId::parse(id).ok()) else {
+        let Ok(id) = PageId::parse(page) else {
             return Vec::new();
         };
         self.open
@@ -270,45 +219,74 @@ impl Bridge {
             .map(|(_, handle)| handle.clone())
             .collect()
     }
+
+    /// Forgets the sessions of pages that left their notebook, such as pages moved to Trash or to another notebook.
+    /// The interface opens a page again when it needs it.
+    pub(crate) fn drop_stale_handles(&mut self) {
+        let core = &self.core;
+        let homes = &self.homes;
+        let stale: Vec<(PageId, ClientId)> = self
+            .open
+            .keys()
+            .filter(|key| {
+                let home = homes.get(*key).copied();
+                !core
+                    .find_node(key.0 .0)
+                    .is_some_and(|(notebook, node)| node.is_some() && Some(notebook.id()) == home)
+            })
+            .cloned()
+            .collect();
+        for key in stale {
+            self.homes.remove(&key);
+            if let Some(handle) = self.open.remove(&key) {
+                let _ = handle.close(&key.1);
+            }
+        }
+    }
 }
 
 impl CoreBridge {
     pub fn new(paths: &Paths) -> CoreBridge {
-        CoreBridge::at(paths.local.join("phase4"))
+        CoreBridge::at(paths.local.clone())
     }
 
-    fn at(root: PathBuf) -> CoreBridge {
+    /// A bridge whose device-local files are under `root`, for tests and the notes harness.
+    pub fn at(root: PathBuf) -> CoreBridge {
         CoreBridge {
             root,
-            notes_folder: OnceLock::new(),
-            state: Mutex::new(None),
+            state: Arc::new(Mutex::new(None)),
             relay: Arc::default(),
         }
     }
 
-    /// Puts the notebook in the notes folder, if the core hasn't started yet. The first call wins.
-    fn use_notes_folder(&self, folder: Option<String>) {
-        if let Some(folder) = folder.filter(|folder| !folder.is_empty()) {
-            let _ = self.notes_folder.set(PathBuf::from(folder));
-        }
+    /// Sends the core's events through `emit`. The first call wins.
+    pub fn listen(&self, emit: Emit) {
+        let _ = self.relay.emit.set(emit);
     }
 
-    /// Where the notebook goes: where a profile already keeps it, else the notes folder, else this device's files.
-    fn notebook_parent(&self) -> PathBuf {
-        if self.root.join(NOTEBOOK).join("notebook.json").exists() {
-            return self.root.clone();
+    /// Lets the core's events reach the app's window.
+    fn listen_app(&self, app: &AppHandle) {
+        if self.relay.emit.get().is_some() {
+            return;
         }
-        self.notes_folder.get().cloned().unwrap_or_else(|| self.root.clone())
+        let app = app.clone();
+        self.listen(Box::new(move |name, payload| {
+            if let Err(error) = app.emit(name, payload) {
+                ::log::warn!("Couldn't send {name} to the interface: {error}");
+            }
+        }));
     }
 
     /// Runs `work` on the bridge, starting the core first if it hasn't started. A start that fails is logged and
     /// tried again by the next command.
-    fn with<T>(&self, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
+    pub fn with<T>(&self, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         if state.is_none() {
-            let parent = self.notebook_parent();
-            match Bridge::start(&self.root, &parent, self.relay.clone()) {
-                Ok(bridge) => *state = Some(bridge),
+            match Bridge::start(&self.root, self.relay.clone()) {
+                Ok(bridge) => {
+                    *state = Some(bridge);
+                    self.watch_trees();
+                }
                 Err(error) => {
                     ::log::error!("The core couldn't start: {}", error.message);
                     return Err(IpcError::new(codes::INTERNAL, NOT_STARTED));
@@ -321,8 +299,46 @@ impl CoreBridge {
         }
     }
 
+    /// Runs a notes command in the notes folder `folder`, after the folder's notebooks are open and a beta 1
+    /// profile is migrated, and sends the notes events for what it changed.
+    pub fn notes<T>(&self, folder: Option<PathBuf>, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
+        self.with(|bridge| {
+            bridge.use_folder(folder);
+            let result = work(bridge);
+            bridge.drop_stale_handles();
+            bridge.send_tree_events();
+            result
+        })
+    }
+
+    /// Starts the worker that turns tree changes the core makes on its own into notes events.
+    fn watch_trees(&self) {
+        let (sender, receiver) = mpsc::channel::<NotebookId>();
+        *self.relay.trees.lock().unwrap_or_else(PoisonError::into_inner) = Some(sender);
+        let state = Arc::downgrade(&self.state);
+        let spawned = std::thread::Builder::new()
+            .name("opennote-tree-events".into())
+            .spawn(move || {
+                while receiver.recv().is_ok() {
+                    // A burst of changes needs one pass.
+                    while receiver.try_recv().is_ok() {}
+                    let Some(state) = state.upgrade() else {
+                        return;
+                    };
+                    let mut state = state.lock().unwrap_or_else(PoisonError::into_inner);
+                    if let Some(bridge) = state.as_mut() {
+                        bridge.send_tree_events();
+                    }
+                }
+            });
+        if let Err(error) = spawned {
+            ::log::warn!("Couldn't start the tree events worker: {error}");
+        }
+    }
+
     /// Saves every page and stops the core. The app calls it on exit.
     pub fn shutdown(&self) {
+        *self.relay.trees.lock().unwrap_or_else(PoisonError::into_inner) = None;
         let state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(bridge) = state.as_ref() {
             if let Err(error) = bridge.core.flush_all(EXIT_FLUSH) {
@@ -331,6 +347,26 @@ impl CoreBridge {
             bridge.core.shutdown(EXIT_FLUSH);
         }
     }
+}
+
+/// The notes folder that settings name, if setup has chosen one.
+pub(crate) fn notes_folder(app: &AppHandle) -> Option<PathBuf> {
+    app.state::<SettingsStore>()
+        .get()
+        .storage
+        .notes_folder
+        .filter(|folder| !folder.is_empty())
+        .map(PathBuf::from)
+}
+
+/// Runs a notes command for the app: its events go to the window, in the notes folder from settings.
+pub(crate) fn run_notes<T>(
+    app: &AppHandle,
+    bridge: &CoreBridge,
+    work: impl FnOnce(&mut Bridge) -> IpcResult<T>,
+) -> IpcResult<T> {
+    bridge.listen_app(app);
+    bridge.notes(notes_folder(app), work)
 }
 
 /// An open page of the core, for Phase 4's image commands (P3-8).
@@ -347,14 +383,9 @@ pub fn page_handle(app: &AppHandle, page: PageId) -> Option<PageHandle> {
     }
 }
 
-/// The core page that holds an interface page, if it was ever opened.
-pub fn core_page_id(app: &AppHandle, page: &str) -> Option<PageId> {
-    let bridge = app.state::<CoreBridge>();
-    let state = bridge.state.lock().unwrap_or_else(PoisonError::into_inner);
-    match state.as_ref() {
-        Some(bridge) => bridge.map.get(page).and_then(|id| PageId::parse(id).ok()),
-        _ => None,
-    }
+/// The core page an interface page ID names: they are the same ID.
+pub fn core_page_id(_app: &AppHandle, page: &str) -> Option<PageId> {
+    PageId::parse(page).ok()
 }
 
 fn edit_error(error: opennote_core::EditError) -> IpcError {
@@ -370,15 +401,7 @@ pub async fn page_open(
     client: String,
     viewport: Option<Rect>,
 ) -> IpcResult<Response> {
-    bridge.use_notes_folder(app.state::<SettingsStore>().get().storage.notes_folder);
-    bridge.relay.emit.get_or_init(|| {
-        Box::new(move |name, payload| {
-            if let Err(error) = app.emit(name, payload) {
-                ::log::warn!("Couldn't send {name} to the interface: {error}");
-            }
-        })
-    });
-    bridge.with(|bridge| {
+    run_notes(&app, &bridge, |bridge| {
         let handle = bridge.handle(&page, &client)?;
         let envelope = handle.envelope(viewport).map_err(internal)?;
         Ok(Response::new(envelope.bytes))
@@ -444,10 +467,11 @@ pub async fn page_save_now(bridge: State<'_, CoreBridge>, page: String) -> IpcRe
 #[tauri::command]
 pub async fn page_close(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<()> {
     bridge.with(|bridge| {
-        let Some(id) = bridge.map.get(&page).and_then(|id| PageId::parse(id).ok()) else {
+        let Ok(id) = PageId::parse(&page) else {
             return Ok(());
         };
         let client = ClientId::parse(&client).map_err(|error| invalid("client", error))?;
+        bridge.homes.remove(&(id, client.clone()));
         if let Some(handle) = bridge.open.remove(&(id, client.clone())) {
             handle.close(&client).map_err(internal)?;
         }
@@ -476,16 +500,17 @@ pub async fn history_open(
     })
 }
 
-/// Restores a version in place, or as a new page.
+/// Restores a version in place, or as a new page, which the notes events then add to the tree.
 #[tauri::command]
 pub async fn history_restore(
+    app: AppHandle,
     bridge: State<'_, CoreBridge>,
     page: String,
     client: String,
     revision: String,
     as_copy: bool,
 ) -> IpcResult<RestoreResult> {
-    bridge.with(|bridge| {
+    run_notes(&app, &bridge, |bridge| {
         let handle = bridge.open_handle(&page, &client)?;
         handle
             .restore_version(revision_id(&revision)?, as_copy)
@@ -530,199 +555,5 @@ pub async fn history_name(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use opennote_core::ops::resolve::Edit;
-
-    fn text_of(handle: &PageHandle) -> String {
-        let envelope = handle.envelope(None).expect("an envelope");
-        let decoded = opennote_core::wire::envelope::decode(&envelope.bytes).expect("decodes");
-        let page: Value = serde_json::from_slice(decoded.page_json).expect("page JSON");
-        page["blocks"][0]["data"]["markdown"]
-            .as_str()
-            .unwrap_or_default()
-            .to_owned()
-    }
-
-    fn insert(handle: &PageHandle, seq: u64, markdown: &str) {
-        let block: opennote_core::ops::resolve::NewBlock = serde_json::from_value(serde_json::json!({
-            "id": "01k6f00000000000000000b001", "type": "text", "data": { "markdown": markdown }
-        }))
-        .expect("a new block");
-        let request = TxnRequest {
-            page: handle.id(),
-            client: handle.client().clone(),
-            client_seq: seq,
-            coalesce: None,
-            ui: None,
-            edits: vec![Edit::InsertBlock {
-                block,
-                after: None,
-                before: None,
-            }],
-        };
-        handle.apply(request).expect("applies");
-    }
-
-    #[test]
-    fn typed_text_survives_a_restart_of_the_core() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let bridge = CoreBridge::at(dir.path().to_owned());
-        bridge
-            .with(|bridge| {
-                let handle = bridge.handle("p-mitosis", "main-1")?;
-                insert(&handle, 1, "Cells divide");
-                Ok(())
-            })
-            .expect("the first run");
-        bridge.shutdown();
-        let again = CoreBridge::at(dir.path().to_owned());
-        let text = again
-            .with(|bridge| Ok(text_of(&bridge.handle("p-mitosis", "main-1")?)))
-            .expect("the second run");
-        again.shutdown();
-        assert_eq!(text, "Cells divide");
-    }
-
-    #[test]
-    fn the_notebook_goes_in_the_notes_folder_and_the_map_stays_on_this_device() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let (local, notes) = (dir.path().join("local"), dir.path().join("Documents").join("OpenNote"));
-        let start = || {
-            let bridge = CoreBridge::at(local.clone());
-            bridge.use_notes_folder(Some(notes.display().to_string()));
-            bridge
-        };
-        let bridge = start();
-        bridge
-            .with(|bridge| {
-                let handle = bridge.handle("p-notes", "main-1")?;
-                insert(&handle, 1, "Kept in the notes folder");
-                Ok(())
-            })
-            .expect("the first run");
-        bridge.shutdown();
-        assert!(notes.join(NOTEBOOK).join("notebook.json").is_file());
-        assert!(local.join("pages.json").is_file());
-        assert!(!local.join(NOTEBOOK).exists());
-        let again = start();
-        let text = again
-            .with(|bridge| Ok(text_of(&bridge.handle("p-notes", "main-1")?)))
-            .expect("the second run");
-        again.shutdown();
-        assert_eq!(text, "Kept in the notes folder");
-    }
-
-    #[test]
-    fn a_profile_that_keeps_its_notebook_on_this_device_keeps_it_there() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let (local, notes) = (dir.path().join("local"), dir.path().join("Notes"));
-        let bridge = CoreBridge::at(local.clone());
-        let first = bridge.with(|bridge| bridge.core_page("p-old")).expect("the old layout");
-        bridge.shutdown();
-        let again = CoreBridge::at(local.clone());
-        again.use_notes_folder(Some(notes.display().to_string()));
-        assert_eq!(again.notebook_parent(), local);
-        let same = again.with(|bridge| bridge.core_page("p-old")).expect("the same page");
-        again.shutdown();
-        assert_eq!(same, first);
-        assert!(!notes.exists());
-    }
-
-    #[test]
-    fn each_interface_page_gets_its_own_core_page() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let bridge = CoreBridge::at(dir.path().to_owned());
-        let (one, two, again) = bridge
-            .with(|bridge| Ok((bridge.core_page("a")?, bridge.core_page("b")?, bridge.core_page("a")?)))
-            .expect("pages");
-        bridge.shutdown();
-        assert_ne!(one, two);
-        assert_eq!(one, again);
-    }
-
-    #[test]
-    fn events_name_the_interface_page_and_history_keeps_closed_versions() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let bridge = CoreBridge::at(dir.path().to_owned());
-        let (core, versions) = bridge
-            .with(|bridge| {
-                let handle = bridge.handle("p-history", "main-1")?;
-                insert(&handle, 1, "Kept when closed");
-                let client = handle.client().clone();
-                bridge.open.remove(&(handle.id(), client.clone()));
-                handle.close(&client).map_err(internal)?;
-                let again = bridge.handle("p-history", "main-1")?;
-                Ok((again.id(), again.history().map_err(core_error)?))
-            })
-            .expect("a saved page");
-        let named = bridge.relay.pages.lock().expect("the relay").get(&core).cloned();
-        bridge.shutdown();
-        assert_eq!(named.as_deref(), Some("p-history"));
-        assert!(!versions.is_empty());
-        assert_eq!(core_error(CoreError::NotFound("version".into())).code, "notFound");
-    }
-
-    #[test]
-    fn an_unreadable_page_map_stops_the_start_and_is_never_replaced() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let map_file = dir.path().join("pages.json");
-        fs::write(&map_file, b"{ not json").expect("a damaged map");
-        let bridge = CoreBridge::at(dir.path().to_owned());
-        let error = bridge
-            .with(|bridge| bridge.handle("p-damaged", "main-1").map(|_| ()))
-            .expect_err("the start fails");
-        assert_eq!(error.code, codes::INTERNAL);
-        assert!(!error.message.contains(&dir.path().display().to_string()));
-        assert_eq!(fs::read(&map_file).expect("the map"), b"{ not json");
-        // A start that failed is tried again by the next command, once the file can be read.
-        fs::write(&map_file, br#"{ "p-kept": "01k6f00000000000000000p001" }"#).expect("a mended map");
-        let kept = bridge
-            .with(|bridge| Ok(bridge.map.get("p-kept").cloned()))
-            .expect("the second start");
-        bridge.shutdown();
-        assert_eq!(kept.as_deref(), Some("01k6f00000000000000000p001"));
-    }
-
-    #[test]
-    fn a_page_is_mapped_only_once_its_map_is_written() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let bridge = CoreBridge::at(dir.path().to_owned());
-        let (first, second, mapped) = bridge
-            .with(|bridge| {
-                // A folder where the map goes makes every write fail.
-                bridge.map_file = dir.path().join("blocked");
-                fs::create_dir(&bridge.map_file).map_err(internal)?;
-                let first = bridge.core_page("p-new").is_err();
-                let second = bridge.core_page("p-new").is_err();
-                Ok((first, second, bridge.map.contains_key("p-new")))
-            })
-            .expect("the bridge");
-        bridge.shutdown();
-        assert!(first && second);
-        assert!(!mapped);
-    }
-
-    #[test]
-    fn only_page_open_makes_a_page_and_page_ids_are_checked() {
-        let dir = tempfile::tempdir().expect("a temp folder");
-        let bridge = CoreBridge::at(dir.path().to_owned());
-        let (unopened, opened) = bridge
-            .with(|bridge| {
-                let unopened = bridge.open_handle("p-never-opened", "main-1").map(|_| ()).unwrap_err();
-                bridge.handle("p-opened", "main-1")?;
-                let opened = bridge.open_handle("p-opened", "main-1").is_ok();
-                Ok((unopened, opened))
-            })
-            .expect("the bridge");
-        let map = fs::read_to_string(dir.path().join("pages.json")).expect("the map");
-        bridge.shutdown();
-        assert_eq!(unopened.code, "notFound");
-        assert!(opened);
-        assert!(!map.contains("p-never-opened"));
-        for bad in ["", "a/b", "..", "p 1", &"p".repeat(MAX_PAGE_ID + 1)] {
-            assert_eq!(check_page(bad).expect_err(bad).code, codes::INVALID);
-        }
-        assert!(check_page("01k6f00000000000000000p001").is_ok());
-    }
-}
+#[path = "core_bridge_tests.rs"]
+mod tests;
