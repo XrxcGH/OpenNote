@@ -168,4 +168,16 @@
     padding: 0;
     list-style: none;
   }
+
+  /* A labeled switch's hover area pads its label by 8 px and a 1 px border. The area hangs out to the start, so
+     the label lines up with the heading above and the help text below. */
+  .block [role='switch'] {
+    margin-inline-start: calc(-1 * (var(--space-3) + 1px));
+  }
+
+  /* One width for every flag's switch, so the tracks line up at its end instead of following each label. */
+  .flags [role='switch'] {
+    display: flex;
+    inline-size: min(100%, 24rem);
+  }
 }
