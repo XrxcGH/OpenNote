@@ -48,7 +48,8 @@ export interface BlockContext {
   readonly strokes: ReadonlyMap<string, readonly ExportStroke[]>;
 }
 
-function htmlOptions(cx: BlockContext): HtmlOptions {
+/** The options the Markdown renderer needs for a page: how links and images resolve. */
+export function htmlOptions(cx: BlockContext): HtmlOptions {
   return {
     link: cx.link,
     penColor: cx.penColor,

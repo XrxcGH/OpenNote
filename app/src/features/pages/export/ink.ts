@@ -13,6 +13,8 @@ export interface InkShape {
   /** 1 for opaque ink, less for highlighters and translucent pens. */
   readonly opacity: number;
   readonly bbox: Rect;
+  /** True for a highlighter, which draws below the text of a page. */
+  readonly highlighter: boolean;
 }
 
 /** Where an ink block's origin sits on the page. Blocks not listed sit at the page origin. */
@@ -136,7 +138,7 @@ export function strokeShape(stroke: ExportStroke, dx = 0, dy = 0): InkShape | nu
   if (stroke.x.length === 0 || stroke.x.length !== stroke.y.length) return null;
   const points = thin(pointsOf(stroke, dx, dy));
   const ring = outline(points);
-  return { d: pathData(ring), bbox: boxOf(ring), ...colorOf(stroke.color) };
+  return { d: pathData(ring), bbox: boxOf(ring), highlighter: stroke.tool === HIGHLIGHTER, ...colorOf(stroke.color) };
 }
 
 /**
