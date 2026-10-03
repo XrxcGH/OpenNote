@@ -3,6 +3,7 @@
 // nightly builds also take overrides from the boot payload and from settings.experimental.flags.
 
 import type { Channel } from '../platform/bindings/Channel';
+import { INK_FLAGS } from '../features/ink/flags';
 import { PAGE_FLAGS } from '../features/page/flags';
 import { createStore, useStore } from '../state/store';
 
@@ -54,6 +55,9 @@ type Phase4FlagId =
 
 type Phase5FlagId =
   | 'ink.core'
+  | 'ink.erasers'
+  | 'ink.lasso'
+  | 'ink.palm'
   | 'ink.shapes'
   | 'ink.anchoring'
   | 'ink.insertSpace'
@@ -98,7 +102,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('trash.view', 'The Trash view with Restore.', testBuilds),
   flag('notes.memorySnapshot', 'Keep the Phase 2 notes in a temporary snapshot file.', testBuilds),
   flag('commandBar.insert', 'The Insert tab of the command bar.', off),
-  flag('commandBar.draw', 'The Draw tab of the command bar.', off),
+  flag('commandBar.draw', 'The Draw tab of the command bar.', on),
   flag('setup.smartFeatures', 'The smart features step of setup.', off),
   flag('setup.import', 'The step of setup that brings in notes from other apps.', off),
   flag('settings.penAndInk', 'The Pen and ink section of Settings.', off),
@@ -107,6 +111,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', off),
   flag('storage.core', "Phase 3's storage-backed notes service.", off),
   ...PAGE_FLAGS,
+  ...INK_FLAGS,
 ];
 
 interface FlagState {
