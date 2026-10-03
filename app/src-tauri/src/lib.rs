@@ -23,6 +23,7 @@ pub mod log;
 pub mod notes;
 pub mod notes_snapshot;
 pub mod page_export;
+pub mod page_extras;
 pub mod paths;
 pub mod perf;
 pub mod settings;
@@ -288,5 +289,10 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         intel::intel_read_aloud_next,
         intel::intel_read_aloud_cancel,
         intel::intel_clip_audio,
+        page_extras::caret::page_extras_caret,
+        page_extras::title::page_extras_link_title,
+        page_extras::attach::attachment_import,
+        page_extras::attach::attachment_open,
+        page_extras::attach::attachment_stop,
     ]
 }

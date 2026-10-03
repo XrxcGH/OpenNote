@@ -8,7 +8,9 @@ import { announce, showToast } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import { assetTable } from './assets';
-import { FREEFORM_MAX_WIDTH, initialSize } from './geometry';
+import { offerActualSize, sizeFor, sizingFor } from '../qol/pasteSize';
+import type { Sizing } from '../qol/pasteSize';
+import { FREEFORM_MAX_WIDTH } from './geometry';
 import styles from './images.module.css';
 import type { ImportQueue, QueuedImage } from './importQueue';
 import { createImportQueue } from './importQueue';
@@ -124,6 +126,7 @@ export function imageEdits(
   mounted: Pick<MountedPage, 'viewport' | 'page'>,
   imported: readonly { asset: ImportedAsset; alt?: string }[],
   place: Placement,
+  sizing: Sizing = 'fit',
 ): { edits: Edit[]; blocks: BlockId[] } {
   const edits: Edit[] = [];
   const blocks: BlockId[] = [];
@@ -133,7 +136,10 @@ export function imageEdits(
   let y = floating ? place.y : 0;
   let after = place.kind === 'after' ? place.block : null;
   for (const { asset, alt } of imported) {
-    const size = initialSize({ width: asset.asset.width ?? 320, height: asset.asset.height ?? 240 }, { dpr, maxWidth });
+    const size = sizeFor(
+      { width: asset.asset.width ?? 320, height: asset.asset.height ?? 240 },
+      { dpr, maxWidth, sizing },
+    );
     const id = newId();
     const frame: Frame = floating ? { x: place.x, y, w: size.w, h: size.h } : { w: size.w };
     const block: NewBlock = { id, type: 'image', frame, data: { asset: asset.id, ...(alt ? { alt } : {}) } };
@@ -151,6 +157,7 @@ export async function insertImages(
   mounted: MountedPage,
   items: readonly (QueuedImage & { alt?: string })[],
   place: Placement = defaultPlacement(mounted),
+  choice: 'actual' | 'fit' | 'ask' = 'fit',
 ): Promise<BlockId[]> {
   if (items.length === 0) return [];
   const queue = importsFor(mounted);
@@ -170,9 +177,10 @@ export async function insertImages(
   if (imported.length === 0) return [];
   const table = assetTable(mounted.page);
   imported.forEach(({ asset }) => table.add(asset.id, asset.asset));
-  const { edits, blocks } = imageEdits(mounted, imported, place);
+  const { edits, blocks } = imageEdits(mounted, imported, place, sizingFor(choice));
   const ack = await mounted.sync.send({ edits });
   showInserted(mounted, edits, ack.orderKeys);
+  if (choice === 'ask') offerActualSize(mounted, blocks);
   selectOnPage({ blocks: blocks.slice(0, 1), strokes: [] });
   mounted.layer.view(blocks[0])?.element.focus({ preventScroll: false });
   announce(t('images.added', { count: blocks.length }));

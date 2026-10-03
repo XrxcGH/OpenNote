@@ -5,6 +5,8 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
 import type {
+  AttachmentSaved,
+  CaretMetrics,
   CaptionLayout,
   CaptionState,
   DeviceStatePatch,
@@ -79,6 +81,10 @@ export interface Commands extends IntelCommands, IntelChoiceCommands {
   clipboard_read: { args: None; result: ArrayBuffer };
   image_import_url: { args: { page: string; url: string }; result: ImportedAsset };
   image_import_clip: { args: { page: string; token: string }; result: ImportedAsset };
+  page_extras_caret: { args: None; result: CaretMetrics };
+  page_extras_link_title: { args: { url: string }; result: string | null };
+  attachment_open: { args: { page: string; asset: string; name: string }; result: null };
+  attachment_stop: { args: { page: string }; result: null };
   spell_languages: { args: None; result: { tag: string; name: string; isDefault: boolean }[] };
   spell_check: {
     args: { items: readonly { id: string; text: string }[]; languages: readonly string[] };
@@ -115,6 +121,7 @@ export interface Events {
   'app://before-exit': ExitReason;
   'updater://status': UpdaterStatus;
   'search:updated': IndexUpdate;
+  'attachment://saved': AttachmentSaved;
 }
 
 /** Any rejection as an IpcError. A command the shell doesn't have yet reads as code notImplemented. */

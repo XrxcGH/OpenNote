@@ -6,6 +6,7 @@ import { t } from '../../../strings/t';
 import type { ImageHandle } from '../blocks/imageBlock';
 import { cropOf, FREEFORM_MAX_WIDTH, heightFor, initialSize } from './geometry';
 import styles from './images.module.css';
+import { canWrap, openWrapMenu } from './wrapMenu';
 
 /** The column a flowing image fits: the world's width, or the freeform cap when that isn't known. */
 export function columnWidth(handle: ImageHandle): number {
@@ -58,6 +59,10 @@ export function imageToolbar(handle: ImageHandle): HTMLElement {
   };
   button(t('images.crop'), () => void import('./cropMode').then(({ startCrop }) => startCrop(handle)));
   button(t('images.altText'), () => void import('./AltTextDialog').then(({ editAltText }) => editAltText(handle)));
+  if (canWrap(handle)) {
+    const wrapButton = button(t('pageExtras.wrap.menu'), () => void openWrapMenu(handle, wrapButton));
+    wrapButton.setAttribute('aria-haspopup', 'menu');
+  }
   // Phase 12: reads the words in the image on this device, and offers to turn text recognition on first.
   if (isEnabled('intel.ocr')) {
     button(t('intel.commands.copyImageTextShort'), () => void executeCommand('intel.copyImageText', undefined, 'menu'));

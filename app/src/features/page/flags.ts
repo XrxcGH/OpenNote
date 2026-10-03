@@ -2,6 +2,9 @@
 // behind its flag, hidden rather than disabled, until it meets the definition of done. app/flags.ts joins these to
 // Phase 2's list, so they load at start-up, before the page's chunk.
 import type { FlagDef, FlagId } from '../../app/flags';
+import { QOL_PAGE_FLAGS } from './qolFlags';
+
+export type { QolPageFlagId } from './qolFlags';
 
 export type PageFlagId = Extract<FlagId, `page.${string}` | 'editor.spelling' | 'editor.readAloud'>;
 
@@ -34,4 +37,5 @@ export const PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.heicImport', 'Converting HEIC and TIFF images at import.', building),
   flag('editor.spelling', 'Spell check and its settings.', building),
   flag('editor.readAloud', 'Read aloud.', building),
+  ...QOL_PAGE_FLAGS,
 ];

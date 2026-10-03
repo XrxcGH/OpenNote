@@ -1,5 +1,5 @@
 {
-  "startup": { "jsKb": 236, "cssKb": 19 },
+  "startup": { "jsKb": 237, "cssKb": 19 },
   "after": {
     "within": [
       "features/page/",
@@ -21,7 +21,7 @@
     "features/page/readAloud": 10,
     "features/page/styles": 15,
     "features/page/readingOrder": 15,
-    "features/page/PageBody": 228,
+    "features/page/PageBody": 242,
     "@observablehq/plot": 135,
     "features/math": 125,
     "features/tables": 40,

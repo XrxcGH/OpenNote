@@ -1,7 +1,7 @@
 // The page's blocks (owner after WP0: WP3), in the page chunk that loads after start-up: the editor, Markdown, and
 // sync code stay out of the start-up bundle. They mount imperatively, so React never re-renders on a keystroke.
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useFlag } from '../../app/flags';
 import { useNotes } from '../../services/notes';
 import type { NodeId } from '../../services/notes';
@@ -9,15 +9,28 @@ import { getSizeClass } from '../../state/layout';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { mountPage } from './mount';
+import type { MountedPage } from './mount';
+import extrasStyles from './qol/qol.module.css';
+import { sourceState } from './qol/stores';
 import styles from './PageView.module.css';
 import { pagesClient, pageView } from './runtime';
-import type { MountedPage } from './mount';
 import paneStyles from './readingOrder/pane.module.css';
 import { ReadingOrderPane } from './readingOrder/ReadingOrderPane';
 import { returnBand } from './title/TitleSlot';
 import { readingOrderOpen } from './viewport/shown';
 
 const LAYERS = { viewport: '', world: '', underlay: '' };
+
+/** The Find bar, the status line, and the table of contents load after the page. */
+const PageExtras = lazy(() => import('./qol/PageExtras'));
+
+function Extras({ mounted, slot }: { mounted: MountedPage; slot: 'top' | 'source' | 'bottom' | 'side' }) {
+  return (
+    <Suspense fallback={null}>
+      <PageExtras mounted={mounted} slot={slot} />
+    </Suspense>
+  );
+}
 
 export interface PageBodyProps {
   pageId: string;
@@ -41,6 +54,7 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
   const [mounted, setMounted] = useState<MountedPage | null>(null);
   const paneWanted = useStore(readingOrderOpen, (open) => open);
   const paneAllowed = useFlag('page.readingOrder');
+  const sourceOn = useStore(sourceState, (state) => state !== null);
   const paneOpen = paneWanted && paneAllowed;
   useEffect(() => {
     let cancelled = false;
@@ -86,8 +100,14 @@ export default function PageBody({ pageId, title, treeTitle, changed, band }: Pa
     <>
       {failed && <p role="alert">{t('page.openFailed')}</p>}
       <div className={paneStyles.row}>
-        <div ref={host} className={styles.body} />
+        <div className={extrasStyles.column}>
+          {mounted && <Extras mounted={mounted} slot="top" />}
+          {mounted && <Extras mounted={mounted} slot="source" />}
+          <div ref={host} className={styles.body} hidden={sourceOn} />
+          {mounted && <Extras mounted={mounted} slot="bottom" />}
+        </div>
         {mounted && paneOpen && <ReadingOrderPane mounted={mounted} onClose={() => readingOrderOpen.set(false)} />}
+        {mounted && <Extras mounted={mounted} slot="side" />}
       </div>
     </>
   );

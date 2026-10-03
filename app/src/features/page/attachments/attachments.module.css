@@ -1,0 +1,126 @@
+/*
+ * The attachment card: the file's type as a labeled badge (the label, not the color, says what it is), its name and
+ * size, and an Open button. Selected, it has the same clay outline as a selected image (BRAND.md sections 4 and 7).
+ */
+@layer components {
+  .file {
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    touch-action: none;
+  }
+
+  .file:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .card {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+  }
+
+  .selected .card {
+    outline: 2px solid var(--color-accent-clay);
+    outline-offset: 1px;
+  }
+
+  .badge {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: 3rem;
+    block-size: 2.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font-size: var(--type-caption-size);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .badge[data-family='word'] {
+    background: var(--color-accent-night-subtle);
+  }
+
+  .badge[data-family='excel'] {
+    background: var(--color-accent-primary-subtle);
+  }
+
+  .badge[data-family='powerpoint'] {
+    background: var(--color-accent-candle-subtle);
+  }
+
+  .badge[data-family='pdf'] {
+    background: var(--color-accent-dusk-subtle);
+  }
+
+  .meta {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .name {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .size {
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .open {
+    flex: none;
+    margin-inline-start: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .open:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+
+  .open:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .preview {
+    max-inline-size: 100%;
+    margin: var(--space-2) 0 0;
+    padding: var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .status {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .status:empty {
+    display: none;
+  }
+}

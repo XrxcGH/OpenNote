@@ -93,6 +93,7 @@ export interface Platform {
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
   readonly images: ImagesClient;
+  readonly pageExtras: PageExtrasClient;
   readonly exports: ExportsClient;
   /** Phase 9: recording and playback. */
   readonly audio: AudioClient;
@@ -260,6 +261,32 @@ export interface ImagesClient {
   importBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
   importUrl(page: string, url: string): Promise<ImportedAsset>;
   importClip(page: string, token: string): Promise<ImportedAsset>;
+}
+
+/** The text cursor settings Windows keeps: its width in device pixels, and how long it shows (null: it never blinks). */
+export interface CaretMetrics {
+  widthPx: number;
+  blinkMs: number | null;
+}
+
+/** An attached file whose changes its own app saved back: the page's attachment now points at `asset`. */
+export interface AttachmentSaved {
+  page: string;
+  previous: string;
+  asset: ImportedAsset;
+}
+
+/** Native help for the typed-notes extras: the caret, link titles, and attached files that save back. */
+export interface PageExtrasClient {
+  caretMetrics(): Promise<CaretMetrics>;
+  /** The page title of a web address, or null. Never runs while Work offline is on. */
+  linkTitle(url: string): Promise<string | null>;
+  attachBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
+  /** Opens the attachment in its own app and saves each change back (see onAttachmentSaved). */
+  openAttachment(page: string, asset: string, name: string): Promise<void>;
+  /** Stops watching a page's attachments, when the page closes. */
+  stopAttachments(page: string): Promise<void>;
+  onAttachmentSaved(listener: (saved: AttachmentSaved) => void): Unsubscribe;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */

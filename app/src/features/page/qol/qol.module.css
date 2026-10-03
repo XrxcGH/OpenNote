@@ -1,0 +1,380 @@
+/*
+ * The quality-of-life parts of the page chrome: the caret the page draws, the status line, the Find bar, the
+ * table of contents, the finished-items line of a checklist, and the Markdown source view. Colors and sizes come
+ * from the tokens, and nothing here moves unless the person asked for motion (BRAND.md sections 7 and 9).
+ */
+@layer components {
+  /* The page's own caret: one thin element that follows the selection (qol/caret.ts). */
+  .caret {
+    position: fixed;
+    z-index: var(--layer-page-chrome);
+    inline-size: var(--caret-width, 2px);
+    background: var(--caret-color, currentcolor);
+    pointer-events: none;
+    animation: blink var(--caret-blink) steps(1, end) infinite;
+  }
+
+  .caret[data-steady] {
+    animation: none;
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  :global([data-custom-caret]) :global(.ProseMirror) {
+    caret-color: transparent;
+  }
+
+  /* The page and the panes beside it. */
+  .column {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    align-items: center;
+    padding: var(--space-1) var(--space-4);
+    border-block-start: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+  }
+
+  .status:empty {
+    display: none;
+  }
+
+  .locked {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  /* Finished items of a checklist. */
+  .doneLine {
+    margin-block-start: var(--space-1);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+  }
+
+  .doneToggle {
+    margin-inline-start: var(--space-2);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-accent-primary);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .doneToggle:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  :global([data-finished='hide']) :global(.ProseMirror) li[data-checked='true'] {
+    display: none;
+  }
+
+  /* Find and replace. */
+  .find {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    align-items: end;
+    padding: var(--space-2) var(--space-4);
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-raised);
+  }
+
+  .findField {
+    flex: 1 1 12rem;
+    min-inline-size: 8rem;
+    max-inline-size: 20rem;
+  }
+
+  .findRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .findCount {
+    min-inline-size: 6rem;
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  ::highlight(opennote-find) {
+    background-color: var(--color-selection-highlight);
+    color: inherit;
+  }
+
+  ::highlight(opennote-find-active) {
+    background-color: var(--color-accent-candle);
+    color: var(--color-surface-page);
+  }
+
+  @media (forced-colors: active) {
+    ::highlight(opennote-find) {
+      background-color: Highlight;
+      color: HighlightText;
+    }
+
+    ::highlight(opennote-find-active) {
+      background-color: Mark;
+      color: MarkText;
+    }
+  }
+
+  /* The table of contents pane. */
+  .toc {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    inline-size: min(16rem, 40%);
+    padding: var(--space-4);
+    border-inline-start: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-app);
+    overflow: auto;
+  }
+
+  .tocTitle {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .tocList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tocLink {
+    display: block;
+    inline-size: 100%;
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .tocLink:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .tocLink:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .tocLink[aria-current='true'] {
+    background: var(--color-surface-selected);
+    color: var(--color-text-on-selected);
+  }
+
+  .tocEmpty {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-note-size);
+  }
+
+  /* The card under a page embed: the target's text boxes, live, under a header that opens the target. */
+  .embed {
+    margin-block: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 3px solid var(--color-accent-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+  }
+
+  .embedHeader {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: var(--type-caption-size);
+  }
+
+  .embedTitle {
+    flex: 1;
+    min-inline-size: 0;
+    color: var(--color-text-primary);
+    font-weight: 600;
+  }
+
+  .embedOpen {
+    padding: 0 var(--space-2);
+    border: 0;
+    background: none;
+    color: var(--color-accent-primary);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .embedOpen:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .embedBody {
+    padding: var(--space-3) var(--space-4) 0;
+  }
+
+  /* The target's boxes flow in the card, whatever their frames say on their own page. */
+  .embedBody > * {
+    position: relative !important;
+    inset: auto !important;
+    inline-size: auto !important;
+  }
+
+  /* The pick lists in the Merge pages dialog. */
+  .pickList {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 18rem;
+    overflow: auto;
+  }
+
+  .pickRow {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-2) var(--space-1);
+  }
+
+  /* The Markdown source view. */
+  .sourceWrap {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .sourceBar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-1) var(--space-4);
+    border-block-end: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .source {
+    position: relative;
+    flex: 1;
+    min-block-size: 0;
+    overflow: auto;
+    background: var(--color-surface-page);
+  }
+
+  .sourceBox {
+    position: relative;
+    min-block-size: 100%;
+    font-family: var(--font-mono);
+    font-size: var(--type-body-size);
+    line-height: 1.6;
+  }
+
+  .sourceLayer,
+  .sourceInput {
+    box-sizing: border-box;
+    inline-size: 100%;
+    margin: 0;
+    padding: var(--space-6) var(--space-8);
+    font: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    tab-size: 4;
+  }
+
+  .sourceLayer {
+    position: absolute;
+    inset: 0;
+    color: var(--color-text-primary);
+    pointer-events: none;
+  }
+
+  .sourceInput {
+    position: relative;
+    display: block;
+    min-block-size: 100%;
+    border: 0;
+    outline: none;
+    resize: none;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--color-text-primary);
+    overflow: hidden;
+  }
+
+  .sourceInput::selection {
+    background: var(--color-selection-highlight);
+    color: transparent;
+  }
+
+  .sourceInput:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: -2px;
+  }
+
+  .tokHeading {
+    color: var(--color-accent-primary);
+    font-weight: 700;
+  }
+
+  .tokMarker,
+  .tokQuote {
+    color: var(--color-accent-clay);
+  }
+
+  .tokEmphasis {
+    font-style: italic;
+  }
+
+  .tokStrong {
+    font-weight: 700;
+  }
+
+  .tokCode {
+    color: var(--color-accent-night);
+  }
+
+  .tokLink {
+    color: var(--color-accent-night);
+    text-decoration: underline;
+  }
+
+  .tokPlaceholder {
+    color: var(--color-text-secondary);
+    font-style: italic;
+  }
+}

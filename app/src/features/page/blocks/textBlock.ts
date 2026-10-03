@@ -6,11 +6,14 @@ import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { highlightStatic } from '../../../editor/highlight';
-import { parseTextBlock } from '../../../editor/markdown';
+import { parseTextBlock, serializeTextBlock } from '../../../editor/markdown';
 import { renderStatic } from '../../../editor/schema/dom';
 import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { PagePool } from '../pool/pool';
+import { countTasks, finishedModeOf } from '../qol/checklist';
+import { pageExtrasPrefs } from '../qol/prefs';
+import qolStyles from '../qol/qol.module.css';
 import { pageView } from '../runtime';
 import { blockLaidOut } from '../seams/geometry';
 import { attachTextSync } from '../sync';
@@ -41,6 +44,17 @@ export function markEphemeral(block: BlockJson): BlockJson {
 /** The sync of a mounted text block's editor. */
 export function syncOf(editor: Editor): TextSyncHandle | null {
   return syncs.get(editor) ?? null;
+}
+
+/** The text of a text block as it is now, which the layer's copy of the block is not while it is being typed in. */
+export interface LiveText {
+  liveDoc(): PMNode;
+  liveMarkdown(): string;
+}
+
+/** The live text of a text block's view, or null for any other kind of block. */
+export function liveText(view: BlockView | null): LiveText | null {
+  return view instanceof TextBlockView ? view : null;
 }
 
 /** A view the block layer renders in two steps: a sized wrapper first, its content when it is near the viewport. */
@@ -105,7 +119,7 @@ function editingRoot(block: BlockJson): HTMLElement {
   return root;
 }
 
-class TextBlockView implements LazyBlockView {
+class TextBlockView implements LazyBlockView, LiveText {
   readonly element: HTMLElement;
   readonly editRoot: HTMLElement;
   rendered = false;
@@ -118,6 +132,9 @@ class TextBlockView implements LazyBlockView {
   private touched = false;
   private readonly saved: [string, string][];
   private readonly unregister: () => void;
+  private doneLine: HTMLElement | null = null;
+  private reveal = false;
+  private readonly stopPrefs: () => void;
 
   constructor(
     private block: BlockJson,
@@ -142,6 +159,7 @@ class TextBlockView implements LazyBlockView {
     this.element.append(box);
     placeBlock(this.element, block);
     this.editRoot.addEventListener('focus', this.onFocus);
+    this.stopPrefs = pageExtrasPrefs.subscribe(() => this.refreshChecklist());
     this.unregister = (ctx.pool as PagePool).register(block.id, {
       root: this.editRoot,
       mount: () => this.mount(),
@@ -158,7 +176,16 @@ class TextBlockView implements LazyBlockView {
     this.doc ??= parseTextBlock(this.markdown);
     this.drawStatic(this.doc);
     this.editRoot.style.minBlockSize = '';
+    this.refreshChecklist();
     blockLaidOut(this.block.id);
+  }
+
+  liveDoc(): PMNode {
+    return this.editor ? this.editor.state.doc : (this.doc ??= parseTextBlock(this.markdown));
+  }
+
+  liveMarkdown(): string {
+    return this.editor ? serializeTextBlock(this.editor.state.doc, this.ctx.cache) : this.markdown;
   }
 
   /** Draws the static text. Its code is colored in idle time, so it looks the same before an editor mounts. */
@@ -171,6 +198,7 @@ class TextBlockView implements LazyBlockView {
     const markdown = markdownOf(next);
     this.block = next;
     placeBlock(this.element, next);
+    this.refreshChecklist();
     if (this.editor || markdown === this.markdown) return;
     this.markdown = markdown;
     this.doc = null;
@@ -185,6 +213,7 @@ class TextBlockView implements LazyBlockView {
   }
 
   destroy(): void {
+    this.stopPrefs();
     this.editRoot.removeEventListener('focus', this.onFocus);
     this.unregister();
     this.element.remove();
@@ -200,6 +229,7 @@ class TextBlockView implements LazyBlockView {
     editor.on('blur', this.onBlur);
     this.editor = editor;
     this.sync = sync;
+    this.refreshChecklist();
     return editor;
   }
 
@@ -220,10 +250,50 @@ class TextBlockView implements LazyBlockView {
     if (name) this.editRoot.setAttribute('aria-label', name);
     this.editRoot.style.minBlockSize = '';
     this.drawStatic(this.doc);
+    this.refreshChecklist();
+  }
+
+  /** The finished-items choice of this box and its done count: hidden items, and "2 of 5 done". */
+  private refreshChecklist(): void {
+    const on = this.ctx.host.flag('page.checklistExtras');
+    const mode = on ? finishedModeOf(this.block.data) : 'keep';
+    if (mode === 'hide') this.element.dataset.finished = this.reveal ? 'shown' : 'hide';
+    else delete this.element.dataset.finished;
+    const counting = on && pageExtrasPrefs.get().doneCount;
+    if (!on || !(counting || mode === 'hide') || !(this.editor || this.rendered)) return this.setDoneLine(null);
+    const { done, total } = countTasks(this.liveDoc());
+    if (total === 0) return this.setDoneLine(null);
+    const parts: string[] = [];
+    if (counting) parts.push(t('pageExtras.checklist.count', { done, total }));
+    if (mode === 'hide' && done > 0) parts.push(t('pageExtras.checklist.hidden', { count: done }));
+    this.setDoneLine(parts.length > 0 ? parts.join(' · ') : null, mode === 'hide' && done > 0);
+  }
+
+  private setDoneLine(text: string | null, toggle = false): void {
+    if (text === null) {
+      this.doneLine?.remove();
+      this.doneLine = null;
+      return;
+    }
+    if (!this.doneLine) {
+      this.doneLine = this.element.appendChild(document.createElement('div'));
+      this.doneLine.className = qolStyles.doneLine;
+    }
+    this.doneLine.replaceChildren(text);
+    if (!toggle) return;
+    const button = this.doneLine.appendChild(document.createElement('button'));
+    button.type = 'button';
+    button.className = qolStyles.doneToggle;
+    button.textContent = t(this.reveal ? 'pageExtras.checklist.hide' : 'pageExtras.checklist.show');
+    button.addEventListener('click', () => {
+      this.reveal = !this.reveal;
+      this.refreshChecklist();
+    });
   }
 
   private readonly onUpdate = () => {
     this.touched = true;
+    if (this.doneLine || pageExtrasPrefs.get().doneCount) this.refreshChecklist();
     blockLaidOut(this.block.id);
   };
 
