@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: pasted documents' colors, matched to the pens, never shown.
 import { describe, expect, it } from 'vitest';
 import { deltaE2000, highlighterFor, parseColor, penFor } from './colors';
 

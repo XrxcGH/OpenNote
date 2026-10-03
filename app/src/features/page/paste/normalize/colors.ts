@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: Office's and the web's own colors, matched to the pens, never shown.
 // Colors from document sources (Phase 4 ARCHITECTURE.md section 15.3). For Word, OneNote, and Google Docs, a
 // background color becomes the nearest of the five highlighters, and a text color becomes the nearest pen when it is
 // within a CIEDE2000 distance of 10 of that pen's light value, or a hexadecimal color otherwise. Web pastes drop

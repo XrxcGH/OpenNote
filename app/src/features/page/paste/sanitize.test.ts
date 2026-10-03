@@ -82,7 +82,8 @@ describe('a paste from OneNote', () => {
     expect(result.source).toBe('onenote');
     expect(outline(result)).toEqual([
       'doc(paragraph(bold("Meeting notes")), bulletList(listItem[checked=false](paragraph("Send the agenda")), ' +
-        'listItem[checked=true](paragraph("Book the room"))), paragraph(italic(textColorbrick("Bring")), textColorbrick(" the printouts")), ' +
+        'listItem[checked=true](paragraph("Book the room"))), ' +
+        'paragraph(italic(textColorbrick("Bring")), textColorbrick(" the printouts")), ' +
         'bulletList(listItem(paragraph("Budget review")), listItem(paragraph("Hiring"))))',
     ]);
     expect(result.images).toEqual([]);

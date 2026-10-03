@@ -5,6 +5,9 @@ import type { PasteInput } from '../types';
 import { breaksToNewlines, dropUnwanted, fixNestedLists } from './common';
 
 const WEB_CHROME = 'nav, footer, aside, form, button, select, input, textarea, svg, canvas, video, audio, dialog';
+/** Wiki and article furniture that a selection picks up: edit links, citation marks, and print-only notes. */
+const WEB_NOISE =
+  '.mw-editsection, sup.reference, .noprint, [role="navigation"], [role="banner"], [role="contentinfo"]';
 const HIDDEN = '[hidden], [aria-hidden="true"]';
 const HIDDEN_STYLE = /display\s*:\s*none|visibility\s*:\s*hidden/i;
 
@@ -63,6 +66,7 @@ export function normalizeWeb(body: HTMLElement, input: PasteInput): void {
   dropPageHeaders(body);
   markTaskBoxes(body);
   removeAll(body, WEB_CHROME);
+  removeAll(body, WEB_NOISE);
   removeAll(body, HIDDEN);
   body.querySelectorAll('mark').forEach(unwrap);
   body.querySelectorAll('[style]').forEach((element) => {
