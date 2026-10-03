@@ -25,8 +25,11 @@
     margin-block-start: calc(var(--type-small-line) + var(--space-2));
   }
 
-  /* On the Settings page the tables don't scroll on their own, but keep the dialog's space between them. */
+  /* On the Settings page the tables don't scroll on their own, but keep the dialog's space between them. Positioned,
+     so the visually hidden table heads stay inside the Settings scroller. Unpositioned, they escaped it and made the
+     whole window scrollable. */
   .groups {
+    position: relative;
     display: grid;
     gap: var(--space-6);
   }

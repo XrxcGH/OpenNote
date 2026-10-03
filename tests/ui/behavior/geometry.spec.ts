@@ -1,6 +1,7 @@
-// Geometry on every registered screen state (tests/ui/screens/*.ts). Nothing spills past the window, and a dialog
-// never scrolls around its own content. Every focus ring that Tab shows is whole. A centered button's content sits
-// within 1 px of its middle. A screenshot review found these defects by eye, and the checks keep them fixed.
+// Geometry on every registered screen state (tests/ui/screens/*.ts). Nothing spills past the window, the window
+// itself never scrolls, and a dialog never scrolls around its own content. Every focus ring that Tab shows is
+// whole. A centered button's content sits within 1 px of its middle. A screenshot review found these defects by
+// eye, and the checks keep them fixed.
 
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
@@ -18,6 +19,8 @@ const TAB_STOPS = 40;
 
 interface Geometry {
   sideways: number;
+  /** How far the document itself scrolls down. The app scrolls inside its panes, never the whole window. */
+  downward: number;
   dialogs: { name: string; overflow: number; bottomGap: number; drawer: boolean }[];
   offCenter: string[];
 }
@@ -63,7 +66,13 @@ function measure(page: Page): Promise<Geometry> {
         offCenter.push(`${name(button)}: ${dx.toFixed(1)}, ${dy.toFixed(1)} px off center`);
       }
     }
-    return { sideways: document.documentElement.scrollWidth - window.innerWidth, dialogs, offCenter };
+    const root = document.documentElement;
+    return {
+      sideways: root.scrollWidth - window.innerWidth,
+      downward: root.scrollHeight - window.innerHeight,
+      dialogs,
+      offCenter,
+    };
   });
 }
 
@@ -150,6 +159,7 @@ async function focusWalk(page: Page): Promise<string[]> {
 async function expectSound(page: Page, screen: ScreenState) {
   const geometry = await measure(page);
   expect(geometry.sideways, 'the page scrolls sideways').toBeLessThanOrEqual(0);
+  expect(geometry.downward, 'the whole window scrolls, title bar and all').toBeLessThanOrEqual(0);
   for (const dialog of geometry.dialogs) {
     expect(dialog.overflow, `the dialog "${dialog.name}" scrolls around its own content`).toBeLessThanOrEqual(1);
     if (!dialog.drawer) {
