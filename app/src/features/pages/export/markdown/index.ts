@@ -2,6 +2,16 @@
 
 export { parseMarkdown } from './block';
 export { parseInline, unescapeText } from './inline';
-export { altText, escapeAttr, escapeHtml, renderHtml, renderInlineHtml, safeHref, type HtmlOptions } from './html';
+export {
+  altText,
+  escapeAttr,
+  escapeHtml,
+  renderHtml,
+  renderInlineHtml,
+  safeHref,
+  voidEnd,
+  xmlSafe,
+  type HtmlOptions,
+} from './html';
 export { documentText, inlineText } from './tree';
 export type { Block, Document, Inline, ListItem, Mark } from './tree';

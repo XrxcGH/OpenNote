@@ -10,6 +10,7 @@ import {
   parseMarkdown,
   renderHtml,
   renderInlineHtml,
+  voidEnd,
   type HtmlOptions,
 } from './markdown';
 import type { ExportAsset, ExportBlock, ExportPage, ExportStroke, TableBlock } from './source';
@@ -44,6 +45,8 @@ export interface BlockContext {
   readonly penColor?: HtmlOptions['penColor'];
   readonly labels: ExportLabels;
   readonly foldable?: boolean;
+  /** Writes XHTML for an XML document, such as text in an SVG. See `HtmlOptions.xml`. */
+  readonly xml?: boolean;
   /** The strokes of each ink block, by block ID. Build it once with `strokesByBlock`. */
   readonly strokes: ReadonlyMap<string, readonly ExportStroke[]>;
 }
@@ -54,6 +57,7 @@ export function htmlOptions(cx: BlockContext): HtmlOptions {
     link: cx.link,
     penColor: cx.penColor,
     foldable: cx.foldable,
+    xml: cx.xml,
     labels: { done: cx.labels.done, open: cx.labels.open },
     image: (destination) => {
       const id = /^asset:(.+)$/.exec(destination)?.[1];
@@ -83,7 +87,8 @@ function image(block: ExportBlock & { type: 'image' }, cx: BlockContext): string
   const alt = block.decorative ? '' : block.alt === '' ? cx.labels.noDescription : block.alt;
   const role = block.decorative ? ' role="presentation"' : '';
   const dims = asset.width && asset.height ? ` width="${asset.width}" height="${asset.height}"` : '';
-  return `<figure${size(block.frame)}><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${role}${dims}></figure>`;
+  const img = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${role}${dims}${voidEnd(cx.xml)}`;
+  return `<figure${size(block.frame)}>${img}</figure>`;
 }
 
 function file(block: ExportBlock & { type: 'file' }, cx: BlockContext): string {
@@ -103,7 +108,7 @@ function table(block: TableBlock, cx: BlockContext): string {
   const [first, ...rest] = block.rows;
   const head = block.header && first ? `<thead>${row(first, 'th')}</thead>\n` : '';
   const body = (block.header && first ? rest : block.rows).map((r) => row(r, 'td')).join('\n');
-  const cols = block.columns.map((c) => `<col style="width:${px(c.width)}px">`).join('');
+  const cols = block.columns.map((c) => `<col style="width:${px(c.width)}px"${voidEnd(cx.xml)}`).join('');
   return `<table><colgroup>${cols}</colgroup>\n${head}<tbody>\n${body}\n</tbody></table>`;
 }
 

@@ -18,9 +18,30 @@ export interface HtmlOptions {
   readonly calloutTitle?: (type: string) => string;
   /** Shows folded callouts closed in a `details` element. When false, every callout is open text. */
   readonly foldable?: boolean;
+  /**
+   * Writes XHTML that an XML parser accepts, for HTML embedded in SVG: void elements close themselves and attributes
+   * always have values. It reads the same in an HTML parser.
+   */
+  readonly xml?: boolean;
 }
 
 const DEFAULT_LABELS = { done: 'Done', open: 'Not done' };
+
+/** The end of a void element's start tag: `/>` in XML, where every element must close, and `>` in HTML. */
+export function voidEnd(xml: boolean | undefined): string {
+  return xml ? '/>' : '>';
+}
+
+// C0 controls other than tab, line feed, and carriage return, and the noncharacters U+FFFE and U+FFFF.
+// eslint-disable-next-line no-control-regex
+const XML_FORBIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g;
+/** A high surrogate with no low one after it, or a low surrogate with no high one before it. */
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+
+/** The text without the characters XML 1.0 forbids. An XML parser rejects a document that holds any of them. */
+export function xmlSafe(text: string): string {
+  return text.replace(XML_FORBIDDEN, '').replace(LONE_SURROGATE, '');
+}
 
 export function escapeHtml(text: string): string {
   return text.replace(/[&<>]/g, (c) => (c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;'));
@@ -64,10 +85,11 @@ class Renderer {
   }
 
   private run(run: Inline): string {
-    if ('hardBreak' in run) return '<br>';
+    if ('hardBreak' in run) return `<br${voidEnd(this.o.xml)}`;
     if ('image' in run) {
       const src = this.o.image?.(run.image, run.alt) ?? null;
-      return src === null ? '' : `<img src="${escapeAttr(src)}" alt="${escapeAttr(run.alt)}">`;
+      if (src === null) return '';
+      return `<img src="${escapeAttr(src)}" alt="${escapeAttr(run.alt)}"${voidEnd(this.o.xml)}`;
     }
     const open = run.marks.map((m) => this.open(m)).join('');
     const close = [...run.marks]
@@ -88,7 +110,7 @@ class Renderer {
       case 'heading':
         return `<h${b.level}>${this.inline(b.content)}</h${b.level}>`;
       case 'break':
-        return '<hr>';
+        return `<hr${voidEnd(this.o.xml)}`;
       case 'code': {
         const cls = b.language === '' ? '' : ` class="language-${cssName(b.language)}"`;
         return `<pre><code${cls}>${escapeHtml(b.text)}</code></pre>`;
@@ -128,7 +150,7 @@ class Renderer {
     const cls = `callout callout-${cssName(b.callout)}`;
     const body = this.blocks(b.blocks);
     if (this.o.foldable && b.fold !== null) {
-      const open = b.fold === 'open' ? ' open' : '';
+      const open = b.fold !== 'open' ? '' : this.o.xml ? ' open="open"' : ' open';
       return `<details class="${cls}"${open}><summary>${title}</summary>\n${body}\n</details>`;
     }
     return `<aside class="${cls}" role="note"><p class="callout-title">${title}</p>\n${body}\n</aside>`;

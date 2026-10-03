@@ -4,7 +4,7 @@
 
 import { ENGLISH_LABELS, renderBlock, strokesByBlock, type BlockContext, type ExportLabels } from '../export/blocks';
 import { drawingOrder, strokeShape } from '../export/ink';
-import { escapeAttr } from '../export/markdown';
+import { escapeAttr, xmlSafe } from '../export/markdown';
 import { readingOrder } from '../export/order';
 import type { ExportAsset, ExportBlock, ExportPage } from '../export/source';
 import { round2 } from '../layout/json';
@@ -61,6 +61,8 @@ export function selectionSvg(page: ExportPage, selection: Selection, options: Sv
     assetUrl: options.assetUrl,
     labels: options.labels ?? ENGLISH_LABELS,
     strokes: strokesByBlock(cropped.strokes),
+    // The SVG is an XML document, so its embedded HTML must be well-formed XML too.
+    xml: true,
   };
   const parts: string[] = [];
   const order = readingOrder(cropped.blocks, cropped.view.readingOrder);
@@ -93,8 +95,8 @@ export function selectionSvg(page: ExportPage, selection: Selection, options: Sv
     ? `<rect width="${num(w)}" height="${num(h)}" fill="${escapeAttr(options.background)}"/>`
     : '';
   const body = `<g${selection.clip ? ' clip-path="url(#selection-clip)"' : ''}>${parts.join('')}</g>`;
-  return (
+  return xmlSafe(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${num(w)} ${num(h)}" width="${num(w)}" height="${num(h)}"${label}>` +
-    `${style}${clip}${background}${body}</svg>`
+      `${style}${clip}${background}${body}</svg>`,
   );
 }
