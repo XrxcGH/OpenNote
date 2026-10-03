@@ -29,3 +29,24 @@ test('shows every page as the sampler with ?fixture=sampler', async ({ page }) =
   await expect(page.getByText('Every kind of text')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Table' })).toBeVisible();
 });
+
+test('keeps a page that fits from scrolling sideways, also when it opens again', async ({ page }) => {
+  await page.goto('/');
+  const pages = page.getByRole('tree', { name: 'Pages' });
+  await page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Lectures' }).click();
+  // Each page's place is saved when it settles, and comes back when it opens again.
+  for (const name of ['Membranes', 'Mitosis', 'Membranes']) {
+    await pages.getByRole('treeitem', { name }).click();
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
+  }
+  const sideways = () =>
+    page.evaluate(() => {
+      const viewport = document.querySelector('[data-scope="page"] [tabindex]') as HTMLElement | null;
+      const scroller = [...document.querySelectorAll<HTMLElement>('[data-scope="page"] *')].find(
+        (element) => getComputedStyle(element).overflowX === 'auto',
+      );
+      const box = scroller ?? viewport;
+      return box ? box.scrollWidth - box.clientWidth : -1;
+    });
+  await expect.poll(sideways).toBe(0);
+});
