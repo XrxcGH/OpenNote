@@ -19,6 +19,7 @@ export type SourceKind =
   | 'textBundle'
   | 'stickyNotes'
   | 'spreadsheet'
+  | 'presentation'
   | 'oneNoteFile';
 
 /** What a file, folder, or archive is. */
