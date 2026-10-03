@@ -119,7 +119,8 @@ export const tree = {
     undo: 'Undo',
     confirmTitle: 'Delete the notebook "{title}"?',
     confirmBody:
-      'Its {count, plural, one {# page moves} other {# pages move}} to Trash, and you can restore them for 30 days.',
+      'It moves to Trash with {count, plural, one {its # page} other {its # pages}}. You can restore it for 30 days.',
+    confirmBodyEmpty: 'It moves to Trash, and you can restore it for 30 days.',
     confirm: 'Delete notebook',
   },
   undo: {
