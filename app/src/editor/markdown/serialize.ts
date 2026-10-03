@@ -142,6 +142,20 @@ function quoteEntry(node: PMNode, store: Store): CacheEntry {
   };
 }
 
+/** Whether the first block a container writes from child `from` on is a paragraph. */
+function writesParagraphFirst(node: PMNode, from: number): boolean {
+  for (let i = from; i < node.childCount; i++) {
+    const child = node.child(i);
+    if (!isEmptyParagraph(child)) return child.type.name === 'paragraph';
+  }
+  return false;
+}
+
+/**
+ * A callout: its head line, then its blocks. A paragraph first in the body follows the head line directly, as the
+ * shared fixtures write it. Its lines can't start another block, because SPEC 7.6 escapes every such start. Any other
+ * block follows a blank line, since some, like a thematic break, would change the head line.
+ */
 function calloutEntry(node: PMNode, store: Store): CacheEntry {
   const title = node.firstChild;
   const type = CALLOUT_TYPE_PATTERN.test(node.attrs.type as string) ? (node.attrs.type as string) : 'note';
@@ -149,8 +163,9 @@ function calloutEntry(node: PMNode, store: Store): CacheEntry {
   const line = title ? entryOf(title, '', store).text : '';
   const head = `[!${type}]${fold}${line === '' ? '' : ` ${line}`}`;
   const body = joinBlocks(node, 1, store);
-  const inner = body.text === '' ? head : `${head}\n\n${body.text}`;
-  const offset = head.length + 2;
+  const gap = writesParagraphFirst(node, 1) ? '\n' : '\n\n';
+  const inner = body.text === '' ? head : `${head}${gap}${body.text}`;
+  const offset = head.length + gap.length;
   return {
     ctx: '',
     text: quoted(inner),

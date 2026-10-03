@@ -97,7 +97,7 @@ describe('re-parsing the changed range', () => {
 
   it('reaches into callouts, quotes, and task items', () => {
     const body = Array.from({ length: 50 }, (_, i) => `> Line ${i} of the callout.`).join('\n>\n');
-    const callout = `> [!tip]- Title\n>\n${body}`;
+    const callout = `> [!tip]- Title\n${body}`;
     expect(expectRange(callout, callout.replace('Line 30', 'Line thirty')).content.childCount).toBe(1);
     const quote = '> one\n>\n> > two\n> >\n> > three';
     expect(expectRange(quote, quote.replace('three', 'four')).content.firstChild?.textContent).toBe('four');
@@ -109,7 +109,8 @@ describe('re-parsing the changed range', () => {
 
   it('handles changes to the containers themselves', () => {
     expectRange('- [ ] one\n- [ ] two', '- [ ] one\n- [x] two');
-    expectRange('> [!note] Old\n>\n> body', '> [!tip] New\n>\n> body');
+    expectRange('> [!note] Old\n> body', '> [!tip] New\n> body');
+    expectRange('> [!note] Head\n> body', '> [!note] Head\n>\n> - body');
     expectRange('1. a\n2. b\n3. c', '1. a\n2. b\n3. c\n4. d');
     expectRange('- a\n- b', '- a\n\n  more\n\n- b');
     expectRange('para\n\n- a\n- b', 'para\n\n- a\n\n---\n\n- b');
