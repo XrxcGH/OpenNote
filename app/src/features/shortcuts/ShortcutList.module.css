@@ -5,6 +5,18 @@
     gap: var(--space-6);
   }
 
+  /* The two shortcut sets are one choice, so their cards share one width and the descriptions wrap inside. In
+     compact they stack. */
+  .section > [role='radiogroup'] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-inline-size: 44rem;
+  }
+
+  :global(:root[data-size-class='compact']) .section > [role='radiogroup'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .list {
     display: grid;
     gap: var(--space-5);

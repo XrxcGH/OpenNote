@@ -20,7 +20,8 @@ interface ChoiceProps {
   help?: string;
   value: string;
   options: readonly { value: string; label: string }[];
-  /** Gives every option one width, for a row of equal steps such as percentages. */
+  /** Gives every option a fixed width, for a row of equal steps such as percentages. Otherwise the options share
+   * the widest one's width. */
   even?: boolean;
   onChange(value: string): void;
 }
@@ -29,7 +30,7 @@ interface ChoiceProps {
 function Choice({ label, help, value, options, even, onChange }: ChoiceProps) {
   const id = useId();
   return (
-    <section className={even ? `${styles.group} ${styles.even}` : styles.group} aria-labelledby={`${id}-label`}>
+    <section className={`${styles.group} ${even ? styles.even : styles.matched}`} aria-labelledby={`${id}-label`}>
       <h2 id={`${id}-label`} className={styles.label}>
         {label}
       </h2>
