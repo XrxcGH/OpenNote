@@ -16,6 +16,7 @@ import { mountedPageHooks, shownMounted } from '../pagesApi';
 import { panelRenderer } from '../panels/kinds';
 import { blockRenderers, editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
+import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
 import { currentTable } from '../tables/current';
 import { later } from '../tables/later';
@@ -309,5 +310,67 @@ for (const [id, title, run] of [
     flag: 'tables.calculated',
     when: () => currentTable.get() !== null,
     run: async () => void (await (await import('../../tables')).runSmartCommand({ run })),
+  });
+}
+
+// Study tape: a floating strip over part of the page that hides it until pressed.
+blockRenderers.register(
+  panelRenderer({
+    type: 'tape',
+    label: 'study.tape.block',
+    flag: 'study.tape',
+    load: async () => {
+      const { mountTape } = await import('../../study');
+      return { mount: (container, props) => mountTape(container, props) };
+    },
+  }),
+);
+
+addCommand({
+  id: 'insert.tape',
+  title: 'study.tape.insert',
+  keywords: 'study.tape.insertKeywords',
+  icon: 'EyeSlash',
+  flag: 'study.tape',
+  slash: { group: 'advanced', order: 31 },
+  bar: { group: 'study', priority: 35 },
+  run: async () => {
+    const mounted = shownMounted.get();
+    if (!mounted) return;
+    const { insertPanelBlock } = await import('../panels/insertPanel');
+    // Below the block with the caret, where the person will see it and can move it over what to hide.
+    const active = shownPool.get()?.active();
+    const rect = active ? mounted.layer.view(active.block)?.measure() : undefined;
+    const frame = { x: rect ? rect.x : 80, y: rect ? rect.y + rect.h + 8 : 80, w: 260, h: 56 };
+    const id = await insertPanelBlock('tape', { hidden: true }, t('study.tape.fallback'), frame);
+    if (id) announce(t('study.tape.inserted'));
+  },
+});
+
+/** Covers or uncovers every study tape on the page in one step. */
+async function setAllTape(hidden: boolean): Promise<void> {
+  const mounted = shownMounted.get();
+  const queue = shownQueue.get();
+  if (!mounted || !queue) return;
+  const tapes = mounted.layer.blocks().filter((block) => block.type === 'tape');
+  if (tapes.length === 0) return void announce(t('study.tape.none'));
+  await queue.send({
+    edits: tapes.map((block) => ({ edit: 'patchBlock' as const, block: block.id, data: { hidden } })),
+  });
+  announce(t(hidden ? 'study.tape.allHidden' : 'study.tape.allShown'));
+}
+
+for (const [id, title, hidden] of [
+  ['tape.showAll', 'study.tape.showAll', false],
+  ['tape.hideAll', 'study.tape.hideAll', true],
+] as const) {
+  addCommand({
+    id,
+    title,
+    keywords: 'study.tape.insertKeywords',
+    category: 'general',
+    icon: hidden ? 'EyeSlash' : 'Eye',
+    flag: 'study.tape',
+    run: () => setAllTape(hidden),
   });
 }

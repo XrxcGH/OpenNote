@@ -208,4 +208,32 @@
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
   }
+
+  .tape {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    block-size: 100%;
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-2);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 2px dashed var(--color-accent-clay);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .tape[data-hidden] {
+    color: var(--color-text-on-accent);
+    background: var(--color-accent-clay);
+    border-style: solid;
+  }
+
+  .tape:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
 }

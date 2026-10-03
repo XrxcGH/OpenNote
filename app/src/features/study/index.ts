@@ -7,4 +7,4 @@ export { decksStore, createDeck, deckById, pageDeckId, setDeckExam, syncInlineDe
 export { inlineCards } from './deck/inline';
 export { DeckPanel } from './ui/DeckPanel';
 export type { Card, Deck } from './deck/types';
-export { mountDeck } from './ui/mount';
+export { mountDeck, mountTape } from './ui/mount';
