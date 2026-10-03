@@ -1,6 +1,6 @@
 //! The header read at import: format, pixel size, and orientation (Phase 4 ARCHITECTURE.md section 12.2). The page
-//! never decodes an image to learn its size. The format comes from the first bytes, the size and the EXIF orientation
-//! from the header, and on Windows, Windows Imaging Component confirms the size for every format it has a codec for.
+//! never decodes an image to learn its size. The format comes from the first bytes. The size and the EXIF orientation
+//! come from the header. On Windows, the Windows Imaging Component confirms the size for each format it can decode.
 //! SVG gets its size from its `width`, `height`, or `viewBox`, or 300 by 150.
 
 use super::{header, svg};
