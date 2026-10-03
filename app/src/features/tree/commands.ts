@@ -12,6 +12,8 @@ import { canCreate, createFromContext } from './creation';
 import type { NewKind } from './creation';
 import { currentNode } from './current';
 import { changeLevel, moveStep, moveTo } from './movement';
+import { selectedNodes } from './multi';
+import { colorSelection, moveSelection, trashSelection } from './multiActions';
 import { levelAfter, stepOf } from './moves';
 import { deleteNode } from './remove';
 import { startRename } from './rename';
@@ -123,7 +125,11 @@ const editCommands = [
     category: 'notebooks',
     palette: false,
     enabled: (ctx) => ![undefined, 'page'].includes(currentNode(ctx)?.kind),
-    run: async (ctx, args) => onNode((c, id) => colorNode(c.notes, id, args?.color ?? null))(ctx),
+    run: async (ctx, args) => {
+      const many = selectedNodes(ctx);
+      if (many) return colorSelection(ctx.notes, many, args?.color ?? null);
+      return onNode((c, id) => colorNode(c.notes, id, args?.color ?? null))(ctx);
+    },
   }),
   defineCommand({
     id: 'tree.moveTo',
@@ -133,6 +139,11 @@ const editCommands = [
     scope: 'tree',
     enabled: (ctx) => ![undefined, 'notebook'].includes(currentNode(ctx)?.kind),
     run: async (ctx) => {
+      const many = selectedNodes(ctx);
+      if (many) {
+        await moveSelection(ctx.notes, many);
+        return;
+      }
       const node = currentNode(ctx);
       if (node) await moveTo(ctx.notes, node);
     },
@@ -145,7 +156,14 @@ const editCommands = [
     keys: [chord('Delete')],
     scope: 'tree',
     enabled: (ctx) => currentNode(ctx) !== undefined,
-    run: onNode((ctx, id) => deleteNode(ctx.notes, id)),
+    run: async (ctx) => {
+      const many = selectedNodes(ctx);
+      if (many) {
+        await trashSelection(ctx.notes, many);
+        return;
+      }
+      await onNode((c, id) => deleteNode(c.notes, id))(ctx);
+    },
   }),
   defineCommand({
     id: 'edit.undo',
