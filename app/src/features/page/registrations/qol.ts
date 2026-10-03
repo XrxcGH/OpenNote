@@ -4,13 +4,15 @@
 import { announce } from '../../../ui';
 import { chord, defineCommand } from '../../../commands/registry';
 import type { CommandDef } from '../../../commands/types';
-import { commandBar, commands } from '../../../registries';
+import { isEnabled } from '../../../app/flags';
+import { commandBar, commands, pageCreated } from '../../../registries';
 import type { CommandBarItem } from '../../../registries/types';
 import { t } from '../../../strings/t';
 import { targetEditor } from '../formattingBar/target';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
 import { editingSettingsParts } from '../registries';
 import { openFind, readingLock } from '../qol/stores';
+import { shownIsTemplate } from '../templates/state';
 import { pageExtrasPrefs, setPrefs } from '../qol/prefs';
 
 const shown = () => shownMounted.get() !== null;
@@ -159,6 +161,69 @@ register({
   run: () => setPrefs({ toc: !pageExtrasPrefs.get().toc }),
 });
 
+// Page templates and series pages.
+const templates = () => import('../templates/commands');
+register({
+  id: 'templates.newPage',
+  title: 'pageExtras.templates.newPage',
+  keywords: 'pageExtras.templates.keywords',
+  category: 'notebooks',
+  flag: 'page.templates',
+  run: () => void templates().then((module) => module.newPageFromTemplate()),
+});
+register({
+  id: 'templates.insert',
+  title: 'pageExtras.templates.insertCommand',
+  keywords: 'pageExtras.templates.keywords',
+  category: 'insert',
+  flag: 'page.templates',
+  when: shown,
+  run: () => void templates().then((module) => module.insertTemplateHere()),
+});
+register({
+  id: 'templates.save',
+  title: 'pageExtras.templates.saveCommand',
+  keywords: 'pageExtras.templates.keywords',
+  category: 'editing',
+  flag: 'page.templates',
+  when: () => shown() && !shownIsTemplate(),
+  run: () => void templates().then((module) => module.setTemplate(true)),
+});
+register({
+  id: 'templates.remove',
+  title: 'pageExtras.templates.removeCommand',
+  keywords: 'pageExtras.templates.keywords',
+  category: 'editing',
+  flag: 'page.templates',
+  when: () => shown() && shownIsTemplate(),
+  run: () => void templates().then((module) => module.setTemplate(false)),
+});
+register({
+  id: 'templates.setDefault',
+  title: 'pageExtras.templates.defaultCommand',
+  keywords: 'pageExtras.templates.keywords',
+  category: 'notebooks',
+  flag: 'page.templates',
+  run: () => void templates().then((module) => module.setSectionDefault()),
+});
+register({
+  id: 'series.newPage',
+  title: 'pageExtras.series.command',
+  keywords: 'pageExtras.series.keywords',
+  category: 'notebooks',
+  flag: 'page.series',
+  when: shown,
+  run: () => void templates().then((module) => module.newPageInSeries()),
+});
+pageCreated.register({
+  id: 'qol.templates',
+  order: 5,
+  run: async (pageId, ctx) => {
+    if (!isEnabled('page.templates') && !isEnabled('page.series')) return;
+    await (await import('../templates/apply')).onPageCreated(pageId, ctx);
+  },
+});
+
 const bar = (item: Omit<CommandBarItem, 'id'>): CommandBarItem => ({ id: `qol.${item.command}`, ...item });
 [
   bar({ tab: 'view', group: 'pageTools', command: 'page.toc', priority: 30, presentation: 'toggle', flag: 'page.toc' }),
@@ -171,6 +236,7 @@ const bar = (item: Omit<CommandBarItem, 'id'>): CommandBarItem => ({ id: `qol.${
     flag: 'page.readingLock',
   }),
   bar({ tab: 'home', group: 'find', command: 'page.find', priority: 20, flag: 'page.findReplace' }),
+  bar({ tab: 'insert', group: 'blocks', command: 'templates.insert', priority: 40, flag: 'page.templates' }),
   bar({ tab: 'home', group: 'paragraph', command: 'checklist.checkAll', priority: 36, flag: 'page.checklistExtras' }),
 ].forEach((item) => commandBar.register(item));
 

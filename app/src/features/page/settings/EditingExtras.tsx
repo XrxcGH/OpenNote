@@ -135,6 +135,7 @@ export default function EditingExtras() {
   const linkTitles = useFlag('page.linkTitles');
   const checklist = useFlag('page.checklistExtras');
   const words = useFlag('page.wordCount');
+  const series = useFlag('page.series');
   const prefs = usePrefs((value) => value);
   return (
     <section className={styles.part} aria-labelledby="editing-extras">
@@ -148,6 +149,13 @@ export default function EditingExtras() {
           label={t('pageExtras.settings.doneCount')}
           checked={prefs.doneCount}
           onChange={(doneCount) => setPrefs({ doneCount })}
+        />
+      )}
+      {series && (
+        <Switch
+          label={t('pageExtras.settings.seriesCarry')}
+          checked={prefs.seriesCarry}
+          onChange={(seriesCarry) => setPrefs({ seriesCarry })}
         />
       )}
       {words && (

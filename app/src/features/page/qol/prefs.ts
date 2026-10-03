@@ -26,6 +26,10 @@ export interface PageExtrasPrefs {
   toc: boolean;
   /** Show the word count and reading time under the page. */
   wordCount: boolean;
+  /** The template that new pages in a section start from, by section ID. */
+  templateDefaults: Record<string, string>;
+  /** A new page in a series carries the unfinished checkboxes of the last page forward. */
+  seriesCarry: boolean;
 }
 
 export const DEFAULT_PREFS: PageExtrasPrefs = {
@@ -39,11 +43,23 @@ export const DEFAULT_PREFS: PageExtrasPrefs = {
   doneCount: false,
   toc: false,
   wordCount: true,
+  templateDefaults: {},
+  seriesCarry: true,
 };
 
 const KEY = 'opennote.pageExtras';
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, Math.round(value)));
+
+/** A map of short strings, without anything else. */
+function strings(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (typeof raw !== 'object' || raw === null) return out;
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === 'string' && key.length <= 100 && value.length <= 100) out[key] = value;
+  }
+  return out;
+}
 
 /** Keeps only valid values, so a hand-edited or older entry never breaks the page. */
 export function cleanPrefs(raw: unknown): PageExtrasPrefs {
@@ -66,6 +82,8 @@ export function cleanPrefs(raw: unknown): PageExtrasPrefs {
     doneCount: bool('doneCount'),
     toc: bool('toc'),
     wordCount: bool('wordCount'),
+    templateDefaults: strings(found.templateDefaults),
+    seriesCarry: bool('seriesCarry'),
   };
 }
 

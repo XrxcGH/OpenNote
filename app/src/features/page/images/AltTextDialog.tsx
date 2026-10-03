@@ -4,9 +4,10 @@
 import { useId, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { t } from '../../../strings/t';
-import { Dialog } from '../../../ui';
+import { Button, Dialog } from '../../../ui';
 import type { DialogAction } from '../../../ui';
 import type { ImageHandle } from '../blocks/imageBlock';
+import { canDraftAlt, draftFromText, recognizedText } from '../qol/altDraft';
 import styles from './dialog.module.css';
 
 export const MAX_ALT_LENGTH = 2000;
@@ -21,10 +22,13 @@ export interface AltTextDialogProps {
   onSave(value: AltTextValue): void;
   onCancel(): void;
   returnFocus?: () => HTMLElement | null;
+  /** Offers a first draft from the words in the image; absent when text recognition isn't available. */
+  draft?: () => Promise<string | null>;
 }
 
-export function AltTextDialog({ initial, onSave, onCancel, returnFocus }: AltTextDialogProps) {
+export function AltTextDialog({ initial, onSave, onCancel, returnFocus, draft }: AltTextDialogProps) {
   const [alt, setAlt] = useState(initial.alt);
+  const [drafting, setDrafting] = useState(false);
   const [decorative, setDecorative] = useState(initial.decorative);
   const field = useRef<HTMLTextAreaElement>(null);
   const id = useId();
@@ -67,6 +71,29 @@ export function AltTextDialog({ initial, onSave, onCancel, returnFocus }: AltTex
           {t('images.altDialog.count', { count: alt.length.toLocaleString() })}
         </span>
       </div>
+      {draft && (
+        <div className={styles.field}>
+          <Button
+            variant="quiet"
+            disabled={decorative || drafting}
+            onClick={() => {
+              setDrafting(true);
+              void draft()
+                .then((text) => {
+                  if (text)
+                    setAlt((current) => (current.trim() ? `${current.trim()} ${text}` : text).slice(0, MAX_ALT_LENGTH));
+                })
+                .finally(() => {
+                  setDrafting(false);
+                  field.current?.focus();
+                });
+            }}
+          >
+            {t('pageExtras.altDraft.button')}
+          </Button>
+          <span className={styles.help}>{t('pageExtras.altDraft.help')}</span>
+        </div>
+      )}
       <label className={styles.check}>
         <input type="checkbox" checked={decorative} onChange={(event) => setDecorative(event.target.checked)} />
         {t('images.altDialog.decorative')}
@@ -106,8 +133,17 @@ export function editAltText(handle: ImageHandle): Promise<boolean> {
       close();
       resolve(false);
     };
+    const draft = canDraftAlt(handle)
+      ? () => recognizedText(handle).then((text) => (text ? draftFromText(text, MAX_ALT_LENGTH) : null))
+      : undefined;
     root.render(
-      <AltTextDialog initial={initial} onSave={onSave} onCancel={onCancel} returnFocus={() => handle.element} />,
+      <AltTextDialog
+        initial={initial}
+        onSave={onSave}
+        onCancel={onCancel}
+        returnFocus={() => handle.element}
+        draft={draft}
+      />,
     );
   });
 }
