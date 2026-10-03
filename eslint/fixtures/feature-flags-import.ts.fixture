@@ -1,0 +1,5 @@
+// lint-as: app/src/app/Allowed.ts
+// expect: none
+import { PAGE_FLAGS } from '../features/page/flags';
+
+export const flags = PAGE_FLAGS;

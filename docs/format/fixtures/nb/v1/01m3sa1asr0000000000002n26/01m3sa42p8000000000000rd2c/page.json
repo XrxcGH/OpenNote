@@ -1,0 +1,111 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sa42p8000000000000rd2c",
+  "title": "Photosynthesis",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:07:40.412Z",
+  "tags": ["biology", "exam/unit-3"],
+  "view": {
+    "mode": "paginated",
+    "background": {
+      "pattern": "ruled"
+    }
+  },
+  "blocks": [
+    {
+      "id": "01m3sa75ag000000000001gt4q",
+      "type": "text",
+      "order": "a0",
+      "frame": {
+        "x": 96,
+        "y": 120,
+        "w": 624
+      },
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "markdown": "## Light reactions\n\nThe **thylakoid** membrane holds ==chlorophyll a== and splits water into O<sub>2</sub>.\n\n> [!tip] Exam hint\n> Learn the Z-scheme diagram.\n\n- [x] Read chapter 8\n- [ ] Lab write-up",
+        "ids": ["01m3sad7n80000000000030x30", "01m3sad8mg00000000000314tf", "01m3sad9kr0000000000031chy", "01m3sadak00000000000031m9d", "01m3sadbj80000000000031w0w"],
+        "tags": {
+          "01m3sad7n80000000000030x30": ["exam"]
+        },
+        "styles": {
+          "01m3sad7n80000000000030x30": "title"
+        },
+        "checked": ["01m3sadak00000000000031m9d"]
+      }
+    },
+    {
+      "id": "01m3sa74b8000000000001gjd8",
+      "type": "ink",
+      "order": "a1",
+      "frame": {
+        "x": 0,
+        "y": 0
+      },
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "role": "layer",
+        "strokeCount": 4
+      }
+    },
+    {
+      "id": "01m3sa769r000000000001h1w6",
+      "type": "ink",
+      "order": "a2",
+      "frame": {
+        "x": 120,
+        "y": 168
+      },
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "role": "anchored",
+        "strokeCount": 0,
+        "anchor": {
+          "block": "01m3sa75ag000000000001gt4q",
+          "para": "01m3sad8mg00000000000314tf",
+          "at": 4,
+          "quote": {
+            "prefix": "The ",
+            "exact": "thylakoid",
+            "suffix": " membrane"
+          },
+          "dx": -6.5,
+          "dy": 14,
+          "zzfuture": 1
+        }
+      }
+    }
+  ],
+  "ink": {
+    "segments": [
+      {
+        "id": "01m3sag9a8000000000003s2dw",
+        "bytes": 882,
+        "records": 4,
+        "crc32": "388f48a2"
+      },
+      {
+        "id": "01m3saga9g000000000003sa5b",
+        "bytes": 292,
+        "records": 4,
+        "crc32": "e17a3063"
+      }
+    ]
+  },
+  "revision": {
+    "id": "01m3saa6080000000000028qr4",
+    "parents": ["01m3saa5100000000000028g0n"],
+    "ancestors": ["01m3saa5100000000000028g0n"],
+    "savedAt": "2026-09-30T14:07:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.4.0 (windows)"
+  }
+}

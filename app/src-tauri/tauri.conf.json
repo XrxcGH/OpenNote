@@ -24,11 +24,12 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: blob: data:; worker-src 'self'"
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: http://opennote-asset.localhost blob: data:; worker-src 'self'"
     }
   },
   "bundle": {
     "active": true,
+    "publisher": "OpenNote contributors",
     "targets": ["nsis"],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"]
   }

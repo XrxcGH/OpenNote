@@ -2,7 +2,8 @@
 // gzips each group of files, and fails when a group passes its limit in app/bundle-budget.json. The groups are:
 // - start-up JavaScript: the entry and everything it imports statically
 // - start-up CSS: the style sheets of those chunks
-// - one lazy group per dynamic import, without what start-up already loads
+// - one lazy group per dynamic import, without what start-up already loads. A group that only ever loads after
+//   another one (the page's on-demand chunks load after the page) also leaves out what that one loads.
 //
 // Run after `npm run app:build`:
 //   node app/scripts/check-bundle.ts [--dist app/dist] [--compare-with <old report.json>] [--report <out.json>]
@@ -29,6 +30,11 @@ export interface Budget {
   /** Limits for lazy groups whose source path contains the key, such as "features/palette". */
   lazyKb: Record<string, number>;
   lazyDefaultKb: number;
+  /**
+   * Lazy groups that load only after another one: a group whose source path contains `within` counts without the
+   * files of the group whose path contains `entry`, which is loaded by then.
+   */
+  after?: { within: string; entry: string };
 }
 
 export interface Group {
@@ -68,8 +74,13 @@ export function groups(manifest: Manifest, budget: Budget): Group[] {
       limitKb: budget.startup.cssKb,
     },
   ];
-  for (const key of keys.filter((k) => manifest[k].isDynamicEntry)) {
-    const own = [...staticClosure(manifest, [key])].filter((k) => !startup.has(k)).map((k) => manifest[k]);
+  const lazyKeys = keys.filter((k) => manifest[k].isDynamicEntry);
+  const first = budget.after && lazyKeys.find((k) => k.includes(budget.after!.entry));
+  const loadedFirst = first ? staticClosure(manifest, [first]) : new Set<string>();
+  for (const key of lazyKeys) {
+    const follows = first !== undefined && key !== first && key.includes(budget.after!.within);
+    const loaded = (k: string) => startup.has(k) || (follows && loadedFirst.has(k));
+    const own = [...staticClosure(manifest, [key])].filter((k) => !loaded(k)).map((k) => manifest[k]);
     const limit = Object.entries(budget.lazyKb).find(([fragment]) => key.includes(fragment))?.[1];
     const files = [...own.map((chunk) => chunk.file), ...new Set(own.flatMap((chunk) => chunk.css ?? []))];
     result.push({ name: manifest[key].src ?? key, files, limitKb: limit ?? budget.lazyDefaultKb });

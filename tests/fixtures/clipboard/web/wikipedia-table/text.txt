@@ -1,0 +1,7 @@
+Planets[edit]
+The planets of the Solar System, in order from the Sun[1]:
+Planet	Distance (AU)	Moons
+Mercury	0.39	0
+Venus	0.72	0
+Earth	1.00	1
+Each planet keeps its own orbit.

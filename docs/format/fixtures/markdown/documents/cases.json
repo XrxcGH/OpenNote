@@ -1,0 +1,453 @@
+{
+  "cases": [
+    {
+      "name": "paragraph",
+      "markdown": "Plants make sugar from light.",
+      "document": [
+        {"type": "paragraph", "content": [{"text": "Plants make sugar from light.", "marks": []}]}
+      ]
+    },
+    {
+      "name": "heading and emphasis",
+      "markdown": "## Light reactions\n\nThe **thylakoid** membrane holds *water*.",
+      "document": [
+        {"type": "heading", "level": 2, "content": [{"text": "Light reactions", "marks": []}]},
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "The ", "marks": []},
+            {"text": "thylakoid", "marks": ["strong"]},
+            {"text": " membrane holds ", "marks": []},
+            {"text": "water", "marks": ["emphasis"]},
+            {"text": ".", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "highlights and subscripts",
+      "markdown": "Water splits into O<sub>2</sub> and ==energy==.",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "Water splits into O", "marks": []},
+            {"text": "2", "marks": ["sub"]},
+            {"text": " and ", "marks": []},
+            {"text": "energy", "marks": ["highlight"]},
+            {"text": ".", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "colors and sizes",
+      "markdown": "<span data-color=\"brick\">Warning</span> and <mark data-color=\"mint\">note</mark> and <span data-size=\"large\">big</span>",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "Warning", "marks": [{"color": "brick"}]},
+            {"text": " and ", "marks": []},
+            {"text": "note", "marks": [{"highlight": "mint"}]},
+            {"text": " and ", "marks": []},
+            {"text": "big", "marks": [{"size": "large"}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a delimiter that can't close",
+      "markdown": "a<strong>(b)</strong>c",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "a", "marks": []},
+            {"text": "(b)", "marks": ["strong"]},
+            {"text": "c", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "links and images",
+      "markdown": "See [Photosynthesis](opennote:page/01m3sa12426sg32pmtyffjaqcf) and ![Leaf](asset:01m3sa43z1tp9rdr5e8df2jbxy)",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "See ", "marks": []},
+            {"text": "Photosynthesis", "marks": [{"link": "opennote:page/01m3sa12426sg32pmtyffjaqcf"}]},
+            {"text": " and ", "marks": []},
+            {"image": "asset:01m3sa43z1tp9rdr5e8df2jbxy", "alt": "Leaf"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "escapes and a hard break",
+      "markdown": "5 \\* 3 = 15\\\n1\\. Not a list",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "5 * 3 = 15", "marks": []},
+            {"hardBreak": true},
+            {"text": "1. Not a list", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "task list",
+      "markdown": "- [x] Read chapter 8\n- [ ] Lab write-up",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {"task": "done", "blocks": [{"type": "paragraph", "content": [{"text": "Read chapter 8", "marks": []}]}]},
+            {"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Lab write-up", "marks": []}]}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "numbered list",
+      "markdown": "3. Third\n4. Fourth",
+      "document": [
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 3,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "loose list",
+      "markdown": "- First\n\n  More about it\n\n- Second",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {
+              "task": null,
+              "blocks": [
+                {"type": "paragraph", "content": [{"text": "First", "marks": []}]},
+                {"type": "paragraph", "content": [{"text": "More about it", "marks": []}]}
+              ]
+            },
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Second", "marks": []}]}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "callout",
+      "markdown": "> [!tip] Exam hint\n> Learn the Z-scheme diagram.",
+      "document": [
+        {
+          "type": "callout",
+          "callout": "tip",
+          "fold": null,
+          "title": [{"text": "Exam hint", "marks": []}],
+          "blocks": [{"type": "paragraph", "content": [{"text": "Learn the Z-scheme diagram.", "marks": []}]}]
+        }
+      ]
+    },
+    {
+      "name": "quote",
+      "markdown": "> Life finds a way.\n>\n> It always does.",
+      "document": [
+        {
+          "type": "quote",
+          "blocks": [
+            {"type": "paragraph", "content": [{"text": "Life finds a way.", "marks": []}]},
+            {"type": "paragraph", "content": [{"text": "It always does.", "marks": []}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "code block and break",
+      "markdown": "```rust\nlet x = 1;\n```\n\n---\n\nAfter `code`",
+      "document": [
+        {"type": "code", "language": "rust", "text": "let x = 1;"},
+        {"type": "break"},
+        {"type": "paragraph", "content": [{"text": "After ", "marks": []}, {"text": "code", "marks": ["code"]}]}
+      ]
+    },
+    {
+      "name": "a bulleted list beside a numbered list",
+      "markdown": "- Apples\n\n1. Pears",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 1,
+          "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+        }
+      ]
+    },
+    {
+      "name": "two lists of one kind are written as one",
+      "markdown": "- Apples\n- [ ] Pears\n\nBetween\n\n3. Third\n4. Fourth\n5. Fifth",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]},
+            {"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}
+          ]
+        },
+        {"type": "paragraph", "content": [{"text": "Between", "marks": []}]},
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 3,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fifth", "marks": []}]}]}
+          ]
+        }
+      ],
+      "alsoWrittenFrom": [
+        [
+          {
+            "type": "list",
+            "ordered": false,
+            "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+          },
+          {
+            "type": "list",
+            "ordered": false,
+            "items": [{"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+          },
+          {"type": "paragraph", "content": [{"text": "Between", "marks": []}]},
+          {
+            "type": "list",
+            "ordered": true,
+            "start": 3,
+            "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]}]
+          },
+          {
+            "type": "list",
+            "ordered": true,
+            "start": 1,
+            "items": [
+              {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]},
+              {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fifth", "marks": []}]}]}
+            ]
+          }
+        ]
+      ]
+    },
+    {
+      "name": "callouts with folds",
+      "markdown": "> [!warning]- Folded with a title\n> Hidden until opened.\n\n> [!question]+\n> Open, with no title.\n\n> [!info] A list first\n>\n> - First point",
+      "document": [
+        {
+          "type": "callout",
+          "callout": "warning",
+          "fold": "folded",
+          "title": [{"text": "Folded with a title", "marks": []}],
+          "blocks": [{"type": "paragraph", "content": [{"text": "Hidden until opened.", "marks": []}]}]
+        },
+        {
+          "type": "callout",
+          "callout": "question",
+          "fold": "open",
+          "title": [],
+          "blocks": [{"type": "paragraph", "content": [{"text": "Open, with no title.", "marks": []}]}]
+        },
+        {
+          "type": "callout",
+          "callout": "info",
+          "fold": null,
+          "title": [{"text": "A list first", "marks": []}],
+          "blocks": [
+            {
+              "type": "list",
+              "ordered": false,
+              "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "First point", "marks": []}]}]}]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "every mark overlap",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": [{"link": "https://example.com"}]},
+            {"text": "two", "marks": [{"link": "https://example.com"}, "strong"]},
+            {"text": " three", "marks": ["strong"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["strong"]},
+            {"text": "two", "marks": ["strong", "emphasis"]},
+            {"text": " three", "marks": ["emphasis"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["emphasis"]},
+            {"text": "two", "marks": ["emphasis", "strike"]},
+            {"text": " three", "marks": ["strike"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["strike"]},
+            {"text": "two", "marks": ["strike", "underline"]},
+            {"text": " three", "marks": ["underline"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["underline"]},
+            {"text": "two", "marks": ["underline", "highlight"]},
+            {"text": " three", "marks": ["highlight"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["highlight"]},
+            {"text": "two", "marks": ["highlight", {"color": "brick"}]},
+            {"text": " three", "marks": [{"color": "brick"}]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": [{"color": "brick"}]},
+            {"text": "two", "marks": [{"color": "brick"}, {"size": "small"}]},
+            {"text": " three", "marks": [{"size": "small"}]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": [{"size": "small"}]},
+            {"text": "two", "marks": [{"size": "small"}, "sub"]},
+            {"text": " three", "marks": ["sub"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["sub"]},
+            {"text": "two", "marks": ["sub", "code"]},
+            {"text": " three", "marks": ["code"]}
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "one ", "marks": ["sup"]},
+            {"text": "two", "marks": ["sup", "code"]},
+            {"text": " three", "marks": ["code"]}
+          ]
+        }
+      ],
+      "markdown": "[one **two**](https://example.com)<strong> three</strong>\n\n**one *two***<em> three</em>\n\n*one ~~two~~*<del> three</del>\n\n~~one <u>two</u>~~<u> three</u>\n\n<u>one ==two==</u><mark> three</mark>\n\n==one <span data-color=\"brick\">two</span>==<span data-color=\"brick\"> three</span>\n\n<span data-color=\"brick\">one <span data-size=\"small\">two</span></span><span data-size=\"small\"> three</span>\n\n<span data-size=\"small\">one <sub>two</sub></span><sub> three</sub>\n\n<sub>one `two`</sub>` three`\n\n<sup>one `two`</sup>` three`"
+    },
+    {
+      "name": "flanking fallbacks",
+      "markdown": "a<strong>(b)</strong>c\n\n<em>\"quoted\"</em>x\n\na<del>(s)</del>c\n\nx==.==y",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [{"text": "a", "marks": []}, {"text": "(b)", "marks": ["strong"]}, {"text": "c", "marks": []}]
+        },
+        {"type": "paragraph", "content": [{"text": "\"quoted\"", "marks": ["emphasis"]}, {"text": "x", "marks": []}]},
+        {
+          "type": "paragraph",
+          "content": [{"text": "a", "marks": []}, {"text": "(s)", "marks": ["strike"]}, {"text": "c", "marks": []}]
+        },
+        {
+          "type": "paragraph",
+          "content": [{"text": "x", "marks": []}, {"text": ".", "marks": ["highlight"]}, {"text": "y", "marks": []}]
+        }
+      ]
+    },
+    {
+      "name": "adjacent lists of two kinds inside an item and a quote",
+      "markdown": "- Fruit\n\n  - Apples\n\n  1. Pears\n\n> - Inside\n>\n> 1. A quote",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {
+              "task": null,
+              "blocks": [
+                {"type": "paragraph", "content": [{"text": "Fruit", "marks": []}]},
+                {
+                  "type": "list",
+                  "ordered": false,
+                  "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+                },
+                {
+                  "type": "list",
+                  "ordered": true,
+                  "start": 1,
+                  "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "quote",
+          "blocks": [
+            {
+              "type": "list",
+              "ordered": false,
+              "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Inside", "marks": []}]}]}]
+            },
+            {
+              "type": "list",
+              "ordered": true,
+              "start": 1,
+              "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "A quote", "marks": []}]}]}]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "math atoms",
+      "markdown": "$$\n\\frac{a}{b} = c\n$$\n\nThe area is $\\pi r^2$ and costs \\$5.",
+      "document": [
+        {"type": "math", "source": "\\frac{a}{b} = c"},
+        {
+          "type": "paragraph",
+          "content": [{"text": "The area is ", "marks": []}, {"math": "\\pi r^2"}, {"text": " and costs $5.", "marks": []}]
+        }
+      ]
+    }
+  ]
+}

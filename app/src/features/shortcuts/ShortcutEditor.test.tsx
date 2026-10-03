@@ -86,10 +86,11 @@ describe('changing a shortcut', () => {
     const { row } = await startChange(dialog, 'Toggle dark mode');
     await pressChord('Ctrl+K');
     const prompt = await within(row).findByRole('group', { name: 'New shortcut for Toggle dark mode' });
-    expect(prompt.textContent).toContain('Ctrl+K is already used by Open command palette.');
+    // Phase 4's Link refines the palette's Ctrl+K in text boxes, so the chord has two users.
+    expect(prompt.textContent).toContain('Ctrl+K is already used by Link and 1 other command.');
     expect(prompt.textContent).toContain('Use it for Toggle dark mode instead?');
     expect(announcements().at(-1)).toBe(
-      'Ctrl+K is already used by Open command palette. Use it for Toggle dark mode instead?',
+      'Ctrl+K is already used by Link and 1 other command. Use it for Toggle dark mode instead?',
     );
     const useHere = within(prompt).getByRole('button', { name: 'Use it here' });
     await expectFocus(useHere);
@@ -164,7 +165,7 @@ describe('finding by shortcut', () => {
         within(dialog)
           .getAllByRole('rowheader')
           .map((header) => header.textContent),
-      ).toEqual(['Open command palette']),
+      ).toEqual(['Open command palette', 'Link']),
     );
     expect((field as HTMLInputElement).value).toBe('Ctrl+K');
     await pressChord('Ctrl+Alt+Shift+Q');

@@ -1,13 +1,18 @@
 // Vitest runs two projects (ARCHITECTURE.md section 21.1). The file extension picks the project:
 // - unit: *.test.ts in Node, or in jsdom with a `@vitest-environment jsdom` comment
 // - components: *.test.tsx in a real browser through Playwright
+import { join } from 'node:path';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
 import { browserChannel } from '../tests/browser';
+import { packageImports } from './scripts/package-imports.ts';
 import { viteConfig } from './vite.config';
 
 export default defineConfig((env) =>
   mergeConfig(viteConfig({ ...env, mode: 'test' }), {
+    // Bundles every package the app imports before the first test: one found later, in a chunk that loads lazily,
+    // reloads the page under a running test (scripts/package-imports.ts).
+    optimizeDeps: { include: packageImports(join(import.meta.dirname, 'src')) },
     test: {
       projects: [
         {

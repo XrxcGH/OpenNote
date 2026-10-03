@@ -1,0 +1,69 @@
+/*
+ * The code language picker (owner: WP6): a filter above a short list, in a popover at the language button.
+ */
+@layer components {
+  .picker {
+    display: grid;
+    gap: var(--space-2);
+    inline-size: 16rem;
+  }
+
+  .filter {
+    inline-size: 100%;
+    min-block-size: var(--size-row-pointer);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  :global(:root[data-density='touch']) .filter {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .filter:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .list {
+    display: grid;
+    max-block-size: 18rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .option {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    min-block-size: var(--size-row-pointer);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .option {
+    min-block-size: var(--size-row-touch);
+  }
+
+  /* The highlighted option. Forced colors keep the outline, which marks it without color. */
+  .option[aria-selected='true'] {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+    background: var(--color-surface-selected);
+  }
+
+  .check {
+    color: var(--color-text-secondary);
+  }
+
+  .none {
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    color: var(--color-text-secondary);
+  }
+}

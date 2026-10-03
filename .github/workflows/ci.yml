@@ -127,6 +127,32 @@ jobs:
             tests/ui/results
           retention-days: 7
 
+  perf-typing:
+    # Phase 4's typing benchmark, in-page measure only (ARCHITECTURE.md section 24.5): every typing condition and
+    # the motion gestures, recorded as an artifact. Hosted runners are too noisy for the 16 ms gate itself, which
+    # the reference laptop's run checks with OPENNOTE_TYPING_GATE=1 (docs/perf/phase-4.md).
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Typing benchmark
+        run: npm run perf:typing
+      - name: Keep the numbers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-typing
+          path: tests/perf/typing/results
+          retention-days: 30
+
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest
@@ -154,6 +180,10 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Rust tests
         run: cargo test --workspace
+      - name: Core lints and tests with every feature
+        run: |
+          cargo clippy -p opennote-core --all-targets --all-features -- -D warnings
+          cargo test -p opennote-core --all-features
       - name: Inter-process types match the Rust ones (bindings drift check)
         # Catches new files too, which git diff alone would miss.
         shell: bash
@@ -227,3 +257,71 @@ jobs:
           name: e2e-logs
           path: tests/e2e/logs
           retention-days: 7
+
+  core-linux:
+    # The core has no platform UI, so it also runs on Linux, where the Unix file system code is tested.
+    runs-on: ubuntu-latest
+    # Normally about 10 minutes with a cold cache.
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy for the core, the kill harness, and the benchmarks
+        run: >-
+          cargo clippy -p opennote-core -p opennote-crashtest -p opennote-perf
+          --all-targets --all-features -- -D warnings
+      - name: Core tests with every feature
+        run: cargo test -p opennote-core --all-features
+      - name: Benchmark harness tests
+        run: cargo test -p opennote-perf
+      - name: Fuzz targets compile
+        run: cargo check --manifest-path crates/core/fuzz/Cargo.toml
+      - name: No work package stubs are left (pull requests into main)
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        run: |
+          if grep -rn 'unimplemented!("WP' crates/core; then
+            echo "Remove every work package stub before Phase 3 merges into main."
+            exit 1
+          fi
+
+  format-fixtures:
+    # Every implementation of the note format reads the same fixtures in docs/format/fixtures.
+    runs-on: ubuntu-latest
+    # Normally about 5 minutes with a cold cache.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install tools
+        run: npm ci
+      - name: Rust fixture tests
+        run: cargo test -p opennote-core --all-features fixture
+      - name: TypeScript fixture tests
+        run: npx vitest run --config app/vite.config.ts --passWithNoTests src/core/
+
+  reference-reader:
+    # The Python reference reader proves that the specification is enough to read a notebook.
+    runs-on: ubuntu-latest
+    # Normally under 1 minute.
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Reference reader tests
+        run: python -m unittest discover -s docs/format/tools -p "test_*.py" -v
