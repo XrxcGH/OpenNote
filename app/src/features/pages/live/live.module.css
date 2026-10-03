@@ -80,6 +80,79 @@
     z-index: var(--layer-page-chrome);
   }
 
+  /* The sheet strip: thumbnails down the end of the window, over the page's margin and under the page chrome. */
+  .strip {
+    position: absolute;
+    inset-block: var(--space-3);
+    inset-inline-end: var(--space-2);
+    inline-size: 4.5rem;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-1);
+    z-index: var(--layer-page-chrome);
+  }
+
+  .stripList {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    overflow-y: auto;
+    align-content: start;
+  }
+
+  .thumb {
+    display: grid;
+    gap: var(--space-1);
+    justify-items: center;
+    padding: var(--space-1);
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+  }
+
+  .thumb[aria-current='true'] {
+    border-color: var(--color-accent-primary);
+    color: var(--color-text-primary);
+  }
+
+  .thumbPaper {
+    display: block;
+    inline-size: 100%;
+    overflow: hidden;
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  .thumbPaper > svg {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .thumbNumber {
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+  }
+
+  .stripAdd,
+  .stripFlip {
+    min-block-size: 2.75rem;
+    border: 1px dashed var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--type-body-size);
+    cursor: pointer;
+  }
+
+  .stripFlip {
+    border-style: solid;
+  }
+
   /* The reading focus band: everything outside the lit lines dims. It never takes the pointer. */
   .focusLayer {
     position: absolute;

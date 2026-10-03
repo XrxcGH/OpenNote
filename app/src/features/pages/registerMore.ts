@@ -1,16 +1,16 @@
 // The pages area's second pass of commands, menu items, and bar items, in one file so the first pass (register.ts)
 // stays as it was: layout templates and spacing, the sheet navigator, accessible PDF, the elements library, selection
 // export, presenting with a laser, and syllable marks. Each command loads its code on first use.
-import { defineCommand } from '../../commands/registry';
+import { chord, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
-import { commands, contextMenus } from '../../registries';
+import { commandBar, commands, contextMenus } from '../../registries';
 import type { MenuId } from '../../registries/types';
 import { shownMounted } from '../page';
 import type { MessageKey } from '../../strings/t';
 import type { FlagId } from '../../app/flags';
 
 import { spacingRangeMm } from './layout/layouts';
-import { shownPagesView } from './live/shown';
+import { setSheetNav, sheetNav, shownPagesView } from './live/shown';
 
 const shown = () => shownMounted.get() !== null;
 const api = () => shownPagesView.get();
@@ -99,3 +99,70 @@ menuItems('pages.background', 'pages.layouts', 'layout', [
   'pages.notebookDefault',
   'pages.notebookDefaultClear',
 ]);
+
+// ---- The sheet navigator: a strip of thumbnails, Go to sheet, flipping, and adding a sheet ------------------------------
+const paginated = () => api()?.state().mode === 'paginated';
+const sheetsModule = () => import('./ui/sheetCommands');
+command({
+  id: 'pages.sheet.navigator',
+  title: 'pagesPlus.commands.sheetNavigator',
+  keywords: 'pagesPlus.commands.sheetKeywords',
+  flag: 'pages.sheets',
+  checked: () => sheetNav.get().open,
+  enabled: paginated,
+  run: () => setSheetNav({ open: !sheetNav.get().open }),
+});
+command({
+  id: 'pages.sheet.flip',
+  title: 'pagesPlus.commands.sheetFlip',
+  keywords: 'pagesPlus.commands.sheetKeywords',
+  flag: 'pages.sheets',
+  checked: () => sheetNav.get().flip,
+  enabled: paginated,
+  run: () => setSheetNav({ flip: !sheetNav.get().flip }),
+});
+command({
+  id: 'pages.sheet.goTo',
+  title: 'pagesPlus.commands.sheetGoTo',
+  keywords: 'pagesPlus.commands.sheetKeywords',
+  flag: 'pages.sheets',
+  enabled: paginated,
+  run: () => sheetsModule().then((m) => m.openGoToSheet()),
+});
+command({
+  id: 'pages.sheet.next',
+  title: 'pagesPlus.commands.sheetNext',
+  keywords: 'pagesPlus.commands.sheetKeywords',
+  keys: [chord('Alt+PageDown')],
+  flag: 'pages.sheets',
+  allowInTextInput: true,
+  enabled: paginated,
+  run: () => sheetsModule().then((m) => m.stepSheet(1)),
+});
+command({
+  id: 'pages.sheet.previous',
+  title: 'pagesPlus.commands.sheetPrevious',
+  keywords: 'pagesPlus.commands.sheetKeywords',
+  keys: [chord('Alt+PageUp')],
+  flag: 'pages.sheets',
+  allowInTextInput: true,
+  enabled: paginated,
+  run: () => sheetsModule().then((m) => m.stepSheet(-1)),
+});
+command({
+  id: 'pages.sheet.add',
+  title: 'pagesPlus.commands.sheetAdd',
+  keywords: 'pagesPlus.commands.sheetKeywords',
+  flag: 'pages.sheets',
+  enabled: paginated,
+  run: () => api()?.addSheet(),
+});
+commandBar.register({
+  tab: 'view',
+  id: 'pages.bar.sheets',
+  group: 'pageview',
+  command: 'pages.sheet.navigator',
+  priority: 55,
+  presentation: 'toggle',
+  flag: 'pages.sheets',
+});

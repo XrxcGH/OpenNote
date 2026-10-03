@@ -35,9 +35,44 @@ export interface PagesViewApi {
   edit(change: (view: PageViewSpec) => PageViewSpec, announcement?: string): void;
   /** The reading aids panel and the line focus. */
   readingAids(): void;
+  /** How many sheets the page shows, and the one the window is on (from 0). */
+  sheets(): { count: number; current: number };
+  goToSheet(sheet: number): void;
+  /** Adds a sheet with the same paper at the end, as one undo step. */
+  addSheet(): void;
 }
 
 export const shownPagesView = createStore<PagesViewApi | null>(null, 'pages view');
 
 /** Notified after the view's state changes, so the View tab's toggles re-render. */
 export const pagesViewEpoch = createStore<number>(0, 'pages view epoch');
+
+/** The sheet strip and flipping, a setting of this device. */
+export interface SheetNav {
+  /** The strip of thumbnails beside the page. */
+  readonly open: boolean;
+  /** Sheets go one at a time, each fitted whole in the window. */
+  readonly flip: boolean;
+}
+
+const NAV_KEY = 'opennote.sheetNav';
+
+function loadNav(): SheetNav {
+  try {
+    const raw = JSON.parse(globalThis.localStorage?.getItem(NAV_KEY) ?? '{}') as Partial<SheetNav>;
+    return { open: raw.open === true, flip: raw.flip === true };
+  } catch {
+    return { open: false, flip: false };
+  }
+}
+
+export const sheetNav = createStore<SheetNav>(loadNav(), 'sheet navigator');
+
+export function setSheetNav(next: Partial<SheetNav>): void {
+  sheetNav.set((now) => ({ ...now, ...next }));
+  try {
+    globalThis.localStorage?.setItem(NAV_KEY, JSON.stringify(sheetNav.get()));
+  } catch {
+    // The setting lasts until the window closes.
+  }
+}

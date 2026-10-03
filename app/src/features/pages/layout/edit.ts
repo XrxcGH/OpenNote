@@ -132,3 +132,18 @@ export function newPageView(region: string | undefined, notebook?: JsonObject, s
   const app = writeView({ ...DEFAULT_VIEW, paper: defaultPaperFor(region) });
   return readView(mergeLayers(app, notebook, section)).view;
 }
+
+/** The key of the view that asks for at least this many sheets. An extra key of the view, which the format keeps. */
+export const MIN_SHEETS_KEY = 'minSheets';
+
+/** How many sheets the view asks for at least; 1 when it asks for none. */
+export function minSheetsOf(view: PageViewSpec): number {
+  const value = view.extra[MIN_SHEETS_KEY];
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1;
+}
+
+/** Asks for at least `count` sheets, so a sheet can be added before anything is written on it. */
+export function withMinSheets(view: PageViewSpec, count: number): PageViewSpec {
+  const { [MIN_SHEETS_KEY]: _before, ...rest } = view.extra;
+  return { ...view, extra: count > 1 ? { ...rest, [MIN_SHEETS_KEY]: Math.floor(count) } : rest };
+}

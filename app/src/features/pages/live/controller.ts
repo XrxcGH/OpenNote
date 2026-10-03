@@ -22,12 +22,15 @@ import type { PageBackground } from '../paper';
 import { lightTheme } from '../export/style';
 import { paperStyle } from '../print/css';
 import { currentSheet, fitSheet, openingZoom } from '../zoom';
+import { minSheetsOf, withMinSheets } from '../layout';
+import { createStrip } from './strip';
+import type { Strip } from './strip';
 import { createPaginator } from './paginate';
 import { attachReading } from './reading';
 import type { Paginator } from './paginate';
 import styles from './live.module.css';
 import { applyNotebookDefault } from './notebookDefault';
-import { pagesViewEpoch, shownPagesView } from './shown';
+import { pagesViewEpoch, shownPagesView, sheetNav } from './shown';
 import type { MarginName, PagesViewApi, PagesViewState, PaperName } from './shown';
 
 const STYLE = paperStyle(lightTheme()).style;
@@ -70,6 +73,9 @@ class PagesView {
   private reading: ReturnType<typeof attachReading> | null = null;
   private readonly stops: (() => void)[] = [];
   private sheets = 1;
+  /** The sheets the content needs. The view may ask for more (`minSheets`), and the page shows the larger. */
+  private contentSheets = 1;
+  private strip: Strip | null = null;
   private frame = 0;
   private paperKey = '';
   private lastMode: 'infinite' | 'paginated' | null = null;
@@ -107,11 +113,26 @@ class PagesView {
       mounted.layout.onView((raw) => {
         this.spec = readView(raw).view;
         this.layout = pageLayout(this.spec);
+        this.sheets = this.wantedSheets();
         this.apply();
         pagesViewEpoch.set((n) => n + 1);
       }),
       mounted.viewport.onCamera(() => this.updateCounter()),
+      sheetNav.subscribe(() => this.refreshStrip()),
     );
+    if (isEnabled('pages.sheets')) {
+      this.strip = createStrip(mounted.viewport.viewport.parentElement ?? mounted.viewport.viewport, {
+        sheets: () => this.sheets,
+        current: () => this.sheetIndex(),
+        paper: () => this.thumbnailPaper(),
+        aspect: () => this.layout.sheet.width / this.layout.sheet.height,
+        goTo: (sheet) => this.api.goToSheet(sheet),
+        add: () => this.api.addSheet(),
+      });
+      const host = mounted.viewport.viewport;
+      host.addEventListener('pointerup', this.onPenUp);
+      this.stops.push(() => host.removeEventListener('pointerup', this.onPenUp));
+    }
     this.reading = attachReading(mounted, () => this.spec.mode === 'paginated');
     this.apply();
     if (isEnabled('pages.layouts')) {
@@ -131,6 +152,7 @@ class PagesView {
     this.sheetsLayer.remove();
     this.paperLayer.remove();
     this.counter.remove();
+    this.strip?.destroy();
   }
 
   state(): PagesViewState {
@@ -203,13 +225,75 @@ class PagesView {
       viewport.scrollTo(0, at * sheet.height * zoom);
     },
     readingAids: () => void import('../ui/readingCommands').then((m) => m.openReadingAids()),
+    sheets: () => ({ count: this.sheets, current: this.sheetIndex() }),
+    goToSheet: (sheet) => this.goToSheet(sheet),
+    addSheet: () => {
+      if (this.spec.mode !== 'paginated' || this.sheets >= MAX_SHEETS) return;
+      this.change(withMinSheets(this.spec, this.sheets + 1), t('pagesPlus.sheets.added', { n: this.sheets + 1 }));
+      // The view settles on the next frame; the new sheet is the last one then.
+      requestAnimationFrame(() => this.goToSheet(this.sheets - 1));
+    },
   };
 
+  /** The sheet the window is on, from 0. */
+  private sheetIndex(): number {
+    const camera = this.mounted.viewport.camera();
+    const view = { zoom: camera.zoom, left: camera.scrollX / camera.zoom, top: camera.scrollY / camera.zoom };
+    return currentSheet(this.layout.sheet, view, { width: camera.viewport.w, height: camera.viewport.h }, this.sheets);
+  }
+
+  /** Scrolls so a sheet's top is at the top of the window, or fits the whole sheet when sheets flip one at a time. */
+  private goToSheet(target: number): void {
+    if (this.spec.mode !== 'paginated') return;
+    const sheet = Math.min(Math.max(0, target), this.sheets - 1);
+    const { viewport } = this.mounted;
+    const camera = viewport.camera();
+    const { sheet: g } = this.layout;
+    if (sheetNav.get().flip) {
+      const zoom = fitSheet({ width: camera.viewport.w, height: camera.viewport.h }, g.width, g.height);
+      viewport.setZoom(zoom);
+      viewport.scrollTo(0, sheet * g.height * zoom);
+    } else {
+      viewport.scrollTo(camera.scrollX, sheet * g.height * camera.zoom);
+    }
+    announce(t('pagesPlus.sheets.at', { n: sheet + 1, total: this.sheets }));
+  }
+
+  /** The paper of one sheet for the strip's thumbnails. */
+  private thumbnailPaper(): string {
+    const { sheet, background } = this.layout;
+    return paperSvg(paperPaths(background, sheet), { x: 0, y: 0, w: sheet.width, h: sheet.height }, background, STYLE);
+  }
+
+  private refreshStrip(): void {
+    const { open, flip } = sheetNav.get();
+    this.strip?.show(open && this.spec.mode === 'paginated', flip);
+    this.strip?.refresh();
+  }
+
+  /** Writing near the bottom of the last sheet with a pen adds a sheet with the same paper. */
+  private readonly onPenUp = (event: PointerEvent): void => {
+    if (event.pointerType !== 'pen' || this.spec.mode !== 'paginated' || this.spec.layout === 'flow') return;
+    const { y } = this.mounted.viewport.toWorld(event.clientX, event.clientY);
+    const { sheet } = this.layout;
+    if (y > this.sheets * sheet.height - sheet.height * 0.1 && this.sheets < MAX_SHEETS) {
+      this.change(withMinSheets(this.spec, this.sheets + 1), t('pagesPlus.sheets.added', { n: this.sheets + 1 }));
+    }
+  };
+
+  /** The sheets to show: what the content needs, or more when the person added sheets. */
+  private wantedSheets(): number {
+    return Math.min(MAX_SHEETS, Math.max(this.contentSheets, minSheetsOf(this.spec)));
+  }
+
   private setSheets(count: number): void {
-    if (count === this.sheets) return;
-    this.sheets = count;
+    this.contentSheets = count;
+    const wanted = this.wantedSheets();
+    if (wanted === this.sheets) return;
+    this.sheets = wanted;
     if (this.spec.mode === 'paginated') this.drawSheets();
     this.updateCounter();
+    this.refreshStrip();
     pagesViewEpoch.set((n) => n + 1);
   }
 
@@ -234,6 +318,7 @@ class PagesView {
     this.lastMode = paginated ? 'paginated' : 'infinite';
     this.reading?.refresh();
     this.updateCounter();
+    this.refreshStrip();
   }
 
   /** A sheet wider than the window zooms out to fit its width, once, when the person switches views. */
@@ -292,6 +377,7 @@ class PagesView {
   }
 
   private updateCounter(): void {
+    this.strip?.mark();
     const show = this.spec.mode === 'paginated' && this.sheets > 1;
     this.counter.hidden = !show;
     if (!show) return;
