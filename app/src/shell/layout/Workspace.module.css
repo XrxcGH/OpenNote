@@ -82,22 +82,20 @@
     padding: var(--space-5);
   }
 
-  /* The desk the page lies on. By day, warm window light pools from the top corner, and a patch of it falls on the
-     desk with the soft shadow of the window's cross bars. In the evening the sky deepens from night indigo through
-     dusk to a low sunset band at the horizon, and the stars sit behind the page. Every tone stays within 1.5:1 of
-     the sunken canvas, and the light only ever shows around the page card, never behind text. */
+  /* The desk the page lies on. By day, warm window light pools from the top corner, and a soft patch of it falls on
+     the desk. The patch stops growing at 420 by 300 px, so a wide window doesn't stretch it. In the evening the sky
+     deepens from night indigo through dusk to a low sunset band at the horizon, and the stars sit above the page. Every
+     tone stays within 1.5:1 of the sunken canvas, and the light only ever shows around the page card, never behind
+     text. */
   .page {
     grid-area: page;
     min-inline-size: 0;
     overflow: auto;
     isolation: isolate;
-    --pane-shadow: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
     background:
-      /* The window's cross bars cast two faint shadows across the patch of light, fading at their ends. */
-      linear-gradient(to bottom, transparent, var(--pane-shadow) 20% 80%, transparent) 70% 81.3% / 5px 36% no-repeat,
-      linear-gradient(to right, transparent, var(--pane-shadow) 20% 80%, transparent) 88.5% 70% / 48% 5px no-repeat,
       /* The patch of window light on the desk, wider than it is tall, as light falls on a flat surface. */
-        radial-gradient(closest-side, var(--color-ambient-glow) 40%, transparent) 95.5% 84.5% / 56% 42% no-repeat,
+      radial-gradient(closest-side, var(--color-ambient-glow) 40%, transparent) 95.5% 84.5% / min(56%, 420px)
+        min(42%, 300px) no-repeat,
       /* The pool of light from the window at the top corner. */
         radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
       var(--color-surface-sunken);

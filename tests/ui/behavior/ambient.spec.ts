@@ -126,12 +126,10 @@ for (const theme of THEMES) {
     });
     // The page card itself stays plain paper.
     expect(seen.card).toBe('none');
-    // By day: two faint cross-bar shadows, the patch of light, and the pool from the corner. At night: the sunset
-    // band low on the horizon over the night-to-dusk sky.
+    // By day: the patch of light and the pool from the corner. At night: the sunset band low on the horizon over the
+    // night-to-dusk sky.
     expect(seen.layers).toEqual(
-      theme === 'light'
-        ? ['linear-gradient', 'linear-gradient', 'radial-gradient', 'radial-gradient']
-        : ['radial-gradient', 'linear-gradient'],
+      theme === 'light' ? ['radial-gradient', 'radial-gradient'] : ['radial-gradient', 'linear-gradient'],
     );
   });
 }
