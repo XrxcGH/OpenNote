@@ -23,7 +23,7 @@ An export that has errors is not saved without telling the person. A warning is 
 
 ## The reader
 
-`inspectPdf` reads what Chromium writes: plain objects, Flate streams, and font maps that turn the codes in a page into text. It finds objects by scanning, so it also reads a file whose table is damaged. It does not read encrypted files or object streams. It is tested on hand-made files and on the files Edge writes, and the golden tests use it to compare the text layer of each page with the document that was printed.
+`inspectPdf` reads what Chromium writes: plain objects, Flate streams, and font maps that turn the codes in a page into text. It finds objects by scanning, so it also reads a file whose table is damaged. It does not read encrypted files or object streams. It reads 86 sheets (970 KiB) in under a second (`docs/perf/phase-6-core.md`), inflating the content of 16 pages at a time. `exportPdf` closes the print window before it reads the file. The reader is tested on hand-made files and on the files Edge writes, and the golden tests use it to compare the text layer of each page with the document that was printed.
 
 ## Tests
 

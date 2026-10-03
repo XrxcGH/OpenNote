@@ -160,14 +160,15 @@ function pageNodes(pdf: Pdf, node: PdfDict, inherited: PageNode['inherited'], ou
   }
 }
 
-async function pageInfo(pdf: Pdf, node: PageNode): Promise<PdfPageInfo> {
+/** How many pages inflate their content at once. The streams are independent, and a host inflates them off the thread. */
+const PAGES_AT_ONCE = 16;
+
+async function pageInfo(pdf: Pdf, node: PageNode, resources: Resources): Promise<PdfPageInfo> {
   const box = pdf.list(node.inherited.mediaBox).map((n) => Number(pdf.get(n)));
-  const resources = await pdf.resources(node.inherited.resources);
   const out: PageContent = { text: '', images: 0, fills: 0, strokes: 0, marked: [] };
   const contents = pdf.get(node.dict.Contents);
   const refs = Array.isArray(contents) ? contents : [node.dict.Contents];
-  for (const ref of refs) {
-    const data = await pdf.stream(ref);
+  for (const data of await Promise.all(refs.map((ref) => pdf.stream(ref)))) {
     if (data) readContent(data, resources, out);
   }
   return {
@@ -250,8 +251,14 @@ export async function inspectPdf(bytes: Uint8Array): Promise<PdfInfo> {
   if (!catalog || !root) throw new Error('This file has no page tree.');
   const nodes: PageNode[] = [];
   pageNodes(pdf, root, {}, nodes);
-  const pages = [];
-  for (const node of nodes) pages.push(await pageInfo(pdf, node));
+  const pages: PdfPageInfo[] = [];
+  for (let i = 0; i < nodes.length; i += PAGES_AT_ONCE) {
+    const chunk = nodes.slice(i, i + PAGES_AT_ONCE);
+    // Resources are shared between pages and cached, so they are read one page at a time.
+    const resources: Resources[] = [];
+    for (const node of chunk) resources.push(await pdf.resources(node.inherited.resources));
+    pages.push(...(await Promise.all(chunk.map((node, k) => pageInfo(pdf, node, resources[k])))));
+  }
   const tree = pdf.dict(catalog.StructTreeRoot);
   const { counts, figuresWithAlt } = structure(pdf, tree);
   const tail = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 4096)));

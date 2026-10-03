@@ -120,6 +120,7 @@ export async function exportPdf(surface: PrintSurface, request: PdfExportRequest
     background: request.input.print?.background !== false,
   };
   const mark = (stage: PdfStage, fraction: number) => onProgress?.({ stage, fraction });
+  let closed = false;
   try {
     aborted(signal);
     mark('prepare', 0);
@@ -129,6 +130,10 @@ export async function exportPdf(surface: PrintSurface, request: PdfExportRequest
     mark('render', 0.3);
     const t1 = performance.now();
     const bytes = await surface.toPdf(options);
+    // Close the print window before reading the file: a window that is still open competes for the processor with
+    // the reader, and the file is all that is needed from here on.
+    closed = true;
+    await surface.dispose();
     aborted(signal);
     mark('verify', 0.9);
     const t2 = performance.now();
@@ -145,6 +150,6 @@ export async function exportPdf(surface: PrintSurface, request: PdfExportRequest
       timings: { prepare: t1 - t0, render: t2 - t1, verify: t3 - t2 },
     };
   } finally {
-    await surface.dispose();
+    if (!closed) await surface.dispose();
   }
 }
