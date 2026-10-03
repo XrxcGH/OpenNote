@@ -110,6 +110,13 @@ describe('the Tauri page service', () => {
     expect(seqs).toEqual([4, 4, 5]);
   });
 
+  it('builds asset addresses that WebView2 routes, with each ID kept to one path segment', async () => {
+    const { core } = fakeCore([envelope([])]);
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    expect(page.assetUrl('01k6asset')).toBe('http://opennote-asset.localhost/p1/01k6asset');
+    expect(page.assetUrl('../x?y#z')).toBe('http://opennote-asset.localhost/p1/..%2Fx%3Fy%23z');
+  });
+
   it('keeps edits, undo, and restores in the order they were asked for', async () => {
     const { core, calls } = fakeCore([envelope([])]);
     const order: string[] = [];

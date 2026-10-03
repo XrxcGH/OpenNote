@@ -171,7 +171,8 @@ export interface OpenPage {
   saveNow(): Promise<void>;
   /** The asset and its ID, which the image block names (PLAN.md says AssetJson; see WP0-NOTES.md). */
   importImage(source: ImageSource, signal?: AbortSignal): Promise<ImportedAsset>;
-  /** opennote-asset://localhost/<page>/<asset> */
+  /** Where the image loads from: `http://opennote-asset.localhost/<page>/<asset>` in the Windows app, as WebView2
+   * routes the opennote-asset scheme (images/protocol.rs), with each ID encoded as one path segment. */
   assetUrl(asset: AssetId): string;
   readonly history: PageHistory;
   onFrame(listener: (frame: AppliedFrame) => void): Unsubscribe;

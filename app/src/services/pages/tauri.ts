@@ -286,7 +286,8 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
           return images.importClip(pageId, source.token);
         },
         // WebView2 reaches custom schemes as http://<scheme>.localhost (images/protocol.rs).
-        assetUrl: (asset) => `http://opennote-asset.localhost/${pageId}/${asset}`,
+        assetUrl: (asset) =>
+          `http://opennote-asset.localhost/${encodeURIComponent(pageId)}/${encodeURIComponent(asset)}`,
         history: history(session),
         onFrame: heard.onFrame,
         onExternal: heard.onExternal,
