@@ -182,6 +182,11 @@ export function buildDoc(tokens: readonly Token[], md: Md): PMNode {
   return nodes.doc.createAndFill(null, Fragment.from(blocks)) ?? (nodes.doc.createAndFill() as PMNode);
 }
 
+/** The blocks of a piece of Markdown, with no empty paragraph added when there are none. Throws on parser errors. */
+export function parseBlocks(markdown: string): PMNode[] {
+  return readBlocks({ tokens: dialect.parse(markdown, {}), md: dialect, i: 0 });
+}
+
 /** The inline nodes of a line of Markdown, for checking what the writer produced. */
 export function parseInlineNodes(text: string): PMNode[] {
   return inlineNodes(dialect.parseInline(text, {})[0]?.children ?? []);

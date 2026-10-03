@@ -42,9 +42,10 @@ describe('the Markdown API', () => {
     expect(utf8Offset(text, 4)).toBe(7);
   });
 
-  it('asks for a full parse and parses through the worker API', async () => {
-    const doc = parseTextBlock('one');
-    expect(reparseRange(doc, 'one', 'two', cache)).toBe('full');
+  it('re-parses a changed range and parses through the worker API', async () => {
+    const doc = parseTextBlock('one\n\nthree');
+    const change = reparseRange(doc, 'one\n\nthree', 'one\n\ntwo', cache);
+    expect(change === 'full' ? null : change.content.firstChild?.textContent).toBe('two');
     expect(serializeTextBlock(await parseInWorker('two'), cache)).toBe('two');
   });
 });
