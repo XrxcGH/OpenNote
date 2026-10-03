@@ -1,7 +1,16 @@
 {
-  "startup": { "jsKb": 160, "cssKb": 15 },
+  "startup": { "jsKb": 180, "cssKb": 15 },
+  "after": { "within": "features/page/", "entry": "features/page/PageBody" },
   "lazyKb": {
-    "features/page": 150,
+    "editor/markdown/worker": 45,
+    "editor/highlight": 20,
+    "highlight.js/lib/languages": 5,
+    "features/page/history": 25,
+    "features/page/readAloud": 10,
+    "features/page/styles": 15,
+    "features/page/readingOrder": 15,
+    "features/page/PageBody": 225,
+    "features/page": 40,
     "features/palette": 40,
     "features/settings": 40,
     "features/setup": 40,

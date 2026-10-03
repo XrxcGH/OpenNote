@@ -1,0 +1,45 @@
+@layer components {
+  /* The page region's scroll container (ARCHITECTURE.md section 5.1). Wheel and touchpad scrolling stay native;
+     touch and pen pan through the pointer router, so a pen stroke never scrolls the page. */
+  .viewport {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: none;
+    container-type: inline-size;
+    scrollbar-gutter: stable;
+    background: var(--color-surface-sunken);
+  }
+
+  .viewport:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .sizer {
+    position: relative;
+    overflow: clip;
+  }
+
+  /* The world is the paper, in page units: one unit is one CSS pixel at 100% page zoom. */
+  .world {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    transform: scale(var(--page-zoom, 1));
+    transform-origin: 0 0;
+    background: var(--color-surface-page);
+  }
+
+  /* ADR 0005 rule 3: a layer only while a zoom gesture runs, so text is drawn sharp again when it settles. */
+  .world[data-gesture] {
+    will-change: transform;
+  }
+
+  .underlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+}

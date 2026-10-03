@@ -1,0 +1,306 @@
+/* Text styles: each property a notebook sets is a custom property on the root, marked by a data attribute.
+   Only marked properties apply, so the type tokens stay the default. The names follow styleVars.ts. */
+@layer components {
+  :is([data-style-normal-font] [data-scope~='page'], [data-style-normal-font][data-scope~='page']) :is(p, li) {
+    font-family: var(--style-normal-font);
+  }
+
+  :is([data-style-normal-size] [data-scope~='page'], [data-style-normal-size][data-scope~='page']) :is(p, li) {
+    font-size: var(--style-normal-size);
+  }
+
+  :is([data-style-normal-weight] [data-scope~='page'], [data-style-normal-weight][data-scope~='page']) :is(p, li) {
+    font-weight: var(--style-normal-weight);
+  }
+
+  :is([data-style-normal-color] [data-scope~='page'], [data-style-normal-color][data-scope~='page']) :is(p, li) {
+    color: var(--style-normal-color);
+  }
+
+  :is([data-style-normal-space-before] [data-scope~='page'], [data-style-normal-space-before][data-scope~='page'])
+    :is(p, li) {
+    margin-block-start: var(--style-normal-space-before);
+  }
+
+  :is([data-style-normal-space-after] [data-scope~='page'], [data-style-normal-space-after][data-scope~='page'])
+    :is(p, li) {
+    margin-block-end: var(--style-normal-space-after);
+  }
+
+  :is([data-style-normal-line-height] [data-scope~='page'], [data-style-normal-line-height][data-scope~='page'])
+    :is(p, li) {
+    line-height: var(--style-normal-line-height);
+  }
+
+  :is([data-style-h1-font] [data-scope~='page'], [data-style-h1-font][data-scope~='page'])
+    :is(h1:not([data-page-title])) {
+    font-family: var(--style-h1-font);
+  }
+
+  :is([data-style-h1-size] [data-scope~='page'], [data-style-h1-size][data-scope~='page'])
+    :is(h1:not([data-page-title])) {
+    font-size: var(--style-h1-size);
+  }
+
+  :is([data-style-h1-weight] [data-scope~='page'], [data-style-h1-weight][data-scope~='page'])
+    :is(h1:not([data-page-title])) {
+    font-weight: var(--style-h1-weight);
+  }
+
+  :is([data-style-h1-color] [data-scope~='page'], [data-style-h1-color][data-scope~='page'])
+    :is(h1:not([data-page-title])) {
+    color: var(--style-h1-color);
+  }
+
+  :is([data-style-h1-space-before] [data-scope~='page'], [data-style-h1-space-before][data-scope~='page'])
+    :is(h1:not([data-page-title])) {
+    margin-block-start: var(--style-h1-space-before);
+  }
+
+  :is([data-style-h1-space-after] [data-scope~='page'], [data-style-h1-space-after][data-scope~='page'])
+    :is(h1:not([data-page-title])) {
+    margin-block-end: var(--style-h1-space-after);
+  }
+
+  :is([data-style-h1-line-height] [data-scope~='page'], [data-style-h1-line-height][data-scope~='page'])
+    :is(h1:not([data-page-title])) {
+    line-height: var(--style-h1-line-height);
+  }
+
+  :is([data-style-h2-font] [data-scope~='page'], [data-style-h2-font][data-scope~='page']) :is(h2) {
+    font-family: var(--style-h2-font);
+  }
+
+  :is([data-style-h2-size] [data-scope~='page'], [data-style-h2-size][data-scope~='page']) :is(h2) {
+    font-size: var(--style-h2-size);
+  }
+
+  :is([data-style-h2-weight] [data-scope~='page'], [data-style-h2-weight][data-scope~='page']) :is(h2) {
+    font-weight: var(--style-h2-weight);
+  }
+
+  :is([data-style-h2-color] [data-scope~='page'], [data-style-h2-color][data-scope~='page']) :is(h2) {
+    color: var(--style-h2-color);
+  }
+
+  :is([data-style-h2-space-before] [data-scope~='page'], [data-style-h2-space-before][data-scope~='page']) :is(h2) {
+    margin-block-start: var(--style-h2-space-before);
+  }
+
+  :is([data-style-h2-space-after] [data-scope~='page'], [data-style-h2-space-after][data-scope~='page']) :is(h2) {
+    margin-block-end: var(--style-h2-space-after);
+  }
+
+  :is([data-style-h2-line-height] [data-scope~='page'], [data-style-h2-line-height][data-scope~='page']) :is(h2) {
+    line-height: var(--style-h2-line-height);
+  }
+
+  :is([data-style-h3-font] [data-scope~='page'], [data-style-h3-font][data-scope~='page']) :is(h3) {
+    font-family: var(--style-h3-font);
+  }
+
+  :is([data-style-h3-size] [data-scope~='page'], [data-style-h3-size][data-scope~='page']) :is(h3) {
+    font-size: var(--style-h3-size);
+  }
+
+  :is([data-style-h3-weight] [data-scope~='page'], [data-style-h3-weight][data-scope~='page']) :is(h3) {
+    font-weight: var(--style-h3-weight);
+  }
+
+  :is([data-style-h3-color] [data-scope~='page'], [data-style-h3-color][data-scope~='page']) :is(h3) {
+    color: var(--style-h3-color);
+  }
+
+  :is([data-style-h3-space-before] [data-scope~='page'], [data-style-h3-space-before][data-scope~='page']) :is(h3) {
+    margin-block-start: var(--style-h3-space-before);
+  }
+
+  :is([data-style-h3-space-after] [data-scope~='page'], [data-style-h3-space-after][data-scope~='page']) :is(h3) {
+    margin-block-end: var(--style-h3-space-after);
+  }
+
+  :is([data-style-h3-line-height] [data-scope~='page'], [data-style-h3-line-height][data-scope~='page']) :is(h3) {
+    line-height: var(--style-h3-line-height);
+  }
+
+  :is([data-style-h4-font] [data-scope~='page'], [data-style-h4-font][data-scope~='page']) :is(h4) {
+    font-family: var(--style-h4-font);
+  }
+
+  :is([data-style-h4-size] [data-scope~='page'], [data-style-h4-size][data-scope~='page']) :is(h4) {
+    font-size: var(--style-h4-size);
+  }
+
+  :is([data-style-h4-weight] [data-scope~='page'], [data-style-h4-weight][data-scope~='page']) :is(h4) {
+    font-weight: var(--style-h4-weight);
+  }
+
+  :is([data-style-h4-color] [data-scope~='page'], [data-style-h4-color][data-scope~='page']) :is(h4) {
+    color: var(--style-h4-color);
+  }
+
+  :is([data-style-h4-space-before] [data-scope~='page'], [data-style-h4-space-before][data-scope~='page']) :is(h4) {
+    margin-block-start: var(--style-h4-space-before);
+  }
+
+  :is([data-style-h4-space-after] [data-scope~='page'], [data-style-h4-space-after][data-scope~='page']) :is(h4) {
+    margin-block-end: var(--style-h4-space-after);
+  }
+
+  :is([data-style-h4-line-height] [data-scope~='page'], [data-style-h4-line-height][data-scope~='page']) :is(h4) {
+    line-height: var(--style-h4-line-height);
+  }
+
+  :is([data-style-h5-font] [data-scope~='page'], [data-style-h5-font][data-scope~='page']) :is(h5) {
+    font-family: var(--style-h5-font);
+  }
+
+  :is([data-style-h5-size] [data-scope~='page'], [data-style-h5-size][data-scope~='page']) :is(h5) {
+    font-size: var(--style-h5-size);
+  }
+
+  :is([data-style-h5-weight] [data-scope~='page'], [data-style-h5-weight][data-scope~='page']) :is(h5) {
+    font-weight: var(--style-h5-weight);
+  }
+
+  :is([data-style-h5-color] [data-scope~='page'], [data-style-h5-color][data-scope~='page']) :is(h5) {
+    color: var(--style-h5-color);
+  }
+
+  :is([data-style-h5-space-before] [data-scope~='page'], [data-style-h5-space-before][data-scope~='page']) :is(h5) {
+    margin-block-start: var(--style-h5-space-before);
+  }
+
+  :is([data-style-h5-space-after] [data-scope~='page'], [data-style-h5-space-after][data-scope~='page']) :is(h5) {
+    margin-block-end: var(--style-h5-space-after);
+  }
+
+  :is([data-style-h5-line-height] [data-scope~='page'], [data-style-h5-line-height][data-scope~='page']) :is(h5) {
+    line-height: var(--style-h5-line-height);
+  }
+
+  :is([data-style-h6-font] [data-scope~='page'], [data-style-h6-font][data-scope~='page']) :is(h6) {
+    font-family: var(--style-h6-font);
+  }
+
+  :is([data-style-h6-size] [data-scope~='page'], [data-style-h6-size][data-scope~='page']) :is(h6) {
+    font-size: var(--style-h6-size);
+  }
+
+  :is([data-style-h6-weight] [data-scope~='page'], [data-style-h6-weight][data-scope~='page']) :is(h6) {
+    font-weight: var(--style-h6-weight);
+  }
+
+  :is([data-style-h6-color] [data-scope~='page'], [data-style-h6-color][data-scope~='page']) :is(h6) {
+    color: var(--style-h6-color);
+  }
+
+  :is([data-style-h6-space-before] [data-scope~='page'], [data-style-h6-space-before][data-scope~='page']) :is(h6) {
+    margin-block-start: var(--style-h6-space-before);
+  }
+
+  :is([data-style-h6-space-after] [data-scope~='page'], [data-style-h6-space-after][data-scope~='page']) :is(h6) {
+    margin-block-end: var(--style-h6-space-after);
+  }
+
+  :is([data-style-h6-line-height] [data-scope~='page'], [data-style-h6-line-height][data-scope~='page']) :is(h6) {
+    line-height: var(--style-h6-line-height);
+  }
+
+  :is([data-style-title-font] [data-scope~='page'], [data-style-title-font][data-scope~='page'])
+    :is([data-page-title]) {
+    font-family: var(--style-title-font);
+  }
+
+  :is([data-style-title-size] [data-scope~='page'], [data-style-title-size][data-scope~='page'])
+    :is([data-page-title]) {
+    font-size: var(--style-title-size);
+  }
+
+  :is([data-style-title-weight] [data-scope~='page'], [data-style-title-weight][data-scope~='page'])
+    :is([data-page-title]) {
+    font-weight: var(--style-title-weight);
+  }
+
+  :is([data-style-title-color] [data-scope~='page'], [data-style-title-color][data-scope~='page'])
+    :is([data-page-title]) {
+    color: var(--style-title-color);
+  }
+
+  :is([data-style-title-space-before] [data-scope~='page'], [data-style-title-space-before][data-scope~='page'])
+    :is([data-page-title]) {
+    margin-block-start: var(--style-title-space-before);
+  }
+
+  :is([data-style-title-space-after] [data-scope~='page'], [data-style-title-space-after][data-scope~='page'])
+    :is([data-page-title]) {
+    margin-block-end: var(--style-title-space-after);
+  }
+
+  :is([data-style-title-line-height] [data-scope~='page'], [data-style-title-line-height][data-scope~='page'])
+    :is([data-page-title]) {
+    line-height: var(--style-title-line-height);
+  }
+
+  :is([data-style-quote-font] [data-scope~='page'], [data-style-quote-font][data-scope~='page']) :is(blockquote) {
+    font-family: var(--style-quote-font);
+  }
+
+  :is([data-style-quote-size] [data-scope~='page'], [data-style-quote-size][data-scope~='page']) :is(blockquote) {
+    font-size: var(--style-quote-size);
+  }
+
+  :is([data-style-quote-weight] [data-scope~='page'], [data-style-quote-weight][data-scope~='page']) :is(blockquote) {
+    font-weight: var(--style-quote-weight);
+  }
+
+  :is([data-style-quote-color] [data-scope~='page'], [data-style-quote-color][data-scope~='page']) :is(blockquote) {
+    color: var(--style-quote-color);
+  }
+
+  :is([data-style-quote-space-before] [data-scope~='page'], [data-style-quote-space-before][data-scope~='page'])
+    :is(blockquote) {
+    margin-block-start: var(--style-quote-space-before);
+  }
+
+  :is([data-style-quote-space-after] [data-scope~='page'], [data-style-quote-space-after][data-scope~='page'])
+    :is(blockquote) {
+    margin-block-end: var(--style-quote-space-after);
+  }
+
+  :is([data-style-quote-line-height] [data-scope~='page'], [data-style-quote-line-height][data-scope~='page'])
+    :is(blockquote) {
+    line-height: var(--style-quote-line-height);
+  }
+
+  :is([data-style-code-font] [data-scope~='page'], [data-style-code-font][data-scope~='page']) :is(pre, code) {
+    font-family: var(--style-code-font);
+  }
+
+  :is([data-style-code-size] [data-scope~='page'], [data-style-code-size][data-scope~='page']) :is(pre, code) {
+    font-size: var(--style-code-size);
+  }
+
+  :is([data-style-code-weight] [data-scope~='page'], [data-style-code-weight][data-scope~='page']) :is(pre, code) {
+    font-weight: var(--style-code-weight);
+  }
+
+  :is([data-style-code-color] [data-scope~='page'], [data-style-code-color][data-scope~='page']) :is(pre, code) {
+    color: var(--style-code-color);
+  }
+
+  :is([data-style-code-space-before] [data-scope~='page'], [data-style-code-space-before][data-scope~='page'])
+    :is(pre, code) {
+    margin-block-start: var(--style-code-space-before);
+  }
+
+  :is([data-style-code-space-after] [data-scope~='page'], [data-style-code-space-after][data-scope~='page'])
+    :is(pre, code) {
+    margin-block-end: var(--style-code-space-after);
+  }
+
+  :is([data-style-code-line-height] [data-scope~='page'], [data-style-code-line-height][data-scope~='page'])
+    :is(pre, code) {
+    line-height: var(--style-code-line-height);
+  }
+}

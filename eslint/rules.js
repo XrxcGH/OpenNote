@@ -57,7 +57,8 @@ const featureBoundaries = {
     const own = /^features\/([^/]+)\//.exec(file)?.[1];
     return onImports(context, (node, path) => {
       const match = /^features\/([^/]+)\/(.+)$/.exec(path);
-      if (!match || match[1] === own || /^index(\.tsx?)?$/.test(match[2])) return;
+      // A feature's flags.ts is public like its index.ts, because flags load at start-up, before the feature.
+      if (!match || match[1] === own || /^(index|flags)(\.tsx?)?$/.test(match[2])) return;
       context.report({ node, messageId: 'deep', data: { feature: match[1], path } });
     });
   },
@@ -78,6 +79,21 @@ const uiBoundaries = {
       const bare = path.replace(/\.tsx?$/, '');
       if (ALLOWED_STATE.has(bare)) return;
       if (/^(state|services|features|shell)\//.test(bare)) context.report({ node, messageId: 'layer', data: { path } });
+    });
+  },
+};
+
+const editorBoundaries = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'editor/ is a library: it never imports state, services, features, or the shell.' },
+    messages: { layer: 'editor/ gets what it needs through EditorHost, so it can’t import {{path}}.' },
+    schema: [],
+  },
+  create(context) {
+    if (!fromFile(context)?.startsWith('editor/')) return {};
+    return onImports(context, (node, path) => {
+      if (/^(state|services|features|shell)\//.test(path)) context.report({ node, messageId: 'layer', data: { path } });
     });
   },
 };
@@ -134,6 +150,7 @@ export default {
   rules: {
     'feature-boundaries': featureBoundaries,
     'ui-boundaries': uiBoundaries,
+    'editor-boundaries': editorBoundaries,
     'no-literal-text': noLiteralText,
     'no-theme-key': noThemeKey,
   },

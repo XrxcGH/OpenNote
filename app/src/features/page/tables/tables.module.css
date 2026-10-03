@@ -1,0 +1,150 @@
+/*
+ * Tables (ARCHITECTURE.md section 13; owner: WP6). A table is as wide as its columns and scrolls sideways inside
+ * its block when wider than the column. Rules are inset shadows, never borders, so layout matches the PDF export
+ * (ADR 0006 rule 1). In forced colors, where shadows vanish, each cell draws an inset outline instead.
+ */
+@layer components {
+  .wrapper {
+    position: relative;
+  }
+
+  .scroller {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 1px;
+  }
+
+  .table :global(table) {
+    border-collapse: collapse;
+    table-layout: fixed;
+    box-shadow: inset 1px 1px 0 var(--color-border-control);
+  }
+
+  .table :global(td),
+  .table :global(th) {
+    padding: var(--space-1) var(--space-2);
+    box-shadow: inset -1px -1px 0 var(--color-border-control);
+    vertical-align: top;
+    text-align: start;
+    overflow-wrap: anywhere;
+  }
+
+  .table :global(th) {
+    background: var(--color-surface-sunken);
+    font-weight: 700;
+  }
+
+  .table :global(td > p),
+  .table :global(th > p) {
+    margin: 0;
+  }
+
+  .table :global(.selectedCell) {
+    background: var(--color-surface-selected);
+  }
+
+  .toolbarWrap {
+    position: absolute;
+    inset-block-end: 100%;
+    inset-inline-start: 0;
+    z-index: var(--layer-page-chrome);
+    display: none;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding-block-end: var(--space-1);
+  }
+
+  .wrapper[data-current] .toolbarWrap {
+    display: flex;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+    inline-size: max-content;
+  }
+
+  .group {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .group + .group {
+    padding-inline-start: var(--space-2);
+    border-inline-start: 1px solid var(--color-border-subtle);
+  }
+
+  .widthField {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    inline-size: max-content;
+  }
+
+  /* Column edges: a hit area as wide as the chrome target, centered on the rule. */
+  .handles {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    pointer-events: none;
+  }
+
+  .handle {
+    position: absolute;
+    inset-block: 0;
+    inline-size: var(--size-chrome-hit);
+    margin-inline-start: calc(var(--size-chrome-hit) / -2);
+    cursor: col-resize;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  :root[data-density='touch'] .handle {
+    inline-size: var(--size-chrome-hit-touch);
+    margin-inline-start: calc(var(--size-chrome-hit-touch) / -2);
+  }
+
+  .handle::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(50% - 1px);
+    inline-size: 2px;
+    background: transparent;
+  }
+
+  .handle:hover::after,
+  .handle[data-dragging]::after {
+    background: var(--color-accent-primary);
+  }
+
+  @media (forced-colors: active) {
+    .table :global(table) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+
+    .table :global(td),
+    .table :global(th) {
+      outline: 1px solid CanvasText;
+      outline-offset: -1px;
+    }
+
+    .table :global(.selectedCell) {
+      background: Highlight;
+      color: HighlightText;
+    }
+
+    .handle:hover::after,
+    .handle[data-dragging]::after {
+      background: Highlight;
+    }
+  }
+}

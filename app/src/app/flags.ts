@@ -3,6 +3,7 @@
 // nightly builds also take overrides from the boot payload and from settings.experimental.flags.
 
 import type { Channel } from '../platform/bindings/Channel';
+import { PAGE_FLAGS } from '../features/page/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -105,6 +106,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('settings.privacyAndAi', 'The Privacy and smart features section of Settings.', off),
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', off),
   flag('storage.core', "Phase 3's storage-backed notes service.", off),
+  ...PAGE_FLAGS,
 ];
 
 interface FlagState {
