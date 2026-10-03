@@ -83,6 +83,24 @@ describe('page layout', () => {
     expect(mounted.flow.element.getBoundingClientRect().width).toBeLessThanOrEqual(288 + 1);
   });
 
+  it('keeps a page of text with an ink layer from scrolling sideways', async () => {
+    const fixture = textPageFixture('Chromosomes line up at the equator of the cell.');
+    const layer: BlockJson = {
+      id: '01k6f00000000000000000k001',
+      type: 'ink',
+      order: 'zz',
+      created: fixture.page.created,
+      modified: fixture.page.created,
+      frame: { x: 0, y: 0 },
+      data: { role: 'layer' },
+    };
+    const { mounted } = await open({ page: { ...fixture.page, blocks: [...fixture.page.blocks, layer] } }, 480);
+    await expect.poll(() => mounted.viewport.viewport.clientWidth).toBeGreaterThan(0);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const { viewport } = mounted.viewport;
+    expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+  });
+
   it('places a caret where the page is pressed, and drops it unsaved when nothing is typed', async () => {
     const { mounted, service, page } = await open(textPageFixture('First'));
     const before = mounted.layer.blocks().length;

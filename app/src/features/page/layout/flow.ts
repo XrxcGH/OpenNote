@@ -18,13 +18,16 @@ export interface Flow {
   stop(): void;
 }
 
-/** The right and bottom edges of everything in the world, in page units. */
+/**
+ * The right and bottom edges of everything in the world, in page units. An ink block's slot is an empty box the ink
+ * view draws over, not content, so a page of text with handwriting on it still never scrolls sideways.
+ */
 function contentExtent(world: HTMLElement, flow: HTMLElement): { w: number; h: number; floating: boolean } {
   let w = flow.offsetLeft + flow.offsetWidth;
   let h = flow.offsetTop + flow.offsetHeight;
   let floating = false;
   for (const child of flow.children) {
-    if (!(child instanceof HTMLElement)) continue;
+    if (!(child instanceof HTMLElement) || child.dataset.ink !== undefined) continue;
     w = Math.max(w, child.offsetLeft + child.offsetWidth);
     h = Math.max(h, child.offsetTop + child.offsetHeight);
     floating ||= child.style.left !== '';
