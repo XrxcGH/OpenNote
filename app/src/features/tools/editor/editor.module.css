@@ -1,0 +1,47 @@
+/*
+ * Parts the tools draw inside page text (Productivity and study tools): the answer after an equals sign, the Graph
+ * this button, and the due-date chip with its date picker. They sit beside the words and are never part of them.
+ */
+@layer components {
+  .answer {
+    margin-inline-start: var(--space-1);
+    color: var(--color-accent-primary);
+    font-variant-numeric: tabular-nums;
+    user-select: all;
+  }
+
+  .graph,
+  .chip {
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-2);
+    min-block-size: var(--size-target-min);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .graph:hover,
+  .chip:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .graph:focus-visible,
+  .chip:focus-visible,
+  .picker:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .picker {
+    margin-inline-start: var(--space-2);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+}

@@ -14,9 +14,10 @@ import { targetEditor } from '../formattingBar/target';
 import type { MountedPage } from '../mount';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
 import { panelRenderer } from '../panels/kinds';
-import { blockRenderers, slashItems } from '../registries';
+import { blockRenderers, editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
 import { shownQueue } from '../sync/shown';
+import { later } from '../tables/later';
 
 interface Spec {
   id: `${string}.${string}`;
@@ -252,3 +253,43 @@ for (const [tool, flag, title, keywords, icon] of [
     run: async () => (await import('../../tools')).openTool(tool),
   });
 }
+
+// Parts the tools draw inside page text: answers on math lines and due-date chips. They join the text editors shortly
+// after start-up, in the tools' own chunk.
+later(() => import('../../tools').then((tools) => tools.registerToolsEditor()));
+
+// Quick math: after a Space typed behind "sum=", the answer follows. The check here is cheap and loads nothing; the
+// math code loads the first time a Space follows an equals sign.
+const QUICK_MATH_OFF = 'opennote.math.quickMath';
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'input',
+    (event) => {
+      const typed = event as InputEvent;
+      if (typed.inputType !== 'insertText' || typed.data !== ' ' || typed.isComposing) return;
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || !target.closest('.ProseMirror') || !isEnabled('math.quickMath')) return;
+      try {
+        if (window.localStorage.getItem(QUICK_MATH_OFF) === 'off') return;
+      } catch {
+        // Storage that cannot be read leaves quick math on.
+      }
+      // The editor reads the typed character a moment after the event, so the check waits a task.
+      window.setTimeout(() => {
+        const editor = targetEditor();
+        if (!editor || !editor.view.dom.contains(target)) return;
+        const { $from, empty } = editor.state.selection;
+        if (!empty || !/=\s$/.test($from.parent.textBetween(0, $from.parentOffset, undefined, ' '))) return;
+        void import('../../math').then((math) => math.applyQuickMath(editor, announce));
+      }, 0);
+    },
+    true,
+  );
+}
+editingSettingsParts.register({
+  id: 'math.quickMath',
+  title: 'study.quickMath.title',
+  order: 40,
+  flag: 'math.quickMath',
+  load: () => import('../../math').then((math) => ({ default: math.QuickMathSetting })),
+});

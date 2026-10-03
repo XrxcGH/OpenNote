@@ -9,3 +9,5 @@ export { graphRenderer } from './graph/renderer';
 export { GraphView } from './graph/GraphView';
 export { readGraph, writeGraph } from './graph/source';
 export type { GraphSource } from './graph/source';
+export { applyQuickMath, browserLocale, quickMathEnabled, setQuickMathEnabled } from './quickMath';
+export { default as QuickMathSetting } from './QuickMathSetting';

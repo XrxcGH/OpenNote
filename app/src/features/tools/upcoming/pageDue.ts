@@ -4,6 +4,7 @@
 import { dateKey, minutesOf } from './date';
 import type { Due } from './date';
 import { findDue } from './parseDue';
+import { FILLERS } from './words';
 import type { ParseContext } from './parseDue';
 
 export interface PageDue {
@@ -49,11 +50,19 @@ export function findPageDues(blocks: readonly { id: string; markdown: string }[]
         title: due.title || candidate.text,
         due: due.due,
         done: candidate.done,
-        phrase: due.phrase,
+        phrase: datePart(due.phrase),
       });
     });
   }
   return found;
+}
+
+/** The date words of a phrase, without the words before it such as "by" or "due", which stay in the line. */
+export function datePart(phrase: string): string {
+  const words = phrase.split(' ');
+  let skip = 0;
+  while (skip < words.length - 1 && FILLERS.has(words[skip].toLowerCase())) skip += 1;
+  return words.slice(skip).join(' ');
 }
 
 /** A date and time written so the parser reads it back: "2026-10-07" or "2026-10-07 5:00 pm". */

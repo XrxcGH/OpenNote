@@ -179,6 +179,16 @@ export const study = {
     needFields: 'Give the class a name, at least one day, and times.',
   },
   planner: { summary: 'Exams and classes' },
+  quickMath: {
+    title: 'Quick math',
+    label: 'Add the answer when I type a sum, an equals sign, and a space',
+    help: 'Type 2.5*9.81= and press Space to add the answer. Press Ctrl+Z once to take it back out.',
+    error: 'The sum {sum} cannot be worked out.',
+  },
+  notes: {
+    graph: 'Graph this',
+    graphThis: 'Graph this equation: {equation}',
+  },
   calendar: {
     found: 'Found in {name}',
     kinds: {
