@@ -1,8 +1,8 @@
-// The accessibility checker (docs/FEATURES.md, "Accessibility checker"). It reads a page as the page service gives
-// it and lists what makes the page hard to use with a screen reader, a keyboard, or low vision: images with no
-// description, skipped heading levels, tables without a header row, text colors that are hard to read, meaning
-// that only color carries, and free-form pages with no reading order. Each problem carries the edit that fixes
-// it, so the report can apply the fix with one press. Nothing here changes a page.
+// The accessibility checker (docs/FEATURES.md, "Accessibility checker"). It reads a page as the page service gives it.
+// It lists what makes the page hard to use with a screen reader, a keyboard, or low vision. The problems are images
+// with no description, skipped heading levels, tables without a header row, text colors that are hard to read,
+// meaning that only color carries, and free-form pages with no reading order. Each problem carries the edit that
+// fixes it, so the report can apply the fix with one press. Nothing here changes a page.
 
 import type { BlockJson, Edit, PageJson } from '../../services/pages/types';
 
@@ -25,7 +25,7 @@ const HEADING = /^(#{1,6})\s+\S/;
 const COLOR_SPAN = /<span\s+[^>]*data-color="([^"]+)"[^>]*>(.*?)<\/span>/gs;
 const EMPHASIS = /\*\*|__|<u>|<mark|<strong|<em>|(^|\s)\*\S|(^|\s)_\S/;
 
-/** WCAG relative luminance of an sRGB color given as #rrggbb or #rgb. Null for anything else. */
+/** WCAG relative luminance of a color written as #rrggbb or #rgb. Null for anything else. */
 export function luminance(hex: string): number | null {
   const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
   if (!match) return null;
@@ -46,6 +46,7 @@ export function contrast(a: string, b: string): number | null {
 
 /** The lowest contrast ratio that passes for body text (WCAG 2.2, 1.4.3). */
 export const MIN_CONTRAST = 4.5;
+// checks-disable-next-line brand-consistency: the white of a light page, for the contrast ratio, not a style
 const PAGE_WHITE = '#ffffff';
 
 function textOf(block: BlockJson): string {
@@ -53,7 +54,7 @@ function textOf(block: BlockJson): string {
   return typeof markdown === 'string' ? markdown : '';
 }
 
-/** The blocks in the order a reader meets them: the page's reading order, else top to bottom and left to right. */
+/** The blocks in the order a reader meets them: the reading order of the page, else by position on the page. */
 export function readingBlocks(page: PageJson): BlockJson[] {
   const preferred = page.view.readingOrder ?? [];
   const rank = new Map(preferred.map((id, i) => [id as string, i]));
@@ -150,35 +151,38 @@ function colorIssues(blocks: readonly BlockJson[]): Issue[] {
   return issues;
 }
 
+function imageIssue(block: BlockJson): Issue[] {
+  const alt = typeof block.data.alt === 'string' ? block.data.alt.trim() : '';
+  if (alt || block.data.decorative === true) return [];
+  return [
+    {
+      id: `${block.id}:alt`,
+      kind: 'imageAlt',
+      block: block.id,
+      params: {},
+      fix: { kind: 'imageAlt', block: block.id },
+    },
+  ];
+}
+
+function tableIssue(block: BlockJson): Issue[] {
+  const rows = Array.isArray(block.data.rows) ? block.data.rows.length : 0;
+  if (rows <= 1 || block.data.header === true) return [];
+  return [
+    {
+      id: `${block.id}:header`,
+      kind: 'tableHeader',
+      block: block.id,
+      params: {},
+      fix: { kind: 'edits', edits: [{ edit: 'patchBlock', block: block.id, data: { header: true } }] },
+    },
+  ];
+}
+
 function objectIssues(blocks: readonly BlockJson[]): Issue[] {
-  const issues: Issue[] = [];
-  for (const block of blocks) {
-    if (block.type === 'image') {
-      const alt = typeof block.data.alt === 'string' ? block.data.alt.trim() : '';
-      if (!alt && block.data.decorative !== true) {
-        issues.push({
-          id: `${block.id}:alt`,
-          kind: 'imageAlt',
-          block: block.id,
-          params: {},
-          fix: { kind: 'imageAlt', block: block.id },
-        });
-      }
-    }
-    if (block.type === 'table') {
-      const rows = Array.isArray(block.data.rows) ? block.data.rows.length : 0;
-      if (rows > 1 && block.data.header !== true) {
-        issues.push({
-          id: `${block.id}:header`,
-          kind: 'tableHeader',
-          block: block.id,
-          params: {},
-          fix: { kind: 'edits', edits: [{ edit: 'patchBlock', block: block.id, data: { header: true } }] },
-        });
-      }
-    }
-  }
-  return issues;
+  return blocks.flatMap((block) =>
+    block.type === 'image' ? imageIssue(block) : block.type === 'table' ? tableIssue(block) : [],
+  );
 }
 
 function orderIssues(page: PageJson): Issue[] {

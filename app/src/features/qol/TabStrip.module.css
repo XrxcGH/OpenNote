@@ -3,7 +3,7 @@
   .strip {
     position: sticky;
     inset-block-start: 0;
-    z-index: 2;
+    z-index: var(--layer-dropdown);
     display: flex;
     gap: var(--space-1);
     padding: var(--space-1) var(--space-2) 0;

@@ -1,6 +1,7 @@
-// Registers the shell and storage quality-of-life features: the commands, their context menu items and command bar
-// items, the Settings sections, the setup step, the recently closed list in the palette, and the listeners that
-// follow tabs, power, and the folder watcher. One file, so other lanes' registrations never touch it.
+// Registers the shell and storage quality-of-life features: the commands, their command bar items, the Settings
+// sections, the setup step, the recently closed list in the palette, and the listeners that follow tabs, power,
+// and the folder watcher. The context menu items are in features/tree/qolMenus.ts. One file, so other lanes
+// never touch it.
 
 import { isEnabled } from '../../app/flags';
 import { getLocation, navigate, onNavigate } from '../../app/location';
@@ -14,16 +15,12 @@ import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
 import { commitHabits } from './setup/habits';
 import {
-  copyTo,
   currentNode,
-  duplicateNode,
+  loadMultiActions,
+  loadQolActions,
   locationFor,
   notebookOf,
   selectedNodes,
-  setArchived,
-  setPinned,
-  setShowArchived,
-  sortSiblings,
   treeStore,
 } from '../tree';
 import type { SortKey } from '../tree';
@@ -53,9 +50,9 @@ register(
     category: 'notebooks',
     flag: 'qol.pins',
     when: (ctx) => isPage(ctx) && !one(ctx)?.pinned,
-    run: (ctx) => {
+    run: async (ctx) => {
       const node = one(ctx);
-      return node ? setPinned(node.id, true) : undefined;
+      if (node) await (await loadQolActions()).setPinned(node.id, true);
     },
   }),
   defineCommand({
@@ -64,9 +61,9 @@ register(
     category: 'notebooks',
     flag: 'qol.pins',
     when: (ctx) => isPage(ctx) && one(ctx)?.pinned === true,
-    run: (ctx) => {
+    run: async (ctx) => {
       const node = one(ctx);
-      return node ? setPinned(node.id, false) : undefined;
+      if (node) await (await loadQolActions()).setPinned(node.id, false);
     },
   }),
   defineCommand({
@@ -75,9 +72,9 @@ register(
     category: 'notebooks',
     flag: 'qol.pins',
     enabled: (ctx) => ['page', 'section'].includes(one(ctx)?.kind ?? ''),
-    run: (ctx) => {
+    run: async (ctx) => {
       const node = one(ctx);
-      return node ? duplicateNode(node.id) : undefined;
+      if (node) await (await loadQolActions()).duplicateNode(node.id);
     },
   }),
   defineCommand({
@@ -90,7 +87,7 @@ register(
       const many = selectedNodes(ctx);
       const node = one(ctx);
       const nodes = many ?? (node ? [node] : []);
-      if (nodes.length > 0) await copyTo(ctx.notes, nodes);
+      if (nodes.length > 0) await (await loadMultiActions()).copyTo(ctx.notes, nodes);
     },
   }),
 );
@@ -111,9 +108,9 @@ for (const [key, title] of SORTS) {
       category: 'notebooks',
       flag: 'qol.pins',
       enabled: isSortable,
-      run: (ctx) => {
+      run: async (ctx) => {
         const node = one(ctx);
-        return node ? sortSiblings(ctx.notes, node, key) : undefined;
+        if (node) await (await loadQolActions()).sortSiblings(ctx.notes, node, key);
       },
     }),
   );
@@ -126,9 +123,9 @@ register(
     category: 'notebooks',
     flag: 'qol.archive',
     when: (ctx) => one(ctx) !== undefined && !one(ctx)?.archived,
-    run: (ctx) => {
+    run: async (ctx) => {
       const node = one(ctx);
-      return node ? setArchived(node.id, true) : undefined;
+      if (node) await (await loadQolActions()).setArchived(node.id, true);
     },
   }),
   defineCommand({
@@ -137,9 +134,9 @@ register(
     category: 'notebooks',
     flag: 'qol.archive',
     when: (ctx) => one(ctx)?.archived === true,
-    run: (ctx) => {
+    run: async (ctx) => {
       const node = one(ctx);
-      return node ? setArchived(node.id, false) : undefined;
+      if (node) await (await loadQolActions()).setArchived(node.id, false);
     },
   }),
   defineCommand({
@@ -148,7 +145,7 @@ register(
     category: 'view',
     flag: 'qol.archive',
     checked: () => qolStore.get().showArchived,
-    run: () => setShowArchived(!qolStore.get().showArchived),
+    run: async () => (await loadQolActions()).setShowArchived(!qolStore.get().showArchived),
   }),
 );
 

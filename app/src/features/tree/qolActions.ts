@@ -1,6 +1,5 @@
-// Pin, sort, duplicate, and archive for the tree (docs/FEATURES.md, "Pin, sort, duplicate and copy pages and
-// sections" and "Archive"). Pins and archive marks are kept in the notebook files by the shell; sorting is a
-// move, so it joins the undo stack like any other move.
+// Pin, sort, duplicate, and archive for the tree (docs/FEATURES.md). The shell keeps pins and archive marks in the
+// notebook files. Sorting is a move, so it joins the undo stack like any other move.
 
 import { shellCall } from '../../platform/shellqol';
 import type { NodeId, NodeSummary, NotesService } from '../../services/notes';

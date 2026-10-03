@@ -1,5 +1,5 @@
 //! Page shortcuts and the taskbar jump list. A shortcut is a `.lnk` file that starts OpenNote with an
-//! `opennote://page/<id>` link, the same link Outlook and Word use, so it survives renames and moves. The jump
+//! `opennote://page/<id>` link, the same link that Outlook, Word, and Teams use, so it survives renames and moves. The jump
 //! list shows "New quick note" and the recent pages. A `--quick-note` argument (the jump list's task) opens the
 //! quick capture window.
 
@@ -24,16 +24,24 @@ struct Recent {
     url: String,
 }
 
-/// A file name made from a title: no characters Windows refuses, no trailing dots or spaces, at most 100
-/// characters, and "OpenNote page" for a title with nothing left.
+/// A file name made from a title. Characters Windows refuses become spaces, and trailing dots and spaces go.
+/// The name keeps at most 100 characters. A title with nothing left becomes "OpenNote page".
 pub fn file_name_for(title: &str) -> String {
     let cleaned: String = title
         .chars()
-        .map(|c| if "<>:\"/\\|?*".contains(c) || c.is_control() { ' ' } else { c })
+        .map(|c| {
+            if "<>:\"/\\|?*".contains(c) || c.is_control() {
+                ' '
+            } else {
+                c
+            }
+        })
         .collect();
     let trimmed: String = cleaned.split_whitespace().collect::<Vec<_>>().join(" ");
     let shortened: String = trimmed.chars().take(100).collect();
-    let name = shortened.trim_matches(|c: char| c == '.' || c.is_whitespace()).to_owned();
+    let name = shortened
+        .trim_matches(|c: char| c == '.' || c.is_whitespace())
+        .to_owned();
     if name.is_empty() {
         "OpenNote page".to_owned()
     } else {

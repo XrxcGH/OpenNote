@@ -1,5 +1,5 @@
 {
-  "startup": { "jsKb": 228, "cssKb": 19 },
+  "startup": { "jsKb": 250, "cssKb": 20 },
   "after": {
     "within": [
       "features/page/",

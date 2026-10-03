@@ -48,7 +48,11 @@ fn build(
     let os = app.state::<Current>().get();
     let data = boot::payload(&app.state::<Startup>(), &settings, &state, &os, install::status(&paths));
     let Rgb(r, g, b) = boot::window_color(settings.appearance.theme, &os, boot::system_window_color());
-    let text = script(&boot::initialization_script(&data), kind, page.as_ref().map(|(id, _)| *id));
+    let text = script(
+        &boot::initialization_script(&data),
+        kind,
+        page.as_ref().map(|(id, _)| *id),
+    );
     WebviewWindowBuilder::new(app, label, WebviewUrl::App("index.html".into()))
         .title(title)
         .inner_size(size.0, size.1)
@@ -66,7 +70,13 @@ fn build(
 }
 
 /// Opens a page in a window of its own, or brings its window forward.
-pub fn open_page(app: &AppHandle, page: &str, section: Option<String>, notebook: Option<String>, title: &str) -> IpcResult<()> {
+pub fn open_page(
+    app: &AppHandle,
+    page: &str,
+    section: Option<String>,
+    notebook: Option<String>,
+    title: &str,
+) -> IpcResult<()> {
     let label = page_label(page);
     if let Some(open) = app.get_webview_window(&label) {
         let _ = open.show();
@@ -78,7 +88,15 @@ pub fn open_page(app: &AppHandle, page: &str, section: Option<String>, notebook:
         section_id: section,
         page_id: Some(page.to_owned()),
     };
-    build(app, &label, title, (900.0, 720.0), "page", Some((page, location)), false)
+    build(
+        app,
+        &label,
+        title,
+        (900.0, 720.0),
+        "page",
+        Some((page, location)),
+        false,
+    )
 }
 
 /// Opens the quick capture window, or brings it forward.
@@ -124,7 +142,13 @@ pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
         "window.openPage" => {
             let page: String = arg(args, "pageId")?;
             let title: Option<String> = opt(args, "title")?;
-            open_page(app, &page, opt(args, "sectionId")?, opt(args, "notebookId")?, &title.unwrap_or_default())?;
+            open_page(
+                app,
+                &page,
+                opt(args, "sectionId")?,
+                opt(args, "notebookId")?,
+                &title.unwrap_or_default(),
+            )?;
             ok()
         }
         "window.closeCapture" => {

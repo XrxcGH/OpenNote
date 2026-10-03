@@ -1,5 +1,5 @@
 // Page shortcuts and the jump list (docs/FEATURES.md, "Page shortcuts and jump list"). A shortcut is a Windows
-// .lnk file that starts OpenNote with an opennote://page/<id> link, the same link Outlook and Word use, so it
+// .lnk file that starts OpenNote with an opennote://page/<id> link, the same link that Outlook, Word, and Teams use, so it
 // survives renames and moves. A link opens a page, so a section or notebook shortcut opens the first page in
 // it. The jump list on the taskbar shows New quick note and the recent pages.
 

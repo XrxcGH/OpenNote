@@ -231,7 +231,10 @@ pub const ARCHIVED_KEY: &str = "archived";
 
 /// Whether an entry's unknown keys mark it archived.
 pub fn is_archived(extra: &JsonMap) -> bool {
-    extra.get(ARCHIVED_KEY).and_then(serde_json::Value::as_bool).unwrap_or(false)
+    extra
+        .get(ARCHIVED_KEY)
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
 }
 
 /// Marks an entry archived or not. True when the entry changed.

@@ -20,7 +20,8 @@ pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
         "conflict.list" => out(handle.conflicts().map_err(core_error)?),
         "conflict.text" => {
             let revision: String = arg(args, "revision")?;
-            let revision = RevisionId::parse(&revision).map_err(|error| IpcError::invalid("revision", &error.to_string()))?;
+            let revision =
+                RevisionId::parse(&revision).map_err(|error| IpcError::invalid("revision", &error.to_string()))?;
             Ok(json!({
                 "mine": handle.text(),
                 "theirs": handle.conflict_text(revision).map_err(core_error)?,
@@ -28,7 +29,8 @@ pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
         }
         "conflict.resolve" => {
             let revision: String = arg(args, "revision")?;
-            let revision = RevisionId::parse(&revision).map_err(|error| IpcError::invalid("revision", &error.to_string()))?;
+            let revision =
+                RevisionId::parse(&revision).map_err(|error| IpcError::invalid("revision", &error.to_string()))?;
             let choice: ConflictChoice = arg(args, "choice")?;
             handle.resolve_conflict(revision, choice).map_err(core_error)?;
             Ok(json!({ "ok": true }))

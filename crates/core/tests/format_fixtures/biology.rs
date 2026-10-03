@@ -73,6 +73,7 @@ pub fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
                         order: entry.order.clone(),
                         level,
                         pinned: entry.pinned,
+                        archived: false,
                         color: entry.color.clone(),
                         created: entry.changed,
                         modified: None,
@@ -82,6 +83,7 @@ pub fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
                 .collect(),
             access: s.format.access.clone(),
             encrypted: s.encryption.is_some(),
+            archived: false,
         })
         .collect();
     NotebookTree {
@@ -95,6 +97,7 @@ pub fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
         sections: nodes,
         access: Access::ReadWrite,
         notices: Vec::new(),
+        archived: false,
     }
 }
 

@@ -99,7 +99,10 @@ fn pin(path: &Path) -> Result<(), String> {
             .creation_flags(CREATE_NO_WINDOW)
             .status()
             .map_err(|error| error.to_string())?;
-        status.success().then_some(()).ok_or_else(|| "attrib didn't finish".to_owned())
+        status
+            .success()
+            .then_some(())
+            .ok_or_else(|| "attrib didn't finish".to_owned())
     };
     let folder = path.to_string_lossy().trim_end_matches('\\').to_owned();
     run(folder.clone(), &[])?;
@@ -160,6 +163,10 @@ mod tests {
 
     #[test]
     fn only_onedrive_can_be_pinned_from_here() {
-        assert!(ONE_DRIVE.can_pin && !DROPBOX.can_pin && !ICLOUD.can_pin && !GOOGLE_DRIVE.can_pin);
+        let pinnable = |path: &str| detect_in(Path::new(path), &[]).is_some_and(|info| info.can_pin);
+        assert!(pinnable(r"C:\Users\ada\OneDrive\Notes"));
+        assert!(!pinnable(r"D:\Dropbox\Notes"));
+        assert!(!pinnable(r"C:\Users\ada\iCloudDrive\Notes"));
+        assert!(!pinnable(r"G:\My Drive\Notes"));
     }
 }

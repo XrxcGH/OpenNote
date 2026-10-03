@@ -150,7 +150,11 @@ fn run_inner(app: &AppHandle) -> IpcResult<Value> {
     // Saving first puts every open page's latest edits in the files the copy reads.
     let roots: Vec<PathBuf> = run_notes(app, &bridge, |b| {
         let _ = b.core.flush_all(Duration::from_secs(10));
-        Ok(b.notebooks().iter().filter(|nb| !nb.is_backup()).map(|nb| nb.path().to_path_buf()).collect())
+        Ok(b.notebooks()
+            .iter()
+            .filter(|nb| !nb.is_backup())
+            .map(|nb| nb.path().to_path_buf())
+            .collect())
     })?;
     let fs = StdFs::new(&Timings::default());
     let destination = PathBuf::from(config.destination.trim());
@@ -184,15 +188,17 @@ fn run_inner(app: &AppHandle) -> IpcResult<Value> {
 
 pub fn start(app: &AppHandle) {
     let app = app.clone();
-    let spawned = std::thread::Builder::new().name("opennote-backup".into()).spawn(move || loop {
-        std::thread::sleep(CHECK);
-        let config = config(&app);
-        if config.due(last_time(&app), SystemClock::new().now()) {
-            if let Err(error) = run(&app) {
-                ::log::warn!("The scheduled backup didn't run: {error}");
+    let spawned = std::thread::Builder::new()
+        .name("opennote-backup".into())
+        .spawn(move || loop {
+            std::thread::sleep(CHECK);
+            let config = config(&app);
+            if config.due(last_time(&app), SystemClock::new().now()) {
+                if let Err(error) = run(&app) {
+                    ::log::warn!("The scheduled backup didn't run: {error}");
+                }
             }
-        }
-    });
+        });
     if let Err(error) = spawned {
         ::log::warn!("Couldn't start the backup schedule: {error}");
     }
@@ -269,6 +275,9 @@ mod tests {
     fn a_config_reads_with_missing_fields() {
         let config: Config = serde_json::from_value(json!({ "enabled": true, "destination": "D:\\B" })).expect("reads");
         assert!(config.enabled);
-        assert_eq!((config.every_hours, config.daily, config.weekly, config.monthly), (24, 7, 4, 12));
+        assert_eq!(
+            (config.every_hours, config.daily, config.weekly, config.monthly),
+            (24, 7, 4, 12)
+        );
     }
 }

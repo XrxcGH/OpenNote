@@ -118,10 +118,10 @@ export const qol = {
   },
   conflict: {
     banner:
-      '{count, plural, one {A sync tool or another device made a copy of this page.} other {A sync tool or another device made # copies of this page.}} Nothing was overwritten.',
+      '{count, plural, one {A sync tool made a copy of this page.} other {A sync tool made # copies of this page.}}',
     compare: 'Compare versions',
     title: 'Two versions of this page',
-    explain: 'Choose the version to keep, or keep both as separate pages.',
+    explain: 'Nothing was overwritten. Choose the version to keep, or keep both as separate pages.',
     more: '{count, plural, one {Another copy waits after this one.} other {# more copies wait after this one.}}',
     mine: 'This version',
     theirs: 'From {device}, saved {date}',
@@ -141,9 +141,9 @@ export const qol = {
   cloud: {
     title: 'This notes folder is in {service}',
     explain:
-      '{service} can keep files only in the cloud and download them when they open. OpenNote waits for each file to download, so a page never looks empty.',
+      '{service} can keep files only in the cloud. OpenNote waits for each file to download, so a page never looks empty.',
     conflicts:
-      'If {service} makes a conflict copy of a page, OpenNote shows a banner on that page and a side-by-side view, instead of a duplicate page.',
+      'If {service} makes a conflict copy of a page, OpenNote shows a banner and a side-by-side view, not a duplicate page.',
     keep: 'Always keep on this device',
     kept: 'This folder stays on this device',
     keepFailed: 'The folder could not be kept on this device.',
@@ -151,7 +151,7 @@ export const qol = {
   },
   open: {
     title: 'Open a notebook from a folder',
-    body: 'Open a notebook from another drive, a USB stick, a network share, or a Git folder. It opens where it is, with no copy and no import.',
+    body: 'Open a notebook from another drive, a USB stick, a network share, or a Git folder. It opens where it is, with no copy.',
     button: 'Choose a folder',
     missing: 'That folder is not there.',
     convertTitle: 'Turn {title} into a notebook?',
@@ -160,10 +160,14 @@ export const qol = {
     convert: 'Make notebook',
     opened: 'Opened {title}.',
     failed: 'The folder could not be opened as a notebook.',
+    lostTitle: 'Notebooks that cannot be found',
+    lostBody: '{title} was in {path}. Plug in the drive, or point OpenNote to the folder.',
+    locate: 'Locate {title}',
+    notThere: 'That folder is not this notebook.',
   },
   backup: {
     title: 'Backups',
-    body: 'OpenNote copies your notebooks to a folder you pick, such as a USB drive or a second disk. Only changed files are copied, and protected sections stay encrypted in the copy.',
+    body: 'OpenNote copies changed files from your notebooks to a folder you pick, such as a USB drive. Protected sections stay encrypted.',
     enable: 'Back up on a schedule',
     noFolder: 'No backup folder chosen.',
     choose: 'Choose backup folder',
@@ -179,6 +183,7 @@ export const qol = {
     weekly: 'Weekly copies to keep',
     monthly: 'Monthly copies to keep',
     never: 'No backup has run yet.',
+    restore: 'To bring pages back, open a backup folder as a notebook. It opens read-only, so you can copy pages out.',
     last: '{count, plural, one {Last backup: {when}, 1 notebook.} other {Last backup: {when}, # notebooks.}}',
     lastFailed: 'The last backup, on {when}, did not finish.',
     done: 'The backup finished.',
@@ -186,7 +191,7 @@ export const qol = {
   },
   check: {
     title: 'Check notebook',
-    body: 'Look for damaged files, missing images and recordings, and problems in the notebook files. Nothing changes until you pick a repair.',
+    body: 'Look for damaged files, missing images and recordings, and tree problems. Nothing changes until you pick a repair.',
     run: 'Check {title}',
     dialogTitle: 'Check {title}',
     checking: 'Checking {title}.',
@@ -211,7 +216,7 @@ export const qol = {
   },
   portable: {
     title: 'Run from a USB drive',
-    body: 'To keep settings and caches beside the program, put an empty file named portable next to OpenNote. OpenNote then leaves nothing in the Windows profile.',
+    body: 'To keep settings and caches beside the program, add an empty file named portable next to it. Nothing goes in your profile.',
   },
   capture: {
     label: 'Quick note',
@@ -275,7 +280,7 @@ export const qol = {
     title: 'Keys and pen',
     subtitle: 'Choose the shortcuts you know. You can change this in Settings.',
     onenoteClash:
-      'Where the two sets use the same keys, this set keeps the meaning OneNote gives them. The shortcut list shows where the other command went.',
+      'Where the sets clash, this set keeps the meaning OneNote gives a key. The shortcut list shows where the other command went.',
     penTitle: 'Pen top button',
     penBody:
       'To open a quick note with the top button of your pen, choose OpenNote for the pen shortcut in Windows pen settings.',

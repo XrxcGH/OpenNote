@@ -50,7 +50,12 @@ pub fn status() -> Status {
     if unsafe { GetSystemPowerStatus(&mut raw) }.is_err() {
         return Status::default();
     }
-    decode(raw.ACLineStatus, raw.BatteryFlag, raw.BatteryLifePercent, raw.SystemStatusFlag)
+    decode(
+        raw.ACLineStatus,
+        raw.BatteryFlag,
+        raw.BatteryLifePercent,
+        raw.SystemStatusFlag,
+    )
 }
 
 #[cfg(not(windows))]
@@ -62,21 +67,26 @@ static LAST: Mutex<Option<Status>> = Mutex::new(None);
 
 pub fn start(app: &AppHandle) {
     let app = app.clone();
-    let spawned = std::thread::Builder::new().name("opennote-power".into()).spawn(move || loop {
-        let now = status();
-        let changed = {
-            let mut last = LAST.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            let changed = last.is_none_or(|before| {
-                before.on_battery != now.on_battery || before.saver != now.saver
-            });
-            *last = Some(now);
-            changed
-        };
-        if changed {
-            emit(&app, "power", json!({ "onBattery": now.on_battery, "saver": now.saver, "percent": now.percent }));
-        }
-        std::thread::sleep(POLL);
-    });
+    let spawned = std::thread::Builder::new()
+        .name("opennote-power".into())
+        .spawn(move || loop {
+            let now = status();
+            let changed = {
+                let mut last = LAST.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                let changed =
+                    last.is_none_or(|before| before.on_battery != now.on_battery || before.saver != now.saver);
+                *last = Some(now);
+                changed
+            };
+            if changed {
+                emit(
+                    &app,
+                    "power",
+                    json!({ "onBattery": now.on_battery, "saver": now.saver, "percent": now.percent }),
+                );
+            }
+            std::thread::sleep(POLL);
+        });
     if let Err(error) = spawned {
         ::log::warn!("Couldn't start the power watcher: {error}");
     }

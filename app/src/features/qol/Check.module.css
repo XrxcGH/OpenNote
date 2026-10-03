@@ -26,10 +26,6 @@
     overflow-wrap: anywhere;
   }
 
-  .hint {
-    font-family: inherit;
-  }
-
   .fixes {
     margin-block-start: var(--space-2);
   }

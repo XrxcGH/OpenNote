@@ -24,7 +24,10 @@ pub const PORTABLE_FOLDER: &str = "OpenNote-data";
 /// there too. Settings, caches, models, and the Documents default all live inside it, so nothing goes to the
 /// Windows profile. The notes folder the person picks is theirs and stays wherever they chose.
 pub fn portable_profile(program_dir: &Path) -> Option<PathBuf> {
-    program_dir.join(PORTABLE_FILE).is_file().then(|| program_dir.join(PORTABLE_FOLDER))
+    program_dir
+        .join(PORTABLE_FILE)
+        .is_file()
+        .then(|| program_dir.join(PORTABLE_FOLDER))
 }
 
 /// The profile override: the environment variable wins (tests and E2E runs), then portable mode.

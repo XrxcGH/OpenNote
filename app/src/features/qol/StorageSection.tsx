@@ -1,7 +1,7 @@
 // Settings, then Storage and backups: a notice when the notes folder is in a sync service, opening a notebook from
 // any folder, backups on a schedule, and checking a notebook for problems.
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { isEnabled } from '../../app/flags';
 import { shellCall, shellHost } from '../../platform/shellqol';
 import { useNotes } from '../../services/notes';
@@ -81,6 +81,52 @@ export async function openNotebookFolder(): Promise<void> {
   } catch {
     showToast({ message: t('qol.open.failed'), tone: 'danger' });
   }
+}
+
+interface LibraryItem {
+  readonly path: string;
+  readonly title: string;
+  readonly id: string;
+  readonly available: boolean;
+}
+
+/** Notebooks the library knows but whose folder is gone, such as a drive that is not plugged in. */
+function LostNotebooks() {
+  const [lost, setLost] = useState<readonly LibraryItem[]>([]);
+  const load = useCallback(() => {
+    void shellCall<LibraryItem[] | null>('library.list').then(
+      (items) => setLost((items ?? []).filter((item) => !item.available)),
+      () => undefined,
+    );
+  }, []);
+  useEffect(load, [load]);
+  if (!isEnabled('qol.openFolder') || lost.length === 0) return null;
+  const locate = async (item: LibraryItem) => {
+    const folder = await host().install.pickNotesFolder(item.path);
+    if (!folder) return;
+    try {
+      const seen = await shellCall<{ kind: string } | null>('library.inspect', { path: folder });
+      if (seen?.kind !== 'notebook') throw new Error('not a notebook');
+      await shellCall('library.open', { path: folder });
+      showToast({ message: t('qol.open.opened', { title: item.title }) });
+      load();
+    } catch {
+      showToast({ message: t('qol.open.notThere'), tone: 'danger' });
+    }
+  };
+  return (
+    <section className={styles.block} aria-labelledby="qol-lost">
+      <h2 id="qol-lost">{t('qol.open.lostTitle')}</h2>
+      {lost.map((item) => (
+        <div key={item.id}>
+          <p>{t('qol.open.lostBody', { title: item.title, path: item.path })}</p>
+          <div className={styles.actions}>
+            <Button onClick={() => void locate(item)}>{t('qol.open.locate', { title: item.title })}</Button>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
 }
 
 function OpenFolder() {
@@ -179,6 +225,7 @@ function Backups() {
       <p className={styles.help} role="status">
         {lastText}
       </p>
+      <p className={styles.help}>{t('qol.backup.restore')}</p>
     </section>
   );
 }
@@ -215,6 +262,7 @@ export default function StorageSection() {
     <>
       <CloudFolder />
       <OpenFolder />
+      <LostNotebooks />
       <Backups />
       <CheckNotebooks />
       <section className={styles.block} aria-labelledby="qol-portable">

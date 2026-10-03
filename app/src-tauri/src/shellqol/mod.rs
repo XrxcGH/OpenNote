@@ -1,4 +1,4 @@
-//! Shell extras for the quality-of-life features: pins, archive, duplicate and Copy to, docking, the mini window,
+//! Shell extras for the quality-of-life features: pins, archive, duplicate, Copy to, docking, the mini window,
 //! power status, backups on a schedule, edits from other programs, opening a notebook from any folder, the check,
 //! quick capture, and Windows shortcuts. One command, `shellqol_call`, carries each by name with JSON arguments,
 //! so the command list and the capability file stay short (like `search_call`). Events go out on one channel,

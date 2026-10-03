@@ -173,7 +173,11 @@ fn settle(app: &AppHandle, pending: HashMap<(PathBuf, String, Seen), PathBuf>) {
             }
         };
         if foreign {
-            let change = if seen == Seen::ConflictCopy { "conflictCopy" } else { "changed" };
+            let change = if seen == Seen::ConflictCopy {
+                "conflictCopy"
+            } else {
+                "changed"
+            };
             emit(app, "external", json!({ "pageId": page, "change": change }));
         }
     }

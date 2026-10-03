@@ -8,9 +8,10 @@ export { listRestored, useTreeNode } from './access';
 // What the quality-of-life features (features/qol) use: the open row, selections, the actions on them, and the store.
 export { currentNode } from './current';
 export { selectedNodes } from './multi';
-export { copyTo } from './multiActions';
-export { duplicateNode, setArchived, setPinned, setShowArchived, sortSiblings } from './qolActions';
 export type { SortKey } from './qolActions';
+/** The actions on a selection and on pins, sorting, and archive load when first used, so start-up stays small. */
+export const loadMultiActions = () => import('./multiActions');
+export const loadQolActions = () => import('./qolActions');
 export { locationFor } from './selection';
 export { getNode, notebookOf, treeStore } from './store';
 export { startTree, stopTree } from './load';

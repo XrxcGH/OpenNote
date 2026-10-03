@@ -102,31 +102,33 @@ mod imp {
         unregister();
         let app = app.clone();
         let (sender, receiver) = std::sync::mpsc::channel::<bool>();
-        let spawned = std::thread::Builder::new().name("opennote-hotkey".into()).spawn(move || {
-            // SAFETY: the hot key belongs to this thread, which also pumps its messages and removes the key
-            // before it ends.
-            unsafe {
-                let ok = RegisterHotKey(None, 1, HOT_KEY_MODIFIERS(modifiers) | MOD_NOREPEAT, key).is_ok();
-                if ok {
-                    THREAD.store(GetCurrentThreadId(), Ordering::SeqCst);
-                    REGISTERED.store(true, Ordering::SeqCst);
-                }
-                let _ = sender.send(ok);
-                if !ok {
-                    return;
-                }
-                let mut message = MSG::default();
-                while GetMessageW(&mut message, None, 0, 0).as_bool() {
-                    if message.message == WM_HOTKEY {
-                        if let Err(error) = super::windows_ops::open_capture(&app) {
-                            ::log::warn!("Couldn't open quick capture: {error}");
+        let spawned = std::thread::Builder::new()
+            .name("opennote-hotkey".into())
+            .spawn(move || {
+                // SAFETY: the hot key belongs to this thread, which also pumps its messages and removes the key
+                // before it ends.
+                unsafe {
+                    let ok = RegisterHotKey(None, 1, HOT_KEY_MODIFIERS(modifiers) | MOD_NOREPEAT, key).is_ok();
+                    if ok {
+                        THREAD.store(GetCurrentThreadId(), Ordering::SeqCst);
+                        REGISTERED.store(true, Ordering::SeqCst);
+                    }
+                    let _ = sender.send(ok);
+                    if !ok {
+                        return;
+                    }
+                    let mut message = MSG::default();
+                    while GetMessageW(&mut message, None, 0, 0).as_bool() {
+                        if message.message == WM_HOTKEY {
+                            if let Err(error) = super::windows_ops::open_capture(&app) {
+                                ::log::warn!("Couldn't open quick capture: {error}");
+                            }
                         }
                     }
+                    let _ = UnregisterHotKey(None, 1);
+                    REGISTERED.store(false, Ordering::SeqCst);
                 }
-                let _ = UnregisterHotKey(None, 1);
-                REGISTERED.store(false, Ordering::SeqCst);
-            }
-        });
+            });
         spawned.is_ok() && receiver.recv().unwrap_or(false)
     }
 
@@ -185,7 +187,10 @@ pub fn call(app: &AppHandle, _bridge: &CoreBridge, name: &str, args: &Value) -> 
                 key: opt::<String>(args, "key")?.unwrap_or_else(|| DEFAULT_KEY.to_owned()),
             };
             if parse_key(&next.key).is_none() {
-                return Err(IpcError::invalid("key", "Use Ctrl, Alt, or the Windows key with a letter, digit, or F key."));
+                return Err(IpcError::invalid(
+                    "key",
+                    "Use Ctrl, Alt, or the Windows key with a letter, digit, or F key.",
+                ));
             }
             let mut patch = serde_json::Map::new();
             patch.insert("quickCapture".to_owned(), out(&next)?);
@@ -208,7 +213,10 @@ mod tests {
     #[test]
     fn parses_modifiers_and_a_key() {
         assert_eq!(parse_key("Ctrl+Alt+Q"), Some((MOD_CONTROL | MOD_ALT, u32::from(b'Q'))));
-        assert_eq!(parse_key("ctrl + shift + 7"), Some((MOD_CONTROL | MOD_SHIFT, u32::from(b'7'))));
+        assert_eq!(
+            parse_key("ctrl + shift + 7"),
+            Some((MOD_CONTROL | MOD_SHIFT, u32::from(b'7')))
+        );
         assert_eq!(parse_key("Win+F12"), Some((MOD_WIN, 0x7B)));
     }
 

@@ -157,7 +157,9 @@ mod imp {
         // SAFETY: `info` has its size set, and `hwnd` names this app's window.
         unsafe {
             let monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-            GetMonitorInfoW(monitor, &mut info).as_bool().then(|| tuple(info.rcMonitor))
+            GetMonitorInfoW(monitor, &mut info)
+                .as_bool()
+                .then(|| tuple(info.rcMonitor))
         }
     }
 
@@ -308,7 +310,10 @@ mod tests {
     fn a_column_stays_between_the_minimum_and_half_the_screen() {
         assert_eq!(column(SCREEN, Edge::Left, 100, 280).2, 280);
         assert_eq!(column(SCREEN, Edge::Right, 5000, 280).0, 960);
-        assert_eq!(column((1920, 0, 3840, 1080), Edge::Left, 420, 280), (1920, 0, 2340, 1080));
+        assert_eq!(
+            column((1920, 0, 3840, 1080), Edge::Left, 420, 280),
+            (1920, 0, 2340, 1080)
+        );
     }
 
     #[test]

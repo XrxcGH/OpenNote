@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the tests use hexadecimal text colors, the input the checker reads
 import { describe, expect, it } from 'vitest';
 import type { BlockJson, PageJson } from '../../services/pages/types';
 import { checkPage, contrast, imageAltEdits } from './check';
