@@ -1,0 +1,100 @@
+{
+  "description": "The first record's length runs past the end. The reader scans on.",
+  "expect": {
+    "bytes": 624,
+    "crc32": "fc79f7a2",
+    "id": "01m3sawfy8000000000006sqsc",
+    "records": 6
+  },
+  "file": "bad-length.onk",
+  "page": "01m3sa12426sg32pmtyffjaqcf",
+  "result": {
+    "damaged": [
+      {
+        "index": 0,
+        "offset": 64,
+        "reason": "length",
+        "stroke": null
+      }
+    ],
+    "footerOk": false,
+    "header": {
+      "created": 1790777260500,
+      "id": "01m3sawfy8000000000006sqsc",
+      "page": "01m3sa12426sg32pmtyffjaqcf"
+    },
+    "records": [
+      {
+        "bbox": [2587, -1498, 3103, -1230],
+        "block": "01m3sawgxg000000000006szgv",
+        "channels": 7,
+        "id": "01m3sawhwr000000000006t78a",
+        "kind": "stroke",
+        "origin": "01m3sawjw0000000000006tezs",
+        "points": [
+          [2587, -1498, 30358, 1203, -771, 3],
+          [2659, -1467, 29789, 1200, -796, 45],
+          [2731, -1432, 29145, 1201, -821, 87],
+          [2804, -1394, 28431, 1208, -846, 129],
+          [2877, -1353, 27653, 1219, -870, 171],
+          [2951, -1312, 26816, 1234, -892, 213],
+          [3026, -1271, 25927, 1253, -914, 255],
+          [3103, -1230, 24992, 1277, -933, 297]
+        ],
+        "start": 1790778161345,
+        "startUnknown": true,
+        "style": {
+          "color": [51, 102, 153, 192],
+          "palette": 0,
+          "tool": 1,
+          "width": 2.0
+        },
+        "transform": [0.5, 0.25, -0.25, 0.5, 100.0, -3.5]
+      },
+      {
+        "bbox": [-145, 120, -145, 120],
+        "block": "01m3sawgxg000000000006szgv",
+        "channels": 0,
+        "id": "01m3sawkv8000000000006tpq8",
+        "kind": "stroke",
+        "origin": null,
+        "points": [
+          [-145, 120, 0, 0, 0, 0]
+        ],
+        "start": 1790778163345,
+        "startUnknown": false,
+        "style": {
+          "color": [1, 2, 3, 4],
+          "palette": 99,
+          "tool": 9,
+          "width": 2.0
+        },
+        "transform": null
+      },
+      {
+        "block": "01m3sawmtg000000000006tyeq",
+        "id": "01m3sawhwr000000000006t78a",
+        "kind": "props",
+        "style": {
+          "color": [242, 158, 179, 128],
+          "palette": 34,
+          "tool": 2,
+          "width": 8.5
+        },
+        "transform": [2.0, 0.0, 0.0, 2.0, 0.0, 0.0]
+      },
+      {
+        "block": null,
+        "id": "01m3sawhwr000000000006t78a",
+        "kind": "props",
+        "style": null,
+        "transform": "remove"
+      },
+      {
+        "id": "01m3sawkv8000000000006tpq8",
+        "kind": "remove"
+      }
+    ],
+    "unknownRecords": 0
+  }
+}

@@ -5,6 +5,7 @@ import { posix } from 'node:path';
 import type { Finding, ProseLine, Rule, RuleContext, SourceFile } from '../types.ts';
 import { numberSetting } from '../config.ts';
 import { caseProblem, wordCount } from '../text.ts';
+import { stripHtmlTags } from '../html.ts';
 import { reporter } from './helpers.ts';
 
 const UI_EXTENSIONS = ['tsx', 'jsx', 'html', 'vue', 'svelte', 'css', 'scss'];
@@ -107,9 +108,7 @@ export function headingSlugs(prose: ProseLine[]): Set<string> {
 }
 
 export function githubSlug(text: string): string {
-  return text
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/<[^>]+>/g, '')
+  return stripHtmlTags(text.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1'))
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s_-]/gu, '')
     .replace(/ /g, '-');

@@ -7,12 +7,14 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { startApp } from './app/start';
+import { installExitHandshake } from './boot/exit';
+import { reportFirstPaint } from './boot/marks';
 import { NotesProvider } from './services/notes';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 
-const { notes } = await startApp();
+const { platform, notes } = await startApp();
 
 createRoot(root).render(
   <StrictMode>
@@ -21,3 +23,5 @@ createRoot(root).render(
     </NotesProvider>
   </StrictMode>,
 );
+installExitHandshake(platform);
+reportFirstPaint(platform);

@@ -2,8 +2,10 @@
 //! so the whole interface scales together. The zoom is capped so the page is never narrower than 320 CSS pixels,
 //! and the minimum window width grows with it.
 //!
-//! The formulas are final. The shell work package applies them with `set_zoom` and `set_min_size`, and again
-//! whenever the text size, Windows' text scale, or the monitor changes.
+//! [`apply`] sets the zoom and the minimum size on the main window. `appearance::refresh` calls it whenever the
+//! text size, Windows' text scale, or the monitor changes.
+
+use tauri::{LogicalSize, WebviewWindow};
 
 /// The narrowest the page may get, in CSS pixels (WCAG 1.4.10 reflow).
 pub const CONTENT_MIN_CSS_PX: f64 = 320.0;
@@ -22,6 +24,32 @@ pub fn min_window_width(zoom: f64, work_area_width_dips: f64) -> f64 {
     WINDOW_MIN_DIPS
         .max((CONTENT_MIN_CSS_PX * zoom).ceil())
         .min(work_area_width_dips)
+}
+
+/// The shortest the window may get, in DIPs.
+pub const WINDOW_MIN_HEIGHT_DIPS: f64 = 480.0;
+
+/// The width of the work area of the monitor the window is on, in DIPs. A large value when it can't be read, so
+/// the cap doesn't bite.
+fn work_area_width_dips(window: &WebviewWindow) -> f64 {
+    match window.current_monitor() {
+        Ok(Some(monitor)) => f64::from(monitor.work_area().size.width) / monitor.scale_factor().max(1.0),
+        _ => f64::MAX,
+    }
+}
+
+/// Applies the effective zoom and the minimum window size to `window`, and returns the zoom.
+pub fn apply(window: &WebviewWindow, text_size_percent: u16, text_scale: f64) -> f64 {
+    let work_width = work_area_width_dips(window);
+    let zoom = effective_zoom(text_size_percent, text_scale, work_width);
+    if let Err(error) = window.set_zoom(zoom) {
+        log::warn!("Couldn't set the zoom to {zoom}: {error}");
+    }
+    let min = LogicalSize::new(min_window_width(zoom, work_width), WINDOW_MIN_HEIGHT_DIPS);
+    if let Err(error) = window.set_min_size(Some(min)) {
+        log::warn!("Couldn't set the minimum window size: {error}");
+    }
+    zoom
 }
 
 #[cfg(test)]

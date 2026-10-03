@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Finding, Rule, SourceFile } from '../types.ts';
 import { caseProblem } from '../text.ts';
+import { decodeHtmlEntities } from '../html.ts';
 import { reporter } from './helpers.ts';
 
 const AUDIT = readFileSync(join(import.meta.dirname, '..', 'layout', 'audit.js'), 'utf8');
@@ -43,6 +44,15 @@ interface AuditResult {
   text: string;
 }
 
+/**
+ * Arguments for one headless render. The browser profile lives in `dir`, which the caller deletes;
+ * without --user-data-dir, headless Edge leaves a new HeadlessEdge profile in the temp folder on every run.
+ */
+export function browserArgs(dir: string): string[] {
+  const profile = `--user-data-dir=${join(dir, 'profile')}`;
+  return ['--headless', '--no-sandbox', '--disable-gpu', profile, '--virtual-time-budget=3000', '--dump-dom'];
+}
+
 function render(svg: string, exe: string): AuditResult[] {
   const dir = mkdtempSync(join(tmpdir(), 'checks-layout-'));
   try {
@@ -53,22 +63,16 @@ function render(svg: string, exe: string): AuditResult[] {
       `<pre id="out"></pre><script>${AUDIT}</script></body></html>`,
     ].join('');
     writeFileSync(page, html);
-    const args = ['--headless', '--no-sandbox', '--disable-gpu', '--virtual-time-budget=3000', '--dump-dom'];
-    const dom = execFileSync(exe, [...args, `file://${page}`], {
+    const dom = execFileSync(exe, [...browserArgs(dir), `file://${page}`], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });
     const json = /<pre id="out">([\s\S]*?)<\/pre>/.exec(dom)?.[1] ?? '';
     if (!json) throw new Error('the audit script produced no result');
-    return JSON.parse(
-      json
-        .replace(/&quot;/g, '"')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>'),
-    );
+    return JSON.parse(decodeHtmlEntities(json));
   } finally {
-    rmSync(dir, { recursive: true, force: true });
+    // The browser's helper processes can hold profile files for a moment after it exits.
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }
 }
 
@@ -78,7 +82,7 @@ function lineOf(file: SourceFile, text: string): number {
   return index === -1 ? 1 : index + 1;
 }
 
-/** Interface text in drawings follows BRAND.md: sentence case, with single-word overlines allowed. */
+/** Interface text in drawings follows docs/BRAND.md: sentence case, with single-word overlines allowed. */
 function caseFindings(file: SourceFile): Finding[] {
   const report = reporter('layout', file);
   const findings: Finding[] = [];

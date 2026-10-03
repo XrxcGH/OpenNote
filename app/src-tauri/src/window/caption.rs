@@ -11,6 +11,7 @@ use crate::ipc::IpcResult;
 
 /// A rectangle in physical pixels, relative to the client area.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct Rect {
     pub x: f64,
     pub y: f64,
@@ -20,13 +21,16 @@ pub struct Rect {
 
 /// Where the Maximize button is, and its accessible names, matching the interface's `CaptionLayout`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct CaptionLayout {
     pub maximize: Rect,
+    #[cfg_attr(test, ts(inline))]
     pub labels: CaptionLabels,
 }
 
 /// The overlay button's name when the window is restored or maximized, from the interface's strings.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS))]
 pub struct CaptionLabels {
     pub maximize: String,
     pub restore: String,
@@ -34,6 +38,7 @@ pub struct CaptionLabels {
 
 /// The payload of `window://caption-state`: the overlay's hover and pressed state, drawn by the HTML button.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct CaptionState {
     pub hovered: bool,
     pub pressed: bool,

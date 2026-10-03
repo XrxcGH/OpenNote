@@ -4,5 +4,8 @@ import type { PerfClient } from '../types';
 import { fire } from './invoke';
 
 export function createTauriPerf(): PerfClient {
-  return { mark: (name) => fire('perf_mark', { name, epochMs: performance.timeOrigin + performance.now() }) };
+  return {
+    mark: (name, detail) =>
+      fire('perf_mark', { name, epochMs: performance.timeOrigin + performance.now(), detail: detail ?? null }),
+  };
 }

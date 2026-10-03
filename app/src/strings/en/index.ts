@@ -5,6 +5,7 @@ import { commands } from './commands';
 import { titleBar } from './titleBar';
 import { layout } from './layout';
 import { tree } from './tree';
+import { page } from './page';
 import { palette } from './palette';
 import { shortcuts } from './shortcuts';
 import { settings } from './settings';
@@ -20,6 +21,7 @@ export const en = {
   titleBar,
   layout,
   tree,
+  page,
   palette,
   shortcuts,
   settings,

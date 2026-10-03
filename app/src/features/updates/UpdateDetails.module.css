@@ -1,0 +1,107 @@
+@layer components {
+  .details {
+    display: grid;
+    gap: var(--space-3);
+    max-inline-size: var(--size-dialog-width);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+  }
+
+  .details p {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .notes {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .notesTitle {
+    margin: 0;
+    font-size: var(--type-caption-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-caption-line);
+  }
+
+  /* Plain text, at most 8 lines (ARCHITECTURE.md section 18.11). */
+  .notes .notesText {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: pre-line;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 8;
+  }
+
+  .details .blocked {
+    color: var(--color-text-primary);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-block-size: var(--size-target-min);
+    padding-inline: var(--space-3);
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent-primary-subtle);
+    color: var(--color-text-link);
+    font: inherit;
+    font-size: var(--type-caption-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-caption-line);
+    cursor: pointer;
+  }
+
+  .chip svg {
+    inline-size: var(--size-icon-sm);
+    block-size: var(--size-icon-sm);
+  }
+
+  .section {
+    display: grid;
+    gap: var(--space-5);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .section h2,
+  .section h3 {
+    margin: 0;
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .card p,
+  .section p {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+}

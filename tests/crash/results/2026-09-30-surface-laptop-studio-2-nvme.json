@@ -1,0 +1,509 @@
+{
+  "machine": "Surface Laptop Studio 2 (i7-13800H, KIOXIA KXG80ZNV1T02 NVMe, NTFS, Windows 11 26200, Defender real-time protection on)",
+  "notes": [
+    "1 segments: 2 file opens per page open",
+    "4 segments: 5 file opens per page open",
+    "8 segments: 9 file opens per page open",
+    "nvme: 0 of 200 saves were unconfirmed",
+    "nvme: volume Ntfs, remote false",
+    "nvme: a durable write renames with PosixByHandle",
+    "nvme: flushing a folder handle: ok ()",
+    "nvme: replace while held (rwd): ok Committed { durability: Confirmed, stamp: FileStamp { len: 3, modified: 134352589846243480, file_id: 3096224746873386 } }; holder read \"old\"",
+    "nvme: delete while held (rwd): ok ()",
+    "nvme: rename the folder while held (rwd): Busy (os error Some(5))",
+    "nvme: delete the folder while held (rwd): ok ()",
+    "nvme: replace while held (rw): Busy (os error Some(32)); holder read \"old\"",
+    "nvme: delete while held (rw): Busy (os error Some(32))",
+    "nvme: rename the folder while held (rw): Busy (os error Some(5))",
+    "nvme: delete the folder while held (rw): Busy (os error Some(32))"
+  ],
+  "reference_laptop": false,
+  "results": [
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.warm.p50",
+      "unit": "ms",
+      "value": 11.0374
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.warm.p95",
+      "unit": "ms",
+      "value": 14.6261
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.warm.p99",
+      "unit": "ms",
+      "value": 18.503
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.cold.p50",
+      "unit": "ms",
+      "value": 14.737200000000001
+    },
+    {
+      "gate": 60.0,
+      "name": "nvme.m3.open.1seg.cold.p95",
+      "unit": "ms",
+      "value": 17.9829
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.cold.p99",
+      "unit": "ms",
+      "value": 33.6117
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.cold_new_files.p50",
+      "unit": "ms",
+      "value": 10.828000000000001
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.cold_new_files.p95",
+      "unit": "ms",
+      "value": 17.081300000000002
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.1seg.cold_new_files.p99",
+      "unit": "ms",
+      "value": 31.0037
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.warm.p50",
+      "unit": "ms",
+      "value": 10.7745
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.warm.p95",
+      "unit": "ms",
+      "value": 14.7311
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.warm.p99",
+      "unit": "ms",
+      "value": 15.4948
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.cold.p50",
+      "unit": "ms",
+      "value": 15.8779
+    },
+    {
+      "gate": 60.0,
+      "name": "nvme.m3.open.4seg.cold.p95",
+      "unit": "ms",
+      "value": 31.4411
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.cold.p99",
+      "unit": "ms",
+      "value": 67.9429
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.cold_new_files.p50",
+      "unit": "ms",
+      "value": 13.5871
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.cold_new_files.p95",
+      "unit": "ms",
+      "value": 23.8266
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.4seg.cold_new_files.p99",
+      "unit": "ms",
+      "value": 26.451999999999998
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.warm.p50",
+      "unit": "ms",
+      "value": 11.8266
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.warm.p95",
+      "unit": "ms",
+      "value": 34.768
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.warm.p99",
+      "unit": "ms",
+      "value": 50.4651
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.cold.p50",
+      "unit": "ms",
+      "value": 29.9571
+    },
+    {
+      "gate": 60.0,
+      "name": "nvme.m3.open.8seg.cold.p95",
+      "unit": "ms",
+      "value": 63.3972
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.cold.p99",
+      "unit": "ms",
+      "value": 90.8405
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.cold_new_files.p50",
+      "unit": "ms",
+      "value": 17.6493
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.cold_new_files.p95",
+      "unit": "ms",
+      "value": 38.9045
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.8seg.cold_new_files.p99",
+      "unit": "ms",
+      "value": 119.4317
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.parse_page_json.p50",
+      "unit": "ms",
+      "value": 1.563
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.parse_page_json.p95",
+      "unit": "ms",
+      "value": 2.3471
+    },
+    {
+      "gate": null,
+      "name": "nvme.m3.open.parse_page_json.p99",
+      "unit": "ms",
+      "value": 2.4778000000000002
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.1k.p50",
+      "unit": "ms",
+      "value": 4.7728
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.1k.p95",
+      "unit": "ms",
+      "value": 6.0912
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.1k.p99",
+      "unit": "ms",
+      "value": 9.2614
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.200k.p50",
+      "unit": "ms",
+      "value": 6.4981
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.200k.p95",
+      "unit": "ms",
+      "value": 13.5469
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.200k.p99",
+      "unit": "ms",
+      "value": 16.4988
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.4m.p50",
+      "unit": "ms",
+      "value": 14.839599999999999
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.4m.p95",
+      "unit": "ms",
+      "value": 17.858999999999998
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.replace_durable.4m.p99",
+      "unit": "ms",
+      "value": 18.003899999999998
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_durable.2k.p50",
+      "unit": "ms",
+      "value": 6.5100999999999996
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_durable.2k.p95",
+      "unit": "ms",
+      "value": 9.941099999999999
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_durable.2k.p99",
+      "unit": "ms",
+      "value": 11.566099999999999
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_durable.1m.p50",
+      "unit": "ms",
+      "value": 8.2179
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_durable.1m.p95",
+      "unit": "ms",
+      "value": 13.559
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_durable.1m.p99",
+      "unit": "ms",
+      "value": 14.6892
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.write_derived.100k.p50",
+      "unit": "ms",
+      "value": 3.7979
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.write_derived.100k.p95",
+      "unit": "ms",
+      "value": 4.9283
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.write_derived.100k.p99",
+      "unit": "ms",
+      "value": 7.9366
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_dir_durable.p50",
+      "unit": "ms",
+      "value": 1.0067
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_dir_durable.p95",
+      "unit": "ms",
+      "value": 1.5081
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.create_dir_durable.p99",
+      "unit": "ms",
+      "value": 2.005
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.rename_dir.p50",
+      "unit": "ms",
+      "value": 7.9327000000000005
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.rename_dir.p95",
+      "unit": "ms",
+      "value": 10.5664
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.rename_dir.p99",
+      "unit": "ms",
+      "value": 11.653699999999999
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.journal.append_sync.200b.p50",
+      "unit": "ms",
+      "value": 1.0985
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.journal.append_sync.200b.p95",
+      "unit": "ms",
+      "value": 2.8933
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.journal.append_sync.200b.p99",
+      "unit": "ms",
+      "value": 4.829
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.metadata.p50",
+      "unit": "ms",
+      "value": 0.1216
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.metadata.p95",
+      "unit": "ms",
+      "value": 0.1706
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.metadata.p99",
+      "unit": "ms",
+      "value": 0.24489999999999998
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.read.200k.warm.p50",
+      "unit": "ms",
+      "value": 0.2686
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.read.200k.warm.p95",
+      "unit": "ms",
+      "value": 0.45790000000000003
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.read.200k.warm.p99",
+      "unit": "ms",
+      "value": 0.5693
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.save.one_stroke.commit.p50",
+      "unit": "ms",
+      "value": 15.061
+    },
+    {
+      "gate": 25.0,
+      "name": "nvme.m5.save.one_stroke.commit.p95",
+      "unit": "ms",
+      "value": 23.4281
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.save.one_stroke.commit.p99",
+      "unit": "ms",
+      "value": 27.9224
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.save.one_stroke.full.p50",
+      "unit": "ms",
+      "value": 19.1858
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.save.one_stroke.full.p95",
+      "unit": "ms",
+      "value": 27.9898
+    },
+    {
+      "gate": null,
+      "name": "nvme.m5.save.one_stroke.full.p99",
+      "unit": "ms",
+      "value": 32.5289
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.probe.posix_by_handle",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.probe.flush_folder_ok",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rwd.replace_ok",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rwd.holder_kept_old",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rwd.remove_ok",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rwd.rename_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rwd.remove_folder_ok",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rw.replace_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rw.holder_kept_old",
+      "unit": "bool",
+      "value": 1.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rw.remove_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rw.rename_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    },
+    {
+      "gate": null,
+      "name": "nvme.m6.held_rw.remove_folder_ok",
+      "unit": "bool",
+      "value": 0.0
+    }
+  ]
+}

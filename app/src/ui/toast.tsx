@@ -1,16 +1,26 @@
 // Toasts (ARCHITECTURE.md section 15.5): bottom center, one at a time, in an always-present "Notifications"
-// status region. Toasts with an action stay until dismissed; the rest close after 6 seconds. Toasts never take
-// focus. WP4 adds pausing, Escape, motion, and the toast height for scroll padding.
+// status region, so a screen reader reads each toast politely and F6 reaches it. Toasts with an action stay
+// until dismissed or replaced; the rest close after 6 seconds, and the timer waits while the pointer or focus is
+// on the toast. Escape on a focused toast dismisses it. Toasts never take focus: a press on one doesn't move it.
+//
+// A toast with an id replaces the toast with the same id, so a repeated gesture updates one toast.
 
-import { useEffect } from 'react';
+import { useRef } from 'react';
+import type { KeyboardEvent, RefCallback } from 'react';
+import { hasModalLayer } from '../state/layers';
 import { dismissToast, enqueueToast, toastStore } from '../state/toasts';
+import type { ToastItem } from '../state/toasts';
 import { useStore } from '../state/store';
 import { t } from '../strings/t';
-import { tokens } from '../theme/tokens';
-import { announce } from './announce';
-import styles from './controls.module.css';
+import { announce, recordAnnouncement } from './announce';
+import { Button } from './Button';
+import styles from './Toast.module.css';
+import { useAutoDismiss, usePause, useReturnFocus, useToastClearance } from './toastHooks';
+import { VisuallyHidden } from './VisuallyHidden';
 
 export interface ToastSpec {
+  /** Replaces the showing or waiting toast with this id instead of queueing another. */
+  id?: string;
   message: string;
   /** Spoken instead of the message, for example with the way to undo. */
   announce?: string;
@@ -20,40 +30,78 @@ export interface ToastSpec {
 
 export function showToast(spec: ToastSpec): { dismiss(): void } {
   const item = enqueueToast(spec);
-  if (spec.announce) announce(spec.announce);
+  const spoken = spec.announce ?? spec.message;
+  // The Notifications region says it, unless a dialog has made the region inert: then the announcer does.
+  if (hasModalLayer()) announce(spoken);
+  else recordAnnouncement(spoken);
   return { dismiss: () => dismissToast(item.key) };
 }
 
-/** The Notifications region with the current toast. The app renders it once. */
-export function Toaster() {
-  const current = useStore(toastStore, (state) => state.current);
-  useEffect(() => {
-    if (!current || current.action) return;
-    const timer = setTimeout(() => dismissToast(current.key), tokens.interaction.toastMs);
-    return () => clearTimeout(timer);
-  }, [current]);
+function ToastCard({ item }: { item: ToastItem }) {
+  const stage = useRef<HTMLDivElement>(null);
+  const card = useRef<HTMLDivElement>(null);
+  const { paused, handlers } = usePause();
+  useAutoDismiss(item, paused);
+  useToastClearance(stage);
+  useReturnFocus(card);
+  const spoken = item.announce && item.announce !== item.message ? item.announce : undefined;
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    dismissToast(item.key);
+  };
+  const run = () => {
+    dismissToast(item.key);
+    void item.action?.run();
+  };
   return (
-    <div role="status" aria-label={t('common.notifications')} data-region="notifications" className={styles.toasts}>
-      {current && (
-        <div className={styles.toast} data-tone={current.tone ?? 'neutral'}>
-          <span>{current.message}</span>
-          {current.action && (
-            <button
-              type="button"
-              className={styles.quiet}
-              onClick={() => {
-                dismissToast(current.key);
-                void current.action?.run();
-              }}
-            >
-              {current.action.label}
-            </button>
+    <div ref={stage} className={styles.stage}>
+      <div
+        ref={card}
+        className={styles.toast}
+        data-tone={item.tone ?? 'neutral'}
+        onKeyDown={onKeyDown}
+        // Keeps a press on the toast from moving focus to it.
+        onMouseDown={(event) => event.preventDefault()}
+        {...handlers}
+      >
+        <span className={styles.message} aria-hidden={spoken ? true : undefined}>
+          {item.message}
+        </span>
+        {spoken && <VisuallyHidden>{spoken}</VisuallyHidden>}
+        <div className={styles.actions}>
+          {item.action && (
+            <Button variant="quiet" onClick={run}>
+              {item.action.label}
+            </Button>
           )}
-          <button type="button" className={styles.quiet} onClick={() => dismissToast(current.key)}>
+          <Button variant="quiet" onClick={() => dismissToast(item.key)}>
             {t('common.close')}
-          </button>
+          </Button>
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+export interface ToasterProps {
+  /** The shell's region registration (useRegion('notifications')), which lets F6 reach the region. */
+  region?: { ref: RefCallback<HTMLElement>; 'data-region': string };
+}
+
+/** The Notifications region with the current toast. The app renders it once. */
+export function Toaster({ region }: ToasterProps) {
+  const current = useStore(toastStore, (state) => state.current);
+  return (
+    <div
+      ref={region?.ref}
+      role="status"
+      aria-label={t('common.notifications')}
+      aria-atomic="false"
+      data-region={region?.['data-region'] ?? 'notifications'}
+      className={styles.region}
+    >
+      {current && <ToastCard key={current.key} item={current} />}
     </div>
   );
 }

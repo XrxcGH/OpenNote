@@ -1,14 +1,19 @@
 // Keeps Tab inside an overlay (contain), focuses its first control (autoFocus), and returns focus when it closes
 // (restoreFocus). Without containment, tabbing past the last element would move focus to the host window.
 
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import styles from './controls.module.css';
+import { tabbables } from './tabbable';
 
-const TABBABLE = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex="0"]';
+export { tabbables } from './tabbable';
 
-export function tabbables(root: HTMLElement): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>(TABBABLE)].filter((element) => !element.closest('[inert]'));
+/** The element Tab or Shift+Tab should wrap to, or null when the browser's own move stays inside. */
+export function wrapTarget(items: readonly HTMLElement[], active: Element | null, back: boolean): HTMLElement | null {
+  if (items.length === 0) return null;
+  const index = items.indexOf(active as HTMLElement);
+  if (back && index <= 0) return items[items.length - 1];
+  if (!back && (index === -1 || index === items.length - 1)) return items[0];
+  return null;
 }
 
 export function FocusScope(props: {
@@ -19,28 +24,24 @@ export function FocusScope(props: {
 }) {
   const { contain, restoreFocus, autoFocus, children } = props;
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    if (autoFocus && ref.current) tabbables(ref.current)[0]?.focus();
+    const scope = ref.current;
+    if (autoFocus && scope) tabbables(scope)[0]?.focus();
     return () => {
-      if (restoreFocus && previous?.isConnected) previous.focus();
+      const inside = scope?.contains(document.activeElement) || document.activeElement === document.body;
+      if (restoreFocus && inside && previous?.isConnected) previous.focus();
     };
   }, [autoFocus, restoreFocus]);
   const onKeyDown = (event: KeyboardEvent) => {
-    if (!contain || event.key !== 'Tab' || !ref.current) return;
-    const items = tabbables(ref.current);
-    if (items.length === 0) return;
-    const [first, last] = [items[0], items[items.length - 1]];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    if (!contain || event.key !== 'Tab' || event.ctrlKey || event.altKey || !ref.current) return;
+    const target = wrapTarget(tabbables(ref.current), document.activeElement, event.shiftKey);
+    if (!target) return;
+    event.preventDefault();
+    target.focus();
   };
   return (
-    <div ref={ref} className={styles.scope} onKeyDown={onKeyDown}>
+    <div ref={ref} style={{ display: 'contents' }} onKeyDown={onKeyDown}>
       {children}
     </div>
   );

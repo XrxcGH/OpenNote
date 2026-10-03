@@ -1,4 +1,5 @@
-// The eight extension points (ARCHITECTURE.md section 7.1). Features register into them from register.ts.
+// The extension points (ARCHITECTURE.md section 7.1), plus the page created hooks (amendment P2-8). Features
+// register into them from register.ts.
 
 import type { CommandDef } from '../commands/types';
 import { createRegistry } from './registry';
@@ -6,9 +7,11 @@ import type {
   BeforeExitHook,
   CommandBarItem,
   ContextMenuItem,
+  PageCreatedHook,
   PaletteProvider,
   SettingsSectionDef,
   SetupStepDef,
+  ShortcutListSectionDef,
   TitleBarItemDef,
 } from './types';
 
@@ -26,3 +29,7 @@ export const setupSteps = createRegistry<SetupStepDef>('setup steps');
 export const titleBarItems = createRegistry<TitleBarItemDef>('title bar items');
 export const paletteProviders = createRegistry<PaletteProvider>('palette providers');
 export const beforeExit = createRegistry<BeforeExitHook>('before-exit hooks');
+/** Phase 4 amendment P2-8: hooks that notes.newPage and notes.newSubpage run after creating a page. */
+export const pageCreated = createRegistry<PageCreatedHook>('page created hooks');
+/** Tables that later phases add to the keyboard shortcut list (AMENDMENTS.md, Phase 5 P2-5). */
+export const shortcutListSections = createRegistry<ShortcutListSectionDef>('shortcut list sections');

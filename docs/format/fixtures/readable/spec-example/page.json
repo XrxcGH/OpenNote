@@ -1,0 +1,130 @@
+{
+  "formatVersion": 1,
+  "minReaderVersion": 1,
+  "kind": "opennote.page",
+  "id": "01m3sa12426sg32pmtyffjaqcf",
+  "title": "Photosynthesis",
+  "created": "2026-09-30T14:03:22.114Z",
+  "modified": "2026-09-30T14:07:40.412Z",
+  "tags": ["biology", "exam/unit-3"],
+  "view": {
+    "mode": "paginated",
+    "paper": {
+      "size": "a4",
+      "width": 793.7,
+      "height": 1122.52
+    },
+    "background": {
+      "pattern": "ruled"
+    }
+  },
+  "blocks": [
+    {
+      "id": "01m3sa14y9zszek1wdk3snddsn",
+      "type": "text",
+      "order": "a0",
+      "frame": {
+        "x": 96,
+        "y": 120,
+        "w": 624
+      },
+      "created": "2026-09-30T14:03:25.001Z",
+      "modified": "2026-09-30T14:05:40.020Z",
+      "data": {
+        "markdown": "## Light reactions\n\nThe **thylakoid** membrane holds ==chlorophyll a== and splits water into O<sub>2</sub>.\n\n> [!tip] Exam hint\n> Learn the Z-scheme diagram.\n\n- [x] Read chapter 8\n- [ ] Lab write-up"
+      }
+    },
+    {
+      "id": "01m3sa43z6vy2m3w1j4qw8y09j",
+      "type": "image",
+      "order": "a1",
+      "frame": {
+        "x": 760,
+        "y": 140,
+        "w": 320,
+        "h": 240
+      },
+      "lock": "position",
+      "created": "2026-09-30T14:05:02.310Z",
+      "modified": "2026-09-30T14:05:02.310Z",
+      "data": {
+        "asset": "01m3sa43z1tp9rdr5e8df2jbxy",
+        "alt": "Cross-section of a leaf"
+      }
+    },
+    {
+      "id": "01m3sa1242ayy4avvsz3yx5gxj",
+      "type": "ink",
+      "order": "a2",
+      "frame": {
+        "x": 0,
+        "y": 0
+      },
+      "created": "2026-09-30T14:03:22.114Z",
+      "modified": "2026-09-30T14:07:40.412Z",
+      "data": {
+        "role": "layer",
+        "strokeCount": 215
+      }
+    },
+    {
+      "id": "01m3sa5x98mzky5xcv2a5xp2n6",
+      "type": "ext:org.example/kanban",
+      "order": "a3",
+      "frame": {
+        "x": 96,
+        "y": 900,
+        "w": 600,
+        "h": 300
+      },
+      "created": "2026-09-30T14:06:01.000Z",
+      "modified": "2026-09-30T14:06:30.000Z",
+      "data": {
+        "cards": 7,
+        "columns": ["To do", "Done"]
+      },
+      "fallback": {
+        "markdown": "**Kanban board**: 2 columns, 7 cards"
+      }
+    }
+  ],
+  "assets": {
+    "01m3sa43z1tp9rdr5e8df2jbxy": {
+      "file": "01m3sa43z1tp9rdr5e8df2jbxy-leaf-section.png",
+      "mime": "image/png",
+      "bytes": 482113,
+      "sha256": "5f2b8e1c9d7a4b3e6f0a1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f",
+      "name": "Leaf section.png",
+      "width": 1600,
+      "height": 1200,
+      "created": "2026-09-30T14:05:02.305Z"
+    }
+  },
+  "ink": {
+    "segments": [
+      {
+        "id": "01m3sa81n2n6c32zjexe5yq0r5",
+        "bytes": 151822,
+        "records": 214,
+        "crc32": "9a3b1c2d"
+      },
+      {
+        "id": "01m3sa8yempcnn2qgrtvppsafr",
+        "bytes": 176,
+        "records": 1,
+        "crc32": "c445a2a0"
+      }
+    ]
+  },
+  "revision": {
+    "id": "01m3sa8yf8bryf28a7sjgb7mmc",
+    "parents": ["01m3sa81nc71kgdfrzdejhbngd"],
+    "ancestors": ["01m3sa81nc71kgdfrzdejhbngd", "01m3sa6634zkpfshkpzzrzbmav"],
+    "savedAt": "2026-09-30T14:07:40.520Z",
+    "device": {
+      "id": "01m1e34qm04rx4vfj1927vgwgm",
+      "label": "Windows device GWGM"
+    },
+    "writer": "OpenNote 0.4.0 (windows)"
+  }
+}

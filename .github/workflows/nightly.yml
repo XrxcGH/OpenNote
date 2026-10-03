@@ -2,7 +2,7 @@ name: nightly
 
 # The nightly run (ARCHITECTURE.md section 21.10). This skeleton builds the app with the test endpoints and runs
 # every E2E spec. WP1 grows it with the other architectures, 200% text, start-up baselines, and the frame probe;
-# WP2 adds the updater specs, and WP4 the NVDA canary. A failure opens an issue, as DEVELOPMENT.md section 8
+# WP2 adds the updater specs, and WP4 the NVDA canary. A failure opens an issue, as docs/DEVELOPMENT.md section 8
 # requires.
 
 on:

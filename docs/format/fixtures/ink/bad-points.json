@@ -1,0 +1,52 @@
+{
+  "description": "A stroke whose points don't match its bounding box.",
+  "expect": {
+    "bytes": 368,
+    "crc32": "65f2a177",
+    "id": "01m3sawfy8000000000006sqsc",
+    "records": 2
+  },
+  "file": "bad-points.onk",
+  "page": "01m3sa12426sg32pmtyffjaqcf",
+  "result": {
+    "damaged": [
+      {
+        "index": 1,
+        "offset": 168,
+        "reason": "points",
+        "stroke": "01m3sawhwr000000000006t78a"
+      }
+    ],
+    "footerOk": true,
+    "header": {
+      "created": 1790777260500,
+      "id": "01m3sawfy8000000000006sqsc",
+      "page": "01m3sa12426sg32pmtyffjaqcf"
+    },
+    "records": [
+      {
+        "bbox": [640, 1280, 720, 1440],
+        "block": "01m3sa1242ayy4avvsz3yx5gxj",
+        "channels": 5,
+        "id": "01m3sa8wb93eknedj0qexh7af2",
+        "kind": "stroke",
+        "origin": null,
+        "points": [
+          [640, 1280, 32768, 0, 0, 0],
+          [672, 1344, 34078, 0, 0, 42],
+          [720, 1440, 36044, 0, 0, 83]
+        ],
+        "start": 1790777258345,
+        "startUnknown": false,
+        "style": {
+          "color": [43, 37, 33, 255],
+          "palette": 1,
+          "tool": 0,
+          "width": 2.0
+        },
+        "transform": null
+      }
+    ],
+    "unknownRecords": 0
+  }
+}

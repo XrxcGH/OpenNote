@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import type { ConfigEnv, UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { phosphorWeights } from './scripts/phosphor-weights.ts';
 
 export type PlatformKind = 'tauri' | 'web';
 
@@ -22,7 +23,7 @@ export function viteConfig(env: Pick<ConfigEnv, 'mode' | 'command'>): UserConfig
   const platform = platformFor(env);
   return {
     root: import.meta.dirname,
-    plugins: [react()],
+    plugins: [react(), phosphorWeights()],
     clearScreen: false,
     define: { 'import.meta.env.VITE_PLATFORM': JSON.stringify(platform) },
     // Tauri expects a fixed dev server port and serves the built files from app/dist.

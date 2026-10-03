@@ -1,7 +1,6 @@
 // The first E2E smoke spec: the real app starts in a fresh profile, shows the dark mode switch, and Ctrl+Shift+D
 // switches the theme, with the keyboard alone.
 
-import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { Key } from 'webdriverio';
 import { launchApp, skipReason } from '../harness.ts';
@@ -25,7 +24,14 @@ describe('the app starts', { skip: skipReason() }, () => {
     const before = await toggle.getAttribute('aria-checked');
     await browser.action('key').down(Key.Ctrl).down(Key.Shift).down('d').up('d').up(Key.Shift).up(Key.Ctrl).perform();
     await browser.waitUntil(async () => (await toggle.getAttribute('aria-checked')) !== before, { timeout: 5_000 });
-    const theme = await browser.execute(() => document.documentElement.dataset.theme ?? null);
-    assert.equal(theme, before === 'true' ? 'light' : 'dark');
+    // The switch changes at once, and the theme follows when the crossfade starts, so wait for it.
+    const expected = before === 'true' ? 'light' : 'dark';
+    await browser.waitUntil(
+      async () => (await browser.execute(() => document.documentElement.dataset.theme)) === expected,
+      {
+        timeout: 5_000,
+        timeoutMsg: `the page never showed the ${expected} theme`,
+      },
+    );
   });
 });

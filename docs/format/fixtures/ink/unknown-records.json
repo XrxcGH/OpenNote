@@ -1,0 +1,22 @@
+{
+  "description": "A stroke with flag bit 6 and a record of kind 4: kept, not shown.",
+  "expect": {
+    "bytes": 204,
+    "crc32": "32e321a2",
+    "id": "01m3sawfy8000000000006sqsc",
+    "records": 2
+  },
+  "file": "unknown-records.onk",
+  "page": "01m3sa12426sg32pmtyffjaqcf",
+  "result": {
+    "damaged": [],
+    "footerOk": true,
+    "header": {
+      "created": 1790777260500,
+      "id": "01m3sawfy8000000000006sqsc",
+      "page": "01m3sa12426sg32pmtyffjaqcf"
+    },
+    "records": [],
+    "unknownRecords": 2
+  }
+}

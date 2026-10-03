@@ -1,0 +1,109 @@
+# Fuzz targets for opennote-core (plan 13.3). Run one with `cargo +nightly fuzz run <target>` from
+# crates/core. Each target calls an entry function in `opennote_core::fuzzing`, which an ordinary test also
+# runs on the corpus and on past crashes with stable Rust.
+
+[package]
+name = "opennote-core-fuzz"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+arbitrary = { version = "1.4.2", features = ["derive"] }
+libfuzzer-sys = "0.4.13"
+opennote-core = { path = "..", features = ["fuzzing"] }
+
+# Fuzzing needs a nightly toolchain, so this crate is its own workspace.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "page_json"
+path = "fuzz_targets/page_json.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "section_json"
+path = "fuzz_targets/section_json.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "notebook_json"
+path = "fuzz_targets/notebook_json.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "trash_item"
+path = "fuzz_targets/trash_item.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "versions"
+path = "fuzz_targets/versions.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "segment"
+path = "fuzz_targets/segment.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "records"
+path = "fuzz_targets/records.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "readable"
+path = "fuzz_targets/readable.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "migrate"
+path = "fuzz_targets/migrate.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "txn_request"
+path = "fuzz_targets/txn_request.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "journal"
+path = "fuzz_targets/journal.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "notebook_tree"
+path = "fuzz_targets/notebook_tree.rs"
+test = false
+doc = false
+bench = false

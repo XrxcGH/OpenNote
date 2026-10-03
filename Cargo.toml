@@ -1,5 +1,15 @@
 [workspace]
-members = ["app/src-tauri", "crates/updater", "spikes/harness", "tests/perf/frame-probe"]
+members = [
+  "app/src-tauri",
+  "crates/core",
+  "crates/updater",
+  "spikes/harness",
+  "tests/crash",
+  "tests/perf/core",
+  "tests/perf/frame-probe",
+]
+# The fuzz crate needs a nightly toolchain, so it stays out of the workspace.
+exclude = ["crates/core/fuzz"]
 resolver = "2"
 
 # Versions the app and the updater crate share, so both always build against the same ones.
@@ -21,9 +31,25 @@ panic = "abort"
 strip = true
 
 # The Phase 1 spikes: optimized, but without the slow link-time optimization of a release build.
+# The document core opens, saves, and recovers every page, so it is optimized for speed rather than size. On
+# the budget page of plan 13.9 this made each step of opening, saving, and recovery 12 to 24% faster.
+[profile.release.package.opennote-core]
+opt-level = 3
+
 [profile.spikes]
 inherits = "release"
 codegen-units = 16
+lto = false
+panic = "unwind"
+strip = false
+
+# The benchmarks in tests/perf and the measurements and kill harness in tests/crash. They are optimized like a
+# release build, so their times mean something. Link-time optimization is off, to build faster, and line tables
+# let a profiler name the hot functions. `cargo perf` and `cargo crashtest` (.cargo/config.toml) build this way.
+[profile.perf]
+inherits = "release"
+codegen-units = 16
+debug = "line-tables-only"
 lto = false
 panic = "unwind"
 strip = false

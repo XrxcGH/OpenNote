@@ -1,6 +1,6 @@
 # Phase 1 spikes
 
-These are the four throwaway experiments from [Phase 1 of the development plan](../DEVELOPMENT.md#phase-1-spikes). Each one answers a risky question with measurements before real code depends on the answer. The results feed the architecture decision records (ADRs) in [docs/adr](../docs/adr/README.md).
+These are the four throwaway experiments from [Phase 1 of the development plan](../docs/DEVELOPMENT.md#phase-1-spikes). Each one answers a risky question with measurements before real code depends on the answer. The results feed the architecture decision records (ADRs) in [docs/adr](../docs/adr/README.md).
 
 | Spike | Question | Answer | Decision |
 |---|---|---|---|

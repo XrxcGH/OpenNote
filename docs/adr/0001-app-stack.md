@@ -5,13 +5,13 @@
 
 ## Context
 
-OpenNote ships on Windows first. Later it must run on macOS, Linux, iOS, and Android, on screens from phones to wide monitors. The app stack decides how much code carries over to each platform, and it's the hardest choice to undo. The [research](../../RESEARCH.md#11-cross-platform--multi-screen-implications) compares the options, and the [development plan](../../DEVELOPMENT.md#2-technology-choices) lists the chosen tools.
+OpenNote ships on Windows first. Later it must run on macOS, Linux, iOS, and Android, on screens from phones to wide monitors. The app stack decides how much code carries over to each platform, and it's the hardest choice to undo. The [research](../RESEARCH.md#11-cross-platform--multi-screen-implications) compares the options, and the [development plan](../DEVELOPMENT.md#2-technology-choices) lists the chosen tools.
 
 The stack must provide:
 
 - One codebase for the interface and the core logic on every platform, so a port means new adapters, not a rewrite
 - A small download and low memory use: one `OpenNote.exe` of about 15 to 30 MB, and under 400 MB of memory with a 1,000-page notebook open
-- Pen input with pressure and tilt, drawn within 25 ms end to end, as the [performance budgets](../../BRAND.md#10-comfort-and-performance-budgets) require
+- Pen input with pressure and tilt, drawn within 25 ms end to end, as the [performance budgets](../BRAND.md#10-comfort-and-performance-budgets) require
 - A shared, portable core for the document model, storage, search, audio, and import, which the research suggests writing in Rust or C++
 - A large pool of contributors and ready-made components, such as a rich text editor
 
@@ -25,7 +25,7 @@ We will build OpenNote with:
 
 Platform-specific features, such as pen input, audio capture, and optical character recognition (OCR), sit behind small Rust or TypeScript interfaces.
 
-The decision stands only if ink passes the Phase 1 latency spike. If ink in WebView2 misses the 25 ms budget and can't be fixed, a new architecture decision record (ADR) switches the interface to Flutter before Phase 2. Each spike's result is recorded in an ADR, as [Phase 1](../../DEVELOPMENT.md#phase-1-spikes) requires.
+The decision stands only if ink passes the Phase 1 latency spike. If ink in WebView2 misses the 25 ms budget and can't be fixed, a new architecture decision record (ADR) switches the interface to Flutter before Phase 2. Each spike's result is recorded in an ADR, as [Phase 1](../DEVELOPMENT.md#phase-1-spikes) requires.
 
 ## Options considered
 

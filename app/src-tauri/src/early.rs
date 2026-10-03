@@ -8,8 +8,10 @@
 
 use crate::{
     args::{self, Args},
+    boot,
     instance::{self, InstanceGuard, InstanceOutcome},
     paths::{Paths, PROFILE_DIR_VAR},
+    perf,
     updater::{self, GuardOutcome},
     window::webview::{self, RuntimeCheck},
 };
@@ -32,6 +34,8 @@ pub struct EarlyContext {
     pub paths: Paths,
     pub instance: InstanceGuard,
     pub guard: GuardOutcome,
+    /// The installed WebView2 Runtime's version, for the boot payload.
+    pub webview2_version: String,
 }
 
 /// The early steps, one method each.
@@ -53,11 +57,17 @@ impl Steps for System {
     }
 
     fn wait_for_exit(&self, pid: u32) {
-        args::wait_for_exit(pid, args::WAIT_PID_TIMEOUT);
+        let _ = args::wait_for_exit(pid, args::WAIT_PID_TIMEOUT);
     }
 
     fn resolve_paths(&self) -> std::io::Result<Paths> {
-        Paths::resolve(std::env::var_os(PROFILE_DIR_VAR).map(Into::into))
+        let paths = Paths::resolve(std::env::var_os(PROFILE_DIR_VAR).map(Into::into))?;
+        // Logging starts as soon as it has a folder, so the steps after this one are on record.
+        let profile = std::env::var_os("USERPROFILE")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_default();
+        crate::log::init(&paths.logs, &profile);
+        Ok(paths)
     }
 
     fn acquire_instance(&self, paths: &Paths, args: &Args) -> InstanceOutcome {
@@ -69,12 +79,17 @@ impl Steps for System {
     }
 
     fn check_webview(&self) -> RuntimeCheck {
-        webview::check_runtime()
+        let check = webview::check_runtime();
+        webview::show_runtime_message(&check);
+        check
     }
 }
 
 /// Runs the early steps for this process.
 pub fn run() -> EarlyOutcome {
+    perf::init();
+    perf::mark_at("processCreated", boot::process_start_epoch_ms(), None);
+    perf::mark("mainEntered", None);
     // Logging the marker also keeps it in test-endpoints exes, where the release build job looks for it.
     if let Some(marker) = updater::TEST_ENDPOINTS_MARKER {
         log::warn!("{marker}: this build accepts test update endpoints and a test key.");
@@ -98,19 +113,21 @@ pub fn run_with(steps: &impl Steps) -> EarlyOutcome {
     let instance = match steps.acquire_instance(&paths, &args) {
         InstanceOutcome::Owner(guard) => guard,
         InstanceOutcome::Forwarded => return EarlyOutcome::Exit(0),
+        InstanceOutcome::Unavailable => return EarlyOutcome::Exit(EXIT_FAILURE),
     };
     let guard = steps.guard(&paths);
     if guard == GuardOutcome::Relaunched {
         return EarlyOutcome::Exit(0);
     }
-    if steps.check_webview() != RuntimeCheck::Supported {
+    let RuntimeCheck::Supported { version } = steps.check_webview() else {
         return EarlyOutcome::Exit(EXIT_FAILURE);
-    }
+    };
     EarlyOutcome::Continue(EarlyContext {
         args,
         paths,
         instance,
         guard,
+        webview2_version: version,
     })
 }
 
@@ -138,7 +155,9 @@ mod tests {
                 paths_fail: false,
                 forwarded: false,
                 guard: GuardOutcome::Continue { counted_attempt: None },
-                webview: RuntimeCheck::Supported,
+                webview: RuntimeCheck::Supported {
+                    version: "141.0.0.0".into(),
+                },
             }
         }
     }

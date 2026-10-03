@@ -5,9 +5,9 @@
 
 ## Context
 
-[Phase 4](../../DEVELOPMENT.md#phase-4-typed-notes) builds OneNote-style text containers that sit anywhere on a page. Its gate is typing within 16 ms on the reference laptop with a 20-page note. The [budgets in BRAND.md](../../BRAND.md#10-comfort-and-performance-budgets) also ask for 60 frames per second (120 on fast screens) while zooming and panning, with never two dropped frames in a row. A typical page holds 5,000 ink strokes.
+[Phase 4](../DEVELOPMENT.md#phase-4-typed-notes) builds OneNote-style text containers that sit anywhere on a page. Its gate is typing within 16 ms on the reference laptop with a 20-page note. The [budgets in BRAND.md](../BRAND.md#10-comfort-and-performance-budgets) also ask for 60 frames per second (120 on fast screens) while zooming and panning, with never two dropped frames in a row. A typical page holds 5,000 ink strokes.
 
-[Phase 1](../../DEVELOPMENT.md#phase-1-spikes) asks whether several Tiptap editors on a zoomable canvas, mixed with ink, meet those budgets in WebView2. This architecture decision record (ADR) answers with measurements from the spike in `spikes/web/text*.ts` and `spikes/harness/src/text/`, stored in `spikes/results/text.json`.
+[Phase 1](../DEVELOPMENT.md#phase-1-spikes) asks whether several Tiptap editors on a zoomable canvas, mixed with ink, meet those budgets in WebView2. This architecture decision record (ADR) answers with measurements from the spike in `spikes/web/text*.ts` and `spikes/harness/src/text/`, stored in `spikes/results/text.json`.
 
 ## Decision
 
@@ -20,7 +20,7 @@ This holds only with three rules, which the numbers below show are needed, and o
 3. During a zoom or pan gesture, the world gets `will-change: transform`, removed when the gesture ends so the text is drawn sharp again.
 4. Editors off screen stay mounted. This default is untested: the spike had at most eight editors and never unmounted them. Creating the eight took 59 ms, about 2 ms each after the first two, so 50 would fill the 150 ms page-open budget. Phase 4 sets the limit on the reference laptop.
 
-Phase 4's typing benchmark should gate on this spike's in-page measure: 95th percentile at most 16 ms from keydown to the end of rendering. That is looser than BRAND.md's "a key press shows within 16 ms", which no setup met on screen. The benchmark should also report the screen measure. It confirms the slow 20-page note and the `contain: paint` fix, so the rules still hold.
+Phase 4's typing benchmark should gate on this spike's in-page measure: 95th percentile at most 16 ms from keydown to the end of rendering. That is looser than the rule "a key press shows within 16 ms" in [BRAND.md](../BRAND.md#10-comfort-and-performance-budgets), which no setup met on screen. The benchmark should also report the screen measure. It confirms the slow 20-page note and the `contain: paint` fix, so the rules still hold.
 
 ## Measurements
 

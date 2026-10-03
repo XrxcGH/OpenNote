@@ -5,9 +5,9 @@
 
 ## Context
 
-Phase 6 of the [development plan](../../DEVELOPMENT.md#phase-6-page-views-and-export) adds a paginated view and promises print and PDF export that match it exactly. Ink must stay vector graphics, and golden tests must compare exported PDFs with approved images. The [performance budgets](../../BRAND.md#10-comfort-and-performance-budgets) add a rule: export runs in the background and never blocks drawing or typing.
+Phase 6 of the [development plan](../DEVELOPMENT.md#phase-6-page-views-and-export) adds a paginated view and promises print and PDF export that match it exactly. Ink must stay vector graphics, and golden tests must compare exported PDFs with approved images. The [performance budgets](../BRAND.md#10-comfort-and-performance-budgets) add a rule: export runs in the background and never blocks drawing or typing.
 
-Tauri shows the interface in Microsoft Edge WebView2, which can print a page to PDF itself with `ICoreWebView2_7::PrintToPdf`. The [Phase 1](../../DEVELOPMENT.md#phase-1-spikes) spike asked whether that output matches the paginated page on screen. The spike code is in `spikes/`, and its results are in `spikes/results/pdf.json`.
+Tauri shows the interface in Microsoft Edge WebView2, which can print a page to PDF itself with `ICoreWebView2_7::PrintToPdf`. The [Phase 1](../DEVELOPMENT.md#phase-1-spikes) spike asked whether that output matches the paginated page on screen. The spike code is in `spikes/`, and its results are in `spikes/results/pdf.json`.
 
 ## Decision
 
@@ -95,7 +95,7 @@ Exporting from the hidden WebView kept the visible page's frame gaps at the idle
 - The paginated view and the PDF come from one layout, so page breaks, keep-together groups, and manual breaks land on the same pages.
 - Rules 1 and 2 need a lint or test in Phase 6, because one table with borders shifts every line below it.
 - Regression tests compare each exported page with its approved image from the same renderer. Screen tests fail when over 3% of ink is more than 1 pixel off, a tile moves over 2 pixels, or a page moves over 1 pixel. The adjusted pages pass, and the border bug fails all three. The thresholds sit just above A4 page 3 (2.6% of ink and a 2-pixel tile), so they leave little margin.
-- The Phase 6 test line in DEVELOPMENT.md, which says "pixel by pixel," needs the same change as rule 4.
+- The Phase 6 test line in [DEVELOPMENT.md](../DEVELOPMENT.md#phase-6-page-views-and-export), which says "pixel by pixel," needs the same change as rule 4.
 - CI needs a PDF renderer. Windows.Data.Pdf should run in a child process with a timeout, or PDFium should replace it.
 - Phase 6 follows up on the spike. It tests static fonts and checks their embedding and file size. It compares hidden-WebView PDFs with the visible sheets, and measures that WebView's memory and export time on the reference laptop. It adds line and row splitting to the paginator.
 - A person should print a page at 100% and measure it with a ruler. They should also open the PDFs in Acrobat, Edge, and a phone viewer to check text search and copy.

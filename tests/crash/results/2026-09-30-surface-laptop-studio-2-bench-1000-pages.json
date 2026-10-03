@@ -1,0 +1,240 @@
+{
+  "machine": "Surface Laptop Studio 2 (not the reference laptop)",
+  "reference_laptop": false,
+  "results": [
+    {
+      "name": "format.page_json.bytes.budget",
+      "unit": "KB",
+      "value": 227.4833984375,
+      "gate": null
+    },
+    {
+      "name": "format.page_json.write.budget.p95",
+      "unit": "ms",
+      "value": 9.961599999999999,
+      "gate": null
+    },
+    {
+      "name": "format.page_json.read.budget.p95",
+      "unit": "ms",
+      "value": 33.9392,
+      "gate": null
+    },
+    {
+      "name": "format.segment.bytes.5000_strokes",
+      "unit": "MB",
+      "value": 3.147160530090332,
+      "gate": null
+    },
+    {
+      "name": "format.segment.encode.5000_strokes.p95",
+      "unit": "ms",
+      "value": 266.8763,
+      "gate": null
+    },
+    {
+      "name": "format.segment.decode.5000_strokes.p95",
+      "unit": "ms",
+      "value": 1564.7244,
+      "gate": null
+    },
+    {
+      "name": "m2.decode_5000_strokes.rust.p50",
+      "unit": "ms",
+      "value": 181.3857,
+      "gate": null
+    },
+    {
+      "name": "m2.decode_5000_strokes.rust.p95",
+      "unit": "ms",
+      "value": 575.5077,
+      "gate": null
+    },
+    {
+      "name": "m2.bytes_per_point.surface_pen",
+      "unit": "B",
+      "value": 7.228416627558483,
+      "gate": 10.0
+    },
+    {
+      "name": "m2.bytes_per_point.surface_pen.with_records",
+      "unit": "B",
+      "value": 8.27130154520782,
+      "gate": null
+    },
+    {
+      "name": "m2.points_per_stroke.surface_pen",
+      "unit": "points",
+      "value": 80.5458,
+      "gate": null
+    },
+    {
+      "name": "m2.bytes_per_point.wacom",
+      "unit": "B",
+      "value": 7.395264280552242,
+      "gate": 10.0
+    },
+    {
+      "name": "m2.bytes_per_point.wacom.with_records",
+      "unit": "B",
+      "value": 8.445534725191736,
+      "gate": null
+    },
+    {
+      "name": "m2.points_per_stroke.wacom",
+      "unit": "points",
+      "value": 79.9794,
+      "gate": null
+    },
+    {
+      "name": "m2.bytes_per_point.fine_tilt",
+      "unit": "B",
+      "value": 7.1452701766234155,
+      "gate": 10.0
+    },
+    {
+      "name": "m2.bytes_per_point.fine_tilt.with_records",
+      "unit": "B",
+      "value": 8.203649898067953,
+      "gate": null
+    },
+    {
+      "name": "m2.points_per_stroke.fine_tilt",
+      "unit": "points",
+      "value": 79.3666,
+      "gate": null
+    },
+    {
+      "name": "ops.typing_batch.p99",
+      "unit": "ms",
+      "value": 0.0722,
+      "gate": 0.5
+    },
+    {
+      "name": "ops.typing_batch.p50",
+      "unit": "ms",
+      "value": 0.0139,
+      "gate": null
+    },
+    {
+      "name": "ops.stroke_500.p99",
+      "unit": "ms",
+      "value": 0.1237,
+      "gate": 2.0
+    },
+    {
+      "name": "ops.stroke_500.p50",
+      "unit": "ms",
+      "value": 0.0127,
+      "gate": null
+    },
+    {
+      "name": "ops.undo_step.p99",
+      "unit": "ms",
+      "value": 0.0467,
+      "gate": null
+    },
+    {
+      "name": "store.open.budget_page.p95",
+      "unit": "ms",
+      "value": 278.45029999999997,
+      "gate": 25.0
+    },
+    {
+      "name": "store.open.budget_page.p50",
+      "unit": "ms",
+      "value": 135.5797,
+      "gate": null
+    },
+    {
+      "name": "store.save.one_stroke.p95",
+      "unit": "ms",
+      "value": 1123.2277,
+      "gate": 25.0
+    },
+    {
+      "name": "store.save.one_stroke.p50",
+      "unit": "ms",
+      "value": 38.968799999999995,
+      "gate": null
+    },
+    {
+      "name": "store.save.base_snapshot.p95",
+      "unit": "ms",
+      "value": 3.7577000000000003,
+      "gate": null
+    },
+    {
+      "name": "store.journal.append_flush.p99",
+      "unit": "ms",
+      "value": 2.5221,
+      "gate": 30.0
+    },
+    {
+      "name": "store.journal.append_flush.p50",
+      "unit": "ms",
+      "value": 1.0562,
+      "gate": null
+    },
+    {
+      "name": "store.recovery.journal_4mib.max",
+      "unit": "ms",
+      "value": 987.2701000000001,
+      "gate": 100.0
+    },
+    {
+      "name": "open.notebook.warm.p95",
+      "unit": "ms",
+      "value": 38.400400000000005,
+      "gate": 50.0
+    },
+    {
+      "name": "open.notebook.cold.p95",
+      "unit": "ms",
+      "value": 17.3537,
+      "gate": 250.0
+    },
+    {
+      "name": "page_list.one_section.p95",
+      "unit": "ms",
+      "value": 7.0726,
+      "gate": 50.0
+    },
+    {
+      "name": "open.budget_page.core.warm.p95",
+      "unit": "ms",
+      "value": 1.9043,
+      "gate": 25.0
+    },
+    {
+      "name": "startup.path.warm.p95",
+      "unit": "ms",
+      "value": 38.4107,
+      "gate": 150.0
+    },
+    {
+      "name": "scan.after_unclean_exit.p95",
+      "unit": "ms",
+      "value": 259.5259,
+      "gate": 500.0
+    },
+    {
+      "name": "memory.core.all_pages_opened.delta",
+      "unit": "MB",
+      "value": 0.026201248168945312,
+      "gate": 64.0
+    },
+    {
+      "name": "memory.core.reopen_growth",
+      "unit": "percent",
+      "value": 0.0,
+      "gate": 10.0
+    },
+    {
+      "name": "memory.core.ten_budget_pages.delta",
+      "unit": "MB",
+      "value": 10.503215789794922,
+      "gate": 96.0
+    }
+  ]
+}

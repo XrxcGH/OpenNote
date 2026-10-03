@@ -1,0 +1,259 @@
+{
+  "cases": [
+    {
+      "name": "paragraph",
+      "markdown": "Plants make sugar from light.",
+      "document": [
+        {"type": "paragraph", "content": [{"text": "Plants make sugar from light.", "marks": []}]}
+      ]
+    },
+    {
+      "name": "heading and emphasis",
+      "markdown": "## Light reactions\n\nThe **thylakoid** membrane holds *water*.",
+      "document": [
+        {"type": "heading", "level": 2, "content": [{"text": "Light reactions", "marks": []}]},
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "The ", "marks": []},
+            {"text": "thylakoid", "marks": ["strong"]},
+            {"text": " membrane holds ", "marks": []},
+            {"text": "water", "marks": ["emphasis"]},
+            {"text": ".", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "highlights and subscripts",
+      "markdown": "Water splits into O<sub>2</sub> and ==energy==.",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "Water splits into O", "marks": []},
+            {"text": "2", "marks": ["sub"]},
+            {"text": " and ", "marks": []},
+            {"text": "energy", "marks": ["highlight"]},
+            {"text": ".", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "colors and sizes",
+      "markdown": "<span data-color=\"brick\">Warning</span> and <mark data-color=\"mint\">note</mark> and <span data-size=\"large\">big</span>",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "Warning", "marks": [{"color": "brick"}]},
+            {"text": " and ", "marks": []},
+            {"text": "note", "marks": [{"highlight": "mint"}]},
+            {"text": " and ", "marks": []},
+            {"text": "big", "marks": [{"size": "large"}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a delimiter that can't close",
+      "markdown": "a<strong>(b)</strong>c",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "a", "marks": []},
+            {"text": "(b)", "marks": ["strong"]},
+            {"text": "c", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "links and images",
+      "markdown": "See [Photosynthesis](opennote:page/01m3sa12426sg32pmtyffjaqcf) and ![Leaf](asset:01m3sa43z1tp9rdr5e8df2jbxy)",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "See ", "marks": []},
+            {"text": "Photosynthesis", "marks": [{"link": "opennote:page/01m3sa12426sg32pmtyffjaqcf"}]},
+            {"text": " and ", "marks": []},
+            {"image": "asset:01m3sa43z1tp9rdr5e8df2jbxy", "alt": "Leaf"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "escapes and a hard break",
+      "markdown": "5 \\* 3 = 15\\\n1\\. Not a list",
+      "document": [
+        {
+          "type": "paragraph",
+          "content": [
+            {"text": "5 * 3 = 15", "marks": []},
+            {"hardBreak": true},
+            {"text": "1. Not a list", "marks": []}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "task list",
+      "markdown": "- [x] Read chapter 8\n- [ ] Lab write-up",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {"task": "done", "blocks": [{"type": "paragraph", "content": [{"text": "Read chapter 8", "marks": []}]}]},
+            {"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Lab write-up", "marks": []}]}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "numbered list",
+      "markdown": "3. Third\n4. Fourth",
+      "document": [
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 3,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "loose list",
+      "markdown": "- First\n\n  More about it\n\n- Second",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {
+              "task": null,
+              "blocks": [
+                {"type": "paragraph", "content": [{"text": "First", "marks": []}]},
+                {"type": "paragraph", "content": [{"text": "More about it", "marks": []}]}
+              ]
+            },
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Second", "marks": []}]}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "callout",
+      "markdown": "> [!tip] Exam hint\n> Learn the Z-scheme diagram.",
+      "document": [
+        {
+          "type": "callout",
+          "callout": "tip",
+          "fold": null,
+          "title": [{"text": "Exam hint", "marks": []}],
+          "blocks": [{"type": "paragraph", "content": [{"text": "Learn the Z-scheme diagram.", "marks": []}]}]
+        }
+      ]
+    },
+    {
+      "name": "quote",
+      "markdown": "> Life finds a way.\n>\n> It always does.",
+      "document": [
+        {
+          "type": "quote",
+          "blocks": [
+            {"type": "paragraph", "content": [{"text": "Life finds a way.", "marks": []}]},
+            {"type": "paragraph", "content": [{"text": "It always does.", "marks": []}]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "code block and break",
+      "markdown": "```rust\nlet x = 1;\n```\n\n---\n\nAfter `code`",
+      "document": [
+        {"type": "code", "language": "rust", "text": "let x = 1;"},
+        {"type": "break"},
+        {"type": "paragraph", "content": [{"text": "After ", "marks": []}, {"text": "code", "marks": ["code"]}]}
+      ]
+    },
+    {
+      "name": "a bulleted list beside a numbered list",
+      "markdown": "- Apples\n\n1. Pears",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+        },
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 1,
+          "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+        }
+      ]
+    },
+    {
+      "name": "two lists of one kind are written as one",
+      "markdown": "- Apples\n- [ ] Pears\n\nBetween\n\n3. Third\n4. Fourth\n5. Fifth",
+      "document": [
+        {
+          "type": "list",
+          "ordered": false,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]},
+            {"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}
+          ]
+        },
+        {"type": "paragraph", "content": [{"text": "Between", "marks": []}]},
+        {
+          "type": "list",
+          "ordered": true,
+          "start": 3,
+          "items": [
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]},
+            {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fifth", "marks": []}]}]}
+          ]
+        }
+      ],
+      "alsoWrittenFrom": [
+        [
+          {
+            "type": "list",
+            "ordered": false,
+            "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Apples", "marks": []}]}]}]
+          },
+          {
+            "type": "list",
+            "ordered": false,
+            "items": [{"task": "open", "blocks": [{"type": "paragraph", "content": [{"text": "Pears", "marks": []}]}]}]
+          },
+          {"type": "paragraph", "content": [{"text": "Between", "marks": []}]},
+          {
+            "type": "list",
+            "ordered": true,
+            "start": 3,
+            "items": [{"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Third", "marks": []}]}]}]
+          },
+          {
+            "type": "list",
+            "ordered": true,
+            "start": 1,
+            "items": [
+              {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fourth", "marks": []}]}]},
+              {"task": null, "blocks": [{"type": "paragraph", "content": [{"text": "Fifth", "marks": []}]}]}
+            ]
+          }
+        ]
+      ]
+    }
+  ]
+}

@@ -20,10 +20,12 @@ pub mod codes {
 
 /// Serialized as `{ code, message, field? }`, matching `IpcError` in the interface's platform types.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
 pub struct IpcError {
     pub code: String,
     pub message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
     pub field: Option<String>,
 }
 
