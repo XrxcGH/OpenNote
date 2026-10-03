@@ -235,7 +235,6 @@ export const editor = {
     formattingBarTouch: 'For touch and pen',
     formattingBarAlways: 'Always',
     formattingBarNever: 'Never',
-    dateLine: 'Add the date and time under the title of a new page',
   },
   styles: {
     title: 'Text styles',
