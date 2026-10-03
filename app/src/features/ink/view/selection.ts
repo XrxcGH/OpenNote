@@ -21,6 +21,8 @@ const CORNERS: readonly Corner[] = ['nw', 'ne', 'se', 'sw'];
 /** Arrow keys move the selection this far, in page units; with Shift, ten times as far. */
 const KEY_STEP = 1;
 const MIN_SIZE = 4;
+/** The bar keeps this many CSS px from the sides of the page view. */
+const BAR_MARGIN = 8;
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
@@ -180,13 +182,29 @@ class FrameView implements SelectionFrame {
     }
     const shown = this.drag ? transformBox(box, this.drag.matrix) : box;
     const { zoom, scrollX, scrollY } = this.surface.cameraNow();
+    const left = shown.minX * zoom - scrollX - 4;
     Object.assign(this.frame.style, {
       display: '',
-      left: `${shown.minX * zoom - scrollX - 4}px`,
+      left: `${left}px`,
       top: `${shown.minY * zoom - scrollY - 4}px`,
       width: `${Math.max(MIN_SIZE, (shown.maxX - shown.minX) * zoom) + 8}px`,
       height: `${Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8}px`,
     });
+    this.fitBar(left);
+  }
+
+  /**
+   * Keeps the bar inside the page view: it wraps when the view is narrower than it, and slides back from the right
+   * edge, so it never runs past the view and makes the window scroll sideways.
+   */
+  private fitBar(left: number): void {
+    // The view's inside, without its scroll bar.
+    const room = this.surface.parts.viewport.viewport.clientWidth;
+    if (room <= 2 * BAR_MARGIN) return;
+    this.bar.style.maxInlineSize = `${room - 2 * BAR_MARGIN}px`;
+    const over = left + this.bar.offsetWidth - (room - BAR_MARGIN);
+    const shift = Math.max(Math.min(0, -over), BAR_MARGIN - left);
+    this.bar.style.insetInlineStart = `${shift}px`;
   }
 
   /** Blocks move with the ink: floating ones get a new frame; ones in the flow stay where the flow puts them. */
