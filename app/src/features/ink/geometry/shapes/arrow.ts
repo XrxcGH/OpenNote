@@ -52,6 +52,11 @@ function headRatio(tip: Vec, tipAgain: Vec, barbs: readonly [Vec, Vec], shaft: V
   return distance(tip, tipAgain) / (MAX_TIP_GAP * short);
 }
 
+/** The two barbs of a head at `tip` on an arrow that points along the unit vector `shaft`, `length` long. */
+export function headBarbs(tip: Vec, shaft: Vec, length: number): readonly [Vec, Vec] {
+  return drawnBarbs(tip, shaft, length);
+}
+
 /** The arrow's polyline-ready geometry: shaft end to end, and barbs at 30 degrees, sized to the stroke width. */
 function drawnBarbs(tip: Vec, shaft: Vec, length: number): readonly [Vec, Vec] {
   const back = (sign: number): Vec => {

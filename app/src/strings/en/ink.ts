@@ -42,7 +42,7 @@ export const ink = {
   shapes: {
     inkToShape: 'Ink to shape',
     keywords: 'shape recognition line rectangle circle arrow snap',
-    made: '{shape, select, line {Line} arrow {Arrow} rectangle {Rectangle} circle {Circle} other {Shape}}',
+    made: '{shape, select, line {Line} arrow {Arrow} rectangle {Rectangle} circle {Circle} polygon {Polygon} star {Star} arc {Arc} curvedArrow {Curved arrow} doubleArrow {Double arrow} other {Shape}}',
   },
   selection: {
     frame: 'Selected ink and text',

@@ -11,7 +11,7 @@ import { createPartialEraseSession, createStrokeEraseSession } from '../edits/er
 import type { PartialEraseSession, StrokeEraseSession } from '../edits/eraseSession';
 import { eraserSkip, ERASE_ALL } from '../edits/filters';
 import type { EraserFilter } from '../edits/filters';
-import { recognizeShape } from '../geometry/shapes';
+import { applyReshape, pivotOf, recognizeShape, reshapeFor } from '../geometry/shapes';
 import type { ShapeMatch } from '../geometry/shapes';
 import type { InkPoint, Vec } from '../geometry/types';
 import { resolvePenAction, suppressContextMenu } from './../input/buttons';
@@ -72,7 +72,18 @@ interface InkGesture {
   /** What the ruler, protractor, or grid holds this stroke to, set by its first sample. */
   snapHold?: Hold;
   radius: number;
-  hold?: { x: number; y: number; at: number; timer: ReturnType<typeof setInterval> | null; shape: ShapeMatch | null };
+  hold?: {
+    x: number;
+    y: number;
+    at: number;
+    timer: ReturnType<typeof setInterval> | null;
+    shape: ShapeMatch | null;
+    /** Where the pen rested when the shape snapped, and the middle the shape grows and turns about. */
+    snapAt?: Vec;
+    pivot?: Vec;
+    /** The shape after the pen moved on without lifting, or null while it is as it snapped. */
+    live?: Vec[] | null;
+  };
   last?: Vec;
 }
 
@@ -356,8 +367,13 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
     for (const sample of samples) g.builder.push(sample);
     if (g.hold) {
       const zoom = surface.cameraNow().zoom;
-      if (Math.hypot(last.x - g.hold.x, last.y - g.hold.y) * zoom > HOLD_SLOP_PX) {
-        g.hold = { ...g.hold, x: last.x, y: last.y, at: performance.now(), shape: null };
+      const hold = g.hold;
+      if (hold.shape && hold.snapAt && hold.pivot) {
+        // Keep holding the snapped shape and move: it grows and turns with the pen until the pen lifts.
+        const moved = Math.hypot(last.x - hold.snapAt.x, last.y - hold.snapAt.y) * zoom > HOLD_SLOP_PX;
+        hold.live = moved ? applyReshape(hold.shape.points, hold.pivot, reshapeFor(hold.pivot, hold.snapAt, last)) : null;
+      } else if (Math.hypot(last.x - hold.x, last.y - hold.y) * zoom > HOLD_SLOP_PX) {
+        g.hold = { ...hold, x: last.x, y: last.y, at: performance.now(), shape: null };
       }
     }
     if (g.hold?.shape) return drawShape(g, surface);
@@ -402,16 +418,23 @@ function holdCheck(g: InkGesture, surface: InkSurface, holdMs: number): void {
   const points = g.builder.points;
   if (points.length < 4) return;
   const zoom = surface.cameraNow().zoom;
-  const match = recognizeShape(points, { minSize: 16 / zoom, width: g.style.width });
+  const match = recognizeShape(points, {
+    minSize: 16 / zoom,
+    width: g.style.width,
+    extra: isEnabled('ink.shapeTools'),
+  });
   if (!match) return;
   hold.shape = match;
+  hold.snapAt = { x: hold.x, y: hold.y };
+  hold.pivot = pivotOf(match.points);
+  hold.live = null;
   drawShape(g, surface);
   announce(t('ink.shapes.made', { shape: match.shape.kind }));
 }
 
 function drawShape(g: InkGesture, surface: InkSurface): void {
   const shape = g.hold?.shape;
-  if (shape) surface.drawLive(shape.points, g.style, true);
+  if (shape) surface.drawLive(g.hold?.live ?? shape.points, g.style, true);
 }
 
 /** The stroke a shape makes: the shape's exact points, with no pressure, so the width stays even. */
@@ -432,7 +455,7 @@ async function finish(g: InkGesture, surface: InkSurface, host: InkHost, gesture
     if (strokes.length === 1 && isEnabled('ink.shapes')) {
       const zoom = surface.cameraNow().zoom;
       const match =
-        held ??
+        (held && g.hold?.live ? { ...held, points: g.hold.live } : held) ??
         (shapes.inkToShape && g.style.tool !== 'highlighter'
           ? recognizeShape(strokes[0].points, { minSize: 16 / zoom, width: g.style.width })
           : null);
