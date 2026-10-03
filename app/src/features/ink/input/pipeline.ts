@@ -66,6 +66,8 @@ export interface InkPipeline {
   system(signal: SystemSignal, t: number): void;
   tick(t: number): void;
   needsTick(): boolean;
+  /** When a held stroke commits: tick then as well as every 100 ms. */
+  nextDue(): number;
   setInkToolActive(active: boolean): void;
   learned(): LearnedState;
 }
@@ -97,6 +99,8 @@ class Pipeline implements InkPipeline {
   /** Lifted strokes waiting for a Commit or a Retract, and recent commits that may be taken back. */
   private readonly held = new Map<number, TouchInk>();
   private readonly committed = new Map<number, TouchInk>();
+  /** Held strokes that never moved: a dot shows only when it commits. */
+  private readonly hidden = new Set<number>();
   private readonly page = { x: 0, y: 0 };
   private readonly pxPerMm: number;
   private lastPen = -Infinity;
@@ -141,6 +145,10 @@ class Pipeline implements InkPipeline {
 
   needsTick(): boolean {
     return this.filter.needsTick() || this.live.size > 0;
+  }
+
+  nextDue(): number {
+    return this.filter.nextDue();
   }
 
   learned(): LearnedState {
@@ -223,8 +231,8 @@ class Pipeline implements InkPipeline {
     const canceled = r.type === 'cancel';
     const wasDrawing = e?.role === Role.Draw;
     if (e?.ink && wasDrawing && !canceled) this.push(e.ink, r);
-    if (e?.ink && wasDrawing && !canceled && !e.visible) this.show(r.id, e);
     const bits = this.filter.touchEnd(r.id, r.t, canceled);
+    if (e?.ink && wasDrawing && !canceled && !e.visible && (bits & End.Held) === 0) this.show(r.id, e);
     if (e?.ink && wasDrawing && (bits & End.Held) !== 0) this.hold(r.id, e.ink);
     this.drain(r.t);
     if (this.nav.owns(r.id)) {
@@ -254,6 +262,8 @@ class Pipeline implements InkPipeline {
   }
 
   private hold(id: number, ink: TouchInk): void {
+    const e = this.live.get(id);
+    if (e && !e.visible) this.hidden.add(id);
     ink.strokes ??= ink.builder.finish();
     this.held.set(id, ink);
     this.host.touchStroke(id, 'hold', ink);
@@ -282,6 +292,7 @@ class Pipeline implements InkPipeline {
     if (bits & Fx.Retract && ink) {
       this.host.touchStroke(id, 'retract', ink);
       this.held.delete(id);
+      this.hidden.delete(id);
       if (e) e.ink = null;
     }
     if (bits & Fx.Promote && e) this.show(id, e);
@@ -298,6 +309,7 @@ class Pipeline implements InkPipeline {
 
   private commit(id: number, e: Entry | undefined, ink: TouchInk | null): void {
     if (!ink) return;
+    if (this.hidden.delete(id)) this.host.touchStroke(id, 'show', ink);
     ink.strokes ??= ink.builder.finish();
     this.host.touchStroke(id, 'commit', ink);
     this.held.delete(id);

@@ -208,7 +208,11 @@ export class Core {
       this.commits.add(c.id[i], t, c.x0[i], c.y0[i]);
       return false;
     }
-    if (this.holds.add(c.id[i], c.t0[i], t + this.settings.graceMs, c.x0[i], c.y0[i]) >= 0) return true;
+    // A dot (a contact that never moved) is the most ambiguous ink: a palm that bounces before the pen arrives
+    // looks the same. It waits the late-retract window, so a pen that arrives in that time drops it unseen.
+    const hold =
+      c.disp[i] < K.WEAK_TRAVEL_MM ? Math.max(this.settings.graceMs, K.LATE_RETRACT_MS) : this.settings.graceMs;
+    if (this.holds.add(c.id[i], c.t0[i], t + hold, c.x0[i], c.y0[i]) >= 0) return true;
     this.fx.push(c.id[i], Role.Ignore, Fx.Commit, c.why[i]);
     return false;
   }

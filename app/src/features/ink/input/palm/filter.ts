@@ -46,9 +46,11 @@ export interface PalmFilter {
   /** A native hint matched to a contact by position (2 mm) and time (20 ms). */
   hint(kind: 'palm' | 'confident', time: number, x: number, y: number): void;
   system(signal: SystemSignal, time: number): void;
-  /** Call every 100 ms while `needsTick` is true. */
+  /** Call every 100 ms while `needsTick` is true, and at `nextDue`. */
   tick(time: number): void;
   needsTick(): boolean;
+  /** When the next held stroke commits, so the page view can tick exactly then; Infinity when none waits. */
+  nextDue(): number;
   presence(time: number): Presence;
   touchPolicy(): TouchPolicy;
   /** The effects of the last call. Read them after every call; the next call clears them. */
@@ -294,6 +296,13 @@ class Filter implements PalmFilter {
   needsTick(): boolean {
     const core = this.core;
     return core.holds.count > 0 || core.c.live > 0;
+  }
+
+  nextDue(): number {
+    const h = this.core.holds;
+    let due = Infinity;
+    for (let k = 0; k < K.MAX_HOLDS; k++) if (h.used[k] === 1) due = Math.min(due, h.until[k] + K.COMMIT_SLACK_MS);
+    return due;
   }
 
   presence(t: number): Presence {
