@@ -3,6 +3,7 @@
 
 pub mod anki;
 mod zip;
+mod zotero;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -42,4 +43,18 @@ pub async fn study_anki_write(deck: anki::DeckIn) -> IpcResult<Response> {
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
         .map_err(|reason| IpcError::new(codes::IO, reason))?;
     Ok(Response::new(bytes))
+}
+
+/// Asks Zotero on this computer for the person's library. Fails with the code `zoteroOff` when its local API is
+/// off, and `zoteroMissing` when Zotero is not running.
+#[tauri::command]
+pub async fn study_zotero_items() -> IpcResult<String> {
+    tauri::async_runtime::spawn_blocking(zotero::fetch)
+        .await
+        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
+        .map_err(|reason| match reason.as_str() {
+            "disabled" => IpcError::new("zoteroOff", "Zotero's local API is off."),
+            "unreachable" => IpcError::new("zoteroMissing", "Zotero is not running."),
+            _ => IpcError::new(codes::IO, reason),
+        })
 }

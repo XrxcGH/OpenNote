@@ -243,6 +243,7 @@ if (typeof window !== 'undefined') {
 for (const [tool, flag, title, keywords, icon] of [
   ['converter', 'tools.converter', 'study.converter.open', 'study.converter.keywords', 'Ruler'],
   ['reference', 'tools.reference', 'study.reference.open', 'study.reference.keywords', 'Atom'],
+  ['citations', 'tools.citations', 'study.citations.open', 'study.citations.keywords', 'Quotes'],
 ] as const) {
   addCommand({
     id: `tools.${tool}`,

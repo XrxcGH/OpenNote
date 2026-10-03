@@ -265,6 +265,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         tool_windows::tool_window_open,
         study::study_anki_read,
         study::study_anki_write,
+        study::study_zotero_items,
         interop::commands::interop_pick,
         interop::commands::interop_detect,
         interop::commands::interop_local_sources,

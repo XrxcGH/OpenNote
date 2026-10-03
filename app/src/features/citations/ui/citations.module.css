@@ -1,0 +1,86 @@
+/*
+ * The Citations window (Citation helper): the source list, the form, and the bibliography. Calm and plain, on tokens.
+ */
+@layer components {
+  .root {
+    display: grid;
+    gap: var(--space-4);
+    min-inline-size: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+  }
+
+  .form,
+  .list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .grow {
+    flex: 1;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .field input[type='text'],
+  .field select,
+  .field textarea {
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+
+  .muted {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+  }
+
+  .preview {
+    padding: var(--space-3);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-md);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: var(--type-small-size);
+  }
+}

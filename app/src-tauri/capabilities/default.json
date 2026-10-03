@@ -127,6 +127,7 @@
     "allow-tool-window-open",
     "allow-study-anki-read",
     "allow-study-anki-write",
+    "allow-study-zotero-items",
     "allow-interop-pick",
     "allow-interop-detect",
     "allow-interop-local-sources",
