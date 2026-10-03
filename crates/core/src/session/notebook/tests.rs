@@ -114,6 +114,28 @@ fn contract_page_moves_and_levels_go_through_the_flat_list() {
 }
 
 #[test]
+fn page_blocks_move_together_each_at_its_own_level() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let section = notebook.create_section("Lab", top()).unwrap();
+    let a = notebook.create_page_titled(section, in_section(section), "A").unwrap();
+    let b = notebook.create_page_titled(section, in_section(section), "B").unwrap();
+    let c = notebook.create_page_titled(section, in_section(section), "C").unwrap();
+    let d = notebook.create_page_titled(section, in_section(section), "D").unwrap();
+    notebook.set_page_level(&[b], 1).unwrap();
+    // B goes first at level 0 and D after it at level 1, before C.
+    notebook.move_page_blocks(&[(b, 0), (d, 1)], section, 1).unwrap();
+    assert_eq!(
+        page_titles(&notebook, section),
+        [("A".into(), 0), ("B".into(), 0), ("D".into(), 1), ("C".into(), 0)]
+    );
+    // A move that leaves a page too deep changes nothing.
+    assert!(notebook.move_page_blocks(&[(a, 2)], section, 3).is_err());
+    assert_eq!(page_titles(&notebook, section).len(), 4);
+    let _ = c;
+}
+
+#[test]
 fn a_page_moves_to_another_notebook_after_its_final_save() {
     let kit = CoreKit::new();
     let source = kit.notebook("Biology").unwrap();

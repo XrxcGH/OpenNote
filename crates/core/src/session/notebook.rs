@@ -219,6 +219,11 @@ impl NotebookHandle {
         self.change(true, |t| t.store.move_pages(pages, section, index, level))
     }
 
+    /// Moves pages as [`NotebookHandle::move_pages`] does, with each moved page at its own level.
+    pub fn move_page_blocks(&self, pages: &[(PageId, u8)], section: SectionId, index: usize) -> Result<(), CoreError> {
+        self.change(true, |t| t.store.move_page_blocks(pages, section, index))
+    }
+
     /// Gives pages, with their subpages, a new level in place: the notes contract's `setPageLevel`.
     pub fn set_page_level(&self, pages: &[PageId], level: u8) -> Result<(), CoreError> {
         self.change(false, |t| t.store.set_page_level(pages, level))
