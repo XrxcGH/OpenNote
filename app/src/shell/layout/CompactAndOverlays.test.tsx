@@ -3,6 +3,7 @@
 
 import { act, fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import { getLocation, navigate } from '../../app/location';
 import type { NodeId } from '../../services/notes/types';
 import { layoutStore, setSizeClass } from '../../state/layout';
@@ -83,6 +84,26 @@ describe('the expanded pages overlay', () => {
     await pressChord('Escape');
     await expect.poll(() => layoutStore.get().overlayOpen).toBe(false);
     await expectFocus(row);
+  });
+
+  it('stays open when the row that has focus goes, as it does after a rename or a delete', async () => {
+    await renderApp({ sizeClass: 'expanded' });
+    const section = await screen.findByRole('treeitem', { name: 'Lectures' });
+    section.focus();
+    fireEvent.click(section);
+    await expectFocus(await screen.findByRole('treeitem', { name: 'Cell structure' }));
+    await pressChord('Down');
+    await pressChord('Down');
+    await expectFocus(screen.getByRole('treeitem', { name: 'Mitosis' }));
+    await pressChord('F2');
+    await expectFocus(await screen.findByRole('textbox', { name: 'Rename Mitosis' }));
+    await userEvent.keyboard('Cell division{Enter}');
+    // The field unmounts with focus in it, so focus leaves for nowhere until the row takes it.
+    await expectFocus(await screen.findByRole('treeitem', { name: 'Cell division' }));
+    expect(layoutStore.get().overlayOpen).toBe(true);
+    await pressChord('Delete');
+    await expectFocus(await screen.findByRole('treeitem', { name: 'Meiosis' }));
+    expect(layoutStore.get().overlayOpen).toBe(true);
   });
 
   it('closes whenever focus moves outside it, so it never covers the focused element', async () => {
