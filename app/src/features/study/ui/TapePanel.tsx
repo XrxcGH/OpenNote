@@ -1,5 +1,5 @@
 // Study tape (Study tools): a strip laid over part of a page that hides what is under it until it is pressed. A
-// press, or Enter or Space, toggles it. The words say what state it is in, so it never depends on colour or sight.
+// press, or Enter or Space, toggles it. The words say what state it is in, so it never depends on color or sight.
 import { t } from '../../../strings/t';
 import styles from './study.module.css';
 

@@ -18,7 +18,7 @@ export interface Parsed {
 const MAX_CELL = 4000;
 const BOM = String.fromCharCode(0xfeff);
 
-/** Splits delimited text into rows, honouring quotes and picking the tab, semicolon, or comma used most. */
+/** Splits delimited text into rows, honoring quotes and picking the tab, semicolon, or comma used most. */
 export function parseDelimited(text: string): string[][] {
   const body = text.startsWith(BOM) ? text.slice(1) : text;
   const first = body.split('\n', 1)[0] ?? '';

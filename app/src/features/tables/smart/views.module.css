@@ -1,6 +1,6 @@
 /*
  * Board, calendar, gallery, and timeline views of a smart table (Further features, Phase 7). Cards are real
- * buttons, lanes and days are drop targets, and nothing depends on colour alone.
+ * buttons, lanes and days are drop targets, and nothing depends on color alone.
  */
 @layer components {
   .root {

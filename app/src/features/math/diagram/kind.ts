@@ -13,7 +13,7 @@ export const STARTER_TEXT: Readonly<Record<Exclude<DiagramKind, 'other'>, string
   class: 'classDiagram\n  class Animal {\n    +String name\n    +eat()\n  }\n  class Dog\n  Animal <|-- Dog',
 };
 
-/** The kind of diagram a text draws, from its first word, skipping comment lines and front matter. */
+/** The kind of diagram a text draws, from its first word, skipping comment lines, and front matter. */
 export function kindOf(source: string): DiagramKind {
   const body = source.replace(/^\s*---[\s\S]*?---\s*/, '');
   const first =

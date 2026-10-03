@@ -13,7 +13,7 @@ const KINDS: readonly CardKind[] = ['basic', 'cloze', 'choice', 'occlusion'];
 const MAX_SIDE = 1000;
 const STEP = 2;
 
-/** An image file as a data address, no wider or taller than the limit. */
+/** An image file as a data address, no wider, or taller than the limit. */
 export async function readImage(file: File): Promise<string> {
   const source = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();

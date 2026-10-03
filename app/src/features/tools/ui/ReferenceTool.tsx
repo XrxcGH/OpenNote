@@ -1,5 +1,5 @@
 // Reference tables (Productivity and study tools): the periodic table, physical constants, metric prefixes, and Greek
-// letters. An element's family shows as a colour and as a label in words. Choosing Insert puts an entry at the
+// letters. An element's family shows as a color and as a label in words. Choosing Insert puts an entry at the
 // caret of the page that is open.
 import { useMemo, useState } from 'react';
 import { t } from '../../../strings/t';

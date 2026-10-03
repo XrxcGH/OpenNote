@@ -1,6 +1,6 @@
 // The parts of a chart for people who can't see it (Accessible charts): a summary in words that can be edited,
 // arrow keys that step through the data points and read each value, and a table of the same data that a button
-// always shows. Nothing here depends on colour or on the picture.
+// always shows. Nothing here depends on color or on the picture.
 import { useId, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';

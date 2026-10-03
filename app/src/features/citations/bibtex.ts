@@ -1,4 +1,4 @@
-// BibTeX and RIS, read and written (Citation helper). Both are plain text. The readers are forgiving: an entry they
+// BibTeX and RIS, read, and written (Citation helper). Both are plain text. The readers are forgiving: an entry they
 // cannot make sense of is counted and skipped, and the rest are kept.
 import { blankSource, parsePeople } from './model';
 import type { Person, Source, SourceType } from './model';

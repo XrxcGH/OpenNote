@@ -1,6 +1,6 @@
 /*
  * A diagram drawn from text (Further features, Phase 7): the text above, the drawing below, on tokens. The drawing
- * keeps its own colours, which Mermaid picks to match the light or dark theme.
+ * keeps its own colors, which Mermaid picks to match the light or dark theme.
  */
 @layer components {
   .root {

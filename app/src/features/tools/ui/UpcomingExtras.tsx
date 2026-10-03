@@ -1,6 +1,6 @@
 // The parts of Upcoming that came with the study tools: today's classes and the next one, exam countdowns, forms
 // for exams and classes, the calendar file flow with "Update from this file", and the reminders switch. A
-// countdown is a plain number of days: no colours that grow urgent, no alarms.
+// countdown is a plain number of days: no colors that grow urgent, no alarms.
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { decksStore, setDeckExam } from '../../study';

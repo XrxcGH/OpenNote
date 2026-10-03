@@ -77,7 +77,7 @@ export interface Month {
   month: number;
 }
 
-/** The weeks of a month as day numbers, Sunday first, with days of the neighbouring months filling the first and last week. */
+/** The weeks of a month as day numbers, Sunday first, with days of the neighboring months filling the first and last week. */
 export function monthWeeks(at: Month): number[][] {
   const first = ymdToDays(at.year, at.month, 1) ?? 0;
   const offset = ((first % 7) + 4) % 7; // 1970-01-01 was a Thursday, so day 0 has weekday 4.

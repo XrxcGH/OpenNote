@@ -97,7 +97,7 @@ export function stepAt(data: ChartData, seriesIndex: number, index: number): Ste
   return point ? { series: series.name, seriesIndex, index, x: xText(point.x, data.xKind), y: point.y } : null;
 }
 
-/** Where an arrow key goes from a place: left and right along a series, up and down between series. */
+/** Where an arrow key goes from a place: left and right along a series, up, and down between series. */
 export function moveStep(
   data: ChartData,
   from: { series: number; index: number },
