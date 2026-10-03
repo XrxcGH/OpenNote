@@ -1,0 +1,22 @@
+[package]
+name = "opennote-crashtest"
+version = "0.1.0"
+description = "The kill harness: kills a writer during saves and checks that no page is damaged or lost"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+name = "opennote-crashtest"
+path = "src/main.rs"
+
+[dependencies]
+crc32fast = "1.5.2"
+opennote-core = { path = "../../crates/core", features = ["testing", "failpoints"] }
+# The measurements write the benchmark harness's JSON report.
+opennote-perf = { path = "../perf/core" }
+proptest = "1.11.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tempfile = "3.27.0"

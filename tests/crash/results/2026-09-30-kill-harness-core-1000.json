@@ -1,0 +1,15 @@
+{
+  "workload": "core",
+  "iterations": 1000,
+  "killed_at_random": 506,
+  "killed_after_save": 264,
+  "fail_points_armed": 230,
+  "fail_points_reached": 72,
+  "acks": 12470,
+  "save_steps": 1283,
+  "torn_tails": 0,
+  "temp_files_max": 0,
+  "hostile_holds": 14211,
+  "seconds": 10608.1363134,
+  "failures": []
+}

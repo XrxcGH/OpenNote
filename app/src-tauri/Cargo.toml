@@ -21,6 +21,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 log.workspace = true
+opennote-core = { path = "../../crates/core" }
 opennote-updater = { path = "../../crates/updater" }
 semver.workspace = true
 serde.workspace = true
