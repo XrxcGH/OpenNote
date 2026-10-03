@@ -127,13 +127,16 @@ export function createPartialEraseSession<S extends Stroke>(
   const anchor = new Map<string, string>();
   let last: Vec | null = null;
 
+  // Each stroke once: a part sent in a checkpoint is in the index once the core confirms it, and in `extra` too,
+  // because it is still in the picture. The session's own copy wins, since it is the one the gesture shows.
   const candidates = (capsules: readonly Capsule[]): S[] => {
-    const found = hitCapsules(index, capsules) as S[];
+    const found = new Map<string, S>();
+    for (const stroke of hitCapsules(index, capsules) as S[]) found.set(stroke.id, extra.get(stroke.id) ?? stroke);
     const reach = capsules.map(capsuleBounds);
     for (const part of extra.values()) {
-      if (reach.some((box) => intersects(box, strokeBounds(part)))) found.push(part);
+      if (!found.has(part.id) && reach.some((box) => intersects(box, strokeBounds(part)))) found.set(part.id, part);
     }
-    return found.filter((stroke) => !gone.has(stroke.id) && !(options.skip?.(stroke) ?? false));
+    return [...found.values()].filter((stroke) => !gone.has(stroke.id) && !(options.skip?.(stroke) ?? false));
   };
 
   function cut(stroke: S, capsules: readonly Capsule[], change: ViewChange<S>): void {
