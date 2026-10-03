@@ -81,7 +81,13 @@ export interface MountOptions {
   /** The view this device last chose for the page. */
   savedView?: PageViewMode | null;
   /** The title band, inside the world; `band` is the one the page view showed while the page loaded. */
-  title?: { text: string; changed: string | null; band?: HTMLElement | null };
+  title?: {
+    text: string;
+    changed: string | null;
+    band?: HTMLElement | null;
+    /** After typing in the title is sent: the page's name in the tree is the same title. */
+    onSend?: (title: string) => void;
+  };
   /** Called when undo or another window changes the title, tags, or view. */
   onPageFields?(fields: NonNullable<AppliedFrame['page']>): void;
   /** Whether the shown page's stores point at this view; tests that mount several pages turn it off. */
@@ -201,6 +207,7 @@ function titleBand(world: HTMLElement, parts: TitleParts, options: MountOptions)
     readOnly: page.readOnly !== null,
     send(title) {
       void sync.send({ edits: [{ edit: 'setPage', title }], coalesce: { kind: 'typing', target: 'title' } });
+      options.title?.onSend?.(title);
     },
     enterPage() {
       const first = layer.blocks().find((block) => block.type === 'text');
