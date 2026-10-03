@@ -1,6 +1,6 @@
 // The notebooks pane and the pages pane (ARCHITECTURE.md section 13.2). Both use TreeView: the notebooks tree holds
 // notebooks, section groups, and sections, and the pages tree the current section's pages and subpages. Trash
-// sits at the bottom of the notebooks pane, behind trash.view.
+// sits at the bottom of the notebooks pane, behind trash.view, with a small plant opposite it when there is room.
 
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
 import { useEffect } from 'react';
@@ -9,7 +9,7 @@ import { formatChord, useKeysFor } from '../../commands/keymap';
 import { executeCommand } from '../../commands/registry';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
-import { Button } from '../../ui';
+import { Button, EmptyArt, Plant } from '../../ui';
 import { ensureChildren } from './load';
 import {
   useNotebookRows,
@@ -25,7 +25,8 @@ import { treeStore } from './store';
 import styles from './Tree.module.css';
 import { TreeView } from './TreeView';
 
-function TrashButton() {
+/** The plant keeps the footer company only when the pane has notebooks, because the empty pane has its own drawing. */
+function TrashButton({ plant }: { plant: boolean }) {
   if (!useFlag('trash.view')) return null;
   return (
     <div className={styles.footer}>
@@ -33,7 +34,17 @@ function TrashButton() {
         <TrashIcon aria-hidden="true" />
         {t('tree.trash.open')}
       </Button>
+      {plant && <Plant className={styles.plant} />}
     </div>
+  );
+}
+
+function NotebooksEmpty() {
+  return (
+    <>
+      <EmptyArt kind="notebooks" className={styles.emptyArt} />
+      <p>{t('tree.empty.notebooks')}</p>
+    </>
   );
 }
 
@@ -54,11 +65,11 @@ export function NotebooksPane() {
         selectedId={selectedId}
         loading={status === 'idle' || status === 'loading'}
         loadingLabel={t('tree.loading.notebooks')}
-        empty={<p>{t('tree.empty.notebooks')}</p>}
+        empty={<NotebooksEmpty />}
         rowHeight={rowHeight}
         openMenu={openMenu}
       />
-      <TrashButton />
+      <TrashButton plant={rows.length > 0} />
     </div>
   );
 }

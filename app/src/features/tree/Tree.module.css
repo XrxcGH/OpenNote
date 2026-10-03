@@ -246,11 +246,35 @@
     color: var(--color-text-secondary);
   }
 
+  .emptyArt {
+    margin-block-end: var(--space-3);
+  }
+
   .footer {
     display: flex;
     flex: none;
+    align-items: center;
+    justify-content: space-between;
+    container-type: inline-size;
     border-block-start: 1px solid var(--color-border-subtle);
     padding-block-start: var(--space-2);
+  }
+
+  /* A small plant at the end of the footer, opposite Trash. It needs room, so it hides when the footer is narrow, in
+     compact, and with the pane collapsed (a collapsed pane has no width). It sits in the fixed footer, so it never
+     covers a row. */
+  .footer .plant {
+    display: none;
+  }
+
+  @container (min-width: 200px) {
+    .footer .plant {
+      display: block;
+    }
+  }
+
+  :global(:root[data-size-class='compact']) .footer .plant {
+    display: none;
   }
 
   .saveStatus {
@@ -260,6 +284,11 @@
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);
+  }
+
+  /* Saved is the one good state, so its cloud is the success green; the rest stay as quiet as the text. */
+  .saveStatus[data-status='saved'] svg {
+    color: var(--color-status-success);
   }
 
   .saveStatus[data-status='error'] {
