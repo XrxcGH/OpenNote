@@ -36,6 +36,8 @@ export interface ObjectParts {
   openMenu(anchor: HTMLElement | { x: number; y: number }): void;
   /** Opens "Size and position" for a block. */
   openSizeAndPosition(block: BlockId): void;
+  /** A text box's width is changing: its height change moves the blocks below it (keep-below). */
+  widthChanging?(block: BlockId): void;
 }
 
 let gestures = 0;
@@ -157,6 +159,7 @@ export class Objects {
     for (const [id, frame] of frames) {
       const block = this.parts.layer.block(id);
       if (!block) continue;
+      if (frame.w !== block.frame?.w) this.widthChanging(id);
       this.parts.layer.upsert({ ...block, frame });
       edits.push({ edit: 'moveBlock', block: id, frame });
     }
@@ -174,6 +177,10 @@ export class Objects {
         }
       })
       .catch(() => undefined);
+  }
+
+  widthChanging(block: BlockId): void {
+    this.parts.widthChanging?.(block);
   }
 
   destroy(): void {

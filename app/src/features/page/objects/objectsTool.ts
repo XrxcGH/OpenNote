@@ -166,6 +166,7 @@ class ObjectsTool implements PointerToolDef {
       const element = block && this.parts.layer.view(block.id)?.element;
       if (!block || !element) return;
       const width = block.frame?.w ?? this.parts.layer.view(block.id)!.measure().w;
+      this.parts.objects.widthChanging(block.id);
       element.style.inlineSize = `${Math.max(MIN_TEXT_WIDTH, width + dx)}px`;
       return this.parts.chrome.update();
     }

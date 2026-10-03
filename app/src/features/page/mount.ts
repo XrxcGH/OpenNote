@@ -18,6 +18,7 @@ import { createEditorHost } from './editorHost';
 import { createFlow } from './layout/flow';
 import type { Flow } from './layout/flow';
 import { createPageLayout } from './layout/actions';
+import { createKeepBelow } from './layout/keepBelow';
 import { createChrome } from './chrome/chrome';
 import type { Chrome } from './chrome/chrome';
 import { openObjectMenu } from './chrome/menu';
@@ -226,6 +227,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   const compact = options.compact ?? false;
   const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, compact, reading });
   const chrome = createChrome({ container, viewport, layer, pool });
+  const keepBelow = createKeepBelow(layer, sync, pool);
   objects = new Objects({
     page,
     sync,
@@ -234,6 +236,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     viewport,
     openMenu: (anchor) => void openObjectMenu(objects!, anchor),
     openSizeAndPosition: (block) => openSizeAndPosition(container, objects!, layer, block),
+    widthChanging: (block) => keepBelow.arm(block),
   });
   const gestures = createGestureTool(viewport);
   const select = createSelectTool(pool, { world: viewport.world, pressEmpty: (point) => layout.pressEmpty(point) });
@@ -245,6 +248,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     installObjectKeys(viewport.world, objects, layer),
     objectMenus(container, objects, layer),
     () => chrome.destroy(),
+    () => keepBelow.stop(),
     () => objects?.destroy(),
     () => layout.stop(),
     () => title?.destroy(),
