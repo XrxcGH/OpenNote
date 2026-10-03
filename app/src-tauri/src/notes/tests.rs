@@ -678,3 +678,19 @@ fn a_notes_folder_chosen_in_setup_opens_its_notebooks_and_tells_the_tree() {
         .iter()
         .any(|e| e["type"] == "childrenChanged" && e["parentId"].is_null()));
 }
+
+#[test]
+fn a_restored_notebook_goes_back_before_its_old_neighbor_or_to_the_end() {
+    let lib = Lib::new();
+    let alpha = lib.add(None, "notebook", "Alpha");
+    let beta = lib.add(None, "notebook", "Beta");
+    let receipt = lib.ok("notes_trash", json!({ "ids": [alpha] }));
+    lib.add(None, "notebook", "Gamma");
+    lib.ok("notes_restore", json!({ "receiptId": receipt["id"] }));
+    assert_eq!(lib.titles(None), ["Alpha", "Beta", "Gamma"]);
+    // Without its old neighbor, it goes to the end, as the reference model has it.
+    let receipt = lib.ok("notes_trash", json!({ "ids": [alpha] }));
+    lib.ok("notes_trash", json!({ "ids": [beta] }));
+    lib.ok("notes_restore", json!({ "receiptId": receipt["id"] }));
+    assert_eq!(lib.titles(None), ["Gamma", "Alpha"]);
+}

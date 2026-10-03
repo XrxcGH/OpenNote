@@ -240,7 +240,7 @@ impl Bridge {
         let id = node.id();
         let tree = node.notebook().tree();
         let (parent, siblings): (Option<String>, Vec<String>) = match node {
-            Found::Notebook(_) => (None, Vec::new()),
+            Found::Notebook(_) => (None, self.notebooks().iter().map(|n| n.id().to_string()).collect()),
             Found::Node(notebook, NodeRef::Page(page)) => match tree.find_page(*page) {
                 Some((section, _)) => {
                     let flat = flat_pages(&tree, section.id);
@@ -412,10 +412,18 @@ impl Bridge {
         for entry in entries {
             let (order, found) = match entry {
                 Entry::Notebook(removed) => {
-                    let key = notebook_key(&removed.entry.path);
-                    let order = self.notes.pending.remove(&key).map_or(0, |p| p.order);
-                    let notebook = self.core.restore_notebook(&removed.entry.path).map_err(from_core)?;
-                    (order, Found::Notebook(notebook))
+                    let path = removed.entry.path;
+                    let pending = self.notes.pending.remove(&notebook_key(&path));
+                    let notebook = self.core.restore_notebook(&path).map_err(from_core)?;
+                    if let Some(pending) = &pending {
+                        // Before the notebook it was before, or at the end when that one is gone.
+                        let before = pending.before.as_deref().and_then(|id| match self.find(id) {
+                            Ok(Found::Notebook(next)) => Some(next.path().to_path_buf()),
+                            _ => None,
+                        });
+                        self.core.move_notebook(&path, before.as_deref()).map_err(from_core)?;
+                    }
+                    (pending.map_or(0, |p| p.order), Found::Notebook(notebook))
                 }
                 Entry::Item(notebook, item) => self.restore_item(&notebook, item, &mut fallback)?,
             };
