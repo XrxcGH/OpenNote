@@ -10,6 +10,7 @@ mod names;
 mod pdf;
 mod plan;
 mod single;
+mod tables;
 mod word;
 
 pub use convert::Resolver;
@@ -17,4 +18,5 @@ pub use files::{export_files, export_files_with, Exported, Format};
 pub use pdf::{export_pdf_bundle, NoPdfRenderer, PdfRenderer};
 pub use plan::Scope;
 pub use single::export_html_single;
+pub use tables::{export_tables, TableFormat};
 pub use word::{export_docx, export_docx_with};

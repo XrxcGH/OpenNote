@@ -22,7 +22,7 @@ export interface ExportDialogProps {
   target: ExportTarget;
 }
 
-const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx'];
+const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx', 'xlsx', 'csv'];
 
 const formatLabel = (format: ExportFormat) =>
   ({
@@ -31,6 +31,8 @@ const formatLabel = (format: ExportFormat) =>
     htmlSingle: t('interop.export.formats.htmlSingle'),
     docx: t('interop.export.formats.docx'),
     pdf: t('interop.export.formats.pdf'),
+    xlsx: t('interop.export.formats.xlsx'),
+    csv: t('interop.export.formats.csv'),
   })[format];
 
 const formatHint = (format: ExportFormat) =>
@@ -40,6 +42,8 @@ const formatHint = (format: ExportFormat) =>
     htmlSingle: t('interop.export.formats.htmlSingleHint'),
     docx: t('interop.export.formats.docxHint'),
     pdf: t('interop.export.formats.pdfHint'),
+    xlsx: t('interop.export.formats.xlsxHint'),
+    csv: t('interop.export.formats.csvHint'),
   })[format];
 
 function scopeLabel(scope: ExportScope, name: string): string {

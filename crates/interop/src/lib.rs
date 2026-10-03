@@ -38,8 +38,8 @@ pub use detect::{detect, Detected, SourceKind};
 pub use disk::{DiskSink, DiskSource};
 pub use error::{InteropError, Result};
 pub use export::{
-    export_docx, export_docx_with, export_files, export_files_with, export_html_single, export_pdf_bundle, Exported,
-    Format, NoPdfRenderer, PdfRenderer, Scope,
+    export_docx, export_docx_with, export_files, export_files_with, export_html_single, export_pdf_bundle,
+    export_tables, Exported, Format, NoPdfRenderer, PdfRenderer, Scope, TableFormat,
 };
 pub use import::{
     import_csv, import_docx, import_docx_with, import_enex, import_enex_reader, import_html_folder, import_keep_folder,
