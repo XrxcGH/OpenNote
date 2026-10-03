@@ -9,8 +9,10 @@ import { pageSelection, shownMounted } from '../page';
 import type { MessageKey } from '../../strings/t';
 import type { FlagId } from '../../app/flags';
 
-import { spacingRangeMm } from './layout/layouts';
 import { setSheetNav, sheetNav, shownPagesView } from './live/shown';
+
+/** The papers that have lines or squares to space. The layout module holds their ranges, and loads when needed. */
+const SPACED = new Set(['ruled', 'grid', 'dots', 'isometric']);
 
 const shown = () => shownMounted.get() !== null;
 const api = () => shownPagesView.get();
@@ -58,10 +60,7 @@ command({
   title: 'pagesPlus.commands.spacing',
   keywords: 'pagesPlus.commands.spacingKeywords',
   flag: 'pages.layouts',
-  enabled: () => {
-    const view = api()?.view();
-    return view !== undefined && spacingRangeMm(view.background.pattern) !== null;
-  },
+  enabled: () => SPACED.has(api()?.view().background.pattern ?? ''),
   run: () => import('./ui/layoutCommands').then((m) => m.openSpacing()),
 });
 command({

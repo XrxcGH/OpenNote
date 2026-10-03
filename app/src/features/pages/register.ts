@@ -12,7 +12,6 @@ import { openMenu } from '../../ui';
 import { menuItemsFor } from '../../commands/menus';
 import { isEnabled } from '../../app/flags';
 import type { FlagId } from '../../app/flags';
-import './registerMore';
 
 import type { PagesViewState, PaperName, MarginName } from './live/shown';
 import { pagesViewEpoch, shownPagesView } from './live/shown';
@@ -339,6 +338,9 @@ pagesViewEpoch.subscribe(() => {
 mountedPageHooks.register({
   id: 'pages.view',
   attach(mounted) {
+    // The second pass of commands (registerMore.ts) loads with the first page, so start-up stays small. All of them
+    // need a shown page, except the elements library, which waits for the first page too.
+    void import('./registerMore');
     if (!isEnabled('pages.view')) return () => undefined;
     let detach: () => void = () => undefined;
     let gone = false;
