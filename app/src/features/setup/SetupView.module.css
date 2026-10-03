@@ -10,19 +10,12 @@
     background: var(--color-surface-app);
   }
 
-  /* Window light. By day, a warm pool falls from the top corner, with a patch of light and the window's soft
-     cross-bar shadow. In the evening, a dusk sky ends in a low sunset band. It paints the backdrop, never the card,
-     and stays close to the surface (BRAND.md section 4). */
+  /* Window light. By day, a warm pool falls from the top corner. In the evening, a dusk sky ends in a low sunset
+     band. It paints the backdrop, never the card, and stays close to the surface (BRAND.md section 4). The patch of
+     light on the desk belongs to the page canvas, so the setup steps stay calm. */
   .screen {
-    --pane-shadow: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
     background:
-      /* The window's cross bars cast two faint shadows across the patch of light, fading at their ends. */
-      linear-gradient(to bottom, transparent, var(--pane-shadow) 25% 75%, transparent) 88% 64.3% / 6px 30% no-repeat,
-      linear-gradient(to right, transparent, var(--pane-shadow) 25% 75%, transparent) 98.7% 60% / 22% 6px no-repeat,
-      /* The patch of window light beside the card. */
-        radial-gradient(closest-side, var(--color-ambient-glow) 35%, transparent) 109.4% 77.3% / 36% 56% no-repeat,
-      /* The pool of light from the window at the top corner. */
-        radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
+      radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
       var(--color-surface-app);
   }
 

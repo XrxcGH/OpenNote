@@ -91,13 +91,13 @@
     min-inline-size: 0;
     overflow: auto;
     isolation: isolate;
-    --pane-shadow: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+    --pane-shadow: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
     background:
       /* The window's cross bars cast two faint shadows across the patch of light, fading at their ends. */
-      linear-gradient(to bottom, transparent, var(--pane-shadow) 25% 75%, transparent) 72% 71.2% / 6px 34% no-repeat,
-      linear-gradient(to right, transparent, var(--pane-shadow) 25% 75%, transparent) 81.4% 64% / 30% 6px no-repeat,
-      /* The patch of window light on the desk. */
-        radial-gradient(closest-side, var(--color-ambient-glow) 35%, transparent) 92.3% 88.1% / 48% 58% no-repeat,
+      linear-gradient(to bottom, transparent, var(--pane-shadow) 20% 80%, transparent) 70% 81.3% / 5px 36% no-repeat,
+      linear-gradient(to right, transparent, var(--pane-shadow) 20% 80%, transparent) 88.5% 70% / 48% 5px no-repeat,
+      /* The patch of window light on the desk, wider than it is tall, as light falls on a flat surface. */
+        radial-gradient(closest-side, var(--color-ambient-glow) 40%, transparent) 95.5% 84.5% / 56% 42% no-repeat,
       /* The pool of light from the window at the top corner. */
         radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
       var(--color-surface-sunken);

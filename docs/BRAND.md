@@ -261,7 +261,7 @@ A drawing never moves to a pane that has none, and the extra motifs live inside 
 ### The ambient canvas
 
 - The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. The card itself stays plain paper.
-- By day, warm light pools from the window's top corner, and a soft patch of it lies on the desk. Across the patch falls the faint shadow of the window's cross bars: two thin bars at 5 percent of the text color that fade at their ends.
+- By day, warm light pools from the window's top corner, and a soft patch of it, wider than it is tall, lies on the desk. Across the patch falls the faint shadow of the window's cross bars: two thin bars at 4 percent of the text color that fade at their ends. The setup backdrop keeps only the pool, so the steps stay calm.
 - In the evening, the sky deepens from night indigo through dusk to a low sunset band at the horizon. Twenty-five stars sit at the top, 0.75 to 1.25 pixels in radius at 45 to 70 percent opacity, with three larger ones, up to 1.8 pixels, at up to 80 percent. They are drawn at 1:1 at any width, and each stays at least 5 pixels clear of the card's top edge, so none looks like a speck on the card.
 
 No 3D renders, gradient blobs, stock photos, or mascots.
