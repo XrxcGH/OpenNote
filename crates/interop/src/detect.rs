@@ -27,7 +27,7 @@ pub enum SourceKind {
     Notion,
     /// Evernote export files (`.enex`).
     Evernote,
-    /// Word files (`.docx`), including OneNote's exports.
+    /// Word files (`.docx`) and OpenDocument text (`.odt`), including OneNote's exports.
     Word,
     /// Web page archives (`.mht`), including OneNote's exports.
     WebArchive,
@@ -101,7 +101,7 @@ pub fn detect(path: &Path) -> Result<Detected> {
         "one" | "onepkg" | "onetoc2" => Ok(onenote_files()),
         "sqlite" | "sqlite3" | "db" => detect_database(path),
         "snt" => Err(InteropError::unsupported(file_name(path), STICKY_ADVICE)),
-        "doc" | "rtf" | "odt" | "pages" | "wpd" => Err(InteropError::unsupported(
+        "doc" | "rtf" | "pages" | "wpd" => Err(InteropError::unsupported(
             file_name(path),
             "Save the document as .docx in its own app, then import that file.",
         )),
@@ -152,7 +152,7 @@ fn by_extension(ext: &str) -> Option<Detected> {
     let kind = match ext {
         "md" | "markdown" => SourceKind::Markdown,
         "enex" => SourceKind::Evernote,
-        "docx" | "docm" => SourceKind::Word,
+        "docx" | "docm" | "odt" | "ott" => SourceKind::Word,
         "mht" | "mhtml" => SourceKind::WebArchive,
         "html" | "htm" => SourceKind::Html,
         "txt" | "text" => SourceKind::Text,
@@ -206,7 +206,7 @@ impl Survey {
     fn majority(&self) -> Option<SourceKind> {
         let candidates = [
             (SourceKind::Markdown, self.count(&["md", "markdown"])),
-            (SourceKind::Word, self.count(&["docx", "docm"])),
+            (SourceKind::Word, self.count(&["docx", "docm", "odt", "ott"])),
             (SourceKind::WebArchive, self.count(&["mht", "mhtml"])),
             (SourceKind::Html, self.count(&["html", "htm"])),
             (SourceKind::Evernote, self.count(&["enex"])),

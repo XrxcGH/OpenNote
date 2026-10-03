@@ -20,6 +20,8 @@ mod markdown;
 mod mht;
 mod mime;
 mod notion;
+mod odt;
+mod pictures;
 mod placement;
 mod plain;
 mod scan;
@@ -29,6 +31,7 @@ mod tags;
 mod textbundle;
 mod word;
 mod xmltree;
+mod zipxml;
 
 pub use enex::{import_enex, import_enex_reader};
 pub use html::import_html_folder;
