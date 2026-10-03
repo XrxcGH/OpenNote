@@ -62,6 +62,15 @@ describe('the first step', () => {
     expect(container.querySelector('svg[viewBox="0 0 56 8"][aria-hidden="true"]')).toBeTruthy();
   });
 
+  it('keeps the title where the next step has it, so Get started does not move it', async () => {
+    await renderApp(firstRun());
+    const top = async (name: string) =>
+      Math.round((await screen.findByRole('heading', { level: 1, name })).getBoundingClientRect().top);
+    const welcome = await top('Welcome to OpenNote');
+    fireEvent.click(button('Get started'));
+    await expect.poll(() => top('Choose your look')).toBe(welcome);
+  });
+
   it('stays out of the way when setup is done', async () => {
     await renderApp();
     expect(getLocation().view).toBe('workspace');

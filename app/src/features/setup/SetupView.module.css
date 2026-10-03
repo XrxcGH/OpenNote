@@ -75,15 +75,17 @@
     color: var(--color-text-secondary);
   }
 
-  /* The welcome step: everything centered under the title, with the desk between the sentence and the note. */
+  /* The welcome step: the title stays where every other step has it, the note sits at the bottom, and the desk is
+     centered in the room between them. */
   .welcome {
+    grid-template-rows: auto 1fr auto;
     min-block-size: 100%;
-    align-content: center;
     text-align: center;
   }
 
   .scene {
     display: grid;
+    align-content: center;
     justify-items: center;
   }
 
