@@ -6,6 +6,7 @@ import { commandBar, commands, settingsSections } from '../../../registries';
 import { getSettings, settingsStore, updateSettings } from '../../../state/settings';
 import type { InkHost } from './host';
 import { DrawPens, DrawTools } from './DrawBar';
+import { registerExportStrokes } from './exportSource';
 import { createPenTool } from './input';
 import { TouchTool } from './touch';
 import { attachSelectionFrame, createFrameTool } from './selection';
@@ -74,6 +75,7 @@ export function installInk(host: InkHost): () => void {
     () => touch.destroy(),
     drawState.subscribe(() => host.setActiveTool(routerTool(drawState.get()))),
     follow(host),
+    registerExportStrokes(() => current?.surface ?? null),
     // New settings take effect at the next touch.
     settingsStore.subscribe(() => touch.reset()),
     settingsSections.register({
