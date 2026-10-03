@@ -3,6 +3,7 @@
 // wholly outside it, or needs an exact test. A lasso over 10,000 strokes then tests points for only a few.
 
 import { boundsOf } from './bounds';
+import { pointInPolygon } from './primitives';
 import type { Bounds, Vec } from './types';
 
 export const OUTSIDE = 0;
@@ -173,4 +174,10 @@ export function stateAt(mask: LassoMask, x: number, y: number): number {
   const r = Math.floor((y - mask.originY) / mask.cell);
   if (c < 0 || r < 0 || c >= mask.cols || r >= mask.rows) return OUTSIDE;
   return mask.state[r * mask.cols + c];
+}
+
+/** True when the point is inside the lasso. The mask answers for whole cells, and edge cells need the exact test. */
+export function insideMask(mask: LassoMask, x: number, y: number): boolean {
+  const state = stateAt(mask, x, y);
+  return state === INSIDE || (state === EDGE && pointInPolygon({ x, y }, mask.polygon));
 }

@@ -6,3 +6,5 @@ export * from './geometry';
 export * from './model';
 export * from './input';
 export * from './pens';
+export * from './selection';
+export * from './space';

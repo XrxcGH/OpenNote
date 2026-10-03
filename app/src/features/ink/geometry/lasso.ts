@@ -2,9 +2,8 @@
 // index, and a coarse mask answers most strokes without testing a point. The rest count their points inside.
 
 import { boundsOf } from './bounds';
-import { classifyBox, EDGE, INSIDE, buildMask, stateAt } from './lassoMask';
+import { buildMask, classifyBox, insideMask } from './lassoMask';
 import type { LassoMask } from './lassoMask';
-import { pointInPolygon } from './primitives';
 import { simplify } from './simplify';
 import { pagePoints } from './strokeIndex';
 import type { StrokeIndex } from './strokeIndex';
@@ -27,19 +26,13 @@ export const DEFAULT_LASSO_THRESHOLD = 0.6;
 /** A stroke's points are checked at least this close together, in page units. */
 const SAMPLE_STEP = 2;
 
-/** True when the point is inside the lasso. The mask answers for whole cells; edge cells need the exact test. */
-function isInside(mask: LassoMask, x: number, y: number): boolean {
-  const state = stateAt(mask, x, y);
-  return state === INSIDE || (state === EDGE && pointInPolygon({ x, y }, mask.polygon));
-}
-
 /**
  * The share of a stroke's centerline samples that fall inside the lasso. Samples come about one per SAMPLE_STEP
  * along the stroke. Points closer than that to the last sample are skipped, and longer gaps get extra samples. It
  * stops early once `mode` is decided.
  */
 function shareInside(mask: LassoMask, points: readonly Vec[], mode: LassoMode): number {
-  let inside = isInside(mask, points[0].x, points[0].y) ? 1 : 0;
+  let inside = insideMask(mask, points[0].x, points[0].y) ? 1 : 0;
   let total = 1;
   let lastX = points[0].x;
   let lastY = points[0].y;
@@ -49,7 +42,7 @@ function shareInside(mask: LassoMask, points: readonly Vec[], mode: LassoMode): 
     if (gapSq < SAMPLE_STEP * SAMPLE_STEP && i < points.length - 1) continue;
     const pieces = Math.max(1, Math.ceil(Math.sqrt(gapSq) / SAMPLE_STEP));
     for (let k = 1; k <= pieces; k++) {
-      const isIn = isInside(mask, lastX + ((x - lastX) * k) / pieces, lastY + ((y - lastY) * k) / pieces);
+      const isIn = insideMask(mask, lastX + ((x - lastX) * k) / pieces, lastY + ((y - lastY) * k) / pieces);
       total++;
       if (isIn) inside++;
       if (mode === 'any' ? isIn : mode === 'all' && !isIn) return inside / total;

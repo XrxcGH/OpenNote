@@ -49,6 +49,17 @@ export type { CurveControls, PressureCurveKind, PressureSettings } from './press
 export { createStabilizer, PAGE_UNITS_PER_MM, stabilize, stringRadius } from './stabilizer';
 export type { Stabilizer, StabilizerOptions } from './stabilizer';
 export { densify, resample, simplify } from './simplify';
+export {
+  detailLevel,
+  lodTolerance,
+  MIN_POLYLINE_PX,
+  polylineWidth,
+  POLYLINE_BELOW_SCALE,
+  pressureExtremes,
+  simplifyStroke,
+  smoothPath,
+} from './lod';
+export type { DetailLevel } from './lod';
 
 export { createSpatialIndex } from './spatialIndex';
 export type { SpatialEntry, SpatialIndex } from './spatialIndex';
