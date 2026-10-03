@@ -78,7 +78,7 @@ describe('page zoom', () => {
     );
     await screen.findByRole('heading', { level: 1, name: 'Mitosis' });
     expect(pageArticle().style.zoom).toBe('1.25');
-    await executeCommand('page.zoomReset');
+    await executeCommand('page.zoom100');
     expect(pageArticle().style.zoom).toBe('');
   });
 });

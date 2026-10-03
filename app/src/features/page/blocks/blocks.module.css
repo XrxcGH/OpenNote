@@ -1,0 +1,104 @@
+@layer components {
+  .block {
+    position: relative;
+    margin-block-end: var(--space-4);
+    border-radius: var(--radius-sm);
+  }
+
+  .block:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .floating {
+    position: absolute;
+    margin: 0;
+  }
+
+  .text {
+    color: var(--color-text-primary);
+    font-family: var(--font-reading);
+    font-size: var(--type-note-size);
+    line-height: var(--type-note-line);
+  }
+
+  .text :global(.ProseMirror) {
+    min-block-size: 1lh;
+    outline: none;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    caret-color: var(--color-accent-clay);
+  }
+
+  /* An empty text box invites writing, in muted text that is never part of the note. */
+  .text :global(.ProseMirror) > p:only-child:has(> br:only-child)::before {
+    content: var(--placeholder);
+    float: inline-start;
+    block-size: 0;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .text :global(.ProseMirror) ::selection {
+    background: var(--color-selection-highlight);
+  }
+
+  .text :global(.ProseMirror) > :first-child {
+    margin-block-start: 0;
+  }
+
+  .text :global(.ProseMirror) h1,
+  .text :global(.ProseMirror) h2,
+  .text :global(.ProseMirror) h3 {
+    color: var(--color-text-primary);
+    font-family: var(--font-reading);
+    line-height: 1.25;
+  }
+
+  .text :global(.ProseMirror) h2 {
+    padding-block-end: var(--space-1);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .text :global(.ProseMirror) a {
+    color: var(--color-accent-primary);
+  }
+
+  .text :global(.ProseMirror) blockquote {
+    margin-inline: 0;
+    padding-inline-start: var(--space-4);
+    border-inline-start: 3px solid var(--color-accent-clay);
+    color: var(--color-text-secondary);
+  }
+
+  .text :global(.ProseMirror) mark {
+    background: var(--color-selection-highlight);
+    color: inherit;
+  }
+
+  .text :global(.ProseMirror) pre,
+  .text :global(.ProseMirror) code {
+    font-family: var(--font-mono);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+  }
+
+  .text :global(.ProseMirror) pre {
+    padding: var(--space-3) var(--space-4);
+    overflow-x: auto;
+  }
+
+  .text :global(.ProseMirror) hr {
+    border: 0;
+    border-block-start: 1px solid var(--color-border-subtle);
+  }
+
+  .unknown {
+    padding: var(--space-3) var(--space-4);
+    border: 1px dashed var(--color-border-control);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-sunken);
+    font-size: var(--type-note-size);
+  }
+}

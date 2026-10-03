@@ -1,18 +1,5 @@
-// Registers the page zoom commands. They have no shortcuts, because Ctrl+=, Ctrl+-, and Ctrl+0 change the text size
-// everywhere. Ctrl+wheel over the page is the pointer way (amendment P2-13), and the palette is the keyboard way.
+// Loads each work package's registrations (PLAN.md section 3.9, owned by WP0). Every package registers its
+// commands, menus, bar items, settings parts, and renderers from its own file in registrations/, so no two
+// packages edit one list. The files load at start-up, so each keeps its heavy code behind dynamic imports.
 
-import { defineCommand } from '../../commands/registry';
-import { commands } from '../../registries';
-import { canZoomPage, resetPageZoom, stepPageZoom } from './zoom';
-
-const ZOOM = [
-  { id: 'page.zoomIn', title: 'page.zoom.in', run: () => stepPageZoom(1) },
-  { id: 'page.zoomOut', title: 'page.zoom.out', run: () => stepPageZoom(-1) },
-  { id: 'page.zoomReset', title: 'page.zoom.reset', run: resetPageZoom },
-] as const;
-
-for (const { id, title, run } of ZOOM) {
-  commands.register(
-    defineCommand({ id, title, keywords: 'page.zoom.keywords', category: 'view', enabled: canZoomPage, run }),
-  );
-}
+import.meta.glob('./registrations/*.ts', { eager: true });
