@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opennote.app/schemas/palm-session.json",
+  "title": "OpenNote labeled palm session, one JSON object per line",
+  "description": "The first line is a header; then events in delivery order (seq), labels, and expectations. app/src/features/ink/input/testing/session.ts validates the same rules in CI.",
+  "oneOf": [
+    { "$ref": "#/$defs/header" },
+    { "$ref": "#/$defs/event" },
+    { "$ref": "#/$defs/label" },
+    { "$ref": "#/$defs/expect" }
+  ],
+  "$defs": {
+    "header": {
+      "type": "object",
+      "required": ["format", "version", "device", "profile", "capabilities", "screen", "handedness", "consent"],
+      "properties": {
+        "format": { "const": "opennote-palm-session" },
+        "version": { "const": 1 },
+        "device": {
+          "type": "object",
+          "required": ["os", "model", "digitizer", "penFamily"],
+          "properties": {
+            "os": { "type": "string" },
+            "model": { "type": "string" },
+            "digitizer": { "type": "string" },
+            "penFamily": { "type": "string" }
+          }
+        },
+        "profile": { "type": "string" },
+        "capabilities": {
+          "type": "object",
+          "properties": {
+            "hover": { "enum": ["none", "short", "long"] },
+            "pressureLevels": { "type": "integer", "minimum": 0 },
+            "tiltMode": { "enum": ["none", "degrees", "angles"] },
+            "sizeMode": { "enum": ["real", "quantized", "constant", "none"] },
+            "rateHz": { "type": "number", "minimum": 0 }
+          }
+        },
+        "screen": {
+          "type": "object",
+          "required": ["cssPxPerMm"],
+          "properties": {
+            "dpr": { "type": "number" },
+            "cssPxPerMm": { "type": "number", "exclusiveMinimum": 0 },
+            "refreshHz": { "type": "number" },
+            "w": { "type": "number" },
+            "h": { "type": "number" }
+          }
+        },
+        "webview": { "type": "string" },
+        "handedness": { "enum": ["right", "left"] },
+        "grip": { "enum": ["tripod", "hooked", "overwriter", "fist"] },
+        "posture": { "enum": ["desk", "lap", "handheld"] },
+        "settings": { "type": "object" },
+        "learned": { "type": "object" },
+        "task": { "type": "string" },
+        "consent": { "const": true }
+      }
+    },
+    "sample": {
+      "type": "array",
+      "description": "[t, x, y, pressure, tiltX, tiltY, width, height]",
+      "items": { "type": "number" },
+      "minItems": 8,
+      "maxItems": 8
+    },
+    "event": {
+      "type": "object",
+      "required": ["seq", "t", "type"],
+      "properties": {
+        "seq": { "type": "integer", "minimum": 0 },
+        "t": { "type": "number" },
+        "type": {
+          "enum": [
+            "pointerover",
+            "pointerenter",
+            "pointerdown",
+            "pointermove",
+            "pointerrawupdate",
+            "pointerup",
+            "pointercancel",
+            "pointerout",
+            "pointerleave",
+            "gotpointercapture",
+            "lostpointercapture",
+            "blur",
+            "focus",
+            "visibility",
+            "pageswitch",
+            "native",
+            "tool"
+          ]
+        },
+        "id": { "type": "integer" },
+        "pt": { "enum": ["pen", "touch", "mouse"] },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number" },
+        "h": { "type": "number" },
+        "p": { "type": "number", "minimum": 0, "maximum": 1 },
+        "tx": { "type": "number" },
+        "ty": { "type": "number" },
+        "alt": { "type": "number" },
+        "az": { "type": "number" },
+        "twist": { "type": "number" },
+        "b": { "type": "integer" },
+        "bs": { "type": "integer" },
+        "co": { "type": "array", "items": { "$ref": "#/$defs/sample" } },
+        "pr": { "type": "array", "items": { "$ref": "#/$defs/sample" } },
+        "target": { "enum": ["page", "chrome", "root"] },
+        "hidden": { "type": "boolean" },
+        "on": { "type": "boolean" },
+        "kind": { "enum": ["palm", "confident"] },
+        "down": { "type": "boolean" }
+      }
+    },
+    "label": {
+      "type": "object",
+      "required": ["type", "id", "from", "to", "cls", "intent"],
+      "properties": {
+        "type": { "const": "label" },
+        "id": { "type": "integer" },
+        "from": { "type": "number" },
+        "to": { "type": "number" },
+        "cls": {
+          "enum": [
+            "pen",
+            "pen-eraser",
+            "finger",
+            "thumb",
+            "palm",
+            "wrist",
+            "knuckle",
+            "pinky",
+            "grip-thumb",
+            "sleeve",
+            "other"
+          ]
+        },
+        "intent": { "enum": ["ink", "erase", "pan", "zoom", "scroll", "tap", "gesture", "none"] }
+      }
+    },
+    "expect": {
+      "type": "object",
+      "required": ["type", "t", "what"],
+      "properties": {
+        "type": { "const": "expect" },
+        "t": { "type": "number" },
+        "what": { "enum": ["stray-mark", "missed-stroke", "stray-scroll"] },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

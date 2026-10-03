@@ -1,0 +1,4 @@
+{
+  "description": "Recorded sessions whose non-intent contacts have no physical tell a page can see (palm README, Finger drawing, known limit). They are replayed and counted in the report but excluded from the gates. The list may only shrink: knownLimitsMax in thresholds.json caps it.",
+  "sessions": []
+}
