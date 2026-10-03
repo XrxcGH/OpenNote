@@ -1,8 +1,22 @@
 // The search methods Beta 4 added (see core_bridge/search/extras.rs), each one a call of the `search_call` command.
-import type { SearchExtras } from '../../services/search/types';
+import type {
+  Connections,
+  LinkGraphData,
+  Neighbor,
+  PageFact,
+  SearchExtras,
+  TaggedBlock,
+} from '../../services/search/types';
 
-export function createTauriSearchExtras(call: <T>(method: string, args?: Record<string, unknown>) => Promise<T>): SearchExtras {
+type Call = <T>(method: string, args?: Record<string, unknown>) => Promise<T>;
+
+export function createTauriSearchExtras(call: Call): SearchExtras {
   return {
     launchLink: () => call<string | null>('launchLink'),
+    pageFacts: (notebook) => call<PageFact[]>('pageFacts', { notebook: notebook ?? null }),
+    taggedBlocks: (scope) => call<TaggedBlock[]>('taggedBlocks', { scope }),
+    linkGraph: (notebook) => call<LinkGraphData>('graph', { notebook: notebook ?? null }),
+    neighbors: (page, depth) => call<Neighbor[]>('neighbors', { page, depth }),
+    connections: (page) => call<Connections>('connections', { page }),
   };
 }
