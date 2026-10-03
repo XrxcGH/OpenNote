@@ -6,7 +6,8 @@ import { commandBar, commands, settingsSections } from '../../../registries';
 import { getSettings, settingsStore, updateSettings } from '../../../state/settings';
 import type { InkHost } from './host';
 import { DrawPens, DrawTools } from './DrawBar';
-import { createPenTool, createTouchTool } from './input';
+import { createPenTool } from './input';
+import { TouchTool } from './touch';
 import { attachSelectionFrame, createFrameTool } from './selection';
 import type { SelectionFrame } from './selection';
 import { chooseTool, drawState, routerTool } from './state';
@@ -64,7 +65,7 @@ const tool = (id: `ink.${string}`, title: CommandDef['title'], to: DrawTool, fla
 export function installInk(host: InkHost): () => void {
   installInkTestHooks(() => current?.surface ?? null);
   const pen = createPenTool(host, () => current?.surface ?? null);
-  const touch = createTouchTool(host, () => current?.surface ?? null);
+  const touch = new TouchTool(host, () => current?.surface ?? null);
   const stops: (() => void)[] = [
     host.registerPointerTool(pen.tool),
     host.registerPointerTool(touch.tool),

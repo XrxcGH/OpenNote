@@ -1,6 +1,6 @@
 // Phase 5's flags (ARCHITECTURE.md section 2.2), and the loader of the ink view. app/flags.ts joins these to Phase
-// 2's list, so this file loads at start-up, before the ink chunk: it is the feature's light public face, as
-// index.ts is its full one. A feature turns on when it works end to end in the app; the rest stay off.
+// 2's list, so this file loads at start-up, before the ink chunk. It is the feature's light public face; index.ts
+// is its full one. A feature turns on when it works end to end in the app, and the rest stay off.
 import type { FlagDef, FlagId } from '../../app/flags';
 
 export type InkFlagId = Extract<FlagId, `ink.${string}` | 'dev.penRecorder'>;

@@ -1,4 +1,5 @@
-// Palm rejection settings on the web platform: Settings, Pen and touch sets the writing hand and when a finger draws.
+// Palm rejection settings on the web platform: the Pen and touch section sets the writing hand and when a finger
+// draws.
 import { expect, test } from '../fixtures';
 import { openPage } from '../ink';
 

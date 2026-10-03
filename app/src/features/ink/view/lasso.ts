@@ -7,6 +7,7 @@ import type { Bounds, Vec } from '../geometry/types';
 import { lassoAll } from '../selection/lassoItems';
 import type { BlockItem, BlockKind } from '../selection/lassoItems';
 import type { InkHost } from './host';
+import { brandColor } from './paint';
 import type { InkSurface } from './surface';
 
 export interface LassoGesture {
@@ -24,7 +25,7 @@ export function startLasso(): LassoGesture {
       const zoom = surface.cameraNow().zoom;
       ctx.lineWidth = 1.5 / zoom;
       ctx.setLineDash([6 / zoom, 4 / zoom]);
-      ctx.strokeStyle = surface.scheme() === 'dark' ? '#9db4ea' : '#2f4f9a';
+      ctx.strokeStyle = brandColor('indigo', surface.scheme());
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
       for (const p of points) ctx.lineTo(p.x, p.y);

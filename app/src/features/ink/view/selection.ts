@@ -2,13 +2,12 @@
 // deletes, recolors, and makes the ink thicker or thinner. Text and images the lasso held move with the ink. The
 // frame is a group of real buttons, so a keyboard reaches each part: arrow keys move, Delete deletes, and Escape
 // lets go of the selection.
-import { buttonClass, openMenu } from '../../../ui';
+import type { Edit } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
-import { announce } from '../../../ui';
-import { compose, scaling, translation } from '../geometry/matrix';
+import { announce, buttonClass, openMenu } from '../../../ui';
+import { compose, IDENTITY, scaling, translation } from '../geometry/matrix';
 import type { Bounds, Matrix } from '../geometry/types';
-import type { Edit } from '../../../services/pages/types';
 import { recolor, scaleWidths, THICKER, THINNER } from '../model/restyle';
 import type { InkStroke } from '../model/types';
 import { slotsForTool } from '../pens/palette';
@@ -22,6 +21,12 @@ const CORNERS: readonly Corner[] = ['nw', 'ne', 'se', 'sw'];
 /** Arrow keys move the selection this far, in page units; with Shift, ten times as far. */
 const KEY_STEP = 1;
 const MIN_SIZE = 4;
+const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
 
 interface Drag {
   pointerId: number;
@@ -29,6 +34,15 @@ interface Drag {
   corner: Corner | null;
   box: Bounds;
   matrix: Matrix;
+}
+
+/** What the frame's pointer tool drives: the page view's router hands it every pointer pressed on the frame. */
+export interface SelectionFrame {
+  down(event: PointerEvent): void;
+  move(event: PointerEvent): void;
+  up(event: PointerEvent): void;
+  cancel(): void;
+  stop(): void;
 }
 
 function button(doc: Document, label: string, text?: string): HTMLButtonElement {
@@ -42,35 +56,27 @@ function button(doc: Document, label: string, text?: string): HTMLButtonElement 
   return element;
 }
 
-export function attachSelectionFrame(host: InkHost, surface: InkSurface): SelectionFrame {
-  const doc = surface.chrome.ownerDocument;
+/** The frame's elements: the group, the move area that covers it, a handle at each corner, and the bar. */
+function buildFrame(doc: Document, actions: readonly [MessageKey, string, () => void][]) {
   const frame = doc.createElement('div');
   frame.dataset.inkSelection = '';
+  frame.className = 'ink-selection-frame';
   frame.setAttribute('role', 'group');
   frame.setAttribute('aria-label', t('ink.selection.frame'));
   Object.assign(frame.style, { position: 'absolute', display: 'none', pointerEvents: 'auto' });
-  frame.className = 'ink-selection-frame';
   const mover = button(doc, t('ink.selection.move'));
   mover.dataset.inkMove = '';
   frame.append(mover);
-  CORNERS.forEach((corner) => {
-    const handle = button(
-      doc,
-      t('ink.selection.resize', { corner: t(`ink.selection.corners.${corner}` as MessageKey) }),
-    );
+  for (const corner of CORNERS) {
+    const name = t(`ink.selection.corners.${corner}` as MessageKey);
+    const handle = button(doc, t('ink.selection.resize', { corner: name }));
     handle.dataset.inkCorner = corner;
     frame.append(handle);
-  });
+  }
   const bar = doc.createElement('div');
   bar.setAttribute('role', 'toolbar');
   bar.setAttribute('aria-label', t('ink.selection.frame'));
   bar.dataset.inkSelectionBar = '';
-  const actions: [MessageKey, string, () => void][] = [
-    ['ink.selection.delete', 'delete', () => void remove()],
-    ['ink.selection.recolor', 'recolor', () => void recolorMenu()],
-    ['ink.selection.thicker', 'thicker', () => void widths(THICKER)],
-    ['ink.selection.thinner', 'thinner', () => void widths(THINNER)],
-  ];
   for (const [key, id, run] of actions) {
     const action = button(doc, t(key), t(key));
     action.dataset.inkAction = id;
@@ -78,39 +84,115 @@ export function attachSelectionFrame(host: InkHost, surface: InkSurface): Select
     bar.append(action);
   }
   frame.append(bar);
-  surface.chrome.append(frame);
+  return { frame, mover, bar };
+}
 
-  let drag: Drag | null = null;
-  const selection = () => host.selection.get();
-  const selected = (): InkStroke[] => surface.strokes(selection().strokes);
-  const box = (): Bounds | null => {
-    const sel = selection();
+class FrameView implements SelectionFrame {
+  private readonly frame: HTMLDivElement;
+  private readonly mover: HTMLButtonElement;
+  private readonly bar: HTMLDivElement;
+  private readonly stops: (() => void)[];
+  private drag: Drag | null = null;
+  private had = 0;
+
+  constructor(
+    private readonly host: InkHost,
+    private readonly surface: InkSurface,
+  ) {
+    const parts = buildFrame(surface.chrome.ownerDocument, [
+      ['ink.selection.delete', 'delete', () => void this.remove()],
+      ['ink.selection.recolor', 'recolor', () => void this.recolorMenu()],
+      ['ink.selection.thicker', 'thicker', () => void this.widths(THICKER)],
+      ['ink.selection.thinner', 'thinner', () => void this.widths(THINNER)],
+    ]);
+    ({ frame: this.frame, mover: this.mover, bar: this.bar } = parts);
+    this.frame.addEventListener('keydown', this.onKey);
+    surface.chrome.append(this.frame);
+    this.stops = [host.selection.subscribe(() => this.selectionChanged()), surface.onChange(() => this.place())];
+    this.place();
+  }
+
+  down(event: PointerEvent): void {
+    const target = event.target as HTMLElement;
+    const box = this.box();
+    if (!box || event.button !== 0 || !(target === this.mover || target.dataset.inkCorner)) return;
+    const start = this.host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? { x: 0, y: 0 };
+    const corner = (target.dataset.inkCorner as Corner | undefined) ?? null;
+    this.drag = { pointerId: event.pointerId, start, corner, box, matrix: IDENTITY };
+  }
+
+  move(event: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const at = this.host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? drag.start;
+    drag.matrix = drag.corner
+      ? resizeMatrix(drag.box, drag.corner, at)
+      : translation(at.x - drag.start.x, at.y - drag.start.y);
+    this.preview(drag.matrix);
+  }
+
+  up(event: PointerEvent): void {
+    const drag = this.drag;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    this.drag = null;
+    if (drag.matrix.some((v, i) => v !== IDENTITY[i])) void this.apply(drag.matrix);
+  }
+
+  cancel(): void {
+    this.drag = null;
+    this.surface.endPreview();
+    this.showBlocks(null);
+    this.place();
+  }
+
+  stop(): void {
+    this.stops.forEach((stop) => stop());
+    this.frame.remove();
+  }
+
+  private selection() {
+    return this.host.selection.get();
+  }
+
+  private selected(): InkStroke[] {
+    return this.surface.strokes(this.selection().strokes);
+  }
+
+  private box(): Bounds | null {
+    const sel = this.selection();
     if (sel.strokes.length === 0) return null;
-    const blocks = blockItems(host).filter((item) => sel.blocks.includes(item.id));
-    return selectionFrame(selected(), blocks);
-  };
+    const blocks = blockItems(this.host).filter((item) => sel.blocks.includes(item.id));
+    return selectionFrame(this.selected(), blocks);
+  }
 
-  const place = () => {
-    const b = box();
-    if (!b) {
-      frame.style.display = 'none';
+  private selectionChanged(): void {
+    this.place();
+    const now = this.selection().strokes.length;
+    if (now > 0 && this.had === 0) this.mover.focus({ preventScroll: true });
+    this.had = now;
+  }
+
+  private place(): void {
+    const box = this.box();
+    if (!box) {
+      this.frame.style.display = 'none';
       return;
     }
-    const shown = drag ? transformBox(b, drag.matrix) : b;
-    const { zoom, scrollX, scrollY } = surface.cameraNow();
-    Object.assign(frame.style, {
+    const shown = this.drag ? transformBox(box, this.drag.matrix) : box;
+    const { zoom, scrollX, scrollY } = this.surface.cameraNow();
+    Object.assign(this.frame.style, {
       display: '',
       left: `${shown.minX * zoom - scrollX - 4}px`,
       top: `${shown.minY * zoom - scrollY - 4}px`,
       width: `${Math.max(MIN_SIZE, (shown.maxX - shown.minX) * zoom) + 8}px`,
       height: `${Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8}px`,
     });
-  };
+  }
 
   /** Blocks move with the ink: floating ones get a new frame; ones in the flow stay where the flow puts them. */
-  const blockEdits = (matrix: Matrix): Edit[] => {
-    const layer = host.layer.get();
-    return selection().blocks.flatMap((id): Edit[] => {
+  private blockEdits(matrix: Matrix): Edit[] {
+    const layer = this.host.layer.get();
+    return this.selection().blocks.flatMap((id): Edit[] => {
       const block = layer?.block(id);
       const f = block?.frame;
       if (!block || f?.x === undefined || f.y === undefined || block.lock) return [];
@@ -118,162 +200,88 @@ export function attachSelectionFrame(host: InkHost, surface: InkSurface): Select
       const next = { ...f, x: a * f.x + e, y: d * f.y + fy, ...(f.w !== undefined ? { w: f.w * a } : {}) };
       return [{ edit: 'moveBlock', block: id, frame: next }];
     });
-  };
+  }
 
-  const showBlocks = (matrix: Matrix | null) => {
-    const layer = host.layer.get();
-    for (const id of selection().blocks) {
+  private showBlocks(matrix: Matrix | null): void {
+    const layer = this.host.layer.get();
+    for (const id of this.selection().blocks) {
       const element = layer?.view(id)?.element;
       if (!element) continue;
       element.style.transformOrigin = '0 0';
       element.style.transform = matrix ? `matrix(${matrix.join(',')})` : '';
     }
-  };
+  }
 
-  const apply = async (matrix: Matrix) => {
-    const ids = [...selection().strokes];
-    surface.endPreview();
-    showBlocks(null);
-    await surface.transform(ids, matrix, blockEdits(matrix));
-    place();
-  };
-
-  const preview = (matrix: Matrix) => {
-    const strokes = selected();
-    surface.preview(
+  private preview(matrix: Matrix): void {
+    const strokes = this.selected();
+    const moved = strokes.map((s) => ({ ...s, transform: compose(matrix, s.transform ?? IDENTITY) }));
+    this.surface.preview(
       strokes.map((s) => s.id),
-      strokes.map((s) => ({ ...s, transform: compose(matrix, s.transform ?? [1, 0, 0, 1, 0, 0]) })),
+      moved,
     );
-    showBlocks(matrix);
-    place();
-  };
+    this.showBlocks(matrix);
+    this.place();
+  }
 
-  const remove = async () => {
-    const sel = selection();
-    host.select({ blocks: sel.blocks, strokes: [] });
-    if (sel.blocks.length > 0) host.objectCommand('delete');
-    await surface.remove(sel.strokes);
-    host.select({ blocks: [], strokes: [] });
+  private async apply(matrix: Matrix): Promise<void> {
+    const ids = [...this.selection().strokes];
+    this.surface.endPreview();
+    this.showBlocks(null);
+    await this.surface.transform(ids, matrix, this.blockEdits(matrix));
+    this.place();
+  }
+
+  private async remove(): Promise<void> {
+    const sel = this.selection();
+    this.host.select({ blocks: sel.blocks, strokes: [] });
+    if (sel.blocks.length > 0) this.host.objectCommand('delete');
+    await this.surface.remove(sel.strokes);
+    this.host.select({ blocks: [], strokes: [] });
     announce(t('ink.announce.deleted'));
-  };
+  }
 
-  const widths = async (factor: number) => {
-    const strokes = selected();
-    const next = scaleWidths(strokes, factor);
-    const ids = strokes.map((s) => s.id);
-    // The core sets one width for all of them; strokes keep their own when they differ, one edit each.
-    await Promise.all(next.map((s) => surface.restyle([s.id], [s], { width: s.width })));
-    host.select({ blocks: selection().blocks, strokes: ids });
-  };
+  /** Thicker and Thinner keep each stroke's own width, so each stroke is its own restyle. */
+  private async widths(factor: number): Promise<void> {
+    const strokes = this.selected();
+    await Promise.all(scaleWidths(strokes, factor).map((s) => this.surface.restyle([s.id], [s], { width: s.width })));
+  }
 
-  const recolorMenu = async () => {
-    const strokes = selected();
+  private async recolorMenu(): Promise<void> {
+    const strokes = this.selected();
     const kind = strokes.every((s) => s.tool === 'highlighter') ? 'highlighter' : 'pen';
-    const chosen = await openMenu({
-      label: t('ink.selection.recolor'),
-      anchor: bar,
-      items: slotsForTool(kind).map((entry) => ({
-        id: String(entry.slot),
-        label: t(`ink.colors.${entry.name}` as MessageKey),
-      })),
-    });
-    if (chosen === null) return;
-    const entry = slotsForTool(kind).find((e) => String(e.slot) === chosen);
+    const entries = slotsForTool(kind);
+    const items = entries.map((entry) => ({
+      id: String(entry.slot),
+      label: t(`ink.colors.${entry.name}` as MessageKey),
+    }));
+    const chosen = await openMenu({ label: t('ink.selection.recolor'), anchor: this.bar, items });
+    const entry = entries.find((e) => String(e.slot) === chosen);
     if (!entry) return;
     const next = recolor(strokes, { slot: entry.slot, color: entry.light }, kind);
-    const ids = next.map((s) => s.id);
-    await surface.restyle(ids, next, { palette: entry.slot, color: [...entry.light] });
-  };
+    await this.surface.restyle(
+      next.map((s) => s.id),
+      next,
+      { palette: entry.slot, color: [...entry.light] },
+    );
+  }
 
-  const onDown = (event: PointerEvent) => {
-    const target = event.target as HTMLElement;
-    const b = box();
-    if (!b || event.button !== 0 || !(target === mover || target.dataset.inkCorner)) return;
-    const viewport = host.viewport.get();
-    const start = viewport?.toWorld(event.clientX, event.clientY) ?? { x: 0, y: 0 };
-    drag = {
-      pointerId: event.pointerId,
-      start,
-      corner: (target.dataset.inkCorner as Corner) ?? null,
-      box: b,
-      matrix: [1, 0, 0, 1, 0, 0],
-    };
-  };
-  const onMove = (event: PointerEvent) => {
-    if (!drag || event.pointerId !== drag.pointerId) return;
-    const at = host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? drag.start;
-    drag.matrix = drag.corner
-      ? resizeMatrix(drag.box, drag.corner, at)
-      : translation(at.x - drag.start.x, at.y - drag.start.y);
-    preview(drag.matrix);
-  };
-  const onUp = (event: PointerEvent) => {
-    if (!drag || event.pointerId !== drag.pointerId) return;
-    const { matrix } = drag;
-    drag = null;
-    if (matrix.every((v, i) => v === [1, 0, 0, 1, 0, 0][i])) return;
-    void apply(matrix);
-  };
-  const onKey = (event: KeyboardEvent) => {
-    if (selection().strokes.length === 0) return;
+  private readonly onKey = (event: KeyboardEvent) => {
+    if (this.selection().strokes.length === 0) return;
+    const arrow = ARROWS[event.key];
     const step = event.shiftKey ? KEY_STEP * 10 : KEY_STEP;
-    const moves: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, -step],
-      ArrowDown: [0, step],
-    };
-    const move = moves[event.key];
-    if (move && event.target === mover) {
-      event.preventDefault();
-      event.stopPropagation();
-      void apply(translation(move[0], move[1]));
-    } else if (event.key === 'Delete' || event.key === 'Backspace') {
-      event.preventDefault();
-      event.stopPropagation();
-      void remove();
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      host.select({ blocks: [], strokes: [] });
-    }
-  };
-  frame.addEventListener('keydown', onKey);
-  let had = 0;
-  const stops = [
-    host.selection.subscribe(() => {
-      place();
-      const now = selection().strokes.length;
-      if (now > 0 && had === 0) mover.focus({ preventScroll: true });
-      had = now;
-    }),
-    surface.onChange(place),
-  ];
-  place();
-  return {
-    down: onDown,
-    move: onMove,
-    up: onUp,
-    cancel() {
-      drag = null;
-      surface.endPreview();
-      showBlocks(null);
-      place();
-    },
-    stop() {
-      stops.forEach((stop) => stop());
-      frame.remove();
-    },
+    let run: (() => unknown) | null = null;
+    if (arrow && event.target === this.mover) run = () => this.apply(translation(arrow[0] * step, arrow[1] * step));
+    else if (event.key === 'Delete' || event.key === 'Backspace') run = () => this.remove();
+    else if (event.key === 'Escape') run = () => this.host.select({ blocks: [], strokes: [] });
+    if (!run) return;
+    event.preventDefault();
+    event.stopPropagation();
+    void run();
   };
 }
 
-/** What the frame's pointer tool drives: the page view's router hands it every pointer pressed on the frame. */
-export interface SelectionFrame {
-  down(event: PointerEvent): void;
-  move(event: PointerEvent): void;
-  up(event: PointerEvent): void;
-  cancel(): void;
-  stop(): void;
+export function attachSelectionFrame(host: InkHost, surface: InkSurface): SelectionFrame {
+  return new FrameView(host, surface);
 }
 
 /**

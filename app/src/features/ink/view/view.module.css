@@ -1,5 +1,5 @@
 @layer components {
-  /* The Draw tab's tools and pens, sized and colored like the command bar's own tools. */
+  /* The Draw tab's tools and pens look like the command bar's own tools. */
   .group {
     display: flex;
     align-items: center;

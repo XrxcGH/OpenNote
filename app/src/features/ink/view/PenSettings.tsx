@@ -1,5 +1,5 @@
-// Settings, Pen and touch (design 9.4): the writing hand the palm filter assumes, and when a finger draws. While a
-// pen is near the screen a touch never draws, whatever the choice.
+// The Pen and touch section of Settings (design 9.4): the writing hand the palm filter assumes, and when a finger
+// draws. While a pen is near the screen a touch never draws, whatever the choice.
 import type { FingerDraw } from '../../../platform/bindings/FingerDraw';
 import type { Handedness } from '../../../platform/bindings/Handedness';
 import { updateSettings, useSettings } from '../../../state/settings';

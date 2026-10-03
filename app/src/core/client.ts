@@ -66,7 +66,7 @@ export interface CoreClient {
   onEvent(event: string, handler: (payload: unknown) => void): () => void;
 }
 
-/** The body of page_add_strokes: a u32 JSON length, the JSON, and the records (app/src-tauri/src/ink_bridge.rs). */
+/** The body of page_add_strokes: the JSON's length as 4 bytes, the JSON, and the records (see ink_bridge.rs). */
 export function strokesBody(header: Record<string, unknown>, records: Uint8Array): Uint8Array {
   const json = new TextEncoder().encode(JSON.stringify(header));
   const body = new Uint8Array(4 + json.length + records.length);

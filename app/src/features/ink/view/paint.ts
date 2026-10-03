@@ -5,7 +5,7 @@ import { applyToPoint, widthScale } from '../geometry/matrix';
 import { pencilOpacity, strokeOutline } from '../geometry/outline';
 import type { InkPoint, InkTool } from '../geometry/types';
 import type { InkStroke } from '../model/types';
-import { resolveColor, toCss } from '../pens/palette';
+import { paletteByName, resolveColor, toCss } from '../pens/palette';
 import type { ColorScheme, Rgba } from '../pens/palette';
 
 const paths = new WeakMap<InkStroke, Path2D>();
@@ -40,6 +40,12 @@ export function strokePath(stroke: InkStroke): Path2D {
     paths.set(stroke, path);
   }
   return path;
+}
+
+/** A pen color from the brand palette, for the eraser's ring and the lasso's path. */
+export function brandColor(name: string, scheme: ColorScheme): string {
+  const entry = paletteByName(name);
+  return entry ? toCss(scheme === 'dark' ? entry.dark : entry.light) : 'currentColor';
 }
 
 export function fillOf(style: { slot: number; color: Rgba }, scheme: ColorScheme): string {
