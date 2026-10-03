@@ -49,6 +49,23 @@ describe('ThemeCards', () => {
   });
 });
 
+describe('the marks in the previews', () => {
+  it('give Light a sun, Dark a moon, and Match Windows both, all hidden from screen readers', () => {
+    renderUi(<Harness onChange={() => {}} />);
+    const marks = (name: string) => [...radio(name).querySelectorAll('svg[viewBox="0 0 16 16"]')];
+    expect(marks('Light')).toHaveLength(1);
+    expect(marks('Dark')).toHaveLength(1);
+    expect(marks('Match Windows')).toHaveLength(2);
+    for (const mark of marks('Light').concat(marks('Dark'), marks('Match Windows'))) {
+      expect(mark.getAttribute('aria-hidden')).toBe('true');
+      expect(mark.getAttribute('focusable')).toBe('false');
+      expect(mark.closest('[data-theme-scope]')).toBeTruthy();
+    }
+    expect(radio('Light').querySelector('svg circle')).toBeNull();
+    expect(radio('Dark').querySelectorAll('svg circle')).toHaveLength(2);
+  });
+});
+
 describe('choosing a theme card', () => {
   it('selects on a click and on an arrow key, and ignores a held key', async () => {
     const onChange = vi.fn();

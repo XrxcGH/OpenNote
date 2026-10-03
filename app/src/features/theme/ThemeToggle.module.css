@@ -8,6 +8,15 @@
     user-select: none;
   }
 
+  /* The sun is candlelight and the moon is night, so the toggle shows which sky is shown (BRAND.md section 4). */
+  .sun {
+    color: var(--color-accent-candle);
+  }
+
+  .moon {
+    color: var(--color-accent-night);
+  }
+
   .hidden {
     position: absolute;
     inline-size: 1px;
