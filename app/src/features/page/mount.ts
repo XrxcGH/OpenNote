@@ -36,7 +36,7 @@ import type { PagePool } from './pool/pool';
 import { createSelectTool } from './pool/selectTool';
 import { savePageView } from './runtime';
 import { setGeometrySource } from './seams/geometry';
-import { selectOnPage } from './seams/selectionStore';
+import { pageSelection, selectOnPage } from './seams/selectionStore';
 import { createSyncQueue, shownQueue } from './sync';
 import type { SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
@@ -139,6 +139,10 @@ function objectMenus(container: HTMLElement, objects: Objects, layer: PageBlockL
 
 /** Points the shown page's stores at this view. Returns a function that clears them if they still point here. */
 function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
+  // A selection belongs to the page it was made on: the page before this one may have left a block selected.
+  if (pageSelection.get().blocks.length + pageSelection.get().strokes.length > 0) {
+    selectOnPage({ blocks: [], strokes: [] });
+  }
   shownViewport.set(mounted.viewport);
   shownPage.set({
     ...mounted.layout,
