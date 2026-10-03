@@ -266,6 +266,36 @@
     border-block-start: 1px solid var(--color-border-subtle);
   }
 
+  /*
+   * Math in static text. An editor's math view shows the source in a code element; static text has only the
+   * empty element with the source in an attribute, so math vanished until an editor mounted. Generated content
+   * shows the same source, in the same style, and screen readers read it.
+   */
+  .text :global(.ProseMirror) :is([data-math-block], [data-math]):empty::before {
+    font-family: var(--font-mono);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+  }
+
+  .text :global(.ProseMirror) [data-math-block]:empty {
+    display: block;
+    margin-block: var(--space-3);
+    color: var(--color-text-secondary);
+    white-space: pre-wrap;
+  }
+
+  .text :global(.ProseMirror) [data-math-block]:empty::before {
+    content: '$$\A' attr(data-math-block) '\A$$';
+  }
+
+  .text :global(.ProseMirror) [data-math]:empty {
+    color: var(--color-text-secondary);
+  }
+
+  .text :global(.ProseMirror) [data-math]:empty::before {
+    content: '$' attr(data-math) '$';
+  }
+
   .unknown {
     padding: var(--space-3) var(--space-4);
     border: 1px dashed var(--color-border-control);
