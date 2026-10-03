@@ -3,6 +3,7 @@
 export { createPartialEraseSession, createStrokeEraseSession } from './eraseSession';
 export type {
   EraseOptions,
+  EraseRollback,
   EraseTransaction,
   PartialEraseSession,
   StrokeEraseSession,

@@ -95,6 +95,21 @@ describe('the stroke eraser session', () => {
     expect(session.erased().size).toBe(0);
     expect(session.move([{ x: 50, y: 30 }], 3)).toEqual([]);
   });
+
+  it('puts back what a cancelled touch gesture erased, but not what a transaction already took', () => {
+    const session = createStrokeEraseSession(index);
+    session.move(
+      [
+        { x: 50, y: -5 },
+        { x: 50, y: 5 },
+      ],
+      2,
+    );
+    expect(session.commit()).toEqual(['a']);
+    session.move([{ x: 50, y: 35 }], 2);
+    expect(session.cancel()).toEqual({ hide: [], show: ['b'] });
+    expect([...session.erased()]).toEqual(['a']);
+  });
 });
 
 let counter = 0;
@@ -106,6 +121,22 @@ const sweep = (y: number, from: number, to: number): Vec[] => [
 
 describe('the partial eraser session', () => {
   const index = createStrokeIndex([lineStroke('long', { x: 0, y: 0 }, { x: 200, y: 0 }, 40)]);
+
+  it('cancels a gesture: hides its parts and shows the stroke it cut', () => {
+    const session = createPartialEraseSession<Stroke>(index, newId);
+    const change = session.move(
+      [
+        { x: 100, y: -10 },
+        { x: 100, y: 10 },
+      ],
+      4,
+    );
+    const rollback = session.cancel();
+    expect(rollback.show).toEqual(['long']);
+    expect(rollback.hide.sort()).toEqual(change.added.map((p) => p.id).sort());
+    expect(session.isGone('long')).toBe(false);
+    expect(session.commit()).toEqual({ removed: [], added: [] });
+  });
 
   it('cuts a stroke into parts that name it as their origin', () => {
     const session = createPartialEraseSession<Stroke>(index, newId);

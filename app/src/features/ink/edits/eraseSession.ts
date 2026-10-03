@@ -1,7 +1,8 @@
 // Erase gestures (architecture 8.3 and 8.4). A gesture lasts from pen-down to pen-up and sends its hit tests as the
 // pen moves. The session keeps what the gesture has done so far and shows it at once. It gives the core one
-// transaction at the end, and interim ones every 500 ms for a long gesture. It never changes the stroke index. The
-// engine does that when the transaction lands.
+// transaction at the end, and interim ones every 500 ms for a long pen gesture. It never changes the stroke index. The
+// engine does that when the transaction lands. A touch gesture sends no interim transaction: its final `commit` waits
+// for the palm filter's Commit effect, and a Retract or a `pointercancel` calls `cancel` to put the picture back.
 
 import { intersects, strokeBounds } from '../geometry/bounds';
 import { capsulesAlong } from '../geometry/erase';
@@ -30,6 +31,14 @@ export interface StrokeEraseSession {
   erased(): ReadonlySet<string>;
   /** The ids to remove in a transaction. An interim call and the final call give only what is new since the last. */
   commit(): string[];
+  /** Abandons the gesture: what the picture must show again, since no transaction took it. The session resets. */
+  cancel(): EraseRollback;
+}
+
+/** What to put back in the picture when a gesture is abandoned: parts it made to hide, and core strokes to show. */
+export interface EraseRollback {
+  readonly hide: string[];
+  readonly show: string[];
 }
 
 export function createStrokeEraseSession(index: StrokeIndex, options: EraseOptions = {}): StrokeEraseSession {
@@ -62,6 +71,12 @@ export function createStrokeEraseSession(index: StrokeIndex, options: EraseOptio
       committed = all.length;
       return fresh;
     },
+    cancel() {
+      const show = [...erased].slice(committed);
+      for (const id of show) erased.delete(id);
+      last = null;
+      return { hide: [], show };
+    },
   };
 }
 
@@ -88,6 +103,8 @@ export interface PartialEraseSession<S extends Stroke> {
   checkpoint(): EraseTransaction<S>;
   /** The final transaction. */
   commit(): EraseTransaction<S>;
+  /** Abandons the gesture: parts that never reached the core to hide, and core strokes to show again. */
+  cancel(): EraseRollback;
 }
 
 /**
@@ -156,5 +173,15 @@ export function createPartialEraseSession<S extends Stroke>(
     isGone: (id) => gone.has(id) || phantoms.has(id),
     checkpoint: transaction,
     commit: transaction,
+    cancel() {
+      const hide = [...fresh];
+      const show = [...gone].filter((id) => !sent.has(id));
+      for (const id of hide) extra.delete(id);
+      for (const id of show) gone.delete(id);
+      fresh.clear();
+      phantoms.clear();
+      last = null;
+      return { hide, show };
+    },
   };
 }
