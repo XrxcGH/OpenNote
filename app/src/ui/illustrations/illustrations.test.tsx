@@ -73,6 +73,87 @@ describe('every drawing', () => {
   });
 });
 
+/** Points along a shape's outline in its own coordinates, before its own transform. */
+const along = (shape: SVGGeometryElement, steps = 400) =>
+  Array.from({ length: steps + 1 }, (_, i) =>
+    DOMPoint.fromPoint(shape.getPointAtLength((i / steps) * shape.getTotalLength())),
+  );
+
+/** Points along a shape's outline in its drawing's own coordinates (the viewBox), after every transform. */
+function outline(shape: SVGGeometryElement, steps = 400): DOMPoint[] {
+  const svg = shape.ownerSVGElement as SVGSVGElement;
+  const toDrawing = (svg.getScreenCTM() as DOMMatrix).inverse().multiply(shape.getScreenCTM() as DOMMatrix);
+  return along(shape, steps).map((p) => p.matrixTransform(toDrawing));
+}
+
+/** The outline of one shape, or of every shape in a group. */
+const pointsOf = (thing: Element) =>
+  (thing instanceof SVGGeometryElement
+    ? [thing]
+    : [...thing.querySelectorAll<SVGGeometryElement>('path, circle')]
+  ).flatMap((shape) => outline(shape));
+
+/** An empty state's shelf is the first line in its drawing. */
+const shelfOf = (svg: SVGSVGElement) => svg.querySelector('g > path') as SVGGeometryElement;
+
+/** The top of a shelf or desk at a given x, from its outline. */
+function surface(line: SVGGeometryElement): (x: number) => number {
+  const points = outline(line, 1000);
+  return (x) => Math.min(...points.filter((p) => Math.abs(p.x - x) <= 0.5).map((p) => p.y));
+}
+
+/** Things stand on a line: no point dips below it, and the lowest one is within a unit of it, so nothing floats. */
+function expectStandsOn(points: DOMPoint[], at: (x: number) => number) {
+  const gaps = points.map((p) => at(p.x) - p.y);
+  expect(Math.min(...gaps)).toBeGreaterThanOrEqual(-0.01);
+  expect(Math.min(...gaps)).toBeLessThan(1);
+}
+
+describe('where things stand', () => {
+  it('leans the third book on its bottom-left corner against the moss book, above the shelf', () => {
+    const svg = drawn(renderUi(<EmptyArt kind="notebooks" />).container);
+    const leaning = svg.querySelector('path[transform]') as SVGGeometryElement;
+    const upright = leaning.previousElementSibling as SVGGeometryElement;
+    const shelf = surface(shelfOf(svg));
+    const lean = outline(leaning);
+    expectStandsOn(lean, shelf);
+    // Its lowest point is the bottom-left corner, and the bottom-right corner is lifted off the shelf.
+    const lowest = lean.reduce((a, b) => (b.y > a.y ? b : a));
+    expect([lowest.x, lowest.y]).toEqual([lean[0].x, lean[0].y]);
+    // It rests on the moss book without passing into it: no outline point of one is inside the other. Both are
+    // compared in their shared parent's coordinates, where the moss book has no transform of its own.
+    const tilt = (leaning.transform.baseVal.consolidate() as SVGTransform).matrix;
+    const leaningEdge = along(leaning).map((p) => p.matrixTransform(tilt));
+    const uprightEdge = along(upright);
+    expect(leaningEdge.filter((p) => upright.isPointInFill(p))).toEqual([]);
+    expect(uprightEdge.filter((p) => leaning.isPointInFill(p.matrixTransform(tilt.inverse())))).toEqual([]);
+    let touch = Infinity;
+    for (const a of leaningEdge) for (const b of uprightEdge) touch = Math.min(touch, Math.hypot(a.x - b.x, a.y - b.y));
+    expect(touch).toBeLessThan(0.3);
+  });
+
+  it.each(['notebooks', 'page', 'trash'] as const)('stands everything in the %s drawing on the shelf', (kind) => {
+    const svg = drawn(renderUi(<EmptyArt kind={kind} />).container);
+    const shelf = surface(shelfOf(svg));
+    // The shelf drawing's objects are single shapes; the others are a drawing and a candle, each in a group.
+    const things = svg.querySelectorAll(kind === 'notebooks' ? 'g > path:not(:first-child)' : 'g g');
+    // Each object near the shelf (a book, the pot, the notebook, the stack, the candle) stands on it, never below it.
+    const near = [...things].map(pointsOf).filter((points) => points.some((p) => shelf(p.x) - p.y < 1));
+    for (const points of near) expectStandsOn(points, shelf);
+    expect(near).toHaveLength(kind === 'notebooks' ? 4 : 2);
+  });
+
+  it('stands the books, notebook and candle on the desk, and the plant on the window sill', () => {
+    const svg = drawn(renderUi(<DeskScene sky="day" />).container);
+    const [frame, plant, books, notebook, candle] = [...svg.querySelectorAll(':scope > g')];
+    const desk = surface(svg.querySelector(':scope > path') as SVGGeometryElement);
+    for (const thing of [books, notebook, candle]) expectStandsOn(pointsOf(thing), desk);
+    const sill = outline(frame.querySelector('path:last-child') as SVGGeometryElement);
+    const sillTop = Math.min(...sill.map((p) => p.y));
+    expectStandsOn(outline(plant.querySelector('path') as SVGGeometryElement), () => sillTop);
+  });
+});
+
 describe('in both themes', () => {
   it.each(['light', 'dark'] as const)('paints the window with the %s theme tokens', (theme) => {
     document.documentElement.dataset.theme = theme;

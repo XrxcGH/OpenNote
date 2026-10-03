@@ -214,7 +214,14 @@ Icons come from Phosphor Icons (MIT license) in the Regular weight at 20 pixels,
 
 The logo is a folded page with a moss-green ink stroke ending in a clay pen tip: see [`brand/logo-mark.svg`](../brand/logo-mark.svg) and [`brand/app-icon.svg`](../brand/app-icon.svg). Keep clear space of half the mark's width around it, and don't recolor, stretch or add effects.
 
-Illustrations appear in onboarding, empty states, error screens, the theme previews, Settings > About and the notebooks pane footer. A pane or card has at most one, and none is larger than 240 by 150 pixels. The motif set is a window, a plant and vine, a candle, books, a sunset, and stars with a moon. They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors with at most three fills. Each is under 3 KB, hidden from screen readers, and never sits behind text. The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing. No 3D renders, gradient blobs, stock photos, or mascots.
+Illustrations appear in onboarding, empty states, error screens, the theme previews, Settings > About and the notebooks pane footer. A pane or card has at most one, and none is larger than 240 by 150 pixels. The motif set is a window, a plant and vine, a candle, books, a sunset, and stars with a moon.
+
+- They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors with at most three fills.
+- Each is under 3 KB, hidden from screen readers, and never sits behind text.
+- Things in a drawing obey gravity. Books, pots, the notebook, and the candle stand on their shelf, desk, or sill line. None sinks into its line or floats above it. A leaning book stands on its lower corner and rests against its neighbor. The component tests check both.
+- The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing.
+
+No 3D renders, gradient blobs, stock photos, or mascots.
 
 ## 9. Motion
 

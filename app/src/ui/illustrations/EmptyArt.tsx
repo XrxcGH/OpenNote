@@ -19,9 +19,12 @@ function Shelf() {
     <>
       <path className={styles.fillDusk} d="M20 70.4 20.4 32.4C23 31.8 27 32 30 32.4L30.2 70.4Z" />
       <path className={styles.fillMoss} d="M31 70.4 31.2 41.4C33.6 41 37 41.2 39 41.4L39.2 70.4Z" />
+      {/* The leaning book stands on its bottom-left corner, (48, 70.4), with its bottom-right corner lifted, and its
+          left edge rests on the moss book's top-right corner, (39, 41.4): a 17.7 degree lean. The tests check that
+          no part of it dips below the shelf or into the moss book. */}
       <path
         className={styles.fillNight}
-        transform="rotate(-14 58 70.4)"
+        transform="rotate(-17.7 48 70.4)"
         d="M48 70.4 48.3 34.6C51.6 34.1 55 34.3 58 34.6L58 70.4Z"
       />
       <path className={styles.dusk} d="M22.6 40H27.6M22.6 44H27.6" />

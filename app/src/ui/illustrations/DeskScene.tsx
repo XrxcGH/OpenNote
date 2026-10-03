@@ -21,10 +21,10 @@ export function DeskScene({ sky, className }: ArtProps & { sky: Sky }) {
         <PlantArt />
       </g>
       <path d="M10 128.4H230V135.4H10ZM22 136V148m196-12v12" />
-      <g transform="translate(20 91)">
+      <g transform="translate(20 90.3)">
         <BooksArt />
       </g>
-      <g transform="translate(98 99) scale(0.8)">
+      <g transform="translate(98 98.8) scale(0.8)">
         <NotebookArt />
       </g>
       <g transform="translate(188 72.4)">
