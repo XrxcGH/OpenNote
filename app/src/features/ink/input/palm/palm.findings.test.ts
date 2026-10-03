@@ -360,3 +360,43 @@ describe('native hints and handedness', () => {
     expect(down(f, 1, 0, 100, 100)).toBe('scroll');
   });
 });
+
+describe('settings and boundaries', () => {
+  it('pairs a second finger at 150 ms after a moving first one, and not at 151 ms', () => {
+    for (const [late, role] of [
+      [150, 'nav'],
+      [151, 'shadow'],
+    ] as const) {
+      const f = filter({ fingerDraw: 'on' });
+      down(f, 1, 0, 100, 100);
+      move(f, 1, 100, 106, 100);
+      expect(down(f, 2, late, 60, 90)).toBe(role);
+    }
+  });
+
+  it('latches palm at 20 mm long but not just under it', () => {
+    const f = filter({ fingerDraw: 'on' });
+    expect(down(f, 1, 0, 100, 100, { size: 19.9, minor: 10 })).toBe('draw');
+    const g = filter({ fingerDraw: 'on' });
+    expect(down(g, 1, 0, 100, 100, { size: 20, minor: 10 })).toBe('ignore');
+  });
+
+  it('applies a settings change to new contacts and keeps a live stroke', () => {
+    const f = filter({ fingerDraw: 'on' }, { penDigitizer: false });
+    expect(down(f, 1, 0, 100, 100)).toBe('draw');
+    f.configure({ fingerDraw: 'off', graceMs: 99_999 });
+    expect(move(f, 1, 50, 110, 100)).toBe('draw');
+    expect(down(f, 2, 2000, 100, 140)).toBe('pass');
+    f.setInkToolActive(false);
+    expect(f.touchPolicy()).toBe('native');
+  });
+
+  it('never retracts a live stroke on a tick that runs ahead of queued events', () => {
+    const f = filter({ fingerDraw: 'on' }, { penDigitizer: true });
+    down(f, 1, 0, 100, 100);
+    move(f, 1, 50, 110, 100);
+    f.tick(5000);
+    expect(fxOf(f, 1)).toBe(0);
+    expect(move(f, 1, 60, 111, 100)).toBe('draw');
+  });
+});

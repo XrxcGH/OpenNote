@@ -14,6 +14,8 @@ const { MAX_EFFECTS } = thresholds;
  */
 export const Role = { Pass: 0, Ignore: 1, Draw: 2, Shadow: 3, Scroll: 4, Nav: 5 } as const;
 export type Role = (typeof Role)[keyof typeof Role];
+/** The same type under a name that does not clash with a local copy of the values. */
+export type RoleCode = Role;
 
 export const ROLE_NAMES: readonly string[] = ['pass', 'ignore', 'draw', 'shadow', 'scroll', 'nav'];
 

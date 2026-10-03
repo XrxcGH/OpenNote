@@ -1,10 +1,16 @@
 // The evidence score (README, "Evidence"). A contact's score is the sum of the terms that hold now, recomputed from
 // its features each time, never accumulated. Each term sets a bit in `why`, so a verdict can be explained.
 
-import { ContactTable, F, SizeMode } from './contacts';
+import { ContactTable, F as F_, SizeMode as SizeMode_ } from './contacts';
 import { HandRegion } from './handRegion';
-import { P } from './presence';
+import { P as P_ } from './presence';
 import * as thresholds from './thresholds';
+import type { PresenceCode } from './presence';
+
+/** Local copies, so event paths call and read them directly rather than through module bindings. */
+const F = { ...F_ };
+const SizeMode = { ...SizeMode_ };
+const P = { ...P_ };
 
 /** A plain copy, so hot loops read fields rather than module bindings. */
 const K = { ...thresholds };
@@ -45,7 +51,7 @@ export function explainBits(why: number): string {
 /** What the score reads besides the contact itself. The filter fills it before scoring. */
 export class ScoreContext {
   t = 0;
-  presence: P = P.Away;
+  presence: PresenceCode = P.Away;
   penCtx = false;
   drawMode = false;
   /** The slot of the contact that holds the draw slot, or -1. */

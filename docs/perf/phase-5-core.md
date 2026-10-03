@@ -39,14 +39,14 @@ Architecture 5.4 and the palm README set these budgets: a pen event costs at mos
 
 | Operation | Best (ms) | Median (ms) | Per event |
 |---|---|---|---|
-| Filter 100,000 palm events (80,000 pen, 20,000 touch) | 78.95 | 88.40 | 0.79 µs |
-| 10,000 pen events, 10 contacts live | 3.77 | 6.19 | 0.38 µs |
-| 10,000 touch moves, 10 contacts live | 10.04 | 19.44 | 1.0 µs |
-| 1,000 ticks, 10 contacts live | 0.021 | 0.024 | 0.02 µs |
+| Filter 100,000 palm events (80,000 pen, 20,000 touch) | 56.58 | 60.10 | 0.57 µs |
+| 10,000 pen events, 10 contacts live | 3.77 | 4.44 | 0.38 µs |
+| 10,000 touch moves, 10 contacts live | 10.69 | 11.73 | 1.1 µs |
+| 1,000 ticks, 10 contacts live | 0.025 | 0.027 | 0.03 µs |
 
-- Heap growth over 200,000 events after warm-up, with `--expose-gc`: 4.3 KB, against a budget of 64 KB. The filter keeps contacts, pens, holds, and effects in typed arrays, and the stroke builder allocates only the points it stores.
-- The 100,000-event figure is close to its budget once the load factor is applied. Most of it is the rescoring of every live contact when the pen goes down, once per stroke, which the design requires.
-- Vitest runs modules through Vite's module runner, which turns every imported binding into a getter. Scoring a contact took 2.9 µs until the palm modules copied their thresholds into plain local objects at load, and 0.6 µs after. A production build has direct bindings, so it is at least this fast.
+- Heap growth over 200,000 events after warm-up, with `--expose-gc`: under 5 KB across runs (0.6 KB in the last), against a budget of 64 KB. The filter keeps contacts, pens, holds, and effects in typed arrays, and the stroke builder allocates only the points it stores.
+- The 100,000-event figure has the least margin. The pen events cost 30 ms of it, the touch moves 21 ms, and the rescoring of every live contact when the pen goes down, once per stroke as the design requires, the rest. In a full parallel test run it measured 87 ms before the last optimization, so a slow run on a loaded machine can still trip it.
+- Vitest runs modules through Vite's module runner, which turns every imported binding into a getter. Scoring a contact took 2.9 µs until the palm modules copied their thresholds, flags, and hot functions into plain local constants at load, and 0.6 µs after. A production build has direct bindings, so it is at least this fast.
 - The accuracy run replays every scenario through the whole pipeline, with stroke builders and a recording host. That costs 3.5 to 8.7 µs per event on the pen profiles and 12 to 14 µs on the finger profiles, which build touch strokes. `docs/perf/palm-accuracy.md` lists it per profile.
 
 ## Results at page open

@@ -15,6 +15,8 @@ export const Slot = { Away: 0, Hovering: 1, Down: 2, Grace: 3 } as const;
 /** Presence as a number, in order of strength. */
 export const P = { Absent: 0, Away: 1, Recent: 2, Near: 3, Down: 4 } as const;
 export type P = (typeof P)[keyof typeof P];
+/** The same type under a name that does not clash with a local copy of the values. */
+export type PresenceCode = P;
 export const PRESENCE_NAMES: readonly Presence[] = ['absent', 'away', 'recent', 'near', 'down'];
 
 /** True for presence that judges touch against the pen: down, near, or recent. */

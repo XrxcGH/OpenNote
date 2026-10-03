@@ -1,15 +1,30 @@
 // The filter's state and its primitive operations: presence, scoring, verdicts, role changes, holds, and learning.
 // `decide.ts` holds the role rules and `filter.ts` the public API.
 
-import { Cls, ContactTable, F, SizeMode } from './contacts';
-import { EffectQueue, Fx, Role } from './effects';
+import { Cls as Cls_, ContactTable, F as F_, SizeMode as SizeMode_ } from './contacts';
+import { EffectQueue, Fx as Fx_, Role as Role_ } from './effects';
 import { HandRegion } from './handRegion';
 import { Holds, RecentCommits } from './holds';
-import { P, PenSlots, penContext } from './presence';
-import { E, HARD, isGrip, ScoreContext, scoreContact } from './score';
+import { P as P_, PenSlots, penContext as penContext_ } from './presence';
+import { E as E_, HARD as HARD_, isGrip as isGrip_, ScoreContext, scoreContact as scoreContact_ } from './score';
 import { DEFAULT_PALM_SETTINGS, UNKNOWN_PROFILE } from './settings';
 import type { DeviceProfile, HandShape, LearnedState, PalmSettings } from './settings';
 import * as thresholds from './thresholds';
+import type { PresenceCode } from './presence';
+import type { RoleCode } from './effects';
+
+/** Local copies, so event paths call and read them directly rather than through module bindings. */
+const Cls = { ...Cls_ };
+const F = { ...F_ };
+const SizeMode = { ...SizeMode_ };
+const Fx = { ...Fx_ };
+const Role = { ...Role_ };
+const P = { ...P_ };
+const penContext = penContext_;
+const E = { ...E_ };
+const HARD = HARD_;
+const isGrip = isGrip_;
+const scoreContact = scoreContact_;
 
 /** A plain copy, so hot loops read fields rather than module bindings. */
 const K = { ...thresholds };
@@ -43,7 +58,7 @@ export class Core {
   tipN = 0;
   learnedIn: LearnedState | null = null;
 
-  presenceAt(t: number): P {
+  presenceAt(t: number): PresenceCode {
     this.pens.graceMs = this.settings.graceMs;
     this.pens.handHeld = this.handLive > 0 || t - this.handLift < this.settings.graceMs;
     return this.pens.presence(t, this.profile.penDigitizer === false);
@@ -60,7 +75,7 @@ export class Core {
   }
 
   /** Fills the score context for time t and presence p. */
-  prepare(t: number, p: P): void {
+  prepare(t: number, p: PresenceCode): void {
     const x = this.x;
     x.t = t;
     x.presence = p;
@@ -84,7 +99,7 @@ export class Core {
     return this.tipN >= K.TIP_LEARN_STROKES && mean <= K.TIP_STYLUS_MAX_MM ? mean : 0;
   }
 
-  setRole(i: number, role: Role, fx: number): void {
+  setRole(i: number, role: RoleCode, fx: number): void {
     const c = this.c;
     c.role[i] = role;
     this.fx.push(c.id[i], role, fx, c.why[i]);

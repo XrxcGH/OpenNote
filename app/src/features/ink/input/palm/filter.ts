@@ -2,18 +2,40 @@
 // event time, so a recorded session replays the same way. A pen never waits: `pen` does constant bookkeeping and
 // gates nothing. Touch ink is provisional until its contact resolves and its hold passes.
 
-import { Cls, F } from './contacts';
+import { Cls as Cls_, F as F_ } from './contacts';
 import { Core } from './core';
-import { decideDown, decideEnd, afterMove, freezeNav, pressAllowed } from './decide';
-import { Fx, Role } from './effects';
+import {
+  decideDown as decideDown_,
+  decideEnd as decideEnd_,
+  afterMove as afterMove_,
+  freezeNav as freezeNav_,
+  pressAllowed as pressAllowed_,
+} from './decide';
+import { Fx as Fx_, Role as Role_ } from './effects';
 import type { Effects } from './effects';
-import { leanOf } from './handRegion';
-import { P, PRESENCE_NAMES, penContext } from './presence';
+import { leanOf as leanOf_ } from './handRegion';
+import { P as P_, PRESENCE_NAMES, penContext as penContext_ } from './presence';
 import type { PenSignal, Presence } from './presence';
 import { sanitizeLearned, sanitizeProfile, sanitizeSettings } from './settings';
 import type { DeviceProfile, LearnedState, PalmSettings } from './settings';
 import * as thresholds from './thresholds';
 import { resolvePxPerMm } from './units';
+import type { PresenceCode } from './presence';
+import type { RoleCode } from './effects';
+
+/** Local copies, so event paths call and read them directly rather than through module bindings. */
+const Cls = { ...Cls_ };
+const F = { ...F_ };
+const decideDown = decideDown_;
+const decideEnd = decideEnd_;
+const afterMove = afterMove_;
+const freezeNav = freezeNav_;
+const pressAllowed = pressAllowed_;
+const Fx = { ...Fx_ };
+const Role = { ...Role_ };
+const leanOf = leanOf_;
+const P = { ...P_ };
+const penContext = penContext_;
 
 /** A plain copy, so hot loops read fields rather than module bindings. */
 const K = { ...thresholds };
@@ -40,8 +62,8 @@ export interface PalmFilter {
     h: number,
     pressure: number,
     surface: Surface,
-  ): Role;
-  touchMove(id: number, time: number, x: number, y: number, w: number, h: number, pressure: number): Role;
+  ): RoleCode;
+  touchMove(id: number, time: number, x: number, y: number, w: number, h: number, pressure: number): RoleCode;
   /** End bits; a held stroke resolves later as an `Fx.Commit` or `Fx.Retract` effect. */
   touchEnd(id: number, time: number, canceled: boolean): number;
   /** Whether a still contact's long press may open the menu now. */
@@ -61,7 +83,7 @@ export interface PalmFilter {
   /** The evidence bits behind a live contact's verdict. */
   explain(id: number): number;
   /** The live contact's role, or Ignore for an unknown id. */
-  roleOf(id: number): Role;
+  roleOf(id: number): RoleCode;
   learned(): LearnedState;
 }
 
@@ -155,7 +177,7 @@ class Filter implements PalmFilter {
     h: number,
     pressure: number,
     surface: Surface,
-  ): Role {
+  ): RoleCode {
     const core = this.core;
     const c = core.c;
     core.fx.count = 0;
@@ -186,7 +208,7 @@ class Filter implements PalmFilter {
     return role;
   }
 
-  touchMove(id: number, t: number, x: number, y: number, w: number, h: number, pressure: number): Role {
+  touchMove(id: number, t: number, x: number, y: number, w: number, h: number, pressure: number): RoleCode {
     const core = this.core;
     const c = core.c;
     core.fx.count = 0;
@@ -201,7 +223,7 @@ class Filter implements PalmFilter {
     core.rescore(i);
     core.checkpoints(t);
     if (c.used[i] === 1) afterMove(core, i, p);
-    return c.role[i] as Role;
+    return c.role[i] as RoleCode;
   }
 
   touchEnd(id: number, t: number, canceled: boolean): number {
@@ -323,9 +345,9 @@ class Filter implements PalmFilter {
     return i < 0 ? 0 : this.core.c.why[i];
   }
 
-  roleOf(id: number): Role {
+  roleOf(id: number): RoleCode {
     const i = this.core.c.find(id);
-    return i < 0 ? Role.Ignore : (this.core.c.role[i] as Role);
+    return i < 0 ? Role.Ignore : (this.core.c.role[i] as RoleCode);
   }
 
   learned(): LearnedState {
@@ -345,7 +367,7 @@ class Filter implements PalmFilter {
   }
 
   /** Offsets from the pen tip (pen down) or from the drawing contact (finger drawing), for learning. */
-  private track(i: number, p: P): void {
+  private track(i: number, p: PresenceCode): void {
     const core = this.core;
     const c = core.c;
     const pens = core.pens;

@@ -1,12 +1,36 @@
 // Role rules (README, "Roles and gates" and "Finger drawing"): what a contact does when it lands, moves, and lifts.
 
-import { Cls, F } from './contacts';
+import { Cls as Cls_, F as F_ } from './contacts';
 import type { Core } from './core';
-import { End, Fx, Role } from './effects';
-import { P } from './presence';
-import { canPair, chromeGate, navGate, panConfirmed, scrollGate, tapGate } from './roles';
-import { E } from './score';
+import { End as End_, Fx as Fx_, Role as Role_ } from './effects';
+import { P as P_ } from './presence';
+import {
+  canPair as canPair_,
+  chromeGate as chromeGate_,
+  navGate as navGate_,
+  panConfirmed as panConfirmed_,
+  scrollGate as scrollGate_,
+  tapGate as tapGate_,
+} from './roles';
+import { E as E_ } from './score';
 import * as thresholds from './thresholds';
+import type { PresenceCode } from './presence';
+import type { RoleCode } from './effects';
+
+/** Local copies, so event paths call and read them directly rather than through module bindings. */
+const Cls = { ...Cls_ };
+const F = { ...F_ };
+const End = { ...End_ };
+const Fx = { ...Fx_ };
+const Role = { ...Role_ };
+const P = { ...P_ };
+const canPair = canPair_;
+const chromeGate = chromeGate_;
+const navGate = navGate_;
+const panConfirmed = panConfirmed_;
+const scrollGate = scrollGate_;
+const tapGate = tapGate_;
+const E = { ...E_ };
 
 /** A plain copy, so hot loops read fields rather than module bindings. */
 const K = { ...thresholds };
@@ -14,7 +38,7 @@ const K = { ...thresholds };
 const isNav = (role: number) => role === Role.Nav;
 
 /** The role of a contact that just landed and was scored. */
-export function decideDown(core: Core, i: number, p: P): Role {
+export function decideDown(core: Core, i: number, p: PresenceCode): RoleCode {
   const c = core.c;
   if (c.flags[i] & F.Chrome) return chromeGate(p, c.score[i], c.cls[i] === Cls.Palm) ? Role.Pass : Role.Ignore;
   if (c.cls[i] === Cls.Palm) return Role.Ignore;
@@ -47,7 +71,7 @@ function busy(core: Core, i: number): boolean {
  * window, at finger spacing, count. A third finger inside the window voids the pair; any other newcomer is ignored
  * and leaves the pair alone. Returns Pass when no pair rule applies.
  */
-function pairWithin(core: Core, i: number, p: P): Role {
+function pairWithin(core: Core, i: number, p: PresenceCode): RoleCode {
   const c = core.c;
   let partner = -1;
   let candidates = 0;
@@ -97,7 +121,7 @@ function weak(core: Core, d: number): boolean {
 }
 
 /** Finger drawing: one draw slot, chosen by classification rather than arrival. */
-function decideDraw(core: Core, i: number): Role {
+function decideDraw(core: Core, i: number): RoleCode {
   const c = core.c;
   const x = core.x;
   if (core.grip(i) || !tipAllowed(core, i)) return Role.Ignore;
@@ -136,7 +160,7 @@ function tipAllowed(core: Core, i: number): boolean {
 }
 
 /** After a move: starts a pending scroll or pan that passed its gate, and transfers the draw slot to a moving shadow. */
-export function afterMove(core: Core, i: number, p: P): void {
+export function afterMove(core: Core, i: number, p: PresenceCode): void {
   const c = core.c;
   const role = c.role[i];
   if (role === Role.Scroll && c.started[i] === 0) {
@@ -156,7 +180,7 @@ function start(core: Core, i: number): void {
   const c = core.c;
   c.started[i] = 1;
   c.tAction[i] = core.x.t;
-  core.setRole(i, c.role[i] as Role, Fx.Start);
+  core.setRole(i, c.role[i] as RoleCode, Fx.Start);
 }
 
 /** The pen went down: a scroll or pan in progress stops, and reverts when it began under 500 ms ago. */
@@ -172,7 +196,7 @@ export function freezeNav(core: Core, t: number): void {
 }
 
 /** Ends a contact: holds or retracts its stroke, ends its pair, and says whether its lift may click. */
-export function decideEnd(core: Core, i: number, t: number, p: P): number {
+export function decideEnd(core: Core, i: number, t: number, p: PresenceCode): number {
   const c = core.c;
   let bits = 0;
   const role = c.role[i];
@@ -198,7 +222,7 @@ function afterDrawEnd(core: Core, d: number): void {
   if (c.disp[s] >= K.WEAK_TRAVEL_MM || c.disp[d] < K.WEAK_TRAVEL_MM) core.promoteShadow();
 }
 
-function tapAllowed(core: Core, i: number, t: number, p: P): boolean {
+function tapAllowed(core: Core, i: number, t: number, p: PresenceCode): boolean {
   const c = core.c;
   if ((c.flags[i] & F.Suppress) !== 0 || c.cls[i] === Cls.Palm || c.started[i] === 1) return false;
   if (t - c.t0[i] >= K.LONG_PRESS_MS || c.disp[i] >= K.SLOP_MM) return false;
@@ -208,7 +232,7 @@ function tapAllowed(core: Core, i: number, t: number, p: P): boolean {
 }
 
 /** Whether a still contact's long press may open the menu now. */
-export function pressAllowed(core: Core, i: number, p: P): boolean {
+export function pressAllowed(core: Core, i: number, p: PresenceCode): boolean {
   const c = core.c;
   if ((c.flags[i] & F.Suppress) !== 0 || c.cls[i] === Cls.Palm || c.started[i] === 1) return false;
   if (c.disp[i] >= K.SLOP_MM) return false;
