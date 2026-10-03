@@ -3,6 +3,7 @@
 import { updateSettings, useSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { RadioCard, RadioGroup, Switch } from '../../../ui';
+import styles from './EditingTyping.module.css';
 
 type SourceLink = 'ask' | 'always' | 'never';
 
@@ -10,7 +11,8 @@ export default function EditingPaste() {
   const paste = useSettings((settings) => settings.editing.paste);
   const set = (patch: Partial<typeof paste>) => void updateSettings({ editing: { paste: patch } });
   return (
-    <div>
+    <section className={styles.part} aria-labelledby="editing-paste">
+      <h2 id="editing-paste">{t('paste.settings.title')}</h2>
       <RadioGroup<SourceLink>
         label={t('paste.settings.sourceLink')}
         value={paste.sourceLink}
@@ -32,6 +34,6 @@ export default function EditingPaste() {
         checked={paste.joinPdfLines}
         onChange={(joinPdfLines) => set({ joinPdfLines })}
       />
-    </div>
+    </section>
   );
 }
