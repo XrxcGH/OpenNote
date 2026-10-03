@@ -1,19 +1,26 @@
 // A ProseMirror text block document to canonical OpenNote Markdown (SPEC 7.2 and 7.7). The same document always gives
-// the same string, so saving, reloading, and undo give identical text.
+// the same string, so saving, reloading, and undo give identical text. With a cache, every node the writer visits
+// keeps its text (ARCHITECTURE.md section 9.2), so writing a document after a small change only writes what changed.
+// Node types are compared by name, so documents from any schema instance work: editors build their own.
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { CALLOUT_TYPE_PATTERN, FOLDS, LANGUAGE_PATTERN } from '../schema/specs';
+import { stateOf } from './cache';
+import type { CacheEntry, CacheState, MarkdownCache } from './cache';
 import { PARAGRAPH, TITLE, cleanText } from './escape';
 import { serializeInline } from './inline';
 import { joinAdjacentLists } from './normalize';
 
-function childrenOf(node: PMNode): PMNode[] {
-  const out: PMNode[] = [];
-  node.forEach((child) => out.push(child));
-  return out;
-}
+type Store = CacheState | null;
+
+const NO_SPANS = new Int32Array(0);
 
 /** Markdown cannot hold an empty paragraph between blocks, so one is dropped. */
 const isEmptyParagraph = (node: PMNode) => node.type.name === 'paragraph' && node.content.size === 0;
+const isList = (node: PMNode) => node.type.name === 'bulletList' || node.type.name === 'orderedList';
+
+function leaf(text: string): CacheEntry {
+  return { ctx: '', text, inner: text, childStarts: NO_SPANS, childEnds: NO_SPANS, loose: false };
+}
 
 function fenceText(node: PMNode): string {
   const source = cleanText(node.textContent);
@@ -24,92 +31,263 @@ function fenceText(node: PMNode): string {
   return source === '' ? `${fence}${info}\n${fence}` : `${fence}${info}\n${source}\n${fence}`;
 }
 
-function quoted(text: string): string {
+/** `> ` before every line, and `>` alone on a blank one. */
+export function quoted(text: string): string {
   return text
     .split('\n')
     .map((line) => (line === '' ? '>' : `> ${line}`))
     .join('\n');
 }
 
-function calloutText(node: PMNode): string {
-  const [title, ...body] = childrenOf(node);
-  const type = CALLOUT_TYPE_PATTERN.test(node.attrs.type as string) ? (node.attrs.type as string) : 'note';
-  const fold = (FOLDS as readonly string[]).includes(node.attrs.fold as string) ? (node.attrs.fold as string) : '';
-  const line = title ? serializeInline(title, TITLE, true) : '';
-  const head = `[!${type}]${fold}${line === '' ? '' : ` ${line}`}`;
-  const rest = blocksText(body);
-  return quoted(rest === '' ? head : `${head}\n\n${rest}`);
+/** Every line after the first that holds text, indented by `width` spaces. */
+export function indented(text: string, width: number): string {
+  return text.replace(/\n(?=[^\n])/g, `\n${' '.repeat(width)}`);
 }
 
 function taskPrefix(checked: boolean | null): string {
   return checked === null ? '' : checked ? '[x] ' : '[ ] ';
 }
 
-/** The text of one list item: its marker on the first line, and every later line indented to the marker's width. */
-function itemText(item: PMNode, marker: string): { text: string; blocks: number } {
-  const [first, ...rest] = childrenOf(item);
-  const lead = first ? blockText(first) : '';
-  const others = joinAdjacentLists(rest)
-    .filter((node) => !isEmptyParagraph(node))
-    .map(blockText);
+/** The marker of item `index` in a list: `- `, or `10. ` for the tenth item of a numbered list starting at 1. */
+export function markerOf(list: PMNode, index: number): string {
+  if (list.type.name !== 'orderedList') return '- ';
+  return `${Math.max(0, Math.floor(Number(list.attrs.start) || 0)) + index}. `;
+}
+
+interface Joined {
+  readonly text: string;
+  readonly starts: Int32Array | null;
+  readonly ends: Int32Array | null;
+}
+
+function hasAdjacentLists(node: PMNode, from: number): boolean {
+  for (let i = from + 1; i < node.childCount; i++) {
+    const a = node.child(i - 1);
+    if (isList(a) && a.type === node.child(i).type) return true;
+  }
+  return false;
+}
+
+/**
+ * The blocks of `node` from child `from` on, joined by one blank line. Spans are relative to the joined text, one
+ * for each child from `from` on.
+ */
+function joinBlocks(node: PMNode, from: number, store: Store): Joined {
+  if (hasAdjacentLists(node, from)) {
+    const children: PMNode[] = [];
+    for (let i = from; i < node.childCount; i++) children.push(node.child(i));
+    const parts = joinAdjacentLists(children)
+      .filter((child) => !isEmptyParagraph(child))
+      .map((child) => entryOf(child, '', store).text);
+    return { text: parts.join('\n\n'), starts: null, ends: null };
+  }
+  const count = node.childCount - from;
+  const starts = new Int32Array(count);
+  const ends = new Int32Array(count);
+  const parts: string[] = [];
+  const waiting: number[] = [];
+  let at = 0;
+  for (let i = 0; i < count; i++) {
+    const child = node.child(from + i);
+    if (isEmptyParagraph(child)) {
+      waiting.push(i);
+      continue;
+    }
+    if (parts.length > 0) at += 2;
+    for (const dropped of waiting) starts[dropped] = ends[dropped] = at;
+    waiting.length = 0;
+    const text = entryOf(child, '', store).text;
+    starts[i] = at;
+    at += text.length;
+    ends[i] = at;
+    parts.push(text);
+  }
+  for (const dropped of waiting) starts[dropped] = ends[dropped] = at;
+  return { text: parts.join('\n\n'), starts, ends };
+}
+
+function shifted(spans: Int32Array | null, by: number, limit: number): Int32Array | null {
+  return spans && spans.map((at) => Math.min(limit, at + by));
+}
+
+function withHead(head: Int32Array | null, rest: Int32Array | null, first: number): Int32Array | null {
+  if (!head || !rest) return null;
+  const out = new Int32Array(rest.length + 1);
+  out[0] = first;
+  out.set(rest, 1);
+  return out;
+}
+
+function blocksEntry(node: PMNode, store: Store): CacheEntry {
+  const joined = joinBlocks(node, 0, store);
+  return {
+    ctx: '',
+    text: joined.text,
+    inner: joined.text,
+    childStarts: joined.starts,
+    childEnds: joined.ends,
+    loose: false,
+  };
+}
+
+function quoteEntry(node: PMNode, store: Store): CacheEntry {
+  const joined = joinBlocks(node, 0, store);
+  return {
+    ctx: '',
+    text: quoted(joined.text),
+    inner: joined.text,
+    childStarts: joined.starts,
+    childEnds: joined.ends,
+    loose: false,
+  };
+}
+
+function calloutEntry(node: PMNode, store: Store): CacheEntry {
+  const title = node.firstChild;
+  const type = CALLOUT_TYPE_PATTERN.test(node.attrs.type as string) ? (node.attrs.type as string) : 'note';
+  const fold = (FOLDS as readonly string[]).includes(node.attrs.fold as string) ? (node.attrs.fold as string) : '';
+  const line = title ? entryOf(title, '', store).text : '';
+  const head = `[!${type}]${fold}${line === '' ? '' : ` ${line}`}`;
+  const body = joinBlocks(node, 1, store);
+  const inner = body.text === '' ? head : `${head}\n\n${body.text}`;
+  const offset = head.length + 2;
+  return {
+    ctx: '',
+    text: quoted(inner),
+    inner,
+    childStarts: withHead(NO_SPANS, shifted(body.starts, offset, inner.length), head.length - line.length),
+    childEnds: withHead(NO_SPANS, shifted(body.ends, offset, inner.length), head.length),
+    loose: false,
+  };
+}
+
+/**
+ * A list item: its blocks with every later line indented to the marker's width (`ctx`). The list writes the marker
+ * on the first line. An item with no text can't be followed by a paragraph, so its blocks start on the next line. A
+ * task item still has its `[ ]` line, which a block on the next line would join, so a blank line separates them.
+ */
+function itemEntry(item: PMNode, ctx: string, store: Store): CacheEntry {
+  const first = item.firstChild;
+  const lead = first ? entryOf(first, '', store).text : '';
+  const rest = item.childCount > 1 ? joinBlocks(item, 1, store) : { text: '', starts: NO_SPANS, ends: NO_SPANS };
+  const hasOthers = rest.text !== '';
   const checked = item.attrs.checked as boolean | null;
-  // An item with no text cannot be followed by a paragraph, so its blocks start on the next line. A task item still
-  // has its `[ ]` line, which a block on the next line would join, so a blank line separates them.
-  const bare = lead === '' && checked === null && others.length > 0;
-  const body = (bare ? others : [lead, ...others]).join('\n\n').split('\n');
-  const lines = bare ? ['', ...body] : body;
-  const head = marker + taskPrefix(checked);
-  const indent = ' '.repeat(marker.length);
-  const text = lines.map((line, i) =>
-    i === 0 ? (line === '' ? head.trimEnd() : head + line) : line === '' ? '' : indent + line,
-  );
-  return { text: text.join('\n'), blocks: others.length + 1 };
+  const bare = lead === '' && checked === null && hasOthers;
+  let inner: string;
+  let leadAt: number;
+  let restAt: number;
+  if (bare) {
+    inner = `\n${rest.text}`;
+    leadAt = 0;
+    restAt = 1;
+  } else {
+    const body = hasOthers ? `${lead}\n\n${rest.text}` : lead;
+    const prefix = taskPrefix(checked);
+    const head = lead === '' || lead.charCodeAt(0) === 10 ? prefix.trimEnd() : prefix;
+    inner = head + body;
+    leadAt = head.length;
+    restAt = head.length + lead.length + 2;
+  }
+  return {
+    ctx,
+    text: indented(inner, Number(ctx)),
+    inner,
+    childStarts: withHead(NO_SPANS, shifted(rest.starts, restAt, inner.length), leadAt),
+    childEnds: withHead(NO_SPANS, shifted(rest.ends, restAt, inner.length), leadAt + lead.length),
+    loose: hasOthers,
+  };
 }
 
-function listText(list: PMNode): string {
-  const ordered = list.type.name === 'orderedList';
-  const start = ordered ? Math.max(0, Math.floor(Number(list.attrs.start) || 0)) : 0;
-  const items = childrenOf(list).map((item, i) => itemText(item, ordered ? `${start + i}. ` : '- '));
-  const loose = items.some((item) => item.blocks > 1);
-  return items.map((item) => item.text).join(loose ? '\n\n' : '\n');
+/** The marker joined to an item's text. An item whose first line is empty writes the marker without its space. */
+export function itemLine(marker: string, text: string): string {
+  return text === '' || text.charCodeAt(0) === 10 ? marker.trimEnd() + text : marker + text;
 }
 
-function blockText(node: PMNode): string {
+function listEntry(list: PMNode, store: Store): CacheEntry {
+  const count = list.childCount;
+  const lines: string[] = [];
+  let loose = false;
+  for (let i = 0; i < count; i++) {
+    const marker = markerOf(list, i);
+    const item = entryOf(list.child(i), String(marker.length), store);
+    loose ||= item.loose;
+    lines.push(itemLine(marker, item.text));
+  }
+  const gap = loose ? 2 : 1;
+  const starts = new Int32Array(count);
+  const ends = new Int32Array(count);
+  let at = 0;
+  lines.forEach((line, i) => {
+    starts[i] = at;
+    at += line.length;
+    ends[i] = at;
+    at += gap;
+  });
+  const text = lines.join(loose ? '\n\n' : '\n');
+  return { ctx: '', text, inner: text, childStarts: starts, childEnds: ends, loose: false };
+}
+
+function build(node: PMNode, ctx: string, store: Store): CacheEntry {
   switch (node.type.name) {
+    case 'doc':
+      return blocksEntry(node, store);
     case 'paragraph':
-      return serializeInline(node, PARAGRAPH);
+      return leaf(serializeInline(node, PARAGRAPH));
     case 'heading': {
       const level = Math.min(6, Math.max(1, Number(node.attrs.level) || 1));
       const text = serializeInline(node, TITLE, true);
-      return text === '' ? '#'.repeat(level) : `${'#'.repeat(level)} ${text}`;
+      return leaf(text === '' ? '#'.repeat(level) : `${'#'.repeat(level)} ${text}`);
     }
+    case 'calloutTitle':
+      return leaf(serializeInline(node, TITLE, true));
     case 'bulletList':
     case 'orderedList':
-      return listText(node);
+      return listEntry(node, store);
+    case 'listItem':
+      return itemEntry(node, ctx, store);
     case 'blockquote':
-      return quoted(blocksText(childrenOf(node)));
+      return quoteEntry(node, store);
     case 'callout':
-      return calloutText(node);
+      return calloutEntry(node, store);
     case 'codeBlock':
-      return fenceText(node);
+      return leaf(fenceText(node));
     case 'mathBlock':
-      return `$$\n${cleanText(node.attrs.source as string)}\n$$`;
+      return leaf(`$$\n${cleanText(node.attrs.source as string)}\n$$`);
     case 'horizontalRule':
-      return '---';
+      return leaf('---');
     default:
-      return '';
+      return leaf('');
   }
 }
 
-/** Blocks joined by one blank line. */
-function blocksText(nodes: readonly PMNode[]): string {
-  return joinAdjacentLists(nodes)
-    .filter((node) => !isEmptyParagraph(node))
-    .map(blockText)
-    .join('\n\n');
+/** A node's entry: from the cache when it holds one made in the same context, else written now. */
+export function entryOf(node: PMNode, ctx: string, store: Store): CacheEntry {
+  const hit = store?.byNode.get(node);
+  if (hit && hit.ctx === ctx) return hit;
+  const made = build(node, ctx, store);
+  store?.byNode.set(node, made);
+  return made;
 }
 
 /** The canonical `markdown` string of a text block (SPEC 7.7): no blank line at the start, no newline at the end. */
-export function serializeTextBlock(doc: PMNode): string {
-  return blocksText(childrenOf(doc));
+export function serializeTextBlock(doc: PMNode, cache: MarkdownCache | null = null): string {
+  return entryOf(doc, '', cache && stateOf(cache)).text;
+}
+
+/** A table cell's paragraph as one line, escaped like paragraph text. */
+export function serializeCellParagraph(paragraph: PMNode, cache: MarkdownCache | null = null): string {
+  const store = cache && stateOf(cache);
+  const hit = store?.byNode.get(paragraph);
+  if (hit && hit.ctx === 'cell') return hit.text;
+  const made: CacheEntry = { ...leaf(serializeInline(paragraph, PARAGRAPH, true)), ctx: 'cell' };
+  store?.byNode.set(paragraph, made);
+  return made.text;
+}
+
+/**
+ * After a mount, in idle time: writes the document once so that every node has its entry. Nothing is sent: a block
+ * whose stored Markdown isn't canonical stays as it is until it is next edited (ARCHITECTURE.md section 9.5).
+ */
+export function warmCache(doc: PMNode, _markdown: string, cache: MarkdownCache): void {
+  serializeTextBlock(doc, cache);
 }

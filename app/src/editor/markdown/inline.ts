@@ -1,6 +1,6 @@
 // The canonical Markdown of one paragraph, heading, or title (SPEC 7.3, 7.6, and 7.7). Text is escaped as one line
 // of code points, so that an escape depends on the text around it and never on how marks split that text.
-import { Fragment } from '@tiptap/pm/model';
+import { Fragment, Mark } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
 import { LABEL, escapeCodePoints } from './escape';
@@ -87,12 +87,20 @@ function bangIsBare(text: string): boolean {
   return text.endsWith('!') && slashes % 2 === 0;
 }
 
+/** The same marks in textSchema, which the reader builds. Editors use their own schema instance. */
+function readerMarks(marks: readonly Mark[]): readonly Mark[] {
+  if (marks.every((mark) => mark.type.schema === textSchema)) return marks;
+  return Mark.setFrom(marks.map((mark) => textSchema.marks[mark.type.name].create(mark.attrs)));
+}
+
 /** The nodes that the leaves stand for, to check that the written text reads back as the same content. */
 function expectedNodes(leaves: readonly Leaf[]): PMNode[] {
   return leaves.map((leaf) => {
-    if (leaf.kind === 'atom') return leaf.node;
-    if (leaf.kind === 'break') return textSchema.nodes.hardBreak.create(null, null, leaf.marks);
-    return textSchema.text(leaf.text, leaf.marks);
+    const marks = readerMarks(leaf.marks);
+    if (leaf.kind === 'break') return textSchema.nodes.hardBreak.create(null, null, marks);
+    if (leaf.kind === 'text') return textSchema.text(leaf.text, marks);
+    if (leaf.node.type.schema === textSchema) return leaf.node;
+    return textSchema.nodes[leaf.node.type.name].create(leaf.node.attrs, null, marks);
   });
 }
 
