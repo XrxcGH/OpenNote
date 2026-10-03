@@ -1,0 +1,5 @@
+// lint-as: app/src/editor/extensions/Bad.ts
+// expect: opennote/editor-boundaries
+import { useNotes } from '../../services/notes';
+
+export const notes = useNotes;

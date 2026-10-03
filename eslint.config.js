@@ -37,6 +37,7 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'opennote/feature-boundaries': 'error',
       'opennote/ui-boundaries': 'error',
+      'opennote/editor-boundaries': 'error',
       'opennote/no-theme-key': 'error',
       'no-restricted-imports': [
         'error',
