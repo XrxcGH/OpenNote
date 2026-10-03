@@ -123,7 +123,7 @@ describe('inside their boxes', () => {
     }
   });
 
-  it("keeps every star at least 5 px clear of the page card's top edge, however wide the canvas", () => {
+  it("keeps every star above the page card's top edge by at least 5 px, however wide the canvas", () => {
     document.documentElement.dataset.theme = 'dark';
     // The page card starts one --space-8 margin down the canvas.
     const card = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-8'));
@@ -137,8 +137,8 @@ describe('inside their boxes', () => {
       const top = drawn(container).getBoundingClientRect().top;
       for (const star of container.querySelectorAll('circle')) {
         const dot = star.getBoundingClientRect();
-        // Above the edge, or below it where the card covers it, by 5 px either way.
-        const clear = Math.max(card - (dot.bottom - top), dot.top - top - card);
+        // Above the edge. A lower star could land on one of the card's side edges, which move with the canvas width.
+        const clear = card - (dot.bottom - top);
         expect(clear, `the star at x ${star.getAttribute('cx')} on a ${width} px canvas`).toBeGreaterThanOrEqual(5);
       }
       unmount();
