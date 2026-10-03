@@ -186,8 +186,12 @@
     outline-offset: calc(-1 * var(--size-focus-ring-width));
   }
 
+  /* The scroller reaches 4 px into the drawer's padding and pads its content back, so a control at its edge, like
+     the Trash button, keeps its whole focus ring. */
   .drawerBody {
     min-inline-size: 0;
+    margin: calc(-1 * var(--space-2));
+    padding: var(--space-2);
     overflow: auto;
   }
 

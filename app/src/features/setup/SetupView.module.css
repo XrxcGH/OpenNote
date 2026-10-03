@@ -39,9 +39,11 @@
     box-shadow: var(--elevation-2);
   }
 
+  /* The scroll padding brings a control that Tab reaches below the fold in with room for its focus ring. */
   .content {
     overflow-y: auto;
     padding: var(--space-8) var(--space-8) var(--space-5);
+    scroll-padding-block: var(--space-3);
   }
 
   .step {

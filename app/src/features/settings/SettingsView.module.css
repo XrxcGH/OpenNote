@@ -10,9 +10,10 @@
   }
 
   .header {
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-3) var(--space-4) var(--space-2);
   }
 
+  /* The scroll padding brings a control that Tab reaches below the fold in with room for its focus ring. */
   .body {
     display: grid;
     grid-template-columns: var(--size-settings-nav) minmax(0, 1fr);
@@ -20,17 +21,20 @@
     align-content: start;
     min-block-size: 0;
     overflow-y: auto;
+    scroll-padding-block: var(--space-3);
   }
 
   :global(:root[data-size-class='compact']) .body {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* The list's block padding is room inside the scroller for the first link's focus ring. The header and the
+     main column give up and take back the same 4 px, so nothing moves. */
   .nav ul {
     display: grid;
     gap: var(--space-1);
     margin: 0;
-    padding: 0 var(--space-3);
+    padding: var(--space-2) var(--space-3);
     list-style: none;
   }
 
@@ -67,7 +71,7 @@
     gap: var(--space-6);
     align-content: start;
     min-inline-size: 0;
-    padding: var(--space-2) var(--space-7) var(--space-8);
+    padding: var(--space-3) var(--space-7) var(--space-8);
   }
 
   .heading,

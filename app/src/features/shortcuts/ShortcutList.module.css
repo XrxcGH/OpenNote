@@ -22,7 +22,8 @@
   /* Positioned, so the visually hidden table heads stay inside the scroller instead of stretching the dialog. The
      height leaves room for the dialog's title, filter and Close button in a short window: 344 px is the title bar
      40, the dialog layer's padding 32, the dialog's padding and border 50, the title 28, the description 22, the
-     filter row 76, the actions 32, and four 16 px gaps. */
+     filter row 76, the actions 32, and four 16 px gaps. The scroll padding brings a control that Tab reaches below
+     the fold in with room for its focus ring. */
   .scroll {
     position: relative;
     display: grid;
@@ -31,6 +32,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-inline-end: var(--space-2);
+    scroll-padding-block: var(--space-3);
   }
 
   .scroll:focus-visible {
