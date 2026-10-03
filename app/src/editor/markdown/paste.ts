@@ -3,13 +3,17 @@
 import type { Token } from 'markdown-it';
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { TITLE } from '../markdown/escape';
-import { serializeInline } from '../markdown/inline';
-import { buildDoc, createMarkdown } from '../markdown/parse';
-import { inlineNodes } from '../markdown/parseInline';
+import { TITLE } from './escape';
+import { serializeInline } from './inline';
+import { buildDoc, createMarkdown } from './parse';
+import { inlineNodes } from './parseInline';
 import { textSchema } from '../schema/schema';
-import { DEFAULT_COLUMN_WIDTH } from './types';
-import type { PastedPiece, TableData } from './types';
+import { newId as makeId } from '../ids';
+import { DEFAULT_COLUMN_WIDTH } from '../schema/specs';
+import type { TableData } from '../schema/specs';
+
+/** A run of blocks for the text editor, or a table that becomes its own block. */
+export type PastedPiece = { kind: 'text'; doc: PMNode } | { kind: 'table'; data: TableData };
 
 const { nodes } = textSchema;
 const pasteMarkdown = createMarkdown(true);
@@ -61,7 +65,7 @@ function textPiece(tokens: readonly Token[]): PastedPiece[] {
 }
 
 /** Pasted Markdown as text pieces, with each GFM table as a table piece. */
-export function parsePastedMarkdown(text: string, newId: () => string): PastedPiece[] {
+export function parsePastedMarkdown(text: string, newId: () => string = makeId): PastedPiece[] {
   const tokens = pasteMarkdown.parse(text, {});
   const pieces: PastedPiece[] = [];
   let start = 0;

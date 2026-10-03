@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { shape } from '../shape';
+import { shape } from '../../../editor/shape';
 import excel from './fixtures/excel.html?raw';
 import gdocs from './fixtures/gdocs.html?raw';
 import onenote from './fixtures/onenote.html?raw';

@@ -3,8 +3,8 @@
 // reads the clipboard, loads an image, or touches the page.
 import { DOMParser as PMDOMParser, Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { newId as makeId } from '../ids';
-import { textSchema } from '../schema/schema';
+import { newId as makeId } from '../../../editor/ids';
+import { textSchema } from '../../../editor/schema/schema';
 import { classifyHtml } from './classify';
 import { parseHtml } from './dom';
 import { collectImageRequests, dropUnknownImages } from './images';
@@ -12,7 +12,7 @@ import { dropFormattingAttributes, dropUnwanted } from './normalize/common';
 import { normalizeGoogleDocs, normalizeOneNote, normalizeWeb } from './normalize/sources';
 import { normalizeWord } from './normalize/word';
 import { joinBrokenLines } from './pdf';
-import { looksLikeMarkdown, parsePastedMarkdown, plainTextPieces } from './plain';
+import { looksLikeMarkdown, parsePastedMarkdown, plainTextPieces } from '../../../editor/markdown/paste';
 import { extractTables, tableMarker } from './tables';
 import { tidyDoc } from './tidy';
 import { MAX_HTML_LENGTH } from './types';

@@ -2,7 +2,7 @@
 // image. It names each one, the page imports the bytes, and `resolveImages` swaps each source for its asset.
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { textSchema } from '../schema/schema';
+import { textSchema } from '../../../editor/schema/schema';
 import type { ImageKind, ImageRequest } from './types';
 
 const { nodes, marks } = textSchema;

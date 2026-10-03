@@ -2,7 +2,7 @@
 // canonical string round-trips. Parse rules are the paste allowlist: only what a rule reads survives a paste.
 import { Node } from '@tiptap/core';
 import type { TagParseRule } from '@tiptap/pm/model';
-import { CALLOUT_TYPE_PATTERN, FOLDS, LANGUAGE_PATTERN } from './specs';
+import { CALLOUT_TYPE_PATTERN, FOLDS, LANGUAGE_PATTERN } from './constants';
 
 const META_OFF = { rendered: false, parseHTML: () => null };
 

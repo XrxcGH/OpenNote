@@ -2,9 +2,9 @@
 // marker paragraph before the text is parsed, so its place among the other blocks is kept.
 import { DOMParser as PMDOMParser } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { TITLE } from '../markdown/escape';
-import { serializeInline } from '../markdown/inline';
-import { textSchema } from '../schema/schema';
+import { TITLE } from '../../../editor/markdown/escape';
+import { serializeInline } from '../../../editor/markdown/inline';
+import { textSchema } from '../../../editor/schema/schema';
 import { DEFAULT_COLUMN_WIDTH } from './types';
 import type { TableData } from './types';
 

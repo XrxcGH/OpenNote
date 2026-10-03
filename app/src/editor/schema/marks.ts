@@ -3,7 +3,7 @@
 // pasted `style` never reaches the page; the paste normalizers turn styles into these tags first.
 import { Mark } from '@tiptap/core';
 import type { TagParseRule } from '@tiptap/pm/model';
-import { HIGHLIGHT_COLORS, TEXT_COLOR_PATTERN, TEXT_SIZES, isBlockedHref, schemeOf } from './specs';
+import { HIGHLIGHT_COLORS, TEXT_COLOR_PATTERN, TEXT_SIZES, isBlockedHref, schemeOf } from './constants';
 
 /** Mark priorities: higher comes first in the schema, so it is outermost in the canonical order. */
 const RANK = {

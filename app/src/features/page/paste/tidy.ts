@@ -2,8 +2,8 @@
 // edges of each paragraph and heading lose their space, including the non-breaking spaces that Word leaves behind.
 import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
-import { joinListsDeep } from '../markdown/normalize';
-import { textSchema } from '../schema/schema';
+import { joinListsDeep } from '../../../editor/markdown/normalize';
+import { textSchema } from '../../../editor/schema/schema';
 
 const SPACE = '[\\s\\u00a0]+';
 const LEADING = new RegExp(`^${SPACE}`);

@@ -1,6 +1,6 @@
 // What the paste pipeline takes in and gives back. It is pure: the page feature reads the clipboard, resolves the
 // image requests through the import queue, and applies the pieces (Phase 4 design, section 15).
-import type { Node as PMNode } from '@tiptap/pm/model';
+import type { PastedPiece } from '../../../editor/markdown/paste';
 
 /** What the clipboard held, as far as the pipeline can tell (Phase 4 design, 15.3). */
 export type PasteSource = 'word' | 'onenote' | 'gdocs' | 'excel' | 'vscode' | 'web' | 'markdown' | 'plain';
@@ -19,15 +19,8 @@ export interface PasteOptions {
   readonly newId?: () => string;
 }
 
-/** A table block's data (SPEC 6.3). */
-export interface TableData {
-  header: boolean;
-  columns: { id: string; width: number }[];
-  rows: { id: string; cells: Record<string, { markdown: string }> }[];
-}
-
-/** A run of blocks for the text editor, or a table that becomes its own block. */
-export type PastedPiece = { kind: 'text'; doc: PMNode } | { kind: 'table'; data: TableData };
+export type { TableData } from '../../../editor/schema/specs';
+export type { PastedPiece } from '../../../editor/markdown/paste';
 
 /** Where an image's bytes come from. The page feature picks the import command by this. */
 export type ImageKind = 'data' | 'blob' | 'remote' | 'clip';
@@ -54,5 +47,4 @@ export interface PasteResult {
 /** Larger HTML is not kept: Phase 4 design, 15.1. */
 export const MAX_HTML_LENGTH = 5 * 1024 * 1024;
 
-/** Column width for a pasted table, in page units (SPEC 2.6). */
-export const DEFAULT_COLUMN_WIDTH = 160;
+export { DEFAULT_COLUMN_WIDTH } from '../../../editor/schema/specs';

@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { shape } from '../shape';
+import { shape } from '../../../editor/shape';
 import markdownSample from './fixtures/markdown.txt?raw';
 import pdfSample from './fixtures/pdf.txt?raw';
 import { joinBrokenLines, looksHardWrapped } from './pdf';
-import { looksLikeMarkdown, parsePastedMarkdown } from './plain';
+import { looksLikeMarkdown, parsePastedMarkdown } from '../../../editor/markdown/paste';
 import { sanitizePaste } from './sanitize';
 
 const newId = (() => {
