@@ -12,7 +12,7 @@ import type { MessageKey } from '../../../strings/t';
 import { installDropWatch } from '../audio/drop';
 import { installMomentLinks } from '../audio/momentLinks';
 import { isRunning, recordingChoices, recordingUi } from '../audio/state';
-import { TRANSCRIPT_TYPE } from '../audio/transcripts/model';
+import { TRANSCRIPT_TYPE } from '../audio/transcripts/moment';
 import { blockRenderers } from '../registries';
 import { shownQueue } from '../sync/shown';
 import { lazyBlockView } from '../tables/lazyView';

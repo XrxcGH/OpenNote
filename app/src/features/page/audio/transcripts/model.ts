@@ -5,7 +5,9 @@
 //
 // Everything here is plain functions on plain data, so each change is a new value and nothing is edited in place.
 
-export const TRANSCRIPT_TYPE = 'ext:org.opennote/transcript';
+import { momentHref } from './moment';
+
+export { momentHref, parseMomentHref, TRANSCRIPT_TYPE } from './moment';
 
 export interface Line {
   id: string;
@@ -235,14 +237,6 @@ export function parseTranscript(text: string, durationMs: number): { segments: S
     return segment;
   });
   return { segments: spread, timed: false };
-}
-
-/** The moment a link points at: the recording, and a position in its audio. */
-export const momentHref = (recording: string, ms: number): string => `opennote:moment/${recording}#${Math.round(ms)}`;
-
-export function parseMomentHref(href: string): { recording: string; ms: number } | null {
-  const found = /^opennote:moment\/([A-Za-z0-9_-]+)#(\d+)$/.exec(href);
-  return found ? { recording: found[1], ms: Number(found[2]) } : null;
 }
 
 const escapeHtml = (text: string): string =>

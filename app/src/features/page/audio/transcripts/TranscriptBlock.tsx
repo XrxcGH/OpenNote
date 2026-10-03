@@ -4,7 +4,6 @@
 // suggested (nothing is added until it is chosen).
 import { useId, useState } from 'react';
 import { useFlag } from '../../../../app/flags';
-import type { ActionItem } from '../../../../services/intel';
 import type { BlockJson } from '../../../../services/pages/types';
 import { useStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
@@ -16,6 +15,7 @@ import {
   addActionToPage,
   findActionItems,
   findChapters,
+  type FoundAction,
   playMs,
   quoteLines,
   summarizeTranscript,
@@ -134,7 +134,7 @@ function Speakers({ data, save }: { data: TranscriptData; save: Save }) {
 
 function Suggestions(props: {
   data: TranscriptData;
-  actions: ActionItem[] | null;
+  actions: FoundAction[] | null;
   chapters: Chapter[] | null;
   save: Save;
   clear(): void;
@@ -223,7 +223,9 @@ export function TranscriptView({ block }: { block: BlockJson }) {
   const picked = useStore(lineSelection, (state) => state);
   const selected: ReadonlySet<string> = picked.block === block.id ? picked.ids : EMPTY;
   const includeSpeaker = picked.includeSpeaker;
-  const [suggested, setSuggested] = useState<{ actions: ActionItem[] | null; chapters: Chapter[] | null } | null>(null);
+  const [suggested, setSuggested] = useState<{ actions: FoundAction[] | null; chapters: Chapter[] | null } | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
   const speakersOn = useFlag('transcripts.speakers');
   const notesOn = useFlag('transcripts.notes');

@@ -1,7 +1,7 @@
 // Links to a moment of a recording, such as the time in front of a quoted transcript line. A click on one plays the
 // recording from that moment, if the recording is on the page. It loads at start-up, so it only listens: the work loads
 // when a link is clicked.
-import { parseMomentHref } from './transcripts/model';
+import { parseMomentHref } from './transcripts/moment';
 
 /** Starts listening. Answers a function that stops. */
 export function installMomentLinks(): () => void {

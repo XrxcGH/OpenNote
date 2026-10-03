@@ -13,7 +13,6 @@ import { openFor, playAt } from '../playback';
 import { targetEditor } from '../../formattingBar/target';
 import { shownPage } from '../../history/shown';
 import { shownLayer } from '../../mount';
-import { parseDue } from '../../../tools';
 import { currentEngine } from './engine';
 import {
   forIntel,
@@ -153,12 +152,31 @@ async function quietSummary(data: TranscriptData): Promise<string | null> {
   }
 }
 
+/** An action item with the date its deadline means, if the deadline names one. */
+export interface FoundAction extends ActionItem {
+  dueOn: string | null;
+}
+
+/** The date a deadline phrase such as "by Friday" means, as 2026-10-09, or null if it is not a date. */
+async function dueDate(phrase: string | null): Promise<string | null> {
+  if (!phrase) return null;
+  const { parseDue } = await import('../../../tools');
+  const result = parseDue(phrase, { now: Date.now(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+  if (!result.ok) return null;
+  const { year, month, day } = result.due.date;
+  const two = (n: number) => String(n).padStart(2, '0');
+  return `${year}-${two(month)}-${two(day)}`;
+}
+
 /** Finds tasks and decisions. Suggestions only: nothing is added to the page. */
-export async function findActionItems(data: TranscriptData): Promise<ActionItem[] | null> {
+export async function findActionItems(data: TranscriptData): Promise<FoundAction[] | null> {
   const api = await loadApi();
   if (!(await api.askToTurnOn('summaries'))) return null;
   try {
-    return await (await api.intelClient()).actionItems(forIntel(data));
+    const found = await (await api.intelClient()).actionItems(forIntel(data));
+    return await Promise.all(
+      found.map(async (item) => ({ ...item, dueOn: await dueDate(item.due).catch(() => null) })),
+    );
   } catch (error) {
     api.reportProblem(error, 'text');
     return null;
@@ -182,21 +200,10 @@ export async function findChapters(data: TranscriptData): Promise<Chapter[] | nu
   }
 }
 
-/** The date a deadline phrase such as "by Friday" means, as 2026-10-09, or null if it is not a date. */
-export function dueDate(phrase: string, now: number = Date.now()): string | null {
-  const result = parseDue(phrase, { now, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-  if (!result.ok) return null;
-  const { year, month, day } = result.due.date;
-  const two = (n: number) => String(n).padStart(2, '0');
-  return `${year}-${two(month)}-${two(day)}`;
-}
-
 /** The words of a checkbox for an action item: what, who, and by when. */
-export function actionWords(item: ActionItem): string {
-  const due = item.due ? dueDate(item.due) : null;
-  const tail = [item.owner, item.due ? (due ? t('audioMore.transcript.due', { date: due }) : item.due) : null].filter(
-    (part): part is string => Boolean(part),
-  );
+export function actionWords(item: FoundAction): string {
+  const when = item.due ? (item.dueOn ? t('audioMore.transcript.due', { date: item.dueOn }) : item.due) : null;
+  const tail = [item.owner, when].filter((part): part is string => Boolean(part));
   return tail.length > 0 ? `${item.text} (${tail.join(', ')})` : item.text;
 }
 
@@ -216,7 +223,7 @@ async function intoNotes(node: DocNode, markdown: string): Promise<boolean> {
 }
 
 /** Adds an action item to the page as a checkbox with a link to its moment. */
-export async function addActionToPage(data: TranscriptData, item: ActionItem): Promise<void> {
+export async function addActionToPage(data: TranscriptData, item: FoundAction): Promise<void> {
   const words = actionWords(item);
   const placed = await intoNotes(
     taskContent(data.recording, item.startMs, words),
