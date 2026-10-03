@@ -1,5 +1,5 @@
 {
-  "startup": { "jsKb": 190, "cssKb": 16 },
+  "startup": { "jsKb": 196, "cssKb": 18 },
   "after": { "within": "features/page", "entry": "features/page/PageBody" },
   "lazyKb": {
     "features/pages/live": 40,
