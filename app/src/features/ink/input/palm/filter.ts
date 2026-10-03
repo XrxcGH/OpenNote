@@ -12,8 +12,11 @@ import { P, PRESENCE_NAMES, penContext } from './presence';
 import type { PenSignal, Presence } from './presence';
 import { sanitizeLearned, sanitizeProfile, sanitizeSettings } from './settings';
 import type { DeviceProfile, LearnedState, PalmSettings } from './settings';
-import * as K from './thresholds';
+import * as thresholds from './thresholds';
 import { resolvePxPerMm } from './units';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const K = { ...thresholds };
 
 export type Surface = 'page' | 'chrome';
 /** Window blur, the page hidden, a page switch, or a pen capture lost while the pen is still down. */
@@ -123,6 +126,7 @@ class Filter implements PalmFilter {
     if (core.c.live === 0) return;
     const wentDown = after === P.Down && before !== P.Down;
     if (!arrival && !wentDown) {
+      if (!core.due(t)) return;
       core.prepare(t, after);
       core.checkpoints(t);
       return;
@@ -163,6 +167,7 @@ class Filter implements PalmFilter {
     const ym = y / core.pxPerMm;
     const i = c.add(id, t, xm, ym);
     if (i < 0) return Role.Ignore;
+    core.dueAt = Math.min(core.dueAt, t + K.CHECKPOINTS_MS[0]);
     this.size(i, w, h, pressure);
     const p = core.presenceAt(t);
     if (p === P.Down) c.flags[i] |= F.PenDownAtLand;
@@ -239,7 +244,7 @@ class Filter implements PalmFilter {
     const ym = y / core.pxPerMm;
     for (let i = 0; i < K.MAX_CONTACTS; i++) {
       if (c.used[i] === 0 || t < c.t0[i] - K.HINT_MS || t > c.tLast[i] + K.HINT_MS) continue;
-      if (Math.hypot(c.x[i] - xm, c.y[i] - ym) > K.HINT_MM) continue;
+      if (K.len(c.x[i] - xm, c.y[i] - ym) > K.HINT_MM) continue;
       c.flags[i] |= F.OsPalm;
       core.prepare(t, core.presenceAt(t));
       core.rescore(i);
@@ -288,7 +293,7 @@ class Filter implements PalmFilter {
     core.fx.count = 0;
     core.settle(t);
     this.prune(t);
-    if (core.c.live === 0) return;
+    if (core.c.live === 0 || !core.due(t)) return;
     core.prepare(t, core.presenceAt(t));
     core.checkpoints(t);
   }

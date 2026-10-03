@@ -3,7 +3,10 @@
 
 import { ContactTable } from './contacts';
 import { P } from './presence';
-import * as K from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const K = { ...thresholds };
 
 /** A page tap or long press. */
 export function tapGate(p: P, s: number): boolean {
@@ -53,8 +56,8 @@ export function panConfirmed(c: ContactTable, i: number, j: number): boolean {
   const ay = c.y[i] - c.y0[i];
   const bx = c.x[j] - c.x0[j];
   const by = c.y[j] - c.y0[j];
-  const la = Math.hypot(ax, ay);
-  const lb = Math.hypot(bx, by);
+  const la = K.len(ax, ay);
+  const lb = K.len(bx, by);
   if (la === 0 || lb === 0) return false;
   const ratio = la > lb ? la / lb : lb / la;
   return (ax * bx + ay * by) / (la * lb) >= Math.cos(K.PAN_HEADING_DEG * (Math.PI / 180)) && ratio < K.PAN_SPEED_RATIO;

@@ -2,7 +2,10 @@
 // grace. Nothing latches: every state that blocks touch has a timed exit. Presence at a time is computed from the
 // slots without changing them, so asking about a later time never changes what an earlier event decides.
 
-import { DOWN_LEAVE_MS, DOWN_SILENCE_MS, MAX_PENS, RECENT_MS } from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const { DOWN_LEAVE_MS, DOWN_SILENCE_MS, MAX_PENS, RECENT_MS } = thresholds;
 
 export type PenSignal = 'hover' | 'down' | 'move' | 'up' | 'cancel' | 'leave';
 export type Presence = 'absent' | 'away' | 'recent' | 'near' | 'down';

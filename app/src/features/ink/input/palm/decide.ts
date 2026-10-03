@@ -6,7 +6,10 @@ import { End, Fx, Role } from './effects';
 import { P } from './presence';
 import { canPair, chromeGate, navGate, panConfirmed, scrollGate, tapGate } from './roles';
 import { E } from './score';
-import * as K from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const K = { ...thresholds };
 
 const isNav = (role: number) => role === Role.Nav;
 

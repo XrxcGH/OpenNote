@@ -128,6 +128,8 @@ The learned state holds `penSeen`, the hand regions, the stylus tip size, and th
 | `tick(time)`                                       | Every 100 ms while `needsTick()`                                                                                                          |
 | `hint(kind, time, x, y)`                           | A native palm hint                                                                                                                        |
 
+Budgets, checked in `benchmark.test.ts`: a pen event at most 1 µs, a touch event with 10 contacts down at most 5 µs, a tick at most 10 µs, 100,000 mixed events at most 60 ms, and no allocation per event. Contacts, pens, holds, and effects live in typed arrays, and hot modules copy their thresholds into plain local objects. `docs/perf/phase-5-core.md` records the numbers.
+
 ## Sources
 
 - [S6] Android palm rejection and `FLAG_CANCELED`.

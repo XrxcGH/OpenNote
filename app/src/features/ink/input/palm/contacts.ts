@@ -1,8 +1,11 @@
 // The contact table: a struct of typed arrays with 12 slots, so tracking a touch allocates nothing. Positions and
 // sizes are millimeters. Each slot keeps the features the score reads, updated on every event of its contact.
 
-import { MAX_CONTACTS, SIZE_MODE_CONTACTS, SWIPE_MS } from './thresholds';
 import type { Role } from './effects';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const { len, MAX_CONTACTS, SIZE_MODE_CONTACTS, SWIPE_MS } = thresholds;
 
 /** Flags per contact. */
 export const F = {
@@ -124,8 +127,8 @@ export class ContactTable {
 
   /** Moves a contact and updates its motion features. */
   moveTo(i: number, t: number, x: number, y: number): void {
-    const step = Math.hypot(x - this.x[i], y - this.y[i]);
-    const disp = Math.hypot(x - this.x0[i], y - this.y0[i]);
+    const step = len(x - this.x[i], y - this.y[i]);
+    const disp = len(x - this.x0[i], y - this.y0[i]);
     this.path[i] += step;
     if (disp > this.disp[i]) this.disp[i] = disp;
     if (t - this.t0[i] <= SWIPE_MS) {
@@ -147,7 +150,7 @@ export class ContactTable {
       this.relY0[i] = ry;
       return;
     }
-    const d = Math.hypot(rx - this.relX0[i], ry - this.relY0[i]);
+    const d = len(rx - this.relX0[i], ry - this.relY0[i]);
     if (d > this.relDisp[i]) this.relDisp[i] = d;
   }
 
@@ -199,7 +202,7 @@ export class ContactTable {
   }
 
   dist(i: number, j: number): number {
-    return Math.hypot(this.x[i] - this.x[j], this.y[i] - this.y[j]);
+    return len(this.x[i] - this.x[j], this.y[i] - this.y[j]);
   }
 
   roleOf(i: number): Role {

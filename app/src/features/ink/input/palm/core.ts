@@ -9,7 +9,10 @@ import { P, PenSlots, penContext } from './presence';
 import { E, HARD, isGrip, ScoreContext, scoreContact } from './score';
 import { DEFAULT_PALM_SETTINGS, UNKNOWN_PROFILE } from './settings';
 import type { DeviceProfile, HandShape, LearnedState, PalmSettings } from './settings';
-import * as K from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const K = { ...thresholds };
 
 const mirror = (s: HandShape, left: boolean): HandShape => (left ? { ox: -s.ox, oy: s.oy, r: s.r } : s);
 
@@ -33,6 +36,8 @@ export class Core {
   handLift = -Infinity;
   drawSlot = -1;
   shadowSlot = -1;
+  /** The earliest time a live contact reaches its next checkpoint. */
+  dueAt = Infinity;
   /** Learned passive stylus tip: running sum and count of committed stroke sizes. */
   tipSum = 0;
   tipN = 0;
@@ -110,13 +115,24 @@ export class Core {
 
   /** Scores each live contact that has reached its next age checkpoint. */
   checkpoints(t: number): void {
+    if (t < this.dueAt) return;
     const c = this.c;
     const marks = K.CHECKPOINTS_MS;
+    let next = Infinity;
     for (let i = 0; i < K.MAX_CONTACTS; i++) {
-      if (c.used[i] === 0 || c.checkpoint[i] >= marks.length || t - c.t0[i] < marks[c.checkpoint[i]]) continue;
-      while (c.checkpoint[i] < marks.length && t - c.t0[i] >= marks[c.checkpoint[i]]) c.checkpoint[i]++;
-      this.rescore(i);
+      if (c.used[i] === 0 || c.checkpoint[i] >= marks.length) continue;
+      if (t - c.t0[i] >= marks[c.checkpoint[i]]) {
+        while (c.checkpoint[i] < marks.length && t - c.t0[i] >= marks[c.checkpoint[i]]) c.checkpoint[i]++;
+        this.rescore(i);
+      }
+      if (c.used[i] === 1 && c.checkpoint[i] < marks.length) next = Math.min(next, c.t0[i] + marks[c.checkpoint[i]]);
     }
+    this.dueAt = next;
+  }
+
+  /** True when some contact has reached its next checkpoint, so the pen path can skip scoring otherwise. */
+  due(t: number): boolean {
+    return t >= this.dueAt;
   }
 
   /** A palm verdict: final for the contact's life. Its ink goes, its camera move reverts, and its tap is swallowed. */

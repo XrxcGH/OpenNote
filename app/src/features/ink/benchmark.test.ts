@@ -17,6 +17,7 @@ import { createStrokeIndex } from './geometry/strokeIndex';
 import type { StrokeIndex } from './geometry/strokeIndex';
 import type { Bounds, Stroke } from './geometry/types';
 import { createPalmFilter } from './input/palm/index';
+import type { PalmFilter } from './input/palm/index';
 import { detectScribble } from './input/gestures/scribble';
 import { createStrokeBuilder } from './input/strokeBuilder';
 import type { RawSample } from './input/samples';
@@ -251,22 +252,88 @@ describe('the pen path', () => {
     expectWithinBudget(record('Build a 400-sample stroke with the steady pen', took, '400 samples'));
   });
 
-  it('filters 2,000 touch and pen events under the budget', () => {
-    const took = measure(() => {
-      const palm = createPalmFilter({ fingerDraw: 'on' });
-      for (let i = 0; i < 500; i++) {
-        palm.pen(i % 3 ? 'hover' : 'leave', 1, i * 8, 400, 300, 20, 25);
-        palm.touchDown(i, i * 8 + 1, 600, 500, 14, 14, 0, 'page');
-        palm.touchMove(i, i * 8 + 2, 602, 500, 14, 14, 0);
-        palm.touchEnd(i, i * 8 + 4, false);
-      }
-    });
-    expectWithinBudget(record('Filter 2,000 palm events', took, '500 pen and 1,500 touch events'));
-  });
-
   it('checks 10,000 strokes for a scribble in well under a second', () => {
     const { strokes } = generatePage(STROKES, 42);
     const took = measure(() => strokes.forEach((s) => detectScribble(s.points)), 5, 1);
     expectBelow(record('Check 10,000 strokes for a scribble', took, NOTE), 2000);
+  });
+});
+
+/** The pen event for step i of a stroke cycle: 8 hovers, a down, 30 moves, and an up. */
+function penStep(palm: PalmFilter, i: number, t: number): void {
+  const k = i % 40;
+  const signal = k < 8 ? 'hover' : k === 8 ? 'down' : k === 39 ? 'up' : 'move';
+  palm.pen(signal, 1, t, 400 + k, 300, 20, 25);
+}
+
+/** A mixed stream: a pen writing and hovering while 10 touch contacts rest and move, as a palm and fingers do. */
+function mixedEvents(palm: PalmFilter, count: number, t0: number): number {
+  let t = t0;
+  for (let i = 0; i < count; i++) {
+    t += 1;
+    const k = i % 50;
+    if (k < 40) penStep(palm, k, t);
+    else palm.touchMove(100 + (k - 40), t, 600 + (k - 40) * 30 + (i % 3), 500, 60, 50, 0);
+  }
+  return t;
+}
+
+function liveContacts(palm: PalmFilter, t: number): void {
+  for (let id = 100; id < 110; id++) palm.touchDown(id, t, 600 + (id - 100) * 30, 500, 60, 50, 0, 'page');
+}
+
+describe('palm rejection cost (architecture 5.4)', () => {
+  it('filters 100,000 mixed palm events under 60 ms', () => {
+    let t = 0;
+    const took = measure(
+      () => {
+        const palm = createPalmFilter({}, { pxPerMm: 5.2, penDigitizer: true });
+        liveContacts(palm, t);
+        t = mixedEvents(palm, 100_000, t) + 20_000;
+      },
+      7,
+      2,
+    );
+    expectWithinBudget(
+      record('Filter 100,000 palm events', took, '80,000 pen and 20,000 touch events, 10 contacts live'),
+      60,
+    );
+  });
+
+  it('spends under 1 µs on a pen event and 5 µs on a touch event with 10 contacts live', () => {
+    const palm = createPalmFilter({}, { pxPerMm: 5.2, penDigitizer: true });
+    let t = 0;
+    liveContacts(palm, t);
+    const pen = measure(() => {
+      for (let i = 0; i < 10_000; i++) penStep(palm, i, ++t);
+    });
+    expectWithinBudget(record('10,000 pen events, 10 contacts live', pen, '1 µs each'), 10);
+    const touch = measure(() => {
+      for (let i = 0; i < 10_000; i++)
+        palm.touchMove(100 + (i % 10), ++t, 600 + (i % 10) * 30 + (i % 3), 500, 60, 50, 0);
+    });
+    expectWithinBudget(record('10,000 touch moves, 10 contacts live', touch, '5 µs each'), 50);
+    const tick = measure(() => {
+      for (let i = 0; i < 1000; i++) palm.tick((t += 100));
+    });
+    expectWithinBudget(record('1,000 ticks, 10 contacts live', tick, '10 µs each'), 10);
+  });
+
+  it('allocates nothing per event once warm', () => {
+    const gc = (globalThis as { gc?: () => void }).gc;
+    const palm = createPalmFilter({}, { pxPerMm: 5.2, penDigitizer: true });
+    liveContacts(palm, 0);
+    const warm = mixedEvents(palm, 20_000, 0);
+    gc?.();
+    const before = process.memoryUsage().heapUsed;
+    mixedEvents(palm, 200_000, warm);
+    gc?.();
+    const growth = process.memoryUsage().heapUsed - before;
+    record(
+      'Heap growth over 200,000 palm events',
+      { best: growth / 1024, median: growth / 1024, runs: 1, load: 1 },
+      gc ? 'KB, with --expose-gc' : 'KB, no gc',
+    );
+    if (gc) expect(growth).toBeLessThan(64 * 1024);
   });
 });

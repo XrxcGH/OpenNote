@@ -3,9 +3,25 @@
 // from where confirmed palms land. A left hand mirrors a right one.
 
 import type { HandShape } from './settings';
-import { clamp, FAR_OUTSIDE_MM, FAR_SIDE_MM, FOREARM_HALF_MM, LEAN_FLIP_STROKES, LEAN_MIN_DEG } from './thresholds';
-import { LEAN_OFFSET_MM, LEAN_WEIGHT, LEARN_RATE, RADIUS_MAX_MM, RADIUS_MIN_MM } from './thresholds';
-import { REGION_FALLOFF_MM, TIP_GRIP_MM } from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const {
+  clamp,
+  len,
+  FAR_OUTSIDE_MM,
+  FAR_SIDE_MM,
+  FOREARM_HALF_MM,
+  LEAN_FLIP_STROKES,
+  LEAN_MIN_DEG,
+  LEAN_OFFSET_MM,
+  LEAN_WEIGHT,
+  LEARN_RATE,
+  RADIUS_MAX_MM,
+  RADIUS_MIN_MM,
+  REGION_FALLOFF_MM,
+  TIP_GRIP_MM,
+} = thresholds;
 
 const DEG = Math.PI / 180;
 
@@ -14,10 +30,10 @@ export function leanOf(tiltX: number, tiltY: number, out: { x: number; y: number
   if (!Number.isFinite(tiltX) || !Number.isFinite(tiltY)) return false;
   const lx = Math.tan(clamp(tiltX, -89, 89) * DEG);
   const ly = Math.tan(clamp(tiltY, -89, 89) * DEG);
-  const len = Math.hypot(lx, ly);
-  if (len < Math.tan(LEAN_MIN_DEG * DEG)) return false;
-  out.x = lx / len;
-  out.y = ly / len;
+  const norm = len(lx, ly);
+  if (norm < Math.tan(LEAN_MIN_DEG * DEG)) return false;
+  out.x = lx / norm;
+  out.y = ly / norm;
   return true;
 }
 
@@ -62,19 +78,19 @@ export class HandRegion {
   outside(cx: number, cy: number, tipX: number, tipY: number): number {
     const ex = cx - tipX - this.ox;
     const ey = cy - tipY - this.oy;
-    const dist = Math.hypot(ex, ey);
+    const dist = len(ex, ey);
     if (dist <= this.r) return 0;
-    const len = Math.hypot(this.ox, this.oy) || 1;
-    const along = (ex * this.ox + ey * this.oy) / len;
-    const across = Math.abs(ex * -this.oy + ey * this.ox) / len;
+    const norm = len(this.ox, this.oy) || 1;
+    const along = (ex * this.ox + ey * this.oy) / norm;
+    const across = Math.abs(ex * -this.oy + ey * this.ox) / norm;
     if (along > 0 && across <= FOREARM_HALF_MM) return 0;
     return dist - this.r;
   }
 
   /** E6: on the far side of the tip from the hand, or well outside the region. */
   farFrom(cx: number, cy: number, tipX: number, tipY: number): boolean {
-    const len = Math.hypot(this.ox, this.oy) || 1;
-    const along = ((cx - tipX) * this.ox + (cy - tipY) * this.oy) / len;
+    const norm = len(this.ox, this.oy) || 1;
+    const along = ((cx - tipX) * this.ox + (cy - tipY) * this.oy) / norm;
     return along < -FAR_SIDE_MM || this.outside(cx, cy, tipX, tipY) > FAR_OUTSIDE_MM;
   }
 
@@ -101,7 +117,7 @@ export class HandRegion {
   /** Learns from a palm's mean offset from the anchor while both were down. */
   learn(mx: number, my: number): void {
     if (this.pinned && Math.sign(mx) !== Math.sign(this.ox) && Math.abs(mx) > 10) return;
-    const miss = Math.hypot(mx - this.ox, my - this.oy);
+    const miss = len(mx - this.ox, my - this.oy);
     this.ox += LEARN_RATE * (mx - this.ox);
     this.oy += LEARN_RATE * (my - this.oy);
     this.r = clamp(this.r + LEARN_RATE * (miss + REGION_FALLOFF_MM - this.r), RADIUS_MIN_MM, RADIUS_MAX_MM);

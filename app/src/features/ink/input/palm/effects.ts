@@ -2,7 +2,10 @@
 // contact it changed, so the caller drains the queue after every call. The queue is typed arrays, so no event
 // allocates.
 
-import { MAX_EFFECTS } from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const { MAX_EFFECTS } = thresholds;
 
 /**
  * What a touch contact does. Pass: native, on surfaces the filter does not manage. Ignore: nothing at all. Draw:

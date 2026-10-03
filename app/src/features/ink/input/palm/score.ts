@@ -4,7 +4,10 @@
 import { ContactTable, F, SizeMode } from './contacts';
 import { HandRegion } from './handRegion';
 import { P } from './presence';
-import * as K from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const K = { ...thresholds };
 
 /** Evidence bits: bit n-1 is En. */
 export const E = {
@@ -182,7 +185,7 @@ function neighborTerms(c: ContactTable, i: number, x: ScoreContext): number {
     if (j === i || c.used[j] === 0) continue;
     if (c.cls[j] === 2 && i !== x.drawSlot && c.dist(i, j) <= K.CLUSTER_MM) nearPalm = true;
     const together = Math.abs(c.t0[i] - c.t0[j]) <= K.BURST_MS;
-    if (together && Math.hypot(c.x0[i] - c.x0[j], c.y0[i] - c.y0[j]) <= K.SPLIT_MM) split = true;
+    if (together && K.len(c.x0[i] - c.x0[j], c.y0[i] - c.y0[j]) <= K.SPLIT_MM) split = true;
     const resting = c.cls[j] === 2 || c.role[j] === 1 || c.disp[j] < K.WEAK_TRAVEL_MM;
     if (x.drawMode && resting && x.touchHand.membership(c.x[j], c.y[j], c.x[i], c.y[i]) >= 0.5) ownPalm = true;
   }
@@ -210,7 +213,7 @@ function burst(c: ContactTable, i: number, x: ScoreContext): boolean {
   let n = 0;
   for (let k = 0; k < K.MAX_LANDINGS; k++) {
     if (Math.abs(x.landT[k] - c.t0[i]) > K.BURST_MS) continue;
-    if (Math.hypot(x.landX[k] - c.x0[i], x.landY[k] - c.y0[i]) <= K.BURST_MM) n++;
+    if (K.len(x.landX[k] - c.x0[i], x.landY[k] - c.y0[i]) <= K.BURST_MM) n++;
   }
   return n >= K.BURST_COUNT;
 }

@@ -171,6 +171,9 @@ export const MAX_EFFECTS = 32;
 export const HINT_MM = 2;
 export const HINT_MS = 20;
 
+/** The length of (x, y). Math.hypot is several times slower, and this runs on every event. */
+export const len = (x: number, y: number): number => Math.sqrt(x * x + y * y);
+
 export const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > hi ? hi : v);
 
 /** A finite number clamped to a range, or the fallback. */

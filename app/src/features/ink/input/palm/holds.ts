@@ -2,7 +2,10 @@
 // `graceMs`; real pen evidence at or after its start, up to the end of the hold, drops it. A stroke committed
 // shortly before a pen arrives, inside the new pen's hand region, is taken back.
 
-import { MAX_COMMITS, MAX_HOLDS } from './thresholds';
+import * as thresholds from './thresholds';
+
+/** A plain copy, so hot loops read fields rather than module bindings. */
+const { MAX_COMMITS, MAX_HOLDS } = thresholds;
 
 export class Holds {
   readonly id = new Int32Array(MAX_HOLDS);
