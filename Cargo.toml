@@ -1,8 +1,26 @@
 [workspace]
-members = ["app/src-tauri", "crates/core", "spikes/harness", "tests/crash", "tests/perf/core"]
+members = [
+  "app/src-tauri",
+  "crates/core",
+  "crates/updater",
+  "spikes/harness",
+  "tests/crash",
+  "tests/perf/core",
+  "tests/perf/frame-probe",
+]
 # The fuzz crate needs a nightly toolchain, so it stays out of the workspace.
 exclude = ["crates/core/fuzz"]
 resolver = "2"
+
+# Versions the app and the updater crate share, so both always build against the same ones.
+[workspace.dependencies]
+log = "0.4"
+proptest = "1.11.0"
+semver = "1.0.28"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11.0"
+tempfile = "3.27.0"
 
 [profile.release]
 # A smaller, faster single-file exe for each release target.
@@ -35,3 +53,9 @@ debug = "line-tables-only"
 lto = false
 panic = "unwind"
 strip = false
+
+[profile.ci]
+# CI's end-to-end build: the release settings with thin link-time optimization, so it builds faster.
+inherits = "release"
+codegen-units = 16
+lto = "thin"

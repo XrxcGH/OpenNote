@@ -1,0 +1,38 @@
+/* Styles for the primitives WP0 wrote and WP4's scope didn't reach: RadioGroup, RadioCard, and ProgressBar. Every
+   value is a design token, and every position a logical property. The focus ring comes from base.css. */
+@layer components {
+  .radioGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-7);
+  }
+
+  .radioCard {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .radioCard[aria-checked='true'] {
+    border-color: var(--color-accent-primary);
+    background: var(--color-accent-primary-subtle);
+  }
+
+  .fieldNote {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .progress {
+    block-size: var(--space-1);
+    background: var(--color-accent-primary-subtle);
+  }
+}

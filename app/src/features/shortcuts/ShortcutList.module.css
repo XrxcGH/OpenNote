@@ -1,0 +1,165 @@
+/* The shortcut list (ARCHITECTURE.md section 14.7). Tables use the design tokens only. */
+@layer components {
+  .section {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-5);
+    inline-size: min(56rem, 100%);
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .scroll {
+    display: grid;
+    gap: var(--space-6);
+    max-block-size: 55vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-inline-end: var(--space-2);
+  }
+
+  .scroll:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .group h2,
+  .group h3 {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  .name {
+    inline-size: 50%;
+    font-weight: var(--font-weight-regular);
+  }
+
+  .note {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+  }
+
+  .none {
+    color: var(--color-text-secondary);
+  }
+
+  .actions {
+    inline-size: 11rem;
+    white-space: nowrap;
+    text-align: end;
+  }
+
+  .chords {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .or {
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .kbd {
+    padding: var(--space-0) var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    white-space: nowrap;
+  }
+
+  .capture {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .captureField {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .captureField[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .findLabel {
+    color: var(--color-text-primary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--type-small-line);
+  }
+
+  .problem {
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .prompt {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .prompt p {
+    margin: 0;
+  }
+
+  .promptActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

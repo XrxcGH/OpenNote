@@ -14,14 +14,16 @@ export const tokens = {
         "raised": "#FFFDF9",
         "sunken": "#EAE3D8",
         "hover": "#ECE5DA",
-        "selected": "#DDE8DA"
+        "selected": "#DDE8DA",
+        "scrim": "#2B252147"
       },
       "text": {
         "primary": "#2B2521",
         "secondary": "#5C534A",
         "muted": "#6B6054",
         "onAccent": "#FFFCF6",
-        "link": "#3B6A4D"
+        "link": "#3B6A4D",
+        "onSelected": "#2B2521"
       },
       "border": {
         "subtle": "#E3DACC",
@@ -45,6 +47,20 @@ export const tokens = {
       },
       "selection": {
         "highlight": "#F4DE93"
+      },
+      "caption": {
+        "closeHover": "#C42B1C",
+        "closeHoverText": "#FFFCF6"
+      },
+      "code": {
+        "keyword": "#6A4A9C",
+        "string": "#2E6B45",
+        "number": "#9A4A1F",
+        "comment": "#6B6054",
+        "function": "#2F4F9A",
+        "type": "#7A5410",
+        "variable": "#6E4B2E",
+        "punctuation": "#5C534A"
       }
     },
     "dark": {
@@ -54,14 +70,16 @@ export const tokens = {
         "raised": "#2C2722",
         "sunken": "#171411",
         "hover": "#332C26",
-        "selected": "#2E3B30"
+        "selected": "#2E3B30",
+        "scrim": "#1712108C"
       },
       "text": {
         "primary": "#F0E9DE",
         "secondary": "#CFC5B7",
         "muted": "#ABA093",
         "onAccent": "#1C1916",
-        "link": "#8FC29D"
+        "link": "#8FC29D",
+        "onSelected": "#F0E9DE"
       },
       "border": {
         "subtle": "#3A322B",
@@ -85,8 +103,59 @@ export const tokens = {
       },
       "selection": {
         "highlight": "#52451F"
+      },
+      "caption": {
+        "closeHover": "#C42B1C",
+        "closeHoverText": "#FFFCF6"
+      },
+      "code": {
+        "keyword": "#C2ABE8",
+        "string": "#8FC29D",
+        "number": "#F0AE68",
+        "comment": "#ABA093",
+        "function": "#9DB4EA",
+        "type": "#E7BA62",
+        "variable": "#D6AE86",
+        "punctuation": "#CFC5B7"
       }
     }
+  },
+  "forcedColors": {
+    "surface.app": "Canvas",
+    "surface.page": "Canvas",
+    "surface.raised": "Canvas",
+    "surface.sunken": "Field",
+    "surface.hover": "Canvas",
+    "surface.selected": "Highlight",
+    "text.primary": "CanvasText",
+    "text.secondary": "CanvasText",
+    "text.muted": "CanvasText",
+    "text.onAccent": "HighlightText",
+    "text.link": "LinkText",
+    "text.onSelected": "HighlightText",
+    "border.subtle": "GrayText",
+    "border.control": "ButtonBorder",
+    "accent.primary": "Highlight",
+    "accent.primaryHover": "Highlight",
+    "accent.primaryPressed": "Highlight",
+    "accent.primarySubtle": "Canvas",
+    "accent.clay": "CanvasText",
+    "status.success": "CanvasText",
+    "status.warning": "CanvasText",
+    "status.danger": "CanvasText",
+    "status.recording": "CanvasText",
+    "focus.ring": "Highlight",
+    "selection.highlight": "Highlight",
+    "caption.closeHover": "Highlight",
+    "caption.closeHoverText": "HighlightText",
+    "code.keyword": "CanvasText",
+    "code.string": "CanvasText",
+    "code.number": "CanvasText",
+    "code.comment": "CanvasText",
+    "code.function": "CanvasText",
+    "code.type": "CanvasText",
+    "code.variable": "CanvasText",
+    "code.punctuation": "CanvasText"
   },
   "contrast": [
     {
@@ -233,6 +302,271 @@ export const tokens = {
       "fg": "focus.ring",
       "bg": "surface.selected",
       "min": 3
+    },
+    {
+      "fg": "text.onSelected",
+      "bg": "surface.selected",
+      "min": 7
+    },
+    {
+      "fg": "text.link",
+      "bg": "accent.primarySubtle",
+      "min": 4.5
+    },
+    {
+      "fg": "caption.closeHoverText",
+      "bg": "caption.closeHover",
+      "min": 4.5
+    },
+    {
+      "fg": "accent.primary",
+      "bg": "accent.primarySubtle",
+      "min": 3
+    },
+    {
+      "fg": "focus.ring",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "focus.ring",
+      "bg": "surface.raised",
+      "min": 3
+    },
+    {
+      "fg": "text.secondary",
+      "bg": "surface.raised",
+      "min": 4.5
+    },
+    {
+      "fg": "text.secondary",
+      "bg": "surface.hover",
+      "min": 4.5
+    },
+    {
+      "fg": "text.secondary",
+      "bg": "surface.selected",
+      "min": 4.5
+    },
+    {
+      "fg": "border.control",
+      "bg": "surface.raised",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Ink",
+      "bg": "surface.app",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Ink",
+      "bg": "surface.selected",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Ink",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Indigo",
+      "bg": "surface.app",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Indigo",
+      "bg": "surface.selected",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Indigo",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Brick",
+      "bg": "surface.app",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Brick",
+      "bg": "surface.selected",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Brick",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Fern",
+      "bg": "surface.app",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Fern",
+      "bg": "surface.selected",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Fern",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Plum",
+      "bg": "surface.app",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Plum",
+      "bg": "surface.selected",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Plum",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Amber",
+      "bg": "surface.app",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Amber",
+      "bg": "surface.selected",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Amber",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Walnut",
+      "bg": "surface.app",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Walnut",
+      "bg": "surface.selected",
+      "min": 3
+    },
+    {
+      "fg": "ink.pens.Walnut",
+      "bg": "surface.hover",
+      "min": 3
+    },
+    {
+      "fg": "code.keyword",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.keyword",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.string",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.string",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.number",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.number",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.comment",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.comment",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.function",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.function",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.type",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.type",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.variable",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.variable",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "code.punctuation",
+      "bg": "surface.page",
+      "min": 4.5
+    },
+    {
+      "fg": "code.punctuation",
+      "bg": "surface.sunken",
+      "min": 4.5
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Honey",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Mint",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Rose",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Apricot",
+      "over": "surface.page",
+      "min": 7
+    },
+    {
+      "fg": "text.primary",
+      "bg": "ink.highlighters.Lilac",
+      "over": "surface.page",
+      "min": 7
     }
   ],
   "ink": {
@@ -277,7 +611,7 @@ export const tokens = {
       {
         "name": "Honey",
         "light": "#F2CF4A66",
-        "dark": "#C9A42F66"
+        "dark": "#A88A2C66"
       },
       {
         "name": "Mint",
@@ -305,6 +639,7 @@ export const tokens = {
     "ui": "\"Atkinson Hyperlegible Next Variable\", \"Atkinson Hyperlegible Next\", \"Segoe UI Variable Text\", \"Segoe UI\", system-ui, sans-serif",
     "reading": "\"Literata Variable\", \"Literata\", \"Cambria\", Georgia, serif",
     "mono": "\"Atkinson Hyperlegible Mono\", \"Cascadia Code\", Consolas, monospace",
+    "symbol": "\"Segoe Fluent Icons\", \"Segoe MDL2 Assets\"",
     "weight": {
       "regular": 400,
       "medium": 500,
@@ -385,13 +720,49 @@ export const tokens = {
     "editorMin": 480,
     "readingMeasure": "72ch",
     "focusRingWidth": 2,
-    "focusRingOffset": 2
+    "focusRingOffset": 2,
+    "titleBar": 40,
+    "titleBarTouch": 48,
+    "captionButton": 46,
+    "dragMin": 200,
+    "rail": 48,
+    "sidebarMin": 220,
+    "sidebarMax": 400,
+    "pageListMin": 240,
+    "pageListMax": 420,
+    "splitterHit": 8,
+    "splitterHitTouch": 24,
+    "treeIndent": 16,
+    "rowPointer": 32,
+    "rowTouch": 44,
+    "themeCard": 200,
+    "pageRow": 56,
+    "autoScrollStrip": 28,
+    "palette": 680,
+    "paletteTop": 90,
+    "setupCardWidth": 720,
+    "setupCardHeight": 600,
+    "settingsNav": 240,
+    "bottomBar": 64,
+    "menuMinWidth": 208,
+    "dialogWidth": 440,
+    "toastMaxWidth": 480,
+    "contentMin": 320,
+    "windowMin": 400,
+    "flowMargin": 48,
+    "textBoxMinWidth": 120,
+    "textBoxAutoMax": 600,
+    "keepBelowBand": 24,
+    "chromeHit": 32,
+    "chromeHitTouch": 44,
+    "penPalette": 44,
+    "penPaletteTouch": 56,
+    "shapeHandle": 12
   },
   "breakpoint": {
-    "compact": 600,
-    "medium": 840,
-    "expanded": 1200,
-    "wide": 1600
+    "medium": 600,
+    "expanded": 840,
+    "wide": 1200
   },
   "elevation": {
     "1": "0 1px 2px rgba(43, 37, 33, 0.08)",
@@ -400,7 +771,12 @@ export const tokens = {
   },
   "layer": {
     "base": 0,
+    "inkTiles": 2,
+    "inkSelection": 3,
+    "inkLive": 4,
+    "pageChrome": 6,
     "sticky": 10,
+    "formattingBar": 15,
     "dropdown": 20,
     "overlay": 30,
     "dialog": 40,
@@ -429,5 +805,17 @@ export const tokens = {
       "mass": 1
     },
     "reducedDuration": 100
+  },
+  "interaction": {
+    "longPressMs": 500,
+    "typeaheadMs": 700,
+    "tooltipDelayMs": 500,
+    "loadingDelayMs": 300,
+    "toastMs": 6000,
+    "themeApplyMinMs": 350,
+    "pageOpenDebounceMs": 100,
+    "shapeHoldMs": 500,
+    "palmGraceMs": 500,
+    "palmWatchdogMs": 2000
   }
 } as const;

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "minWriterSchema": 1,
+  "appearance": {
+    "theme": "dark",
+    "pageColor": "paper",
+    "textSize": 125,
+    "motion": "reduce",
+    "density": "touch"
+  },
+  "storage": { "notesFolder": "C:\\Users\\Ada\\Documents\\OpenNote" },
+  "startup": { "openLastPage": false },
+  "shortcuts": { "theme.toggle": ["Ctrl+Alt+K"] },
+  "updates": { "install": "ask", "channel": "stable", "skippedVersion": "0.4.1" },
+  "setup": { "completedSteps": ["welcome", "look"] },
+  "experimental": { "flags": { "trash.view": true } }
+}

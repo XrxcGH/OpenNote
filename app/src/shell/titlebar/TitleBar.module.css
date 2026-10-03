@@ -1,0 +1,234 @@
+/* The title bar and the compact app bar (ARCHITECTURE.md section 10). The window keeps its native frame for now
+   (ADR 0012), so the bar is an ordinary toolbar row below the native caption: no drag region, no caption buttons. */
+@layer components {
+  .titleBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    block-size: var(--size-title-bar);
+    padding-inline-start: var(--space-4);
+    overflow: hidden;
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-app);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+  }
+
+  :global(:root[data-density='touch']) .titleBar {
+    block-size: var(--size-title-bar-touch);
+  }
+
+  .logo {
+    flex: none;
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+  }
+
+  .logoPage {
+    fill: var(--color-surface-page);
+    stroke: var(--color-text-primary);
+    stroke-width: 3;
+    stroke-linejoin: round;
+  }
+
+  .logoFold {
+    fill: var(--color-border-subtle);
+    stroke: var(--color-text-primary);
+    stroke-width: 3;
+    stroke-linejoin: round;
+  }
+
+  .logoInk {
+    fill: none;
+    stroke: var(--color-accent-primary);
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+
+  .logoTip {
+    fill: var(--color-accent-clay);
+  }
+
+  .appName {
+    flex: none;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .group {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-inline-size: 0;
+  }
+
+  /* At the last level, the breadcrumb gives way before any item does. */
+  .group[data-fit-max] {
+    flex: 0 1 auto;
+  }
+
+  .item {
+    display: flex;
+    flex: none;
+    align-items: center;
+  }
+
+  .breadcrumbItem {
+    display: flex;
+    flex: none;
+    align-items: center;
+    min-inline-size: 0;
+  }
+
+  .group[data-fit-max] .breadcrumbItem {
+    flex: 0 1 auto;
+  }
+
+  .spacer {
+    flex: 1 0 0;
+    align-self: stretch;
+  }
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    list-style: none;
+  }
+
+  .crumb {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .crumb + .crumb::before,
+  .crumb[data-after-ellipsis]::before {
+    content: '\203A' / '';
+    padding-inline: var(--space-2);
+    color: var(--color-text-muted);
+  }
+
+  .crumb[data-after-ellipsis]::before {
+    content: '\2026\00a0\203A' / '';
+  }
+
+  .crumb[aria-current] {
+    color: var(--color-text-primary);
+  }
+
+  .visuallyHidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The compact app bar. */
+  .appBar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-block-size: var(--size-toolbar-pointer);
+    padding-inline: var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-app);
+  }
+
+  :global(:root[data-density='touch']) .appBar {
+    min-block-size: var(--size-toolbar-touch);
+  }
+
+  .back {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    max-inline-size: 40%;
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-link);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .back {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .back:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .back:focus-visible,
+  .overflowItem:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .back svg {
+    flex: none;
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+  }
+
+  .backLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screenTitle {
+    flex: 1;
+    min-inline-size: 0;
+    margin: 0;
+    font-size: inherit;
+    overflow: hidden;
+    font-weight: var(--font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .overflowList {
+    display: grid;
+    gap: var(--space-2);
+    min-inline-size: var(--size-menu-min-width);
+  }
+
+  .overflowItem {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-7);
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .overflowItem:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .overflowItem[aria-disabled='true'] {
+    color: var(--color-text-muted);
+    cursor: default;
+  }
+
+  .shortcut {
+    color: var(--color-text-secondary);
+  }
+}

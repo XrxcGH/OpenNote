@@ -1,97 +1,54 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
-// One module per icon: the package index loads every icon, which slows the dev server and tests.
-import { MoonIcon } from '@phosphor-icons/react/dist/csr/Moon';
-import { SunIcon } from '@phosphor-icons/react/dist/csr/Sun';
-import { isTauri } from '@tauri-apps/api/core';
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import {
-  applyPreference,
-  isToggleShortcut,
-  loadPreference,
-  resolveTheme,
-  savePreference,
-  toggledPreference,
-} from './theme/theme';
-import type { ThemePreference } from './theme/theme';
+// Composes the views from each feature's public face and switches on the location (ARCHITECTURE.md section 5.3).
+// The workspace holds the title bar in its grid; Settings and setup get the title bar above them, so the window
+// can always be moved and closed. The window title follows the location, and the mouse's back and forward
+// buttons move through history.
 
-const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)');
+import { useLocation } from './app/location';
+import { NotebooksPane, PagesPane } from './features/tree';
+import { PageView } from './features/page';
+import { SettingsView } from './features/settings';
+import { SetupView } from './features/setup';
+import { TrashView } from './features/trash';
+import { BottomBar, CommandBar } from './shell/commandbar';
+import { useHistoryMouseButtons, useWindowTitle } from './shell/layout/history';
+import { Workspace } from './shell/layout/Workspace';
+import { useRegion } from './shell/regions';
+import { AppBar, TitleBar } from './shell/titlebar';
+import { Announcer, Toaster } from './ui';
+import styles from './App.module.css';
 
-function useTheme() {
-  const [preference, setPreference] = useState<ThemePreference>(() => loadPreference(window.localStorage));
-  const [systemDark, setSystemDark] = useState(() => darkQuery().matches);
-
-  useEffect(() => {
-    const query = darkQuery();
-    const onChange = (event: MediaQueryListEvent) => setSystemDark(event.matches);
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
-  }, []);
-
-  // A layout effect, so the new theme is in place when flushSync returns inside a view transition.
-  useLayoutEffect(() => {
-    applyPreference(document.documentElement, preference);
-  }, [preference]);
-
-  useEffect(() => {
-    savePreference(window.localStorage, preference);
-    // Keeps the native title bar in step. Null hands the choice back to Windows (Match Windows).
-    if (isTauri()) {
-      getCurrentWindow()
-        .setTheme(preference === 'system' ? null : preference)
-        .catch(() => {});
-    }
-  }, [preference]);
-
-  // Reads the latest preference, so quick repeated toggles never act on a stale theme.
-  const toggle = useCallback(() => {
-    const update = () =>
-      flushSync(() => setPreference((current) => toggledPreference(resolveTheme(current, darkQuery().matches))));
-    // Crossfades every surface; engines without view transitions (such as jsdom) switch at once.
-    if (typeof document.startViewTransition === 'function') document.startViewTransition(update);
-    else update();
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!isToggleShortcut(event)) return;
-      event.preventDefault();
-      toggle();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [toggle]);
-
-  return { shown: resolveTheme(preference, systemDark), toggle };
+function View() {
+  const location = useLocation();
+  if (location.view === 'settings' || location.view === 'setup') {
+    return (
+      <div className={styles.view}>
+        <TitleBar />
+        <div className={styles.body}>{location.view === 'settings' ? <SettingsView /> : <SetupView />}</div>
+      </div>
+    );
+  }
+  return (
+    <Workspace
+      titleBar={<TitleBar />}
+      appBar={<AppBar />}
+      commandBar={<CommandBar />}
+      notebooks={<NotebooksPane />}
+      pages={<PagesPane />}
+      page={location.view === 'trash' ? <TrashView /> : <PageView />}
+      bottomBar={<BottomBar />}
+    />
+  );
 }
 
 export function App() {
-  const { shown, toggle } = useTheme();
-  const dark = shown === 'dark';
+  const notifications = useRegion('notifications');
+  useWindowTitle();
+  useHistoryMouseButtons();
   return (
-    <div className="app">
-      <header className="title-bar">
-        <span className="app-name">OpenNote</span>
-        <button
-          type="button"
-          role="switch"
-          className="icon-button"
-          onClick={toggle}
-          aria-checked={dark}
-          aria-label="Dark mode"
-          aria-keyshortcuts="Control+Shift+D"
-          title="Dark mode (Ctrl+Shift+D)"
-        >
-          {/* Shows the current theme; Fill marks the switch as on (docs/BRAND.md sections 8 and 11). */}
-          {dark ? <MoonIcon weight="fill" aria-hidden="true" /> : <SunIcon aria-hidden="true" />}
-        </button>
-      </header>
-      <main className="desk">
-        <article className="page">
-          <h1>OpenNote</h1>
-          <p>The app shell is running. Notebooks, pages, and ink arrive in the next phases.</p>
-        </article>
-      </main>
-    </div>
+    <>
+      <View />
+      <Toaster region={notifications} />
+      <Announcer />
+    </>
   );
 }

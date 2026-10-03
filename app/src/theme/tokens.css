@@ -8,11 +8,13 @@
   --color-surface-sunken: #EAE3D8;
   --color-surface-hover: #ECE5DA;
   --color-surface-selected: #DDE8DA;
+  --color-surface-scrim: #2B252147;
   --color-text-primary: #2B2521;
   --color-text-secondary: #5C534A;
   --color-text-muted: #6B6054;
   --color-text-on-accent: #FFFCF6;
   --color-text-link: #3B6A4D;
+  --color-text-on-selected: #2B2521;
   --color-border-subtle: #E3DACC;
   --color-border-control: #877B6C;
   --color-accent-primary: #3B6A4D;
@@ -26,9 +28,27 @@
   --color-status-recording: #A8342A;
   --color-focus-ring: #A9502F;
   --color-selection-highlight: #F4DE93;
+  --color-caption-close-hover: #C42B1C;
+  --color-caption-close-hover-text: #FFFCF6;
+  --color-code-keyword: #6A4A9C;
+  --color-code-string: #2E6B45;
+  --color-code-number: #9A4A1F;
+  --color-code-comment: #6B6054;
+  --color-code-function: #2F4F9A;
+  --color-code-type: #7A5410;
+  --color-code-variable: #6E4B2E;
+  --color-code-punctuation: #5C534A;
+  --ink-ink: #2B2521;
+  --ink-indigo: #2F4F9A;
+  --ink-brick: #B0342A;
+  --ink-fern: #2E7048;
+  --ink-plum: #6A4A9C;
+  --ink-amber: #B8620F;
+  --ink-walnut: #6E4B2E;
   --font-ui: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   --font-reading: "Literata Variable", "Literata", "Cambria", Georgia, serif;
   --font-mono: "Atkinson Hyperlegible Mono", "Cascadia Code", Consolas, monospace;
+  --font-symbol: "Segoe Fluent Icons", "Segoe MDL2 Assets";
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -82,15 +102,56 @@
   --size-reading-measure: 72ch;
   --size-focus-ring-width: 2px;
   --size-focus-ring-offset: 2px;
-  --breakpoint-compact: 600px;
-  --breakpoint-medium: 840px;
-  --breakpoint-expanded: 1200px;
-  --breakpoint-wide: 1600px;
+  --size-title-bar: 40px;
+  --size-title-bar-touch: 48px;
+  --size-caption-button: 46px;
+  --size-drag-min: 200px;
+  --size-rail: 48px;
+  --size-sidebar-min: 220px;
+  --size-sidebar-max: 400px;
+  --size-page-list-min: 240px;
+  --size-page-list-max: 420px;
+  --size-splitter-hit: 8px;
+  --size-splitter-hit-touch: 24px;
+  --size-tree-indent: 16px;
+  --size-row-pointer: 32px;
+  --size-row-touch: 44px;
+  --size-theme-card: 200px;
+  --size-page-row: 56px;
+  --size-auto-scroll-strip: 28px;
+  --size-palette: 680px;
+  --size-palette-top: 90px;
+  --size-setup-card-width: 720px;
+  --size-setup-card-height: 600px;
+  --size-settings-nav: 240px;
+  --size-bottom-bar: 64px;
+  --size-menu-min-width: 208px;
+  --size-dialog-width: 440px;
+  --size-toast-max-width: 480px;
+  --size-content-min: 320px;
+  --size-window-min: 400px;
+  --size-flow-margin: 48px;
+  --size-text-box-min-width: 120px;
+  --size-text-box-auto-max: 600px;
+  --size-keep-below-band: 24px;
+  --size-chrome-hit: 32px;
+  --size-chrome-hit-touch: 44px;
+  --size-pen-palette: 44px;
+  --size-pen-palette-touch: 56px;
+  --size-shape-handle: 12px;
+  --breakpoint-medium: 600px;
+  --breakpoint-expanded: 840px;
+  --breakpoint-wide: 1200px;
   --elevation-1: 0 1px 2px rgba(43, 37, 33, 0.08);
   --elevation-2: 0 4px 12px rgba(43, 37, 33, 0.10);
   --elevation-3: 0 12px 32px rgba(43, 37, 33, 0.14);
   --layer-base: 0;
+  --layer-ink-tiles: 2;
+  --layer-ink-selection: 3;
+  --layer-ink-live: 4;
+  --layer-page-chrome: 6;
   --layer-sticky: 10;
+  --layer-formatting-bar: 15;
   --layer-dropdown: 20;
   --layer-overlay: 30;
   --layer-dialog: 40;
@@ -103,10 +164,12 @@
   --motion-duration-gentle: 250ms;
   --motion-duration-slow: 320ms;
   --motion-duration-deliberate: 400ms;
+  --motion-duration-spring: 385ms;
   --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --motion-easing-enter: cubic-bezier(0, 0, 0.2, 1);
   --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
   --motion-easing-linear: linear;
+  --motion-easing-spring: linear(0, 0.047, 0.15, 0.272, 0.393, 0.504, 0.6, 0.682, 0.748, 0.802, 0.846, 0.88, 0.907, 0.928, 0.945, 0.957, 0.967, 0.975, 0.981, 0.985, 0.989, 0.991, 0.993, 1);
 }
 
 :root[data-theme="dark"] {
@@ -117,11 +180,13 @@
   --color-surface-sunken: #171411;
   --color-surface-hover: #332C26;
   --color-surface-selected: #2E3B30;
+  --color-surface-scrim: #1712108C;
   --color-text-primary: #F0E9DE;
   --color-text-secondary: #CFC5B7;
   --color-text-muted: #ABA093;
   --color-text-on-accent: #1C1916;
   --color-text-link: #8FC29D;
+  --color-text-on-selected: #F0E9DE;
   --color-border-subtle: #3A322B;
   --color-border-control: #8D8174;
   --color-accent-primary: #8FC29D;
@@ -135,8 +200,26 @@
   --color-status-recording: #F2907F;
   --color-focus-ring: #E7BA62;
   --color-selection-highlight: #52451F;
+  --color-caption-close-hover: #C42B1C;
+  --color-caption-close-hover-text: #FFFCF6;
+  --color-code-keyword: #C2ABE8;
+  --color-code-string: #8FC29D;
+  --color-code-number: #F0AE68;
+  --color-code-comment: #ABA093;
+  --color-code-function: #9DB4EA;
+  --color-code-type: #E7BA62;
+  --color-code-variable: #D6AE86;
+  --color-code-punctuation: #CFC5B7;
+  --ink-ink: #F0E9DE;
+  --ink-indigo: #9DB4EA;
+  --ink-brick: #F2907F;
+  --ink-fern: #8FC29D;
+  --ink-plum: #C2ABE8;
+  --ink-amber: #F0AE68;
+  --ink-walnut: #D6AE86;
 }
 
+/* Before scripts run in a plain browser, the system setting decides. The app always sets data-theme. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
@@ -146,11 +229,13 @@
     --color-surface-sunken: #171411;
     --color-surface-hover: #332C26;
     --color-surface-selected: #2E3B30;
+    --color-surface-scrim: #1712108C;
     --color-text-primary: #F0E9DE;
     --color-text-secondary: #CFC5B7;
     --color-text-muted: #ABA093;
     --color-text-on-accent: #1C1916;
     --color-text-link: #8FC29D;
+    --color-text-on-selected: #F0E9DE;
     --color-border-subtle: #3A322B;
     --color-border-control: #8D8174;
     --color-accent-primary: #8FC29D;
@@ -164,7 +249,120 @@
     --color-status-recording: #F2907F;
     --color-focus-ring: #E7BA62;
     --color-selection-highlight: #52451F;
+    --color-caption-close-hover: #C42B1C;
+    --color-caption-close-hover-text: #FFFCF6;
+    --color-code-keyword: #C2ABE8;
+    --color-code-string: #8FC29D;
+    --color-code-number: #F0AE68;
+    --color-code-comment: #ABA093;
+    --color-code-function: #9DB4EA;
+    --color-code-type: #E7BA62;
+    --color-code-variable: #D6AE86;
+    --color-code-punctuation: #CFC5B7;
+    --ink-ink: #F0E9DE;
+    --ink-indigo: #9DB4EA;
+    --ink-brick: #F2907F;
+    --ink-fern: #8FC29D;
+    --ink-plum: #C2ABE8;
+    --ink-amber: #F0AE68;
+    --ink-walnut: #D6AE86;
   }
+}
+
+/* Theme preview cards, and paper-white pages inside the dark theme. */
+[data-theme-scope="light"],
+:root[data-page-color="paper"] [data-region="page"] {
+  color-scheme: light;
+  --color-surface-app: #F3EEE6;
+  --color-surface-page: #FFFCF6;
+  --color-surface-raised: #FFFDF9;
+  --color-surface-sunken: #EAE3D8;
+  --color-surface-hover: #ECE5DA;
+  --color-surface-selected: #DDE8DA;
+  --color-surface-scrim: #2B252147;
+  --color-text-primary: #2B2521;
+  --color-text-secondary: #5C534A;
+  --color-text-muted: #6B6054;
+  --color-text-on-accent: #FFFCF6;
+  --color-text-link: #3B6A4D;
+  --color-text-on-selected: #2B2521;
+  --color-border-subtle: #E3DACC;
+  --color-border-control: #877B6C;
+  --color-accent-primary: #3B6A4D;
+  --color-accent-primary-hover: #325C42;
+  --color-accent-primary-pressed: #2A4D38;
+  --color-accent-primary-subtle: #E2ECE1;
+  --color-accent-clay: #A9502F;
+  --color-status-success: #35704A;
+  --color-status-warning: #855B0C;
+  --color-status-danger: #A8342A;
+  --color-status-recording: #A8342A;
+  --color-focus-ring: #A9502F;
+  --color-selection-highlight: #F4DE93;
+  --color-caption-close-hover: #C42B1C;
+  --color-caption-close-hover-text: #FFFCF6;
+  --color-code-keyword: #6A4A9C;
+  --color-code-string: #2E6B45;
+  --color-code-number: #9A4A1F;
+  --color-code-comment: #6B6054;
+  --color-code-function: #2F4F9A;
+  --color-code-type: #7A5410;
+  --color-code-variable: #6E4B2E;
+  --color-code-punctuation: #5C534A;
+  --ink-ink: #2B2521;
+  --ink-indigo: #2F4F9A;
+  --ink-brick: #B0342A;
+  --ink-fern: #2E7048;
+  --ink-plum: #6A4A9C;
+  --ink-amber: #B8620F;
+  --ink-walnut: #6E4B2E;
+}
+
+[data-theme-scope="dark"] {
+  color-scheme: dark;
+  --color-surface-app: #1C1916;
+  --color-surface-page: #24201C;
+  --color-surface-raised: #2C2722;
+  --color-surface-sunken: #171411;
+  --color-surface-hover: #332C26;
+  --color-surface-selected: #2E3B30;
+  --color-surface-scrim: #1712108C;
+  --color-text-primary: #F0E9DE;
+  --color-text-secondary: #CFC5B7;
+  --color-text-muted: #ABA093;
+  --color-text-on-accent: #1C1916;
+  --color-text-link: #8FC29D;
+  --color-text-on-selected: #F0E9DE;
+  --color-border-subtle: #3A322B;
+  --color-border-control: #8D8174;
+  --color-accent-primary: #8FC29D;
+  --color-accent-primary-hover: #A2CEAE;
+  --color-accent-primary-pressed: #7DB28C;
+  --color-accent-primary-subtle: #2E3B30;
+  --color-accent-clay: #E59372;
+  --color-status-success: #8FC29D;
+  --color-status-warning: #E7BA62;
+  --color-status-danger: #F2907F;
+  --color-status-recording: #F2907F;
+  --color-focus-ring: #E7BA62;
+  --color-selection-highlight: #52451F;
+  --color-caption-close-hover: #C42B1C;
+  --color-caption-close-hover-text: #FFFCF6;
+  --color-code-keyword: #C2ABE8;
+  --color-code-string: #8FC29D;
+  --color-code-number: #F0AE68;
+  --color-code-comment: #ABA093;
+  --color-code-function: #9DB4EA;
+  --color-code-type: #E7BA62;
+  --color-code-variable: #D6AE86;
+  --color-code-punctuation: #CFC5B7;
+  --ink-ink: #F0E9DE;
+  --ink-indigo: #9DB4EA;
+  --ink-brick: #F2907F;
+  --ink-fern: #8FC29D;
+  --ink-plum: #C2ABE8;
+  --ink-amber: #F0AE68;
+  --ink-walnut: #D6AE86;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -176,5 +374,60 @@
     --motion-duration-gentle: 100ms;
     --motion-duration-slow: 100ms;
     --motion-duration-deliberate: 100ms;
+    --motion-duration-spring: 100ms;
+  }
+}
+
+/* The in-app "Always reduce motion" setting. */
+:root[data-motion="reduce"] {
+  --motion-duration-instant: 0ms;
+  --motion-duration-quick: 100ms;
+  --motion-duration-fast: 100ms;
+  --motion-duration-base: 100ms;
+  --motion-duration-gentle: 100ms;
+  --motion-duration-slow: 100ms;
+  --motion-duration-deliberate: 100ms;
+  --motion-duration-spring: 100ms;
+}
+
+@media (forced-colors: active) {
+  :root,
+  :root[data-theme],
+  :root:not([data-theme="light"]) {
+    --color-surface-app: Canvas;
+    --color-surface-page: Canvas;
+    --color-surface-raised: Canvas;
+    --color-surface-sunken: Field;
+    --color-surface-hover: Canvas;
+    --color-surface-selected: Highlight;
+    --color-text-primary: CanvasText;
+    --color-text-secondary: CanvasText;
+    --color-text-muted: CanvasText;
+    --color-text-on-accent: HighlightText;
+    --color-text-link: LinkText;
+    --color-text-on-selected: HighlightText;
+    --color-border-subtle: GrayText;
+    --color-border-control: ButtonBorder;
+    --color-accent-primary: Highlight;
+    --color-accent-primary-hover: Highlight;
+    --color-accent-primary-pressed: Highlight;
+    --color-accent-primary-subtle: Canvas;
+    --color-accent-clay: CanvasText;
+    --color-status-success: CanvasText;
+    --color-status-warning: CanvasText;
+    --color-status-danger: CanvasText;
+    --color-status-recording: CanvasText;
+    --color-focus-ring: Highlight;
+    --color-selection-highlight: Highlight;
+    --color-caption-close-hover: Highlight;
+    --color-caption-close-hover-text: HighlightText;
+    --color-code-keyword: CanvasText;
+    --color-code-string: CanvasText;
+    --color-code-number: CanvasText;
+    --color-code-comment: CanvasText;
+    --color-code-function: CanvasText;
+    --color-code-type: CanvasText;
+    --color-code-variable: CanvasText;
+    --color-code-punctuation: CanvasText;
   }
 }

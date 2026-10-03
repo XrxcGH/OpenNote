@@ -1,0 +1,5 @@
+// lint-as: app/src/app/Bad.ts
+// expect: no-restricted-imports
+import { createWebPlatform } from '../platform/web';
+
+export const platform = createWebPlatform();

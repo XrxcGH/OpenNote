@@ -1,0 +1,6 @@
+// lint-as: app/src/ui/Good.ts
+// expect: none
+import { pushLayer } from '../state/layers';
+import { enqueueToast } from '../state/toasts';
+
+export const both = [pushLayer, enqueueToast];

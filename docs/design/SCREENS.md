@@ -30,6 +30,7 @@ Keep-out zones that apply to every desktop screen:
 |---|---|---|
 | Window buttons | 138 × 40, top right | Windows draws minimize, maximize, and close here. Hovering maximize opens Snap Layouts. |
 | Title bar drag area | At least 200 px wide | People must always be able to grab the window to move it |
+| Compact title bar | Drag area and window buttons only | The theme toggle and other items move to the app bar below, so the drag area stays wide. Setup shows the logo, the name, the drag area, and the window buttons |
 | Pane resize handles | 8 px wide | Dragging the divider resizes a pane, so nothing clickable may sit on it |
 
 ## First run
@@ -39,7 +40,7 @@ Keep-out zones that apply to every desktop screen:
 Setup has five short steps in a centered 720 × 600 card:
 
 1. **Welcome:** what OpenNote is, in one sentence.
-2. **Choose your look:** Light, Dark, or Match Windows (shown above). The card matching the current Windows setting is selected in advance, and clicking a card repaints the whole screen at once.
+2. **Choose your look:** Light, Dark, or Match Windows (shown above). Match Windows is selected in advance, with a caption that names the Windows setting, and clicking a card repaints the whole screen at once.
 3. **Where to keep things:** the notes folder, where the app lives, and the first notebook (shown below).
 4. **Smart features:** choose on-device transcription, handwriting, and image text (see [FEATURES.md](../FEATURES.md)).
 5. **Bring your notes (optional):** import from OneNote or Evernote, or skip.

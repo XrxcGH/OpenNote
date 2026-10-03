@@ -1,0 +1,7 @@
+[package]
+name = "frame-probe"
+version = "0.1.0"
+description = "Samples the OpenNote window during start-up to prove it never shows white or the wrong theme"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
