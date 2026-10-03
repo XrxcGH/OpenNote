@@ -1,0 +1,14 @@
+/* Spelling squiggles (ARCHITECTURE.md section 16.3): a wavy underline from the highlight, so no DOM changes. */
+@layer components {
+  :global(::highlight(spelling-error)) {
+    text-decoration: underline wavy var(--color-status-danger);
+    text-decoration-skip-ink: none;
+    text-underline-offset: 0.2em;
+  }
+
+  @media (forced-colors: active) {
+    :global(::highlight(spelling-error)) {
+      text-decoration-color: CanvasText;
+    }
+  }
+}

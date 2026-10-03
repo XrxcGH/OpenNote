@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>S7 key recorder</title>
+    <style>
+      body { font: 16px system-ui, sans-serif; margin: 2rem; }
+      textarea { inline-size: 100%; block-size: 50vh; font: 14px ui-monospace, monospace; }
+    </style>
+  </head>
+  <body>
+    <h1>S7 key recorder</h1>
+    <p>Pick the layout, click in the box, and press keys. Each press becomes one fixture line.</p>
+    <label>Layout <input id="layout" value="German" /></label>
+    <div id="target" contenteditable="true" aria-label="Press keys here" style="border: 1px solid; min-block-size: 3rem"></div>
+    <textarea id="out" aria-label="Fixture lines" readonly></textarea>
+    <script>
+      const out = document.getElementById('out');
+      document.getElementById('target').addEventListener('keydown', (event) => {
+        if (['Control', 'Alt', 'Shift', 'AltGraph', 'Meta'].includes(event.key)) return;
+        const altGraph = event.getModifierState('AltGraph');
+        const press = {
+          layout: document.getElementById('layout').value,
+          pressed: '',
+          key: event.key,
+          code: event.code,
+          ...(event.ctrlKey && !altGraph ? { ctrl: true } : {}),
+          ...(event.altKey && !altGraph ? { alt: true } : {}),
+          ...(event.shiftKey ? { shift: true } : {}),
+          ...(altGraph ? { altGraph: true } : {}),
+          expect: null,
+        };
+        out.value += JSON.stringify(press) + ',\n';
+        event.preventDefault();
+      });
+    </script>
+  </body>
+</html>

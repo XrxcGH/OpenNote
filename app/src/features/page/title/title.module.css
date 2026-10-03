@@ -1,0 +1,54 @@
+@layer components {
+  /* The title band (ARCHITECTURE.md section 5.8): x 48 and y 24 in page units, and the flow starts 16 units below
+     it. The Page title style is the reading face at the title size, with the logo's short clay stroke under it. */
+  .band {
+    padding: 24px 48px 0;
+    margin-block-end: 16px;
+  }
+
+  .title {
+    margin: 0;
+    font-family: var(--font-reading);
+    font-size: var(--type-title1-size);
+    line-height: var(--type-title1-line);
+  }
+
+  .title::after {
+    content: '';
+    display: block;
+    inline-size: var(--space-10);
+    block-size: 2px;
+    margin-block-start: var(--space-2);
+    border-radius: 1px;
+    background: var(--color-accent-clay);
+  }
+
+  .text {
+    display: inline-block;
+    min-inline-size: 8ch;
+  }
+
+  .text:empty::before {
+    content: attr(data-placeholder);
+    color: var(--color-text-muted);
+  }
+
+  .title:focus-visible,
+  .text:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .changed {
+    margin: var(--space-2) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+  }
+
+  @media (forced-colors: active) {
+    .title::after {
+      background: CanvasText;
+    }
+  }
+}

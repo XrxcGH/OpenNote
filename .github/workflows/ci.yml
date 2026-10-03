@@ -127,6 +127,31 @@ jobs:
             tests/ui/results
           retention-days: 7
 
+  perf-typing:
+    # Phase 4's typing benchmark, in-page measure only (ARCHITECTURE.md section 24.5). WP0 runs it on the short
+    # fixture and keeps the numbers; WP8 adds the conditions, the throttling, and the gate against main.
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Typing benchmark
+        run: npm run perf:typing
+      - name: Keep the numbers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-typing
+          path: tests/perf/typing/results
+          retention-days: 30
+
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest

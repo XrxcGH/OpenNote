@@ -1,0 +1,59 @@
+/* The Text styles dialog: labeled fields in two columns, and the previews on a light and a dark page. */
+@layer components {
+  .editor {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .field input,
+  .field select {
+    min-block-size: var(--size-chrome-hit);
+    padding-inline: var(--space-2);
+    color: var(--color-text-primary);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .warning {
+    margin: 0;
+    color: var(--color-status-danger);
+  }
+
+  .previews {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .preview {
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .caption {
+    font-size: var(--type-small-size);
+    opacity: 0.8;
+  }
+
+  .actions {
+    display: flex;
+    grid-column: 1 / -1;
+    gap: var(--space-2);
+  }
+
+  @media (forced-colors: active) {
+    .preview {
+      forced-color-adjust: auto;
+    }
+  }
+}

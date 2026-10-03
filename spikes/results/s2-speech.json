@@ -1,0 +1,141 @@
+{
+  "spike": "s2-speech",
+  "at": "2026-10-03T09:26:03.141Z",
+  "os": "Windows 10.0.26200",
+  "browser": "154.0.4258.48",
+  "text": "The quick brown fox jumps over the lazy dog, then rests in the warm afternoon sun.",
+  "voices": 3,
+  "local": [
+    {
+      "name": "Microsoft David - English (United States)",
+      "lang": "en-US",
+      "default": true
+    },
+    {
+      "name": "Microsoft Mark - English (United States)",
+      "lang": "en-US",
+      "default": false
+    },
+    {
+      "name": "Microsoft Zira - English (United States)",
+      "lang": "en-US",
+      "default": false
+    }
+  ],
+  "online": 0,
+  "boundaries": [
+    {
+      "name": "sentence",
+      "charIndex": 0,
+      "charLength": 0,
+      "ms": 1197
+    },
+    {
+      "name": "word",
+      "charIndex": 0,
+      "charLength": 3,
+      "ms": 1335
+    },
+    {
+      "name": "word",
+      "charIndex": 4,
+      "charLength": 5,
+      "ms": 1483
+    },
+    {
+      "name": "word",
+      "charIndex": 10,
+      "charLength": 5,
+      "ms": 1733
+    },
+    {
+      "name": "word",
+      "charIndex": 16,
+      "charLength": 3,
+      "ms": 2083
+    },
+    {
+      "name": "word",
+      "charIndex": 20,
+      "charLength": 5,
+      "ms": 2404
+    },
+    {
+      "name": "word",
+      "charIndex": 26,
+      "charLength": 4,
+      "ms": 3702
+    },
+    {
+      "name": "word",
+      "charIndex": 31,
+      "charLength": 3,
+      "ms": 4001
+    },
+    {
+      "name": "word",
+      "charIndex": 35,
+      "charLength": 4,
+      "ms": 4102
+    },
+    {
+      "name": "word",
+      "charIndex": 40,
+      "charLength": 3,
+      "ms": 4451
+    },
+    {
+      "name": "word",
+      "charIndex": 45,
+      "charLength": 4,
+      "ms": 5252
+    },
+    {
+      "name": "word",
+      "charIndex": 50,
+      "charLength": 5,
+      "ms": 5452
+    },
+    {
+      "name": "word",
+      "charIndex": 56,
+      "charLength": 2,
+      "ms": 5802
+    },
+    {
+      "name": "word",
+      "charIndex": 59,
+      "charLength": 3,
+      "ms": 5902
+    },
+    {
+      "name": "word",
+      "charIndex": 63,
+      "charLength": 4,
+      "ms": 6001
+    },
+    {
+      "name": "word",
+      "charIndex": 68,
+      "charLength": 9,
+      "ms": 6301
+    },
+    {
+      "name": "word",
+      "charIndex": 78,
+      "charLength": 4,
+      "ms": 6852
+    }
+  ],
+  "paused": {
+    "speaking": true,
+    "paused": true,
+    "boundariesDuringPause": 3
+  },
+  "resumed": {
+    "paused": false,
+    "boundariesAfter": 7
+  },
+  "ended": true,
+  "error": null
+}

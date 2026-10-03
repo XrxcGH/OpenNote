@@ -9,6 +9,7 @@ export const settings = {
   sections: {
     general: 'General',
     appearance: 'Appearance',
+    editing: 'Editing',
     updates: 'Updates',
     shortcuts: 'Shortcuts',
     about: 'About',

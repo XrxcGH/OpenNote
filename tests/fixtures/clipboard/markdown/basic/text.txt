@@ -1,0 +1,17 @@
+# Field notes
+
+Saw **three** birds near the [pond](https://example.com/pond).
+
+- [ ] Log the sightings
+- [x] Charge the camera
+
+| Bird | Count |
+|------|------:|
+| Heron | 1 |
+| Duck | 2 |
+
+> Quiet morning.
+
+```js
+console.log('birds');
+```

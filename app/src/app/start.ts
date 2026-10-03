@@ -5,7 +5,7 @@ import { hasInjectedBoot, readBoot, readDevOptions } from '../boot/read';
 import { installDispatcher } from '../commands/dispatcher';
 import { configureCommands } from '../commands/registry';
 import '../features';
-import { installPageZoom } from '../features/page';
+import { installPageZoom, installPages } from '../features/page';
 import { installSetup } from '../features/setup';
 import { installAppearance } from '../features/theme';
 import { createPlatform } from '../platform';
@@ -54,6 +54,7 @@ export function installApp(
     initLayout(),
     installAppearance(),
     installPageZoom(),
+    installPages(platform),
     installAppContextMenu(),
     installSetup(platform, notes),
   ];
