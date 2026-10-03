@@ -8,7 +8,7 @@
 import type { Editor } from '@tiptap/core';
 import type { Transaction } from '@tiptap/pm/state';
 import { isEnabled } from '../../../app/flags';
-import { strokeEntries, TextMarks } from '../../../core/audio';
+import { extrasOf, strokeEntries, TapRecognizer, tapPlays, TextMarks } from '../../../core/audio';
 import type { StampEntry, StrokeTime, TextMarksData } from '../../../core/audio';
 import { META_REMOTE } from '../../../editor/meta';
 import { t } from '../../../strings/t';
@@ -24,6 +24,7 @@ import { recordingEntries } from './entries';
 import { stampNow } from './controller';
 import { clockNs } from './format';
 import { addStampSource, openFor, playAtCapture } from './playback';
+import { playbackOpen } from './state';
 
 /** The marks of the shown page's text blocks, by block. A page switch starts a new set. */
 let marksByBlock = new Map<string, TextMarks>();
@@ -139,8 +140,43 @@ export async function playFromInk(ids: readonly string[] = pageSelection.get().s
   return true;
 }
 
+/** The screen snaps of the page's recordings as stamps, so a snap lights up while its moment plays. */
+export function snapEntries(): StampEntry[] {
+  return [...recordingEntries.get().values()].flatMap((entry) =>
+    (extrasOf(entry).snaps ?? []).map((one) => ({
+      recording: entry.id,
+      startNs: one.captureNs,
+      endNs: one.captureNs,
+      target: { type: 'item' as const, id: one.block },
+    })),
+  );
+}
+addStampSource(snapEntries);
+
+/** The recording and moment a block (a screen snap) was added at, if it was added while recording. */
+function snapOf(block: string): { recording: string; captureNs: number } | null {
+  for (const entry of recordingEntries.get().values()) {
+    const one = extrasOf(entry).snaps?.find((snap) => snap.block === block);
+    if (one) return { recording: entry.id, captureNs: one.captureNs };
+  }
+  return null;
+}
+
+/** Plays the recording from the moment a screen snap was taken. */
+async function playFromSnap(block: string): Promise<boolean> {
+  const snap = snapOf(block);
+  const holder = snap && recordingBlocks().find((candidate) => dataOf(candidate)?.entry.id === snap.recording);
+  const page = shownOpenPage.get()?.id;
+  if (!snap || !holder || !page || !(await openFor(holder, page))) return false;
+  await playAtCapture(snap.captureNs);
+  const started = dataOf(holder)?.entry.startedNs ?? 0;
+  announce(t('audio.announce.playingFrom', { time: clockNs(snap.captureNs - started) }));
+  return true;
+}
+
 /** Plays the recording from the moment the text at `offset` of the block was written. */
 export async function playFromText(block: string, offset?: number): Promise<boolean> {
+  if (snapOf(block)) return playFromSnap(block);
   const marks = marksOf(block);
   const first = marks?.marks[0];
   if (!marks || !first) {
@@ -171,12 +207,36 @@ export async function playFromCaret(): Promise<boolean> {
 
 let clicks: (() => void) | null = null;
 
-/** Alt+click on text plays the recording from the moment it was written. */
+/** The block that holds an event's target, if the target is in one. */
+const blockOf = (event: Event): string | undefined =>
+  (event.target as Element | null)?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+
+/** How long after a tap lifts the caret is read: a finger or a pen puts the caret in the word a moment later. */
+const TAP_SETTLE_MS = 60;
+
+/**
+ * Plays from the word the caret has just landed in, if that word was written during a recording. A tap on a word
+ * with no time stamp is only a tap, so it says nothing.
+ */
+function playFromTap(block: string): void {
+  setTimeout(() => {
+    const at = caret();
+    if (snapOf(block) || (at?.block === block && marksOf(block)?.markAt(at.offset))) {
+      void playFromText(block, at?.block === block ? at.offset : undefined);
+    }
+  }, TAP_SETTLE_MS);
+}
+
+/**
+ * Alt+click, and a tap of a pen or a finger, on text plays the recording from the moment it was written. A tap
+ * plays when a recording is open for listening, and a double tap plays at any time, so a single tap can still place
+ * the caret to type.
+ */
 export function installTapToHear(): void {
   if (clicks || typeof document === 'undefined') return;
   const onClick = (event: MouseEvent) => {
     if (!event.altKey || event.button !== 0 || !isEnabled('audio.stamps')) return;
-    const block = (event.target as Element | null)?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
+    const block = blockOf(event);
     if (!block) return;
     // The press before the click has already put the caret in the word, so the caret says which word it was.
     setTimeout(() => {
@@ -184,8 +244,32 @@ export function installTapToHear(): void {
       void playFromText(block, at?.block === block ? at.offset : undefined);
     }, 0);
   };
+  const taps = new TapRecognizer();
+  const sample = (event: PointerEvent) => ({
+    id: event.pointerId,
+    type: event.pointerType,
+    x: event.clientX,
+    y: event.clientY,
+    at: event.timeStamp,
+  });
+  const onDown = (event: PointerEvent) => taps.press(sample(event));
+  const onUp = (event: PointerEvent) => {
+    const kind = taps.release(sample(event));
+    if (!kind || !isEnabled('audio.stamps') || !tapPlays(kind, playbackOpen.get())) return;
+    const block = blockOf(event);
+    if (block) playFromTap(block);
+  };
+  const onCancel = () => taps.cancel();
   document.addEventListener('click', onClick, true);
-  clicks = () => document.removeEventListener('click', onClick, true);
+  document.addEventListener('pointerdown', onDown, true);
+  document.addEventListener('pointerup', onUp, true);
+  document.addEventListener('pointercancel', onCancel, true);
+  clicks = () => {
+    document.removeEventListener('click', onClick, true);
+    document.removeEventListener('pointerdown', onDown, true);
+    document.removeEventListener('pointerup', onUp, true);
+    document.removeEventListener('pointercancel', onCancel, true);
+  };
 }
 
 /** Stops everything this module watches. */

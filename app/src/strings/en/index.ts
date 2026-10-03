@@ -31,6 +31,7 @@ import { pagesPlus } from './pagesPlus';
 import { smart } from './smart';
 import { search } from './search';
 import { audio } from './audio';
+import { audioMore } from './audioMore';
 import { interop } from './interop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
@@ -69,6 +70,7 @@ export const en = {
   smart,
   search,
   audio,
+  audioMore,
   interop,
   intel,
   pageExtras,

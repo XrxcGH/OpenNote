@@ -12,7 +12,7 @@ import { useId } from 'react';
 import { useFlag } from '../../../app/flags';
 import { executeCommand } from '../../../commands/registry';
 import type { PlaybackStatus, RecordingEntry } from '../../../core/audio';
-import { Flags } from '../../../core/audio';
+import { audioIsRemoved, enhancedTracks, Flags, listensEnhanced } from '../../../core/audio';
 import type { BlockJson } from '../../../services/pages/types';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
@@ -200,13 +200,38 @@ function Extras(props: { open: Open; block: BlockJson; entry: RecordingEntry; pa
           }}
         />
       )}
-      <MoreMenu block={block} entry={entry} pageId={pageId} position={open.position} />
+      <MoreMenu block={block} entry={entry} pageId={pageId} position={open.position} total={open.total} />
     </>
+  );
+}
+
+/** Chooses between the original voice and the enhanced copy while listening. */
+function EnhancedSwitch({ block, entry, pageId }: { block: BlockJson; entry: RecordingEntry; pageId: string }) {
+  const enhance = useFlag('audio.enhance');
+  if (!enhance || enhancedTracks(entry).length === 0) return null;
+  return (
+    <Switch
+      label={t('audioMore.enhance.switch')}
+      checked={listensEnhanced(entry)}
+      onChange={(on) =>
+        void import('./enhance').then((module) =>
+          module.chooseAudio(block, pageId, entry, { listen: on ? 'enhanced' : 'original' }),
+        )
+      }
+    />
   );
 }
 
 function Player({ block, entry, pageId }: { block: BlockJson; entry: RecordingEntry; pageId: string }) {
   const open = useOpen(block, entry, pageId);
+  if (audioIsRemoved(entry)) {
+    return (
+      <div className={styles.player}>
+        <p className={styles.hint}>{t('audioMore.storage.removedNote')}</p>
+        <FlagList pageId={pageId} block={block.id} entry={entry} />
+      </div>
+    );
+  }
   return (
     <div className={styles.player}>
       <div className={styles.controls}>
@@ -219,6 +244,7 @@ function Player({ block, entry, pageId }: { block: BlockJson; entry: RecordingEn
           checked={open.status?.skipSilence ?? false}
           onChange={(on) => void open.whenOpen(() => setSkipSilence(on))}
         />
+        <EnhancedSwitch block={block} entry={entry} pageId={pageId} />
       </div>
       <FlagList pageId={pageId} block={block.id} entry={entry} />
       {open.error && (

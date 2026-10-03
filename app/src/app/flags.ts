@@ -158,7 +158,22 @@ type Phase5FlagId =
 
 /** Phase 9's flags; features/audio/flags.ts defines them. */
 type Phase9FlagId =
-  'audio.record' | 'audio.stamps' | 'audio.flags' | 'audio.trim' | 'audio.systemAudio' | 'audio.meetingPrompt';
+  | 'audio.record'
+  | 'audio.stamps'
+  | 'audio.flags'
+  | 'audio.trim'
+  | 'audio.systemAudio'
+  | 'audio.meetingPrompt'
+  | 'audio.enhance'
+  | 'audio.storage'
+  | 'audio.snap'
+  | 'audio.import'
+  | 'audio.export'
+  | 'transcripts.block'
+  | 'transcripts.speakers'
+  | 'transcripts.notes'
+  | 'transcripts.actions'
+  | 'transcripts.recap';
 /** Phase 13: the Privacy panel, Work offline, crash reports, the self-check, feedback, and safe start. */
 type Phase13FlagId =
   | 'privacy.panel'
@@ -209,7 +224,7 @@ export const FLAGS: readonly FlagDef[] = [
   flag('setup.smartFeatures', 'The smart features step of setup.', off),
   flag('setup.import', 'The step of setup that brings in notes from other apps.', off),
   flag('settings.penAndInk', 'The Pen and ink section of Settings.', off),
-  flag('settings.recording', 'The Recording section of Settings.', off),
+  flag('settings.recording', 'The Recording section of Settings.', on),
   flag('settings.privacyAndAi', 'The Privacy and smart features section of Settings.', off),
   flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', off),
   flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),

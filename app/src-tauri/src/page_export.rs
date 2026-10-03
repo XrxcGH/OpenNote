@@ -56,11 +56,11 @@ impl ExportGrants {
         }
     }
 
-    fn take(&self, path: &Path) -> bool {
+    pub(crate) fn take(&self, path: &Path) -> bool {
         self.chosen.lock().map(|mut set| set.remove(path)).unwrap_or(false)
     }
 
-    fn mark_written(&self, path: PathBuf) {
+    pub(crate) fn mark_written(&self, path: PathBuf) {
         if let Ok(mut set) = self.written.lock() {
             set.insert(path);
         }

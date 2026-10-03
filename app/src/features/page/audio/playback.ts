@@ -1,7 +1,7 @@
 // Playback, from the interface's side (Phase 9). One recording plays at a time. Opening one asks the host for its
 // length and position map; after that, where a stroke or word falls in the audio, and what to highlight at a
 // moment, are worked out here with no calls to the host (core/audio/playback.ts).
-import { PlaybackSession, StampIndex } from '../../../core/audio';
+import { PlaybackSession, playable, StampIndex } from '../../../core/audio';
 import type { PlaybackStatus, RecordingEntry, StampEntry, Target } from '../../../core/audio';
 import { Flags } from '../../../core/audio';
 import type { BlockJson } from '../../../services/pages/types';
@@ -73,7 +73,7 @@ export function openFor(block: BlockJson, pageId: string): Promise<boolean> {
     const next = new PlaybackSession(audio.host);
     try {
       const assetsDir = await audio.assetsDir(pageId);
-      await next.open(assetsDir, data.entry, null, listened(data.entry.id));
+      await next.open(assetsDir, playable(data.entry), null, listened(data.entry.id));
       next.setIndex(indexFor(data.entry));
       session = next;
       playbackOpen.set(true);
@@ -93,6 +93,19 @@ export function openFor(block: BlockJson, pageId: string): Promise<boolean> {
     }
   })();
   return opening;
+}
+
+/**
+ * Opens the block's recording again where it was, as after the person switches between the original and the enhanced
+ * voice. Nothing happens when this block's recording isn't open: the next Play opens the right audio.
+ */
+export async function reopenPlayback(block: BlockJson, pageId: string): Promise<void> {
+  const { block: openBlock, recording, status } = playbackUi.get();
+  if (openBlock !== block.id || !session || !recording) return;
+  const wasPlaying = status?.state === 'playing';
+  rememberListened(recording, status?.positionNs ?? 0);
+  await closePlayback();
+  if ((await openFor(block, pageId)) && wasPlaying) await toggle();
 }
 
 export async function closePlayback(): Promise<void> {

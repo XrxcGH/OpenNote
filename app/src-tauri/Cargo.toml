@@ -57,6 +57,7 @@ features = [
   "UI_ViewManagement",
   "Win32_Foundation",
   "Win32_Globalization",
+  "Win32_Media_MediaFoundation",
   "Win32_Graphics_Dwm",
   "Win32_Graphics_Gdi",
   "Win32_Graphics_Imaging",

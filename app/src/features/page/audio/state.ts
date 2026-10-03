@@ -45,10 +45,19 @@ export const playbackOpen = createStore<boolean>(false, 'audio playback open');
 export interface RecordingChoices {
   microphone: string | null;
   systemAudio: boolean;
+  /** How small "Compress" makes a saved recording. */
+  quality: 'smaller' | 'smallest';
+  /** Whether OpenNote offers to record when another app starts using the microphone. Off until the person asks. */
+  meetingPrompt: boolean;
 }
 
 const CHOICES_KEY = 'opennote.audio.choices';
-export const DEFAULT_CHOICES: RecordingChoices = { microphone: null, systemAudio: false };
+export const DEFAULT_CHOICES: RecordingChoices = {
+  microphone: null,
+  systemAudio: false,
+  quality: 'smaller',
+  meetingPrompt: false,
+};
 
 function readChoices(): RecordingChoices {
   try {
@@ -56,6 +65,8 @@ function readChoices(): RecordingChoices {
     return {
       microphone: typeof saved?.microphone === 'string' ? saved.microphone : null,
       systemAudio: saved?.systemAudio === true,
+      quality: saved?.quality === 'smallest' ? 'smallest' : 'smaller',
+      meetingPrompt: saved?.meetingPrompt === true,
     };
   } catch {
     return DEFAULT_CHOICES;
