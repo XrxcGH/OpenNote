@@ -154,7 +154,7 @@ fn trashed_and_empty_notes_and_pictures_are_reported() {
         picture_note
             .entries
             .iter()
-            .any(|e| e.outcome == Outcome::Skipped && e.what.contains("picture")),
+            .any(|e| e.outcome == Outcome::CameOver && e.what.contains("picture")),
         "{picture_note:?}"
     );
 }

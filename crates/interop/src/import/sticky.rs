@@ -7,6 +7,9 @@
 //! Notes in the app's trash are left out and reported. The reader works on the file alone, so it needs no account
 //! and no network. The app can stay open, because the newest notes sit in the file's write-ahead log, which the
 //! reader follows.
+//!
+//! A note's pictures come from the app's `Media` table. A picture is kept when its bytes are a PNG, JPEG, GIF, or
+//! BMP file, and the rest are reported.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -82,7 +85,7 @@ fn open_database(path: &Path) -> Result<Database> {
 /// Writes the notes as the pages of one section.
 fn write_notes(
     notes: Vec<Note>,
-    pictures: &HashMap<String, usize>,
+    pictures: &HashMap<String, Pictures>,
     env: &ImportEnv<'_>,
     sink: &mut dyn ImportSink,
 ) -> Result<Report> {
@@ -95,8 +98,7 @@ fn write_notes(
     for note in notes {
         env.control.checkpoint()?;
         let shown = note.title();
-        let count = pictures.get(&note.id).copied().unwrap_or(0);
-        let converted = match convert(&note, count, env) {
+        let converted = match convert(&note, pictures.get(&note.id), env) {
             Err(error @ InteropError::TooBig(_)) => Converted::Skipped(error.to_string()),
             other => other?,
         };
@@ -140,7 +142,7 @@ impl Note {
 }
 
 /// The notes in the order they were made, and how many pictures each one has.
-fn read_notes(database: &Database) -> Result<(Vec<Note>, HashMap<String, usize>)> {
+fn read_notes(database: &Database) -> Result<(Vec<Note>, HashMap<String, Pictures>)> {
     let mut notes = Vec::new();
     if let Some(table) = database.table("Note") {
         database.for_each_row(table, &mut |row: &Row<'_>| {
@@ -156,14 +158,50 @@ fn read_notes(database: &Database) -> Result<(Vec<Note>, HashMap<String, usize>)
         })?;
     }
     notes.sort_by_key(|n| n.created);
-    let mut pictures: HashMap<String, usize> = HashMap::new();
+    let mut pictures: HashMap<String, Pictures> = HashMap::new();
+    let mut total = 0usize;
     if let Some(table) = database.table("Media").filter(|t| t.has_column("ParentId")) {
         database.for_each_row(table, &mut |row: &Row<'_>| {
-            *pictures.entry(row.text("ParentId").to_owned()).or_default() += 1;
+            let entry = pictures.entry(row.text("ParentId").to_owned()).or_default();
+            let bytes = ["Data", "Content", "Image"].iter().find_map(|c| row.get(c).as_blob());
+            match bytes.and_then(|b| image_extension(b).map(|ext| (ext, b))) {
+                Some((ext, bytes)) if total + bytes.len() <= MAX_PICTURE_BYTES => {
+                    total += bytes.len();
+                    entry.found.push((ext, bytes.to_vec()));
+                }
+                _ => entry.unreadable += 1,
+            }
             Ok(())
         })?;
     }
     Ok((notes, pictures))
+}
+
+/// The most picture bytes one import reads, so a database of huge pictures cannot fill the memory.
+const MAX_PICTURE_BYTES: usize = 512 << 20;
+
+/// The pictures of one note.
+#[derive(Default)]
+struct Pictures {
+    /// The extension and bytes of each picture that can be shown.
+    found: Vec<(&'static str, Vec<u8>)>,
+    /// Pictures that were not a file type OpenNote shows, or that went past the size limit.
+    unreadable: usize,
+}
+
+/// The file extension of image bytes, from their first bytes.
+fn image_extension(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(&[0x89, b'P', b'N', b'G']) {
+        Some("png")
+    } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        Some("jpg")
+    } else if bytes.starts_with(b"GIF8") {
+        Some("gif")
+    } else if bytes.starts_with(b"BM") {
+        Some("bmp")
+    } else {
+        None
+    }
 }
 
 /// A note that became a page.
@@ -182,7 +220,9 @@ enum Converted {
 }
 
 /// Converts one note to a page, or says why it was left out. An error is a failure of the whole import.
-fn convert(note: &Note, pictures: usize, env: &ImportEnv<'_>) -> Result<Converted> {
+fn convert(note: &Note, pictures: Option<&Pictures>, env: &ImportEnv<'_>) -> Result<Converted> {
+    let none = Pictures::default();
+    let pictures = pictures.unwrap_or(&none);
     if note.deleted {
         return Ok(Converted::Skipped(
             "The note is in the trash of Sticky Notes.".to_owned(),
@@ -190,15 +230,21 @@ fn convert(note: &Note, pictures: usize, env: &ImportEnv<'_>) -> Result<Converte
     }
     let text_lines: Vec<String> = lines(&note.text).into_iter().filter(|l| !l.trim().is_empty()).collect();
     if text_lines.is_empty() {
-        return Ok(Converted::Skipped(if pictures > 0 {
-            "The note holds only a picture, and pictures are not imported yet.".to_owned()
-        } else {
-            "The note is empty.".to_owned()
-        }));
+        if pictures.found.is_empty() {
+            return Ok(Converted::Skipped(if pictures.unreadable > 0 {
+                "The note holds only pictures that OpenNote cannot show.".to_owned()
+            } else {
+                "The note is empty.".to_owned()
+            }));
+        }
     }
     let created = note.created.or(note.updated).unwrap_or_else(|| env.clock.now());
     let modified = note.updated.unwrap_or(created);
-    let title = note.title();
+    let title = if text_lines.is_empty() {
+        "Picture note".to_owned()
+    } else {
+        note.title()
+    };
     let mut builder = PageBuilder::new(env, &title, created, modified);
     builder.push_blocks(
         text_lines
@@ -206,6 +252,12 @@ fn convert(note: &Note, pictures: usize, env: &ImportEnv<'_>) -> Result<Converte
             .map(|l| Block::Paragraph(vec![Inline::text(l)]))
             .collect(),
     );
+    for (n, (ext, bytes)) in pictures.found.iter().enumerate() {
+        let name = format!("picture-{}.{ext}", n + 1);
+        let mime = crate::assets::mime_from_extension(ext);
+        let id = builder.add_asset(&name, Some(mime), bytes.clone());
+        builder.push_image(id, String::new());
+    }
     let color = theme_color(&note.theme);
     Ok(Converted::Page(Box::new(Done {
         imported: builder.finish()?,
@@ -215,7 +267,7 @@ fn convert(note: &Note, pictures: usize, env: &ImportEnv<'_>) -> Result<Converte
 }
 
 /// What came over, what was simplified, and what was skipped for one note.
-fn page_report(note: &Note, title: &str, colored: bool, pictures: usize) -> PageReport {
+fn page_report(note: &Note, title: &str, colored: bool, pictures: &Pictures) -> PageReport {
     let mut report = PageReport {
         title: title.to_owned(),
         ..PageReport::default()
@@ -232,8 +284,13 @@ fn page_report(note: &Note, title: &str, colored: bool, pictures: usize) -> Page
     } else if !note.theme.is_empty() {
         report.simplified("color", "OpenNote does not know this color, so the page has none.");
     }
-    let why = "OpenNote cannot read the pictures that Sticky Notes keeps yet.";
-    report.skipped_count(pictures, ("picture", "pictures"), why);
+    report.came_over_count(pictures.found.len(), "picture", "pictures");
+    let why = "It is not a PNG, JPEG, GIF, or BMP file, or it went past the size limit of the import.";
+    report.skipped_count(
+        pictures.unreadable,
+        ("picture that cannot be shown", "pictures that cannot be shown"),
+        why,
+    );
     report
 }
 
