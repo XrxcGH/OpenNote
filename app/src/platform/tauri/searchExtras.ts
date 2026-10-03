@@ -2,6 +2,7 @@
 import type {
   Connections,
   LinkGraphData,
+  MediaKind,
   Neighbor,
   PageFact,
   SearchExtras,
@@ -16,6 +17,8 @@ export function createTauriSearchExtras(call: Call): SearchExtras {
     launchLink: () => call<string | null>('launchLink'),
     pageFacts: (notebook) => call<PageFact[]>('pageFacts', { notebook: notebook ?? null }),
     taggedBlocks: (scope) => call<TaggedBlock[]>('taggedBlocks', { scope }),
+    setMediaText: (page, block, kind, text) => call<boolean>('setMediaText', { page, block, kind, text }),
+    mediaBlocks: (page) => call<{ block: string; kind: MediaKind }[]>('mediaBlocks', { page }),
     findText: (needle, limit) => call<TextHit[]>('findText', { needle, limit }),
     linkGraph: (notebook) => call<LinkGraphData>('graph', { notebook: notebook ?? null }),
     neighbors: (page, depth) => call<Neighbor[]>('neighbors', { page, depth }),

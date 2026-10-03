@@ -14,8 +14,9 @@ use opennote_core::session::page::read_page_dir;
 use opennote_core::store::fs::Fs;
 use opennote_core::store::layout::NotebookLayout;
 use opennote_core::store::std_fs::StdFs;
-use opennote_core::{NotebookId, PageId, SectionId};
-use opennote_search::{IndexerHandle, PageFact, Scope};
+use opennote_core::{BlockId, NotebookId, PageId, SectionId};
+use opennote_search::sync::Job;
+use opennote_search::{IndexerHandle, MediaKind, PageFact, Scope};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -42,6 +43,15 @@ struct NotebookArgs {
 struct FindArgs {
     needle: String,
     limit: Option<usize>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MediaArgs {
+    page: String,
+    block: Option<String>,
+    kind: Option<MediaKind>,
+    text: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -156,6 +166,35 @@ impl Hub {
                 let request: ScopeArgs = args(value)?;
                 let candidates = lock_index(&shared).tag_candidates(request.scope).map_err(search_error)?;
                 Ok(self.tagged_blocks(&candidates))
+            }
+            "setMediaText" => {
+                let request: MediaArgs = args(value)?;
+                let page = self.core_page(&request.page)?;
+                let (Some(block), Some(kind)) = (request.block.as_deref(), request.kind) else {
+                    return Err(invalid("args", "setMediaText needs a block and a kind"));
+                };
+                let block = BlockId::parse(block).map_err(|error| invalid("block", error))?;
+                // A page the index does not hold is locked, deleted, or unknown, so nothing of it is kept.
+                let held = lock_index(&shared).indexed_page(page).map_err(search_error)?.is_some();
+                let changed = held
+                    && self
+                        .media
+                        .set(page, block, kind, request.text.as_deref().unwrap_or_default());
+                if changed {
+                    handle.submit(Job::Reload { page, notebook: None });
+                }
+                Ok(json!(changed))
+            }
+            "mediaBlocks" => {
+                let request: MediaArgs = args(value)?;
+                let page = self.core_page(&request.page)?;
+                let blocks: Vec<Value> = self
+                    .media
+                    .blocks(page)
+                    .into_iter()
+                    .map(|(block, kind)| json!({ "block": block, "kind": kind }))
+                    .collect();
+                Ok(Value::Array(blocks))
             }
             "findText" => {
                 let request: FindArgs = args(value)?;

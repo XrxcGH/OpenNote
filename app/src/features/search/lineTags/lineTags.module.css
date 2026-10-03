@@ -1,0 +1,116 @@
+/* The Tags pane. A checked line is struck through as well as checked, and every tag shows an icon and a name. */
+@layer components {
+  .controls {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-end: var(--space-3);
+  }
+
+  .choice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .choiceLabel {
+    min-inline-size: 5rem;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .groups {
+    display: grid;
+    gap: var(--space-4);
+    max-block-size: 55vh;
+    overflow-y: auto;
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .groupTitle {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .count {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-regular);
+  }
+
+  .lines {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+
+  .lineText {
+    flex: 1 1 12rem;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .lineText[data-done='true'] {
+    color: var(--color-text-secondary);
+    text-decoration: line-through;
+  }
+
+  .box {
+    inline-size: 1.1em;
+    block-size: 1.1em;
+    margin: 0;
+    accent-color: var(--color-accent-primary);
+  }
+
+  .box:focus-visible,
+  .link:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .chip {
+    display: inline-flex;
+    gap: var(--space-1);
+    align-items: center;
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}

@@ -26,6 +26,7 @@ mod graph;
 mod index;
 pub mod linkgraph;
 pub mod links;
+pub mod media;
 pub mod mentions;
 pub mod palette;
 pub mod pattern;
@@ -61,6 +62,7 @@ pub use graph::{Backlink, HeadingRef, LinkEdit, LinkTarget, OutgoingLink, PageSu
 pub use index::{IndexedPage, SearchIndex};
 pub use linkgraph::{BrokenLink, Connection, Connections, GraphEdge, GraphPage, LinkGraph, Neighbor};
 pub use links::{Link, LinkKind, Rename};
+pub use media::{MediaKind, MediaText};
 pub use mentions::{LinkedMentions, Mention, MentionBlock, UnlinkedMention};
 pub use palette::{Command, Palette, PaletteContext, PaletteHit};
 pub use persist::{OpenStatus, Rebuild, ReplaceReason};

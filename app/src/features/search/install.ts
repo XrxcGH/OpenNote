@@ -9,6 +9,7 @@ import type { IndexUpdate } from '../../services/search/types';
 import { setSearchClient } from './client';
 import { installDeepLinks } from './deeplink/install';
 import { startTitleFeed } from './feed';
+import { startMediaIndexer } from './media/indexer';
 import type { TitleFeed } from './feed';
 
 let running: TitleFeed | null = null;
@@ -50,6 +51,7 @@ export function installSearch(platform: Platform, notes: NotesService): () => vo
   const stops = [
     () => feed?.stop(),
     installDeepLinks(platform, notes),
+    startMediaIndexer(),
     platform.search.onUpdate(handle),
     // Links follow a new title once the person is done with it, which leaving the page says. The tree may have
     // renamed the page a moment ago, so the index hears the tree first.

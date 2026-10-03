@@ -96,6 +96,17 @@ commands.register(
   }),
 );
 
+commands.register(
+  defineCommand({
+    id: 'search.tagsPane',
+    title: 'qolSearch.commands.tagsPane',
+    keywords: 'qolSearch.commands.keywords.tagsPane',
+    category: 'navigation',
+    flag: 'search.lineTags',
+    run: () => import('./lineTags/open').then((module) => module.openTagsPane()),
+  }),
+);
+
 contextMenus.register({
   id: 'search.text.tagLine',
   menu: 'page.text',

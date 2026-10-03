@@ -3,5 +3,6 @@
 export { installSearch } from './install';
 export { openSearchPanel } from './open';
 export { SEARCH_FLAGS } from './flags';
+export { indexMediaText } from './media/indexer';
 export { locationOfPage, openPage } from './locate';
 export { maybeSearchClient } from './client';

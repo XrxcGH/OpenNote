@@ -27,8 +27,8 @@ use opennote_core::{
     NotebookId, PageId,
 };
 use opennote_search::{
-    BackgroundIndexer, CorePageSource, CoreSlot, IndexerConfig, IndexerHandle, SearchError, SearchIndex, SharedIndex,
-    Switcher,
+    BackgroundIndexer, CorePageSource, CoreSlot, IndexerConfig, IndexerHandle, MediaText, SearchError, SearchIndex,
+    SharedIndex, Switcher,
 };
 use serde_json::Value;
 use tauri::{AppHandle, State};
@@ -77,6 +77,8 @@ pub(super) struct Hub {
     run: Mutex<Option<Run>>,
     slot: CoreSlot,
     switcher: Mutex<Switcher>,
+    /// Words read from pictures, handwriting, and recordings, kept beside the index.
+    media: MediaText,
 }
 
 impl Hub {
@@ -94,7 +96,8 @@ impl Hub {
                 SearchIndex::open_in_memory()
             })
             .map_err(internal)?;
-        let source = CorePageSource::production(self.slot.clone());
+        self.media.attach(&root.join("media-text.json"));
+        let source = CorePageSource::production(self.slot.clone()).with_media(self.media.clone());
         let observer = {
             let relay = relay.clone();
             Box::new(move |event| announce(&relay, event))

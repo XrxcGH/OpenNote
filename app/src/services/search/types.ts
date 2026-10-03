@@ -260,6 +260,8 @@ export interface TaggedBlock {
   checked: string[];
 }
 
+export type MediaKind = 'image' | 'handwriting' | 'transcript';
+
 /** A block whose text holds some words. */
 export interface TextHit {
   page: PageId;
@@ -318,6 +320,14 @@ export interface SearchExtras {
   pageFacts(notebook?: string | null): Promise<PageFact[]>;
   /** The text blocks in a scope that carry line tags or an open checkbox. */
   taggedBlocks(scope: ScopeRef): Promise<TaggedBlock[]>;
+  /**
+   * Records the words read from a picture, handwriting, or a recording, so search finds the block by them. The text
+   * stays on this device and out of the page. A page the index does not hold, such as one in a locked section,
+   * keeps nothing. Empty text removes it. Resolves whether anything changed.
+   */
+  setMediaText(page: PageId, block: BlockId, kind: MediaKind, text: string): Promise<boolean>;
+  /** The blocks of a page that have recorded text. */
+  mediaBlocks(page: PageId): Promise<{ block: BlockId; kind: MediaKind }[]>;
   /** The blocks whose text holds the words anywhere inside, ignoring case: a literal search, for replace. */
   findText(needle: string, limit?: number): Promise<TextHit[]>;
   /** The pages of a notebook, or of all notebooks, and the links between them. */

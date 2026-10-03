@@ -344,4 +344,10 @@
     font-weight: var(--font-weight-semibold);
     text-decoration: underline;
   }
+
+  .snippetKind {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+  }
 }
