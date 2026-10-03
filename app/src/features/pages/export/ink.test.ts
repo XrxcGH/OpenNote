@@ -2,7 +2,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { CHANNEL_PRESSURE, encodePoints, type InkRecord, type Stroke } from '../../../core/ink/codec';
-import { drawingOrder, inkExtent, inkShapes, inkSvg, shapesInBand, strokeShape } from './ink';
+import { strokesByBlock } from './blocks';
+import { drawingOrder, inkExtent, inkShapes, inkSvg, shapesInBand, strokeShape, type InkShape } from './ink';
 import { exportStrokes, liveStrokes, toExportStroke } from './inkSource';
 import type { ExportStroke } from './source';
 
@@ -103,6 +104,23 @@ describe('drawing order and bands', () => {
     expect(shapesInBand(shapes, 2000, 100)).toHaveLength(0);
     expect(inkExtent(shapes)!.h).toBeGreaterThan(1100);
     expect(inkExtent([])).toBeNull();
+  });
+
+  it('handles a long handwritten page in linear time and without an argument limit', () => {
+    // 60,000 strokes in one block took about 40 seconds when each stroke copied the block's list.
+    const strokes = Array.from({ length: 60_000 }, (_, i) => stroke(`s${i}`));
+    const started = performance.now();
+    expect(strokesByBlock(strokes).get('b1')).toHaveLength(60_000);
+    expect(performance.now() - started).toBeLessThan(2000);
+    // Spreading 300,000 values into Math.min throws a RangeError.
+    const shapes = Array.from({ length: 300_000 }, (_, i): InkShape => ({
+      d: '',
+      fill: '#000000',
+      opacity: 1,
+      highlighter: false,
+      bbox: { x: i, y: -i, w: 1, h: 1 },
+    }));
+    expect(inkExtent(shapes)).toEqual({ x: 0, y: -299_999, w: 300_000, h: 300_000 });
   });
 
   it('writes an svg whose group moves the page band to the top', () => {

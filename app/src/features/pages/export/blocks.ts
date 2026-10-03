@@ -115,7 +115,11 @@ function table(block: TableBlock, cx: BlockContext): string {
 /** The strokes of each ink block, so a block finds its own. */
 export function strokesByBlock(strokes: readonly ExportStroke[]): Map<string, ExportStroke[]> {
   const map = new Map<string, ExportStroke[]>();
-  for (const s of strokes) map.set(s.block, [...(map.get(s.block) ?? []), s]);
+  for (const s of strokes) {
+    const own = map.get(s.block);
+    if (own) own.push(s);
+    else map.set(s.block, [s]);
+  }
   return map;
 }
 

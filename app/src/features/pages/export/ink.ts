@@ -194,9 +194,13 @@ export function inkSvg(
 /** The smallest box around the strokes, or null when none has points. */
 export function inkExtent(shapes: readonly InkShape[]): Rect | null {
   if (shapes.length === 0) return null;
-  const x0 = Math.min(...shapes.map((s) => s.bbox.x));
-  const y0 = Math.min(...shapes.map((s) => s.bbox.y));
-  const x1 = Math.max(...shapes.map((s) => s.bbox.x + s.bbox.w));
-  const y1 = Math.max(...shapes.map((s) => s.bbox.y + s.bbox.h));
+  // A loop, not Math.min(...shapes): a spread of a long page's shapes passes the engine's argument limit and throws.
+  let [x0, y0, x1, y1] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const { bbox } of shapes) {
+    x0 = Math.min(x0, bbox.x);
+    y0 = Math.min(y0, bbox.y);
+    x1 = Math.max(x1, bbox.x + bbox.w);
+    y1 = Math.max(y1, bbox.y + bbox.h);
+  }
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
