@@ -32,6 +32,7 @@ import { search } from './search';
 import { audio } from './audio';
 import { interop } from './interop';
 import { intel } from './intel';
+import { qol } from './qol';
 
 export const en = {
   common,
@@ -66,4 +67,5 @@ export const en = {
   audio,
   interop,
   intel,
+  qol,
 } as const;

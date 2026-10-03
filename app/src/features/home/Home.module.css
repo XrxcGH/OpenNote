@@ -1,0 +1,86 @@
+/* The Home page card: plain sections on the page card, one column, tokens only. */
+@layer components {
+  .home {
+    max-inline-size: var(--size-reading-measure);
+    margin: var(--space-6) auto;
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+  }
+
+  .header,
+  .sectionHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .home h1,
+  .home h2 {
+    margin: 0;
+    font-family: var(--font-reading);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .home h1:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .section {
+    margin-block-start: var(--space-6);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-1);
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .link {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: baseline;
+    inline-size: 100%;
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-text-link);
+    font: inherit;
+    text-align: start;
+    cursor: default;
+  }
+
+  .link:hover {
+    background: var(--color-surface-hover);
+  }
+
+  :global(:root[data-density='touch']) .link {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .path,
+  .empty {
+    color: var(--color-text-secondary);
+  }
+
+  .empty {
+    margin: var(--space-2) 0 0;
+  }
+
+  .row,
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+}

@@ -18,6 +18,17 @@
     overflow: hidden;
   }
 
+  /* Focus mode: only the title bar and the page. */
+  .workspace[data-focus] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'title' 'page';
+  }
+
+  .workspace[data-focus] :is(.commandBar, .notebooks, .pages, .appBar, .bottomBar) {
+    display: none;
+  }
+
   :global(:root[data-size-class='compact']) .workspace {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr) auto;
