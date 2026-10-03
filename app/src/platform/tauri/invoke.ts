@@ -90,7 +90,10 @@ export interface Commands extends IntelCommands, IntelChoiceCommands {
   speech_voices: { args: None; result: { id: string; name: string; language: string }[] };
   speech_synthesize: { args: { text: string; voice: string }; result: ArrayBuffer };
   print_prepare: { args: { job: string; input: unknown }; result: unknown };
-  print_render: { args: { job: string; width: number; height: number; background: boolean }; result: ArrayBuffer };
+  print_render: {
+    args: { job: string; width: number; height: number; background: boolean; tagged?: boolean; outline?: boolean };
+    result: ArrayBuffer;
+  };
   print_close: { args: { job: string }; result: null };
   export_pick_save: { args: { suggested: string; label: string; extension: string }; result: string | null };
   export_open: { args: { path: string; reveal: boolean }; result: null };

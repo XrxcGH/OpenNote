@@ -50,7 +50,7 @@ export function createPrintSurface(client: ExportsClient, job: string): PrintSur
     async toPdf(options) {
       if (!box) throw new Error('Prepare the page before printing it.');
       const inches = { width: box.width / 96, height: box.height / 96 };
-      return client.printRender(job, inches, options.background);
+      return client.printRender(job, inches, options.background, { tagged: options.tagged, outline: options.outline });
     },
     dispose: () => client.printClose(job),
   };
@@ -58,6 +58,8 @@ export function createPrintSurface(client: ExportsClient, job: string): PrintSur
 
 export interface PdfExportOptions {
   readonly print: PrintOptions;
+  /** Writes structure tags, a language, alt text, and bookmarks through the DevTools route. */
+  readonly accessible?: boolean;
   readonly signal?: AbortSignal;
   readonly onProgress?: (progress: PdfProgress) => void;
 }
@@ -118,9 +120,10 @@ export async function exportPdfFile(
   const job = newJobId();
   const result: PdfExportResult = await exportPdf(createPrintSurface(client, job), {
     input: prepareInput(source, options.print),
-    // WebView2's PrintToPdf writes neither structure tags nor bookmarks (ADR 0006), so they aren't asked for.
-    tagged: false,
-    outline: false,
+    // WebView2's PrintToPdf writes neither structure tags nor bookmarks (ADR 0006), so an accessible PDF goes through
+    // the DevTools route, and the check below says when the file still has no tags.
+    tagged: options.accessible === true,
+    outline: options.accessible === true,
     signal: options.signal,
     onProgress: options.onProgress,
   });

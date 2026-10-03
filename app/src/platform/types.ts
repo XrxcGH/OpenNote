@@ -270,8 +270,17 @@ export interface ImagesClient {
 export interface ExportsClient {
   /** Opens the hidden print window on a `PrepareInput` (as JSON) and returns the `PrepareResult` it planned. */
   printPrepare(job: string, input: unknown): Promise<unknown>;
-  /** Prints the window's document to PDF. The size is the first sheet's box in inches. */
-  printRender(job: string, size: { width: number; height: number }, background: boolean): Promise<Uint8Array>;
+  /**
+   * Prints the window's document to PDF. The size is the first sheet's box in inches. `tagged` and `outline` ask for
+   * structure tags with a language, and for bookmarks from the headings; the host prints through the DevTools route
+   * for them, and falls back to the plain route if that fails.
+   */
+  printRender(
+    job: string,
+    size: { width: number; height: number },
+    background: boolean,
+    options?: { tagged?: boolean; outline?: boolean },
+  ): Promise<Uint8Array>;
   printClose(job: string): Promise<void>;
   /** Shows the Save dialog. Resolves to the chosen path, or null when the person cancels. */
   pickSave(request: { suggested: string; label: string; extension: string }): Promise<string | null>;

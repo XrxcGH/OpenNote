@@ -25,6 +25,11 @@ export const pagesPlus = {
     sheetKeywords: 'sheet page navigator thumbnails strip flip go to add next previous',
     notebookDefaultKeywords: 'notebook default layout new pages paper',
   },
+  pdf: {
+    accessible: 'Accessible PDF',
+    accessibleHelp:
+      'Adds headings, lists, tables, reading order, picture descriptions, the page’s language, and bookmarks, so a screen reader can follow the file.',
+  },
   sheets: {
     strip: 'Sheets',
     goTo: 'Go to sheet {n}',
