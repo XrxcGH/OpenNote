@@ -20,7 +20,7 @@ function palmSettings(palm: Palm) {
   return { ...palm.palmSettingsFromInk(ink), handedness: ink.handedness, fingerDraw: ink.touch.finger };
 }
 
-const PEN_EVENTS = ['pointermove', 'pointerdown', 'pointerup'] as const;
+const PEN_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'pointercancel'] as const;
 
 /** Copies a pointer event into the pipeline's reused record. */
 function fill(record: PointerRecord, event: PointerEvent, type: PointerRecord['type']): PointerRecord {
@@ -93,16 +93,32 @@ export class TouchTool {
   }
 
   private accepts(event: PointerEvent): boolean {
+    return event.pointerType === 'touch' && this.active();
+  }
+
+  /** A pen tool is active on an editable page, and the palm filter has loaded. */
+  private active(): boolean {
     const surface = this.surfaceOf();
-    if (event.pointerType !== 'touch' || !surface || surface.readOnly || !this.palm) return false;
+    if (!surface || surface.readOnly || !this.palm) return false;
     return drawState.get().tool === 'pen' && isEnabled('ink.core') && isEnabled('ink.palm');
   }
 
-  /** Pen hover and contact tell the palm filter a pen is near. */
+  /**
+   * Pen hover and contact tell the palm filter a pen is near. The filter starts with the first pen event while a pen
+   * tool is active, so a palm that lands while the pen is already down meets a filter that knows it.
+   */
   private readonly onPen = (event: PointerEvent) => {
-    if (event.pointerType !== 'pen' || !this.pipeline) return;
-    const type = event.type === 'pointerdown' ? 'down' : event.type === 'pointerup' ? 'up' : 'move';
-    this.pipeline.handle(fill(this.record, event, type));
+    if (event.pointerType !== 'pen') return;
+    if (!this.pipeline && !this.active()) return;
+    const type =
+      event.type === 'pointerdown'
+        ? 'down'
+        : event.type === 'pointerup'
+          ? 'up'
+          : event.type === 'pointercancel'
+            ? 'cancel'
+            : 'move';
+    this.ensure().handle(fill(this.record, event, type));
   };
 
   private readonly onBlur = () => this.pipeline?.system('blur', performance.now());
@@ -132,7 +148,8 @@ export class TouchTool {
       camera: (op, id, a, b, c) => this.camera(op, id, a, b, c),
       tap: () => undefined,
       contextMenu: () => undefined,
-      gesture: (kind) => {
+      // A silent gesture takes back one the filter delivered just before a pen arrived; neither shows feedback here.
+      gesture: (kind, _silent) => {
         if (!isEnabled('ink.gestures')) return;
         const queue = this.host.queue.get();
         void (kind === 'undo' ? queue?.undo() : queue?.redo());
