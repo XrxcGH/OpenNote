@@ -131,9 +131,31 @@ function readQuote(c: Cursor): PMNode[] {
   return [make('callout', { type: head.type, fold: head.fold }, [title, ...first, ...body])];
 }
 
+/**
+ * A table inside a list or quote, which only the paste parser reads: each row becomes a paragraph with its cells
+ * apart. A text block holds no tables (SPEC 6.3), and a table at the top level becomes a table block instead.
+ */
+function readTableRows(c: Cursor): PMNode[] {
+  const rows: PMNode[] = [];
+  let cells: PMNode[][] = [];
+  for (c.i++; c.i < c.tokens.length && c.tokens[c.i].type !== 'table_close'; c.i++) {
+    const token = c.tokens[c.i];
+    if (token.type === 'tr_open') cells = [];
+    else if (token.type === 'inline') cells.push(inlineNodes(token.children ?? []));
+    else if (token.type === 'tr_close') {
+      const content = cells.flatMap((cell, i) => (i === 0 ? cell : [textSchema.text(' | '), ...cell]));
+      rows.push(make('paragraph', null, content));
+    }
+  }
+  c.i++;
+  return rows;
+}
+
 function readBlock(c: Cursor): PMNode[] {
   const token = c.tokens[c.i];
   switch (token.type) {
+    case 'table_open':
+      return readTableRows(c);
     case 'paragraph_open':
       c.i += 3;
       return [paragraph(c.tokens[c.i - 2])];
