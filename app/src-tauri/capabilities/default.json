@@ -34,6 +34,24 @@
     "allow-updater-unskip",
     "allow-updater-go-back",
     "allow-notes-snapshot-load",
-    "allow-notes-snapshot-save"
+    "allow-notes-snapshot-save",
+    "allow-page-open",
+    "allow-page-apply",
+    "allow-page-undo",
+    "allow-page-redo",
+    "allow-page-save-now",
+    "allow-page-close",
+    "allow-clipboard-facts",
+    "allow-clipboard-read",
+    "allow-image-import",
+    "allow-image-import-url",
+    "allow-image-import-clip",
+    "allow-spell-languages",
+    "allow-spell-check",
+    "allow-spell-suggest",
+    "allow-spell-add-word",
+    "allow-spell-remove-word",
+    "allow-speech-voices",
+    "allow-speech-synthesize"
   ]
 }
