@@ -92,6 +92,19 @@ register(
   }),
 );
 
+// The Sort button in the View tab opens a menu of the three sorts; the button itself does nothing else.
+register(
+  defineCommand({
+    id: 'tree.sort',
+    title: 'qol.commands.sort',
+    category: 'notebooks',
+    flag: 'qol.pins',
+    palette: false,
+    enabled: isSortable,
+    run: () => undefined,
+  }),
+);
+
 const SORTS: readonly (readonly [
   SortKey,
   'qol.commands.sortTitle' | 'qol.commands.sortCreated' | 'qol.commands.sortModified',
@@ -392,7 +405,7 @@ const BAR: readonly (readonly [string, 'home' | 'view', string, string, number, 
   ['qol.mini', 'view', 'window', 'window.toggleMini', 65, 'toggle'],
   ['qol.dockRight', 'view', 'window', 'window.dockRight', 60, 'toggle'],
   ['qol.showArchived', 'view', 'tree', 'tree.showArchived', 50, 'toggle'],
-  ['qol.sort', 'view', 'tree', 'tree.sort.title', 45, 'menu'],
+  ['qol.sort', 'view', 'tree', 'tree.sort', 45, 'menu'],
   ['qol.a11y', 'view', 'check', 'page.checkAccessibility', 40],
 ];
 for (const [id, tab, group, command, priority, presentation] of BAR) {

@@ -9,6 +9,7 @@ export const qol = {
     unpin: 'Unpin page',
     duplicate: 'Duplicate',
     copyTo: 'Copy to',
+    sort: 'Sort',
     sortTitle: 'Sort by title',
     sortCreated: 'Sort by date created',
     sortModified: 'Sort by date modified',
