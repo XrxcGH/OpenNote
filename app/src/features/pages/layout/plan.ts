@@ -10,6 +10,8 @@ import type { PageLayout } from './page';
 export interface PageContent {
   /** The flowing blocks in reading order, with the measure of each. Empty for a freeform page. */
   readonly flow?: { readonly blocks: readonly FlowBlock[]; readonly measure: Measure };
+  /** A flow already planned with `planFlow` for the layout's flow sheet. It takes the place of `flow`. */
+  readonly flowPlan?: FlowPlan;
   /** Floating blocks and the ink layer, as boxes in page coordinates. */
   readonly floating?: readonly FloatingItem[];
   readonly options?: PaginateOptions;
@@ -36,9 +38,9 @@ export interface PagePlan {
 
 export function planPage(layout: PageLayout, content: PageContent): PagePlan {
   const items = content.floating ?? [];
-  const flow = content.flow
-    ? planFlow(layout.flowSheet, content.flow.blocks, content.flow.measure, content.options)
-    : null;
+  const flow =
+    content.flowPlan ??
+    (content.flow ? planFlow(layout.flowSheet, content.flow.blocks, content.flow.measure, content.options) : null);
   const floating = planFloating(layout.sheet, items);
   const needed = Math.max(1, flow?.plan.sheets ?? 1, floating.sheets);
   // A block far down the page must not make the plan, and the print document after it, millions of sheets long.

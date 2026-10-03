@@ -2,15 +2,19 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { ENGLISH_LABELS, strokesByBlock, type BlockContext } from '../export/blocks';
 import { readingOrder } from '../export/order';
+import { readExportPage, type InkBlock } from '../export/source';
 import { lightTheme } from '../export/style';
 import { pageLayout } from '../layout/page';
 import { planPage } from '../layout/plan';
 import { setMargins, setPaperSize } from '../layout/edit';
 import { DEFAULT_VIEW } from '../layout/view';
+import { planFlow } from '../layout/flow';
 import { flow as fakeFlow, type Spec } from '../pagination/flowFixture';
+import type { BlockMeasure } from '../pagination/types';
 import { MAX_SHEETS, contentBottom, contentTop } from '../pagination/geometry';
 import { lecturePage } from '../testing/samples';
 import { measureDocument, printDocument, type DocumentSetup } from './document';
+import { anchoredShift } from './prepare';
 import { bandBox, fillBand, fillTemplate } from './headerFooter';
 import { parsePageRange } from './range';
 import { chromiumPageFor, planPrint } from './sheets';
@@ -272,5 +276,56 @@ describe('the print documents', () => {
       ),
       { numRuns: 25 },
     );
+  });
+});
+
+describe('anchored ink in print', () => {
+  const layout = pageLayout(DEFAULT_VIEW);
+  // 37 lines fill most of a Letter sheet, so the 6-line paragraph `p#1` moves whole to the next sheet.
+  const { blocks, measure } = fakeFlow(
+    [
+      { id: 'a', kind: 'text', lines: 37 },
+      { id: 'p#1', kind: 'text', lines: 6 },
+    ],
+    layout.flowSheet.margins[0],
+  );
+  const measured = new Map<string, BlockMeasure>();
+  const flow = planFlow(layout.flowSheet, blocks, (b) => {
+    const m = measure(b);
+    measured.set(b.id, m);
+    return m;
+  });
+  const lineTop = measured.get('p#1')!.lines![2].top;
+  const ink = (anchor: string, role = 'anchored'): InkBlock => ({
+    id: 'hl',
+    order: 'a9',
+    type: 'ink',
+    role,
+    alt: '',
+    decorative: false,
+    strokeCount: 1,
+    frame: { x: 100, y: lineTop + 20 },
+    anchor: { block: anchor, dx: 0, dy: 18 },
+  });
+
+  it('moves with the line of text it is tied to when a break moves that text', () => {
+    const push = flow.plan.breaks[0].push;
+    expect(flow.plan.breaks[0].pos).toEqual({ kind: 'block', block: 'p#1' });
+    expect(push).toBeGreaterThan(0);
+    expect(anchoredShift(ink('p'), flow, measured)).toBeCloseTo(push);
+  });
+
+  it('stays at its frame when its text does not move, does not flow, or it is not anchored', () => {
+    expect(anchoredShift(ink('a'), flow, measured)).toBe(0);
+    expect(anchoredShift(ink('missing'), flow, measured)).toBe(0);
+    expect(anchoredShift(ink('p', 'layer'), flow, measured)).toBe(0);
+  });
+});
+
+describe('reading anchored ink', () => {
+  it('keeps the anchor', () => {
+    const data = { role: 'anchored', anchor: { block: 'p', dy: 14 } };
+    const page = readExportPage({ blocks: [{ id: 'hl', type: 'ink', order: 'a0', frame: { x: 1, y: 2 }, data }] });
+    expect(page.blocks[0]).toMatchObject({ role: 'anchored', anchor: { block: 'p', dx: 0, dy: 14 } });
   });
 });

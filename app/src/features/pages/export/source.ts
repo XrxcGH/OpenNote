@@ -36,12 +36,23 @@ export interface TextBlock extends BlockBase {
   readonly markdown: string;
 }
 
+/** Where anchored ink is tied to text (format spec 8.1). */
+export interface InkAnchor {
+  /** The text block the ink is drawn with. */
+  readonly block: string;
+  /** The distance from the anchored place to the ink block's origin, in page units. */
+  readonly dx: number;
+  readonly dy: number;
+}
+
 export interface InkBlock extends BlockBase {
   readonly type: 'ink';
   readonly role: string;
   readonly alt: string;
   readonly decorative: boolean;
   readonly strokeCount: number;
+  /** For ink whose role is `anchored`: the text it moves with. */
+  readonly anchor?: InkAnchor;
 }
 
 export interface ImageBlock extends BlockBase {
@@ -152,11 +163,23 @@ function readTable(data: JsonObject): Body<TableBlock> {
   };
 }
 
+function readAnchor(raw: Json | undefined): InkAnchor | undefined {
+  if (!isObject(raw) || typeof raw.block !== 'string') return undefined;
+  return { block: raw.block, dx: geometry(raw.dx) ?? 0, dy: geometry(raw.dy) ?? 0 };
+}
+
 function readData(type: string, data: JsonObject, fallback: Json | undefined): Body<ExportBlock> {
   const alt = { alt: str(data.alt), decorative: flag(data.decorative) };
   if (type === 'text' && typeof data.markdown === 'string') return { type, markdown: data.markdown };
   if (type === 'ink') {
-    return { type, role: str(data.role, 'layer'), strokeCount: geometry(data.strokeCount) ?? 0, ...alt };
+    const anchor = readAnchor(data.anchor);
+    return {
+      type,
+      role: str(data.role, 'layer'),
+      strokeCount: geometry(data.strokeCount) ?? 0,
+      ...alt,
+      ...(anchor ? { anchor } : {}),
+    };
   }
   if ((type === 'image' || type === 'file') && typeof data.asset === 'string') {
     return { type, asset: data.asset, ...alt };
