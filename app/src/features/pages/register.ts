@@ -12,6 +12,7 @@ import { openMenu } from '../../ui';
 import { menuItemsFor } from '../../commands/menus';
 import { isEnabled } from '../../app/flags';
 import type { FlagId } from '../../app/flags';
+import './registerMore';
 
 import type { PagesViewState, PaperName, MarginName } from './live/shown';
 import { pagesViewEpoch, shownPagesView } from './live/shown';

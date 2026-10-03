@@ -11,8 +11,10 @@ import {
   type Orientation,
   type PaperSizeName,
 } from '../pagination/geometry';
+import { DRAWING_KEY } from '../paper/drawing';
+import type { PaperTemplate } from '../paper/types';
 import { withSpacing } from '../paper/presets';
-import { diffPatch, mergeLayers, type JsonObject } from './json';
+import { diffPatch, mergeLayers, type Json, type JsonObject } from './json';
 import {
   DEFAULT_VIEW,
   defaultPaperFor,
@@ -89,8 +91,19 @@ export function setLayout(view: PageViewSpec, layout: LayoutKind): PageViewSpec 
   return { ...view, layout };
 }
 
+/** Changes the background. Leaving the `template` pattern drops the template's name and its drawing. */
 export function setBackground(view: PageViewSpec, background: Partial<BackgroundSpec>): PageViewSpec {
-  return { ...view, background: { ...view.background, ...background } };
+  const merged = { ...view.background, ...background };
+  if (background.pattern === undefined || background.pattern === 'template') return { ...view, background: merged };
+  const { template: _template, ...rest } = merged;
+  const { [DRAWING_KEY]: _drawing, ...extra } = rest.extra;
+  return { ...view, background: { ...rest, extra } };
+}
+
+/** Puts a template on the page: its name in `background.template` and its drawing beside it, so the page holds both. */
+export function setTemplate(view: PageViewSpec, template: PaperTemplate): PageViewSpec {
+  const extra = { ...view.background.extra, [DRAWING_KEY]: template as unknown as Json };
+  return { ...view, background: { ...view.background, pattern: 'template', template: template.id, extra } };
 }
 
 /** Changes the spacing of ruled and grid paper, kept within the range the pattern allows. */

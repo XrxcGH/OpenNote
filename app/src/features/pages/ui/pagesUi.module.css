@@ -154,3 +154,38 @@
     background: var(--color-surface-page);
   }
 }
+
+@layer components {
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .items {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 16rem;
+    overflow: auto;
+  }
+
+  .item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+  }
+
+  .itemName {
+    flex: 1 1 8rem;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+    color: var(--color-text-primary);
+  }
+}

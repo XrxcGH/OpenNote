@@ -1,6 +1,7 @@
 // The page view's Phase 6 side (loaded when a page is mounted): the page's view settings (mode, paper, margins, and
 // background), the sheets drawn under a paginated page, and the paper under an infinite one. Every change goes to the
 // page as one setPage merge patch, so it is one undo step. The paginated flow itself is in paginate.ts.
+import { isEnabled } from '../../../app/flags';
 import { announce } from '../../../ui';
 import { t } from '../../../strings/t';
 import type { MountedPage } from '../../page';
@@ -16,7 +17,7 @@ import {
 } from '../layout';
 import type { PageLayout, PageViewSpec } from '../layout';
 import { GAP_HALF, MARGIN_PRESETS, MAX_SHEETS } from '../pagination';
-import { PRESETS, infinitePaths, paperPaths, paperSvg } from '../paper';
+import { PRESETS, TEMPLATE_IDS, infinitePaths, paperPaths, paperSvg } from '../paper';
 import type { PageBackground } from '../paper';
 import { lightTheme } from '../export/style';
 import { paperStyle } from '../print/css';
@@ -25,6 +26,7 @@ import { createPaginator } from './paginate';
 import { attachReading } from './reading';
 import type { Paginator } from './paginate';
 import styles from './live.module.css';
+import { applyNotebookDefault } from './notebookDefault';
 import { pagesViewEpoch, shownPagesView } from './shown';
 import type { MarginName, PagesViewApi, PagesViewState, PaperName } from './shown';
 
@@ -34,6 +36,9 @@ const MAX_PAPER_SIDE = 40_000;
 
 /** The preset a background stands for, or 'custom'. */
 function presetOf(background: PageViewSpec['background']): string {
+  if (background.pattern === 'template') {
+    return Object.entries(TEMPLATE_IDS).find(([, id]) => id === background.template)?.[0] ?? 'custom';
+  }
   for (const [id, preset] of Object.entries(PRESETS) as [string, PageBackground][]) {
     if (preset.pattern !== background.pattern) continue;
     if (preset.spacing === undefined || Math.abs(preset.spacing - background.spacing) < 0.05) return id;
@@ -109,6 +114,13 @@ class PagesView {
     );
     this.reading = attachReading(mounted, () => this.spec.mode === 'paginated');
     this.apply();
+    if (isEnabled('pages.layouts')) {
+      applyNotebookDefault(
+        mounted,
+        () => this.spec,
+        (next) => this.change(next),
+      );
+    }
   }
 
   stop(): void {
@@ -177,6 +189,8 @@ class PagesView {
         }),
       );
     },
+    view: () => this.spec,
+    edit: (change, announcement) => this.change(change(this.spec), announcement),
     fitSheet: () => {
       const { viewport } = this.mounted;
       const rect = viewport.camera().viewport;

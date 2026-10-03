@@ -1,6 +1,7 @@
 // The shown page's page view, in a module light enough for start-up: the commands and the View tab read it without
 // loading the paginated view's code. The code attaches when a page is mounted and fills this in.
 import { createStore } from '../../../state/store';
+import type { PageViewSpec } from '../layout';
 
 export type PaperName = 'letter' | 'a4' | 'a5' | 'legal' | 'tabloid';
 export type MarginName = 'narrow' | 'normal' | 'wide';
@@ -28,6 +29,10 @@ export interface PagesViewApi {
   setBackground(preset: string): void;
   /** Zooms so the whole sheet shows. */
   fitSheet(): void;
+  /** The page's view settings as they are now. */
+  view(): PageViewSpec;
+  /** Changes the view with a pure edit from the layout module. The change is one undo step. */
+  edit(change: (view: PageViewSpec) => PageViewSpec, announcement?: string): void;
   /** The reading aids panel and the line focus. */
   readingAids(): void;
 }
