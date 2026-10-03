@@ -7,4 +7,5 @@ export { indexMediaText } from './media/indexer';
 export { FIELD_TYPES, compareValues, displayValue, fieldNamed, readFields, viewPatch } from './properties/model';
 export type { Field, FieldType } from './properties/model';
 export { locationOfPage, openPage } from './locate';
+export { openAndReveal } from './deeplink/jump';
 export { maybeSearchClient } from './client';
