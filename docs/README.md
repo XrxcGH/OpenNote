@@ -21,6 +21,10 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 
 - [adr/README.md](adr/README.md): the architecture decision records (ADRs), with how to write one and the list of decisions so far.
 
+## File format
+
+- [format/README.md](format/README.md): the note file format specification, tools, and fixtures.
+
 ## Releasing
 
 - [RELEASING.md](RELEASING.md): the maintainer guide to signing keys, version numbers, cutting a release, and rolling one back.
