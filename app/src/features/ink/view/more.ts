@@ -5,6 +5,7 @@ import type { Chord, CommandDef } from '../../../commands/types';
 import { commandBar, commands } from '../../../registries';
 import { toggleCanvasLock, installCanvasLock } from './canvasLock';
 import { describeDrawing } from './describe';
+import { getSettings, updateSettings } from '../../../state/settings';
 import { DrawOptions } from './DrawOptions';
 import type { InkHost } from './host';
 import { installHover } from './hover';
@@ -18,6 +19,19 @@ export interface MoreContext {
 }
 
 const chord = (value: string) => value as Chord;
+
+type GestureKey = 'scribbleErase' | 'circleSelect' | 'twoFingerUndo' | 'threeFingerRedo';
+
+/** One switch for each gesture, listed with the commands so the shortcut list shows it and it can be turned off. */
+const gestureCommand = (key: GestureKey): CommandDef => ({
+  id: `ink.gestures.${key}`,
+  title: `ink.gestures.${key}`,
+  keywords: 'ink.gestures.keywords',
+  category: 'editing',
+  flag: 'ink.gestures',
+  checked: () => getSettings().ink.gestures[key],
+  run: () => void updateSettings({ ink: { gestures: { [key]: !getSettings().ink.gestures[key] } } }),
+});
 
 export function installMore(context: MoreContext): () => void {
   const { host, surface } = context;
@@ -53,6 +67,10 @@ export function installMore(context: MoreContext): () => void {
         if (current) void describeDrawing(host, current);
       },
     },
+    gestureCommand('scribbleErase'),
+    gestureCommand('circleSelect'),
+    gestureCommand('twoFingerUndo'),
+    gestureCommand('threeFingerRedo'),
   ];
   for (const def of defs) stops.push(commands.register(def));
   stops.push(

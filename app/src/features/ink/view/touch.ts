@@ -9,7 +9,7 @@ import type { CameraOp, InkPipeline, PipelineHost, PointerRecord, TouchInk } fro
 import type { TouchStrokePhase } from '../input/pipeline';
 import { createStrokeBuilder } from '../input/strokeBuilder';
 import type { InkHost, InkPointerTool } from './host';
-import { activeSlot, drawState, styleOf } from './state';
+import { activeSlot, drawState, styleOf, writesInk } from './state';
 import type { InkSurface } from './surface';
 
 type Palm = typeof import('./palm');
@@ -51,6 +51,8 @@ export class TouchTool {
   private tick: ReturnType<typeof setInterval> | null = null;
   // The palm filter is the largest part of ink input, so it loads in its own chunk, right after the ink view.
   private palm: Palm | null = null;
+  /** Hears the two- and three-finger double taps. */
+  onGesture: ((kind: 'undo' | 'redo') => void) | null = null;
 
   constructor(
     private readonly host: InkHost,
@@ -100,7 +102,7 @@ export class TouchTool {
   private active(): boolean {
     const surface = this.surfaceOf();
     if (!surface || surface.readOnly || !this.palm) return false;
-    return drawState.get().tool === 'pen' && isEnabled('ink.core') && isEnabled('ink.palm');
+    return writesInk(drawState.get().tool) && isEnabled('ink.core') && isEnabled('ink.palm');
   }
 
   /**
@@ -149,11 +151,7 @@ export class TouchTool {
       tap: () => undefined,
       contextMenu: () => undefined,
       // A silent gesture takes back one the filter delivered just before a pen arrived; neither shows feedback here.
-      gesture: (kind, _silent) => {
-        if (!isEnabled('ink.gestures')) return;
-        const queue = this.host.queue.get();
-        void (kind === 'undo' ? queue?.undo() : queue?.redo());
-      },
+      gesture: (kind, _silent) => this.onGesture?.(kind),
       touchPolicy: () => undefined,
     };
   }

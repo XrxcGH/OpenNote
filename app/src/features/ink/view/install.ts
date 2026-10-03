@@ -8,6 +8,7 @@ import { applyToPoint } from '../geometry/matrix';
 import type { Stroke } from '../geometry/types';
 import type { InkHost } from './host';
 import { DrawPens, DrawTools } from './DrawBar';
+import { handleTouchGesture } from './gestures';
 import { registerExportStrokes } from './exportSource';
 import { createPenTool } from './input';
 import { TouchTool } from './touch';
@@ -83,6 +84,7 @@ export function installInk(host: InkHost): () => void {
   installInkTestHooks(() => current?.surface ?? null);
   const pen = createPenTool(host, () => current?.surface ?? null);
   const touch = new TouchTool(host, () => current?.surface ?? null);
+  touch.onGesture = (kind) => handleTouchGesture(host, kind);
   const stops: (() => void)[] = [
     host.registerPointerTool(pen.tool),
     host.registerPointerTool(touch.tool),
