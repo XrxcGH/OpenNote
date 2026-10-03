@@ -14,6 +14,7 @@ pub fn decode_file(_path: &Path, _max_ns: u64) -> IpcResult<Vec<f32>> {
     Err(IpcError::not_implemented("Importing audio files"))
 }
 
+#[cfg(windows)]
 fn unreadable(message: &str) -> IpcError {
     IpcError::new("audioFormat", message)
 }

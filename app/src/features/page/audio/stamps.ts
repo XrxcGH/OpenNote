@@ -211,18 +211,20 @@ let clicks: (() => void) | null = null;
 const blockOf = (event: Event): string | undefined =>
   (event.target as Element | null)?.closest<HTMLElement>('[data-block-id]')?.dataset.blockId;
 
+/** How long after a tap lifts the caret is read: a finger or a pen puts the caret in the word a moment later. */
+const TAP_SETTLE_MS = 60;
+
 /**
  * Plays from the word the caret has just landed in, if that word was written during a recording. A tap on a word
  * with no time stamp is only a tap, so it says nothing.
  */
 function playFromTap(block: string): void {
-  // The press before the tap has already put the caret in the word, so the caret says which word it was.
   setTimeout(() => {
     const at = caret();
     if (snapOf(block) || (at?.block === block && marksOf(block)?.markAt(at.offset))) {
       void playFromText(block, at?.block === block ? at.offset : undefined);
     }
-  }, 0);
+  }, TAP_SETTLE_MS);
 }
 
 /**
