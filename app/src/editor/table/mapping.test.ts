@@ -189,7 +189,8 @@ describe('the table commands on data', () => {
           }
         }
         const order = data.columns.map((column) => column.id);
-        for (const row of data.rows) expect(Object.keys(row.cells)).toEqual(expect.arrayContaining(order));
+        // Object keys keep insertion order except integer-like ones, which real IDs never are, so compare as sets.
+        for (const row of data.rows) expect(Object.keys(row.cells).sort()).toEqual([...order].sort());
         expect(new Set(ids(data)).size).toBe(ids(data).length);
         const table = tableOf(tableDataToDoc(data))!;
         table.forEach((row) => expect(row.childCount).toBe(order.length));

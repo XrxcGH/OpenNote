@@ -99,7 +99,11 @@ export function applyTableOp(input: TableData, at: CellAt, op: TableOp): TableCh
       const added = newColumn(data.columns[column].width);
       const columns = [...data.columns];
       columns.splice(index, 0, added);
-      const rows = data.rows.map((one) => ({ ...one, cells: { ...one.cells, [added.id]: { markdown: '' } } }));
+      // Each row's cells follow the columns' order, which is the order page.md writes them in.
+      const rows = data.rows.map((one) => ({
+        ...one,
+        cells: Object.fromEntries(columns.map((c) => [c.id, one.cells[c.id] ?? { markdown: '' }])),
+      }));
       return { data: { ...data, columns, rows }, caret: { row, column: index } };
     }
     case 'deleteRow': {
