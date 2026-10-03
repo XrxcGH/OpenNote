@@ -8,6 +8,19 @@ export type { DecodedEnvelope, FrameInfo, SessionInfo } from './wire';
 
 /** Calls a Tauri command. Binary answers arrive as an ArrayBuffer. */
 export type CoreInvoke = (command: string, args?: Record<string, unknown>) => Promise<unknown>;
+/** Hears a `core:*` event. The returned function stops listening. */
+export type CoreListen = (event: string, handler: (payload: unknown) => void) => () => void;
+
+/** What restoring a version did (crates/core/src/session/page.rs, RestoreResult). */
+export type CoreRestoreResult = { kind: 'restored' } | { kind: 'copied'; page: string };
+
+export interface CoreRestoreBlocksRequest {
+  page: string;
+  client: string;
+  clientSeq: number;
+  revision: string;
+  blocks: readonly string[];
+}
 
 export interface CoreTxnAck {
   seq: number;
@@ -38,6 +51,15 @@ export interface CoreClient {
   pageRedo(page: string, client: string): Promise<FrameInfo | null>;
   pageSaveNow(page: string): Promise<void>;
   pageClose(page: string, client: string): Promise<void>;
+  /** The page's saved versions, newest first, as the core lists them. */
+  historyList(page: string, client: string): Promise<Record<string, unknown>[]>;
+  historyOpen(page: string, client: string, revision: string): Promise<DecodedEnvelope>;
+  historyRestore(page: string, client: string, revision: string, asCopy: boolean): Promise<CoreRestoreResult>;
+  /** One transaction of the client, so it takes the client's next sequence number. */
+  historyRestoreBlocks(request: CoreRestoreBlocksRequest): Promise<CoreTxnAck>;
+  historyName(page: string, client: string, revision: string, name: string | null, keep: boolean): Promise<void>;
+  /** Hears a `core:*` event, or nothing where the client has no `listen`. */
+  onEvent(event: string, handler: (payload: unknown) => void): () => void;
 }
 
 function bytesOf(answer: unknown): ArrayBuffer {
@@ -48,7 +70,7 @@ function bytesOf(answer: unknown): ArrayBuffer {
   throw new Error('The core answered with something other than bytes.');
 }
 
-export function createCoreClient(deps: { invoke: CoreInvoke }): CoreClient {
+export function createCoreClient(deps: { invoke: CoreInvoke; listen?: CoreListen }): CoreClient {
   const queues = new Map<string, Promise<unknown>>();
   /** Runs `call` after every earlier call for the same page has settled. */
   const ordered = <T>(page: string, call: () => Promise<T>): Promise<T> => {
@@ -72,5 +94,19 @@ export function createCoreClient(deps: { invoke: CoreInvoke }): CoreClient {
     pageRedo: (page, client) => ordered(page, () => frame('page_redo', page, client)),
     pageSaveNow: (page) => ordered(page, async () => void (await deps.invoke('page_save_now', { page }))),
     pageClose: (page, client) => ordered(page, async () => void (await deps.invoke('page_close', { page, client }))),
+    historyList: (page, client) =>
+      ordered(page, () => deps.invoke('history_list', { page, client }) as Promise<Record<string, unknown>[]>),
+    historyOpen: (page, client, revision) =>
+      ordered(page, async () => decodeEnvelope(bytesOf(await deps.invoke('history_open', { page, client, revision })))),
+    historyRestore: (page, client, revision, asCopy) =>
+      ordered(
+        page,
+        () => deps.invoke('history_restore', { page, client, revision, asCopy }) as Promise<CoreRestoreResult>,
+      ),
+    historyRestoreBlocks: (request) =>
+      ordered(request.page, () => deps.invoke('history_restore_blocks', { ...request }) as Promise<CoreTxnAck>),
+    historyName: (page, client, revision, name, keep) =>
+      ordered(page, async () => void (await deps.invoke('history_name', { page, client, revision, name, keep }))),
+    onEvent: (event, handler) => deps.listen?.(event, handler) ?? (() => undefined),
   };
 }

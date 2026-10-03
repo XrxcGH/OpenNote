@@ -331,11 +331,13 @@ export const CONTRACT_CASES: readonly ContractCase[] = [
     },
   },
   {
-    name: 'lists, opens, and names versions when the service keeps history',
+    name: 'keeps a version when an edited page closes, and lists, opens, names, and restores from it',
     async run(make) {
-      const { page } = await opened(make);
-      await page.send({ edits: [{ edit: 'setText', block: FIRST, markdown: 'Saved' }] });
-      await page.saveNow();
+      const { service, page: first } = await opened(make);
+      await first.send({ edits: [{ edit: 'setText', block: FIRST, markdown: 'Saved' }] });
+      // The core keeps a version when an edited page closes, at exit, and every 10 minutes of editing.
+      await first.close();
+      const page = await service.open(CONTRACT_PAGE.id, { viewport: null });
       let versions;
       try {
         versions = await page.history.list();
@@ -343,7 +345,7 @@ export const CONTRACT_CASES: readonly ContractCase[] = [
         if ((error as Partial<PageServiceError>).code === 'notImplemented') return page.close();
         throw error;
       }
-      check(versions.length > 0, 'a version after saving');
+      check(versions.length > 0, 'a version after closing');
       const version = await page.history.open(versions[0].revision);
       equal(markdownOf(version, FIRST), 'Saved', 'the newest version');
       await page.history.name(versions[0].revision, 'Before the exam', true);

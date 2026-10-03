@@ -208,6 +208,8 @@ export function openClient(
   };
   state.clients.add(self);
   let closed = false;
+  /** Whether this client changed the page, so closing it keeps a version, as the core does at close. */
+  let edited = false;
   const ctx: Ctx = {
     state,
     stacks,
@@ -217,6 +219,7 @@ export function openClient(
     },
     move(next) {
       const before = state.page;
+      edited = true;
       state.page = next;
       for (const other of state.clients) {
         if (other !== self) other.frame((u, r) => diffFrame(before, next, null, { canUndo: u, canRedo: r }));
@@ -224,6 +227,7 @@ export function openClient(
     },
     swap(next, ui) {
       const before = state.page;
+      edited = true;
       ctx.move(next);
       return diffFrame(before, next, ui, { canUndo: stacks.canUndo(), canRedo: stacks.canRedo() });
     },
@@ -251,6 +255,7 @@ export function openClient(
     onExternal: external.listen,
     onReadOnly: readOnly.listen,
     close() {
+      if (!closed && edited) state.versions.save(state.page, 'closed');
       closed = true;
       state.clients.delete(self);
       return Promise.resolve();
