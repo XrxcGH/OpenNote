@@ -76,10 +76,42 @@ export async function placeCaret(page: Page, box: Locator, caret: Caret): Promis
   await frame(page);
 }
 
-/** Puts the caret at the end of the 20-page note and adds a block there by typing, then waits for it. */
+/** Where the caret sits, for the message of a wait that ran out. */
+async function caretContext(page: Page): Promise<string> {
+  return page.evaluate(() => {
+    const node = getSelection()?.anchorNode;
+    const element = node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : (node?.parentElement ?? null);
+    const block = element?.closest('p, li, pre, h1, h2, h3, h4, h5, h6, td, th');
+    return JSON.stringify({
+      editable: element?.closest('[contenteditable="true"]') !== null,
+      block: block?.tagName ?? null,
+      textEnd: block?.textContent?.slice(-60) ?? null,
+      codeBlocks: document.querySelectorAll('pre code').length,
+    });
+  });
+}
+
+/**
+ * Puts the caret at the end of the 20-page note and adds a paragraph there by typing, then waits until the caret is
+ * in it. Keys sent before then land at the end of the note's last paragraph, where a block shortcut can't apply.
+ */
 async function atEndOfNote(page: Page): Promise<void> {
   await placeCaret(page, await longestBox(page), 'end');
   await page.keyboard.press('Enter');
+  await page
+    .waitForFunction(
+      () => {
+        const node = getSelection()?.anchorNode;
+        const element = node?.nodeType === Node.ELEMENT_NODE ? (node as Element) : node?.parentElement;
+        const paragraph = element?.closest('p');
+        return paragraph !== null && paragraph !== undefined && paragraph.textContent === '';
+      },
+      null,
+      { timeout: 15_000 },
+    )
+    .catch(async (error: unknown) => {
+      throw new Error(`Enter did not put the caret in a new paragraph: ${await caretContext(page)}`, { cause: error });
+    });
 }
 
 /** Presses page zoom keys until the page's scale passes `target`. */
@@ -155,7 +187,13 @@ export const CONDITIONS: readonly Condition[] = [
     prepare: async (page) => {
       await atEndOfNote(page);
       await page.keyboard.type('```ts ');
-      await page.locator('pre code').last().waitFor({ state: 'attached' });
+      await page
+        .locator('pre code')
+        .last()
+        .waitFor({ state: 'attached', timeout: 15_000 })
+        .catch(async (error: unknown) => {
+          throw new Error(`The fence made no code block: ${await caretContext(page)}`, { cause: error });
+        });
       await page.keyboard.type('const value = compute(1, 2);');
       await page.keyboard.press('Enter');
     },
