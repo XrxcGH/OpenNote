@@ -9,10 +9,10 @@ import styles from './illustrations.module.css';
 export type Sky = 'day' | 'night';
 
 /** Six stars, each a zero-length stroke that the round cap turns into a dot. */
-const STARS = 'M22 40h.1M37 21h.1M63 17h.1M84 37h.1M17 67h.1M66 66h.1';
+const STARS = 'M20 36h.1M37 21h.1M63 17h.1M84 37h.1M40 70h.1M66 66h.1';
 
 function Heavens({ sky }: { sky: Sky }) {
-  if (sky === 'day') return <circle className={styles.sun} cx="72" cy="68" r="9.5" />;
+  if (sky === 'day') return <circle className={styles.sun} cx="72" cy="69.5" r="9.5" />;
   return (
     <>
       <path className={styles.dots} d={STARS} />

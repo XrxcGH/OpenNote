@@ -219,6 +219,7 @@ Illustrations appear in onboarding, empty states, error screens, the theme previ
 - They are inline SVG in the 1.5-pixel line style, drawn with a slight wobble so they look handwritten, using only token colors with at most three fills.
 - Each is under 3 KB, hidden from screen readers, and never sits behind text.
 - Things in a drawing obey gravity. Books, pots, the notebook, and the candle stand on their shelf, desk, or sill line. None sinks into its line or floats above it. A leaning book stands on its lower corner and rests against its neighbor. The component tests check both.
+- Nothing crowds another shape, such as a star against a leaf or the sun against a window bar.
 - The page canvas carries window light in Daylight and a dusk-to-stars sky in Evening, around the page card, and never behind the writing.
 
 No 3D renders, gradient blobs, stock photos, or mascots.
