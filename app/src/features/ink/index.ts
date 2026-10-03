@@ -9,3 +9,4 @@ export * from './input';
 export * from './pens';
 export * from './selection';
 export * from './space';
+export * from './zoombox';

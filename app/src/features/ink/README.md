@@ -6,17 +6,18 @@ Import from `index.ts`. Other features never reach into these folders.
 
 ## Map
 
-| Folder | What it does |
-|---|---|
-| [geometry](geometry/README.md) | Matrices, boxes, the stroke index, hit tests, the erasers' math, the lasso, outlines, pressure curves, the steady pen, shapes |
-| [model](model/README.md) | Adapters between the note file's ink records and the strokes the geometry uses, the page's stroke table, recolor and width edits |
-| [pens](pens/README.md) | The brand pen and highlighter colors, the tool numbers, and width from pressure and tilt |
-| [input](input/README.md) | Samples to strokes, the stroke builder, palm rejection, and pen buttons |
-| [input/gestures](input/gestures/README.md) | Scribble to erase, circle and tap, and two-finger and three-finger double taps |
-| [edits](edits/README.md) | Erase sessions for a whole gesture, and the eraser and lasso filters |
-| [selection](selection/README.md) | The lasso over blocks, and over ink and blocks together |
-| [space](space/README.md) | What moves when space is inserted |
-| [engine/tiles](engine/tiles/README.md) | The tile cache planner: which tiles to draw, invalidate, and give back |
+| Folder                                     | What it does                                                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| [geometry](geometry/README.md)             | Matrices, boxes, the stroke index, hit tests, the erasers' math, the lasso, outlines, pressure curves, the steady pen, shapes              |
+| [model](model/README.md)                   | Adapters between the note file's ink records and the geometry's strokes, plus the page's stroke table and the edits that recolor or resize |
+| [pens](pens/README.md)                     | The brand pen and highlighter colors, the tool numbers, and width from pressure and tilt                                                   |
+| [input](input/README.md)                   | Samples to strokes, the stroke builder, palm rejection, and pen buttons                                                                    |
+| [input/gestures](input/gestures/README.md) | Scribble to erase, circle and tap, and two-finger and three-finger double taps                                                             |
+| [edits](edits/README.md)                   | Erase sessions for a whole gesture, and the eraser and lasso filters                                                                       |
+| [selection](selection/README.md)           | The lasso over blocks, and over ink and blocks together                                                                                    |
+| [space](space/README.md)                   | What moves when space is inserted                                                                                                          |
+| [zoombox](zoombox/README.md)               | The zoom writing box: strip and box coordinates, and moving the box along the line                                                         |
+| [engine/tiles](engine/tiles/README.md)     | The tile cache planner: which tiles to draw, invalidate, and give back                                                                     |
 
 The 10,000-stroke benchmark and its numbers are in [docs/perf/phase-5-core.md](../../../../docs/perf/phase-5-core.md).
 
