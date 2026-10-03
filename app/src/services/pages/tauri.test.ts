@@ -96,7 +96,9 @@ describe('the Tauri page service', () => {
     await expect(page.history.restore('v1', false)).resolves.toEqual({ page: 'p1', asCopy: false });
     expect(reloaded).toHaveBeenCalledWith({ action: 'reloaded' });
   });
+});
 
+describe('the Tauri page service’s requests', () => {
   it('numbers an edit only when the core takes it, so a refused edit leaves its number for the next', async () => {
     const { core, calls } = fakeCore([envelope([])]);
     calls.pageApply.mockImplementationOnce(() => Promise.reject({ code: 'invalid', message: 'Too long.' }));
@@ -140,7 +142,9 @@ describe('the Tauri page service', () => {
     await page.send({ edits: [] });
     expect(calls.pageApply.mock.calls.at(-1)).toMatchObject([{ clientSeq: 8 }]);
   });
+});
 
+describe('the Tauri page service’s events', () => {
   it('turns the core’s events for the page into frames, external changes, and read-only notices', async () => {
     const { core, emit } = fakeCore([envelope([block('a', 'One')]), envelope([block('a', 'Two')])]);
     const page = await createTauriPageService(core, images).open('p1', { viewport: null });

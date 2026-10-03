@@ -122,9 +122,9 @@ function listeners<T>() {
 }
 
 /**
- * One open page's calls, in the order they were asked for. The core counts a client's requests only when it accepts
- * one (crates/core/src/session/page/edits.rs, check_request), so a numbered request takes its number when it is sent
- * and the count moves only on an ack: a refused edit leaves its number for the next. After an out-of-order answer
+ * One open page's calls, in the order they were asked for. The core counts only the requests it accepts
+ * (crates/core/src/session/page/edits.rs, check_request). So a numbered request takes its number when it is sent,
+ * and the count moves only on an ack: a refused edit leaves its number for the next. After an out-of-order answer,
  * the count is read back from the core.
  */
 function sequence(start: number, reread: () => Promise<number>) {
