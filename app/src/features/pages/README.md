@@ -11,6 +11,7 @@ The pure parts of Phase 6, "Page views and export". Everything here works on pag
 | [`selection`](selection/README.md) | Export selection: lasso geometry, smart select, a selection as a page for PDF, and as an SVG picture |
 | [`slides`](slides/README.md) | Present as slides: a page split at its headings or divider lines |
 | [`zoom`](zoom/README.md)             | Zoom steps, gestures, fitting, view limits, switching between infinite and paginated view, and sheet navigation                           |
+| [`elements`](elements/README.md) | The elements library: save a selection as an element, put it back scaled to fit, folders and search, and a file to share |
 | [`export`](export/README.md)         | Markdown and HTML export of a page, and the ink shapes both use                                                                           |
 | [`print`](print/README.md)           | Turns a page into the document that prints, one box for each sheet                                                                        |
 | [`pdf`](pdf/README.md)               | The PDF export job, the reader that checks the file, and the golden tests                                                                 |

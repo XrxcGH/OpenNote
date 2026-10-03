@@ -2,6 +2,7 @@
 // All of them are pure TypeScript over page units. The views, the export document, and the page setup dialog
 // import them from here.
 
+export * from './elements';
 export * from './export';
 export * from './layout';
 export * from './pagination';
