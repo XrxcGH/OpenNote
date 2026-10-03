@@ -1,7 +1,7 @@
 // Spell check on the shown page (ARCHITECTURE.md section 16.3): at open, the textblocks in view are checked first and
 // the rest in idle time, static and mounted alike. Textblocks that appear later outside editors, such as a block
 // another window changed, are checked as they come; mounted editors report their own changes (spellingRanges).
-import { isCheckable, spellingHighlights, TEXTBLOCK_SELECTOR } from '../../../editor/extensions/spellingRanges';
+import { isCheckable, spellingHighlights, TEXTBLOCK_SELECTOR } from '../../../editor/extensions/spellingText';
 import { shownViewport } from '../viewport/viewport';
 import { spellingEngine } from './current';
 import type { SpellingEngine } from './engine';

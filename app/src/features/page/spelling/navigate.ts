@@ -8,8 +8,8 @@ import {
   spellingHighlights,
   TEXTBLOCK_SELECTOR,
   textblockText,
-} from '../../../editor/extensions/spellingRanges';
-import type { SpellRange } from '../../../editor/extensions/spellingRanges';
+} from '../../../editor/extensions/spellingText';
+import type { SpellRange } from '../../../editor/extensions/spellingText';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { shownPool } from '../pool/pool';

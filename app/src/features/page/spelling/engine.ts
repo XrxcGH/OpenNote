@@ -2,7 +2,7 @@
 // are scheduled so typing never waits for them. Some words are hidden without checking again: the personal
 // dictionary, words ignored this session, and words in all capitals or with digits.
 import type { SpellingService } from '../../../editor/host';
-import type { SpellRange } from '../../../editor/extensions/spellingRanges';
+import type { SpellRange } from '../../../editor/extensions/spellingText';
 import type { SpellingClient } from '../../../platform/types';
 
 export interface SpellingRules {

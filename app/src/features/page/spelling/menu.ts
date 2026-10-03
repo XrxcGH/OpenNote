@@ -7,7 +7,7 @@ import {
   spellingHighlights,
   TEXTBLOCK_SELECTOR,
   textblockText,
-} from '../../../editor/extensions/spellingRanges';
+} from '../../../editor/extensions/spellingText';
 import { META_COMMAND } from '../../../editor/meta';
 import { t } from '../../../strings/t';
 import { announce, editMenu, openMenu } from '../../../ui';
