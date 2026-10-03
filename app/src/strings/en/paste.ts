@@ -4,8 +4,6 @@
 export const paste = {
   tooLarge: 'This paste was too large to keep its formatting, so it was added as plain text.',
   pasted: 'Pasted.',
-  plain: 'Paste as plain text',
-  plainKeywords: 'paste text unformatted clean',
   copyAsMarkdown: 'Copy as Markdown',
   copyAsMarkdownKeywords: 'markdown obsidian copy text',
   copiedMarkdown: 'Copied as Markdown.',
@@ -14,7 +12,6 @@ export const paste = {
   sourcePrompt: {
     message: 'Add source links to web pastes?',
     always: 'Always',
-    never: 'Never',
   },
   joined: 'Joined broken lines.',
   undo: 'Undo',

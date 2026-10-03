@@ -13,7 +13,6 @@ export const images = {
   decorativeLabel: 'Decorative image',
   noAltBadge: 'No alt text',
   missing: 'This image is still syncing or is missing.',
-  loading: 'Loading image',
   adding: '{count, plural, one {Adding # image} other {Adding # images}}',
   added: '{count, plural, one {Added # image.} other {Added # images.}}',
   failed: "{count, plural, one {# image couldn't be added.} other {# images couldn't be added.}}",
@@ -37,8 +36,6 @@ export const images = {
   cropMode: {
     label: 'Crop image. Drag the handles, or use the arrow keys on a handle. Enter keeps the crop; Escape cancels.',
     handle: 'Crop from the {edge}',
-    done: 'Done',
-    cancel: 'Cancel',
     applied: 'Cropped the image.',
     cancelled: 'Crop canceled.',
   },
