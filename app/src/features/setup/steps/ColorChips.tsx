@@ -16,15 +16,17 @@ interface ColorChipsProps {
 
 export function ColorChips({ label, colors, value, onChange }: ColorChipsProps) {
   return (
-    <RadioGroup label={label} value={value} onChange={onChange}>
-      {colors.map((color) => (
-        <RadioCard
-          key={color}
-          value={color}
-          label={t(`setup.storage.notebook.colors.${color}` as MessageKey)}
-          preview={<span className={styles.chip} style={{ background: `var(--ink-${color})` }} />}
-        />
-      ))}
-    </RadioGroup>
+    <div className={styles.chips}>
+      <RadioGroup label={label} value={value} onChange={onChange}>
+        {colors.map((color) => (
+          <RadioCard
+            key={color}
+            value={color}
+            label={t(`setup.storage.notebook.colors.${color}` as MessageKey)}
+            preview={<span className={styles.chip} style={{ background: `var(--ink-${color})` }} />}
+          />
+        ))}
+      </RadioGroup>
+    </div>
   );
 }

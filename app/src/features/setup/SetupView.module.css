@@ -1,5 +1,6 @@
-/* First-run setup (ARCHITECTURE.md section 17.2): a centered card on the app surface. In compact it fills the
-   window with 16 px margins, its cards stack, and Back and Continue stay in a footer that is always visible. */
+/* First-run setup (ARCHITECTURE.md section 17.2): a centered card on the app surface, with the window light of the
+   day or the evening sky behind it. In compact it fills the window with 16 px margins, its cards stack, and Back and
+   Continue stay in a footer that is always visible. */
 @layer components {
   .screen {
     display: grid;
@@ -7,6 +8,23 @@
     min-block-size: calc(100dvh - var(--size-title-bar));
     padding: var(--space-5);
     background: var(--color-surface-app);
+  }
+
+  /* Window light: a warm wash from the top corner by day, and a sky that darkens toward dusk in the evening. It
+     paints the backdrop, never the card, and stays within a hair of the surface (BRAND.md section 4). */
+  .screen {
+    background:
+      radial-gradient(ellipse 70% 55% at top right, var(--color-ambient-canvas-top), transparent 70%),
+      var(--color-surface-app);
+  }
+
+  :global(:root[data-theme='dark']) .screen {
+    background: linear-gradient(
+      to bottom,
+      var(--color-ambient-canvas-top),
+      var(--color-surface-sunken) 55%,
+      var(--color-ambient-canvas-bottom)
+    );
   }
 
   .card {
@@ -55,6 +73,18 @@
   .subtitle {
     margin: 0;
     color: var(--color-text-secondary);
+  }
+
+  /* The welcome step: everything centered under the title, with the desk between the sentence and the note. */
+  .welcome {
+    min-block-size: 100%;
+    align-content: center;
+    text-align: center;
+  }
+
+  .scene {
+    display: grid;
+    justify-items: center;
   }
 
   .note {
@@ -115,6 +145,12 @@
     align-content: start;
   }
 
+  /* The notebook color chips share the width evenly, so every chip is the same size. */
+  .chips :where([role='radiogroup']) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(calc(var(--space-9) * 2), 1fr));
+  }
+
   :global(:root[data-size-class='compact']) .screen {
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
@@ -135,6 +171,10 @@
 
 @layer forced {
   @media (forced-colors: active) {
+    .screen {
+      background-image: none;
+    }
+
     .card {
       border-color: ButtonBorder;
     }

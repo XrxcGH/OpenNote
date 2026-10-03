@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react';
 import type { SetupStepProps } from '../../registries';
 import { t } from '../../strings/t';
+import { InkStroke } from '../../ui';
 import styles from './SetupView.module.css';
 
 type Position = Pick<SetupStepProps, 'stepIndex' | 'stepCount' | 'titleId' | 'progressId'>;
@@ -18,6 +19,7 @@ export function StepHeader(props: Position & { title: string; subtitle?: ReactNo
       <h1 id={titleId} className={styles.title}>
         {title}
       </h1>
+      <InkStroke />
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
     </header>
   );
