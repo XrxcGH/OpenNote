@@ -37,7 +37,7 @@ import { createSelectTool } from './pool/selectTool';
 import { savePageView } from './runtime';
 import { setGeometrySource } from './seams/geometry';
 import { pageSelection, selectOnPage } from './seams/selectionStore';
-import { createSyncQueue, shownQueue } from './sync';
+import { createSyncQueue, exitHook, shownQueue } from './sync';
 import type { SyncQueue } from './sync';
 import type { Point } from './viewport/camera';
 import { createGestureTool } from './viewport/gestures';
@@ -273,7 +273,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     beforeExit.register({
       id: `page.flush.${page.client}`,
       order: 10,
-      run: () => sync.flushAll('exit').then(() => ({ ok: true }) as const),
+      run: exitHook(sync),
     }),
   ];
   pool.watch(viewport.viewport);

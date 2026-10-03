@@ -31,5 +31,7 @@ export const pageSync = {
     locked: 'That block is locked, so that change wasn’t kept.',
     other: 'That change couldn’t be kept. Try it again.',
   },
+  /** The window stays open: a change the core refused is still on the page and not saved. */
+  exitUnsaved: 'Some changes on this page aren’t saved yet. Try closing again in a moment.',
   reloaded: 'This page changed in another app, so it was reloaded.',
 } as const;
