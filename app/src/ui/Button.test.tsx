@@ -112,6 +112,19 @@ describe('IconButton', () => {
     );
   }
 
+  it('draws no box around a disabled icon button, as around an enabled one', () => {
+    renderUi(
+      <>
+        <Toolbar />
+        <Button disabled>Bordered</Button>
+      </>,
+    );
+    const border = (name: string) => getComputedStyle(screen.getByRole('button', { name })).borderTopColor;
+    expect(border('Unavailable')).toBe(border('Settings'));
+    expect(border('Unavailable')).toBe('rgba(0, 0, 0, 0)');
+    expect(border('Bordered')).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
   it('is named by its label and gives its command’s shortcut to assistive technology', () => {
     renderUi(<Toolbar />);
     const button = screen.getByRole('button', { name: 'Settings' });
