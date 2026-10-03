@@ -174,7 +174,33 @@ describe('the stroke builder', () => {
     expect(final.id).toBe(progress.id);
     expect(final.points.length).toBe(12);
   });
+});
 
+describe('pressure and allocation in the stroke builder', () => {
+  it('decides zero pressure per stroke: back-fills a leading 0 and repeats the last value for a trailing 0', () => {
+    const pressures = [0, 0, 0.04, 0.1, 0.05, 0];
+    const samples = pressures.map((pressure, i) => pen(i, { pressure, y: i }));
+    const [stroke] = run(samples);
+    expect(stroke.points.map((p) => p.pressure)).toEqual([0.04, 0.04, 0.04, 0.1, 0.05, 0.05]);
+  });
+
+  it('keeps the middle pressure for a stroke that never reports any', () => {
+    const [stroke] = run([0, 1, 2].map((i) => pen(i, { pressure: 0 })));
+    expect(stroke.points.every((p) => p.pressure === 0.5)).toBe(true);
+  });
+
+  it('allocates only the stored point for each pen sample', () => {
+    const builder = createStrokeBuilder(options({ steady: { strength: 4, zoom: 1 } }));
+    const stored = new Set<object>();
+    for (let i = 0; i < 50; i++) {
+      const point = builder.push(pen(i));
+      if (point) stored.add(point);
+    }
+    expect(builder.points.every((p) => stored.has(p))).toBe(true);
+  });
+});
+
+describe('stroke records from the builder', () => {
   it('builds strokes that encode as records and decode back within a quantum', () => {
     fc.assert(
       fc.property(fc.integer({ min: 1, max: 120 }), fc.boolean(), (count, steadyOn) => {

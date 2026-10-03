@@ -1,7 +1,7 @@
 // The steady pen (design 5.8): a One Euro filter removes jitter, then a "pulled string" lets the ink follow the pen
 // only by the distance beyond a radius. Both depend only on the samples, so a recording replays to the same stroke.
 
-import type { InkPoint, Vec } from './types';
+import type { InkPoint } from './types';
 
 export interface StabilizerOptions {
   /** Steady pen strength, 1 to 10. */
@@ -58,6 +58,8 @@ class OneEuro {
 /** A stabilizer for one stroke. Push each raw sample; call `finish` at pen-up for the closing segment. */
 export interface Stabilizer {
   push(point: InkPoint): InkPoint;
+  /** Steadies a position into `out` without allocating. `time` is the sample's, for the filter's gap. */
+  steady(x: number, y: number, time: number | undefined, out: { x: number; y: number }): void;
   /** The raw last point, so the ink catches up to where the pen lifted, or null when nothing was pushed. */
   finish(): InkPoint | null;
 }
@@ -67,31 +69,43 @@ export function createStabilizer(options: StabilizerOptions): Stabilizer {
   const fallbackGap = (options.fallbackGapMs ?? 8) / 1000;
   const fx = new OneEuro(options.minCutoff ?? 1, options.beta ?? 0.007);
   const fy = new OneEuro(options.minCutoff ?? 1, options.beta ?? 0.007);
-  let anchor: Vec | null = null;
+  let anchored = false;
+  let ax = 0;
+  let ay = 0;
   let lastTime: number | undefined;
   let last: InkPoint | null = null;
+  const scratch = { x: 0, y: 0 };
+
+  const steady = (x: number, y: number, time: number | undefined, out: { x: number; y: number }): void => {
+    const gap = time !== undefined && lastTime !== undefined ? Math.max(time - lastTime, 0.5) / 1000 : fallbackGap;
+    lastTime = time;
+    const sx = fx.next(x, gap);
+    const sy = fy.next(y, gap);
+    if (!anchored) {
+      anchored = true;
+      ax = sx;
+      ay = sy;
+    } else {
+      const d = Math.hypot(sx - ax, sy - ay);
+      if (d > radius) {
+        const move = (d - radius) / d;
+        ax += (sx - ax) * move;
+        ay += (sy - ay) * move;
+      }
+    }
+    out.x = ax;
+    out.y = ay;
+  };
 
   return {
     push(point) {
-      const gap =
-        point.time !== undefined && lastTime !== undefined ? Math.max(point.time - lastTime, 0.5) / 1000 : fallbackGap;
-      lastTime = point.time;
       last = point;
-      const smooth = { x: fx.next(point.x, gap), y: fy.next(point.y, gap) };
-      anchor = pull(anchor, smooth, radius);
-      return { ...point, x: anchor.x, y: anchor.y };
+      steady(point.x, point.y, point.time, scratch);
+      return { ...point, x: scratch.x, y: scratch.y };
     },
+    steady,
     finish: () => last,
   };
-}
-
-/** Moves the anchor toward the pen by the distance beyond the radius, and not at all inside it. */
-function pull(anchor: Vec | null, pen: Vec, radius: number): Vec {
-  if (!anchor) return pen;
-  const d = Math.hypot(pen.x - anchor.x, pen.y - anchor.y);
-  if (d <= radius) return anchor;
-  const move = (d - radius) / d;
-  return { x: anchor.x + (pen.x - anchor.x) * move, y: anchor.y + (pen.y - anchor.y) * move };
 }
 
 /** Steadies a whole stroke, then adds the raw last point so the ink reaches the lift point. */
