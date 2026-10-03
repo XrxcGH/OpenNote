@@ -6,6 +6,7 @@ import type { EditorHost } from '../../editor/host';
 import { createMarkdownCache } from '../../editor/markdown';
 import type { MarkdownCache } from '../../editor/markdown';
 import { beforeExit } from '../../registries';
+import type { PageViewMode } from '../../platform/bindings/PageViewMode';
 import type { AppliedFrame, BlockId, BlockJson, OpenPage } from '../../services/pages/types';
 import { osStore } from '../../state/os';
 import { announce } from '../../ui';
@@ -16,6 +17,8 @@ import { markDraft } from './blocks/textBlock';
 import { createEditorHost } from './editorHost';
 import { createFlow } from './layout/flow';
 import type { Flow } from './layout/flow';
+import { createPageLayout } from './layout/actions';
+import type { PageLayout } from './layout/actions';
 import { createEditorPool, shownPool } from './pool/pool';
 import type { PagePool } from './pool/pool';
 import { createSelectTool } from './pool/selectTool';
@@ -29,7 +32,9 @@ import { createGestureTool } from './viewport/gestures';
 import { rememberView, restoreView } from './viewport/remember';
 import { createRouter } from './viewport/router';
 import type { PointerToolDef } from './viewport/router';
-import { shownFitWidth } from './viewport/shown';
+import { shownFitWidth, shownPage } from './viewport/shown';
+import { createTitle } from './title/title';
+import type { TitleBand } from './title/title';
 import { createViewport, shownViewport } from './viewport/viewport';
 import type { PageViewport } from './viewport/viewport';
 
@@ -42,6 +47,8 @@ export interface MountedPage {
   readonly sync: SyncQueue;
   readonly cache: MarkdownCache;
   readonly host: EditorHost;
+  readonly title: TitleBand | null;
+  readonly layout: PageLayout;
   /** Flushes, closes the page, and removes the view. */
   destroy(): Promise<void>;
 }
@@ -49,7 +56,14 @@ export interface MountedPage {
 export interface MountOptions {
   classNames: { viewport: string; world: string; underlay: string };
   host?: Partial<EditorHost>;
+  /** The compact Reading view; by default it follows the size class, the page, and the saved choice. */
   reading?: boolean;
+  /** The compact size class, where pages with floating blocks open in the Reading view. */
+  compact?: boolean;
+  /** The view this device last chose for the page. */
+  savedView?: PageViewMode | null;
+  /** The title band, inside the world. */
+  title?: { text: string; changed: string | null };
   /** Called when undo or another window changes the title, tags, or view. */
   onPageFields?(fields: NonNullable<AppliedFrame['page']>): void;
   /** Whether the shown page's stores point at this view; tests that mount several pages turn it off. */
@@ -89,6 +103,7 @@ function routePointers(viewport: PageViewport, tools: readonly PointerToolDef[])
 /** Points the shown page's stores at this view. Returns a function that clears them if they still point here. */
 function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
   shownViewport.set(mounted.viewport);
+  shownPage.set(mounted.layout);
   shownFitWidth.set(() => mounted.flow.fitWidth());
   shownQueue.set(mounted.sync);
   shownPool.set(mounted.pool);
@@ -98,6 +113,7 @@ function showPage(mounted: Omit<MountedPage, 'destroy'>): () => void {
     shownQueue.set(null);
     shownPool.set(null);
     shownViewport.set(null);
+    shownPage.set(null);
     shownFitWidth.set(null);
     setGeometrySource(null);
   };
@@ -110,35 +126,74 @@ function followScreenReader(pool: PagePool, host: EditorHost): () => void {
   return osStore.subscribe(sync);
 }
 
+/** Pages with floating blocks open in the Reading view in the compact size class, unless Canvas was chosen. */
+function opensInReading(page: OpenPage, options: MountOptions): boolean {
+  if (options.reading !== undefined) return options.reading;
+  const floating = page.initial.blocks.some((block) => block.frame?.x !== undefined && block.frame?.y !== undefined);
+  return (options.compact ?? false) && floating && options.savedView !== 'canvas';
+}
+
+interface TitleParts {
+  readonly page: OpenPage;
+  readonly sync: SyncQueue;
+  readonly layer: PageBlockLayer;
+  readonly pool: PagePool;
+}
+
+/** The title band, wired to send typing as setPage and to move into the page on Enter. */
+function titleBand(world: HTMLElement, parts: TitleParts, options: MountOptions): TitleBand | null {
+  if (!options.title) return null;
+  const { page, sync, layer, pool } = parts;
+  return createTitle(world, {
+    title: options.title.text,
+    changed: options.title.changed,
+    readOnly: page.readOnly !== null,
+    send(title) {
+      void sync.send({ edits: [{ edit: 'setPage', title }], coalesce: { kind: 'typing', target: 'title' } });
+    },
+    enterPage() {
+      const first = layer.blocks().find((block) => block.type === 'text');
+      if (first) pool.mount(first.id, { kind: 'start' }, 'target');
+    },
+  });
+}
+
 export function mountPage(container: HTMLElement, page: OpenPage, options: MountOptions): MountedPage {
   const cache = createMarkdownCache();
   const viewport = createViewport(container, options.classNames);
   const flow = createFlow(viewport);
   flow.setView(page.initial.view);
-  flow.setReading(options.reading ?? false);
+  const reading = opensInReading(page, options);
+  flow.setReading(reading);
   restoreView(page.id, viewport);
   const pool = createEditorPool();
   const host = createEditorHost(options.host);
   const frames = frameContext(pool, () => layer, {
     setPageFields(fields) {
       if (fields.view) {
-        flow.setView(fields.view);
+        layout.setView(fields.view);
         layer.setPreferredOrder(fields.view.readingOrder ?? []);
       }
+      if (fields.title !== undefined) title?.setTitle(fields.title);
       options.onPageFields?.(fields);
     },
     selectObjects: (blocks) => selectOnPage({ blocks, strokes: [] }),
   });
   const sync = createSyncQueue({ page, cache, frames, announce });
-  const reading = options.reading ?? false;
   const layer = createBlockLayer(flow.element, { page, host, viewport, pool, sync, cache, reading });
   layer.apply(page.initial);
   if (!page.readOnly && !page.initial.blocks.some((block) => block.type === 'text')) layer.upsert(draftTextBlock());
+  const title = titleBand(viewport.world, { page, sync, layer, pool }, options);
+  const compact = options.compact ?? false;
+  const layout = createPageLayout({ page, sync, layer, pool, flow, viewport, compact, reading });
   const gestures = createGestureTool(viewport);
-  const mounted = { page, viewport, flow, layer, pool, sync, cache, host };
+  const select = createSelectTool(pool, { world: viewport.world, pressEmpty: (point) => layout.pressEmpty(point) });
+  const mounted = { page, viewport, flow, layer, pool, sync, cache, host, title, layout };
   const stops = [
     rememberView(page.id, viewport),
-    routePointers(viewport, [gestures, createSelectTool(pool)]),
+    routePointers(viewport, [gestures, select]),
+    () => layout.stop(),
+    () => title?.destroy(),
     () => gestures.destroy(),
     followScreenReader(pool, host),
     options.shown === false ? () => undefined : showPage(mounted),

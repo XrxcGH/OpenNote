@@ -15,7 +15,7 @@ export function restoreView(pageId: string, viewport: PageViewport): void {
   const seen = viewport.camera().viewport;
   viewport.zoomAt(zoom, { x: seen.x, y: seen.y }, 'commandZoom');
   // Blocks below the viewport may not have their heights yet, so the world makes room for the saved place first.
-  viewport.setContent({ w: (saved.scrollX + seen.w) / zoom, h: (saved.scrollY + seen.h) / zoom });
+  viewport.setContent({ w: (saved.scrollX + seen.w) / zoom, h: (saved.scrollY + seen.h) / zoom, floating: false });
   viewport.scrollTo(saved.scrollX, saved.scrollY);
 }
 

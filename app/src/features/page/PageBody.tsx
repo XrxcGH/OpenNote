@@ -2,16 +2,27 @@
 // sync code stay out of the start-up bundle. They mount imperatively, so React never re-renders on a keystroke.
 
 import { useEffect, useRef, useState } from 'react';
+import { getSizeClass } from '../../state/layout';
 import { t } from '../../strings/t';
 import { mountPage } from './mount';
 import styles from './PageView.module.css';
-import { pagesClient } from './runtime';
+import { pagesClient, pageView } from './runtime';
+import { takeTitleFocus, TitlePlaceholder } from './title/TitlePlaceholder';
 
 const LAYERS = { viewport: '', world: '', underlay: '' };
 
-export default function PageBody({ pageId }: { pageId: string }) {
+export interface PageBodyProps {
+  pageId: string;
+  /** The tree's name for the page, shown when the page itself has no title yet. */
+  title: string;
+  changed: string | null;
+}
+
+export default function PageBody({ pageId, title, changed }: PageBodyProps) {
   const host = useRef<HTMLDivElement>(null);
+  const placeholder = useRef<HTMLHeadingElement | null>(null);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     let cancelled = false;
     let destroy: (() => Promise<void>) | null = null;
@@ -19,17 +30,28 @@ export default function PageBody({ pageId }: { pageId: string }) {
       .open(pageId, { viewport: null })
       .then((page) => {
         if (cancelled || !host.current) return void page.close();
-        destroy = mountPage(host.current, page, { classNames: LAYERS }).destroy;
+        const mounted = mountPage(host.current, page, {
+          classNames: LAYERS,
+          title: { text: page.initial.title || title, changed },
+          compact: getSizeClass() === 'compact',
+          savedView: pageView(page.id)?.view ?? null,
+        });
+        destroy = mounted.destroy;
+        if (takeTitleFocus(placeholder.current)) mounted.title?.heading.focus();
+        setReady(true);
       })
       .catch(() => !cancelled && setFailed(true));
     return () => {
       cancelled = true;
       void destroy?.();
     };
+    // The title and the changed line are read once, when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageId]);
   return (
     <>
       {failed && <p role="alert">{t('page.openFailed')}</p>}
+      {!ready && !failed && <TitlePlaceholder ref={placeholder} title={title} changed={changed} />}
       <div ref={host} className={styles.body} />
     </>
   );

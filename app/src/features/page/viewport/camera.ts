@@ -86,9 +86,12 @@ export function rectToClient(camera: Camera, rect: PageRect): PageRect {
   return { x: origin.x, y: origin.y, w: rect.w * camera.zoom, h: rect.h * camera.zoom };
 }
 
+/** Room to the right of freeform content, in page units, for the next text box or drawing. */
+export const ROOM_RIGHT = 480;
+
 /**
- * The world's size while a page is open (ARCHITECTURE.md section 5.1): the content plus half a viewport below and
- * 480 units to the right, at least the viewport, and never smaller than before, so content never jumps.
+ * The world's size while a page is open (ARCHITECTURE.md section 5.1): the content (with its room to the right)
+ * plus half a viewport below, at least the viewport, and never smaller than before, so content never jumps.
  */
 export function worldSize(
   content: { w: number; h: number },
@@ -98,7 +101,7 @@ export function worldSize(
 ): { w: number; h: number } {
   const seenW = viewport.w / zoom;
   const seenH = viewport.h / zoom;
-  const w = Math.ceil(Math.max(content.w + 480, seenW, previous?.w ?? 0));
+  const w = Math.ceil(Math.max(content.w, seenW, previous?.w ?? 0));
   const h = Math.ceil(Math.max(content.h + seenH / 2, seenH, previous?.h ?? 0));
   return { w, h };
 }

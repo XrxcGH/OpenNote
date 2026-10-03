@@ -87,11 +87,12 @@ function place(editor: Editor, target: MountTarget, entry: Entry): void {
   if (target.kind === 'remembered' && entry.remembered) {
     const size = editor.state.doc.content.size;
     const clamp = (pos: number) => Math.max(0, Math.min(pos, size));
-    editor.commands.focus(null, { scrollIntoView: false });
     editor.commands.setTextSelection({ from: clamp(entry.remembered.anchor), to: clamp(entry.remembered.head) });
-    return;
+    return editor.view.focus();
   }
   editor.commands.focus(target.kind === 'end' ? 'end' : 'start', { scrollIntoView: false });
+  // Tiptap focuses in the next frame; the person's next key must land in this editor.
+  editor.view.focus();
 }
 
 class Pool implements PagePool {

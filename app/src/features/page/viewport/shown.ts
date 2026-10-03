@@ -9,6 +9,21 @@ export const shownViewport = createStore<PageViewportApi | null>(null, 'page vie
 /** The zoom that fits the shown page's content to the viewport's width, set while a page is shown. */
 export const shownFitWidth = createStore<(() => number) | null>(null, 'page fit width');
 
+/** What the page commands do to the shown page. Its code loads with the page; the commands load at start-up. */
+export interface PageActions {
+  /** A caret for a new floating text box, 16 units below the last focused block or at the view's top left. */
+  newTextBox(): void;
+  layout(): 'freeform' | 'flow';
+  setLayout(layout: 'freeform' | 'flow'): void;
+  /** Whether the compact Reading view applies: the compact size class. */
+  readingAvailable(): boolean;
+  reading(): boolean;
+  setReading(on: boolean): void;
+}
+
+/** The shown page's actions, set while a page is shown. */
+export const shownPage = createStore<PageActions | null>(null, 'page actions');
+
 export function usePageViewport(): PageViewportApi | null {
   return useStore(shownViewport, (viewport) => viewport);
 }

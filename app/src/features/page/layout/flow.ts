@@ -19,18 +19,20 @@ export interface Flow {
 }
 
 /** The right and bottom edges of everything in the world, in page units. */
-function contentExtent(world: HTMLElement, flow: HTMLElement): { w: number; h: number } {
+function contentExtent(world: HTMLElement, flow: HTMLElement): { w: number; h: number; floating: boolean } {
   let w = flow.offsetLeft + flow.offsetWidth;
   let h = flow.offsetTop + flow.offsetHeight;
+  let floating = false;
   for (const child of flow.children) {
     if (!(child instanceof HTMLElement)) continue;
     w = Math.max(w, child.offsetLeft + child.offsetWidth);
     h = Math.max(h, child.offsetTop + child.offsetHeight);
+    floating ||= child.style.left !== '';
   }
   for (const child of world.children) {
     if (child instanceof HTMLElement && child !== flow) h = Math.max(h, child.offsetTop + child.offsetHeight);
   }
-  return { w, h };
+  return { w, h, floating };
 }
 
 export function createFlow(viewport: PageViewport): Flow {

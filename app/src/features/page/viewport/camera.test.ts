@@ -65,7 +65,7 @@ describe('the camera', () => {
   });
 
   it('grows the world past the content and never shrinks it', () => {
-    const first = worldSize({ w: 1000, h: 3000 }, { w: 800, h: 600 }, 1, null);
+    const first = worldSize({ w: 1480, h: 3000 }, { w: 800, h: 600 }, 1, null);
     expect(first).toEqual({ w: 1480, h: 3300 });
     expect(worldSize({ w: 10, h: 10 }, { w: 800, h: 600 }, 1, first)).toEqual(first);
     expect(worldSize({ w: 0, h: 0 }, { w: 800, h: 600 }, 0.5, null)).toEqual({ w: 1600, h: 1200 });

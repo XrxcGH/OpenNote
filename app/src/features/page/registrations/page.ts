@@ -1,6 +1,8 @@
-// WP3's registrations: page zoom (ARCHITECTURE.md section 5.3, amendment P2-13). Ctrl+wheel over the page zooms it
-// too, and Ctrl+=, Ctrl+-, and Ctrl+0 keep changing the interface text size.
+// WP3's registrations: page zoom (ARCHITECTURE.md section 5.3, amendment P2-13), the page's layout commands, and
+// the object commands. Ctrl+wheel over the page zooms it too, and Ctrl+=, Ctrl+-, and Ctrl+0 keep changing the
+// interface text size. Each command reaches the shown page through a light store, so start-up loads none of it.
 import { registerPageCommand } from '../keys';
+import { shownPage } from '../viewport/shown';
 import { canFitPageWidth, canZoomPage, fitPageWidth, resetPageZoom, stepPageZoom } from '../zoom';
 
 const ZOOM = [
@@ -13,3 +15,38 @@ const ZOOM = [
 for (const { id, title, run, enabled } of ZOOM) {
   registerPageCommand({ id, title, keywords: 'page.zoom.keywords', category: 'view', enabled, run });
 }
+
+const shown = () => shownPage.get();
+
+registerPageCommand({
+  id: 'page.newTextBox',
+  title: 'page.commands.newTextBox',
+  keywords: 'page.commands.newTextBoxKeywords',
+  category: 'insert',
+  enabled: () => shown() !== null,
+  run: () => shown()?.newTextBox(),
+});
+
+registerPageCommand({
+  id: 'page.layout',
+  title: 'page.commands.layout',
+  keywords: 'page.commands.layoutKeywords',
+  category: 'view',
+  enabled: () => shown() !== null,
+  run: () => {
+    const page = shown();
+    page?.setLayout(page.layout() === 'flow' ? 'freeform' : 'flow');
+  },
+});
+
+registerPageCommand({
+  id: 'page.readingView',
+  title: 'page.commands.readingView',
+  keywords: 'page.commands.readingViewKeywords',
+  category: 'view',
+  enabled: () => shown()?.readingAvailable() ?? false,
+  run: () => {
+    const page = shown();
+    page?.setReading(!page.reading());
+  },
+});

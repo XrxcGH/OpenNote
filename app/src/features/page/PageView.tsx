@@ -14,6 +14,7 @@ import { t } from '../../strings/t';
 import { ProgressBar, useDelayedFlag } from '../../ui';
 import { titleOf, useTreeNode } from '../tree';
 import { EmptyPageArt } from './EmptyPageArt';
+import { TitlePlaceholder } from './title/TitlePlaceholder';
 import styles from './PageView.module.css';
 import { usePageZoom } from './zoom';
 
@@ -45,15 +46,13 @@ export function PageView() {
   const editing = useFlag('page.editor');
   const shown = editing && page !== null;
   const zoom = usePageZoom(shown ? null : (page?.id ?? null));
-  useEffect(() => registerRegionMain('page', () => heading.current), []);
-  const titleBlock = (
-    <>
-      <h1 ref={heading} tabIndex={-1} className={styles.title}>
-        {page ? titleOf(page) : t('tree.page.noneTitle')}
-      </h1>
-      {page && <p className={styles.changed}>{t('tree.page.changed', { date: formatDate(page.modified) })}</p>}
-    </>
+  // With the editor on, the heading is the title band in the page's world, or its placeholder while it loads.
+  useEffect(
+    () => registerRegionMain('page', () => heading.current ?? document.querySelector('h1[data-page-title]')),
+    [],
   );
+  const title = page ? titleOf(page) : t('tree.page.noneTitle');
+  const changed = page ? t('tree.page.changed', { date: formatDate(page.modified) }) : null;
   return (
     <article
       className={shown ? styles.editing : styles.page}
@@ -62,11 +61,17 @@ export function PageView() {
       style={zoom === 100 ? undefined : { zoom: zoom / 100 }}
     >
       {showProgress && <ProgressBar label={t('tree.loading.page')} />}
-      {shown ? <div className={styles.header}>{titleBlock}</div> : titleBlock}
-      {shown && (
-        <Suspense fallback={null}>
-          <PageBody key={page.id} pageId={page.id} />
+      {shown ? (
+        <Suspense fallback={<TitlePlaceholder title={title} changed={changed} />}>
+          <PageBody key={page.id} pageId={page.id} title={title} changed={changed} />
         </Suspense>
+      ) : (
+        <>
+          <h1 ref={heading} tabIndex={-1} className={styles.title}>
+            {title}
+          </h1>
+          {changed && <p className={styles.changed}>{changed}</p>}
+        </>
       )}
       {page && !editing && <p className={styles.note}>{t('tree.page.empty')}</p>}
       {!page && !loading && (

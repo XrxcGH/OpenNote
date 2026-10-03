@@ -19,10 +19,20 @@ import type { BlockRenderContext, BlockRendererDef, BlockView } from './types';
 
 const drafts = new WeakMap<BlockJson, PendingInsert>();
 const syncs = new WeakMap<Editor, TextSyncHandle>();
+const ephemeral = new WeakSet<BlockJson>();
+
+/** Fired on a draft's wrapper when it loses focus empty and untouched; the page removes it unsaved. */
+export const DISCARD_DRAFT = 'opennote-discard-draft';
 
 /** A text box that isn't in page.json yet. Its first change inserts it. */
 export function markDraft(block: BlockJson, insert: PendingInsert): BlockJson {
   drafts.set(block, insert);
+  return block;
+}
+
+/** A draft that disappears if it loses focus while still empty: a caret for a new text box. */
+export function markEphemeral(block: BlockJson): BlockJson {
+  ephemeral.add(block);
   return block;
 }
 
@@ -102,6 +112,8 @@ class TextBlockView implements LazyBlockView {
   private editor: Editor | null = null;
   private sync: TextSyncHandle | null = null;
   private draft: PendingInsert | null;
+  private readonly ephemeral: boolean;
+  private touched = false;
   private readonly saved: [string, string][];
   private readonly unregister: () => void;
 
@@ -111,6 +123,7 @@ class TextBlockView implements LazyBlockView {
   ) {
     this.markdown = markdownOf(block);
     this.draft = drafts.get(block) ?? null;
+    this.ephemeral = ephemeral.has(block);
     this.element = document.createElement('div');
     this.element.className = styles.block;
     this.element.setAttribute('role', 'group');
@@ -174,6 +187,8 @@ class TextBlockView implements LazyBlockView {
     const editor = createBlockEditor(this.editRoot, doc, { kind: 'text', block: this.block.id, host: this.ctx.host });
     const sync = attachTextSync(editor, this.block.id, this.ctx.sync, this.ctx.cache, this.markdown, this.draft);
     syncs.set(editor, sync);
+    editor.on('update', this.onUpdate);
+    editor.on('blur', this.onBlur);
     this.editor = editor;
     this.sync = sync;
     return editor;
@@ -186,6 +201,8 @@ class TextBlockView implements LazyBlockView {
     this.markdown = sync.lastSent();
     this.draft = null;
     sync.detach();
+    editor.off('update', this.onUpdate);
+    editor.off('blur', this.onBlur);
     editor.destroy();
     this.editor = null;
     this.sync = null;
@@ -193,6 +210,16 @@ class TextBlockView implements LazyBlockView {
     this.editRoot.style.minBlockSize = '';
     renderStatic(this.doc, this.editRoot);
   }
+
+  private readonly onUpdate = () => {
+    this.touched = true;
+  };
+
+  private readonly onBlur = () => {
+    if (!this.ephemeral || this.touched || (this.editor?.state.doc.textContent ?? '') !== '') return;
+    const discard = new CustomEvent(DISCARD_DRAFT, { bubbles: true, detail: this.block.id });
+    queueMicrotask(() => this.element.dispatchEvent(discard));
+  };
 
   /** Tab, a screen reader, or a script focused the static root: mount with the caret where it last was. */
   private readonly onFocus = () => {

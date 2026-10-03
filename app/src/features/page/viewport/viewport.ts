@@ -3,7 +3,7 @@
 // the camera: scroll and zoom listeners read no layout, a ResizeObserver keeps the viewport's rectangle, and camera
 // listeners run at most once per frame during a gesture and once more when it settles.
 import type { PageRect } from '../../../services/pages/types';
-import { cameraToClient, cameraToWorld, clampZoom, scrollForZoom, snapToDevice, worldSize } from './camera';
+import { cameraToClient, cameraToWorld, clampZoom, ROOM_RIGHT, scrollForZoom, snapToDevice, worldSize } from './camera';
 import type { Camera, GestureKind, Point } from './camera';
 import styles from './viewport.module.css';
 
@@ -34,8 +34,11 @@ export interface PageViewport extends PageViewportApi {
   readonly sizer: HTMLElement;
   /** Whether anything holds the camera. */
   held(): boolean;
-  /** The content's extent in page units; the world grows to fit it and never shrinks. */
-  setContent(size: { w: number; h: number }): void;
+  /**
+   * The content's extent in page units; the world grows to fit it and never shrinks. Floating content gets room to
+   * its right; a page of flowing text gets none, so it never scrolls sideways.
+   */
+  setContent(size: { w: number; h: number; floating?: boolean }): void;
   beginGesture(kind: GestureKind): void;
   endGesture(kind: GestureKind): void;
   /** Scrolls by CSS px. */
@@ -178,9 +181,10 @@ class Viewport implements PageViewport {
     this.scrollTo(x, y);
   }
 
-  setContent(next: { w: number; h: number }): void {
-    if (next.w <= this.content.w && next.h <= this.content.h) return;
-    this.content = { w: Math.max(next.w, this.content.w), h: Math.max(next.h, this.content.h) };
+  setContent(next: { w: number; h: number; floating?: boolean }): void {
+    const w = next.w + (next.floating === false ? 0 : ROOM_RIGHT);
+    if (w <= this.content.w && next.h <= this.content.h) return;
+    this.content = { w: Math.max(w, this.content.w), h: Math.max(next.h, this.content.h) };
     this.resize();
   }
 
@@ -264,7 +268,9 @@ class Viewport implements PageViewport {
 
   private resize(): void {
     const { rect, zoom } = this;
-    const size = worldSize(this.content, { w: rect.width, h: rect.height }, zoom, this.size);
+    // The viewport's inside, without its scroll bar gutter, so a page that fits never scrolls sideways.
+    const inner = { w: this.viewport.clientWidth || rect.width, h: this.viewport.clientHeight || rect.height };
+    const size = worldSize(this.content, inner, zoom, this.size);
     this.size = size;
     this.world.style.inlineSize = `${size.w}px`;
     this.world.style.blockSize = `${size.h}px`;
