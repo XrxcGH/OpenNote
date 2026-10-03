@@ -1,0 +1,69 @@
+/* Element defaults. Every value comes from a design token (see app/src/theme/tokens.css). */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  :root {
+    /* Target sizes that follow density (ARCHITECTURE.md section 9.8): the pointer sizes from BRAND.md section 6,
+       or 44 px targets with touch density. Components use these rather than choosing a size themselves. */
+    --target-size: var(--size-target-pointer);
+    --toolbar-size: var(--size-toolbar-pointer);
+    /* What scroll containers keep clear at their bottom, so focus never lands under a toast or the bottom bar
+       (WCAG 2.4.11). Toaster keeps --toast-height current; scroll containers use this in scroll-padding. */
+    --toast-clearance: calc(var(--toast-height, 0px) + var(--bottom-bar-height, 0px) + var(--space-4));
+  }
+
+  html {
+    scroll-padding-block-end: var(--toast-clearance);
+  }
+
+  html,
+  body,
+  #root {
+    block-size: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: var(--color-surface-app);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+  }
+
+  /* Focus is always visible (ARCHITECTURE.md section 15.7): a 2 px focus.ring outline with a 2 px gap. Outlines
+     survive Windows contrast themes, which remove box shadows. Components may move the ring, never remove it. */
+  :focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  /* Switching themes crossfades the whole window (docs/BRAND.md section 4). With reduced motion the base token is
+     100 ms. Chromium sends clicks made during the fade to the root element, even with pointer-events: none. */
+  ::view-transition-group(root) {
+    animation-duration: var(--motion-duration-base);
+    animation-timing-function: var(--motion-easing-standard);
+  }
+
+  /* Overlays close with a quick fade on a copy of themselves (ui/topLayer.ts playExit), so the real element can
+     leave at once and focus can move on. */
+  [data-exiting] {
+    animation: exit-fade var(--motion-duration-quick) var(--motion-easing-exit) forwards;
+    pointer-events: none;
+  }
+
+  @keyframes exit-fade {
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+@layer states {
+  :root[data-density='touch'] {
+    --target-size: var(--size-target-touch);
+    --toolbar-size: var(--size-toolbar-touch);
+  }
+}

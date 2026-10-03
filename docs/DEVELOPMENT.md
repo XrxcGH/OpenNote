@@ -292,6 +292,12 @@ The next steps, in rough order:
 4. PDF annotation, flashcards from notes, and citation support.
 5. Meeting mode with speaker labels.
 6. Real-time collaboration.
+7. Plugins and scripts, with the same permissions and access log as the local API.
+8. Comments and mentions on shared pages, built on real-time collaboration.
+9. Publishing a page or notebook as a read-only site from the self-hosted server.
+10. PDF forms, signatures, and redaction, and page tools to merge, split, rotate, and reorder PDF pages.
+11. Widgets for quick capture and the Upcoming list, on Windows 11 and phones.
+12. Sending a page to a nearby device on the same network, with no account.
 
 ## 6. Testing strategy
 
@@ -435,6 +441,7 @@ A build ships to beta or stable only when every item is checked:
 A feature is done, and can leave its feature flag, when:
 
 - [ ] It works with mouse, keyboard, touch, and pen, in every size class and both themes.
+- [ ] Every drag has a click or keyboard alternative, as the Web Content Accessibility Guidelines (WCAG) 2.2 require (success criterion 2.5.7).
 - [ ] It has unit tests, and an E2E test for its main task.
 - [ ] It meets the performance budgets, with a benchmark if it could affect them.
 - [ ] It passes automated accessibility checks and the relevant manual checklist items.

@@ -1,0 +1,5 @@
+// lint-as: tests/e2e/keyboard/bad.spec.ts
+// expect: no-restricted-syntax
+export async function run(button: { click(): Promise<void> }) {
+  await button.click();
+}

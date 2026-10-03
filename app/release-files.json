@@ -1,0 +1,5 @@
+[
+  { "platform": "windows-x86_64", "target": "x86_64-pc-windows-msvc", "file": "OpenNote_Windows64.exe" },
+  { "platform": "windows-i686", "target": "i686-pc-windows-msvc", "file": "OpenNote_Windows32.exe" },
+  { "platform": "windows-aarch64", "target": "aarch64-pc-windows-msvc", "file": "OpenNote_WindowsARM64.exe" }
+]

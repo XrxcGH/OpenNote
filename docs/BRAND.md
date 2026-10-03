@@ -111,12 +111,12 @@ Dark mode is a setting people can switch at any moment, not something hidden in 
 
 Ways to switch, all with the same result:
 
-- A sun and moon toggle in the title bar, always one click, or tap away. It switches between Light and Dark. A long press or right-click opens all three choices.
+- A sun and moon toggle in the title bar, always one click, or tap away. It switches between Light and Dark. A long press, a right-click, Shift+F10, or the Menu key opens all three choices and a link to Settings.
 - The shortcut Ctrl+Shift+D, which people can change in settings.
 - "Toggle dark mode" in the command palette (Ctrl+K).
 - Settings, then Appearance, which shows all three choices with small previews.
 
-First-time setup asks once. The "Choose your look" step shows Light, Dark and Match Windows as three preview cards, and the whole screen changes as the person picks one. The card that matches the current Windows setting is selected in advance, so pressing Continue keeps what they already use. The choice is stored before the first page ever opens.
+First-time setup asks once. The "Choose your look" step shows Light, Dark and Match Windows as three preview cards, and the whole screen changes as the person picks one. Match Windows is selected in advance, with a caption that names the Windows setting, such as "Preselected because Windows is set to Light." The screen already matches Windows. Pressing Continue keeps what they already use. The choice is stored before the first page ever opens.
 
 The preference belongs to the person, not the device. If they later turn on an account for sync, the setup asks whether to keep this device's choice or use the one saved in their account. After that, each device can override it.
 
@@ -126,7 +126,8 @@ Rules for the switch:
 - Switching crossfades every surface over 200 ms (the `base` token), or 100 ms with reduced motion. Content, scroll position, and selection stay exactly where they were.
 - Notes don't change. Ink uses each pen's light or dark value, and pasted images keep their colors.
 - A separate "Page color" setting lets people keep paper-white pages inside the dark interface, for reading or printing previews. It defaults to matching the theme.
-- Windows contrast themes always take priority over this setting.
+- A theme change applies at most once every 350 ms, and the latest choice wins, so a held key or a repeated shortcut can't flash the screen.
+- Windows contrast themes always take priority over this setting. The toggle then stays focusable but disabled, and says why. The choice is kept, and applies again when the contrast theme is off.
 
 ## 5. Typography
 
@@ -172,6 +173,8 @@ The layout adapts to the window width, not the device type:
 | Medium | 600 to 839 | Page list and page side by side. Notebooks in a slide-over drawer. |
 | Expanded | 840 to 1,199 | Notebook sidebar (272) and page. The page list opens as an overlay. |
 | Wide | 1,200 and up | Three panes: notebooks (272), pages (300), page (at least 480). |
+
+Button and row sizes follow the pointer by default. A touch or pen tap switches to the touch sizes, and a mouse click switches back, never in the middle of a gesture. People who want large targets with a mouse can choose Large in Settings, then Appearance. "Interface size" scales the sidebars, toolbars, and menus from 90% to 150% without changing the page zoom. The title bar is 40 tall, or 48 with touch sizes, and the Windows buttons are 46 wide.
 
 Panes resize by dragging, and collapse with a button or keyboard shortcut. Paginated pages sit centered on `surface.sunken` with a soft shadow, like paper on a desk.
 
@@ -245,7 +248,8 @@ Heavy work, such as handwriting recognition, transcription, search indexing, exp
 | Navigation tree | Notebooks, sections, and pages with color chips. Drag to reorder. Full keyboard support with arrow keys. |
 | Page canvas | Paper backgrounds (plain, lined, dot grid, graph, Cornell) drawn with `border.subtle`. Page breaks are dashed lines with the page number in `text.muted`. |
 | Recording bar | Pinned above the page, with a pulsing dot, elapsed time, and pause and stop buttons. Timestamps link to ink and text. |
-| Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch. |
+| Theme toggle | Sun and moon icon in the title bar with the tooltip "Dark mode (Ctrl+Shift+D)". Shows the current state and exposes it to screen readers as a switch, with a hidden description of how to reach Light, Dark, and Match Windows. |
+| Theme cards | Three cards in a radio group named "Theme", each with a small live preview that screen readers and Tab skip. Holding an arrow key moves one step. |
 | Sync status | A small icon with a text tooltip in the title bar: saved, syncing, offline, or needs attention. Never a blocking dialog. |
 | Dialogs | Title, one-sentence explanation, then actions (primary on the right). Escape closes. Focus returns to where it was. |
 | Update notice | A small "Update ready" chip in the title bar, with release notes on hover or tap. "Restart to update" applies it; otherwise it applies the next time the app closes. Never a pop-up, never mid-task. |

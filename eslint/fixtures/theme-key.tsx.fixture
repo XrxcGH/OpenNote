@@ -1,0 +1,3 @@
+// lint-as: app/src/features/theme/Bad.tsx
+// expect: opennote/no-theme-key
+export const Bad = (props: { theme: string }) => <div key={props.theme} />;

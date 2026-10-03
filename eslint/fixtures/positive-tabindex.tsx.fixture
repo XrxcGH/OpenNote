@@ -1,0 +1,3 @@
+// lint-as: app/src/features/theme/Bad.tsx
+// expect: no-restricted-syntax
+export const Bad = () => <div tabIndex={1} />;

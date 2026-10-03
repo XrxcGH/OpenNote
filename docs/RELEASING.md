@@ -35,7 +35,7 @@ Look after both files:
 
 - Never commit the private key. The `.gitignore` file skips `*.key` files, but keep the key outside the repository anyway.
 - Save the private key and its password in a password manager, with an offline backup. If either is lost, copies already installed can't accept any later update.
-- Keep the public key. Phase 2 adds it to the app's updater config. It isn't secret.
+- Keep the public key. It isn't secret. Commit it as `app/src-tauri/keys/update.pub`, and the build embeds it. Until it is there, every build keeps the updater off, and Settings, then Updates, says why.
 
 If the private key leaks, generate a new pair. Ship one last release signed with the old key that carries the new public key. Then replace both secrets, so later releases are signed with the new key.
 
@@ -129,7 +129,7 @@ Next to each exe is its update signature, with `.sig` added to the name, such as
 
 Each name starts with `OpenNote_`, followed by the operating system and, where needed, the architecture. Later, macOS and Linux builds will ship as `OpenNote_macOS.dmg` and `OpenNote_Linux.AppImage`.
 
-The table lives in `RELEASE_FILES`, in [write-manifest.ts](../app/scripts/write-manifest.ts). The build matrix in [release.yml](../.github/workflows/release.yml) lists the same targets and names, and a unit test fails if the two differ. To add a file, change both.
+The table lives in [app/release-files.json](../app/release-files.json). [write-manifest.ts](../app/scripts/write-manifest.ts) reads it. The updater in `crates/updater` compiles in the same rows, so each build knows the one file it may update to. The build matrix in [release.yml](../.github/workflows/release.yml) lists the same targets and names. A unit test fails if the matrix differs from the table, and a Rust test fails if the updater's rows do. To add a file, change all three.
 
 ## What the release workflow does
 
@@ -168,7 +168,7 @@ This job runs on `windows-latest`. It's the only job that can write to the repos
 1. Check out the repository, set up Node.js 22, and install the project tools with `npm ci --ignore-scripts`.
 2. Download the three exes into `dist-release`.
 3. Sign each exe with `npx tauri signer sign --app-version`, followed by the tag without its `v`. This writes a signature next to each exe, such as `OpenNote_Windows64.exe.sig`. The version goes into each signature's trusted comment, which the signature covers, so nobody can change it without the private key. Only this step gets the two secrets. If `TAURI_SIGNING_PRIVATE_KEY` isn't set, it fails with an error.
-4. Write the update manifest with [write-manifest.ts](../app/scripts/write-manifest.ts). It writes `latest.json`, or `beta.json` for a tag with a hyphen. The script stops if any of the three exes or their `.sig` files is missing or empty, or if any signed version differs from the tag.
+4. Write the update manifest with [write-manifest.ts](../app/scripts/write-manifest.ts). It writes `latest.json`, or `beta.json` for a tag with a hyphen. The script stops if any of the three exes or their `.sig` files is missing or empty. It also stops if any signed version differs from the tag, or if any signature names another file than its exe.
 5. Publish a GitHub Release named after the tag, with every file in `dist-release`. Tags with a hyphen become prereleases. GitHub generates the release notes from the merged pull requests.
 
 ### The update manifest

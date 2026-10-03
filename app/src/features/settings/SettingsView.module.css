@@ -1,0 +1,148 @@
+/* The Settings page (ARCHITECTURE.md section 16.1). Tokens only. */
+@layer components {
+  .page {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    block-size: 100%;
+    min-block-size: 0;
+    background: var(--color-surface-app);
+    color: var(--color-text-primary);
+  }
+
+  .header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: var(--size-settings-nav) minmax(0, 1fr);
+    align-items: start;
+    align-content: start;
+    min-block-size: 0;
+    overflow-y: auto;
+  }
+
+  :global(:root[data-size-class='compact']) .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nav ul {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0 var(--space-3);
+    list-style: none;
+  }
+
+  .link {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--size-row-pointer);
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  :global(:root[data-density='touch']) .link {
+    min-block-size: var(--size-row-touch);
+  }
+
+  .link:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .link[aria-current='page'] {
+    background: var(--color-surface-selected);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .link:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .main {
+    display: grid;
+    gap: var(--space-6);
+    align-content: start;
+    min-inline-size: 0;
+    padding: var(--space-2) var(--space-7) var(--space-8);
+  }
+
+  .heading,
+  .listHeading {
+    inline-size: fit-content;
+    margin: 0;
+    font-size: var(--type-title2-size);
+    line-height: var(--type-title2-line);
+  }
+
+  .listHeading {
+    padding: 0 var(--space-4) var(--space-3);
+  }
+
+  .heading:focus-visible,
+  .listHeading:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  /* One setting: a label, what it says, and the control. */
+  .block {
+    display: grid;
+    gap: var(--space-2);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .block h2 {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .block p {
+    margin: 0;
+  }
+
+  .help {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .path {
+    overflow-wrap: anywhere;
+    font-family: var(--font-mono);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-2) var(--space-6);
+    margin: 0;
+  }
+
+  .facts dt {
+    color: var(--color-text-secondary);
+  }
+
+  .facts dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .flags {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}

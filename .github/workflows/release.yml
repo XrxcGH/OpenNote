@@ -48,7 +48,7 @@ jobs:
       # Let every architecture finish, so one run shows every failure. The publish job needs all three.
       fail-fast: false
       matrix:
-        # The same targets and file names as RELEASE_FILES in app/scripts/write-manifest.ts. Its tests check this.
+        # The same targets and file names as app/release-files.json. The write-manifest.ts tests check this.
         include:
           - target: x86_64-pc-windows-msvc
             file: OpenNote_Windows64.exe

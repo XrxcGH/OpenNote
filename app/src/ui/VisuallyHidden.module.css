@@ -1,0 +1,14 @@
+/* Text for assistive technology only: out of sight, but still read and still in the layout's reading order. */
+@layer components {
+  .hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

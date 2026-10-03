@@ -1,0 +1,32 @@
+[package]
+name = "opennote-updater"
+version = "0.1.0"
+description = "Checks for, verifies, and installs OpenNote updates, and rolls back a version that fails to start"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[features]
+# Accepts manifests from http://127.0.0.1 and one test key. Only CI's end-to-end builds turn it on, and the
+# release build job fails for an exe built with it (ARCHITECTURE.md section 18.12).
+test-endpoints = []
+
+[dependencies]
+# The manifest's signature field is the base64 text of the .sig file. Already built for the app's build script.
+base64 = "0.22.1"
+log.workspace = true
+minisign-verify = "=0.3.0"
+self-replace = "1.5.0"
+semver.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default", "win-system-proxy"] }
+
+[dev-dependencies]
+minisign = "0.10.0"
+# The tests serve updates from http://127.0.0.1, which only test-endpoints builds accept. Naming the crate itself
+# here turns the feature on for its own tests and examples only. The app's builds don't get it from here.
+opennote-updater = { path = ".", features = ["test-endpoints"] }
+proptest.workspace = true
+tempfile.workspace = true

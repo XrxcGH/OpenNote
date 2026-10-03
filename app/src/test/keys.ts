@@ -1,0 +1,46 @@
+// Real key presses and focus checks for component tests in the browser (PLAN.md section 3.14).
+
+import { expect } from 'vitest';
+import { page, userEvent } from 'vitest/browser';
+import type { Locator } from 'vitest/browser';
+
+const KEYS: Record<string, string> = {
+  Ctrl: 'Control',
+  Up: 'ArrowUp',
+  Down: 'ArrowDown',
+  Left: 'ArrowLeft',
+  Right: 'ArrowRight',
+  Space: 'Space',
+  Menu: 'ContextMenu',
+};
+
+/** Presses a chord such as 'Ctrl+Shift+D' with trusted key events: holds the modifiers, presses the key. */
+export async function pressChord(chord: string): Promise<void> {
+  const parts = chord.split('+').map((part) => KEYS[part] ?? part);
+  const key = parts.pop() ?? '';
+  const down = parts.map((part) => `{${part}>}`).join('');
+  const up = [...parts]
+    .reverse()
+    .map((part) => `{/${part}}`)
+    .join('');
+  // Punctuation is typed as itself: "{/}" would read as the end of a descriptor.
+  const pressed = /^[^A-Za-z0-9{[]$/.test(key) ? key : `{${key}}`;
+  await userEvent.keyboard(`${down}${pressed}${up}`);
+}
+
+/** Waits until focus is on the element. */
+export async function expectFocus(target: Element | Locator): Promise<void> {
+  const element = target instanceof Element ? target : target.element();
+  await expect.poll(() => document.activeElement).toBe(element);
+}
+
+/**
+ * Types into a field through a locator. Given a bare element, userEvent.type finds it by a CSS path such as
+ * "body > div:nth-child(4) > dialog". The path is made in the page and used a moment later by Playwright.
+ * A node added to the body in between (a live region, a toast, a tooltip) shifts an index. Then the path
+ * matches nothing, and the call waits for ever. A locator made from the element finds it by its label,
+ * placeholder, or role instead.
+ */
+export function typeInto(field: HTMLElement, text: string): Promise<void> {
+  return userEvent.type(page.elementLocator(field), text);
+}

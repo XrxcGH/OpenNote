@@ -1,0 +1,159 @@
+/* Dialogs (ARCHITECTURE.md section 15.1 and BRAND.md section 11). The layer and its scrim start below the title
+   bar, which is never dimmed, so the window can still be moved and closed. A dialog opens with a 320 ms fade
+   and scale from 0.97; the drawer slides in from the start edge instead. */
+@layer components {
+  .layer {
+    position: fixed;
+    inset-block: var(--title-bar-height, var(--size-title-bar)) 0;
+    inset-inline: 0;
+    z-index: var(--layer-dialog);
+    display: grid;
+    padding: var(--space-5);
+  }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--color-surface-scrim, transparent);
+    transition: opacity var(--motion-duration-slow) var(--motion-easing-enter);
+  }
+
+  .dialog {
+    position: relative;
+    inset: auto;
+    box-sizing: border-box;
+    inline-size: min(var(--dialog-width), 100%);
+    max-block-size: 100%;
+    margin: 0;
+    padding: var(--space-7);
+    overflow: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    box-shadow: var(--elevation-3);
+    transition:
+      opacity var(--motion-duration-slow) var(--motion-easing-enter),
+      scale var(--motion-duration-slow) var(--motion-easing-enter),
+      translate var(--motion-duration-slow) var(--motion-easing-enter);
+  }
+
+  .dialog[open] {
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+  }
+
+  .dialog:focus-visible {
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  @starting-style {
+    .dialog[open] {
+      opacity: 0;
+      scale: 0.97;
+    }
+
+    .scrim {
+      opacity: 0;
+    }
+  }
+
+  .layer[data-size='small'] {
+    --dialog-width: var(--size-dialog-width);
+  }
+
+  .layer[data-size='medium'] {
+    --dialog-width: calc(var(--size-dialog-width) * 1.25);
+  }
+
+  .layer[data-size='large'] {
+    --dialog-width: var(--size-setup-card-width);
+  }
+
+  .layer[data-size='palette'] {
+    --dialog-width: var(--size-palette);
+  }
+
+  .layer[data-placement='center'] .dialog {
+    place-self: center;
+  }
+
+  .layer[data-placement='top'] .dialog {
+    align-self: start;
+    justify-self: center;
+    margin-block-start: max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar))));
+  }
+
+  .layer[data-placement='start'] {
+    padding: 0;
+  }
+
+  .layer[data-placement='start'] .dialog {
+    justify-self: start;
+    block-size: 100%;
+    inline-size: min(var(--size-content-min), 85vw);
+    border-block: none;
+    border-inline-start: none;
+    border-radius: 0;
+  }
+
+  @starting-style {
+    .layer[data-placement='start'] .dialog[open] {
+      opacity: 1;
+      scale: 1;
+      translate: -100% 0;
+    }
+
+    .layer[data-placement='start'] .dialog[open]:dir(rtl) {
+      translate: 100% 0;
+    }
+  }
+
+  .title {
+    margin: 0;
+    font-size: var(--type-title3-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-title3-line);
+  }
+
+  .description {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-4);
+  }
+}
+
+@layer states {
+  :root[data-density='touch'] .layer {
+    inset-block-start: var(--title-bar-height, var(--size-title-bar-touch));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dialog {
+      transition-property: opacity;
+    }
+  }
+
+  :root[data-motion='reduce'] .dialog {
+    transition-property: opacity;
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .dialog {
+      border: 1px solid ButtonBorder;
+    }
+
+    .scrim {
+      display: none;
+    }
+  }
+}

@@ -1,0 +1,5 @@
+// lint-as: app/src/features/theme/Bad.ts
+// expect: no-restricted-imports
+import { invoke } from '@tauri-apps/api/core';
+
+export const call = () => invoke('app_version');

@@ -1,0 +1,57 @@
+name: update-screenshots
+
+# Screenshot baselines come only from this workflow (ARCHITECTURE.md section 21.3), so every baseline is taken on
+# the same runner and browser as the checks that compare against it. A maintainer runs it for a pull request,
+# reviews the new images and the diff report, and commits the images to that pull request.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  screenshots:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check out the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ inputs.pr }}
+        run: gh pr checkout "$env:PR"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Build the test interface
+        run: npm run app:build:test
+      - name: Take new baselines
+        run: >-
+          npx playwright test --config tests/ui/playwright.config.ts --update-snapshots
+          --project visual --project forced-colors --project pseudo-locale
+      - name: Keep the new baselines
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-pr-${{ inputs.pr }}
+          path: tests/ui/visual/__screenshots__
+          retention-days: 14
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-report-pr-${{ inputs.pr }}
+          path: |
+            tests/ui/report
+            tests/ui/results
+          retention-days: 14

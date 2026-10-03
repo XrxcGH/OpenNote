@@ -1,0 +1,13 @@
+/* Settings and setup: the title bar across the top, and the view below it, scrolling on its own. */
+@layer components {
+  .view {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    block-size: 100%;
+  }
+
+  .body {
+    min-block-size: 0;
+    overflow: auto;
+  }
+}

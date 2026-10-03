@@ -1,0 +1,42 @@
+/* The title bar's theme toggle. The wrapper carries the long press and the menu; the switch inside is WP4's. */
+@layer components {
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  .hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Under a contrast theme the switch keeps a visible edge. "On" shows as the system highlight, also when the switch
+   is disabled, so the state stays visible (ARCHITECTURE.md section 9.6). A disabled switch that is off is GrayText. */
+@layer forced {
+  @media (forced-colors: active) {
+    .toggle [role='switch'] {
+      border: 1px solid ButtonBorder;
+    }
+
+    .toggle [role='switch'][aria-disabled='true'] {
+      border-color: GrayText;
+      background: Canvas;
+      color: GrayText;
+    }
+
+    .toggle [role='switch'][aria-checked='true'] {
+      forced-color-adjust: none;
+      border-color: Highlight;
+      background: Highlight;
+      color: HighlightText;
+    }
+  }
+}

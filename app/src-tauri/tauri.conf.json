@@ -12,16 +12,19 @@
   "app": {
     "windows": [
       {
+        "label": "main",
+        "create": false,
         "title": "OpenNote",
         "width": 1280,
         "height": 800,
-        "minWidth": 360,
+        "minWidth": 400,
         "minHeight": 480,
-        "visible": false
+        "visible": false,
+        "decorations": false
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: blob: data:; worker-src 'self'"
     }
   },
   "bundle": {

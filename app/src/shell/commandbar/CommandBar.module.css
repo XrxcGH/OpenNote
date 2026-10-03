@@ -1,0 +1,169 @@
+/* The command bar and the compact bottom bar (ARCHITECTURE.md section 14.5). Tokens only, logical properties. */
+@layer components {
+  .commandBar {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-5);
+    block-size: var(--size-toolbar-pointer);
+    padding-inline: var(--space-4);
+    border-block-end: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-app);
+  }
+
+  :global(:root[data-density='touch']) .commandBar {
+    block-size: var(--size-toolbar-touch);
+  }
+
+  .tabs {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  /* The active tab's indicator is a 3 px bottom border, which forced colors keep. */
+  .tab {
+    padding-inline: var(--space-4);
+    border: none;
+    border-block-end: 3px solid transparent;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    border-block-end-color: var(--color-accent-primary);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .panel {
+    display: flex;
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  .toolbar {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    overflow: hidden;
+  }
+
+  .slot {
+    display: flex;
+    flex: none;
+  }
+
+  .slot[data-group-start] {
+    padding-inline-start: var(--space-4);
+    border-inline-start: 1px solid var(--color-border-subtle);
+    margin-inline-start: var(--space-2);
+  }
+
+  /* The More button while nothing overflows: measured, but invisible and out of the tab order. */
+  .measure {
+    position: absolute;
+    visibility: hidden;
+  }
+
+  .tool {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .tool {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .tool:hover,
+  .tab:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .tool[aria-pressed='true'] {
+    background: var(--color-surface-selected);
+  }
+
+  .tool[aria-disabled='true'] {
+    color: var(--color-text-muted);
+    cursor: default;
+  }
+
+  .tool:focus-visible,
+  .tab:focus-visible,
+  .bottomButton:focus-visible,
+  .moreItem:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .bottomBar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    block-size: var(--size-bottom-bar);
+    padding-inline: var(--space-3);
+    border-block-start: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-app);
+  }
+
+  .bottomButton {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-1);
+    min-inline-size: var(--size-target-touch);
+    min-block-size: var(--size-target-touch);
+    padding-inline: var(--space-3);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: var(--type-caption-size);
+    line-height: var(--type-caption-line);
+    cursor: pointer;
+  }
+
+  .bottomButton svg {
+    inline-size: var(--size-icon-md);
+    block-size: var(--size-icon-md);
+  }
+
+  .moreList {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: var(--size-menu-min-width);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .moreItem {
+    inline-size: 100%;
+    min-block-size: var(--size-target-touch);
+    padding-inline: var(--space-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .moreItem:hover,
+  .bottomButton:hover {
+    background: var(--color-surface-hover);
+  }
+}

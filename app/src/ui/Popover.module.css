@@ -1,0 +1,67 @@
+/* Popovers sit in the top layer below their control, or at its end side, and flip to stay on screen. They open
+   with a 150 ms fade and 4 px rise and close with a 100 ms fade on a copy (BRAND.md section 9). */
+@layer components {
+  .popover {
+    position: fixed;
+    inset: auto;
+    inset-block-start: var(--point-y, auto);
+    inset-inline-start: var(--point-x, auto);
+    box-sizing: border-box;
+    max-inline-size: calc(100vw - 2 * var(--space-3));
+    max-block-size: calc(100vh - 2 * var(--space-3));
+    margin: var(--space-2);
+    padding: var(--space-5);
+    overflow: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    box-shadow: var(--elevation-2);
+    transition:
+      opacity var(--motion-duration-fast) var(--motion-easing-enter),
+      translate var(--motion-duration-fast) var(--motion-easing-enter);
+  }
+
+  .popover[data-placement='block-end'] {
+    position-area: block-end span-inline-end;
+    position-try-fallbacks:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline;
+  }
+
+  .popover[data-placement='inline-end'] {
+    position-area: inline-end span-block-end;
+    position-try-fallbacks:
+      flip-inline,
+      flip-block,
+      flip-block flip-inline;
+  }
+
+  @starting-style {
+    .popover:popover-open {
+      opacity: 0;
+      translate: 0 var(--space-2);
+    }
+  }
+}
+
+@layer states {
+  @media (prefers-reduced-motion: reduce) {
+    .popover {
+      transition-property: opacity;
+    }
+  }
+
+  :root[data-motion='reduce'] .popover {
+    transition-property: opacity;
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .popover {
+      border-color: CanvasText;
+    }
+  }
+}
