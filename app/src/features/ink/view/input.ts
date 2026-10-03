@@ -16,9 +16,7 @@ import type { ShapeMatch } from '../geometry/shapes';
 import type { InkPoint, Vec } from '../geometry/types';
 import { DEFAULT_PEN_BUTTONS, resolvePenAction, suppressContextMenu } from './../input/buttons';
 import type { PenAction } from '../input/buttons';
-import { createInkPipeline } from '../input/pipeline';
 import type { InkPipeline, PointerRecord, TouchInk } from '../input/pipeline';
-import { palmSettingsFromInk } from '../input/palm/settings';
 import { createStrokeBuilder } from '../input/strokeBuilder';
 import type { StrokeBuilder } from '../input/strokeBuilder';
 import type { RawSample } from '../input/samples';
@@ -382,6 +380,9 @@ function cancel(g: InkGesture, surface: InkSurface): void {
 
 // ---- touch ----
 
+type Palm = typeof import('./palm');
+const loadPalm = (): Promise<Palm> => import('./palm');
+
 /** The touch tool: every touch on the page goes through the palm filter while an ink tool is active. */
 export function createTouchTool(host: InkHost, surfaceOf: () => InkSurface | null) {
   const record: PointerRecord = {
@@ -429,9 +430,12 @@ export function createTouchTool(host: InkHost, surfaceOf: () => InkSurface | nul
     for (const ink of shown.values()) surface.drawLive(ink.builder.points, style);
   };
 
+  // The palm filter is the largest part of ink input, so it loads in its own chunk, right after the ink view.
+  let palm: Palm | null = null;
+  void loadPalm().then((loaded) => (palm = loaded));
   const ensure = (): InkPipeline => {
     if (pipeline) return pipeline;
-    const made = createInkPipeline(
+    const made = palm!.createInkPipeline(
       {
         penSample: () => undefined,
         touchBuilder: () => {
@@ -488,7 +492,7 @@ export function createTouchTool(host: InkHost, surfaceOf: () => InkSurface | nul
         },
         touchPolicy: () => undefined,
       },
-      palmSettingsFromInk(getSettings().ink),
+      palm!.palmSettingsFromInk(getSettings().ink),
       { platform: 'windows' },
     );
     made.setInkToolActive(true);
@@ -506,7 +510,14 @@ export function createTouchTool(host: InkHost, surfaceOf: () => InkSurface | nul
     priority: 100,
     accepts(event) {
       const surface = surfaceOf();
-      return event.pointerType === 'touch' && !!surface && !surface.readOnly && inkActive() && isEnabled('ink.palm');
+      return (
+        event.pointerType === 'touch' &&
+        !!surface &&
+        !surface.readOnly &&
+        inkActive() &&
+        isEnabled('ink.palm') &&
+        !!palm
+      );
     },
     down(event, ctx) {
       ctx.capture(event.pointerId);

@@ -1,11 +1,25 @@
 // Strokes in the memory page service (Phase 5; owner: the ink lane). They live in the held page under MEMORY_INK as
 // decoded records keyed by ID, so undo and redo, which move whole pages, carry them too. The rules are the core's:
 // a new stroke needs its ink block, an ID is never reused, and transforms compose with `transform` applied first.
-import { decodeRecords, encodeRecords } from '../../../core/ink/codec';
 import type { InkRecord, Stroke } from '../../../core/ink/codec';
 import type { InkChanges, StrokeEdit } from '../ink';
 import { PageServiceError } from '../types';
 import type { PageJson } from '../types';
+
+type Codec = typeof import('../../../core/ink/codec');
+let codec: Codec | null = null;
+
+/**
+ * Loads the ink codec. The web platform holds this service at start-up, so the codec loads on its own, before the
+ * first page opens, rather than in the start-up bundle.
+ */
+export function loadInkCodec(): Promise<Codec> {
+  return import('../../../core/ink/codec').then((loaded) => (codec = loaded));
+}
+
+function encodeRecords(records: InkRecord[]): Uint8Array {
+  return records.length === 0 ? new Uint8Array(0) : codec!.encodeRecords(records);
+}
 
 /** Where the held page keeps its strokes. It never reaches the page view, which reads `OpenPage.ink`. */
 export const MEMORY_INK = 'memoryInk';
@@ -75,7 +89,7 @@ export function applyStrokeEdit(page: PageJson, edit: StrokeEdit): null {
 /** Adds new strokes, sent as ink records, after the batch's edits. */
 export function addStrokes(page: PageJson, records: Uint8Array): void {
   const strokes = { ...strokesOf(page) };
-  for (const record of decodeRecords(records)) {
+  for (const record of codec!.decodeRecords(records)) {
     if (record.kind !== 'stroke') throw new PageServiceError('invalid', 'Only stroke records can be added.');
     const { stroke } = record;
     if (strokes[stroke.id]) throw new PageServiceError('invalid', `The page already has a stroke ${stroke.id}.`);

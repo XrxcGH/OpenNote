@@ -5,6 +5,7 @@ import { newId } from '../../../editor/ids';
 import { PageServiceError } from '../types';
 import type { AssetId, EditBatch, ExternalChange, PageId, PageJson, PageService, ReadOnlyInfo } from '../types';
 import { openClient } from './client';
+import { loadInkCodec } from './ink';
 import type { PageState } from './client';
 import { createVersions } from './versions';
 
@@ -68,7 +69,8 @@ export function createMemoryPageService(
         if (!made) return Promise.reject(new PageServiceError('notFound', `There is no page ${pageId}.`, false));
         state = add({ ...made, id: pageId });
       }
-      return Promise.resolve(openClient(state, `main-${++clients}`, splices, copy));
+      const opened = state;
+      return loadInkCodec().then(() => openClient(opened, `main-${++clients}`, splices, copy));
     },
     sent: (page) => pages.get(page)?.sent ?? [],
     held: (page) => {

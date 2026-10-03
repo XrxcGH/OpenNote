@@ -56,19 +56,14 @@ export const ink = {
     recolor: 'Recolor the selection',
     thicker: 'Make ink thicker',
     thinner: 'Make ink thinner',
-    clear: 'Clear the selection',
-    selected: '{count, plural, one {# stroke selected} other {# strokes selected}}',
-    keywords: 'lasso selection move delete recolor thicker thinner ink',
   },
   announce: {
-    stroke: 'Ink added',
     erased: '{count, plural, one {Erased # stroke} other {Erased # strokes}}',
     deleted: 'Selection deleted',
     tool: '{tool} chosen',
   },
   errors: {
     notSaved: "That ink wasn't saved. Try again.",
-    readOnly: 'This page is read-only, so ink stays off.',
   },
   settings: {
     title: 'Pen and touch',
@@ -81,16 +76,5 @@ export const ink = {
     fingerDrawOn: 'Always',
     fingerDrawOff: 'Never',
     fingerDrawHint: 'While a pen is near the screen, a touch never draws.',
-    inkToShape: 'Turn every stroke into a shape when one fits',
-    holdForShape: 'Hold the pen still at the end of a stroke to make a shape',
-    eraserEnd: "The pen's eraser end",
-    barrel: "The pen's barrel button",
-    actions: {
-      strokeEraser: 'Erases whole strokes',
-      partialEraser: 'Erases parts of strokes',
-      highlighterEraser: 'Erases highlighter only',
-      lasso: 'Selects with a lasso',
-      none: 'Does nothing',
-    },
   },
 } as const;

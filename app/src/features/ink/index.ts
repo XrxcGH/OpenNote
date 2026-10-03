@@ -10,6 +10,3 @@ export * from './pens';
 export * from './selection';
 export * from './space';
 export * from './zoombox';
-
-/** The ink view: the pointer tools, the Draw tab, and the ink over the shown page. Loads on first use. */
-export const loadInkView = () => import('./view/install');
