@@ -18,6 +18,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "updater_skip", "updater_unskip", "updater_go_back",
     "notes_snapshot_load", "notes_snapshot_save",
     "page_open", "page_apply", "page_undo", "page_redo", "page_save_now", "page_close",
+    "history_list", "history_open", "history_restore", "history_restore_blocks", "history_name",
     "clipboard_facts", "clipboard_read", "image_import", "image_import_url", "image_import_clip",
     "spell_languages", "spell_check", "spell_suggest", "spell_add_word", "spell_remove_word", "speech_voices", "speech_synthesize",
 ];

@@ -1,6 +1,7 @@
 // Assembles a page view around an open page (owner after WP0: WP3): the viewport, the block layer, the editor pool,
 // the sync queue, and the frame context that applies undo and other windows' changes. PageView.tsx mounts it, and
 // the test harness mounts it without React.
+import { Fragment } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { newId } from '../../editor/ids';
 import type { EditorHost } from '../../editor/host';
@@ -53,10 +54,15 @@ function frameContext(pool: StaticPool, layer: () => BlockLayer, options: MountO
     },
     replaceText(block, change, markdown) {
       const editor = pool.editor(block);
-      if (!editor || change === 'full' || !('full' in change)) return;
-      const doc: PMNode = editor.schema.nodeFromJSON(change.full.toJSON());
+      if (!editor || change === 'full') return;
       const { tr } = editor.state;
-      editor.view.dispatch(tr.replaceWith(0, tr.doc.content.size, doc.content).setMeta(META_REMOTE, true));
+      if ('full' in change) {
+        const doc: PMNode = editor.schema.nodeFromJSON(change.full.toJSON());
+        tr.replaceWith(0, tr.doc.content.size, doc.content);
+      } else {
+        tr.replaceWith(change.from, change.to, Fragment.fromJSON(editor.schema, change.content.toJSON()));
+      }
+      editor.view.dispatch(tr.setMeta(META_REMOTE, true));
       const sync = syncOf(editor);
       if (sync) acceptRemoteText(sync, markdown);
       blockLaidOut(block);

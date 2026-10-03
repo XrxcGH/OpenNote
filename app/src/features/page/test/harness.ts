@@ -8,7 +8,7 @@ import { createMarkdownCache, serializeTextBlock } from '../../../editor/markdow
 import { createWebPlatform } from '../../../platform/web';
 import { createMemoryPageService } from '../../../services/pages/memory';
 import type { MemoryPageService, PageFixture } from '../../../services/pages/memory';
-import type { BlockId, EditBatch, Edit, OpenPage } from '../../../services/pages/types';
+import type { BlockId, EditBatch, OpenPage } from '../../../services/pages/types';
 import { createMemoryNotesService } from '../../../services/notes/memory';
 import { setDensity, setSizeClass } from '../../../state/layout';
 import type { Density, SizeClass } from '../../../state/layout';
@@ -59,28 +59,6 @@ async function realKeyboard(): Promise<((text: string) => Promise<void>) | null>
   }
 }
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
-function applyText(markdown: string, edit: Edit): string {
-  if (edit.edit === 'setText') return edit.markdown;
-  if (edit.edit !== 'spliceText') return markdown;
-  const bytes = encoder.encode(markdown);
-  const end = edit.at + encoder.encode(edit.del).length;
-  return decoder.decode(bytes.subarray(0, edit.at)) + edit.ins + decoder.decode(bytes.subarray(end));
-}
-
-/** A block's Markdown as the service holds it: the fixture's, with every text edit sent since applied. */
-function heldMarkdown(fixture: PageFixture, sent: readonly EditBatch[], block: BlockId): string {
-  const initial = fixture.page.blocks.find((candidate) => candidate.id === block)?.data.markdown;
-  let markdown = typeof initial === 'string' ? initial : '';
-  for (const edit of sent.flatMap((batch) => batch.edits)) {
-    if (edit.edit === 'insertBlock' && edit.block.id === block) markdown = String(edit.block.data.markdown ?? '');
-    else if ('block' in edit && edit.block === block) markdown = applyText(markdown, edit);
-  }
-  return markdown;
-}
-
 /** Commands run against a web platform, as they do in the app. */
 function configure(oneNoteKeys: boolean): void {
   const platform = createWebPlatform({ followBrowser: false });
@@ -125,7 +103,10 @@ export async function renderPage(options: RenderPageOptions): Promise<PageHarnes
     },
     sent: () => service.sent(page.id),
     advance: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    markdown: (block) => heldMarkdown(options.fixture, service.sent(page.id), block),
+    markdown: (block) => {
+      const held = service.held(page.id)?.blocks.find((candidate) => candidate.id === block)?.data.markdown;
+      return typeof held === 'string' ? held : '';
+    },
     async destroy() {
       await mounted.destroy();
       container.remove();
