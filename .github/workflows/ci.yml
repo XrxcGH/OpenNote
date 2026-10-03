@@ -128,10 +128,11 @@ jobs:
           retention-days: 7
 
   perf-typing:
-    # Phase 4's typing benchmark, in-page measure only (ARCHITECTURE.md section 24.5). WP0 runs it on the short
-    # fixture and keeps the numbers; WP8 adds the conditions, the throttling, and the gate against main.
+    # Phase 4's typing benchmark, in-page measure only (ARCHITECTURE.md section 24.5): every typing condition and
+    # the motion gestures, recorded as an artifact. Hosted runners are too noisy for the 16 ms gate itself, which
+    # the reference laptop's run checks with OPENNOTE_TYPING_GATE=1 (docs/perf/phase-4.md).
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
