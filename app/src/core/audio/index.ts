@@ -11,4 +11,5 @@ export * from './recording';
 export * from './replay';
 export * from './stamps';
 export * from './strokes';
+export * from './tap';
 export type * from './types';
