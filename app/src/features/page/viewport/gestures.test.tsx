@@ -80,6 +80,21 @@ describe('touch gestures', () => {
     pointer('pointerup', touch(1, 100, 100));
   });
 
+  it('keeps panning when the element the finger pressed loses its capture to the viewport', async () => {
+    // A real touch starts captured by what it pressed; moving the capture fires lostpointercapture there.
+    const pressed = viewport.world.appendChild(document.createElement('p'));
+    pointer('pointerdown', touch(1, 200, 150));
+    pointer('pointermove', touch(1, 180, 150));
+    pressed.dispatchEvent(new PointerEvent('lostpointercapture', { bubbles: true, ...touch(1, 180, 150) }));
+    for (const x of [160, 140, 120, 100]) {
+      pointer('pointermove', touch(1, x, 150));
+      await frame();
+    }
+    expect(viewport.viewport.scrollLeft).toBeGreaterThan(590);
+    expect(viewport.camera().gesture).toBe('touchPan');
+    pointer('pointerup', touch(1, 100, 150));
+  });
+
   it('glides after a flick and settles on whole device pixels', async () => {
     await drag(1, 300, 150, -200, 0, 4);
     const lifted = viewport.viewport.scrollLeft;
