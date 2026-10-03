@@ -56,7 +56,6 @@
     "fast-check": "^4.10.2",
     "globals": "^17.12.0",
     "jsdom": "^30.1.1",
-    "perfect-freehand": "^1.2.3",
     "prettier": "^3.9.9",
     "spdx-license-list": "^6.12.0",
     "typescript": "~6.0.0",
@@ -82,6 +81,7 @@
     "highlight.js": "11.11.2",
     "lowlight": "3.3.0",
     "markdown-it": "15.0.2",
+    "perfect-freehand": "^1.2.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

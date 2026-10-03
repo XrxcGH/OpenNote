@@ -19,6 +19,10 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 - [testing/keyboard-and-screen-reader.md](testing/keyboard-and-screen-reader.md): the checklist a person runs at each phase exit and before each beta, with a screen reader and no mouse.
 - [perf/phase-4.md](perf/phase-4.md): how Phase 4's typing speed was measured, the numbers, and what is still over budget.
 
+## Performance
+
+- [perf/phase-5-core.md](perf/phase-5-core.md): the 10,000-stroke benchmark of the ink core, with its method and numbers.
+
 ## Decisions
 
 - [adr/README.md](adr/README.md): the architecture decision records (ADRs), with how to write one and the list of decisions so far, including Phase 4's typed notes decisions (0020 to 0026).
