@@ -8,6 +8,8 @@ import { commandContext, defineCommand } from '../../../commands/registry';
 import type { CommandCategory, CommandContext, CommandId } from '../../../commands/types';
 import type { EditorCommandArgs } from '../../../editor/commands/catalog';
 import {
+  FOLDS_EVENT,
+  FOLDS_REQUEST_EVENT,
   MERGE_BLOCKS_EVENT,
   SLASH_MENU_EVENT,
   blockKindAt,
@@ -17,7 +19,7 @@ import {
   linkApplies,
   marksAllowed,
 } from '../../../editor/commands/state';
-import type { BlockKindName, MergeBlocksDetail } from '../../../editor/commands/state';
+import type { BlockKindName, FoldsDetail, FoldsRequestDetail, MergeBlocksDetail } from '../../../editor/commands/state';
 import { commandBar, commands, contextMenus } from '../../../registries';
 import type { CommandBarItem, ContextMenuItem } from '../../../registries/types';
 import type { MessageKey } from '../../../strings/t';
@@ -158,6 +160,30 @@ for (const [id, title] of DATES) {
   register({ id, title, keywords: 'editor.keywords.date', category: 'insert', flag: 'page.typingHelpers' });
 }
 
+const OUTLINE: readonly [PageCommandId, MessageKey][] = [
+  ['outline.moveUp', 'editor.commands.moveUp'],
+  ['outline.moveDown', 'editor.commands.moveDown'],
+  ['outline.promote', 'editor.commands.promote'],
+  ['outline.demote', 'editor.commands.demote'],
+  ['outline.fold', 'editor.commands.fold'],
+  ['outline.unfold', 'editor.commands.unfold'],
+  ['outline.showAll', 'editor.commands.showAll'],
+];
+for (const [id, title] of OUTLINE) {
+  const keywords: MessageKey =
+    id.includes('fold') || id === 'outline.showAll' ? 'editor.keywords.fold' : 'editor.keywords.outline';
+  register({ id, title, keywords, category: 'editing', flag: 'page.outline' });
+}
+for (const level of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
+  register({
+    id: `outline.showLevel${level}`,
+    title: `editor.commands.showLevel${level}`,
+    keywords: 'editor.keywords.fold',
+    category: 'view',
+    flag: 'page.outline',
+  });
+}
+
 registerPageCommand<{ color?: string | null } | undefined>({
   id: 'text.setColor',
   title: 'editor.commands.setColor',
@@ -217,12 +243,15 @@ const BAR: readonly CommandBarItem[] = [
   bar({ group: 'paragraph', command: 'block.bulletList', priority: 66, presentation: 'toggle' }),
   bar({ group: 'paragraph', command: 'block.orderedList', priority: 65, presentation: 'toggle' }),
   bar({ group: 'paragraph', command: 'block.checklist', priority: 64, presentation: 'toggle' }),
+  bar({ group: 'paragraph', command: 'outline.promote', priority: 37, flag: 'page.outline' }),
+  bar({ group: 'paragraph', command: 'outline.demote', priority: 37, flag: 'page.outline' }),
   bar({ group: 'paragraph', command: 'block.toggleCheck', priority: 38 }),
   bar({ group: 'styles', command: 'block.normal', priority: 50, presentation: 'toggle' }),
   bar({ group: 'styles', command: 'block.heading1', priority: 49, presentation: 'toggle' }),
   bar({ group: 'styles', command: 'block.heading2', priority: 48, presentation: 'toggle' }),
   bar({ group: 'styles', command: 'block.heading3', priority: 47, presentation: 'toggle' }),
   bar({ group: 'styles', command: 'block.turnInto', priority: 25, flag: 'page.slashMenu' }),
+  bar({ tab: 'view', group: 'outline', command: 'outline.showAll', priority: 20, flag: 'page.outline' }),
   bar({ tab: 'insert', group: 'text', command: 'format.link', priority: 60 }),
   bar({ tab: 'insert', group: 'blocks', command: 'block.codeBlock', priority: 50 }),
   bar({ tab: 'insert', group: 'blocks', command: 'block.callout', priority: 49 }),
@@ -324,5 +353,18 @@ if (typeof document !== 'undefined') {
   document.addEventListener(SLASH_MENU_EVENT, (event) => {
     const session = (event as CustomEvent<SlashSession>).detail;
     void import('../slash/slashMenu').then(({ openSlashMenu }) => openSlashMenu(session));
+  });
+}
+
+// Folds live in pageViews: editors ask for their block's folds as they mount, and report changes.
+if (typeof document !== 'undefined') {
+  const folds = () => import('../formattingBar/folds');
+  document.addEventListener(FOLDS_REQUEST_EVENT, (event) => {
+    const { detail } = event as CustomEvent<FoldsRequestDetail>;
+    void folds().then(({ provideFolds }) => provideFolds(detail));
+  });
+  document.addEventListener(FOLDS_EVENT, (event) => {
+    const { detail } = event as CustomEvent<FoldsDetail>;
+    void folds().then(({ saveFolds }) => saveFolds(detail));
   });
 }

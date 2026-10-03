@@ -156,6 +156,61 @@
     color: oklch(from attr(data-color type(<color>), currentcolor) max(l, 0.74) c h);
   }
 
+  /* Fold buttons sit in the gutter before a heading or inside a list item's marker space. They show on hover, on
+     the folded state, and to anyone who reaches them by name; their hit area follows the density. */
+  :global(.ProseMirror) {
+    position: relative;
+  }
+
+  :global(.ProseMirror) li {
+    position: relative;
+  }
+
+  .foldButton {
+    position: absolute;
+    inset-inline-start: calc(-1 * var(--size-chrome-hit));
+    inline-size: var(--size-chrome-hit);
+    block-size: var(--size-chrome-hit);
+    margin-block-start: calc((1lh - var(--size-chrome-hit)) / 2);
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    background: transparent;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .foldButton::before {
+    content: '';
+    display: inline-block;
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    border-block-end: 2px solid currentcolor;
+    border-inline-end: 2px solid currentcolor;
+    transform: rotate(45deg);
+  }
+
+  .foldButton[aria-expanded='false']::before {
+    transform: rotate(-45deg);
+  }
+
+  .foldButton:hover,
+  .foldButton:focus-visible,
+  .foldButton[aria-expanded='false'],
+  .foldButton:has(+ :hover),
+  li:hover > .foldButton {
+    opacity: 1;
+  }
+
+  .foldButton:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .foldButton:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  }
+
   @media (forced-colors: active) {
     .calloutType::before {
       background: CanvasText;

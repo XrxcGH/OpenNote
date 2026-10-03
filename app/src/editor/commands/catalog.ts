@@ -11,6 +11,7 @@ import { cycleTodo, insertDivider, toggleCheck } from './blocks';
 import { fromChange, runCommand } from './command';
 import type { Command } from './command';
 import { insertDateTime } from './insertDate';
+import { OUTLINE_IDS, runOutline } from './outlineRun';
 import { removeLink, setLink } from './links';
 import {
   clearFormatting,
@@ -162,6 +163,7 @@ export function runEditorCommand(
   args: EditorCommandArgs = {},
   options: { focus?: boolean } = {},
 ): boolean {
+  if (OUTLINE_IDS.includes(id)) return runOutline(editor, id);
   const command = editorCommand(id, args);
   if (!command) return false;
   const ran = runCommand(editor, command, options);

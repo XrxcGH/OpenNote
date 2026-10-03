@@ -3,6 +3,7 @@
 // types only, so the start-up registrations can use it without loading the editor.
 import type { Mark, MarkType, Node as PMNode } from '@tiptap/pm/model';
 import type { EditorState, Transaction } from '@tiptap/pm/state';
+import type { FoldKey } from './fold';
 
 /** The marks at the caret, or of the selection's first character. */
 function marksAtSelection(state: EditorState | Transaction): readonly Mark[] {
@@ -119,3 +120,19 @@ export interface MergeBlocksDetail {
 
 /** The event an editor sends when "/" opens a slash menu session, with the session as its detail. */
 export const SLASH_MENU_EVENT = 'opennote:slashmenu';
+
+/** The event an editor sends when its folds change, so the page can save them in pageViews. */
+export const FOLDS_EVENT = 'opennote:folds';
+/** The event an editor sends as it mounts, asking the page for the folds it saved. */
+export const FOLDS_REQUEST_EVENT = 'opennote:foldsrequest';
+
+export interface FoldsDetail {
+  block: string;
+  keys: readonly FoldKey[];
+}
+
+export interface FoldsRequestDetail {
+  block: string;
+  /** The page calls this with the block's saved folds. */
+  provide(keys: readonly FoldKey[]): void;
+}

@@ -103,6 +103,19 @@ const CASES: Partial<Record<PageCommandId | 'link.remove' | 'link.edit', Case>> 
   'insert.date': { before: 'On []', after: 'On Sep 30, 2026' },
   'insert.time': { before: 'At []', after: 'At 2:05 PM' },
   'insert.dateTime': { before: 'At []', after: 'At Sep 30, 2026 2:05 PM' },
+  'outline.moveUp': { before: '- one\n- t[]wo', after: '- two\n- one' },
+  'outline.moveDown': { before: '- o[]ne\n- two', after: '- two\n- one' },
+  'outline.promote': { before: '## T[]itle', after: '# Title' },
+  'outline.demote': { before: '## T[]itle', after: '### Title' },
+  'outline.fold': { before: '## T[]itle\n\nBody', after: '## Title\n\nBody' },
+  'outline.unfold': { before: '## T[]itle\n\nBody', after: '## Title\n\nBody' },
+  'outline.showAll': { before: '## T[]itle\n\nBody', after: '## Title\n\nBody' },
+  ...Object.fromEntries(
+    [1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => [
+      `outline.showLevel${level}`,
+      { before: '## T[]itle\n\nBody', after: '## Title\n\nBody' },
+    ]),
+  ),
   'text.setColor': {
     before: 'one []two',
     after: '<span data-color="brick">one two</span>',
@@ -126,11 +139,8 @@ describe('WP4’s page commands', () => {
 
   it('are all registered, each with a case', () => {
     const registered = WP4.filter((id) => commands.get(id));
-    const pending = WP4.filter((id) => !CASES[id] && !id.startsWith('outline.'));
-    expect(pending).toEqual([]);
-    expect(registered.filter((id) => !id.startsWith('outline.'))).toEqual(
-      WP4.filter((id) => !id.startsWith('outline.')),
-    );
+    expect(WP4.filter((id) => !CASES[id])).toEqual([]);
+    expect(registered).toEqual(WP4);
   });
 
   for (const [id, testCase] of Object.entries(CASES)) {
