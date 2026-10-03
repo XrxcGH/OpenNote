@@ -276,3 +276,24 @@ fn damaged_points_are_reported() {
     let blob = encode_records(&[InkRecord::Stroke(Arc::new(sample_stroke()))]);
     assert!(decode_records(&blob, &small).is_err());
 }
+
+#[test]
+fn a_crafted_damaged_segment_cant_make_the_walk_quadratic() {
+    let mut bytes = encode_segment(&b2_header(), &[]);
+    bytes.truncate(HEADER_BYTES);
+    let size = 2 << 20;
+    // A first frame whose length runs past the end, so the walk scans for the next record.
+    bytes.extend_from_slice(&[0, 0, 0, 0, 1, 0, 0, 0]);
+    bytes.extend_from_slice(&u32::MAX.to_le_bytes());
+    // Then a frame with zero flags every 12 bytes, each claiming half the file as its body.
+    let half = u32::try_from(size / 2).unwrap();
+    while bytes.len() < size {
+        bytes.extend_from_slice(&[0, 0, 0, 0, 1, 0, 0, 0]);
+        bytes.extend_from_slice(&half.to_le_bytes());
+    }
+    let started = std::time::Instant::now();
+    let decoded = decode_segment(&bytes, &entry(&bytes, b2_header().id, 0), sample_page_id(), &limits()).unwrap();
+    let took = started.elapsed();
+    assert!(decoded.records.is_empty() && !decoded.damaged.is_empty());
+    assert!(took < std::time::Duration::from_secs(5), "the walk took {took:?}");
+}

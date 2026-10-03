@@ -29,6 +29,8 @@ pub const HEADER_BYTES: usize = 64;
 pub const FOOTER_BYTES: usize = 8;
 /// The shortest segment file: a header and a footer.
 pub const MIN_BYTES: usize = HEADER_BYTES + FOOTER_BYTES;
+/// How many times the file's length the walk may hash while it looks for records after damage.
+const RESYNC_BUDGET: usize = 4;
 
 /// Encodes a segment file: header, records, and footer.
 pub fn encode_segment(header: &SegmentHeader, records: &[InkRecord]) -> Vec<u8> {
@@ -306,6 +308,7 @@ fn walk(bytes: &[u8], end: usize, limits: &Limits, want: &Want<'_>) -> DecodedSe
     };
     let mut pos = HEADER_BYTES;
     let mut index = 0u32;
+    let mut budget = end.saturating_mul(RESYNC_BUDGET);
     while pos < end {
         match read_frame(bytes, pos, end) {
             Ok(frame) => {
@@ -314,7 +317,7 @@ fn walk(bytes: &[u8], end: usize, limits: &Limits, want: &Want<'_>) -> DecodedSe
             }
             Err(reason) => {
                 out.damaged.push(damaged(bytes, index, pos, None, reason));
-                let Some(next) = resync(bytes, pos.saturating_add(1), end) else {
+                let Some(next) = resync(bytes, pos.saturating_add(1), end, &mut budget) else {
                     break;
                 };
                 pos = next;
@@ -342,10 +345,23 @@ fn take_record(out: &mut DecodedSegment, bytes: &[u8], frame: &Frame, index: u32
     }
 }
 
-/// The next offset from `from` where a record frame parses, has zero flags, and has a matching CRC-32.
-fn resync(bytes: &[u8], from: usize, end: usize) -> Option<usize> {
-    (from..end)
-        .find(|&pos| read_frame(bytes, pos, end).is_ok_and(|frame| frame.flags == [0, 0, 0] && frame.crc_ok(bytes)))
+/// The next offset from `from` where a record frame parses, has zero flags, and has a matching CRC-32. Each
+/// CRC-32 checked costs its frame's length from `budget`. Once that runs out, the rest of the file counts as
+/// damaged, so a crafted file whose frames claim long bodies at every offset can't make the walk quadratic.
+fn resync(bytes: &[u8], from: usize, end: usize, budget: &mut usize) -> Option<usize> {
+    for pos in from..end {
+        let Ok(frame) = read_frame(bytes, pos, end) else {
+            continue;
+        };
+        if frame.flags != [0, 0, 0] {
+            continue;
+        }
+        *budget = budget.checked_sub(frame.body.end.saturating_sub(pos))?;
+        if frame.crc_ok(bytes) {
+            return Some(pos);
+        }
+    }
+    None
 }
 
 fn damaged(bytes: &[u8], index: u32, pos: usize, frame: Option<&Frame>, reason: &str) -> DamagedRecord {
