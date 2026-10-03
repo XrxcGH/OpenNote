@@ -168,7 +168,9 @@ pub fn payload(
     install: InstallStatus,
 ) -> BootData {
     let version = env!("CARGO_PKG_VERSION");
-    let channel = channel_for(version, cfg!(debug_assertions));
+    // A build with `test-endpoints` is CI's end-to-end build. It runs as the dev channel, so it has the sample
+    // library, the test flags, and flag overrides, as the specs expect, though it is an optimized exe.
+    let channel = channel_for(version, cfg!(debug_assertions) || cfg!(feature = "test-endpoints"));
     // Overrides are for development and nightly builds only; the interface ignores them elsewhere, and so does this.
     let overrides_allowed = matches!(channel, Channel::Dev | Channel::Nightly);
     BootData {
