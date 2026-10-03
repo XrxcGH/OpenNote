@@ -654,3 +654,27 @@ fn the_sample_library_of_test_builds_matches_the_fixture() {
         ]
     );
 }
+
+#[test]
+fn a_notes_folder_chosen_in_setup_opens_its_notebooks_and_tells_the_tree() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let notes = dir.path().join("Synced");
+    {
+        let earlier = Lib::at(&dir.path().join("other-computer"), &notes);
+        earlier.add(None, "notebook", "From the other computer");
+    }
+    let lib = Lib::at(&dir.path().join("local"), &notes);
+    // Before setup chooses the folder, the library is empty.
+    let empty = lib
+        .bridge
+        .notes(None, |bridge| {
+            bridge.dispatch("notes_load_initial", &json!({ "path": [] }))
+        })
+        .expect("the first load");
+    assert_eq!(empty["notebooks"], json!([]));
+    assert_eq!(lib.titles(None), ["From the other computer"]);
+    let events = lib.events.lock().expect("the events").clone();
+    assert!(events
+        .iter()
+        .any(|e| e["type"] == "childrenChanged" && e["parentId"].is_null()));
+}

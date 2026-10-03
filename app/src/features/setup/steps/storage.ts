@@ -38,12 +38,19 @@ export function canContinueStorage(draft: SetupDraft): boolean {
   return opensExistingLibrary(draft) || draft.storage.notebookName.trim().length > 0;
 }
 
-/** Saves the folder, which Rust creates, then makes the first notebook with a section and a page. */
+/**
+ * Saves the folder, which Rust creates, then makes the first notebook with a section and a page. A folder that
+ * already holds notebooks, such as one copied or synced from another computer, opens as it is: asking the service
+ * for its notebooks makes the core open them, and the tree hears about them.
+ */
 export async function commitStorage(ctx: SetupContext, draft: SetupDraft): Promise<void> {
   const { storage } = draft;
   if (!storage) return;
   await updateSettings({ storage: { notesFolder: storage.notesFolder } });
-  if (opensExistingLibrary(draft)) return;
+  if (opensExistingLibrary(draft)) {
+    await ctx.notes.listNotebooks();
+    return;
+  }
   const end = { beforeId: null };
   const notebook = await ctx.notes.create({
     kind: 'notebook',
