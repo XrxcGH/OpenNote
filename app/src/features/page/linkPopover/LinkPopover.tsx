@@ -54,9 +54,14 @@ export function LinkPopover({ editor, anchor, onClose, typed }: LinkPopoverProps
   const form = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    form.current?.querySelector('input')?.focus();
+    const field = form.current?.querySelector('input');
+    field?.focus();
     const early = typed?.();
-    if (early) setHref((value) => value + early);
+    if (field && early) {
+      // Into the field at once, so keys that arrive before React renders again follow these.
+      field.value += early;
+      setHref(field.value);
+    }
   }, [typed, setHref]);
 
   return (
