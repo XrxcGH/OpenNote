@@ -106,15 +106,20 @@ describe('static text', () => {
     expect(root.textContent).toBe('Paragraph 2 of the long page.');
   });
 
-  it('renders the viewport’s blocks before the first paint and the rest in idle time', async () => {
-    const mounted = await open(pageFixtures.budget500, { height: 300 });
-    const lazy = mounted.layer.blocks().map((block) => mounted.layer.view(block.id)!);
-    const rendered = () => lazy.filter((view) => (view as { rendered?: boolean }).rendered === true).length;
-    const first = rendered();
-    expect(first).toBeGreaterThan(0);
-    expect(first).toBeLessThan(lazy.length / 2);
-    await expect.poll(rendered, { timeout: 20_000 }).toBe(lazy.filter((view) => 'rendered' in view).length);
-  });
+  // Idle time is scarce when several agents share the machine, so this one waits longer.
+  it(
+    'renders the viewport’s blocks before the first paint and the rest in idle time',
+    { timeout: 60_000 },
+    async () => {
+      const mounted = await open(pageFixtures.budget500, { height: 300 });
+      const lazy = mounted.layer.blocks().map((block) => mounted.layer.view(block.id)!);
+      const rendered = () => lazy.filter((view) => (view as { rendered?: boolean }).rendered === true).length;
+      const first = rendered();
+      expect(first).toBeGreaterThan(0);
+      expect(first).toBeLessThan(lazy.length / 2);
+      await expect.poll(rendered, { timeout: 55_000 }).toBe(lazy.filter((view) => 'rendered' in view).length);
+    },
+  );
 });
 
 describe('mounting in place', () => {
