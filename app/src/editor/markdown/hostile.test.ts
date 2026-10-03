@@ -3,10 +3,11 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { shape } from '../shape';
+import { propertyRuns } from './arbitrary';
 import { parseTextBlock } from './parse';
 import { serializeTextBlock } from './serialize';
 
-const RUNS = Number(process.env.FC_RUNS ?? 400);
+const RUNS = propertyRuns(400);
 const TIMEOUT = 600_000;
 const LONE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
 

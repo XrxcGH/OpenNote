@@ -4,14 +4,14 @@ import { getSchema } from '@tiptap/core';
 import { Fragment, Slice } from '@tiptap/pm/model';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { textExtensions } from '../schema/schema';
-import { documents } from './arbitrary';
+import { documents, propertyRuns } from './arbitrary';
 import { createMarkdownCache } from './cache';
 import { parseTextBlock } from './parse';
 import { reparseRange } from './reparse';
 import type { Reparse } from './reparse';
 import { serializeTextBlock, warmCache } from './serialize';
 
-const RUNS = Number(process.env.FC_RUNS ?? 300);
+const RUNS = propertyRuns(300);
 const TIMEOUT = 600_000;
 const { doc } = documents();
 

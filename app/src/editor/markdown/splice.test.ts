@@ -1,8 +1,9 @@
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
+import { propertyRuns } from './arbitrary';
 import { diffMarkdown, utf8Offset } from './splice';
 
-const RUNS = Number(process.env.FC_RUNS ?? 1000);
+const RUNS = propertyRuns(1000);
 const encoder = new TextEncoder();
 const isLow = (code: number) => code >= 0xdc00 && code <= 0xdfff;
 const isHigh = (code: number) => code >= 0xd800 && code <= 0xdbff;

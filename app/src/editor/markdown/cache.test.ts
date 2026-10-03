@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { Transform } from '@tiptap/pm/transform';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { textSchema } from '../schema/schema';
-import { documents } from './arbitrary';
+import { documents, propertyRuns } from './arbitrary';
 import { createMarkdownCache, stateOf } from './cache';
 import { parseTextBlock } from './parse';
 import { serializeTextBlock, warmCache } from './serialize';
 
-const RUNS = Number(process.env.FC_RUNS ?? 300);
+const RUNS = propertyRuns(300);
 const TIMEOUT = 600_000;
 const { doc } = documents();
 
