@@ -114,3 +114,14 @@ export function typeInto(editor: Editor, text: string): void {
     if (!handled) view.dispatch(view.state.tr.insertText(char, from, to));
   }
 }
+
+/** jsdom has no layout: ranges get empty rectangles, so ProseMirror can scroll and measure without throwing. */
+export function stubLayout(): void {
+  if (typeof Range === 'undefined' || 'getClientRects' in Range.prototype) return;
+  const empty = () => ({ left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0 }) as DOMRect;
+  Object.assign(Range.prototype, {
+    getClientRects: () => Object.assign([], { item: () => null }) as unknown as DOMRectList,
+    getBoundingClientRect: empty,
+  });
+}
+stubLayout();

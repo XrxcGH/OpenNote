@@ -176,6 +176,8 @@ export const editor = {
   },
   slash: {
     label: 'Insert a block',
+    table: 'Table',
+    image: 'Image',
     results: '{count, plural, =0 {No results.} one {# result.} other {# results.}}',
     option: '{name}, {position} of {count}.',
     groups: {

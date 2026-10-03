@@ -9,6 +9,7 @@ import type { CommandCategory, CommandContext, CommandId } from '../../../comman
 import type { EditorCommandArgs } from '../../../editor/commands/catalog';
 import {
   MERGE_BLOCKS_EVENT,
+  SLASH_MENU_EVENT,
   blockKindAt,
   caretInLink,
   inTaskItem,
@@ -24,6 +25,9 @@ import { t } from '../../../strings/t';
 import { editMenu, registerAppMenu } from '../../../ui/appMenu';
 import { targetEditor } from '../formattingBar/target';
 import { registerPageCommand } from '../keys';
+import { slashItems } from '../registries';
+import type { SlashItemDef } from '../registries';
+import type { SlashSession } from '../../../editor/extensions/slash';
 import type { PageCommandId } from '../keys';
 
 const formatting = () => import('../formattingBar/commands');
@@ -261,5 +265,64 @@ if (typeof document !== 'undefined') {
   document.addEventListener(MERGE_BLOCKS_EVENT, (event) => {
     const { detail } = event as CustomEvent<MergeBlocksDetail>;
     void import('../formattingBar/merge').then(({ mergeIntoPrevious }) => mergeIntoPrevious(detail));
+  });
+}
+
+// The slash menu's items. Headings 4 to 6 show once the filter asks for them; Table and Image show when their
+// packages register their commands.
+type SlashSpec = readonly [
+  name: string,
+  group: SlashItemDef['group'],
+  order: number,
+  command: CommandId,
+  flag?: FlagId,
+];
+const SLASH: readonly SlashSpec[] = [
+  ['normal', 'basic', 10, 'block.normal'],
+  ['heading1', 'basic', 21, 'block.heading1'],
+  ['heading2', 'basic', 22, 'block.heading2'],
+  ['heading3', 'basic', 23, 'block.heading3'],
+  ['heading4', 'basic', 24, 'block.heading4'],
+  ['heading5', 'basic', 25, 'block.heading5'],
+  ['heading6', 'basic', 26, 'block.heading6'],
+  ['quote', 'basic', 40, 'block.quote'],
+  ['callout', 'basic', 41, 'block.callout'],
+  ['divider', 'basic', 50, 'block.divider'],
+  ['bulletList', 'lists', 10, 'block.bulletList'],
+  ['orderedList', 'lists', 11, 'block.orderedList'],
+  ['checklist', 'lists', 12, 'block.checklist'],
+  ['table', 'media', 10, 'insert.table', 'page.tables'],
+  ['image', 'media', 20, 'insert.image', 'page.images'],
+  ['codeBlock', 'advanced', 10, 'block.codeBlock'],
+  ['date', 'advanced', 20, 'insert.date', 'page.typingHelpers'],
+  ['time', 'advanced', 21, 'insert.time', 'page.typingHelpers'],
+  ['dateTime', 'advanced', 22, 'insert.dateTime', 'page.typingHelpers'],
+];
+const SLASH_KEYWORDS: Record<string, MessageKey> = { normal: 'editor.slash.keywords.text' };
+const SLASH_TITLES: Record<string, MessageKey> = {
+  table: 'editor.slash.table',
+  image: 'editor.slash.image',
+};
+for (const [name, group, order, command, flag] of SLASH) {
+  const heading = name.startsWith('heading');
+  slashItems.register({
+    id: `editor.${name}`,
+    title: SLASH_TITLES[name] ?? (`editor.commands.${name}` as MessageKey),
+    keywords:
+      SLASH_KEYWORDS[name] ??
+      (heading ? 'editor.slash.keywords.heading' : (`editor.slash.keywords.${name}` as MessageKey)),
+    icon: '',
+    group,
+    order,
+    command,
+    flag: flag ?? 'page.slashMenu',
+  });
+}
+
+// "/" at the start of a line opens a session; the page's menu attaches to it.
+if (typeof document !== 'undefined') {
+  document.addEventListener(SLASH_MENU_EVENT, (event) => {
+    const session = (event as CustomEvent<SlashSession>).detail;
+    void import('../slash/slashMenu').then(({ openSlashMenu }) => openSlashMenu(session));
   });
 }

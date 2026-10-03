@@ -116,3 +116,6 @@ export interface MergeBlocksDetail {
   /** The text block above, which keeps the merged text. */
   previous: string;
 }
+
+/** The event an editor sends when "/" opens a slash menu session, with the session as its detail. */
+export const SLASH_MENU_EVENT = 'opennote:slashmenu';
