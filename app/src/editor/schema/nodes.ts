@@ -1,5 +1,7 @@
 // The nodes of a text block (Phase 4 design, 8.1). Every node here can be written in OpenNote Markdown 1, so every
-// canonical string round-trips. Parse rules are the paste allowlist: only what a rule reads survives a paste.
+// canonical string round-trips. Parse rules are the paste allowlist: only what a rule reads survives a paste. Every
+// attribute has its own parseHTML: without one, Tiptap reads the pasted element's attribute of the same name and lets
+// it override what the rule set.
 import { Node } from '@tiptap/core';
 import type { TagParseRule } from '@tiptap/pm/model';
 import { CALLOUT_TYPE_PATTERN, FOLDS, LANGUAGE_PATTERN } from './constants';
@@ -17,7 +19,10 @@ function elementAttributes() {
   };
 }
 
-const inert = { rendered: false };
+/** A heading's tag, from a level clamped to 1 to 6 so no value can name another element. */
+export function headingTag(level: unknown): string {
+  return `h${Math.min(6, Math.max(1, Math.trunc(Number(level)) || 1))}`;
+}
 
 export const Doc = Node.create({ name: 'doc', topNode: true, content: 'block+' });
 export const TextNode = Node.create({ name: 'text', group: 'inline' });
@@ -37,9 +42,10 @@ export const Heading = Node.create({
   group: 'block',
   content: 'inline*',
   defining: true,
-  addAttributes: () => ({ level: { default: 1, ...inert }, ...elementAttributes() }),
+  // The level comes from the tag the rule matched, never from a `level` attribute on the pasted element.
+  addAttributes: () => ({ level: { default: 1, rendered: false, parseHTML: () => null }, ...elementAttributes() }),
   parseHTML: () => [1, 2, 3, 4, 5, 6].map((level): TagParseRule => ({ tag: `h${level}`, attrs: { level } })),
-  renderHTML: ({ node }) => [`h${node.attrs.level as number}`, 0],
+  renderHTML: ({ node }) => [headingTag(node.attrs.level), 0],
 });
 
 export const HardBreak = Node.create({
@@ -216,7 +222,7 @@ export const ImageNode = Node.create({
   atom: true,
   draggable: true,
   addAttributes: () => ({
-    src: { default: '', rendered: false },
+    src: { default: '', rendered: false, parseHTML: (el: HTMLElement) => el.getAttribute('src') ?? '' },
     alt: { default: '', rendered: false, parseHTML: (el: HTMLElement) => el.getAttribute('alt') ?? '' },
   }),
   parseHTML: () => [{ tag: 'img[src]' }],

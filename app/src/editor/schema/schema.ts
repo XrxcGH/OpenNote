@@ -75,9 +75,33 @@ export const textExtensions: Extensions = [
 
 /** A table editor's document is one table. */
 export const TableDoc = Node.create({ name: 'doc', topNode: true, content: 'table' });
+/** A pasted cell's span as a whole number from 1 to 1000, so no other value reaches the table's layout. */
+function spanOf(name: string) {
+  return (element: HTMLElement): number => {
+    const span = Number(element.getAttribute(name) ?? '1');
+    return Number.isInteger(span) && span >= 1 && span <= 1000 ? span : 1;
+  };
+}
+
+/** Tiptap's cells read their spans without a parse rule of their own, which lets any value through. */
+const SPANS = {
+  colspan: { default: 1, parseHTML: spanOf('colspan') },
+  rowspan: { default: 1, parseHTML: spanOf('rowspan') },
+};
+
 /** A cell holds exactly one paragraph, because a table cell is one line of Markdown (SPEC 6.3). */
-export const OneParagraphCell = TableCell.extend({ content: 'paragraph' });
-export const OneParagraphHeader = TableHeader.extend({ content: 'paragraph' });
+export const OneParagraphCell = TableCell.extend({
+  content: 'paragraph',
+  addAttributes() {
+    return { ...this.parent?.(), ...SPANS };
+  },
+});
+export const OneParagraphHeader = TableHeader.extend({
+  content: 'paragraph',
+  addAttributes() {
+    return { ...this.parent?.(), ...SPANS };
+  },
+});
 
 export const tableExtensions: Extensions = [
   TableDoc,
