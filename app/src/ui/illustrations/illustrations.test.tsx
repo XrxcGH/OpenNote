@@ -225,6 +225,28 @@ describe('inside their boxes', () => {
       expect(edge.bottom + half).toBeLessThanOrEqual(box.bottom);
     }
   });
+
+  it("keeps every star at least 5 px clear of the page card's top edge, however wide the canvas", () => {
+    document.documentElement.dataset.theme = 'dark';
+    // The page card starts one --space-8 margin down the canvas.
+    const card = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--space-8'));
+    expect(card).toBe(32);
+    for (const width of [600, 1280, 1920, 2560]) {
+      const { container, unmount } = renderUi(
+        <div style={{ inlineSize: width }}>
+          <StarField />
+        </div>,
+      );
+      const top = drawn(container).getBoundingClientRect().top;
+      for (const star of container.querySelectorAll('circle')) {
+        const dot = star.getBoundingClientRect();
+        // Above the edge, or below it where the card covers it, by 5 px either way.
+        const clear = Math.max(card - (dot.bottom - top), dot.top - top - card);
+        expect(clear, `the star at x ${star.getAttribute('cx')} on a ${width} px canvas`).toBeGreaterThanOrEqual(5);
+      }
+      unmount();
+    }
+  });
 });
 
 describe('motion', () => {
