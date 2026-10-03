@@ -30,6 +30,8 @@ export interface PageExtrasPrefs {
   templateDefaults: Record<string, string>;
   /** A new page in a series carries the unfinished checkboxes of the last page forward. */
   seriesCarry: boolean;
+  /** When a link title was last asked for (ISO 8601), for the Privacy panel. */
+  linkTitleLastRan: string | null;
 }
 
 export const DEFAULT_PREFS: PageExtrasPrefs = {
@@ -45,6 +47,7 @@ export const DEFAULT_PREFS: PageExtrasPrefs = {
   wordCount: true,
   templateDefaults: {},
   seriesCarry: true,
+  linkTitleLastRan: null,
 };
 
 const KEY = 'opennote.pageExtras';
@@ -84,6 +87,7 @@ export function cleanPrefs(raw: unknown): PageExtrasPrefs {
     wordCount: bool('wordCount'),
     templateDefaults: strings(found.templateDefaults),
     seriesCarry: bool('seriesCarry'),
+    linkTitleLastRan: typeof found.linkTitleLastRan === 'string' ? found.linkTitleLastRan.slice(0, 40) : null,
   };
 }
 

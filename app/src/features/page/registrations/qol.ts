@@ -387,6 +387,7 @@ editingSettingsParts.register({
 // What loads after start-up: the editor extensions and the hook that attaches the features to each page view.
 // A load that fails, as when a test ends before the chunk arrives, leaves the page without these extras.
 void import('../qol/editorExtension').catch(() => undefined);
+void import('../embeds/extension').catch(() => undefined);
 mountedPageHooks.register({
   id: 'qol',
   attach(mounted) {

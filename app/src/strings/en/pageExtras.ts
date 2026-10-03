@@ -165,6 +165,17 @@ export const pageExtras = {
     doneSkipped:
       '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}} {skipped, plural, one {# image or drawing stays on this page.} other {# images and drawings stay on this page.}}',
   },
+  embed: {
+    loading: 'Loading the embedded page.',
+    failed: 'The embedded page couldn’t be opened.',
+    missing: 'No page called “{title}”.',
+    self: 'A page can’t embed itself.',
+    ambiguous: 'Several pages have this name; showing the first.',
+    headingMissing: 'That heading isn’t on the page any more; showing the page.',
+    empty: 'Nothing to show here yet.',
+    open: 'Open',
+    label: 'Embedded page: {title}',
+  },
   source: {
     command: 'Show page as Markdown',
     keywords: 'markdown source text raw view edit syntax',

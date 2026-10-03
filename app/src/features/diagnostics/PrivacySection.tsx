@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useFlag } from '../../app/flags';
 import { useUpdaterStatus } from '../../state/updater';
+import { usePageExtrasPrefs } from '../page';
 import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Switch, announce, confirm, showToast } from '../../ui';
@@ -44,6 +45,9 @@ function NetworkUse() {
   const lastCheck = useUpdaterStatus((status) => status.lastCheck);
   const { reportEndpoint, reportSentUnix } = usePrivacy();
   const sent = reportSentUnix === null ? null : new Date(reportSentUnix * 1000).toISOString();
+  const titlesFlag = useFlag('page.linkTitles');
+  const titlesOn = usePageExtrasPrefs((prefs) => prefs.linkTitles);
+  const titlesRan = usePageExtrasPrefs((prefs) => prefs.linkTitleLastRan);
   const headingId = useId();
   return (
     <section className={styles.block} aria-labelledby={headingId}>
@@ -68,6 +72,14 @@ function NetworkUse() {
           status={t('diagnostics.privacy.use.imagesNever')}
           offline={offline}
         />
+        {titlesFlag && (
+          <Use
+            title={t('pageExtras.linkTitles.privacyTitle')}
+            detail={t('pageExtras.linkTitles.privacyDetail')}
+            status={titlesOn ? lastRan(titlesRan) : t('pageExtras.linkTitles.privacyNever')}
+            offline={offline}
+          />
+        )}
       </ul>
     </section>
   );

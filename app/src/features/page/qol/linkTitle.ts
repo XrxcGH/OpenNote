@@ -8,7 +8,7 @@ import { META_COMMAND } from '../../../editor/meta';
 import type { PageExtrasClient } from '../../../platform/types';
 import { isOffline } from '../../diagnostics';
 import type { MountedPage } from '../mount';
-import { pageExtrasPrefs } from './prefs';
+import { pageExtrasPrefs, setPrefs } from './prefs';
 
 const BARE_ADDRESS = /^https?:\/\/[^\s<>"]+$/i;
 
@@ -61,6 +61,7 @@ async function titleAfterPaste(mounted: MountedPage, address: string): Promise<v
     const end = editor?.state.selection.to;
     if (!editor || end === undefined || !addressRange(editor, end, address)) continue;
     if (isOffline()) return;
+    setPrefs({ linkTitleLastRan: new Date().toISOString() });
     const title = usableTitle(await native.linkTitle(address).catch(() => null), address);
     // The person may have typed on since; the title only replaces the address where it still stands.
     if (title) showTitle(editor, end, address, title);
