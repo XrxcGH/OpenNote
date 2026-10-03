@@ -10,6 +10,8 @@ import { arrowStep, trackDrag } from '../images/drag';
 import type { Crop, Handle, Rect } from '../images/geometry';
 import { cropOf, FREEFORM_MAX_WIDTH, HANDLES, heightFor, initialSize, resizeRect } from '../images/geometry';
 import { shownImageIds } from '../images/shown';
+import { MAX_WRAP_GAP, mergeData, wrapGapOf, wrapOf, wrapPatch } from '../images/wrap';
+import type { Wrap } from '../images/wrap';
 import { readingLock } from '../qol/stores';
 import styles from '../images/images.module.css';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
@@ -29,6 +31,9 @@ export interface ImageHandle {
   /** The image element and its frame, for crop mode. */
   parts(): { frame: HTMLElement; picture: HTMLImageElement | null };
   setCropping(on: boolean): void;
+  /** How text wraps around the image. */
+  wrap(): Wrap;
+  setWrap(wrap: Wrap): void;
 }
 
 const shownImages = new Map<string, ImageHandle>();
@@ -145,6 +150,19 @@ class ImageView implements BlockView, ImageHandle {
     return { frame: this.frameElement, picture: this.picture };
   }
 
+  wrap(): Wrap {
+    return this.floating() ? 'alone' : wrapOf(this.current.data);
+  }
+
+  /** Changes how text wraps, as one undo step. Only flowing images wrap. */
+  setWrap(wrap: Wrap): void {
+    if (this.floating() || !this.editable()) return;
+    const patch = wrapPatch(wrap, wrapGapOf(this.current.data));
+    this.current = { ...this.current, data: mergeData(this.current.data, patch) };
+    this.render();
+    void this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block: this.id, data: patch }] }).catch(() => undefined);
+  }
+
   setCropping(on: boolean): void {
     this.cropping = on;
     this.element.classList.toggle(styles.cropping, on);
@@ -200,9 +218,55 @@ class ImageView implements BlockView, ImageHandle {
     if (asset && id && !this.failed) this.showPicture(asset, id);
     else this.showPlaceholder();
     if (this.picture) layoutPicture(this.picture, crop);
+    this.showWrap();
     this.element.setAttribute('aria-label', imageLabel(block));
     this.element.dataset.lock = block.lock ?? '';
     this.refreshChrome();
+  }
+
+  /** Text wrap, for a flowing image on a page that is not in the compact Reading view. */
+  private showWrap(): void {
+    const wrap = this.ctx.reading || !this.ctx.host.flag('page.wrapImages') ? 'alone' : this.wrap();
+    if (wrap === 'alone') delete this.element.dataset.wrap;
+    else this.element.dataset.wrap = wrap;
+    this.element.style.setProperty('--wrap-gap', wrap === 'alone' ? '' : `${wrapGapOf(this.current.data)}px`);
+    const world = this.ctx.viewport.world;
+    // Paragraphs beside a float can not be paint-contained, or their lines would not wrap around it.
+    if (wrap === 'left' || wrap === 'right') world.dataset.wrapActive = '';
+    else if (!world.querySelector('[data-wrap="left"], [data-wrap="right"]')) delete world.dataset.wrapActive;
+  }
+
+  private startGapDrag(event: PointerEvent, side: 'left' | 'right'): void {
+    const start = wrapGapOf(this.current.data);
+    let gap = start;
+    trackDrag(
+      event,
+      this.ctx.viewport.camera().zoom || 1,
+      (dx) => {
+        gap = Math.min(MAX_WRAP_GAP, Math.max(0, Math.round(start + (side === 'left' ? dx : -dx))));
+        this.element.style.setProperty('--wrap-gap', `${gap}px`);
+      },
+      () => gap !== start && this.sendGap(gap),
+    );
+  }
+
+  private sendGap(gap: number): void {
+    const patch = wrapPatch(this.wrap(), gap);
+    this.current = { ...this.current, data: mergeData(this.current.data, patch) };
+    this.render();
+    void this.ctx.sync
+      .send({
+        edits: [{ edit: 'patchBlock', block: this.id, data: patch }],
+        coalesce: { kind: 'drag', target: `${this.id}:gap` },
+      })
+      .catch(() => undefined);
+  }
+
+  private gapByKey(event: KeyboardEvent, side: 'left' | 'right'): void {
+    const step = arrowStep(event, event.shiftKey ? 1 : 4);
+    if (!step) return;
+    const grow = side === 'left' ? step[0] : -step[0];
+    if (grow !== 0) this.sendGap(wrapGapOf(this.current.data) + grow);
   }
 
   /** A flowing image keeps its ratio when the column is narrower than its width. */
@@ -306,12 +370,28 @@ class ImageView implements BlockView, ImageHandle {
     }
     if (!this.editable()) return;
     this.addHandles();
+    this.addGapHandle();
     void import('../images/toolbar').then(({ imageToolbar }) => {
       if (generation !== this.chromeGeneration || !this.element.isConnected) return;
       const bar = imageToolbar(this);
       this.element.append(bar);
       this.chrome.push(bar);
     });
+  }
+
+  /** A wrapped image has a handle on the edge that faces the text, to change the gap. */
+  private addGapHandle(): void {
+    const wrap = this.wrap();
+    if (wrap !== 'left' && wrap !== 'right') return;
+    const button = this.element.appendChild(document.createElement('button'));
+    button.type = 'button';
+    button.className = `${styles.handle} ${styles.gapHandle}`;
+    button.dataset.side = wrap;
+    button.tabIndex = -1;
+    button.setAttribute('aria-label', t('pageExtras.wrap.gapHandle'));
+    button.addEventListener('pointerdown', (event) => this.startGapDrag(event, wrap));
+    button.addEventListener('keydown', (event) => this.gapByKey(event, wrap));
+    this.chrome.push(button);
   }
 
   /** A flowing image has one corner handle and stores only its width. */

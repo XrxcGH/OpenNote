@@ -165,6 +165,17 @@ export const pageExtras = {
     doneSkipped:
       '{count, plural, one {Made # page from a heading.} other {Made # pages from headings.}} {skipped, plural, one {# image or drawing stays on this page.} other {# images and drawings stay on this page.}}',
   },
+  wrap: {
+    menu: 'Text wrap',
+    command: 'Wrap text around image',
+    keywords: 'text wrap image left right in line alone float',
+    alone: 'Stand alone',
+    inline: 'In line',
+    left: 'Image on the left, text wraps',
+    right: 'Image on the right, text wraps',
+    gapHandle: 'Space between image and text',
+    set: '{mode}.',
+  },
   altDraft: {
     button: 'Use text from the image',
     help: 'Reads the words in the image on this device and adds them as a draft to edit.',

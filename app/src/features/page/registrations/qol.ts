@@ -11,6 +11,7 @@ import { t } from '../../../strings/t';
 import { targetEditor } from '../formattingBar/target';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
 import { editingSettingsParts } from '../registries';
+import { oneImageSelected } from '../images/shown';
 import { openFind, readingLock } from '../qol/stores';
 import { shownIsTemplate } from '../templates/state';
 import { pageExtrasPrefs, setPrefs } from '../qol/prefs';
@@ -215,6 +216,19 @@ register({
   when: shown,
   run: () => void templates().then((module) => module.newPageInSeries()),
 });
+// Text wrap around the selected image.
+for (const mode of ['alone', 'inline', 'left', 'right'] as const) {
+  register({
+    id: `image.wrap.${mode}`,
+    title: `pageExtras.wrap.${mode}`,
+    keywords: 'pageExtras.wrap.keywords',
+    category: 'object',
+    flag: 'page.wrapImages',
+    when: oneImageSelected,
+    run: () => void import('../blocks/imageBlock').then((module) => module.selectedImage()?.setWrap(mode)),
+  });
+}
+
 // Extract, merge, and split.
 const extract = () => import('../extract/commands');
 register({
