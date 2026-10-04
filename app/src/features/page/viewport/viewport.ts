@@ -38,7 +38,8 @@ export interface PageViewport extends PageViewportApi {
    * The content's extent in page units; the world grows to fit it and never shrinks. Floating content gets room to
    * its right; a page of flowing text gets none, so it never scrolls sideways.
    */
-  setContent(size: { w: number; h: number; floating?: boolean }): void;
+  /** The content's extent. It only grows, unless `narrower`: the content got narrower (the window did), so the width goes back. */
+  setContent(size: { w: number; h: number; floating?: boolean; narrower?: boolean }): void;
   beginGesture(kind: GestureKind): void;
   endGesture(kind: GestureKind): void;
   /** Scrolls by CSS px. */
@@ -181,8 +182,13 @@ class Viewport implements PageViewport {
     this.scrollTo(x, y);
   }
 
-  setContent(next: { w: number; h: number; floating?: boolean }): void {
+  setContent(next: { w: number; h: number; floating?: boolean; narrower?: boolean }): void {
     const w = next.w + (next.floating === false ? 0 : ROOM_RIGHT);
+    // A narrower window leaves no dead strip to scroll into: the width follows the content back down.
+    if (next.narrower && w < this.content.w) {
+      this.content = { w, h: Math.max(next.h, this.content.h) };
+      return this.resize();
+    }
     if (w <= this.content.w && next.h <= this.content.h) return;
     this.content = { w: Math.max(w, this.content.w), h: Math.max(next.h, this.content.h) };
     this.resize();

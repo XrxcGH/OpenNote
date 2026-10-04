@@ -49,11 +49,16 @@ export function createFlow(viewport: PageViewport): Flow {
   flow.className = styles.flow;
   viewport.world.append(flow);
   let frame = 0;
-  // The world grows in the next frame: growing it from the observer would make the observer loop.
+  let lastWidth = 0;
+  // The world grows in the next frame: growing it from the observer would make the observer loop. When the flow got
+  // narrower (the window or a pane did), the world's width goes back down with it.
   const grow = () => {
     frame ||= requestAnimationFrame(() => {
       frame = 0;
-      viewport.setContent(contentExtent(viewport.world, flow));
+      // Sheets set their own width, which a narrower column does not change.
+      const narrower = flow.offsetWidth < lastWidth && viewport.world.dataset.sheets === undefined;
+      lastWidth = flow.offsetWidth;
+      viewport.setContent({ ...contentExtent(viewport.world, flow), narrower });
     });
   };
   const stopFlow = observeResize(flow, grow);

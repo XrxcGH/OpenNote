@@ -117,6 +117,7 @@ class PagesView {
     cancelAnimationFrame(this.frame);
     this.paginator.stop();
     this.mounted.flow.setRules(null);
+    delete this.mounted.viewport.world.dataset.sheets;
     this.sheetsLayer.remove();
     this.paperLayer.remove();
     this.counter.remove();
@@ -204,6 +205,8 @@ class PagesView {
   private apply(): void {
     const paginated = this.spec.mode === 'paginated';
     const { world } = this.mounted.viewport;
+    if (paginated) world.dataset.sheets = '';
+    else delete world.dataset.sheets;
     if (paginated) {
       world.style.background = 'transparent';
       this.paperLayer.replaceChildren();
