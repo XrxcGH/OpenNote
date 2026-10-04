@@ -157,7 +157,6 @@ async function continueSeries(pageId: NodeId, source: string, ctx: CommandContex
   const title = `${base} · ${dateTimeText('date')}`;
   await ctx.notes.rename(pageId, title).catch(() => undefined);
   const blocks = seriesBlocks(await readBlocks(source), {
-    dateLine: `<span data-size="small">${dateTimeText('date')}</span>`,
     previous: last ? { title: last.title || base, page: source } : null,
     previousLabel: t('pageExtras.series.before'),
     carry: pageExtrasPrefs.get().seriesCarry,

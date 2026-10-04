@@ -157,17 +157,17 @@ export function pageLink(title: string, page: string): string {
   return `[${text}](opennote:page/${page})`;
 }
 
-/** The structure of a whole series page, as new blocks: the date line, the link back, and the carried text. */
+/** The structure of a whole series page, as new blocks: the link back and the carried text. The date is in the
+ * title and the "Changed" subtitle, so the page has no date text box (the owner's request). */
 export function seriesBlocks(
   last: readonly BlockJson[],
   options: {
-    dateLine: string;
     previous: { title: string; page: string } | null;
     previousLabel: string;
     carry: boolean;
   },
 ): NewBlock[] {
-  const out: NewBlock[] = [{ id: newId(), type: 'text', data: { markdown: options.dateLine } }];
+  const out: NewBlock[] = [];
   if (options.previous) {
     const link = pageLink(options.previous.title, options.previous.page);
     out.push({ id: newId(), type: 'text', data: { markdown: `${options.previousLabel} ${link}` } });

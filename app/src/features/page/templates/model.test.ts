@@ -74,15 +74,13 @@ describe('series pages', () => {
     expect(seriesStructure('Just words\n\n- plain item', true)).toBe('');
   });
 
-  it('builds the page with a date line and a link back', () => {
+  it('builds the page with a link back and no date line', () => {
     const blocks = seriesBlocks([text(last)], {
-      dateLine: 'Oct 10, 2026',
       previous: { title: 'Weekly review · Oct 3, 2026', page: 'p1' },
       previousLabel: 'Before:',
       carry: true,
     });
     expect(blocks.map((block) => block.data.markdown)).toEqual([
-      'Oct 10, 2026',
       'Before: [Weekly review · Oct 3, 2026](opennote:page/p1)',
       '# Agenda\n\n- [ ] Book room\n- [ ] Call Sam\n\n## Next steps',
     ]);
