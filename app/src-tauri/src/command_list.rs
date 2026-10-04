@@ -45,6 +45,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "intel_keywords", "intel_action_items", "intel_chapters", "intel_vocabulary_offer",
     "intel_speech_voices", "intel_speech_synthesize", "intel_read_aloud_start", "intel_read_aloud_next",
     "intel_read_aloud_cancel", "intel_clip_audio",
+    "connectors_list", "connectors_connect", "connectors_cancel", "connectors_disconnect", "connectors_request",
 ];
 
 #[cfg(test)]

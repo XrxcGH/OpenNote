@@ -20,6 +20,10 @@ base64 = "0.22.1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+# Connectors: PKCE and sign-in state need the operating system's random generator, the token endpoints take
+# form bodies, and the account name is read from the payload of an ID token. All three are already built.
+base64 = "0.22.1"
+getrandom = "0.3.4"
 log.workspace = true
 opennote-core = { path = "../../crates/core" }
 opennote-crashreport = { path = "../../crates/crashreport" }
@@ -37,6 +41,7 @@ sha2.workspace = true
 tauri = { version = "2", features = [] }
 # Web images for paste (Phase 4 ARCHITECTURE.md section 12.2), with the same TLS stack and version as the updater.
 ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default"] }
+url = "2.5.8"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
@@ -55,6 +60,7 @@ features = [
   "Win32_Graphics_Gdi",
   "Win32_Graphics_Imaging",
   "Win32_Security",
+  "Win32_Security_Credentials",
   "Win32_Storage_FileSystem",
   "Win32_System_Com",
   "Win32_System_Com_StructuredStorage",

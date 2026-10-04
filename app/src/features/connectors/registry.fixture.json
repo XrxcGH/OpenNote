@@ -1,0 +1,284 @@
+[
+  {
+    "access": [
+      {
+        "capability": "account",
+        "writes": false
+      },
+      {
+        "capability": "stayConnected",
+        "writes": false
+      },
+      {
+        "capability": "onenoteRead",
+        "writes": false
+      },
+      {
+        "capability": "calendarRead",
+        "writes": false
+      },
+      {
+        "capability": "tasksWrite",
+        "writes": true
+      }
+    ],
+    "auth": "oauth",
+    "baseUrl": null,
+    "features": [
+      "importOneNote",
+      "outlookCalendar",
+      "microsoftToDo"
+    ],
+    "group": "microsoft",
+    "hosts": [
+      "login.microsoftonline.com",
+      "graph.microsoft.com"
+    ],
+    "id": "microsoft",
+    "lastUsedUnix": null,
+    "name": "Microsoft",
+    "pending": false,
+    "state": {
+      "kind": "needsSetup"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "account",
+        "writes": false
+      },
+      {
+        "capability": "calendarRead",
+        "writes": false
+      },
+      {
+        "capability": "tasksWrite",
+        "writes": true
+      },
+      {
+        "capability": "classroomRead",
+        "writes": false
+      },
+      {
+        "capability": "driveFiles",
+        "writes": true
+      },
+      {
+        "capability": "youtubeRead",
+        "writes": false
+      }
+    ],
+    "auth": "oauth",
+    "baseUrl": null,
+    "features": [
+      "googleCalendar",
+      "googleTasks",
+      "googleClassroom",
+      "googleDrive",
+      "youtubeCaptions"
+    ],
+    "group": "google",
+    "hosts": [
+      "accounts.google.com",
+      "oauth2.googleapis.com",
+      "www.googleapis.com",
+      "tasks.googleapis.com",
+      "classroom.googleapis.com",
+      "youtube.googleapis.com"
+    ],
+    "id": "google",
+    "lastUsedUnix": null,
+    "name": "Google",
+    "pending": false,
+    "state": {
+      "kind": "needsSetup"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "dropboxAccount",
+        "writes": false
+      },
+      {
+        "capability": "dropboxRead",
+        "writes": false
+      },
+      {
+        "capability": "dropboxWrite",
+        "writes": true
+      }
+    ],
+    "auth": "oauth",
+    "baseUrl": null,
+    "features": [
+      "syncDropbox",
+      "sendToDropbox"
+    ],
+    "group": "storage",
+    "hosts": [
+      "www.dropbox.com",
+      "api.dropboxapi.com",
+      "content.dropboxapi.com"
+    ],
+    "id": "dropbox",
+    "lastUsedUnix": null,
+    "name": "Dropbox",
+    "pending": false,
+    "state": {
+      "kind": "needsSetup"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "boxFiles",
+        "writes": true
+      }
+    ],
+    "auth": "oauth",
+    "baseUrl": null,
+    "features": [
+      "syncBox",
+      "sendToBox"
+    ],
+    "group": "storage",
+    "hosts": [
+      "account.box.com",
+      "api.box.com",
+      "upload.box.com"
+    ],
+    "id": "box",
+    "lastUsedUnix": null,
+    "name": "Box",
+    "pending": false,
+    "state": {
+      "kind": "needsSetup"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "slackPost",
+        "writes": true
+      },
+      {
+        "capability": "slackFiles",
+        "writes": true
+      },
+      {
+        "capability": "slackChannels",
+        "writes": false
+      }
+    ],
+    "auth": "oauth",
+    "baseUrl": null,
+    "features": [
+      "shareToSlack"
+    ],
+    "group": "other",
+    "hosts": [
+      "slack.com"
+    ],
+    "id": "slack",
+    "lastUsedUnix": null,
+    "name": "Slack",
+    "pending": false,
+    "state": {
+      "kind": "needsSetup"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "vimeoRead",
+        "writes": false
+      }
+    ],
+    "auth": "oauth",
+    "baseUrl": null,
+    "features": [
+      "vimeoCaptions"
+    ],
+    "group": "other",
+    "hosts": [
+      "api.vimeo.com"
+    ],
+    "id": "vimeo",
+    "lastUsedUnix": null,
+    "name": "Vimeo",
+    "pending": false,
+    "state": {
+      "kind": "needsSetup"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "readwiseRead",
+        "writes": false
+      }
+    ],
+    "auth": "token",
+    "baseUrl": null,
+    "features": [
+      "readwiseHighlights"
+    ],
+    "group": "other",
+    "hosts": [
+      "readwise.io"
+    ],
+    "id": "readwise",
+    "lastUsedUnix": null,
+    "name": "Readwise",
+    "pending": false,
+    "state": {
+      "kind": "notConnected"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "canvasRead",
+        "writes": false
+      }
+    ],
+    "auth": "tokenAndUrl",
+    "baseUrl": null,
+    "features": [
+      "canvasAssignments"
+    ],
+    "group": "learning",
+    "hosts": [],
+    "id": "canvas",
+    "lastUsedUnix": null,
+    "name": "Canvas",
+    "pending": false,
+    "state": {
+      "kind": "notConnected"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "moodleRead",
+        "writes": false
+      }
+    ],
+    "auth": "tokenAndUrl",
+    "baseUrl": null,
+    "features": [
+      "moodleAssignments"
+    ],
+    "group": "learning",
+    "hosts": [],
+    "id": "moodle",
+    "lastUsedUnix": null,
+    "name": "Moodle",
+    "pending": false,
+    "state": {
+      "kind": "notConnected"
+    }
+  }
+]
