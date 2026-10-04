@@ -35,7 +35,9 @@ const wrapperOf = (view: EditorView): HTMLElement | null => view.dom.closest<HTM
 /** Floating blocks sit at their frame; flowing ones stack in the column. */
 export function isFloating(wrapper: HTMLElement): boolean {
   const position = wrapper.ownerDocument.defaultView?.getComputedStyle(wrapper).position;
-  return position === 'absolute' || position === 'fixed' || (wrapper.style.left !== '' && wrapper.style.top !== '');
+  // Without layout (tests), the inline position says it: a text box's top is the --frame-y property, not top.
+  const top = wrapper.style.top !== '' || wrapper.style.getPropertyValue('--frame-y') !== '';
+  return position === 'absolute' || position === 'fixed' || (wrapper.style.left !== '' && top);
 }
 
 /** The page's flowing blocks in reading order. */

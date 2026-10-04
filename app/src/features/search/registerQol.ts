@@ -126,7 +126,7 @@ commands.register(
     keywords: 'qolSearch.commands.keywords.replace',
     category: 'navigation',
     keys: [chord('Ctrl+Alt+H')],
-    presetKeys: { onenote: [chord('Ctrl+H')] },
+    presetKeys: { onenote: [chord('Ctrl+Shift+H')] },
     allowInTextInput: true,
     flag: 'search.replace',
     run: () => import('./replace/open').then((module) => module.openReplace()),
