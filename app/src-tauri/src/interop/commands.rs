@@ -439,7 +439,7 @@ mod tests {
             json!({
                 "status": "done",
                 "result": {
-                    "detected": { "kind": "googleKeep", "label": "Google Keep export", "supported": true, "zipped": false, "advice": null },
+                    "detected": { "kind": "googleKeep", "label": "Google Keep export", "supported": true, "zipped": false, "advice": null, "needsPassword": false },
                     "notebookTitle": "Keep",
                     "sections": [{ "title": "Notes", "pages": 4 }],
                     "pages": 4, "blocks": 9, "assets": 1, "assetBytes": 2048,

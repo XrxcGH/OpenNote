@@ -93,6 +93,7 @@ pub struct Detected {
     /// What to do instead, when the source cannot be imported.
     pub advice: Option<String>,
     /// Whether the file is locked with a password, which the import needs.
+    #[serde(rename = "needsPassword")]
     pub needs_password: bool,
 }
 
