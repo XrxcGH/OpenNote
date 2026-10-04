@@ -61,9 +61,17 @@ pub fn truncate(message: &str, max_bytes: usize) -> &str {
     &message[..end]
 }
 
-/// Replaces the person's profile folder in `message` with `%USERPROFILE%`, so a log they share doesn't carry
-/// their user name. Comparison ignores case, as Windows paths do.
+/// Keeps the person's profile folder and every secret out of `message`. The profile folder becomes
+/// `%USERPROFILE%`, so a log they share doesn't carry their user name. A token, an authorization code, and the
+/// value after a word such as `password` or `client_secret` become `<token>`, so a message that holds one by
+/// mistake (a failed request that echoes its body, say) still leaves nothing in the file.
 pub fn redact(message: &str, profile: &Path) -> String {
+    opennote_crashreport::redact_secrets(&hide_profile(message, profile))
+}
+
+/// Replaces the person's profile folder in `message` with `%USERPROFILE%`. Comparison ignores case, as Windows
+/// paths do.
+fn hide_profile(message: &str, profile: &Path) -> String {
     let profile = profile.to_string_lossy();
     if profile.is_empty() {
         return message.to_owned();
@@ -282,6 +290,36 @@ mod tests {
         );
         assert_eq!(redact("Nothing to hide", profile), "Nothing to hide");
         assert_eq!(redact("Nothing to hide", Path::new("")), "Nothing to hide");
+    }
+
+    #[test]
+    fn keeps_tokens_out_of_messages() {
+        // Built in pieces so secret scanners do not take the test values for real ones.
+        let access = format!(
+            "{}.{}",
+            concat!("ya", "29"),
+            "a0AfB-byCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+        );
+        let refresh = concat!("1//0g", "Zx9Qw3Er5Ty7Ui1Op4As6Df8Gh2Jk0LmN");
+        let profile = Path::new("");
+        for message in [
+            format!("Renewing the sign-in failed: access_token={access}"),
+            format!("The service answered {{\"refresh_token\":\"{refresh}\"}}"),
+            format!("Request refused (Authorization: Bearer {access})"),
+            format!("Got {refresh} back"),
+            "Sent client_secret=abc123 to the token endpoint".to_owned(),
+        ] {
+            let logged = redact(&message, profile);
+            assert!(
+                !logged.contains("a0AfB") && !logged.contains("Zx9Qw3") && !logged.contains("abc123"),
+                "{logged}"
+            );
+            assert!(logged.contains("<token>"), "{logged}");
+        }
+        assert_eq!(
+            redact("Connected the Google connector.", profile),
+            "Connected the Google connector."
+        );
     }
 
     #[test]

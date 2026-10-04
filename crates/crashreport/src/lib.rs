@@ -30,7 +30,7 @@ pub use consent::{Consent, Decision, Prompt, WORDING_VERSION};
 pub use hook::{add_private, apply, install, is_enabled, set_enabled, Config};
 pub use redactions::Redactions;
 pub use report::{Frame, Kind, Report, FORMAT};
-pub use scrub::Scrubber;
+pub use scrub::{redact_secrets, Scrubber};
 pub use send::{prepare, send, Agreement, PendingSend, SendError, Settings, Transport};
 pub use store::{CrashStore, StoreError, Summary, MAX_REPORTS};
 pub use symbols::{SymbolError, SymbolSet, SymbolTable, Symbolicated};
