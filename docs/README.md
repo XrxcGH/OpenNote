@@ -16,6 +16,8 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 ## Quality
 
 - [CHECKS.md](CHECKS.md): the quality gate every file change must pass, with its rules and settings.
+- [testing/beta-4-checklist.md](testing/beta-4-checklist.md): the hand test checklist for beta 4, starting with how to run it on a throwaway profile so real notes stay safe.
+- [testing/palm-rejection.md](testing/palm-rejection.md): the palm rejection test with a real pen.
 - [testing/keyboard-and-screen-reader.md](testing/keyboard-and-screen-reader.md): the checklist a person runs at each phase exit and before each beta, with a screen reader and no mouse.
 - [perf/phase-4.md](perf/phase-4.md): how Phase 4's typing speed was measured, the numbers, and what is still over budget.
 
@@ -30,7 +32,8 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 ## File format
 
 - [format/README.md](format/README.md): the note file format specification, tools, and fixtures.
-## Performance
+
+## More performance records
 
 - [perf/phase-8-core.md](perf/phase-8-core.md): how fast the Phase 8 search core runs, with the corpus, the method, the numbers, and the open questions.
 
