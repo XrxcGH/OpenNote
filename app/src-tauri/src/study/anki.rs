@@ -53,12 +53,16 @@ pub fn read(bytes: &[u8]) -> Result<Read, String> {
     let path = dir.path().join("collection.sqlite");
     std::fs::write(&path, &collection.data).map_err(|error| error.to_string())?;
     let db = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).map_err(|error| error.to_string())?;
-    let mut statement = db.prepare("SELECT flds FROM notes ORDER BY id").map_err(|error| error.to_string())?;
+    let mut statement = db
+        .prepare("SELECT flds FROM notes ORDER BY id")
+        .map_err(|error| error.to_string())?;
     let notes = statement
         .query_map([], |row| row.get::<_, String>(0))
         .map_err(|error| error.to_string())?
         .filter_map(Result::ok)
-        .map(|flds| Note { fields: flds.split(FIELD_SEPARATOR).map(str::to_owned).collect() })
+        .map(|flds| Note {
+            fields: flds.split(FIELD_SEPARATOR).map(str::to_owned).collect(),
+        })
         .collect();
     let name = deck_name(&db).unwrap_or_default();
     let media = pictures(&entries);
@@ -69,8 +73,16 @@ pub fn read(bytes: &[u8]) -> Result<Read, String> {
 fn deck_name(db: &Connection) -> Option<String> {
     let decks: String = db.query_row("SELECT decks FROM col", [], |row| row.get(0)).ok()?;
     let decks: Value = serde_json::from_str(&decks).ok()?;
-    let names: Vec<&str> = decks.as_object()?.values().filter_map(|deck| deck["name"].as_str()).collect();
-    names.iter().find(|name| **name != "Default").or(names.first()).map(|name| (*name).to_owned())
+    let names: Vec<&str> = decks
+        .as_object()?
+        .values()
+        .filter_map(|deck| deck["name"].as_str())
+        .collect();
+    names
+        .iter()
+        .find(|name| **name != "Default")
+        .or(names.first())
+        .map(|name| (*name).to_owned())
 }
 
 /// The pictures of the package as data addresses, by the file name the notes use.
@@ -92,7 +104,10 @@ fn pictures(entries: &[zip::Entry]) -> BTreeMap<String, String> {
             continue;
         }
         total += file.data.len();
-        found.insert(name.to_owned(), format!("data:{kind};base64,{}", STANDARD.encode(&file.data)));
+        found.insert(
+            name.to_owned(),
+            format!("data:{kind};base64,{}", STANDARD.encode(&file.data)),
+        );
     }
     found
 }
@@ -122,7 +137,8 @@ pub struct DeckIn {
 const BASIC: i64 = 1_700_000_000_001;
 const CLOZE: i64 = 1_700_000_000_002;
 const DECK: i64 = 1_700_000_000_003;
-const CSS: &str = ".card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }";
+const CSS: &str =
+    ".card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }";
 const LATEX_PRE: &str = "\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n";
 
 fn field(name: &str, ord: usize) -> Value {
@@ -227,7 +243,14 @@ fn collection(deck_in: &DeckIn, now_ms: i64) -> Result<Vec<u8>, String> {
         "lapse": {"delays": [10], "leechAction": 1, "leechFails": 8, "minInt": 1, "mult": 0}, "dyn": false}});
     db.execute(
         "INSERT INTO col VALUES (1, ?1, ?2, ?2, 11, 0, 0, 0, ?3, ?4, ?5, ?6, '{}')",
-        params![secs, now_ms, conf.to_string(), models.to_string(), decks.to_string(), dconf.to_string()],
+        params![
+            secs,
+            now_ms,
+            conf.to_string(),
+            models.to_string(),
+            decks.to_string(),
+            dconf.to_string()
+        ],
     )
     .map_err(|error| error.to_string())?;
     let mut next = now_ms;
@@ -236,13 +259,21 @@ fn collection(deck_in: &DeckIn, now_ms: i64) -> Result<Vec<u8>, String> {
         next += 1;
         let model = if note.cloze { CLOZE } else { BASIC };
         let fields = format!("{}{FIELD_SEPARATOR}{}", note.front, note.back);
-        let guid: String = Sha256::digest(note.id.as_bytes()).iter().take(5).map(|byte| format!("{byte:02x}")).collect();
+        let guid: String = Sha256::digest(note.id.as_bytes())
+            .iter()
+            .take(5)
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
         db.execute(
             "INSERT INTO notes VALUES (?1, ?2, ?3, ?4, -1, '', ?5, ?6, ?7, 0, '')",
             params![next, guid, model, secs, fields, note.front, checksum(&note.front)],
         )
         .map_err(|error| error.to_string())?;
-        let numbers = if note.cloze { cloze_numbers(&note.front) } else { Vec::new() };
+        let numbers = if note.cloze {
+            cloze_numbers(&note.front)
+        } else {
+            Vec::new()
+        };
         let ords = if numbers.is_empty() { vec![1] } else { numbers };
         for ord in ords {
             due += 1;
@@ -268,7 +299,13 @@ pub fn write(deck_in: &DeckIn, now_ms: i64) -> Result<Vec<u8>, String> {
         let safe: String = media
             .name
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || "-_.".contains(c) { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || "-_.".contains(c) {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         names.insert(count.to_string(), Value::String(safe));
         files.push((count.to_string(), data));
@@ -286,7 +323,12 @@ mod tests {
         DeckIn {
             name: "Biology".to_owned(),
             notes: vec![
-                NoteIn { id: "a".into(), cloze: false, front: "Powerhouse?".into(), back: "Mitochondria".into() },
+                NoteIn {
+                    id: "a".into(),
+                    cloze: false,
+                    front: "Powerhouse?".into(),
+                    back: "Mitochondria".into(),
+                },
                 NoteIn {
                     id: "b".into(),
                     cloze: true,
@@ -294,7 +336,10 @@ mod tests {
                     back: String::new(),
                 },
             ],
-            media: vec![MediaIn { name: "pic one.png".into(), data: "data:image/png;base64,AQID".into() }],
+            media: vec![MediaIn {
+                name: "pic one.png".into(),
+                data: "data:image/png;base64,AQID".into(),
+            }],
         }
     }
 
@@ -304,9 +349,17 @@ mod tests {
         let read = read(&bytes).unwrap();
         assert_eq!(read.name, "Biology");
         assert_eq!(read.notes.len(), 2);
-        assert_eq!(read.notes[0], Note { fields: vec!["Powerhouse?".into(), "Mitochondria".into()] });
+        assert_eq!(
+            read.notes[0],
+            Note {
+                fields: vec!["Powerhouse?".into(), "Mitochondria".into()]
+            }
+        );
         assert!(read.notes[1].fields[0].contains("{{c2::ribosome}}"));
-        assert_eq!(read.media.get("pic_one.png").map(String::as_str), Some("data:image/png;base64,AQID"));
+        assert_eq!(
+            read.media.get("pic_one.png").map(String::as_str),
+            Some("data:image/png;base64,AQID")
+        );
     }
 
     #[test]
@@ -316,7 +369,10 @@ mod tests {
 
     #[test]
     fn refuses_a_collection_in_the_newer_format() {
-        let files = vec![("collection.anki21b".to_owned(), vec![1, 2, 3]), ("meta".to_owned(), vec![8])];
+        let files = vec![
+            ("collection.anki21b".to_owned(), vec![1, 2, 3]),
+            ("meta".to_owned(), vec![8]),
+        ];
         assert_eq!(read(&zip::write(&files)).unwrap_err(), "newer");
     }
 }

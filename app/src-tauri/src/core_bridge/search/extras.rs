@@ -164,7 +164,9 @@ impl Hub {
             }
             "taggedBlocks" => {
                 let request: ScopeArgs = args(value)?;
-                let candidates = lock_index(&shared).tag_candidates(request.scope).map_err(search_error)?;
+                let candidates = lock_index(&shared)
+                    .tag_candidates(request.scope)
+                    .map_err(search_error)?;
                 Ok(self.tagged_blocks(&candidates))
             }
             "setMediaText" => {
@@ -226,7 +228,10 @@ impl Hub {
                 if method == "connections" {
                     serde_json::to_value(graph.connections(page)).map_err(internal)
                 } else {
-                    let depth = request.depth.unwrap_or(1).clamp(1, opennote_search::linkgraph::MAX_DEPTH);
+                    let depth = request
+                        .depth
+                        .unwrap_or(1)
+                        .clamp(1, opennote_search::linkgraph::MAX_DEPTH);
                     serde_json::to_value(graph.neighbors(page, depth)).map_err(internal)
                 }
             }

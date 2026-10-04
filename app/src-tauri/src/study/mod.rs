@@ -37,7 +37,9 @@ pub async fn study_anki_read(request: Request<'_>) -> IpcResult<anki::Read> {
 /// Writes a deck as an Anki package and returns its bytes.
 #[tauri::command]
 pub async fn study_anki_write(deck: anki::DeckIn) -> IpcResult<Response> {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |elapsed| elapsed.as_millis() as i64);
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_millis() as i64);
     let bytes = tauri::async_runtime::spawn_blocking(move || anki::write(&deck, now))
         .await
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?

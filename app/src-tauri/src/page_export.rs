@@ -273,7 +273,10 @@ async fn render_with_devtools(
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
     match outcome {
         Ok(Ok(reply)) => pdf_from_reply(&reply).map_err(|message| IpcError::new(codes::INTERNAL, message)),
-        Ok(Err(message)) => Err(IpcError::new(codes::INTERNAL, format!("Page.printToPDF failed: {message}"))),
+        Ok(Err(message)) => Err(IpcError::new(
+            codes::INTERNAL,
+            format!("Page.printToPDF failed: {message}"),
+        )),
         Err(_) => Err(IpcError::new("timeout", "Printing to PDF took too long.")),
     }
 }

@@ -140,7 +140,10 @@ mod tests {
     #[test]
     fn a_size_out_of_range_is_refused() {
         for (w, h) in [(0, 10), (10, 0), (MAX_SIDE + 1, 10)] {
-            assert!(build_document(&png(), &facts(w, h), Timestamp::default()).is_err(), "{w}x{h}");
+            assert!(
+                build_document(&png(), &facts(w, h), Timestamp::default()).is_err(),
+                "{w}x{h}"
+            );
         }
     }
 }

@@ -208,8 +208,10 @@ pub fn properties_text(page: &Page) -> String {
             lines.push(format!("{name}: {value}"));
         }
     }
-    lines.join("
-")
+    lines.join(
+        "
+",
+    )
 }
 
 /// The searchable text of a block, and the kind it counts as.

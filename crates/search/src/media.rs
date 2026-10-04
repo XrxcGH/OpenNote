@@ -88,7 +88,9 @@ impl MediaText {
 
     fn save(inner: &Inner) {
         let Some(path) = &inner.path else { return };
-        let Ok(bytes) = serde_json::to_vec(&inner.pages) else { return };
+        let Ok(bytes) = serde_json::to_vec(&inner.pages) else {
+            return;
+        };
         let temporary = path.with_extension("tmp");
         if std::fs::write(&temporary, bytes).is_ok() && std::fs::rename(&temporary, path).is_err() {
             let _ = std::fs::remove_file(&temporary);
@@ -114,7 +116,12 @@ impl MediaText {
                 kind,
                 text: text.to_owned(),
             };
-            inner.pages.entry(key).or_default().insert(block.to_string(), entry.clone()) != Some(entry)
+            inner
+                .pages
+                .entry(key)
+                .or_default()
+                .insert(block.to_string(), entry.clone())
+                != Some(entry)
         };
         if changed {
             Self::save(&inner);
@@ -137,7 +144,12 @@ impl MediaText {
         self.lock()
             .pages
             .get(&page.to_string())
-            .map(|blocks| blocks.iter().map(|(block, entry)| (block.clone(), entry.kind)).collect())
+            .map(|blocks| {
+                blocks
+                    .iter()
+                    .map(|(block, entry)| (block.clone(), entry.kind))
+                    .collect()
+            })
             .unwrap_or_default()
     }
 

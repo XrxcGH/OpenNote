@@ -67,14 +67,17 @@ impl SearchIndex {
             "SELECT p.id, p.title, b.id, b.kind FROM blocks b JOIN pages p ON p.rid = b.page
              WHERE instr(lower(b.text), lower(?1)) > 0 ORDER BY p.rid, b.ord LIMIT ?2",
         )?;
-        let rows = statement.query_map(rusqlite::params![needle, i64::try_from(limit).unwrap_or(i64::MAX)], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-                row.get::<_, String>(3)?,
-            ))
-        })?;
+        let rows = statement.query_map(
+            rusqlite::params![needle, i64::try_from(limit).unwrap_or(i64::MAX)],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                ))
+            },
+        )?;
         let mut hits = Vec::new();
         for row in rows {
             let (page, title, block, kind) = row?;

@@ -33,7 +33,10 @@ pub fn read(bytes: &[u8]) -> Result<Vec<Entry>, String> {
     let mut at = u32_at(bytes, eocd + 16).ok_or_else(bad)?;
     let mut entries = Vec::with_capacity(count);
     for _ in 0..count {
-        if !bytes.get(at..).is_some_and(|rest| rest.starts_with(&[0x50, 0x4b, 0x01, 0x02])) {
+        if !bytes
+            .get(at..)
+            .is_some_and(|rest| rest.starts_with(&[0x50, 0x4b, 0x01, 0x02]))
+        {
             return Err(bad());
         }
         let method = u16_at(bytes, at + 10).ok_or_else(bad)?;
@@ -47,7 +50,10 @@ pub fn read(bytes: &[u8]) -> Result<Vec<Entry>, String> {
         if name.ends_with('/') {
             continue;
         }
-        if !bytes.get(local..).is_some_and(|rest| rest.starts_with(&[0x50, 0x4b, 0x03, 0x04])) {
+        if !bytes
+            .get(local..)
+            .is_some_and(|rest| rest.starts_with(&[0x50, 0x4b, 0x03, 0x04]))
+        {
             return Err(bad());
         }
         let skip = u16_at(bytes, local + 26).ok_or_else(bad)? + u16_at(bytes, local + 28).ok_or_else(bad)?;
@@ -82,7 +88,11 @@ pub fn write(files: &[(String, Vec<u8>)]) -> Vec<u8> {
         let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
         encoder.write_all(data).expect("writing to memory");
         let packed = encoder.finish().expect("writing to memory");
-        let (method, body) = if packed.len() < data.len() { (8u16, packed) } else { (0u16, data.clone()) };
+        let (method, body) = if packed.len() < data.len() {
+            (8u16, packed)
+        } else {
+            (0u16, data.clone())
+        };
         let offset = out.len() as u32;
         let name_bytes = name.as_bytes();
         // Local header, then the data. Bit 11 says the name is UTF-8.
