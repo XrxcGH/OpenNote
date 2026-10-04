@@ -86,7 +86,21 @@ The file format is the most important long-term decision, because every future p
 
 Each phase lists what to build, how to test it, and when it is done. Time estimates are left out on purpose; the exit gates decide when to move on.
 
+Each phase below opens with a status note for beta 4 (0.1.0-beta.4). A note says what is built, what is not, and how it was checked. The plan's own wording is unchanged.
+
+How the beta branch was checked:
+
+- Agents ran the type check, lint, Clippy, and the unit tests. The JavaScript suites had 4,247 passes. Three failures were fixed, and four timing tests, which ran while Rust was building, were not rerun.
+- The Rust tests passed (2,577), and agents started the real exe and opened each main screen once.
+- Agents did not run the browser UI tests, the component tests, or the real-device tests.
+- Nobody has checked beta 4 by hand yet. The hand test is [the beta 4 checklist](testing/beta-4-checklist.md).
+
 ### Phase 0: Foundation
+
+Status: done and merged.
+
+- Built: The toolchains, CI, the release workflow, and the templates.
+- Needs the owner: The update signing key belongs to the owner, and the release pipeline has not run yet.
 
 Build:
 
@@ -101,6 +115,11 @@ Done when: a fresh clone builds and opens a window with one command on Windows, 
 
 ### Phase 1: Spikes
 
+Status: done and merged.
+
+- Built: Each spike has a record (ADRs 0004 to 0007), and its code is in `spikes/`.
+- Needs the owner: ADR 0004 still waits for the owner’s camera check of ink latency.
+
 Four throwaway experiments answer the riskiest questions before real code depends on them.
 
 1. **Ink latency.** Draw with a Surface Pen and a Wacom tablet in WebView2. Measure pen-to-screen time with a high-speed phone camera (240 frames per second).
@@ -111,6 +130,13 @@ Four throwaway experiments answer the riskiest questions before real code depend
 Done when: each spike has an ADR with measurements. If ink latency misses the 25 ms budget in BRAND.md and can't be fixed, the ADR switches the interface to Flutter before Phase 2.
 
 ### Phase 2: App shell and navigation
+
+Status: done and merged on 2026-10-02 ([pull request #8](https://github.com/XrxcGH/OpenNote/pull/8)).
+
+- Built: The shell, and all 21 shell extras of beta 4: multi-select, pins, tabs, dock, portable mode, scheduled backups, focus mode, quick capture, the OneNote shortcut set, and more.
+- Not built: The self-updater is built but not used. The beta exe is unsigned and has no updater.
+- Checked by agents: It passed its component, keyboard, and screen tests when it merged. On beta 4, only the unit tests and a start-up run.
+- Checked by hand: Not yet. See section 2 of [the beta 4 checklist](testing/beta-4-checklist.md).
 
 Build:
 
@@ -127,6 +153,12 @@ Test: component tests for every control, keyboard-only end-to-end (E2E) tests of
 Done when: the shell meets the start-up and feedback budgets, and passes the keyboard and screen reader checklist in [section 6](#6-testing-strategy).
 
 ### Phase 3: Document model and storage
+
+Status: done and merged on 2026-10-03 ([pull request #9](https://github.com/XrxcGH/OpenNote/pull/9)).
+
+- Built: Notebook folders, the journal, page history, and Trash.
+- Checked by agents: Crash tests that kill the app during saves run in CI (`tests/crash`).
+- Checked by hand: Not yet. See section 1a and 3 of [the beta 4 checklist](testing/beta-4-checklist.md).
 
 Build:
 
@@ -146,6 +178,12 @@ Done when: all three test types pass, and a 1,000-page sample notebook opens wit
 
 ### Phase 4: Typed notes
 
+Status: done and merged on 2026-10-03 ([pull request #15](https://github.com/XrxcGH/OpenNote/pull/15)).
+
+- Built: The typed notes editor, and all 18 extras of beta 4, such as wrapping text around pictures, templates, find and replace, and page embeds.
+- Checked by agents: Typing speed is measured in [docs/perf/phase-4.md](perf/phase-4.md), which also lists what is still over budget.
+- Checked by hand: Not yet. See section 4 of [the beta 4 checklist](testing/beta-4-checklist.md).
+
 Build:
 
 - Add text containers that can be placed anywhere on a page (the OneNote model), or stacked in a simple document flow.
@@ -160,6 +198,14 @@ Test: editor unit tests for every command, E2E tests for writing and formatting 
 Done when: typing stays within 16 ms on the reference laptop with a 20-page-long note.
 
 ### Phase 5: Ink
+
+Status: built, and in beta testing on branch `beta`.
+
+- Built: Pens, the highlighter, erasers, the lasso, shapes, and palm rejection, with 21 of the 24 extras. They include gestures, insert space, replay, and handwriting to text.
+- Not built: The pen library (fountain, brush, calligraphy, dashed, dotted), strokes in the audio stamp index, and links on handwriting.
+- Needs the owner: Layers (a format decision), pen settings sync, and pen writing in text fields.
+- Checked by agents: Unit tests, the 10,000-stroke benchmark ([docs/perf/phase-5-core.md](perf/phase-5-core.md)), and the palm replays ([docs/perf/palm-accuracy.md](perf/palm-accuracy.md)). Two palm timing tests and two highlight idle-time tests failed under load and were not rerun.
+- Checked by hand: Not yet. That includes the real-pen test in [docs/testing/palm-rejection.md](testing/palm-rejection.md).
 
 Build:
 
@@ -176,6 +222,13 @@ Done when: the pen-to-screen and frame-rate budgets pass on the reference laptop
 
 ### Phase 6: Page views and export
 
+Status: built, and in beta testing.
+
+- Built: Flow, paginated, and canvas views, lined, grid, and dot paper with text on the rules, PDF, image, and Word export, print, slides, the gallery, and reading aids. All 11 extras are built.
+- Not built: The PDF choice in the Import and export dialog is not connected (the `interop.exportPdf` flag is off). A page’s Export and Print still make PDFs.
+- Checked by agents: Unit tests. The ruled-paper browser test passes 10 of 12 cases. Print and PDF on ruled paper were checked by tests and by reading the code, not by printing.
+- Checked by hand: Not yet. See section 6 of [the beta 4 checklist](testing/beta-4-checklist.md).
+
 This phase delivers the owner's top request: seeing page breaks.
 
 Build:
@@ -190,6 +243,12 @@ Test: golden-image tests that render sample pages to PDF and compare them with a
 Done when: exported PDFs match the screen for every sample page, and switching views keeps the content under the pointer still.
 
 ### Phase 7: Smart tables and charts
+
+Status: built, and in beta testing.
+
+- Built: Smart tables, calculated columns, board, calendar, gallery, and timeline views, charts, accessible charts, and drawing a grid to make a table. Nothing is left out.
+- Checked by agents: Unit tests only.
+- Checked by hand: Not yet. See section 7 of [the beta 4 checklist](testing/beta-4-checklist.md).
 
 This phase delivers the owner's second request: easy charts.
 
@@ -206,6 +265,13 @@ Done when: a 1,000-row table sorts and redraws its chart within 100 ms.
 
 ### Phase 8: Search and linking
 
+Status: built, and in beta testing.
+
+- Built: The search panel, the quick switcher, page and paragraph links, backlinks, tags, and daily notes. Also properties, collections, the graph view, the canvas of cards, replace across notebooks, and text in pictures in search.
+- Not built: Links on handwriting. Handwriting is not fed to search yet.
+- Checked by agents: Unit tests and the benchmark in [docs/perf/phase-8-core.md](perf/phase-8-core.md).
+- Checked by hand: Not yet. See section 8 of [the beta 4 checklist](testing/beta-4-checklist.md).
+
 Build:
 
 - Add the full-text search (FTS) index, updated in the background after each save.
@@ -218,6 +284,13 @@ Test: index consistency tests after random edits, the 10,000-page search benchma
 Done when: search meets its 100 ms budget, and renaming a page updates every link to it.
 
 ### Phase 9: Audio recording
+
+Status: built, and in beta testing.
+
+- Built: Recording with stamps, flags, trim, split, and system audio. Also transcript blocks, speakers, and recaps. 14 of the 16 extras are built.
+- Not built: Time-stamped notes on embedded video and podcast players, and a narrated video export. A recording’s `.timeline` file is not a core asset, so duplicating a page copies the audio but not the timeline.
+- Checked by agents: The `crates/media` tests and [docs/perf/phase-9-core.md](perf/phase-9-core.md). An agent started a recording once, and it worked.
+- Checked by hand: Not yet. Recording is one of the riskiest parts. See sections 1d and 9 of [the beta 4 checklist](testing/beta-4-checklist.md).
 
 Build:
 
@@ -232,6 +305,13 @@ Done when: timestamps stay within 100 ms of the audio after a 3-hour recording, 
 
 ### Phase 10: Math
 
+Status: built, and in beta testing.
+
+- Built: LaTeX math, the grapher, math actions, quick math, diagrams, and mind maps. Also flashcards, Anki and CSV, study tape, citations, and the tool windows (timers, calculator, unit converter, reference tables, Upcoming).
+- Not built: Making cards from a page, section, or transcript, and a dictionary and thesaurus tool.
+- Checked by agents: Unit tests and [docs/perf/expr-engine.md](perf/expr-engine.md). Tool windows open a second webview, which is the likeliest place for the real exe to differ.
+- Checked by hand: Not yet. See section 10 of [the beta 4 checklist](testing/beta-4-checklist.md).
+
 Build:
 
 - Add LaTeX math blocks and inline math.
@@ -244,6 +324,14 @@ Done when: all math renders on screen and in PDF identically.
 
 ### Phase 11: Import and export
 
+Status: built, and in beta testing.
+
+- Built: Importers for Markdown, Obsidian, Word, HTML, Notion, Google Keep, Logseq, Evernote, and more. Also the exporters and the import report with undo. 13 of the 26 extras are built, such as .odt, .xlsx, .pptx, .eml, Sticky Notes, and send to folders.
+- Not built: PDF in the dialog, OneNote `.one` and `.onepkg` files, PDF import with note space, PDF highlights, dimmed PDFs, and scan cleanup. Also opening single Markdown files, the local API, the command-line tool, a Model Context Protocol (MCP) server, the web clipper, the phone camera, and the embed block. Share as a file has a back end and no screen.
+- Needs the owner: Everything that needs a Google or Microsoft account.
+- Checked by agents: The `crates/interop` tests and [docs/perf/phase-11-core.md](perf/phase-11-core.md).
+- Checked by hand: Not yet. See section 11 of [the beta 4 checklist](testing/beta-4-checklist.md).
+
 Build:
 
 - Add export to Markdown, HTML, DOCX, and PDF, for a page, a section or a whole notebook.
@@ -255,6 +343,13 @@ Test: round-trip tests (export then import gives the same content), plus a corpu
 Done when: the test corpus imports without errors, and the "OneNote user switching" E2E test passes.
 
 ### Phase 12: On-device intelligence
+
+Status: built, and in beta testing.
+
+- Built: Text in pictures, read aloud, summaries, and handwriting to text, all off until a person turns them on. 9 of the 15 extras are built, such as model downloads with consent, search by meaning, Ask your notes, and writing tools.
+- Not built: The whisper.cpp transcription engine, dictation, live captions, the speaker separation engine, math recognition from handwriting, and translation on the device.
+- Checked by agents: Unit tests and the `crates/intel` tests. It needs Windows language packs and voices on the PC.
+- Checked by hand: Not yet. See section 12 of [the beta 4 checklist](testing/beta-4-checklist.md).
 
 These are set up during first-run setup (see FEATURES.md), not left off. They run on the device, and nothing leaves it.
 
@@ -272,6 +367,14 @@ Done when: all three features pass their accuracy targets, and the app stays smo
 
 ### Phase 13: Hardening and beta
 
+Status: partly built.
+
+- Built: Opt-in crash reports with consent, the self-check, the feedback file, safe start, and the Privacy page with Work offline. Interface text is in translation files.
+- Not built: The accessibility audit with Narrator and NVDA (a free screen reader), and testing updates from every earlier beta, because the beta exe has no updater.
+- Needs the owner: The four-week public beta.
+- Checked by agents: Unit tests and the Rust tests.
+- Checked by hand: Not yet. See section 13 of [the beta 4 checklist](testing/beta-4-checklist.md).
+
 Build:
 
 - Fix every issue found by the soak tests, fuzzing, and performance runs.
@@ -283,6 +386,12 @@ Build:
 Done when: a four-week public beta shows at least 99.5% of sessions ending without a crash, and no data-loss reports.
 
 ### Phase 14: Windows release
+
+Status: built but not run.
+
+- Built: The release workflow, the signing steps, checksums, and winget files. See [docs/RELEASING.md](RELEASING.md).
+- Not built: No release has been made, and no sign-off file exists yet in `docs/releases/`.
+- Needs the owner: The beta period, the code-signing certificate, and the update signing key.
 
 Complete the [release checklist](#10-release-checklist), then tag version 1.0.0. The release workflow signs the Windows exes and publishes them on GitHub, and every beta copy updates itself to the new version.
 
