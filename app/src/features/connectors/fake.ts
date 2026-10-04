@@ -12,7 +12,6 @@ import type {
   ConnectorInfo,
   ConnectorRequest,
   ConnectorResponse,
-  Disconnected,
   RevokeOutcome,
 } from './types';
 
@@ -47,11 +46,10 @@ export interface FakeConnectors {
 
 const NOW = 1_790_000_000;
 
-function copy(item: ConnectorInfo): ConnectorInfo {
-  return structuredClone(item);
-}
+const copy = (item: ConnectorInfo): ConnectorInfo => structuredClone(item);
 
-export function createFakeConnectors(options: FakeOptions = {}): FakeConnectors {
+/** The registry's list, with the connectors that are configured or already connected as the options say. */
+function startingItems(options: FakeOptions): ConnectorInfo[] {
   const configured = options.configured ?? [];
   const items = (catalog as unknown as ConnectorInfo[]).map(copy);
   for (const item of items) {
@@ -61,31 +59,72 @@ export function createFakeConnectors(options: FakeOptions = {}): FakeConnectors 
       item.state = { kind: 'notConnected' };
     }
   }
+  return items;
+}
+
+/** Marks a connector as connected. A school's connector then talks to the school's server only. */
+function markConnected(item: ConnectorInfo, account: string, input?: ConnectInput): ConnectorInfo {
+  const address = input?.baseUrl
+    ?.trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '');
+  item.pending = false;
+  item.baseUrl = address ? `https://${address}` : null;
+  item.state = { kind: 'connected', account, connectedUnix: NOW };
+  if (item.auth === 'tokenAndUrl' && item.baseUrl) item.hosts = [new URL(item.baseUrl).host];
+  return copy(item);
+}
+
+/** What the real host checks about a pasted token and a school's address, before it asks the service. */
+function connectWithToken(item: ConnectorInfo, input: ConnectInput): ConnectorInfo {
+  const token = input.token?.trim() ?? '';
+  if (token.length < 8 || /\s/.test(token)) throw new ConnectorError('badInput');
+  if (item.auth === 'tokenAndUrl' && !input.baseUrl?.trim()) throw new ConnectorError('badInput');
+  return markConnected(item, item.auth === 'tokenAndUrl' ? 'Sam Student' : '', input);
+}
+
+interface Waiting {
+  resolve(account: string): void;
+  reject(code: ConnectorErrorCode): void;
+}
+
+export function createFakeConnectors(options: FakeOptions = {}): FakeConnectors {
+  const items = startingItems(options);
+  const waiting = new Map<string, Waiting>();
+  const calls: string[] = [];
+  const requests: FakeConnectors['requests'] = [];
+  const inputs: Record<string, ConnectInput | undefined> = {};
+  const offline = () => options.offline?.() ?? false;
   const find = (id: string): ConnectorInfo => {
     const item = items.find((one) => one.id === id);
     if (!item) throw new ConnectorError('unknown');
     return item;
   };
-  const waiting = new Map<string, { resolve(account: string): void; reject(code: ConnectorErrorCode): void }>();
-  const calls: string[] = [];
-  const requests: FakeConnectors['requests'] = [];
-  const inputs: Record<string, ConnectInput | undefined> = {};
-  const offline = () => options.offline?.() ?? false;
-
-  const signedIn = (item: ConnectorInfo, account: string, input?: ConnectInput): ConnectorInfo => {
-    item.pending = false;
-    item.baseUrl = input?.baseUrl ? `https://${input.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}` : null;
-    item.state = { kind: 'connected', account, connectedUnix: NOW };
-    // A school's connector talks to the school's server only.
-    if (item.auth === 'tokenAndUrl' && item.baseUrl) item.hosts = [new URL(item.baseUrl).host];
-    return copy(item);
+  const finish = (id: string, account: string): void => {
+    const entry = waiting.get(id);
+    waiting.delete(id);
+    entry?.resolve(account);
+  };
+  const fail = (id: string, code: ConnectorErrorCode): void => {
+    const entry = waiting.get(id);
+    waiting.delete(id);
+    entry?.reject(code);
   };
 
-  const connectWithToken = (item: ConnectorInfo, input: ConnectInput): ConnectorInfo => {
-    const token = input.token?.trim() ?? '';
-    if (token.length < 8 || /\s/.test(token)) throw new ConnectorError('badInput');
-    if (item.auth === 'tokenAndUrl' && !input.baseUrl?.trim()) throw new ConnectorError('badInput');
-    return signedIn(item, item.auth === 'tokenAndUrl' ? 'Sam Student' : '', input);
+  /** A sign-in on the service's own page: pending until the test (or the web build's timer) finishes it. */
+  const signIn = (item: ConnectorInfo, input?: ConnectInput): Promise<ConnectorInfo> => {
+    item.pending = true;
+    return new Promise<ConnectorInfo>((resolve, reject) => {
+      waiting.set(item.id, {
+        resolve: (account) => resolve(markConnected(item, account, input)),
+        reject: (code) => {
+          item.pending = false;
+          reject(new ConnectorError(code));
+        },
+      });
+      if (options.autoSignIn)
+        setTimeout(() => finish(item.id, options.autoSignIn?.account ?? ''), options.autoSignIn.afterMs);
+    });
   };
 
   const client: ConnectorsClient = {
@@ -97,40 +136,24 @@ export function createFakeConnectors(options: FakeOptions = {}): FakeConnectors 
       if (offline()) return Promise.reject(new ConnectorError('offline'));
       if (item.state.kind === 'needsSetup') return Promise.reject(new ConnectorError('notConfigured'));
       if (waiting.has(id)) return Promise.reject(new ConnectorError('busy'));
-      if (item.auth !== 'oauth') {
-        try {
-          return Promise.resolve(connectWithToken(item, input ?? {}));
-        } catch (error) {
-          return Promise.reject(error);
-        }
+      if (item.auth === 'oauth') return signIn(item, input);
+      try {
+        return Promise.resolve(connectWithToken(item, input ?? {}));
+      } catch (error) {
+        return Promise.reject(error);
       }
-      item.pending = true;
-      return new Promise<ConnectorInfo>((resolve, reject) => {
-        waiting.set(id, {
-          resolve: (account) => resolve(signedIn(item, account, input)),
-          reject: (code) => {
-            item.pending = false;
-            reject(new ConnectorError(code));
-          },
-        });
-        if (options.autoSignIn) {
-          const { afterMs, account } = options.autoSignIn;
-          setTimeout(() => finish(id, account), afterMs);
-        }
-      });
     },
     cancel(id) {
       calls.push(`cancel:${id}`);
       fail(id, 'canceled');
       return Promise.resolve();
     },
-    disconnect(id): Promise<Disconnected> {
+    disconnect(id) {
       calls.push(`disconnect:${id}`);
       const item = find(id);
       item.state = { kind: 'notConnected' };
       item.baseUrl = null;
-      const revoke = options.revoke ?? 'revoked';
-      return Promise.resolve({ view: copy(item), revoke });
+      return Promise.resolve({ view: copy(item), revoke: options.revoke ?? 'revoked' });
     },
     request(id, access, request) {
       requests.push({ id, access, request });
@@ -138,21 +161,11 @@ export function createFakeConnectors(options: FakeOptions = {}): FakeConnectors 
       if (offline()) return Promise.reject(new ConnectorError('offline'));
       if (item.state.kind === 'expired') return Promise.reject(new ConnectorError('expired'));
       if (item.state.kind !== 'connected') return Promise.reject(new ConnectorError('notConnected'));
-      const answer = options.respond?.(id, request) ?? { status: 200, contentType: 'application/json', body: '{}' };
-      return Promise.resolve(answer);
+      return Promise.resolve(
+        options.respond?.(id, request) ?? { status: 200, contentType: 'application/json', body: '{}' },
+      );
     },
   };
-
-  function finish(id: string, account: string): void {
-    const entry = waiting.get(id);
-    waiting.delete(id);
-    entry?.resolve(account);
-  }
-  function fail(id: string, code: ConnectorErrorCode): void {
-    const entry = waiting.get(id);
-    waiting.delete(id);
-    entry?.reject(code);
-  }
 
   return { client, items, calls, requests, inputs, finishSignIn: finish, failSignIn: fail };
 }

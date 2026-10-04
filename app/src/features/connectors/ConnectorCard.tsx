@@ -1,4 +1,4 @@
-// One connector: its name and state, what connecting unlocks, what OpenNote will be able to do, and the buttons for
+// One connector: its name and state, what connecting gives you, what OpenNote will be able to do, and the buttons for
 // its state. A service with its own sign-in page opens the browser from Connect. A service that takes a pasted token
 // shows its form (the token, and the school's address where there is one) under the button.
 
@@ -49,7 +49,7 @@ function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): 
     setBusy(true);
     const connected = await onSubmit({ token, ...(school ? { baseUrl: address } : {}) });
     setBusy(false);
-    // The token leaves the page as soon as it has been sent, whether or not it was accepted.
+    // The token field is emptied as soon as the token has been sent, whatever the answer.
     setToken('');
     if (connected) onClose();
   };

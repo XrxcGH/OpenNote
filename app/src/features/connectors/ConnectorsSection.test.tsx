@@ -49,7 +49,7 @@ describe('the list', () => {
     await setup({ configured: 'all' });
     render(<ConnectorsSection />);
     const google = await screen.findByRole('article', { name: 'Google' });
-    expect(within(google).getByText(/Open meeting notes from Calendar events/)).toBeTruthy();
+    expect(within(google).getByText(/Meeting notes from Calendar events/)).toBeTruthy();
     fireEvent.click(within(google).getByText('What this allows'));
     expect(within(google).getByText('Read your calendar events. It cannot change them.')).toBeTruthy();
     expect(within(google).getByText('Read and change your tasks.')).toBeTruthy();
@@ -113,7 +113,7 @@ describe('signing in with the service’s own page', () => {
     render(<ConnectorsSection />);
     const microsoft = await screen.findByRole('article', { name: 'Microsoft' });
     expect(within(microsoft).queryByRole('button', { name: 'Connect' })).toBeNull();
-    expect(within(microsoft).getByText(/ships without a client ID for Microsoft/)).toBeTruthy();
+    expect(within(microsoft).getByText(/has no client ID for Microsoft/)).toBeTruthy();
     fireEvent.click(within(microsoft).getByRole('button', { name: 'Show setup steps' }));
     fireEvent.click(within(microsoft).getByRole('button', { name: 'Open the connectors folder' }));
     expect(opened).toEqual([
@@ -137,7 +137,7 @@ describe('Disconnect and Reconnect', () => {
     fireEvent.click(within(dropbox).getByRole('button', { name: 'Disconnect' }));
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Disconnect' }));
     await waitFor(() => expect(states(fake, 'dropbox')).not.toBe('connected'));
-    await waitFor(() => expect(announcements().join(' ')).toMatch(/Dropbox has no way to end the sign-in from here/));
+    await waitFor(() => expect(announcements().join(' ')).toMatch(/Dropbox is disconnected here/));
   });
 
   it('offers Reconnect beside Disconnect when the sign-in expired', async () => {

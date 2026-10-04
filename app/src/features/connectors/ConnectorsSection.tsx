@@ -52,7 +52,9 @@ export default function ConnectorsSection() {
   }, [query, loaded, visible.length]);
   return (
     <div className={styles.page}>
-      <p className={styles.help}>{t('connectors.intro')}</p>
+      <p className={styles.help}>
+        {t('connectors.intro')} {t('connectors.introMore')}
+      </p>
       {offline && (
         <p id={noticeId} className={styles.notice} role="status">
           {t('connectors.offlineNotice')}

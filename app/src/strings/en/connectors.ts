@@ -5,12 +5,11 @@
 
 export const connectors = {
   section: 'Connectors',
-  intro:
-    "Connect an account so OpenNote can work with that service. Everything here is off until you connect it. You sign in on the service's own page, and you can disconnect at any time.",
+  intro: 'Connect an account so a feature can use that service. Everything here is off until you connect it.',
+  introMore: "You sign in on the service's own page, and you can disconnect at any time.",
   searchLabel: 'Search connectors',
   noMatches: 'No connectors match that search.',
   resultCount: '{count, plural, one {# connector matches.} other {# connectors match.}}',
-  listLabel: 'Connectors',
   offlineNotice: 'Work offline is on, so signing in and renewing wait until you go back online.',
   groups: {
     microsoft: 'Microsoft',
@@ -25,7 +24,6 @@ export const connectors = {
     connectedNoName: 'Connected',
     needsSetup: 'Needs setup',
     expired: 'Sign-in expired',
-    expiredAs: 'Sign-in expired for {account}',
     waiting: 'Waiting for you to finish signing in, in your browser',
     connectedOn: 'Connected on {date}',
   },
@@ -40,7 +38,7 @@ export const connectors = {
     details: 'What this allows',
   },
   detail: {
-    unlocksHeading: 'What connecting unlocks',
+    unlocksHeading: 'Features that use this account',
     accessHeading: 'What OpenNote will be able to do',
     readOnly: 'Read only',
     canChange: 'Can change data',
@@ -49,23 +47,18 @@ export const connectors = {
     noHostsYet: "OpenNote talks only to your school's server, once you give its address.",
     lastUsed: 'Last used {date}',
     neverUsed: 'Not used yet',
-    setupHelp:
-      'OpenNote ships without a client ID for {name}. The setup steps say how to register OpenNote with the service and where to put the ID.',
-    tokenHeading: 'Personal token',
+    setupHelp: 'OpenNote has no client ID for {name} yet. The setup steps say how to add one.',
     tokenLabel: 'Personal token',
     tokenHelp: 'Paste the token from your account. OpenNote keeps it in Windows Credential Manager, never in a file.',
     addressLabel: 'School address',
     addressHelp: "The address you use to sign in to your school's site, such as school.instructure.com.",
-    removeHelp:
-      'To remove OpenNote from your {name} account entirely, use the access page in your {name} account settings.',
   },
   service: {
     microsoft: {
       unlocks: 'Import notebooks from OneNote, open meeting notes from Outlook events, and sync Microsoft To Do.',
     },
     google: {
-      unlocks:
-        'Open meeting notes from Calendar events, sync Google Tasks, bring in Classroom assignments, send pages to Drive, and use YouTube captions.',
+      unlocks: 'Meeting notes from Calendar events, Google Tasks, Classroom assignments, Drive, and YouTube captions.',
     },
     slack: { unlocks: 'Share a page to a Slack channel.' },
     dropbox: { unlocks: 'Sync folders with Dropbox and send pages to it.' },
@@ -129,12 +122,10 @@ export const connectors = {
   },
   revoke: {
     revoked: 'Disconnected from {name}. The service no longer lets OpenNote in.',
-    notSupported:
-      '{name} is disconnected on this computer. {name} has no way to end the sign-in from here, so remove OpenNote from your account settings there too.',
+    notSupported: '{name} is disconnected here. To end the sign-in there too, remove OpenNote in your {name} account.',
     skippedOffline:
-      '{name} is disconnected on this computer. Work offline was on, so {name} was not told. Remove OpenNote from your account settings there to end the sign-in.',
-    failed:
-      '{name} is disconnected on this computer. OpenNote could not reach {name} to end the sign-in, so remove OpenNote from your account settings there.',
+      'Disconnected here. Work offline was on, so {name} was not told. Remove OpenNote in your {name} account.',
+    failed: 'Disconnected here. OpenNote could not reach {name}, so remove OpenNote in your {name} account.',
   },
   error: {
     offline: 'Work offline is on. Turn it off in Privacy settings, then try again.',
@@ -148,14 +139,13 @@ export const connectors = {
     timedOut: 'The sign-in to {name} was not finished in 5 minutes, so it was closed. Choose Connect to try again.',
     denied: 'You did not allow access, so {name} is not connected.',
     mismatch: "The browser's answer did not match this sign-in, so OpenNote ignored it. Choose Connect to start again.",
-    portInUse:
-      'Another program is using the port that {name} sign-in needs. Close it, or choose another port in the connectors file.',
+    portInUse: 'Another program is using the port {name} needs. Close it, or set another port in the connectors file.',
     browserFailed: 'OpenNote could not open your browser. Check your default browser in Windows settings.',
     network: 'OpenNote could not reach {name}. Check your connection and try again.',
     rejected: '{name} did not accept the sign-in or the token. Check it and try again.',
     badInput: "Check the school address and the token. The address must start with https and name your school's site.",
     foreignHost: 'That address is not one OpenNote may connect to for {name}.',
-    storage: 'OpenNote could not save the {name} sign-in in Windows Credential Manager.',
+    storage: 'OpenNote could not save the {name} connection in Windows Credential Manager.',
   },
   privacy: {
     heading: 'Connected accounts',
