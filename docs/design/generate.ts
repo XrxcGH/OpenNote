@@ -1,8 +1,9 @@
-// Regenerates every wireframe in docs/design/images from brand/tokens.json.
+// Regenerates every wireframe in docs/design/images, and brand/social-preview.svg, from brand/tokens.json.
 // Run with: npm run design
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { socialPreview } from './social-preview.ts';
 import type { Screen } from './screens/screen.ts';
 import { firstRunLook, firstRunSmart, firstRunStorage } from './screens/first-run.ts';
 import { studyTools } from './screens/study.ts';
@@ -76,3 +77,6 @@ for (const screen of screens) {
   writeFileSync(join(OUT_DIR, screen.file), screen.svg);
   console.log(`wrote ${screen.file}`);
 }
+
+writeFileSync(join(import.meta.dirname, '..', '..', 'brand', 'social-preview.svg'), socialPreview());
+console.log('wrote brand/social-preview.svg');
