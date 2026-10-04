@@ -1,17 +1,27 @@
 # OpenNote screens
 
-These wireframes show the layout of each major screen, with sizes, keep-out zones and the rules behind them. They follow [BRAND.md](../BRAND.md) and use its exact colors from [`brand/tokens.json`](../../brand/tokens.json). They are layout guides, not pixel-perfect mockups: icons are placeholders, and gray bars stand in for text.
+These wireframes show the layout of each major screen, with sizes, keep-out zones, and the rules behind them. They follow [BRAND.md](../BRAND.md) and use its exact colors from [`brand/tokens.json`](../../brand/tokens.json). They are layout guides, not pixel-perfect mockups: icons are placeholders, and gray bars stand in for text.
+
+They were redrawn for beta 4 to match the app as built. For real pictures of every screen, in the light and the dark theme, see [the screenshots](../screens/README.md).
 
 ## Contents
 
 - [Reading the drawings](#reading-the-drawings)
+- [The brand look](#the-brand-look)
 - [First run](#first-run)
 - [A new page](#a-new-page)
+- [The page editor](#the-page-editor)
+- [Drawing and ink](#drawing-and-ink)
+- [Page views and paper](#page-views-and-paper)
+- [Tables and charts](#tables-and-charts)
+- [Math and graphs](#math-and-graphs)
 - [Organizing notebooks](#organizing-notebooks)
 - [Paginated view](#paginated-view)
 - [Recording](#recording)
-- [Search and commands](#search-and-commands)
+- [Search, commands, and links](#search-commands-and-links)
+- [Import and export](#import-and-export)
 - [Settings](#settings)
+- [Tool windows](#tool-windows)
 - [Size classes](#size-classes)
 - [Phone](#phone)
 - [Study tools](#study-tools)
@@ -37,40 +47,114 @@ Keep-out zones that apply to every desktop screen:
 | Compact title bar | Drag area and window buttons only | The theme toggle and other items move to the app bar below, so the drag area stays wide. Setup shows the logo, the name, the drag area, and the window buttons |
 | Pane resize handles | 8 px wide | Dragging the divider resizes a pane, so nothing clickable may sit on it |
 
+## The brand look
+
+OpenNote should feel like a good desk by a window. The wireframes draw that look in three places:
+
+| Part of the look | Where it appears |
+|---|---|
+| The desk scene: a window with a vine, a plant, books, an open notebook, and two candles | The welcome step, empty states, and About. Drawings sit beside the work and never on text. |
+| The ambient canvas: window light pooling from the top left corner by day, a dusk sky with a few stars in the evening | Around the page card. The card itself stays plain paper. The setup backdrop keeps only the pool of light. |
+| A small plant in a pot | The foot of the notebooks pane, beside Trash. |
+
+The window in every desktop drawing has the same parts:
+
+| Part | What it holds |
+|---|---|
+| Title bar | The logo, back and forward arrows, a breadcrumb that starts with the notebook's color, the save status, Upcoming, search, and the theme toggle, then the window buttons. |
+| Command bar | Home, Insert, Draw, and View tabs, with the active tab's tools to the right. Tools that do not fit move under More. |
+| Notebooks pane (272, resizable 220 to 400) | Notebooks, section groups, and sections, each with a color. Trash and the plant are at the foot. Settings opens with Ctrl+, (comma). |
+| Pages pane (300, resizable 240 to 420) | Pages in the selected section, each with its changed date. Subpages are indented. |
+| Page | The page card on the canvas, with a Properties chip at the top right and a status line with the word count and reading time. |
+
 ## First run
+
+![First run, step 1: the welcome desk by the window](images/16-first-run-welcome.svg)
+
+Setup has six short steps in a centered 720 × 672 card:
+
+1. **Welcome:** what OpenNote is, in one sentence, over the desk scene (shown above).
+2. **Choose your look:** Light, Dark, or Match Windows (shown below). Match Windows is selected in advance, with a caption that names the Windows setting. Clicking a card repaints the whole screen at once.
+3. **On-device intelligence:** Recommended, Custom, or Not now (see [FEATURES.md](../FEATURES.md)). Not now is selected in advance, and nothing downloads until the person chooses it.
+4. **Keys and pen:** the OpenNote or OneNote shortcut set, and a button that opens Windows pen settings for the pen's top button.
+5. **Where to keep things:** the notes folder, where the app lives, and the first notebook.
+6. **Bring in your notes:** start with a new notebook, or open the Import window when setup is done.
 
 ![First run, step 2: three theme cards, with Match Windows selected](images/01-first-run-look.svg)
 
-Setup has five short steps in a centered 720 × 672 card:
+![First run, step 3: on-device intelligence with Recommended, Custom, and Not now](images/02b-first-run-smart.svg)
 
-1. **Welcome:** what OpenNote is, in one sentence.
-2. **Choose your look:** Light, Dark, or Match Windows (shown above). Match Windows is selected in advance, with a caption that names the Windows setting, and clicking a card repaints the whole screen at once.
-3. **Where to keep things:** the notes folder, where the app lives, and the first notebook (shown below).
-4. **Smart features:** choose on-device transcription, handwriting, and image text (see [FEATURES.md](../FEATURES.md)).
-5. **Bring your notes (optional):** import from OneNote or Evernote, or skip.
+Step 3 lists each option as a full-width card, with the model's download size shown before anything downloads.
 
-![First run, step 3: notes folder, app location, and first notebook](images/02-first-run-storage.svg)
+![First run, step 4: the shortcut set and the pen top button](images/16b-first-run-keys.svg)
 
-![First run, step 4: smart features with Recommended, Custom, and Not now](images/02b-first-run-smart.svg)
-
-Step 4 lists each option as a full-width card, with model download sizes shown before anything downloads.
+![First run, step 5: notes folder, app location, and first notebook](images/02-first-run-storage.svg)
 
 Paths are shown in full and wrap onto a second line rather than being cut in the middle. Back never loses what was entered.
+
+![First run, step 6: bring in your notes](images/16c-first-run-import.svg)
 
 ## A new page
 
 ![A new, empty page in the three-pane layout, light theme](images/03-new-page.svg)
 
-- **Title bar:** logo, breadcrumb, save status, the dark mode toggle, then the window buttons.
-- **Command bar:** Home, Insert, Draw, and View tabs, with the active tab's tools to the right.
-- **Notebooks pane (272, resizable 220 to 400):** notebooks, section groups, and sections, each with a color.
-- **Pages pane (300, resizable 240 to 420):** pages in the selected section. Subpages are indented.
+- **Title bar and command bar:** as described in [the brand look](#the-brand-look).
 - **Page:** fills the rest and is never narrower than 480. Text starts 48 px in, and lines stop at 72 characters.
-- **Pen palette:** floats at the bottom center of the page by default and can be dragged anywhere. Its home spot stays clear of other controls.
+- **Pen slots:** live in the Draw tab. Below 1600 px they sit under More, then Pen.
 
-The same screen in the dark theme:
+The same screen in the dark theme, with the dusk sky and stars:
 
 ![The same new page in the dark theme](images/03-new-page-dark.svg)
+
+## The page editor
+
+![A page of typed notes, with the formatting buttons in the Home tab and the slash menu open](images/17-page-editor.svg)
+
+- **Home tab:** Record and Options, then the formatting buttons (Bold, Italic, Underline, Highlight) while the caret is in text, then New page, New section, New notebook, Undo, and More.
+- **Typing:** Markdown shortcuts work as you type. A hash and a space make a heading, and a dash and a space make a list.
+- **Slash menu:** type a slash at the start of a line to add a table, equation, graph, code block, callout, or recording.
+- **Page links:** typing two square brackets lists pages. A link shows whether its page exists.
+- **Properties chip:** tags and page details, at the top right of the page.
+- **Status line:** words and reading time, at the foot of the page.
+
+## Drawing and ink
+
+![The Draw tab with ink on a page: a highlighter, a circled link, an arrow, and a pencil sketch](images/18-draw-tab.svg)
+
+- **Draw tab:** Select and type, Stroke eraser, Partial eraser, Lasso select, Insert space, and Writing pen, then More.
+- **Pen slots:** seven slots (pens, a pencil, and highlighters), then Color and Width for the active one. At 1600 px and wider they sit in the bar. Narrower, they are under More, then Pen.
+- **Select and type:** keeps the text under the ink easy to click and type into. Choosing a pen draws instead.
+- **More:** Ruler, Add text to shape, Ink to shape, Replay ink, Describe drawing, Zoom writing box, and Canvas lock.
+
+Ink is saved with the page, loads back when the page opens, and undo takes it away.
+
+## Page views and paper
+
+![The View tab with lined paper behind typed notes and the Background menu open](images/19-view-tab.svg)
+
+- **Pane buttons:** Notebooks pane and Pages pane show and hide the two panes. A hidden pages pane leaves a 48 px rail.
+- **Layout:** Infinite canvas, or Pages with breaks at Letter, A4, A5, or Legal size.
+- **Background:** Blank, Lined (narrow, college, or wide), Grid (5 mm, quarter inch, or 1 cm), or Dot grid.
+- **Text on the rules:** on lined, grid, and dot paper, typed text sits on the rules the way handwriting does.
+- **Pane widths and Focus mode:** Pane widths sets the pane sizes. Focus mode turns the calm writing view on or off.
+
+## Tables and charts
+
+![A smart table with a formula, the Data menu, and the bar chart made from the table](images/20-tables-charts.svg)
+
+- **Smart table:** a cell that starts with an equals sign is a formula and shows its result. Results follow the data.
+- **Data menu:** sort, filter, and Insert chart. A chart is made in two steps and draws below the table.
+- **Chart:** follows the data as it is edited and takes the table's filter. Chart options changes the kind, adds patterns, or removes it.
+- **Access:** the chart is named for screen readers, with a legend, so color is never the only signal.
+
+## Math and graphs
+
+![An inline equation, a function graph with a slider, and the notes beside them](images/21-math-grapher.svg)
+
+- **Equations:** Alt+= writes one inside a sentence. Type /equation for a display equation. The field shows a preview and names a mistake in the LaTeX.
+- **Graph block:** type /graph. The block's text is the whole graph, with one function on each line.
+- **Using the graph:** plus and minus zoom, the arrow keys pan, and Shift with the arrows reads a value and a slope.
+- **Sliders:** each letter besides x in a function gets a slider.
 
 ## Organizing notebooks
 
@@ -87,11 +171,11 @@ Tree rows are 32 px tall with a pointer and 44 px on touch, indented 16 px per l
 
 ![A lab report in paginated view, with page margins, a table, a chart, and a page break](images/05-paginated-view.svg)
 
-The View tab switches any page between the infinite canvas and paginated view. In paginated view:
+The View tab switches any page between the infinite canvas and pages with breaks. With breaks:
 
 - Pages are shown as sheets on the sunken background, at the chosen paper size (Letter here).
 - The print margins are keep-out zones. Content placed there moves inside when the page is paginated.
-- The gap between sheets is the page break, labeled with the page number. Tables, charts, and images never split across pages; they move to the next page whole.
+- The gap between sheets is the page break, labeled with the sheet number. Tables, charts, and images never split across pages. They move to the next page whole.
 - Tables and charts are live blocks. Editing the table redraws the chart.
 - The side panes collapse to a 48 px rail to give the page more room.
 
@@ -99,28 +183,81 @@ What you see here is exactly what prints or exports to PDF.
 
 ## Recording
 
-![A lecture page while recording, with timestamps and a live transcript](images/06-recording.svg)
+![A lecture page while recording, with the title bar indicator and the recording block](images/06-recording.svg)
 
-- **Recording bar (48 px):** pinned above the page and never covering its title. It shows the recording dot, elapsed time, the audio source, a level meter, and Pause, Stop and Transcript buttons.
-- **Time gutter (56 px):** shows when each paragraph or drawing was written. Tapping a time, or any stroke later, plays the recording from that moment.
-- **Transcript panel (320 px, optional):** fills in live, on the device, with speaker labels.
+- **Title bar indicator:** shows "Recording" and the time while a recording runs. Selecting it opens the recording controls.
+- **Home tab:** while recording, Pause and Stop take the place of Record.
+- **Recording block:** takes the audio's place in the page, with the recording dot, the time, a level meter, and Pause and Stop. It never covers the page title.
+- **Time stamps:** what you write or draw while recording is time-stamped. Later, Alt+click a word to hear when you wrote it.
 
-## Search and commands
+![The recording options popover under Record, over a recording in progress](images/24-recording-options.svg)
 
-![The search and command palette over a dimmed page](images/07-search.svg)
+Options sits beside Record. It picks the microphone, offers to also record sound from this PC for meetings, and reminds the person to tell everyone before recording a meeting. Nothing records until Record is pressed.
 
-Ctrl+K opens one box for both search and commands. It is 680 px wide and sits 90 px from the top, so the page stays visible below. Results cover typed text, handwriting, recording transcripts, and commands, with filter chips to narrow them. The title bar is never dimmed, so the window can still be moved or closed.
+After a recording stops, the block becomes a player with Play, speed, a position slider, flags, and Trim silence.
+
+## Search, commands, and links
+
+![The command palette over a dimmed page](images/07-search.svg)
+
+Ctrl+K opens one box for both pages and commands. It is 680 px wide and sits 90 px from the top, so the page stays visible below. Filter chips narrow the list to pages or commands. The title bar is never dimmed, so the window can still be moved or closed.
+
+![The search panel with a result and a preview of the page](images/22-search-panel.svg)
+
+Ctrl+Shift+F opens the search panel. It finds words in the text of every page.
+
+- Words must all match. Quotes find a phrase, `OR` between two words finds either one, and a minus sign leaves a word out.
+- Operators such as tag:name, title:word, type:table, and after:7d narrow the search further. Switches limit it to titles or use a regular expression.
+- The matched word is bold, so a match never rests on color alone. A preview of the page sits beside the results.
+
+![The linked pages pane, listing the pages that link here and the pages that mention the title](images/23-linked-pages.svg)
+
+Ctrl+Alt+G shows the pages that link to the open page, and the pages that say its title without linking it. Link turns a mention into a page link. The pane follows the open page, and Escape closes it.
+
+## Import and export
+
+![The Import notes dialog before a file is chosen, and the review after](images/25-import.svg)
+
+- **Choose:** a file or a folder from another app. OpenNote checks it first and adds nothing until the person says so.
+- **Review:** says how many pages come into which new notebook, what does not come over, and what was simplified. An optional import report page can be added to the notebook.
+- **Import:** runs with progress and Cancel, then offers to open the new notebook.
+
+![The Export dialog with a section and the Word document format chosen](images/26-export.svg)
+
+Export opens from the right-click menu on a page, section, or notebook. The person picks what to export, a format, and a folder. Formats include Markdown, web pages, Word, PowerPoint slides, and Excel tables. A summary follows the export.
 
 ## Settings
 
 ![Settings with the Appearance and Updates sections](images/08-settings.svg)
 
-Settings replaces the workspace, with a "Back to notes" link at the top left. The drawing shows two sections side by side for reference; the app shows one at a time.
+Settings replaces the workspace, with a "Back to notes" link at the top left. The section list has General, Appearance, Editing, Recording, On-device intelligence, Storage and backups, Updates, Privacy, Windows and power, Connectors, Help, Shortcuts, and About. The drawing shows two sections side by side for reference. The app shows one at a time.
 
-- **Appearance:** theme (Light, Dark, Match Windows), page color in dark mode, text size and reduced motion.
+- **Appearance:** theme (Light, Dark, Match Windows), page color in dark mode, text size, and interface size.
 - **Updates:** a ready update with "Restart to update", install preference, channel, and a one-click way back to the previous version.
 
 The "Update ready" notice appears in the title bar only. It never pops up or interrupts work.
+
+![Settings, on-device intelligence: every feature off and marked as running on this device](images/27-settings-intelligence.svg)
+
+Every feature starts off: text in images, handwriting, read aloud, and summaries and keywords. Each says it runs on this device and nothing leaves it. Turning one on shows whether it is ready, or why not.
+
+![Settings, privacy: work offline and every kind of network use](images/28-settings-privacy.svg)
+
+Privacy lists every kind of network use, such as update checks, crash reports, and model downloads. Each says what it does and when it last ran. Work offline blocks all of them at once. Crash reports and Check OpenNote are reached from this page.
+
+![Settings, connectors: accounts that some features use](images/29-settings-connectors.svg)
+
+Connectors lists the accounts that features can use, such as Microsoft, Google, and Dropbox. A connector with no client ID says "Needs setup", and Show setup steps explains how to register the app. Nothing signs in until the person asks.
+
+## Tool windows
+
+![The timers, calculator, and Upcoming windows beside a page](images/30-tool-windows.svg)
+
+Timers, the calculator, and Upcoming open from the command palette as small windows. Each works with the keyboard alone, keeps its state on this device, and closes with Escape. Keep on top stops a window going behind the page.
+
+- **Timers:** countdown timers, with Start, Pause, and Reset. A timer is still there after a restart.
+- **Calculator:** answers expressions, converts units (5 km to mi), and keeps a history.
+- **Upcoming:** tasks and due dates, with repeats, a calendar file import, and an optional Windows notification.
 
 ## Size classes
 
@@ -206,4 +343,4 @@ The drawings are generated by code in this folder, so they stay in step with the
 npm run design     # rebuild every SVG in docs/design/images
 ```
 
-Each screen is a function in `docs/design/screens/`. Shared window parts live in `docs/design/lib/chrome.ts`, and drawing helpers in `docs/design/lib/svg.ts`. After changing `brand/tokens.json`, run `npm run design` and commit the updated images.
+Each screen is a function in `docs/design/screens/`. Shared window parts live in `docs/design/lib/chrome.ts`, small interface parts such as buttons and dialogs in `docs/design/lib/parts.ts`, and drawing helpers in `docs/design/lib/svg.ts`. After changing `brand/tokens.json`, run `npm run design` and commit the updated images.

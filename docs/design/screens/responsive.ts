@@ -95,7 +95,7 @@ const CLASSES: SizeClass[] = [
     range: '1,200 px and up',
     frame: { x: 1070, y: FRAME_Y, w: 330, h: 400 },
     panes: [
-      { label: 'Books', share: 0.24, token: 'surface.app' },
+      { label: 'Notebooks', share: 0.24, token: 'surface.app' },
       { label: 'Pages', share: 0.26, token: 'surface.app' },
       { label: 'Page', share: 0.5, token: 'surface.page' },
     ],
@@ -114,7 +114,7 @@ export function sizeClasses(): Screen {
     tag(
       40,
       640,
-      'Pen palette, command bar and dialogs adapt with the same breakpoints (docs/BRAND.md section 6)',
+      'The command bar, the pen slots, and dialogs adapt with the same breakpoints (docs/BRAND.md section 6)',
       NOTE.region,
     ),
   ];

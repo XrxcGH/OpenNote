@@ -18,9 +18,13 @@ import {
   BODY_TOP,
   EDITOR_X,
   WIDE,
+  HOME_TOOLS,
+  VIEW_TOOLS,
   commandBar,
   editorBackground,
   iconButton,
+  pageHeader,
+  propertiesChip,
   standardWindow,
   titleBar,
   windowAnnotations,
@@ -32,16 +36,6 @@ const PAGE = { w: Math.round(816 * SCALE), h: Math.round(1056 * SCALE), margin: 
 const RAIL = 48;
 const PAGE_X = RAIL + (WIDE.width - RAIL - PAGE.w) / 2;
 const PAGE_Y = BODY_TOP + 28;
-
-const VIEW_TOOLS = [
-  { label: 'Infinite' },
-  { label: 'Pages', active: true },
-  { label: 'Letter ▾' },
-  { label: 'Margins: Normal ▾' },
-  { label: 'Paper: Lined ▾' },
-  { label: '+ Page break' },
-  { label: '100% ▾' },
-];
 
 function rail(p: Palette): string {
   return [
@@ -170,123 +164,77 @@ export function paginated(): Screen {
   });
 }
 
-const TRANSCRIPT_W = 320;
-
-function recordingBar(p: Palette): string {
-  const x = EDITOR_X;
-  const w = WIDE.width - EDITOR_X;
-  const y = BODY_TOP;
-  const wave = Array.from({ length: 20 }, (_, i) =>
+function recordingBlock(p: Palette, x: number, y: number): string {
+  const w = 720;
+  const wave = Array.from({ length: 36 }, (_, i) =>
     rect(
-      { x: x + 370 + i * 6, y: y + 24 - ((i * 7) % 11), w: 3, h: ((i * 7) % 11) * 2 + 2 },
+      { x: x + 250 + i * 6, y: y + 40 - ((i * 7) % 11), w: 3, h: ((i * 7) % 11) * 2 + 2 },
       { fill: p.c('text.muted'), r: 1.5 },
     ),
   );
   return [
-    rect({ x, y, w, h: 48 }, { fill: p.c('surface.raised') }),
-    line([x, y + 48], [x + w, y + 48], p.c('border.subtle')),
-    circle(x + 24, y + 24, 7, p.c('status.recording')),
-    text(x + 40, y + 29, 'Recording', { size: 14, weight: 600, fill: p.c('text.primary') }),
-    text(x + 122, y + 29, '12:48', { size: 14, fill: p.c('text.primary'), font: 'mono' }),
-    text(x + 180, y + 29, 'Microphone + system audio', { size: 12, fill: p.c('text.muted') }),
+    rect({ x, y, w, h: 80 }, { fill: p.c('surface.raised'), stroke: p.c('border.subtle'), r: 12 }),
+    circle(x + 26, y + 40, 7, p.c('status.recording')),
+    text(x + 44, y + 45, 'Recording', { size: 14, weight: 600, fill: p.c('text.primary') }),
+    text(x + 140, y + 45, '12:48', { size: 14, fill: p.c('text.primary'), font: 'mono' }),
     ...wave,
-    button(p, x + w - 300, y + 10, '❚❚ Pause'),
-    button(p, x + w - 206, y + 10, '■ Stop'),
-    button(p, x + w - 112, y + 10, 'Transcript', true),
+    pillButton(p, x + w - 190, y + 24, 80, 'Pause'),
+    pillButton(p, x + w - 100, y + 24, 80, 'Stop'),
   ].join('');
 }
 
-function button(p: Palette, x: number, y: number, label: string, active = false): string {
-  const fill = active ? p.c('accent.primarySubtle') : 'none';
-  return (
-    rect({ x, y, w: 88, h: 28 }, { fill, stroke: p.c('border.control'), r: 8 }) +
-    text(x + 44, y + 19, label, { size: 12, fill: p.c(active ? 'text.link' : 'text.primary'), anchor: 'middle' })
-  );
-}
-
-function transcript(p: Palette): string {
-  const x = WIDE.width - TRANSCRIPT_W;
-  const y = BODY_TOP + 48;
-  const entries = [
-    ['Speaker 1 · 12:02', [250, 270, 180]],
-    ['Speaker 2 · 12:10', [240, 120]],
-    ['Speaker 1 · 12:31', [260, 250, 210]],
-    ['Speaker 1 · 12:47', [200]],
-  ] as const;
-  const parts = [
-    rect({ x, y, w: TRANSCRIPT_W, h: WIDE.height - y }, { fill: p.c('surface.app') }),
-    line([x, y], [x, WIDE.height], p.c('border.subtle')),
-    text(x + 20, y + 32, 'Transcript', { size: 15, weight: 600, fill: p.c('text.primary') }),
-    text(x + 20, y + 52, 'Runs on this device', { size: 12, fill: p.c('text.muted') }),
-  ];
-  let ty = y + 88;
-  for (const [who, lines] of entries) {
-    parts.push(text(x + 20, ty, who, { size: 12, weight: 600, fill: p.c('text.secondary') }));
-    parts.push(textLines(x + 20, ty + 10, [...lines], p.c('border.control')));
-    ty += 34 + lines.length * 16;
-  }
-  return parts.join('');
-}
-
-function recordingNotes(p: Palette): string {
-  const x = EDITOR_X + 72;
-  const y = BODY_TOP + 120;
-  const gutter = (ty: number, t: string) =>
-    text(EDITOR_X + 16, ty, t, { size: 11, fill: p.c('text.link'), font: 'mono' });
+function pillButton(p: Palette, x: number, y: number, w: number, label: string): string {
   return [
-    text(x, y, 'Lecture 6: Enzymes', { size: 30, weight: 600, fill: p.c('text.primary') }),
-    text(x, y + 26, 'Today · 12:00 PM · Recording linked', { size: 13, fill: p.c('text.muted') }),
-    gutter(y + 76, '12:02'),
-    textLines(x, y + 70, [400, 360, 300], p.c('border.control')),
-    gutter(y + 140, '12:10'),
-    ink(`M${x} ${y + 260}l0-110M${x} ${y + 260}l230 0`, p.pen('Ink'), 2),
-    ink(`M${x + 10} ${y + 250}c60-10 80-90 120-95s60 20 90 25`, p.pen('Indigo')),
-    text(x + 150, y + 150, 'Vmax', { size: 16, fill: p.pen('Indigo'), italic: true, font: 'reading' }),
-    gutter(y + 300, '12:31'),
-    textLines(x, y + 294, [380, 340], p.c('border.control')),
-    gutter(y + 350, '12:47'),
-    rect({ x: x - 2, y: y + 338, w: 260, h: 20 }, { fill: p.highlighter('Mint'), r: 3 }),
-    textLines(x, y + 345, [250], p.c('border.control')),
+    '<g data-fit="6" data-center="both">',
+    rect({ x, y, w, h: 32 }, { stroke: p.c('border.control'), r: 8 }),
+    text(x + w / 2, y + 21, label, { size: 13, fill: p.c('text.primary'), anchor: 'middle' }),
+    '</g>',
+  ].join('');
+}
+
+function recordingNotes(p: Palette, x: number, y: number): string {
+  const body = { size: 15, fill: p.c('text.primary'), font: 'reading' as const };
+  return [
+    text(x, y, 'Osmosis moves water across a membrane', body),
+    text(x, y + 28, 'The cell swells when the water outside is purer than the water inside', body),
+    ink(`M${x} ${y + 150}l0-80M${x} ${y + 150}l200 0`, p.pen('Ink'), 2),
+    ink(`M${x + 10} ${y + 140}c50-10 70-60 100-64s50 14 80 18`, p.pen('Indigo')),
+    text(x + 130, y + 80, 'Vmax', { size: 16, fill: p.pen('Indigo'), italic: true, font: 'reading' }),
+    rect({ x: x - 2, y: y + 176, w: 300, h: 22 }, { fill: p.highlighter('Mint'), r: 3, opacity: 0.6 }),
+    text(x, y + 192, 'Question for Thursday: how does this differ from diffusion?', body),
   ].join('');
 }
 
 export function recording(): Screen {
   const p = palette('light');
   const pages = [
-    { title: 'Lecture 6: Enzymes', meta: 'Recording now', selected: true },
-    { title: 'Lecture 5: Proteins', meta: 'Sep 25 · 1 recording' },
+    { title: 'Lecture 6: Enzymes', meta: 'Sep 30, 2026', selected: true },
+    { title: 'Lecture 5: Proteins', meta: 'Sep 25, 2026' },
   ];
   const tree = [
     { label: 'Biology 101', depth: 0, kind: 'notebook' as const, color: p.pen('Fern') },
     { label: 'Lectures', depth: 1, kind: 'section' as const, color: p.pen('Fern'), selected: true },
   ];
+  const x = EDITOR_X + 48;
   const body = [
     ...standardWindow(p, {
-      title: { breadcrumb: 'Biology 101  ›  Lectures  ›  Lecture 6: Enzymes' },
+      title: { breadcrumb: 'Biology 101 › Lectures › Lecture 6: Enzymes', recording: 'Recording 12:48' },
       tab: 'Home',
-      tools: [{ label: '● Record', active: true }, { label: 'B' }, { label: 'I' }, { label: '• List' }],
+      tools: [{ label: 'Pause', active: true }, { label: 'Stop' }, { label: 'Options' }, ...HOME_TOOLS.slice(2)],
       tree,
-      pagesHeading: 'Lectures',
       pages,
     }),
     editorBackground(p),
-    recordingBar(p),
-    recordingNotes(p),
-    transcript(p),
+    propertiesChip(p, WIDE.width - 52, BODY_TOP + 8),
+    pageHeader(p, x, BODY_TOP + 64, 'Lecture 6: Enzymes', 'Changed Sep 30, 2026'),
+    recordingBlock(p, x, BODY_TOP + 120),
+    recordingNotes(p, x, BODY_TOP + 250),
     ...windowAnnotations(),
-    region({ x: EDITOR_X + 2, y: BODY_TOP + 2, w: WIDE.width - EDITOR_X - 4, h: 44 }, ''),
-    tag(EDITOR_X + 72, BODY_TOP + 70, 'Recording bar 48, pinned above the page; never covers the title', NOTE.region),
-    region({ x: EDITOR_X + 4, y: BODY_TOP + 176, w: 52, h: 290 }, ''),
-    tag(
-      EDITOR_X + 16,
-      BODY_TOP + 540,
-      'Time gutter 56: tap a time, or any stroke later, to play from that moment',
-      NOTE.region,
-    ),
-    region(
-      { x: WIDE.width - TRANSCRIPT_W + 2, y: BODY_TOP + 460, w: TRANSCRIPT_W - 4, h: 60 },
-      'Transcript panel 320 (optional)',
-    ),
+    region({ x: 1104, y: 6, w: 132, h: 28 }, ''),
+    tag(900, 116, 'Title bar shows Recording and the time', NOTE.region),
+    tag(x, BODY_TOP + 222, 'Recording block: takes the audio’s place in the page, never covers the title', NOTE.region),
+    tag(x, BODY_TOP + 520, 'Writing and drawing while recording are time-stamped', NOTE.region),
+    tag(x, BODY_TOP + 546, 'Later, Alt+click a word or stroke to hear when you wrote it', NOTE.region),
   ];
   return makeScreen({
     file: '06-recording.svg',
