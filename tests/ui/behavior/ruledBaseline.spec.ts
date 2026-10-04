@@ -14,8 +14,13 @@
 //
 // The title and the date under it sit in an unruled header, like the top margin of a notebook page: no rule runs
 // through them, and the first rule is the one the first line of body text sits above. A highlight and a piece of
-// inline code sit in the gap between two rules: the rule beneath their line stays fully visible, with paper between
-// it and the box, and the box starts below the rule above. Both are read from the pixels of the same screenshots.
+// inline code sit in the gap between two rules, with rounded corners and padding at their sides: the box ends a CSS
+// pixel above the rule beneath its line, which stays fully visible in its own color across the box, and starts below
+// the rule above with a CSS pixel of paper under it. Both are read from the pixels of the same screenshots.
+//
+// The lines on a later sheet sit where the lines of the first sheet do, to half a CSS pixel: on the second and third
+// sheet of every paper in the matrix, and on the fifth, which is scrolled to. A page break must not leave a line a
+// pixel low (a table's pad, measured before the breaks moved it, once did on A4).
 //
 // Text size is the WebView's zoom in the app, which a browser shows as a larger device scale factor over the same
 // CSS viewport: 80 percent is a scale of 1.6 and 200 percent a scale of 4, over a scale of 2.
@@ -65,6 +70,9 @@ interface Chip {
   key: string;
   kind: 'mark' | 'code';
   box: Box;
+  /** The box's computed corner radius and side padding, in CSS pixels. */
+  radius: number;
+  padding: number;
 }
 
 interface Scene {
@@ -92,6 +100,8 @@ interface ChipRead {
   onRule: number;
   /** Columns of the box with no mark of a rule on the middle row of the rule beneath. */
   noRule: number;
+  /** Columns of the box whose color on the middle row of the rule beneath is not one the rule has outside the box. */
+  offColor: number;
   /** Columns of the box that are not paper on the row above the rule beneath. */
   notPaper: number;
   width: number;
@@ -168,10 +178,13 @@ function scene(column: readonly [number, number]): Scene {
   for (const element of world.querySelectorAll<HTMLElement>('.ProseMirror mark, .ProseMirror :not(pre) > code')) {
     const r = element.getClientRects()[0];
     if (r && r.width > 0) {
+      const style = getComputedStyle(element);
       chips.push({
         key: `${numbered} ${element.localName}`,
         kind: element.localName === 'mark' ? 'mark' : 'code',
         box: box(r),
+        radius: Number.parseFloat(style.borderTopLeftRadius) || 0,
+        padding: Math.min(Number.parseFloat(style.paddingLeft) || 0, Number.parseFloat(style.paddingRight) || 0),
       });
     }
     numbered++;
@@ -277,6 +290,7 @@ async function readPixels(
           above: null,
           onRule: 0,
           noRule: 0,
+          offColor: 0,
           notPaper: 0,
           width: xb - xa + 1,
         };
@@ -316,6 +330,7 @@ async function readPixels(
             }
           }
           if (near(at(x, mid), [pr, pg, pb], 6)) read.noRule++;
+          if (!colorsOfRow(mid).has(colorKey(at(x, mid)))) read.offColor++;
           if (!colorsOfRow(s - 1).has(colorKey(at(x, s - 1)))) read.notPaper++;
         }
       }
@@ -447,27 +462,59 @@ function judge(
 }
 
 /**
- * What is wrong with a chip, or null: its box ends above the rule beneath its line, with at least a CSS pixel of paper
- * between them (`gap` device rows), starts below the rule above, and leaves the rule beneath it in the rule's own
- * color across the box's width. `strict` papers have nothing but paper and that rule around the box (lined paper).
+ * What is wrong with a chip, or null: its box ends a CSS pixel above the rule beneath its line (`gap` device rows, within
+ * one), starts below the rule above with a CSS pixel of paper under that rule, and leaves the rule beneath it in the
+ * rule's own color across the box's width. `strict` papers have nothing but paper and that rule around the box (lined
+ * paper).
  */
-function judgeChip(read: ChipRead | undefined, gap: number, dots: boolean, strict: boolean): string | null {
+function judgeChip(
+  read: ChipRead | undefined,
+  gap: number,
+  dots: boolean,
+  strict: boolean,
+  exact: boolean,
+): string | null {
   if (!read?.color || !read.rows) return 'no box found';
   if (!read.rule) return 'no rule beneath its line';
   const [s, e] = read.rule;
+  // A rule is a pixel wide and starts on the row the lattice puts it at. A dot is centered on that row, so the rule
+  // of dot paper is the middle of its dots, and the box ends a CSS pixel above that.
+  const line = dots ? Math.round((s + e + 1) / 2) : s;
+  // The box's edge and the rule each round to a row: half a CSS pixel either way, and more where a CSS pixel is not
+  // a whole number of device pixels.
+  const slack = exact ? Math.max(1, Math.round(gap / 2)) : 2;
   // A few columns can blend to the box's color where the lines of a grid cross, or at the edge of a dot, at a scale
   // that is not a whole number of device pixels: a box over the rule covers it in nearly every column.
   if (read.onRule > read.width * 0.1)
     return `its box covers the rule beneath it in ${read.onRule} of ${read.width} columns`;
-  const between = s - read.rows[1] - 1;
-  if (between < gap)
-    return `its box ends ${between} device rows above the rule (rows ${read.rows.join('-')}, rule ${s}-${e})`;
-  if (read.above && read.rows[0] <= read.above[1])
-    return `its box reaches the rule above it (rows ${read.rows.join('-')}, rule ${read.above.join('-')})`;
+  const between = line - read.rows[1] - 1;
+  if (Math.abs(between - gap) > slack)
+    return `its box ends ${between} device rows above the rule, not ${gap} (rows ${read.rows.join('-')}, rule ${s}-${e})`;
+  if (read.above && read.rows[0] - read.above[1] - 1 < gap - (exact ? 0 : 1))
+    return `its box comes within ${read.rows[0] - read.above[1] - 1} device rows of the rule above it (rows ${read.rows.join('-')}, rule ${read.above.join('-')})`;
   if (!dots && read.noRule > 0) return `the rule beneath it is missing in ${read.noRule} of ${read.width} columns`;
-  if (strict && read.notPaper > 0)
+  if (strict && exact && read.offColor > 0)
+    return `the rule beneath it is not the rule's color in ${read.offColor} of ${read.width} columns`;
+  if (strict && exact && read.notPaper > 0)
     return `the row above the rule is not paper in ${read.notPaper} of ${read.width} columns (box rows ${read.rows.join('-')}, rule ${s}-${e}, color ${read.color.join(',')})`;
   return null;
+}
+
+/**
+ * Device rows from the lift above the nearest rule to the lowest row of a line's ink: below the lift when positive,
+ * and the rule it was measured against.
+ */
+function residual(
+  ink: [number, number],
+  rules: [number, number][],
+  lift: number,
+): { off: number; rule: [number, number] } | null {
+  let best: { off: number; rule: [number, number] } | null = null;
+  for (const rule of rules) {
+    const off = ink[1] - (rule[0] - lift);
+    if (best === null || Math.abs(off) < Math.abs(best.off)) best = { off, rule };
+  }
+  return best;
 }
 
 /** Rows of the rules that run through the title block (the title and the date line), which must have none. */
@@ -636,6 +683,10 @@ const RULED_BACKGROUNDS = [
   { menu: 'Dot grid', kind: 'dots' },
 ] as const;
 const SHEETS_CHECKED = 3;
+/** One sheet further down (counting from 0) is checked too, scrolled to: the fifth. */
+const LATER_SHEET = 4;
+/** How far under the top of the page area a later sheet is scrolled to, in CSS pixels: below the toolbar over it. */
+const BELOW_TOOLBAR = 120;
 
 interface SheetRun extends Run {
   sheet: number;
@@ -706,22 +757,61 @@ async function resetZoom(page: Page): Promise<void> {
   if ((await zoom()) !== 100) await setZoom(page, 0, 100);
 }
 
-/** Checks one paper: every line on its first three sheets, and where each sheet's rules start. */
+/** What one pass over a paper found. */
+interface SheetsResult {
+  checked: number;
+  perSheet: number[];
+  problems: string[];
+  firsts: string[];
+  chips: number;
+  /** Where the lines of the first sheet sit against the lift above their rules, in device rows (the middle one). */
+  reference: number | null;
+}
+
+/**
+ * Checks one paper: every line on `count` sheets from sheet `first`, and where each sheet's rules start. With `tight`
+ * set, each line of a sheet after the first must also sit within half a CSS pixel of where the lines of the first sheet
+ * sit against their rules (`reference`, from the pass over the first sheet): a page break must not leave a line a
+ * pixel low.
+ */
 async function checkSheets(
   page: Page,
   lab: Page,
-  setup: { height: number; margin: number; kind: string; paginated: boolean; scale?: number },
-): Promise<{ checked: number; perSheet: number[]; problems: string[]; firsts: string[]; chips: number }> {
-  const { margin, kind, paginated, scale = 2 } = setup;
+  setup: {
+    height: number;
+    margin: number;
+    kind: string;
+    paginated: boolean;
+    scale?: number;
+    first?: number;
+    count?: number;
+    tight?: boolean;
+    reference?: number | null;
+  },
+): Promise<SheetsResult> {
+  const { margin, kind, paginated, scale = 2, first = 0, count = SHEETS_CHECKED, tight = false } = setup;
+  let reference = setup.reference ?? null;
   // The screen draws each sheet of paper that text sits on a whole number of units tall (pages/layout/page.ts).
   const height = Math.round(setup.height);
   // Scroll to the top left of the page.
   const start = await sheetScene(page, height);
-  await page.mouse.move(start.area.x + start.area.width / 2, start.area.y + start.area.height / 2);
+  const middle = { x: start.area.x + start.area.width / 2, y: start.area.y + start.area.height / 2 };
+  await page.mouse.move(middle.x, middle.y);
   await page.mouse.wheel(-8000, -40000);
   await page.mouse.move(0, 0);
   await page.waitForTimeout(200);
-  const now = await sheetScene(page, height);
+  let now = await sheetScene(page, height);
+  // A later sheet: scroll down until its top is a little under the top of the page area, clear of the toolbar over it.
+  const sheetTop = () => now.world.y + first * height * now.zoom;
+  for (let attempt = 0; first > 0 && attempt < 4; attempt++) {
+    const away = sheetTop() - now.area.y - BELOW_TOOLBAR;
+    if (Math.abs(away) < 1) break;
+    await page.mouse.move(middle.x, middle.y);
+    await page.mouse.wheel(0, Math.round(away));
+    await page.mouse.move(0, 0);
+    await page.waitForTimeout(300);
+    now = await sheetScene(page, height);
+  }
   const lift = liftOf(now.step) * now.zoom * scale;
   // Lined paper rules its margins too, and grid paper does on the infinite canvas; on sheets the grid leaves them
   // blank, so its column is in the text column, right of the fixture's short lines. Dots take a wide column there,
@@ -733,9 +823,9 @@ async function checkSheets(
         ? [MARGIN_COLUMN[0], MARGIN_COLUMN[1]]
         : [margin + 300, margin + 340];
   const band: [number, number] = [now.world.x + column[0] * now.zoom, now.world.x + column[1] * now.zoom];
-  const limit = paginated ? SHEETS_CHECKED * height : 3 * 1056;
-  const runs = now.runs.filter((run) => !paginated || run.sheet < SHEETS_CHECKED);
-  const top = Math.max(now.area.y, now.world.y);
+  const limit = paginated ? (first + count) * height : 3 * 1056;
+  const runs = now.runs.filter((run) => !paginated || (run.sheet >= first && run.sheet < first + count));
+  const top = Math.max(now.area.y, first > 0 ? sheetTop() : now.world.y);
   const bottom = Math.min(now.area.y + now.area.height, now.world.y + limit * now.zoom);
   const right =
     Math.max(
@@ -751,62 +841,105 @@ async function checkSheets(
   const png = await page.screenshot({ clip, animations: 'disabled', caret: 'hide' });
   const chips = now.chips.filter(
     (chip) =>
-      (!paginated || chip.sheet < SHEETS_CHECKED) &&
+      (!paginated || (chip.sheet >= first && chip.sheet < first + count)) &&
       chip.box.y >= clip.y + 2 &&
       chip.box.y + chip.box.height <= clip.y + clip.height - 2,
   );
   const pixels = await readPixels(lab, png, clip, band, inside, kind === 'dots', chips, now.step * now.zoom * scale);
   const problems: string[] = [];
-  if (pixels.rules.length <= 3) return { checked: 0, perSheet: [], problems: ['no rules seen'], firsts: [], chips: 0 };
+  if (pixels.rules.length <= 3)
+    return { checked: 0, perSheet: [], problems: ['no rules seen'], firsts: [], chips: 0, reference };
+  if (first > 0 && Math.abs(now.world.y * scale - Math.round(now.world.y * scale)) > 0.01)
+    problems.push(`the page scrolled to a fraction of a device pixel (${now.world.y})`);
   const sheetOf = (y: number) => Math.floor(((y + 0.5) / scale + clip.y - now.world.y) / now.zoom / height);
   const { rules, period } = lattice(
     pixels.rules,
     pixels.boxes,
     paginated ? sheetOf : undefined,
-    now.header ? Math.floor((now.header.y - clip.y) * scale) : undefined,
+    first === 0 && now.header ? Math.floor((now.header.y - clip.y) * scale) : undefined,
   );
-  const perSheet = Array.from({ length: SHEETS_CHECKED }, () => 0);
+  const perSheet = Array.from({ length: paginated ? count : SHEETS_CHECKED }, () => 0);
   const firsts: string[] = [];
+  // The lines of the first sheet below the title block set the reference for the lines of the sheets after it.
+  if (tight && first === 0) {
+    const bottomOfHeader = now.header ? now.header.y + now.header.height : 0;
+    const offsets = inside
+      .filter((run) => run.sheet === 0 && run.box.y >= bottomOfHeader)
+      .map((run) => (pixels.ink[run.key] ? (residual(pixels.ink[run.key]!, rules, lift)?.off ?? null) : null))
+      .filter((off): off is number => off !== null)
+      .sort((a, b) => a - b);
+    reference = offsets.length > 0 ? offsets[Math.floor(offsets.length / 2)] : null;
+  }
+  const half = 0.5 * now.zoom * scale + 1e-6;
   for (const run of inside) {
     const ink = pixels.ink[run.key];
     // Where a page unit is not a whole number of device pixels, the rules and the letters each round to a row of
     // their own: half a device pixel more either way.
     const slack = Number.isInteger(scale * now.zoom) ? 1 : 1.5;
     const problem = ink ? judge(ink, rules, period, lift, slack) : 'no ink found';
-    if (paginated && perSheet[run.sheet] === 0 && run.sheet > 0) firsts.push(run.key.split(' ')[1]);
-    if (paginated) perSheet[run.sheet] += 1;
+    if (paginated && perSheet[run.sheet - first] === 0 && run.sheet > 0) firsts.push(run.key.split(' ')[1]);
+    if (paginated) perSheet[run.sheet - first] += 1;
+    const label = `sheet ${run.sheet + 1}, ${run.key.replace(/\s+/g, ' ')}`;
     if (problem) {
       // The ink's rows and the rules near it, in device pixels of the screenshot, to read a failure by.
       const near = rules.filter(([a]) => ink && Math.abs(a - ink[1]) < 120).map(([a, b]) => `${a}-${b}`);
       const detail = ink ? ` (ink rows ${ink.join('-')}, rules ${near.join(' ')})` : '';
-      problems.push(`sheet ${run.sheet + 1}, ${run.key.replace(/\s+/g, ' ')}: ${problem}${detail}`);
+      problems.push(`${label}: ${problem}${detail}`);
+    } else if (tight && paginated && ink && reference !== null && run.sheet > 0) {
+      // Every line of a later sheet sits within half a CSS pixel of where the first sheet's lines sit.
+      const found = residual(ink, rules, lift);
+      // Behind a box (a callout, a code block) the paper's rules are hidden and are put back from the ones around it,
+      // to the row: a rule that was put back is allowed that row more.
+      const allowed = half + (found && !pixels.rules.includes(found.rule) ? 1 : 0);
+      const off = found?.off ?? null;
+      if (off !== null && Math.abs(off - reference) > allowed)
+        problems.push(
+          `${label}: its ink is ${(off - reference).toFixed(1)} device px from where the first sheet's lines sit over their rules (limit ${allowed.toFixed(1)}; ink rows ${ink.join('-')}, rules ${rules
+            .filter(([a]) => Math.abs(a - ink[1]) < 60)
+            .map((r) => r.join('-'))
+            .join(' ')})`,
+        );
     }
   }
   // The title and the date sit in an unruled header: no rule runs through them, and the first rule drawn is the one
   // the first line of body text sits above.
-  if (now.header) {
-    const through = rulesInHeader(pixels.rules, now.header, clip, scale);
-    if (through.length > 0)
-      problems.push(`rules run through the title block, at rows ${through.map((r) => r.join('-')).join(', ')}`);
-    const bottomOfHeader = now.header.y + now.header.height;
-    const firstLine = inside.filter((run) => run.box.y >= bottomOfHeader).sort((a, b) => a.box.y - b.box.y)[0];
-    const ink = firstLine ? pixels.ink[firstLine.key] : null;
-    if (!ink) problems.push('no first line of body text found below the title block');
-    else {
-      const slack = Number.isInteger(scale * now.zoom) ? 1 : 1.5;
-      const wrong = judge(ink, pixels.rules.slice(0, 1), period, lift, slack);
-      if (wrong) problems.push(`the first rule is not the one the first line sits above: ${wrong}`);
-    }
-  } else problems.push('no title block found');
-  // A highlight and a piece of inline code sit between two rules and leave the rule beneath them in view.
-  const gap = Math.max(1, Math.floor(now.zoom * scale));
+  if (first === 0) {
+    if (now.header) {
+      const through = rulesInHeader(pixels.rules, now.header, clip, scale);
+      if (through.length > 0)
+        problems.push(`rules run through the title block, at rows ${through.map((r) => r.join('-')).join(', ')}`);
+      const bottomOfHeader = now.header.y + now.header.height;
+      const firstLine = inside.filter((run) => run.box.y >= bottomOfHeader).sort((a, b) => a.box.y - b.box.y)[0];
+      const ink = firstLine ? pixels.ink[firstLine.key] : null;
+      if (!ink) problems.push('no first line of body text found below the title block');
+      else {
+        const slack = Number.isInteger(scale * now.zoom) ? 1 : 1.5;
+        const wrong = judge(ink, pixels.rules.slice(0, 1), period, lift, slack);
+        if (wrong) problems.push(`the first rule is not the one the first line sits above: ${wrong}`);
+      }
+    } else problems.push('no title block found');
+  }
+  // A highlight and a piece of inline code sit between two rules and leave the rule beneath them in view, with their
+  // rounded corners and their side padding.
+  const gap = Math.max(1, Math.round(now.zoom * scale));
   const seen = new Set<string>();
   for (const chip of chips) {
-    const problem = judgeChip(pixels.chips[chip.key], gap, kind === 'dots', kind === 'lined');
+    const problem = judgeChip(
+      pixels.chips[chip.key],
+      gap,
+      kind === 'dots',
+      kind === 'lined',
+      Number.isInteger(scale * now.zoom),
+    );
     seen.add(chip.kind);
-    if (problem) problems.push(`sheet ${chip.sheet + 1}, ${chip.kind} ${chip.key.split(' ')[0]}: ${problem}`);
+    const label = `sheet ${chip.sheet + 1}, ${chip.kind} ${chip.key.split(' ')[0]}`;
+    if (problem) problems.push(`${label}: ${problem}`);
+    if (!(chip.radius > 0)) problems.push(`${label}: its corners are square (radius ${chip.radius})`);
+    if (!(chip.padding > 0)) problems.push(`${label}: it has no padding at its sides (${chip.padding})`);
   }
-  for (const kindOf of ['mark', 'code']) if (!seen.has(kindOf)) problems.push(`no ${kindOf} was checked`);
+  if (first === 0) {
+    for (const kindOf of ['mark', 'code']) if (!seen.has(kindOf)) problems.push(`no ${kindOf} was checked`);
+  }
   // Each sheet's rules start from its own top margin: every rule seen is a whole number of spacings below it.
   if (paginated) {
     const device = scale * now.zoom;
@@ -821,7 +954,7 @@ async function checkSheets(
         problems.push(`sheet ${sheet + 1}: a rule ${off.toFixed(1)} device px off the lattice of its top margin`);
     }
   }
-  return { checked: inside.length, perSheet, problems, firsts, chips: chips.length };
+  return { checked: inside.length, perSheet, problems, firsts, chips: chips.length, reference };
 }
 
 for (const paper of SHEET_PAPERS) {
@@ -855,14 +988,23 @@ for (const paper of SHEET_PAPERS) {
               await settle(page);
               const paginated = mode === 'Pages with breaks';
               const combo = `${name} ${orientation} ${width}x${height}, ${margins.menu}, ${background.menu}, ${mode}`;
-              const result = await checkSheets(page, lab, {
-                height,
-                margin: margins.size,
-                kind: background.kind,
-                paginated,
-              });
+              const setup = { height, margin: margins.size, kind: background.kind, paginated, tight: true };
+              const result = await checkSheets(page, lab, setup);
               if (paginated && result.perSheet.some((n) => n < 4))
                 result.problems.push(`too few lines checked on a sheet: ${result.perSheet.join(', ')}`);
+              if (paginated) {
+                // One later sheet, scrolled to: its lines sit where the first sheet's do.
+                const later = await checkSheets(page, lab, {
+                  ...setup,
+                  first: LATER_SHEET,
+                  count: 1,
+                  reference: result.reference,
+                });
+                result.problems.push(...later.problems);
+                result.checked += later.checked;
+                if (later.perSheet[0] < 3)
+                  result.problems.push(`too few lines checked on sheet ${LATER_SHEET + 1}: ${later.perSheet[0]}`);
+              }
               if (!paginated && result.checked < FIXTURE_LINES)
                 result.problems.push(`only ${result.checked} lines checked`);
               result.firsts.forEach((tag) => firsts.add(tag));

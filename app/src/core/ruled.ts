@@ -18,6 +18,13 @@ export interface RuleGrid {
 /** Tolerance for a height that is a whole number of rules, in page units. Layout rounds to fractions of a pixel. */
 const WHOLE = 0.5;
 
+/**
+ * The finer tolerance for the pad under a block: layout measures in 64ths of a pixel, so the cap-height lengths of
+ * a callout or a code block leave a block a few hundredths of a unit short of its rule. Let alone, each block adds
+ * its share and a long page drifts off its rules by more than a pixel; the pad takes it up at the end of each block.
+ */
+export const FINE = 0.02;
+
 /** The y of the rule at or above `y` in its sheet's lattice, and the sheet's own top. */
 function cell(y: number, grid: RuleGrid): { top: number; into: number } {
   const top = grid.sheet === null ? 0 : y - (((y % grid.sheet) + grid.sheet) % grid.sheet);
@@ -53,10 +60,10 @@ export function wholeRules(height: number, grid: RuleGrid | null): number {
 }
 
 /** How far down from `top` the next rule is, from 0 to a step. A flow that starts there has its lines on the rules. */
-export function leadFor(top: number, grid: RuleGrid): number {
+export function leadFor(top: number, grid: RuleGrid, tolerance = WHOLE): number {
   const { into } = cell(top, grid);
   const lead = (((grid.origin - into) % grid.step) + grid.step) % grid.step;
-  return lead < WHOLE || grid.step - lead < WHOLE ? 0 : lead;
+  return lead < tolerance || grid.step - lead < tolerance ? 0 : lead;
 }
 
 /**

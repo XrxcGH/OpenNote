@@ -5,7 +5,7 @@ import type { PageViewJson } from '../../../services/pages/types';
 import { fitWidthZoom } from '../viewport/camera';
 import { observeResize } from '../viewport/viewport';
 import type { PageViewport } from '../viewport/viewport';
-import { RULE_PROPERTIES, leadFor, ruleProperties } from './rules';
+import { FINE, RULE_PROPERTIES, leadFor, ruleProperties } from './rules';
 import type { RuleGrid } from './rules';
 import styles from './layout.module.css';
 
@@ -21,6 +21,12 @@ export interface Flow {
   setRules(grid: RuleGrid | null): void;
   /** The rules the page is laid out in, or null on plain paper. */
   rules(): RuleGrid | null;
+  /**
+   * Measures the ruled pads again, now, and says whether any changed. A page break moves a block without resizing it,
+   * which no observer reports, and the pad under a table or an image depends on where its end lies in its sheet's
+   * rules: the paginator measures again after a pad moves, until none does.
+   */
+  realign(): boolean;
   stop(): void;
 }
 
@@ -84,6 +90,7 @@ export function createFlow(viewport: PageViewport): Flow {
     },
     setRules: ruled.set,
     rules: ruled.current,
+    realign: ruled.align,
     stop() {
       ruled.stop();
       stopFlow();
@@ -111,8 +118,11 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
 
   /** How far down the page an element ends, in page units from the top of the world. */
   const bottomOf = (rect: DOMRect) => (rect.bottom - world.getBoundingClientRect().top) / viewport.camera().zoom;
-  const setVar = (element: HTMLElement, name: string, value: string) => {
-    if (element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value);
+  /** Sets a custom property, and says whether that changed it. */
+  const setVar = (element: HTMLElement, name: string, value: string): boolean => {
+    if (element.style.getPropertyValue(name) === value) return false;
+    element.style.setProperty(name, value);
+    return true;
   };
 
   /**
@@ -120,35 +130,38 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
    * block that a page break pushed onto the next sheet ends in that sheet's rules, not in a whole number of rules
    * from its own top.
    */
-  function pad(element: HTMLElement): void {
-    if (!grid) return;
+  function pad(element: HTMLElement): boolean {
+    if (!grid) return false;
     const rect = element.getBoundingClientRect();
-    const extra = rect.height === 0 ? 0 : leadFor(bottomOf(rect), grid);
-    setVar(element, '--rule-pad', `${Math.round(extra * 100) / 100}px`);
+    const extra = rect.height === 0 ? 0 : leadFor(bottomOf(rect), grid, FINE);
+    return setVar(element, '--rule-pad', `${Math.round(extra * 100) / 100}px`);
   }
 
-  function align(): void {
+  /** Pads the flow to its rules, and says whether any pad changed. */
+  function align(): boolean {
     frame = 0;
-    if (!grid) return;
+    if (!grid) return false;
     // The flow's first line goes to a rule: a lead below whatever sits above it, measured with no lead.
     if (grid.sheet === null) {
       setVar(flow, '--rule-lead', '0px');
       setVar(flow, '--rule-lead', `${Math.round(leadFor(flow.offsetTop, grid) * 100) / 100}px`);
     } else flow.style.removeProperty('--rule-lead');
     const found = new Set<Element>();
+    let moved = false;
     for (const child of flow.children) {
       if (!(child instanceof HTMLElement) || child.dataset.ink !== undefined || child.style.left !== '') continue;
       found.add(child);
-      pad(child);
+      moved = pad(child) || moved;
     }
     for (const inner of flow.querySelectorAll<HTMLElement>(PADDED_INSIDE)) {
       found.add(inner);
-      pad(inner);
+      moved = pad(inner) || moved;
     }
     for (const element of watched) if (!found.has(element)) resizes?.unobserve(element);
     for (const element of found) if (!watched.has(element)) resizes?.observe(element);
     watched.clear();
     found.forEach((element) => watched.add(element));
+    return moved;
   }
 
   function schedule(): void {
@@ -172,6 +185,7 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
 
   return {
     current: () => grid,
+    align,
     set(next: RuleGrid | null): void {
       const was = grid;
       grid = next;

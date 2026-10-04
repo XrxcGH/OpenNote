@@ -52,6 +52,8 @@ interface BlockSpacers {
 const isFloating = (block: BlockJson): boolean => block.frame?.x !== undefined && block.frame?.y !== undefined;
 const HEADING = /^H[1-6]$/;
 const MAX_SHEETS = 2_000;
+/** The most times one run lays the page out again because a ruled pad moved: a page whose pads never settle stops here. */
+const PAD_PASSES = 4;
 
 /** Orders two places in the document, for inserting spacers from the last to the first. */
 function documentOrder(a: LineStart, b: LineStart): number {
@@ -318,10 +320,22 @@ class ScreenPaginator implements Paginator {
 
   private run(): void {
     if (!this.enabled) return;
+    let flowSheets = 1;
+    // On ruled paper the pads under tables and images depend on where the breaks leave those blocks, and the breaks
+    // on how tall the pads make everything before them: the page is laid out again until the pads stop moving.
+    for (let pass = 0; pass < PAD_PASSES; pass++) {
+      flowSheets = this.layOut();
+      if (!this.mounted.flow.realign()) break;
+    }
+    this.hooks.onSheets(Math.min(Math.max(flowSheets, this.floatingSheets()), MAX_SHEETS));
+    this.restoreAnchor();
+  }
+
+  /** One pass: measures the page as it lies, plans its breaks, and puts them in. Returns the sheets the flow fills. */
+  private layOut(): number {
     const { world } = this.mounted.viewport;
     this.applying = true;
     world.dataset.paginating = '';
-    let flowSheets: number;
     try {
       // Take every spacer away, so what is measured is the page as it lies.
       this.clearApplied();
@@ -333,14 +347,12 @@ class ScreenPaginator implements Paginator {
         (block) => byId.get(block.id) ?? { top: 0, height: 0 },
       );
       this.applyBreaks(units, plan.plan.breaks);
-      flowSheets = plan.plan.sheets;
+      return plan.plan.sheets;
     } finally {
       delete world.dataset.paginating;
       this.mutations?.takeRecords();
       this.applying = false;
     }
-    this.hooks.onSheets(Math.min(Math.max(flowSheets, this.floatingSheets()), MAX_SHEETS));
-    this.restoreAnchor();
   }
 
   private restoreAnchor(): void {

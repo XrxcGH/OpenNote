@@ -215,13 +215,13 @@ function build(): Record<string, () => PageFixture> {
         }),
       ),
     ruled: () => page('Ruled', [text(0, RULED_TEXT), ruledTable(1), text(2, 'Hxn after the table.')]),
-    // The ruled lines five times over, enough to fill three sheets of any paper, on a custom size of paper whose
-    // height is not a whole number of page units, so a test can check the rules and the lines on sheets after a
-    // break. The View tab's paper sizes replace the custom one.
+    // The ruled lines ten times over, enough to fill five sheets of any paper (and the narrowest rules on the largest
+    // paper), on a custom size of paper whose height is not a whole number of page units, so a test can check the
+    // rules and the lines on sheets after a break. The View tab's paper sizes replace the custom one.
     ruledSheets: () =>
       page(
         'Ruled sheets',
-        [0, 1, 2, 3, 4].flatMap((n) => [
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((n) => [
           text(3 * n, RULED_TEXT),
           ruledTable(3 * n + 1),
           text(3 * n + 2, 'Hxn after the table.'),
