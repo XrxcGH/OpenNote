@@ -96,27 +96,29 @@
   }
 
   .text :global(.ProseMirror) mark {
+    --chip-fill: var(--color-selection-highlight);
+
     padding-inline: 0.1em;
     border-radius: 2px;
-    background: var(--color-selection-highlight);
+    background: var(--chip-fill);
     color: inherit;
   }
 
   /* The other highlighters are the pens' colors, washed out like a highlighter on paper (BRAND.md section 4). */
   .text :global(.ProseMirror) mark[data-color='mint'] {
-    background: color-mix(in srgb, var(--ink-fern) 22%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-fern) 22%, transparent);
   }
 
   .text :global(.ProseMirror) mark[data-color='rose'] {
-    background: color-mix(in srgb, var(--ink-brick) 20%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-brick) 20%, transparent);
   }
 
   .text :global(.ProseMirror) mark[data-color='apricot'] {
-    background: color-mix(in srgb, var(--ink-amber) 24%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-amber) 24%, transparent);
   }
 
   .text :global(.ProseMirror) mark[data-color='lilac'] {
-    background: color-mix(in srgb, var(--ink-plum) 20%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-plum) 20%, transparent);
   }
 
   .text :global(.ProseMirror) span[data-color='ink'] {
@@ -325,9 +327,48 @@
    * lines down to the cap height of its first line and the alphabetic baseline of its last, and a padding of one
    * line less one cap height above it puts the first baseline one line below the block's top. A block that starts
    * on a rule therefore ends on the rule its last baseline sits on, and the next block starts there.
+   *
+   * Every baseline then rises off its rule by the lift (--rule-lift, core/ruled.ts), the same for every size of
+   * text: the top padding gives it back and the bottom padding takes it, so the block keeps its height and the next
+   * block still starts on a rule. The letters clear the rule by a thin gap of paper; descenders may cross it.
    */
   :global([data-ruled]) {
     --rule-line: round(up, 1.25em, var(--rule));
+
+    /*
+     * An inline background (a highlight, inline code, a search hit, the words being read aloud) sits in the gap
+     * between two rules, not over the rule under its line. A browser paints it over the font's ascent and descent,
+     * which reaches below the baseline past the lift and over the rule, so the box is drawn instead as a thick
+     * text decoration, which is measured from the baseline: it rises --chip-rise above it (a font's height, but
+     * never up to the rule above) and ends 3px short of the rule beneath (at the baseline with the usual lift of 3, and never above it),
+     * so the rule, which is a pixel wide, keeps well over a pixel of paper between it and the box even where a
+     * page break leaves a line a pixel low. The letters stay where they are, and descenders may cross the rule. A
+     * decoration is placed on whole pixels, so the sizes are whole pixels. Forced colors keep the system's own boxes.
+     */
+    --chip-rise: round(min(1.15em, calc(var(--rule) - var(--rule-lift) - 1px)), 1px);
+    --chip-size: calc(var(--chip-rise) + max(var(--rule-lift) - 3px, 0px));
+    --chip-offset: calc(-1 * var(--chip-rise));
+  }
+
+  @media (forced-colors: none) {
+    :global([data-ruled]) .text :global(.ProseMirror) :is(mark, :not(pre) > code) {
+      --chip-color: var(--chip-fill);
+
+      background: none;
+      text-decoration: underline solid var(--chip-color);
+      text-decoration-thickness: var(--chip-size);
+      text-decoration-skip-ink: none;
+      text-underline-offset: var(--chip-offset);
+    }
+
+    :global([data-ruled]) .text :global(.ProseMirror) :not(pre) > code {
+      --chip-color: var(--color-surface-sunken);
+    }
+
+    /* Underlined text and links inside a box keep their own underline. */
+    :global([data-ruled]) .text :global(.ProseMirror) :is(mark, :not(pre) > code) :is(u, a) {
+      text-underline-offset: auto;
+    }
   }
 
   :global([data-ruled]) .block {
@@ -356,7 +397,7 @@
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
-    padding-block: calc(1lh - 1cap) 0;
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
     line-height: var(--rule-line);
     text-box: trim-both cap alphabetic;
     /* The block ends at its last baseline, so descenders paint below it. */
@@ -374,7 +415,7 @@
    * one more rule, part padding and part margin, so the text after it is back on a rule.
    */
   :global([data-ruled]) .text :global(.ProseMirror) pre {
-    padding-block: calc(1lh - 1cap);
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) calc(1lh - 1cap + var(--rule-lift));
     margin-block-end: 1cap;
     line-height: var(--rule-line);
     text-box: trim-both cap alphabetic;

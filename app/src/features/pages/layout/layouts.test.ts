@@ -15,7 +15,7 @@ import {
   unitsToMm,
   writeLayoutFile,
 } from './layouts';
-import { pageLayout } from './page';
+import { pageLayout, screenLayout } from './page';
 import { DEFAULT_VIEW, readView, writeView } from './view';
 
 const TEXTS = {
@@ -103,6 +103,24 @@ describe('line spacing', () => {
     const ruled = setBackground(DEFAULT_VIEW, { pattern: 'ruled' });
     expect(setSpacing(ruled, mmToUnits(9)).background.spacing).toBeCloseTo(mmToUnits(9), 5);
     expect(setSpacing(ruled, 1).background.spacing).toBe(12);
+  });
+});
+
+describe('the screen sheet', () => {
+  const a4 = { ...DEFAULT_VIEW.paper, size: 'a4', width: 793.7, height: 1122.52, margins: [72.4, 72, 72, 72] as const };
+
+  it('is whole page units on paper that text sits on, so every sheet starts its rules on a whole unit', () => {
+    const view = setBackground({ ...DEFAULT_VIEW, paper: a4 }, { pattern: 'ruled' });
+    const { sheet, flowSheet } = screenLayout(pageLayout(view));
+    expect(sheet.height).toBe(1123);
+    expect(sheet.margins[0]).toBe(72);
+    expect(flowSheet.height).toBe(1123);
+    expect(pageLayout(view).sheet.height).toBe(1122.52);
+  });
+
+  it('keeps the exact paper when text does not sit on its lines', () => {
+    const plain = pageLayout({ ...DEFAULT_VIEW, paper: a4 });
+    expect(screenLayout(plain)).toBe(plain);
   });
 });
 

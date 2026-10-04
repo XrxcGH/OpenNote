@@ -4,7 +4,7 @@
 export * from './view';
 export * from './edit';
 export * from './layouts';
-export { MIN_COLUMN, columnOf, pageLayout, resolveBackground } from './page';
+export { MIN_COLUMN, columnOf, pageLayout, resolveBackground, screenLayout } from './page';
 export type { Column, PageLayout, TemplateLookup } from './page';
 export { displayY, naturalY, planFlow, slicesBySheet } from './flow';
 export type { FlowPiece, FlowPlan, FlowSlice } from './flow';

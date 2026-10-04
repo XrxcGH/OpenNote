@@ -1,11 +1,13 @@
 // Text on ruled paper, measured in a real browser. With the paper's rules set as the page's grid, body text, a
-// heading, a list, and a text box dropped at an arbitrary height all put their first baseline on a rule, and every
-// block is a whole number of rules tall, so the text after it is back on a rule. Plain paper changes nothing.
+// heading, a list, and a text box dropped at an arbitrary height all put their first baseline the lift above a rule
+// (core/ruled.ts), and every block is a whole number of rules tall, so the text after it is back on its rule. Plain
+// paper changes nothing.
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanupPages, renderPage } from '../test/harness';
 import type { PageHarness } from '../test/harness';
 import { textPageFixture } from '../test/fixtures';
 import type { PageFixture } from '../test/fixtures';
+import { ruleLift } from '../../../core/ruled';
 import type { RuleGrid } from './rules';
 
 const GRID: RuleGrid = { step: 26.46, origin: 40, sheet: null };
@@ -45,6 +47,9 @@ const offRule = (y: number, grid: RuleGrid = GRID) => {
   return Math.abs(y - (grid.origin + k * grid.step));
 };
 
+/** How far a baseline at `y` is from the lift above the nearest rule. */
+const offLift = (y: number, grid: RuleGrid = GRID) => offRule(y + ruleLift(grid.step), grid);
+
 const MARKDOWN = [
   'Body text on the first rule.',
   '',
@@ -64,7 +69,7 @@ function floating(y: number): PageFixture {
 }
 
 describe('ruled paper', () => {
-  it('puts body text, a heading, and a list on the rules', async () => {
+  it('puts body text, a heading, and a list just above the rules', async () => {
     const harness = await ruled(textPageFixture(MARKDOWN));
     const root = harness.viewport.world.querySelector('.ProseMirror')!;
     const paragraphs = [...root.querySelectorAll(':scope > p')];
@@ -73,7 +78,7 @@ describe('ruled paper', () => {
     expect(paragraphs).toHaveLength(2);
     expect(items).toHaveLength(2);
     for (const line of [paragraphs[0]!, heading, items[0]!, items[1]!, paragraphs[1]!]) {
-      expect(offRule(baseline(harness, line)), line.outerHTML.slice(0, 40)).toBeLessThan(TOLERANCE);
+      expect(offLift(baseline(harness, line)), line.outerHTML.slice(0, 40)).toBeLessThan(TOLERANCE);
     }
     // The text between them is the next rule, not an arbitrary gap: the heading and the list took whole rules.
     const rules = (a: Element, b: Element) => (baseline(harness, b) - baseline(harness, a)) / GRID.step;
@@ -88,12 +93,12 @@ describe('ruled paper', () => {
     expect(Math.abs(rules - Math.round(rules))).toBeLessThan(TOLERANCE / GRID.step);
   });
 
-  it('snaps a text box dropped at an arbitrary height so its first baseline is on a rule', async () => {
+  it('snaps a text box dropped at an arbitrary height so its first baseline is just above a rule', async () => {
     for (const y of [123.7, 201.2, 88]) {
       const harness = await ruled(floating(y));
       const wrapper = harness.viewport.world.querySelector<HTMLElement>('[data-block-id]')!;
       const line = wrapper.querySelector('.ProseMirror > p')!;
-      expect(offRule(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
+      expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
       expect(offRule((wrapper.offsetTop ?? 0) - 0)).toBeLessThan(TOLERANCE);
       const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
       expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
@@ -108,7 +113,7 @@ describe('ruled paper', () => {
     await frames();
     const root = harness.viewport.world.querySelector('.ProseMirror')!;
     for (const line of [root.querySelector(':scope > p')!, root.querySelector('h2')!, root.querySelector('li > p')!]) {
-      expect(offRule(baseline(harness, line), next)).toBeLessThan(TOLERANCE);
+      expect(offLift(baseline(harness, line), next)).toBeLessThan(TOLERANCE);
     }
   });
 

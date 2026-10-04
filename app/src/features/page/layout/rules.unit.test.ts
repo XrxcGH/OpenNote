@@ -1,7 +1,8 @@
 // The snapping math for ruled paper: which rule a text box snaps to, how a nudge steps, how tall a block is padded to
 // be, and how far the flow's first line is from a rule.
 import { describe, expect, it } from 'vitest';
-import { leadFor, ruleProperties, snapY, stepY, wholeRules } from './rules';
+import { ruleLift } from '../../../core/ruled';
+import { firstRuleBelow, leadFor, ruleProperties, snapY, stepY, wholeRules } from './rules';
 import type { RuleGrid } from './rules';
 
 const GRID: RuleGrid = { step: 20, origin: 50, sheet: null };
@@ -88,5 +89,39 @@ describe('ruleProperties', () => {
       '--rule-sheet': '1000px',
     });
     expect(ruleProperties(GRID)['--rule-sheet']).toBe('1000000000px');
+  });
+});
+
+describe('ruleLift', () => {
+  it('lifts text 12 percent of the spacing, to a whole page unit, never under 2', () => {
+    expect(ruleLift(26)).toBe(3);
+    expect(ruleLift(33)).toBe(4);
+    expect(ruleLift(38)).toBe(5);
+    expect(ruleLift(19)).toBe(2);
+    expect(ruleLift(10)).toBe(2);
+    expect(ruleProperties({ step: 26, origin: 72, sheet: null })['--rule-lift']).toBe('3px');
+  });
+});
+
+describe('firstRuleBelow', () => {
+  it('is one rule below a flow that starts on a rule', () => {
+    expect(firstRuleBelow(150, GRID)).toBe(170);
+    expect(firstRuleBelow(150, SHEETS)).toBe(170);
+  });
+
+  it('counts the lead that brings the first line of the flow to a rule', () => {
+    expect(firstRuleBelow(141, GRID)).toBe(170);
+  });
+
+  it('is the rule beneath the middle of the letters when the first line takes several rules', () => {
+    // A line two rules tall, from 150 to 190, with letters about 163 to 187: they sit above the rule at 190.
+    expect(firstRuleBelow(150, GRID, 175)).toBe(190);
+    // The middle of the letters just above a rule belongs to the line that rule ends.
+    expect(firstRuleBelow(150, GRID, 189)).toBe(190);
+    expect(firstRuleBelow(150, GRID, 191)).toBe(210);
+  });
+
+  it('never goes above the first rule below the top of the flow', () => {
+    expect(firstRuleBelow(150, GRID, 100)).toBe(170);
   });
 });

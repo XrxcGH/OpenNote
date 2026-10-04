@@ -1,8 +1,9 @@
 // The geometry a page's view settings stand for: the sheet, the sheet the flow of text lays out in, the text column,
 // and the background in the form the paper generators draw. Everything here is pure.
 
-import { contentBox, sheetGeometry, type SheetGeometry } from '../pagination/geometry';
+import { contentBox, sheetGeometry, type Margins, type SheetGeometry } from '../pagination/geometry';
 import { flowGeometry } from '../paper/patterns';
+import { paperRules } from '../paper/rules';
 import { DRAWING_KEY, readDrawing } from '../paper/drawing';
 import type { PageBackground, PaperTemplate } from '../paper/types';
 import { isFlow, isPaginated, type BackgroundSpec, type PageViewSpec } from './view';
@@ -75,4 +76,21 @@ export function pageLayout(view: PageViewSpec, lookup?: TemplateLookup): PageLay
     column: columnOf(flowSheet, view.contentWidth),
     background,
   };
+}
+
+/**
+ * The layout as the screen shows it. On paper that text sits on (ruled, grid, and dots), every sheet is a whole
+ * number of page units tall below a whole top margin, so each sheet draws its rules from its own top margin on whole
+ * units and the text after a break lands on them: a browser paints a baseline on a whole unit, and A4 (1122.52
+ * tall), A5, or a custom size would otherwise put every sheet after the first up to half a unit off its rules. The
+ * sheet differs from the paper by under half a unit; print and export keep the exact size.
+ */
+export function screenLayout(layout: PageLayout): PageLayout {
+  const { sheet, background } = layout;
+  const [top, right, bottom, left] = sheet.margins;
+  const whole = Math.round(sheet.height) === sheet.height && Math.round(top) === top;
+  if (whole || !paperRules(background, sheet, true)) return layout;
+  const margins: Margins = [Math.round(top), right, bottom, left];
+  const rounded = { ...sheet, height: Math.round(sheet.height), margins };
+  return { ...layout, sheet: rounded, flowSheet: flowGeometry(rounded, background) };
 }

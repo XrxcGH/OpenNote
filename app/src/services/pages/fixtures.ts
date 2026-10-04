@@ -215,6 +215,22 @@ function build(): Record<string, () => PageFixture> {
         }),
       ),
     ruled: () => page('Ruled', [text(0, RULED_TEXT), ruledTable(1), text(2, 'Hxn after the table.')]),
+    // The ruled lines five times over, enough to fill three sheets of any paper, on a custom size of paper whose
+    // height is not a whole number of page units, so a test can check the rules and the lines on sheets after a
+    // break. The View tab's paper sizes replace the custom one.
+    ruledSheets: () =>
+      page(
+        'Ruled sheets',
+        [0, 1, 2, 3, 4].flatMap((n) => [
+          text(3 * n, RULED_TEXT),
+          ruledTable(3 * n + 1),
+          text(3 * n + 2, 'Hxn after the table.'),
+        ]),
+        {
+          layout: 'flow',
+          paper: { size: 'custom', orientation: 'portrait', width: 650, height: 901.37 },
+        },
+      ),
   };
 }
 
@@ -227,7 +243,8 @@ export type PageFixtureName =
   | 'twentyPageCallout'
   | 'freeform8'
   | 'budget500'
-  | 'ruled';
+  | 'ruled'
+  | 'ruledSheets';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

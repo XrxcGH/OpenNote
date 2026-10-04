@@ -2,12 +2,14 @@
 // background), the sheets drawn under a paginated page, and the paper under an infinite one. Every change goes to the
 // page as one setPage merge patch, so it is one undo step. The paginated flow itself is in paginate.ts.
 import { isEnabled } from '../../../app/flags';
+import { firstRuleBelow } from '../../../core/ruled';
 import { announce } from '../../../ui';
 import { t } from '../../../strings/t';
 import type { MountedPage } from '../../page';
 import {
   pageLayout,
   readView,
+  screenLayout,
   setBackground as withBackground,
   setMargins as withMargins,
   setMode as withMode,
@@ -78,6 +80,8 @@ class PagesView {
   private strip: Strip | null = null;
   private frame = 0;
   private paperKey = '';
+  /** The y of the first rule below the page's title, on paper with rules: the header above it is left blank. */
+  private headerRule: number | undefined;
   private lastMode: 'infinite' | 'paginated' | null = null;
   /** Set when the person switches to the paginated view, which fits a sheet wider than the window. */
   private fitOnEnter = false;
@@ -85,7 +89,7 @@ class PagesView {
   constructor(private readonly mounted: MountedPage) {
     const { viewport } = mounted.viewport;
     this.spec = readView(mounted.layout.view()).view;
-    this.layout = pageLayout(this.spec);
+    this.layout = screenLayout(pageLayout(this.spec));
     this.sheetsLayer = this.layer(styles.sheets);
     this.paperLayer = this.layer(styles.paper);
     this.counter = document.createElement('div');
@@ -112,7 +116,7 @@ class PagesView {
     this.stops.push(
       mounted.layout.onView((raw) => {
         this.spec = readView(raw).view;
-        this.layout = pageLayout(this.spec);
+        this.layout = screenLayout(pageLayout(this.spec));
         this.sheets = this.wantedSheets();
         this.apply();
         pagesViewEpoch.set((n) => n + 1);
@@ -134,6 +138,13 @@ class PagesView {
       this.stops.push(() => host.removeEventListener('pointerup', this.onPenUp));
     }
     this.reading = attachReading(mounted, () => this.spec.mode === 'paginated');
+    // The title can grow a line, the first line can change its size, and the fonts load after the page does.
+    if (mounted.title && typeof ResizeObserver !== 'undefined') {
+      const watch = new ResizeObserver(() => this.refreshHeader());
+      watch.observe(mounted.title.element);
+      watch.observe(mounted.flow.element);
+      this.stops.push(() => watch.disconnect());
+    }
     this.apply();
     if (isEnabled('pages.layouts')) {
       applyNotebookDefault(
@@ -322,9 +333,47 @@ class PagesView {
     this.lastMode = paginated ? 'paginated' : 'infinite';
     // On ruled paper the text lays out in the rules (features/page/layout/rules.ts), in either mode.
     this.mounted.flow.setRules(paperRules(this.layout.background, this.layout.sheet, paginated));
+    this.refreshHeader();
     this.reading?.refresh();
     this.updateCounter();
     this.refreshStrip();
+  }
+
+  /**
+   * The title and the date under it sit in an unruled header, like the top margin of a notebook page, and the first
+   * sheet's rules begin below it, at the rule the page's first line sits above. When that moves, the paper is drawn
+   * again. Print and export have no title band, so their paper keeps the rules from the top margin.
+   */
+  private refreshHeader(): void {
+    const { flow, title } = this.mounted;
+    const rules = flow.rules();
+    const next = rules && title ? firstRuleBelow(flow.element.offsetTop, rules, this.firstLineMiddle()) : undefined;
+    if (next === this.headerRule) return;
+    this.headerRule = next;
+    this.paperKey = '';
+    if (this.spec.mode === 'paginated') this.drawSheets();
+    else this.drawInfinitePaper();
+  }
+
+  /** The middle of the letters of the page's first line of text, in page units from the top of the world. */
+  private firstLineMiddle(): number | undefined {
+    const { flow, viewport } = this.mounted;
+    const doc = flow.element.ownerDocument;
+    const block = [...flow.element.children].find(
+      (child) => child instanceof HTMLElement && child.dataset.ink === undefined && child.style.left === '',
+    );
+    if (!block) return undefined;
+    const walker = doc.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.textContent?.trim()) continue;
+      const range = doc.createRange();
+      range.selectNodeContents(node);
+      const rect = range.getClientRects()[0];
+      if (!rect || rect.height === 0) continue;
+      const top = viewport.world.getBoundingClientRect().top;
+      return ((rect.top + rect.bottom) / 2 - top) / viewport.camera().zoom;
+    }
+    return undefined;
   }
 
   /** A sheet wider than the window zooms out to fit its width, once, when the person switches views. */
@@ -341,19 +390,19 @@ class PagesView {
   private drawSheets(): void {
     const { sheet } = this.layout;
     const count = Math.min(this.sheets, MAX_SHEETS);
-    const paper = paperSvg(
-      paperPaths(this.layout.background, sheet),
-      { x: 0, y: 0, w: sheet.width, h: sheet.height },
-      this.layout.background,
-      STYLE,
-    );
-    const key = `${sheet.width}x${sheet.height}:${count}:${paper.length}:${this.layout.background.pattern}`;
+    const { background } = this.layout;
+    const draw = (from?: number) =>
+      paperSvg(paperPaths(background, sheet, from), { x: 0, y: 0, w: sheet.width, h: sheet.height }, background, STYLE);
+    const paper = draw();
+    // Only the first sheet has the title: its rules begin below the header.
+    const first = this.headerRule === undefined ? paper : draw(Math.min(this.headerRule, sheet.height));
+    const key = `${sheet.width}x${sheet.height}:${count}:${paper.length}:${first.length}:${background.pattern}`;
     if (key === this.paperKey) return;
     this.paperKey = key;
     const parts: string[] = [];
     for (let k = 0; k < count; k += 1) {
       const box = `inset-block-start:${k * sheet.height}px;inline-size:${sheet.width}px;block-size:${sheet.height}px`;
-      parts.push(`<div class="${styles.sheet}" style="${box}">${paper}</div>`);
+      parts.push(`<div class="${styles.sheet}" style="${box}">${k === 0 ? first : paper}</div>`);
     }
     for (let k = 1; k < count; k += 1) {
       const top = k * sheet.height - GAP_HALF;
@@ -376,7 +425,7 @@ class PagesView {
     const { world } = this.mounted.viewport;
     const w = Math.min(MAX_PAPER_SIDE, Math.max(world.offsetWidth, sheet.width));
     const h = Math.min(MAX_PAPER_SIDE, Math.max(world.offsetHeight, sheet.height * 2));
-    const paths = infinitePaths(background, { x: 0, y: 0, w, h }, sheet);
+    const paths = infinitePaths(background, { x: 0, y: 0, w, h }, sheet, this.headerRule);
     this.paperLayer.innerHTML = paperSvg(paths, { x: 0, y: 0, w, h }, background, STYLE);
     this.paperLayer.style.inlineSize = `${w}px`;
     this.paperLayer.style.blockSize = `${h}px`;

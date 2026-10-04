@@ -60,6 +60,38 @@ export function leadFor(top: number, grid: RuleGrid): number {
 }
 
 /**
+ * The y of the first rule drawn on a page that has a header: the rule the page's first line of text sits above. The
+ * title and the date under it sit in an unruled header, like the top margin of a notebook page, and the rules begin
+ * below it. `flowTop` is the top of the flow (the bottom of the title band and its margin) and `lineMiddle` the
+ * middle of the first line's letters, when it has any: a line that takes several rules (large text, or fine ruling)
+ * sits above the last of them, and with no letters the first rule below the flow's top is the first.
+ */
+export function firstRuleBelow(flowTop: number, grid: RuleGrid, lineMiddle?: number): number {
+  const first = flowTop + leadFor(flowTop, grid) + grid.step;
+  if (lineMiddle === undefined) return first;
+  const beneath = grid.origin + (Math.floor((lineMiddle - grid.origin) / grid.step) + 1) * grid.step;
+  return Math.max(first, beneath);
+}
+
+/**
+ * The lift: how far above its rule every line's baseline sits, the way handwriting sits just clear of the line, so
+ * the rule reads as a line under the words and never touches the bottoms of the letters. It is a share of the rule
+ * spacing, the same for every size of text on the page, and never under MIN_LIFT. Descenders may reach or cross the
+ * rule. College ruling (26) lifts its text 3 units.
+ *
+ * It is a whole number of page units, which at 100 percent text and zoom is a whole number of device pixels: a
+ * browser paints a baseline on a whole layout pixel, so a lift between two would round up on some lines and down on
+ * others, and the gap under the letters would change from line to line.
+ */
+const LIFT_SHARE = 0.12;
+const MIN_LIFT = 2;
+
+/** The lift for a rule spacing, in page units. */
+export function ruleLift(step: number): number {
+  return Math.max(MIN_LIFT, Math.round(LIFT_SHARE * step));
+}
+
+/**
  * The custom properties the stylesheet reads. They are on the page's world, so everything inside follows them. The
  * stylesheet finds each line's baseline from its own font (text-box-trim), so no font metric is passed.
  */
@@ -69,7 +101,8 @@ export function ruleProperties(grid: RuleGrid): Record<string, string> {
     '--rule-origin': `${grid.origin}px`,
     // An unpaginated page is one long lattice, which a sheet height far past any page makes the same arithmetic.
     '--rule-sheet': `${grid.sheet ?? 1e9}px`,
+    '--rule-lift': `${ruleLift(grid.step)}px`,
   };
 }
 
-export const RULE_PROPERTIES = ['--rule', '--rule-origin', '--rule-sheet'] as const;
+export const RULE_PROPERTIES = ['--rule', '--rule-origin', '--rule-sheet', '--rule-lift'] as const;

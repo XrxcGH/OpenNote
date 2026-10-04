@@ -54,8 +54,22 @@ function drawSheetPattern(c: Canvas, bg: PageBackground, g: SheetGeometry): void
   else if (bg.pattern === 'template' && bg.template) drawTemplate(c, bg.template, g);
 }
 
-/** Everything one sheet draws, from the sheet's top-left corner. Plain and unknown patterns draw nothing. */
-export function paperPaths(bg: PageBackground, g: SheetGeometry): PaperPaths {
+/**
+ * The box with everything above `from` cut off, or the box itself when `from` is not given. A page's title and its
+ * date sit in a header the rules leave blank: the rules (and the squares and dots) of the first sheet begin at
+ * `from`, which is a rule of the lattice.
+ */
+function below(box: Rect, from: number | undefined): Rect {
+  if (from === undefined || from <= box.y) return box;
+  const y = Math.min(from, box.y + box.h);
+  return { ...box, y, h: box.y + box.h - y };
+}
+
+/**
+ * Everything one sheet draws, from the sheet's top-left corner. Plain and unknown patterns draw nothing. `from` is
+ * the y of the first rule of paper that text sits on, below the page's header (sheet 0 only; see `below`).
+ */
+export function paperPaths(bg: PageBackground, g: SheetGeometry, from?: number): PaperPaths {
   const c = new Canvas();
   const step = drawnSpacingOf(bg);
   const [top, , bottom, left] = g.margins;
@@ -63,30 +77,32 @@ export function paperPaths(bg: PageBackground, g: SheetGeometry): PaperPaths {
   const origin = { x: content.x, y: content.y };
   if (SHEET_PATTERNS.has(bg.pattern)) drawSheetPattern(c, bg, g);
   else if (bg.pattern === 'ruled') {
-    ruled(c, { x: 0, y: top + step, w: g.width, h: g.height - bottom - top - step }, top, step);
+    ruled(c, below({ x: 0, y: top + step, w: g.width, h: g.height - bottom - top - step }, from), top, step);
     if (bg.marginLine === true) c.line(left, 0, left, g.height, 'margin');
-  } else if (bg.pattern === 'grid') grid(c, wholeCells(content, step), origin, step);
-  else if (bg.pattern === 'dots') dots(c, wholeCells(content, step), origin, step);
+  } else if (bg.pattern === 'grid') grid(c, below(wholeCells(content, step), from), origin, step);
+  else if (bg.pattern === 'dots') dots(c, below(wholeCells(content, step), from), origin, step);
   else if (bg.pattern === 'isometric') isometric(c, content, origin, step);
   return c.paths();
 }
 
 /**
  * The paper for a tile of the infinite canvas, in page coordinates. Lattices and rules run through the tile, anchored
- * at sheet 0's content box. Patterns that repeat once per sheet are drawn for each sheet the tile touches.
+ * at sheet 0's content box. Patterns that repeat once per sheet are drawn for each sheet the tile touches. `from` is
+ * the y of the first rule, below the page's header: the canvas has no rules above it.
  */
-export function infinitePaths(bg: PageBackground, tile: Rect, g: SheetGeometry): PaperPaths {
+export function infinitePaths(bg: PageBackground, tile: Rect, g: SheetGeometry, from?: number): PaperPaths {
   if (SHEET_PATTERNS.has(bg.pattern)) return sheetsPaths(bg, tile, g);
   const c = new Canvas();
   const step = drawnSpacingOf(bg);
   const origin = { x: g.margins[3], y: g.margins[0] };
+  const rest = below(tile, from);
   if (bg.pattern === 'ruled') {
-    ruled(c, tile, origin.y, step);
+    ruled(c, rest, origin.y, step);
     if (bg.marginLine === true && origin.x >= tile.x - EPS && origin.x <= tile.x + tile.w + EPS) {
       c.line(origin.x, tile.y, origin.x, tile.y + tile.h, 'margin');
     }
-  } else if (bg.pattern === 'grid') grid(c, tile, origin, step);
-  else if (bg.pattern === 'dots') dots(c, tile, origin, step);
+  } else if (bg.pattern === 'grid') grid(c, rest, origin, step);
+  else if (bg.pattern === 'dots') dots(c, rest, origin, step);
   else if (bg.pattern === 'isometric') isometric(c, tile, origin, step);
   return c.paths();
 }

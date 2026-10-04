@@ -120,12 +120,15 @@ describe('dot grid', () => {
     }
   });
 
-  it('keeps every k-th crossing on the largest paper, so a sheet never holds more than MAX_DOTS', () => {
+  it('keeps every row and every k-th dot of each row on the largest paper, never more than MAX_DOTS', () => {
     const g = sheetGeometry({ width: MAX_PAPER, height: MAX_PAPER });
     const dots = points(paperPaths({ pattern: 'dots', spacing: 8 }, g).dots);
     expect(dots.length).toBeLessThanOrEqual(MAX_DOTS);
-    expect(dots.length).toBeGreaterThan(MAX_DOTS / 4);
-    expect(dots[1][0] - dots[0][0]).toBeCloseTo(8 * 6);
+    expect(dots.length).toBeGreaterThan(MAX_DOTS / 2);
+    // Text sits on the rows, so none is left out; the dots along a row thin out instead.
+    const rows = [...new Set(dots.map(([, y]) => y))].sort((a, b) => a - b);
+    expect(rows[1] - rows[0]).toBeCloseTo(8);
+    expect(dots[1][0] - dots[0][0]).toBeGreaterThan(8);
   });
 });
 
@@ -206,5 +209,45 @@ describe('infinite canvas', () => {
     const strong = segments(infinitePaths(PRESETS.cornell, tall, LETTER).strong);
     const dividers = horizontal(strong).map((l) => l[1]);
     expect(dividers).toEqual([1056 - 72 - 192, 2 * 1056 - 72 - 192, 3 * 1056 - 72 - 192]);
+  });
+});
+
+describe('a page header', () => {
+  const [top] = LETTER.margins;
+  /** The first rule: three rules below the top margin, as the first line of text of a page with a one-line title. */
+  const from = top + 3 * 26;
+  const college = { pattern: 'ruled', spacing: 26 };
+
+  it('leaves sheet 0 unruled above the first rule, and everything below it as it was', () => {
+    const whole = segments(paperPaths(college, LETTER).rules);
+    const lines = segments(paperPaths(college, LETTER, from).rules);
+    expect(lines[0][1]).toBe(from);
+    expect(lines).toEqual(whole.filter((l) => l[1] >= from));
+  });
+
+  it('starts the squares and the dots of the first sheet at the first rule', () => {
+    const grid = segments(paperPaths(PRESETS['grid-5mm'], LETTER, from).rules);
+    expect(grid.every((l) => Math.min(l[1], l[3]) >= from)).toBe(true);
+    expect(vertical(grid).every((l) => l[1] === from)).toBe(true);
+    const dots = points(paperPaths(PRESETS.dots, LETTER, from).dots);
+    expect(dots).toEqual(points(paperPaths(PRESETS.dots, LETTER).dots).filter(([, y]) => y >= from));
+  });
+
+  it('leaves the infinite canvas without rules above the first rule, in step with the rules below it', () => {
+    const tile = { x: 0, y: 0, w: 800, h: 800 };
+    const whole = segments(infinitePaths(college, tile, LETTER).rules);
+    const lines = segments(infinitePaths(college, tile, LETTER, from).rules);
+    expect(lines[0][1]).toBe(from);
+    expect(lines).toEqual(whole.filter((l) => l[1] >= from));
+    const dots = points(infinitePaths(PRESETS.dots, tile, LETTER, from).dots);
+    expect(dots).toEqual(points(infinitePaths(PRESETS.dots, tile, LETTER).dots).filter(([, y]) => y >= from));
+  });
+
+  it('draws nothing above a first rule that is below the sheet', () => {
+    expect(paperPaths(college, LETTER, LETTER.height + 100).rules).toBe('');
+  });
+
+  it('does not change paper that is not laid out on rules', () => {
+    expect(paperPaths(PRESETS.isometric, LETTER, from)).toEqual(paperPaths(PRESETS.isometric, LETTER));
   });
 });
