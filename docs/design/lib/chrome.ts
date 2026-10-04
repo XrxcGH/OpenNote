@@ -1,6 +1,5 @@
 // Shared pieces of the OpenNote window at the "wide" size class (docs/BRAND.md section 6), drawn as built in beta 4.
 // They cover the title bar, the command bar, the notebooks and pages panes, and the page on the ambient canvas.
-// They also hold the small drawings that carry the desk-by-the-window look.
 
 import {
   type Box,
@@ -16,6 +15,7 @@ import {
   text,
   textLines,
 } from './svg.ts';
+import { plantPot } from './drawings.ts';
 
 export const WIDE = { width: 1440, height: 900, title: 40, command: 44, sidebar: 272, pages: 300 };
 export const BODY_TOP = WIDE.title + WIDE.command;
@@ -169,19 +169,15 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
     );
     if (isActive) parts.push(rect({ x, y: y + 38, w: tab.length * 8, h: 3 }, { fill: p.c('accent.primary'), r: 1.5 }));
   });
-  let x = 290;
-  for (const tool of tools) {
+  for (const { tool, x, w } of layoutTools(tools)) {
     if (tool.sep) {
       parts.push(line([x + 4, y + 10], [x + 4, y + 34], p.c('border.subtle')));
-      x += 12;
       continue;
     }
     if (tool.dot) {
       parts.push(circle(x + 13, y + 22, 6, tool.dot));
-      x += 28;
       continue;
     }
-    const w = tool.label.length * 7 + 20;
     const fill = tool.active ? p.c('accent.primarySubtle') : 'none';
     parts.push('<g data-fit="6" data-center="both">', rect({ x, y: y + 8, w, h: 28 }, { fill, r: 8 }));
     parts.push(
@@ -192,9 +188,19 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
       }),
     );
     parts.push('</g>');
-    x += w + 6;
   }
   return parts.join('');
+}
+
+/** Where each command bar tool sits: its left edge and width, from the left of the tools at x = 290. */
+export function layoutTools(tools: Tool[]): { tool: Tool; x: number; w: number }[] {
+  let x = 290;
+  return tools.map((tool) => {
+    const w = tool.sep ? 12 : tool.dot ? 28 : tool.label.length * 7 + 20;
+    const at = { tool, x, w };
+    x += tool.sep || tool.dot ? w : w + 6;
+    return at;
+  });
 }
 
 export interface TreeItem {
@@ -219,7 +225,7 @@ export function sidebar(p: Palette, items: TreeItem[]): string {
   parts.push(
     line([12, WIDE.height - 66], [WIDE.sidebar - 12, WIDE.height - 66], p.c('border.subtle')),
     trashLabel(p, 22, WIDE.height - 44),
-    plantPot(p, WIDE.sidebar - 62, WIDE.height - 66),
+    plantPot(p, WIDE.sidebar - 56, WIDE.height - 12),
   );
   return parts.join('');
 }
@@ -379,69 +385,6 @@ export function propertiesChip(p: Palette, rightEdge: number, y: number): string
     rect({ x, y, w, h: 32 }, { fill: p.c('surface.page'), stroke: p.c('border.control'), r: 16 }),
     text(x + 16, y + 21, 'Properties', { size: 12, weight: 600, fill: p.c('text.primary') }),
     text(x + w - 16, y + 21, 'none', { size: 12, fill: p.c('text.muted'), anchor: 'end' }),
-  ].join('');
-}
-
-function leaf(p: Palette, cx: number, cy: number, angle: number): string {
-  const tilt = `transform="rotate(${angle} ${cx} ${cy})"`;
-  return `<ellipse cx="${cx}" cy="${cy}" rx="9" ry="4" ${tilt} fill="${p.c('art.moss')}" stroke="${p.pen('Fern')}"/>`;
-}
-
-/** A small plant in a pot, which sits at the foot of the notebooks pane. */
-export function plantPot(p: Palette, x: number, y: number): string {
-  return [
-    ink(`M${x + 24} ${y + 40}c0-14-2-24-8-34`, p.pen('Fern'), 2),
-    leaf(p, x + 12, y + 8, -35),
-    leaf(p, x + 30, y + 18, 30),
-    `<path d="M${x + 12} ${y + 40}h24l-3 22h-18z" fill="${p.c('art.clay')}" stroke="${p.c('border.control')}"/>`,
-  ].join('');
-}
-
-/**
- * The desk by the window, as the welcome step draws it: a window with a vine and the day or evening sky, books, a
- * plant, an open notebook, and two candles of different heights. Drawn in a 240 by 150 box and scaled.
- */
-export function deskScene(p: Palette, x: number, y: number, scale = 1): string {
-  const day = p.theme === 'light';
-  const edge = p.c('border.control');
-  const sky = p.c(day ? 'accent.candleSubtle' : 'accent.nightSubtle');
-  const arch = 'M78 100V44a42 42 0 0 1 84 0v56z';
-  const sun = day
-    ? circle(120, 66, 13, p.c('ambient.spark'))
-    : [
-        circle(124, 56, 11, p.c('ambient.spark')),
-        circle(129, 52, 10, sky),
-        circle(98, 48, 1.5, p.c('ambient.spark')),
-        circle(146, 40, 1.5, p.c('ambient.spark')),
-        circle(104, 74, 1.2, p.c('ambient.spark')),
-      ].join('');
-  return [
-    `<g transform="translate(${x} ${y}) scale(${scale})">`,
-    `<path d="${arch}" fill="${sky}" stroke="${edge}" stroke-width="2"/>`,
-    sun,
-    `<path d="M78 100V84q22-14 42-4t42 0v20z" fill="${p.c(day ? 'art.moss' : 'art.night')}"/>`,
-    line([120, 6], [120, 100], edge),
-    line([78, 62], [162, 62], edge),
-    ink('M74 100c-8-18 6-26-2-44', p.pen('Fern'), 2),
-    circle(70, 80, 3.5, p.c('art.moss'), p.pen('Fern')),
-    circle(77, 58, 3.5, p.c('art.moss'), p.pen('Fern')),
-    line([14, 128], [226, 128], edge),
-    ...[
-      [20, 116, 50, p.c('art.clay')],
-      [24, 106, 42, p.c('art.dusk')],
-      [22, 96, 44, p.c('art.moss')],
-    ].map(([bx, by, bw, fill]) =>
-      rect({ x: bx as number, y: by as number, w: bw as number, h: 10 }, { fill: fill as string, stroke: edge }),
-    ),
-    `<path d="M98 128l20-5 20 5v-12l-20-5-20 5z" fill="${p.c('accent.candleSubtle')}" stroke="${edge}"/>`,
-    line([118, 111], [118, 123], edge),
-    rect({ x: 168, y: 100, w: 9, h: 28 }, { fill: p.c('accent.candleSubtle'), stroke: edge }),
-    rect({ x: 188, y: 112, w: 9, h: 16 }, { fill: p.c('accent.candleSubtle'), stroke: edge }),
-    `<ellipse cx="172.5" cy="94" rx="3" ry="5" fill="${p.c('accent.candle')}"/>`,
-    `<ellipse cx="192.5" cy="106" rx="3" ry="5" fill="${p.c('accent.candle')}"/>`,
-    `<path d="M206 128h22l-3 18h-16z" fill="${p.c('art.clay')}" stroke="${edge}"/>`,
-    ink('M217 128c0-12-2-20-8-28M217 128c1-10 4-16 10-22', p.pen('Fern'), 2),
-    '</g>',
   ].join('');
 }
 

@@ -2,6 +2,7 @@
 
 import {
   type Palette,
+  arrow,
   circle,
   ink,
   keepOut,
@@ -106,7 +107,7 @@ function barChart(p: Palette, x: number, y: number): string {
       }),
     );
   });
-  parts.push(ink(`M${x + 300} ${y + 10}c20 0 40 4 50 20`, p.pen('Brick'), 2.5));
+  parts.push(arrow([x + 316, y - 2], [x + 336, y - 8], [x + 354, y + 4], [x + 352, y + 22], p.pen('Brick'), 2.5));
   parts.push(text(x + 250, y + 8, 'plateau!', { size: 15, fill: p.pen('Brick'), italic: true, font: 'reading' }));
   return parts.join('');
 }

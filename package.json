@@ -30,6 +30,7 @@
     "checks:all": "node checks/cli.ts --all",
     "checks:fix": "node checks/cli.ts --fix",
     "test:checks": "node --test \"checks/test/**/*.test.ts\"",
+    "test:design": "node --test \"docs/design/test/**/*.test.ts\"",
     "setup-hooks": "git config core.hooksPath .githooks",
     "typecheck": "tsc -p checks/tsconfig.json && tsc -p docs/design/tsconfig.json && tsc -p spikes/web/tsconfig.json && tsc -p eslint/tsconfig.json && tsc -p tests/tsconfig.json && npm run app:typecheck",
     "format": "prettier --write \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"spikes/web/**/*.ts\" \"tests/**/*.ts\" \"eslint/*.{js,ts}\" eslint.config.js",
@@ -38,7 +39,7 @@
     "spikes:web": "vite build --config spikes/web/vite.config.ts",
     "spikes": "npm run spikes:web && cargo run --profile spikes -p opennote-spikes --",
     "release:check": "node app/scripts/release/checklist.ts",
-    "test": "npm run test:checks && npm run test:lint-rules && npm run test:matrix && npm run app:test",
+    "test": "npm run test:checks && npm run test:design && npm run test:lint-rules && npm run test:matrix && npm run app:test",
     "test:matrix": "node --test tests/ui/matrix.test.ts",
     "test:lint-rules": "node --test eslint/rules.test.ts"
   },

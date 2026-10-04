@@ -10,29 +10,34 @@ import { CandleArt } from './Candle';
 import styles from './illustrations.module.css';
 import { NotebookArt } from './Notebook';
 import { PlantArt } from './Plant';
+import { DESK } from './shapes';
 import { WindowArt } from './Window';
 import type { Sky } from './Window';
 
+/** The transform that puts a part at its place on the desk. */
+const place = ({ at, scale }: { at: readonly [number, number]; scale: number }) =>
+  `translate(${at[0]} ${at[1]}) scale(${scale})`;
+
 export function DeskScene({ sky, className }: ArtProps & { sky: Sky }) {
   return (
-    <Art width={360} height={225} box={[240, 150]} className={className}>
-      <path className={styles.fillPaper} d="M10 128.4H230V135.4H10ZM22 136V148m196-12v12" />
-      <g transform="translate(75 2) scale(0.9)">
+    <Art width={360} height={225} box={DESK.box} className={className}>
+      <path className={styles.fillPaper} d={DESK.slab} />
+      <g transform={place(DESK.window)}>
         <WindowArt sky={sky} />
       </g>
-      <g transform="translate(76 38) scale(0.8)">
+      <g transform={place(DESK.plant)}>
         <PlantArt />
       </g>
-      <g transform="translate(20 90.3)">
+      <g transform={place(DESK.books)}>
         <BooksArt />
       </g>
-      <g transform="translate(98 96.88) scale(0.8)">
+      <g transform={place(DESK.notebook)}>
         <NotebookArt />
       </g>
-      <g transform="translate(176 72.4)">
+      <g transform={place(DESK.candle)}>
         <CandleArt />
       </g>
-      <g transform="translate(203 88.08) scale(0.72)">
+      <g transform={place(DESK.shortCandle)}>
         <CandleArt />
       </g>
     </Art>

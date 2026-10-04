@@ -79,6 +79,7 @@ Audio recording encodes with libopus, which the `opus` crate builds from source 
 | `npm run checks:all` | Runs CHECKS on every file. |
 | `npm run checks:fix` | Applies the safe automatic fixes CHECKS offers. |
 | `npm run test:checks` | Tests the CHECKS program itself. |
+| `npm run test:design` | Checks the wireframes and the social preview by the numbers: things stand on their line, arrows have heads. |
 | `npm run setup-hooks` | Turns on the Git hook that runs CHECKS before each commit. |
 | `npm run tauri -- <command>` | Runs the Tauri command line, for example `npm run tauri -- info`. |
 

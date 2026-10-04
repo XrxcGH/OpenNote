@@ -1,7 +1,8 @@
 // The other three setup steps: the welcome desk (step 1), keys and pen (step 4), and bring in your notes (step 6).
 
 import { type Palette, NOTE, captionKeepOut, palette, rect, region, tag, text } from '../lib/svg.ts';
-import { WIDE, deskScene } from '../lib/chrome.ts';
+import { WIDE } from '../lib/chrome.ts';
+import { deskScene } from '../lib/drawings.ts';
 import { button } from '../lib/parts.ts';
 import { CARD, buttons, setupCard } from './first-run.ts';
 import { type Screen, makeScreen } from './screen.ts';
@@ -37,7 +38,8 @@ export function firstRunWelcome(): Screen {
       anchor: 'middle',
     }),
     ...buttons(p, 'Get started').filter((part) => !part.includes('>Back<')),
-    region({ x: center - 190, y: CARD.y + 184, w: 380, h: 240 }, 'Welcome desk 360×225, drawn at 240×150'),
+    region({ x: center - 190, y: CARD.y + 184, w: 380, h: 240 }, ''),
+    tag(center - 184, CARD.y + 176, 'Welcome desk 360×225, drawn at 240×150', NOTE.region),
     tag(CARD.x + CARD.w + 16, CARD.y + 230, 'The desk by the window', NOTE.region),
     tag(CARD.x + CARD.w + 16, CARD.y + 256, 'Drawings never sit on text', NOTE.region),
     tag(CARD.x + CARD.w + 16, CARD.y + 282, 'Backdrop: only the window light', NOTE.region),

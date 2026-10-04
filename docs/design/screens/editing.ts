@@ -4,10 +4,12 @@
 import {
   type Palette,
   NOTE,
+  arrow,
   circle,
   ink,
   keepOut,
   line,
+  onEllipse,
   palette,
   rect,
   region,
@@ -24,6 +26,7 @@ import {
   VIEW_TOOLS,
   WIDE,
   editorBackground,
+  layoutTools,
   pageHeader,
   propertiesChip,
   standardWindow,
@@ -114,6 +117,8 @@ export function pageEditor(): Screen {
     ['Heading', 'Bulleted list', 'Insert table', 'Insert equation', 'Insert graph'],
     2,
   );
+  const tools = layoutTools(HOME_TOOLS);
+  const [bold, highlight] = ['Bold', 'Highlight'].map((label) => tools.find((t) => t.tool.label === label)!);
   const body = [
     ...win(p, 'Home', HOME_TOOLS),
     ...pageFrame(p),
@@ -121,8 +126,8 @@ export function pageEditor(): Screen {
     text(X, y + 200, '/table', { size: 15, fill: p.c('text.primary'), font: 'reading' }),
     slash,
     ...windowAnnotations(),
-    region({ x: 478, y: WIDE.title + 4, w: 420, h: 36 }, ''),
-    tag(880, BODY_TOP + 118, 'Formatting buttons: Bold to Highlight', NOTE.region),
+    region({ x: bold.x - 3, y: WIDE.title + 6, w: highlight.x + highlight.w - bold.x + 6, h: 32 }, ''),
+    tag(bold.x - 3, BODY_TOP + 14, 'Formatting buttons: Bold to Highlight', NOTE.region),
     tag(1000, BODY_TOP + 130, 'Properties chip: tags and page details', NOTE.region),
     tag(X + 380, y + 250, 'Slash menu: type / for any block', NOTE.region),
     tag(X + 680, y + 120, 'Type [[ to link a page', NOTE.region),
@@ -135,8 +140,15 @@ export function pageEditor(): Screen {
 function inkMarks(p: Palette, x: number, y: number): string {
   return [
     rect({ x: x - 6, y: y - 22, w: 214, h: 30 }, { fill: p.highlighter('Honey'), r: 4, opacity: 0.55 }),
-    ink(`M${x + 308} ${y + 203}a56 16 0 1 0 112 0a56 16 0 1 0-112 0`, p.pen('Indigo'), 3),
-    ink(`M${x + 340} ${y + 226}c-40 20-80 34-116 44m0 0l22-4m-22 4l8-20`, p.pen('Fern'), 3),
+    ink(`M${x + 308} ${y + 203}a56 16 0 1 0 112 0a56 16 0 1 0-112 0`, p.pen('Indigo'), 3, 'circled'),
+    arrow(
+      onEllipse(x + 364, y + 203, 56, 16, 115),
+      [x + 300, y + 240],
+      [x + 260, y + 256],
+      [x + 224, y + 270],
+      p.pen('Fern'),
+      3,
+    ),
     ink(`M${x + 20} ${y + 300}c0-50 40-80 90-80s90 30 90 80-40 70-90 70-90-20-90-70z`, p.pen('Walnut'), 2.5),
     ink(`M${x + 110} ${y + 222}v146M${x + 36} ${y + 300}c20-20 30 20 50 0s30 20 50 0 30 20 50 0`, p.pen('Walnut'), 2),
     ink(`M${x + 250} ${y + 300}c20-14 30 14 50 0s30 14 50 0 30 14 50 0 30 14 50 0`, p.pen('Ink'), 2.5),

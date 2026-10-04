@@ -4,76 +4,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { socialPreview } from './social-preview.ts';
-import type { Screen } from './screens/screen.ts';
-import { firstRunLook, firstRunSmart, firstRunStorage } from './screens/first-run.ts';
-import { studyTools } from './screens/study.ts';
-import { sendTo } from './screens/send-to.ts';
-import { newPage, organize, search } from './screens/workspace.ts';
-import { paginated, recording } from './screens/page-views.ts';
-import { settings } from './screens/settings.ts';
-import { phone, sizeClasses } from './screens/responsive.ts';
-import { crashConsent, feedbackReview, selfCheck } from './screens/hardening.ts';
-import { firstRunImport, firstRunKeys, firstRunWelcome } from './screens/setup.ts';
-import {
-  drawTab,
-  linkedPages,
-  mathGrapher,
-  pageEditor,
-  searchPanel,
-  tablesCharts,
-  viewTab,
-} from './screens/editing.ts';
-import {
-  connectorsSettings,
-  exportDialog,
-  importDialog,
-  intelligenceSettings,
-  privacySettings,
-  recordingOptions,
-  toolWindows,
-} from './screens/panels.ts';
+import { allScreens } from './screens/all.ts';
 
 const OUT_DIR = join(import.meta.dirname, 'images');
 
-const screens: Screen[] = [
-  firstRunLook(),
-  firstRunStorage(),
-  firstRunSmart(),
-  newPage('light'),
-  newPage('dark'),
-  organize(),
-  paginated(),
-  recording(),
-  search(),
-  settings(),
-  sizeClasses(),
-  phone(),
-  studyTools(),
-  sendTo(),
-  crashConsent(),
-  selfCheck(),
-  feedbackReview(),
-  firstRunWelcome(),
-  firstRunKeys(),
-  firstRunImport(),
-  pageEditor(),
-  drawTab(),
-  viewTab(),
-  tablesCharts(),
-  mathGrapher(),
-  searchPanel(),
-  linkedPages(),
-  recordingOptions(),
-  importDialog(),
-  exportDialog(),
-  intelligenceSettings(),
-  privacySettings(),
-  connectorsSettings(),
-  toolWindows(),
-];
-
 mkdirSync(OUT_DIR, { recursive: true });
-for (const screen of screens) {
+for (const screen of allScreens()) {
   writeFileSync(join(OUT_DIR, screen.file), screen.svg);
   console.log(`wrote ${screen.file}`);
 }

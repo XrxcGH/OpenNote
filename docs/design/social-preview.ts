@@ -1,8 +1,9 @@
 // The social preview image (1280 by 640): the product name and tagline beside the desk by the window and a
 // real-looking workspace. brand/social-preview.png is rendered from the SVG this writes.
 
-import { type Palette, circle, ink, line, palette, rect, text } from './lib/svg.ts';
-import { ambientCanvas, deskScene, logo, plantPot } from './lib/chrome.ts';
+import { type Palette, arrow, circle, ink, line, onEllipse, palette, rect, text } from './lib/svg.ts';
+import { ambientCanvas, logo } from './lib/chrome.ts';
+import { deskScene, plantPot } from './lib/drawings.ts';
 
 const WIN = { x: 600, y: 72, w: 640, h: 496 };
 const SIDE = 112;
@@ -80,7 +81,7 @@ function panes(p: Palette): string {
   });
   parts.push(
     text(WIN.x + 14, top + h - 14, 'Trash', { size: 11, fill: p.c('text.secondary') }),
-    plantPot(p, WIN.x + SIDE - 52, top + h - 64),
+    plantPot(p, WIN.x + SIDE - 54, top + h - 14),
   );
   PAGE_LIST.forEach(([title, date, selected], i) => {
     const py = top + 10 + i * 46;
@@ -118,8 +119,14 @@ function page(p: Palette): string {
       circle(x + 4, top + 134 + i * 22, 2.5, p.c('accent.clay')),
       text(x + 16, top + 138 + i * 22, item, body),
     ]),
-    ink(`M${x + 246} ${top + 150}a46 14 0 1 0 92 0a46 14 0 1 0-92 0`, p.pen('Indigo'), 2.2),
-    ink(`M${x + 270} ${top + 168}c-20 16-44 24-70 30m0 0l12-2m-12 2l4-11`, p.pen('Fern'), 2.2),
+    ink(`M${x + 246} ${top + 150}a46 14 0 1 0 92 0a46 14 0 1 0-92 0`, p.pen('Indigo'), 2.2, 'circled'),
+    arrow(
+      onEllipse(x + 292, top + 150, 46, 14, 100),
+      [x + 284, top + 200],
+      [x + 240, top + 196],
+      [x + 196, top + 198],
+      p.pen('Fern'),
+    ),
     ...bars.map((bh, i) =>
       rect(
         { x: x + 12 + i * 34, y: top + 330 - bh, w: 24, h: bh },
