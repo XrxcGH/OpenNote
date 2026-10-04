@@ -1,6 +1,7 @@
 # OpenNote beta 4 (0.1.0-beta.4): hand test checklist
 
 Agents only started this exe and opened each main entry point once. Everything below is untested by hand.
+This exe was built from commit `907d90f1` (the pushed branch head adds only these docs).
 Tick each step; when one fails, stop that section, report it (see "Reporting a failure"), and go on to the next section.
 
 ## Contents
@@ -91,7 +92,7 @@ Your real notes stay safe if you do this every time you test beta 4:
 ## 2. Shell (Phase 2)
 
 1. Resize the window from wide to narrow and back. The panes follow, nothing is cut off, and no horizontal scroll bar
-   appears under the page.
+   appears under the page, at full width too (it did on a 150 percent display; fixed in this build).
 2. Drag each pane splitter (notebook list, page list) left and right. The page area follows. Restart: the widths stay.
 3. Ctrl+K opens the command palette; type "settings" and press Enter. Settings opens. Escape closes it.
 4. Zoom with Ctrl+= and Ctrl+-; Ctrl+0 resets.
@@ -180,13 +181,16 @@ Quality-of-life features (ink lane):
 ## 6. Page views and export (Phase 6)
 
 1. View > Page view: switch between flow, paginated (Letter/A4), and infinite canvas.
-2. Paper: View > Paper > Lined. Type three lines: each line of text sits on a rule, with no rule cutting through text.
-   Try Grid and Dotted too.
+2. Paper: View > Background > Lined. Type three lines: each line of text rests ON a rule the way handwriting does (the
+   bottoms of the letters touch the rule, descenders hang below it), with no rule cutting through text. Try Grid and
+   Dotted too.
 
 Your requests in this build (owner fixes):
 
 1. New page: only the title and the gray "Changed ..." subtitle; no date text box. "Next in series" pages too.
-2. Lined paper: body text, a heading, a bulleted list, and a checklist each sit on the rules. Change the line spacing
+2. Lined paper: the page title and the "Changed" date under it, body text, a heading, a bulleted list, and a checklist
+   each rest on a rule, and the rules are a whole number of units apart. A checklist item shows one checkbox and no
+   second box beside it (a stray one showed in the earlier build). Change the line spacing
    (View > Paper > spacing): the text follows the new rules.
 3. Text boxes on lined paper: click on the canvas to make a text box, type two lines, drag it up, and down: it moves
    rule to rule and its text stays on the rules. Nudge it with the arrow keys: one rule per press. Drag its width
