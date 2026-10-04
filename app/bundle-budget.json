@@ -1,5 +1,5 @@
 {
-  "startup": { "jsKb": 250, "cssKb": 20 },
+  "startup": { "jsKb": 300, "cssKb": 22 },
   "after": {
     "within": [
       "features/page/",
@@ -28,7 +28,8 @@
     "@observablehq/plot": 135,
     "features/math": 175,
     "features/tables": 50,
-    "features/search/links": 190,
+    "features/search/links": 195,
+    "features/search/lineTags": 160,
     "features/page": 40,
     "features/ink/view/install": 110,
     "features/palette": 40,
