@@ -4,8 +4,7 @@
 import type { SetupStepProps } from '../../../registries';
 import { t } from '../../../strings/t';
 import { RadioCard, RadioGroup } from '../../../ui';
-import styles from '../../setup/SetupView.module.css';
-import { StepHeader } from '../../setup/StepHeader';
+import { StepHeader, setupStyles as styles } from '../../setup';
 
 type Choice = 'fresh' | 'import';
 

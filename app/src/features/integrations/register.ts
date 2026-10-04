@@ -1,18 +1,14 @@
 // Registers the extra import, export, embed, and integration features of Phase 11 and later: the setup step, commands,
 // and menu items. Each screen loads when it is used, so start-up carries only this file.
 
-import { lazy } from 'react';
 import { isEnabled } from '../../app/flags';
-import { commandContext } from '../../commands/registry';
+import { commandContext, executeCommand } from '../../commands/registry';
 import { setupSteps } from '../../registries';
-import { showOverlay } from '../../shell/commandbar/overlays';
 import { t } from '../../strings/t';
 import { showToast } from '../../ui';
 import { shownMounted } from '../page';
 import { createSnipWatcher } from './snip/watch';
 import type { SnipWatcher } from './snip/watch';
-
-const LazyImport = lazy(() => import('../interop/ImportDialog'));
 
 /** How long after setup finishes the import window opens, so the notebook and its view are on screen first. */
 const OPEN_IMPORT_AFTER_MS = 700;
@@ -24,12 +20,9 @@ setupSteps.register({
   scope: 'person',
   isEnabled: (ctx) => ctx.firstRun && isEnabled('setup.import'),
   load: () => import('./setup/ImportStep'),
-  commit(ctx, draft) {
+  commit(_ctx, draft) {
     if ((draft.import as { after?: boolean } | undefined)?.after) {
-      setTimeout(
-        () => showOverlay('interop-import', LazyImport, { interop: ctx.platform.interop, notes: ctx.notes }),
-        OPEN_IMPORT_AFTER_MS,
-      );
+      setTimeout(() => void executeCommand('interop.import', undefined, 'menu'), OPEN_IMPORT_AFTER_MS);
     }
     return Promise.resolve();
   },
