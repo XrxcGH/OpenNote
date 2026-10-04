@@ -265,7 +265,9 @@ async function openRuledPage(page: Page, paper: string, mode: string): Promise<v
     const button = bar.getByRole('button', { name, exact: true });
     if ((await button.getAttribute('aria-pressed')) !== 'true') await button.click();
   };
-  await press('Document flow');
+  // A page starts in document flow. With the pane buttons in the bar, Document flow no longer fits at this width
+  // and sits under More, so it is pressed only where it shows.
+  if ((await bar.getByRole('button', { name: 'Document flow', exact: true }).count()) > 0) await press('Document flow');
   await press(mode);
   await bar.getByRole('button', { name: 'Background' }).click();
   await page.getByRole('menuitemradio', { name: paper }).click();

@@ -172,14 +172,14 @@
     color: var(--color-accent-clay);
   }
 
-  .text :global(.ProseMirror) li[data-checked]::marker {
-    content: '\2610\00a0\00a0';
-    color: var(--color-text-secondary);
+  /* A task item draws its own checkbox (the node view in editor/extensions/listItem.ts, styled in content.module.css),
+     so it gets no list marker of its own: a generated ballot box here showed beside the real one. */
+  .text :global(.ProseMirror) li[data-checked] {
+    list-style: none;
   }
 
-  .text :global(.ProseMirror) li[data-checked='true']::marker {
-    content: '\2611\00a0\00a0';
-    color: var(--color-accent-primary);
+  .text :global(.ProseMirror) li[data-checked]::marker {
+    content: none;
   }
 
   .text :global(.ProseMirror) li[data-checked='true'] > p {
