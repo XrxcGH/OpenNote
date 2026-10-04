@@ -6,6 +6,7 @@
 // backgrounds, because a border snaps to device pixels on screen but not in print, and shifts layout (ADR 0006,
 // rule 1).
 
+import type { RuleGrid } from '../../../core/ruled';
 import { tokens } from '../../../theme/tokens';
 import { own } from '../layout/json';
 
@@ -153,8 +154,36 @@ const HEADINGS: readonly (readonly [string, number, number])[] = [
   ['h6', 16, 1.5],
 ];
 
+/** Ruled paper's grid and the font metric its text is shifted by: see `features/page/layout/rules.ts`. */
+export interface Ruled {
+  readonly grid: RuleGrid;
+  /** The reading font's ascent minus its descent, in ems. */
+  readonly metric: number;
+}
+
+/**
+ * The rules that lay a page's text out on ruled paper, the same as the screen does: every line is a whole number of
+ * rules tall with its baseline on a rule, and what does not come in lines is rounded up to whole rules.
+ */
+function ruledCss({ grid, metric }: Ruled): string[] {
+  const shift = 'calc((1lh - var(--ruled-m) * 1em) / 2)';
+  const lines = 'p,h1,h2,h3,h4,h5,h6,.page-title,.callout-title,summary,li:not(:has(>ul,>ol,>p))';
+  return [
+    `:root{--ruled:${grid.step}px;--ruled-m:${metric}}`,
+    `body{line-height:var(--ruled)}`,
+    `p,ul,ol,li,blockquote,pre,figure,table,details,.callout,.tags,h1,h2,h3,h4,h5,h6,.page-title{margin-top:0;margin-bottom:0}`,
+    `${lines}{line-height:round(up,1.25em,var(--ruled));padding-top:${shift};margin-bottom:calc(-1 * ${shift})}`,
+    `li>:is(ul,ol){margin-top:calc(-1 * ${shift})}`,
+    `span,a,code,mark,em,strong,s,u,.link{line-height:0}`,
+    `.callout,pre,th,td{padding-top:0;padding-bottom:0}`,
+    `.callout :is(p,.callout-title,summary,li){padding-top:0;margin-bottom:0}`,
+    `pre,pre code{line-height:var(--ruled)}`,
+    `hr{height:var(--ruled);margin:0;background:none;box-shadow:inset 0 -1px 0 var(--rule)}`,
+  ];
+}
+
 /** The stylesheet for the markup of `renderHtml` and the blocks around it. */
-export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}): string {
+export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}, ruled: Ruled | null = null): string {
   const { colors: c, fonts: f } = theme;
   const styler = new Styler(theme, notebookStyles);
   const normal = styler.resolve('normal', {
@@ -215,5 +244,6 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     `.ink{display:block;max-width:100%;height:auto}`,
     `img{display:block}p img{display:inline-block}`,
   ];
+  if (ruled) rules.push(...ruledCss(ruled));
   return `${theme.fontFaces}\n${rules.join('\n')}\n`;
 }

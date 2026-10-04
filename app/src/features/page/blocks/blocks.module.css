@@ -20,6 +20,10 @@
     contain: none;
   }
 
+  .textBox {
+    inset-block-start: var(--frame-y);
+  }
+
   .text {
     color: var(--color-text-primary);
     font-family: var(--font-reading);
@@ -308,5 +312,94 @@
     color: var(--color-text-secondary);
     background: var(--color-surface-sunken);
     font-size: var(--type-note-size);
+  }
+
+  /*
+   * Ruled paper (layout/rules.ts). When the paper has rules, --rule is their spacing and it is the unit of layout:
+   * every line of text is a whole number of rules tall and its baseline sits on a rule, and whatever does not come
+   * in lines is rounded up to whole rules, so the text after it is back on a rule. Margins between text elements go,
+   * because a paragraph on ruled paper is the next line. --rule-shift is how far a line moves down inside its line
+   * box so its baseline is on the rule instead of above it: (line height - (ascent - descent) * size) / 2, using the
+   * font's measured ascent and descent (--rule-m). A padding at the top and the same margin at the bottom keep the
+   * line's height a whole number of rules while its text moves, in the flow, so list markers move with their lines.
+   */
+  :global([data-ruled]) {
+    --rule-shift: calc((1lh - var(--rule-m, 0.7) * 1em) / 2);
+  }
+
+  :global([data-ruled]) .block {
+    display: flow-root;
+    margin-block-end: var(--rule-pad, 0px);
+  }
+
+  :global([data-ruled]) .text {
+    line-height: var(--rule);
+  }
+
+  /* A floating text box's top is the rule nearest to where it was put, in its own sheet when the page is paginated. */
+  :global([data-ruled]) .textBox {
+    inset-block-start: calc(
+      var(--frame-y) - mod(var(--frame-y), var(--rule-sheet)) + var(--rule-origin) +
+        round(
+          nearest,
+          max(mod(var(--frame-y), var(--rule-sheet)), mod(var(--rule-origin), var(--rule))) - var(--rule-origin),
+          var(--rule)
+        )
+    );
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) :is(p, ul, ol, blockquote, pre, h1, h2, h3, h4, h5, h6, hr) {
+    margin-block: 0;
+  }
+
+  /* Text takes whole rules: a line is as tall as the next whole number of rules above 1.25 times its size. */
+  :global([data-ruled]) .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
+    line-height: round(up, 1.25em, var(--rule));
+    padding-block-start: var(--rule-shift);
+    margin-block-end: calc(-1 * var(--rule-shift));
+  }
+
+  /* Inline text of another size never makes its line taller than its block's rules. */
+  :global([data-ruled]) .text :global(.ProseMirror) :is(span, a, mark, em, strong, s, u, sub, sup, code) {
+    line-height: 0;
+  }
+
+  /* A code block and a callout have their own background, which hides the rules behind them: whole rules tall, with
+     their lines in the rules' cells. */
+  :global([data-ruled]) .text :global(.ProseMirror) pre {
+    padding-block: 0;
+    line-height: var(--rule);
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) pre code {
+    line-height: inherit;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) [data-callout] {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) [data-callout] :is(p, [data-callout-title]) {
+    padding-block-start: 0;
+    margin-block: 0;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) h2 {
+    padding-block-end: 0;
+    border-block-end: 0;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) hr {
+    block-size: var(--rule);
+    border-block-start: 0;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) :is(td, th) {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) :is(table, figure) {
+    margin-block: 0 var(--rule-pad, 0px);
   }
 }

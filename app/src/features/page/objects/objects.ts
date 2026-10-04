@@ -8,6 +8,8 @@ import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { isFloating } from '../blocks/textBlock';
+import { snapY, stepY } from '../layout/rules';
+import type { RuleGrid } from '../layout/rules';
 import type { PagePool } from '../pool/pool';
 import { readingLock } from '../qol/stores';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
@@ -39,6 +41,8 @@ export interface ObjectParts {
   openSizeAndPosition(block: BlockId): void;
   /** A text box's width is changing: its height change moves the blocks below it (keep-below). */
   widthChanging?(block: BlockId): void;
+  /** The rules of ruled paper, which text boxes snap to, or null on plain paper. */
+  rules?(): RuleGrid | null;
 }
 
 let gestures = 0;
@@ -133,6 +137,23 @@ export class Objects {
     this.commitFrames(frames, this.gesture('drag'));
   }
 
+  /**
+   * A text box on ruled paper sits on the rules: its top is a rule, so its first baseline lands on one. Anything else
+   * keeps the frame it was given.
+   */
+  snapped(block: BlockJson, frame: Frame): Frame {
+    const grid = this.parts.rules?.() ?? null;
+    if (!grid || block.type !== 'text' || frame.y === undefined) return frame;
+    return { ...frame, y: frameValue(snapY(frame.y, grid)) };
+  }
+
+  /** How far a drag of `dy` really moves a block: to the nearest rule for a text box on ruled paper. */
+  snapDelta(block: BlockJson, dy: number): number {
+    const y = block.frame?.y;
+    if (y === undefined) return dy;
+    return this.snapped(block, { ...block.frame, y: y + dy }).y! - y;
+  }
+
   /** Shift+Arrows: a text box's width, never below 120 units. */
   widen(dw: number): void {
     const frames = new Map<BlockId, Frame>();
@@ -161,9 +182,10 @@ export class Objects {
     for (const [id, frame] of frames) {
       const block = this.parts.layer.block(id);
       if (!block) continue;
-      if (frame.w !== block.frame?.w) this.widthChanging(id);
-      this.parts.layer.upsert({ ...block, frame });
-      edits.push({ edit: 'moveBlock', block: id, frame });
+      const placed = this.snapped(block, frame);
+      if (placed.w !== block.frame?.w) this.widthChanging(id);
+      this.parts.layer.upsert({ ...block, frame: placed });
+      edits.push({ edit: 'moveBlock', block: id, frame: placed });
     }
     if (edits.length > 0) this.send({ edits, ...(coalesce ? { coalesce } : {}) });
   }
@@ -198,7 +220,11 @@ export class Objects {
   }
 
   private offset(block: BlockJson, dx: number, dy: number): Frame {
-    return { ...block.frame, x: frameValue((block.frame?.x ?? 0) + dx), y: frameValue((block.frame?.y ?? 0) + dy) };
+    const grid = this.parts.rules?.() ?? null;
+    const y = block.frame?.y ?? 0;
+    // On ruled paper an arrow moves a text box one rule, not 8 units.
+    const moved = grid && block.type === 'text' && dy !== 0 ? stepY(y, dy > 0 ? 1 : -1, grid) : y + dy;
+    return { ...block.frame, x: frameValue((block.frame?.x ?? 0) + dx), y: frameValue(moved) };
   }
 
   /** The gesture a key belongs to: the same one while keys come less than a second apart. Announces new runs. */

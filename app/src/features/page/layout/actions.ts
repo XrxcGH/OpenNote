@@ -17,6 +17,7 @@ import { isFloating } from '../blocks/textBlock';
 import styles from './layout.module.css';
 import type { PageViewport } from '../viewport/viewport';
 import type { Flow } from './flow';
+import { snapY } from './rules';
 
 /** An RFC 7396 merge patch over a view: null removes a key, an object merges, anything else replaces. */
 function mergePatch(view: PageViewJson, patch: Record<string, unknown>): PageViewJson {
@@ -110,7 +111,9 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
   const caretAt = (at: Point, floating: boolean) => {
     const now = new Date().toISOString();
     const id = newId();
-    const frame = floating ? { x: Math.max(0, Math.round(at.x)), y: Math.max(0, Math.round(at.y)) } : undefined;
+    // On ruled paper a new text box starts on a rule, so its first line is on the rules.
+    const top = Math.max(0, Math.round(at.y));
+    const frame = floating ? { x: Math.max(0, Math.round(at.x)), y: Math.round(snapY(top, flow.rules())) } : undefined;
     const block: BlockJson = { id, type: 'text', order: '~', created: now, modified: now, data: { markdown: '' } };
     if (frame) block.frame = frame;
     const after = floating ? insertAfter() : layer.blocks().at(-1)?.id;

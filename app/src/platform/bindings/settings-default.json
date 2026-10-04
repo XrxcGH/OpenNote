@@ -34,7 +34,6 @@
     "markdownShortcuts": true,
     "slashMenu": true,
     "formattingBar": "touchAndPen",
-    "newPageDateTime": true,
     "autocorrect": {
       "enabled": true,
       "entries": []

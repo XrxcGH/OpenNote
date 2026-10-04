@@ -8,7 +8,8 @@ import { planFlow } from '../layout';
 import type { PageLayout } from '../layout';
 import { sheetAt } from '../pagination';
 import type { BlockMeasure, FlowBlock, SheetBreak } from '../pagination';
-import { linesOf } from '../print/dom';
+import { paperRules } from '../paper/rules';
+import { linesOf, ruledCell } from '../print/dom';
 import type { LineStart } from '../print/dom';
 import { clearEditorSpacers, insertStaticSpacers, positionOf, removeStaticSpacers, setEditorSpacers } from './spacers';
 import type { EditorSpacers } from './spacers';
@@ -180,11 +181,17 @@ class ScreenPaginator implements Paginator {
   /** The units of one text block: each top-level element, with its lines. */
   private textUnits(block: BlockJson, wrapper: HTMLElement, elements: HTMLElement[], origin: DOMRect): Unit[] {
     const zoom = this.mounted.viewport.camera().zoom;
+    const { background, sheet } = this.hooks.layout();
+    const rules = paperRules(background, sheet, true);
     return elements.map((element, index) => {
       const id = elements.length === 1 ? block.id : `${block.id}#${index}`;
       const measured = this.box(element, origin, zoom);
       const lines = linesOf(element, origin);
-      const scaled = lines.boxes.map((line) => ({ top: line.top / zoom, height: line.height / zoom }));
+      const scaled = lines.boxes.map((line) => {
+        const box = { top: line.top / zoom, height: line.height / zoom };
+        // On ruled paper the paginator places each line's cell, so a sheet's first line is on its first rule.
+        return rules ? ruledCell(box, element, rules) : box;
+      });
       return {
         id,
         block: block.id,

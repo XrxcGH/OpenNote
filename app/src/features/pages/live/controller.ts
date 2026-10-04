@@ -17,7 +17,7 @@ import {
 } from '../layout';
 import type { PageLayout, PageViewSpec } from '../layout';
 import { GAP_HALF, MARGIN_PRESETS, MAX_SHEETS } from '../pagination';
-import { PRESETS, TEMPLATE_IDS, infinitePaths, paperPaths, paperSvg } from '../paper';
+import { PRESETS, TEMPLATE_IDS, infinitePaths, paperPaths, paperRules, paperSvg } from '../paper';
 import type { PageBackground } from '../paper';
 import { lightTheme } from '../export/style';
 import { paperStyle } from '../print/css';
@@ -149,6 +149,8 @@ class PagesView {
     this.stops.forEach((stop) => stop());
     cancelAnimationFrame(this.frame);
     this.paginator.stop();
+    this.mounted.flow.setRules(null);
+    delete this.mounted.viewport.world.dataset.sheets;
     this.sheetsLayer.remove();
     this.paperLayer.remove();
     this.counter.remove();
@@ -301,6 +303,8 @@ class PagesView {
   private apply(): void {
     const paginated = this.spec.mode === 'paginated';
     const { world } = this.mounted.viewport;
+    if (paginated) world.dataset.sheets = '';
+    else delete world.dataset.sheets;
     if (paginated) {
       world.style.background = 'transparent';
       this.paperLayer.replaceChildren();
@@ -316,6 +320,8 @@ class PagesView {
       this.drawInfinitePaper();
     }
     this.lastMode = paginated ? 'paginated' : 'infinite';
+    // On ruled paper the text lays out in the rules (features/page/layout/rules.ts), in either mode.
+    this.mounted.flow.setRules(paperRules(this.layout.background, this.layout.sheet, paginated));
     this.reading?.refresh();
     this.updateCounter();
     this.refreshStrip();

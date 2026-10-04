@@ -28,7 +28,7 @@ export const PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.slashMenu', 'The slash menu and Turn into.', building),
   flag('page.styles', 'Editable text styles.', building),
   flag('page.outline', 'Outline moves and folding.', building),
-  flag('page.typingHelpers', 'AutoCorrect, date and time helpers, and the date line on new pages.', building),
+  flag('page.typingHelpers', 'AutoCorrect, and the date and time helpers.', building),
   flag('page.pasteExtras', 'Source links, PDF line joining, and saving web images.', building),
   flag('page.formattingBar', 'The formatting bar after touch and pen selections.', building),
   flag('page.readingOrder', 'The Reading order pane.', building),

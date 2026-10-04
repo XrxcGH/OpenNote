@@ -263,6 +263,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
     openMenu: (anchor) => void openObjectMenu(objects!, anchor),
     openSizeAndPosition: (block) => openSizeAndPosition(container, objects!, layer, block),
     widthChanging: (block) => keepBelow.arm(block),
+    rules: () => flow.rules(),
   });
   const gestures = createGestureTool(viewport);
   const select = createSelectTool(pool, { world: viewport.world, pressEmpty: (point) => layout.pressEmpty(point) });
