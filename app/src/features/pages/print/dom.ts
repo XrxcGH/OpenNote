@@ -2,6 +2,7 @@
 // is to ask the DOM: it gives the box of every line of text and every table row, and the place in the text where each
 // line starts. The same code can measure the page view for the paginator. It needs a live document and nothing else.
 
+import type { RuleGrid } from '../../../core/ruled';
 import type { Rect } from '../pagination/geometry';
 import type { BlockMeasure, Box } from '../pagination/types';
 
@@ -139,6 +140,25 @@ function clusterLines(fragments: readonly Fragment[]): Fragment[][] {
   return clusters.map((c) => c.members);
 }
 
+/** How far below its baseline a line's glyphs reach, as a fraction of the text size. Enough to find the baseline. */
+const DESCENT = 0.24;
+
+/**
+ * The line cell a line of text has on ruled paper: a whole number of rules tall, with the baseline on its bottom rule.
+ * The paginator places cells, not the glyph boxes in them, so a line that starts a sheet puts its cell on the sheet's
+ * first rule and its baseline on the rule below. `box` is in page units from the same top as `rules.origin`.
+ */
+export function ruledCell(box: Box, element: Element, rules: RuleGrid): Box {
+  const style = getComputedStyle(element);
+  const height = Number.parseFloat(style.lineHeight);
+  const size = Number.parseFloat(style.fontSize);
+  if (!Number.isFinite(height) || !Number.isFinite(size)) return box;
+  const n = Math.max(1, Math.round(height / rules.step));
+  const baseline = box.top + box.height - DESCENT * size;
+  const rule = Math.round((baseline - rules.origin) / rules.step);
+  return { top: rules.origin + (rule - n) * rules.step, height: n * rules.step };
+}
+
 /** The lines of an element: a box for each, and where in the text it starts. */
 export function linesOf(content: Element, origin: DOMRect): Lines {
   const seq = { n: 0 };
@@ -168,7 +188,11 @@ export interface UnitMeasure extends BlockMeasure {
 export class FlowMeasurer {
   private readonly lines = new Map<string, Lines>();
 
-  constructor(private readonly root: HTMLElement) {}
+  constructor(
+    private readonly root: HTMLElement,
+    /** The rules of ruled paper: lines are then the cells they sit in. */
+    private readonly rules: RuleGrid | null = null,
+  ) {}
 
   private unit(id: string): HTMLElement | null {
     return this.root.querySelector<HTMLElement>(`[data-unit="${CSS.escape(id)}"]`);
@@ -187,7 +211,10 @@ export class FlowMeasurer {
     const kind = el.dataset.kind;
     const content = el.firstElementChild;
     if (kind === 'text' && content) {
-      const lines = linesOf(content, origin);
+      const found = linesOf(content, origin);
+      const lines = this.rules
+        ? { ...found, boxes: found.boxes.map((line) => ruledCell(line, content, this.rules!)) }
+        : found;
       this.lines.set(id, lines);
       if (lines.boxes.length > 0) return { ...box, lines: lines.boxes, first: lines.boxes[0].top };
     }

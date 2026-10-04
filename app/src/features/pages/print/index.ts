@@ -12,7 +12,7 @@ export { measureDocument, printDocument } from './document';
 export type { DocumentSetup, SheetContent, TextSlicer } from './document';
 export { pageUnits } from './units';
 export type { FlowUnit, FloatingUnit, PageUnits } from './units';
-export { FlowMeasurer, linesOf, settle } from './dom';
+export { FlowMeasurer, linesOf, ruledCell, settle } from './dom';
 export type { LineStart, Lines, UnitMeasure } from './dom';
 export { preparePrint, rotatedBounds, showDocument } from './prepare';
 export type { PrepareInput, PrepareResult } from './prepare';

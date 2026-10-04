@@ -171,9 +171,11 @@ class ObjectsTool implements PointerToolDef {
       return this.parts.chrome.update();
     }
     const floating = press.blocks.some(isFloating);
-    for (const { id } of press.blocks) {
-      const element = this.parts.layer.view(id)?.element;
-      if (element) element.style.transform = floating ? `translate(${dx}px, ${dy}px)` : `translateY(${dy}px)`;
+    for (const block of press.blocks) {
+      const element = this.parts.layer.view(block.id)?.element;
+      // A text box on ruled paper moves from rule to rule while it is dragged.
+      const down = floating ? this.parts.objects.snapDelta(block, dy) : dy;
+      if (element) element.style.transform = floating ? `translate(${dx}px, ${down}px)` : `translateY(${dy}px)`;
     }
     if (!floating) this.parts.chrome.setDropLine(this.dropTarget(press)?.y ?? null);
     this.parts.chrome.update();

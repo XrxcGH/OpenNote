@@ -8,7 +8,9 @@ import { inkSvg, shapesInBand, type InkShape } from '../export/ink';
 import { escapeAttr, escapeHtml } from '../export/markdown';
 import { readingOrder } from '../export/order';
 import type { ExportBlock, ExportPage, TableBlock } from '../export/source';
-import { documentCss, type DocTheme, type NotebookStyles } from '../export/style';
+import { fontMetric, snapY, type RuleGrid } from '../../../core/ruled';
+import { documentCss, type DocTheme, type NotebookStyles, type Ruled } from '../export/style';
+import { paperRules } from '../paper/rules';
 import type { FlowSlice } from '../layout/flow';
 import type { PageLayout } from '../layout/page';
 import type { PagePlan } from '../layout/plan';
@@ -37,6 +39,12 @@ const LANGUAGE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const CSP =
   "default-src 'none'; img-src data: file: blob: 'self'; style-src 'unsafe-inline'; font-src data: file: blob: 'self'";
 
+/** The ruled paper the page prints on, if it has rules: text is laid out on them, as it is on the screen. */
+function ruledOf(setup: DocumentSetup): Ruled | null {
+  const grid = paperRules(setup.layout.background, setup.layout.sheet, true);
+  return grid ? { grid, metric: fontMetric(setup.theme.fonts.reading) } : null;
+}
+
 function documentHead(setup: DocumentSetup, css: string): string {
   const title = setup.page.title.trim() === '' ? setup.cx.labels.untitled : setup.page.title;
   const lang = LANGUAGE.test(setup.page.language) ? setup.page.language : 'en';
@@ -48,7 +56,7 @@ function documentHead(setup: DocumentSetup, css: string): string {
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">`,
     '<meta name="generator" content="OpenNote">',
     `<title>${escapeHtml(title)}</title>`,
-    `<style>\n${documentCss(setup.theme, setup.styles)}${css}\n</style>`,
+    `<style>\n${documentCss(setup.theme, setup.styles, ruledOf(setup))}${css}\n</style>`,
     '</head>',
     '',
   ].join('\n');
@@ -59,9 +67,11 @@ export function unitKind(unit: FlowUnit): 'text' | 'table' | 'atom' | 'break' {
   return unit.flow.kind;
 }
 
-function floatStyle(block: ExportBlock): string {
+function floatStyle(block: ExportBlock, rules: RuleGrid | null): string {
   const f = block.frame ?? {};
-  const parts = [`left:${px(f.x ?? 0)}px`, `top:${px(f.y ?? 0)}px`];
+  // A text box on ruled paper sits on the rules.
+  const top = block.type === 'text' ? snapY(f.y ?? 0, rules) : (f.y ?? 0);
+  const parts = [`left:${px(f.x ?? 0)}px`, `top:${px(top)}px`];
   if (f.w !== undefined) parts.push(`width:${px(f.w)}px`);
   else if (block.type === 'text') parts.push('width:max-content', 'min-width:120px', 'max-width:600px');
   if (f.h !== undefined) parts.push(`height:${px(f.h)}px`);
@@ -77,7 +87,8 @@ export function measureDocument(setup: DocumentSetup): string {
     .join('\n');
   const floating = units.floating
     .map(
-      (u) => `<div class="float" data-block="${escapeAttr(u.block.id)}" style="${floatStyle(u.block)}">${u.html}</div>`,
+      (u) =>
+        `<div class="float" data-block="${escapeAttr(u.block.id)}" style="${floatStyle(u.block, paperRules(setup.layout.background, setup.layout.sheet, true))}">${u.html}</div>`,
     )
     .join('\n');
   const column = `left:${px(layout.column.x)}px;width:${px(layout.column.width)}px;padding-top:${px(layout.flowSheet.margins[0])}px`;
@@ -178,7 +189,10 @@ class SheetWriter {
       if (!rect || !shown.has(u.block.id)) return [];
       const rank = this.rank.get(u.block.id) ?? 0;
       const layer = `z-index:${LAYER.float + rank}`;
-      const style = floatStyle({ ...u.block, frame: { ...u.block.frame, x: rect.x, y: rect.y - index * g.height } });
+      const style = floatStyle(
+        { ...u.block, frame: { ...u.block.frame, x: rect.x, y: rect.y - index * g.height } },
+        paperRules(this.setup.layout.background, this.setup.layout.sheet, true),
+      );
       return [
         {
           rank,

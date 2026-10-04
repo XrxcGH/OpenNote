@@ -65,11 +65,15 @@ export function placeBlock(element: HTMLElement, block: BlockJson): void {
   const frame = block.frame;
   const floating = isFloating(block);
   element.classList.toggle(styles.floating, floating);
+  const text = floating && block.type === 'text';
   element.style.left = floating ? `${frame!.x}px` : '';
-  element.style.top = floating ? `${frame!.y}px` : '';
+  // A floating text box's top is a rule of the stylesheet: on ruled paper it snaps to the rules (see layout/rules.ts).
+  element.style.top = floating && !text ? `${frame!.y}px` : '';
+  if (text) element.style.setProperty('--frame-y', `${frame!.y}px`);
+  else element.style.removeProperty('--frame-y');
+  element.classList.toggle(styles.textBox, text);
   element.style.inlineSize = frame?.w !== undefined ? `${frame.w}px` : '';
   // A floating text box without a width is as wide as its content (ARCHITECTURE.md section 6.3).
-  const text = floating && block.type === 'text';
   element.classList.toggle(layoutStyles.autoWidth, text && frame?.w === undefined);
   element.classList.toggle(layoutStyles.setWidth, text && frame?.w !== undefined);
 }

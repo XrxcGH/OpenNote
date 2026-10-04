@@ -32,6 +32,11 @@
     outline-offset: var(--size-focus-ring-offset);
   }
 
+  /* On ruled paper the box moves down with its line, as the line's text does (blocks.module.css). */
+  :global([data-ruled]) .taskBox {
+    inset-block-start: var(--rule-shift);
+  }
+
   .taskBody > p {
     margin-block: var(--space-1);
   }

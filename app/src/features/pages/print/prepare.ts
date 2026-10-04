@@ -12,6 +12,7 @@ import type { FloatingItem } from '../layout/freeform';
 import { displayY, planFlow, type FlowPlan } from '../layout/flow';
 import { own } from '../layout/json';
 import { pageLayout } from '../layout/page';
+import { paperRules } from '../paper/rules';
 import { planPage } from '../layout/plan';
 import { EPS, type Rect } from '../pagination/geometry';
 import type { BlockMeasure, Measure } from '../pagination/types';
@@ -125,7 +126,9 @@ export async function preparePrint(doc: Document, input: PrepareInput): Promise<
   const units = pageUnits(readingOrder(page.blocks, page.view.readingOrder), cx);
   const setup: DocumentSetup = { page, layout, units, cx, theme: input.theme ?? lightTheme(), styles: input.styles };
   await showDocument(doc, measureDocument(setup));
-  const measurer = new FlowMeasurer(doc.getElementById('measure') as HTMLElement);
+  // On ruled paper the paginator places the cells the lines sit in, so every sheet starts on a rule.
+  const rules = paperRules(layout.background, layout.sheet, true);
+  const measurer = new FlowMeasurer(doc.getElementById('measure') as HTMLElement, rules);
   const measured = new Map<string, UnitMeasure>();
   const measure: Measure = (block) => {
     const m = measurer.measure(block.id);
