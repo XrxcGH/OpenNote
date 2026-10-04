@@ -228,9 +228,9 @@ test.describe('text boxes', () => {
     await drag(page, 'grip', 40, 83);
     await page.waitForTimeout(300);
     const { top } = await frame(box);
-    // The college ruling is 26.46 units from a 72 unit top margin.
-    const rules = (top - 72) / 26.46;
-    expect(Math.abs(rules - Math.round(rules)) * 26.46).toBeLessThan(1);
+    // The college ruling is drawn 26 units apart from a 72 unit top margin.
+    const rules = (top - 72) / 26;
+    expect(Math.abs(rules - Math.round(rules)) * 26).toBeLessThan(1);
     expect(top).toBeGreaterThanOrEqual(0);
   });
 });

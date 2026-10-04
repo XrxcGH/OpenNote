@@ -29,6 +29,19 @@ export function spacingOf(background: PageBackground): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(Math.max(value, lo), hi) : DEFAULT_SPACING;
 }
 
+/** Paper that text sits on (see rules.ts). */
+const TEXT_PAPER = new Set(['ruled', 'grid', 'dots']);
+
+/**
+ * The spacing to draw with and lay text out in. Paper that text sits on keeps its rules a whole number of page units
+ * apart: a browser paints each line of text with its baseline on a whole unit, so rules a fraction of a unit apart
+ * would drift up to half a unit off the letters (7 mm college ruling is drawn 26 units apart instead of 26.46).
+ */
+export function drawnSpacingOf(background: PageBackground): number {
+  const spacing = spacingOf(background);
+  return TEXT_PAPER.has(background.pattern) ? Math.round(spacing) : spacing;
+}
+
 /** A notes area smaller than this, in page units, isn't usable, and the page keeps its plain margins. */
 const MIN_NOTES = 96;
 
@@ -44,7 +57,7 @@ function drawSheetPattern(c: Canvas, bg: PageBackground, g: SheetGeometry): void
 /** Everything one sheet draws, from the sheet's top-left corner. Plain and unknown patterns draw nothing. */
 export function paperPaths(bg: PageBackground, g: SheetGeometry): PaperPaths {
   const c = new Canvas();
-  const step = spacingOf(bg);
+  const step = drawnSpacingOf(bg);
   const [top, , bottom, left] = g.margins;
   const content = contentBox(g, 0);
   const origin = { x: content.x, y: content.y };
@@ -65,7 +78,7 @@ export function paperPaths(bg: PageBackground, g: SheetGeometry): PaperPaths {
 export function infinitePaths(bg: PageBackground, tile: Rect, g: SheetGeometry): PaperPaths {
   if (SHEET_PATTERNS.has(bg.pattern)) return sheetsPaths(bg, tile, g);
   const c = new Canvas();
-  const step = spacingOf(bg);
+  const step = drawnSpacingOf(bg);
   const origin = { x: g.margins[3], y: g.margins[0] };
   if (bg.pattern === 'ruled') {
     ruled(c, tile, origin.y, step);

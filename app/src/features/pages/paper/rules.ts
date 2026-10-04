@@ -3,7 +3,7 @@
 // `features/page/layout/rules.ts`); every other paper lays text out freely.
 import type { RuleGrid } from '../../../core/ruled';
 import type { SheetGeometry } from '../pagination/geometry';
-import { spacingOf } from './patterns';
+import { drawnSpacingOf } from './patterns';
 import type { PageBackground } from './types';
 
 /** Patterns whose lines run across the page at one spacing, anchored at the top margin. */
@@ -15,5 +15,5 @@ export type PaperRules = RuleGrid;
 /** The rules of the paper, or null when its paper has none a line of text could sit on. */
 export function paperRules(background: PageBackground, g: SheetGeometry, paginated: boolean): PaperRules | null {
   if (!RULED.has(background.pattern)) return null;
-  return { step: spacingOf(background), origin: g.margins[0], sheet: paginated ? g.height : null };
+  return { step: drawnSpacingOf(background), origin: g.margins[0], sheet: paginated ? g.height : null };
 }

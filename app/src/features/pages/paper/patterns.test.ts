@@ -42,10 +42,12 @@ describe('ruled paper', () => {
     ['college 7 mm', SPACINGS.ruledCollege],
     ['wide 8.7 mm', SPACINGS.ruledWide],
     ['custom 40', 40],
-  ])('draws %s lines across the sheet between the margins, at every paper size', (_name, spacing) => {
+  ])('draws %s lines across the sheet between the margins, at every paper size', (_name, given) => {
+    // Paper that text sits on is drawn a whole number of units apart.
+    const spacing = Math.round(given);
     for (const [, g] of SIZES) {
       const [top, , bottom] = g.margins;
-      const lines = segments(paperPaths({ pattern: 'ruled', spacing }, g).rules);
+      const lines = segments(paperPaths({ pattern: 'ruled', spacing: given }, g).rules);
       const expected = Math.floor((g.height - top - bottom) / spacing + 0.001);
       expect(lines).toHaveLength(expected);
       expect(lines[0][1]).toBeCloseTo(top + spacing, 1);
@@ -77,12 +79,13 @@ describe('grid paper', () => {
     ['1/4 inch', SPACINGS.gridQuarterInch],
     ['1 cm', SPACINGS.grid1cm],
     ['custom 50', 50],
-  ])('draws %s squares from the content box corner and ends on a whole square', (_name, spacing) => {
+  ])('draws %s squares from the content box corner and ends on a whole square', (_name, given) => {
+    const spacing = Math.round(given);
     for (const [, g] of SIZES) {
       const box = contentBox(g, 0);
       const cols = Math.floor(box.w / spacing + 0.001);
       const rows = Math.floor(box.h / spacing + 0.001);
-      const lines = segments(paperPaths({ pattern: 'grid', spacing }, g).rules);
+      const lines = segments(paperPaths({ pattern: 'grid', spacing: given }, g).rules);
       const across = horizontal(lines);
       const down = vertical(lines);
       expect(down).toHaveLength(cols + 1);
@@ -104,8 +107,8 @@ describe('dot grid', () => {
   it('puts one dot at each crossing of the grid, inside the content box', () => {
     for (const [, g] of SIZES) {
       const box = contentBox(g, 0);
-      const step = SPACINGS.dots;
-      const dots = points(paperPaths({ pattern: 'dots', spacing: step }, g).dots);
+      const step = Math.round(SPACINGS.dots);
+      const dots = points(paperPaths({ pattern: 'dots', spacing: SPACINGS.dots }, g).dots);
       const cols = Math.floor(box.w / step + 0.001) + 1;
       const rows = Math.floor(box.h / step + 0.001) + 1;
       expect(dots).toHaveLength(cols * rows);

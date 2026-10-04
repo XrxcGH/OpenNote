@@ -14,7 +14,7 @@ describe('paperRules', () => {
   });
 
   it('restarts the lattice on every sheet when the page is paginated', () => {
-    expect(paperRules({ pattern: 'ruled' }, sheet, true)).toEqual({ step: 26.46, origin: 72, sheet: 1056 });
+    expect(paperRules({ pattern: 'ruled' }, sheet, true)).toEqual({ step: 26, origin: 72, sheet: 1056 });
   });
 
   it('gives plain paper, Cornell paper, and templates none', () => {
@@ -25,13 +25,13 @@ describe('paperRules', () => {
 });
 
 describe('print on ruled paper', () => {
-  const ruled = { grid: { step: 26.46, origin: 72, sheet: 1056 }, metric: 0.7 };
+  const ruled = { grid: { step: 26.46, origin: 72, sheet: 1056 } };
 
   it('lays out text in whole rules with baselines on them', () => {
     const css = documentCss(lightTheme(), {}, ruled);
     expect(css).toContain('--ruled:26.46px');
     expect(css).toContain('line-height:round(up,1.25em,var(--ruled))');
-    expect(css).toContain('padding-top:calc((1lh - var(--ruled-m) * 1em) / 2)');
+    expect(css).toContain('text-box:trim-both cap alphabetic;padding-top:calc(1lh - 1cap)');
   });
 
   it('is the same stylesheet as before on plain paper', () => {

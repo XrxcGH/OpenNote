@@ -5,7 +5,7 @@ import type { PageViewJson } from '../../../services/pages/types';
 import { fitWidthZoom } from '../viewport/camera';
 import { observeResize } from '../viewport/viewport';
 import type { PageViewport } from '../viewport/viewport';
-import { RULE_PROPERTIES, fontMetric, leadFor, ruleProperties, wholeRules } from './rules';
+import { RULE_PROPERTIES, leadFor, ruleProperties } from './rules';
 import type { RuleGrid } from './rules';
 import styles from './layout.module.css';
 
@@ -109,15 +109,21 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
   const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => schedule());
   const mutations = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => schedule());
 
-  const heightOf = (element: Element) => element.getBoundingClientRect().height / viewport.camera().zoom;
+  /** How far down the page an element ends, in page units from the top of the world. */
+  const bottomOf = (rect: DOMRect) => (rect.bottom - world.getBoundingClientRect().top) / viewport.camera().zoom;
   const setVar = (element: HTMLElement, name: string, value: string) => {
     if (element.style.getPropertyValue(name) !== value) element.style.setProperty(name, value);
   };
 
+  /**
+   * Pads an element down to the next rule below its end. The rule is the one of the sheet the element ends on: a
+   * block that a page break pushed onto the next sheet ends in that sheet's rules, not in a whole number of rules
+   * from its own top.
+   */
   function pad(element: HTMLElement): void {
     if (!grid) return;
-    const height = heightOf(element);
-    const extra = height === 0 ? 0 : wholeRules(height, grid) - height;
+    const rect = element.getBoundingClientRect();
+    const extra = rect.height === 0 ? 0 : leadFor(bottomOf(rect), grid);
     setVar(element, '--rule-pad', `${Math.round(extra * 100) / 100}px`);
   }
 
@@ -170,18 +176,13 @@ function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
       const was = grid;
       grid = next;
       if (!next) return clear();
-      const style = getComputedStyle(flow);
-      const text = fontMetric(style.fontFamily);
-      const mono = fontMetric(getComputedStyle(world).getPropertyValue('--font-mono') || 'monospace');
       world.dataset.ruled = '';
-      for (const [name, value] of Object.entries(ruleProperties(next, { text, mono }))) setVar(world, name, value);
+      for (const [name, value] of Object.entries(ruleProperties(next))) setVar(world, name, value);
       if (!was) {
         resizes?.observe(flow);
         mutations?.observe(flow, { childList: true, subtree: true });
-        // The fonts load after the page does, and the metric is measured from the loaded font.
-        void document.fonts?.ready.then(() => {
-          if (grid) setVar(world, '--rule-m', String(fontMetric(getComputedStyle(flow).fontFamily)));
-        });
+        // The fonts load after the page does and can change what sits above the flow.
+        void document.fonts?.ready.then(schedule);
       }
       align();
     },

@@ -22,6 +22,8 @@ interface Fragment {
 
 /** Inline elements that take room on a line with no text in them. */
 const REPLACED = 'img, svg, .box';
+/** Controls an editor draws over its text, such as a code block's language button: they are not lines of text. */
+const CONTROLS = 'button';
 
 export interface Lines {
   readonly boxes: Box[];
@@ -43,7 +45,7 @@ function piecesOf(root: Element): (Text | Element)[] {
         if (child.data.trim() !== '') pieces.push(child);
       } else if (child instanceof Element) {
         if (child.matches(REPLACED)) pieces.push(child);
-        else visit(child);
+        else if (!child.matches(CONTROLS)) visit(child);
       }
     }
   };
