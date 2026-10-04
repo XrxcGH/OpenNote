@@ -8,7 +8,7 @@ import { inkSvg, shapesInBand, type InkShape } from '../export/ink';
 import { escapeAttr, escapeHtml } from '../export/markdown';
 import { readingOrder } from '../export/order';
 import type { ExportBlock, ExportPage, TableBlock } from '../export/source';
-import { fontMetric, snapY, type RuleGrid } from '../../../core/ruled';
+import { snapY, type RuleGrid } from '../../../core/ruled';
 import { documentCss, type DocTheme, type NotebookStyles, type Ruled } from '../export/style';
 import { paperRules } from '../paper/rules';
 import type { FlowSlice } from '../layout/flow';
@@ -42,7 +42,7 @@ const CSP =
 /** The ruled paper the page prints on, if it has rules: text is laid out on them, as it is on the screen. */
 function ruledOf(setup: DocumentSetup): Ruled | null {
   const grid = paperRules(setup.layout.background, setup.layout.sheet, true);
-  return grid ? { grid, metric: fontMetric(setup.theme.fonts.reading) } : null;
+  return grid ? { grid } : null;
 }
 
 function documentHead(setup: DocumentSetup, css: string): string {

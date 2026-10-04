@@ -316,15 +316,18 @@
 
   /*
    * Ruled paper (layout/rules.ts). When the paper has rules, --rule is their spacing and it is the unit of layout:
-   * every line of text is a whole number of rules tall and its baseline sits on a rule, and whatever does not come
-   * in lines is rounded up to whole rules, so the text after it is back on a rule. Margins between text elements go,
-   * because a paragraph on ruled paper is the next line. --rule-shift is how far a line moves down inside its line
-   * box so its baseline is on the rule instead of above it: (line height - (ascent - descent) * size) / 2, using the
-   * font's measured ascent and descent (--rule-m). A padding at the top and the same margin at the bottom keep the
-   * line's height a whole number of rules while its text moves, in the flow, so list markers move with their lines.
+   * every line of text sits on a rule the way handwriting does, its letters in the gap above the rule and its
+   * descenders below it. A line takes the whole number of rules above 1.25 times its size (--rule-line), so a
+   * heading takes two rules and its capitals stay inside its gap. Margins between text elements go, because a
+   * paragraph on ruled paper is the next line.
+   *
+   * The baseline comes from the font itself, not from a guess at its metrics: text-box-trim cuts each block of
+   * lines down to the cap height of its first line and the alphabetic baseline of its last, and a padding of one
+   * line less one cap height above it puts the first baseline one line below the block's top. A block that starts
+   * on a rule therefore ends on the rule its last baseline sits on, and the next block starts there.
    */
   :global([data-ruled]) {
-    --rule-shift: calc((1lh - var(--rule-m, 0.7) * 1em) / 2);
+    --rule-line: round(up, 1.25em, var(--rule));
   }
 
   :global([data-ruled]) .block {
@@ -348,15 +351,16 @@
     );
   }
 
-  :global([data-ruled]) .text :global(.ProseMirror) :is(p, ul, ol, blockquote, pre, h1, h2, h3, h4, h5, h6, hr) {
+  :global([data-ruled]) .text :global(.ProseMirror) :is(p, ul, ol, li, blockquote, pre, h1, h2, h3, h4, h5, h6, hr) {
     margin-block: 0;
   }
 
-  /* Text takes whole rules: a line is as tall as the next whole number of rules above 1.25 times its size. */
   :global([data-ruled]) .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
-    line-height: round(up, 1.25em, var(--rule));
-    padding-block-start: var(--rule-shift);
-    margin-block-end: calc(-1 * var(--rule-shift));
+    padding-block: calc(1lh - 1cap) 0;
+    line-height: var(--rule-line);
+    text-box: trim-both cap alphabetic;
+    /* The block ends at its last baseline, so descenders paint below it. */
+    overflow-clip-margin: 0.5em;
   }
 
   /* Inline text of another size never makes its line taller than its block's rules. */
@@ -364,11 +368,16 @@
     line-height: 0;
   }
 
-  /* A code block and a callout have their own background, which hides the rules behind them: whole rules tall, with
-     their lines in the rules' cells. */
+  /*
+   * A code block and a callout have their own background, which hides the rules behind them. Their lines stay on
+   * the rules: the box starts on a rule, its first baseline is one line down, and below its last baseline it takes
+   * one more rule, part padding and part margin, so the text after it is back on a rule.
+   */
   :global([data-ruled]) .text :global(.ProseMirror) pre {
-    padding-block: 0;
-    line-height: var(--rule);
+    padding-block: calc(1lh - 1cap);
+    margin-block-end: 1cap;
+    line-height: var(--rule-line);
+    text-box: trim-both cap alphabetic;
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) pre code {
@@ -376,27 +385,30 @@
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) [data-callout] {
-    padding-block: 0;
+    padding-block: 0 calc(var(--rule-line) - 1cap);
+    margin-block: 0 1cap;
   }
 
-  :global([data-ruled]) .text :global(.ProseMirror) [data-callout] :is(p, [data-callout-title]) {
-    padding-block-start: 0;
-    margin-block: 0;
+  /* The title's dot is inline, so the title is a block of lines the trim can reach, centered on the capitals. */
+  :global([data-ruled]) .text :global(.ProseMirror) [data-callout-title] {
+    display: block;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) [data-callout-title]::before {
+    display: inline-block;
+    margin-inline-end: var(--space-2);
+    vertical-align: calc(0.5cap - 0.275em);
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) h2 {
-    padding-block-end: 0;
     border-block-end: 0;
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) hr {
+    box-sizing: border-box;
     block-size: var(--rule);
     border-block-start: 0;
     border-block-end: 1px solid var(--color-border-subtle);
-  }
-
-  :global([data-ruled]) .text :global(.ProseMirror) :is(td, th) {
-    padding-block: 0;
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) :is(table, figure) {

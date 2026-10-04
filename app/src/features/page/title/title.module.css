@@ -2,6 +2,8 @@
   /* The title band (ARCHITECTURE.md section 5.8): x 48 and y 24 in page units, and the flow starts 16 units below
      it. The Page title style is the reading face at the title size, with the logo's short clay stroke under it. */
   .band {
+    /* Positioned, so it paints above the sheets of pages with breaks, as the flow below it does. */
+    position: relative;
     padding: 24px 48px 0;
     margin-block-end: 16px;
   }
@@ -44,6 +46,40 @@
     color: var(--color-text-muted);
     font-size: var(--type-caption-size);
     line-height: var(--type-caption-line);
+  }
+
+  /*
+   * Ruled paper (blocks.module.css): the title sits on the sheet's first rule below its top margin, the date on the
+   * next rule, and one rule stays empty before the text, so the band is whole rules and the flow starts on a rule.
+   * Each line is trimmed to its capitals and its baseline, and padded down one line from its top.
+   */
+  :global([data-ruled]) .band {
+    padding-block-start: 0;
+    margin-block-end: var(--rule);
+  }
+
+  :global([data-ruled]) .title {
+    --first: calc(var(--rule-origin) + var(--rule) - 1lh);
+
+    position: relative;
+    padding-block-start: calc(max(var(--first), mod(var(--first), var(--rule))) + 1lh - 1cap);
+    line-height: round(up, 1.25em, var(--rule));
+    text-box: trim-both cap alphabetic;
+  }
+
+  /* The stroke hangs below the baseline instead of adding to the band's height. */
+  :global([data-ruled]) .title::after {
+    position: absolute;
+    inset-block-start: calc(100% + 0.2em);
+    inset-inline-start: 0;
+    margin: 0;
+  }
+
+  :global([data-ruled]) .changed {
+    margin: 0;
+    padding-block-start: calc(1lh - 1cap);
+    line-height: round(up, 1.25em, var(--rule));
+    text-box: trim-both cap alphabetic;
   }
 
   @media (forced-colors: active) {

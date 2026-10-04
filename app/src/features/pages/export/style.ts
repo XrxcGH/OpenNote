@@ -154,30 +154,32 @@ const HEADINGS: readonly (readonly [string, number, number])[] = [
   ['h6', 16, 1.5],
 ];
 
-/** Ruled paper's grid and the font metric its text is shifted by: see `features/page/layout/rules.ts`. */
+/** Ruled paper's grid: see `features/page/layout/rules.ts`. */
 export interface Ruled {
   readonly grid: RuleGrid;
-  /** The reading font's ascent minus its descent, in ems. */
-  readonly metric: number;
 }
 
 /**
  * The rules that lay a page's text out on ruled paper, the same as the screen does: every line is a whole number of
- * rules tall with its baseline on a rule, and what does not come in lines is rounded up to whole rules.
+ * rules tall with its baseline on a rule, and what does not come in lines is rounded up to whole rules. Each block
+ * of lines is trimmed to its first line's capitals and its last line's baseline (text-box-trim), using the font's
+ * own metrics, and padded one line less one cap height from its top, so its first baseline is one line down.
  */
-function ruledCss({ grid, metric }: Ruled): string[] {
-  const shift = 'calc((1lh - var(--ruled-m) * 1em) / 2)';
-  const lines = 'p,h1,h2,h3,h4,h5,h6,.page-title,.callout-title,summary,li:not(:has(>ul,>ol,>p))';
+function ruledCss({ grid }: Ruled): string[] {
+  const line = 'round(up,1.25em,var(--ruled))';
+  const trim = `line-height:${line};text-box:trim-both cap alphabetic;padding-top:calc(1lh - 1cap)`;
+  const lines = 'p,h1,h2,h3,h4,h5,h6,.page-title,.tags,.callout-title,summary,th,td,li:not(:has(>ul,>ol,>p))';
   return [
-    `:root{--ruled:${grid.step}px;--ruled-m:${metric}}`,
+    `:root{--ruled:${grid.step}px}`,
     `body{line-height:var(--ruled)}`,
     `p,ul,ol,li,blockquote,pre,figure,table,details,.callout,.tags,h1,h2,h3,h4,h5,h6,.page-title{margin-top:0;margin-bottom:0}`,
-    `${lines}{line-height:round(up,1.25em,var(--ruled));padding-top:${shift};margin-bottom:calc(-1 * ${shift})}`,
-    `li>:is(ul,ol){margin-top:calc(-1 * ${shift})}`,
-    `span,a,code,mark,em,strong,s,u,.link{line-height:0}`,
-    `.callout,pre,th,td{padding-top:0;padding-bottom:0}`,
-    `.callout :is(p,.callout-title,summary,li){padding-top:0;margin-bottom:0}`,
-    `pre,pre code{line-height:var(--ruled)}`,
+    `${lines}{${trim};padding-bottom:0}`,
+    `span,a,code,mark,em,strong,s,u,sub,sup,.link{line-height:0}`,
+    // A checkbox is inline with its line's text, centered on the capitals.
+    `li.task{display:list-item}li.task>.box{top:0;margin-inline-end:4px;vertical-align:calc(0.5cap - 7px)}`,
+    // A code block and a callout start on a rule and take one more rule below their last baseline.
+    `pre{${trim};padding-bottom:calc(1lh - 1cap);margin-bottom:1cap}pre code{line-height:inherit}`,
+    `.callout{padding-top:0;padding-bottom:calc(${line} - 1cap);margin-bottom:1cap}`,
     `hr{height:var(--ruled);margin:0;background:none;box-shadow:inset 0 -1px 0 var(--rule)}`,
   ];
 }

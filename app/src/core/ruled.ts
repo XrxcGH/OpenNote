@@ -59,37 +59,17 @@ export function leadFor(top: number, grid: RuleGrid): number {
   return lead < WHOLE || grid.step - lead < WHOLE ? 0 : lead;
 }
 
-/** The custom properties the stylesheet reads. They are on the page's world, so everything inside follows them. */
-export function ruleProperties(grid: RuleGrid, metrics: { text: number; mono: number }): Record<string, string> {
+/**
+ * The custom properties the stylesheet reads. They are on the page's world, so everything inside follows them. The
+ * stylesheet finds each line's baseline from its own font (text-box-trim), so no font metric is passed.
+ */
+export function ruleProperties(grid: RuleGrid): Record<string, string> {
   return {
     '--rule': `${grid.step}px`,
     '--rule-origin': `${grid.origin}px`,
     // An unpaginated page is one long lattice, which a sheet height far past any page makes the same arithmetic.
     '--rule-sheet': `${grid.sheet ?? 1e9}px`,
-    '--rule-m': String(metrics.text),
-    '--rule-m-mono': String(metrics.mono),
   };
 }
 
-export const RULE_PROPERTIES = ['--rule', '--rule-origin', '--rule-sheet', '--rule-m', '--rule-m-mono'] as const;
-
-/**
- * A font's ascent minus its descent, in ems. With a line of height L and size s, the baseline sits (L - m * s) / 2
- * above the bottom of its line box, which is how far the stylesheet shifts the line down to put the baseline on a
- * rule. Measured with a canvas so it follows the font that is really loaded; 0.7 where a canvas cannot answer.
- */
-export function fontMetric(family: string, canvas?: HTMLCanvasElement): number {
-  const fallback = 0.7;
-  try {
-    const context = (canvas ?? document.createElement('canvas')).getContext('2d');
-    if (!context) return fallback;
-    context.font = `100px ${family}`;
-    const m = context.measureText('Hxg');
-    const ascent = m.fontBoundingBoxAscent;
-    const descent = m.fontBoundingBoxDescent;
-    if (!Number.isFinite(ascent) || !Number.isFinite(descent)) return fallback;
-    return Math.round(((ascent - descent) / 100) * 1000) / 1000;
-  } catch {
-    return fallback;
-  }
-}
+export const RULE_PROPERTIES = ['--rule', '--rule-origin', '--rule-sheet'] as const;

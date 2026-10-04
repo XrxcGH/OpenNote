@@ -63,6 +63,20 @@
     block-size: var(--pg-push, 0);
   }
 
+  /* On ruled paper a block of lines is trimmed to its first line's capitals (page/blocks/blocks.module.css), which a
+     block before that line would stop: the room goes into the block's top padding instead. */
+  :global([data-ruled])
+    :global(.ProseMirror)
+    :is(p, h1, h2, h3, h4, h5, h6, pre, :global([data-callout-title])):global([data-pg-push])::before {
+    display: none;
+  }
+
+  :global([data-ruled]:not([data-paginating]))
+    :global(.ProseMirror)
+    :is(p, h1, h2, h3, h4, h5, h6, pre, :global([data-callout-title])):global([data-pg-push]) {
+    padding-block-start: calc(1lh - 1cap + var(--pg-push, 0px));
+  }
+
   .counter {
     position: absolute;
     inset-block-end: var(--space-3);

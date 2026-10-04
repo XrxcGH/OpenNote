@@ -82,11 +82,11 @@ describe('leadFor', () => {
 
 describe('ruleProperties', () => {
   it('names the spacing, the origin, and the sheet height for the stylesheet', () => {
-    expect(ruleProperties(SHEETS, { text: 0.7, mono: 0.6 })).toMatchObject({
+    expect(ruleProperties(SHEETS)).toMatchObject({
       '--rule': '20px',
       '--rule-origin': '50px',
       '--rule-sheet': '1000px',
     });
-    expect(ruleProperties(GRID, { text: 0.7, mono: 0.6 })['--rule-sheet']).toBe('1000000000px');
+    expect(ruleProperties(GRID)['--rule-sheet']).toBe('1000000000px');
   });
 });
