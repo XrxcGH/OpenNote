@@ -60,6 +60,20 @@ export function leadFor(top: number, grid: RuleGrid): number {
 }
 
 /**
+ * The y of the first rule drawn on a page that has a header: the rule the page's first line of text sits above. The
+ * title and the date under it sit in an unruled header, like the top margin of a notebook page, and the rules begin
+ * below it. `flowTop` is the top of the flow (the bottom of the title band and its margin) and `lineMiddle` the
+ * middle of the first line's letters, when it has any: a line that takes several rules (large text, or fine ruling)
+ * sits above the last of them, and with no letters the first rule below the flow's top is the first.
+ */
+export function firstRuleBelow(flowTop: number, grid: RuleGrid, lineMiddle?: number): number {
+  const first = flowTop + leadFor(flowTop, grid) + grid.step;
+  if (lineMiddle === undefined) return first;
+  const beneath = grid.origin + (Math.floor((lineMiddle - grid.origin) / grid.step) + 1) * grid.step;
+  return Math.max(first, beneath);
+}
+
+/**
  * The lift: how far above its rule every line's baseline sits, the way handwriting sits just clear of the line, so
  * the rule reads as a line under the words and never touches the bottoms of the letters. It is a share of the rule
  * spacing, the same for every size of text on the page, and never under MIN_LIFT. Descenders may reach or cross the

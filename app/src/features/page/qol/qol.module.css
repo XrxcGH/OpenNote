@@ -129,6 +129,25 @@
     color: var(--color-surface-page);
   }
 
+  /* On ruled paper a hit sits in the gap between two rules, not over the one beneath it (blocks.module.css). */
+  @media (forced-colors: none) {
+    :global([data-ruled]) ::highlight(opennote-find) {
+      background-color: transparent;
+      text-decoration: underline solid var(--color-selection-highlight);
+      text-decoration-thickness: var(--chip-size);
+      text-decoration-skip-ink: none;
+      text-underline-offset: var(--chip-offset);
+    }
+
+    :global([data-ruled]) ::highlight(opennote-find-active) {
+      background-color: transparent;
+      text-decoration: underline solid var(--color-accent-candle);
+      text-decoration-thickness: var(--chip-size);
+      text-decoration-skip-ink: none;
+      text-underline-offset: var(--chip-offset);
+    }
+  }
+
   @media (forced-colors: active) {
     ::highlight(opennote-find) {
       background-color: Highlight;
