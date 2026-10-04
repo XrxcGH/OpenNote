@@ -4,6 +4,7 @@ import { isEnabled } from '../../app/flags';
 import type { BootData, Platform } from '../types';
 import { createTauriExports } from './exports';
 import { createTauriAudio } from './audio';
+import { createTauriConnectors } from './connectors';
 import { createTauriDiagnostics } from './diagnostics';
 import { createTauriInstall } from './install';
 import { createTauriInterop } from './interop';
@@ -43,6 +44,7 @@ export function createTauriPlatform(boot: BootData): Platform {
     pages: createTauriPages(images),
     search: createTauriSearch(),
     diagnostics: createTauriDiagnostics(),
+    connectors: createTauriConnectors(),
     spelling: createTauriSpelling(),
     clipboard: createTauriClipboard(),
     images,

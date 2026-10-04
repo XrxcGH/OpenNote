@@ -14,6 +14,8 @@ export interface TextFieldProps {
   error?: string;
   help?: string;
   readOnly?: boolean;
+  /** Hides what is typed, as a password field does, and keeps the browser from suggesting or remembering it. */
+  secret?: boolean;
   /** Selects the text when the field mounts. */
   autoSelect?: boolean;
   onCommit?(): void;
@@ -21,7 +23,7 @@ export interface TextFieldProps {
 }
 
 export function TextField(props: TextFieldProps) {
-  const { label, value, onChange, error, help, readOnly, autoSelect, onCommit, onCancel } = props;
+  const { label, value, onChange, error, help, readOnly, secret, autoSelect, onCommit, onCancel } = props;
   const id = useId();
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -42,6 +44,10 @@ export function TextField(props: TextFieldProps) {
         className={styles.input}
         value={value}
         readOnly={readOnly}
+        type={secret ? 'password' : undefined}
+        autoComplete={secret ? 'off' : undefined}
+        spellCheck={secret ? false : undefined}
+        autoCapitalize={secret ? 'off' : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}

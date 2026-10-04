@@ -40,6 +40,7 @@ import { study } from './study';
 import { qolSearch } from './qolSearch';
 import { intelPlus } from './intelPlus';
 import { qol } from './qol';
+import { connectors } from './connectors';
 
 export const en = {
   common,
@@ -82,4 +83,5 @@ export const en = {
   qolSearch,
   intelPlus,
   qol,
+  connectors,
 } as const;

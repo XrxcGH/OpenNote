@@ -13,6 +13,7 @@ import { INTEGRATIONS_FLAGS } from '../features/integrations/flags';
 import type { IntegrationsFlagId } from '../features/integrations/flags';
 import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
+import { CONNECTORS_FLAGS } from '../features/connectors/flags';
 import { EXPR_FLAGS } from '../features/tools/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
 import { QOL_FLAGS } from '../features/qol/flags';
@@ -54,7 +55,9 @@ export type FlagId =
   | Phase9FlagId
   | IntelFlagId
   | Phase13FlagId
-  | QolFlagId;
+  | QolFlagId
+  /** The Connectors section of Settings (features/connectors/flags.ts). */
+  | 'connectors.page';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -280,6 +283,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INTEL_FLAGS,
   ...DIAGNOSTICS_FLAGS,
   ...QOL_FLAGS,
+  ...CONNECTORS_FLAGS,
 ];
 
 interface FlagState {

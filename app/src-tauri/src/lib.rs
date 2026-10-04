@@ -8,6 +8,7 @@ pub mod audio_more;
 pub mod boot;
 pub mod clipboard;
 pub mod command_list;
+pub mod connectors;
 pub mod core_bridge;
 pub mod deeplink;
 pub mod early;
@@ -97,6 +98,7 @@ pub fn run(context: EarlyContext) {
     let pages = core_bridge::CoreBridge::new(&paths);
     let audio = audio::AudioState::new(&paths);
     let intel = intel::IntelState::new(&paths);
+    let connectors = connectors::Connectors::new(&paths);
     let builder = images::register_renditions(tauri::Builder::default());
     let app = builder
         .manage(loaded.store)
@@ -113,6 +115,7 @@ pub fn run(context: EarlyContext) {
         .manage(page_export::ExportGrants::default())
         .manage(audio)
         .manage(intel)
+        .manage(connectors)
         // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
         .manage(instance)
         .setup(|app| {
@@ -318,5 +321,10 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_extras::attach::attachment_open,
         page_extras::attach::attachment_stop,
         intel::intel_ext_call,
+        connectors::connectors_list,
+        connectors::connectors_connect,
+        connectors::connectors_cancel,
+        connectors::connectors_disconnect,
+        connectors::connectors_request,
     ]
 }

@@ -37,6 +37,7 @@ This folder holds the plans, guides, and records behind OpenNote. Pick a group b
 ## Releasing
 
 - [RELEASING.md](RELEASING.md): the maintainer guide to signing keys, version numbers, cutting a release, and rolling one back.
+- [CONNECTORS.md](CONNECTORS.md): the owner's guide to registering OpenNote with each service that connected accounts use, and where the client IDs go.
 
 ## Help
 

@@ -28,6 +28,21 @@ const MAX_SYMBOL: usize = 300;
 /// How many more times [`Scrubber::text`] runs its rules, at most, before the text stops changing.
 const MAX_PASSES: usize = 4;
 
+/// Removes the values of named secrets and long key-like strings, and nothing else, for a line of the app's log:
+/// it keeps its words and paths but can never hold a token, a refresh token, or an authorization code. The rules
+/// run again until the text stops changing, so redacting twice changes nothing.
+pub fn redact_secrets(input: &str) -> String {
+    let mut text = input.to_owned();
+    for _ in 0..=MAX_PASSES {
+        let next = crate::scrub_ids::replace_tokens(&crate::scrub_ids::replace_secrets(&text));
+        if next == text {
+            break;
+        }
+        text = next;
+    }
+    text
+}
+
 /// Removes private text. Clone it freely; it only holds the names to look for.
 #[derive(Clone, Debug, Default)]
 pub struct Scrubber {
@@ -379,3 +394,7 @@ mod tests;
 #[cfg(test)]
 #[path = "scrub_property_tests.rs"]
 mod property_tests;
+
+#[cfg(test)]
+#[path = "scrub_connector_tests.rs"]
+mod connector_tests;

@@ -171,6 +171,31 @@ fn nothing_private_gets_through_from_any_part() {
 }
 
 #[test]
+fn a_connectors_tokens_in_a_log_line_never_get_into_the_bundle() {
+    // Made up and built from pieces, so secret scanners pass over them.
+    let body = "Zx9Qw3Er5Ty7Ui1Op4As6Df8Gh2Jk0LmN";
+    let line = format!(
+        "Renewal failed: refresh_token=1//0g{body}{body} and Authorization: Bearer {}.{body}",
+        concat!("ya", "29")
+    );
+    let world = World::new();
+    let log = world.logs().join("opennote.log");
+    let mut text = fs::read_to_string(&log).unwrap();
+    text.push_str(&log_line(1_790_000_004_000, &line));
+    fs::write(&log, text).unwrap();
+    let text = build(&world, &BundleOptions::default(), true).render();
+    assert!(text.contains("Renewal failed"), "{text}");
+    for token in ["Zx9Qw3", "Df8Gh2", "1//0g"] {
+        assert!(
+            !text.contains(token),
+            "{token:?} in the bundle:
+{text}"
+        );
+    }
+    assert!(text.contains("<token>"));
+}
+
+#[test]
 fn says_what_was_removed_and_counts_it_per_part() {
     let world = World::new();
     let bundle = build(&world, &BundleOptions::default(), true);

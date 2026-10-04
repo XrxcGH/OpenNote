@@ -32,6 +32,7 @@ describe('the Settings page', () => {
       'Updates',
       'Privacy',
       'Windows and power',
+      'Connectors',
       'Help',
       'Shortcuts',
       'About',

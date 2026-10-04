@@ -171,6 +171,11 @@
     "allow-attachment-import",
     "allow-attachment-open",
     "allow-attachment-stop",
-    "allow-intel-ext-call"
+    "allow-intel-ext-call",
+    "allow-connectors-list",
+    "allow-connectors-connect",
+    "allow-connectors-cancel",
+    "allow-connectors-disconnect",
+    "allow-connectors-request"
   ]
 }

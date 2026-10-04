@@ -32,7 +32,7 @@ Import and export (Phase 11):
 
 Linked accounts (Phase 11):
 
-- People can link Google and Microsoft accounts in Settings. Sign-in uses the provider's own secure page (OAuth), and tokens are stored in Windows Credential Manager.
+- People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle. Sign-in uses the provider's own secure page (OAuth) in the default browser, and tokens are stored in Windows Credential Manager. The [setup guide](CONNECTORS.md) says how the owner of a build registers each service.
 - The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder. It all happens inside OpenNote.
 - Favorite destinations are saved, so "Send to Drive: Biology/Lab reports" becomes one click.
 - A page can stay linked to its exported copy and offer "Update the Drive copy" after edits.

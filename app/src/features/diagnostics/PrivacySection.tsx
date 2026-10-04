@@ -10,6 +10,7 @@ import { useModelDownloadsLastRan } from '../intel';
 import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Switch, announce, confirm, showToast } from '../../ui';
+import { ConnectorNetworkUse } from '../connectors';
 import { savingAllowed, declined } from './consent';
 import { crashListSummary, crashRows } from './crashReview';
 import styles from './Diagnostics.module.css';
@@ -88,6 +89,7 @@ function NetworkUse() {
             offline={offline}
           />
         )}
+        <ConnectorNetworkUse />
       </ul>
     </section>
   );

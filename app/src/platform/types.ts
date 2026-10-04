@@ -4,6 +4,7 @@
 
 import type { NotesCoreClient } from '../services/notes/core/service';
 import type { AudioHost, RecordingEntry } from '../core/audio';
+import type { ConnectorsClient } from '../features/connectors';
 import type { DiagnosticsClient } from '../features/diagnostics';
 import type { ImportedAsset, PageService } from '../services/pages/types';
 import type { SearchClient } from '../services/search/types';
@@ -90,6 +91,8 @@ export interface Platform {
   readonly search: SearchClient;
   /** Phase 13: crash reports, the self-check, the feedback file, safe start, and Work offline. */
   readonly diagnostics: DiagnosticsClient;
+  /** Accounts that features sign in to, such as Microsoft and Google, with their tokens kept in the shell. */
+  readonly connectors: ConnectorsClient;
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
   readonly images: ImagesClient;
