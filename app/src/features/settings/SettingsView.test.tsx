@@ -30,6 +30,7 @@ describe('the Settings page', () => {
       'On-device intelligence',
       'Updates',
       'Privacy',
+      'Connectors',
       'Help',
       'Shortcuts',
       'About',

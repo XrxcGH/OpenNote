@@ -10,6 +10,7 @@ import { AUDIO_FLAGS } from '../features/audio/flags';
 import { INTEROP_FLAGS } from '../features/interop/flags';
 import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
+import { CONNECTORS_FLAGS } from '../features/connectors/flags';
 import { EXPR_FLAGS } from '../features/tools/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
 import { createStore, useStore } from '../state/store';
@@ -48,7 +49,9 @@ export type FlagId =
   | Phase8FlagId
   | Phase9FlagId
   | IntelFlagId
-  | Phase13FlagId;
+  | Phase13FlagId
+  /** The Connectors section of Settings (features/connectors/flags.ts). */
+  | 'connectors.page';
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -172,6 +175,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INTEROP_FLAGS,
   ...INTEL_FLAGS,
   ...DIAGNOSTICS_FLAGS,
+  ...CONNECTORS_FLAGS,
 ];
 
 interface FlagState {

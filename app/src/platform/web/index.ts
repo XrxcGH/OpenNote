@@ -7,6 +7,7 @@ import type { NotesFixture } from '../../services/notes/fixtures';
 import { DEFAULT_SETTINGS } from '../../state/settings';
 import type { Platform } from '../types';
 import { createWebAudio } from './audio';
+import { createWebConnectors } from './connectors';
 import { createWebDiagnostics } from './diagnostics';
 import { createWebInstall } from './install';
 import { createWebInterop } from './interop';
@@ -73,6 +74,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     pages,
     search: createWebSearch(pages),
     diagnostics: createWebDiagnostics(),
+    connectors: createWebConnectors(),
     spelling: createWebSpelling(),
     clipboard: createWebClipboard(),
     images: createWebImages(),

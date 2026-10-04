@@ -24,16 +24,9 @@
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": [
-      "importOneNote",
-      "outlookCalendar",
-      "microsoftToDo"
-    ],
+    "features": ["importOneNote", "outlookCalendar", "microsoftToDo"],
     "group": "microsoft",
-    "hosts": [
-      "login.microsoftonline.com",
-      "graph.microsoft.com"
-    ],
+    "hosts": ["login.microsoftonline.com", "graph.microsoft.com"],
     "id": "microsoft",
     "lastUsedUnix": null,
     "name": "Microsoft",
@@ -71,13 +64,7 @@
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": [
-      "googleCalendar",
-      "googleTasks",
-      "googleClassroom",
-      "googleDrive",
-      "youtubeCaptions"
-    ],
+    "features": ["googleCalendar", "googleTasks", "googleClassroom", "googleDrive", "youtubeCaptions"],
     "group": "google",
     "hosts": [
       "accounts.google.com",
@@ -112,16 +99,9 @@
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": [
-      "syncDropbox",
-      "sendToDropbox"
-    ],
+    "features": ["syncDropbox", "sendToDropbox"],
     "group": "storage",
-    "hosts": [
-      "www.dropbox.com",
-      "api.dropboxapi.com",
-      "content.dropboxapi.com"
-    ],
+    "hosts": ["www.dropbox.com", "api.dropboxapi.com", "content.dropboxapi.com"],
     "id": "dropbox",
     "lastUsedUnix": null,
     "name": "Dropbox",
@@ -139,16 +119,9 @@
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": [
-      "syncBox",
-      "sendToBox"
-    ],
+    "features": ["syncBox", "sendToBox"],
     "group": "storage",
-    "hosts": [
-      "account.box.com",
-      "api.box.com",
-      "upload.box.com"
-    ],
+    "hosts": ["account.box.com", "api.box.com", "upload.box.com"],
     "id": "box",
     "lastUsedUnix": null,
     "name": "Box",
@@ -174,13 +147,9 @@
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": [
-      "shareToSlack"
-    ],
+    "features": ["shareToSlack"],
     "group": "other",
-    "hosts": [
-      "slack.com"
-    ],
+    "hosts": ["slack.com"],
     "id": "slack",
     "lastUsedUnix": null,
     "name": "Slack",
@@ -198,13 +167,9 @@
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": [
-      "vimeoCaptions"
-    ],
+    "features": ["vimeoCaptions"],
     "group": "other",
-    "hosts": [
-      "api.vimeo.com"
-    ],
+    "hosts": ["api.vimeo.com"],
     "id": "vimeo",
     "lastUsedUnix": null,
     "name": "Vimeo",
@@ -222,13 +187,9 @@
     ],
     "auth": "token",
     "baseUrl": null,
-    "features": [
-      "readwiseHighlights"
-    ],
+    "features": ["readwiseHighlights"],
     "group": "other",
-    "hosts": [
-      "readwise.io"
-    ],
+    "hosts": ["readwise.io"],
     "id": "readwise",
     "lastUsedUnix": null,
     "name": "Readwise",
@@ -246,9 +207,7 @@
     ],
     "auth": "tokenAndUrl",
     "baseUrl": null,
-    "features": [
-      "canvasAssignments"
-    ],
+    "features": ["canvasAssignments"],
     "group": "learning",
     "hosts": [],
     "id": "canvas",
@@ -268,9 +227,7 @@
     ],
     "auth": "tokenAndUrl",
     "baseUrl": null,
-    "features": [
-      "moodleAssignments"
-    ],
+    "features": ["moodleAssignments"],
     "group": "learning",
     "hosts": [],
     "id": "moodle",

@@ -18,6 +18,15 @@ function Fixture(props: Partial<TextFieldProps> & { start?: string }) {
 const input = () => screen.getByRole('textbox', { name: 'Page name' }) as HTMLInputElement;
 
 describe('TextField rendering', () => {
+  it('hides a secret and keeps the browser from remembering it', () => {
+    renderUi(<Fixture secret start="pasted-token" />);
+    const field = document.querySelector('input') as HTMLInputElement;
+    expect(field.type).toBe('password');
+    expect(field.autocomplete).toBe('off');
+    expect(field.spellcheck).toBe(false);
+    expect(screen.queryByRole('textbox', { name: 'Page name' })).toBeNull();
+  });
+
   it('is a textbox named by its label above it', () => {
     renderUi(<Fixture />);
     expect(input().value).toBe('Mitosis');

@@ -9,6 +9,7 @@ export const connectors = {
     "Connect an account so OpenNote can work with that service. Everything here is off until you connect it. You sign in on the service's own page, and you can disconnect at any time.",
   searchLabel: 'Search connectors',
   noMatches: 'No connectors match that search.',
+  resultCount: '{count, plural, one {# connector matches.} other {# connectors match.}}',
   listLabel: 'Connectors',
   offlineNotice: 'Work offline is on, so signing in and renewing wait until you go back online.',
   groups: {
@@ -158,10 +159,12 @@ export const connectors = {
   },
   privacy: {
     heading: 'Connected accounts',
-    detail: 'Signing in, renewing a sign-in, and what a feature asks of the service, only after you connect it.',
-    none: 'No accounts are connected.',
+    detail: 'OpenNote contacts these servers only after you connect an account, and only when a feature needs it.',
+    off: '{name} is not connected, so OpenNote makes no requests to it.',
     hostsLine: '{name} uses {hosts}.',
     lastUsed: 'Last used {date}.',
     neverUsed: 'Not used yet.',
+    ready: 'Sign-in, renewing, and requests happen only while you are online.',
+    blocked: 'Sign-in and requests are blocked while you work offline.',
   },
 } as const;
