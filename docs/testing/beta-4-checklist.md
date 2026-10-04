@@ -187,12 +187,12 @@ Quality-of-life features (ink lane):
 Your requests in this build (owner fixes):
 
 1. New page: only the title and the gray "Changed ..." subtitle; no date text box. "Next in series" pages too.
-2. Lined paper: letters sit just above the rule beneath them, the rules begin below the page title, and highlights
-   and inline code leave the rule visible. Check the title and the "Changed" date under it (Grid and Dotted too),
-   body text, a heading, a bulleted list, and a checklist; the rules are a whole number of units apart. A checklist
-   item shows one checkbox and no second box beside it (a stray one showed in the earlier build). Highlight a word
-   and make another word inline code: each colored box ends above the rule under its line. Change the line spacing
-   (View > Paper > spacing): the text follows the new rules.
+2. Lined paper: letters sit just above the rule beneath them, the rules begin below the page title, and highlights and
+   inline code are rounded boxes that leave the rule visible. Check the title and the "Changed" date under it (Grid
+   and Dotted too), body text, a heading, a bulleted list, and a checklist; the rules are a whole number of units
+   apart. A checklist item shows one checkbox and no second box beside it (a stray one showed in the earlier build).
+   Highlight a word and make another word inline code: each rounded colored box ends just above the rule under its
+   line. Change the line spacing (View > Paper > spacing): the text follows the new rules.
 3. Text boxes on lined paper: click on the canvas to make a text box, type two lines, drag it up, and down: it moves
    rule to rule and its text stays on the rules. Nudge it with the arrow keys: one rule per press. Drag its width
    handle narrower: the text rewraps and the box grows by whole rules.
