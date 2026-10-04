@@ -65,11 +65,6 @@ impl<R: Read + Seek> Parts<R> {
         })
     }
 
-    /// Whether the archive holds a part with this name.
-    pub fn has(&self, name: &str) -> bool {
-        self.archive.find(name).is_some()
-    }
-
     /// The names of the parts that start with `prefix`, sorted.
     pub fn names_under(&self, prefix: &str) -> Vec<String> {
         let mut names: Vec<String> = self

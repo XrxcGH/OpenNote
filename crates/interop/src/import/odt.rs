@@ -292,7 +292,7 @@ impl Styles {
     }
 
     fn is_title(&self, name: &str) -> bool {
-        self.chain(name).iter().any(|s| *s == "Title")
+        self.chain(name).contains(&"Title")
     }
 }
 

@@ -229,14 +229,12 @@ fn convert(note: &Note, pictures: Option<&Pictures>, env: &ImportEnv<'_>) -> Res
         ));
     }
     let text_lines: Vec<String> = lines(&note.text).into_iter().filter(|l| !l.trim().is_empty()).collect();
-    if text_lines.is_empty() {
-        if pictures.found.is_empty() {
-            return Ok(Converted::Skipped(if pictures.unreadable > 0 {
-                "The note holds only pictures that OpenNote cannot show.".to_owned()
-            } else {
-                "The note is empty.".to_owned()
-            }));
-        }
+    if text_lines.is_empty() && pictures.found.is_empty() {
+        return Ok(Converted::Skipped(if pictures.unreadable > 0 {
+            "The note holds only pictures that OpenNote cannot show.".to_owned()
+        } else {
+            "The note is empty.".to_owned()
+        }));
     }
     let created = note.created.or(note.updated).unwrap_or_else(|| env.clock.now());
     let modified = note.updated.unwrap_or(created);

@@ -61,6 +61,8 @@ impl ImportChoices {
             kind: None,
             word_pages,
             report_page: self.report_page,
+            // Share as a file stopped before the interface asked for a locked file's password.
+            password: None,
         }
     }
 }
