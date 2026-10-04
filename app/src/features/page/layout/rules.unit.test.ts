@@ -1,6 +1,7 @@
 // The snapping math for ruled paper: which rule a text box snaps to, how a nudge steps, how tall a block is padded to
 // be, and how far the flow's first line is from a rule.
 import { describe, expect, it } from 'vitest';
+import { ruleLift } from '../../../core/ruled';
 import { leadFor, ruleProperties, snapY, stepY, wholeRules } from './rules';
 import type { RuleGrid } from './rules';
 
@@ -88,5 +89,16 @@ describe('ruleProperties', () => {
       '--rule-sheet': '1000px',
     });
     expect(ruleProperties(GRID)['--rule-sheet']).toBe('1000000000px');
+  });
+});
+
+describe('ruleLift', () => {
+  it('lifts text 12 percent of the spacing, to a whole page unit, never under 2', () => {
+    expect(ruleLift(26)).toBe(3);
+    expect(ruleLift(33)).toBe(4);
+    expect(ruleLift(38)).toBe(5);
+    expect(ruleLift(19)).toBe(2);
+    expect(ruleLift(10)).toBe(2);
+    expect(ruleProperties({ step: 26, origin: 72, sheet: null })['--rule-lift']).toBe('3px');
   });
 });

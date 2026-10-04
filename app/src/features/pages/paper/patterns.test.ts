@@ -120,12 +120,15 @@ describe('dot grid', () => {
     }
   });
 
-  it('keeps every k-th crossing on the largest paper, so a sheet never holds more than MAX_DOTS', () => {
+  it('keeps every row and every k-th dot of each row on the largest paper, never more than MAX_DOTS', () => {
     const g = sheetGeometry({ width: MAX_PAPER, height: MAX_PAPER });
     const dots = points(paperPaths({ pattern: 'dots', spacing: 8 }, g).dots);
     expect(dots.length).toBeLessThanOrEqual(MAX_DOTS);
-    expect(dots.length).toBeGreaterThan(MAX_DOTS / 4);
-    expect(dots[1][0] - dots[0][0]).toBeCloseTo(8 * 6);
+    expect(dots.length).toBeGreaterThan(MAX_DOTS / 2);
+    // Text sits on the rows, so none is left out; the dots along a row thin out instead.
+    const rows = [...new Set(dots.map(([, y]) => y))].sort((a, b) => a - b);
+    expect(rows[1] - rows[0]).toBeCloseTo(8);
+    expect(dots[1][0] - dots[0][0]).toBeGreaterThan(8);
   });
 });
 

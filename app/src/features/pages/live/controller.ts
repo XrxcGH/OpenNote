@@ -8,6 +8,7 @@ import type { MountedPage } from '../../page';
 import {
   pageLayout,
   readView,
+  screenLayout,
   setBackground as withBackground,
   setMargins as withMargins,
   setMode as withMode,
@@ -85,7 +86,7 @@ class PagesView {
   constructor(private readonly mounted: MountedPage) {
     const { viewport } = mounted.viewport;
     this.spec = readView(mounted.layout.view()).view;
-    this.layout = pageLayout(this.spec);
+    this.layout = screenLayout(pageLayout(this.spec));
     this.sheetsLayer = this.layer(styles.sheets);
     this.paperLayer = this.layer(styles.paper);
     this.counter = document.createElement('div');
@@ -112,7 +113,7 @@ class PagesView {
     this.stops.push(
       mounted.layout.onView((raw) => {
         this.spec = readView(raw).view;
-        this.layout = pageLayout(this.spec);
+        this.layout = screenLayout(pageLayout(this.spec));
         this.sheets = this.wantedSheets();
         this.apply();
         pagesViewEpoch.set((n) => n + 1);

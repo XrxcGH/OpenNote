@@ -51,7 +51,7 @@
   /*
    * Ruled paper (blocks.module.css): the title sits on the sheet's first rule below its top margin, the date on the
    * next rule, and one rule stays empty before the text, so the band is whole rules and the flow starts on a rule.
-   * Each line is trimmed to its capitals and its baseline, and padded down one line from its top.
+   * Each line is trimmed to its capitals and its baseline, and padded down one line from its top, less the lift.
    */
   :global([data-ruled]) .band {
     padding-block-start: 0;
@@ -62,7 +62,8 @@
     --first: calc(var(--rule-origin) + var(--rule) - 1lh);
 
     position: relative;
-    padding-block-start: calc(max(var(--first), mod(var(--first), var(--rule))) + 1lh - 1cap);
+    padding-block: calc(max(var(--first), mod(var(--first), var(--rule))) + 1lh - 1cap - var(--rule-lift))
+      var(--rule-lift);
     line-height: round(up, 1.25em, var(--rule));
     text-box: trim-both cap alphabetic;
   }
@@ -70,14 +71,14 @@
   /* The stroke hangs below the baseline instead of adding to the band's height. */
   :global([data-ruled]) .title::after {
     position: absolute;
-    inset-block-start: calc(100% + 0.2em);
+    inset-block-start: calc(100% - var(--rule-lift) + 0.2em);
     inset-inline-start: 0;
     margin: 0;
   }
 
   :global([data-ruled]) .changed {
     margin: 0;
-    padding-block-start: calc(1lh - 1cap);
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
     line-height: round(up, 1.25em, var(--rule));
     text-box: trim-both cap alphabetic;
   }

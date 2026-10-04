@@ -32,10 +32,10 @@
     outline-offset: var(--size-focus-ring-offset);
   }
 
-  /* On ruled paper the line's baseline is one line below the item's top (blocks.module.css): the box is centered on
+  /* On ruled paper the line's baseline is one line less the lift below the item's top (blocks.module.css): the box is centered on
      the capitals above it. Its own line height is 0 there, so it is sized in ems. */
   :global([data-ruled]) .taskBox {
-    inset-block-start: calc(var(--rule-line) - 0.5cap - 0.5em);
+    inset-block-start: calc(var(--rule-line) - var(--rule-lift) - 0.5cap - 0.5em);
     block-size: 1em;
   }
 

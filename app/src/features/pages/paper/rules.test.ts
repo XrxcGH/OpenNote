@@ -30,8 +30,11 @@ describe('print on ruled paper', () => {
   it('lays out text in whole rules with baselines on them', () => {
     const css = documentCss(lightTheme(), {}, ruled);
     expect(css).toContain('--ruled:26.46px');
+    // The lift: 12 percent of the spacing, to a whole pixel, at least 2.
+    expect(css).toContain('--ruled-lift:3px');
+    expect(css).toContain('padding-bottom:var(--ruled-lift)');
     expect(css).toContain('line-height:round(up,1.25em,var(--ruled))');
-    expect(css).toContain('text-box:trim-both cap alphabetic;padding-top:calc(1lh - 1cap)');
+    expect(css).toContain('text-box:trim-both cap alphabetic;padding-top:calc(1lh - 1cap - var(--ruled-lift))');
   });
 
   it('is the same stylesheet as before on plain paper', () => {

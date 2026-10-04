@@ -54,7 +54,7 @@
   }
 
   :global([data-ruled]) .table :is(:global(td > p), :global(th > p)) {
-    padding-block: calc(1lh - 1cap) 0;
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
     line-height: var(--rule-line);
     text-box: trim-both cap alphabetic;
   }

@@ -25,13 +25,16 @@ export function grid(c: Canvas, box: Rect, origin: Point, step: number): void {
 /** The most dots one box holds, so a dot grid on a huge paper stays cheap to draw. */
 export const MAX_DOTS = 160_000;
 
-/** A dot at each crossing of the grid. A box that would hold more than MAX_DOTS keeps every k-th crossing instead. */
+/**
+ * A dot at each crossing of the grid. A box that would hold more than MAX_DOTS keeps every k-th dot of each row
+ * instead, but every row: text on dot paper sits on the rows, so a row left out would leave lines with nothing under
+ * them.
+ */
 export function dots(c: Canvas, box: Rect, origin: Point, step: number): void {
-  const count = (s: number) =>
-    ticks(origin.x, s, box.x, box.x + box.w).length * ticks(origin.y, s, box.y, box.y + box.h).length;
-  const thin = Math.max(1, Math.ceil(Math.sqrt(count(step) / MAX_DOTS)));
+  const ys = ticks(origin.y, step, box.y, box.y + box.h);
+  const columns = ticks(origin.x, step, box.x, box.x + box.w).length;
+  const thin = Math.max(1, Math.ceil((columns * ys.length) / MAX_DOTS));
   const xs = ticks(origin.x, step * thin, box.x, box.x + box.w);
-  const ys = ticks(origin.y, step * thin, box.y, box.y + box.h);
   for (const y of ys) for (const x of xs) c.dot(x, y);
 }
 

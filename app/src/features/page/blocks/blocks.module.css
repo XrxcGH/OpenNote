@@ -325,6 +325,10 @@
    * lines down to the cap height of its first line and the alphabetic baseline of its last, and a padding of one
    * line less one cap height above it puts the first baseline one line below the block's top. A block that starts
    * on a rule therefore ends on the rule its last baseline sits on, and the next block starts there.
+   *
+   * Every baseline then rises off its rule by the lift (--rule-lift, core/ruled.ts), the same for every size of
+   * text: the top padding gives it back and the bottom padding takes it, so the block keeps its height and the next
+   * block still starts on a rule. The letters clear the rule by a thin gap of paper; descenders may cross it.
    */
   :global([data-ruled]) {
     --rule-line: round(up, 1.25em, var(--rule));
@@ -356,7 +360,7 @@
   }
 
   :global([data-ruled]) .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
-    padding-block: calc(1lh - 1cap) 0;
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
     line-height: var(--rule-line);
     text-box: trim-both cap alphabetic;
     /* The block ends at its last baseline, so descenders paint below it. */
@@ -374,7 +378,7 @@
    * one more rule, part padding and part margin, so the text after it is back on a rule.
    */
   :global([data-ruled]) .text :global(.ProseMirror) pre {
-    padding-block: calc(1lh - 1cap);
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) calc(1lh - 1cap + var(--rule-lift));
     margin-block-end: 1cap;
     line-height: var(--rule-line);
     text-box: trim-both cap alphabetic;

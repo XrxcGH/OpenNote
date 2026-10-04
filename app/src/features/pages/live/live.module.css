@@ -74,7 +74,7 @@
   :global([data-ruled]:not([data-paginating]))
     :global(.ProseMirror)
     :is(p, h1, h2, h3, h4, h5, h6, pre, :global([data-callout-title])):global([data-pg-push]) {
-    padding-block-start: calc(1lh - 1cap + var(--pg-push, 0px));
+    padding-block-start: calc(1lh - 1cap - var(--rule-lift) + var(--pg-push, 0px));
   }
 
   .counter {
