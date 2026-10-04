@@ -280,6 +280,33 @@ export function gapBetween(a: Pt[], b: Pt[]): number {
   return best;
 }
 
+/**
+ * Points every `step` along a shape's runs, closing the closed ones. A straight line flattens to its two ends, so a
+ * gap measured to it needs the points in between.
+ */
+export function densify(runs: Run[], step = 0.1): Pt[] {
+  return runs.flatMap(({ pts, closed }) => {
+    const line = closed ? [...pts, pts[0]] : pts;
+    const out = [line[0]];
+    for (let i = 1; i < line.length; i++) {
+      const [a, b] = [line[i - 1], line[i]];
+      const n = Math.max(1, Math.ceil(dist(a, b) / step));
+      for (let j = 1; j <= n; j++) out.push({ x: a.x + ((b.x - a.x) * j) / n, y: a.y + ((b.y - a.y) * j) / n });
+    }
+    return out;
+  });
+}
+
+/** Whether a point is inside a closed outline, by the even-odd rule. */
+export function within(p: Pt, outline: Pt[]): boolean {
+  let odd = false;
+  for (let i = 0, j = outline.length - 1; i < outline.length; j = i++) {
+    const [a, b] = [outline[i], outline[j]];
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) odd = !odd;
+  }
+  return odd;
+}
+
 export const lowest = (pts: Pt[]) => Math.max(...pts.map((p) => p.y));
 
 /** The y of the top edge of a flat line or slab at x, from its outline. */

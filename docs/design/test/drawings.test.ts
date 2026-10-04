@@ -5,7 +5,7 @@
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DESK, WINDOW } from '../../../app/src/ui/illustrations/shapes.ts';
+import { DESK, PLANT, WINDOW } from '../../../app/src/ui/illustrations/shapes.ts';
 import { deskScene, plantPot } from '../lib/drawings.ts';
 import { palette } from '../lib/svg.ts';
 import { allScreens } from '../screens/all.ts';
@@ -13,9 +13,11 @@ import { socialPreview } from '../social-preview.ts';
 import {
   type El,
   type Pt,
+  densify,
   dist,
   flatten,
   gapBetween,
+  within,
   lowest,
   named,
   outlineOf,
@@ -119,14 +121,71 @@ describe('where the vine and its leaves meet', () => {
     }
   });
 
-  it("keeps the leaves clear of the window's middle bar and the sill", () => {
-    const bars = outlineOf(only(window, 'window-bars'))[0].pts;
-    const sill = pointsUnder(only(window, 'sill'));
+  it("keeps the leaves clear of both of the window's bars and the sill", () => {
+    // Both bars, the upright and the crosspiece, with the points along their straight lines.
+    const bars = densify(outlineOf(only(window, 'window-bars')), 0.25);
+    const sill = densify(outlineOf(only(window, 'sill')), 0.25);
     for (const leaf of leaves) {
       const points = outlineOf(leaf)[0].pts;
       assert.ok(gapBetween(points, bars) / size > 1.5);
       assert.ok(gapBetween(points, sill) / size > 1.5);
     }
+  });
+});
+
+describe('how each leaf meets its stem, and the window frame', () => {
+  // In the shapes' own units, where a line is 1.5 units wide at most. The app and the generator draw these strings.
+  const LINE = 1.5;
+  const angle = (u: Pt, v: Pt) => (Math.acos((u.x * v.x + u.y * v.y) / Math.hypot(u.x, u.y) / Math.hypot(v.x, v.y)) * 180) / Math.PI;
+  const vines = [
+    { name: 'the window vine', stem: WINDOW.vine, leaves: WINDOW.leaves },
+    { name: "the plant's trailing vine", stem: PLANT.trailing, leaves: PLANT.trailingLeaves },
+  ];
+
+  for (const { name, stem, leaves } of vines) {
+    const line = densify(flatten(stem), 0.05);
+    leaves.forEach((d, i) => {
+      it(`grows leaf ${i} on ${name} from one point of its stem and away from it`, () => {
+        const leaf = densify(flatten(d), 0.05);
+        const base = leaf[0];
+        const at = line.reduce((best, p, j) => (dist(p, base) < dist(line[best], base) ? j : best), 0);
+        assert.ok(dist(line[at], base) < 0.1, 'its base is on the stem');
+        // Past 3 units from the base, the stem neither runs inside the leaf nor comes within a line's width of its
+        // edge, so the two meet at the base and nowhere else. A leaf lying along its stem fails here.
+        const far = line.filter((p) => dist(p, base) > 3);
+        assert.equal(far.filter((p) => within(p, leaf)).length, 0, 'the stem runs inside the leaf');
+        assert.ok(gapBetween(far, leaf) > LINE, `the stem comes ${gapBetween(far, leaf).toFixed(2)} from the leaf`);
+        // The leaf's midline turns at least 60 degrees from the stem, each way the stem goes from its base.
+        const tip = leaf.reduce((a, b) => (dist(b, base) > dist(a, base) ? b : a));
+        const midline = { x: tip.x - base.x, y: tip.y - base.y };
+        for (const way of [-1, 1]) {
+          let j = at;
+          while (line[j + way] && dist(line[j], line[at]) < LINE) j += way;
+          if (j === at) continue; // the stem ends at this leaf
+          const along = { x: line[j].x - line[at].x, y: line[j].y - line[at].y };
+          assert.ok(angle(midline, along) >= 60, `${angle(midline, along).toFixed(0)} degrees from the stem`);
+        }
+      });
+    });
+  }
+
+  it('lays each window leaf clear of the frame, or across it like the vine, never along it or just touching it', () => {
+    const frame = densify(flatten(WINDOW.sky), 0.05);
+    WINDOW.leaves.forEach((d, i) => {
+      const leaf = densify(flatten(d), 0.05);
+      const under = frame.filter((p) => within(p, leaf));
+      if (under.length === 0) {
+        // Clear of it: two lines a line's width apart only just touch, so more than that.
+        assert.ok(gapBetween(frame, leaf) > LINE, `leaf ${i} is ${gapBetween(frame, leaf).toFixed(2)} from the frame`);
+        return;
+      }
+      // Across it: the frame under the leaf makes at least 35 degrees with the leaf's midline.
+      const base = leaf[0];
+      const tip = leaf.reduce((a, b) => (dist(b, base) > dist(a, base) ? b : a));
+      const run = { x: (under.at(-1) as Pt).x - under[0].x, y: (under.at(-1) as Pt).y - under[0].y };
+      const cross = angle({ x: tip.x - base.x, y: tip.y - base.y }, run);
+      assert.ok(Math.min(cross, 180 - cross) >= 35, `leaf ${i} lies ${cross.toFixed(0)} degrees along the frame`);
+    });
   });
 });
 

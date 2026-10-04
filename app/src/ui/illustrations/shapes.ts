@@ -13,20 +13,27 @@ export const WINDOW = {
   moon: 'M77 24.5A11 11 0 1 0 82 42 9 9 0 1 1 77 24.5Z',
   hills: 'M7 78C20 73.5 30 80 46 76.5S72 72 93 77.5L93 95.3H7Z',
   bars: 'M50 4.2V96M6 56.4C30 55.6 70 57.2 94 56.2',
-  /** The vine twines in and out of the frame down the left of the arch. */
+  /**
+   * The vine twines in and out of the frame down the left of the arch. Its tail crosses the middle bar and ends
+   * inside the lower pane, clear of the frame.
+   */
   vine: [
     'M37.5 3.8C35.9 5.2 31.7 10.2 28 12.3 24.3 14.4 18 13.6 15.4 16.4 12.9 19.2 14.6 25.5 12.7 29.3',
-    '10.8 33.1 5 35.9 4.2 39.4 3.4 42.9 7.9 47.5 8.1 50.4 8.3 53.4 5.9 55.9 5.5 57',
+    '10.8 33.1 5 35.9 4.2 39.4 3.4 42.9 7.9 47.5 8.1 50.4 8.3 53.8 8.4 56.2 9.6 58.6',
   ].join(' '),
-  /** Each leaf is two curves from a point on the vine to its tip. */
+  /**
+   * Each leaf is two curves from a point on the vine to its tip. It touches the stem only at its base and grows away
+   * from it at 75 degrees or more. The end leaves carry on from the stem's ends: the top one drapes across the arch,
+   * and the bottom one hangs in the pane. No leaf runs along the frame or a bar.
+   */
   leaves: [
-    'M37.5 3.8Q40.5 6.7 42.4 2.9Q39.3 0 37.5 3.8Z',
+    'M37.5 3.8Q37.9 7.6 41.6 6.7Q41.2 2.9 37.5 3.8Z',
     'M28 12.3Q26.7 16.7 31.2 17.4Q32.5 13 28 12.3Z',
     'M15.4 16.4Q15.5 11.9 11 12.4Q10.9 16.9 15.4 16.4Z',
-    'M12.7 29.3Q16.7 31.5 18.3 27.3Q14.4 25.1 12.7 29.3Z',
-    'M4.2 39.4Q8.5 38.7 7 34.7Q2.6 35.3 4.2 39.4Z',
-    'M8.1 50.4Q9.5 54.6 13.3 52.3Q11.8 48.2 8.1 50.4Z',
-    'M5.5 57Q2.6 60.3 6.4 62.4Q9.3 59.1 5.5 57Z',
+    'M12.7 29.3Q14.2 33.6 18.2 31.5Q16.7 27.2 12.7 29.3Z',
+    'M5.2 37.4Q5.9 33.5 1.9 33.4Q1.2 37.3 5.2 37.4Z',
+    'M8.1 50.4Q11.1 53.4 13.6 50Q10.6 47 8.1 50.4Z',
+    'M9.6 58.6Q7.5 62.1 11.3 63.7Q13.4 60.2 9.6 58.6Z',
   ],
   sill: 'M1.5 96.5H98.5V101.5H1.5Z',
 } as const;
@@ -45,9 +52,10 @@ export const PLANT = {
     'M32 25C40 25.6 45 20.6 46 13.4 38 12.6 33 17.6 32 25Z',
     'M32 12.6C28 8.6 28.6 3.6 32 1.4 35.4 3.6 36 8.6 32 12.6Z',
   ],
+  /** Like the window vine's: each leaf starts on the trailing stem and grows away from it. */
   trailingLeaves: [
-    'M16.6 51.6Q14.9 47.6 11 49.5Q12.7 53.6 16.6 51.6Z',
-    'M10.4 60.4Q14 58.2 11.4 55Q7.7 57.1 10.4 60.4Z',
+    'M17.2 51.4Q15.5 47.4 11.6 49.3Q13.3 53.4 17.2 51.4Z',
+    'M10.4 60.1Q10.7 56 6.6 56.1Q6.3 60.2 10.4 60.1Z',
     'M4.6 62.4Q5.8 58.5 1.7 58.3Q0.5 62.2 4.6 62.4Z',
   ],
 } as const;
