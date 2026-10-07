@@ -3,6 +3,7 @@
 // Excel gives the raw number in `x:num` and its number format in a style block. Google Sheets gives both in
 // `data-sheets-value`. LibreOffice gives `sdval` and `sdnum`. Anything else is a plain HTML table.
 
+import { stripTags } from '../../../../core/stripTags';
 import { hintFromFormat, type FormatHint } from './formatHints';
 
 export interface PasteCell {
@@ -72,7 +73,7 @@ function detectSource(html: string): PasteSource {
 
 function plainText(inner: string): string {
   const line = (part: string): string =>
-    decodeEntities(part.replace(/<[^>]*>/g, ''))
+    decodeEntities(stripTags(part))
       .replace(/[\s\u00a0]+/g, ' ')
       .trim();
   return inner
@@ -175,10 +176,14 @@ function readRows(table: string, classes: Map<string, FormatHint>): PasteCell[][
 
 /** True when nothing but whitespace, comments, and head content surrounds the table. */
 function isOnlyTable(outside: string): boolean {
-  const visible = outside
-    .replace(/<!--[\s\S]*?-->|<!\[[^\]]*\]>/g, '')
-    .replace(/<(head|style|script|title)\b[\s\S]*?<\/\1>/gi, '')
-    .replace(/<[^>]*>/g, '');
+  // Each pass can join what is left around a removed piece into a new one, so it repeats until nothing more goes.
+  let visible = outside;
+  for (let before = ''; before !== visible;) {
+    before = visible;
+    visible = stripTags(
+      visible.replace(/<!--[\s\S]*?-->|<!\[[^\]]*\]>/g, '').replace(/<(head|style|script|title)\b[\s\S]*?<\/\1>/gi, ''),
+    );
+  }
   return decodeEntities(visible).replace(/[\s\xa0]+/g, '') === '';
 }
 
