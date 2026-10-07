@@ -49,6 +49,7 @@ impl NoteReader for HtmlReader {
             modified: note.modified,
             notes: report.entries,
             skip: None,
+            table_kinds: Vec::new(),
         }
     }
 }

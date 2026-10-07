@@ -17,6 +17,9 @@ Press Ctrl+K and choose Import. First-time setup has the same step. Pick a sourc
 | Email (`.eml`) | A page with its attachments |
 | Kindle clippings and a Readwise CSV file | Your highlights |
 | Windows Sticky Notes | Your notes and their pictures |
+| A Notion export | Its pages, with each database as a smart table |
+
+A Notion database keeps its column types. Numbers, money, dates, checkboxes, and short lists of choices are read from the cells, and the review names each typed column. A column with one value that does not fit stays as text.
 
 Before anything is added, a review lists what comes over and what does not. Choose Save report to keep that list. Undo takes an import back.
 

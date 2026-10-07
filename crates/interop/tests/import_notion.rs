@@ -116,5 +116,37 @@ fn a_csv_database_becomes_a_table_page() {
     assert_eq!((table.rows.len(), table.columns.len()), (3, 3));
     let second = &table.rows[2];
     assert_eq!(second.cells[&table.columns[0].id].markdown, "Cosmos, the series");
-    assert!(report.to_markdown().contains("Notion database became a table"));
+    assert!(report.to_markdown().contains("Notion database became a smart table"));
+}
+
+#[test]
+fn a_database_becomes_a_smart_table_with_column_types() {
+    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/corpus/notion-database/Export");
+    let world = TestEnv::new();
+    let mut sink = MemorySink::default();
+    let report = import_markdown_folder(&dir, &world.env(), &mut sink).expect("imports");
+    let books = page(&sink, "Books");
+    let BlockData::Table(table) = &books.blocks.iter().next().expect("a block").data else {
+        panic!("a table");
+    };
+    let smart = table.extra.get("smart").expect("smart-table data");
+    let kind = |n: usize| smart["columns"][table.columns[n].id.to_string()]["type"].as_str();
+    assert_eq!(kind(0), None, "names stay text");
+    assert_eq!(kind(1), Some("number"));
+    assert_eq!(kind(2), Some("currency"));
+    assert_eq!(kind(3), Some("date"));
+    assert_eq!(kind(4), Some("checkbox"));
+    assert_eq!(kind(5), Some("text"));
+    let choices = &smart["columns"][table.columns[5].id.to_string()]["choices"];
+    assert_eq!(choices, &serde_json::json!(["Done", "Reading", "To read"]));
+    assert_eq!(kind(6), None);
+    let due = |row: usize| table.rows[row].cells[&table.columns[3].id].markdown.to_string();
+    assert_eq!(due(1), "2026-10-07");
+    assert_eq!(due(3), "2026-10-12 15:30");
+    let markdown = report.to_markdown();
+    assert!(
+        markdown
+            .contains("column types: Pages (number), Price (currency), Due (date), Done (checkbox), Status (choice)"),
+        "the report names the types: {markdown}"
+    );
 }

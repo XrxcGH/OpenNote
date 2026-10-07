@@ -4,6 +4,7 @@
 //! Every import writes a new notebook to an [`crate::ImportSink`], so the whole import can be undone by removing
 //! that notebook. Each import returns a [`crate::Report`] with an entry for each page.
 
+mod database;
 mod dateline;
 mod eml;
 mod enex;
@@ -37,6 +38,7 @@ mod xlsx;
 mod xmltree;
 mod zipxml;
 
+pub(crate) use database::{smart_data, ColumnKind};
 pub use eml::import_eml;
 pub use enex::{import_enex, import_enex_reader};
 pub use highlights::import_highlights;

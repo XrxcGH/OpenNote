@@ -63,6 +63,7 @@ impl NoteReader for MarkdownReader {
             modified,
             notes: report.entries,
             skip: None,
+            table_kinds: Vec::new(),
         }
     }
 

@@ -6,6 +6,7 @@
 
 use std::path::Path;
 
+use super::database;
 use super::folder::{import_folder, NoteContent, NoteReader};
 use super::scan::NoteFile;
 use crate::csv;
@@ -49,7 +50,18 @@ impl NoteReader for CsvReader {
 /// A page that holds the table of a CSV text. `simplified` names what a source app's database lost, if the
 /// file came from one, as a short name and the reason.
 pub(super) fn table_content(text: &str, title: String, simplified: Option<(&str, &str)>) -> NoteContent {
-    let table = csv::parse(text);
+    typed_table_content(text, title, simplified, false)
+}
+
+/// Like [`table_content`]. With `typed`, the column types are read from the cells, date cells are written in ISO
+/// form, and the page's table becomes a smart table with those types (see [`super::database`]).
+pub(super) fn typed_table_content(
+    text: &str,
+    title: String,
+    simplified: Option<(&str, &str)>,
+    typed: bool,
+) -> NoteContent {
+    let mut table = csv::parse(text);
     if table.rows.is_empty() {
         return NoteContent {
             skip: Some("The file has no rows.".to_owned()),
@@ -57,6 +69,13 @@ pub(super) fn table_content(text: &str, title: String, simplified: Option<(&str,
         };
     }
     let kept = rows_that_fit(&table.rows);
+    let kinds = if typed {
+        let kinds = database::infer_columns(&table.rows[..kept]);
+        database::normalize_dates(&mut table.rows[..kept], &kinds);
+        kinds
+    } else {
+        Vec::new()
+    };
     let rows: Vec<Vec<Vec<Inline>>> = table
         .rows
         .iter()
@@ -65,6 +84,9 @@ pub(super) fn table_content(text: &str, title: String, simplified: Option<(&str,
         .collect();
     let mut report = PageReport::default();
     report.came_over(format!("{} rows and {} columns", kept - 1, table.width()));
+    if let Some(types) = database::describe(&table.rows[0], &kinds) {
+        report.came_over(types);
+    }
     if let Some((what, why)) = simplified {
         report.simplified(what, why);
     }
@@ -86,6 +108,7 @@ pub(super) fn table_content(text: &str, title: String, simplified: Option<(&str,
         title,
         blocks: vec![Block::Table { header: true, rows }],
         notes: report.entries,
+        table_kinds: kinds,
         ..NoteContent::default()
     }
 }

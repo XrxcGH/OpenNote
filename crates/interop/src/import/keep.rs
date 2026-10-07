@@ -142,6 +142,7 @@ fn read_note(json: &Value, note: &NoteFile) -> NoteContent {
         modified: usec(json, "userEditedTimestampUsec"),
         notes: report.entries,
         skip: None,
+        table_kinds: Vec::new(),
     }
 }
 

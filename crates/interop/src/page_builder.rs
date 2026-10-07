@@ -129,6 +129,19 @@ impl<'a> PageBuilder<'a> {
         }
     }
 
+    /// Gives the last table its column types as smart-table data (`data.smart`), so it opens as a smart table.
+    /// Text columns get no entry. A page with no table is left alone.
+    pub(crate) fn type_last_table(&mut self, kinds: &[crate::import::ColumnKind]) {
+        let Some(BlockData::Table(table)) = self.pieces.iter_mut().rev().find(|p| matches!(p, BlockData::Table(_)))
+        else {
+            return;
+        };
+        let ids: Vec<String> = table.columns.iter().map(|c| c.id.to_string()).collect();
+        if let Some(smart) = crate::import::smart_data(&ids, kinds) {
+            table.extra.insert("smart".to_owned(), smart);
+        }
+    }
+
     /// Adds an image block.
     pub fn push_image(&mut self, asset: AssetId, alt: String) {
         self.flush_text();
