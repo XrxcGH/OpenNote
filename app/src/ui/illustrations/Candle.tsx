@@ -29,10 +29,20 @@ export function CandleArt() {
   );
 }
 
+/**
+ * The glow reaches past the candle's own box, above the flame and to both sides, so the candle on its own gets a
+ * margin as wide as the glow overhangs. Without it the glow would end in a hard edge at the top and sides.
+ */
+const GLOW_X = CANDLE.halo.r - CANDLE.halo.cx;
+const GLOW_Y = CANDLE.halo.r - CANDLE.halo.cy;
+
 export function Candle({ className }: ArtProps) {
+  const [width, height] = [CANDLE.box[0] + 2 * GLOW_X, CANDLE.box[1] + GLOW_Y];
   return (
-    <Art width={CANDLE.box[0]} height={CANDLE.box[1]} className={className}>
-      <CandleArt />
+    <Art width={width} height={height} className={className}>
+      <g transform={`translate(${GLOW_X} ${GLOW_Y})`}>
+        <CandleArt />
+      </g>
     </Art>
   );
 }

@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderUi } from '../../test';
 import { along, drawn, expectStandsOn, outline, pointsOf, shelfOf, surface } from '../../test/drawing';
-import { Books, Candle, DeskScene, EmptyArt, StarField, Window } from './index';
+import { Books, Candle, DeskScene, EmptyArt, Glint, InkStroke, Notebook, Plant, StarField, Window } from './index';
 
 afterEach(() => {
   document.documentElement.removeAttribute('data-theme');
@@ -108,18 +108,37 @@ describe('where things meet', () => {
 });
 
 describe('inside their boxes', () => {
-  it.each([64, 103])('keeps every window line, stroke and all, inside the drawing at %i px tall', (height) => {
-    const svg = drawn(renderUi(<Window sky="day" height={height} />).container);
+  const drawings = {
+    'the desk scene': <DeskScene sky="day" />,
+    'the window at 64 px': <Window sky="day" height={64} />,
+    'the window at 103 px': <Window sky="night" />,
+    'the About window at 112 px': <Window sky="day" height={112} />,
+    'the plant': <Plant />,
+    'the books': <Books />,
+    'the candle': <Candle />,
+    'the notebook': <Notebook />,
+    'the notebooks empty state': <EmptyArt kind="notebooks" />,
+    'the page empty state': <EmptyArt kind="page" />,
+    'the trash empty state': <EmptyArt kind="trash" />,
+    'the sun glint': <Glint kind="sun" />,
+    'the moon glint': <Glint kind="moon" />,
+    'the ink stroke': <InkStroke />,
+  };
+
+  it.each(Object.entries(drawings))('keeps every line, stroke, glow and all, inside %s', (_, drawing) => {
+    const svg = drawn(renderUi(drawing).container);
     const box = svg.getBoundingClientRect();
     for (const shape of svg.querySelectorAll<SVGGeometryElement>('path, circle')) {
       const style = getComputedStyle(shape);
-      // Lines don't scale, so half of each one's width reaches past its path by the same number of pixels.
+      // Lines don't scale, so half of each one's width reaches past its path by the same number of pixels. A glow
+      // has no line, and its circle is as far as it reaches.
       const half = style.stroke === 'none' ? 0 : parseFloat(style.strokeWidth) / 2;
       const edge = shape.getBoundingClientRect();
-      expect(edge.left - half).toBeGreaterThanOrEqual(box.left);
-      expect(edge.top - half).toBeGreaterThanOrEqual(box.top);
-      expect(edge.right + half).toBeLessThanOrEqual(box.right);
-      expect(edge.bottom + half).toBeLessThanOrEqual(box.bottom);
+      const where = `${shape.tagName} ${shape.getAttribute('d')?.slice(0, 24) ?? shape.getAttribute('class')}`;
+      expect(edge.left - half, where).toBeGreaterThanOrEqual(box.left - 0.01);
+      expect(edge.top - half, where).toBeGreaterThanOrEqual(box.top - 0.01);
+      expect(edge.right + half, where).toBeLessThanOrEqual(box.right + 0.01);
+      expect(edge.bottom + half, where).toBeLessThanOrEqual(box.bottom + 0.01);
     }
   });
 

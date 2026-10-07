@@ -85,9 +85,12 @@ export const CANDLE = {
   base: 'M8 56H20',
 } as const;
 
-/** The open notebook, drawn in a 64 x 40 box. It rests on its spine, the lowest point of its cover. */
+/**
+ * The open notebook, drawn in a 64 x 41 box: the line along its spine reaches 40.15. It rests on its spine, the
+ * lowest point of its cover.
+ */
 export const NOTEBOOK = {
-  box: [64, 40],
+  box: [64, 41],
   cover: 'M1.6 13V36.8C14 34 24 34.6 32 39.4 40 34.6 50 34 62.4 36.8V13Z',
   left: 'M3 9C14 6 24 7 32 12V37C24 32 14 31.4 3 34.4Z',
   right: 'M61 9C50 6 40 7 32 12V37C40 32 50 31.4 61 34.4Z',
