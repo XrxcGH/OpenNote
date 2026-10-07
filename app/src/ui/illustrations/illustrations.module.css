@@ -195,6 +195,13 @@
       stroke: CanvasText;
     }
 
+    /* A star or a pen tip stays a solid dot. As an outline it would grow by half the line's width all round, and the
+       moon glint's stars would touch the moon. */
+    :is(.art, .stroke) :is(.spark, .dot) {
+      fill: CanvasText;
+      stroke: none;
+    }
+
     :is(.stars, .dots, .halo) {
       display: none;
     }
