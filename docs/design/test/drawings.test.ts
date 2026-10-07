@@ -427,6 +427,42 @@ describe('text', () => {
   });
 });
 
+describe('the phone', () => {
+  it("keeps every keep-out zone on the phone inside its screen's rounded corners", () => {
+    const root = picture('10-phone.svg');
+    const screens = [...walk(root)].filter(
+      (e) => e.tag === 'rect' && e.attrs.rx === '42' && !e.parent?.attrs['clip-path'],
+    );
+    const clips = new Map([...walk(root)].filter((e) => e.tag === 'clipPath').map((c) => [c.attrs.id, c.children[0]]));
+    /** Whether a point is on a rounded rectangle's glass. */
+    const onGlass = (s: El, q: Pt) => {
+      const [x, y, w, h, r] = ['x', 'y', 'width', 'height', 'rx'].map((k) => Number(s.attrs[k]));
+      const cx = Math.min(Math.max(q.x, x + r), x + w - r);
+      const cy = Math.min(Math.max(q.y, y + r), y + h - r);
+      return q.x >= x - 0.01 && q.x <= x + w + 0.01 && Math.hypot(q.x - cx, q.y - cy) <= r + 0.01;
+    };
+    const zones = [...walk(root)].filter((e) => e.tag === 'rect' && e.attrs.fill === 'url(#hatch)');
+    let checked = 0;
+    for (const zone of zones) {
+      const corners = outlineOf(zone)[0].pts;
+      const middle = { x: (corners[0].x + corners[2].x) / 2, y: (corners[0].y + corners[2].y) / 2 };
+      const on = screens.find((s) => onGlass(s, middle));
+      if (!on) continue;
+      // Either every corner is on the glass, or the zone is cut by a clip that is the screen's own outline.
+      let clip: El | undefined;
+      for (let e: El | undefined = zone; e && !clip; e = e.parent) {
+        const id = /url\(#([^)]+)\)/.exec(e.attrs['clip-path'] ?? '')?.[1];
+        if (id) clip = clips.get(id);
+      }
+      const inside =
+        corners.every((q) => onGlass(clip ?? on, q)) || (clip !== undefined && clip.attrs.rx === on.attrs.rx);
+      assert.ok(inside, `a keep-out zone at ${corners[0].x},${corners[0].y} reaches past the screen's corner`);
+      checked++;
+    }
+    assert.ok(checked >= 4);
+  });
+});
+
 describe('annotation labels', () => {
   const pills = (root: El) =>
     [...walk(root)]
