@@ -176,6 +176,7 @@
     "allow-connectors-connect",
     "allow-connectors-cancel",
     "allow-connectors-disconnect",
-    "allow-connectors-request"
+    "allow-connectors-request",
+    "allow-accounts-call"
   ]
 }

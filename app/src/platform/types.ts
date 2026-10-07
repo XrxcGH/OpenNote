@@ -4,6 +4,7 @@
 
 import type { NotesCoreClient } from '../services/notes/core/service';
 import type { AudioHost, RecordingEntry } from '../core/audio';
+import type { AccountsHost } from '../features/accounts';
 import type { ConnectorsClient } from '../features/connectors';
 import type { DiagnosticsClient } from '../features/diagnostics';
 import type { ImportedAsset, PageService } from '../services/pages/types';
@@ -93,6 +94,8 @@ export interface Platform {
   readonly diagnostics: DiagnosticsClient;
   /** Accounts that features sign in to, such as Microsoft and Google, with their tokens kept in the shell. */
   readonly connectors: ConnectorsClient;
+  /** Saved state, transfer files, and file transfers for the account features (features/accounts). */
+  readonly accounts: AccountsHost;
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
   readonly images: ImagesClient;

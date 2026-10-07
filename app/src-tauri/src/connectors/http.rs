@@ -89,6 +89,8 @@ pub struct HttpResponse {
     pub status: u16,
     pub content_type: Option<String>,
     pub body: Vec<u8>,
+    /// The `Location` header of an answer that is not a redirect: where a resumable upload goes on.
+    pub location: Option<String>,
 }
 
 impl HttpResponse {
@@ -192,7 +194,10 @@ impl Http for UreqHttp {
             }
             let response = self.once(request, &current, drop_body)?;
             let status = response.status().as_u16();
-            if matches!(status, 301 | 302 | 303 | 307 | 308) {
+            // A 308 with no Location is "Resume Incomplete" of a chunked upload (Google), an answer and not a redirect.
+            let redirect = matches!(status, 301 | 302 | 303 | 307 | 308)
+                && !(status == 308 && response.headers().get("location").is_none());
+            if redirect {
                 let location = response
                     .headers()
                     .get("location")
@@ -211,6 +216,11 @@ impl Http for UreqHttp {
                 .get("content-type")
                 .and_then(|value| value.to_str().ok())
                 .map(str::to_owned);
+            let location = response
+                .headers()
+                .get("location")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned);
             let mut body = Vec::new();
             let limit = u64::try_from(max_bytes).unwrap_or(u64::MAX).saturating_add(1);
             response
@@ -226,6 +236,7 @@ impl Http for UreqHttp {
                 status,
                 content_type,
                 body,
+                location,
             });
         }
         Err(HttpError::Network)

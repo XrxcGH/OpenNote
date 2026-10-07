@@ -1,0 +1,60 @@
+/* The small dialogs of the account features: a list to choose from, a line to type, and a progress note. Tokens
+   only (BRAND.md section 14). */
+@layer components {
+  .list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 50vh;
+    overflow-y: auto;
+  }
+
+  .choice {
+    display: grid;
+    gap: var(--space-1);
+    inline-size: 100%;
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .choice {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .choice[aria-checked='true'] {
+    border-color: var(--color-accent-primary);
+    background: var(--color-surface-selected);
+  }
+
+  .choice:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .detail,
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .empty {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .stack {
+    display: grid;
+    gap: var(--space-3);
+  }
+}

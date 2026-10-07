@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ExternalTarget } from '../../platform/types';
 import { announcements, expectNoAxeViolations, renderApp } from '../../test';
+import { createFakeAccountsHost } from '../accounts';
 import { privacyStore } from '../diagnostics';
 import ConnectorsSection from './ConnectorsSection';
 import { createFakeConnectors } from './fake';
@@ -17,7 +18,7 @@ async function setup(options: FakeOptions = {}) {
   // Opening a page or a folder is recorded, so no test leaves the page.
   const opened: ExternalTarget[] = [];
   const shell = { openExternal: (target: ExternalTarget) => (opened.push(target), Promise.resolve()) };
-  Object.assign(app.platform, { connectors: fake.client, shell });
+  Object.assign(app.platform, { connectors: fake.client, shell, accounts: createFakeAccountsHost(() => fake.client) });
   return { app, fake, opened };
 }
 
@@ -121,6 +122,22 @@ describe('signing in with the service’s own page', () => {
       { kind: 'folder', which: 'data' },
     ]);
     expect(fake.calls).toEqual([]);
+  });
+
+  it('takes a client ID typed on the card, and then offers Connect', async () => {
+    await setup();
+    render(<ConnectorsSection />);
+    const microsoft = await screen.findByRole('article', { name: 'Microsoft' });
+    fireEvent.click(within(microsoft).getByRole('button', { name: 'Add a client ID' }));
+    fireEvent.change(within(microsoft).getByLabelText('Client ID'), { target: { value: 'two words' } });
+    fireEvent.click(within(microsoft).getByRole('button', { name: 'Save client ID' }));
+    await within(microsoft).findByText('Something went wrong, and nothing was changed. Try again.');
+    expect(announcements()).toContain('That client ID can’t be used. It has no spaces and is not empty.');
+    fireEvent.change(within(microsoft).getByLabelText('Client ID'), { target: { value: 'typed-client-id' } });
+    fireEvent.click(within(microsoft).getByRole('button', { name: 'Save client ID' }));
+    await within(microsoft).findByRole('button', { name: 'Connect' });
+    expect(within(microsoft).getByText('Not connected')).toBeTruthy();
+    expect(announcements()).toContain('Saved the client ID for Microsoft. You can connect now.');
   });
 });
 

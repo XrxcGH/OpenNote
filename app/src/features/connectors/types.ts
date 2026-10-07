@@ -69,6 +69,8 @@ export interface ConnectorResponse {
   status: number;
   contentType: string | null;
   body: string;
+  /** The `Location` header of the answer, for the start of a resumable upload. */
+  location?: string | null;
 }
 
 /** Why the host refused. Each code has a sentence in strings/en/connectors.ts. */

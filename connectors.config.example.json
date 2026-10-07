@@ -1,0 +1,10 @@
+{
+  "clients": {
+    "microsoft": { "clientId": "" },
+    "google": { "clientId": "", "clientSecret": "" },
+    "dropbox": { "clientId": "" },
+    "box": { "clientId": "", "clientSecret": "" },
+    "slack": { "clientId": "", "clientSecret": "" },
+    "vimeo": { "clientId": "", "clientSecret": "" }
+  }
+}

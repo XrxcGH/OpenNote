@@ -6,6 +6,7 @@ export { createFakeConnectors } from './fake';
 export type { FakeConnectors, FakeOptions } from './fake';
 export type { ConnectorsClient } from './client';
 export { ConnectorNetworkUse } from './NetworkUse';
+export { errorText } from './model';
 export {
   cancelSignIn,
   connectTo,
@@ -15,4 +16,6 @@ export {
   refreshConnectors,
 } from './runtime';
 export { ConnectorError, ERROR_CODES } from './types';
+export { buildUrl, ConnectorHttpError, requestConnector, toRequest } from './request';
+export type { ConnectorReply, QueryValue, RequestOptions } from './request';
 export type * from './types';

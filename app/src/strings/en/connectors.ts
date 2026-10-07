@@ -35,6 +35,8 @@ export const connectors = {
     save: 'Connect with this token',
     setup: 'Show setup steps',
     openFolder: 'Open the connectors folder',
+    addClient: 'Add a client ID',
+    saveClient: 'Save client ID',
     details: 'What this allows',
   },
   detail: {
@@ -50,6 +52,10 @@ export const connectors = {
     setupHelp: 'OpenNote has no client ID for {name} yet. The setup steps say how to add one.',
     tokenLabel: 'Personal token',
     tokenHelp: 'Paste the token from your account. OpenNote keeps it in Windows Credential Manager, never in a file.',
+    clientIdLabel: 'Client ID',
+    clientIdHelp: 'From the app you registered with the service. A client ID is not a secret.',
+    clientSecretLabel: 'Client secret (only if the service gave you one)',
+    clientSecretHelp: 'OpenNote keeps it on this device only, in the connectors file.',
     addressLabel: 'School address',
     addressHelp: "The address you use to sign in to your school's site, such as school.instructure.com.",
   },
@@ -118,6 +124,8 @@ export const connectors = {
     connectedAs: 'Connected to {name} as {account}.',
     waiting: 'Opened {name} in your browser. Finish signing in there.',
     disconnected: 'Disconnected from {name}.',
+    clientSaved: 'Saved the client ID for {name}. You can connect now.',
+    clientRefused: 'That client ID can’t be used. It has no spaces and is not empty.',
     canceled: 'Sign-in canceled.',
   },
   revoke: {

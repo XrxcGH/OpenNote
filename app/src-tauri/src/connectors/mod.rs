@@ -23,6 +23,7 @@
 //! The interface can call `connectors_request` for the last one. It never gets the token.
 
 mod account;
+mod accounts;
 mod catalog;
 mod commands;
 mod connect;
@@ -44,6 +45,7 @@ mod tests;
 mod view;
 
 // The glob also carries the items Tauri generates for each command, which lib.rs needs by path.
+pub use accounts::*;
 pub use commands::*;
 pub use connect::normalize_base_url;
 pub use error::{ConnectorError, Failure};

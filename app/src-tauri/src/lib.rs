@@ -326,5 +326,6 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         connectors::connectors_cancel,
         connectors::connectors_disconnect,
         connectors::connectors_request,
+        connectors::accounts_call,
     ]
 }

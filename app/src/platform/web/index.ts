@@ -6,6 +6,7 @@ import type { BootOverrides } from '../../boot/defaults';
 import type { NotesFixture } from '../../services/notes/fixtures';
 import { DEFAULT_SETTINGS } from '../../state/settings';
 import type { Platform } from '../types';
+import { createWebAccounts } from './accounts';
 import { createWebAudio } from './audio';
 import { createWebConnectors } from './connectors';
 import { createWebDiagnostics } from './diagnostics';
@@ -61,6 +62,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
   const os = createWebOs(boot.os, options.followBrowser ?? false);
   const log = createWebLog();
   const pages = createWebPages();
+  const connectors = createWebConnectors();
   return {
     kind: 'web',
     boot,
@@ -75,7 +77,8 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     pages,
     search: createWebSearch(pages),
     diagnostics: createWebDiagnostics(),
-    connectors: createWebConnectors(),
+    connectors,
+    accounts: createWebAccounts(connectors),
     spelling: createWebSpelling(),
     clipboard: createWebClipboard(),
     images: createWebImages(),

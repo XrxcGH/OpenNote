@@ -15,3 +15,6 @@ tests/e2e/logs/
 tests/ui/report/
 tests/ui/results/
 tests/perf/typing/results/
+
+# The owner of a build keeps the connectors app registrations here (docs/CONNECTORS.md).
+/connectors.config.json

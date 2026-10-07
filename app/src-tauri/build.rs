@@ -25,8 +25,45 @@ fn main() {
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("Cargo sets OUT_DIR"));
     write_if_changed(&out_dir.join("update_keys.rs"), &source);
 
+    connector_clients();
+
     let manifest = tauri_build::AppManifest::new().commands(APP_COMMANDS);
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest)).expect("the Tauri build step failed");
+}
+
+/// The file at the repository root where the owner of a build keeps the app registrations of the connectors. It is
+/// not in the repository. Its shape is the one of `connectors.config.example.json`.
+const CONNECTORS_CONFIG: &str = "../../connectors.config.json";
+
+/// The services whose client IDs can be built in. Each has `OPENNOTE_<NAME>_CLIENT_ID` and `..._CLIENT_SECRET`.
+const CONNECTOR_NAMES: [&str; 6] = ["microsoft", "google", "slack", "dropbox", "box", "vimeo"];
+
+/// Hands the client IDs of `connectors.config.json` to the compiler as the same variables a build can set by hand
+/// (`src/connectors/files.rs` reads them with `option_env!`). A variable that is already set wins over the file.
+fn connector_clients() {
+    println!("cargo:rerun-if-changed={CONNECTORS_CONFIG}");
+    let file = fs::read_to_string(CONNECTORS_CONFIG)
+        .ok()
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok());
+    for name in CONNECTOR_NAMES {
+        let upper = name.to_ascii_uppercase();
+        for (field, suffix) in [("clientId", "CLIENT_ID"), ("clientSecret", "CLIENT_SECRET")] {
+            let variable = format!("OPENNOTE_{upper}_{suffix}");
+            println!("cargo:rerun-if-env-changed={variable}");
+            if env::var_os(&variable).is_some() {
+                continue;
+            }
+            let value = file
+                .as_ref()
+                .and_then(|root| root.pointer(&format!("/clients/{name}/{field}")))
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|text| !text.is_empty());
+            if let Some(value) = value {
+                println!("cargo:rustc-env={variable}={value}");
+            }
+        }
+    }
 }
 
 /// The decoded text of every `*.pub` file in `dir`, sorted by file name. A missing folder has no keys.
