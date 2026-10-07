@@ -191,6 +191,13 @@ describe('inside their boxes', () => {
     'the ink stroke': <InkStroke />,
   };
 
+  it.each(Object.entries(drawings))('draws %s a whole number of pixels wide and tall', (_, drawing) => {
+    // A fraction of a pixel would put the drawing's edges, and everything laid out below it, between pixels.
+    const box = drawn(renderUi(drawing).container).getBoundingClientRect();
+    expect(Number.isInteger(box.width), `${box.width} wide`).toBe(true);
+    expect(Number.isInteger(box.height), `${box.height} tall`).toBe(true);
+  });
+
   it.each(Object.entries(drawings))('keeps every line, stroke, glow and all, inside %s', (_, drawing) => {
     const svg = drawn(renderUi(drawing).container);
     const box = svg.getBoundingClientRect();

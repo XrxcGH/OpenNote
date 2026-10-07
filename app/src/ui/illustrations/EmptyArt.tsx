@@ -56,9 +56,11 @@ export function EmptyArt({ kind, className }: ArtProps & { kind: EmptyKind }) {
   // Each drawing is cropped to its content, so there is no empty paper above it, and its shelf starts where the
   // sentence below it starts.
   const shelf = kind === 'notebooks';
-  const height = shelf ? 52 : 54;
+  // Shown at 1.6 px a unit and a whole number of pixels tall, so the sentence below starts on a pixel: the shelf
+  // drawing's box is 51.875 units tall and the others' 53.75, which leaves the same room under each shelf.
+  const height = shelf ? 83 : 86;
   return (
-    <Art width={176} height={height * 1.6} box={[110, height]} className={className}>
+    <Art width={176} height={height} box={[110, height / 1.6]} className={className}>
       <g transform={`translate(-5 ${shelf ? -22 : -20})`}>
         <path d={SHELF} />
         {shelf && <Shelf />}
