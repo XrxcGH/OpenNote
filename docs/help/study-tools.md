@@ -32,7 +32,7 @@ Press Ctrl+K and choose one by name. Each opens in its own window.
 |---|---|
 | Timers | Countdowns that keep running while you write. |
 | Calculator | Works out sums and unit conversions, and keeps a history. |
-| Unit converter | Converts between units. |
+| Unit converter | Converts length, mass, time, temperature, area, volume, speed, pressure, energy, power, angle, and data size. |
 | Reference tables | Looks up common tables. |
 | Exam countdown | Counts the days to each exam. |
 | Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations. |

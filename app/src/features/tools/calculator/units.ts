@@ -1,4 +1,4 @@
-// Unit conversion for ten categories. Months and years are averages (30.4375 and 365.25 days), "cal" is the
+// Unit conversion for twelve categories. Months and years are averages (30.4375 and 365.25 days), "cal" is the
 // thermochemical calorie, and "kB" is 1000 bytes while "KiB" is 1024. Temperature converts a reading, not a
 // difference, so converting 10 °C to kelvin gives 283.15 and not 10.
 
@@ -29,6 +29,8 @@ export const UNIT_CATEGORIES: readonly UnitCategory[] = [
   'speed',
   'pressure',
   'energy',
+  'power',
+  'angle',
   'data',
 ];
 

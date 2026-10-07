@@ -26,6 +26,9 @@ const CATEGORIES: Readonly<Record<UnitCategory, { dim: Dimension; si: number }>>
   speed: { dim: [1, 0, -1, 0, 0], si: 1 },
   pressure: { dim: [-1, 1, -2, 0, 0], si: 1 },
   energy: { dim: [2, 1, -2, 0, 0], si: 1 },
+  power: { dim: [2, 1, -3, 0, 0], si: 1 },
+  // An angle has no dimension of its own: a radian is a ratio of lengths. The unit it is written in is kept for display.
+  angle: { dim: [0, 0, 0, 0, 0], si: 1 },
   data: { dim: [0, 0, 0, 0, 1], si: 1 },
 };
 

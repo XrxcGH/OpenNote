@@ -4,11 +4,25 @@
 // out, since rates need the network.
 
 export type UnitCategory =
-  'length' | 'mass' | 'time' | 'temperature' | 'area' | 'volume' | 'speed' | 'pressure' | 'energy' | 'data';
+  | 'length'
+  | 'mass'
+  | 'time'
+  | 'temperature'
+  | 'area'
+  | 'volume'
+  | 'speed'
+  | 'pressure'
+  | 'energy'
+  | 'power'
+  | 'angle'
+  | 'data';
 
 export type UnitRow = readonly [symbol: string, factor: number, ...names: string[]];
 
-/** Base units: meter, kilogram, second, kelvin, square meter, liter, meter per second, pascal, joule, byte. */
+/**
+ * Base units: meter, kilogram, second, kelvin, square meter, liter, meter per second, pascal, joule, watt, radian,
+ * byte. A horsepower is the mechanical one (550 ft·lbf per second), and PS is the metric one (75 kgf·m per second).
+ */
 export const UNIT_ROWS: Record<Exclude<UnitCategory, 'temperature'>, readonly UnitRow[]> = {
   length: [
     ['nm', 1e-9, 'nanometer', 'nanometre'],
@@ -106,6 +120,24 @@ export const UNIT_ROWS: Record<Exclude<UnitCategory, 'temperature'>, readonly Un
     ['BTU', 1055.05585262, 'btu'],
     ['ft·lbf', 1.3558179483314, 'ft-lb', 'ftlb', 'foot pound'],
     ['erg', 1e-7],
+  ],
+  power: [
+    ['mW', 0.001, 'milliwatt'],
+    ['W', 1, 'watt'],
+    ['kW', 1000, 'kilowatt'],
+    ['MW', 1e6, 'megawatt'],
+    ['GW', 1e9, 'gigawatt'],
+    ['hp', 745.69987158227, 'horsepower'],
+    ['PS', 735.49875, 'metric horsepower'],
+    ['BTU/h', 0.29307107017, 'btu/h', 'btu per hour'],
+  ],
+  angle: [
+    ['arcsec', Math.PI / 648000, 'arcsecond', 'arc second'],
+    ['arcmin', Math.PI / 10800, 'arcminute', 'arc minute'],
+    ['deg', Math.PI / 180, '°', 'degree'],
+    ['grad', Math.PI / 200, 'gon', 'gradian'],
+    ['rad', 1, 'radian'],
+    ['turn', 2 * Math.PI, 'revolution', 'rev', 'cycle'],
   ],
   data: [
     ['bit', 0.125, 'b'],

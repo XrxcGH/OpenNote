@@ -301,6 +301,8 @@ export const study = {
       speed: 'Speed',
       pressure: 'Pressure',
       energy: 'Energy',
+      power: 'Power',
+      angle: 'Angle',
       data: 'Data size',
     },
     from: 'From',
