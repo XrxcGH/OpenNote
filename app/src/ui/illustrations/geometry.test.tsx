@@ -107,6 +107,18 @@ describe('where things meet', () => {
   });
 });
 
+describe('what hides behind what', () => {
+  it("runs no edge of the notebook's cover behind its pages, where a contrast theme would show it", () => {
+    const paths = drawn(renderUi(<Notebook />).container).querySelectorAll<SVGGeometryElement>('path');
+    const [cover, left, right] = [paths[0], paths[1], paths[2]];
+    // A point of the cover's outline may lie on a page's edge, which is drawn, but never inside a page.
+    const hidden = along(cover, 1200).filter((p) =>
+      [left, right].some((page) => page.isPointInFill(p) && !page.isPointInStroke(p)),
+    );
+    expect(hidden).toEqual([]);
+  });
+});
+
 describe('inside their boxes', () => {
   const drawings = {
     'the desk scene': <DeskScene sky="day" />,

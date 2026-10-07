@@ -91,7 +91,12 @@ export const CANDLE = {
  */
 export const NOTEBOOK = {
   box: [64, 41],
-  cover: 'M1.6 13V36.8C14 34 24 34.6 32 39.4 40 34.6 50 34 62.4 36.8V13Z',
+  /**
+   * The cover is only the band that shows around the pages: its inner edge follows the pages' outer and bottom
+   * edges, so no edge of it runs behind them. A Windows contrast theme draws outlines without fills, and a hidden
+   * edge would show there as a line across both pages.
+   */
+  cover: 'M1.6 13V36.8C14 34 24 34.6 32 39.4 40 34.6 50 34 62.4 36.8V13H61V34.4C50 31.4 40 32 32 37 24 32 14 31.4 3 34.4V13Z',
   left: 'M3 9C14 6 24 7 32 12V37C24 32 14 31.4 3 34.4Z',
   right: 'M61 9C50 6 40 7 32 12V37C40 32 50 31.4 61 34.4Z',
   lines: 'M9 15.6C14 15 18.6 16 24 18.6M9 21.4C14 20.8 18.6 21.8 24 24.4M9 27.2C12 26.8 14 27.2 16 28',
