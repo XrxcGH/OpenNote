@@ -24,7 +24,10 @@ use crate::settings::schema::{InstallPolicy, Settings};
 const PROGRESS_EVERY: Duration = Duration::from_millis(250);
 
 /// The flag that makes automatic mode wait for an unmetered network (section 18.4).
-const METERED_FLAG: &str = "updates.meteredCheck";
+const METERED_FLAG: &str = crate::platform_flags::UPDATES_METERED;
+
+/// The flag that lets a download that stopped partway continue where it stopped.
+const RESUME_FLAG: &str = crate::platform_flags::UPDATES_RESUME;
 
 /// Who asked for a check. Scheduled checks skip quietly when offline; a person sees why a check failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -206,7 +209,8 @@ fn available(offer: &Offer, waiting_for_unmetered: bool) -> UpdaterPhase {
 
 /// Behind `updates.meteredCheck`, automatic mode waits for a network without a data limit.
 fn must_wait_for_unmetered(settings: &Settings) -> bool {
-    settings.experimental.flags.get(METERED_FLAG).copied().unwrap_or(false) && system::WindowsNetworkCost.is_metered()
+    crate::platform_flags::is_on_now(METERED_FLAG, &settings.experimental.flags)
+        && system::WindowsNetworkCost.is_metered()
 }
 
 /// Downloads the version the last check offered, after the person chose Download.
@@ -248,7 +252,8 @@ fn download(service: &Service, offer: Offer) {
             service.set_phase(Some(phase));
         }
     };
-    match updater.download(&offer, &progress) {
+    let resume = crate::platform_flags::is_on_now(RESUME_FLAG, &service.settings().experimental.flags);
+    match updater.download_resumable(&offer, &progress, resume) {
         Ok(staged) => {
             service.shared().offer = None;
             service.set_phase(Some(UpdaterPhase::Ready {
