@@ -138,7 +138,9 @@ export function paginated(): Screen {
     rect({ x: RAIL, y: BODY_TOP, w: WIDE.width - RAIL, h: WIDE.height - BODY_TOP }, { fill: p.c('surface.sunken') }),
     sheet(p, PAGE_Y, 1),
     pageOneContent(p),
-    sheet(p, page2, 2),
+    // The second sheet scrolls on below the window, so it is cut off where the canvas ends.
+    `<clipPath id="canvas"><rect x="${RAIL}" y="${BODY_TOP}" width="${WIDE.width - RAIL}" height="${WIDE.height - BODY_TOP}"/></clipPath>`,
+    `<g clip-path="url(#canvas)">${sheet(p, page2, 2)}</g>`,
     text(x, page2 + PAGE.margin + 22, 'Discussion', { size: 22, weight: 600, fill: p.c('text.primary') }),
     text(PAGE_X + PAGE.w / 2, page2 - 10, 'Page 2 of 3', { size: 12, fill: p.c('text.muted'), anchor: 'middle' }),
     keepOut({ x: PAGE_X, y: PAGE_Y, w: PAGE.w, h: PAGE.margin }, 'Print margin 1 in: content stays inside', [

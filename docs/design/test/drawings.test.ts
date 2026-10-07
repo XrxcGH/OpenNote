@@ -302,11 +302,14 @@ describe('the social preview', () => {
 });
 
 describe('inside their pictures', () => {
-  it('keeps every line, circle and box of every wireframe inside the picture, never cut off by its edge', () => {
+  it('keeps every line, circle, box and label of every wireframe inside the picture, never cut off by its edge', () => {
     for (const { name, root } of pictures) {
       const svg = root.children[0];
       const [width, height] = [Number(svg.attrs.width), Number(svg.attrs.height)];
-      const clipped = [...walk(svg)].filter((e) => !e.attrs['clip-path'] && ['path', 'circle'].includes(e.tag));
+      // A shape cut off on purpose, by a clip on it or around it, is left out; so is a clip's own outline.
+      const cut = (e: El): boolean =>
+        Boolean(e.attrs['clip-path']) || e.tag === 'clipPath' || (e.parent !== undefined && cut(e.parent));
+      const clipped = [...walk(svg)].filter((e) => !cut(e) && ['path', 'circle', 'rect'].includes(e.tag));
       for (const el of clipped) {
         for (const p of outlineOf(el).flatMap((r) => r.pts)) {
           // A line is as wide as its stroke; half of it reaches past the path, so a shape may sit on the edge.
