@@ -28,9 +28,10 @@ import { finishLasso, startLasso } from './lasso';
 import { shapePoints } from '../geometry/shapes';
 import { snapConnector } from './shapeEdit';
 import { SpaceGesture } from './space';
-import { applyHold, holdFor } from '../snap';
+import { applyHold, holdFor, snapShape } from '../snap';
 import type { Hold } from '../snap';
 import { showProtractorAngle, snapToolsNow } from './snapTools';
+import { clearSnapMarks, paperSnapNow, showSnapMarks } from './paperSnap';
 import type { LassoGesture } from './lasso';
 import { createStrokeHooks, setStrokeHooks } from './strokeHooks';
 import type { StrokeHooks } from './strokeHooks';
@@ -76,6 +77,8 @@ interface InkGesture {
   space?: SpaceGesture;
   /** What the ruler, protractor, or grid holds this stroke to, set by its first sample. */
   snapHold?: Hold;
+  /** Alt was held during the stroke, which keeps its shape off the paper's lines. */
+  alt: boolean;
   radius: number;
   hold?: {
     x: number;
@@ -181,6 +184,7 @@ export function createPenTool(
         g.y0 = event.clientY;
       }
       g.travel = Math.max(g.travel, Math.hypot(event.clientX - g.x0, event.clientY - g.y0));
+      if (event.altKey) g.alt = true;
       samples.push(snapped(g, surface, sampleOf(event, ctx)));
     }
     if (samples.length === 0) return;
@@ -313,6 +317,7 @@ function begin(
     lastX: NaN,
     lastY: NaN,
     radius: 0,
+    alt: false,
   };
   const skip = eraserSkip(filter);
   if (mode === 'ink') {
@@ -410,9 +415,9 @@ function holdCheck(g: InkGesture, surface: InkSurface, holdMs: number): void {
     extra: isEnabled('ink.shapeTools'),
   });
   if (!match) return;
-  hold.shape = match;
+  hold.shape = toPaper(g, surface, match);
   hold.snapAt = { x: hold.x, y: hold.y };
-  hold.pivot = pivotOf(match.points);
+  hold.pivot = pivotOf(hold.shape.points);
   hold.live = null;
   drawShape(g, surface);
   announce(t('ink.shapes.made', { shape: t(`ink.shapes.names.${match.shape.kind}` as MessageKey) }));
@@ -421,6 +426,27 @@ function holdCheck(g: InkGesture, surface: InkSurface, holdMs: number): void {
 function drawShape(g: InkGesture, surface: InkSurface): void {
   const shape = g.hold?.shape;
   if (shape) surface.drawLive(g.hold?.live ?? shape.points, g.style, true);
+}
+
+/**
+ * A recognized shape snapped to the lines of ruled, grid, or dot paper, unless the paper has none, snapping is off,
+ * or Alt was held. Freehand ink never comes here: only a stroke that became a shape snaps.
+ */
+function toPaper(g: InkGesture, surface: InkSurface, match: ShapeMatch, linger = false): ShapeMatch {
+  const snap = paperSnapNow(surface.cameraNow().zoom, g.alt);
+  if (!snap) {
+    clearSnapMarks(surface);
+    return match;
+  }
+  const { shape, marks } = snapShape(snap, match.shape);
+  showSnapMarks(surface, marks, linger);
+  return shape === match.shape ? match : { ...match, shape, points: shapePoints(shape) };
+}
+
+/** The shape a held shape became after the pen grew or turned it, read back from its points. */
+function reread(match: ShapeMatch, width: number): ShapeMatch {
+  const again = recognizeShape(match.points, { minSize: 1, width, extra: true });
+  return again ?? match;
 }
 
 /** The stroke a shape makes: the shape's exact points, with no pressure, so the width stays even. */
@@ -450,11 +476,14 @@ async function finish(
     const held = g.hold?.shape ?? null;
     if (strokes.length === 1 && isEnabled('ink.shapes')) {
       const zoom = surface.cameraNow().zoom;
-      const match =
+      const found =
         (held && g.hold?.live ? { ...held, points: g.hold.live } : held) ??
         (shapes.inkToShape && g.style.tool !== 'highlighter'
           ? recognizeShape(strokes[0].points, { minSize: 16 / zoom, width: g.style.width })
           : null);
+      // A shape the pen grew or turned is read back from its points, so it snaps by what it now is.
+      const live = found && g.hold?.live && paperSnapNow(zoom, g.alt) ? reread(found, g.style.width) : found;
+      const match = live ? toPaper(g, surface, live, true) : null;
       if (match) {
         // A connector drawn to a shape ends on the shape's outline, and stays attached when the shape moves.
         const placed = g.hold?.live ? match.shape : snapConnector(match.shape, surface);

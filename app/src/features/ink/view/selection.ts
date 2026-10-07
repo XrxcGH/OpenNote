@@ -18,7 +18,12 @@ import { blockItems } from './lasso';
 import { anchorOffsetEdits, anchorSelection, detachSelection } from './anchoring';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
 import { startReplay } from './replay';
-import { followersForMatrix } from './shapeEdit';
+import { strokeKind } from '../edits/filters';
+import { pagePoints } from '../geometry/strokeIndex';
+import type { Vec } from '../geometry/types';
+import { anchorsOf, nudge, snapMove, snapPoint } from '../snap';
+import { clearSnapMarks, paperSnapNow, showSnapMarks } from './paperSnap';
+import { followersForMatrix, shapeOfStroke } from './shapeEdit';
 import { labelsIn } from './shapeLibrary';
 import type { InkSurface } from './surface';
 
@@ -45,6 +50,12 @@ interface Drag {
   corner: Corner | null;
   box: Bounds;
   matrix: Matrix;
+  /** The points of the selected shapes that a move snaps to the paper by, or null when no shape is selected. */
+  anchors: Vec[] | null;
+  /** Alt was held during the drag, which keeps it off the paper's lines. */
+  alt: boolean;
+  /** The points that landed on a line, shown while the drag goes on. */
+  marks: Vec[];
 }
 
 /** What the frame's pointer tool drives: the page view's router hands it every pointer pressed on the frame. */
@@ -161,7 +172,17 @@ class FrameView implements SelectionFrame {
     if (!box || event.button !== 0 || !(target === this.mover || target.dataset.inkCorner || side)) return;
     const start = this.host.viewport.get()?.toWorld(event.clientX, event.clientY) ?? { x: 0, y: 0 };
     const corner = (target.dataset.inkCorner as Corner | undefined) ?? null;
-    this.drag = { pointerId: event.pointerId, start, corner, box, matrix: IDENTITY, side };
+    this.drag = {
+      pointerId: event.pointerId,
+      start,
+      corner,
+      box,
+      matrix: IDENTITY,
+      side,
+      anchors: this.shapeAnchors(),
+      alt: event.altKey,
+      marks: [],
+    };
   }
 
   move(event: PointerEvent): void {
@@ -173,9 +194,21 @@ class FrameView implements SelectionFrame {
       this.frame.style.width = `${drag.width * this.surface.cameraNow().zoom + 8}px`;
       return;
     }
-    drag.matrix = drag.corner
-      ? resizeMatrix(drag.box, drag.corner, at)
-      : translation(at.x - drag.start.x, at.y - drag.start.y);
+    drag.alt ||= event.altKey;
+    // Shapes snap to the paper's lines as they move or grow; freehand ink alone moves freely.
+    const snap = drag.anchors ? paperSnapNow(this.surface.cameraNow().zoom, drag.alt) : null;
+    drag.marks = [];
+    if (drag.corner) {
+      const hit = snap ? snapPoint(snap, at) : null;
+      if (hit && (hit.x || hit.y)) drag.marks = [hit.point];
+      drag.matrix = resizeMatrix(drag.box, drag.corner, hit ? hit.point : at);
+    } else {
+      const delta = { x: at.x - drag.start.x, y: at.y - drag.start.y };
+      const moved = snap && drag.anchors ? snapMove(snap, drag.anchors, delta) : { delta, marks: [] };
+      drag.marks = moved.marks;
+      drag.matrix = translation(moved.delta.x, moved.delta.y);
+    }
+    showSnapMarks(this.surface, drag.marks);
     this.preview(drag.matrix);
   }
 
@@ -188,11 +221,13 @@ class FrameView implements SelectionFrame {
       if (drag.width) void tidySelection(this.host, this.surface, { kind: 'reflow', width: drag.width });
       return;
     }
+    showSnapMarks(this.surface, drag.marks, true);
     if (drag.matrix.some((v, i) => v !== IDENTITY[i])) void this.apply(drag.matrix);
   }
 
   cancel(): void {
     this.drag = null;
+    clearSnapMarks(this.surface);
     this.surface.endPreview();
     this.showBlocks(null);
     this.place();
@@ -209,6 +244,38 @@ class FrameView implements SelectionFrame {
 
   private selected(): InkStroke[] {
     return this.surface.strokes(this.selection().strokes);
+  }
+
+  /** The points the selected shapes snap to the paper by: their ends, corners, or boxes. Null with no shape. */
+  private shapeAnchors(): Vec[] | null {
+    const anchors: Vec[] = [];
+    for (const stroke of this.selected()) {
+      if (strokeKind(stroke) !== 'shape') continue;
+      const shape = shapeOfStroke(stroke);
+      if (shape) {
+        anchors.push(...anchorsOf(shape));
+        continue;
+      }
+      const points = pagePoints(stroke);
+      if (points.length === 0) continue;
+      const xs = points.map((p) => p.x);
+      const ys = points.map((p) => p.y);
+      anchors.push({ x: Math.min(...xs), y: Math.min(...ys) }, { x: Math.max(...xs), y: Math.max(...ys) });
+    }
+    return anchors.length > 0 ? anchors : null;
+  }
+
+  /** An arrow key's move: one spacing of the paper for shapes when snapping is on, else a page unit (ten with Shift). */
+  private nudgeBy(arrow: readonly [number, number], shift: boolean): Matrix {
+    const anchors = this.shapeAnchors();
+    const snap = anchors ? paperSnapNow(this.surface.cameraNow().zoom) : null;
+    if (!snap || !anchors) {
+      const step = shift ? KEY_STEP * 10 : KEY_STEP;
+      return translation(arrow[0] * step, arrow[1] * step);
+    }
+    const first = nudge(snap, anchors, arrow);
+    const more = shift ? 9 * snap.lattice.step : 0;
+    return translation(first.x + arrow[0] * more, first.y + arrow[1] * more);
   }
 
   private box(): Bounds | null {
@@ -380,9 +447,8 @@ class FrameView implements SelectionFrame {
   private readonly onKey = (event: KeyboardEvent) => {
     if (this.selection().strokes.length === 0) return;
     const arrow = ARROWS[event.key];
-    const step = event.shiftKey ? KEY_STEP * 10 : KEY_STEP;
     let run: (() => unknown) | null = null;
-    if (arrow && event.target === this.mover) run = () => this.apply(translation(arrow[0] * step, arrow[1] * step));
+    if (arrow && event.target === this.mover) run = () => this.apply(this.nudgeBy(arrow, event.shiftKey));
     else if (event.key === 'Delete' || event.key === 'Backspace') run = () => this.remove();
     else if (event.key === 'Escape') run = () => this.host.select({ blocks: [], strokes: [] });
     if (!run) return;

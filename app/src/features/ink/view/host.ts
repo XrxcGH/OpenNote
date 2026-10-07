@@ -3,6 +3,7 @@
 // parts the ink view uses, so the page view's real objects fit them as they are.
 import type { BlockJson, EditBatch, OpenPage, TxnAck } from '../../../services/pages/types';
 import type { InkRecognition, InkStroke as IntelStroke, TidyOperation, TidyPlan } from '../../../services/intel';
+import type { PaperLattice } from '../../../core/paperLattice';
 import type { Sheets } from '../space';
 
 export interface InkCamera {
@@ -110,6 +111,8 @@ export interface InkHost {
     pause(): void;
     setSpeed?(speed: number): void;
   };
+  /** The lines of the shown page's paper, which lines, arrows, and shapes snap to. Absent or null for plain paper. */
+  readonly paper?: Watched<PaperLattice | null>;
   /** The sheets of a paginated page, so pushed content lands on the next sheet. Absent in the flow and freeform views. */
   sheets?(): Sheets | null;
 }

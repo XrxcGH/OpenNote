@@ -4,6 +4,7 @@
 import { loadInkView } from '../../ink/flags';
 import { shownMedia } from '../images/shown';
 import { setInkStrokeReader } from '../seams/inkStrokes';
+import { shownPaper } from '../seams/paper';
 
 /** A part of the shown page, followed through the shown page view. */
 const part = <T>(pick: (page: NonNullable<ReturnType<typeof shownMedia.get>>) => T) => ({
@@ -34,6 +35,7 @@ function start(): void {
         selection: selection.pageSelection,
         select: selection.selectOnPage,
         objectCommand: (command) => shownMedia.get()?.objects.command(command),
+        paper: shownPaper,
         handwriting: {
           recognize: (strokes) => import('./inkSeams').then((seams) => seams.recognize(strokes)),
           tidy: (strokes, recognition, operation) =>

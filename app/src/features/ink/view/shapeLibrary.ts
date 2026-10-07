@@ -14,6 +14,8 @@ import { strokeKind } from '../edits/filters';
 import type { InkStroke } from '../model/types';
 import type { InkHost } from './host';
 import { blockItems } from './lasso';
+import { snapPolylines } from '../snap';
+import { paperSnapNow, showSnapMarks } from './paperSnap';
 import { shapeOfStroke } from './shapeEdit';
 import { activeSlot, styleOf } from './state';
 import type { InkSurface } from './surface';
@@ -32,7 +34,12 @@ export async function insertLibraryShape(host: InkHost, surface: InkSurface, id:
   const pen = styleOf(activeSlot());
   // A highlighter's wide, see-through line is no good for a diagram, so shapes take the pen's color with a pen's tool.
   const tool = pen.tool === 'highlighter' ? 'pen' : pen.tool;
-  const strokes: InkStroke[] = libraryShape(id, center, LIBRARY_SIZE).map((points) => ({
+  // On ruled, grid, or dot paper the shape lands on the nearest lines, sized in whole spacings. The middle of the view
+  // is no place the person chose, so it reaches as far as half a spacing.
+  const snap = paperSnapNow(camera.zoom);
+  const made = libraryShape(id, center, LIBRARY_SIZE);
+  const placed = snap ? snapPolylines({ ...snap, reach: snap.lattice.step / 2 }, made) : { lines: made, marks: [] };
+  const strokes: InkStroke[] = placed.lines.map((points) => ({
     id: newId(),
     tool,
     width: pen.width,
@@ -44,6 +51,7 @@ export async function insertLibraryShape(host: InkHost, surface: InkSurface, id:
   }));
   if (strokes.length === 0) return;
   if (await surface.add(strokes)) {
+    if (placed.marks.length > 0) showSnapMarks(surface, placed.marks, true);
     host.select({ strokes: strokes.map((s) => s.id), blocks: [] });
     announce(t('ink.library.inserted', { shape: t(`ink.library.${id}` as MessageKey) }));
   }

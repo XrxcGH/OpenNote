@@ -5,6 +5,7 @@ import { isEnabled } from '../../../app/flags';
 import { firstRuleBelow } from '../../../core/ruled';
 import { announce } from '../../../ui';
 import { t } from '../../../strings/t';
+import { shownPaper } from '../../page';
 import type { MountedPage } from '../../page';
 import {
   pageLayout,
@@ -19,7 +20,7 @@ import {
 } from '../layout';
 import type { PageLayout, PageViewSpec } from '../layout';
 import { GAP_HALF, MARGIN_PRESETS, MAX_SHEETS } from '../pagination';
-import { PRESETS, TEMPLATE_IDS, infinitePaths, paperPaths, paperRules, paperSvg } from '../paper';
+import { PRESETS, TEMPLATE_IDS, infinitePaths, paperLattice, paperPaths, paperRules, paperSvg } from '../paper';
 import type { PageBackground } from '../paper';
 import { lightTheme } from '../export/style';
 import { paperStyle } from '../print/css';
@@ -83,6 +84,8 @@ class PagesView {
   /** The y of the first rule below the page's title, on paper with rules: the header above it is left blank. */
   private headerRule: number | undefined;
   private lastMode: 'infinite' | 'paginated' | null = null;
+  /** The paper's lines as last drawn, which the drawing tools snap to. */
+  private lattice: ReturnType<typeof paperLattice> = null;
   /** Set when the person switches to the paginated view, which fits a sheet wider than the window. */
   private fitOnEnter = false;
 
@@ -161,6 +164,7 @@ class PagesView {
     cancelAnimationFrame(this.frame);
     this.paginator.stop();
     this.mounted.flow.setRules(null);
+    if (shownPaper.get() === this.lattice) shownPaper.set(null);
     delete this.mounted.viewport.world.dataset.sheets;
     this.sheetsLayer.remove();
     this.paperLayer.remove();
@@ -334,6 +338,7 @@ class PagesView {
     // On ruled paper the text lays out in the rules (features/page/layout/rules.ts), in either mode.
     this.mounted.flow.setRules(paperRules(this.layout.background, this.layout.sheet, paginated));
     this.refreshHeader();
+    this.publishPaper();
     this.reading?.refresh();
     this.updateCounter();
     this.refreshStrip();
@@ -353,6 +358,23 @@ class PagesView {
     this.paperKey = '';
     if (this.spec.mode === 'paginated') this.drawSheets();
     else this.drawInfinitePaper();
+    this.publishPaper();
+  }
+
+  /** The header's first rule as the paper is drawn with it: on sheets, never below the first sheet. */
+  private paperFrom(): number | undefined {
+    if (this.headerRule === undefined) return undefined;
+    return this.spec.mode === 'paginated' ? Math.min(this.headerRule, this.layout.sheet.height) : this.headerRule;
+  }
+
+  /**
+   * Hands the drawing tools the paper's lines: the same lattice the sheets and the infinite paper are drawn from, with
+   * the same header, so a shape that snaps lands on a line the page shows.
+   */
+  private publishPaper(): void {
+    const { background, sheet } = this.layout;
+    this.lattice = paperLattice(background, sheet, this.spec.mode === 'paginated', this.paperFrom());
+    shownPaper.set(this.lattice);
   }
 
   /** The middle of the letters of the page's first line of text, in page units from the top of the world. */
@@ -395,7 +417,8 @@ class PagesView {
       paperSvg(paperPaths(background, sheet, from), { x: 0, y: 0, w: sheet.width, h: sheet.height }, background, STYLE);
     const paper = draw();
     // Only the first sheet has the title: its rules begin below the header.
-    const first = this.headerRule === undefined ? paper : draw(Math.min(this.headerRule, sheet.height));
+    const from = this.paperFrom();
+    const first = from === undefined ? paper : draw(from);
     const key = `${sheet.width}x${sheet.height}:${count}:${paper.length}:${first.length}:${background.pattern}`;
     if (key === this.paperKey) return;
     this.paperKey = key;
@@ -425,7 +448,7 @@ class PagesView {
     const { world } = this.mounted.viewport;
     const w = Math.min(MAX_PAPER_SIDE, Math.max(world.offsetWidth, sheet.width));
     const h = Math.min(MAX_PAPER_SIDE, Math.max(world.offsetHeight, sheet.height * 2));
-    const paths = infinitePaths(background, { x: 0, y: 0, w, h }, sheet, this.headerRule);
+    const paths = infinitePaths(background, { x: 0, y: 0, w, h }, sheet, this.paperFrom());
     this.paperLayer.innerHTML = paperSvg(paths, { x: 0, y: 0, w, h }, background, STYLE);
     this.paperLayer.style.inlineSize = `${w}px`;
     this.paperLayer.style.blockSize = `${h}px`;

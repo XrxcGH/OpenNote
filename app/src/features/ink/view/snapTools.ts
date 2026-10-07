@@ -9,6 +9,7 @@ import { announce } from '../../../ui';
 import { DEFAULT_PROTRACTOR, DEFAULT_RULER, gridSize, protractorAngle, ANGLE_STEP_DEGREES } from '../snap';
 import type { Protractor, Ruler, SnapTools } from '../snap';
 import type { InkHost, InkPointerTool } from './host';
+import { hasPaperLines, paperNow } from './paperSnap';
 import { inkPrefs } from './prefs';
 import type { InkSurface } from './surface';
 
@@ -27,16 +28,25 @@ const REACH_PX = 14;
 const MOVE_STEP = 4;
 const TURN_STEP = Math.PI / 180;
 
+/**
+ * True when the Draw tab's own grid is in use: snap to grid is on and the page's paper has no lines. On ruled, grid,
+ * or dot paper, shapes snap to the paper's lines instead (paperSnap.ts), and freehand ink is never snapped.
+ */
+export function overlayGridOn(): boolean {
+  return inkPrefs.get().gridSnap && !hasPaperLines();
+}
+
 /** What strokes are held to now, or null when no snap tool is on. */
 export function snapToolsNow(zoom: number): SnapTools | null {
   if (!isEnabled('ink.snapTools')) return null;
   const prefs = inkPrefs.get();
-  if (!prefs.ruler && !prefs.protractor && !prefs.gridSnap) return null;
+  const gridOn = overlayGridOn();
+  if (!prefs.ruler && !prefs.protractor && !gridOn) return null;
   const geometry = snapGeometry.get();
   return {
     ruler: prefs.ruler ? geometry.ruler : null,
     protractor: prefs.protractor ? geometry.protractor : null,
-    grid: prefs.gridSnap ? gridSize(prefs.gridMm) : 0,
+    grid: gridOn ? gridSize(prefs.gridMm) : 0,
     reach: REACH_PX / zoom,
   };
 }
@@ -130,7 +140,10 @@ class SnapLayer {
       surface.onChange(() => this.place()),
       snapGeometry.subscribe(() => this.place()),
     );
-    this.stops.push(inkPrefs.subscribe(() => this.place()));
+    this.stops.push(
+      inkPrefs.subscribe(() => this.place()),
+      paperNow.subscribe(() => this.place()),
+    );
     this.place();
   }
 
@@ -155,7 +168,7 @@ class SnapLayer {
     // The grid: dots at every crossing, in the page's own place.
     const size = gridSize(prefs.gridMm) * zoom;
     Object.assign(this.grid.style, {
-      display: on && prefs.gridSnap ? '' : 'none',
+      display: on && overlayGridOn() ? '' : 'none',
       backgroundImage: 'radial-gradient(circle, var(--color-text-secondary) 1px, transparent 1.5px)',
       backgroundSize: `${size}px ${size}px`,
       backgroundPosition: `${-scrollX}px ${-scrollY}px`,

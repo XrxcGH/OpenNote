@@ -25,6 +25,7 @@ import { installZoomBox, toggleZoomBox } from './zoomBox';
 import { installShapeHandles } from './shapeEdit';
 import { addTextToShape } from './shapeLibrary';
 import { insertSpaceByHeight } from './space';
+import { followPaper } from './paperSnap';
 import { installSnapTools } from './snapTools';
 import { inkPrefs, setPrefs } from './prefs';
 import type { InkSurface } from './surface';
@@ -70,13 +71,13 @@ const penEditCommand = (which: EditGesture): CommandDef => ({
   run: () => setPrefs({ penEdit: { ...inkPrefs.get().penEdit, [which]: !inkPrefs.get().penEdit[which] } }),
 });
 
-/** The ruler, the protractor, and the grid are switches, so each is a command with a checked state. */
-const snapCommand = (key: 'ruler' | 'protractor' | 'gridSnap', title: MessageKey): CommandDef => ({
+/** The ruler, the protractor, the grid, and paper lines are switches, so each is a command with a checked state. */
+const snapCommand = (key: 'ruler' | 'protractor' | 'gridSnap' | 'paperSnap', title: MessageKey): CommandDef => ({
   id: `ink.snap.${key}`,
   title,
   keywords: 'ink.snap.keywords',
   category: 'view',
-  flag: 'ink.snapTools',
+  flag: key === 'paperSnap' ? 'ink.paperSnap' : 'ink.snapTools',
   checked: () => inkPrefs.get()[key],
   run: () => setPrefs({ [key]: !inkPrefs.get()[key] }),
 });
@@ -88,6 +89,7 @@ export function installMore(context: MoreContext): () => void {
     () => setViewContext(null),
     installHover(surface),
     installCanvasLock(host),
+    followPaper(host),
     installSnapTools(host, surfaces),
     installShapeHandles(host, surfaces),
     installReplay(host, surfaces),
@@ -139,6 +141,7 @@ export function installMore(context: MoreContext): () => void {
     snapCommand('ruler', 'ink.snap.ruler'),
     snapCommand('protractor', 'ink.snap.protractor'),
     snapCommand('gridSnap', 'ink.snap.grid'),
+    snapCommand('paperSnap', 'ink.snap.paper'),
     {
       id: 'ink.addShapeText',
       title: 'ink.library.addTextTitle',
