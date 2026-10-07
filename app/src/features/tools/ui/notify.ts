@@ -5,7 +5,7 @@ import { t } from '../../../strings/t';
 import { dueReminders } from '../upcoming/reminders';
 import type { UpcomingItem } from '../upcoming';
 import { loadStored } from './storage';
-import { readReminders, writeReminders } from './upcomingStores';
+import { pageItemsStore, readReminders, writeReminders } from './upcomingStores';
 
 const supported = (): boolean => typeof Notification !== 'undefined';
 
@@ -42,7 +42,8 @@ export function runReminderCheck(now = Date.now()): void {
   const items = Array.isArray(saved.items) ? saved.items : [];
   const state = readReminders();
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const found = dueReminders(items, now, zone, new Set(state.sent));
+  const fromPages = Object.values(pageItemsStore.get()).flatMap((entry) => entry.items);
+  const found = dueReminders([...items, ...fromPages], now, zone, new Set(state.sent), new Set(state.pageLines));
   if (found.length === 0) return;
   for (const reminder of found) showNotice(t('study.reminders.due'), reminder.title);
   writeReminders({ ...state, sent: [...state.sent, ...found.map((one) => one.key)] });

@@ -80,11 +80,17 @@ export interface RemindersState {
   on: boolean;
   /** Reminders already announced, so each comes once. */
   sent: string[];
+  /** The page lines the person asked a reminder for, by their reminder keys. */
+  pageLines: string[];
 }
 
 export const readReminders = (): RemindersState => {
   const saved = loadStored<Partial<RemindersState>>(REMINDERS, {});
-  return { on: saved.on === true, sent: list<string>(saved.sent).slice(-200) };
+  return {
+    on: saved.on === true,
+    sent: list<string>(saved.sent).slice(-200),
+    pageLines: list<string>(saved.pageLines),
+  };
 };
 
 export const writeReminders = (state: RemindersState): void =>

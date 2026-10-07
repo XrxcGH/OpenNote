@@ -7,11 +7,12 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
-import { dateKey, findDue, followingItem, groupUpcoming } from '../upcoming';
-import type { Due, GroupContext, Repeat, UpcomingGroupId, UpcomingItem } from '../upcoming';
+import { findDue, followingItem, groupUpcoming } from '../upcoming';
+import type { GroupContext, Repeat, UpcomingGroupId, UpcomingItem } from '../upcoming';
 import { dateIn } from '../upcoming/zone';
 import { loadStored, saveStored } from './storage';
 import { CalendarFile } from './CalendarFile';
+import { Groups } from './UpcomingList';
 import { RemindersSwitch } from './RemindersSwitch';
 import { Overview } from './UpcomingOverview';
 import { Planner } from './UpcomingPlanner';
@@ -35,17 +36,6 @@ function readSaved(): Saved {
   return { items, next: typeof saved.next === 'number' ? saved.next : items.length + 1 };
 }
 
-function whenText(due: Due): string {
-  const day = new Date(due.date.year, due.date.month - 1, due.date.day);
-  const date = day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  if (!due.time) return date;
-  const time = new Date(2000, 0, 1, due.time.hour, due.time.minute).toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-  return `${date}, ${time}`;
-}
-
 function context(): GroupContext {
   return { now: Date.now(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
 }
@@ -58,71 +48,6 @@ function repeatOf(choice: RepeatChoice, days: number): Repeat | undefined {
   if (choice === 'afterDays')
     return { every: Math.min(365, Math.max(1, Math.round(days) || 1)), unit: 'day', mode: 'afterFinish' };
   return undefined;
-}
-
-interface GroupsProps {
-  groups: ReturnType<typeof groupUpcoming>;
-  shown: readonly (UpcomingGroupId | 'undated')[];
-  onChange(id: string, patch: Partial<UpcomingItem> | null): void;
-  onSkip(id: string): void;
-}
-
-/** The groups that have something in them, each with its items. */
-function Groups({ groups, shown, onChange, onSkip }: GroupsProps) {
-  return (
-    <>
-      {shown.map((id) => (
-        <section key={id} aria-labelledby={`upcoming-${id}`} className={styles.group}>
-          <h3 id={`upcoming-${id}`} className={styles.groupTitle}>
-            {t(`smart.tools.upcoming.groups.${id}`)}
-          </h3>
-          <ul className={styles.items}>
-            {groups[id].map((item) => (
-              <li key={item.id} className={styles.item}>
-                <input
-                  type="checkbox"
-                  checked={item.done}
-                  disabled={Boolean(item.page)}
-                  aria-label={t('smart.tools.upcoming.done', { title: item.title })}
-                  onChange={(event) => onChange(item.id, { done: event.target.checked })}
-                />
-                <span className={styles.itemTitle}>
-                  {item.title}
-                  {item.page ? (
-                    <span className={styles.note}> {t('study.dueDates.fromPage', { page: item.page.title })}</span>
-                  ) : null}
-                  {item.repeat ? <span className={styles.note}> {t('study.repeat.badge')}</span> : null}
-                </span>
-                {item.due ? (
-                  <span className={styles.itemDue} title={dateKey(item.due.date)}>
-                    {whenText(item.due)}
-                  </span>
-                ) : null}
-                {item.repeat ? (
-                  <Button
-                    variant="quiet"
-                    aria-label={t('study.repeat.skipNamed', { title: item.title })}
-                    onClick={() => onSkip(item.id)}
-                  >
-                    {t('study.repeat.skip')}
-                  </Button>
-                ) : null}
-                {item.page ? null : (
-                  <Button
-                    variant="quiet"
-                    aria-label={t('smart.tools.upcoming.remove', { title: item.title })}
-                    onClick={() => onChange(item.id, null)}
-                  >
-                    ×
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </>
-  );
 }
 
 export function UpcomingTool() {
@@ -244,7 +169,13 @@ export function UpcomingTool() {
         </p>
       ) : null}
       {groupsShown.length === 0 ? <p className={styles.empty}>{t('smart.tools.upcoming.empty')}</p> : null}
-      <Groups groups={groups} shown={groupsShown} onChange={change} onSkip={(id) => advance(id, false)} />
+      <Groups
+        groups={groups}
+        shown={groupsShown}
+        onChange={change}
+        onSkip={(id) => advance(id, false)}
+        onNote={setNote}
+      />
       <Planner />
       <RemindersSwitch />
     </div>

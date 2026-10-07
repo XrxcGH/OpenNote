@@ -262,10 +262,14 @@ export const study = {
     updated: 'Updated from the file: {added} added, {removed} removed.',
   },
   reminders: {
-    label: 'Remind me with a Windows notification when something is due',
+    label: 'Allow Windows notifications for reminders and timers',
     blocked: 'Windows did not allow notifications for this app. You can allow them in Windows Settings.',
     due: 'Due now',
     timer: 'Timer finished',
+    item: 'Remind me',
+    itemNamed: 'Remind me about {title}',
+    itemOn: 'A reminder is set for {title}.',
+    itemOff: 'The reminder for {title} is off.',
   },
   repeat: {
     label: 'Repeat',

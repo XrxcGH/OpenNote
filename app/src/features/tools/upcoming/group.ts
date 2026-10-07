@@ -23,6 +23,8 @@ export interface UpcomingItem {
   kind?: 'task' | 'event';
   /** Set on a to-do that repeats. Finishing or skipping it makes the next one. */
   repeat?: Repeat;
+  /** True when the person asked for a Windows reminder when this item is due. Repeats keep it. */
+  remind?: boolean;
   /** The calendar file the item came from, so an update from that file can replace it. */
   source?: string;
   /** Set on an item read from a line of a page. The page owns it, so Upcoming shows it and does not change it. */
