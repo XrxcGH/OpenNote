@@ -8,14 +8,14 @@ Reading and running expressions belong to the shared engine in `core/expr`. This
 
 Everything is exported from `index.ts`.
 
-| Name                                                  | What it does                                                                              |
-| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `calculate(source, context)`                          | Evaluates an expression. Returns a value or an error with a code and a place.             |
-| `newSession`, `submit`, `setAngleMode`, and so on     | A session as plain data: history, nine memory slots, and the angle mode.                  |
-| `formatNumber(value, options)`                        | Writes a result: automatic, scientific, engineering, or fixed.                            |
-| `convert`, `convertText`, `parseConversion`           | Unit conversion for ten categories, such as `5 km to mi`.                                 |
-| `evaluateNotes(lines, options)`                       | Runs a page of math lines: `rent = 1,200`, `rent * 12 =`, `5 mi in km =`, `f(x) = x^2`.   |
-| `calculatorUnits`, `CALCULATOR`, `NOTES`              | The unit table, the calculator dialect, and the notes dialect, for other features.        |
+| Name                                              | What it does                                                                            |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `calculate(source, context)`                      | Evaluates an expression. Returns a value or an error with a code and a place.           |
+| `newSession`, `submit`, `setAngleMode`, and so on | A session as plain data: history, nine memory slots, and the angle mode.                |
+| `formatNumber(value, options)`                    | Writes a result: automatic, scientific, engineering, or fixed.                          |
+| `convert`, `convertText`, `parseConversion`       | Unit conversion for ten categories, such as `5 km to mi`.                               |
+| `evaluateNotes(lines, options)`                   | Runs a page of math lines: `rent = 1,200`, `rent * 12 =`, `5 mi in km =`, `f(x) = x^2`. |
+| `calculatorUnits`, `CALCULATOR`, `NOTES`          | The unit table, the calculator dialect, and the notes dialect, for other features.      |
 
 ## What the screens need
 

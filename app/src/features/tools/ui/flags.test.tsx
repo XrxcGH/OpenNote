@@ -11,7 +11,9 @@ import { UpcomingTool } from './UpcomingTool';
 beforeEach(() => {
   localStorage.clear();
   setExams([{ id: 'x1', name: 'Chemistry final', date: '2999-01-01', time: '' }]);
-  setTimetable([{ id: 'k1', name: 'Organic lab', days: [0, 1, 2, 3, 4, 5, 6], start: '09:00', end: '09:50', room: '' }]);
+  setTimetable([
+    { id: 'k1', name: 'Organic lab', days: [0, 1, 2, 3, 4, 5, 6], start: '09:00', end: '09:50', room: '' },
+  ]);
 });
 afterEach(() => {
   setExams([]);

@@ -264,6 +264,8 @@ export const qol = {
     savedNone: 'Searches you save in the search panel appear here.',
     upcomingOpen: 'Open Upcoming',
     upcomingNone: 'Upcoming is not available.',
+    upcomingList: 'Next due',
+    upcomingEmpty: 'Nothing is due. Dated tasks and checkboxes on your pages appear here.',
     settingsTitle: 'Start page',
     startOnHome: 'Start on Home',
     startHelp: 'When this is off, OpenNote opens the last page you used.',
