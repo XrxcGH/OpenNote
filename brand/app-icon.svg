@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
   <title id="title">OpenNote app icon</title>
   <rect width="256" height="256" rx="56" fill="#3B6A4D"/>
-  <path d="M80 44H160L204 88V200A16 16 0 0 1 188 216H80A16 16 0 0 1 64 200V60A16 16 0 0 1 80 44Z" fill="#FFFCF6"/>
-  <path d="M160 44V76A12 12 0 0 0 172 88H204Z" fill="#E3DACC"/>
-  <path d="M92 168C102 128 124 114 134 140S160 180 180 132" fill="none" stroke="#3B6A4D" stroke-width="14" stroke-linecap="round"/>
-  <circle cx="180" cy="132" r="10" fill="#A9502F"/>
+  <path d="M74 42H154L198 86V198A16 16 0 0 1 182 214H74A16 16 0 0 1 58 198V58A16 16 0 0 1 74 42Z" fill="#FFFCF6"/>
+  <path d="M154 42V74A12 12 0 0 0 166 86H198Z" fill="#E3DACC"/>
+  <path d="M82.5 166C92.5 126 114.5 112 124.5 138S150.5 178 170.5 130" fill="none" stroke="#3B6A4D" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="170.5" cy="130" r="10" fill="#A9502F"/>
 </svg>
