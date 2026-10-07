@@ -427,6 +427,32 @@ describe('text', () => {
   });
 });
 
+describe('lined paper', () => {
+  it('sets every typed line 3 px above a rule, and runs no rule through the letters', () => {
+    const root = picture('19-view-tab.svg');
+    const rules = [...walk(root)]
+      // The rules run across the page, 36 px short of its right edge.
+      .filter(
+        (e) => e.tag === 'line' && e.attrs.y1 === e.attrs.y2 && Number(e.attrs.x2) - Number(e.attrs.x1) === 832 - 36,
+      )
+      .map((e) => Number(e.attrs.y1));
+    assert.ok(rules.length > 20);
+    const typed = [...walk(root)].filter(
+      (e) => e.tag === 'text' && (e.attrs['font-family'] ?? '').includes('Literata') && Number(e.attrs.y) > rules[0],
+    );
+    assert.ok(typed.length >= 7);
+    for (const line of typed) {
+      const baseline = Number(line.attrs.y);
+      const below = Math.min(...rules.filter((r) => r >= baseline).map((r) => r - baseline));
+      assert.ok(Math.abs(below - 3) <= 0.5, `"${line.text}" is ${below} px above the rule beneath it`);
+      // The letters rise about 0.7 of their size above the baseline; no rule crosses them.
+      const size = Number(line.attrs['font-size']);
+      const through = rules.filter((r) => r < baseline && r > baseline - size * 0.7);
+      assert.deepEqual(through, [], `a rule runs through "${line.text}"`);
+    }
+  });
+});
+
 describe('the phone', () => {
   it("keeps every keep-out zone on the phone inside its screen's rounded corners", () => {
     const root = picture('10-phone.svg');

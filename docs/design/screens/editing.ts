@@ -63,8 +63,12 @@ const LINK = '[[Meiosis]]';
 const LINK_AT = textWidth(QUESTION, 15, 400, 'reading');
 const LINK_WIDTH = textWidth(LINK, 15, 400, 'reading');
 
-/** Typed notes as the page shows them: a heading, a sentence, a list, and a page link. */
-function notes(p: Palette, x: number, y: number): string {
+/**
+ * Typed notes as the page shows them: a heading, a sentence, a list, and a page link. On ruled paper every line
+ * takes the next rule, 28 px apart, its baseline 3 px above the rule as in the app (blocks.module.css), and the
+ * heading needs no line of its own under it.
+ */
+function notes(p: Palette, x: number, y: number, ruled = false): string {
   const body = { size: 15, fill: p.c('text.primary'), font: 'reading' as const };
   const bullets = [
     'Prophase: the chromosomes coil up and the nuclear envelope breaks down',
@@ -74,15 +78,15 @@ function notes(p: Palette, x: number, y: number): string {
   ];
   return [
     text(x, y, HEADING, { size: 22, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
-    line([x, y + 10], [x + 660, y + 10], p.c('border.subtle')),
-    text(x, y + 44, 'A cell divides in four steps, and each one has a job.', body),
+    ruled ? '' : line([x, y + 10], [x + 660, y + 10], p.c('border.subtle')),
+    text(x, y + (ruled ? 28 : 44), 'A cell divides in four steps, and each one has a job.', body),
     ...bullets
-      .map((item, i) => [
-        circle(x + 8, y + 76 + i * 28, 3, p.c('accent.clay')),
-        text(x + 24, y + 81 + i * 28, item, body),
-      ])
+      .map((item, i) => {
+        const baseline = y + (ruled ? 56 : 81) + i * 28;
+        return [circle(x + 8, baseline - 5, 3, p.c('accent.clay')), text(x + 24, baseline, item, body)];
+      })
       .flat(),
-    textRuns(x, y + 212, [QUESTION, { text: LINK, fill: p.c('text.link') }, '?'], body),
+    textRuns(x, y + (ruled ? 196 : 212), [QUESTION, { text: LINK, fill: p.c('text.link') }, '?'], body),
   ].join('');
 }
 
@@ -236,10 +240,16 @@ export function viewTab(): Screen {
     ...win(p, 'View', VIEW_TOOLS),
     ...pageFrame(p),
     ...rules,
-    notes(p, X, y - 36),
+    // The heading's baseline is 3 px above the third rule.
+    notes(p, X, BODY_TOP + 120 + 2 * 28 - 3, true),
     menu(p, 1170, BODY_TOP + 2, 234, items, 2, 2),
     ...windowAnnotations(),
-    tag(X, BODY_TOP + 560, 'Lined, grid, and dot paper: typed text sits on the rules like handwriting', NOTE.region),
+    tag(
+      X,
+      BODY_TOP + 560,
+      'Lined, grid, and dot paper: typed text sits just above the rules, like handwriting',
+      NOTE.region,
+    ),
     tag(X, BODY_TOP + 620, 'Pane buttons show and hide the notebooks and pages panes', NOTE.region),
     tag(X, BODY_TOP + 590, 'Infinite canvas or pages with breaks; Paper picks Letter, A4, A5, or Legal', NOTE.region),
   ];
