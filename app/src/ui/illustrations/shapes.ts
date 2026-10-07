@@ -69,7 +69,8 @@ export const BOOKS = {
     'M5.5 21.8C20 22.2 36 22.1 49.6 21.7L49.2 15C36 15.4 20 15.3 5.2 15Z',
     'M12.4 15.1C24 15.4 36 15.4 46.2 15.1L45.8 8.8C36 9.2 24 9.1 12 8.8Z',
   ],
-  spines: 'M7 30.2v7.4m3.4-7.5v7.6m43.2-15.5v7.3m-3.2-7.2v7.2M10 15.2v6.6m3.4-6.6v6.7M42.8 9v6.1m-3-6v6',
+  /** Two bands on each spine, the nearer one 4.4 to 4.8 units in from its book's end, as on the others. */
+  spines: 'M7 30.2v7.4m3.4-7.5v7.6m43.2-15.5v7.3m-3.2-7.2v7.2M10 15.2v6.6m3.4-6.6v6.7M41.6 9v6.1m-3-6v6',
   bookmark: 'M44 29.8V35.6L45.8 34.4 47.6 35.6V29.8',
 } as const;
 

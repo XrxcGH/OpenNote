@@ -45,6 +45,36 @@ describe('how books rest', () => {
   });
 });
 
+describe('how books are bound', () => {
+  it('sets the bands on every spine the same distance in from its end and apart', () => {
+    const paths = [...drawn(renderUi(<Books />).container).querySelectorAll<SVGGeometryElement>('path')];
+    const books = paths.slice(0, 4).map((book) => book.getBBox());
+    // The bands are vertical strokes, written as moves and vertical lines.
+    const bands: { x: number; y: number }[] = [];
+    let [x, y] = [0, 0];
+    for (const [, cmd, args] of (paths[4].getAttribute('d') ?? '').matchAll(/([MmVv])([^MmVv]*)/g)) {
+      const n = args.match(/-?\d*\.?\d+/g)?.map(Number) ?? [];
+      if (cmd === 'M') [x, y] = n;
+      if (cmd === 'm') [x, y] = [x + n[0], y + n[1]];
+      if (cmd === 'V' || cmd === 'v') {
+        const end = cmd === 'V' ? n[0] : y + n[0];
+        bands.push({ x, y: (y + end) / 2 });
+        y = end;
+      }
+    }
+    expect(bands).toHaveLength(8);
+    for (const book of books) {
+      const own = bands.filter((b) => b.y > book.y && b.y < book.y + book.height).map((b) => b.x);
+      expect(own).toHaveLength(2);
+      const inset = Math.min(...own.map((bx) => Math.min(bx - book.x, book.x + book.width - bx)));
+      expect(inset).toBeGreaterThanOrEqual(4.2);
+      expect(inset).toBeLessThanOrEqual(5);
+      expect(Math.abs(own[0] - own[1])).toBeGreaterThanOrEqual(3);
+      expect(Math.abs(own[0] - own[1])).toBeLessThanOrEqual(3.41);
+    }
+  });
+});
+
 describe('where things stand', () => {
   it.each(['notebooks', 'page', 'trash'] as const)('stands everything in the %s drawing on the shelf', (kind) => {
     const svg = drawn(renderUi(<EmptyArt kind={kind} />).container);
