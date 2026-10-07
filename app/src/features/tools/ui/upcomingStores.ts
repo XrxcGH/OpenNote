@@ -2,7 +2,7 @@
 // items read from lines on pages, and whether reminders are on. All of it stays on this device.
 import { createStore } from '../../../state/store';
 import type { ClassSlot, Exam } from '../upcoming';
-import { dateKey } from '../upcoming';
+import { dateKey, isExamTarget } from '../upcoming';
 import { findPageDues } from '../upcoming/pageDue';
 import type { UpcomingItem } from '../upcoming';
 import { loadStored, saveStored } from './storage';
@@ -14,12 +14,19 @@ export const REMINDERS = 'reminders';
 
 const list = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
 
-export const examsStore = createStore<readonly Exam[]>(
-  list<Exam>(loadStored<unknown>(EXAMS, [])).filter(
-    (exam) => typeof exam?.id === 'string' && typeof exam.date === 'string',
-  ),
-  'tools exams',
-);
+/** An exam as it was saved: a target that is not valid is dropped, and the rest is kept. */
+const readExam = (exam: Exam): Exam => {
+  const { target, ...rest } = exam;
+  return isExamTarget(target) ? { ...rest, target } : rest;
+};
+
+/** The exams saved on this device. */
+export const loadExams = (): Exam[] =>
+  list<Exam>(loadStored<unknown>(EXAMS, []))
+    .filter((exam) => typeof exam?.id === 'string' && typeof exam.date === 'string')
+    .map(readExam);
+
+export const examsStore = createStore<readonly Exam[]>(loadExams(), 'tools exams');
 export const timetableStore = createStore<readonly ClassSlot[]>(
   list<ClassSlot>(loadStored<unknown>(TIMETABLE, [])).filter(
     (slot) => typeof slot?.id === 'string' && Array.isArray(slot.days),

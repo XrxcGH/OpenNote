@@ -70,7 +70,12 @@ export function Overview() {
           <ul className={styles.items}>
             {ahead.map((exam) => (
               <li key={exam.id} className={styles.item}>
-                <span className={styles.itemTitle}>{exam.name}</span>
+                <span className={styles.itemTitle}>
+                  {exam.name}
+                  {exam.target ? (
+                    <span className={styles.note}> {t('study.exams.for', { place: exam.target.label })}</span>
+                  ) : null}
+                </span>
                 <span className={styles.itemDue}>{t('study.exams.daysLeft', { count: daysLeft(exam, today) })}</span>
               </li>
             ))}

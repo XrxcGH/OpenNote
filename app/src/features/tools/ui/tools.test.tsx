@@ -130,7 +130,7 @@ describe('upcoming', () => {
     expect(screen.getByText(/Nothing due/)).toBeTruthy();
     await userEvent.fill(screen.getByLabelText('Task and when it is due'), 'Read chapter 4 in 3 days');
     await userEvent.click(screen.getByRole('button', { name: 'Add a task' }));
-    const list = screen.getByRole('list');
+    const list = screen.getAllByRole('list')[0];
     expect(within(list).getByText('Read chapter 4')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'No date' })).toBeNull();
   });

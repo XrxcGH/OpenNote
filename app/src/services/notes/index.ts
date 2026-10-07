@@ -107,3 +107,8 @@ export function useNotes(): NotesService {
   if (!service) throw new Error('useNotes needs a NotesProvider.');
   return service;
 }
+
+/** The service of the provider around, or the running one for a tree with no provider, such as a tool window. */
+export function useNotesIfAny(): NotesService | null {
+  return useContext(NotesContext) ?? current;
+}

@@ -20,8 +20,43 @@ export interface Exam {
   time: string;
   /** A deck the exam is for. The deck shows the same countdown. */
   deck?: string;
+  /** The notebook or section the exam is for. The name is kept so it still reads right if the notebook is gone. */
+  target?: ExamTarget;
   /** The calendar file it came from, so an update can replace it. */
   source?: string;
+}
+
+/** What an exam is attached to: a notebook or one of its sections. */
+export interface ExamTarget {
+  kind: 'notebook' | 'section';
+  id: string;
+  label: string;
+  /** The notebook the target is in, which is the target itself for a notebook. */
+  notebookId: string;
+}
+
+export const isExamTarget = (value: unknown): value is ExamTarget => {
+  const target = value as ExamTarget;
+  return (
+    Boolean(target) &&
+    (target.kind === 'notebook' || target.kind === 'section') &&
+    typeof target.id === 'string' &&
+    typeof target.label === 'string' &&
+    typeof target.notebookId === 'string'
+  );
+};
+
+/** The exams that belong with a place: its own, those of its notebook, and those attached to nothing. */
+export function examsAt(
+  exams: readonly Exam[],
+  place: { notebookId: string | null; sectionId: string | null },
+): Exam[] {
+  return exams.filter((exam) => {
+    const target = exam.target;
+    if (!target) return true;
+    if (target.kind === 'notebook') return target.id === place.notebookId;
+    return target.id === place.sectionId;
+  });
 }
 
 /** Whole days from today to the exam: 0 on the day, negative after it. NaN if the date is not valid. */

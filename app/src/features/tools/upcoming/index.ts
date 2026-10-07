@@ -30,7 +30,9 @@ export {
   clockText,
   daysLeft,
   examsAhead,
+  examsAt,
   followingItem,
+  isExamTarget,
   isRepeat,
   minutesOfText,
   nextClass,
@@ -38,4 +40,4 @@ export {
   planIcsImport,
   updateFromFile,
 } from './productivity';
-export type { ClassSlot, Exam, IcsPlan } from './productivity';
+export type { ClassSlot, Exam, ExamTarget, IcsPlan } from './productivity';
