@@ -61,6 +61,12 @@
     border-radius: var(--radius-sm);
   }
 
+  /* Export selection's crop, shown while its buttons are pointed at or focused. */
+  [data-ink-crop] {
+    border: 1px dashed var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
   :global(.ink-selection-frame) [data-ink-move] {
     position: absolute;
     inset: 0;

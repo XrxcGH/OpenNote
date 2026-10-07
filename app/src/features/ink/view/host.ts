@@ -61,6 +61,8 @@ export interface InkBlockLayer {
 export interface InkSelection {
   readonly blocks: readonly string[];
   readonly strokes: readonly string[];
+  /** The lasso's own path, in page units, when the lasso made the selection. */
+  readonly lasso?: readonly { readonly x: number; readonly y: number }[];
 }
 
 /** A store the ink view reads and follows, but never sets. */

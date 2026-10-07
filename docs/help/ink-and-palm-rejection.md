@@ -48,6 +48,17 @@ Press Ctrl+K and choose one of these by name.
 | Replay ink | Plays your strokes back, and plays a recording along with them. |
 | Ruler, Protractor, and Snap to grid | Help you draw neat diagrams. |
 
+## Export a selection
+
+Lasso ink, text, or pictures, then choose Export selection or Copy as image on the bar above the selection, or in its right-click menu. Point at either button to see a dashed outline of the area you will get.
+
+In the export dialog, Area chooses how the edges are cut:
+
+- **Smart** fits the edges to what you selected, with a small margin.
+- **Exact** keeps the shape you drew with the lasso.
+
+OpenNote remembers your choice for next time. Copy as image uses it too. You can save the selection as a PDF, PNG, SVG, or Word file.
+
 ## Handwriting to text
 
 Lasso your writing and choose Convert to text. The Writing pen converts as you write. Both use on-device intelligence, which you turn on in Settings. See [on-device intelligence](on-device-intelligence.md).

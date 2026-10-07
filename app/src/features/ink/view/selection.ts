@@ -4,6 +4,7 @@
 // lets go of the selection.
 import type { BlockJson, Edit } from '../../../services/pages/types';
 import { isEnabled } from '../../../app/flags';
+import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, buttonClass, openMenu } from '../../../ui';
@@ -29,6 +30,9 @@ const KEY_STEP = 1;
 const MIN_SIZE = 4;
 /** The bar keeps this many CSS px from the sides of the page view. */
 const BAR_MARGIN = 8;
+/** Export selection's crop around the content, in page units: its padding and least size (features/pages/selection). */
+const CROP_PADDING = 12;
+const CROP_MIN = 96;
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
@@ -103,6 +107,9 @@ class FrameView implements SelectionFrame {
   private readonly mover: HTMLButtonElement;
   private readonly bar: HTMLDivElement;
   private side: HTMLButtonElement | null = null;
+  /** The dashed area Export selection will crop to, shown while its buttons are pointed at or focused. */
+  private readonly crop: HTMLDivElement;
+  private cropShown = false;
   private readonly stops: (() => void)[];
   private drag: Drag | null = null;
   private had = 0;
@@ -140,8 +147,32 @@ class FrameView implements SelectionFrame {
       ...(isEnabled('ink.replay')
         ? ([['ink.replay.title', 'replay', () => startReplay(host, surface)]] as [MessageKey, string, () => void][])
         : []),
+      ...(isEnabled('pages.exportSelection')
+        ? ([
+            [
+              'ink.selection.exportSelection',
+              'export',
+              () => void executeCommand('pages.exportSelection', undefined, 'menu'),
+            ],
+            ['ink.selection.copyImage', 'copyImage', () => void executeCommand('pages.copyImage', undefined, 'menu')],
+          ] as [MessageKey, string, () => void][])
+        : []),
     ]);
     ({ frame: this.frame, mover: this.mover, bar: this.bar } = parts);
+    this.crop = surface.chrome.ownerDocument.createElement('div');
+    this.crop.dataset.inkCrop = '';
+    this.crop.setAttribute('aria-hidden', 'true');
+    Object.assign(this.crop.style, { position: 'absolute', display: 'none', pointerEvents: 'none' });
+    for (const id of ['export', 'copyImage']) {
+      const action = this.bar.querySelector<HTMLElement>(`[data-ink-action="${id}"]`);
+      if (!action) continue;
+      const show = () => this.showCrop(true);
+      const hide = () => this.showCrop(false);
+      action.addEventListener('pointerenter', show);
+      action.addEventListener('focus', show);
+      action.addEventListener('pointerleave', hide);
+      action.addEventListener('blur', hide);
+    }
     this.frame.addEventListener('keydown', this.onKey);
     this.frame.addEventListener('contextmenu', this.onContext);
     if (handwritingAvailable(host)) {
@@ -149,7 +180,7 @@ class FrameView implements SelectionFrame {
       this.side.dataset.inkSide = '';
       this.frame.append(this.side);
     }
-    surface.chrome.append(this.frame);
+    surface.chrome.append(this.crop, this.frame);
     this.stops = [host.selection.subscribe(() => this.selectionChanged()), surface.onChange(() => this.place())];
     this.place();
   }
@@ -201,6 +232,7 @@ class FrameView implements SelectionFrame {
   stop(): void {
     this.stops.forEach((stop) => stop());
     this.frame.remove();
+    this.crop.remove();
   }
 
   private selection() {
@@ -229,6 +261,7 @@ class FrameView implements SelectionFrame {
     const box = this.box();
     if (!box) {
       this.frame.style.display = 'none';
+      this.crop.style.display = 'none';
       return;
     }
     const shown = this.drag ? transformBox(box, this.drag.matrix) : box;
@@ -242,6 +275,29 @@ class FrameView implements SelectionFrame {
       height: `${Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8}px`,
     });
     this.fitBar(left);
+    this.placeCrop(shown);
+  }
+
+  private showCrop(on: boolean): void {
+    this.cropShown = on;
+    this.place();
+  }
+
+  /** The crop as Export selection makes it: the box with a margin, at least an inch each way, around its center. */
+  private placeCrop(box: Bounds): void {
+    if (!this.cropShown || this.drag) {
+      this.crop.style.display = 'none';
+      return;
+    }
+    const crop = cropBounds(box);
+    const { zoom, scrollX, scrollY } = this.surface.cameraNow();
+    Object.assign(this.crop.style, {
+      display: '',
+      left: `${crop.minX * zoom - scrollX}px`,
+      top: `${crop.minY * zoom - scrollY}px`,
+      width: `${(crop.maxX - crop.minX) * zoom}px`,
+      height: `${(crop.maxY - crop.minY) * zoom}px`,
+    });
   }
 
   /**
@@ -417,6 +473,15 @@ export function createFrameTool(frameOf: () => SelectionFrame | null): InkPointe
     up: (event) => frameOf()?.up(event),
     cancel: () => frameOf()?.cancel(),
   };
+}
+
+/** Export selection's smart crop around a box: CROP_PADDING all round, and at least CROP_MIN each way. */
+export function cropBounds(b: Bounds): Bounds {
+  const w = Math.max(b.maxX - b.minX + 2 * CROP_PADDING, CROP_MIN);
+  const h = Math.max(b.maxY - b.minY + 2 * CROP_PADDING, CROP_MIN);
+  const cx = (b.minX + b.maxX) / 2;
+  const cy = (b.minY + b.maxY) / 2;
+  return { minX: cx - w / 2, minY: cy - h / 2, maxX: cx + w / 2, maxY: cy + h / 2 };
 }
 
 function transformBox(b: Bounds, m: Matrix): Bounds {

@@ -71,6 +71,15 @@ export const ink = {
     recolor: 'Recolor the selection',
     thicker: 'Make ink thicker',
     thinner: 'Make ink thinner',
+    exportSelection: 'Export selection',
+    copyImage: 'Copy as image',
+  },
+  exportArea: {
+    label: 'Area',
+    smart: 'Smart',
+    smartHelp: 'Fits the edges to what you selected, with a small margin.',
+    exact: 'Exact',
+    exactHelp: 'Keeps the shape you drew with the lasso.',
   },
   announce: {
     erased: '{count, plural, one {Erased # stroke} other {Erased # strokes}}',

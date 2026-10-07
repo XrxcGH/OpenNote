@@ -137,8 +137,8 @@ Presets, set per page, or as a notebook default:
 
 (Phase 6)
 
-- Lasso any area, then choose "Export selection" to save it as PDF, PNG, SVG or `.docx`, or copy it as an image. Status: Built, untested by hand.
-- Smart select grows the lasso to include whole strokes, text boxes and images that it only partly touches, and trims empty margins. Status: Built, untested by hand.
+- Lasso any area, then choose "Export selection" to save it as PDF, PNG, SVG or `.docx`, or copy it as an image. Both sit on the lasso bar and in the selection's right-click menu, and pointing at either shows the crop as a dashed outline. Status: Built, untested by hand.
+- Smart select grows the lasso to include whole strokes, text boxes and images that it only partly touches, and trims empty margins. Exact keeps the lasso's own shape. The dialog's Smart and Exact choice is remembered on the device. Status: Built, untested by hand.
 - This works for annotated images: import a photo, draw on it, and export just that part. Status: Built, untested by hand.
 
 ## On-device intelligence setup

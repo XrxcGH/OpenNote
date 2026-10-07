@@ -6,11 +6,18 @@ import { Dialog, RadioCard, RadioGroup, showToast } from '../../../ui';
 import { isEnabled } from '../../../app/flags';
 import { exportPdfFile } from '../host/exporter';
 import { saveFile } from '../host/files';
-import { blockBoxes, makePicture, selectionFor, svgToPng } from '../host/picture';
+import {
+  blockBoxes,
+  makePicture,
+  rememberSelectMode,
+  rememberedSelectMode,
+  selectionFor,
+  svgToPng,
+} from '../host/picture';
 import type { Picture, PictureScope } from '../host/picture';
 import { exportFileName } from '../pdf';
 import { cropPage, selectionText } from '../selection';
-import type { Chosen } from '../selection';
+import type { Chosen, SelectMode } from '../selection';
 import type { PageSource } from '../host/source';
 import styles from './pagesUi.module.css';
 
@@ -41,11 +48,11 @@ const SCALE_KEYS = {
 } as const;
 
 /** The picture for a scope, made again when the scope changes. */
-function useBuilt(source: PageSource, scope: PictureScope, chosen: Chosen): Built {
+function useBuilt(source: PageSource, scope: PictureScope, chosen: Chosen, mode: SelectMode): Built {
   const [built, setBuilt] = useState<Built>({ status: 'loading' });
   useEffect(() => {
     let current = true;
-    const selection = selectionFor(source, scope, chosen);
+    const selection = selectionFor(source, scope, chosen, mode);
     const label = source.title || t('pageViews.print.untitled');
     const work: Promise<Built> = selection
       ? makePicture(source, selection, label).then((picture) => ({ status: 'ready' as const, picture }))
@@ -54,7 +61,7 @@ function useBuilt(source: PageSource, scope: PictureScope, chosen: Chosen): Buil
     return () => {
       current = false;
     };
-  }, [source, scope, chosen]);
+  }, [source, scope, chosen, mode]);
   return built;
 }
 
@@ -155,6 +162,10 @@ interface OptionsProps {
   readonly scope: PictureScope;
   readonly format: Format;
   readonly scale: Scale;
+  /** Smart or exact, offered when a lasso drew the selection. */
+  readonly mode: SelectMode;
+  readonly lassoed: boolean;
+  onMode(value: SelectMode): void;
   onScope(value: PictureScope): void;
   onFormat(value: Format): void;
   onScale(value: Scale): void;
@@ -174,6 +185,12 @@ function Options(props: OptionsProps) {
         <RadioCard value="selection" label={t('pageViews.image.selection')} disabled={props.chosen === 0} />
         <RadioCard value="page" label={t('pageViews.image.wholePage')} />
       </RadioGroup>
+      {props.scope === 'selection' && props.lassoed ? (
+        <RadioGroup<SelectMode> label={t('ink.exportArea.label')} value={props.mode} onChange={props.onMode}>
+          <RadioCard value="smart" label={t('ink.exportArea.smart')} description={t('ink.exportArea.smartHelp')} />
+          <RadioCard value="exact" label={t('ink.exportArea.exact')} description={t('ink.exportArea.exactHelp')} />
+        </RadioGroup>
+      ) : null}
       <RadioGroup<Format> label={t('pageViews.image.format')} value={props.format} onChange={props.onFormat}>
         {props.formats.map((format) => (
           <RadioCard key={format} value={format} label={t(FORMAT_LABELS[format])} />
@@ -193,7 +210,15 @@ function Options(props: OptionsProps) {
 function Preview({ built }: { built: Built }) {
   if (built.status === 'ready') {
     const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(built.picture.svg)}`;
-    return <img className={styles.pictureFrame} src={url} alt={t('pageViews.image.preview')} />;
+    // The dashed edge is the crop: exactly what the file or the clipboard gets.
+    return (
+      <img
+        className={`${styles.pictureFrame} ${styles.cropEdge}`}
+        src={url}
+        alt={t('pageViews.image.preview')}
+        data-crop-mode={built.picture.selection.mode}
+      />
+    );
   }
   const empty = built.status === 'empty';
   return (
@@ -210,7 +235,12 @@ export function ImageDialog(props: ImageDialogProps) {
   const [scope, setScope] = useState<PictureScope>(picked > 0 ? 'selection' : 'page');
   const [format, setFormat] = useState<Format>(formats[0]);
   const [scale, setScale] = useState<Scale>('2');
-  const built = useBuilt(source, scope, chosen);
+  const [mode, setMode] = useState<SelectMode>(rememberedSelectMode);
+  const chooseMode = (next: SelectMode) => {
+    setMode(next);
+    rememberSelectMode(next);
+  };
+  const built = useBuilt(source, scope, chosen, mode);
   const actions = useActions(props, built, format, scale);
   const ready = built.status === 'ready' && !actions.busy;
   const copy = { id: 'copy', label: t('pageViews.image.copy'), variant: 'secondary' as const };
@@ -238,6 +268,9 @@ export function ImageDialog(props: ImageDialogProps) {
           scope={scope}
           format={format}
           scale={scale}
+          mode={mode}
+          lassoed={(chosen.lasso?.length ?? 0) >= 3}
+          onMode={chooseMode}
           onScope={setScope}
           onFormat={setFormat}
           onScale={setScale}

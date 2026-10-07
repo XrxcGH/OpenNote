@@ -67,3 +67,45 @@ test('moves a text box with the ink the lasso takes', async ({ page }) => {
   await expect.poll(async () => (await text.boundingBox())!.x).toBeGreaterThan(before.x + 5);
   expect((await text.boundingBox())!.y).toBeGreaterThan(before.y + 5);
 });
+
+test('exports the lasso selection from its bar and menu, with a crop preview and a remembered smart or exact area', async ({
+  page,
+}) => {
+  test.slow();
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [400, 380]));
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(275, 365, 220, 90));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  const exportButton = bar.getByRole('button', { name: 'Export selection' });
+  await expect(exportButton).toBeVisible();
+  await expect(bar.getByRole('button', { name: 'Copy as image' })).toBeVisible();
+
+  // Pointing at Export selection shows the dashed area it will crop to, around the ink.
+  const crop = page.locator('[data-ink-crop]');
+  await expect(crop).toBeHidden();
+  await exportButton.hover();
+  await expect(crop).toBeVisible();
+  const frame = (await page.getByRole('group', { name: 'Selected ink and text' }).boundingBox())!;
+  const area = (await crop.boundingBox())!;
+  expect(area.x).toBeLessThan(frame.x);
+  expect(area.x + area.width).toBeGreaterThan(frame.x + frame.width);
+
+  await exportButton.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const areaGroup = dialog.getByRole('radiogroup', { name: 'Area' });
+  await expect(areaGroup.getByRole('radio', { name: /Smart/ })).toBeChecked();
+  const preview = dialog.getByRole('img', { name: /preview/i });
+  await expect(preview).toHaveAttribute('data-crop-mode', 'smart');
+  await areaGroup.getByRole('radio', { name: /Exact/ }).click();
+  await expect(preview).toHaveAttribute('data-crop-mode', 'exact');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+
+  // The menu on the selection has the same actions, and the dialog remembers Exact.
+  await page.getByRole('button', { name: 'Move the selection' }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Export selection' }).click();
+  await expect(page.getByRole('dialog').getByRole('radio', { name: /Exact/ })).toBeChecked();
+});

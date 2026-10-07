@@ -3,7 +3,7 @@ import type { CommandContext } from '../../../commands/types';
 import { pageSelection } from '../../page';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
-import { makePicture, selectionFor, svgToPng } from '../host/picture';
+import { makePicture, rememberedSelectMode, selectionFor, svgToPng } from '../host/picture';
 import { collectSource } from '../host/source';
 import { ImageDialog } from './ImageDialog';
 import type { Format } from './ImageDialog';
@@ -31,7 +31,7 @@ export async function copyImage(ctx: CommandContext): Promise<void> {
   }
   const chosen = pageSelection.get();
   const scope = chosen.blocks.length + chosen.strokes.length > 0 ? 'selection' : 'page';
-  const selection = selectionFor(source, scope, chosen);
+  const selection = selectionFor(source, scope, chosen, rememberedSelectMode());
   if (!selection) {
     showToast({ message: t('pageViews.image.nothingSelected') });
     return;
