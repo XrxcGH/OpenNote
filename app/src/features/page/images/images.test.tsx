@@ -81,6 +81,25 @@ describe('image blocks', () => {
   });
 });
 
+describe('Size and position for an image', () => {
+  it('shows the crop fields and Reset crop, and a crop is one patch and one move', async () => {
+    const { page, id } = await pageWithImage();
+    selectOnPage({ blocks: [id], strokes: [] });
+    page.mounted.objects.command('sizeAndPosition');
+    const left = await vi.waitFor(() => screen.getByLabelText('Crop left'), { timeout: 10_000 });
+    expect(screen.getByRole('button', { name: 'Reset crop' })).toBeDisabled();
+    const before = page.sent().length;
+    await userEvent.clear(left);
+    await userEvent.type(left, '20{Enter}');
+    await vi.waitFor(() => expect(page.sent().length).toBe(before + 1));
+    const [patch, move] = page.sent().at(-1)!.edits;
+    expect(patch).toMatchObject({ edit: 'patchBlock', data: { crop: { x: 0.2, y: 0, w: 0.8, h: 1 } } });
+    expect(move.edit).toBe('moveBlock');
+    // The popover closes after the crop, because the image's frame changed with it.
+    await vi.waitFor(() => expect(screen.queryByLabelText('Crop left')).toBeNull());
+  });
+});
+
 describe('the alt text dialog', () => {
   it('saves a description, and the decorative mark disables the field', async () => {
     const onSave = vi.fn();

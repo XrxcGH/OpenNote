@@ -15,6 +15,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Page layouts](#page-layouts)
 - [Export a selection](#export-a-selection)
 - [On-device intelligence setup](#on-device-intelligence-setup)
+- [Pages and search additions](#pages-and-search-additions)
 - [Quality-of-life fixes](#quality-of-life-fixes)
 - [More quality-of-life features by phase](#more-quality-of-life-features-by-phase)
 - [Further features by phase](#further-features-by-phase)
@@ -150,6 +151,14 @@ First-time setup has a step for it, instead of leaving everything off. The step 
 3. **Not now:** everything stays off and can be turned on later in Settings.
 
 The step shows the download size of each model and states that nothing leaves the device.
+
+## Pages and search additions
+
+Beta 5 finished these pages, tables, export, and search features. Each is behind a flag that is on in development, nightly, and beta builds. Status for all of them: Built, untested by hand.
+
+| Feature | What it does | Status |
+|---|---|---|
+| Crop fields in Size and position | Size and position on a picture also shows how much to cut from each side, in percent, and Reset crop. A crop is one undo step. | Built, untested by hand |
 
 ## Quality-of-life fixes
 

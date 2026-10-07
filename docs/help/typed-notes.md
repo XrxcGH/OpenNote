@@ -44,6 +44,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 
 - Right-click a picture and choose Alt text to get a first draft you can edit.
 - Choose Wrap on a picture to set text around it on a document page.
+- Choose Size and position on a picture to type its size and how much to crop from each side. Reset crop puts the whole picture back.
 - Drop a file, a PDF, or a link on the page to attach it. A Word file you edit and save comes back into the page.
 
 ## Spelling and reading aloud
