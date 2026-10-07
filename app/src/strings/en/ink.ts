@@ -126,6 +126,10 @@ export const ink = {
     offer: 'That looks like a grid, {rows} rows by {columns} columns.',
     convert: 'Convert to table',
     converted: 'Table made, {rows} rows by {columns} columns',
+    convertedText:
+      '{cells, plural, one {Table made, {rows} rows by {columns} columns, with the writing in # cell as text} other {Table made, {rows} rows by {columns} columns, with the writing in # cells as text}}',
+    noGrid: 'No grid found in the selection. Draw at least three lines each way.',
+    keywords: 'table grid cells rows columns lines convert handwriting',
   },
   handwriting: {
     working: 'Reading handwriting',

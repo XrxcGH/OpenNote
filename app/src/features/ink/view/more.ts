@@ -7,6 +7,7 @@ import { commandBar, commands } from '../../../registries';
 import { toggleCanvasLock, installCanvasLock } from './canvasLock';
 import { anchorSelection, detachSelection, installAnchoring } from './anchoring';
 import { describeDrawing } from './describe';
+import { convertSelectionToTable } from './gridTable';
 import { convertSelection, tidySelection } from './handwriting';
 import { EDIT_GESTURES } from './penEditing';
 import type { EditGesture } from './penEditing';
@@ -139,6 +140,18 @@ export function installMore(context: MoreContext): () => void {
     snapCommand('ruler', 'ink.snap.ruler'),
     snapCommand('protractor', 'ink.snap.protractor'),
     snapCommand('gridSnap', 'ink.snap.grid'),
+    {
+      id: 'ink.convertToTable',
+      title: 'ink.gridTable.convert',
+      keywords: 'ink.gridTable.keywords',
+      category: 'insert',
+      flag: 'ink.gridTable',
+      enabled: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void convertSelectionToTable(host, current);
+      },
+    },
     {
       id: 'ink.addShapeText',
       title: 'ink.library.addTextTitle',

@@ -35,7 +35,7 @@ Open Settings, then Pen and touch, to change this.
 - Draw a rough shape and hold the pen still. It snaps to a clean circle, rectangle, triangle, star, or arrow. Keep holding to resize it before you lift.
 - Scribble over words to erase them. Circle something, then tap, to select it.
 - Double tap with two fingers to undo. Double tap with three to redo.
-- Draw a grid and it becomes a table.
+- Draw a grid of at least three lines each way, and OpenNote offers Convert to table. You can also lasso a grid you drew earlier and choose Convert to table on the bar, or press Ctrl+K and type it. With on-device handwriting recognition on, what you wrote in each cell becomes the cell's text. One Ctrl+Z puts the lines and the writing back.
 
 ## Helpers
 

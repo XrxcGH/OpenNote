@@ -270,7 +270,7 @@ These features answer requests from people switching from OneNote, Goodnotes, Ob
 |---|---|---|
 | Accessible charts | Each chart gets an editable text summary of its type, axes, range, trend, and highest and lowest values. Arrow keys step through data points and read their values. "Show as table" is always one click away. | Built, untested by hand |
 | Quick math | Typing an expression such as `2.5*9.81=` and then Space adds the result, as in OneNote. It handles powers, roots, percentages, sine, and logarithms, with the same engine as smart tables. One Ctrl+Z removes the result, and the feature can be turned off. | Built, untested by hand |
-| Draw a grid to make a table | Draw a rough grid with the pen and choose "Snap shape" or "Convert to table". The grid becomes a table with the same rows and columns. Handwriting inside a cell stays as ink, and it converts to text when recognition is on (Phase 12). | Built, untested by hand |
+| Draw a grid to make a table | Draw a rough grid with the pen and choose "Snap shape" or "Convert to table". The grid becomes a table with the same rows and columns. With handwriting recognition on (Phase 12), the writing in each cell becomes that cell's text in the same undo step; without it, the writing stays as ink. A lassoed grid can also be converted with "Convert to table" on the lasso bar or in the command palette. | Built, untested by hand |
 
 ### Phase 8: Search and linking
 

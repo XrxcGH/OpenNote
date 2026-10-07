@@ -5,6 +5,7 @@
 import { newId } from '../../../editor/ids';
 import { escapeParagraphText } from '../../../editor/markdown/escape';
 import { isEnabled } from '../../../app/flags';
+import { loadApi as loadIntel } from '../../intel';
 import type { InkLine, InkRecognition, InkStroke as IntelStroke, TidyOperation } from '../../../services/intel';
 import type { Edit } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
@@ -28,6 +29,25 @@ export function toIntel(strokes: readonly InkStroke[]): IntelStroke[] {
 
 export const handwritingAvailable = (host: InkHost): boolean =>
   isEnabled('ink.handwriting') && isEnabled('intel.handwriting') && host.handwriting !== undefined;
+
+/** Recognized text with the symbols and formulas people mean (features/intel's tidyRecognizedText). */
+export async function tidyText(text: string): Promise<string> {
+  try {
+    return (await loadIntel()).tidyRecognizedText(text);
+  } catch {
+    return text;
+  }
+}
+
+/** The recognizer's reading of some strokes as one tidied line of text, or null when it read nothing. */
+export async function readText(host: InkHost, strokes: readonly InkStroke[]): Promise<string | null> {
+  const recognition = await host.handwriting?.recognize(toIntel(strokes));
+  const text = recognition?.lines
+    .map((line) => line.text.trim())
+    .filter(Boolean)
+    .join(' ');
+  return text ? tidyText(text) : null;
+}
 
 const boxOf = (strokes: readonly InkStroke[]): Bounds => strokes.map(strokeBounds).reduce(union);
 

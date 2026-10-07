@@ -1,15 +1,19 @@
 // Draw a grid to make a table: after a few straight lines are drawn across each other in a grid, the page offers
-// Convert to table. The table has the grid's rows and columns, sits where the grid was, and replaces the drawn lines in
-// one undo step. Handwriting inside the cells stays where it is, as ink. The drawn lines are read as lines and
-// rectangles by the shape recognizer, and the table is built by the editor's own table data.
+// Convert to table, and the lasso and the palette offer it for a grid that is selected. The table has the grid's rows
+// and columns, sits where the grid was, and replaces the drawn lines in one undo step. With handwriting recognition on,
+// the writing in each cell is read into that cell in the same step; otherwise it stays where it is, as ink. The drawn
+// lines are read as lines and rectangles by the shape recognizer, and the table is built by the editor's own table data.
 import { newId } from '../../../editor/ids';
+import { escapeParagraphText } from '../../../editor/markdown/escape';
 import type { TableData } from '../../../editor/schema/specs';
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
+import { strokeBounds } from '../geometry/bounds';
 import { recognizeShape } from '../geometry/shapes';
 import { pagePoints } from '../geometry/strokeIndex';
 import type { InkStroke } from '../model/types';
+import { handwritingAvailable, readText } from './handwriting';
 import type { InkHost } from './host';
 import type { InkSurface } from './surface';
 
@@ -32,6 +36,9 @@ export interface Grid {
   readonly width: number;
   readonly height: number;
   readonly ids: readonly string[];
+  /** Where the grid's horizontal lines sit, top to bottom, and its vertical ones, left to right. */
+  readonly rowLines: readonly number[];
+  readonly columnLines: readonly number[];
 }
 
 /** Lines drawn within this long of each other can make a grid. */
@@ -107,16 +114,142 @@ export function findGrid(lines: readonly GridLine[]): Grid | null {
     width: x1 - x0,
     height: y1 - y0,
     ids: [...new Set(inside.map((line) => line.id))],
+    rowLines: rows,
+    columnLines: columns,
   };
 }
 
+/** Which of the gaps between sorted lines a position falls in, or -1 outside them. */
+function gapAt(lines: readonly number[], at: number): number {
+  for (let i = 0; i + 1 < lines.length; i += 1) if (at >= lines[i] && at < lines[i + 1]) return i;
+  return -1;
+}
+
+/** The cell a point is in, as "row:column", or null when it is outside the grid. */
+export function cellAt(grid: Pick<Grid, 'rowLines' | 'columnLines'>, x: number, y: number): string | null {
+  const row = gapAt(grid.rowLines, y);
+  const column = gapAt(grid.columnLines, x);
+  return row < 0 || column < 0 ? null : `${row}:${column}`;
+}
+
+/** The handwriting in each cell: every stroke but the grid's own lines and highlighter, by where its middle is. */
+export function cellInk(grid: Grid, strokes: readonly InkStroke[]): Map<string, InkStroke[]> {
+  const cells = new Map<string, InkStroke[]>();
+  const lines = new Set(grid.ids);
+  for (const stroke of strokes) {
+    if (lines.has(stroke.id) || stroke.tool === 'highlighter') continue;
+    const b = strokeBounds(stroke);
+    const cell = cellAt(grid, (b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2);
+    if (cell) cells.set(cell, [...(cells.get(cell) ?? []), stroke]);
+  }
+  return cells;
+}
+
+/**
+ * The words in each cell, read by `read` (the recognizer, or a stub in tests). A cell whose ink reads as nothing
+ * keeps its ink. Returns the text by cell and the strokes that became text.
+ */
+export async function readCells(
+  cells: ReadonlyMap<string, readonly InkStroke[]>,
+  read: (strokes: readonly InkStroke[]) => Promise<string | null>,
+): Promise<{ texts: Map<string, string>; used: string[] }> {
+  const texts = new Map<string, string>();
+  const used: string[] = [];
+  for (const [cell, strokes] of cells) {
+    const text = (await read(strokes))?.trim();
+    if (!text) continue;
+    texts.set(cell, text);
+    used.push(...strokes.map((stroke) => stroke.id));
+  }
+  return { texts, used };
+}
+
 /** A table block's data (spec 6.3) with a column for each grid column, as wide as the grid drew them. */
-export function tableData(grid: Pick<Grid, 'rows' | 'columns' | 'width'>): TableData {
+export function tableData(
+  grid: Pick<Grid, 'rows' | 'columns' | 'width'>,
+  texts: ReadonlyMap<string, string> = new Map(),
+): TableData {
   const width = Math.min(2000, Math.max(40, Math.round(grid.width / Math.max(1, grid.columns))));
   const columns = Array.from({ length: Math.max(1, grid.columns) }, () => ({ id: newId(), width }));
-  const cells = Object.fromEntries(columns.map((column) => [column.id, { markdown: '' }]));
-  const rows = Array.from({ length: Math.max(1, grid.rows) }, () => ({ id: newId(), cells: { ...cells } }));
+  const rows = Array.from({ length: Math.max(1, grid.rows) }, (_, row) => ({
+    id: newId(),
+    cells: Object.fromEntries(
+      columns.map((column, index) => [
+        column.id,
+        { markdown: escapeParagraphText(texts.get(`${row}:${index}`) ?? '') },
+      ]),
+    ),
+  }));
   return { header: false, columns, rows };
+}
+
+/** The ink over a grid that may be writing in its cells. */
+function inkNear(surface: InkSurface, grid: Grid): InkStroke[] {
+  return surface.index.query({
+    minX: grid.x,
+    minY: grid.y,
+    maxX: grid.x + grid.width,
+    maxY: grid.y + grid.height,
+  }) as InkStroke[];
+}
+
+/**
+ * Turns a grid into a table as one undo step: the lines go, the table comes, and with recognition on, the writing in
+ * each cell becomes the cell's text. `candidates` are the strokes that may be cell writing; by default, the ink over
+ * the grid. Returns whether the page took it.
+ */
+export async function convertGrid(
+  host: InkHost,
+  surface: InkSurface,
+  grid: Grid,
+  candidates: readonly InkStroke[] = inkNear(surface, grid),
+): Promise<boolean> {
+  const queue = host.queue.get();
+  if (!queue || surface.readOnly) return false;
+  if (handwritingAvailable(host)) announce(t('ink.handwriting.working'));
+  const { texts, used } = handwritingAvailable(host)
+    ? await readCells(cellInk(grid, candidates), (strokes) => readText(host, strokes))
+    : { texts: new Map<string, string>(), used: [] as string[] };
+  const removed = [...grid.ids, ...used];
+  const gone = surface.hide(removed);
+  const edits = [
+    { edit: 'removeStrokes' as const, strokes: removed },
+    {
+      edit: 'insertBlock' as const,
+      block: {
+        id: newId(),
+        type: 'table',
+        frame: { x: grid.x, y: grid.y, w: Math.max(80, grid.width) },
+        data: { ...tableData(grid, texts) },
+      },
+    },
+  ];
+  const ok = await surface.send({ edits }, () => surface.show(gone));
+  if (ok) {
+    const message =
+      texts.size > 0
+        ? t('ink.gridTable.convertedText', { rows: grid.rows, columns: grid.columns, cells: texts.size })
+        : t('ink.gridTable.converted', { rows: grid.rows, columns: grid.columns });
+    showToast({ id: 'ink-grid', message, action: { label: t('ink.gestures.undo'), run: () => queue.undo() } });
+  }
+  return ok;
+}
+
+/** The grid the selected strokes draw, for Convert to table on the lasso and in the palette. */
+export function gridInSelection(strokes: readonly InkStroke[]): Grid | null {
+  return findGrid(strokes.flatMap((stroke) => linesOf(stroke.id, pagePoints(stroke), 0)));
+}
+
+/** Convert to table for the lasso's selection: its grid, with the selected writing read into the cells. */
+export async function convertSelectionToTable(host: InkHost, surface: InkSurface): Promise<void> {
+  const strokes = surface.strokes(host.selection.get().strokes);
+  const grid = gridInSelection(strokes);
+  if (!grid) {
+    showToast({ message: t('ink.gridTable.noGrid') });
+    return;
+  }
+  host.select({ blocks: [], strokes: [] });
+  await convertGrid(host, surface, grid, strokes);
 }
 
 export function createGridWatch(host: InkHost, surfaceOf: () => InkSurface | null) {
@@ -124,26 +257,7 @@ export function createGridWatch(host: InkHost, surfaceOf: () => InkSurface | nul
   let offered = '';
 
   const convert = async (surface: InkSurface, grid: Grid) => {
-    const queue = host.queue.get();
-    if (!queue) return;
-    const gone = surface.hide(grid.ids as string[]);
-    const edits = [
-      { edit: 'removeStrokes' as const, strokes: [...grid.ids] },
-      {
-        edit: 'insertBlock' as const,
-        block: {
-          id: newId(),
-          type: 'table',
-          frame: { x: grid.x, y: grid.y, w: Math.max(80, grid.width) },
-          data: { ...tableData(grid) },
-        },
-      },
-    ];
-    const ok = await surface.send({ edits }, () => surface.show(gone));
-    if (ok) {
-      lines = lines.filter((line) => !grid.ids.includes(line.id));
-      announce(t('ink.gridTable.converted', { rows: grid.rows, columns: grid.columns }));
-    }
+    if (await convertGrid(host, surface, grid)) lines = lines.filter((line) => !grid.ids.includes(line.id));
   };
 
   return {

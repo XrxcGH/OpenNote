@@ -17,6 +17,7 @@ import { selectionFrame } from '../selection/lassoItems';
 import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
 import { anchorOffsetEdits, anchorSelection, detachSelection } from './anchoring';
+import { convertSelectionToTable, gridInSelection } from './gridTable';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
 import { startReplay } from './replay';
 import { followersForMatrix } from './shapeEdit';
@@ -32,6 +33,8 @@ const MIN_SIZE = 4;
 const BAR_MARGIN = 8;
 /** Export selection's crop around the content, in page units: its padding and least size (features/pages/selection). */
 const CROP_PADDING = 12;
+/** A selection of more strokes than this is not checked for a grid, so the bar stays quick. */
+const GRID_MOST = 300;
 const CROP_MIN = 96;
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
@@ -147,6 +150,13 @@ class FrameView implements SelectionFrame {
       ...(isEnabled('ink.replay')
         ? ([['ink.replay.title', 'replay', () => startReplay(host, surface)]] as [MessageKey, string, () => void][])
         : []),
+      ...(isEnabled('ink.gridTable')
+        ? ([['ink.gridTable.convert', 'table', () => void convertSelectionToTable(host, surface)]] as [
+            MessageKey,
+            string,
+            () => void,
+          ][])
+        : []),
       ...(isEnabled('pages.exportSelection')
         ? ([
             [
@@ -181,6 +191,7 @@ class FrameView implements SelectionFrame {
       this.frame.append(this.side);
     }
     surface.chrome.append(this.crop, this.frame);
+    this.offerTable();
     this.stops = [host.selection.subscribe(() => this.selectionChanged()), surface.onChange(() => this.place())];
     this.place();
   }
@@ -251,6 +262,7 @@ class FrameView implements SelectionFrame {
   }
 
   private selectionChanged(): void {
+    this.offerTable();
     this.place();
     const now = this.selection().strokes.length;
     if (now > 0 && this.had === 0) this.mover.focus({ preventScroll: true });
@@ -276,6 +288,15 @@ class FrameView implements SelectionFrame {
     });
     this.fitBar(left);
     this.placeCrop(shown);
+  }
+
+  /** Convert to table shows only when the selected strokes draw a grid. */
+  private offerTable(): void {
+    const action = this.bar.querySelector<HTMLElement>('[data-ink-action="table"]');
+    if (!action) return;
+    const strokes = this.selection().strokes;
+    const grid = strokes.length >= 6 && strokes.length <= GRID_MOST && gridInSelection(this.selected()) !== null;
+    action.style.display = grid ? '' : 'none';
   }
 
   private showCrop(on: boolean): void {
@@ -420,7 +441,9 @@ class FrameView implements SelectionFrame {
   /** The same actions as the bar, at the pointer, for a right click or a long press on the selection. */
   private readonly onContext = (event: MouseEvent) => {
     event.preventDefault();
-    const actions = [...this.bar.querySelectorAll<HTMLButtonElement>('button')];
+    const actions = [...this.bar.querySelectorAll<HTMLButtonElement>('button')].filter(
+      (b) => b.style.display !== 'none',
+    );
     void openMenu({
       label: t('ink.selection.frame'),
       anchor: { x: event.clientX, y: event.clientY },
