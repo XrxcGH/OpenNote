@@ -409,6 +409,24 @@ describe('text', () => {
     }
   });
 
+  it('circles something with every circled mark, never an empty patch of page', () => {
+    let checked = 0;
+    for (const { name, root } of pictures) {
+      for (const ring of named(root, 'circled')) {
+        const pts = outlineOf(ring).flatMap((run) => run.pts);
+        const [x0, x1] = [Math.min(...pts.map((q) => q.x)), Math.max(...pts.map((q) => q.x))];
+        const [y0, y1] = [Math.min(...pts.map((q) => q.y)), Math.max(...pts.map((q) => q.y))];
+        // Some words lie inside the ring's box: the ring is round them.
+        const inside = lines(root).some(
+          (t) => t.box.x1 > x0 && t.box.x0 < x1 && (t.box.y0 + t.box.y1) / 2 > y0 && (t.box.y0 + t.box.y1) / 2 < y1,
+        );
+        assert.ok(inside, `${name}: the circled mark at ${x0.toFixed(0)},${y0.toFixed(0)} circles nothing`);
+        checked++;
+      }
+    }
+    assert.ok(checked >= 2);
+  });
+
   it('keeps every handwritten label clear of the ink around it', () => {
     for (const { name, root } of pictures) {
       const strokes = [...walk(root)].filter(
