@@ -100,6 +100,10 @@ pub fn run() -> EarlyOutcome {
     if let Some(marker) = updater::TEST_ENDPOINTS_MARKER {
         log::warn!("{marker}: this build accepts test update endpoints and a test key.");
     }
+    // `--uninstall` from Installed apps, and the copy that finishes it, never start the app.
+    if let Some(code) = crate::install::uninstall::run_from_args() {
+        return EarlyOutcome::Exit(code);
+    }
     run_with(&System)
 }
 

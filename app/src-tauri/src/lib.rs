@@ -30,6 +30,7 @@ pub mod page_export;
 pub mod page_extras;
 pub mod paths;
 pub mod perf;
+pub mod platform_flags;
 pub mod settings;
 pub mod shell;
 pub mod shellqol;
@@ -82,6 +83,7 @@ pub fn run(context: EarlyContext) {
         }
     }
     let settings = loaded.store.get();
+    install::uninstall::refresh_if_installed(&paths, &settings.experimental.flags);
     let mut notices = loaded.notices;
     notices.extend(state_notice);
     notices.extend(launch.notices(env!("CARGO_PKG_VERSION")));

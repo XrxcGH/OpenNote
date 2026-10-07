@@ -12,6 +12,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Record](#record)
 - [Bring notes in and out](#bring-notes-in-and-out)
 - [Smart features, privacy, and accounts](#smart-features-privacy-and-accounts)
+- [Install, update, and remove](#install-update-and-remove)
 
 ## Write
 
@@ -43,3 +44,11 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [On-device intelligence](on-device-intelligence.md): reading pictures, summaries, Ask your notes, and handwriting to text.
 - [Privacy and Work offline](privacy-and-work-offline.md): what uses the network, and how to stop it.
 - [Connectors](connectors.md): signing in to other services.
+
+## Install, update, and remove
+
+OpenNote is one file, and it never needs administrator rights.
+
+- **Install.** The first time it starts, setup offers to move OpenNote into your own Programs folder (`%LOCALAPPDATA%\Programs\OpenNote`) and add it to the Start menu. After the move, OpenNote also shows in Windows Settings, then **Apps**, then **Installed apps**, with its version.
+- **Updates.** OpenNote checks for updates in the background and installs them the way you chose in Settings, then **Updates**. A download that stops partway, because the PC slept or the network dropped, carries on from where it stopped the next time. If you are on a metered network, such as a phone hotspot, automatic updates wait until you are on a network without a data limit. Every update is checked against its signature before it is installed, whether it was downloaded in one go or in parts.
+- **Remove.** In **Installed apps**, choose the three dots next to OpenNote, then **Uninstall**. OpenNote asks first. It removes the app, its Start menu shortcut, the `opennote` command if you added it, and its Installed apps entry. Your notes folder is never touched, and your settings stay, so installing OpenNote again picks up where you left off. If OpenNote is open, close it first.

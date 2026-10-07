@@ -12,7 +12,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+pub mod path_entry;
 mod shortcut;
+pub mod uninstall;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -324,9 +326,22 @@ pub fn prepare_move(paths: &Paths) -> IpcResult<(PathBuf, PathBuf)> {
 #[tauri::command]
 pub async fn install_move_to_user_programs(app: AppHandle) -> IpcResult<()> {
     let paths = app.state::<Paths>().inner().clone();
-    let (current, target) = tauri::async_runtime::spawn_blocking(move || prepare_move(&paths))
-        .await
-        .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))??;
+    let entry = crate::platform_flags::is_on_for(&app, crate::platform_flags::UNINSTALL_ENTRY);
+    let (current, target) = tauri::async_runtime::spawn_blocking(move || {
+        let moved = prepare_move(&paths)?;
+        // The Installed apps entry (install.uninstallEntry). The new copy refreshes it at each start too.
+        if entry {
+            let dir = programs_dir(&paths);
+            if let Err(error) =
+                uninstall::write_entry(uninstall::user_registry().as_ref(), &dir, env!("CARGO_PKG_VERSION"))
+            {
+                log::warn!("Couldn't write the Installed apps entry: {error}");
+            }
+        }
+        Ok::<_, IpcError>(moved)
+    })
+    .await
+    .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))??;
     app.state::<ExitState>().plan_relaunch(Relaunch {
         exe: target,
         args: vec!["--moved-from".into(), current.display().to_string()],
