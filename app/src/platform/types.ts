@@ -292,6 +292,11 @@ export interface PageExtrasClient {
   /** Stops watching a page's attachments, when the page closes. */
   stopAttachments(page: string): Promise<void>;
   onAttachmentSaved(listener: (saved: AttachmentSaved) => void): Unsubscribe;
+  /**
+   * A PNG of the first page of an attached PDF or Office file, drawn by Windows, or null when it can't be drawn.
+   * `size` is the longer side in device pixels.
+   */
+  attachmentThumbnail(page: string, asset: string, name: string, size: number): Promise<Uint8Array | null>;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */

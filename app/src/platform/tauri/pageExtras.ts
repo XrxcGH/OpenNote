@@ -17,5 +17,10 @@ export function createTauriPageExtras(): PageExtrasClient {
     openAttachment: (page, asset, name) => invoke('attachment_open', { page, asset, name }).then(() => undefined),
     stopAttachments: (page) => invoke('attachment_stop', { page }).then(() => undefined),
     onAttachmentSaved: (listener) => listen('attachment://saved', listener),
+    attachmentThumbnail: (page, asset, name, size) =>
+      invoke('attachment_thumbnail', { page, asset, name, size }).then(
+        (bytes) => new Uint8Array(bytes),
+        () => null,
+      ),
   };
 }

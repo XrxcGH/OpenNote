@@ -155,7 +155,7 @@ struct Watch {
 
 static WATCHES: Mutex<Vec<Watch>> = Mutex::new(Vec::new());
 
-fn temp_folder(asset: &str) -> PathBuf {
+pub(super) fn temp_folder(asset: &str) -> PathBuf {
     std::env::temp_dir().join("OpenNote").join("attachments").join(asset)
 }
 

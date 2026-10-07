@@ -158,6 +158,7 @@ Beta 5 finished these pages, tables, export, and search features. Each is behind
 
 | Feature | What it does | Status |
 |---|---|---|
+| Attachment Save a copy and thumbnails | Right-click an attachment, or press Ctrl+K and choose "Save a copy of the attachment", to save the file through the Windows Save dialog. A PDF or Office attachment shows its first page on the card, drawn by Windows, and keeps its type badge where Windows has no picture. | Built, untested by hand |
 | Crop fields in Size and position | Size and position on a picture also shows how much to cut from each side, in percent, and Reset crop. A crop is one undo step. | Built, untested by hand |
 
 ## Quality-of-life fixes

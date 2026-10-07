@@ -46,6 +46,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 - Choose Wrap on a picture to set text around it on a document page.
 - Choose Size and position on a picture to type its size and how much to crop from each side. Reset crop puts the whole picture back.
 - Drop a file, a PDF, or a link on the page to attach it. A Word file you edit and save comes back into the page.
+- A PDF or Office attachment shows its first page on the card. To keep a file outside the note, right-click the attachment and choose Save a copy of the attachment. The note keeps its own copy.
 
 ## Spelling and reading aloud
 

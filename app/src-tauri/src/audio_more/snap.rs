@@ -148,7 +148,7 @@ fn grab(x: i32, y: i32, width: i32, height: i32) -> windows::core::Result<Vec<u8
 
 /// A PNG of BGRA pixels, made by Windows Imaging Component.
 #[cfg(windows)]
-fn encode_png(pixels: &[u8], width: u32, height: u32) -> windows::core::Result<Vec<u8>> {
+pub(crate) fn encode_png(pixels: &[u8], width: u32, height: u32) -> windows::core::Result<Vec<u8>> {
     use windows::Win32::{
         Foundation::HGLOBAL,
         Graphics::Imaging::{

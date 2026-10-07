@@ -205,6 +205,11 @@ export const pageExtras = {
     noApp: 'Windows has no app set up to open this kind of file.',
     desktopOnly: 'Opening an attachment in its own app needs the desktop app.',
     openFailed: 'The attachment couldn’t be opened.',
+    copyCommand: 'Save a copy of the attachment',
+    copyLabel: 'Attached file',
+    copySaved: 'Saved a copy as {name}.',
+    showCopy: 'Show in folder',
+    copyFailed: 'The copy couldn’t be saved.',
   },
   wrap: {
     menu: 'Text wrap',

@@ -7,6 +7,7 @@ import type { AssetJson, BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
 import { fileKind, formatSize, isTextual, previewLines } from '../attachments/model';
+import { thumbnailUrl, wantsThumbnail } from '../attachments/thumbnails';
 import styles from '../attachments/attachments.module.css';
 import { assetTable } from '../images/assets';
 import { readingLock } from '../qol/stores';
@@ -130,12 +131,29 @@ class FileView implements BlockView {
       void this.open();
     });
     this.card.replaceChildren(label, meta, open);
+    void this.showThumbnail(asset, label);
     this.element.setAttribute(
       'aria-label',
       asset ? t('pageExtras.attach.label', { name, size: formatSize(asset.bytes) }) : t('pageExtras.attach.missing'),
     );
     this.element.classList.toggle(styles.selected, this.selected());
     void this.showPreview(asset);
+  }
+
+  /** The first page of a PDF or Office file in place of the badge, when Windows can draw it. */
+  private async showThumbnail(asset: AssetJson | null, badge: HTMLElement): Promise<void> {
+    const id = assetOf(this.current);
+    if (!asset || !id || !wantsThumbnail(asset.name)) return;
+    const url = await thumbnailUrl(this.ctx.page.id, id, asset.name);
+    // A newer render replaced the badge, or the page closed: leave it be.
+    if (!url || this.destroyed || badge.parentElement !== this.card) return;
+    const picture = document.createElement('img');
+    picture.className = styles.thumbnail;
+    picture.src = url;
+    picture.alt = '';
+    picture.setAttribute('aria-hidden', 'true');
+    picture.addEventListener('error', () => picture.replaceWith(badge), { once: true });
+    badge.replaceWith(picture);
   }
 
   /** The first lines of a text file, when the card is set to preview. */

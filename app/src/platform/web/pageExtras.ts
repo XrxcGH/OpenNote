@@ -16,5 +16,6 @@ export function createWebPageExtras(): PageExtrasClient {
       } satisfies IpcError),
     stopAttachments: () => Promise.resolve(),
     onAttachmentSaved: () => () => undefined,
+    attachmentThumbnail: () => Promise.resolve(null),
   };
 }
