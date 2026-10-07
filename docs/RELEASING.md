@@ -17,7 +17,17 @@ This guide is for maintainers. It covers the one-time setup, version numbers, cu
 
 ## One-time setup
 
-Do these steps once per repository, before the first release that people will update from.
+Do these steps once per repository, before the first release that people will update from. Only the owner can do them, because each one needs a secret, a purchase, or a repository setting. Agents never create or hold a key or a secret.
+
+| Step | Where | Without it |
+|---|---|---|
+| 1. [Create the update key pair](#create-the-update-signing-key), and commit its public key as `app/src-tauri/keys/update.pub` | Your PC, then a pull request | A `release` build stops with a message that names this guide, and a dry run builds without an updater key |
+| 2. [Add the release environment](#add-the-release-environment-and-its-secrets), with required reviewers and a `v*` tag rule | GitHub, Settings, then Environments | The package and publish jobs can't run for a tag |
+| 3. Add the two signing secrets to that environment | The same page | "Sign the updates" stops the release |
+| 4. [Add the tag ruleset](#limit-who-can-push-version-tags) for `v*` | GitHub, Settings, then Rules | Anyone who can push could start a release run |
+| 5. [Get an Authenticode certificate and add its signing step](#add-code-signing-later) | Your certificate provider, then a pull request | A beta or stable release stops at its Authenticode check; a test build and a dry run don't need it |
+| 6. [Create the beta channel](#create-the-beta-channel) prerelease | `gh release create` | A beta's run stops before it publishes |
+| 7. For the share target, sign the sparse package in `packaging/msix` with the same certificate | `packaging/msix/README.md` | "Share to OpenNote" stays hidden; everything else works |
 
 ### Create the update signing key
 
@@ -163,11 +173,18 @@ A test build never updates the beta channel, so no copy is offered it. `0.5.0-te
 
 A dry run builds and packages everything and publishes nothing. Use it to test a change to the release workflow or the release scripts, or to see what a release would contain.
 
-1. On GitHub, open the Actions tab, choose the "release" workflow, and choose "Run workflow". The button appears once the workflow file is on the default branch. From the command line, run `gh workflow run release.yml --ref <branch>`.
+1. On GitHub, open the Actions tab, choose the "release" workflow, and choose "Run workflow". Leave **dry_run** on; a run by hand with it off stops at once, because a release is published only from a pushed tag. The button appears once the workflow file is on the default branch. From the command line, run `gh workflow run release.yml --ref <branch> -f dry_run=true`.
 2. The run uses the version in the three version files as its tag, such as `v0.5.0`. It runs the checklist in report mode, CI, and the three builds.
 3. It signs the exes with a key made for that run, which is deleted at the end. The real signing secrets are never used, and the publish job doesn't run.
 4. It checks the result the way the app will, against the throwaway key. The run summary lists the files.
-5. The run keeps a `release-files` artifact for seven days. It holds the exes, the signatures, the manifest, the notes, the bill of materials, the checksums, and the throwaway public key. A `winget-manifests` artifact holds the winget files.
+5. The `update-test` job runs the update-from-earlier-beta test. It builds the updater's test app (`crates/updater/examples/fake_app.rs`) from the last `v*-beta.*` tag, serves this run's manifest and x64 exe from `127.0.0.1`, and lets the old app update itself, checking the hash and the throwaway key's signature on the way. Without an earlier beta tag, it builds the test app from the same commit and says so in the summary. A pushed tag runs the same test against the committed key, and the publish job waits for it.
+6. The run keeps a `release-files` artifact for seven days. It holds the exes, the signatures, the manifest, the notes, the bill of materials, the checksums, and the throwaway public key. A `winget-manifests` artifact holds the winget files, and an `update-test` artifact holds the update test's report.
+
+A `release` build stops when `app/src-tauri/keys` has no `.pub` file, so `npx tauri build` on your PC fails until step 1 of the one-time setup is done. A dry run sets `OPENNOTE_DRY_RUN=1` for its builds, so it works before then. CI's own builds use the `ci` profile and aren't affected.
+
+### Recording the sign-off
+
+`node app/scripts/release/signoff.ts <version> <item> --by "<your name>"` writes one checklist item to `docs/releases/<version>.signoff.json`, creating the file from the blank template if needed. It checks the entry the way the checklist will, so a missing name, a date in the future, or pen testing on fewer than two devices is refused with the reason. For pen testing, add `--device "<type>=<device>"` once per device. For the `updates` item, add `--update-report update-test.json` from the dry run's `update-test` artifact, and the report goes into the notes. Commit the file before you tag the release.
 
 The throwaway signatures are valid only for that run's key, so no copy of the app accepts them.
 

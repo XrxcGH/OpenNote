@@ -4,7 +4,8 @@ name: release
 # updates, and publishes a GitHub Release.
 #
 # Running the workflow by hand (workflow_dispatch) is a dry run. It does everything except publish, signs with a
-# key made for that run, and keeps the results as run artifacts.
+# key made for that run, tests an update from the last beta to the new build, and keeps the results as run
+# artifacts. Its dry_run input stays on: a release is published only from a pushed tag.
 #
 # See docs/RELEASING.md. Each job gets only the permissions it needs. The signing secrets belong to the release
 # environment, which only v* tags may use after a maintainer approves. They reach one step of the package job, which
@@ -14,6 +15,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: build, sign with a throwaway key, and test an update from the last beta. Publishes nothing.'
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -54,6 +60,16 @@ jobs:
           git merge-base --is-ancestor $env:GITHUB_SHA origin/main
           if ($LASTEXITCODE -ne 0) {
             "::error::The tagged commit $env:GITHUB_SHA is not on main. Tag a merge commit on main."
+            exit 1
+          }
+      - name: Refuse a run by hand that is not a dry run
+        # Publishing needs the release environment, which only a pushed v tag can use.
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if ($env:DRY_RUN -ne 'true') {
+            "::error::A release is published only from a pushed v tag. Run by hand with dry_run on, or push the tag."
             exit 1
           }
       - id: tag
@@ -136,6 +152,9 @@ jobs:
     env:
       RELEASE_TARGET: ${{ matrix.target }}
       RELEASE_FILE: ${{ matrix.file }}
+      # A release build stops without a committed update key (app/src-tauri/build.rs). A dry run may build without
+      # one, because nothing it builds is published.
+      OPENNOTE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -337,11 +356,78 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  update-test:
+    # The update-from-earlier-beta test: the updater's test app, built from the last beta tag, updates itself to
+    # this release's x64 exe from a local server, checking the hash and the signature on the way. A dry run checks
+    # against the throwaway key, and a tag against the committed key. It gets no secrets.
+    needs: [version, package]
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Every tag, to find the last beta.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - name: Download the release files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-files
+          path: .
+      - name: Build the test app from the last beta
+        # Without an earlier beta tag, the test app is built from this commit, and the summary says so.
+        run: |
+          $earlier = node app/scripts/release/update-test.ts earlier $env:TAG
+          if ($earlier) {
+            git worktree add earlier-beta $earlier
+            $from = $earlier -replace '^v', ''
+            Push-Location earlier-beta
+          } else {
+            "No earlier beta tag: the test app is built from this commit." >> $env:GITHUB_STEP_SUMMARY
+            $from = '0.0.1'
+          }
+          cargo build --example fake_app -p opennote-updater
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if ($earlier) { Pop-Location; $app = 'earlier-beta/target/debug/examples/fake_app.exe' }
+          else { $app = 'target/debug/examples/fake_app.exe' }
+          "FAKE_APP=$app" >> $env:GITHUB_ENV
+          "FROM_VERSION=$from" >> $env:GITHUB_ENV
+      - name: Update from the last beta (dry run)
+        if: github.event_name == 'workflow_dispatch'
+        run: >-
+          node app/scripts/release/update-test.ts run dist-release $env:TAG --fake-app $env:FAKE_APP
+          --from $env:FROM_VERSION --pubkey dry-run/update.pub --report update-test.json
+      - name: Update from the last beta (tag)
+        if: github.event_name == 'push'
+        run: >-
+          node app/scripts/release/update-test.ts run dist-release $env:TAG --fake-app $env:FAKE_APP
+          --from $env:FROM_VERSION --report update-test.json
+      - name: Show the update test in the run summary
+        if: always()
+        run: if (Test-Path update-test.json) { Get-Content update-test.json >> $env:GITHUB_STEP_SUMMARY }
+      - name: Keep the update test report for the sign-off
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: update-test
+          path: update-test.json
+          if-no-files-found: ignore
+          retention-days: 30
+
   publish:
     # The only job that can write releases. It publishes the files the package job checked, and nothing else.
     # It gets no secrets and runs no project code. A dry run never reaches it.
     if: github.event_name == 'push'
-    needs: [version, package]
+    needs: [version, package, update-test]
     runs-on: ubuntu-latest
     # A maintainer approves again here, after reading the package job's summary, before anything goes live.
     environment: release

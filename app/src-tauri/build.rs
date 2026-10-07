@@ -1,6 +1,7 @@
 //! The build script. It declares every app command in Tauri's app manifest, so each one gets an `allow-<command>`
 //! permission that capabilities/default.json grants by name, instead of allowing every command. It also writes
-//! `OUT_DIR/update_keys.rs` with the update public keys from `keys/*.pub`, which `src/updater.rs` includes.
+//! `OUT_DIR/update_keys.rs` with the update public keys from `keys/*.pub`, which `src/updater.rs` includes. A
+//! `release` build without a key stops (`src/build_rules.rs`).
 
 use std::{
     env, fs,
@@ -10,6 +11,7 @@ use std::{
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 include!("src/command_list.rs");
+include!("src/build_rules.rs");
 
 /// The folder of update public keys, each as `tauri signer generate` writes it.
 const KEYS_DIR: &str = "keys";
@@ -20,9 +22,16 @@ const TEST_ENDPOINTS_MARKER: &str = "OPENNOTE-TEST-ENDPOINTS-BUILD";
 fn main() {
     println!("cargo:rerun-if-changed=src/command_list.rs");
     println!("cargo:rerun-if-changed={KEYS_DIR}");
+    println!("cargo:rerun-if-env-changed=OPENNOTE_DRY_RUN");
     let test_endpoints = env::var_os("CARGO_FEATURE_TEST_ENDPOINTS").is_some();
-    let source = update_keys_source(&public_keys(Path::new(KEYS_DIR)), test_endpoints);
+    let keys = public_keys(Path::new(KEYS_DIR));
+    let source = update_keys_source(&keys, test_endpoints);
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("Cargo sets OUT_DIR"));
+    let profile = profile_from_out_dir(&out_dir).unwrap_or_default();
+    let dry_run = env::var("OPENNOTE_DRY_RUN").is_ok_and(|value| value == "1");
+    if let Some(problem) = release_key_problem(&profile, keys.len(), test_endpoints, dry_run) {
+        panic!("{problem}");
+    }
     write_if_changed(&out_dir.join("update_keys.rs"), &source);
 
     let manifest = tauri_build::AppManifest::new().commands(APP_COMMANDS);
