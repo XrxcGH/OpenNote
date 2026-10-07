@@ -167,6 +167,8 @@ export function exportDialog(): Screen {
   ];
   const body = [
     ...backdrop(p),
+    // The window's own zones are drawn under the dialog, which covers the pages pane's resize handle.
+    ...windowAnnotations(),
     scrim(p),
     card(p, d, 'Export "Lectures"'),
     text(d.x + 24, d.y + 70, 'Choose what to export', { size: 14, weight: 600, fill: p.c('text.primary') }),
@@ -191,7 +193,6 @@ export function exportDialog(): Screen {
     button(p, d.x + d.w - 184, d.y + 586, 160, 'Choose a folder…'),
     button(p, d.x + 24, d.y + d.h - 62, 80, 'Cancel', 'quiet'),
     button(p, d.x + d.w - 130, d.y + d.h - 62, 106, 'Export', 'primary'),
-    ...windowAnnotations(),
     tag(d.x + d.w + 20, d.y + 100, 'Opens from the tree\u2019s right-click menu: Export…', NOTE.region),
     tag(d.x + d.w + 20, d.y + 130, 'Page, section, or notebook; the formats follow', NOTE.region),
     tag(d.x + d.w + 20, d.y + 160, 'Export shows progress, then a summary', NOTE.region),

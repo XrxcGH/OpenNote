@@ -368,6 +368,32 @@ describe('text', () => {
     }
   });
 
+  it('draws no keep-out zone of the window over a card or dialog in front of it', () => {
+    const over: string[] = [];
+    for (const { name, root } of pictures) {
+      const order = [...walk(root)];
+      const box = (e: El) => ({
+        x0: +e.attrs.x,
+        y0: +e.attrs.y,
+        x1: +e.attrs.x + +e.attrs.width,
+        y1: +e.attrs.y + +e.attrs.height,
+      });
+      // A raised card, dialog or menu has rounded corners; a sheet of paper, whose margins may be marked, has none.
+      const cards = order.filter(
+        (e) => e.tag === 'rect' && e.attrs.filter === 'url(#shadow)' && Number(e.attrs.rx) > 0,
+      );
+      for (const zone of order.filter((e) => e.tag === 'rect' && e.attrs.fill === 'url(#hatch)')) {
+        const z = box(zone);
+        for (const card of cards.filter((c) => order.indexOf(c) < order.indexOf(zone)).map(box)) {
+          const apart = z.x1 <= card.x0 || card.x1 <= z.x0 || z.y1 <= card.y0 || card.y1 <= z.y0;
+          if (!apart)
+            over.push(`${name}: a keep-out zone at ${z.x0},${z.y0} is drawn over a card at ${card.x0},${card.y0}`);
+        }
+      }
+    }
+    assert.deepEqual(over, []);
+  });
+
   it('keeps every button and field clear of the others', () => {
     for (const { name, root } of pictures) {
       const controls = [...walk(root)]
