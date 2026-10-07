@@ -381,7 +381,8 @@ function toolWindow(p: Palette, x: number, y: number, w: number, h: number, titl
 
 export function toolWindows(): Screen {
   const p = palette('light');
-  const t = { x: 480, y: BODY_TOP + 20, w: 300, h: 380 };
+  // The timer card ends 22 px below its Add timer button, like the calculator, and the button 22 px below the field.
+  const t = { x: 480, y: BODY_TOP + 20, w: 300, h: 404 };
   const c = { x: 800, y: BODY_TOP + 20, w: 300, h: 540 };
   const u = { x: 1120, y: BODY_TOP + 20, w: 300, h: 420 };
   const keys = ['sin', 'cos', 'tan', 'ln', '7', '8', '9', '÷', '4', '5', '6', '×', '1', '2', '3', '−'];
@@ -428,10 +429,9 @@ export function toolWindows(): Screen {
     field(p, u.x + 24, u.y + 148, u.w - 48, 'Does not repeat', true),
     button(p, u.x + 24, u.y + 200, 110, 'Add a task', 'primary'),
     button(p, u.x + 144, u.y + 200, 130, 'Import a file'),
-    text(u.x + 24, u.y + 270, 'Nothing due yet. Add a task, or import a calendar file.', {
-      size: 12,
-      fill: p.c('text.muted'),
-    }),
+    // Two lines, so the words stay inside the 252 px between the card's margins.
+    text(u.x + 24, u.y + 266, 'Nothing due yet. Add a task, or import', { size: 12, fill: p.c('text.muted') }),
+    text(u.x + 24, u.y + 286, 'a calendar file.', { size: 12, fill: p.c('text.muted') }),
     text(u.x + 24, u.y + 336, 'Remind me with a Windows notification', { size: 12, fill: p.c('text.primary') }),
     text(u.x + 24, u.y + 356, 'when something is due', { size: 12, fill: p.c('text.primary') }),
     toggle(p, u.x + 236, u.y + 338, false),

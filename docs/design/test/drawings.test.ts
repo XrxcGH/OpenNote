@@ -341,6 +341,45 @@ describe('text', () => {
     }
   });
 
+  it('keeps the words on a card or dialog inside it', () => {
+    for (const { name, root } of pictures) {
+      const order = [...walk(root)];
+      const cards = order.filter((e) => e.tag === 'rect' && e.attrs.filter === 'url(#shadow)');
+      for (const t of lines(root)) {
+        const at = order.indexOf(t.e);
+        const x = Number(t.e.attrs.x);
+        // The card it is written on is the last one drawn before it under the point where it starts.
+        const card = cards
+          .filter((c) => order.indexOf(c) < at)
+          .map((c) => ({
+            x0: +c.attrs.x,
+            y0: +c.attrs.y,
+            x1: +c.attrs.x + +c.attrs.width,
+            y1: +c.attrs.y + +c.attrs.height,
+          }))
+          .filter((c) => x > c.x0 && x < c.x1 && t.y > c.y0 && t.y < c.y1)
+          .at(-1);
+        if (!card) continue;
+        assert.ok(t.box.x0 >= card.x0 && t.box.x1 <= card.x1, `${name}: "${t.e.text}" runs past its card's edge`);
+      }
+    }
+  });
+
+  it('keeps every button and field clear of the others', () => {
+    for (const { name, root } of pictures) {
+      const controls = [...walk(root)]
+        .filter((e) => e.tag === 'rect' && e.attrs.height === '34')
+        .map((e) => ({ x0: +e.attrs.x, y0: +e.attrs.y, x1: +e.attrs.x + +e.attrs.width, y1: +e.attrs.y + 34 }));
+      for (let i = 0; i < controls.length; i++) {
+        for (let j = i + 1; j < controls.length; j++) {
+          const [a, b] = [controls[i], controls[j]];
+          const apart = a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0;
+          assert.ok(apart, `${name}: controls at ${a.x0},${a.y0} and ${b.x0},${b.y0} overlap`);
+        }
+      }
+    }
+  });
+
   it('keeps every handwritten label clear of the ink around it', () => {
     for (const { name, root } of pictures) {
       const strokes = [...walk(root)].filter(
