@@ -53,9 +53,10 @@ function movedNote(id: CommandId): string | null {
   const lost = change.defaultKeys.filter((key) => !here.includes(key));
   if (lost.length === 0) return null;
   const taker = change.takenBy[0] && commands.get(change.takenBy[0].id);
-  return taker
+  const from = taker
     ? t('shortcuts.movedTo', { keys: joinKeys(lost), command: t(taker.title) })
     : t('shortcuts.movedAway', { keys: joinKeys(lost) });
+  return here.length > 0 ? `${from} ${t('shortcuts.movedNow', { keys: joinKeys(here) })}` : from;
 }
 
 function rowFor(def: AnyCommand): ShortcutRow {

@@ -227,6 +227,8 @@ register(
     category: 'navigation',
     flag: 'qol.recentlyClosed',
     keys: [chord('Ctrl+Shift+T')],
+    // OneNote's Ctrl+Shift+T selects the page title (features/shortcuts), so the OneNote set adds Alt.
+    presetKeys: { onenote: [chord('Ctrl+Alt+Shift+T')] },
     allowInTextInput: true,
     enabled: () => qolStore.get().closedTabs.length > 0,
     run: async (ctx) => {

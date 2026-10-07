@@ -43,6 +43,12 @@ export const shortcuts = {
   resetAllDone: 'All shortcuts are back to the {set} set.',
   movedTo: 'Moved from {keys}, which {command} uses in the OneNote set.',
   movedAway: 'Moved from {keys} in the default set.',
+  movedNow: 'In this set it is {keys}.',
+  selectTitle: {
+    title: 'Select the page title',
+    keywords: 'title heading rename page name select',
+    none: 'No page is open, so there is no title to select.',
+  },
   categories: {
     general: 'General',
     navigation: 'Navigation',
