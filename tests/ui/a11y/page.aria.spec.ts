@@ -22,6 +22,8 @@ async function staticAndMounted(page: Page): Promise<[string, string]> {
   const before = await text.ariaSnapshot();
   await text.click({ position: { x: 4, y: 4 } });
   await expect(text).toHaveAttribute('contenteditable', 'true');
+  // The math view loads a moment after the editor does, and an early snapshot would not have it.
+  await expect(text.getByRole('math').first()).toBeAttached();
   return [before, await text.ariaSnapshot()];
 }
 
@@ -33,7 +35,12 @@ const words = (tree: string) =>
     .map((line) => line.replace(/'note "[^"]*"':/, 'note:'))
     // Static math is generated text; an editor's math view puts the same source in a code element.
     .map((line) => line.replace(/^(\s*- )code: (\$.*)$/, '$1text: $2'))
-    .join('\n');
+    .join('\n')
+    // The mounted math view is a math element named for its source. Static math reads as the source in dollar signs.
+    .replace(
+      /^(\s*)- 'math "Display math: ([^"]*)"':\n\s*- math: .*$/gm,
+      (_all, indent: string, source: string) => `${indent}- text: $$ ${source} $$`,
+    );
 
 test('the sampler text reads the same, in the same structure, static and mounted', async ({ page }) => {
   const [before, after] = await staticAndMounted(page);
