@@ -414,6 +414,8 @@ fn copy_assets(fs: &dyn Fs, src: &Path, dst: &Path, page: &Page) -> Result<(), C
         }
         fs.create_durable(&to, &bytes)?;
     }
+    // A recording's timeline goes with its audio, so the copy's stamps stay intact.
+    super::companions::copy_companions(fs, src, dst, page)?;
     Ok(())
 }
 

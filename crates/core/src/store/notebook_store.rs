@@ -29,6 +29,7 @@ use crate::store::tree_log::IntentLog;
 use crate::time::{Clock, Timestamp};
 
 mod arrange;
+mod companions;
 mod create;
 mod duplicates;
 mod edit;
