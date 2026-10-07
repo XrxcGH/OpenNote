@@ -25,7 +25,8 @@ export function mountProperties(mounted: MountedPage): () => void {
   return () => {
     window.removeEventListener('resize', place);
     observer?.disconnect();
-    root.unmount();
+    // The page view destroys its hooks while React may be mid-render, which a root cannot unmount in.
+    setTimeout(() => root.unmount(), 0);
     host.remove();
   };
 }
