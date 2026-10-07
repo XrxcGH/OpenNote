@@ -46,7 +46,12 @@ export const PLANT = {
   base: 63.325,
   rim: 'M17.5 44.6C28 43.6 37 43.6 46.5 44.6',
   stem: 'M32 44C31.4 34 32.4 23 32 12',
-  trailing: 'M21.5 46C15.5 49.5 18 55.6 12.4 59 9 61 6 62.4 2.6 62.6',
+  /**
+   * The trailing vine grows from the soil beside the stem, arches over the rim's left lip, and hangs down outside the
+   * pot to the surface. No part of it passes through the pot's wall.
+   */
+  trailing:
+    'M26 43.8C22 41.8 16.6 42.6 16.4 46.2 16.6 48.6 17.6 49.8 17.2 51.4 16.6 54 15 57.4 12.4 59 9 61 6 62.4 2.6 62.6',
   leaves: [
     'M32 35C24 35.6 19 30.6 18 23.4 26 22.6 31 27.6 32 35Z',
     'M32 25C40 25.6 45 20.6 46 13.4 38 12.6 33 17.6 32 25Z',
@@ -54,7 +59,7 @@ export const PLANT = {
   ],
   /** Like the window vine's: each leaf starts on the trailing stem and grows away from it. */
   trailingLeaves: [
-    'M17.2 51.4Q15.5 47.4 11.6 49.3Q13.3 53.4 17.2 51.4Z',
+    'M17.2 51.4Q14.5 48 11.2 50.8Q14 54.3 17.2 51.4Z',
     'M10.4 60.1Q10.7 56 6.6 56.1Q6.3 60.2 10.4 60.1Z',
     'M4.6 62.4Q5.8 58.5 1.7 58.3Q0.5 62.2 4.6 62.4Z',
   ],
@@ -97,7 +102,8 @@ export const NOTEBOOK = {
    * edges, so no edge of it runs behind them. A Windows contrast theme draws outlines without fills, and a hidden
    * edge would show there as a line across both pages.
    */
-  cover: 'M1.6 13V36.8C14 34 24 34.6 32 39.4 40 34.6 50 34 62.4 36.8V13H61V34.4C50 31.4 40 32 32 37 24 32 14 31.4 3 34.4V13Z',
+  cover:
+    'M1.6 13V36.8C14 34 24 34.6 32 39.4 40 34.6 50 34 62.4 36.8V13H61V34.4C50 31.4 40 32 32 37 24 32 14 31.4 3 34.4V13Z',
   left: 'M3 9C14 6 24 7 32 12V37C24 32 14 31.4 3 34.4Z',
   right: 'M61 9C50 6 40 7 32 12V37C40 32 50 31.4 61 34.4Z',
   lines: 'M9 15.6C14 15 18.6 16 24 18.6M9 21.4C14 20.8 18.6 21.8 24 24.4M9 27.2C12 26.8 14 27.2 16 28',

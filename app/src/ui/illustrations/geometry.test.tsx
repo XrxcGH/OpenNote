@@ -108,6 +108,14 @@ describe('where things stand', () => {
 });
 
 describe('where things meet', () => {
+  it("hangs the plant's trailing vine over the pot's rim, never through its wall", () => {
+    const paths = [...drawn(renderUi(<Plant />).container).querySelectorAll<SVGGeometryElement>('path')];
+    const [pot, trailing] = [paths[0], paths[3]];
+    // Every point of the vine is outside the pot's body; where it crosses the rim it lies on top of it.
+    const through = along(trailing, 800).filter((p) => pot.isPointInFill(p));
+    expect(through).toEqual([]);
+  });
+
   it("keeps the plant's left leaf clear of the window's middle bar", () => {
     const svg = drawn(renderUi(<DeskScene sky="day" />).container);
     const [frame, plant] = [...svg.querySelectorAll(':scope > g')];
@@ -148,7 +156,10 @@ describe('how light falls', () => {
     const inner: number[] = [];
     const outer: number[] = [];
     for (const segment of segments) {
-      const [ax, ay, bx, by] = segment.trim().split(/[\s,]+/).map(Number);
+      const [ax, ay, bx, by] = segment
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number);
       inner.push(Math.hypot(ax - middle.x, ay - middle.y));
       outer.push(Math.hypot(bx - middle.x, by - middle.y));
       // The ray's own direction and the direction from the sun to its start agree to within 2 degrees.
