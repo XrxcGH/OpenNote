@@ -37,7 +37,7 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.gridTable', 'Draw a grid to make a table.', on),
   flag('ink.penEditing', 'Edit typed text with the pen.', on),
   // ink.delegatedTrail, ink.nativeTrail, ink.openSnapshot, and dev.penRecorder aren't built yet, so they have no
-  // entry and stay off.
+  // FlagId and no entry. Add both when one is built (app/src/app/flagUsage.test.ts checks that they match).
 ];
 
 /** The ink view: the pointer tools, the Draw tab, and the ink over the shown page. It loads with the first page. */

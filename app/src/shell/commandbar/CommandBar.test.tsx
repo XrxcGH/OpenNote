@@ -7,6 +7,7 @@ import { commandBar, commands, contextMenus, titleBarItems } from '../../registr
 import type { CommandBarItem } from '../../registries/types';
 import type { MessageKey } from '../../strings/t';
 import { expectFocus, expectNoAxeViolations, renderApp, setViewport } from '../../test';
+import { recordRecentPage } from '../../state/session';
 import { registerRegionMain } from '../regions';
 
 const stops: (() => void)[] = [];
@@ -167,5 +168,37 @@ describe('the bottom bar', () => {
     await userEvent.keyboard('{Escape}');
     await expectFocus(more);
     await expectNoAxeViolations(document.body);
+  });
+
+  it('lists the recent pages in More when bottomBar.recent is on', async () => {
+    const open = async (channel: 'beta' | 'stable') => {
+      const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel } });
+      const pages = await notes.listChildren('s-lectures');
+      recordRecentPage(pages[1].id);
+      recordRecentPage(pages[0].id);
+      const bar = screen.getByRole('navigation', { name: 'Quick actions' });
+      await userEvent.click(within(bar).getByRole('button', { name: 'More commands' }));
+      return { pages, panel: await screen.findByRole('dialog', { name: 'More commands' }) };
+    };
+    const { pages, panel } = await open('beta');
+    const list = await within(panel).findByRole('list', { name: 'Recent pages' });
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual([pages[0].title, pages[1].title]);
+    await expectNoAxeViolations(document.body);
+    await userEvent.click(within(list).getAllByRole('button')[1]);
+    expect(screen.queryByRole('dialog', { name: 'More commands' })).toBeNull();
+  });
+
+  it('leaves the recent pages out of More in Stable', async () => {
+    const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel: 'stable' } });
+    const pages = await notes.listChildren('s-lectures');
+    recordRecentPage(pages[0].id);
+    const bar = screen.getByRole('navigation', { name: 'Quick actions' });
+    await userEvent.click(within(bar).getByRole('button', { name: 'More commands' }));
+    const panel = await screen.findByRole('dialog', { name: 'More commands' });
+    expect(within(panel).queryByRole('list', { name: 'Recent pages' })).toBeNull();
   });
 });

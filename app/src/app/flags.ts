@@ -36,9 +36,7 @@ export type FlagId =
   | 'commandBar.draw'
   | 'setup.smartFeatures'
   | 'setup.import'
-  | 'settings.penAndInk'
   | 'settings.recording'
-  | 'settings.privacyAndAi'
   | 'bottomBar.recent'
   /** Notes kept on disk in every build: the library file and the core's pages in the notes folder. */
   | 'storage.core'
@@ -171,11 +169,7 @@ type Phase5FlagId =
   | 'ink.shapeTools'
   | 'ink.handwriting'
   | 'ink.gridTable'
-  | 'ink.penEditing'
-  | 'ink.delegatedTrail'
-  | 'ink.nativeTrail'
-  | 'ink.openSnapshot'
-  | 'dev.penRecorder';
+  | 'ink.penEditing';
 
 /** Phase 9's flags; features/audio/flags.ts defines them. */
 type Phase9FlagId =
@@ -267,10 +261,8 @@ export const FLAGS: readonly FlagDef[] = [
   flag('commandBar.draw', 'The Draw tab of the command bar.', on),
   flag('setup.smartFeatures', 'The smart features step of setup.', betaBuilds),
   flag('setup.import', 'The step of setup that brings in notes from other apps.', on),
-  flag('settings.penAndInk', 'The Pen and ink section of Settings.', off),
   flag('settings.recording', 'The Recording section of Settings.', on),
-  flag('settings.privacyAndAi', 'The Privacy and smart features section of Settings.', off),
-  flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', off),
+  flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', betaBuilds),
   flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),
   ...PAGE_FLAGS,
   ...INK_FLAGS,
