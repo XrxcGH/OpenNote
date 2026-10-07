@@ -40,7 +40,7 @@ export function tagName(tag: string): string {
 }
 
 const ICONS: Record<KnownTag | 'custom', string> = {
-  todo: 'M5 5h14v14H5z M8.5 12.5l2.5 2.5 4.5-5',
+  todo: 'M4 4h16v16H4z M8 12.6l2.9 2.9 5.1-5.8',
   important: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z',
   question: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7 M12 17v.01',
   idea: 'M9 18h6 M10 21h4 M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z',
