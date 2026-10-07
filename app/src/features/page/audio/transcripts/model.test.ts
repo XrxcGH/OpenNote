@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   actionText,
   clockMs,
+  fixedWords,
   fromSegments,
   markdownOf,
   momentHref,
@@ -200,5 +201,25 @@ describe('the recap', () => {
 
   it('names who and when only when they are known', () => {
     expect(actionText({ text: 'Call', owner: null, due: null })).toBe('Call');
+  });
+});
+
+describe('the words a fix changed', () => {
+  it('finds the changed words between the shared ones', () => {
+    expect(fixedWords('we talked about calvin psyche today', 'we talked about Calvin cycle today')).toEqual({
+      original: 'calvin psyche',
+      fixed: 'Calvin cycle',
+    });
+    expect(fixedWords('the adp molecule.', 'the ATP molecule.')).toEqual({ original: 'adp', fixed: 'ATP' });
+  });
+
+  it('keeps punctuation out of the term', () => {
+    expect(fixedWords('Ask doctor pat tell.', 'Ask doctor Patel.')).toEqual({ original: 'pat tell', fixed: 'Patel' });
+  });
+
+  it('offers nothing for no change, an added word, or a rewrite', () => {
+    expect(fixedWords('same words', 'same  words')).toBeNull();
+    expect(fixedWords('one two', 'one more two')).toBeNull();
+    expect(fixedWords('a b c d e f', 'g h i j k l')).toBeNull();
   });
 });

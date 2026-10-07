@@ -85,6 +85,38 @@ const replaceLine = (data: TranscriptData, id: string, change: (line: Line) => L
 export const setLineText = (data: TranscriptData, id: string, text: string): TranscriptData =>
   replaceLine(data, id, (line) => ({ ...line, text }));
 
+/** The most words on either side of a fix that is still offered as one vocabulary term. */
+const MAX_FIX_WORDS = 4;
+
+/**
+ * The words the person changed when fixing a line: what the line said and what it says now, without the words both
+ * share at the start and the end. Null when nothing changed, when only words were added or removed, or when the change
+ * is too long to be one term (a rewrite, not a fix).
+ */
+export function fixedWords(before: string, after: string): { original: string; fixed: string } | null {
+  const strip = (word: string) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+  const a = before.trim().split(/\s+/).filter(Boolean);
+  const b = after.trim().split(/\s+/).filter(Boolean);
+  let start = 0;
+  while (start < a.length && start < b.length && a[start] === b[start]) start += 1;
+  let end = 0;
+  while (end < a.length - start && end < b.length - start && a[a.length - 1 - end] === b[b.length - 1 - end]) end += 1;
+  const original = a
+    .slice(start, a.length - end)
+    .map(strip)
+    .filter(Boolean)
+    .join(' ');
+  const fixed = b
+    .slice(start, b.length - end)
+    .map(strip)
+    .filter(Boolean)
+    .join(' ');
+  if (!original || !fixed || original === fixed) return null;
+  const count = (text: string) => text.split(' ').length;
+  if (count(original) > MAX_FIX_WORDS || count(fixed) > MAX_FIX_WORDS) return null;
+  return { original, fixed };
+}
+
 /** Gives a line to a speaker, or to nobody with undefined. */
 export function setLineSpeaker(data: TranscriptData, id: string, speaker: number | undefined): TranscriptData {
   return replaceLine(data, id, (line) => {

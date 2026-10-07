@@ -19,17 +19,18 @@ A recording's transcript, on the page. It is part of [audio recording](../README
 - **Action items and chapters.** Find action items and Make chapters ask the on-device summaries, show what they find, and add nothing until a click. An action item becomes a checkbox with its due date and a link to its moment. Chapters can be kept with the transcript, and then list under the summary with jump points.
 - **Copy recap.** Summary, decisions, and action items, as formatted text or Markdown, with a preview and a choice of parts. Without on-device summaries it offers the page's own headings and open checkboxes.
 - **Making one.** The More menu of a recording makes a transcript with the registered speech engine, or adds one from captions (SRT, WebVTT), lines that start with a time, or plain text. Transcripts can be made from the original or the enhanced voice.
+- **Fixing a word.** When an edited line's changed words look like a term (a name, a course word), a quiet toast offers to add them to the notebook's custom vocabulary (`vocabulary.ts`). Add saves the term with what was heard, on this device. The flag is `intel.vocabulary`.
 - **Edits to the audio.** A removed part takes its words out of the transcript, along with the summary and chapters, which could carry them. A split divides the transcript. A trim moves it earlier by what was cut from the start.
 
 ## Where things are
 
-| File | Holds |
-| --- | --- |
-| `model.ts` | The data, and every change to it as a pure function. Parsing captions and text, quotes, the recap. |
-| `store.ts` | Finding and saving the transcript block, the ticked lines, the saved speaker names. |
-| `engine.ts` | The seam where the speech engine registers. |
-| `actions.ts`, `commands.ts` | What the screens and commands do. |
-| `TranscriptBlock.tsx`, `blockRenderer.tsx`, `dialogs.tsx` | The screens. |
+| File                                                      | Holds                                                                                              |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `model.ts`                                                | The data, and every change to it as a pure function. Parsing captions and text, quotes, the recap. |
+| `store.ts`                                                | Finding and saving the transcript block, the ticked lines, the saved speaker names.                |
+| `engine.ts`                                               | The seam where the speech engine registers.                                                        |
+| `actions.ts`, `commands.ts`                               | What the screens and commands do.                                                                  |
+| `TranscriptBlock.tsx`, `blockRenderer.tsx`, `dialogs.tsx` | The screens.                                                                                       |
 
 ## How a transcript is kept
 
@@ -48,4 +49,3 @@ npx vitest run --config app/vitest.config.ts --project unit app/src/features/pag
 ## Not done
 
 - No speech engine is registered. `registerTranscriptEngine` is where the on-device transcriber plugs in. It also needs to report speaker numbers for diarization to show.
-- Custom vocabulary is not applied to a transcript.
