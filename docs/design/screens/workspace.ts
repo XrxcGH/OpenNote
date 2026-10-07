@@ -74,7 +74,7 @@ export function samplePage(p: Palette, x: number, y: number): string {
     straightArrow([x + 656, y + 106], onEllipse(x + 540.5, y + 203, 22, 18, -50), p.pen('Ink'), 2),
     text(x + 664, y + 100, 'nucleus', { size: 18, fill: p.pen('Ink'), italic: true, font: 'reading' }),
     text(x, y + 190, 'Key terms', { size: 20, weight: 600, fill: p.c('text.primary') }),
-    rect({ x: x - 2, y: y + 204, w: 150, h: 20 }, { fill: p.highlighter('Honey'), r: 3 }),
+    rect({ x: x - 2, y: y + 204, w: 144, h: 20 }, { fill: p.highlighter('Honey'), r: 3 }),
     textLines(x, y + 211, [140, 360, 330], p.c('border.control')),
   ].join('');
 }

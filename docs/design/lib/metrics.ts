@@ -67,12 +67,17 @@ function faceOf(font: FontKind, weight: number, italic: boolean): Face | null {
 /** The width of a run of text in pixels, at a font size in pixels. */
 export function textWidth(content: string, size: number, weight = 400, font: FontKind = 'ui', italic = false): number {
   const face = faceOf(font, weight, italic);
+  // Cambria's regular and italic carry hinted widths for small sizes, which round each character to a whole pixel.
+  const whole = (face === 'reading400' || face === 'reading400i') && size <= HINTED;
   let total = 0;
   for (const ch of content) {
     const code = ch.codePointAt(0) ?? 0;
     // Cascadia Code and Consolas, the monospaced fallbacks, are 0.55 to 0.59 of the size wide.
-    if (!face) total += 570;
-    else total += code >= 32 && code <= 126 ? ADVANCE[face][code - 32] : OTHER;
+    const advance = !face ? 570 : code >= 32 && code <= 126 ? ADVANCE[face][code - 32] : OTHER;
+    total += whole ? Math.round((advance * size) / 1000) : (advance * size) / 1000;
   }
-  return (total * size) / 1000;
+  return total;
 }
+
+/** The largest size in pixels at which a browser uses Cambria's hinted, whole-pixel widths. */
+const HINTED = 20;

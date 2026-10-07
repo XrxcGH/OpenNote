@@ -117,7 +117,11 @@ function page(p: Palette): string {
     text(x, top + 44, 'Mitosis', { size: 26, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
     rect({ x, y: top + 54, w: 36, h: 2 }, { fill: p.c('accent.clay') }),
     text(x, top + 72, 'Changed Sep 23, 2026', { size: 11, fill: p.c('text.muted') }),
-    rect({ x: x - 4, y: top + 90, w: 150, h: 22 }, { fill: p.highlighter('Honey'), r: 3, opacity: 0.6 }),
+    // The highlight reaches 4 px past each end of the heading.
+    rect(
+      { x: x - 4, y: top + 90, w: Math.round(textWidth('Phases of mitosis', 15, 700, 'reading') + 8), h: 22 },
+      { fill: p.highlighter('Honey'), r: 3, opacity: 0.6 },
+    ),
     text(x, top + 106, 'Phases of mitosis', { size: 15, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
     ...bullets.flatMap((item, i) => [
       circle(x + 4, top + 134 + i * 22, 2.5, p.c('accent.clay')),

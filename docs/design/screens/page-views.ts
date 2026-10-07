@@ -30,6 +30,7 @@ import {
   titleBar,
   windowAnnotations,
 } from '../lib/chrome.ts';
+import { textWidth } from '../lib/metrics.ts';
 import { type Screen, makeScreen } from './screen.ts';
 
 const SCALE = 0.62;
@@ -193,6 +194,9 @@ function pillButton(p: Palette, x: number, y: number, w: number, label: string):
   ].join('');
 }
 
+/** The highlighted question under the recording; the band reaches 2 px past each end of it. */
+const QUESTION = 'Question for Thursday: how does this differ from diffusion?';
+
 function recordingNotes(p: Palette, x: number, y: number): string {
   const body = { size: 15, fill: p.c('text.primary'), font: 'reading' as const };
   return [
@@ -201,8 +205,15 @@ function recordingNotes(p: Palette, x: number, y: number): string {
     ink(`M${x} ${y + 150}l0-80M${x} ${y + 150}l200 0`, p.pen('Ink'), 2),
     ink(`M${x + 10} ${y + 140}c50-10 70-60 100-64s50 14 80 18`, p.pen('Indigo')),
     text(x + 130, y + 80, 'Vmax', { size: 16, fill: p.pen('Indigo'), italic: true, font: 'reading' }),
-    rect({ x: x - 2, y: y + 176, w: 300, h: 22 }, { fill: p.highlighter('Mint'), r: 3, opacity: 0.6 }),
-    text(x, y + 192, 'Question for Thursday: how does this differ from diffusion?', body),
+    rect(
+      { x: x - 2, y: y + 176, w: Math.round(textWidth(QUESTION, 15, 400, 'reading') + 4), h: 22 },
+      {
+        fill: p.highlighter('Mint'),
+        r: 3,
+        opacity: 0.6,
+      },
+    ),
+    text(x, y + 192, QUESTION, body),
   ].join('');
 }
 

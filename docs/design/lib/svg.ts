@@ -97,6 +97,35 @@ const FONTS = {
 };
 
 export function text(x: number, y: number, content: string, s: TextStyle = {}): string {
+  return `<text ${textAttrs(x, y, s)}>${escapeXml(content)}</text>`;
+}
+
+/** A run of words inside a line of text, in its own color, weight or slant. */
+export interface Run {
+  text: string;
+  fill?: string;
+  weight?: number;
+  italic?: boolean;
+}
+
+/**
+ * One line of text made of runs in different styles. The browser sets each run right after the one before, so a
+ * link, a bold word, or an equation sits one space from the words around it whatever font the viewer has.
+ */
+export function textRuns(x: number, y: number, runs: (string | Run)[], s: TextStyle = {}): string {
+  const inner = runs.map((run) => {
+    if (typeof run === 'string') return escapeXml(run);
+    const attrs = [
+      run.fill ? `fill="${run.fill}"` : '',
+      run.weight ? `font-weight="${run.weight}"` : '',
+      run.italic ? 'font-style="italic"' : '',
+    ];
+    return `<tspan ${attrs.filter(Boolean).join(' ')}>${escapeXml(run.text)}</tspan>`;
+  });
+  return `<text ${textAttrs(x, y, s)}>${inner.join('')}</text>`;
+}
+
+function textAttrs(x: number, y: number, s: TextStyle): string {
   const attrs = [
     `x="${x}" y="${y}"`,
     `font-size="${s.size ?? 13}"`,
@@ -106,7 +135,7 @@ export function text(x: number, y: number, content: string, s: TextStyle = {}): 
     `font-family="${FONTS[s.font ?? 'ui']}"`,
     s.italic ? 'font-style="italic"' : '',
   ];
-  return `<text ${attrs.filter(Boolean).join(' ')}>${escapeXml(content)}</text>`;
+  return attrs.filter(Boolean).join(' ');
 }
 
 function escapeXml(value: string): string {

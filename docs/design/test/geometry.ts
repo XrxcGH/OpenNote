@@ -30,7 +30,10 @@ export function parseSvg(svg: string): El {
   for (const token of svg.match(/<[^>]*>|[^<]+/g) ?? []) {
     if (token.startsWith('<?') || token.startsWith('<!')) continue;
     if (!token.startsWith('<')) {
-      at.text += token.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+      const words = token.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+      at.text += words;
+      // A run inside a line of text belongs to the line too.
+      if (at.tag === 'tspan' && at.parent) at.parent.text += words;
       continue;
     }
     if (token.startsWith('</')) {

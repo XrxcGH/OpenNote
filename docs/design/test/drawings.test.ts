@@ -319,6 +319,47 @@ describe('inside their pictures', () => {
   });
 });
 
+describe('text', () => {
+  const lines = (root: El) =>
+    [...walk(root)].filter((e) => e.tag === 'text').map((e) => ({ e, box: textBox(e), y: Number(e.attrs.y) }));
+
+  it('sets the pieces of a line one after another in one text, never as pieces that crowd or overlap', () => {
+    for (const { name, root } of pictures) {
+      const all = lines(root).filter((t) => (t.e.attrs['text-anchor'] ?? 'start') === 'start');
+      for (const a of all) {
+        for (const b of all) {
+          if (a === b || Math.abs(a.y - b.y) > 0.5 || b.box.x0 <= a.box.x0) continue;
+          // Pieces of one line share its size and font; a menu over a chip does not.
+          const same = (k: string) => a.e.attrs[k] === b.e.attrs[k];
+          if (!same('font-size') || !same('font-family')) continue;
+          const gap = b.box.x0 - a.box.x1;
+          // Two texts on one line either stand apart or are one line of runs, which the browser spaces itself.
+          assert.ok(gap >= 6 || gap < -3, `${name}: "${a.e.text}" and "${b.e.text}" are ${gap.toFixed(1)} px apart`);
+        }
+      }
+    }
+  });
+
+  it('fits each highlight to the words it marks, as far past one end as the other', () => {
+    const p = palette('light');
+    const highlighters = new Set(['Honey', 'Mint'].map((name) => p.highlighter(name)));
+    let checked = 0;
+    for (const { name, root } of pictures) {
+      const texts = lines(root);
+      for (const band of [...walk(root)].filter((e) => e.tag === 'rect' && highlighters.has(e.attrs.fill ?? ''))) {
+        const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((k) => Number(band.attrs[k]));
+        // The words it marks start just inside it and sit on a baseline within it.
+        const words = texts.find((t) => t.box.x0 >= x && t.box.x0 <= x + 8 && t.y > y && t.y <= y + h);
+        if (!words) continue;
+        const [before, after] = [words.box.x0 - x, x + w - words.box.x1];
+        assert.ok(Math.abs(before - after) <= 1.5, `${name}: "${words.e.text}" has ${before} and ${after.toFixed(1)} px`);
+        checked++;
+      }
+    }
+    assert.ok(checked >= 3, `${checked} highlights over words`);
+  });
+});
+
 describe('annotation labels', () => {
   const pills = (root: El) =>
     [...walk(root)]
