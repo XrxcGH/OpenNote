@@ -86,6 +86,21 @@ export const shortcuts = {
     objectToggle: 'With boxes selected: add or remove the focused box.',
     objectEdit: 'With a box selected: edit its text.',
   },
+  gestures: {
+    title: 'Pen and touch gestures',
+    description:
+      'Gestures you can make with the pen or your fingers on a page. Turn each one on or off in Pen and touch settings.',
+    gestureColumn: 'Gesture',
+    howColumn: 'How',
+    stateColumn: 'State',
+    scribbleHow: 'Scribble back and forth over ink with the pen.',
+    circleHow: 'Draw a circle around ink or text, then tap inside it.',
+    twoFingerHow: 'Tap twice with two fingers.',
+    threeFingerHow: 'Tap twice with three fingers.',
+    on: 'On',
+    off: 'Off',
+    openSettings: 'Open Pen and touch settings',
+  },
   set: {
     label: 'Shortcut set',
     default: 'OpenNote',

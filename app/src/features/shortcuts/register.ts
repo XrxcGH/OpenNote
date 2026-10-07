@@ -3,7 +3,8 @@
 
 import { lazy } from 'react';
 import { chord, defineCommand } from '../../commands/registry';
-import { commands, settingsSections } from '../../registries';
+import { commands, settingsSections, shortcutListSections } from '../../registries';
+import { GesturesTable } from './Gestures';
 import { closeOverlay, openOverlay, showOverlay } from '../../shell/commandbar/overlays';
 
 const LazyShortcuts = lazy(() => import('./ShortcutsDialog'));
@@ -30,4 +31,13 @@ settingsSections.register({
   icon: 'Keyboard',
   order: 40,
   load: () => import('./ShortcutsSection'),
+});
+
+// The pen and touch gestures, with whether each is on, after the keys that always work.
+shortcutListSections.register({
+  id: 'gestures',
+  title: 'shortcuts.gestures.title',
+  order: 10,
+  flag: 'ink.gestures',
+  Component: GesturesTable,
 });

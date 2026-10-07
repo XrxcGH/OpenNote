@@ -4,7 +4,9 @@ import { userEvent } from 'vitest/browser';
 import { chord, defineCommand } from '../../commands/registry';
 import { commands, shortcutListSections } from '../../registries';
 import { closeOverlay } from '../../shell/commandbar/overlays';
+import { getLocation } from '../../app/location';
 import { setShortcut } from '../../state/keymap';
+import { updateSettings } from '../../state/settings';
 import { announcements, expectNoAxeViolations, pressChord, renderApp, typeInto } from '../../test';
 
 const stops: (() => void)[] = [];
@@ -14,8 +16,8 @@ afterEach(() => {
   stops.splice(0).forEach((stop) => stop());
 });
 
-async function openList() {
-  await pressChord('Ctrl+/');
+async function openList(keys = 'Ctrl+/') {
+  await pressChord(keys);
   return screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
 }
 
@@ -116,5 +118,28 @@ describe('the shortcut list sets and changes', () => {
     const dialog = await openList();
     expect(within(dialog).getByRole('heading', { name: 'More' })).toBeTruthy();
     expect(within(dialog).getByText('Two fingers scroll.')).toBeTruthy();
+  });
+});
+
+describe('the gestures in the shortcut list', () => {
+  it('lists each pen and touch gesture with whether it is on, and links to Pen and touch settings', async () => {
+    await renderApp();
+    await updateSettings({ ink: { gestures: { scribbleErase: false } } });
+    const dialog = await openList();
+    const table = within(dialog).getByRole('table', { name: 'Pen and touch gestures' });
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows.map((row) => within(row).getByRole('rowheader').textContent)).toEqual([
+      'Scribble to erase',
+      'Circle and tap to select',
+      'Two-finger double tap to undo',
+      'Three-finger double tap to redo',
+    ]);
+    expect(rows[0].textContent).toContain('Off');
+    expect(rows[1].textContent).toContain('On');
+    await updateSettings({ ink: { gestures: { scribbleErase: true } } });
+    await waitFor(() => expect(within(table).getAllByRole('row')[1].textContent).toContain('On'));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Open Pen and touch settings' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(getLocation()).toEqual({ view: 'settings', section: 'penAndTouch' });
   });
 });
