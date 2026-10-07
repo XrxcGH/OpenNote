@@ -1,6 +1,7 @@
 // The reference tables (Productivity and study tools): the periodic table, physical constants, metric prefixes, and
 // Greek letters. The data is plain and complete for what it lists, and works offline.
 import { CONSTANTS } from '../calculator';
+import { configurationOf, groupNumberOf, periodOf } from './configuration';
 
 export type ElementGroup =
   | 'alkali'
@@ -21,6 +22,12 @@ export interface Element {
   /** Standard atomic weight, or the mass number of the longest-lived isotope for elements with no stable one. */
   mass: number;
   group: ElementGroup;
+  /** The row of the periodic table, 1 to 7. */
+  period: number;
+  /** The column, 1 to 18, or null for the f-block elements between the groups. */
+  groupNumber: number | null;
+  /** The electron configuration, such as [Ar] 3d⁶ 4s². */
+  configuration: string;
 }
 
 // number, symbol, name, mass
@@ -50,7 +57,17 @@ export function groupOf(number: number): ElementGroup {
 
 export const ELEMENTS: readonly Element[] = ROWS.split('|').map((row) => {
   const [number, symbol, name, mass] = row.split(' ');
-  return { number: Number(number), symbol, name, mass: Number(mass), group: groupOf(Number(number)) };
+  const z = Number(number);
+  return {
+    number: z,
+    symbol,
+    name,
+    mass: Number(mass),
+    group: groupOf(z),
+    period: periodOf(z),
+    groupNumber: groupNumberOf(z),
+    configuration: configurationOf(z),
+  };
 });
 
 export const ELEMENT_GROUPS: readonly ElementGroup[] = [

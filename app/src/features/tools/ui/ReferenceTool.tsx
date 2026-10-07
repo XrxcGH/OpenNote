@@ -3,27 +3,16 @@
 // caret of the page that is open.
 import { useMemo, useState } from 'react';
 import { t } from '../../../strings/t';
-import { Button, TextField, announce } from '../../../ui';
+import { TextField } from '../../../ui';
 import { formatNumber } from '../calculator';
 import { ELEMENTS, GREEK, PHYSICAL_CONSTANTS, PREFIXES, matches } from '../reference/data';
-import { insertIntoPage } from './CalculatorTool';
+import { ElementsTable } from './ElementsTable';
+import { InsertButton } from './InsertButton';
 import extra from './extra.module.css';
 import styles from './tools.module.css';
 
 type Tab = 'elements' | 'constants' | 'prefixes' | 'greek';
 const TABS: readonly Tab[] = ['elements', 'constants', 'prefixes', 'greek'];
-
-function InsertButton({ text, label }: { text: string; label: string }) {
-  return (
-    <Button
-      variant="quiet"
-      aria-label={label}
-      onClick={() => announce(t(insertIntoPage({ text }) ? 'study.reference.inserted' : 'study.reference.noPage'))}
-    >
-      {t('study.reference.insert')}
-    </Button>
-  );
-}
 
 export function ReferenceTool() {
   const [tab, setTab] = useState<Tab>('elements');
@@ -62,42 +51,7 @@ export function ReferenceTool() {
       </div>
       <TextField label={t('study.reference.search')} value={query} onChange={setQuery} />
       <div id="reference-panel" role="tabpanel" aria-labelledby={`reference-tab-${tab}`} className={extra.scroll}>
-        {tab === 'elements' ? (
-          <table className={extra.table}>
-            <thead>
-              <tr>
-                <th scope="col">{t('study.reference.number')}</th>
-                <th scope="col">{t('study.reference.symbol')}</th>
-                <th scope="col">{t('study.reference.name')}</th>
-                <th scope="col">{t('study.reference.mass')}</th>
-                <th scope="col">{t('study.reference.family')}</th>
-                <th scope="col">
-                  <span className={extra.hidden}>{t('study.reference.insert')}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {elements.map((element) => (
-                <tr key={element.number}>
-                  <td>{element.number}</td>
-                  <th scope="row">{element.symbol}</th>
-                  <td>{element.name}</td>
-                  <td>{element.mass}</td>
-                  <td>
-                    <span className={extra.dot} data-group={element.group} aria-hidden="true" />
-                    {t(`study.reference.groups.${element.group}`)}
-                  </td>
-                  <td>
-                    <InsertButton
-                      text={element.symbol}
-                      label={t('study.reference.insertNamed', { name: element.name })}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : null}
+        {tab === 'elements' ? <ElementsTable elements={elements} /> : null}
         {tab === 'constants' ? (
           <table className={extra.table}>
             <thead>
