@@ -6,7 +6,13 @@ import { newId } from '../../../editor/ids';
 import { escapeParagraphText } from '../../../editor/markdown/escape';
 import { isEnabled } from '../../../app/flags';
 import { loadApi as loadIntel } from '../../intel';
-import type { InkLine, InkRecognition, InkStroke as IntelStroke, TidyOperation } from '../../../services/intel';
+import type {
+  InkLine,
+  InkRecognition,
+  InkWord,
+  InkStroke as IntelStroke,
+  TidyOperation,
+} from '../../../services/intel';
 import type { Edit } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
@@ -18,6 +24,8 @@ import type { InkStroke } from '../model/types';
 import { paletteByName } from '../pens/palette';
 import type { InkHost } from './host';
 import type { InkSurface } from './surface';
+import { marksFor, showUnsure } from './unsure';
+import type { UnsureMark } from './unsure';
 
 /** Strokes in the recognizer's form: the ID, and the points with each stroke's own transform applied. */
 export function toIntel(strokes: readonly InkStroke[]): IntelStroke[] {
@@ -30,13 +38,35 @@ export function toIntel(strokes: readonly InkStroke[]): IntelStroke[] {
 export const handwritingAvailable = (host: InkHost): boolean =>
   isEnabled('ink.handwriting') && isEnabled('intel.handwriting') && host.handwriting !== undefined;
 
+/** What the app does with recognized words, from features/intel's handwriting API. */
+export interface WordHelpers {
+  /** The symbols and formulas people mean: -> becomes an arrow and H2O gets its subscript. */
+  tidy(text: string): string;
+  /** Whether the recognizer was unsure of a word. */
+  unsure(word: InkWord): boolean;
+  /** The other readings to offer for a word. */
+  alternatives(word: InkWord): string[];
+}
+
+const PLAIN: WordHelpers = { tidy: (text) => text, unsure: () => false, alternatives: () => [] };
+
+/** features/intel's handwriting helpers, or plain ones when that part can't load. */
+export async function wordHelpers(): Promise<WordHelpers> {
+  try {
+    const intel = await loadIntel();
+    return {
+      tidy: intel.tidyRecognizedText,
+      unsure: intel.isUnsureWord,
+      alternatives: (word) => intel.alternativesFor(word),
+    };
+  } catch {
+    return PLAIN;
+  }
+}
+
 /** Recognized text with the symbols and formulas people mean (features/intel's tidyRecognizedText). */
 export async function tidyText(text: string): Promise<string> {
-  try {
-    return (await loadIntel()).tidyRecognizedText(text);
-  } catch {
-    return text;
-  }
+  return (await wordHelpers()).tidy(text);
 }
 
 /** The recognizer's reading of some strokes as one tidied line of text, or null when it read nothing. */
@@ -63,8 +93,45 @@ function shapeAround(surface: InkSurface, box: Bounds, exclude: ReadonlySet<stri
   return null;
 }
 
-function insertText(markdown: string, frame: { x: number; y: number; w: number }): Edit {
-  return { edit: 'insertBlock', block: { id: newId(), type: 'text', frame, data: { markdown } } };
+function insertText(markdown: string, frame: { x: number; y: number; w: number }, id = newId()): Edit {
+  return { edit: 'insertBlock', block: { id, type: 'text', frame, data: { markdown } } };
+}
+
+/** The amber lines under a line's unsure words, by word. */
+function underlinesFor(surface: InkSurface, words: readonly InkWord[], helpers: WordHelpers): Map<InkWord, InkStroke> {
+  const lines = new Map<InkWord, InkStroke>();
+  const amber = paletteByName('amber');
+  if (!amber) return lines;
+  for (const word of words) {
+    if (!helpers.unsure(word) || helpers.alternatives(word).length === 0) continue;
+    const y = word.bounds.y + word.bounds.height + 2;
+    lines.set(word, {
+      id: newId(),
+      tool: 'pen',
+      width: 1.5,
+      startTime: Date.now(),
+      points: [
+        { x: word.bounds.x, y },
+        { x: word.bounds.x + word.bounds.width, y },
+      ],
+      block: surface.layerFor(),
+      slot: amber.slot,
+      color: amber.light,
+    } satisfies InkStroke);
+  }
+  return lines;
+}
+
+/** The marks that let a person pick another reading for each underlined word in a new text box. */
+function unsureMarks(
+  words: readonly InkWord[],
+  lines: ReadonlyMap<InkWord, InkStroke>,
+  block: string,
+  markdown: string,
+  helpers: WordHelpers,
+): UnsureMark[] {
+  const ids = new Map([...lines].map(([word, stroke]) => [word, stroke.id]));
+  return marksFor(words, block, markdown, ids, helpers);
 }
 
 /** Reads the selected handwriting and adds the words as text below it, or inside the shape it was written in. */
@@ -75,32 +142,40 @@ export async function convertSelection(host: InkHost, surface: InkSurface): Prom
   announce(t('ink.handwriting.working'));
   const recognition = await host.handwriting!.recognize(toIntel(strokes));
   if (!recognition) return;
-  const lines = recognition.lines.map((line) => line.text.trim()).filter(Boolean);
+  const helpers = await wordHelpers();
+  const read = recognition.lines.filter((line) => line.text.trim() !== '');
+  const lines = read.map((line) => helpers.tidy(line.text.trim()));
   if (lines.length === 0) {
     showToast({ message: t('ink.handwriting.none') });
     return;
   }
   const box = boxOf(strokes);
   const label = shapeAround(surface, box, new Set(strokes.map((s) => s.id)));
+  const markdown = label
+    ? escapeParagraphText(lines.join(' '))
+    : lines.map((line) => escapeParagraphText(line)).join('\n\n');
+  const block = newId();
   const edit = label
-    ? insertText(escapeParagraphText(lines.join(' ')), {
-        x: label.minX + 8,
-        y: (label.minY + label.maxY) / 2 - 14,
-        w: Math.max(40, label.maxX - label.minX - 16),
-      })
-    : insertText(lines.map((line) => escapeParagraphText(line)).join('\n\n'), {
-        x: box.minX,
-        y: box.maxY + 16,
-        w: Math.max(220, box.maxX - box.minX),
-      });
+    ? insertText(
+        markdown,
+        { x: label.minX + 8, y: (label.minY + label.maxY) / 2 - 14, w: Math.max(40, label.maxX - label.minX - 16) },
+        block,
+      )
+    : insertText(markdown, { x: box.minX, y: box.maxY + 16, w: Math.max(220, box.maxX - box.minX) }, block);
+  const words = read.flatMap((line) => line.words);
+  const underlines = underlinesFor(surface, words, helpers);
+  const amber = [...underlines.values()];
   try {
-    await queue.send({ edits: [edit] });
+    surface.show(amber);
+    await queue.send({ edits: [edit], ...(amber.length > 0 ? { strokes: surface.records(amber) } : {}) });
+    showUnsure(host, surface, unsureMarks(words, underlines, block, markdown, helpers));
     showToast({
       id: 'ink-converted',
       message: t(label ? 'ink.handwriting.label' : 'ink.handwriting.converted'),
       action: { label: t('ink.gestures.undo'), run: () => queue.undo() },
     });
   } catch {
+    surface.hide(amber.map((stroke) => stroke.id));
     announce(t('ink.errors.notSaved'));
   }
 }
@@ -139,9 +214,6 @@ export const WRITING_IDLE_MS = 1400;
 /** The faded ink keeps this much of its opacity, out of 255. */
 export const FADED_ALPHA = 36;
 
-/** A word is unsure when the recognizer has another reading of it. */
-export const isUnsure = (word: { alternates: readonly string[] }): boolean => word.alternates.length > 0;
-
 /** The line's box, in page units. */
 const lineBox = (line: InkLine): Bounds => ({
   minX: line.bounds.x,
@@ -159,28 +231,6 @@ function clientOf(surface: InkSurface, x: number, y: number): { x: number; y: nu
   };
 }
 
-/** A thin amber line under each word the recognizer was unsure of. */
-function underlinesFor(surface: InkSurface, line: InkLine): InkStroke[] {
-  const amber = paletteByName('amber');
-  if (!amber) return [];
-  return line.words.filter(isUnsure).map((word) => {
-    const y = word.bounds.y + word.bounds.height + 2;
-    return {
-      id: newId(),
-      tool: 'pen',
-      width: 1.5,
-      startTime: Date.now(),
-      points: [
-        { x: word.bounds.x, y },
-        { x: word.bounds.x + word.bounds.width, y },
-      ],
-      block: surface.layerFor(),
-      slot: amber.slot,
-      color: amber.light,
-    } satisfies InkStroke;
-  });
-}
-
 /** The edit that fades a stroke to a trace behind its words. */
 const fadeEdit = (stroke: InkStroke): Edit => ({
   edit: 'restyleStrokes',
@@ -188,19 +238,33 @@ const fadeEdit = (stroke: InkStroke): Edit => ({
   style: { color: [stroke.color[0], stroke.color[1], stroke.color[2], FADED_ALPHA] },
 });
 
+/** A new text box for a recognized line: its edit, its ID, and its text. */
+interface Placed {
+  readonly edit: Edit;
+  readonly block: string;
+  readonly markdown: string;
+}
+
 /**
- * What a recognized line becomes: words written in a gap of typed text go into that text, and any others become a text
- * box where they were written. Returns the text box's edit, or null when the words went into the text.
+ * What a recognized line becomes, tidied: words written in a gap of typed text go into that text, and any others
+ * become a text box where they were written. Returns the text box, or null when the words went into the text.
  */
-async function placeLine(host: InkHost, surface: InkSurface, line: InkLine): Promise<Edit | null | undefined> {
-  const text = line.text.trim();
+async function placeLine(
+  host: InkHost,
+  surface: InkSurface,
+  line: InkLine,
+  helpers: WordHelpers,
+): Promise<Placed | null | undefined> {
+  const text = helpers.tidy(line.text.trim());
   if (!text) return undefined;
   const box = lineBox(line);
   const at = clientOf(surface, box.minX, (box.minY + box.maxY) / 2);
   const inside = await host.text?.hit(at.x, at.y);
   if (inside && (await host.text?.insert(inside.block, inside.pos, `${text} `))) return null;
   const frame = { x: box.minX, y: box.minY, w: Math.max(80, box.maxX - box.minX + 24) };
-  return insertText(escapeParagraphText(text), frame);
+  const block = newId();
+  const markdown = escapeParagraphText(text);
+  return { edit: insertText(markdown, frame, block), block, markdown };
 }
 
 export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | null) {
@@ -218,13 +282,17 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     if (!surface || !queue || strokes.length === 0 || !handwritingAvailable(host)) return;
     const recognition = await host.handwriting!.recognize(toIntel(strokes));
     if (!recognition || recognition.lines.length === 0) return;
+    const helpers = await wordHelpers();
     const edits: Edit[] = [];
     const underlines: InkStroke[] = [];
+    const marks: UnsureMark[] = [];
     for (const line of recognition.lines) {
-      const placed = await placeLine(host, surface, line);
+      const placed = await placeLine(host, surface, line, helpers);
       if (placed) {
-        edits.push(placed);
-        underlines.push(...underlinesFor(surface, line));
+        edits.push(placed.edit);
+        const lines = underlinesFor(surface, line.words, helpers);
+        underlines.push(...lines.values());
+        marks.push(...unsureMarks(line.words, lines, placed.block, placed.markdown, helpers));
       }
     }
     for (const stroke of strokes) faded.set(stroke.id, stroke);
@@ -241,6 +309,7 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
       surface.hide(underlines.map((u) => u.id));
     });
     if (!ok) return;
+    showUnsure(host, surface, marks);
     const message = t('ink.handwriting.written', { count: recognition.lines.length });
     showToast({ id: 'ink-written', message, action: { label: t('ink.gestures.undo'), run: () => queue.undo() } });
   };

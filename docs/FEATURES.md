@@ -89,6 +89,7 @@ Linked accounts (Phase 11):
 (Phase 5 and Phase 12)
 
 - A "Writing pen" converts handwriting to typed text as the person writes, with the original ink kept one tap away. Status: Built, untested by hand. Needs on-device intelligence turned on.
+- Both the Writing pen and lasso Convert to text write symbols and formulas as meant (`->` becomes an arrow, H2O becomes H₂O), and draw an amber line under each word the recognizer was unsure of. Tapping the line, or pressing Enter on it, lists the other readings, and choosing one replaces the word in one undo step. Status: Built, untested by hand.
 - Math is recognized as math: subscripts, superscripts, fractions, roots, integrals, matrices, and Greek letters become editable equations. Status: Not built yet.
 - Special characters (°, ±, →, ≤, µ) and chemistry notation such as H₂O are kept. Status: Built, untested by hand.
 - Unsure words are underlined; tapping one shows alternatives. Status: Built, untested by hand.

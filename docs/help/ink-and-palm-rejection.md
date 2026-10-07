@@ -63,4 +63,6 @@ OpenNote remembers your choice for next time. Copy as image uses it too. You can
 
 Lasso your writing and choose Convert to text. The Writing pen converts as you write. Both use on-device intelligence, which you turn on in Settings. See [on-device intelligence](on-device-intelligence.md).
 
+Arrows, signs, and formulas come out as you meant them: `->` becomes →, `>=` becomes ≥, and H2O becomes H₂O. When OpenNote isn't sure of a word, it draws a thin amber line under it. Tap the line, or Tab to it and press Enter, to see other readings. Choose one to put it in the text, or choose Keep to remove the line. Ctrl+Z undoes the change.
+
 Ink and palm rejection are built. They have been checked by automated tests only, and the real-pen test in [palm-rejection.md](../testing/palm-rejection.md) is waiting for a person with a pen.

@@ -5,7 +5,6 @@ import type { InkStroke } from '../model/types';
 import { circle } from '../input/gestures/corpus';
 import { cellAt, cellInk, findGrid, linesOf, readCells, tableData } from './gridTable';
 import type { GridLine } from './gridTable';
-import { isUnsure } from './handwriting';
 import { classifyEdit, LINE_HEIGHT } from './penEditing';
 
 const line = (a: Vec, b: Vec): Vec[] => densify([a, b], 4);
@@ -58,13 +57,6 @@ describe('a grid drawn in lines', () => {
     expect(lines.filter((one) => one.axis === 'h')).toHaveLength(2);
     expect(lines.filter((one) => one.axis === 'v')).toHaveLength(2);
     expect(linesOf('l', line({ x: 0, y: 0 }, { x: 200, y: 200 }), 0)).toEqual([]);
-  });
-});
-
-describe('the writing pen', () => {
-  it('marks a word as unsure when the recognizer has another reading', () => {
-    expect(isUnsure({ alternates: ['hello'] })).toBe(true);
-    expect(isUnsure({ alternates: [] })).toBe(false);
   });
 });
 

@@ -133,6 +133,13 @@ export const ink = {
   },
   handwriting: {
     working: 'Reading handwriting',
+    unsureWord: 'Unsure word: {word}. Choose another reading',
+    unsureHint: 'Tap or press Enter to see other readings of this word',
+    alternatives: 'Other readings of {word}',
+    keepWord: 'Keep "{word}"',
+    wordReplaced: 'Changed to "{word}"',
+    wordKept: 'Kept "{word}"',
+    wordChanged: 'That word has changed since it was written, so it was left as it is.',
     none: 'No words found in that ink.',
     convert: 'Convert to text',
     straighten: 'Straighten',
