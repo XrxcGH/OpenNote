@@ -323,6 +323,15 @@ export function installMore(context: MoreContext): () => void {
       flag: 'ink.canvasLock',
     }),
     commandBar.register({
+      id: 'ink.writing',
+      tab: 'draw',
+      group: 'tools',
+      command: 'ink.writing',
+      priority: 60,
+      presentation: 'toggle',
+      flag: 'ink.handwriting',
+    }),
+    commandBar.register({
       id: 'ink.insertSpace',
       tab: 'draw',
       group: 'tools',

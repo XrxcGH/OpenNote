@@ -33,13 +33,12 @@ export function DrawTools({ toolProps }: CommandBarComponentProps) {
   const erasers = useFlag('ink.erasers');
   const lasso = useFlag('ink.lasso');
   const space = useFlag('ink.insertSpace');
-  const writing = useFlag('ink.handwriting');
+  // The Writing pen is a bar item of its own (more.ts), so the pens fit beside these on a laptop screen.
   const shown: Exclude<DrawTool, 'pen'>[] = [
     'select',
     ...(erasers ? (['eraser', 'partialEraser'] as const) : []),
     ...(lasso ? (['lasso'] as const) : []),
     ...(space ? (['insertSpace'] as const) : []),
-    ...(writing ? (['writing'] as const) : []),
   ];
   return (
     <div className={styles.group} role="group" aria-label={t('ink.tools.group')}>
