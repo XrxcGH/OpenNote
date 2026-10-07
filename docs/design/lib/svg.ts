@@ -3,6 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { textWidth } from './metrics.ts';
 
 export type ThemeName = 'light' | 'dark';
 
@@ -195,7 +196,8 @@ export function region(b: Box, label: string): string {
 
 /** A small annotation label on a white pill, readable over any background. */
 export function tag(x: number, y: number, label: string, color: string): string {
-  const width = Math.ceil(label.length * 7.4 + 16);
+  // The pill is 6 px wider than its words at each end.
+  const width = Math.ceil(textWidth(label, 11, 600) + 12);
   return [
     '<g data-fit="4" pointer-events="none">',
     rect({ x, y: y - 12, w: width, h: 17 }, { fill: NOTE.paper, stroke: color, r: 8.5 }),

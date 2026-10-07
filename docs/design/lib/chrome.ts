@@ -16,6 +16,10 @@ import {
   textLines,
 } from './svg.ts';
 import { plantPot } from './drawings.ts';
+import { textWidth } from './metrics.ts';
+
+/** To a tenth of a pixel, so the SVG stays short. */
+const round = (n: number) => Math.round(n * 10) / 10;
 
 export const WIDE = { width: 1440, height: 900, title: 40, command: 44, sidebar: 272, pages: 300 };
 export const BODY_TOP = WIDE.title + WIDE.command;
@@ -157,8 +161,11 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
     rect({ x: 0, y, w: WIDE.width, h: WIDE.command }, { fill: p.c('surface.app') }),
     line([0, y + WIDE.command], [WIDE.width, y + WIDE.command], p.c('border.subtle')),
   ];
-  ['Home', 'Insert', 'Draw', 'View'].forEach((tab, i) => {
-    const x = 20 + i * 64;
+  // Each tab is as wide as its name in the active tab's weight, so the tabs stay put when another is chosen, and
+  // 24 px apart.
+  let x = 20;
+  for (const tab of ['Home', 'Insert', 'Draw', 'View']) {
+    const width = textWidth(tab, 14, 600);
     const isActive = tab === active;
     parts.push(
       text(x, y + 27, tab, {
@@ -167,8 +174,9 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
         fill: p.c(isActive ? 'text.primary' : 'text.secondary'),
       }),
     );
-    if (isActive) parts.push(rect({ x, y: y + 38, w: tab.length * 8, h: 3 }, { fill: p.c('accent.primary'), r: 1.5 }));
-  });
+    if (isActive) parts.push(rect({ x, y: y + 38, w: round(width), h: 3 }, { fill: p.c('accent.primary'), r: 1.5 }));
+    x += round(width) + 24;
+  }
   for (const { tool, x, w } of layoutTools(tools)) {
     if (tool.sep) {
       parts.push(line([x + 4, y + 10], [x + 4, y + 34], p.c('border.subtle')));
@@ -196,7 +204,8 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
 export function layoutTools(tools: Tool[]): { tool: Tool; x: number; w: number }[] {
   let x = 290;
   return tools.map((tool) => {
-    const w = tool.sep ? 12 : tool.dot ? 28 : tool.label.length * 7 + 20;
+    // A tool's box is its label and 10 px each side, so the words are evenly spaced.
+    const w = tool.sep ? 12 : tool.dot ? 28 : round(textWidth(tool.label, 13) + 20);
     const at = { tool, x, w };
     x += tool.sep || tool.dot ? w : w + 6;
     return at;

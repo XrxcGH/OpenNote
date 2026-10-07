@@ -2,6 +2,8 @@
 // to points in the picture's own coordinates. It answers the questions the app's drawing tests answer in a
 // browser: where is the lowest point, and how far apart are two shapes.
 
+import { textWidth } from '../lib/metrics.ts';
+
 export interface Pt {
   x: number;
   y: number;
@@ -314,10 +316,13 @@ export function topAt(pts: Pt[], x: number): number {
   return Math.min(...pts.filter((p) => Math.abs(p.x - x) <= 0.5).map((p) => p.y));
 }
 
-/** Where text sits, estimated from its size: a character is about half its size wide, and it rises and falls a little. */
+/** Where text sits: as wide as its font's advance widths make it, and it rises and falls a little. */
 export function textBox(el: El): { x0: number; y0: number; x1: number; y1: number } {
   const size = Number(el.attrs['font-size'] ?? 13);
-  const width = el.text.length * size * 0.5;
+  const family = el.attrs['font-family'] ?? '';
+  const font = family.includes('Mono') ? 'mono' : family.includes('Literata') ? 'reading' : 'ui';
+  const weight = Number(el.attrs['font-weight'] ?? 400);
+  const width = textWidth(el.text, size, weight, font, el.attrs['font-style'] === 'italic');
   const x = Number(el.attrs.x);
   const anchor = el.attrs['text-anchor'];
   const x0 = anchor === 'end' ? x - width : anchor === 'middle' ? x - width / 2 : x;

@@ -3,6 +3,7 @@
 
 import { type Palette, arrow, circle, ink, line, onEllipse, palette, rect, text } from './lib/svg.ts';
 import { ambientCanvas, logo } from './lib/chrome.ts';
+import { textWidth } from './lib/metrics.ts';
 import { deskScene, plantPot } from './lib/drawings.ts';
 
 const WIN = { x: 600, y: 72, w: 640, h: 496 };
@@ -41,8 +42,10 @@ function titleAndTabs(p: Palette): string {
     text(x + w - 16, y + 22, '☁ Saved', { size: 11, fill: p.c('text.secondary'), anchor: 'end' }),
     line([x, y + BAR * 2], [x + w, y + BAR * 2], p.c('border.subtle')),
   ];
+  // Each tab is as wide as its name in the active weight, 20 px apart, and the tools are 22 px apart.
+  let tx = x + 16;
   tabs.forEach((tab, i) => {
-    const tx = x + 16 + i * 52;
+    const width = Math.round(textWidth(tab, 12, 600) * 10) / 10;
     parts.push(
       text(tx, y + BAR + 22, tab, {
         size: 12,
@@ -50,12 +53,13 @@ function titleAndTabs(p: Palette): string {
         fill: p.c(i === 0 ? 'text.primary' : 'text.secondary'),
       }),
     );
-    if (i === 0) parts.push(rect({ x: tx, y: y + BAR + 28, w: 30, h: 2.5 }, { fill: p.c('accent.primary'), r: 1 }));
+    if (i === 0) parts.push(rect({ x: tx, y: y + BAR + 28, w: width, h: 2.5 }, { fill: p.c('accent.primary'), r: 1 }));
+    tx += width + 20;
   });
-  let tx = x + 232;
+  tx = x + 232;
   for (const tool of tools) {
     parts.push(text(tx, y + BAR + 22, tool, { size: 11, fill: p.c('text.primary') }));
-    tx += tool.length * 6.4 + 22;
+    tx = Math.round((tx + textWidth(tool, 11) + 22) * 10) / 10;
   }
   return parts.join('');
 }
