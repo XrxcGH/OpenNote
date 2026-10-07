@@ -40,10 +40,46 @@ interface Spec {
 const running = () => isRunning(recordingUi.get());
 const pageShown = () => shownQueue.get() !== null;
 const transcripts = () => import('../audio/transcripts/commands');
+const edits = () => import('../audio/commands');
 const snap = (kind: 'screen' | 'window' | 'region') => () =>
   import('../audio/snap').then((module) => module.snap(kind));
 
 const SPECS: readonly Spec[] = [
+  {
+    id: 'audio.split',
+    title: 'audioMore.commands.split',
+    flag: 'audio.trim',
+    when: pageShown,
+    run: () => edits().then((module) => module.split()),
+  },
+  {
+    id: 'audio.enhance',
+    title: 'audioMore.commands.enhance',
+    flag: 'audio.enhance',
+    when: pageShown,
+    run: () => edits().then((module) => module.enhance()),
+  },
+  {
+    id: 'audio.exportWav',
+    title: 'audioMore.commands.exportWav',
+    flag: 'audio.export',
+    when: pageShown,
+    run: () => edits().then((module) => module.exportAs('wav')),
+  },
+  {
+    id: 'audio.exportOpus',
+    title: 'audioMore.commands.exportOpus',
+    flag: 'audio.export',
+    when: pageShown,
+    run: () => edits().then((module) => module.exportAs('opus')),
+  },
+  {
+    id: 'audio.removePart',
+    title: 'audio.block.removePart',
+    flag: 'audio.trim',
+    when: pageShown,
+    run: () => edits().then((module) => module.removeSelected()),
+  },
   {
     id: 'audio.storage',
     title: 'audioMore.commands.storage',
