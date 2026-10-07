@@ -37,6 +37,7 @@ export function cleanLatex(value: string): string {
     text = text.split(`{${mark}}`).join(letter).split(mark).join(letter);
   return text
     .replace(/\\([&%$#_{}])/g, '$1')
+    .replace(/\\textbackslash\s*\{\}/g, '\\')
     .replace(/---/g, '—')
     .replace(/--/g, '–')
     .replace(/[{}]/g, '')
@@ -174,7 +175,7 @@ export function parseBibtex(text: string): Imported {
   return { sources, skipped: all.length - sources.length };
 }
 
-const escapeBibtex = (text: string): string => text.replace(/([&%$#_])/g, '\\$1');
+const escapeBibtex = (text: string): string => text.replace(/\\/g, '\\textbackslash{}').replace(/([&%$#_])/g, '\\$1');
 
 /** The sources as BibTeX entries. */
 export function toBibtex(sources: readonly Source[]): string {
