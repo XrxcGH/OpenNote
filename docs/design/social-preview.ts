@@ -111,7 +111,11 @@ function page(p: Palette): string {
     'Metaphase: they line up in the middle',
     'Anaphase: the sister chromatids pull apart',
   ];
-  const bars = [72, 56, 40];
+  const months = [
+    [120, 80],
+    [150, 90],
+    [90, 70],
+  ];
   return [
     rect({ x: left, y: top, w, h }, { fill: p.c('surface.page') }),
     text(x, top + 44, 'Mitosis', { size: 26, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
@@ -135,11 +139,15 @@ function page(p: Palette): string {
       [x + 196, top + 198],
       p.pen('Fern'),
     ),
-    ...bars.map((bh, i) =>
-      rect(
-        { x: x + 12 + i * 34, y: top + 330 - bh, w: 24, h: bh },
-        { fill: p.pen(i === 1 ? 'Amber' : 'Indigo'), r: 2 },
-      ),
+    // Three months, each a Sales bar and a Cost bar side by side, from the table in the tables wireframe.
+    ...months.flatMap(([sales, cost], i) =>
+      [sales, cost].map((value, j) => {
+        const bh = Math.round(value * 0.45);
+        return rect(
+          { x: x + 8 + i * 38 + j * 16, y: top + 330 - bh, w: 14, h: bh },
+          { fill: p.pen(j === 0 ? 'Indigo' : 'Amber'), r: 2 },
+        );
+      }),
     ),
     line([x, top + 330], [x + 120, top + 330], p.c('border.control')),
     text(x, top + 224, 'Sales, Cost by Month', { size: 11, weight: 600, fill: p.c('text.primary') }),

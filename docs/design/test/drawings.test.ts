@@ -427,6 +427,19 @@ describe('text', () => {
   });
 });
 
+describe('the social preview', () => {
+  it('charts "Sales, Cost by Month" as a Sales bar and a Cost bar for each month', () => {
+    const p = palette('light');
+    const [sales, cost] = [p.pen('Indigo'), p.pen('Amber')];
+    const bars = [...walk(picture(SOCIAL))]
+      // The bars, not the small colored squares of the notebooks in the tree.
+      .filter((e) => e.tag === 'rect' && [sales, cost].includes(e.attrs.fill ?? '') && Number(e.attrs.height) > 12)
+      .sort((a, b) => Number(a.attrs.x) - Number(b.attrs.x));
+    assert.ok(bars.length >= 4 && bars.length % 2 === 0, `${bars.length} bars`);
+    bars.forEach((bar, i) => assert.equal(bar.attrs.fill, i % 2 === 0 ? sales : cost));
+  });
+});
+
 describe('lined paper', () => {
   it('sets every typed line 3 px above a rule, and runs no rule through the letters', () => {
     const root = picture('19-view-tab.svg');
