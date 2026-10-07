@@ -107,6 +107,30 @@ describe('where things meet', () => {
   });
 });
 
+describe('how light falls', () => {
+  it("points every ray of the sun glint straight out from the sun's middle, all at the same distance", () => {
+    const [sun, rays] = drawn(renderUi(<Glint kind="sun" />).container).querySelectorAll('path');
+    // The sun is a half disc on the horizon: its middle is the middle of its flat side.
+    const [x0, y0, , , , , , x1] = (sun.getAttribute('d')?.match(/-?[\d.]+/g) ?? []).map(Number);
+    const middle = { x: (x0 + x1) / 2, y: y0 };
+    const segments = (rays.getAttribute('d') ?? '').split('M').slice(2);
+    expect(segments).toHaveLength(3);
+    const inner: number[] = [];
+    const outer: number[] = [];
+    for (const segment of segments) {
+      const [ax, ay, bx, by] = segment.trim().split(/[\s,]+/).map(Number);
+      inner.push(Math.hypot(ax - middle.x, ay - middle.y));
+      outer.push(Math.hypot(bx - middle.x, by - middle.y));
+      // The ray's own direction and the direction from the sun to its start agree to within 2 degrees.
+      const ray = Math.atan2(by - ay, bx - ax);
+      const out = Math.atan2(ay - middle.y, ax - middle.x);
+      expect(Math.abs(ray - out) * (180 / Math.PI), segment).toBeLessThan(2);
+    }
+    for (const r of inner) expect(r).toBeCloseTo(inner[0], 1);
+    for (const r of outer) expect(r).toBeCloseTo(outer[0], 1);
+  });
+});
+
 describe('what hides behind what', () => {
   it("runs no edge of the notebook's cover behind its pages, where a contrast theme would show it", () => {
     const paths = drawn(renderUi(<Notebook />).container).querySelectorAll<SVGGeometryElement>('path');
