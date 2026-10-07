@@ -136,7 +136,8 @@ describe('where the vine and its leaves meet', () => {
 describe('how each leaf meets its stem, and the window frame', () => {
   // In the shapes' own units, where a line is 1.5 units wide at most. The app and the generator draw these strings.
   const LINE = 1.5;
-  const angle = (u: Pt, v: Pt) => (Math.acos((u.x * v.x + u.y * v.y) / Math.hypot(u.x, u.y) / Math.hypot(v.x, v.y)) * 180) / Math.PI;
+  const angle = (u: Pt, v: Pt) =>
+    (Math.acos((u.x * v.x + u.y * v.y) / Math.hypot(u.x, u.y) / Math.hypot(v.x, v.y)) * 180) / Math.PI;
   const vines = [
     { name: 'the window vine', stem: WINDOW.vine, leaves: WINDOW.leaves },
     { name: "the plant's trailing vine", stem: PLANT.trailing, leaves: PLANT.trailingLeaves },
@@ -340,6 +341,27 @@ describe('text', () => {
     }
   });
 
+  it('keeps every handwritten label clear of the ink around it', () => {
+    for (const { name, root } of pictures) {
+      const strokes = [...walk(root)].filter(
+        (e) => e.tag === 'path' && e.attrs['stroke-linecap'] === 'round' && e.attrs.fill === 'none' && e.attrs.d,
+      );
+      for (const label of lines(root).filter((t) => t.e.attrs['font-style'] === 'italic')) {
+        for (const stroke of strokes) {
+          const half = Number(stroke.attrs['stroke-width'] ?? 1.5) / 2;
+          const { x0, x1, y0, y1 } = label.box;
+          // The distance from the label's box to the nearest point of the stroke's line.
+          const gap = Math.min(
+            ...densify(outlineOf(stroke), 1).map((q) =>
+              Math.hypot(Math.max(x0 - q.x, 0, q.x - x1), Math.max(y0 - q.y, 0, q.y - y1)),
+            ),
+          );
+          assert.ok(gap - half >= 2, `${name}: "${label.e.text}" is ${(gap - half).toFixed(1)} px from a stroke`);
+        }
+      }
+    }
+  });
+
   it('fits each highlight to the words it marks, as far past one end as the other', () => {
     const p = palette('light');
     const highlighters = new Set(['Honey', 'Mint'].map((name) => p.highlighter(name)));
@@ -352,7 +374,10 @@ describe('text', () => {
         const words = texts.find((t) => t.box.x0 >= x && t.box.x0 <= x + 8 && t.y > y && t.y <= y + h);
         if (!words) continue;
         const [before, after] = [words.box.x0 - x, x + w - words.box.x1];
-        assert.ok(Math.abs(before - after) <= 1.5, `${name}: "${words.e.text}" has ${before} and ${after.toFixed(1)} px`);
+        assert.ok(
+          Math.abs(before - after) <= 1.5,
+          `${name}: "${words.e.text}" has ${before} and ${after.toFixed(1)} px`,
+        );
         checked++;
       }
     }

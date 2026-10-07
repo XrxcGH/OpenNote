@@ -204,7 +204,8 @@ function recordingNotes(p: Palette, x: number, y: number): string {
     text(x, y + 28, 'The cell swells when the water outside is purer than the water inside', body),
     ink(`M${x} ${y + 150}l0-80M${x} ${y + 150}l200 0`, p.pen('Ink'), 2),
     ink(`M${x + 10} ${y + 140}c50-10 70-60 100-64s50 14 80 18`, p.pen('Indigo')),
-    text(x + 130, y + 80, 'Vmax', { size: 16, fill: p.pen('Indigo'), italic: true, font: 'reading' }),
+    // The label sits over the curve's peak, (x + 110, y + 76), clear of the line.
+    text(x + 110, y + 66, 'Vmax', { size: 16, fill: p.pen('Indigo'), italic: true, font: 'reading', anchor: 'middle' }),
     rect(
       { x: x - 2, y: y + 176, w: Math.round(textWidth(QUESTION, 15, 400, 'reading') + 4), h: 22 },
       {
