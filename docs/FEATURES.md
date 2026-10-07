@@ -48,7 +48,7 @@ Import and export (Phase 11):
 
 Linked accounts (Phase 11):
 
-- People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle. Sign-in uses the provider's own secure page (OAuth) in the default browser, and tokens are stored in Windows Credential Manager. The [setup guide](CONNECTORS.md) says how the owner of a build registers each service. Status: Built, untested by hand. Sign-in works. Six services say Needs setup until the owner adds client IDs, and no feature uses a connection yet.
+- People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle. Sign-in uses the provider's own secure page (OAuth) in the default browser, and tokens are stored in Windows Credential Manager. The [setup guide](CONNECTORS.md) says how the owner of a build registers each service. Status: Built, untested by hand. Sign-in works. Six services say Needs setup until the owner adds client IDs, which a card takes, the connectors file holds, or a build with `connectors.config.json` carries. Features now use connections one by one, and each has its own line in this list.
 - The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder. It all happens inside OpenNote. Status: Needs the owner. Sending a copy to a folder is built, untested by hand.
 - Favorite destinations are saved, so "Send to Drive: Biology/Lab reports" becomes one click. Status: Built, untested by hand. For folders.
 - A page can stay linked to its exported copy and offer "Update the Drive copy" after edits. Status: Built, untested by hand. For folders. Drive needs the owner.
@@ -78,7 +78,7 @@ Linked accounts (Phase 11):
 | Zotero and BibTeX | Cite sources while writing and export a bibliography in any common style | Built, untested by hand |
 | Canvas, Moodle, and Google Classroom | Import assignments into a section and submit a page as PDF | Needs the owner. Canvas and Moodle sign-in with a token is built. No import or submit uses it yet. |
 | Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline | Not built yet. The embed block is not built. |
-| Kindle and Readwise | Import book highlights into a notebook | Built, untested by hand. Kindle clippings and a Readwise CSV file. Readwise API sync needs the owner. |
+| Kindle and Readwise | Import book highlights into a notebook | Built, untested by hand. Kindle clippings and a Readwise CSV file are built. Sync Readwise reads the Readwise API into a notebook, a page for each book, and syncs again from where it left off. |
 | Slack and Teams chat | Share a page as a link, PDF, or image | Needs the owner |
 | Dropbox, OneDrive, iCloud Drive, Box, and WebDAV | Sync folders and "Send to" destinations | Built, untested by hand. Synced folders and Send to a folder are built. API sync needs the owner. |
 | Webhooks and a local API | Connect Zapier, Power Automate, or scripts to create pages and export files | Not built yet |

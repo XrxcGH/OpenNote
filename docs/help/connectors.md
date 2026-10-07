@@ -21,8 +21,14 @@ OpenNote keeps each token in Windows Credential Manager. It never writes one to 
 
 ## Why a card says Needs setup
 
-The six sign-in services need a client ID. A client ID says which app is asking for access. Beta 4 ships without any, so those cards say Needs setup. The [connectors guide](../CONNECTORS.md) tells the maintainer where to register and where the IDs go. Readwise, Canvas, and Moodle need no setup.
+The six sign-in services need a client ID. A client ID says which app is asking for access. A copy of OpenNote that was built without them shows Needs setup on those cards. If you have a client ID, choose Add a client ID on the card, paste it, and save. The card then says Not connected and offers Connect. The [connectors guide](../CONNECTORS.md) tells the maintainer where to register and where else the IDs can go. Readwise, Canvas, and Moodle need no setup.
 
-## What connectors do today
+## What connectors do
 
-In beta 4, connecting is the first step only. No feature uses a connector yet. Syncing tasks, sending to Drive or OneDrive, and importing from a course site are next. The [feature list](../FEATURES.md) shows each one as needing the owner's accounts.
+Each feature below needs its account connected first. If it is not, the command tells you and offers a way to Settings.
+
+### Sync Readwise
+
+Connect Readwise with your token, then press Ctrl+K and choose Sync Readwise. OpenNote makes a notebook named Readwise with a section for each kind of reading, such as Books and Articles, and a page for each book. Each highlight is one block on the page, with your note, its place in the book, and its tags.
+
+The first sync reads everything. Later syncs read only what changed since the last one. A highlight you edit at Readwise is updated on its page, and one you delete there is removed. Blocks you write yourself on a page are never changed. If Readwise asks OpenNote to slow down, what was synced so far stays, and you can sync again in a minute.

@@ -2,7 +2,10 @@
 // embeds, and the narrated video. One owner (the accounts and media lane), so parallel work never edits it. Each
 // feature has its own group below.
 
+import { accountsReadwise } from './accountsReadwise';
+
 export const accounts = {
+  readwise: accountsReadwise,
   common: {
     notConnected: '{service} isn’t connected. Connect it in Settings, then Connectors.',
     needsAccess: 'The {service} connection doesn’t allow this yet. Connect it again in Settings, then Connectors.',
