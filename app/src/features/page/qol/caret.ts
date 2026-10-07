@@ -2,7 +2,7 @@
 // settings, which the shell reads, with a 1 to 6 px choice in Settings and a steady caret that does not blink.
 // A browser draws its own caret one pixel wide and always blinking, so when the wanted caret differs, the page
 // hides that one and draws its own: one thin element that follows the selection. With Windows' own default
-// (one pixel, blinking) nothing changes. The color is the text color, so it reads in every theme.
+// (one pixel, blinking) nothing changes. The color is the text color so it reads in every theme, or the Windows text cursor indicator color when 'follow Windows' is on and Windows has one.
 import type { CaretMetrics } from '../../../platform/types';
 import { commandContext } from '../../../commands/registry';
 import { osStore } from '../../../state/os';
@@ -18,6 +18,8 @@ export interface CaretLook {
   blinkMs: number | null;
   /** Whether the page must draw its own caret. */
   custom: boolean;
+  /** The Windows text cursor indicator color (`#rrggbb`) when following Windows and one is set, else null. */
+  color: string | null;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -26,15 +28,17 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 export function caretLook(prefs: PageExtrasPrefs, windows: CaretMetrics | null, dpr = 1): CaretLook {
   // Where Windows can't be read, the caret stays as the browser draws it.
   if (prefs.caretFollowsWindows && windows === null) {
-    return { width: 1, blinkMs: prefs.caretSteady ? null : 530, custom: prefs.caretSteady };
+    return { width: 1, blinkMs: prefs.caretSteady ? null : 530, custom: prefs.caretSteady, color: null };
   }
   const fromWindows = prefs.caretFollowsWindows && windows !== null;
   const device = fromWindows ? clamp(windows.widthPx, 1, 20) : prefs.caretWidth;
   // Windows counts device pixels; the page counts CSS pixels, so a caret at 150% scaling stays the width asked for.
   const width = fromWindows ? Math.max(1, Math.round(device / (dpr > 0 ? dpr : 1))) : device;
   const blinkMs = prefs.caretSteady ? null : fromWindows ? windows.blinkMs : 530;
-  const custom = width > 1 || blinkMs === null;
-  return { width, blinkMs, custom };
+  // An indicator color from Windows needs the page's own caret too, because the browser's caret takes the text color.
+  const color = fromWindows && /^#[0-9a-f]{6}$/i.test(windows.color ?? '') ? windows.color : null;
+  const custom = width > 1 || blinkMs === null || color !== null;
+  return { width, blinkMs, custom, color };
 }
 
 function windowsMetrics(): Promise<CaretMetrics | null> {
@@ -82,7 +86,7 @@ export function attachCaret(mounted: MountedPage): () => void {
     const visible = box.bottom > inside.top && box.top < inside.bottom;
     element.hidden = !visible;
     scroller.setAttribute('data-custom-caret', '');
-    const color = getComputedStyle(editor.view.dom).color;
+    const color = look.color ?? getComputedStyle(editor.view.dom).color;
     element.style.setProperty('--caret-width', `${look.width}px`);
     element.style.setProperty('--caret-color', color);
     element.style.left = `${box.left}px`;

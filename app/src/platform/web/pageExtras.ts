@@ -6,7 +6,7 @@ import { createWebImages } from './images';
 export function createWebPageExtras(): PageExtrasClient {
   const images = createWebImages();
   return {
-    caretMetrics: () => Promise.resolve({ widthPx: 1, blinkMs: 530 }),
+    caretMetrics: () => Promise.resolve({ widthPx: 1, blinkMs: 530, color: null }),
     linkTitle: () => Promise.resolve(null),
     attachBytes: (page, bytes, name, mime) => images.importBytes(page, bytes, name, mime),
     openAttachment: () =>

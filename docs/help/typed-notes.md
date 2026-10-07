@@ -31,6 +31,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 | See the word count and reading time | Press Ctrl+K and choose Word count. |
 | Jump between headings | Press Ctrl+K and choose Contents. Select a heading to go to it. |
 | Stop accidental edits and ink | Press Ctrl+K and choose Lock page. Choose it again to turn the lock off. |
+| Make the caret easier to see | The caret follows the Windows text cursor settings: its thickness, its blinking, and the indicator color. Turn on Settings, Accessibility, Text cursor in Windows, or choose a width in OpenNote's settings. |
 
 ## Templates, series, and the source
 

@@ -270,6 +270,8 @@ export interface ImagesClient {
 export interface CaretMetrics {
   widthPx: number;
   blinkMs: number | null;
+  /** The Windows text cursor indicator color as `#rrggbb`, or null when none is set. */
+  color: string | null;
 }
 
 /** An attached file whose changes its own app saved back: the page's attachment now points at `asset`. */
