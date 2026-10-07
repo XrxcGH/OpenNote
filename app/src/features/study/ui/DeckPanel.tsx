@@ -2,6 +2,7 @@
 // import, and the review step for generated cards. The tool window shows it with the whole list; the flashcard
 // block on a page shows it for one deck.
 import { useState } from 'react';
+import { useFlag } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { Button, announce, confirm } from '../../../ui';
 import { useStore } from '../../../state/store';
@@ -128,6 +129,7 @@ function DeckView({
   useStore(statesStore, (current) => current[deck.id]);
   const shown = counts(deck, statesOf(deck.id), dayKey());
   const [name, setName] = useState<string | null>(null);
+  const canExport = useFlag('study.import');
   const remove = async () => {
     const yes = await confirm({
       title: t('study.deck.deleteTitle'),
@@ -179,12 +181,16 @@ function DeckView({
         <Button variant="quiet" onClick={() => setName(deck.name)}>
           {t('study.deck.rename')}
         </Button>
-        <Button variant="quiet" onClick={() => void exportDeck(deck, 'csv')}>
-          {t('study.io.exportCsv')}
-        </Button>
-        <Button variant="quiet" onClick={() => void exportDeck(deck, 'apkg')}>
-          {t('study.io.exportAnki')}
-        </Button>
+        {canExport ? (
+          <>
+            <Button variant="quiet" onClick={() => void exportDeck(deck, 'csv')}>
+              {t('study.io.exportCsv')}
+            </Button>
+            <Button variant="quiet" onClick={() => void exportDeck(deck, 'apkg')}>
+              {t('study.io.exportAnki')}
+            </Button>
+          </>
+        ) : null}
         <Button variant="danger" onClick={() => void remove()}>
           {t('study.deck.delete')}
         </Button>
@@ -201,6 +207,7 @@ function DeckList({ onOpen, onImport }: { onOpen(id: string): void; onImport(): 
   const decks = useStore(decksStore, (current) => current);
   useStore(statesStore, (current) => current);
   const [name, setName] = useState('');
+  const canImport = useFlag('study.import');
   const today = dayKey();
   const create = () => {
     const deck = createDeck(name.trim() || t('study.deck.untitled', { number: decks.length + 1 }));
@@ -224,9 +231,11 @@ function DeckList({ onOpen, onImport }: { onOpen(id: string): void; onImport(): 
           <Button type="submit" variant="primary">
             {t('study.deck.create')}
           </Button>
-          <Button variant="quiet" onClick={onImport}>
-            {t('study.io.import')}
-          </Button>
+          {canImport ? (
+            <Button variant="quiet" onClick={onImport}>
+              {t('study.io.import')}
+            </Button>
+          ) : null}
         </div>
       </form>
       {decks.length === 0 ? <p className={styles.muted}>{t('study.deck.none')}</p> : null}
@@ -259,6 +268,7 @@ export function DeckPanel({ deckId }: PanelProps) {
   const [view, setView] = useState<View>('deck');
   const decks = useStore(decksStore, (current) => current);
   const request = useStore(cardRequest, (current) => current);
+  const canImport = useFlag('study.import');
   const deck = decks.find((one) => one.id === open) ?? null;
   const back = deckId
     ? null
@@ -279,7 +289,7 @@ export function DeckPanel({ deckId }: PanelProps) {
       </div>
     );
   }
-  if (view === 'import' && !deckId) {
+  if (view === 'import' && !deckId && canImport) {
     return (
       <div className={styles.root}>
         <ImportView
