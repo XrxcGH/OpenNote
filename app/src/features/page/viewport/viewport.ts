@@ -281,7 +281,7 @@ class Viewport implements PageViewport {
   private resize(): void {
     const { rect, zoom } = this;
     // The viewport's inside, without its scroll bar gutter, so a page that fits never scrolls sideways. clientWidth
-    // rounds to a whole pixel, and on a 150 percent display it rounds up (692.67 shows as 693): a world as wide as
+    // rounds to a whole pixel, and on a 150 percent display it rounds up (692.67 shows as 693). A world as wide as
     // that overflows by a third of a pixel, and the bar for it shows under the page.
     const inner = {
       w: this.inline || this.viewport.clientWidth || rect.width,

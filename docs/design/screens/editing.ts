@@ -74,8 +74,8 @@ function notes(p: Palette, x: number, y: number): string {
       ])
       .flat(),
     text(x, y + 212, 'Question for Thursday: how does this differ from', body),
-    text(x + 324, y + 212, '[[Meiosis]]', { ...body, fill: p.c('text.link') }),
-    text(x + 404, y + 212, '?', body),
+    text(x + 356, y + 212, '[[Meiosis]]', { ...body, fill: p.c('text.link') }),
+    text(x + 434, y + 212, '?', body),
   ].join('');
 }
 

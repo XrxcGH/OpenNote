@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: books builds each book's page in one pass; split it when it grows again
 //! Importing reading highlights from files: the Kindle `My Clippings.txt` and a Readwise CSV export.
 //!
 //! Each book becomes a page named for the book, with its author under the title. Every highlight is a quote, with

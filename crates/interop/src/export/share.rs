@@ -2,8 +2,8 @@
 //!
 //! The file is a ZIP archive with the extension `.opennote`. It holds `opennote-share.json` (a small manifest) and
 //! the OpenNote Markdown export of what is shared, in a folder named for it. That is the format the Markdown
-//! importer reads, so opening the file needs nothing new: sections, pages, tags, properties, links between pages,
-//! and pictures come back, and every page gets a new ID, so a file shared to the same PC never collides with the
+//! importer reads, so opening the file needs nothing new. Sections, pages, tags, properties, links between pages,
+//! and pictures come back. Every page gets a new ID, so a file shared to the same PC never collides with the
 //! original. A password locks the whole archive (see [`crate::lock`]). The format is described in
 //! `docs/adr/0035-share-as-a-file.md`.
 

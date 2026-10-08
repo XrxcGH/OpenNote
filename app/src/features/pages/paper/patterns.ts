@@ -35,8 +35,8 @@ const TEXT_PAPER = new Set(['ruled', 'grid', 'dots']);
 
 /**
  * The spacing to draw with and lay text out in. Paper that text sits on keeps its rules a whole number of page units
- * apart: a browser paints each line of text with its baseline on a whole unit, so rules a fraction of a unit apart
- * would drift up to half a unit off the letters (7 mm college ruling is drawn 26 units apart instead of 26.46).
+ * apart. A browser paints each line of text with its baseline on a whole unit, so rules a fraction of a unit apart
+ * would drift up to half a unit off the letters. So 7 mm college ruling is drawn 26 units apart, not 26.46.
  */
 export function drawnSpacingOf(background: PageBackground): number {
   const spacing = spacingOf(background);

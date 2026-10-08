@@ -1,5 +1,6 @@
 // @vitest-environment node
-// Favorite folders and "Update the copy" in the export flow, against the web fake and a stand-in for the host's memory.
+// Favorite folders and "Update the copy" in the export flow. They run against the web fake, with a stand-in for the
+// host's memory.
 
 import { describe, expect, it } from 'vitest';
 import type { ExportRequest, InteropClient } from '../../platform/interop';

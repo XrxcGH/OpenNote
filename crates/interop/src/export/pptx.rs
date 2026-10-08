@@ -1,3 +1,4 @@
+// checks-disable-file modifiability, length: OOXML part templates, one element to a line as the spec writes them
 //! Exporting to a PowerPoint file: slides cut from pages the way "Present as slides" cuts them.
 //!
 //! A heading of level 1 or 2 starts a slide and is its title, and a divider line ends one. A page with no

@@ -1,6 +1,7 @@
 // Ruled paper as the unit of text layout, shared by the page view, print, and export. When a page's paper has rules
-// (ruled, grid, or dots), its spacing is the one unit the page lays out in: body text takes one rule for each line with its baseline on the rule, headings and larger
-// text take whole rules, and a text box sits so that its first baseline lands on a rule. The CSS does the work with
+// (ruled, grid, or dots), its spacing is the one unit the page lays out in. Body text takes one rule for each line
+// with its baseline on the rule. Headings and larger text take whole rules. A text box sits so that its first
+// baseline lands on a rule. The CSS does the work with
 // the custom properties that `ruleProperties` writes, so a change of spacing, paper, text size, or zoom keeps
 // everything aligned without moving any stored value. This file is the math for what CSS cannot do: placing a text
 // box that is created, moved, or resized, and padding the blocks that don't come in whole rules.
@@ -68,10 +69,10 @@ export function leadFor(top: number, grid: RuleGrid, tolerance = WHOLE): number 
 
 /**
  * The y of the first rule drawn on a page that has a header: the rule the page's first line of text sits above. The
- * title and the date under it sit in an unruled header, like the top margin of a notebook page, and the rules begin
- * below it. `flowTop` is the top of the flow (the bottom of the title band and its margin) and `lineMiddle` the
- * middle of the first line's letters, when it has any: a line that takes several rules (large text, or fine ruling)
- * sits above the last of them, and with no letters the first rule below the flow's top is the first.
+ * title and the date under it sit in an unruled header, like the top margin of a notebook page. The rules begin
+ * below it. `flowTop` is the top of the flow (the bottom of the title band and its margin). `lineMiddle` is the
+ * middle of the first line's letters, when it has any. A line that takes several rules (large text, or fine ruling)
+ * sits above the last of them. With no letters, the first rule below the flow's top is the first.
  */
 export function firstRuleBelow(flowTop: number, grid: RuleGrid, lineMiddle?: number): number {
   const first = flowTop + leadFor(flowTop, grid) + grid.step;
@@ -86,9 +87,9 @@ export function firstRuleBelow(flowTop: number, grid: RuleGrid, lineMiddle?: num
  * spacing, the same for every size of text on the page, and never under MIN_LIFT. Descenders may reach or cross the
  * rule. College ruling (26) lifts its text 3 units.
  *
- * It is a whole number of page units, which at 100 percent text and zoom is a whole number of device pixels: a
+ * It is a whole number of page units, which at 100 percent text and zoom is a whole number of device pixels. A
  * browser paints a baseline on a whole layout pixel, so a lift between two would round up on some lines and down on
- * others, and the gap under the letters would change from line to line.
+ * others. The gap under the letters would then change from line to line.
  */
 const LIFT_SHARE = 0.12;
 const MIN_LIFT = 2;
