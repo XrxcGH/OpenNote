@@ -41,12 +41,13 @@ export function initStores(boot: BootData, platform: Platform): void {
 /**
  * Wires the window-wide listeners: shortcuts, Escape for the layer stack, the size class, the theme, the
  * appearance controls (density and Ctrl+wheel text size), Ctrl+wheel page zoom, and the app's context menu in
- * editors. It also opens first-run setup when steps are pending.
+ * editors. It also opens first-run setup when steps are pending. `main` is false in a window beside the main one,
+ * which leaves the start-up questions (consent, safe start) to the main window.
  */
 export function installApp(
   platform: Platform,
   notes: NotesService,
-  options: { keepThemeInStorage: boolean },
+  options: { keepThemeInStorage: boolean; main?: boolean },
 ): () => void {
   configureCommands({ platform, notes });
   const stops = [
@@ -60,12 +61,16 @@ export function installApp(
     installSearch(platform, notes),
     installAppContextMenu(),
     installSetup(platform, notes),
-    installDiagnostics(platform),
+    installDiagnostics(platform, { askConsent: options.main ?? true }),
   ];
   return () => stops.forEach((stop) => stop());
 }
 
-export async function startApp(): Promise<{ platform: Platform; notes: NotesService }> {
+/** `main` is false in a window beside the main one (a page, quick capture, a tool). */
+export async function startApp({ main = true }: { main?: boolean } = {}): Promise<{
+  platform: Platform;
+  notes: NotesService;
+}> {
   const boot = readBoot();
   const dev = readDevOptions();
   initFlagsFrom(boot);
@@ -73,8 +78,8 @@ export async function startApp(): Promise<{ platform: Platform; notes: NotesServ
   const platform = createPlatform(boot, { fixture: dev.fixture });
   initStores(boot, platform);
   const notes = await createNotesService(platform);
-  installApp(platform, notes, { keepThemeInStorage: !hasInjectedBoot() });
-  // After two crashes in a row, safe mode is offered before the notebook opens.
-  await offerSafeStart(platform);
+  installApp(platform, notes, { keepThemeInStorage: !hasInjectedBoot(), main });
+  // After two crashes in a row, the main window offers safe mode before the notebook opens.
+  await offerSafeStart(platform, { offer: main });
   return { platform, notes };
 }

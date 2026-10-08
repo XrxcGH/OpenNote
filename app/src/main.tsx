@@ -27,7 +27,9 @@ const extra = (window as { __OPENNOTE_WINDOW__?: { kind?: string } }).__OPENNOTE
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 
-const { platform, notes } = await startApp();
+const kind = tool ? 'tool' : extra === 'page' || extra === 'capture' ? extra : 'main';
+// Only the main window asks the start-up questions (safe start, consent); a window beside it never repeats them.
+const { platform, notes } = await startApp({ main: kind === 'main' });
 
 createRoot(root).render(
   <StrictMode>
@@ -52,6 +54,5 @@ createRoot(root).render(
 );
 // Every window that edits pages answers the exit handshake, so closing it or the app saves its typing first. Only
 // the main window reports its first paint; a tool's own window has nothing to save.
-const kind = tool ? 'tool' : extra === 'page' || extra === 'capture' ? extra : 'main';
 joinExitHandshake(platform, kind);
 if (kind === 'main') reportFirstPaint(platform);

@@ -367,6 +367,14 @@ describe('Safe start', () => {
     expect(safeModeStore.get()).toBe(false);
   });
 
+  it('offers nothing in a window beside the main one, which takes the mode the main window chose', async () => {
+    const { app, fake } = await setup({ startup: { ...crashed().startup!, safeMode: true } });
+    await offerSafeStart(app.platform, { offer: false });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(fake.calls).not.toContain('enterSafeMode');
+    expect(safeModeStore.get()).toBe(true);
+  });
+
   it('points to feedback when safe mode did not help', async () => {
     await setup();
     const flow = openSafeStart(crashed(true).startup!.report)!;
