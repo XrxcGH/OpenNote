@@ -9,7 +9,7 @@ import { t } from '../../../strings/t';
 import type { TableExtraHost } from '../../page';
 import { chartConfigFor, checkFormulaInput, formatValue, sortedIndices, toCanonical } from '../engine';
 import type { ChartKind, ColumnType, FilterOp, Locale, TotalKind } from '../engine';
-import type { ChartSmart, SmartData, ViewSmart } from './data';
+import type { ChartSmart, SmartData, SortSmart, ViewSmart } from './data';
 import { withColumn } from './data';
 import { filledText } from './fill';
 import type { SmartModel } from './model';
@@ -31,7 +31,8 @@ export interface SmartInstance {
   caret(): { row: number; column: number } | null;
   /** The selected cells, or the caret's cell. */
   range(): Range | null;
-  commit(next: SmartData): Promise<void>;
+  /** Keeps `next`. With `change`, the table's rows change in the same undo step. */
+  commit(next: SmartData, change?: (data: TableData) => TableData | null): Promise<void>;
 }
 
 export type FilterMode = 'equal' | 'notEmpty' | 'greater' | 'less' | 'clear';
@@ -44,19 +45,33 @@ function caretCell(inst: SmartInstance): { row: number; column: number } | null 
   return row < 0 ? null : { row, column: caret.column };
 }
 
-export async function sortColumn(inst: SmartInstance, column: number, desc: boolean): Promise<boolean> {
-  const model = inst.model();
-  const order = sortedIndices(model.table, [{ column, desc }], inst.locale);
-  if (order.every((from, to) => from === to)) return false;
-  const done = await inst.host.apply((data) => {
+/** A change that stores the table's rows in the order the sort gives, or null when they already are. */
+export function sortRows(
+  model: SmartModel,
+  locale: Locale,
+  sort: SortSmart,
+): ((data: TableData) => TableData | null) | null {
+  const column = model.columnIds.indexOf(sort.column);
+  if (column < 0) return null;
+  const order = sortedIndices(model.table, [{ column, desc: sort.desc === true }], locale);
+  if (order.every((from, to) => from === to)) return null;
+  return (data) => {
     const rows = [...data.rows.slice(0, model.offset), ...order.map((from) => data.rows[from + model.offset])];
     return rows.some((row) => !row) ? null : { ...data, rows };
-  });
-  if (done) {
-    const key = desc ? 'smart.table.sortedDescending' : 'smart.table.sortedAscending';
-    inst.host.announce(t(key, { column: model.names[column] }));
-  }
-  return done;
+  };
+}
+
+export async function sortColumn(inst: SmartInstance, column: number, desc: boolean): Promise<boolean> {
+  const model = inst.model();
+  const sort: SortSmart = { column: model.columnIds[column], ...(desc ? { desc: true } : {}) };
+  const change = sortRows(model, inst.locale, sort);
+  const smart = inst.smart();
+  const remembered = smart.sort?.column === sort.column && (smart.sort.desc === true) === desc;
+  if (!change && remembered) return false;
+  await inst.commit({ ...smart, sort }, change ?? undefined);
+  const key = desc ? 'smart.table.sortedDescending' : 'smart.table.sortedAscending';
+  inst.host.announce(t(key, { column: model.names[column] }));
+  return change !== null;
 }
 
 export async function filterBy(inst: SmartInstance, mode: FilterMode): Promise<boolean> {

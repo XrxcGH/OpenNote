@@ -163,6 +163,7 @@ Beta 5 finished these pages, tables, export, and search features. Each is behind
 | Pin sections and color pages | Right-click a section and choose Pin section to keep it above the others in its notebook, and Unpin section to let it sort again. Right-click a page and choose Color to give it a colored dot, the same palette sections use. Both are kept in the notebook's own files, so they stay when the notebook moves to another computer. | Built, untested by hand |
 | Elements library: move and organize | In the Elements library, Move on an element puts it in any folder, and Rename and Move on a folder rename it or put it inside another folder, with everything inside coming along. A folder can't go inside itself. | Built, untested by hand |
 | Links, search, and read aloud open folds | A link, a search result, a tag line, Find on the page, read aloud, F7 to the next misspelling, and Undo or Redo all open the folded heading or list item that hides where they take you. A fold that hides nothing they touch stays shut. | Built, untested by hand |
+| Saved views of a smart table | Data, Saved views keeps a table's filters and sort under a name. Choosing a saved view shows its filters and puts the rows in its sort order, as one undo step. Each table has its own views, kept in the table, and Update, Rename, and Delete are in the same menu. Every row shows the whole table again. | Built, untested by hand |
 
 ## Quality-of-life fixes
 

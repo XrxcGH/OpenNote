@@ -54,11 +54,34 @@ export interface ViewSmart {
   title?: string;
 }
 
+/** The column a table was last sorted by, by ID. */
+export interface SortSmart {
+  column: string;
+  desc?: boolean;
+}
+
+/** A named set of filters and a sort the person saved to come back to. Each table keeps up to MAX_SAVED_VIEWS. */
+export interface SavedViewSmart {
+  id: string;
+  name: string;
+  filters: FilterSmart[];
+  sort?: SortSmart;
+}
+
+export const MAX_SAVED_VIEWS = 24;
+export const MAX_VIEW_NAME = 60;
+
 export interface SmartData {
   columns: Record<string, ColumnSmart>;
   filters: FilterSmart[];
   charts: ChartSmart[];
   view?: ViewSmart;
+  /** The sort the table was last given, so a saved view can keep it. */
+  sort?: SortSmart;
+  /** The saved views, each with its own filters and sort. */
+  saved?: SavedViewSmart[];
+  /** The saved view that was applied last. */
+  savedActive?: string;
 }
 
 export const EMPTY_SMART: SmartData = Object.freeze({ columns: {}, filters: [], charts: [] }) as SmartData;
@@ -103,6 +126,40 @@ function readChart(raw: unknown): ChartSmart | null {
   return chart;
 }
 
+function readFilter(value: unknown): FilterSmart[] {
+  if (!isRecord(value) || !text(value.column) || !text(value.op)) return [];
+  const filter: FilterSmart = { column: value.column as string, op: value.op as FilterOp };
+  if (text(value.value) !== undefined) filter.value = value.value as string;
+  if (text(value.to) !== undefined) filter.to = value.to as string;
+  return [filter];
+}
+
+function readSort(raw: unknown): SortSmart | null {
+  if (!isRecord(raw) || !text(raw.column)) return null;
+  return { column: raw.column as string, ...(raw.desc === true ? { desc: true } : {}) };
+}
+
+function readSaved(raw: unknown): SavedViewSmart[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: SavedViewSmart[] = [];
+  for (const value of raw) {
+    if (!isRecord(value) || !text(value.id) || seen.has(value.id as string)) continue;
+    const name = (text(value.name) ?? '').trim().slice(0, MAX_VIEW_NAME);
+    if (name === '') continue;
+    seen.add(value.id as string);
+    const sort = readSort(value.sort);
+    out.push({
+      id: value.id as string,
+      name,
+      filters: (Array.isArray(value.filters) ? value.filters : []).flatMap(readFilter),
+      ...(sort ? { sort } : {}),
+    });
+    if (out.length >= MAX_SAVED_VIEWS) break;
+  }
+  return out;
+}
+
 function readView(raw: unknown): ViewSmart | null {
   if (!isRecord(raw) || !VIEW_KINDS.includes(raw.kind as ViewKind)) return null;
   const view: ViewSmart = { kind: raw.kind as ViewKind };
@@ -123,16 +180,21 @@ export function readSmart(data: Record<string, unknown> | undefined): SmartData 
       if (Object.keys(column).length > 0) columns[id] = column;
     }
   }
-  const filters = (Array.isArray(raw.filters) ? raw.filters : []).flatMap((value): FilterSmart[] => {
-    if (!isRecord(value) || !text(value.column) || !text(value.op)) return [];
-    const filter: FilterSmart = { column: value.column as string, op: value.op as FilterOp };
-    if (text(value.value) !== undefined) filter.value = value.value as string;
-    if (text(value.to) !== undefined) filter.to = value.to as string;
-    return [filter];
-  });
+  const filters = (Array.isArray(raw.filters) ? raw.filters : []).flatMap(readFilter);
   const charts = (Array.isArray(raw.charts) ? raw.charts : []).flatMap((value) => readChart(value) ?? []);
   const view = readView(raw.view);
-  return { columns, filters, charts, ...(view ? { view } : {}) };
+  const sort = readSort(raw.sort);
+  const saved = readSaved(raw.saved);
+  const active = saved.some((one) => one.id === raw.savedActive) ? (raw.savedActive as string) : undefined;
+  return {
+    columns,
+    filters,
+    charts,
+    ...(view ? { view } : {}),
+    ...(sort ? { sort } : {}),
+    ...(saved.length > 0 ? { saved } : {}),
+    ...(active ? { savedActive: active } : {}),
+  };
 }
 
 /** The merge patch that stores `smart`: the whole object, or null when nothing is left. */
@@ -141,18 +203,28 @@ export function smartPatch(smart: SmartData): Record<string, unknown> {
     Object.keys(smart.columns).length === 0 &&
     smart.filters.length === 0 &&
     smart.charts.length === 0 &&
-    smart.view === undefined;
+    smart.view === undefined &&
+    smart.sort === undefined &&
+    (smart.saved ?? []).length === 0;
   return { smart: empty ? null : smart };
 }
 
 /** `smart` with the columns that are no longer in the table dropped from it. */
 export function pruneSmart(smart: SmartData, columnIds: readonly string[]): SmartData {
   const keep = new Set(columnIds);
+  const saved = (smart.saved ?? []).map(({ sort, filters, ...rest }) => ({
+    ...rest,
+    filters: filters.filter((filter) => keep.has(filter.column)),
+    ...(sort && keep.has(sort.column) ? { sort } : {}),
+  }));
   return {
     columns: Object.fromEntries(Object.entries(smart.columns).filter(([id]) => keep.has(id))),
     filters: smart.filters.filter((filter) => keep.has(filter.column)),
     charts: smart.charts,
     ...(smart.view ? { view: smart.view } : {}),
+    ...(smart.sort && keep.has(smart.sort.column) ? { sort: smart.sort } : {}),
+    ...(saved.length > 0 ? { saved } : {}),
+    ...(smart.savedActive ? { savedActive: smart.savedActive } : {}),
   };
 }
 

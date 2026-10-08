@@ -63,6 +63,8 @@ describe('ElementsDialog organizing', () => {
     expect(within(choice).queryByRole('option', { name: 'Practicals' })).toBeNull();
     await userEvent.selectOptions(choice, 'Letters');
     await userEvent.click(screen.getByRole('button', { name: 'Move here' }));
-    await waitFor(() => expect(elementLibrary.get().entries.find((e) => e.id === '2')?.folder).toBe('Letters/Practicals'));
+    await waitFor(() =>
+      expect(elementLibrary.get().entries.find((e) => e.id === '2')?.folder).toBe('Letters/Practicals'),
+    );
   });
 });

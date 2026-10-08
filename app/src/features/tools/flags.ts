@@ -23,6 +23,7 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.windows', 'Timers, the calculator, and Upcoming in tool windows.'),
   flag('tables.calculated', 'Calculated columns in smart tables.'),
   flag('tables.views', 'Board, calendar, gallery, and timeline views of a smart table.'),
+  flag('tables.savedViews', 'Saved views of a smart table, each with its own filters and sort.'),
   flag('tables.chartTable', 'The text summary, arrow-key reading, and Show as table for charts.'),
   flag('math.quickMath', 'Type a sum and an equals sign in text, then Space, to add the answer.'),
   flag('math.notes', 'Variables and units on page lines, with answers after the equals sign.'),

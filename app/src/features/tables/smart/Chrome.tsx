@@ -30,6 +30,8 @@ export interface ChromeProps {
   active: boolean;
   address: string | null;
   filter: { shown: number; total: number } | null;
+  /** The name of the saved view in use, when the table has one. */
+  savedView: string | null;
   totals: readonly { label: string; text: string }[];
   charts: readonly ChartItem[];
   openData(anchor: HTMLElement): void;
@@ -120,7 +122,7 @@ function Chart({ item, props }: { item: ChartItem; props: ChromeProps }) {
 }
 
 export function Chrome(props: ChromeProps) {
-  const note = props.filter !== null || props.totals.length > 0;
+  const note = props.filter !== null || props.savedView !== null || props.totals.length > 0;
   return (
     <>
       <div
@@ -141,6 +143,11 @@ export function Chrome(props: ChromeProps) {
               </span>
             ) : null}
           </>
+        ) : null}
+        {props.savedView ? (
+          <span className={styles.address} aria-label={t('smart.saved.inUse', { name: props.savedView })}>
+            {props.savedView}
+          </span>
         ) : null}
         {props.filter ? (
           <span role="status">

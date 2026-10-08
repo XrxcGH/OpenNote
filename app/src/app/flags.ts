@@ -105,6 +105,7 @@ type ExprFlagId =
 type ToolsQolFlagId =
   | 'tables.calculated'
   | 'tables.views'
+  | 'tables.savedViews'
   | 'tables.chartTable'
   | 'math.quickMath'
   | 'math.notes'

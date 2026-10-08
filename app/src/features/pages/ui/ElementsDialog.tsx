@@ -292,7 +292,8 @@ function Toolbar({ browser }: { browser: Browser }) {
 /** Where to move an element or a folder: the top level or any folder, except a folder and what is inside it. */
 function MoveRow({ browser, editing }: { browser: Browser; editing: Editing }) {
   const moving = editing.kind === 'moveFolder' ? editing.path : null;
-  const subject = editing.kind === 'moveFolder' ? lastName(editing.path) : editing.kind === 'moveElement' ? editing.name : '';
+  const subject =
+    editing.kind === 'moveFolder' ? lastName(editing.path) : editing.kind === 'moveElement' ? editing.name : '';
   const choices = allFolders(browser.library).filter(
     (path) => moving === null || (path !== moving && !path.startsWith(`${moving}/`)),
   );
@@ -321,7 +322,8 @@ function MoveRow({ browser, editing }: { browser: Browser; editing: Editing }) {
 
 /** The field for a new folder's name or a new name for an element or a folder. */
 function EditRow({ browser, editing }: { browser: Browser; editing: Editing }) {
-  if (editing.kind === 'moveElement' || editing.kind === 'moveFolder') return <MoveRow browser={browser} editing={editing} />;
+  if (editing.kind === 'moveElement' || editing.kind === 'moveFolder')
+    return <MoveRow browser={browser} editing={editing} />;
   const folder = editing.kind === 'folder';
   const field = folder ? 'folderName' : editing.kind === 'renameFolder' ? 'renameFolderField' : 'renameField';
   return (

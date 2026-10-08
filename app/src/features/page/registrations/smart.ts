@@ -118,7 +118,7 @@ interface TableSpec {
   id: `table.${string}` | `insert.${string}`;
   title: MessageKey;
   icon: IconName;
-  flag?: 'tables.smart' | 'tables.charts';
+  flag?: 'tables.smart' | 'tables.charts' | 'tables.savedViews';
   keys?: readonly string[];
   command: import('../../tables').SmartCommand;
 }
@@ -204,6 +204,20 @@ const TABLE_COMMANDS: readonly TableSpec[] = [
     title: 'smart.table.fewerDecimals',
     icon: 'Minus',
     command: { run: 'decimals', by: -1 },
+  },
+  {
+    id: 'table.saveView',
+    title: 'smart.saved.commandSave',
+    icon: 'Funnel',
+    flag: 'tables.savedViews',
+    command: { run: 'saveView' },
+  },
+  {
+    id: 'table.showAllRows',
+    title: 'smart.saved.commandAll',
+    icon: 'FunnelX',
+    flag: 'tables.savedViews',
+    command: { run: 'showAllRows' },
   },
   { id: 'table.totalSum', title: 'smart.table.totalKinds.sum', icon: 'Sigma', command: { run: 'total', total: 'sum' } },
   { id: 'table.totalNone', title: 'smart.table.totalNone', icon: 'Sigma', command: { run: 'total', total: null } },

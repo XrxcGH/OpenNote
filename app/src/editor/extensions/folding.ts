@@ -261,7 +261,8 @@ function apply(host: EditorHost, tr: Transaction, value: PluginValue, state: Edi
  */
 function openFoldsAfterUndo(transactions: readonly Transaction[], state: EditorState): Transaction | null {
   const hiding = new Set<number>();
-  const note = (pos: number) => foldsHiding(state, Math.min(Math.max(pos, 0), state.doc.content.size)).forEach((f) => hiding.add(f));
+  const note = (pos: number) =>
+    foldsHiding(state, Math.min(Math.max(pos, 0), state.doc.content.size)).forEach((f) => hiding.add(f));
   for (const tr of transactions) {
     if (!tr.docChanged || !tr.getMeta(META_REMOTE)) continue;
     tr.mapping.maps.forEach((map, index) => {

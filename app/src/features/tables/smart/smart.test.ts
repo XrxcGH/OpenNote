@@ -12,6 +12,7 @@ import { filledText, shiftFormula } from './fill';
 import { buildModel, inferType, shownFor } from './model';
 import type { Grid } from './model';
 import { addChart, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
+import { applyView, deleteView, matchesView, renameView, saveView, updateView, viewNameProblem } from './savedViews';
 import type { Range, SmartInstance } from './ops';
 
 const COLUMNS = ['item', 'qty', 'price', 'total'];
@@ -69,8 +70,12 @@ function fake(texts = TEXT, caret = { row: 1, column: 1 }, range?: Range, smart:
     model: () => buildModel(gridOf(data), state, EN_US),
     caret: () => caret,
     range: () => range ?? { row0: caret.row, row1: caret.row, col0: caret.column, col1: caret.column },
-    commit: async (next) => {
+    commit: async (next, change) => {
       state = next;
+      if (change) {
+        const changed = change(data);
+        if (changed) data = changed;
+      }
     },
   };
   return { inst, data: () => data, smart: () => state, says: () => said };
@@ -256,5 +261,67 @@ describe('table operations', () => {
     const table = fake([TEXT[0], ['a', 'b', 'c', 'd']]);
     expect(await addChart(table.inst, 'bar')).toBe(false);
     expect(table.says()[0]).toBe('This table has no column of numbers to chart yet.');
+  });
+});
+
+describe('saved views', () => {
+  it('keeps the filters and the sort a view was saved with, each view on its own', async () => {
+    const table = fake(TEXT, { row: 2, column: 1 });
+    await filterBy(table.inst, 'greater'); // Qty above 3
+    await sortColumn(table.inst, 1, true);
+    expect(column(table.data(), 1)).toEqual(['10', '3', '2']);
+    expect(await saveView(table.inst, 'Big first')).toBe(true);
+
+    await applyView(table.inst, null);
+    expect(table.smart().filters).toEqual([]);
+    await sortColumn(table.inst, 0, false);
+    expect(column(table.data(), 0)).toEqual(['Ink', 'Pad', 'Pen']);
+    await saveView(table.inst, 'By name');
+    const [first, second] = table.smart().saved ?? [];
+    expect(first).toMatchObject({ name: 'Big first', sort: { column: 'qty', desc: true } });
+    expect(first.filters).toHaveLength(1);
+    expect(second).toMatchObject({ name: 'By name', sort: { column: 'item' }, filters: [] });
+
+    await applyView(table.inst, first.id);
+    expect(table.smart().savedActive).toBe(first.id);
+    expect(table.smart().filters).toEqual(first.filters);
+    expect(column(table.data(), 1)).toEqual(['10', '3', '2']);
+    expect(matchesView(table.smart(), first)).toBe(true);
+    await applyView(table.inst, second.id);
+    expect(table.smart().filters).toEqual([]);
+    expect(column(table.data(), 0)).toEqual(['Ink', 'Pad', 'Pen']);
+  });
+
+  it('updates, renames, and deletes a view, and refuses a name that is empty or taken', async () => {
+    const table = fake(TEXT, { row: 1, column: 1 });
+    await saveView(table.inst, 'All');
+    const id = table.smart().savedActive!;
+    expect(viewNameProblem(table.smart(), '  ')).not.toBeNull();
+    expect(viewNameProblem(table.smart(), 'all')).toMatch(/already has a view/);
+    expect(await saveView(table.inst, 'ALL')).toBe(false);
+    await filterBy(table.inst, 'equal');
+    expect(matchesView(table.smart(), table.smart().saved![0])).toBe(false);
+    await updateView(table.inst, id);
+    expect(table.smart().saved![0].filters).toHaveLength(1);
+    expect(await renameView(table.inst, id, 'Pens only')).toBe(true);
+    expect(table.smart().saved![0].name).toBe('Pens only');
+    await deleteView(table.inst, id);
+    expect(table.smart().saved).toBeUndefined();
+    expect(table.smart().savedActive).toBeUndefined();
+  });
+
+  it('is stored with the table, read back, and pruned when a column goes', async () => {
+    const table = fake(TEXT, { row: 1, column: 1 });
+    await sortColumn(table.inst, 2, false);
+    await saveView(table.inst, 'Cheap first');
+    const stored = smartPatch(table.smart()).smart;
+    const back = readSmart({ smart: JSON.parse(JSON.stringify(stored)) });
+    expect(back).toEqual(table.smart());
+    const pruned = pruneSmart(back, ['item', 'qty']);
+    expect(pruned.sort).toBeUndefined();
+    expect(pruned.saved?.[0].sort).toBeUndefined();
+    expect(readSmart({ smart: { saved: [{ id: 'a', name: '' }, { id: 'b', name: 'x' }, 7] } }).saved).toEqual([
+      { id: 'b', name: 'x', filters: [] },
+    ]);
   });
 });
