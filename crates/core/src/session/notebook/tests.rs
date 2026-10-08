@@ -330,3 +330,20 @@ fn a_page_that_cant_be_saved_doesnt_stop_the_backup() {
     );
     assert!(report.copied_files > 0 && report.finished.is_some());
 }
+
+#[test]
+fn a_new_or_copied_page_gets_its_readable_copy_before_any_edit() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let section = notebook.create_section("Lab", top()).unwrap();
+    let page = notebook.create_page(section, in_section(section)).unwrap();
+    let copy = notebook.duplicate(page).unwrap();
+    kit.core.run_pending_work();
+    for id in [page, copy] {
+        let dir = notebook.inner.tree().store.page_dir(id).unwrap();
+        assert!(
+            crate::store::fs::Fs::metadata(&kit.fs, &dir.join("page.md")).is_ok(),
+            "page.md for {id}"
+        );
+    }
+}
