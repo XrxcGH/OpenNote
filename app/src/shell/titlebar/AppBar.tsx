@@ -22,7 +22,10 @@ function useScreenNames() {
   const ids = location.view === 'workspace' ? [location.notebookId, location.sectionId, location.pageId] : [];
   const [notebook, section, page] = useNodes(ids);
   if (screen === 'page') {
-    return { title: page?.title ?? t('tree.page.noneTitle'), parent: section?.title ?? t('layout.regions.pages') };
+    // A page that is open but not read yet has no title to show; "No page open" is only for when none is.
+    const opening = location.view === 'workspace' && location.pageId !== null;
+    const title = page?.title ?? (opening ? '' : t('tree.page.noneTitle'));
+    return { title, parent: section?.title ?? t('layout.regions.pages') };
   }
   if (screen === 'pages') {
     return {
