@@ -98,8 +98,12 @@ pub fn script(boot_script: &str, tool: &Tool) -> String {
 
 /// Opens a tool in a window of its own, or brings its window forward if it is open. `pinned` keeps it above other
 /// windows.
+///
+/// It is async so it runs off the main thread. A synchronous command runs on the main thread, and WebView2 can't
+/// finish building the new webview while that thread waits in the command: the window appeared, its page stayed
+/// about:blank, and the call never answered, so the tool stayed docked too.
 #[tauri::command]
-pub fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> IpcResult<()> {
+pub async fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> IpcResult<()> {
     let spec = find(&tool).ok_or_else(|| IpcError::invalid("tool", "That tool does not exist."))?;
     let label = label(spec);
     if let Some(open) = app.get_webview_window(&label) {
@@ -159,6 +163,61 @@ mod tests {
         let text = script("window.__OPENNOTE_BOOT__ = {};", tool);
         assert!(text.starts_with("window.__OPENNOTE_BOOT__ = {};"));
         assert!(text.ends_with("window.__OPENNOTE_TOOL__ = \"calculator\";"));
+    }
+
+    /// The source of every synchronous command in `src`: its name and its body.
+    fn sync_commands() -> Vec<(String, String)> {
+        fn walk(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+            for entry in std::fs::read_dir(dir).expect("src reads").flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, out);
+                } else if path.extension().is_some_and(|extension| extension == "rs") {
+                    out.push(path);
+                }
+            }
+        }
+        let mut files = Vec::new();
+        walk(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+            &mut files,
+        );
+        let mut commands = Vec::new();
+        for file in files {
+            let text = std::fs::read_to_string(&file).expect("a source file reads");
+            for (at, _) in text.match_indices("#[tauri::command]") {
+                // Only the attribute at the start of a line, not this scan's own string.
+                if !text[..at].ends_with('\n') {
+                    continue;
+                }
+                let rest = &text[at..];
+                let Some(start) = rest.find("fn ") else { continue };
+                if rest[..start].contains("async") {
+                    continue;
+                }
+                let end = rest.find("\n}\n").unwrap_or(rest.len());
+                let name = rest[start + 3..].split('(').next().unwrap_or_default().to_owned();
+                commands.push((name, rest[..end].to_owned()));
+            }
+        }
+        commands
+    }
+
+    /// WebView2 can't finish building a webview while the main thread waits in a synchronous command: the window
+    /// appears and its page stays about:blank. Commands that build windows must be async.
+    #[test]
+    fn no_synchronous_command_builds_a_window() {
+        let builders = ["WebviewWindowBuilder", "open_page(", "open_capture(", "build("];
+        let found: Vec<String> = sync_commands()
+            .into_iter()
+            .filter(|(_, body)| builders.iter().any(|builder| body.contains(builder)))
+            .map(|(name, _)| name)
+            .collect();
+        assert!(found.is_empty(), "synchronous commands that build windows: {found:?}");
+        assert!(
+            sync_commands().iter().any(|(name, _)| name == "window_minimize"),
+            "the scan finds synchronous commands"
+        );
     }
 
     #[test]
