@@ -39,9 +39,11 @@
     "spikes:web": "vite build --config spikes/web/vite.config.ts",
     "spikes": "npm run spikes:web && cargo run --profile spikes -p opennote-spikes --",
     "release:check": "node app/scripts/release/checklist.ts",
-    "test": "npm run test:checks && npm run test:design && npm run test:lint-rules && npm run test:matrix && npm run app:test",
+    "test": "npm run test:checks && npm run test:design && npm run test:lint-rules && npm run test:matrix && npm run test:hardware && npm run app:test",
     "test:matrix": "node --test tests/ui/matrix.test.ts",
-    "test:lint-rules": "node --test eslint/rules.test.ts"
+    "test:lint-rules": "node --test eslint/rules.test.ts",
+    "test:hardware": "node --test tests/hardware/kit.test.ts",
+    "hardware": "node tests/hardware/kit.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
