@@ -101,6 +101,20 @@ pub fn key_problem(text: &str) -> Option<KeyProblem> {
     check_key(text).err()
 }
 
+/// The choice `quick.set` saves. Only a choice that is on needs a usable key: turning quick capture off always
+/// works, so a key an earlier beta saved (Ctrl+Alt+Q) can be switched off without typing a new one first. A refused
+/// key isn't kept; the default takes its place for when the person turns it on again.
+pub fn next_choice(enabled: bool, key: String) -> Result<Choice, KeyProblem> {
+    match key_problem(&key) {
+        None => Ok(Choice { enabled, key }),
+        Some(_) if !enabled => Ok(Choice {
+            enabled,
+            key: DEFAULT_KEY.to_owned(),
+        }),
+        Some(problem) => Err(problem),
+    }
+}
+
 fn virtual_key(name: &str) -> Option<u32> {
     let mut chars = name.chars();
     let first = chars.next()?;
@@ -228,13 +242,9 @@ pub fn call(app: &AppHandle, _bridge: &CoreBridge, name: &str, args: &Value) -> 
             Ok(json!({ "choice": choice, "registered": imp::registered(), "problem": problem }))
         }
         "quick.set" => {
-            let next = Choice {
-                enabled: arg(args, "enabled")?,
-                key: opt::<String>(args, "key")?.unwrap_or_else(|| DEFAULT_KEY.to_owned()),
-            };
-            if let Some(problem) = key_problem(&next.key) {
-                return Err(IpcError::invalid("key", problem.message()));
-            }
+            let enabled = arg(args, "enabled")?;
+            let key = opt::<String>(args, "key")?.unwrap_or_else(|| DEFAULT_KEY.to_owned());
+            let next = next_choice(enabled, key).map_err(|problem| IpcError::invalid("key", problem.message()))?;
             let mut patch = serde_json::Map::new();
             patch.insert("quickCapture".to_owned(), out(&next)?);
             prefs::write(app, &patch)?;
@@ -295,5 +305,29 @@ mod tests {
         assert_eq!(key_problem("Win+Ctrl+Alt+Q"), None);
         assert_eq!(key_problem("Ctrl+Shift+Q"), None);
         assert_eq!(key_problem("Shift+Q"), Some(KeyProblem::Invalid));
+    }
+
+    #[test]
+    fn a_refused_key_can_always_be_turned_off() {
+        // A Beta 4 profile kept { enabled: true, key: "Ctrl+Alt+Q" }; turning it off was refused for the key.
+        assert_eq!(
+            next_choice(false, "Ctrl+Alt+Q".to_owned()),
+            Ok(Choice {
+                enabled: false,
+                key: DEFAULT_KEY.to_owned()
+            })
+        );
+        assert_eq!(
+            next_choice(false, "Q".to_owned()).map(|choice| choice.enabled),
+            Ok(false)
+        );
+        assert_eq!(next_choice(true, "Ctrl+Alt+Q".to_owned()), Err(KeyProblem::AltGr));
+        assert_eq!(
+            next_choice(false, "Ctrl+Shift+Q".to_owned()),
+            Ok(Choice {
+                enabled: false,
+                key: "Ctrl+Shift+Q".to_owned()
+            })
+        );
     }
 }
