@@ -42,7 +42,8 @@ function contentExtent(world: HTMLElement, flow: HTMLElement): { w: number; h: n
     if (!(child instanceof HTMLElement) || child.dataset.ink !== undefined) continue;
     w = Math.max(w, child.offsetLeft + child.offsetWidth);
     h = Math.max(h, child.offsetTop + child.offsetHeight);
-    floating ||= child.style.left !== '';
+    // Room to the right is only for a block that leaves the flow column; one inside it adds nothing to scroll into.
+    floating ||= child.style.left !== '' && child.offsetLeft + child.offsetWidth > flow.offsetLeft + flow.offsetWidth;
   }
   for (const child of world.children) {
     if (child instanceof HTMLElement && child !== flow) h = Math.max(h, child.offsetTop + child.offsetHeight);
@@ -62,9 +63,11 @@ export function createFlow(viewport: PageViewport): Flow {
     frame ||= requestAnimationFrame(() => {
       frame = 0;
       // Sheets set their own width, which a narrower column does not change.
-      const narrower = flow.offsetWidth < lastWidth && viewport.world.dataset.sheets === undefined;
+      const extent = contentExtent(viewport.world, flow);
+      // Without a block past the column the extent is exact, so the world follows it down as well as up.
+      const narrower = (flow.offsetWidth < lastWidth || !extent.floating) && viewport.world.dataset.sheets === undefined;
       lastWidth = flow.offsetWidth;
-      viewport.setContent({ ...contentExtent(viewport.world, flow), narrower });
+      viewport.setContent({ ...extent, narrower });
     });
   };
   const stopFlow = observeResize(flow, grow);

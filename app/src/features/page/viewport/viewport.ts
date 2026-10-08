@@ -291,7 +291,9 @@ class Viewport implements PageViewport {
     this.size = size;
     this.world.style.inlineSize = `${size.w}px`;
     this.world.style.blockSize = `${size.h}px`;
-    this.sizer.style.inlineSize = `${size.w * zoom}px`;
+    // Under a pixel past the viewport is rounding, not content: it would show a bar to scroll a fraction into.
+    const wide = size.w * zoom;
+    this.sizer.style.inlineSize = `${wide > inner.w && wide - inner.w < 1 ? inner.w : wide}px`;
     this.sizer.style.blockSize = `${size.h * zoom}px`;
   }
 
