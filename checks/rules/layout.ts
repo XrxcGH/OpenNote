@@ -14,7 +14,7 @@ const AUDIT = readFileSync(join(import.meta.dirname, '..', 'layout', 'audit.js')
 
 /**
  * The brand's bundled fonts, under the family names the drawings ask for (docs/BRAND.md). Without them a drawing is
- * measured in whatever the machine falls back to, Segoe UI on Windows and a wider sans on Linux, so the same file
+ * measured in whatever the machine falls back to: Segoe UI on Windows, a wider sans on Linux. The same file then
  * fits on one runner and overflows on another. Embedded as data URLs, because a file:// page may not load font files.
  */
 const FONTS: [family: string, file: string, weight: string, style: string][] = [
