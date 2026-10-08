@@ -50,6 +50,11 @@
     overflow-clip-margin: 4px;
   }
 
+  /* An open equation's preview panel floats below its line, so that line can't clip it. */
+  .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6):has([data-math-holder]) {
+    contain: none;
+  }
+
   /* An empty text box invites writing, in muted text that is never part of the note. */
   .text :global(.ProseMirror) > p:only-child:has(> br:only-child)::before {
     content: var(--placeholder);

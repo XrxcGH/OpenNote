@@ -3,7 +3,7 @@
 // drawn equation, with MathML behind it for screen readers. Enter or a double-click opens a source field with a
 // live preview and the LaTeX problem, if any. Enter or leaving the field saves it as one undo step, Shift+Enter
 // starts a new line of display math, and Escape puts the old source back.
-import type { Editor, Extensions } from '@tiptap/core';
+import { InputRule, type Editor, type Extensions } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import type { NodeView } from '@tiptap/pm/view';
@@ -89,7 +89,10 @@ class MathView implements NodeView {
     field.setAttribute('aria-label', t('editor.math.field'));
     field.addEventListener('keydown', (event) => this.onKey(event as KeyboardEvent));
     field.addEventListener('input', () => this.showPreview());
-    field.addEventListener('blur', () => this.close(true));
+    // Tab moves on to Simplify and Solve in the panel under the field; leaving the equation entirely saves it.
+    field.addEventListener('blur', (event) => {
+      if (!this.holder?.contains((event as FocusEvent).relatedTarget as Node | null)) this.close(true);
+    });
     this.field = field;
     this.shown.hidden = true;
     this.dom.append(field);
@@ -103,6 +106,12 @@ class MathView implements NodeView {
     // under it for an inline equation, so nothing in them is covered by the others.
     const holder = document.createElement('div');
     holder.className = this.display ? drawn.holderBlock : drawn.holderInline;
+    // The paragraph's paint containment would clip the floating panel; blocks.module.css lifts it while this is open.
+    holder.setAttribute('data-math-holder', '');
+    holder.addEventListener('focusout', (event) => {
+      const to = event.relatedTarget as Node | null;
+      if (!holder.contains(to) && to !== this.field) this.close(true);
+    });
     const preview = document.createElement('div');
     preview.className = drawn.preview;
     const problem = document.createElement('div');
@@ -234,6 +243,20 @@ export function mathBlockExtensions(host: EditorHost): Extensions {
       addKeyboardShortcuts() {
         return { Enter: () => openSelected(this.editor) };
       },
+      // Typing $$x^2$$ alone on a line makes display math.
+      addInputRules() {
+        const type = this.type;
+        return [
+          new InputRule({
+            find: /^\$\$([^$]+)\$\$$/,
+            handler: ({ state, range, match }) => {
+              const $from = state.doc.resolve(range.from);
+              if ($from.parent.type.name !== 'paragraph' || match[1].trim() === '') return null;
+              state.tr.replaceWith($from.before(), $from.after(), type.create({ source: match[1].trim() }));
+            },
+          }),
+        ];
+      },
     }),
   ];
 }
@@ -247,6 +270,18 @@ export function mathInlineExtensions(host: EditorHost): Extensions {
           new MathView(node, editor, getPos, false, host),
       addKeyboardShortcuts() {
         return { Enter: () => openSelected(this.editor) };
+      },
+      // Typing $x^2$ makes an equation; "$5 and $" stays text because the source can't end in a space.
+      addInputRules() {
+        const type = this.type;
+        return [
+          new InputRule({
+            find: /(?<![$\w\\])\$([^$\s](?:[^$]*[^$\s])?)\$$/,
+            handler: ({ state, range, match }) => {
+              state.tr.replaceWith(range.from, range.to, type.create({ source: match[1] }));
+            },
+          }),
+        ];
       },
     }),
   ];

@@ -108,6 +108,7 @@ export const study = {
       heading: 'From a heading',
       definition: 'From a definition',
       bold: 'From a bold word',
+      inline: 'From a card written in the page',
     },
     add: 'Add {count, plural, =0 {no cards} one {# card} other {# cards}}',
     toDeck: 'Add to',

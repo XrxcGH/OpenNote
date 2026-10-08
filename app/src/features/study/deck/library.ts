@@ -1,5 +1,7 @@
 // The decks on this device and their review history. Both live in the browser's storage for the app, as the tool
 // windows' other lists do: reading and writing never throw, and blocked storage just means decks start empty.
+// Several windows share that storage, so a save merges with what another window saved (see saveDecks).
+// Moving the decks into the notes folder, where backups reach them, needs a storage command (beta follow-up).
 import { createStore } from '../../../state/store';
 import { dayKey } from './dates';
 import { capToExam, nextState } from './schedule';
@@ -61,16 +63,33 @@ function loadStates(deckId: string): States {
 
 export const statesOf = (deckId: string): States => loadStates(deckId);
 
-function saveDecks(next: readonly Deck[]): void {
-  decksStore.set(next);
-  write(DECKS, next);
+/**
+ * Saves the deck list. The tool windows share this storage, so the list is merged with what another window saved
+ * first: only `touched` (changed here) and `removed` (deleted here) come from this window; the rest follow the saved
+ * copy, and decks only the saved copy has are kept.
+ */
+function saveDecks(next: readonly Deck[], touched?: string, removed?: string): void {
+  const saved = readDecks();
+  const merged = next.map((deck) => (deck.id === touched ? deck : (saved.find((one) => one.id === deck.id) ?? deck)));
+  for (const deck of saved) {
+    if (deck.id !== removed && !merged.some((one) => one.id === deck.id)) merged.push(deck);
+  }
+  decksStore.set(merged);
+  write(DECKS, merged);
+}
+
+// Another window saved decks: show them here.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === PREFIX + DECKS) decksStore.set(readDecks());
+  });
 }
 
 export const deckById = (id: string): Deck | undefined => decksStore.get().find((deck) => deck.id === id);
 
 export function createDeck(name: string, cards: Card[] = []): Deck {
   const deck: Deck = { id: newId('d'), name: name.trim() || name, cards };
-  saveDecks([...decksStore.get(), deck]);
+  saveDecks([...decksStore.get(), deck], deck.id);
   return deck;
 }
 
@@ -79,6 +98,7 @@ export function putDeck(deck: Deck): void {
   const decks = decksStore.get();
   saveDecks(
     decks.some((one) => one.id === deck.id) ? decks.map((one) => (one.id === deck.id ? deck : one)) : [...decks, deck],
+    deck.id,
   );
 }
 
@@ -88,7 +108,11 @@ export function changeDeck(id: string, change: (deck: Deck) => Deck): void {
 }
 
 export function removeDeck(id: string): void {
-  saveDecks(decksStore.get().filter((deck) => deck.id !== id));
+  saveDecks(
+    decksStore.get().filter((deck) => deck.id !== id),
+    undefined,
+    id,
+  );
   statesStore.set((current) => {
     const { [id]: _gone, ...rest } = current;
     return rest;

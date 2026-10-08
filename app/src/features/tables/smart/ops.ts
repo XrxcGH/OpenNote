@@ -231,9 +231,27 @@ export async function changeChart(inst: SmartInstance, id: string, change: Parti
   await inst.commit({ ...smart, charts });
 }
 
+/** Puts [ ] around a bare word that is a column's name, so "Price * Qty" reads as "[Price] * [Qty]". */
+export function bracketNames(text: string, names: readonly string[]): string {
+  const known = new Set(
+    names.map((name) => name.trim().toLowerCase()).filter((name) => /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name)),
+  );
+  if (known.size === 0) return text;
+  return text
+    .split(/(\[[^\]]*\]|"[^"]*")/)
+    .map((part, i) =>
+      i % 2 === 1
+        ? part
+        : part.replace(/(?<![\w.])[\p{L}_][\p{L}\p{N}_]*(?!\s*\()/gu, (word) =>
+            known.has(word.toLowerCase()) ? `[${word}]` : word,
+          ),
+    )
+    .join('');
+}
+
 /** The problem with a formula typed for a whole column, in words, or null when it reads. */
-export function calculatedProblem(text: string, locale: Locale): string | null {
-  const typed = text.trim().replace(/^=/, '').trim();
+export function calculatedProblem(text: string, locale: Locale, names: readonly string[] = []): string | null {
+  const typed = bracketNames(text.trim().replace(/^=/, '').trim(), names);
   if (typed === '') return t('smart.calculated.empty');
   const checked = checkFormulaInput(typed, locale);
   return typeof checked === 'string' ? null : t('smart.calculated.problem', { message: checked.message });
@@ -241,8 +259,8 @@ export function calculatedProblem(text: string, locale: Locale): string | null {
 
 /** Puts one formula in every data cell of a column, so each row calculates from its own values. */
 export async function setCalculated(inst: SmartInstance, column: number, text: string): Promise<boolean> {
-  if (calculatedProblem(text, inst.locale) !== null) return false;
-  const formula = `=${text.trim().replace(/^=/, '').trim()}`;
+  if (calculatedProblem(text, inst.locale, inst.model().names) !== null) return false;
+  const formula = `=${bracketNames(text.trim().replace(/^=/, '').trim(), inst.model().names)}`;
   const model = inst.model();
   const markdown = serializeCell(tableSchema.nodes.paragraph.create(null, tableSchema.text(formula)), inst.host.cache);
   const done = await inst.host.apply((data) => {

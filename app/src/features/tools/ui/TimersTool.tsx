@@ -37,7 +37,11 @@ export function clockText(ms: number): string {
 const stopwatchText = (ms: number) => clockText(Math.floor(ms / 1000) * 1000);
 
 function TimerCard({ view, timers }: { view: TimerView; timers: Timers }) {
-  const shown = view.kind === 'stopwatch' ? stopwatchText(view.elapsedMs) : clockText(view.leftMs ?? 0);
+  // A focus timer counts down the phase it is in (25:00 of work), not the whole session.
+  const shown =
+    view.kind === 'stopwatch'
+      ? stopwatchText(view.elapsedMs)
+      : clockText(view.focus ? view.focus.phaseLeftMs : (view.leftMs ?? 0));
   const phase = view.focus
     ? t(view.focus.phase === 'work' ? 'smart.tools.timers.phaseWork' : 'smart.tools.timers.phaseBreak', {
         cycle: view.focus.cycle,
