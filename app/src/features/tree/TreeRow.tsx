@@ -31,6 +31,8 @@ export interface TreeRowProps {
   /** The row's top when the tree windows its rows. */
   readonly top?: number;
   onPress(row: Row, event: MouseEvent): void;
+  /** A press with a button other than the main one: the middle button opens the row in a new tab. */
+  onAux(row: Row, event: MouseEvent): void;
   onToggle(row: Row): void;
   onRename(row: Row): void;
   onMore(row: Row, anchor: HTMLElement): void;
@@ -100,6 +102,7 @@ function TreeRowView(props: TreeRowProps) {
       aria-describedby={`${id}-description`}
       tabIndex={focused ? 0 : -1}
       onClick={(event) => props.onPress(row, event)}
+      onAuxClick={(event) => props.onAux(row, event)}
     >
       <Twisty row={row} onToggle={props.onToggle} />
       <Chip node={node} />

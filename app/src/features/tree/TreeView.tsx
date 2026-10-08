@@ -5,6 +5,7 @@
 
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { isEnabled } from '../../app/flags';
+import { executeCommand } from '../../commands/registry';
 import type { KeyboardEvent, MouseEvent, ReactNode, RefObject } from 'react';
 import type { NodeId } from '../../services/notes';
 import { useStore } from '../../state/store';
@@ -176,10 +177,15 @@ function useRowHandlers(props: TreeViewProps) {
     },
     [tree],
   );
+  const onAux = useCallback((row: Row, event: MouseEvent) => {
+    if (event.button !== 1 || (row.node.kind !== 'page' && row.node.kind !== 'section')) return;
+    event.preventDefault();
+    void executeCommand('tabs.openInNewTab', undefined, 'menu', { kind: 'node', id: row.id });
+  }, []);
   const onToggle = useCallback((row: Row) => setOpen(tree, [row.id], !row.expanded), [tree]);
   const onRename = useCallback((row: Row) => startRename(row.id), []);
   const onMore = useCallback((row: Row, anchor: HTMLElement) => openMenu(row, anchor, anchor), [openMenu]);
-  return { onPress, onToggle, onRename, onMore };
+  return { onPress, onAux, onToggle, onRename, onMore };
 }
 
 /** Right-click, the Menu key, Shift+F10, and a long press without a drag all open the row's menu. */
