@@ -44,6 +44,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 - Right-click a picture and choose Alt text to get a first draft you can edit.
 - Choose Wrap on a picture to set text around it on a document page.
 - Drop a file, a PDF, or a link on the page to attach it. A Word file you edit and save comes back into the page.
+- Documents, pictures, audio, video, and ZIP files open in their own app. Other files are shown in their folder, and programs and scripts never open from a note.
 
 ## Spelling and reading aloud
 

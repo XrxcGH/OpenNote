@@ -349,18 +349,25 @@ pub async fn interop_reveal(path: String) -> IpcResult<()> {
     reveal(&target)
 }
 
+/// What Explorer is given to show a file: `/select,` and its path, so the file is selected in its folder. Explorer
+/// given a file's path by itself opens the file as a double-click does, which for an attachment a note won't open
+/// (F2-4: a program, a script, a type it doesn't know) is just what showing it in its folder must never do. A folder
+/// is given as it is, and opens. Explorer reads the argument as one piece, so it is passed as it is.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn explorer_select(target: &Path) -> Option<String> {
+    (!target.is_dir()).then(|| format!("/select,\"{}\"", target.display()))
+}
+
 #[cfg(windows)]
 pub(crate) fn reveal(target: &Path) -> IpcResult<()> {
     use std::os::windows::process::CommandExt;
     use std::process::Command;
 
     let mut command = Command::new("explorer.exe");
-    if target.is_dir() {
-        command.arg(target);
-    } else {
-        // Explorer reads this argument as one piece, so it is passed as it is.
-        command.raw_arg(format!("/select,\"{}\"", target.display()));
-    }
+    match explorer_select(target) {
+        Some(select) => command.raw_arg(select),
+        None => command.arg(target),
+    };
     command.spawn()?;
     Ok(())
 }
@@ -377,6 +384,27 @@ mod tests {
 
     use super::*;
     use crate::interop::restore::{ImportedPageNode, ImportedSection};
+
+    #[test]
+    fn a_file_is_only_ever_selected_in_its_folder() {
+        // F2-4: an attachment a note won't open is shown in its folder. Were its path given to Explorer by itself,
+        // Explorer would open it, and a program or script would run.
+        let dir = tempfile::tempdir().expect("a temp folder");
+        for name in ["Run me.bat", "Budget.unknown", "no extension", "a,b.cmd"] {
+            let file = dir.path().join(name);
+            std::fs::write(&file, b"x").expect("writes");
+            assert_eq!(
+                explorer_select(&file),
+                Some(format!("/select,\"{}\"", file.display())),
+                "{name}"
+            );
+        }
+        // A folder opens, even one named like a program.
+        let folder = dir.path().join("Setup.exe");
+        std::fs::create_dir(&folder).expect("a folder");
+        assert_eq!(explorer_select(&folder), None);
+        assert_eq!(explorer_select(dir.path()), None);
+    }
 
     #[test]
     fn requests_from_the_interface_deserialize() {
