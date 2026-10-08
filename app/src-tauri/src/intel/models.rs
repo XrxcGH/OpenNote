@@ -299,6 +299,9 @@ fn spec_of(id: &str) -> Option<&'static ModelSpec> {
     CATALOG.iter().find(|spec| spec.id == id)
 }
 
+/// How many 20 ms steps `remove` waits for a download to stop: a little over the 60 s read timeout.
+const REMOVE_WAIT_STEPS: u32 = 3100;
+
 impl Models {
     pub fn new(dir: PathBuf) -> Models {
         Models::with_source(dir, Arc::new(HttpSource))
@@ -406,12 +409,17 @@ impl Models {
     pub fn remove(&self, id: &str) -> Result<(), DownloadError> {
         let spec = spec_of(id).ok_or_else(|| DownloadError::Disk("That model isn't in the catalog.".to_owned()))?;
         self.cancel(id);
-        // Wait for the thread to let go of the file.
-        for _ in 0..100 {
+        // Wait for the thread to let go of the file. It sees the flag between reads, and a read can last as long as
+        // the connection's timeout, so the wait is longer than that. If it still runs, nothing is deleted and the
+        // job stays, so the list tells the truth and a second Start can't begin another thread on the same file.
+        for _ in 0..REMOVE_WAIT_STEPS {
             if !self.jobs().get(id).is_some_and(|job| job.running) {
                 break;
             }
             thread::sleep(Duration::from_millis(20));
+        }
+        if self.jobs().get(id).is_some_and(|job| job.running) {
+            return Err(DownloadError::Disk("The download is still stopping. Try again in a moment.".to_owned()));
         }
         for path in [self.0.dir.join(spec.file), part_path(&self.0.dir, spec)] {
             match fs::remove_file(&path) {

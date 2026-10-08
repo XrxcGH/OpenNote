@@ -134,7 +134,7 @@ impl Default for Paste {
     fn default() -> Self {
         Self {
             source_link: SourceLink::Ask,
-            save_web_images: true,
+            save_web_images: false,
             join_pdf_lines: true,
         }
     }
@@ -228,7 +228,7 @@ mod tests {
             "slashMenu": true,
             "formattingBar": "touchAndPen",
             "autocorrect": { "enabled": true, "entries": [] },
-            "paste": { "sourceLink": "ask", "saveWebImages": true, "joinPdfLines": true },
+            "paste": { "sourceLink": "ask", "saveWebImages": false, "joinPdfLines": true },
             "spelling": {
                 "enabled": true, "languages": [], "personalWords": [], "ignoreUppercase": true,
                 "ignoreWithDigits": true
