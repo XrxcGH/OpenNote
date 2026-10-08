@@ -4,9 +4,13 @@
 // no files means the app stopped between the two steps, and it goes with its block.
 //
 // "The recording that runs now" is the host's answer, not this window's: a page open in a second window while the
-// first records it sees the live entry too, and the host refuses it with `audioRunning`. That entry is left alone.
-// Only a recording the host found nothing usable for (`audioCorrupt`) is given up on; any other failure leaves the
-// entry saying `recording`, so the next open tries again instead of losing the files for good.
+// first records it sees the live entry too, and the host refuses it with `audioRunning`, as it does once that window
+// stopped it and is writing the final entry. That entry is left alone, and its block says another window has it.
+// Only a recording none of whose files are there (`audioMissing`) is given up on. A file that is there but damaged
+// (`audioCorrupt`) keeps its entry in `recording`, and its block says so: the file stays on disk, and calling it
+// missing would hide it. Any other failure leaves the entry saying `recording` too, so the next open tries again
+// instead of losing the files for good, and says so. A recording that never began recorded nothing, so with no
+// usable files it goes with its block either way.
 import type { RecordingEntry } from '../../../core/audio';
 import type { OpenPage } from '../../../services/pages/types';
 import { commandContext } from '../../../commands/registry';
@@ -15,14 +19,16 @@ import { announce, showToast } from '../../../ui';
 import { shownLayer } from '../mount';
 import { activeNs, recordingBlocks, removeBlock, writeEntry } from './blocks';
 import { platformAudio, runningRecording } from './controller';
-import { entriesOf } from './entries';
+import { entriesOf, holdRecovery } from './entries';
 import { recordingIdOf } from './entry';
 import { clock } from './format';
 
 /** The host's refusal of the recording it is running now, in this window or another. */
 const RUNNING = 'audioRunning';
-/** The host's answer for a recording with no usable files. */
-const GONE = 'audioCorrupt';
+/** The host's answer for a recording none of whose audio files are there. */
+const GONE = 'audioMissing';
+/** The host's answer for a recording whose files are there but can't be read. */
+const DAMAGED = 'audioCorrupt';
 
 /** The recordings being recovered now, so an undo that comes while one is recovered doesn't start it twice. */
 const inFlight = new Set<string>();
@@ -51,17 +57,30 @@ export async function recoverEntries(page: OpenPage, entries: readonly Recording
     try {
       const dir = await audio.assetsDir(page.id);
       const finished = await audio.host.recover(dir, entry);
+      holdRecovery(entry.id, null);
       await writeEntry(page.id, block, finished.entry, { track: 'finished' });
       const time = clock(activeNs(finished.entry) / 1e6);
       announce(t('audio.announce.recovered', { time }));
       showToast({ message: t('audio.announce.recovered', { time }) });
     } catch (error) {
       const code = (error as { code?: unknown } | null)?.code;
-      if (code === RUNNING) continue;
-      if (code !== GONE) {
-        commandContext('commandBar').platform.log('warn', `Recording ${entry.id} couldn't be recovered now: ${code}`);
+      if (code === RUNNING) {
+        holdRecovery(entry.id, 'elsewhere');
         continue;
       }
+      if (code === DAMAGED && entry.clock !== undefined) {
+        commandContext('commandBar').platform.log('warn', `Recording ${entry.id} is damaged: ${String(error)}`);
+        holdRecovery(entry.id, 'damaged');
+        showToast({ message: t('audio.block.damaged'), tone: 'danger' });
+        continue;
+      }
+      if (code !== GONE && code !== DAMAGED) {
+        commandContext('commandBar').platform.log('warn', `Recording ${entry.id} couldn't be recovered now: ${code}`);
+        holdRecovery(entry.id, 'failed');
+        showToast({ message: t('audio.block.notRecovered'), tone: 'danger' });
+        continue;
+      }
+      holdRecovery(entry.id, null);
       if (entry.clock === undefined) {
         await removeBlock(block, entry.id).catch(() => undefined);
       } else {

@@ -17,6 +17,7 @@
 //! is the `assets` folder of a page in an open notebook.
 
 use std::{
+    collections::HashMap,
     fs,
     path::{Component, Path, PathBuf},
     sync::{Arc, Mutex, PoisonError},
@@ -37,7 +38,7 @@ use opennote_media::{
     storage,
 };
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager, State, WebviewWindow};
 
 use crate::{
     core_bridge::{Bridge, CoreBridge},
@@ -51,6 +52,9 @@ pub mod error_codes {
     pub const ENCODER: &str = "audioEncoder";
     pub const FORMAT: &str = "audioFormat";
     pub const CORRUPT: &str = "audioCorrupt";
+    /// None of the recording's audio files are there. The only answer recovery gives up on: a damaged file
+    /// (`audioCorrupt`) is still on disk.
+    pub const MISSING: &str = "audioMissing";
     pub const WRITER: &str = "audioWriter";
     /// The recording asked to be recovered is the one running now, perhaps in another window.
     pub const RUNNING: &str = "audioRunning";
@@ -59,6 +63,8 @@ pub mod error_codes {
 struct Inner {
     services: Services,
     service: Mutex<AudioService>,
+    /// The recordings that stopped in this run, by the window that stopped them, which writes their final entry.
+    stopped: Mutex<HashMap<String, String>>,
 }
 
 /// The managed state behind the audio commands.
@@ -76,6 +82,7 @@ impl AudioState {
         AudioState(Arc::new(Inner {
             service: Mutex::new(AudioService::new(services.clone())),
             services,
+            stopped: Mutex::default(),
         }))
     }
 
@@ -86,6 +93,25 @@ impl AudioState {
 
     fn lock(&self) -> std::sync::MutexGuard<'_, AudioService> {
         self.0.service.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    fn stopped(&self) -> std::sync::MutexGuard<'_, HashMap<String, String>> {
+        self.0.stopped.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// Stops the running recording for the window labelled `window`, which then writes its final entry.
+    fn stop_for(&self, window: &str) -> IpcResult<Finished> {
+        let mut service = self.lock();
+        let finished = service.stop().map_err(audio_error)?;
+        // Marked while the recorder is still held, so no recovery comes between the stop and the mark.
+        self.stopped().insert(finished.entry.id.clone(), window.to_owned());
+        Ok(finished)
+    }
+
+    /// A window went: the recordings it stopped may be recovered from any window now, as nothing else writes
+    /// their entry.
+    pub fn forget_window(&self, window: &str) {
+        self.stopped().retain(|_, stopper| stopper != window);
     }
 
     /// Stops a recording that is still running, so its files close cleanly. The app calls it on exit.
@@ -177,6 +203,7 @@ pub fn audio_error(error: AudioError) -> IpcError {
         AudioError::Encoder(_) => error_codes::ENCODER,
         AudioError::Format(_) => error_codes::FORMAT,
         AudioError::Corrupt(_) => error_codes::CORRUPT,
+        AudioError::Missing(_) => error_codes::MISSING,
         AudioError::Writer(_) => error_codes::WRITER,
     };
     IpcError::new(code, error.to_string())
@@ -282,29 +309,41 @@ pub async fn audio_switch_system_audio(state: State<'_, AudioState>, id: Option<
 }
 
 #[tauri::command]
-pub async fn audio_stop(state: State<'_, AudioState>) -> IpcResult<Finished> {
-    blocking(&state, |state| state.lock().stop().map_err(audio_error)).await
+pub async fn audio_stop(window: WebviewWindow, state: State<'_, AudioState>) -> IpcResult<Finished> {
+    let label = window.label().to_owned();
+    blocking(&state, move |state| state.stop_for(&label)).await
 }
 
 #[tauri::command]
 pub async fn audio_recover(
+    window: WebviewWindow,
     state: State<'_, AudioState>,
     bridge: State<'_, CoreBridge>,
     assets_dir: String,
     entry: RecordingEntry,
 ) -> IpcResult<Finished> {
     let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
-    blocking(&state, move |state| recover_unless_running(&state.lock(), &dir, &entry)).await
+    let label = window.label().to_owned();
+    blocking(&state, move |state| recover_unless_running(state, &label, &dir, &entry)).await
 }
 
-/// Recovers a recording a crash cut off, or refuses with `audioRunning` when it is the one running now. Every
-/// window shares this process's recorder but keeps its own idea of what records, so a page opened in a second
-/// window while the first records it must learn that from here and leave the entry alone.
-fn recover_unless_running(service: &AudioService, dir: &Path, entry: &RecordingEntry) -> IpcResult<Finished> {
+/// Recovers a recording a crash cut off for the window labelled `window`, or refuses with `audioRunning` when
+/// another window owns its entry: it is the recording running now, or one that window stopped and is writing the
+/// final entry of. Every window shares this process's recorder but keeps its own idea of what records, so a page
+/// opened in a second window while the first records it must learn that from here and leave the entry alone. The
+/// window that stopped a recording may recover it, as when an undo takes its entry back to `recording`.
+fn recover_unless_running(state: &AudioState, window: &str, dir: &Path, entry: &RecordingEntry) -> IpcResult<Finished> {
+    let service = state.lock();
     if service.is_running(&entry.id) {
         return Err(IpcError::new(
             error_codes::RUNNING,
             "This recording is still running. Its entry is saved when it stops.",
+        ));
+    }
+    if state.stopped().get(&entry.id).is_some_and(|stopper| stopper != window) {
+        return Err(IpcError::new(
+            error_codes::RUNNING,
+            "This recording stopped in another window, which saves its entry.",
         ));
     }
     service.recover(dir, entry).map_err(audio_error)
@@ -657,24 +696,110 @@ mod tests {
         bridge.shutdown();
     }
 
-    /// F5-5: the interface gives up on a recording only for `audioCorrupt`, and leaves `audioRunning` alone, so a
-    /// recording with no files must answer the first, and the codes must differ.
+    /// Generated sound in place of a microphone. Nothing here opens a real device.
+    #[derive(Default)]
+    struct Generated {
+        handles: Mutex<Vec<opennote_media::audio::synthetic::SyntheticHandle>>,
+    }
+
+    impl DeviceFactory for Generated {
+        fn microphone(&self, _id: Option<&str>) -> opennote_media::audio::Result<Box<dyn AudioSource>> {
+            let format = opennote_media::audio::SourceFormat {
+                rate: 48_000,
+                channels: 1,
+            };
+            let signal: opennote_media::audio::synthetic::Signal =
+                Arc::new(|frame| ((frame % 97) as f32 - 48.0) / 200.0);
+            let (source, handle) = opennote_media::audio::synthetic::synthetic(format, signal, 1_000_000_000);
+            self.handles.lock().unwrap().push(handle);
+            Ok(Box::new(source))
+        }
+        fn system_audio(&self, _id: Option<&str>) -> opennote_media::audio::Result<Box<dyn AudioSource>> {
+            Err(AudioError::Device("There is no output.".into()))
+        }
+        fn output(
+            &self,
+            _id: Option<&str>,
+        ) -> opennote_media::audio::Result<Box<dyn opennote_media::playback::AudioOutput>> {
+            Err(AudioError::Device("There is no output.".into()))
+        }
+    }
+
+    /// F5-5: a page open in a second window while the main window recorded it saw the live entry and recovered
+    /// it. The host refuses the recording that runs, or that is prepared to, with `audioRunning`; then, once the
+    /// main window stopped it, refuses the other window until the main window, which writes the final entry, has
+    /// gone. A recording with no files answers `audioMissing`, the only answer the interface gives up on.
     #[test]
-    fn a_recording_with_no_files_is_corrupt_and_not_running() {
+    fn only_the_window_that_owns_a_recording_may_recover_it() {
         let dir = tempfile::tempdir().unwrap();
-        let entry: RecordingEntry = serde_json::from_value(json!({
+        let generated = Arc::new(Generated::default());
+        let mut services = services();
+        services.devices = generated.clone();
+        services.catalog = Arc::new(FixedCatalog(vec![opennote_media::audio::DeviceInfo {
+            id: "mic".into(),
+            name: "Generated".into(),
+            direction: opennote_media::audio::Direction::Input,
+            is_default: true,
+            sample_rate: Some(48_000),
+            channels: Some(1),
+        }]));
+        services.clock = opennote_media::audio::synthetic::ManualClock::new(1_000_000_000);
+        services.encoder = opennote_media::pcm_codec::pcm_encoder_factory();
+        services.decoder = opennote_media::pcm_codec::pcm_decoder_factory();
+        let state = AudioState::with(services);
+        let running = |result: IpcResult<Finished>| result.map(|_| ()).unwrap_err().code == error_codes::RUNNING;
+
+        let prepared = state
+            .lock()
+            .prepare(StartRequest {
+                assets_dir: dir.path().to_path_buf(),
+                microphone: None,
+                system_audio: false,
+                system_device: None,
+            })
+            .expect("prepares");
+        let entry = prepared.entry;
+        assert!(
+            running(recover_unless_running(&state, "page-x", dir.path(), &entry)),
+            "a prepared recording is running"
+        );
+        state.lock().begin().expect("begins");
+        generated.handles.lock().unwrap()[0].produce_ms(500);
+        assert!(
+            running(recover_unless_running(&state, "page-x", dir.path(), &entry)),
+            "the running recording is refused in another window"
+        );
+        assert!(running(recover_unless_running(&state, "main", dir.path(), &entry)));
+
+        let finished = state.stop_for("main").expect("stops");
+        assert_eq!(finished.entry.id, entry.id);
+        assert!(
+            running(recover_unless_running(&state, "page-x", dir.path(), &entry)),
+            "the main window writes the final entry, so the other window leaves it alone"
+        );
+        let undone = recover_unless_running(&state, "main", dir.path(), &entry);
+        assert!(
+            undone.is_ok(),
+            "the window that stopped it recovers it, as after an undo: {undone:?}"
+        );
+        state.forget_window("main");
+        let orphaned = recover_unless_running(&state, "page-x", dir.path(), &entry);
+        assert!(
+            orphaned.is_ok(),
+            "once that window has gone, any window recovers it: {orphaned:?}"
+        );
+
+        let none: RecordingEntry = serde_json::from_value(json!({
             "id": "r1",
             "state": "recording",
             "started": "2026-10-07T12:00:00Z",
             "tracks": [],
         }))
         .expect("an entry");
-        let state = state();
-        let service = state.lock();
-        assert!(!service.is_running(&entry.id));
-        let error = recover_unless_running(&service, dir.path(), &entry).unwrap_err();
-        assert_eq!(error.code, error_codes::CORRUPT, "{}", error.message);
-        assert_ne!(error_codes::RUNNING, error_codes::CORRUPT);
+        let error = recover_unless_running(&state, "page-x", dir.path(), &none)
+            .map(|_| ())
+            .unwrap_err();
+        assert_eq!(error.code, error_codes::MISSING, "{}", error.message);
     }
 
     #[test]
@@ -684,6 +809,7 @@ mod tests {
         assert_eq!(code(AudioError::Encoder(String::new())), error_codes::ENCODER);
         assert_eq!(code(AudioError::Format(String::new())), error_codes::FORMAT);
         assert_eq!(code(AudioError::Corrupt(String::new())), error_codes::CORRUPT);
+        assert_eq!(code(AudioError::Missing(String::new())), error_codes::MISSING);
         assert_eq!(code(AudioError::Writer(String::new())), error_codes::WRITER);
         assert_eq!(code(AudioError::Io(std::io::Error::other("x"))), codes::IO);
     }

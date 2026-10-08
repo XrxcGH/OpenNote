@@ -3,6 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RecordingEntry } from '../../../core/audio';
 import type { OpenPage } from '../../../services/pages/types';
+import { t } from '../../../strings/t';
 
 const host = { recover: vi.fn() };
 const log = vi.fn();
@@ -26,6 +27,8 @@ vi.mock('../../../commands/registry', () => ({ commandContext: () => ({ platform
 vi.mock('../../../ui', () => ({ announce: vi.fn(), showToast: (...args: unknown[]) => showToast(...args) }));
 
 const { recoverEntries } = await import('./recover');
+const { holdHint, recoveryHolds } = await import('./entries');
+const hold = () => recoveryHolds.get().get('r1');
 
 const page = { id: 'p1' } as OpenPage;
 const live = (clock: boolean) =>
@@ -45,6 +48,7 @@ beforeEach(() => {
   removeBlock.mockClear();
   showToast.mockClear();
   log.mockClear();
+  recoveryHolds.set(new Map());
 });
 
 describe('recovering a recording when its page opens', () => {
@@ -56,6 +60,9 @@ describe('recovering a recording when its page opens', () => {
     expect(writeEntry).not.toHaveBeenCalled();
     expect(removeBlock).not.toHaveBeenCalled();
     expect(showToast).not.toHaveBeenCalled();
+    // Its block says another window has it, not "Recovering…" for good.
+    expect(hold()).toBe('elsewhere');
+    expect(holdHint(hold())).toBe('audio.block.elsewhere');
   });
 
   it('keeps an entry whose recovery failed for now in `recording`, so the next open tries again', async () => {
@@ -64,13 +71,35 @@ describe('recovering a recording when its page opens', () => {
     expect(writeEntry).not.toHaveBeenCalled();
     expect(removeBlock).not.toHaveBeenCalled();
     expect(log).toHaveBeenCalledWith('warn', expect.stringContaining('r1'));
+    // The person learns it, in a toast and on the block, instead of a block that says "Recovering…" for good.
+    expect(showToast).toHaveBeenCalledWith(expect.objectContaining({ tone: 'danger' }));
+    expect(holdHint(hold())).toBe('audio.block.notRecovered');
+    host.recover.mockResolvedValue({ entry: { ...live(true), state: 'recovered' } });
+    await recoverEntries(page, [live(true)]);
+    expect(hold()).toBeUndefined();
+    expect(holdHint(hold())).toBe('audio.block.recovering');
   });
 
-  it('gives up on a recording with no usable files: missing once begun, gone with its block before', async () => {
-    host.recover.mockRejectedValue({ code: 'audioCorrupt', message: 'There are no audio files.' });
+  it('gives up on a recording with no files: missing once begun, gone with its block before', async () => {
+    host.recover.mockRejectedValue({ code: 'audioMissing', message: 'There are no audio files.' });
     await recoverEntries(page, [live(true)]);
     expect(writeEntry).toHaveBeenCalledWith('p1', 'b1', expect.objectContaining({ state: 'recovered' }));
     expect(showToast).toHaveBeenCalledOnce();
+    await recoverEntries(page, [live(false)]);
+    expect(removeBlock).toHaveBeenCalledWith('b1', 'r1');
+  });
+
+  // F5-5: a file damaged from its first page was answered like no files, so a recording on disk was called missing.
+  it('keeps a begun recording whose file is damaged, and says so instead of calling it missing', async () => {
+    host.recover.mockRejectedValue({ code: 'audioCorrupt', message: 'a-mic.ogg has no Opus headers.' });
+    await recoverEntries(page, [live(true)]);
+    expect(writeEntry).not.toHaveBeenCalled();
+    expect(removeBlock).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ message: t('audio.block.damaged'), tone: 'danger' }),
+    );
+    expect(holdHint(hold())).toBe('audio.block.damaged');
+    // One that never began recorded nothing, so it goes with its block.
     await recoverEntries(page, [live(false)]);
     expect(removeBlock).toHaveBeenCalledWith('b1', 'r1');
   });

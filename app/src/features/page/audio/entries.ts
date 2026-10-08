@@ -8,6 +8,36 @@ import { createStore } from '../../../state/store';
 
 export const recordingEntries = createStore<ReadonlyMap<string, RecordingEntry>>(new Map(), 'audio recording entries');
 
+/**
+ * Why an entry that says `recording` stays so in this window: another window records it, or stopped it and saves
+ * its entry (`elsewhere`), its recovery failed for now and is tried again when the page next opens (`failed`), or its
+ * files are there but damaged (`damaged`), so they stay on disk rather than the recording being called missing.
+ */
+export type RecoveryHold = 'elsewhere' | 'failed' | 'damaged';
+
+/** The recordings this window doesn't recover now, and why, so their block says so instead of "Recovering…". */
+export const recoveryHolds = createStore<ReadonlyMap<string, RecoveryHold>>(new Map(), 'audio recovery holds');
+
+/** Records why a recording isn't recovered here, or, with null, that it no longer waits. */
+export function holdRecovery(id: string, hold: RecoveryHold | null): void {
+  recoveryHolds.set((held) => {
+    const next = new Map(held);
+    if (hold) next.set(id, hold);
+    else next.delete(id);
+    return next;
+  });
+}
+
+/** What the block of an entry that says `recording` shows, for its hold. */
+export const holdHint = (hold: RecoveryHold | undefined) =>
+  hold === 'elsewhere'
+    ? ('audio.block.elsewhere' as const)
+    : hold === 'failed'
+      ? ('audio.block.notRecovered' as const)
+      : hold === 'damaged'
+        ? ('audio.block.damaged' as const)
+        : ('audio.block.recovering' as const);
+
 const isEntry = (value: unknown): value is RecordingEntry =>
   typeof value === 'object' && value !== null && typeof (value as RecordingEntry).id === 'string';
 

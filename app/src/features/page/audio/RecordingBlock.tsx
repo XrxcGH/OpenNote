@@ -20,7 +20,7 @@ import { IconButton, Switch } from '../../../ui';
 import audioStyles from './audio.module.css';
 import styles from './block.module.css';
 import { activeNs, recordingIdOf } from './blocks';
-import { recordingEntries } from './entries';
+import { holdHint, recordingEntries, recoveryHolds } from './entries';
 import { addFlag, removeFlag } from './flagEdits';
 import { clock, clockNs } from './format';
 import { Meter } from './Meter';
@@ -262,8 +262,9 @@ function Player({ block, entry, pageId }: { block: BlockJson; entry: RecordingEn
 export function RecordingBlockView({ block, pageId }: { block: BlockJson; pageId: string }) {
   const ui = useStore(recordingUi, (state) => state);
   const entry = useStore(recordingEntries, (held) => held.get(recordingIdOf(block) ?? ''));
+  const hold = useStore(recoveryHolds, (held) => held.get(recordingIdOf(block) ?? ''));
   if (!entry) return <p className={styles.problem}>{t('audio.block.unavailable')}</p>;
   if (ui.block === block.id && isRunning(ui)) return <LiveBar />;
-  if (entry.state === 'recording') return <p className={styles.hint}>{t('audio.block.recovering')}</p>;
+  if (entry.state === 'recording') return <p className={styles.hint}>{t(holdHint(hold))}</p>;
   return <Player block={block} entry={entry} pageId={pageId} />;
 }

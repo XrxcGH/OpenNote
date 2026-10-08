@@ -15,6 +15,9 @@ pub enum AudioError {
     Format(String),
     /// A recording file is damaged beyond recovery.
     Corrupt(String),
+    /// None of a recording's audio files are on disk, so there is nothing to recover. Unlike [`AudioError::Corrupt`],
+    /// no file is left that a later recovery could read.
+    Missing(String),
     /// The writer thread stopped before the recording ended.
     Writer(String),
 }
@@ -30,6 +33,7 @@ impl fmt::Display for AudioError {
             AudioError::Encoder(message) => write!(f, "Audio encoder error: {message}"),
             AudioError::Format(message) => write!(f, "Unsupported audio format: {message}"),
             AudioError::Corrupt(message) => write!(f, "Damaged recording: {message}"),
+            AudioError::Missing(message) => write!(f, "Missing recording: {message}"),
             AudioError::Writer(message) => write!(f, "The recording writer stopped: {message}"),
         }
     }
