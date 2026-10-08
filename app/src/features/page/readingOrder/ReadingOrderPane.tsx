@@ -8,6 +8,7 @@ import type { KeyboardEvent } from 'react';
 import type { BlockJson } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { announce, Button } from '../../../ui';
+import { liveBlock } from '../blocks/textBlock';
 import type { MountedPage } from '../mount';
 import { readingItemProviders } from '../registries';
 import { summary } from './names';
@@ -41,8 +42,10 @@ export function itemLabel(block: BlockJson): string {
 
 /** The blocks and the providers' reading items, in reading order. */
 function itemsOf(mounted: MountedPage): Item[] {
-  const blocks = mounted.layer.blocks();
-  const page = { ...mounted.page.initial, blocks: [...blocks] };
+  // Labels quote each text box as it is now, not as the layer's copy last held it.
+  const blocks = mounted.layer.blocks().map((block) => liveBlock(mounted.layer, block));
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const page = { ...mounted.page.initial, blocks };
   const extra = readingItemProviders.list().flatMap((provider) => provider.items(page));
   const stand = extra.map((item): BlockJson => ({
     id: item.key,
@@ -56,8 +59,8 @@ function itemsOf(mounted: MountedPage): Item[] {
   const preferred = blocks.map((block) => block.id);
   const labels = new Map(extra.map((item) => [item.key, item.label]));
   return readingOrder([...blocks, ...stand], preferred).map((key) => {
-    const block = mounted.layer.block(key);
-    return { key, label: block ? itemLabel(block) : (labels.get(key) ?? ''), block: block !== null };
+    const block = byId.get(key);
+    return { key, label: block ? itemLabel(block) : (labels.get(key) ?? ''), block: block !== undefined };
   });
 }
 

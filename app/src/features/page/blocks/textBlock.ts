@@ -57,6 +57,18 @@ export function liveText(view: BlockView | null): LiveText | null {
   return view instanceof TextBlockView ? view : null;
 }
 
+/**
+ * A block as it is now. The block layer's copy of a text block keeps the Markdown it was opened or last replaced with,
+ * not what was typed since, so anything that reads a shown text block's Markdown takes its editor's live Markdown.
+ */
+export function liveBlock(layer: { view(id: BlockId): BlockView | null }, block: BlockJson): BlockJson {
+  if (block.type !== 'text') return block;
+  const live = liveText(layer.view(block.id));
+  if (!live) return block;
+  const markdown = live.liveMarkdown();
+  return markdown === block.data.markdown ? block : { ...block, data: { ...block.data, markdown } };
+}
+
 /** A view the block layer renders in two steps: a sized wrapper first, its content when it is near the viewport. */
 export interface LazyBlockView extends BlockView {
   readonly rendered: boolean;
