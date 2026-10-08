@@ -117,6 +117,53 @@ pub struct CoreBridge {
     state: Arc<Mutex<Option<Bridge>>>,
     relay: Arc<Relay>,
     search: Arc<search::Hub>,
+    /// Which opening of each window label is the current one. Kept apart from `state`, so a window that goes can
+    /// retire its opening at once even while a long command holds the bridge.
+    windows: Windows,
+}
+
+/// One opening of a window: its label and which time that label was opened. A page window closed and opened again
+/// keeps its label, so the label alone can't tell the sessions of the old window from those of the new one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WindowOwner {
+    pub label: String,
+    pub generation: u64,
+}
+
+/// The current opening of each window label.
+#[derive(Default)]
+pub struct Windows(Mutex<HashMap<String, u64>>);
+
+impl Windows {
+    fn map(&self) -> std::sync::MutexGuard<'_, HashMap<String, u64>> {
+        self.0.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// The window labelled `label` as it is open now.
+    pub fn current(&self, label: &str) -> WindowOwner {
+        let generation = self.map().get(label).copied().unwrap_or(0);
+        WindowOwner {
+            label: label.to_owned(),
+            generation,
+        }
+    }
+
+    /// Whether `owner` is still the open window of its label.
+    pub fn is_current(&self, owner: &WindowOwner) -> bool {
+        self.map().get(&owner.label).copied().unwrap_or(0) == owner.generation
+    }
+
+    /// The window labelled `label` went: returns the opening that went, and the label's next window is a new one.
+    pub fn retire(&self, label: &str) -> WindowOwner {
+        let mut map = self.map();
+        let generation = map.entry(label.to_owned()).or_insert(0);
+        let gone = WindowOwner {
+            label: label.to_owned(),
+            generation: *generation,
+        };
+        *generation += 1;
+        gone
+    }
 }
 
 /// The started core with what the commands keep beside it.
@@ -129,7 +176,7 @@ pub struct Bridge {
     /// The notebook each open page was opened in.
     homes: HashMap<(PageId, ClientId), NotebookId>,
     /// The window each open page's client lives in, so a window that goes closes the sessions it left open.
-    owners: HashMap<(PageId, ClientId), String>,
+    owners: HashMap<(PageId, ClientId), WindowOwner>,
     pub(crate) notes: NotesState,
     pub(crate) relay: Arc<Relay>,
 }
@@ -225,11 +272,28 @@ impl Bridge {
         Ok(handle)
     }
 
-    /// [`Bridge::handle`] for a client that lives in the window labelled `window`.
-    pub(crate) fn handle_in(&mut self, page: &str, client: &str, window: &str) -> IpcResult<PageHandle> {
+    /// [`Bridge::handle`] for a client that lives in the window `owner`. A client belongs to one window: another
+    /// window that names the same client is refused rather than handed its session, whose sequence, undo, and
+    /// close would then be shared. A window that went, whose open arrives late, is refused too, as nothing would
+    /// close the session it opened.
+    pub(crate) fn handle_in(
+        &mut self,
+        page: &str,
+        client: &str,
+        owner: &WindowOwner,
+        windows: &Windows,
+    ) -> IpcResult<PageHandle> {
+        if !windows.is_current(owner) {
+            return Err(IpcError::new("notFound", "This window has closed."));
+        }
+        if let (Ok(id), Ok(client_id)) = (PageId::parse(page), ClientId::parse(client)) {
+            if self.owners.get(&(id, client_id)).is_some_and(|held| held != owner) {
+                return Err(invalid("client", "This client is open in another window."));
+            }
+        }
         let handle = self.handle(page, client)?;
         self.owners
-            .insert((handle.id(), handle.client().clone()), window.to_owned());
+            .insert((handle.id(), handle.client().clone()), owner.clone());
         Ok(handle)
     }
 
@@ -244,17 +308,22 @@ impl Bridge {
     }
 
     /// Closes the sessions a window left open. A window that closes goes without unmounting its pages, so their
-    /// clients would stay in the session for good. Returns how many it closed.
-    pub(crate) fn close_window(&mut self, window: &str) -> usize {
+    /// clients would stay in the session for good. Only that opening's sessions close, not those of a window
+    /// opened since with the same label. Returns how many it closed.
+    pub(crate) fn close_window(&mut self, window: &WindowOwner) -> usize {
         let keys: Vec<(PageId, ClientId)> = self
             .owners
             .iter()
-            .filter(|(_, owner)| owner.as_str() == window)
+            .filter(|(_, owner)| *owner == window)
             .map(|(key, _)| key.clone())
             .collect();
         for key in &keys {
             if let Err(error) = self.close_client(key) {
-                ::log::warn!("Couldn't close a page the {window} window left open: {}", error.message);
+                ::log::warn!(
+                    "Couldn't close a page the {} window left open: {}",
+                    window.label,
+                    error.message
+                );
             }
         }
         keys.len()
@@ -309,6 +378,7 @@ impl CoreBridge {
             state: Arc::new(Mutex::new(None)),
             relay: Arc::default(),
             search: Arc::default(),
+            windows: Windows::default(),
         }
     }
 
@@ -330,8 +400,19 @@ impl CoreBridge {
         }));
     }
 
+    /// The windows' openings, which page_open records each session's owner by.
+    pub fn windows(&self) -> &Windows {
+        &self.windows
+    }
+
+    /// A window went: retires its opening at once, so nothing opens in its name any more, and returns it for
+    /// [`CoreBridge::close_window`], which may wait for the bridge.
+    pub fn window_went(&self, label: &str) -> WindowOwner {
+        self.windows.retire(label)
+    }
+
     /// Closes the page sessions of a window that went, if the core has started. See [`Bridge::close_window`].
-    pub fn close_window(&self, window: &str) -> usize {
+    pub fn close_window(&self, window: &WindowOwner) -> usize {
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         state.as_mut().map_or(0, |bridge| bridge.close_window(window))
     }
@@ -479,8 +560,10 @@ pub async fn page_open(
     client: String,
     viewport: Option<Rect>,
 ) -> IpcResult<Response> {
+    let windows = bridge.windows();
+    let owner = windows.current(window.label());
     run_notes(&app, &bridge, |bridge| {
-        let handle = bridge.handle_in(&page, &client, window.label())?;
+        let handle = bridge.handle_in(&page, &client, &owner, windows)?;
         let envelope = handle.envelope(viewport).map_err(internal)?;
         Ok(Response::new(envelope.bytes))
     })

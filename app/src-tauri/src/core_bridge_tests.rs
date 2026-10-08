@@ -109,25 +109,79 @@ fn a_window_that_goes_closes_the_page_sessions_it_left_open_and_no_others() {
     let notes = dir.path().join("Notes");
     let bridge = CoreBridge::at(dir.path().join("local"));
     let page = a_page(&bridge, &notes);
+    let main = bridge.windows().current("main");
+    let first = bridge.windows().current("page-x");
     bridge
-        .notes(Some(notes.clone()), |bridge| {
-            bridge.handle_in(&page, "main-1", "main")?;
-            bridge.handle_in(&page, "wabc12345-1", "page-x")?;
+        .notes(Some(notes.clone()), |inner| {
+            inner.handle_in(&page, "main-1", &main, bridge.windows())?;
+            inner.handle_in(&page, "wabc12345-1", &first, bridge.windows())?;
             Ok(())
         })
         .expect("the bridge");
-    assert_eq!(bridge.close_window("page-x"), 1);
-    assert_eq!(bridge.close_window("page-x"), 0, "it closes each session once");
+    let gone = bridge.window_went("page-x");
+    assert_eq!(gone, first);
+    // The same page opens in its own window again before the old window's sessions are closed.
+    let second = bridge.windows().current("page-x");
+    assert_ne!(second, first, "a window opened again with the same label is a new one");
+    let late = bridge.notes(Some(notes.clone()), |inner| {
+        inner.handle_in(&page, "wabc12345-2", &first, bridge.windows())
+    });
+    assert_eq!(
+        late.map(|_| ()).unwrap_err().code,
+        "notFound",
+        "an open from the window that went is refused"
+    );
+    bridge
+        .notes(Some(notes.clone()), |inner| {
+            inner.handle_in(&page, "wdef67890-1", &second, bridge.windows())?;
+            Ok(())
+        })
+        .expect("the new window opens the page");
+    assert_eq!(bridge.close_window(&gone), 1);
+    assert_eq!(bridge.close_window(&gone), 0, "it closes each session once");
     let open = bridge
-        .notes(Some(notes), |bridge| {
+        .notes(Some(notes), |inner| {
             Ok((
-                bridge.open_handle(&page, "main-1").is_ok(),
-                bridge.open_handle(&page, "wabc12345-1").is_ok(),
+                inner.open_handle(&page, "main-1").is_ok(),
+                inner.open_handle(&page, "wabc12345-1").is_ok(),
+                inner.open_handle(&page, "wabc12345-2").is_ok(),
+                inner.open_handle(&page, "wdef67890-1").is_ok(),
             ))
         })
         .expect("the bridge");
     bridge.shutdown();
-    assert_eq!(open, (true, false));
+    assert_eq!(
+        open,
+        (true, false, false, true),
+        "the new window's session outlives the old window's close"
+    );
+}
+
+/// F3-1: a second window that named a client another window holds was handed that window's session.
+#[test]
+fn a_client_belongs_to_one_window() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let notes = dir.path().join("Notes");
+    let bridge = CoreBridge::at(dir.path().join("local"));
+    let page = a_page(&bridge, &notes);
+    let main = bridge.windows().current("main");
+    let other = bridge.windows().current("page-x");
+    let (again, taken) = bridge
+        .notes(Some(notes), |inner| {
+            inner.handle_in(&page, "main-1", &main, bridge.windows())?;
+            let again = inner.handle_in(&page, "main-1", &main, bridge.windows()).is_ok();
+            let taken = inner
+                .handle_in(&page, "main-1", &other, bridge.windows())
+                .map(|_| ())
+                .unwrap_err();
+            Ok((again, taken))
+        })
+        .expect("the bridge");
+    assert!(again, "the window that holds the client opens it again");
+    assert_eq!(taken.code, "invalid", "{}", taken.message);
+    assert_eq!(bridge.close_window(&other), 0, "the session stays with its window");
+    assert_eq!(bridge.close_window(&main), 1);
+    bridge.shutdown();
 }
 
 #[test]
