@@ -36,17 +36,20 @@ const createCommands = [
     title: 'tree.commands.newSection',
     keys: [chord('Ctrl+T')],
     scope: 'workspace',
+    allowInTextInput: true,
   }),
   creating('newPage', 'page', {
     title: 'tree.commands.newPage',
     keywords: 'tree.commands.keywords.newPage',
     keys: [chord('Ctrl+N')],
     scope: 'workspace',
+    allowInTextInput: true,
   }),
   creating('newSubpage', 'subpage', {
     title: 'tree.commands.newSubpage',
     keys: [chord('Ctrl+Alt+Shift+N')],
     scope: 'workspace',
+    allowInTextInput: true,
   }),
 ];
 
