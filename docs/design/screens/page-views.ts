@@ -232,7 +232,7 @@ export function recording(): Screen {
     recordingNotes(p, x, BODY_TOP + 250),
     ...windowAnnotations(),
     region({ x: 1104, y: 6, w: 132, h: 28 }, ''),
-    tag(900, 116, 'Title bar shows Recording and the time', NOTE.region),
+    tag(930, 116, 'Title bar shows Recording and the time', NOTE.region),
     tag(x, BODY_TOP + 222, 'Recording block: takes the audio’s place in the page, never covers the title', NOTE.region),
     tag(x, BODY_TOP + 520, 'Writing and drawing while recording are time-stamped', NOTE.region),
     tag(x, BODY_TOP + 546, 'Later, Alt+click a word or stroke to hear when you wrote it', NOTE.region),
