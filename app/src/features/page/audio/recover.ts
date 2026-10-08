@@ -15,6 +15,15 @@ import { clock } from './format';
 
 /** The recordings being recovered now, so an undo that comes while one is recovered doesn't start it twice. */
 const inFlight = new Set<string>();
+/** The recordings already given a second try in this session. */
+const retried = new Set<string>();
+const RETRY_MS = 5000;
+
+/** Errors that may pass: a file in use or unreadable for now, a device that failed, a writer that stopped. */
+function isTransient(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code;
+  return code === 'io' || code === 'audioDevice' || code === 'audioWriter';
+}
 
 async function blockFor(recording: string): Promise<string | null> {
   for (let tries = 0; tries < 20; tries += 1) {
@@ -44,8 +53,15 @@ export async function recoverEntries(page: OpenPage, entries: readonly Recording
       const time = clock(activeNs(finished.entry) / 1e6);
       announce(t('audio.announce.recovered', { time }));
       showToast({ message: t('audio.announce.recovered', { time }) });
-    } catch {
-      if (entry.clock === undefined) {
+    } catch (error) {
+      if (isTransient(error)) {
+        // A file another program holds for a moment, or a device error, says nothing about the recording: it stays
+        // `recording`, so this is tried once more soon and again whenever the page opens.
+        if (!retried.has(entry.id)) {
+          retried.add(entry.id);
+          setTimeout(() => void recoverEntries(page, [entry]), RETRY_MS);
+        }
+      } else if (entry.clock === undefined) {
         await removeBlock(block, entry.id).catch(() => undefined);
       } else {
         await writeEntry(page.id, block, { ...entry, state: 'recovered' }).catch(() => undefined);
