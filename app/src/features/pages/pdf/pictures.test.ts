@@ -18,11 +18,8 @@ afterAll(() => closeBrowser(browser), 30_000);
 const png = (width: number, height: number) =>
   new Uint8Array(Buffer.from(pngDataUri(width, height, [47, 79, 154]).split(',')[1], 'base64'));
 
-// The URL the Windows app gives a page's asset (services/pages/tauri.ts), and the one the other platforms use.
-const ASSET_URLS = {
-  windows: 'http://opennote-asset.localhost/page/pic',
-  scheme: 'opennote-asset://localhost/page/pic',
-};
+// The URL the app gives a page's asset (services/pages/tauri.ts).
+const ASSET_URL = 'http://opennote-asset.localhost/page/pic';
 
 /** The page T1 exported in Beta 4: text with no frame, a picture placed on the page, and the ink layer. */
 const page = pageOf(
@@ -40,7 +37,7 @@ const page = pageOf(
 
 describe('a page with text, a picture from the asset scheme, and ink, printed to PDF', () => {
   it('has the text, the picture, and the ink', async () => {
-    const url = ASSET_URLS.windows;
+    const url = ASSET_URL;
     const { result, sheets } = await printPage(
       browser,
       page,
@@ -70,7 +67,8 @@ describe('the print document Content Security Policy', () => {
       ?.slice(1) ?? [];
 
   it('lets pictures load from the asset scheme, and from no other place on the network', () => {
-    expect(sources('img-src')).toEqual(expect.arrayContaining(['http://opennote-asset.localhost', 'opennote-asset:']));
+    expect(sources('img-src')).toContain('http://opennote-asset.localhost');
+    expect(sources('img-src').filter((s) => s.includes('opennote-asset'))).toEqual(['http://opennote-asset.localhost']);
     expect(sources('img-src').filter((s) => /^(https?:|\*)/.test(s))).toEqual(['http://opennote-asset.localhost']);
     expect(sources('default-src')).toEqual(["'none'"]);
   });
