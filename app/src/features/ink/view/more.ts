@@ -25,7 +25,7 @@ import { installZoomBox, toggleZoomBox } from './zoomBox';
 import { installShapeHandles } from './shapeEdit';
 import { addTextToShape } from './shapeLibrary';
 import { insertSpaceByHeight } from './space';
-import { followPaper } from './paperSnap';
+import { followPaper, hasPaperLines } from './paperSnap';
 import { installSnapTools } from './snapTools';
 import { inkPrefs, setPrefs } from './prefs';
 import type { InkSurface } from './surface';
@@ -80,6 +80,9 @@ const snapCommand = (key: 'ruler' | 'protractor' | 'gridSnap' | 'paperSnap', tit
   flag: key === 'paperSnap' ? 'ink.paperSnap' : 'ink.snapTools',
   checked: () => inkPrefs.get()[key],
   run: () => setPrefs({ [key]: !inkPrefs.get()[key] }),
+  // Snap to paper lines is for ruled, grid, and dot paper, and Snap to grid (its own grid) for plain paper.
+  ...(key === 'paperSnap' ? { when: () => hasPaperLines() } : {}),
+  ...(key === 'gridSnap' ? { when: () => !hasPaperLines() } : {}),
 });
 
 export function installMore(context: MoreContext): () => void {
@@ -286,6 +289,8 @@ export function installMore(context: MoreContext): () => void {
       priority: 45,
       presentation: 'component',
       Component: DrawSnap,
+      // In More, each switch the group shows: on lined paper, Snap to paper lines in place of Snap to grid.
+      overflow: ['ink.snap.ruler', 'ink.snap.protractor', 'ink.snap.paperSnap', 'ink.snap.gridSnap'],
       flag: 'ink.snapTools',
     }),
     commandBar.register({
