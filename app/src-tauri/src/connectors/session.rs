@@ -7,7 +7,7 @@ use super::{
     files::{Connection, Holds},
     http::{Body, HttpError, HttpRequest, HttpResponse},
     oauth::Exchange,
-    registry::{Auth, ConnectorDef, Placement, Revoke},
+    registry::{Auth, ConnectorDef, Placement, Revoke, TokenDef},
     secret::Secret,
     service::{Cached, Connectors},
     store::target_name,
@@ -234,11 +234,35 @@ impl Connectors {
             if response.status != 401 {
                 return Ok(response);
             }
-            if retried || !matches!(def.auth, Auth::OAuth(_)) || self.holds_access_only(id) {
+            if let Auth::Token(token_def) = &def.auth {
+                return Err(self.token_refused(def, token_def, base.as_deref(), &token));
+            }
+            if retried || self.holds_access_only(id) {
                 return Err(self.expire(def, Failure::Expired));
             }
             retried = true;
             self.lock().access.remove(id);
+        }
+    }
+
+    /// A pasted token got a 401. Services such as Canvas answer 401 for a valid token that lacks one endpoint's
+    /// scope, so the token is checked again: only when that check is refused too is the connection expired.
+    fn token_refused(
+        &self,
+        def: &'static ConnectorDef,
+        token_def: &TokenDef,
+        base: Option<&str>,
+        token: &Secret,
+    ) -> ConnectorError {
+        let url = match base {
+            Some(base) => format!("{base}{}", token_def.check_url),
+            None => token_def.check_url.to_owned(),
+        };
+        let policy = self.policy(def, base);
+        match self.check_token(def, token_def, &policy, &url, token) {
+            Ok(_) => ConnectorError::new(Failure::Rejected, def.id),
+            Err(error) if error.failure == Failure::Rejected => self.expire(def, Failure::Expired),
+            Err(error) => error,
         }
     }
 

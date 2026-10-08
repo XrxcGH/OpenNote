@@ -237,3 +237,41 @@ fn the_interfaces_catalog_is_the_registrys_own_list() {
         path.display()
     );
 }
+
+#[test]
+fn a_401_on_one_endpoint_expires_a_pasted_token_only_when_the_token_check_fails_too() {
+    let http = scripted(vec![
+        (200, json!({ "name": "Sam" })),
+        (401, json!({ "errors": "Insufficient scopes on access token." })),
+        (200, json!({ "name": "Sam" })),
+        (401, json!({})),
+        (401, json!({})),
+    ]);
+    let def = token_connector(
+        "tokened",
+        token_def(
+            false,
+            Placement::Header("Bearer"),
+            "/name",
+            "https://tokens.example/api/me",
+        ),
+        &["tokens.example"],
+    );
+    let rig = Rig::new(registry(vec![def]), http, None);
+    let input = ConnectInput {
+        token: Some("pasted-token-value-1234".into()),
+        base_url: None,
+    };
+    rig.connectors.connect("tokened", input).expect("connects");
+    let ask = || {
+        let request = HttpRequest::new(Method::Get, "https://tokens.example/api/analytics");
+        rig.connectors
+            .request("tokened", &[], request, 1000)
+            .map(|_| ())
+            .map_err(|e| e.failure)
+    };
+    assert_eq!(ask(), Err(Failure::Rejected), "the token still checks out");
+    assert_eq!(rig.state("tokened"), connected("Sam"));
+    assert_eq!(ask(), Err(Failure::Expired), "the token check is refused too");
+    assert_ne!(rig.state("tokened"), connected("Sam"));
+}
