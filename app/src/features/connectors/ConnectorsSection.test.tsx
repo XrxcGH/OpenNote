@@ -114,7 +114,7 @@ describe('signing in with the service’s own page', () => {
     const microsoft = await screen.findByRole('article', { name: 'Microsoft' });
     expect(within(microsoft).queryByRole('button', { name: 'Connect' })).toBeNull();
     expect(within(microsoft).getByText(/has no client ID for Microsoft/)).toBeTruthy();
-    fireEvent.click(within(microsoft).getByRole('button', { name: 'Show setup steps' }));
+    fireEvent.click(within(microsoft).getByRole('button', { name: 'Open setup guide in your browser' }));
     fireEvent.click(within(microsoft).getByRole('button', { name: 'Open the connectors folder' }));
     expect(opened).toEqual([
       { kind: 'link', url: 'https://github.com/XrxcGH/OpenNote/blob/main/docs/CONNECTORS.md#microsoft' },
