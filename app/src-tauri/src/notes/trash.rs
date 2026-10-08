@@ -63,8 +63,25 @@ fn pages_in_notebook(dir: &Path) -> u32 {
         .sum()
 }
 
-/// A trashed root as a node summary.
-fn trashed_node(id: String, kind: &'static str, parent: Option<String>, title: String, at: &str) -> NodeSummary {
+/// Whether a section folder's `section.json` marks it encrypted (spec 5.7), as the core reads it: the key is there.
+/// A file that can't be read counts as encrypted, so nothing of its pages is kept by mistake.
+fn section_encrypted(section_dir: &Path) -> bool {
+    let Ok(text) = fs::read_to_string(section_dir.join("section.json")) else {
+        return true;
+    };
+    serde_json::from_str::<serde_json::Value>(&text).map_or(true, |json| json.get("encryption").is_some())
+}
+
+/// A trashed root as a node summary. `encrypted` carries its section's flag: the smart features would otherwise
+/// take the pages of an encrypted section listed in Trash for unprotected ones.
+fn trashed_node(
+    id: String,
+    kind: &'static str,
+    parent: Option<String>,
+    title: String,
+    at: &str,
+    encrypted: bool,
+) -> NodeSummary {
     NodeSummary {
         id,
         kind,
@@ -78,7 +95,7 @@ fn trashed_node(id: String, kind: &'static str, parent: Option<String>, title: S
         read_only: false,
         pinned: false,
         archived: false,
-        encrypted: false,
+        encrypted,
     }
 }
 
@@ -100,7 +117,16 @@ fn listed_item(notebook: &NotebookHandle, file: &TrashItemFile) -> Option<(NodeS
                 .find(|e| e.parent.is_none_or(|p| !ids.contains(&p)))
                 .or(entries.first())?;
             let parent = Some(section.to_string());
-            let node = trashed_node(root.id.to_string(), "page", parent.clone(), root.title.clone(), &at);
+            // Pages keep their section's flag. A section the tree no longer has counts as encrypted.
+            let encrypted = notebook.tree().section(*section).is_none_or(|s| s.encrypted);
+            let node = trashed_node(
+                root.id.to_string(),
+                "page",
+                parent.clone(),
+                root.title.clone(),
+                &at,
+                encrypted,
+            );
             let count = u32::try_from(entries.len()).unwrap_or(u32::MAX);
             Some((node, parent, section_title.clone(), count))
         }
@@ -109,7 +135,15 @@ fn listed_item(notebook: &NotebookHandle, file: &TrashItemFile) -> Option<(NodeS
         } => {
             let id = file.contents.first()?;
             let parent = Some(group.map_or_else(|| notebook_id.clone(), |g| g.to_string()));
-            let node = trashed_node(id.to_string(), "section", parent.clone(), file.title.clone(), &at);
+            let encrypted = section_encrypted(&dir.join(id.to_string()));
+            let node = trashed_node(
+                id.to_string(),
+                "section",
+                parent.clone(),
+                file.title.clone(),
+                &at,
+                encrypted,
+            );
             let title = parent_title.clone().unwrap_or(notebook_title);
             Some((node, parent, title, pages_in(&dir.join(id.to_string()))))
         }
@@ -122,6 +156,7 @@ fn listed_item(notebook: &NotebookHandle, file: &TrashItemFile) -> Option<(NodeS
                 parent.clone(),
                 file.title.clone(),
                 &at,
+                false,
             );
             let count = file.contents.iter().map(|s| pages_in(&dir.join(s.to_string()))).sum();
             Some((node, parent, parent_title.clone().unwrap_or(notebook_title), count))
@@ -319,6 +354,7 @@ impl Bridge {
                 None,
                 removed.entry.title.clone(),
                 &at,
+                false,
             );
             out.push((
                 at.clone(),
