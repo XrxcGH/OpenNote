@@ -78,10 +78,8 @@ export function rename(lib: Library, id: string, title: string, now: string): Me
 export function setColor(lib: Library, id: string, color: MemNode['color'], now: string): MemNode {
   const node = lib.live(id);
   lib.writable(node);
-  if (node.kind !== 'page') {
-    node.color = penOrNull(color);
-    node.modified = now;
-  }
+  node.color = penOrNull(color);
+  node.modified = now;
   return node;
 }
 

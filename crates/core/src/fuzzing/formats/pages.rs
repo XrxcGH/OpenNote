@@ -268,6 +268,7 @@ fn build_tree(input: &mut Input<'_>) -> NotebookTree {
             access: Access::ReadWrite,
             encrypted: input.bool(),
             archived: false,
+            pinned: false,
         })
         .collect();
     NotebookTree {

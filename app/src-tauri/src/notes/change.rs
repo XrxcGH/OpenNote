@@ -320,7 +320,7 @@ impl Bridge {
         let color = pen(color.as_deref());
         match &found {
             Found::Notebook(notebook) => notebook.set_notebook_color(color).map_err(from_core)?,
-            Found::Node(_, NodeRef::Page(_)) => {}
+            // A page keeps its color in its entry of the section file, as a section keeps its own.
             Found::Node(notebook, node) => {
                 let props = NodeProps {
                     color: Some(color),

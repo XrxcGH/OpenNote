@@ -86,6 +86,7 @@ impl NotebookStore {
             access,
             encrypted: state.encrypted(),
             archived: crate::model::is_archived(&file.extra),
+            pinned: crate::model::is_pinned(&file.extra),
         }
     }
 

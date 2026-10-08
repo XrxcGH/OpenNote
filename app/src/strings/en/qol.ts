@@ -7,6 +7,8 @@ export const qol = {
   commands: {
     pin: 'Pin page',
     unpin: 'Unpin page',
+    pinSection: 'Pin section',
+    unpinSection: 'Unpin section',
     duplicate: 'Duplicate',
     copyTo: 'Copy to',
     sort: 'Sort',

@@ -27,6 +27,7 @@ fn section(n: u64, group: Option<u64>, order: &str) -> SectionNode {
         access: Access::ReadWrite,
         encrypted: false,
         archived: false,
+        pinned: false,
     }
 }
 

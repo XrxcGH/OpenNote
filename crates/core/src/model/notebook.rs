@@ -250,6 +250,30 @@ pub fn set_archived(extra: &mut JsonMap, archived: bool) -> bool {
     true
 }
 
+/// The unknown key in a section's tree file that marks the section pinned. Older versions keep it as it is.
+pub const PINNED_KEY: &str = "pinned";
+
+/// Whether a section file's unknown keys mark it pinned.
+pub fn is_pinned(extra: &JsonMap) -> bool {
+    extra
+        .get(PINNED_KEY)
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or(false)
+}
+
+/// Marks a section file pinned or not. True when it changed.
+pub fn set_pinned(extra: &mut JsonMap, pinned: bool) -> bool {
+    if is_pinned(extra) == pinned {
+        return false;
+    }
+    if pinned {
+        extra.insert(PINNED_KEY.to_owned(), serde_json::Value::Bool(true));
+    } else {
+        extra.remove(PINNED_KEY);
+    }
+    true
+}
+
 /// A section in the navigation tree.
 #[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -276,6 +300,8 @@ pub struct SectionNode {
     pub encrypted: bool,
     /// Archived: hidden from the tree until "Show archived" (the unknown key `archived`).
     pub archived: bool,
+    /// Pinned in the navigation tree (the unknown key `pinned`).
+    pub pinned: bool,
 }
 
 /// A page in the navigation tree.

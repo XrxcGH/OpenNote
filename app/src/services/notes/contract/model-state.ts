@@ -119,7 +119,7 @@ export function summary(state: ModelState, rec: Rec): NodeSummary {
     kind: rec.kind,
     parentId: rec.parentId as NodeId | null,
     title: rec.title,
-    color: rec.kind === 'page' ? null : rec.color,
+    color: rec.color,
     pageLevel: rec.kind === 'page' ? rec.pageLevel : 0,
     childCount: rec.kind === 'page' ? 0 : (state.lists.get(rec.id)?.length ?? 0),
     created: rec.created,

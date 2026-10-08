@@ -50,7 +50,7 @@ function seedNodes(state: ModelState, nodes: readonly FixtureNode[], parentId: s
       kind: node.kind,
       parentId,
       title: node.title,
-      color: node.kind === 'page' ? null : penOrNull(node.color),
+      color: penOrNull(node.color),
       pageLevel: node.kind === 'page' ? (node.pageLevel ?? 0) : 0,
       created,
       modified: node.modified ?? created,
@@ -160,10 +160,8 @@ export class NotesModel {
   setColor(id: string, color: ChipColor | null): NodeSummary {
     const rec = live(this.state, id);
     writable(this.state, rec);
-    if (rec.kind !== 'page') {
-      rec.color = penOrNull(color);
-      rec.modified = this.state.now();
-    }
+    rec.color = penOrNull(color);
+    rec.modified = this.state.now();
     return summary(this.state, rec);
   }
 

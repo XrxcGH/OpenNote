@@ -84,6 +84,7 @@ pub fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
             access: s.format.access.clone(),
             encrypted: s.encryption.is_some(),
             archived: false,
+            pinned: false,
         })
         .collect();
     NotebookTree {

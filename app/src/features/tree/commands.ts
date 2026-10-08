@@ -124,7 +124,7 @@ const editCommands = [
     title: 'tree.commands.color',
     category: 'notebooks',
     palette: false,
-    enabled: (ctx) => ![undefined, 'page'].includes(currentNode(ctx)?.kind),
+    enabled: (ctx) => currentNode(ctx) !== undefined,
     run: async (ctx, args) => {
       const many = selectedNodes(ctx);
       if (many) return (await loadMultiActions()).colorSelection(ctx.notes, many, args?.color ?? null);

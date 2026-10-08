@@ -367,8 +367,8 @@ impl NotebookStore {
         Ok(())
     }
 
-    /// Changes a node's color, or a page's pin. Colors of groups and sections change their tree file, and
-    /// colors and pins of pages change their entry.
+    /// Changes a node's color, or the pin of a page or section. Colors of groups and sections change their tree
+    /// file, as does the pin of a section; colors and pins of pages change their entry.
     pub fn set_props(&mut self, node: NodeRef, props: &NodeProps) -> Result<(), CoreError> {
         if props.styles.is_some() {
             return Err(invalid_move("only the notebook has styles"));
@@ -398,17 +398,21 @@ impl NotebookStore {
 
     fn set_section_props(&mut self, id: SectionId, props: &NodeProps) -> Result<(), CoreError> {
         self.check_section_writable(id)?;
-        if props.pinned.is_some() {
-            return Err(invalid_move("only pages can be pinned"));
-        }
         let now = self.now();
-        let changed = self.sections.get_mut(&id).is_some_and(|s| match &props.color {
-            Some(color) if s.file.color != *color => {
+        let changed = self.sections.get_mut(&id).is_some_and(|s| {
+            let mut changed = false;
+            if let Some(color) = props.color.as_ref().filter(|c| **c != s.file.color) {
                 s.file.color.clone_from(color);
-                s.file.changed = now;
-                true
+                changed = true;
             }
-            _ => false,
+            // A section's pin is the unknown key `pinned`, so versions that don't know it keep it.
+            if let Some(pinned) = props.pinned {
+                changed |= crate::model::set_pinned(&mut s.file.extra, pinned);
+            }
+            if changed {
+                s.file.changed = now;
+            }
+            changed
         });
         if changed {
             self.write_section(id)?;

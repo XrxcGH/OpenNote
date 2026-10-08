@@ -39,3 +39,7 @@ Type `#todo` and the tag is listed in the Tags pane and found by search. Tag a s
 Press Ctrl+K and choose Replace in all notebooks. You see a preview before anything changes.
 
 Search and links are built and have been checked by automated tests only.
+
+## Pin sections and color pages
+
+Right-click a section and choose Pin section to keep it at the top of its notebook. Right-click a page and choose Color to mark it with a colored dot. Both stay with the notebook.

@@ -73,7 +73,7 @@ pub struct NodeProps {
     /// A new color chip. `Some(None)` removes it.
     #[serde(default)]
     pub color: Option<Option<Color>>,
-    /// Pin or unpin a page.
+    /// Pin or unpin a page or a section.
     #[serde(default)]
     pub pinned: Option<bool>,
     /// New named styles, for the notebook only. An empty map removes them.

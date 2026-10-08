@@ -321,6 +321,7 @@ describe('context menu contents', () => {
       'Move down',
       'Move to',
       'Open in new tab',
+      'Pin section',
       'Duplicate',
       'Copy to',
       'Create shortcut',
@@ -337,6 +338,7 @@ describe('context menu contents', () => {
       'New subpage',
       'Make subpage',
       'Rename',
+      'Color',
       'Move up',
       'Move down',
       'Move to',
@@ -412,5 +414,21 @@ describe('context menu actions', () => {
       )
       .toBe('Section, color Fern');
     await expectFocus(row(notebooksTree(), 'Labs'));
+  });
+
+  it('colors a page from its Color submenu', async () => {
+    await renderTree();
+    await openLectures();
+    await openMenuOn(pagesTree, 'Mitosis');
+    await userEvent.click(screen.getByRole('menuitem', { name: /^Color/ }));
+    const submenu = await screen.findByRole('menu', { name: 'Color' });
+    expect(within(submenu).getByRole('menuitemradio', { name: 'No color' }).getAttribute('aria-checked')).toBe('true');
+    await userEvent.click(within(submenu).getByRole('menuitemradio', { name: 'Plum' }));
+    await expect
+      .poll(
+        () => document.getElementById(row(pagesTree(), 'Mitosis').getAttribute('aria-describedby') ?? '')?.textContent,
+      )
+      .toMatch(/color Plum$/);
+    expect(row(pagesTree(), 'Mitosis').querySelector('[data-color="plum"]')).not.toBeNull();
   });
 });

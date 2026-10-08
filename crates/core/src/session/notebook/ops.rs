@@ -139,7 +139,7 @@ impl NotebookHandle {
             },
             NodeRef::Section(s) => NodeProps {
                 color: Some(store.section(s)?.file.color.clone()),
-                pinned: None,
+                pinned: Some(crate::model::is_pinned(&store.section(s)?.file.extra)),
                 styles: None,
             },
             NodeRef::Page(p) => {

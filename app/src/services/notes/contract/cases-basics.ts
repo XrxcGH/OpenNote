@@ -161,9 +161,11 @@ export const renameCases: readonly ContractCase[] = [
     expect((await s.get(lib.lectures))?.color).toBe('indigo');
     expect((await s.setColor(lib.lectures, null)).color).toBeNull();
   }),
-  kase('color.page', 'keeps pages without a color', async (s) => {
+  kase('color.page', 'colors a page and clears it again', async (s) => {
     const lib = await library(s);
-    expect((await s.setColor(lib.pages.Cell, 'fern')).color).toBeNull();
+    expect((await s.setColor(lib.pages.Cell, 'fern')).color).toBe('fern');
+    expect((await s.get(lib.pages.Cell))?.color).toBe('fern');
+    expect((await s.setColor(lib.pages.Cell, null)).color).toBeNull();
   }),
   kase('color.pen-names', 'stores anything but a pen name as no color', async (s) => {
     const lib = await library(s);

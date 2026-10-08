@@ -190,6 +190,7 @@ fn section_node(id: &str, title: &str, group: GroupId, pages: Vec<PageNode>) -> 
         access: Access::ReadWrite,
         encrypted: false,
         archived: false,
+        pinned: false,
     }
 }
 

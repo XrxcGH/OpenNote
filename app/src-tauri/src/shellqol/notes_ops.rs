@@ -33,17 +33,18 @@ fn page_of(found: &Found) -> Option<(opennote_core::session::notebook::NotebookH
 }
 
 impl Bridge {
-    /// Pins or unpins a page.
+    /// Pins or unpins a page or a section.
     pub(crate) fn set_pinned(&mut self, id: &str, pinned: bool) -> IpcResult<NodeSummary> {
         let found = self.find(id)?;
-        let Some((notebook, page)) = page_of(&found) else {
-            return Err(invalid_move("Only pages can be pinned."));
+        let (notebook, node) = match &found {
+            Found::Node(notebook, node @ (NodeRef::Page(_) | NodeRef::Section(_))) => (notebook.clone(), *node),
+            _ => return Err(invalid_move("Only pages and sections can be pinned.")),
         };
         let props = NodeProps {
             pinned: Some(pinned),
             ..NodeProps::default()
         };
-        notebook.set_props(NodeRef::Page(page), props).map_err(from_core)?;
+        notebook.set_props(node, props).map_err(from_core)?;
         self.summary_of(&found)
     }
 

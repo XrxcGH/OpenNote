@@ -60,7 +60,7 @@ pub struct NodeInfo {
     pub modified: Timestamp,
     /// Whether it may not change.
     pub read_only: bool,
-    /// A pinned page. Always false for everything else.
+    /// A pinned page or section. Always false for everything else.
     pub pinned: bool,
     /// Archived: hidden from the tree until "Show archived".
     pub archived: bool,
@@ -119,7 +119,7 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             created: section.created,
             modified: section.changed,
             read_only: section.access.is_read_only(),
-            pinned: false,
+            pinned: section.pinned,
             archived: section.archived,
         },
     }

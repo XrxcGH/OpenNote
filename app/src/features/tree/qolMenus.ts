@@ -21,6 +21,8 @@ const MENU_ENTRIES: readonly MenuEntry[] = [
   ['tree.page', 'tree.archive', 'tree.archive', 31],
   ['tree.page', 'tree.unarchive', 'tree.unarchive', 32],
   ['tree.section', 'tree.openInNewTab', 'tabs.openInNewTab', 20],
+  ['tree.section', 'tree.pinSection', 'tree.pinSection', 22],
+  ['tree.section', 'tree.unpinSection', 'tree.unpinSection', 23],
   ['tree.section', 'tree.duplicate', 'tree.duplicate', 24],
   ['tree.section', 'tree.copyTo', 'tree.copyTo', 25],
   ['tree.section', 'tree.createShortcut', 'notes.createShortcut', 29],
