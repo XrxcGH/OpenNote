@@ -30,6 +30,22 @@ const SPECS: readonly Spec[] = [
     run: () => import('./meetings/commands').then((module) => module.newMeetingNote()),
   },
   {
+    id: 'share.slack',
+    title: 'accounts.share.commands.slack',
+    keywords: 'accounts.share.commands.keywords',
+    flag: 'accounts.share',
+    needsPage: true,
+    run: () => import('./share/commands').then((module) => module.shareSlack()),
+  },
+  {
+    id: 'share.teams',
+    title: 'accounts.share.commands.teams',
+    keywords: 'accounts.share.commands.keywords',
+    flag: 'accounts.share',
+    needsPage: true,
+    run: () => import('./share/commands').then((module) => module.shareTeams()),
+  },
+  {
     id: 'readwise.sync',
     title: 'accounts.readwise.commands.sync',
     keywords: 'accounts.readwise.commands.keywords',

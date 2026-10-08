@@ -50,9 +50,14 @@ export function accountsHost(): AccountsHost {
   return commandContext('menu').platform.accounts;
 }
 
-/** Bytes as text for an upload part. */
-export function bytesPart(bytes: Uint8Array): UploadPart {
+/** Bytes as base64 text. */
+export function base64Of(bytes: Uint8Array): string {
   let binary = '';
   for (let at = 0; at < bytes.length; at += 0x8000) binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));
-  return { kind: 'base64', base64: btoa(binary) };
+  return btoa(binary);
+}
+
+/** Bytes as an upload part. */
+export function bytesPart(bytes: Uint8Array): UploadPart {
+  return { kind: 'base64', base64: base64Of(bytes) };
 }

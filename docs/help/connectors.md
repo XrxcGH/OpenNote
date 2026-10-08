@@ -40,3 +40,9 @@ Press Ctrl+K and choose New meeting note. Pick where the meeting is: your Outloo
 The note goes in a section named Meetings in the notebook you have open. It holds the time, the place, who is invited, the join link, and the agenda from the invitation, with an empty Notes heading to type under. Choose the same meeting again and OpenNote opens the note you already have.
 
 The note remembers which meeting it came from. A recording you start on that page remembers it too, so the two always name the same meeting.
+
+### Share a page to Slack or Teams
+
+Open a page, press Ctrl+K, and choose Share page to Slack or Share page to Teams. Pick the channel (in Teams, the team and then the channel), then pick what to post: a PDF of the page, a picture of the page or of the lasso selection, or a link.
+
+The post is made as you, and nothing is sent until you press Post. A link opens the page in OpenNote, so it works only for people who have OpenNote and the same notebook. In Teams a picture shows in the message, and a PDF is put in the channel's Files folder with a link to it in the message.

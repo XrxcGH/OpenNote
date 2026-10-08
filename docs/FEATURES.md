@@ -79,7 +79,7 @@ Linked accounts (Phase 11):
 | Canvas, Moodle, and Google Classroom | Import assignments into a section and submit a page as PDF | Needs the owner. Canvas and Moodle sign-in with a token is built. No import or submit uses it yet. |
 | Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline | Not built yet. The embed block is not built. |
 | Kindle and Readwise | Import book highlights into a notebook | Built, untested by hand. Kindle clippings and a Readwise CSV file are built. Sync Readwise reads the Readwise API into a notebook, a page for each book, and syncs again from where it left off. |
-| Slack and Teams chat | Share a page as a link, PDF, or image | Needs the owner |
+| Slack and Teams chat | Share a page as a link, PDF, or image | Built, untested by hand. Share page to Slack and Share page to Teams post as you to a channel you choose. Both need the owner's client IDs. |
 | Dropbox, OneDrive, iCloud Drive, Box, and WebDAV | Sync folders and "Send to" destinations | Built, untested by hand. Synced folders and Send to a folder are built. API sync needs the owner. |
 | Webhooks and a local API | Connect Zapier, Power Automate, or scripts to create pages and export files | Not built yet |
 | AI assistants (Model Context Protocol, MCP) | Lets an assistant the person chooses read or write notes, only with permission | Not built yet |
