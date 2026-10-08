@@ -17,8 +17,10 @@ async function addOne(page: string, file: File): Promise<void> {
   try {
     const dir = await platformAudio().assetsDir(page);
     const made = await (await moreClient()).importFile(dir, file.name, await file.arrayBuffer());
-    await insertRecordingBlock({ ...made.entry, importedFrom: file.name }, { track: 'finished' });
+    const entry = { ...made.entry, importedFrom: file.name };
+    const block = await insertRecordingBlock(entry, { track: 'finished' });
     await shownOpenPage.get()?.saveNow();
+    void import('./transcripts/auto').then((auto) => auto.recordingSaved({ page, block, entry, label: file.name }));
     const message = t('audioMore.files.done', { name: file.name, length: clockNs(made.durationNs) });
     showToast({ id: progress, message });
     announce(message);

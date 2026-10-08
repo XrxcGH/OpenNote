@@ -150,7 +150,8 @@ type IntelFlagId =
   | 'intel.meaning'
   | 'intel.ask'
   | 'intel.writing'
-  | 'intel.transcription';
+  | 'intel.transcription'
+  | 'intel.autoTranscripts';
 
 type Phase5FlagId =
   | 'ink.core'

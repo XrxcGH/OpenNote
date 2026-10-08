@@ -9,6 +9,7 @@ export {
   askToTurnOn,
   describeProblem,
   intelClient,
+  intelExt,
   loadIntel,
   onChoiceChange,
   refreshStatus,
@@ -17,6 +18,7 @@ export {
 } from './runtime';
 export { searchTextInImage, searchTextInInk, searchTextReady } from './search';
 export { openActivityPanel } from './background/ActivityPanel';
+export { enqueueBackground } from './background';
 export { extrasState, isExtraOn, loadExtras } from './extras';
 export { changeExtra, openAsk, openFindByMeaning, resumeExtras, toggleRelatedPages } from './lifecycle';
 export { indexPage } from './meaning/engine';

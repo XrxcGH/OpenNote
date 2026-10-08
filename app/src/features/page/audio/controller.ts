@@ -222,6 +222,9 @@ export async function stopRecording(reason?: StopReason): Promise<void> {
     const snaps = extrasOf(active.entry).snaps;
     const entry = active.flags.into(snaps ? ({ ...finished.entry, snaps } as RecordingEntry) : finished.entry);
     await writeEntry(active.page, active.block, entry, { track: 'finished' });
+    void import('./transcripts/auto').then((auto) =>
+      auto.recordingSaved({ page: active.page, block: active.block, entry }),
+    );
     const time = clock(activeNs(entry) / 1e6);
     const message = stoppedMessage(reason, time);
     if (reason) showToast({ message, tone: 'danger' });

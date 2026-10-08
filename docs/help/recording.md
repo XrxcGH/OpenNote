@@ -49,4 +49,10 @@ The transcript is made in the background, one recording at a time, and a note sh
 - The model runs on the processor. Graphics and NPU chips are not used yet.
 - The audio is read from the page's own files. No copy is made.
 
+### A transcript of every recording
+
+To get a transcript and summary without asking each time, open Settings, then Recording, and turn on Make a transcript and summary of every recording. It is off until you turn it on.
+
+When a recording stops, or you drop an audio file on a page, its transcript is made in the background and placed after the recording, with a short summary at the top. It shows in the activity panel, where you can pause or stop it. A recording that already has a transcript keeps it.
+
 Recording is built. Agents started a recording once and it worked. Nobody has tried the rest by hand.

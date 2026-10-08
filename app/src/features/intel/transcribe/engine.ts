@@ -21,6 +21,8 @@ export interface OnDeviceTranscribeRequest {
   signal?: AbortSignal;
   /** The spoken language as a BCP 47 tag, or null to detect it. */
   language?: string | null;
+  /** False for background work: nothing is asked or shown. */
+  interactive?: boolean;
 }
 
 export interface OnDeviceTranscribeResult {
@@ -135,5 +137,7 @@ export async function transcribeOnDevice(
 /** The engine in the shape the page's transcript seam takes. */
 export const onDeviceTranscriptEngine = {
   id: 'whisper',
-  transcribe: (request: OnDeviceTranscribeRequest) => transcribeOnDevice(request),
+  cloud: false,
+  transcribe: (request: OnDeviceTranscribeRequest) =>
+    transcribeOnDevice(request, { ask: request.interactive !== false }),
 };

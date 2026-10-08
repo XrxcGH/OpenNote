@@ -107,7 +107,7 @@ Linked accounts (Phase 11):
 
 (Phase 9 and Phase 12)
 
-- Every recording gets a transcript automatically, with a one-paragraph summary at the top. Status: Not built yet. The speech engine is not built. The transcript block and its summary are built, untested by hand.
+- Every recording gets a transcript automatically, with a one-paragraph summary at the top. Status: Built, untested by hand. It is off until the person turns it on in Settings, then Recording. Recordings and dropped audio files are transcribed in the background queue, on this device.
 - Each line starts with a timestamp. Clicking a line or its time jumps playback to that moment. Status: Built, untested by hand.
 - Different voices are labeled Speaker 1, Speaker 2, and so on. Renaming a speaker once ("Dr. Patel") updates the whole transcript, and saved names are suggested in later recordings. Status: Built, untested by hand. Labels and renaming are built. The engine that tells voices apart is not built yet.
 - Transcripts are searchable and can be edited to fix mistakes. Status: Built, untested by hand.

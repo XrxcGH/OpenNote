@@ -10,6 +10,7 @@ import { Button, Switch } from '../../../ui';
 import { platformAudio } from './controller';
 import styles from './more.module.css';
 import { chooseRecording, recordingChoices } from './state';
+import AutoTranscriptsSwitch from './transcripts/AutoSwitch';
 
 function useInputs(): DeviceInfo[] {
   const [devices, setDevices] = useState<DeviceInfo[]>([]);
@@ -92,6 +93,7 @@ export default function RecordingSettings() {
           </p>
         </>
       )}
+      <AutoTranscriptsSwitch />
       {storage && (
         <div className={styles.field}>
           <div className={styles.actions}>

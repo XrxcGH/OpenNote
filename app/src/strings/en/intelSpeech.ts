@@ -13,4 +13,11 @@ export const intelSpeech = {
     stop: 'Stop',
     notMade: 'No transcript was made.',
   },
+  auto: {
+    switch: 'Make a transcript and summary of every recording',
+    help: 'When a recording stops or an audio file is added, its transcript and summary are made in the background, on this device. It needs Transcription and a speech model.',
+    label: 'Transcript of {name}',
+    recording: 'a recording',
+    ready: 'The transcript of {name} is ready.',
+  },
 } as const;

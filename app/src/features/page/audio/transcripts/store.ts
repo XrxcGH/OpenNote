@@ -89,7 +89,7 @@ export const transcriptBlocks = (): BlockJson[] =>
 export const transcriptOf = (recording: string): BlockJson | null =>
   transcriptBlocks().find((block) => recordingOf(block) === recording) ?? null;
 
-const fallbackOf = (data: TranscriptData) => ({ markdown: markdownOf(data, speakerWord) });
+export const fallbackOf = (data: TranscriptData) => ({ markdown: markdownOf(data, speakerWord) });
 
 /** Names that a speaker no longer has are sent as null, because a merge patch keeps what it isn't told to drop. */
 function viewEdit(previous: TranscriptData | null, next: TranscriptData): Edit {

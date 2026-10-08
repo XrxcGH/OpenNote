@@ -164,7 +164,7 @@ export async function summarizeTranscript(data: TranscriptData): Promise<string 
 }
 
 /** The same without asking: nothing happens if summaries are not on. */
-async function quietSummary(data: TranscriptData): Promise<string | null> {
+export async function quietSummary(data: TranscriptData): Promise<string | null> {
   try {
     const api = await loadApi();
     await api.loadIntel();
