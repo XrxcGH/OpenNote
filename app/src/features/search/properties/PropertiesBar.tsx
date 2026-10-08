@@ -211,7 +211,16 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
   };
 
   return (
-    <section className={styles.bar} aria-label={t('qolSearch.properties.title')}>
+    <section
+      className={styles.bar}
+      aria-label={t('qolSearch.properties.title')}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || !open) return;
+        event.stopPropagation();
+        toggle();
+        event.currentTarget.querySelector('button')?.focus();
+      }}
+    >
       <button type="button" className={styles.fold} aria-expanded={open} onClick={toggle}>
         <SlidersIcon aria-hidden={true} />
         {t('qolSearch.properties.title')}
