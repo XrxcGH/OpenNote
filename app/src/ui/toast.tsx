@@ -1,6 +1,6 @@
 // Toasts (ARCHITECTURE.md section 15.5): bottom center, one at a time, in an always-present "Notifications"
-// status region, so a screen reader reads each toast politely and F6 reaches it. Toasts with an action stay
-// until dismissed or replaced; the rest close after 6 seconds, and the timer waits while the pointer or focus is
+// status region, so a screen reader reads each toast politely and F6 reaches it. Toasts close after 6 seconds (12 with
+// an action such as Undo), and the timer waits while the pointer or focus is
 // on the toast. Escape on a focused toast dismisses it. Toasts never take focus: a press on one doesn't move it.
 //
 // A toast with an id replaces the toast with the same id, so a repeated gesture updates one toast.
