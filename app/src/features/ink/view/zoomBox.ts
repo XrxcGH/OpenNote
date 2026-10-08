@@ -36,6 +36,9 @@ import { activeSlot, styleOf } from './state';
 import type { InkSurface } from './surface';
 
 const SIDE_MARGIN = 40;
+/** A touch on the strip this soon after the last pen event, or while a pen touches the screen, is the writing hand. */
+const PEN_NEAR_MS = 500;
+const PEN_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'pointercancel'] as const;
 const KEYS: Readonly<Record<string, BoxKey>> = {
   ArrowLeft: 'left',
   ArrowRight: 'right',
@@ -63,6 +66,9 @@ class ZoomBoxView {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private strip: Strip = { origin: { x: 0, y: 0 }, width: 0, height: 0 };
   private firstTop = 0;
+  /** Pens touching the screen anywhere in this window, and when a pen was last heard (hover or contact). */
+  private readonly pens = new Set<number>();
+  private lastPen = -Infinity;
 
   constructor(
     private readonly host: InkHost,
@@ -140,6 +146,15 @@ class ZoomBoxView {
     this.box = this.start();
     this.firstTop = this.box.origin.y;
     this.stops.push(surface.onChange(() => this.render()));
+    // The pen is followed in the whole window, not only on the strip: a hand resting on the strip while the pen
+    // writes on the page, or just after it lifts, is the writing hand (F4-1).
+    const win = doc.defaultView;
+    if (win) {
+      for (const type of PEN_EVENTS) win.addEventListener(type, this.onPen, { capture: true, passive: true });
+      this.stops.push(() => {
+        for (const type of PEN_EVENTS) win.removeEventListener(type, this.onPen, { capture: true });
+      });
+    }
     this.render();
     announce(t('ink.zoomBox.on', { line: lineNumber(this.box, this.firstTop) }));
     this.element.focus({ preventScroll: true });
@@ -232,9 +247,11 @@ class ZoomBoxView {
   /**
    * Starts a stroke. The strip writes one stroke at a time: a second contact while one is writing, such as the
    * heel of the hand or a finger, is ignored, so the stroke in progress is kept. A pen that lands while a touch is
-   * writing takes over, and the touch's stroke is dropped: that touch was the hand, not the writing.
+   * writing takes over, and the touch's stroke is dropped: that touch was the hand, not the writing. A touch while a
+   * pen is near, wherever it writes, never starts a stroke.
    */
   down(event: PointerEvent): void {
+    if (event.pointerType === 'touch' && this.penNear()) return;
     if (this.pointerId !== null) {
       if (event.pointerType !== 'pen' || this.pointerType === 'pen') return;
       this.builder = null;
@@ -291,6 +308,19 @@ class ZoomBoxView {
     this.render();
     if (this.settings().auto) this.afterStroke(strokes);
   }
+
+  private penNear(): boolean {
+    return this.pens.size > 0 || performance.now() - this.lastPen < PEN_NEAR_MS;
+  }
+
+  /** A pen came near or touched down: a touch writing in the strip was the hand, so its stroke is dropped. */
+  private readonly onPen = (event: PointerEvent) => {
+    if (event.pointerType !== 'pen') return;
+    this.lastPen = performance.now();
+    if (event.type === 'pointerdown') this.pens.add(event.pointerId);
+    else if (event.type === 'pointerup' || event.type === 'pointercancel') this.pens.delete(event.pointerId);
+    if (this.pointerType === 'touch') this.cancel();
+  };
 
   /** Drops the stroke of `pointerId`, or the stroke in progress when no pointer is named. */
   cancel(pointerId?: number): void {

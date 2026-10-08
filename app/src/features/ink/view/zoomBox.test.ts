@@ -92,4 +92,55 @@ describe('the zoom box strip', () => {
     expect(added[0].flatMap((stroke) => stroke.points).every((point) => point.pressure === 0.5)).toBe(true);
     stop();
   });
+
+  // The pen as the window sees it: on the page, not on the strip.
+  const pen = (type: string) =>
+    window.dispatchEvent(Object.assign(new Event(type), { pointerId: 1, pointerType: 'pen' }));
+  const touchStroke = (tool: InkPointerTool, pointer: ReturnType<typeof setup>['pointer']) => {
+    tool.down(pointer(2, 'touch', 300), ctx);
+    tool.move?.([pointer(2, 'touch', 310), pointer(2, 'touch', 320)], ctx);
+    tool.up?.(pointer(2, 'touch', 330), ctx);
+  };
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+  it('stores no stroke from a hand resting on the strip while the pen writes on the page', async () => {
+    const { tool, added, stop, pointer } = setup();
+    pen('pointerdown');
+    pen('pointermove');
+    touchStroke(tool, pointer);
+    pen('pointerup');
+    await settle();
+    expect(added).toHaveLength(0);
+    stop();
+  });
+
+  it('stores no stroke from a hand landing on the strip just after the pen lifted', async () => {
+    const { tool, added, stop, pointer } = setup();
+    pen('pointerdown');
+    pen('pointerup');
+    touchStroke(tool, pointer);
+    await settle();
+    expect(added).toHaveLength(0);
+    stop();
+  });
+
+  it('drops a touch stroke in the strip when the pen comes down on the page', async () => {
+    const { tool, added, stop, pointer } = setup();
+    tool.down(pointer(2, 'touch', 300), ctx);
+    tool.move?.([pointer(2, 'touch', 310)], ctx);
+    pen('pointerdown');
+    tool.move?.([pointer(2, 'touch', 320)], ctx);
+    tool.up?.(pointer(2, 'touch', 330), ctx);
+    pen('pointerup');
+    await settle();
+    expect(added).toHaveLength(0);
+    stop();
+  });
+
+  it('lets a finger write in the strip when no pen is near', async () => {
+    const { tool, added, stop, pointer } = setup();
+    touchStroke(tool, pointer);
+    await vi.waitFor(() => expect(added).toHaveLength(1));
+    stop();
+  });
 });
