@@ -67,13 +67,26 @@ describe('snapShape', () => {
     expect(shape.kind === 'line' && shape.from.y === 152 && shape.to.y === 152).toBe(true);
   });
 
-  it('lays a line drawn close to level on ruled paper on the nearest rule, however far', () => {
-    const line: Shape = { kind: 'line', from: { x: 150, y: 136 }, to: { x: 400, y: 140 } };
+  it('lays a line drawn close to level on ruled paper on the nearest rule within reach', () => {
+    const line: Shape = { kind: 'line', from: { x: 150, y: 142 }, to: { x: 400, y: 146 } };
     const { shape } = snapShape(at(ruled), line);
     if (shape.kind !== 'line') throw new Error('not a line');
     expect(shape.from.y).toBe(150);
     expect(shape.to.y).toBe(150);
     expect(shape.from.x).toBe(150);
+  });
+
+  it('leaves a level line midway between two rules, or in the header above the first, where it was', () => {
+    const midway: Shape = { kind: 'line', from: { x: 150, y: 137 }, to: { x: 400, y: 137 } };
+    expect(snapShape(at(ruled), midway)).toEqual({ shape: midway, marks: [] });
+    // Lined college with a title header: the first rule is at 176, a line drawn at 137 is 1.5 spacings above it.
+    const headed = { ...ruled, from: 176 };
+    const header: Shape = { kind: 'line', from: { x: 150, y: 137 }, to: { x: 400, y: 137 } };
+    expect(snapShape(at(headed), header)).toEqual({ shape: header, marks: [] });
+    // Just above the first rule, within reach, it lies on that rule.
+    const near: Shape = { kind: 'line', from: { x: 150, y: 170 }, to: { x: 400, y: 171 } };
+    const s = snapShape(at(headed), near).shape;
+    expect(s.kind === 'line' && s.from.y === 176 && s.to.y === 176).toBe(true);
   });
 
   it('snaps an arrow by its tail and tip and keeps its head', () => {

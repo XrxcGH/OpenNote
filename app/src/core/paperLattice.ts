@@ -191,10 +191,10 @@ function snapToDot(lattice: PaperLattice, p: LatticePoint, reach: number): Latti
   return best ? { point: best.point, x: true, y: true } : { point: p, x: false, y: false };
 }
 
-/** The horizontal line nearest `p` on its sheet, at any distance, where one is drawn under `p`; or null. */
-export function nearestRow(lattice: PaperLattice, p: LatticePoint): number | null {
+/** The horizontal line nearest `p` within `reach`, where one is drawn under `p`; or null. */
+export function nearestRow(lattice: PaperLattice, p: LatticePoint, reach: number): number | null {
   let best: AxisHit | null = null;
-  for (const k of nearSheets(lattice, p.y)) best = closer(best, rowHit(lattice, k, p, Infinity));
+  for (const k of nearSheets(lattice, p.y)) best = closer(best, rowHit(lattice, k, p, reach));
   return best ? best.value : null;
 }
 

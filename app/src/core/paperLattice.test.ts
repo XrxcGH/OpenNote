@@ -126,9 +126,10 @@ describe('the lattice helpers', () => {
     expect(sheetIndex(headed, H - 1)).toBe(0);
   });
 
-  it('finds the rule under a point at any distance', () => {
-    expect(nearestRow(ruled, { x: 300, y: 136 })).toBe(124);
-    expect(nearestRow(ruled, { x: 300, y: 138 })).toBe(150);
+  it('finds the rule under a point within reach, and none beyond it', () => {
+    expect(nearestRow(ruled, { x: 300, y: 136 }, 13)).toBe(124);
+    expect(nearestRow(ruled, { x: 300, y: 138 }, 13)).toBe(150);
+    expect(nearestRow(ruled, { x: 300, y: 137 }, 8)).toBeNull();
   });
 
   it('steps to the next line, or to the one a point between two is moving toward', () => {

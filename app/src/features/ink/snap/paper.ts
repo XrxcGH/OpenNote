@@ -84,8 +84,9 @@ export function snapEnds(snap: PaperSnap, a: Vec, b: Vec): { a: Vec; b: Vec; mar
   let onB = sb.x || sb.y;
   if (flat) {
     const middle = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    // On ruled paper a line drawn close to level lies on the rule nearest it, however far that is.
-    const rule = snap.lattice.kind === 'ruled' ? nearestRow(snap.lattice, middle) : null;
+    // On ruled paper a line drawn close to level lies on the rule nearest its middle, when that rule is within reach:
+    // a line in the header above the first rule, or midway between two rules, stays where it was drawn.
+    const rule = snap.lattice.kind === 'ruled' ? nearestRow(snap.lattice, middle, snap.reach) : null;
     const y = rule ?? (sa.y ? A.y : sb.y ? B.y : null);
     if (y !== null) {
       A = { ...A, y };
