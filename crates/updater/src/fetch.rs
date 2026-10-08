@@ -148,10 +148,19 @@ pub struct UreqFetch {
 
 impl Default for UreqFetch {
     fn default() -> Self {
-        use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
+        Self::trusting(ureq::tls::RootCerts::PlatformVerifier)
+    }
+}
+
+impl UreqFetch {
+    /// A fetcher that trusts `roots`: the Windows certificate store, or in tests a local server's own certificate.
+    fn trusting(roots: ureq::tls::RootCerts) -> Self {
+        use ureq::tls::{TlsConfig, TlsProvider};
+        // The provider's own feature must be on: ureq panics on an https address otherwise, and a release build
+        // aborts on a panic (T1-1). The https tests below fail the same way if it is ever turned off.
         let tls = TlsConfig::builder()
             .provider(TlsProvider::NativeTls)
-            .root_certs(RootCerts::PlatformVerifier)
+            .root_certs(roots)
             .build();
         let config = ureq::Agent::config_builder()
             .tls_config(tls)
@@ -251,6 +260,78 @@ fn from_ureq(error: ureq::Error) -> FetchError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_https_download_from_a_server_without_tls_fails_cleanly() {
+        // ureq panics on every https address unless its `native-tls` feature is on, and a release build aborts on a
+        // panic (T1-1). A server that answers in plain HTTP must give an error, not a panic.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a local port");
+        let port = listener.local_addr().expect("an address").port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(mut stream) = stream else { break };
+                let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+            }
+        });
+        let url = Url::parse(&format!("https://127.0.0.1:{port}/latest.json")).expect("https");
+        let mut sink = Vec::new();
+        let result = UreqFetch::default().get(&url, 1024, &mut sink);
+        assert!(matches!(result, Err(FetchError::Unreachable(_))), "{result:?}");
+    }
+
+    #[test]
+    fn an_https_download_succeeds() {
+        // T1-1: the TLS stack the app ships, end to end, against a local server with its own certificate.
+        let (port, cert) = serve_tls(b"{\"version\":\"1.0.0\"}");
+        let roots = ureq::tls::RootCerts::Specific(std::sync::Arc::new(vec![
+            ureq::tls::Certificate::from_der(&cert).to_owned()
+        ]));
+        let url = Url::parse(&format!("https://127.0.0.1:{port}/latest.json")).expect("https");
+        let mut sink = Vec::new();
+        let result = UreqFetch::trusting(roots).get(&url, 1024, &mut sink);
+        assert!(result.is_ok(), "{result:?}");
+        assert_eq!(sink, b"{\"version\":\"1.0.0\"}");
+    }
+
+    /// A local HTTPS server with a new self-signed certificate for 127.0.0.1, which answers every request with `body`.
+    /// Returns its port and the certificate.
+    fn serve_tls(body: &'static [u8]) -> (u16, Vec<u8>) {
+        use std::io::{BufRead, BufReader};
+        let key = rcgen::generate_simple_self_signed(vec!["127.0.0.1".to_owned()]).expect("a certificate");
+        let cert = key.cert.der().to_vec();
+        let config = rustls::ServerConfig::builder()
+            .with_no_client_auth()
+            .with_single_cert(
+                vec![key.cert.der().clone()],
+                rustls::pki_types::PrivatePkcs8KeyDer::from(key.key_pair.serialize_der()).into(),
+            )
+            .expect("a server configuration");
+        let config = std::sync::Arc::new(config);
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a local port");
+        let port = listener.local_addr().expect("an address").port();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else { break };
+                let Ok(connection) = rustls::ServerConnection::new(config.clone()) else {
+                    break;
+                };
+                let mut tls = rustls::StreamOwned::new(connection, stream);
+                let mut reader = BufReader::new(&mut tls);
+                let mut line = String::new();
+                while reader.read_line(&mut line).unwrap_or(0) > 0 && line != "\r\n" {
+                    line.clear();
+                }
+                let head = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                );
+                let _ = tls.write_all(head.as_bytes()).and_then(|()| tls.write_all(body));
+                tls.conn.send_close_notify();
+                let _ = tls.flush();
+            }
+        });
+        (port, cert)
+    }
 
     #[test]
     fn accepts_https_urls_with_a_host() {
