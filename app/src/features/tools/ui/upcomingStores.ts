@@ -5,7 +5,7 @@ import type { ClassSlot, Exam } from '../upcoming';
 import { dateKey } from '../upcoming';
 import { findPageDues } from '../upcoming/pageDue';
 import type { UpcomingItem } from '../upcoming';
-import { loadStored, saveStored } from './storage';
+import { followStored, loadStored, saveStored } from './storage';
 
 const EXAMS = 'exams';
 const TIMETABLE = 'timetable';
@@ -14,16 +14,16 @@ export const REMINDERS = 'reminders';
 
 const list = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
 
-export const examsStore = createStore<readonly Exam[]>(
-  list<Exam>(loadStored<unknown>(EXAMS, [])).filter(
-    (exam) => typeof exam?.id === 'string' && typeof exam.date === 'string',
-  ),
-  'tools exams',
-);
+const readExams = (value: unknown): Exam[] =>
+  list<Exam>(value).filter((exam) => typeof exam?.id === 'string' && typeof exam.date === 'string');
+const readTimetable = (value: unknown): ClassSlot[] =>
+  list<ClassSlot>(value).filter((slot) => typeof slot?.id === 'string' && Array.isArray(slot.days));
+const readPageItems = (value: unknown): Record<string, PageEntry> =>
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, PageEntry>) : {};
+
+export const examsStore = createStore<readonly Exam[]>(readExams(loadStored<unknown>(EXAMS, [])), 'tools exams');
 export const timetableStore = createStore<readonly ClassSlot[]>(
-  list<ClassSlot>(loadStored<unknown>(TIMETABLE, [])).filter(
-    (slot) => typeof slot?.id === 'string' && Array.isArray(slot.days),
-  ),
+  readTimetable(loadStored<unknown>(TIMETABLE, [])),
   'tools timetable',
 );
 
@@ -43,9 +43,15 @@ interface PageEntry {
 }
 
 export const pageItemsStore = createStore<Readonly<Record<string, PageEntry>>>(
-  loadStored<Record<string, PageEntry>>(PAGE_ITEMS, {}),
+  readPageItems(loadStored<unknown>(PAGE_ITEMS, {})),
   'tools page items',
 );
+
+// The main window and popped-out tool windows each hold these lists: each follows the others' saves, so a save in
+// one window never writes an older copy over what another window changed.
+followStored(EXAMS, (value) => examsStore.set(readExams(value)));
+followStored(TIMETABLE, (value) => timetableStore.set(readTimetable(value)));
+followStored(PAGE_ITEMS, (value) => pageItemsStore.set(readPageItems(value)));
 
 /** Reads the due dates written on a page and keeps them for Upcoming. Pages with none are forgotten. */
 export function setPageItems(

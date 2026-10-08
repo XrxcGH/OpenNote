@@ -125,3 +125,43 @@ describe('decks in the device store', () => {
     expect(shared.toasts).toHaveLength(1);
   });
 });
+
+describe('two windows', () => {
+  it('merge their changes instead of writing over each other', async () => {
+    const main = await openWindow();
+    const popped = await openWindow();
+    // In the popped-out Flashcards window, a new deck; in the main window, a page with a "Question :: Answer" line.
+    const chem = popped.createDeck('Chem', [card('x')]);
+    await popped.flushDecks();
+    await main.syncInlineDeck('01k6page000000000000000001', 'Notes', [card('q', { origin: 'inline:b:1' })]);
+    await main.flushDecks();
+    // Each window took in the other's deck.
+    await vi.waitFor(() => expect(main.deckById(chem.id)?.name).toBe('Chem'));
+    await vi.waitFor(() => expect(popped.deckById(main.pageDeckId('01k6page000000000000000001'))).toBeDefined());
+    // Reviewing in one window keeps the other's decks.
+    popped.recordReview(chem.id, 'x', 'good', new Date('2026-10-07T10:00:00Z'));
+    await popped.flushDecks();
+    const later = await openWindow();
+    expect(
+      later.decksStore
+        .get()
+        .map((deck) => deck.name)
+        .sort(),
+    ).toEqual(['Chem', 'Notes']);
+    expect(Object.keys(later.statesOf(chem.id))).toEqual(['x']);
+  });
+
+  it('wait for the decks to be read before a page brings in its lines, so hand-typed cards stay', async () => {
+    const first = await openWindow();
+    const id = first.pageDeckId('01k6page000000000000000002');
+    first.putDeck({ id, name: 'Page', cards: [card('typed'), card('q', { origin: 'inline:b:1' })] });
+    await first.flushDecks();
+    vi.resetModules();
+    const next = await import('./library');
+    // A page is shown before the store is read.
+    const inline = [card('q2', { origin: 'inline:b:2' })];
+    await next.syncInlineDeck('01k6page000000000000000002', 'Page', inline);
+    await next.flushDecks();
+    expect(next.deckById(id)?.cards.map((one) => one.id)).toEqual(['typed', 'q2']);
+  });
+});

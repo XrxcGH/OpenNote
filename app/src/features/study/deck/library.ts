@@ -1,6 +1,8 @@
 // The decks on this device and their review history. They are the person's work, so they live in this device's
 // store (deckFiles.ts), not in the browser's storage: each deck, each deck's history, and each picture is an item of
 // its own, a failed save is reported, and decks kept in the browser's storage by earlier versions move over once.
+// The main window and a popped-out Flashcards window each keep the decks in memory. Each writes only the decks it
+// changed, and tells the other windows, which read those decks back, so neither window overwrites the other's work.
 import { t } from '../../../strings/t';
 import { createStore } from '../../../state/store';
 import { showToast } from '../../../ui';
@@ -26,6 +28,7 @@ import type { Card, Deck, Grade, States } from './types';
 /** Where earlier versions kept the decks, in the browser's storage. */
 const LEGACY_DECKS = 'opennote.study.decks';
 const LEGACY_STATES = 'opennote.study.states.';
+const CHANNEL = 'opennote.study';
 
 let counter = 0;
 /** A short ID that is new on this device. */
@@ -46,7 +49,13 @@ function files(): Promise<DeckFiles> {
   return store;
 }
 
+// ---- Telling the other windows -------------------------------------------------------------------------------------
+
 type Change = { kind: 'deck' | 'states'; id: string };
+const channel: BroadcastChannel | null = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(CHANNEL);
+channel?.addEventListener('message', (event: MessageEvent<Change>) => void readBack(event.data));
+// A channel must not keep a process open (tests run this module in Node).
+(channel as { unref?: () => void } | null)?.unref?.();
 
 // ---- Saving --------------------------------------------------------------------------------------------------------
 
@@ -120,6 +129,7 @@ function save(change: Change): Promise<void> {
     try {
       const store = await files();
       await (change.kind === 'deck' ? writeDeck(store, change.id) : writeStates(store, change.id));
+      channel?.postMessage(change);
     } catch {
       // The change stays in memory, so the person can keep working, and they hear that it isn't kept.
       reportFailure('study.deck.saveFailed');
@@ -155,6 +165,28 @@ async function readDeckItem(store: DeckFiles, id: string): Promise<{ at: number;
   if (!item || item.deck.id !== id) return null;
   firstKept.set(id, item.at);
   return { at: item.at, deck: joinPictures(item.deck, await readPictures(store, [item.deck])) };
+}
+
+/** Takes in a deck or history that another window wrote. */
+async function readBack(change: Change): Promise<void> {
+  if (!change || typeof change.id !== 'string') return;
+  await loaded;
+  if (pending.has(`${change.kind}:${change.id}`)) return;
+  try {
+    const store = await files();
+    if (change.kind === 'states') {
+      const states = readStates(await store.get(statesName(change.id)));
+      statesStore.set((current) => ({ ...current, [change.id]: states }));
+      return;
+    }
+    const read = await readDeckItem(store, change.id);
+    const decks = decksStore.get();
+    if (!read) return decksStore.set(decks.filter((deck) => deck.id !== change.id));
+    const at = decks.findIndex((deck) => deck.id === change.id);
+    decksStore.set(at >= 0 ? decks.map((deck, i) => (i === at ? read.deck : deck)) : [...decks, read.deck]);
+  } catch {
+    reportFailure('study.deck.loadFailed');
+  }
 }
 
 function legacy(): { decks: Deck[]; states: Map<string, States>; keys: string[] } | null {
