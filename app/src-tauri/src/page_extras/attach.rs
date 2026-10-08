@@ -69,6 +69,50 @@ const BLOCKED: &[&str] = &[
     "inf",
     "scf",
     "application",
+    "chm",
+    "msc",
+    "vb",
+    "py",
+    "pyw",
+    "pyc",
+    "pyz",
+    "rb",
+    "pl",
+    "php",
+    "settingcontent-ms",
+    "search-ms",
+    "library-ms",
+    "diagcab",
+    "iso",
+    "img",
+    "vhd",
+    "vhdx",
+    "xll",
+    "xlam",
+    "ppam",
+    "wll",
+    "psc1",
+    "ps1xml",
+    "ps2",
+    "ps2xml",
+    "psd1",
+    "wsc",
+    "sct",
+    "mht",
+    "mhtml",
+    "theme",
+    "themepack",
+    "website",
+    "desklink",
+    "appref-ms",
+    "appinstaller",
+    "msixbundle",
+    "appxbundle",
+    "msu",
+    "mst",
+    "ocx",
+    "sys",
+    "drv",
 ];
 
 #[derive(Debug, Deserialize)]
@@ -314,7 +358,19 @@ mod tests {
 
     #[test]
     fn programs_are_never_opened() {
-        for name in ["setup.EXE", "run.bat", "a.ps1", "shortcut.lnk", "x.JS"] {
+        for name in [
+            "setup.EXE",
+            "run.bat",
+            "a.ps1",
+            "shortcut.lnk",
+            "x.JS",
+            "help.CHM",
+            "a.msc",
+            "b.pyw",
+            "c.settingcontent-ms",
+            "d.iso",
+            "e.xll",
+        ] {
             assert!(is_blocked(name), "{name}");
         }
         for name in [
