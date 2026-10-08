@@ -4,6 +4,7 @@
 export * from './grapher';
 export * from './latex';
 export { mathRenderer } from './mathHost';
+export { exportGraph, exportMath } from './exportRenderers';
 export { insertMath } from './insert';
 export { graphRenderer } from './graph/renderer';
 export { GraphView } from './graph/GraphView';

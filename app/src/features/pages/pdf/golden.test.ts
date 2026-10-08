@@ -3,10 +3,11 @@
 import type { Browser } from '@playwright/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { documentCss, lightTheme } from '../export/style';
-import { blessing, readGolden, summarize, writeGolden } from '../testing/golden';
+import { blessing, readGolden, summarize, summarizeVector, writeGolden } from '../testing/golden';
+import type { VectorGolden } from '../testing/golden';
 import { closeBrowser, openBrowser } from '../testing/edgeSurface';
 import { letters, printPage } from '../testing/run';
-import { freeformPage, lecturePage, pngDataUri } from '../testing/samples';
+import { chartPage, freeformPage, graphPage, lecturePage, mathPage, pngDataUri } from '../testing/samples';
 
 let browser: Browser;
 beforeAll(async () => {
@@ -110,4 +111,66 @@ describe('page ranges and headers', () => {
   it('prints the stylesheet without borders', () => {
     expect(documentCss(lightTheme())).not.toMatch(/border:/);
   });
+});
+
+describe('math, graphs, and charts printed to PDF', () => {
+  it('prints display and inline math as text and shapes, with no picture', async () => {
+    const { result } = await printPage(browser, mathPage(), {}, IMG);
+    const { info } = result;
+    expect(result.problems.filter((p) => p.severity === 'error')).toEqual([]);
+    expect(info.pages).toHaveLength(1);
+    expect(info.pages[0].images).toBe(0);
+    expect(info.pages[0].text).toContain('Equations');
+    // MathML letters come out as mathematical italic code points: pi is U+1D70B.
+    expect(info.pages[0].text).toContain(String.fromCodePoint(0x1d70b));
+    expect(info.pages[0].text).toContain('∑');
+    expect(info.pages[0].text).not.toContain('\\frac');
+    expect(info.tagged).toBe(true);
+  }, 120_000);
+
+  it('prints a graph block as a vector drawing with its curves, axes, and labels', async () => {
+    const { result } = await printPage(browser, graphPage(), {}, IMG);
+    const { info } = result;
+    expect(result.problems.filter((p) => p.severity === 'error')).toEqual([]);
+    expect(info.pages).toHaveLength(1);
+    const first = info.pages[0];
+    expect(first.images).toBe(0);
+    // Two curves, the grid, and the axes are strokes. The tick labels are text of the drawing.
+    expect(first.strokes).toBeGreaterThanOrEqual(4);
+    expect(first.text).toContain('Waves');
+    expect(first.text).toContain('10');
+    expect(first.text).toContain('-8');
+    expect(first.text).not.toContain('sin(x)');
+    expect(info.structure.Figure).toBeGreaterThanOrEqual(1);
+  }, 120_000);
+
+  it('prints the charts of a smart table as vector drawings after the table', async () => {
+    const { result } = await printPage(browser, chartPage(), {}, IMG);
+    const { info } = result;
+    expect(result.problems.filter((p) => p.severity === 'error')).toEqual([]);
+    expect(info.pages.every((p) => p.images === 0)).toBe(true);
+    const text = info.pages.map((p) => p.text).join('\n');
+    expect(text).toContain('Sales');
+    expect(text).toContain('After the charts');
+    expect(info.pages.reduce((n, p) => n + p.fills + p.strokes, 0)).toBeGreaterThan(20);
+    expect(info.structure.Figure).toBeGreaterThanOrEqual(2);
+    expect(info.structure.Table).toBe(1);
+  }, 120_000);
+
+  it.each([
+    ['equations-letter', mathPage],
+    ['graph-letter', graphPage],
+    ['chart-letter', chartPage],
+  ] as const)(
+    'matches the approved vector summary of %s for this platform',
+    async (name, make) => {
+      const { result } = await printPage(browser, make(), {}, IMG);
+      const actual = summarizeVector(result.info);
+      const { path, golden } = readGolden<VectorGolden>(name);
+      if (blessing()) writeGolden(path, actual);
+      else if (golden) expect(actual).toEqual(golden);
+      else console.info(`No approved file at ${path}. Run with OPENNOTE_BLESS=1 to write it.`);
+    },
+    120_000,
+  );
 });

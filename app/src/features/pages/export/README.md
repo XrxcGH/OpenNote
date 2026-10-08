@@ -23,6 +23,7 @@ All of it is re-exported from `features/pages`. The Markdown tree and renderers 
 | `exportMarkdown(page, options?)` | `{ markdown, parts, assets }` |
 | `exportHtml(page, options?)` | `{ html, assets }` |
 | `renderBlock(block, context)` | One block as HTML, for the print document |
+| `loadRenderers(page)`, `withCharts(page, charts)` | Load the math and chart drawers when a page needs them, and add each smart table's charts after the table as figures. The print job calls both |
 | `inkShapes`, `inkSvg`, `shapesInBand` | Ink as shapes, and the svg for one band of the page |
 | `documentCss(theme, styles?)`, `lightTheme(fontFaces?)`, `readStyles(raw)` | The stylesheet and its inputs |
 | `escapeText`, `rewriteLinks`, `writeDestination` | Markdown escaping and link rewriting (format spec 7.5, 7.6) |

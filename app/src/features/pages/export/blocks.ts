@@ -14,6 +14,7 @@ import {
   voidEnd,
   type HtmlOptions,
 } from './markdown';
+import type { ExportRenderers } from './renderers';
 import type { ExportAsset, ExportBlock, ExportPage, ExportStroke, TableBlock } from './source';
 
 /** Words the export writes itself. The caller supplies translations. */
@@ -50,6 +51,8 @@ export interface BlockContext {
   readonly xml?: boolean;
   /** The strokes of each ink block, by block ID. Build it once with `strokesByBlock`. */
   readonly strokes: ReadonlyMap<string, readonly ExportStroke[]>;
+  /** Drawers for math and graphs, when the host has loaded them. Without them both show as text. */
+  readonly renderers?: Pick<ExportRenderers, 'math' | 'graph'>;
 }
 
 /** The options the Markdown renderer needs for a page: how links and images resolve. */
@@ -60,6 +63,8 @@ export function htmlOptions(cx: BlockContext): HtmlOptions {
     foldable: cx.foldable,
     xml: cx.xml,
     labels: { done: cx.labels.done, open: cx.labels.open },
+    math: cx.renderers?.math,
+    graph: cx.renderers?.graph,
     image: (destination) => {
       const id = /^asset:(.+)$/.exec(destination)?.[1];
       const asset = id === undefined ? undefined : own(cx.page.assets, id);
@@ -137,6 +142,11 @@ function ink(block: ExportBlock & { type: 'ink' }, cx: BlockContext): string {
   return `<figure class="ink-block" style="max-width:${px(width)}px">${svg}</figure>`;
 }
 
+/** A drawing the export made, such as a chart, as a figure that screen readers can name. */
+function figure(svg: string, alt: string): string {
+  return `<figure class="chart" role="img" aria-label="${escapeAttr(alt)}">${svg}</figure>`;
+}
+
 /** One block as HTML. Blocks that show nothing give an empty string. */
 export function renderBlock(block: ExportBlock, cx: BlockContext): string {
   switch (block.type) {
@@ -151,6 +161,7 @@ export function renderBlock(block: ExportBlock, cx: BlockContext): string {
     case 'ink':
       return ink(block, cx);
     case 'other':
+      if (block.svg !== undefined) return figure(block.svg, block.alt ?? '');
       return block.fallback === undefined
         ? `<p class="newer">${escapeHtml(cx.labels.newerVersion)}</p>`
         : renderHtml(parseMarkdown(block.fallback), htmlOptions(cx));

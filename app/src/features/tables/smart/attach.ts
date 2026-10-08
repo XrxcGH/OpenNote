@@ -10,8 +10,8 @@ import { t } from '../../../strings/t';
 import { openMenu } from '../../../ui';
 import type { BlockJson } from '../../../services/pages/types';
 import type { TableExtraHandle, TableExtraHost } from '../../page';
-import { buildChartSpec, columnLetter, formatValue, totalsRow, hasTotals } from '../engine';
-import type { ChartConfig, ChartSpec } from '../engine';
+import { columnLetter, formatValue, totalsRow, hasTotals } from '../engine';
+import { chartSpec } from './chartSpec';
 import { Chrome } from './Chrome';
 import type { ChartItem, ChromeProps } from './Chrome';
 import type { ChartSmart, SmartData } from './data';
@@ -41,27 +41,6 @@ export function focusedSmart(): SmartInstance | null {
 
 function kindName(kind: ChartSmart['kind']): string {
   return t(CHART_KINDS.find((entry) => entry.kind === kind)?.label ?? 'smart.chart.kinds.bar');
-}
-
-function chartSpec(model: SmartModel, chart: ChartSmart, locale: ReturnType<typeof appLocale>): ChartSpec | null {
-  const x = model.columnIds.indexOf(chart.x);
-  const series = chart.series.map((id) => model.columnIds.indexOf(id)).filter((index) => index >= 0);
-  if (x < 0 || series.length === 0) return null;
-  const rows = chart.rows
-    ? model.shown.filter((row) => row >= chart.rows!.from && row <= chart.rows!.to)
-    : [...model.shown];
-  const config: ChartConfig = {
-    kind: chart.kind,
-    x,
-    series,
-    ...(chart.aggregate ? { aggregate: chart.aggregate } : {}),
-    ...(chart.stacked !== undefined ? { stacked: chart.stacked } : {}),
-    ...(chart.patterns !== undefined ? { patterns: chart.patterns } : {}),
-    ...(chart.title ? { title: chart.title } : {}),
-    idPrefix: `c${chart.id.slice(-8)}`,
-    otherLabel: t('smart.chart.other'),
-  };
-  return buildChartSpec(model.table, rows, config, locale);
 }
 
 function chartItems(model: SmartModel, smart: SmartData, locale: ReturnType<typeof appLocale>): ChartItem[] {

@@ -33,6 +33,8 @@ export const smart = {
     readoutSlope: 'x = {x}, y = {y}, slope = {slope}',
     readoutNone: 'Move over the graph, or hold Shift and press the left or right arrow, to read a value.',
     announceInserted: 'Graph added. Edit its functions in the box above the plot.',
+    exportTitle: 'Graph',
+    exportDescription: 'Plots {functions}, with x from {xMin} to {xMax} and y from {yMin} to {yMax}.',
   },
   tools: {
     openTimers: 'Open timers',

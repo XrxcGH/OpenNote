@@ -29,4 +29,8 @@ Open Insert, then Graph. Type a function, such as `y = sin(x)`. Pan and zoom the
 
 Press Ctrl+K and choose Calculator or Unit converter. Each opens in its own small window. See [study tools](study-tools.md).
 
+## In a PDF
+
+Export a page as PDF and its equations, graphs, and charts print as sharp shapes and text, not as pictures. A smart table's charts follow the table.
+
 Math, the grapher, and diagrams are built and have been checked by automated tests only. Turning handwritten math into an equation is not built yet.

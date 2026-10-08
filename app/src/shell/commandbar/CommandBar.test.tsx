@@ -5,6 +5,7 @@ import { chord, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
 import { commandBar, commands, contextMenus, titleBarItems } from '../../registries';
 import type { CommandBarItem } from '../../registries/types';
+import type { NodeId } from '../../services/notes/types';
 import type { MessageKey } from '../../strings/t';
 import { expectFocus, expectNoAxeViolations, renderApp, setViewport } from '../../test';
 import { recordRecentPage } from '../../state/session';
@@ -173,7 +174,7 @@ describe('the bottom bar', () => {
   it('lists the recent pages in More when bottomBar.recent is on', async () => {
     const open = async (channel: 'beta' | 'stable') => {
       const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel } });
-      const pages = await notes.listChildren('s-lectures');
+      const pages = await notes.listChildren('s-lectures' as NodeId);
       recordRecentPage(pages[1].id);
       recordRecentPage(pages[0].id);
       const bar = screen.getByRole('navigation', { name: 'Quick actions' });
@@ -194,7 +195,7 @@ describe('the bottom bar', () => {
 
   it('leaves the recent pages out of More in Stable', async () => {
     const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel: 'stable' } });
-    const pages = await notes.listChildren('s-lectures');
+    const pages = await notes.listChildren('s-lectures' as NodeId);
     recordRecentPage(pages[0].id);
     const bar = screen.getByRole('navigation', { name: 'Quick actions' });
     await userEvent.click(within(bar).getByRole('button', { name: 'More commands' }));

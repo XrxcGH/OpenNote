@@ -4,3 +4,4 @@ export * from './engine';
 export { attachSmart } from './smart/attach';
 export { runSmartCommand } from './smart/commands';
 export type { SmartCommand } from './smart/commands';
+export { exportTableCharts } from './smart/exportCharts';
