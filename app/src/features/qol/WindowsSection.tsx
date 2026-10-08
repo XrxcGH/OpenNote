@@ -12,13 +12,14 @@ import { settingsStyles as styles } from '../settings';
 import { refreshLowPower } from './modes';
 import { readPrefs, writePrefs } from './prefs';
 import type { QolPrefs } from './prefs';
-import { DEFAULT_QUICK, quickStatus, setQuick } from './quickCaptureControls';
+import { commands } from '../../registries';
+import { DEFAULT_QUICK, quickKeyClashes, quickKeyProblem, quickStatus, setQuick } from './quickCaptureControls';
 import type { QuickStatus } from './quickCaptureControls';
 
 function QuickCaptureSettings() {
   const [status, setStatus] = useState<QuickStatus>(DEFAULT_QUICK);
   const [key, setKey] = useState(DEFAULT_QUICK.choice.key);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<'invalid' | 'altgr' | null>(null);
   useEffect(() => {
     let current = true;
     void quickStatus().then((loaded) => {
@@ -32,13 +33,22 @@ function QuickCaptureSettings() {
   }, []);
   if (!isEnabled('qol.quickCapture')) return null;
   const apply = async (enabled: boolean, next: string) => {
+    const problem = quickKeyProblem(next);
+    if (problem) {
+      setError(problem);
+      return;
+    }
     try {
       setStatus(await setQuick(enabled, next));
-      setError(false);
+      setError(null);
     } catch {
-      setError(true);
+      setError('invalid');
     }
   };
+  const clashes = quickKeyClashes(status.choice.key).map((id) => {
+    const def = commands.get(id);
+    return def ? t(def.title) : id;
+  });
   return (
     <section className={styles.block} aria-labelledby="qol-quick">
       <h2 id="qol-quick">{t('qol.capture.settingsTitle')}</h2>
@@ -52,11 +62,18 @@ function QuickCaptureSettings() {
         label={t('qol.capture.keys')}
         value={key}
         onChange={setKey}
-        error={error ? t('qol.capture.keysInvalid') : undefined}
+        error={error ? t(error === 'altgr' ? 'qol.capture.keysAltGr' : 'qol.capture.keysInvalid') : undefined}
         help={t('qol.capture.keysHelp')}
         onCommit={() => void apply(status.choice.enabled, key)}
       />
-      {status.choice.enabled && !status.registered && <p className={styles.help}>{t('qol.capture.taken')}</p>}
+      {status.choice.enabled && !status.registered && (
+        <p className={styles.help}>
+          {t(quickKeyProblem(status.choice.key) === 'altgr' ? 'qol.capture.keysAltGr' : 'qol.capture.taken')}
+        </p>
+      )}
+      {status.choice.enabled && clashes.length > 0 && (
+        <p className={styles.help}>{t('qol.capture.keysClash', { commands: clashes.join(', ') })}</p>
+      )}
     </section>
   );
 }

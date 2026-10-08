@@ -1,7 +1,10 @@
 //! Quick capture: a global shortcut that opens a small note window from anywhere in Windows. A thread owns the
 //! hot key (Windows delivers it to the thread that registered it) and opens the window when it fires. The choice
-//! lives in `qol.json` as `quickCapture: { enabled, key }`; it is on by default with Ctrl+Alt+Q, and a key another
-//! program already holds simply doesn't register, which the interface learns from `quick.status`.
+//! lives in `qol.json` as `quickCapture: { enabled, key }`. It is off until the person turns it on, so no key is
+//! taken from other programs unasked. Windows delivers AltGr as Ctrl+Alt, so a Ctrl+Alt letter or digit would also
+//! fire on the AltGr character (AltGr+Q is '@' on German, Polish, and Czech keyboards) in every program: those keys
+//! are refused, and the default uses the Windows key. A key another program already holds doesn't register, which
+//! the interface learns from `quick.status`.
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -13,7 +16,7 @@ use crate::{
     ipc::{IpcError, IpcResult},
 };
 
-pub const DEFAULT_KEY: &str = "Ctrl+Alt+Q";
+pub const DEFAULT_KEY: &str = "Win+Shift+Q";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -25,7 +28,7 @@ pub struct Choice {
 impl Default for Choice {
     fn default() -> Choice {
         Choice {
-            enabled: true,
+            enabled: false,
             key: DEFAULT_KEY.to_owned(),
         }
     }
@@ -58,6 +61,44 @@ pub fn parse_key(text: &str) -> Option<(u32, u32)> {
     }
     let strong = modifiers & (MOD_CONTROL | MOD_ALT | MOD_WIN) != 0;
     key.filter(|_| strong).map(|code| (modifiers, code))
+}
+
+/// Why a shortcut can't be the quick capture key.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KeyProblem {
+    /// Not Ctrl, Alt, or the Windows key with a letter, digit, or F key.
+    Invalid,
+    /// Ctrl+Alt with a letter or digit and without the Windows key: AltGr presses it too, so it would steal a
+    /// character from typing in every program on many keyboards.
+    AltGr,
+}
+
+impl KeyProblem {
+    fn message(self) -> &'static str {
+        match self {
+            KeyProblem::Invalid => "Use Ctrl, Alt, or the Windows key with a letter, digit, or F key.",
+            KeyProblem::AltGr => {
+                "Ctrl+Alt with a letter or digit is also AltGr, which types characters on many keyboards."
+            }
+        }
+    }
+}
+
+/// The shortcut as Windows modifier bits and a virtual-key code, or why it can't be used.
+pub fn check_key(text: &str) -> Result<(u32, u32), KeyProblem> {
+    let (modifiers, code) = parse_key(text).ok_or(KeyProblem::Invalid)?;
+    let altgr = modifiers & (MOD_CONTROL | MOD_ALT) == MOD_CONTROL | MOD_ALT && modifiers & MOD_WIN == 0;
+    let types =
+        (u32::from(b'0')..=u32::from(b'9')).contains(&code) || (u32::from(b'A')..=u32::from(b'Z')).contains(&code);
+    if altgr && types {
+        return Err(KeyProblem::AltGr);
+    }
+    Ok((modifiers, code))
+}
+
+/// Why a shortcut can't be the quick capture key, or `None` when it can.
+pub fn key_problem(text: &str) -> Option<KeyProblem> {
+    check_key(text).err()
 }
 
 fn virtual_key(name: &str) -> Option<u32> {
@@ -165,9 +206,10 @@ pub fn apply(app: &AppHandle) -> bool {
         imp::unregister();
         return false;
     }
-    match parse_key(&choice.key) {
-        Some((modifiers, key)) => imp::register(app, modifiers, key),
-        None => {
+    // A choice saved before AltGr keys were refused is not registered either.
+    match check_key(&choice.key) {
+        Ok((modifiers, key)) => imp::register(app, modifiers, key),
+        Err(_) => {
             imp::unregister();
             false
         }
@@ -180,17 +222,18 @@ pub fn start(app: &AppHandle) {
 
 pub fn call(app: &AppHandle, _bridge: &CoreBridge, name: &str, args: &Value) -> IpcResult<Value> {
     match name {
-        "quick.status" => Ok(json!({ "choice": choice(app), "registered": imp::registered() })),
+        "quick.status" => {
+            let choice = choice(app);
+            let problem = key_problem(&choice.key).map(KeyProblem::message);
+            Ok(json!({ "choice": choice, "registered": imp::registered(), "problem": problem }))
+        }
         "quick.set" => {
             let next = Choice {
                 enabled: arg(args, "enabled")?,
                 key: opt::<String>(args, "key")?.unwrap_or_else(|| DEFAULT_KEY.to_owned()),
             };
-            if parse_key(&next.key).is_none() {
-                return Err(IpcError::invalid(
-                    "key",
-                    "Use Ctrl, Alt, or the Windows key with a letter, digit, or F key.",
-                ));
+            if let Some(problem) = key_problem(&next.key) {
+                return Err(IpcError::invalid("key", problem.message()));
             }
             let mut patch = serde_json::Map::new();
             patch.insert("quickCapture".to_owned(), out(&next)?);
@@ -233,6 +276,24 @@ mod tests {
     #[test]
     fn the_default_key_parses() {
         assert!(parse_key(DEFAULT_KEY).is_some());
-        assert!(Choice::default().enabled);
+    }
+
+    #[test]
+    fn no_global_shortcut_is_taken_until_the_person_turns_it_on() {
+        // Windows delivers AltGr as Ctrl+Alt, so a Ctrl+Alt+Q default typed nothing but quick notes for '@' on
+        // German, Polish, and Czech keyboards, in every program.
+        assert!(!Choice::default().enabled);
+        assert_eq!(key_problem(DEFAULT_KEY), None);
+    }
+
+    #[test]
+    fn refuses_ctrl_alt_keys_that_altgr_also_presses() {
+        assert_eq!(key_problem("Ctrl+Alt+Q"), Some(KeyProblem::AltGr));
+        assert_eq!(key_problem("ctrl+alt+shift+e"), Some(KeyProblem::AltGr));
+        assert_eq!(key_problem("Ctrl+Alt+2"), Some(KeyProblem::AltGr));
+        assert_eq!(key_problem("Ctrl+Alt+F5"), None);
+        assert_eq!(key_problem("Win+Ctrl+Alt+Q"), None);
+        assert_eq!(key_problem("Ctrl+Shift+Q"), None);
+        assert_eq!(key_problem("Shift+Q"), Some(KeyProblem::Invalid));
     }
 }

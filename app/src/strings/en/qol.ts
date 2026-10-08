@@ -229,8 +229,11 @@ export const qol = {
     settingsBody: 'A shortcut that opens a small note window from anywhere in Windows.',
     enable: 'Turn on the quick capture shortcut',
     keys: 'Shortcut',
-    keysHelp: 'Use Ctrl, Alt, or the Windows key with a letter, digit, or F key, such as Ctrl+Alt+Q.',
+    keysHelp: 'Use Ctrl, Alt, or the Windows key with a letter, digit, or F key, such as Win+Shift+Q.',
     keysInvalid: 'That shortcut cannot be used.',
+    keysAltGr:
+      'Ctrl+Alt with a letter or digit is also AltGr, which types characters such as @ on many keyboards. Add the Windows key, or pick other keys.',
+    keysClash: 'OpenNote uses these keys for {commands}. Inside OpenNote they will open quick capture instead.',
     taken: 'Another program is using these keys, so the shortcut is off. Pick other keys.',
   },
   modes: {
