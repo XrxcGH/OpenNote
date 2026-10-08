@@ -53,3 +53,4 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 A misspelled word is marked. Right-click it for fixes. Select text, press Ctrl+K, and choose Read aloud to hear it in a Windows voice. Nothing is sent anywhere.
 
 Typed notes are built and, in beta 4, not yet tried by hand. The [feature list](../FEATURES.md) says where each one stands.
+- In the Elements library, choose Move to put an element in another folder. Folders have Rename and Move too.

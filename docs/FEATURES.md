@@ -161,6 +161,7 @@ Beta 5 finished these pages, tables, export, and search features. Each is behind
 | Attachment Save a copy and thumbnails | Right-click an attachment, or press Ctrl+K and choose "Save a copy of the attachment", to save the file through the Windows Save dialog. A PDF or Office attachment shows its first page on the card, drawn by Windows, and keeps its type badge where Windows has no picture. | Built, untested by hand |
 | Crop fields in Size and position | Size and position on a picture also shows how much to cut from each side, in percent, and Reset crop. A crop is one undo step. | Built, untested by hand |
 | Pin sections and color pages | Right-click a section and choose Pin section to keep it above the others in its notebook, and Unpin section to let it sort again. Right-click a page and choose Color to give it a colored dot, the same palette sections use. Both are kept in the notebook's own files, so they stay when the notebook moves to another computer. | Built, untested by hand |
+| Elements library: move and organize | In the Elements library, Move on an element puts it in any folder, and Rename and Move on a folder rename it or put it inside another folder, with everything inside coming along. A folder can't go inside itself. | Built, untested by hand |
 
 ## Quality-of-life fixes
 

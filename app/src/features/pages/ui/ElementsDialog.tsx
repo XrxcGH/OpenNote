@@ -11,10 +11,13 @@ import {
   cleanName,
   createFolder,
   listFolder,
+  moveElement,
+  moveFolder,
   readElementFile,
   removeElement,
   removeFolder,
   renameElement,
+  renameFolder,
   addElement,
   searchElements,
   writeElementFile,
@@ -82,7 +85,12 @@ export function SaveElementDialog({ defaultName, save, close }: SaveElementProps
   );
 }
 
-type Editing = { readonly kind: 'rename'; readonly id: string; readonly value: string } | { readonly kind: 'folder' };
+type Editing =
+  | { readonly kind: 'rename'; readonly id: string; readonly value: string }
+  | { readonly kind: 'folder' }
+  | { readonly kind: 'moveElement'; readonly id: string; readonly name: string; readonly from: string }
+  | { readonly kind: 'renameFolder'; readonly path: string }
+  | { readonly kind: 'moveFolder'; readonly path: string };
 
 function Card({
   entry,
@@ -140,6 +148,13 @@ function Card({
         </Button>
         <Button
           variant="quiet"
+          aria-label={t('pagesPlus.elements.library.moveLabel', { name: entry.name })}
+          onClick={() => edit({ kind: 'moveElement', id: entry.id, name: entry.name, from: entry.folder })}
+        >
+          {t('pagesPlus.elements.library.move')}
+        </Button>
+        <Button
+          variant="quiet"
           aria-label={t('pagesPlus.elements.library.exportLabel', { name: entry.name })}
           onClick={() => void share()}
         >
@@ -158,6 +173,24 @@ function Card({
 }
 
 const whole = (library: ElementLibrary) => library;
+
+const lastName = (path: string) => path.split('/').at(-1) ?? path;
+
+/** What the field or the folder choice starts with when an edit begins. */
+function initialText(next: Editing): string {
+  switch (next.kind) {
+    case 'rename':
+      return next.value;
+    case 'renameFolder':
+      return lastName(next.path);
+    case 'moveElement':
+      return next.from;
+    case 'moveFolder':
+      return next.path.split('/').slice(0, -1).join('/');
+    default:
+      return '';
+  }
+}
 
 /** The library's folder and search, the inline editor for new folders and renames, and the changes it makes. */
 function useBrowser() {
@@ -178,10 +211,13 @@ function useBrowser() {
   const commit = () => {
     if (!editing) return;
     if (editing.kind === 'folder') void apply((l) => createFolder(l, folder, text));
-    else void apply((l) => renameElement(l, editing.id, text));
+    else if (editing.kind === 'rename') void apply((l) => renameElement(l, editing.id, text));
+    else if (editing.kind === 'renameFolder') void apply((l) => renameFolder(l, editing.path, text));
+    else if (editing.kind === 'moveElement') void apply((l) => moveElement(l, editing.id, text));
+    else void apply((l) => moveFolder(l, editing.path, text));
   };
   const startEdit = (next: Editing) => {
-    setText(next.kind === 'rename' ? next.value : '');
+    setText(initialText(next));
     setEditing(next);
   };
   const entries = searching ? found : listing.entries;
@@ -253,13 +289,45 @@ function Toolbar({ browser }: { browser: Browser }) {
   );
 }
 
-/** The field for a new folder's name or an element's new name. */
+/** Where to move an element or a folder: the top level or any folder, except a folder and what is inside it. */
+function MoveRow({ browser, editing }: { browser: Browser; editing: Editing }) {
+  const moving = editing.kind === 'moveFolder' ? editing.path : null;
+  const subject = editing.kind === 'moveFolder' ? lastName(editing.path) : editing.kind === 'moveElement' ? editing.name : '';
+  const choices = allFolders(browser.library).filter(
+    (path) => moving === null || (path !== moving && !path.startsWith(`${moving}/`)),
+  );
+  return (
+    <div className={styles.buttons}>
+      <label className={styles.hint}>
+        {t('pagesPlus.elements.library.moveField', { name: subject })}
+        <select value={browser.text} onChange={(event) => browser.setText(event.target.value)}>
+          <option value="">{t('pagesPlus.elements.library.root')}</option>
+          {choices.map((path) => (
+            <option key={path} value={path}>
+              {path.split('/').join(' / ')}
+            </option>
+          ))}
+        </select>
+      </label>
+      <Button variant="primary" onClick={browser.commit}>
+        {t('pagesPlus.elements.library.moveApply')}
+      </Button>
+      <Button variant="quiet" onClick={() => browser.setEditing(null)}>
+        {t('pagesPlus.elements.save.cancel')}
+      </Button>
+    </div>
+  );
+}
+
+/** The field for a new folder's name or a new name for an element or a folder. */
 function EditRow({ browser, editing }: { browser: Browser; editing: Editing }) {
+  if (editing.kind === 'moveElement' || editing.kind === 'moveFolder') return <MoveRow browser={browser} editing={editing} />;
   const folder = editing.kind === 'folder';
+  const field = folder ? 'folderName' : editing.kind === 'renameFolder' ? 'renameFolderField' : 'renameField';
   return (
     <div className={styles.buttons}>
       <TextField
-        label={t(folder ? 'pagesPlus.elements.library.folderName' : 'pagesPlus.elements.library.renameField')}
+        label={t(`pagesPlus.elements.library.${field}`)}
         value={browser.text}
         onChange={browser.setText}
         onCommit={browser.commit}
@@ -287,6 +355,20 @@ function Folders({ browser }: { browser: Browser }) {
               onClick={() => browser.setFolder(path)}
             >
               {name}
+            </Button>
+            <Button
+              variant="quiet"
+              aria-label={t('pagesPlus.elements.library.renameFolderLabel', { name })}
+              onClick={() => browser.startEdit({ kind: 'renameFolder', path })}
+            >
+              {t('pagesPlus.elements.library.rename')}
+            </Button>
+            <Button
+              variant="quiet"
+              aria-label={t('pagesPlus.elements.library.moveFolderLabel', { name })}
+              onClick={() => browser.startEdit({ kind: 'moveFolder', path })}
+            >
+              {t('pagesPlus.elements.library.move')}
             </Button>
             <Button
               variant="quiet"
