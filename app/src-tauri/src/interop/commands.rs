@@ -350,7 +350,7 @@ pub async fn interop_reveal(path: String) -> IpcResult<()> {
 }
 
 #[cfg(windows)]
-fn reveal(target: &Path) -> IpcResult<()> {
+pub(crate) fn reveal(target: &Path) -> IpcResult<()> {
     use std::os::windows::process::CommandExt;
     use std::process::Command;
 
@@ -366,7 +366,7 @@ fn reveal(target: &Path) -> IpcResult<()> {
 }
 
 #[cfg(not(windows))]
-fn reveal(_target: &Path) -> IpcResult<()> {
+pub(crate) fn reveal(_target: &Path) -> IpcResult<()> {
     Err(IpcError::not_implemented("interop_reveal"))
 }
 

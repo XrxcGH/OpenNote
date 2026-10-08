@@ -38,38 +38,68 @@ const WATCH_LIMIT: Duration = Duration::from_secs(12 * 60 * 60);
 /// The event the interface hears when a change is saved back.
 pub const SAVED_EVENT: &str = "attachment://saved";
 
-/// Types that run code when opened. They can be attached and kept, but not opened from a note.
-const BLOCKED: &[&str] = &[
-    "exe",
-    "com",
-    "scr",
-    "pif",
-    "bat",
-    "cmd",
-    "msi",
-    "msp",
-    "ps1",
-    "psm1",
-    "vbs",
-    "vbe",
-    "js",
-    "jse",
-    "wsf",
-    "wsh",
-    "hta",
-    "lnk",
-    "url",
-    "reg",
-    "dll",
-    "cpl",
-    "jar",
-    "appx",
-    "msix",
-    "gadget",
-    "inf",
-    "scf",
-    "application",
+/// Types a note opens in their own app: documents, pictures, audio, video, and ZIP folders, whose apps show them
+/// rather than run them. Every other type is shown selected in its folder instead, where the person decides what to
+/// do with it, and [`BLOCKED`] types are not even shown. A list of what may open, rather than of what may not, means
+/// a type nobody thought of (Windows has hundreds that run something) is never opened by a click in a note.
+#[rustfmt::skip]
+const OPENS: &[&str] = &[
+    // Documents.
+    "pdf", "txt", "text", "md", "markdown", "csv", "tsv", "log", "rtf", "doc", "docx", "dotx", "xls", "xlsx", "xltx",
+    "ppt", "pptx", "potx", "ppsx", "odt", "ods", "odp", "odg",
+    // Pictures.
+    "png", "jpg", "jpeg", "jfif", "gif", "bmp", "webp", "tif", "tiff", "heic", "heif", "avif",
+    // Audio.
+    "mp3", "wav", "m4a", "aac", "flac", "ogg", "oga", "opus", "wma", "mid", "midi",
+    // Video.
+    "mp4", "m4v", "mov", "avi", "wmv", "mkv", "webm", "mpg", "mpeg", "3gp",
+    // A ZIP file opens as a folder.
+    "zip",
 ];
+
+/// Types that run code, change Windows, or reach out to the network as soon as Windows opens them or Explorer
+/// shows them. They can be attached and kept, but a note neither opens them nor shows them in a folder.
+#[rustfmt::skip]
+const BLOCKED: &[&str] = &[
+    // Programs and installers.
+    "exe", "com", "scr", "pif", "msi", "msp", "mst", "msu", "msix", "msixbundle", "appx", "appxbundle",
+    "appinstaller", "application", "appref-ms", "xbap", "vsto", "gadget", "jar", "jnlp", "dll", "ocx", "cpl", "sys",
+    "drv",
+    // Scripts.
+    "bat", "cmd", "ps1", "ps1xml", "ps2", "ps2xml", "psc1", "psc2", "psd1", "psm1", "msh", "msh1", "msh2",
+    "mshxml", "msh1xml", "msh2xml", "vb", "vbs", "vbe", "js", "jse", "ws", "wsf", "wsh", "wsc", "sct", "hta", "py",
+    "pyw", "pyc", "pyo", "pyz", "pl", "rb", "shs", "shb",
+    // Shortcuts and shell files that run or fetch what they point at.
+    "lnk", "url", "website", "scf", "library-ms", "search-ms", "searchconnector-ms", "settingcontent-ms", "inf",
+    "reg", "job", "rdp", "ica",
+    // Help, consoles, and troubleshooters that run script.
+    "chm", "hlp", "msc", "diagcab", "diagcfg", "diagpkg",
+    // Disk images, which mount as drives.
+    "iso", "img", "vhd", "vhdx",
+    // Office add-ins and databases that run code.
+    "xll", "xla", "xlam", "ppa", "ppam", "mda", "mde", "accde", "ade", "adp",
+    // Themes, which fetch files from where they point.
+    "theme", "themepack", "deskthemepack",
+];
+
+/// How a note opens an attached file. See [`OPENS`] and [`BLOCKED`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Opening {
+    /// In its own app.
+    App,
+    /// Shown selected in its folder.
+    Folder,
+    /// Not at all.
+    Blocked,
+}
+
+/// Where the attachment was shown, for the interface's message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Shown {
+    App,
+    Folder,
+}
 
 #[derive(Debug, Deserialize)]
 struct ImportHeader {
@@ -101,10 +131,30 @@ pub fn safe_name(name: &str) -> String {
     }
 }
 
-/// Whether Windows would run this file rather than show it.
-pub fn is_blocked(name: &str) -> bool {
-    name.rsplit_once('.')
-        .is_some_and(|(_, extension)| BLOCKED.contains(&extension.to_ascii_lowercase().as_str()))
+/// How a note opens a file of this name. Only the last extension counts, as it does for Windows.
+pub fn opening(name: &str) -> Opening {
+    let Some((_, extension)) = name.rsplit_once('.') else {
+        return Opening::Folder;
+    };
+    let extension = extension.to_ascii_lowercase();
+    if BLOCKED.contains(&extension.as_str()) {
+        Opening::Blocked
+    } else if OPENS.contains(&extension.as_str()) {
+        Opening::App
+    } else {
+        Opening::Folder
+    }
+}
+
+/// Marks a copy as coming from the internet (zone 3), as a browser marks a download. Office then opens it in
+/// Protected View, and Windows asks before it runs anything in it. A drive without alternate streams, such as a
+/// FAT32 stick, can't hold the mark; the copy opens anyway.
+fn mark_from_internet(path: &Path) {
+    let mut stream = path.as_os_str().to_owned();
+    stream.push(":Zone.Identifier");
+    if let Err(error) = std::fs::write(PathBuf::from(stream), "[ZoneTransfer]\r\nZoneId=3\r\n") {
+        ::log::warn!("Couldn't mark an attachment's copy as coming from the internet: {error}");
+    }
 }
 
 fn io_error(error: impl std::fmt::Display) -> IpcError {
@@ -159,11 +209,13 @@ fn temp_folder(asset: &str) -> PathBuf {
     std::env::temp_dir().join("OpenNote").join("attachments").join(asset)
 }
 
-/// Opens the attached file in its own app and starts watching the copy.
+/// Opens the attached file in its own app, or shows it in its folder when it is not a type a note opens (see
+/// [`OPENS`]), and starts watching the copy.
 #[tauri::command]
-pub async fn attachment_open(app: AppHandle, page: String, asset: String, name: String) -> IpcResult<()> {
+pub async fn attachment_open(app: AppHandle, page: String, asset: String, name: String) -> IpcResult<Shown> {
     let name = safe_name(&name);
-    if is_blocked(&name) {
+    let opening = opening(&name);
+    if opening == Opening::Blocked {
         return Err(IpcError::new(
             "blockedType",
             "Windows would run this file instead of opening it, so a note won't open it.",
@@ -186,7 +238,12 @@ pub async fn attachment_open(app: AppHandle, page: String, asset: String, name: 
         if !watching {
             start_watch(app, page, asset, path.clone());
         }
-        open_default(&path)
+        mark_from_internet(&path);
+        if opening == Opening::App {
+            open_default(&path).map(|()| Shown::App)
+        } else {
+            crate::interop::commands::reveal(&path).map(|()| Shown::Folder)
+        }
     })
     .await
 }
@@ -313,19 +370,88 @@ mod tests {
     }
 
     #[test]
-    fn programs_are_never_opened() {
-        for name in ["setup.EXE", "run.bat", "a.ps1", "shortcut.lnk", "x.JS"] {
-            assert!(is_blocked(name), "{name}");
-        }
+    fn only_documents_and_media_open_in_their_app() {
         for name in [
             "notes.docx",
-            "sheet.xlsx",
+            "sheet.XLSX",
             "slides.pptx",
             "scan.pdf",
-            "readme",
+            "photo.jpeg",
+            "voice.m4a",
+            "clip.mp4",
             "archive.zip",
         ] {
-            assert!(!is_blocked(name), "{name}");
+            assert_eq!(opening(name), Opening::App, "{name}");
         }
+    }
+
+    #[test]
+    fn files_that_run_something_are_never_opened() {
+        // The types the review named, which the old list of what may not open had missed, and the usual programs.
+        for name in [
+            "Timesheet.settingcontent-ms",
+            "help.chm",
+            "console.MSC",
+            "fix.diagcab",
+            "disk.iso",
+            "disk.img",
+            "disk.vhd",
+            "disk.vhdx",
+            "a.wsc",
+            "a.sct",
+            "x.library-ms",
+            "x.search-ms",
+            "x.website",
+            "tool.pyw",
+            "tool.py",
+            "a.vb",
+            "a.ws",
+            "dark.theme",
+            "dark.themepack",
+            "dark.deskthemepack",
+            "addin.xll",
+            "x.xbap",
+            "x.msh",
+            "x.mshxml",
+            "x.ps1xml",
+            "x.psd1",
+            "setup.EXE",
+            "run.bat",
+            "a.ps1",
+            "shortcut.lnk",
+            "x.JS",
+            "report.pdf.lnk",
+        ] {
+            assert_eq!(opening(name), Opening::Blocked, "{name}");
+        }
+    }
+
+    #[test]
+    fn other_types_are_shown_in_their_folder() {
+        // A type no list names, like one Windows adds next year, is never handed to Windows to open.
+        for name in [
+            "readme",
+            "drawing.dwg",
+            "macro.xlsm",
+            "page.html",
+            "logo.svg",
+            "new.unheardof",
+        ] {
+            assert_eq!(opening(name), Opening::Folder, "{name}");
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_copy_is_marked_as_coming_from_the_internet() {
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let path = dir.path().join("Budget.xlsx");
+        std::fs::write(&path, b"cells").expect("writes");
+        mark_from_internet(&path);
+        let mut stream = path.as_os_str().to_owned();
+        stream.push(":Zone.Identifier");
+        let mark = std::fs::read_to_string(PathBuf::from(stream)).expect("the mark");
+        assert!(mark.contains("ZoneId=3"), "{mark}");
+        assert_eq!(std::fs::read(&path).expect("reads"), b"cells");
     }
 }

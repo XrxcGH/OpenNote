@@ -175,8 +175,9 @@ class FileView implements BlockView {
     const id = assetOf(this.current);
     if (!asset || !id) return;
     try {
-      await commandContext('menu').platform.pageExtras.openAttachment(this.ctx.page.id, id, asset.name);
-      showToast({ message: t('pageExtras.attach.opened', { name: asset.name }) });
+      const shown = await commandContext('menu').platform.pageExtras.openAttachment(this.ctx.page.id, id, asset.name);
+      const message = shown === 'folder' ? 'pageExtras.attach.shownInFolder' : 'pageExtras.attach.opened';
+      showToast({ message: t(message, { name: asset.name }) });
     } catch (error) {
       showToast({ message: openFailure(error), tone: 'danger' });
     }

@@ -195,6 +195,8 @@ export const pageExtras = {
     label: 'Attachment: {name}, {size}',
     missing: 'Attachment, file missing',
     opened: 'Opened {name}. Changes you save there come back into this page.',
+    shownInFolder:
+      'Showed {name} in its folder. A note opens only documents, pictures, audio, and video itself. Changes you save to this copy come back into this page.',
     saved: 'Saved the changes from the other app.',
     added: '{count, plural, one {Attached # file.} other {Attached # files.}}',
     linkAdded: 'Added a link.',

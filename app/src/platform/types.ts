@@ -285,8 +285,11 @@ export interface PageExtrasClient {
   /** The page title of a web address, or null. Never runs while Work offline is on. */
   linkTitle(url: string): Promise<string | null>;
   attachBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
-  /** Opens the attachment in its own app and saves each change back (see onAttachmentSaved). */
-  openAttachment(page: string, asset: string, name: string): Promise<void>;
+  /**
+   * Opens the attachment in its own app, or shows it selected in its folder when it isn't a document, picture, audio,
+   * or video file, and saves each change back (see onAttachmentSaved). Answers where it was shown.
+   */
+  openAttachment(page: string, asset: string, name: string): Promise<'app' | 'folder'>;
   /** Stops watching a page's attachments, when the page closes. */
   stopAttachments(page: string): Promise<void>;
   onAttachmentSaved(listener: (saved: AttachmentSaved) => void): Unsubscribe;
