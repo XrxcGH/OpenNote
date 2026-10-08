@@ -250,13 +250,16 @@ function events(session: Session, frames: ReturnType<typeof listeners<AppliedFra
  * every other window takes a random name of its own, so a window opened again never finds the last one's session.
  * The core takes lowercase letters, digits, and hyphens, at most 32 of them.
  */
-export function clientPrefix(windowLabel: string, random: (bytes: Uint8Array) => Uint8Array = randomBytes): string {
+export function clientPrefix(
+  windowLabel: string,
+  random: (bytes: Uint8Array<ArrayBuffer>) => Uint8Array = randomBytes,
+): string {
   if (windowLabel === 'main') return 'main';
   const letters = Array.from(random(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join('');
   return `w${letters}`;
 }
 
-const randomBytes = (bytes: Uint8Array) => crypto.getRandomValues(bytes);
+const randomBytes = (bytes: Uint8Array<ArrayBuffer>) => crypto.getRandomValues(bytes);
 
 /** The page service of one window. `prefix` names its clients; see {@link clientPrefix}. */
 export function createTauriPageService(client: CoreClient, images: ImagesClient, prefix = 'main'): PageService {
