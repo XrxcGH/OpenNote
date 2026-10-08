@@ -32,10 +32,16 @@ function treeNotes(): NotesService | null {
   }
 }
 
-/** Whether nothing of the page may be indexed or kept: a page of an encrypted section, or one the tree can't describe. */
+/**
+ * Whether nothing of the page may be indexed or kept: a page of an encrypted section, or one the tree can't describe.
+ * Without the tree nothing is kept, which is safe but stops search by meaning and text in images updating, so it says
+ * so in the log rather than quietly.
+ */
 export function pageIsProtected(id: string): Promise<boolean> {
   const notes = treeNotes();
-  return notes ? checkPageProtected(id, notes) : Promise.resolve(true);
+  if (notes) return checkPageProtected(id, notes);
+  console.warn(`The notes tree isn't ready, so page ${id} is not indexed and its images are not read.`);
+  return Promise.resolve(true);
 }
 
 /**

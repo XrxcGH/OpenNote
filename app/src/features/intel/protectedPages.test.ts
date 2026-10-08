@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeId, NodeSummary } from '../../services/notes/types';
 import { resetStores } from '../../state/store';
 import { resetBackgroundForTests } from './background';
-import { getImageText, queueImageText, resetImageTextForTests } from './background/imageText';
+import { getImageText, onImageText, queueImageText, resetImageTextForTests } from './background/imageText';
 import { createScheduler } from './background/scheduler';
 import { resetExtrasForTests, setExtra } from './extras';
+import { pageIsProtected } from './lifecycle';
 import {
   indexPage,
   loadSavedIndex,
@@ -26,6 +27,16 @@ import { intelExt, loadIntel } from './runtime';
 import { installTestHost } from './testing';
 
 const SECRET = 'My bank PIN is under the blue lamp.';
+
+// Node has no image decoder: the reading itself answers with the secret, so the queue runs as it does in the app.
+vi.mock('./imageText', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./imageText')>()),
+  readTextInImage: async () => ({
+    language: 'en-US',
+    angle: null,
+    lines: [{ text: SECRET, bounds: { x: 0, y: 0, width: 1, height: 1 }, words: [] }],
+  }),
+}));
 
 function source(pages: Record<string, { text: string; encrypted?: boolean }>, reads: string[] = []): PageSource {
   return {
@@ -115,6 +126,18 @@ describe('pages of an encrypted section', () => {
     expect(await queueImageText('http://opennote-asset.localhost/diary/a3', 'photo')).toBe(false);
   });
 
+  it('lose the words of an image at an outside or data address, which names no page', async () => {
+    const src = 'data:image/png;base64,iVBORw0KGgo=';
+    const read = new Promise<string>((resolve) => onImageText((key) => resolve(key)));
+    expect(await queueImageText(src, 'photo', 'diary')).toBe(true);
+    const key = await read;
+    expect(await getImageText(key)).toBe(SECRET);
+    await setPagesProtected(['diary']);
+    expect(await getImageText(key)).toBeNull();
+    expect(await savedFile('image-text.json')).not.toContain('blue lamp');
+    expect(await queueImageText(src, 'photo', 'diary')).toBe(false);
+  });
+
   it('are dropped from a saved image-text file the next time it is read', async () => {
     await (await intelExt()).put('image-text.json', JSON.stringify({ 'diary/a1': { text: SECRET, at: 1 } }));
     await setPagesProtected(['diary']);
@@ -139,6 +162,16 @@ describe('knowing which pages are protected', () => {
       ['p1', true],
       ['p2', false],
     ]);
+  });
+
+  it('keeps nothing of a page while the tree is not there, and says so in the log', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      expect(await pageIsProtected('early')).toBe(true);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('early'));
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('asks the tree about a page it has not seen, and counts an unknown page as protected', async () => {

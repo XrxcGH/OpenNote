@@ -120,6 +120,7 @@ const imageTextHook: MountedPageHook = {
           stop = module.watchImagesForText(
             mounted.viewport.world,
             (img) => img.alt || t('intelPlus.background.unnamedImage'),
+            mounted.page.initial.id,
           );
         }
       });
