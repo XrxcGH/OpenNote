@@ -53,8 +53,27 @@ const ADVANCE: Record<Face, number[]> = {
   ],
 };
 
-/** A character outside the table, such as an arrow or a check mark, is taken as this wide. */
+/** The punctuation and signs past ~ that the wireframes use, measured the same way, in the order of EXTRA_CHARS. */
+const EXTRA_CHARS = '·›×—–…‹’≤−÷²¹';
+const EXTRA: Record<Face, number[]> = {
+  ui400: [217, 316, 684, 1000, 500, 733, 316, 229, 685, 684, 684, 366, 351],
+  ui600: [241, 329, 694, 1000, 500, 813, 329, 256, 695, 694, 694, 383, 371],
+  ui700: [271, 344, 707, 1000, 500, 912, 344, 290, 708, 707, 707, 404, 394],
+  reading400: [282, 303, 554, 1000, 500, 752, 303, 221, 554, 554, 554, 407, 407],
+  reading700: [276, 321, 592, 1000, 500, 772, 321, 235, 592, 592, 592, 437, 437],
+  reading400i: [241, 290, 528, 1000, 500, 719, 290, 213, 528, 528, 528, 395, 395],
+};
+
+/** Any other character, such as an arrow or a check mark from a symbol font, is taken as this wide. */
 const OTHER = 600;
+
+/** One character's advance in thousandths of the font size. */
+function advanceOf(face: Face, ch: string): number {
+  const code = ch.codePointAt(0) ?? 0;
+  if (code >= 32 && code <= 126) return ADVANCE[face][code - 32];
+  const extra = EXTRA_CHARS.indexOf(ch);
+  return extra >= 0 ? EXTRA[face][extra] : OTHER;
+}
 
 export type FontKind = 'ui' | 'reading' | 'mono';
 
@@ -72,9 +91,8 @@ export function textWidth(content: string, size: number, weight = 400, font: Fon
   const whole = (face === 'reading400' || face === 'reading400i') && size <= HINTED;
   let total = 0;
   for (const ch of content) {
-    const code = ch.codePointAt(0) ?? 0;
     // Cascadia Code and Consolas, the monospaced fallbacks, are 0.55 to 0.59 of the size wide.
-    const advance = !face ? 570 : code >= 32 && code <= 126 ? ADVANCE[face][code - 32] : OTHER;
+    const advance = face ? advanceOf(face, ch) : 570;
     total += whole ? Math.round((advance * size) / 1000) : (advance * size) / 1000;
   }
   return total;
