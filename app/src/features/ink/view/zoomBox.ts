@@ -59,6 +59,7 @@ class ZoomBoxView {
   private box: ZoomBox;
   private builder: StrokeBuilder | null = null;
   private pointerId: number | null = null;
+  private pointerType: string | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private strip: Strip = { origin: { x: 0, y: 0 }, width: 0, height: 0 };
   private firstTop = 0;
@@ -228,11 +229,21 @@ class ZoomBoxView {
     );
   }
 
+  /**
+   * Starts a stroke. The strip writes one stroke at a time: a second contact while one is writing, such as the
+   * heel of the hand or a finger, is ignored, so the stroke in progress is kept. A pen that lands while a touch is
+   * writing takes over, and the touch's stroke is dropped: that touch was the hand, not the writing.
+   */
   down(event: PointerEvent): void {
+    if (this.pointerId !== null) {
+      if (event.pointerType !== 'pen' || this.pointerType === 'pen') return;
+      this.builder = null;
+    }
     if (this.timer) clearTimeout(this.timer);
     const style = styleOf(activeSlot());
     const camera = this.surface.cameraNow();
     this.pointerId = event.pointerId;
+    this.pointerType = event.pointerType;
     this.builder = createStrokeBuilder({
       tool: style.tool,
       width: style.width,
@@ -269,19 +280,24 @@ class ZoomBoxView {
   }
 
   async up(event: PointerEvent): Promise<void> {
+    if (event.pointerId !== this.pointerId) return;
     this.sample(event);
     const strokes = this.builder?.finish() ?? [];
     this.builder = null;
     this.pointerId = null;
+    this.pointerType = null;
     if (strokes.length === 0) return this.render();
     await this.surface.add(strokes);
     this.render();
     if (this.settings().auto) this.afterStroke(strokes);
   }
 
-  cancel(): void {
+  /** Drops the stroke of `pointerId`, or the stroke in progress when no pointer is named. */
+  cancel(pointerId?: number): void {
+    if (pointerId !== undefined && pointerId !== this.pointerId) return;
     this.builder = null;
     this.pointerId = null;
+    this.pointerType = null;
     this.render();
   }
 
@@ -396,8 +412,8 @@ export function installZoomBox(host: InkHost, surfaces: Store<InkSurface | null>
     up(event) {
       void view?.up(event);
     },
-    cancel() {
-      view?.cancel();
+    cancel(_ctx, event) {
+      view?.cancel(event?.pointerId);
     },
   };
   const stopTool = host.registerPointerTool(tool);

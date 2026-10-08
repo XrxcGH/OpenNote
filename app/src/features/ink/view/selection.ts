@@ -52,7 +52,7 @@ export interface SelectionFrame {
   down(event: PointerEvent): void;
   move(event: PointerEvent): void;
   up(event: PointerEvent): void;
-  cancel(): void;
+  cancel(pointerId?: number): void;
   stop(): void;
 }
 
@@ -155,6 +155,8 @@ class FrameView implements SelectionFrame {
   }
 
   down(event: PointerEvent): void {
+    // One drag at a time: a second contact, such as the heel of the hand, leaves the drag in progress alone.
+    if (this.drag) return;
     const target = event.target as HTMLElement;
     const box = this.box();
     const side = target === this.side && this.side !== null;
@@ -191,7 +193,9 @@ class FrameView implements SelectionFrame {
     if (drag.matrix.some((v, i) => v !== IDENTITY[i])) void this.apply(drag.matrix);
   }
 
-  cancel(): void {
+  /** Ends the drag, or only the drag of `pointerId` when a pointer is named. */
+  cancel(pointerId?: number): void {
+    if (pointerId !== undefined && this.drag && pointerId !== this.drag.pointerId) return;
     this.drag = null;
     this.surface.endPreview();
     this.showBlocks(null);
@@ -415,7 +419,7 @@ export function createFrameTool(frameOf: () => SelectionFrame | null): InkPointe
       return 'claim';
     },
     up: (event) => frameOf()?.up(event),
-    cancel: () => frameOf()?.cancel(),
+    cancel: (_ctx, event) => frameOf()?.cancel(event?.pointerId),
   };
 }
 

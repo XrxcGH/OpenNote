@@ -260,23 +260,26 @@ export function installShapeHandles(host: InkHost, surfaces: Store<InkSurface | 
     down(event, ctx) {
       const button = layer?.buttonOf(event.target);
       if (!layer || !button?.dataset.inkShapeHandle) return 'watch';
+      // One handle at a time: a second contact, such as the heel of the hand, is held but moves nothing.
+      if (layer.drag) return 'claim';
       ctx.capture(event.pointerId);
       layer.drag = { id: button.dataset.inkShapeHandle, pointerId: event.pointerId };
       last = ctx.toWorld(event.clientX, event.clientY);
       return 'claim';
     },
     move(events, ctx) {
-      const event = events.at(-1);
+      const event = events.filter((one) => one.pointerId === layer?.drag?.pointerId).at(-1);
       if (layer?.drag && event) {
         last = ctx.toWorld(event.clientX, event.clientY);
         layer.moveTo(layer.drag.id, last);
       }
       return 'claim';
     },
-    up() {
-      if (layer?.drag && last) void layer.commit(layer.drag.id, last);
+    up(event) {
+      if (layer?.drag?.pointerId === event.pointerId && last) void layer.commit(layer.drag.id, last);
     },
-    cancel() {
+    cancel(_ctx, event) {
+      if (event && layer?.drag && event.pointerId !== layer.drag.pointerId) return;
       layer?.cancel();
     },
   };
