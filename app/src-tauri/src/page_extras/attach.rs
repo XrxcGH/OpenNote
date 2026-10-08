@@ -264,15 +264,15 @@ fn in_shell<N: Notes, T>(notes: &N, page: &str, work: impl FnOnce(&PageHandle, b
     })
 }
 
-/// Whether a window has the page open.
+/// Whether a window has the page open and can change it. A window that shows it read-only is never asked, so the
+/// shell doesn't wait on a change the window won't make.
 fn in_window(bridge: &Bridge, page: &str) -> bool {
     let Ok(id) = PageId::parse(page) else {
         return false;
     };
-    bridge
-        .open
-        .keys()
-        .any(|(open, client)| *open == id && client.as_str() != SAVE_BACK_CLIENT)
+    bridge.open.iter().any(|((open, client), handle)| {
+        *open == id && client.as_str() != SAVE_BACK_CLIENT && handle.read_only().is_none()
+    })
 }
 
 /// Changes saved back that a window made, as (page, asset), until the watch that waits for them takes them.
@@ -289,23 +289,35 @@ fn applied(page: &str, asset: &str) {
     APPLIED_WAKE.notify_all();
 }
 
-/// Waits up to `timeout` for a window to say it pointed the page's attachment at `asset`.
-fn wait_applied(page: &str, asset: &str, timeout: Duration) -> bool {
-    let deadline = Instant::now() + timeout;
+/// How often a wait for a window checks that the window can still make the change.
+const WINDOW_CHECK: Duration = Duration::from_millis(100);
+
+/// Takes the window's word that it pointed the page's attachment at `asset`, if it gave it.
+fn take_applied(page: &str, asset: &str) -> bool {
     let mut list = APPLIED.lock().unwrap_or_else(PoisonError::into_inner);
+    let found = list.iter().position(|(p, a)| p == page && a == asset);
+    found.map(|index| list.remove(index)).is_some()
+}
+
+/// Waits up to `timeout` for a window to say it pointed the page's attachment at `asset`. Gives up early once
+/// `window` says no window can make it any more, as when the page closed or turned read-only.
+fn wait_applied(page: &str, asset: &str, timeout: Duration, window: impl Fn() -> bool) -> bool {
+    let deadline = Instant::now() + timeout;
     loop {
-        if let Some(index) = list.iter().position(|(p, a)| p == page && a == asset) {
-            list.remove(index);
-            return true;
+        let list = APPLIED.lock().unwrap_or_else(PoisonError::into_inner);
+        if list.iter().any(|(p, a)| p == page && a == asset) {
+            drop(list);
+            return take_applied(page, asset);
         }
         let left = deadline.saturating_duration_since(Instant::now());
         if left.is_zero() {
             return false;
         }
-        list = match APPLIED_WAKE.wait_timeout(list, left) {
-            Ok((list, _)) => list,
-            Err(poisoned) => poisoned.into_inner().0,
-        };
+        drop(APPLIED_WAKE.wait_timeout(list, left.min(WINDOW_CHECK)));
+        // Checked without the list held: the check takes the bridge, which a window's call may hold meanwhile.
+        if !window() {
+            return take_applied(page, asset);
+        }
     }
 }
 
@@ -606,14 +618,15 @@ fn point_at(handle: &PageHandle, lineage: &[AssetId], asset: AssetId) -> IpcResu
 /// Saves the copy's bytes back as an asset of the page, and points the file blocks that show any asset the copy has
 /// been (`lineage`, oldest first) at it: after an undo a block may show an earlier one. A window that shows the page
 /// makes that change, as one step its Ctrl+Z takes back. When none does, or the window doesn't say it did within
-/// [`Timing::window`], the shell makes it. Answers `None` when no block shows the copy any more.
+/// [`Timing::window`], the shell makes it. Answers the assets the save made, oldest first, the last being the one
+/// the page shows; `None` when no block shows the copy any more.
 fn save_back<N: Notes>(
     notes: &N,
     page: &str,
     lineage: &[String],
     path: &Path,
     timing: Timing,
-) -> Result<Option<ImportedAsset>, Failure> {
+) -> Result<Option<Vec<String>>, Failure> {
     let ids = lineage
         .iter()
         .map(|id| AssetId::parse(id))
@@ -648,7 +661,7 @@ fn save_back<N: Notes>(
         Ok(Some((asset, changes && window)))
     })
     .map_err(Failure::Stop)?;
-    let Some((mut asset, by_window)) = imported else {
+    let Some((asset, by_window)) = imported else {
         return Ok(None);
     };
     if by_window {
@@ -661,23 +674,26 @@ fn save_back<N: Notes>(
                 asset: asset_json(&asset),
             },
         });
-        if !wait_applied(page, &asset.id.to_string(), timing.window) {
+        let window = || notes.bridge(|bridge| Ok(in_window(bridge, page))).unwrap_or(false);
+        if !wait_applied(page, &asset.id.to_string(), timing.window, window) {
             // The window closed the page, or couldn't make the change, and the import may have gone with the page's
-            // session. The shell imports the copy again and makes the change itself.
-            asset = in_shell(notes, page, |handle, _| {
+            // session. The shell imports the copy again and makes the change itself. The window may still have made
+            // it, only late, so blocks that show the first import are pointed at the new one too, and the watch
+            // keeps both: a block that shows either is still the copy's.
+            let mut shown = ids.clone();
+            shown.push(asset.id);
+            let again = in_shell(notes, page, |handle, _| {
                 let again = handle.import_asset(source()).map_err(io_error)?;
-                point_at(handle, &ids, again.id)?;
+                point_at(handle, &shown, again.id)?;
                 Ok(again)
             })
             .map_err(Failure::Stop)?;
+            write_record(path, &synced);
+            return Ok(Some(vec![asset.id.to_string(), again.id.to_string()]));
         }
     }
-    let saved = ImportedAsset {
-        id: asset.id.to_string(),
-        asset: asset_json(&asset),
-    };
     write_record(path, &synced);
-    Ok(Some(saved))
+    Ok(Some(vec![asset.id.to_string()]))
 }
 
 /// Applies edits as the next transaction of the handle's client. The shell's client may have sent some before in
@@ -741,8 +757,8 @@ fn open_copy<N: Notes>(notes: &N, page: &str, asset: &str, name: &str, timing: T
     let mut lineage = vec![asset.to_owned()];
     if copy == Copy::Edited {
         match save_back(notes, page, &lineage, &path, timing) {
-            Ok(Some(saved)) if saved.id != asset => lineage.push(saved.id),
-            Ok(_) => {}
+            Ok(Some(made)) => lineage.extend(made.into_iter().filter(|id| id != asset)),
+            Ok(None) => {}
             Err(Failure::Retry(error) | Failure::Stop(error)) => {
                 ::log::warn!("Couldn't save an attachment's earlier changes back: {}", error.message);
             }
@@ -804,12 +820,14 @@ fn start_watch<N: Notes>(
                 continue;
             }
             match save_back(&notes, &page, &lineage, &path, timing) {
-                Ok(Some(saved)) => {
+                Ok(Some(made)) => {
                     seen = Some(now);
                     pending = None;
-                    marks.extend(mark_copy(&saved.id, &path));
-                    if !lineage.contains(&saved.id) {
-                        lineage.push(saved.id);
+                    for id in made {
+                        marks.extend(mark_copy(&id, &path));
+                        if !lineage.contains(&id) {
+                            lineage.push(id);
+                        }
                     }
                     if let Ok(mut watches) = WATCHES.lock() {
                         if let Some(watch) = watches.iter_mut().find(|watch| Arc::ptr_eq(&watch.stop, &stop)) {
@@ -1088,6 +1106,8 @@ mod tests {
         /// Every use of the bridge fails with this code once set, as for a page that turned read-only.
         fail: Arc<Mutex<Option<&'static str>>>,
         calls: Arc<std::sync::atomic::AtomicUsize>,
+        /// The window makes a change but its word never reaches the shell, as when it comes too late.
+        silent: Arc<AtomicBool>,
     }
 
     impl Notes for TestNotes {
@@ -1115,7 +1135,7 @@ mod tests {
                     .collect::<IpcResult<Vec<_>>>()?;
                 point_at(&handle, &lineage, asset)
             });
-            if made.is_ok() {
+            if made.is_ok() && !self.silent.load(Ordering::SeqCst) {
                 applied(&saved.page, &saved.asset.id);
             }
         }
@@ -1144,6 +1164,7 @@ mod tests {
                 told: Arc::default(),
                 fail: Arc::default(),
                 calls: Arc::default(),
+                silent: Arc::default(),
             };
             Setup {
                 _dir: dir,
@@ -1376,6 +1397,52 @@ mod tests {
         eventually("the shell makes the change", || setup.shown() != setup.asset);
         assert_eq!(setup.notes.told.lock().expect("the list").len(), 1);
         assert_eq!(setup.bytes(setup.shown()), b"a,b\n7,7\n");
+    }
+
+    #[test]
+    fn a_change_the_window_made_too_late_to_say_so_keeps_coming_back() {
+        // F3-2: the window made the change but its word came after the wait, so the shell made it again. The block
+        // shows the window's asset, which the shell must point at its own, and later changes must still come back.
+        let setup = Setup::new(true, true);
+        setup.notes.silent.store(true, Ordering::SeqCst);
+        let copy = setup.open();
+        save_in_other_app(&copy, b"a,b\n3,3\n");
+        eventually("the window makes the change", || setup.shown() != setup.asset);
+        // The shell waits out the window, then makes the change itself.
+        thread::sleep(FAST.window * 3);
+        let shown = setup.shown();
+        assert_eq!(
+            setup.bytes(shown),
+            b"a,b
+3,3
+"
+        );
+        let lineage: Vec<String> = WATCHES
+            .lock()
+            .expect("the watches")
+            .iter()
+            .filter(|watch| watch.page == setup.page)
+            .flat_map(|watch| watch.lineage.clone())
+            .collect();
+        assert!(
+            lineage.contains(&shown.to_string()),
+            "the watch knows what the block shows"
+        );
+        setup.notes.silent.store(false, Ordering::SeqCst);
+        save_in_other_app(&copy, b"a,b\n4,4\n");
+        eventually("the next change comes back", || {
+            setup.bytes(setup.shown()) == b"a,b\n4,4\n"
+        });
+        assert_eq!(setup.watches(), 1, "the watch goes on");
+    }
+
+    #[test]
+    fn a_wait_for_the_window_ends_once_no_window_can_make_the_change() {
+        let started = Instant::now();
+        assert!(!wait_applied("page", "asset", Duration::from_secs(30), || false));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        applied("page", "said");
+        assert!(wait_applied("page", "said", Duration::from_secs(30), || false));
     }
 
     #[test]
