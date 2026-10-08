@@ -3,9 +3,17 @@
 import { ExtError } from './ext';
 import type { ModelInfo, ModelList, VocabularyCorrection } from './ext';
 
+/** Where the fake keeps the device store's files: in memory for tests, in the browser's storage on the web platform. */
+export interface ExtFiles {
+  get(name: string): string | undefined;
+  set(name: string, text: string): unknown;
+  delete(name: string): unknown;
+  keys(): Iterable<string>;
+}
+
 export interface FakeExt {
   /** The device store's files. */
-  files: Map<string, string>;
+  files: ExtFiles;
   /** Work offline is on. */
   offline: boolean;
   /** Moves every running download forward by `bytes`, finishing the ones that arrive. */
@@ -60,8 +68,7 @@ function correct(vocabulary: string, text: string): VocabularyCorrection {
   return { text: out, changes };
 }
 
-export function createFakeExt(): FakeExt {
-  const files = new Map<string, string>();
+export function createFakeExt(files: ExtFiles = new Map<string, string>()): FakeExt {
   const calls: string[] = [];
   const models = new Map<string, ModelInfo>(
     CATALOG.map((one) => [one.id, { ...one, state: 'notInstalled', bytes: 0, error: null }]),
