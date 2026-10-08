@@ -77,7 +77,7 @@ async function entryEdits(page: string, entry: RecordingEntry, change: TrackChan
 
 /** What a new block of a type the core doesn't know holds: its type, its data, and the readable copy. */
 export interface ExtSpec {
-  type: string;
+  type: `ext:${string}`;
   data: Record<string, unknown>;
   fallback: BlockJson['fallback'];
 }

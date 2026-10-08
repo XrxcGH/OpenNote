@@ -29,6 +29,19 @@ pub const RESERVED_TYPES: [&str; 10] = [
     "chart", "math", "graph", "embed", "audio", "pdf", "card", "break", "shape", "group",
 ];
 
+/// The prefix of OpenNote's own extension types (spec 6.4), such as `ext:org.opennote/recording`.
+pub const OWN_EXTENSION_PREFIX: &str = "ext:org.opennote/";
+
+/// Whether this writer may change a block's `data` and `fallback`. Version 1 types may be edited, and so may
+/// OpenNote's own extension types, because OpenNote knows them. Any other unknown type, and a known type whose
+/// data failed to read, is kept exactly (spec 6.5): it can be moved, locked, and deleted, but not edited.
+pub fn data_editable(data: &BlockData) -> bool {
+    match data {
+        BlockData::Other(other) => other.unreadable.is_none() && other.type_name.starts_with(OWN_EXTENSION_PREFIX),
+        _ => true,
+    }
+}
+
 /// The block's `lock`, `data`, and `fallback`, as `page.json` writes them.
 pub fn block_view(block: &Block) -> JsonMap {
     let mut view = JsonMap::new();

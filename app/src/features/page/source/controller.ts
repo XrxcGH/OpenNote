@@ -72,7 +72,7 @@ export async function openSource(mounted: MountedPage): Promise<void> {
 function toEdits(edits: readonly SourceEdit[]): Edit[] {
   return edits.map((edit): Edit => {
     if (edit.kind === 'setText') return { edit: 'setText', block: edit.block, markdown: edit.markdown };
-    const block = { id: edit.id, type: 'text', data: { markdown: edit.markdown } };
+    const block = { id: edit.id, type: 'text' as const, data: { markdown: edit.markdown } };
     if (edit.after) return { edit: 'insertBlock', block, after: edit.after };
     return edit.before ? { edit: 'insertBlock', block, before: edit.before } : { edit: 'insertBlock', block };
   });

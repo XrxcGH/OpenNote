@@ -6,7 +6,7 @@ import type { CoreInvoke } from '../../../app/src/core/client';
 import type { ImagesClient } from '../../../app/src/platform/types';
 import { CONTRACT_CASES, CONTRACT_PAGE } from '../../../app/src/services/pages/contractCases';
 import { createTauriPageService } from '../../../app/src/services/pages/tauri';
-import type { PageService } from '../../../app/src/services/pages/types';
+import type { NewBlock, PageService } from '../../../app/src/services/pages/types';
 
 export interface CaseResult {
   name: string;
@@ -23,7 +23,8 @@ async function seededService(invoke: CoreInvoke, run: string): Promise<PageServi
       { edit: 'setPage', title: CONTRACT_PAGE.title },
       ...CONTRACT_PAGE.blocks.map((block) => ({
         edit: 'insertBlock' as const,
-        block: { id: block.id, type: block.type, data: block.data },
+        // The contract page holds version 1 blocks only.
+        block: { id: block.id, type: block.type as NewBlock['type'], data: block.data },
       })),
     ],
   });

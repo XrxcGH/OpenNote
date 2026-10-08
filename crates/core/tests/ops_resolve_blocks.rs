@@ -316,6 +316,33 @@ fn patches_follow_the_rules_of_each_type() {
     assert_eq!(code(&page, lock(kanban, "sealed")), "invalid");
 }
 
+#[test]
+fn opennote_extension_blocks_can_be_edited_and_other_extensions_cannot() {
+    // OpenNote's panel blocks (mind map, flashcards, study tape, diagram) and recordings are its own extension
+    // types: OpenNote knows them, so it may change their data and fallback. Other tools' types stay as they are.
+    let page = sample_page();
+    let mut own = new_block(1, "ext:org.opennote/mindmap", json!({"root": {"text": "Idea"}}));
+    own.fallback = Some(json!({"markdown": "Idea"}));
+    let own_id = own.id;
+    let (page, _) = apply_one(&page, insert(own, None, None));
+    let (changed, _) = apply_one(&page, patch(own_id, json!({"root": {"text": "Cells"}})));
+    let block = changed.blocks.get(own_id).unwrap();
+    let BlockData::Other(other) = &block.data else { panic!() };
+    assert_eq!(other.data["root"], json!({"text": "Cells"}));
+    let refreshed = patch_fallback(&changed, own_id, json!({"markdown": "Cells"}), 1);
+    assert_eq!(refreshed.blocks.get(own_id).unwrap().fallback.as_ref().unwrap().markdown, "Cells");
+    // The readable copy can be replaced but not removed: a block newer than version 1 needs it (spec 6.5).
+    let drop_fallback = Edit::PatchBlock {
+        block: own_id,
+        lock: None,
+        data: None,
+        fallback: Some(serde_json::Value::Null),
+    };
+    assert_eq!(code(&refreshed, drop_fallback), "invalid");
+    let kanban = ids(&page)[3];
+    assert_eq!(code(&page, patch(kanban, json!({"cards": 3}))), "invalid");
+}
+
 fn patch_fallback(page: &Page, block: BlockId, fallback: serde_json::Value, seq: u64) -> Page {
     let req: TxnRequest = serde_json::from_value(json!({
         "page": page.id, "client": "main-1", "clientSeq": seq,

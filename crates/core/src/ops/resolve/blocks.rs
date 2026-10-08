@@ -13,7 +13,7 @@ use crate::id::{BlockId, Id};
 use crate::model::{Block, BlockData, Frame, JsonMap, Lock, NamedValue, Page};
 use crate::ops::apply::checks::{check_block, check_frame, lock_level, LockLevel};
 use crate::ops::merge_patch::view::{
-    apply_view, block_view, data_from_json, fallback_from_json, RESERVED_TYPES, V1_TYPES,
+    apply_view, block_view, data_editable, data_from_json, fallback_from_json, RESERVED_TYPES, V1_TYPES,
 };
 use crate::ops::merge_patch::{apply_patch, diff, round_trips};
 use crate::ops::resolve::NewBlock;
@@ -271,7 +271,7 @@ pub(super) fn patch_block(
     let only_lock = data.is_none() && fallback.is_none();
     if !only_lock {
         editable(block)?;
-        if matches!(block.data, BlockData::Other(_)) {
+        if !data_editable(&block.data) {
             return Err(invalid("blocks of unknown types can't be edited"));
         }
     }
@@ -280,6 +280,10 @@ pub(super) fn patch_block(
     let mut patched = from.clone();
     apply_patch(&mut patched, &requested);
     let changed = apply_view(block, &patched).map_err(invalid)?;
+    if matches!(changed.data, BlockData::Other(_)) && block.fallback.is_some() && changed.fallback.is_none() {
+        // A block newer than version 1 needs its readable copy (spec 6.5): it can be replaced, not removed.
+        return Err(invalid("a block of a type newer than version 1 needs a fallback"));
+    }
     if stroke_count(&changed) != stroke_count(block) {
         return Err(invalid("strokeCount can't be changed"));
     }

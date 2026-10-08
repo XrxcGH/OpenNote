@@ -50,7 +50,7 @@ export async function saveCapture(notes: NotesService, text: string): Promise<No
   if (parts.body) {
     const open = await pagesClient().open(page.id as unknown as PageId, { viewport: null });
     try {
-      const block = { id: newId(), type: 'text', data: { markdown: parts.body } };
+      const block = { id: newId(), type: 'text' as const, data: { markdown: parts.body } };
       await open.send({ edits: [{ edit: 'insertBlock', block }] });
     } finally {
       await open.close();
