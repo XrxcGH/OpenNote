@@ -93,7 +93,7 @@ fn builds_a_report_with_code_positions_only() {
 #[test]
 fn the_report_never_holds_names_folders_or_paths() {
     let json = Report::build(capture(), &environment(), &scrubber()).to_json();
-    for secret in [
+    for leak in [
         "jdoe",
         "Holiday",
         "C:\\",
@@ -103,7 +103,7 @@ fn the_report_never_holds_names_folders_or_paths() {
         "Program Files",
         "/rustc/",
     ] {
-        assert!(!json.contains(secret), "{secret:?} in {json}");
+        assert!(!json.contains(leak), "{leak:?} in {json}");
     }
 }
 
@@ -184,8 +184,8 @@ fn a_loaded_report_is_checked_again() {
     assert_eq!(report.frames, [Frame::new("ntdll.dll", "0x10")]);
     assert_eq!(report.backtrace, ["0: <symbol>", "at x.rs:1:2"]);
     let json = report.to_json();
-    for secret in ["jdoe", "Holiday", "diary"] {
-        assert!(!json.contains(secret), "{secret:?} in {json}");
+    for leak in ["jdoe", "Holiday", "diary"] {
+        assert!(!json.contains(leak), "{leak:?} in {json}");
     }
 }
 
@@ -215,7 +215,7 @@ fn the_example_report_is_clean_and_in_the_real_format() {
     assert_eq!(Report::from_json(&example.to_json()).unwrap(), example);
     assert!(example.frames.iter().all(|f| f.debug_id.is_some()));
     let json = example.to_json();
-    for secret in ["Users", "jdoe", "Documents", ":\\"] {
-        assert!(!json.contains(secret), "{secret:?} in {json}");
+    for leak in ["Users", "jdoe", "Documents", ":\\"] {
+        assert!(!json.contains(leak), "{leak:?} in {json}");
     }
 }

@@ -60,9 +60,7 @@ function apaNames(source: Source): string {
     person.given ? `${person.family}, ${initials(person.given)}` : person.family,
   );
   if (names.length > 20) return `${names.slice(0, 19).join(', ')}, ... ${names.at(-1)}`;
-  return names.length <= 2
-    ? names.join(', & ').replace(', & ', ', & ')
-    : `${names.slice(0, -1).join(', ')}, & ${names.at(-1)}`;
+  return names.length <= 2 ? names.join(', & ') : `${names.slice(0, -1).join(', ')}, & ${names.at(-1)}`;
 }
 
 const apa = {

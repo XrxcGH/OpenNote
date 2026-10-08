@@ -59,6 +59,11 @@ describe('BibTeX', () => {
     const back = parseBibtex(toBibtex([article()]));
     expect(back.sources[0]).toMatchObject({ title: 'Sleep and Memory in Students', year: '2020', pages: '45–67' });
   });
+  it('writes a backslash and the characters BibTeX reserves, and reads them back', () => {
+    const title = String.raw`Paths like C:\Notes & 50% of #1 \& more_`;
+    const back = parseBibtex(toBibtex([{ ...article(), title }]));
+    expect(back.sources[0].title).toBe(title);
+  });
 });
 
 describe('RIS', () => {

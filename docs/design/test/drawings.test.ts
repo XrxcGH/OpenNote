@@ -136,7 +136,8 @@ describe('where the vine and its leaves meet', () => {
 describe('how each leaf meets its stem, and the window frame', () => {
   // In the shapes' own units, where a line is 1.5 units wide at most. The app and the generator draw these strings.
   const LINE = 1.5;
-  const angle = (u: Pt, v: Pt) => (Math.acos((u.x * v.x + u.y * v.y) / Math.hypot(u.x, u.y) / Math.hypot(v.x, v.y)) * 180) / Math.PI;
+  const angle = (u: Pt, v: Pt) =>
+    (Math.acos((u.x * v.x + u.y * v.y) / Math.hypot(u.x, u.y) / Math.hypot(v.x, v.y)) * 180) / Math.PI;
   const vines = [
     { name: 'the window vine', stem: WINDOW.vine, leaves: WINDOW.leaves },
     { name: "the plant's trailing vine", stem: PLANT.trailing, leaves: PLANT.trailingLeaves },

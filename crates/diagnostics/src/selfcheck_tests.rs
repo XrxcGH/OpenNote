@@ -561,8 +561,8 @@ fn text_from_a_file_other_programs_can_write_is_not_repeated() {
     std::fs::write(dir.path().join("state.json"), hostile).unwrap();
     let item = updates_of(dir.path());
     let json = serde_json::to_string(&item).unwrap();
-    for secret in ["jdoe", "Holiday", "diary", "jane", "example.org", "lunch"] {
-        assert!(!json.contains(secret), "{secret:?} in {json}");
+    for leak in ["jdoe", "Holiday", "diary", "jane", "example.org", "lunch"] {
+        assert!(!json.contains(leak), "{leak:?} in {json}");
     }
     let Detail::Updates {
         last_check,

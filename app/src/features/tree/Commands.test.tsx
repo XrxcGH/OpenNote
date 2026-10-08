@@ -348,6 +348,7 @@ describe('context menu contents', () => {
       'Create shortcut',
       'Check accessibility',
       'Archive',
+      'Copy link to this page',
       'Export…',
       'Delete',
     ]);

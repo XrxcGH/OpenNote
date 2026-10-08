@@ -51,10 +51,12 @@ describe('Privacy', () => {
     const uses = screen.getByRole('region', { name: 'Network use' });
     expect(within(uses).getByText('Update checks')).toBeTruthy();
     expect(within(uses).getByText('Sending a crash report')).toBeTruthy();
+    expect(within(uses).getByText('Model downloads')).toBeTruthy();
     expect(within(uses).getByText('Saving a web image you paste')).toBeTruthy();
+    expect(within(uses).getByText('Link titles on paste')).toBeTruthy();
     expect(within(uses).queryByText('Blocked while you work offline.')).toBeNull();
     fireEvent.click(screen.getByRole('switch', { name: 'Work offline' }));
-    await waitFor(() => expect(within(uses).getAllByText('Blocked while you work offline.')).toHaveLength(3));
+    await waitFor(() => expect(within(uses).getAllByText('Blocked while you work offline.')).toHaveLength(5));
     expect(screen.getByRole('switch', { name: 'Work offline' }).getAttribute('aria-checked')).toBe('true');
     expect(announcements()).toContain('Working offline. OpenNote will not use the network.');
   });

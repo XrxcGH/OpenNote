@@ -9,7 +9,13 @@ import type { RenderAppOptions } from '../../test/render';
 beforeEach(() => localStorage.clear());
 
 const firstRun = (boot: NonNullable<RenderAppOptions['boot']> = {}): RenderAppOptions => ({
-  boot: { firstRun: true, ...boot, state: { setup: { status: 'notStarted' }, ...boot.state } },
+  boot: {
+    firstRun: true,
+    // The smart features and import steps have their own tests; these keep the four steps of welcome, look, keys, storage.
+    flagOverrides: { 'setup.smartFeatures': false, 'setup.import': false },
+    ...boot,
+    state: { setup: { status: 'notStarted' }, ...boot.state },
+  },
 });
 const button = (name: string) => screen.getByRole('button', { name });
 const card = (name: string) => screen.getByRole('radio', { name });

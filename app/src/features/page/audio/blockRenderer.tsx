@@ -46,7 +46,8 @@ export function createInner(wrapper: HTMLElement, block: BlockJson, ctx: BlockRe
     measure: () => ({ x: wrapper.offsetLeft, y: wrapper.offsetTop, w: wrapper.offsetWidth, h: wrapper.offsetHeight }),
     destroy() {
       stop();
-      root.unmount();
+      // The editor destroys a block while React may be mid-render, which it does not allow a root to unmount in.
+      setTimeout(() => root.unmount(), 0);
     },
   };
 }
