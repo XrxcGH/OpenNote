@@ -150,8 +150,19 @@ class HandleLayer {
     private readonly host: InkHost,
     private readonly surface: InkSurface,
   ) {
-    this.stops = [host.selection.subscribe(() => this.refresh()), surface.onChange(() => this.place())];
+    this.stops = [host.selection.subscribe(() => this.refresh()), surface.onChange(() => this.changed())];
     this.refresh();
+  }
+
+  /**
+   * The page changed: when the selected shape was moved or nudged its stroke is a new one, so its handles are read
+   * again from where it is now. Otherwise they only follow the view.
+   */
+  private changed(): void {
+    const ids = this.host.selection.get().strokes;
+    const now = !this.drag && this.editing && ids.length === 1 ? this.surface.strokes(ids)[0] : undefined;
+    if (now && now !== this.editing?.stroke) this.refresh();
+    else this.place();
   }
 
   buttonOf(target: EventTarget | null): HTMLButtonElement | null {
