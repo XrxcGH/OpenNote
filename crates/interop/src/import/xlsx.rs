@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use super::files::{import_files, Converted, ConvertedPage, FileConverter};
-use super::sheet::{cell, rows_that_fit, MAX_TABLE_ROWS};
+use super::sheet::{cell, rows_that_fit, MAX_TABLE_COLUMNS, MAX_TABLE_ROWS};
 use super::xmltree::Element;
 use super::zipxml::{first_text, read_rels, resolve, ElementExt, Parts};
 use crate::dates::parse_date;
@@ -45,9 +45,6 @@ impl FileConverter for ExcelConverter {
         convert_parts(&mut parts, &stem, env)
     }
 }
-
-/// The widest table a sheet becomes.
-const MAX_COLUMNS: usize = 1_000;
 
 fn convert_parts<R: std::io::Read + std::io::Seek>(
     parts: &mut Parts<R>,
@@ -134,13 +131,8 @@ fn convert_parts<R: std::io::Read + std::io::Seek>(
             report.skipped("sheet", "The sheet has no cells with values.");
             builder.push_blocks(vec![Block::Paragraph(vec![Inline::text("This sheet was empty.")])]);
         } else {
-            let kept = rows_that_fit(grid.rows.iter().map(|r| r.iter().map(String::len).sum()), grid.width);
-            let rows: Vec<Vec<Vec<Inline>>> = grid
-                .rows
-                .iter()
-                .take(kept)
-                .map(|r| r.iter().map(|c| cell(c)).collect())
-                .collect();
+            let kept = grid.rows.len();
+            let rows: Vec<Vec<Vec<Inline>>> = grid.rows.iter().map(|r| r.iter().map(|c| cell(c)).collect()).collect();
             report.came_over(format!("{} rows and {} columns", kept.saturating_sub(1), grid.width));
             let (one, many, why) = if kept > MAX_TABLE_ROWS {
                 (
@@ -155,7 +147,7 @@ fn convert_parts<R: std::io::Read + std::io::Seek>(
                     "A page holds one table of at most about 32 MiB.",
                 )
             };
-            report.skipped_count(grid.rows.len() - kept, (one, many), why);
+            report.skipped_count(grid.total_rows - kept, (one, many), why);
             builder.push_blocks(vec![Block::Table { header: true, rows }]);
         }
         report.simplified_count(
@@ -200,7 +192,10 @@ fn convert_parts<R: std::io::Read + std::io::Seek>(
 /// The cells of a sheet as text.
 #[derive(Default)]
 struct Grid {
+    /// The rows that become the table, from the first row with a value: at most what [`rows_that_fit`] keeps.
     rows: Vec<Vec<String>>,
+    /// How many rows the sheet spans, from its first row with a value to its last, kept or not.
+    total_rows: usize,
     width: usize,
     formulas: usize,
     merged: usize,
@@ -208,23 +203,25 @@ struct Grid {
     cut_columns: usize,
 }
 
+/// Reads a sheet's cells. Row and column numbers come from the file and can be anything up to `usize::MAX`, so the
+/// grid is sized by the rows that will be kept, never by the numbers: a cell in row 4,000,000,000 is counted, not
+/// allocated for.
 fn read_grid(root: &Element, strings: &[String], formats: &Formats, date1904: bool) -> Grid {
     let mut grid = Grid::default();
     let mut cells: Vec<(usize, usize, String)> = Vec::new();
-    let (mut next_row, mut max_col) = (0usize, 0usize);
-    let mut last_row = 0usize;
+    let mut next_row = 0usize;
     if let Some(data) = root.first("sheetdata") {
         for row in data.elements("row") {
             let r = row
                 .attr("r")
                 .and_then(|r| r.parse::<usize>().ok())
                 .map_or(next_row, |r| r.saturating_sub(1));
-            next_row = r + 1;
+            next_row = r.saturating_add(1);
             let mut next_col = 0usize;
             for c in row.elements("c") {
                 let col = c.attr("r").and_then(column_of).unwrap_or(next_col);
-                next_col = col + 1;
-                if col >= MAX_COLUMNS {
+                next_col = col.saturating_add(1);
+                if col >= MAX_TABLE_COLUMNS {
                     grid.cut_columns += 1;
                     continue;
                 }
@@ -232,22 +229,31 @@ fn read_grid(root: &Element, strings: &[String], formats: &Formats, date1904: bo
                 grid.formulas += usize::from(formula);
                 grid.other_formats += usize::from(formatted);
                 if !text.is_empty() {
-                    max_col = max_col.max(col + 1);
-                    last_row = last_row.max(r + 1);
                     cells.push((r, col, text));
                 }
             }
         }
     }
     grid.merged = root.first("mergecells").map_or(0, |m| m.elements("mergecell").count());
-    if cells.is_empty() {
+    let (Some(first_row), Some(last_row)) = (cells.iter().map(|c| c.0).min(), cells.iter().map(|c| c.0).max()) else {
         return grid;
+    };
+    grid.total_rows = (last_row - first_row).saturating_add(1);
+    // Only rows up to the table's row limit can be kept, so only they are measured, and only the rows that fit
+    // are built.
+    let span = grid.total_rows.min(MAX_TABLE_ROWS + 1);
+    let within = |r: usize| r - first_row < span;
+    grid.width = cells.iter().filter(|c| within(c.0)).map(|c| c.1 + 1).max().unwrap_or(0);
+    let mut text = vec![0usize; span];
+    for (r, _, t) in cells.iter().filter(|c| within(c.0)) {
+        text[r - first_row] += t.len();
     }
-    let first_row = cells.iter().map(|c| c.0).min().unwrap_or(0);
-    grid.width = max_col;
-    let mut rows = vec![vec![String::new(); max_col]; last_row - first_row];
-    for (r, c, text) in cells {
-        rows[r - first_row][c] = text;
+    let kept = rows_that_fit(text, grid.width);
+    let mut rows = vec![vec![String::new(); grid.width]; kept];
+    for (r, c, t) in cells {
+        if let Some(row) = rows.get_mut(r - first_row) {
+            row[c] = t;
+        }
     }
     grid.rows = rows;
     grid
@@ -542,5 +548,51 @@ mod tests {
         assert_eq!(classify(164, Some("yyyy-mm-dd")), Kind::Date);
         assert_eq!(classify(165, Some("0.00\" days\"")), Kind::Other);
         assert_eq!(classify(10, None), Kind::Percent(2));
+    }
+
+    #[test]
+    fn a_cell_in_a_far_row_is_counted_not_allocated_for() {
+        // A1 and a cell in row 4,000,000,000: sizing the grid by row numbers would take terabytes. Rows with numbers
+        // as large as a usize, and a row without a number after them, must not overflow either.
+        let sheet = r#"<worksheet><sheetData>
+            <row r="1"><c r="A1" t="inlineStr"><is><t>Head</t></is></c></row>
+            <row r="2"><c r="B2"><v>1</v></c></row>
+            <row r="4000000000"><c r="ALL4000000000"><v>2</v></c></row>
+            <row r="18446744073709551615"><c><v>3</v></c></row>
+            <row><c><v>4</v></c></row>
+            </sheetData></worksheet>"#;
+        let workbook =
+            r#"<workbook xmlns:r="r"><sheets><sheet name="Far" sheetId="1" r:id="rId1"/></sheets></workbook>"#;
+        let rels = r#"<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>"#;
+        let bytes = zip_bytes(&[
+            ("xl/workbook.xml", workbook.as_bytes()),
+            ("xl/_rels/workbook.xml.rels", rels.as_bytes()),
+            ("xl/worksheets/sheet1.xml", sheet.as_bytes()),
+        ]);
+        let mut parts = Parts::from_reader(Cursor::new(bytes)).expect("opens");
+        let world = TestEnv::new();
+        let env = world.env();
+        let done = convert_parts(&mut parts, "far", &env).expect("converts");
+        let page = &done.pages[0];
+        let table = page
+            .page
+            .page
+            .blocks
+            .iter()
+            .find_map(|b| match &b.data {
+                opennote_core::model::BlockData::Table(t) => Some(t.clone()),
+                _ => None,
+            })
+            .expect("a table");
+        assert_eq!(table.rows.len(), MAX_TABLE_ROWS + 1);
+        assert_eq!(table.columns.len(), 2);
+        assert!(
+            page.report
+                .entries
+                .iter()
+                .any(|e| e.what.contains("rows beyond the first 10,000")),
+            "{:?}",
+            page.report.entries
+        );
     }
 }
