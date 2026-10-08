@@ -25,6 +25,10 @@ pub(super) enum StyleKind {
 struct Style {
     name: String,
     based_on: Option<String>,
+    /// The list the style puts its paragraphs in, as `w:numPr` in the style's paragraph properties gives it.
+    num_id: Option<u32>,
+    /// The list level the style gives.
+    ilvl: Option<u32>,
 }
 
 /// The paragraph styles of a file, by ID.
@@ -61,11 +65,15 @@ impl Styles {
             let Some(id) = style.attr("w:styleid") else {
                 continue;
             };
+            let num = child(style, "w:ppr").and_then(|p| child(p, "w:numpr"));
+            let number = |name| num.and_then(|n| val(n, name)).and_then(|v| v.parse().ok());
             by_id.insert(
                 id.to_owned(),
                 Style {
                     name: val(style, "w:name").unwrap_or("").to_owned(),
                     based_on: val(style, "w:basedon").map(str::to_owned),
+                    num_id: number("w:numid"),
+                    ilvl: number("w:ilvl"),
                 },
             );
         }
@@ -87,6 +95,47 @@ impl Styles {
         }
         StyleKind::Normal
     }
+}
+
+impl Styles {
+    /// The list a style puts its paragraphs in, and the level, following the styles it is based on. Word's
+    /// "List Bullet" and "List Number" styles keep their numbering here rather than on each paragraph. A list
+    /// style with no numbering of its own is a bullet or numbered list by its name.
+    pub fn list(&self, id: &str) -> Option<StyleList> {
+        let mut current = Some(id);
+        let mut ilvl = None;
+        for _ in 0..8 {
+            let style = self.by_id.get(current?)?;
+            ilvl = ilvl.or(style.ilvl);
+            if let Some(num_id) = style.num_id {
+                return Some(StyleList { num_id, ilvl });
+            }
+            current = style.based_on.as_deref();
+        }
+        None
+    }
+
+    /// A list by the style's name alone: `Some(true)` for numbered styles, `Some(false)` for bullets.
+    pub fn list_by_name(&self, id: &str) -> Option<bool> {
+        let name = self.by_id.get(id).map_or(id, |s| s.name.as_str());
+        let compact: String = name.to_lowercase().split_whitespace().collect();
+        if compact.starts_with("listbullet") {
+            Some(false)
+        } else if compact.starts_with("listnumber") {
+            Some(true)
+        } else {
+            None
+        }
+    }
+}
+
+/// The numbering a paragraph style gives.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct StyleList {
+    /// The list of numbering.xml.
+    pub num_id: u32,
+    /// The level, when the style sets one.
+    pub ilvl: Option<u32>,
 }
 
 fn kind_of(name: &str) -> Option<StyleKind> {
@@ -217,6 +266,28 @@ mod tests {
         assert_eq!(styles.kind("Odd"), StyleKind::Code);
         assert_eq!(styles.kind("Title"), StyleKind::Title);
         assert_eq!(styles.kind("Heading9"), StyleKind::Heading(6));
+    }
+
+    #[test]
+    fn list_styles_carry_their_numbering_through_based_on() {
+        let xml = r#"<w:styles>
+            <w:style w:styleId="ListBullet"><w:name w:val="List Bullet"/>
+              <w:pPr><w:numPr><w:numId w:val="3"/></w:numPr></w:pPr></w:style>
+            <w:style w:styleId="Mine"><w:name w:val="Mine"/><w:basedOn w:val="ListBullet"/>
+              <w:pPr><w:numPr><w:ilvl w:val="1"/></w:numPr></w:pPr></w:style>
+            <w:style w:styleId="ListNumber2"><w:name w:val="List Number 2"/></w:style></w:styles>"#;
+        let styles = Styles::read(&parse(xml));
+        assert_eq!(styles.list("ListBullet"), Some(StyleList { num_id: 3, ilvl: None }));
+        assert_eq!(
+            styles.list("Mine"),
+            Some(StyleList {
+                num_id: 3,
+                ilvl: Some(1)
+            })
+        );
+        assert_eq!(styles.list("ListNumber2"), None);
+        assert_eq!(styles.list_by_name("ListNumber2"), Some(true));
+        assert_eq!(styles.list_by_name("ListBullet"), Some(false));
     }
 
     #[test]

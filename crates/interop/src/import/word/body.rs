@@ -193,11 +193,27 @@ impl<'a> Reader<'a> {
     }
 
     fn kind(&mut self, props: &Element) -> Kind {
-        let style = val(props, "w:pstyle").map_or(StyleKind::Normal, |id| self.styles.kind(id));
-        if let Some(num) = child(props, "w:numpr") {
-            let num_id: u32 = val(num, "w:numid").and_then(|v| v.parse().ok()).unwrap_or(0);
-            let level: u32 = val(num, "w:ilvl").and_then(|v| v.parse().ok()).unwrap_or(0);
-            if num_id != 0 && !matches!(style, StyleKind::Heading(_) | StyleKind::Title) {
+        let style_id = val(props, "w:pstyle");
+        let style = style_id.map_or(StyleKind::Normal, |id| self.styles.kind(id));
+        let own = child(props, "w:numpr");
+        let number = |name| own.and_then(|n| val(n, name)).and_then(|v| v.parse::<u32>().ok());
+        // The paragraph's own numbering wins; a list style such as "List Bullet" gives the rest.
+        let from_style = style_id.and_then(|id| self.styles.list(id));
+        let num_id = number("w:numid").or(from_style.map(|list| list.num_id));
+        let level = number("w:ilvl").or(from_style.and_then(|list| list.ilvl)).unwrap_or(0);
+        if !matches!(style, StyleKind::Heading(_) | StyleKind::Title) {
+            if num_id.is_none() && own.is_none() {
+                if let Some(ordered) = style_id.and_then(|id| self.styles.list_by_name(id)) {
+                    return Kind::ListItem {
+                        level,
+                        // Lists known only by their style's name share one ID per kind.
+                        num_id: if ordered { u32::MAX - 1 } else { u32::MAX - 2 },
+                        ordered,
+                        start: 1,
+                    };
+                }
+            }
+            if let Some(num_id) = num_id.filter(|id| *id != 0) {
                 let look = self.numbering.level(num_id, level);
                 self.stats.lettered_lists += usize::from(look.exotic);
                 return Kind::ListItem {
