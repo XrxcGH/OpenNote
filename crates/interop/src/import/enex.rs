@@ -222,6 +222,10 @@ impl Importer<'_, '_> {
         } else {
             raw.title.trim()
         };
+        if raw.too_big {
+            self.report.general.skipped(title.to_owned(), "Its text is too big to import.");
+            return Ok(());
+        }
         let now = env.clock.now();
         let created = parse_date(&raw.created).unwrap_or(now);
         let modified = parse_date(&raw.updated).unwrap_or(created);

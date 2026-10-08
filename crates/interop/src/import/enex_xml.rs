@@ -17,7 +17,13 @@ pub struct RawResource {
     pub mime: String,
     /// The original file name, if the note has it.
     pub file_name: String,
+    /// The data was past [`MAX_ELEMENT_TEXT`], so it was not kept.
+    pub too_big: bool,
 }
+
+/// The most text one element may hold: the base64 of a 256 MiB attachment with its line breaks. Past it the
+/// element's text is dropped and marked too big, so one huge attachment cannot exhaust memory.
+pub const MAX_ELEMENT_TEXT: usize = 360 << 20;
 
 /// One note, as the file holds it.
 #[derive(Default)]
@@ -38,26 +44,38 @@ pub struct RawNote {
     pub has_details: bool,
     /// The attachments.
     pub resources: Vec<RawResource>,
+    /// The ENML text was past [`MAX_ELEMENT_TEXT`], so it was not kept.
+    pub too_big: bool,
 }
 
 /// Reads the file and calls `on_note` for each note as its `note` element ends. A file that stops in the middle of
 /// a note is an error, and the notes before it have been delivered.
 pub fn read_notes<R: BufRead>(input: R, on_note: &mut dyn FnMut(RawNote) -> Result<()>) -> Result<()> {
+    read_notes_capped(input, MAX_ELEMENT_TEXT, on_note)
+}
+
+/// [`read_notes`] with the per-element text cap as a parameter, so tests can use a small one.
+pub(crate) fn read_notes_capped<R: BufRead>(
+    input: R,
+    cap: usize,
+    on_note: &mut dyn FnMut(RawNote) -> Result<()>,
+) -> Result<()> {
     let mut reader = Reader::from_reader(input);
     let config = reader.config_mut();
     config.allow_dangling_amp = true;
     config.check_end_names = false;
-    let mut scanner = Scanner::default();
+    let mut scanner = Scanner {
+        cap,
+        ..Scanner::default()
+    };
     let mut buffer = Vec::new();
     loop {
         let event = reader.read_event_into(&mut buffer);
         match event.map_err(|e| InteropError::format("the ENEX file", e.to_string()))? {
             Event::Start(tag) => scanner.start(tag.name().as_ref().to_lowercase()),
-            Event::Text(t) => scanner.text.push_str(&t.xml10_content()),
-            Event::CData(c) => scanner.text.push_str(&c.xml10_content()),
-            Event::GeneralRef(r) => scanner
-                .text
-                .push_str(&decode_entities(&format!("&{};", r.xml10_content()))),
+            Event::Text(t) => scanner.push(&t.xml10_content()),
+            Event::CData(c) => scanner.push(&c.xml10_content()),
+            Event::GeneralRef(r) => scanner.push(&decode_entities(&format!("&{};", r.xml10_content()))),
             Event::End(_) => {
                 if let Some(note) = scanner.end() {
                     on_note(note)?;
@@ -79,11 +97,25 @@ pub fn read_notes<R: BufRead>(input: R, on_note: &mut dyn FnMut(RawNote) -> Resu
 struct Scanner {
     path: Vec<String>,
     text: String,
+    /// The most text one element may collect.
+    cap: usize,
+    /// The element being read went past `cap`.
+    overflow: bool,
     note: Option<RawNote>,
     resource: Option<RawResource>,
 }
 
 impl Scanner {
+    /// Adds text to the element being read, unless that takes it past the cap.
+    fn push(&mut self, text: &str) {
+        if self.overflow || self.text.len() + text.len() > self.cap {
+            self.overflow = true;
+            self.text = String::new();
+        } else {
+            self.text.push_str(text);
+        }
+    }
+
     fn start(&mut self, name: String) {
         match name.as_str() {
             "note" => self.note = Some(RawNote::default()),
@@ -92,6 +124,7 @@ impl Scanner {
         }
         self.path.push(name);
         self.text.clear();
+        self.overflow = false;
     }
 
     /// Closes an element. Returns the note when it is the `note` element that ended.
@@ -99,6 +132,7 @@ impl Scanner {
         let name = self.path.pop().unwrap_or_default();
         let parent = self.path.last().cloned().unwrap_or_default();
         let text = std::mem::take(&mut self.text);
+        let overflow = std::mem::take(&mut self.overflow);
         match name.as_str() {
             "resource" => {
                 if let (Some(note), Some(resource)) = (self.note.as_mut(), self.resource.take()) {
@@ -106,17 +140,20 @@ impl Scanner {
                 }
             }
             "note" => return self.note.take(),
-            _ => self.store(&name, &parent, text),
+            _ => self.store(&name, &parent, text, overflow),
         }
         None
     }
 
     /// Keeps the text of a leaf element where the note or the resource holds it.
-    fn store(&mut self, name: &str, parent: &str, text: String) {
+    fn store(&mut self, name: &str, parent: &str, text: String, overflow: bool) {
         if matches!(parent, "resource" | "resource-attributes") {
             if let Some(resource) = self.resource.as_mut() {
                 match name {
-                    "data" => resource.data = text,
+                    "data" => {
+                        resource.data = text;
+                        resource.too_big = overflow;
+                    }
                     "mime" => resource.mime = text.trim().to_owned(),
                     "file-name" => resource.file_name = text.trim().to_owned(),
                     _ => {}
@@ -132,12 +169,36 @@ impl Scanner {
             ("note", "created") => note.created = text,
             ("note", "updated") => note.updated = text,
             ("note", "tag") => note.tags.push(text.trim().to_owned()),
-            ("note", "content") => note.content = text,
+            ("note", "content") => {
+                note.content = text;
+                note.too_big |= overflow;
+            }
             ("note-attributes", "source-url") => note.source_url = text.trim().to_owned(),
             ("note-attributes", "author" | "latitude" | "longitude" | "altitude" | "reminder-order") => {
                 note.has_details |= !text.trim().is_empty();
             }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_element_past_the_cap_is_marked_too_big_and_not_kept() {
+        let xml = "<en-export><note><title>T</title><content>short</content>            <resource><data>AAAAAAAAAAAAAAAAAAAAAAAA</data><mime>image/png</mime></resource>            <resource><data>AAAA</data></resource></note></en-export>";
+        let mut notes = Vec::new();
+        read_notes_capped(xml.as_bytes(), 16, &mut |note| {
+            notes.push(note);
+            Ok(())
+        })
+        .unwrap();
+        let note = &notes[0];
+        assert!(!note.too_big);
+        assert!(note.resources[0].too_big && note.resources[0].data.is_empty());
+        assert_eq!(note.resources[0].mime, "image/png");
+        assert!(!note.resources[1].too_big && note.resources[1].data == "AAAA");
     }
 }
