@@ -143,13 +143,20 @@ impl Worker {
         self.trees.clear();
     }
 
-    fn handle(&mut self, command: Command) {
+    pub(super) fn handle(&mut self, command: Command) {
         let Some(command) = self.handle_page(command) else {
             return;
         };
         match command {
             Command::OpenTree { key, meta, reply } => {
-                let _ = reply.send(self.open_tree(key, meta));
+                let known = self.trees.contains_key(&key);
+                if reply.send(self.open_tree(key.clone(), meta)).is_err() && !known {
+                    // Nobody waits for the answer any more (the open timed out): a tree this opened for it has
+                    // no handle, so it is closed again rather than kept open with no one to use it.
+                    if let Some(mut tree) = self.trees.remove(&key) {
+                        tree.sync(&self.config);
+                    }
+                }
             }
             Command::TreeAppend {
                 key,
@@ -176,7 +183,17 @@ impl Worker {
                 base,
                 reply,
             } => {
-                let _ = reply.send(self.open_page(key, page, meta, base));
+                if let Err(unsent) = reply.send(self.open_page(key, page, meta, base)) {
+                    // Nobody waits for the answer any more: the open timed out on the caller's side, and the page
+                    // runs without a journal. The journal this opened for it has no handle, so no `Close` would
+                    // ever come for it, and every later open of the page would find it still open and fail as
+                    // busy. It is detached again now, so the next open of the page gets a journal.
+                    if let Ok((id, _)) = unsent.0 {
+                        if let Some(mut journal) = self.pages.remove(&id) {
+                            journal.detach(&self.config);
+                        }
+                    }
+                }
             }
             Command::Append { id, seq, bytes, edit } => {
                 if let Some(page) = self.pages.get_mut(&id) {

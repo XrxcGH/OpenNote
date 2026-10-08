@@ -335,3 +335,73 @@ fn shutdown_flushes_and_stops() {
     assert!(handle.wait_durable(1, WAIT).is_ok());
     assert!(matches!(handle.wait_durable(2, WAIT), Err(JournalError::Closed)));
 }
+
+/// A page journal opened for a caller that stopped waiting (the open timed out, so the page runs journal-less)
+/// has no handle, so no `Close` ever comes for it. Left open, every later open of the page found it and failed
+/// as busy for the rest of the run (beta 4's T2-3 follow-up). The worker detaches it again when its answer has
+/// nobody to go to.
+#[test]
+fn a_page_journal_nobody_waits_for_is_closed_again_so_the_next_open_of_the_page_works() {
+    let fs = FailingFs::new(MemFs::new());
+    fs.inner.mkdir_all(Path::new("/data"));
+    let config = JournalConfig {
+        fs: Arc::new(fs),
+        codec: Arc::new(RegistryCodec::new()),
+        root: "/data/journal".into(),
+        clock: Arc::new(test_clock()),
+        timings: Timings::default(),
+        events: Arc::new(CollectingSink::default()),
+    };
+    let mut worker = super::worker::Worker::new(config);
+    let page = sample_page().id;
+    let open = |reply| super::worker::Command::OpenPage {
+        key: key(),
+        page,
+        meta: meta("boot-1"),
+        base: base(0),
+        reply,
+    };
+    // The caller gave up: its receiver is gone before the worker answers.
+    let (gone, _) = mpsc::channel();
+    worker.handle(open(gone));
+    let (reply, answer) = mpsc::channel();
+    worker.handle(open(reply));
+    let opened = answer.recv_timeout(WAIT).expect("the worker answers");
+    assert!(opened.is_ok(), "the page opens again: {:?}", opened.as_ref().err());
+    // A tree journal nobody waits for goes the same way.
+    let (gone, _) = mpsc::channel();
+    worker.handle(super::worker::Command::OpenTree {
+        key: key(),
+        meta: meta("boot-1"),
+        reply: gone,
+    });
+    let (reply, answer) = mpsc::channel();
+    worker.handle(super::worker::Command::OpenTree {
+        key: key(),
+        meta: meta("boot-1"),
+        reply,
+    });
+    assert!(answer.recv_timeout(WAIT).expect("the worker answers").is_ok());
+}
+
+/// Opening a journal used to wait for the journal thread's answer with no limit, under the page's lock, and
+/// a command that opened a page then held the core (beta 4's T2-3: every later command waited behind it, for
+/// as long as the app ran). A thread that doesn't answer in time now fails the open with `Timeout`, and the
+/// page runs without a journal (spec 20.12).
+#[test]
+fn opening_a_journal_gives_up_when_the_journal_thread_does_not_answer() {
+    // A thread that never serves its commands: the receiver is kept, so sends succeed, and nobody reads it.
+    let (commands, _unserved) = mpsc::channel();
+    let thread = JournalThread {
+        commands,
+        codec: Arc::new(RegistryCodec::new()),
+        thread: None,
+        open_wait: Duration::from_millis(50),
+    };
+    let started = std::time::Instant::now();
+    let page = thread.open_page(&key(), sample_page().id, meta("boot-1"), base(0));
+    assert!(matches!(page, Err(JournalError::Timeout)), "{:?}", page.err());
+    let tree = thread.open_tree(&key(), meta("boot-1"));
+    assert!(matches!(tree, Err(JournalError::Timeout)), "{:?}", tree.err());
+    assert!(started.elapsed() < WAIT, "the opens waited {:?}", started.elapsed());
+}

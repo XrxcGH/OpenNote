@@ -119,3 +119,21 @@ fn merged_copies_take_the_styles_of_the_copy_changed_later() {
     ours.changed = Timestamp::parse("2026-09-30T16:00:00.000Z").unwrap();
     assert_eq!(merge_notebooks(&theirs, &ours).styles, ours.styles);
 }
+
+/// Styles are written rounded (sizes and spacing to 0.01, the line height to two decimals) and read back the
+/// same way. A style in memory is then the style its bytes read back as. Setting the same style twice is a
+/// repeat, not a change, however many decimals the interface sent (the T2-1 pattern, in `notebook.json`).
+#[test]
+fn styles_read_as_rounded_as_they_are_written() {
+    let file = read(&notebook_with(json!({
+        "body": { "size": 12.345, "spaceBefore": 1.005, "spaceAfter": 0.001, "lineHeight": 1.2345 }
+    })))
+    .unwrap();
+    let body = &file.styles["body"];
+    assert_eq!(body.size, Some(12.35));
+    assert_eq!(body.space_before, Some(1.0));
+    assert_eq!(body.space_after, Some(0.0));
+    assert_eq!(body.line_height, Some(1.23));
+    let again = read_notebook(&write_notebook(&file), &limits()).unwrap();
+    assert_eq!(again.styles, file.styles);
+}

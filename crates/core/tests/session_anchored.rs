@@ -29,6 +29,60 @@ fn new_block(id: BlockId, type_name: &str, data: serde_json::Value) -> Edit {
     }
 }
 
+/// The interface measures where ink sits from its words on the screen, so the offset has as many decimals as
+/// a pixel at the zoom has. The file holds geometry to 0.01, and the save's read-back check compares the two:
+/// beta 4 then failed every save of such a page (T2-1).
+#[test]
+fn ink_anchored_at_a_measured_offset_saves_with_the_offset_as_the_file_holds_it() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let text = BlockId(Id::from_parts(1_800_000_000_000, 7));
+    let ink = BlockId(Id::from_parts(1_800_000_000_000, 8));
+    let anchor = json!({"block": text.to_string(), "at": 0, "quote": {"exact": ""}, "dx": 12.345_678, "dy": -0.001});
+    let inked = NewBlock {
+        id: ink,
+        type_name: "ink".into(),
+        frame: Some(Frame {
+            x: Some(0.004),
+            y: Some(10.0),
+            ..Frame::default()
+        }),
+        data: json!({"role": "anchored", "anchor": anchor})
+            .as_object()
+            .cloned()
+            .unwrap(),
+        fallback: None,
+    };
+    let setup = vec![
+        new_block(text, "text", json!({"markdown": ""})),
+        Edit::InsertBlock {
+            block: inked,
+            after: None,
+            before: None,
+        },
+    ];
+    handle.apply(real.request(setup)).unwrap();
+    handle.save_now().expect("the page saves");
+    let page = page_json(&handle);
+    let block = page["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|b| b["id"] == ink.to_string())
+        .unwrap();
+    assert_eq!(block["data"]["anchor"]["dx"], 12.35);
+    assert_eq!(block["data"]["anchor"].get("dy"), None, "a zero offset is left out");
+    assert_eq!(block["frame"]["x"], 0.0);
+    // The saved page reads back as the session holds it, so the next save has nothing to differ on.
+    handle
+        .apply(real.request(vec![Edit::SetText {
+            block: text,
+            markdown: "Now".into(),
+        }]))
+        .unwrap();
+    handle.save_now().expect("the second save");
+}
+
 #[test]
 fn typing_that_moves_anchored_ink_is_one_undo_step() {
     let mut real = Real::new();

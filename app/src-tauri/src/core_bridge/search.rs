@@ -197,7 +197,9 @@ pub async fn search_call(
 ) -> IpcResult<Value> {
     bridge.listen_app(&app);
     // The first call starts the core, because the index follows it.
-    bridge.with(|_| Ok(()))?;
+    bridge
+        .run(|bridge| bridge.with_named("search_call", |_| Ok(())))
+        .await?;
     let hub = bridge.search.clone();
     hub.call(&method, args)
 }

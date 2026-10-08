@@ -2,6 +2,7 @@
 // one onto a core command through the client in app/src/core/, which keeps one request in flight per page. The
 // core's `core:*` events become frames, external changes, and read-only notices for the page they name.
 import type { CoreClient, DecodedEnvelope, FrameInfo } from '../../core/client';
+import { coreBusy, pageClosed, watchSaveHealth } from './saveHealth';
 import type { ImagesClient, IpcError } from '../../platform/types';
 import { inkListeners } from './ink';
 import { PageServiceError } from './types';
@@ -24,6 +25,7 @@ import type {
 function pageError(error: unknown): PageServiceError {
   if (error instanceof PageServiceError) return error;
   const ipc = error as Partial<IpcError>;
+  if (ipc.code === 'coreBusy') coreBusy();
   return new PageServiceError((ipc.code ?? 'invalid') as PageErrorCode, ipc.message ?? String(error));
 }
 
@@ -245,6 +247,8 @@ function events(session: Session, frames: ReturnType<typeof listeners<AppliedFra
 
 export function createTauriPageService(client: CoreClient, images: ImagesClient): PageService {
   let clients = 0;
+  // The title bar's status hears the saves of every open or closing page for as long as the service lives.
+  watchSaveHealth(client);
   return {
     async open(pageId, { viewport }): Promise<OpenPage> {
       const name = `main-${++clients}`;
@@ -314,6 +318,7 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
         onReadOnly: heard.onReadOnly,
         close: () => {
           heard.stop();
+          pageClosed(pageId);
           return turn(() => client.pageClose(pageId, name)).catch(rejectAs);
         },
       };

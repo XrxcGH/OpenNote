@@ -90,22 +90,28 @@ pub async fn shellqol_call(
     if name == "library.rebuildIndex" {
         return crate::core_bridge::search::search_call(app, bridge, "rebuild".to_owned(), json!({})).await;
     }
-    let (group, _) = name.split_once('.').unwrap_or((name.as_str(), ""));
-    match group {
-        "notes" => notes_ops::call(&app, &bridge, &name, &args),
-        "window" => windows_ops::call(&app, &name, &args),
-        "dock" => dock::call(&app, &name, &args),
-        "power" => power::call(&app, &name),
-        "cloud" => cloud::call(&app, &name, &args),
-        "conflict" => conflicts::call(&app, &name, &args),
-        "backup" => backup::call(&app, &bridge, &name, &args),
-        "library" => library::call(&app, &bridge, &name, &args),
-        "quick" => quick::call(&app, &bridge, &name, &args),
-        "shortcut" => shortcuts::call(&app, &bridge, &name, &args),
-        "external" => external::call(&app, &name, &args),
-        "prefs" => prefs::call(&app, &name, &args),
-        _ => Err(IpcError::invalid("name", &format!("{name} isn't a shell call"))),
-    }
+    // Every call runs on a blocking thread: the ones on the core may wait for it (see `CoreBridge::run`), and
+    // the others open files and dialogs.
+    bridge
+        .run(move |bridge| {
+            let (group, _) = name.split_once('.').unwrap_or((name.as_str(), ""));
+            match group {
+                "notes" => notes_ops::call(&app, bridge, &name, &args),
+                "window" => windows_ops::call(&app, &name, &args),
+                "dock" => dock::call(&app, &name, &args),
+                "power" => power::call(&app, &name),
+                "cloud" => cloud::call(&app, &name, &args),
+                "conflict" => conflicts::call(&app, &name, &args),
+                "backup" => backup::call(&app, bridge, &name, &args),
+                "library" => library::call(&app, bridge, &name, &args),
+                "quick" => quick::call(&app, bridge, &name, &args),
+                "shortcut" => shortcuts::call(&app, bridge, &name, &args),
+                "external" => external::call(&app, &name, &args),
+                "prefs" => prefs::call(&app, &name, &args),
+                _ => Err(IpcError::invalid("name", &format!("{name} isn't a shell call"))),
+            }
+        })
+        .await
 }
 
 /// A small `{ ok: true }` answer.

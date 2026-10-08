@@ -212,6 +212,53 @@ fn defaults_are_left_out_and_values_that_differ_are_written() {
 }
 
 #[test]
+fn geometry_is_read_as_the_file_writes_it_so_a_page_reads_back_as_itself() {
+    let mut value = minimal();
+    value["view"] = json!({"contentWidth": 600.004, "paper": {"width": 793.7001, "margins": [48.005, 72, 48, 72]}});
+    value["blocks"] = json!([
+        {
+            "id": "01m3sa14y9zszek1wdk3snddsn", "order": "a0", "type": "text",
+            "frame": {"x": 96.001, "y": 120.005, "w": 624.4999},
+            "created": "2026-09-30T14:03:25.001Z", "modified": "2026-09-30T14:05:40.020Z",
+            "data": {"markdown": "First"}
+        },
+        {
+            "id": "01m3sa1242ayy4avvsz3yx5gxj", "order": "a1", "type": "ink",
+            "frame": {"x": 0, "y": 0},
+            "created": "2026-09-30T14:03:25.001Z", "modified": "2026-09-30T14:05:40.020Z",
+            "data": {
+                "role": "anchored", "strokeCount": 0,
+                "anchor": {"block": "01m3sa14y9zszek1wdk3snddsn", "at": 0, "quote": {"exact": ""}, "dx": 12.345678, "dy": -0.001}
+            }
+        }
+    ]);
+    let page = read(&value).unwrap().page;
+    let text = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Text(_)))
+        .unwrap();
+    let frame = text.frame.as_ref().unwrap();
+    assert_eq!((frame.x, frame.y, frame.w), (Some(96.0), Some(120.01), Some(624.5)));
+    let ink = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Ink(_)))
+        .unwrap();
+    let BlockData::Ink(data) = &ink.data else { panic!() };
+    let anchor = data.anchor.as_ref().unwrap();
+    assert_eq!((anchor.dx, anchor.dy), (12.35, 0.0));
+    assert_eq!(page.view.content_width, Some(600.0));
+    assert_eq!(page.view.paper.width, 793.7);
+    assert_eq!(page.view.paper.margins, [48.01, 72.0, 48.0, 72.0]);
+    // What was read writes, and reads back as the same page: the check every save makes (spec 17.7, S5).
+    let bytes = write_page(&page);
+    let mut again = read_page(&bytes, &limits()).unwrap().page;
+    again.format = page.format.clone();
+    assert_eq!(again, page);
+}
+
+#[test]
 fn reading_order_keeps_only_blocks_once() {
     let mut page = sample_page();
     let first = page.blocks.iter().next().unwrap().id;

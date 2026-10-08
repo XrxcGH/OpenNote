@@ -8,10 +8,12 @@
 
 use super::*;
 use crate::format::ReadableState;
-use crate::id::{Id, PageId, StrokeId};
-use crate::model::{Access, Asset, InkRecord, ReadOnlyReason};
+use crate::id::{BlockId, Id, PageId, StrokeId};
+use crate::model::{Access, Asset, Block, BlockData, InkRecord, ReadOnlyReason};
 use crate::store::compact::plan_compaction;
-use crate::testing::sample::{sample_asset_id, sample_device, sample_page, sample_stroke, test_clock};
+use crate::testing::sample::{
+    sample_asset_id, sample_device, sample_ink_block, sample_page, sample_stroke, test_clock,
+};
 use crate::testing::{MemFs, NoLinks};
 use crate::time::TestClock;
 
@@ -281,6 +283,15 @@ fn a_page_that_reads_back_differently_is_not_saved() {
         "{err:?}"
     );
     assert_eq!(h.store.fingerprint(&h.dir).unwrap(), None);
+    // The segment written for the pending stroke went with the failed save: a retry writes its own, and a save
+    // that fails every time (beta 4's T2-1 did, every 30 seconds) must not fill `ink/` with orphans.
+    let orphans: Vec<_> =
+        h.fs.files()
+            .into_iter()
+            .filter(|p| p.extension().is_some_and(|e| e == "onk"))
+            .collect();
+    assert!(orphans.is_empty(), "{orphans:?}");
+    assert!(h.store.written.lock().unwrap().is_empty());
 }
 
 #[test]
@@ -382,4 +393,42 @@ fn unconfirmed_durability_is_reported() {
         h.save(&page, None, CompactionPlan::None).1.durability,
         Durability::Unconfirmed
     );
+}
+
+#[test]
+fn ink_anchored_at_a_fractional_offset_saves() {
+    use crate::model::{AnchorQuote, InkAnchor, InkBlockData, InkRole, JsonMap, Named};
+    let h = Harness::new();
+    let mut page = sample_page();
+    h.put_assets(&page);
+    let text = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Text(_)))
+        .unwrap()
+        .id;
+    let mut anchored = Block::clone(page.blocks.get(sample_ink_block()).unwrap());
+    anchored.id = BlockId(Id::parse("01m3sa1242ayy4avvsz3yx5gxk").unwrap());
+    anchored.data = BlockData::Ink(InkBlockData {
+        role: Named::Known(InkRole::Anchored),
+        stroke_count: 0,
+        anchor: Some(InkAnchor {
+            block: text,
+            para: None,
+            at: Some(0),
+            quote: Some(AnchorQuote {
+                prefix: String::new(),
+                exact: String::new(),
+                suffix: String::new(),
+                extra: JsonMap::new(),
+            }),
+            dx: 12.345_678,
+            dy: -0.001,
+            extra: JsonMap::new(),
+        }),
+        ..InkBlockData::default()
+    });
+    page.blocks.insert(Arc::new(anchored)).unwrap();
+    let (saved, _) = h.save(&page, None, CompactionPlan::None);
+    assert_eq!(h.store.load(&h.dir).unwrap().page, saved);
 }

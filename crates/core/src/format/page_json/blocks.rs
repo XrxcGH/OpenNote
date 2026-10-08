@@ -51,11 +51,11 @@ fn read_block(value: Value, index: usize) -> Result<Block, FormatError> {
 fn read_frame(value: Value) -> Result<Frame, FormatError> {
     let mut fields = Fields::new(value, "frame")?;
     Ok(Frame {
-        x: fields.opt_f64("x")?,
-        y: fields.opt_f64("y")?,
-        w: fields.opt_f64("w")?,
-        h: fields.opt_f64("h")?,
-        rotate: fields.opt_f64("rotate")?,
+        x: fields.opt_geometry("x")?,
+        y: fields.opt_geometry("y")?,
+        w: fields.opt_geometry("w")?,
+        h: fields.opt_geometry("h")?,
+        rotate: fields.opt_geometry("rotate")?,
         extra: fields.rest(),
     })
 }

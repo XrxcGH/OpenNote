@@ -81,15 +81,26 @@ pub async fn page_add_strokes(bridge: State<'_, CoreBridge>, request: tauri::ipc
         return Err(IpcError::invalid("body", "The strokes must come as raw bytes."));
     };
     let (header, records) = split_body(body)?;
-    let handle = bridge.with(|bridge| bridge.open_handle(&header.page, &header.client))?;
-    add_strokes(&handle, header, records)
+    let records = records.to_vec();
+    bridge
+        .run(move |bridge| {
+            let handle = bridge.with_named("page_add_strokes", |bridge| {
+                bridge.open_handle(&header.page, &header.client)
+            })?;
+            add_strokes(&handle, header, &records)
+        })
+        .await
 }
 
 /// Every live stroke of the page as ink records, in drawing order.
 #[tauri::command]
 pub async fn page_read_strokes(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Response> {
-    let handle = bridge.with(|bridge| bridge.open_handle(&page, &client))?;
-    Ok(Response::new(handle.read_strokes(None, None).records))
+    bridge
+        .run(move |bridge| {
+            let handle = bridge.with_named("page_read_strokes", |bridge| bridge.open_handle(&page, &client))?;
+            Ok(Response::new(handle.read_strokes(None, None).records))
+        })
+        .await
 }
 
 #[cfg(test)]
