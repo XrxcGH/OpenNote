@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LinkGraphData, PageFact } from '../../services/search/types';
-import { limitNodes, layoutGraph } from './layout';
+import { LABEL_GAP, TITLE_CHAR, labelAt, limitNodes, layoutGraph } from './layout';
 import { NO_FILTER, drawn, passes, unlinked } from './model';
 
 const page = (id: string, section = 's1') => ({ page: id, title: id.toUpperCase(), notebook: 'n1', section });
@@ -98,5 +98,47 @@ describe('graph model', () => {
     ];
     expect(limitNodes(8, edges, 3)).toEqual([3, 4, 5]);
     expect(limitNodes(2, edges, 3)).toEqual([0, 1]);
+  });
+});
+
+describe('page titles in the picture', () => {
+  const [width, height] = [720, 420];
+  const inside = (x: number, title: string) => {
+    const label = labelAt({ x, y: 50 }, width, title);
+    const length = title.length * TITLE_CHAR;
+    return label.anchor === 'start' ? label.x + length <= width : label.x - length >= 0;
+  };
+
+  it('keeps a title up to half the picture wide inside it, wherever its node is', () => {
+    const title = 'x'.repeat(Math.floor((width / 2 - LABEL_GAP) / TITLE_CHAR));
+    for (let x = 12; x <= width - 12; x += 4) expect(inside(x, title)).toBe(true);
+  });
+
+  it('puts a title to the right of its node unless that would run past the edge', () => {
+    const edges = Array.from({ length: 59 }, (_, i) => [i, i + 1] as const);
+    for (const point of layoutGraph(60, edges, width, height)) {
+      const label = labelAt(point, width, 'Lecture notes');
+      const fits = point.x + LABEL_GAP + 'Lecture notes'.length * TITLE_CHAR <= width;
+      expect(label.anchor).toBe(fits ? 'start' : 'end');
+      expect(inside(point.x, 'Lecture notes')).toBe(true);
+    }
+  });
+});
+
+describe('graph layout spacing', () => {
+  it('spreads the nodes over the picture instead of crowding them into its middle', () => {
+    const edges = Array.from({ length: 39 }, (_, i) => [i + 1, Math.floor(i / 3)] as const);
+    const points = layoutGraph(40, edges, 720, 420);
+    const ys = points.map((p) => p.y);
+    // Fills the height to its 24-unit margins, and keeps nodes at least two dots' widths apart.
+    expect(Math.min(...ys)).toBeCloseTo(24, 5);
+    expect(Math.max(...ys)).toBeCloseTo(396, 5);
+    let gap = Infinity;
+    for (let a = 0; a < points.length; a += 1) {
+      for (let b = a + 1; b < points.length; b += 1) {
+        gap = Math.min(gap, Math.hypot(points[a].x - points[b].x, points[a].y - points[b].y));
+      }
+    }
+    expect(gap).toBeGreaterThan(24);
   });
 });

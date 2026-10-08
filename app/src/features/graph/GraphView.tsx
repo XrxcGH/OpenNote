@@ -11,13 +11,18 @@ import { t } from '../../strings/t';
 import { Button, Dialog, TextField, announce } from '../../ui';
 import { maybeSearchClient, openAndReveal } from '../search';
 import styles from './graph.module.css';
-import { MAX_NODES, layoutGraph, limitNodes } from './layout';
+import { MAX_NODES, labelAt, layoutGraph, limitNodes } from './layout';
+import type { Point } from './layout';
 import { NO_FILTER, drawn, unlinked } from './model';
 import type { GraphFilter } from './model';
 
 type Scope = 'notebook' | 'all' | 'around';
 const WIDTH = 720;
 const HEIGHT = 420;
+const titleAt = (point: Point, title: string) => {
+  const { x, y, anchor } = labelAt(point, WIDTH, title);
+  return { x, y, textAnchor: anchor };
+};
 const EMPTY: LinkGraphData = { pages: [], edges: [], orphans: [], broken: 0 };
 
 function Pick({
@@ -245,6 +250,7 @@ export default function GraphView({ onClose }: OverlayProps) {
         {view.pages.map((page, index) => {
           const isSelected = index === selectedAt;
           const label = isSelected || touching.has(index) || view.pages.length <= 30;
+          const title = page.title || t('tree.page.noneTitle');
           return (
             <g
               key={page.page}
@@ -254,11 +260,7 @@ export default function GraphView({ onClose }: OverlayProps) {
               onDoubleClick={() => open(page.page)}
             >
               <circle cx={points[index].x} cy={points[index].y} r={isSelected ? 9 : page.page === current ? 8 : 6} />
-              {label && (
-                <text x={points[index].x + 11} y={points[index].y + 4}>
-                  {page.title || t('tree.page.noneTitle')}
-                </text>
-              )}
+              {label && <text {...titleAt(points[index], title)}>{title}</text>}
             </g>
           );
         })}

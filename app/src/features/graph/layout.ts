@@ -20,6 +20,22 @@ function sequence(seed: number): () => number {
   };
 }
 
+/** How far a page's title starts from its node's center, past the largest (selected) dot. */
+export const LABEL_GAP = 11;
+
+/** About how wide one character of a title is drawn: titles are 11 px (graph.module.css), about 0.6 em a character. */
+export const TITLE_CHAR = 0.6 * 11;
+
+/**
+ * Where a node's title goes: to the right of its node, or to the left when it would run past the picture's right
+ * edge there and has more room on the left, so a node pushed against the side keeps its title inside the picture.
+ */
+export function labelAt(point: Point, width: number, title: string): { x: number; y: number; anchor: 'start' | 'end' } {
+  const room = title.length * TITLE_CHAR + LABEL_GAP;
+  const right = point.x + room <= width || point.x <= width / 2;
+  return { x: point.x + (right ? LABEL_GAP : -LABEL_GAP), y: point.y + 4, anchor: right ? 'start' : 'end' };
+}
+
 /** Places `count` nodes in a `width` by `height` box. `edges` are pairs of node numbers. */
 export function layoutGraph(
   count: number,
@@ -83,7 +99,25 @@ export function layoutGraph(
     }
     heat *= 0.96;
   }
-  return points.map(({ x, y }) => ({ x, y }));
+  return fill(points, width, height);
+}
+
+/** How far the nodes keep from the picture's sides once spread out, and the most the layout is enlarged. */
+const FILL = { margin: 24, most: 2 } as const;
+
+/**
+ * The pull toward the center leaves the settled nodes in about the middle half of the box, crowded together with
+ * their titles on top of each other. This enlarges the layout evenly about its own center, up to FILL.most times, so
+ * it spreads over the box with FILL.margin to spare, then centers it.
+ */
+function fill(points: readonly Point[], width: number, height: number): Point[] {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const [left, right, top, bottom] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const room = (span: number, size: number) => (span > 0 ? (size - 2 * FILL.margin) / span : FILL.most);
+  const scale = Math.max(1, Math.min(FILL.most, room(right - left, width), room(bottom - top, height)));
+  const [cx, cy] = [(left + right) / 2, (top + bottom) / 2];
+  return points.map(({ x, y }) => ({ x: width / 2 + (x - cx) * scale, y: height / 2 + (y - cy) * scale }));
 }
 
 /** Keeps the best connected pages when there are more than the view can draw. Returns the kept node numbers. */
