@@ -222,7 +222,6 @@ export function drawTab(): Screen {
 
 export function viewTab(): Screen {
   const p = palette('light');
-  const y = BODY_TOP + 200;
   const rules: string[] = [];
   for (let ly = BODY_TOP + 120; ly < WIDE.height - 40; ly += 28)
     rules.push(line([EDITOR_X, ly], [EDITOR_X + 832 - 36, ly], p.c('border.subtle')));
