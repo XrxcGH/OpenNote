@@ -124,6 +124,7 @@ interface Props {
   onCancel(): void;
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function CardEditor({ card, onSave, onCancel }: Props) {
   const [kind, setKind] = useState<CardKind>(card?.kind ?? 'basic');
   const [front, setFront] = useState(card?.front ?? '');

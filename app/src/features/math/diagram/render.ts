@@ -21,6 +21,7 @@ async function engine(): Promise<Mermaid> {
     startOnLoad: false,
     securityLevel: 'strict',
     theme: wantsDark() ? 'dark' : 'neutral',
+    // checks-disable-next-line brand-consistency: inherit is not a font; the diagram keeps the page's font token
     fontFamily: 'inherit',
     flowchart: { htmlLabels: false },
   });

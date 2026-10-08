@@ -33,6 +33,7 @@ function insertOutline(root: MapNode): void {
   announce(t(detail.handled ? 'study.mindmap.outlineInserted' : 'study.mindmap.noPage'));
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function MindMap({ data, readOnly, onChange }: Props) {
   const incoming = useMemo(() => readMap(data, t('study.mindmap.mainIdea')), [data]);
   const [root, setRoot] = useState(incoming);

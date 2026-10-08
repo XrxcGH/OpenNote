@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   actionText,
   clockMs,
+  cueText,
   fromSegments,
   markdownOf,
   momentHref,
@@ -120,6 +121,14 @@ describe('reading a transcript from text', () => {
       { startMs: 1000, endMs: 3000, text: 'Hello there' },
       { startMs: 3500, endMs: 5000, text: 'Second cue' },
     ]);
+  });
+
+  it('reads cue text as text, whatever the tags try', () => {
+    expect(cueText('<v Ana>Hi</v> <00:00:01.500><c.loud>there</c>')).toBe('Hi there');
+    // A tag runs to the first ">", so a tag split by another leaves only text behind.
+    expect(cueText('<scr<script>ipt>alert(1)</script>')).toBe('ipt>alert(1)');
+    expect(cueText('a <b')).toBe('a ');
+    expect(cueText('&lt;i&gt;not a tag&lt;/i&gt; &amp;amp; C:\\x')).toBe('<i>not a tag</i> &amp; C:\\x');
   });
 
   it('reads lines that start with a time, and joins a wrapped line to the one before', () => {

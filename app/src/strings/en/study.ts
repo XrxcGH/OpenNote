@@ -139,7 +139,8 @@ export const study = {
     imported: 'Added {count, plural, one {# card} other {# cards}} as the deck {name}.',
     failed: 'This file could not be read as cards.',
     unsupported:
-      'This Anki package is in a newer format than this app reads. Export it from Anki as a package with older versions supported, then try again.',
+      'This Anki package is in a newer format than this app reads. ' +
+      'Export it from Anki as a package with older versions supported, then try again.',
     exportCsv: 'Export as CSV',
     exportAnki: 'Export as Anki package',
     exported: 'Saved {name}.',
@@ -201,7 +202,9 @@ export const study = {
     removed: 'Branch removed.',
     branchText: 'Branch text',
     hidden: '{count, plural, one {# branch folded} other {# branches folded}}',
-    keys: 'Arrow keys move between branches. Enter writes in a branch. While writing, Tab adds a branch under and Enter adds one beside. Space folds. Delete removes. Escape stops writing.',
+    keys:
+      'Arrow keys move between branches. Enter writes in a branch. While writing, Tab adds a branch under and Enter ' +
+      'adds one beside. Space folds. Delete removes. Escape stops writing.',
   },
   diagram: {
     insert: 'Insert diagram from text',
@@ -401,13 +404,15 @@ export const study = {
     paste: 'Or paste BibTeX or RIS text',
     importPasted: 'Import pasted text',
     imported:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       'Added {added, plural, one {# source} other {# sources}}. {repeats, plural, =0 {} one {# was already in the list. } other {# were already in the list. }}{unreadable, plural, =0 {} one {# entry could not be read.} other {# entries could not be read.}}',
     nothingFound: 'No sources were found in that text.',
     cited: 'Citation added to the page.',
     inserted: 'Bibliography added to the page.',
     noPage: 'Click in a page first, then insert.',
     zoteroOff:
-      'Zotero is running, but it does not allow other programs to read it. In Zotero, open Settings, then Advanced, and turn on communication with other applications.',
+      'Zotero is running, but it does not allow other programs to read it. ' +
+      'In Zotero, open Settings, then Advanced, and turn on communication with other applications.',
     zoteroMissing: 'Zotero is not running on this computer. Open it, then try again.',
     zoteroFailed: 'The Zotero library could not be read.',
   },

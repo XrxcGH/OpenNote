@@ -1,22 +1,28 @@
-// Text on ruled, grid, and dot paper sits just above the rules the way handwriting does, proved from the pixels of
-// a screenshot rather than from the layout the page reports about itself. For every line of the ruled fixture (the
-// title, the date under it, body text, inline large text, sub- and superscripts, every heading level, the three
-// kinds of list, a quote, a callout, a code block, and a table), the lowest row of ink of its "Hxn" (letters that
-// sit flat on the baseline) must be the lift above a rule's row, within a device pixel, so a thin gap of paper
-// shows between the letters and the rule, and no rule may cross the letters. The lift is 12 percent of the rule
-// spacing, rounded to a whole page unit, and at least 2 (core/ruled.ts). The rules are found by color in a
-// column with no text in it, never from the page's own numbers.
+// checks-disable-file modifiability: one pixel-reading harness whose passes share their screenshots
 //
-// The first tests sample text size and zoom on Letter. The matrix after them runs every paper the View tab offers
-// (each size, a custom size, portrait and landscape, normal and wide margins) under every background that lays text
-// on rules (the three linings, the three grids, and dots), in both page modes, and checks the first three sheets:
-// each sheet draws its rules from its own top margin, and the lines after a break sit on that sheet's rules.
+// Text on ruled, grid, and dot paper sits just above the rules the way handwriting does. This is proved from the
+// pixels of a screenshot rather than from the layout the page reports about itself.
 //
-// The title and the date under it sit in an unruled header, like the top margin of a notebook page: no rule runs
-// through them, and the first rule is the one the first line of body text sits above. A highlight and a piece of
-// inline code sit in the gap between two rules, with rounded corners and padding at their sides: the box ends a CSS
-// pixel above the rule beneath its line, which stays fully visible in its own color across the box, and starts below
-// the rule above with a CSS pixel of paper under it. Both are read from the pixels of the same screenshots.
+// The ruled fixture has a title, the date under it, body text, inline large text, subscripts, superscripts, every
+// heading level, the three kinds of list, a quote, a callout, a code block, and a table. For every line, the lowest
+// row of ink of its "Hxn" (letters that sit flat on the baseline) must be the lift above a rule's row, within a
+// device pixel. A thin gap of paper shows between the letters and the rule, and no rule may cross the letters.
+//
+// The lift is 12 percent of the rule spacing, rounded to a whole page unit, and at least 2 (core/ruled.ts). The
+// rules are found by color in a column with no text in it, never from the page's own numbers.
+//
+// The first tests sample text size and zoom on Letter. The matrix after them runs every paper the View tab offers:
+// each size, a custom size, both orientations, and both margin widths. It runs them under every background that lays
+// text on rules (the three linings, the three grids, and dots), in both page modes, and checks the first three
+// sheets. Each sheet draws its rules from its own top margin, and the lines after a break sit on that sheet's rules.
+//
+// The title and the date under it sit in an unruled header, like the top margin of a notebook page. No rule runs
+// through them, and the first rule is the one the first line of body text sits above.
+//
+// A highlight and a piece of inline code sit in the gap between two rules, with rounded corners and padding at their
+// sides. The box ends a CSS pixel above the rule beneath its line, which stays fully visible in its own color across
+// the box. It starts below the rule above with a CSS pixel of paper under it. Both are read from the pixels of the
+// same screenshots.
 //
 // The lines on a later sheet sit where the lines of the first sheet do, to half a CSS pixel: on the second and third
 // sheet of every paper in the matrix, and on the fifth, which is scrolled to. A page break must not leave a line a
@@ -44,9 +50,9 @@ const ZOOMS = [
   { percent: 150, steps: 3 },
 ] as const;
 /**
- * Columns of the page, in page units, with no text in them, where the rules show: the margin left of the title and
- * the text, and, where the paper leaves the sheet's margins blank (grid and dots on sheets), a column inside the
- * text column that the fixture's short lines never reach.
+ * Columns of the page, in page units, with no text in them, where the rules show. One is the margin left of the
+ * title and the text. Where the paper leaves the sheet's margins blank (grid and dots on sheets), another is a column
+ * inside the text column that the fixture's short lines never reach.
  */
 const MARGIN_COLUMN = [2, 20] as const;
 const TEXT_COLUMN = [400, 460] as const;
@@ -262,7 +268,7 @@ async function readPixels(
       // middle of its box, and the one above it the last rule above. The box's color is the commonest color that is
       // neither paper nor ink in the upper half of the rows between those two rules, and its rows are the ones in
       // that gap that are mostly that color. The edge of a rule is a blend of its color and the paper's, which can be
-      // the very color of a box (inline code is pale), so a pixel on a row of the rule only counts as the box when
+      // the very color of a box (inline code is pale). So a pixel on a row of the rule only counts as the box when
       // the rule's own pixels, in the rule column on the same row, do not have that color too.
       const near = (i: number, c: number[], tolerance: number) =>
         Math.abs(pixels[i] - c[0]) + Math.abs(pixels[i + 1] - c[1]) + Math.abs(pixels[i + 2] - c[2]) <= tolerance;
@@ -334,7 +340,7 @@ async function readPixels(
           if (!colorsOfRow(s - 1).has(colorKey(at(x, s - 1)))) read.notPaper++;
         }
       }
-      // Ink: dark, colorless pixels (a spelling squiggle is red, rules and highlights are light).
+      // Ink: dark, colorless pixels. A spelling squiggle is red; rules and highlights are light.
       const ink: Record<string, [number, number] | null> = {};
       for (const run of runs) {
         const left = Math.round((run.box.x - clip.x) * sx) + 1;
@@ -374,11 +380,13 @@ async function readPixels(
 }
 
 /**
- * The rules, with the ones a box hides put back: between two rules seen in the column, a gap of a whole number of
- * spacings holds that many rules, evenly spaced (a gap that is not whole is the edge of a sheet), and a box that
- * hides the rules holds the rules that continue the nearest rule seen above it, or below it. The header of the page
- * (its title and date) has no rules: `headerTop`, the row where the header starts, puts the rules of the lattice
- * back above the first one seen, so the lines in the header can still be judged against the lattice they sit on.
+ * The rules, with the ones a box hides put back. Between two rules seen in the column, a gap of a whole number of
+ * spacings holds that many rules, evenly spaced (a gap that is not whole is the edge of a sheet). A box that hides
+ * the rules holds the rules that continue the nearest rule seen above it, or below it.
+ *
+ * The header of the page (its title and date) has no rules. `headerTop`, the row where the header starts, puts the
+ * rules of the lattice back above the first one seen. The lines in the header can then still be judged against the
+ * lattice they sit on.
  */
 function lattice(
   seen: [number, number][],
@@ -462,9 +470,9 @@ function judge(
 }
 
 /**
- * What is wrong with a chip, or null: its box ends a CSS pixel above the rule beneath its line (`gap` device rows, within
- * one), starts below the rule above with a CSS pixel of paper under that rule, and leaves the rule beneath it in the
- * rule's own color across the box's width. `strict` papers have nothing but paper and that rule around the box (lined
+ * What is wrong with a chip, or null. Its box ends a CSS pixel above the rule beneath its line (`gap` device rows,
+ * within one). It starts below the rule above with a CSS pixel of paper under that rule. It leaves the rule beneath
+ * it in the rule's own color across the box's width. `strict` papers have nothing but paper and that rule around the box (lined
  * paper).
  */
 function judgeChip(
@@ -484,19 +492,28 @@ function judgeChip(
   // a whole number of device pixels.
   const slack = exact ? Math.max(1, Math.round(gap / 2)) : 2;
   // A few columns can blend to the box's color where the lines of a grid cross, or at the edge of a dot, at a scale
-  // that is not a whole number of device pixels: a box over the rule covers it in nearly every column.
+  // that is not a whole number of device pixels. A box over the rule covers it in nearly every column.
   if (read.onRule > read.width * 0.1)
     return `its box covers the rule beneath it in ${read.onRule} of ${read.width} columns`;
   const between = line - read.rows[1] - 1;
   if (Math.abs(between - gap) > slack)
-    return `its box ends ${between} device rows above the rule, not ${gap} (rows ${read.rows.join('-')}, rule ${s}-${e})`;
+    return (
+      `its box ends ${between} device rows above the rule, not ${gap} ` +
+      `(rows ${read.rows.join('-')}, rule ${s}-${e})`
+    );
   if (read.above && read.rows[0] - read.above[1] - 1 < gap - (exact ? 0 : 1))
-    return `its box comes within ${read.rows[0] - read.above[1] - 1} device rows of the rule above it (rows ${read.rows.join('-')}, rule ${read.above.join('-')})`;
+    return (
+      `its box comes within ${read.rows[0] - read.above[1] - 1} device rows of the rule above it ` +
+      `(rows ${read.rows.join('-')}, rule ${read.above.join('-')})`
+    );
   if (!dots && read.noRule > 0) return `the rule beneath it is missing in ${read.noRule} of ${read.width} columns`;
   if (strict && exact && read.offColor > 0)
     return `the rule beneath it is not the rule's color in ${read.offColor} of ${read.width} columns`;
   if (strict && exact && read.notPaper > 0)
-    return `the row above the rule is not paper in ${read.notPaper} of ${read.width} columns (box rows ${read.rows.join('-')}, rule ${s}-${e}, color ${read.color.join(',')})`;
+    return (
+      `the row above the rule is not paper in ${read.notPaper} of ${read.width} columns ` +
+      `(box rows ${read.rows.join('-')}, rule ${s}-${e}, color ${read.color.join(',')})`
+    );
   return null;
 }
 
@@ -770,9 +787,9 @@ interface SheetsResult {
 
 /**
  * Checks one paper: every line on `count` sheets from sheet `first`, and where each sheet's rules start. With `tight`
- * set, each line of a sheet after the first must also sit within half a CSS pixel of where the lines of the first sheet
- * sit against their rules (`reference`, from the pass over the first sheet): a page break must not leave a line a
- * pixel low.
+ * set, each line of a sheet after the first must also sit within half a CSS pixel of where the lines of the first
+ * sheet sit against their rules (`reference`, from the pass over the first sheet). A page break must not leave a line
+ * a pixel low.
  */
 async function checkSheets(
   page: Page,
@@ -894,10 +911,11 @@ async function checkSheets(
       const off = found?.off ?? null;
       if (off !== null && Math.abs(off - reference) > allowed)
         problems.push(
-          `${label}: its ink is ${(off - reference).toFixed(1)} device px from where the first sheet's lines sit over their rules (limit ${allowed.toFixed(1)}; ink rows ${ink.join('-')}, rules ${rules
-            .filter(([a]) => Math.abs(a - ink[1]) < 60)
-            .map((r) => r.join('-'))
-            .join(' ')})`,
+          `${label}: its ink is ${(off - reference).toFixed(1)} device px from where the first sheet's lines sit ` +
+            `over their rules (limit ${allowed.toFixed(1)}; ink rows ${ink.join('-')}, rules ${rules
+              .filter(([a]) => Math.abs(a - ink[1]) < 60)
+              .map((r) => r.join('-'))
+              .join(' ')})`,
         );
     }
   }

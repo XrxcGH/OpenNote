@@ -22,6 +22,7 @@ export const moreInterop = {
     freshHint: 'You can import notes any time with Import notes in the Home tab.',
     bring: 'Bring in notes when setup is done',
     bringHint: 'OpenNote opens the import window, and checks what will and will not come over before adding anything.',
+    // checks-disable-next-line length: one list of product names, which splitting would leave a Title Case piece
     apps: 'OpenNote reads Word, Excel, PowerPoint, and OpenDocument files, OneNote exports, Evernote, Notion, Obsidian, Joplin, Google Keep, and Windows Sticky Notes.',
   },
   report: {

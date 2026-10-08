@@ -130,8 +130,9 @@ describe('upcoming', () => {
     expect(screen.getByText(/Nothing due/)).toBeTruthy();
     await userEvent.fill(screen.getByLabelText('Task and when it is due'), 'Read chapter 4 in 3 days');
     await userEvent.click(screen.getByRole('button', { name: 'Add a task' }));
-    const list = screen.getByRole('list');
-    expect(within(list).getByText('Read chapter 4')).toBeTruthy();
+    // The planner below holds lists of its own, so find the task's row from its title.
+    const row = screen.getByText('Read chapter 4').closest('li') as HTMLElement;
+    expect(within(row).getByTitle(/^\d{4}-\d{2}-\d{2}$/)).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'No date' })).toBeNull();
   });
 

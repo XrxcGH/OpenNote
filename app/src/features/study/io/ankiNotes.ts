@@ -1,5 +1,6 @@
 // Anki notes as cards (Study tools). The shell reads the package and hands over each note's fields as Anki wrote
 // them, with HTML in them, and the pictures as data addresses. This turns them into cards of this app's kinds.
+import { markupText } from '../../../core/markupText';
 import { fromAnkiCloze } from '../deck/cloze';
 import type { Skipped } from '../deck/exchange';
 import { newId } from '../deck/library';
@@ -16,21 +17,10 @@ export interface AnkiRead {
   media: Record<string, string>;
 }
 
-const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-
 /** Plain text for a field's HTML, with line breaks kept. */
 export function htmlToText(html: string): string {
-  return html
-    .replace(/<img[^>]*>/gi, '')
-    .replace(/<br\s*\/?>|<\/(?:div|p|li|h\d)>/gi, '\n')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (all, code: string) => {
-      if (code[0] === '#') {
-        const point = code[1].toLowerCase() === 'x' ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
-        return Number.isFinite(point) ? String.fromCodePoint(point) : all;
-      }
-      return ENTITIES[code.toLowerCase()] ?? all;
-    })
+  return markupText(html, { lines: true })
+    .replace(/\u00a0/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
