@@ -34,6 +34,29 @@ fn event_json(event: TreeEvent) -> Value {
     }
 }
 
+/// A page moved between notebooks is removed from the old one and upserted in the new one. Which comes first
+/// depends on library order, and a removal after the upsert would delete the node just added, so ids that
+/// this pass also upserts are not reported as removed.
+fn drop_moved_removals(events: &mut Vec<TreeEvent>) {
+    let upserted: std::collections::HashSet<String> = events
+        .iter()
+        .filter_map(|event| match event {
+            TreeEvent::Upserted { nodes } => Some(nodes.iter().map(|n| n.id.clone())),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+    if upserted.is_empty() {
+        return;
+    }
+    for event in events.iter_mut() {
+        if let TreeEvent::Removed { ids } = event {
+            ids.retain(|id| !upserted.contains(id));
+        }
+    }
+    events.retain(|event| !matches!(event, TreeEvent::Removed { ids } if ids.is_empty()));
+}
+
 impl Bridge {
     /// Sends the events that take the interface from what it last heard to the tree as it is now.
     pub(crate) fn send_tree_events(&mut self) {
@@ -69,6 +92,7 @@ impl Bridge {
         if old.order != now.order {
             events.push(TreeEvent::ChildrenChanged { parent_id: None });
         }
+        drop_moved_removals(&mut events);
         for event in events {
             self.relay.send(NOTES_EVENT, event_json(event));
         }
