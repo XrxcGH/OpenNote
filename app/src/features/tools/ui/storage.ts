@@ -3,6 +3,9 @@
 // never throw: private windows and blocked storage just mean the tools start fresh.
 const PREFIX = 'opennote.tools.';
 
+/** The key a name is saved under, which a window's storage event names. */
+export const storedKey = (name: string): string => PREFIX + name;
+
 export function loadStored<T>(name: string, fallback: T): T {
   try {
     const text = localStorage.getItem(PREFIX + name);

@@ -10,6 +10,7 @@ import {
   pauseAll,
   removeTimer,
   renameTimerIn,
+  setNotifyIn,
   settleAll,
   viewTimers,
 } from './set';
@@ -19,6 +20,10 @@ export interface Timers {
   add(config: TimerConfig, label?: string): string;
   act(id: string, action: TimerAction): void;
   rename(id: string, label: string): void;
+  /** Asks for, or stops asking for, a notification when the timer ends. */
+  setNotify(id: string, notify: boolean): void;
+  /** Takes in a set another window saved. */
+  load(next: TimerSet): void;
   remove(id: string): void;
   pauseAll(): void;
   /** Views of every timer at the current clock reading. */
@@ -46,6 +51,8 @@ export function createTimers(clock: Clock, initial: TimerSet = EMPTY_TIMER_SET):
     },
     act: (id, action) => change(actOnTimer(set, id, action, clock())),
     rename: (id, label) => change(renameTimerIn(set, id, label)),
+    setNotify: (id, notify) => change(setNotifyIn(set, id, notify)),
+    load: (next) => change(next),
     remove: (id) => change(removeTimer(set, id)),
     pauseAll: () => change(pauseAll(set, clock())),
     views: () => viewTimers(set, clock()),

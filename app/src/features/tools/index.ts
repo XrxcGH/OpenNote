@@ -4,8 +4,9 @@
 export * from './timers';
 export * from './calculator';
 export * from './upcoming';
-export { closeTool, openTool, openTools } from './ui/host';
+export { closeTool, openTool, openTools, resetToolWindows } from './ui/host';
 export { PoppedTool } from './ui/PoppedTool';
+export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';
 export type { InsertDetail } from './ui/CalculatorTool';
 export { TOOLS, isToolId } from './ui/tools';

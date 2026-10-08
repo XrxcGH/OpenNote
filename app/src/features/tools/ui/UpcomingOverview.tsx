@@ -6,6 +6,7 @@ import { t } from '../../../strings/t';
 import { classesOn, daysLeft, examsAhead, nextClass } from '../upcoming';
 import type { Exam } from '../upcoming';
 import { dateIn } from '../upcoming/zone';
+import { ClassButtons } from './ClassButtons';
 import { longDay, useMinute, zone } from './upcomingShared';
 import { examsStore, timetableStore } from './upcomingStores';
 import styles from './tools.module.css';
@@ -45,6 +46,7 @@ export function Overview() {
                   {slot.start}–{slot.end}
                   {slot.room ? `, ${slot.room}` : ''}
                 </span>
+                <ClassButtons slot={slot} date={today} />
               </li>
             ))}
           </ul>
@@ -58,6 +60,7 @@ export function Overview() {
                     : longDay(new Date(next.date.year, next.date.month - 1, next.date.day).getDay()),
                 time: next.slot.start,
               })}
+              <ClassButtons slot={next.slot} date={next.date} />
             </p>
           ) : null}
         </section>

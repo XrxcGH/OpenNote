@@ -9,6 +9,7 @@ import { TimersTool } from './TimersTool';
 import { ExtraToolBody } from './extraTools';
 import { ToolWindow } from './ToolWindow';
 import { UpcomingTool } from './UpcomingTool';
+import { forgetStored } from './storage';
 import { TOOLS } from './tools';
 import type { ToolId } from './tools';
 
@@ -16,9 +17,11 @@ interface Layer {
   open: readonly ToolId[];
   /** The tools kept above the others. */
   pinned: readonly ToolId[];
+  /** Counts the times the windows were reset, so each draws again at its first place. */
+  epoch: number;
 }
 
-const layer = createStore<Layer>({ open: [], pinned: [] }, 'tool windows');
+const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0 }, 'tool windows');
 let root: Root | null = null;
 
 export function ToolBody({ tool }: { tool: ToolId }) {
@@ -50,7 +53,7 @@ function Windows() {
         const pinned = state.pinned.includes(id);
         return (
           <ToolWindow
-            key={id}
+            key={`${id}-${state.epoch}`}
             tool={tool}
             index={index}
             pinned={pinned}
@@ -85,9 +88,26 @@ export function openTool(id: ToolId): void {
 
 export function closeTool(id: ToolId): void {
   layer.set((current) => ({
+    ...current,
     open: current.open.filter((one) => one !== id),
     pinned: current.pinned.filter((one) => one !== id),
   }));
+}
+
+/**
+ * Puts every tool window back at its first place: the floating ones here, and the ones the app opened in windows of
+ * their own, which forget their saved size, place, and monitor.
+ */
+export async function resetToolWindows(): Promise<void> {
+  for (const tool of TOOLS) forgetStored(`place.${tool.id}`);
+  layer.set((current) => ({ ...current, epoch: current.epoch + 1 }));
+  if (!canPopOut()) return;
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('tool_windows_reset');
+  } catch {
+    // The windows the app opened keep their places.
+  }
 }
 
 /** The tools open now, for tests. */

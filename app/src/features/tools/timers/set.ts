@@ -1,6 +1,15 @@
 // Several timers at once, as plain data. Every function returns a new set and leaves the old one alone.
 
-import { applyAction, configProblem, createTimer, renameTimer, settle, totalMs, viewTimer } from './timer';
+import {
+  applyAction,
+  configProblem,
+  createTimer,
+  renameTimer,
+  setTimerNotify,
+  settle,
+  totalMs,
+  viewTimer,
+} from './timer';
 import type { TimerAction, TimerConfig, TimerSet, TimerState, TimerStatus, TimerView } from './types';
 
 export const EMPTY_TIMER_SET: TimerSet = { timers: [], nextId: 1 };
@@ -26,6 +35,10 @@ export function actOnTimer(set: TimerSet, id: string, action: TimerAction, now: 
 
 export function renameTimerIn(set: TimerSet, id: string, label: string): TimerSet {
   return mapTimer(set, id, (t) => renameTimer(t, label));
+}
+
+export function setNotifyIn(set: TimerSet, id: string, notify: boolean): TimerSet {
+  return mapTimer(set, id, (t) => setTimerNotify(t, notify));
 }
 
 /** Pauses every running timer, for example when the user taps "pause all" or the app goes to sleep. */
@@ -71,6 +84,7 @@ function restoreTimer(raw: unknown): TimerState | null {
     runningSince: running ? (raw.runningSince as number) : null,
     finishedAt: fixed === 'done' ? finishedAt : null,
     laps: timer.config.kind === 'stopwatch' ? laps : [],
+    ...(raw.notify === true ? { notify: true } : {}),
   };
 }
 

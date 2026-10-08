@@ -11,6 +11,7 @@ import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Switch, announce, confirm, showToast } from '../../ui';
 import { ConnectorNetworkUse } from '../connectors';
+import { CitationNetworkUse } from '../citations';
 import { savingAllowed, declined } from './consent';
 import { crashListSummary, crashRows } from './crashReview';
 import styles from './Diagnostics.module.css';
@@ -89,6 +90,7 @@ function NetworkUse() {
             offline={offline}
           />
         )}
+        <CitationNetworkUse />
         <ConnectorNetworkUse />
       </ul>
     </section>

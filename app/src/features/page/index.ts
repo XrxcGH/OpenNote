@@ -6,6 +6,8 @@ export { installPages } from './runtime';
 export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from './pagesApi';
 export type { MountedPage, MountedPageHook } from './pagesApi';
 export { pageSelection } from './seams/selectionStore';
+export { transcriptActions } from './audio/transcripts/actionRegistry';
+export type { TranscriptAction, TranscriptContext } from './audio/transcripts/actionRegistry';
 export { usePrefs as usePageExtrasPrefs } from './qol/prefs';
 export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';

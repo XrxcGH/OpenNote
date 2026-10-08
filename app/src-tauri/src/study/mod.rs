@@ -2,6 +2,7 @@
 //! interface hands over a package's bytes and gets its notes back, or hands over a deck and gets a package.
 
 pub mod anki;
+pub mod cite;
 mod zip;
 mod zotero;
 
@@ -45,6 +46,25 @@ pub async fn study_anki_write(deck: anki::DeckIn) -> IpcResult<Response> {
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
         .map_err(|reason| IpcError::new(codes::IO, reason))?;
     Ok(Response::new(bytes))
+}
+
+/// Looks up one source by its DOI (Crossref) or ISBN (Open Library). It runs only when the person asks, never while
+/// Work offline is on, and fails with the code `offline`, `invalid` for something that is not a DOI or ISBN, or `io`.
+#[tauri::command]
+pub async fn study_cite_lookup(kind: String, id: String) -> IpcResult<Option<cite::Found>> {
+    if crate::hardening::offline() {
+        return Err(IpcError::new("offline", "Work offline is on."));
+    }
+    tauri::async_runtime::spawn_blocking(move || cite::lookup(&kind, &id))
+        .await
+        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
+        .map_err(|reason| {
+            if reason == "invalid" {
+                IpcError::invalid("id", "That is not a DOI or an ISBN.")
+            } else {
+                IpcError::new(codes::IO, reason)
+            }
+        })
 }
 
 /// Asks Zotero on this computer for the person's library. Fails with the code `zoteroOff` when its local API is

@@ -3,13 +3,16 @@
 // only definitions; each command loads its feature on first use.
 import { isEnabled } from '../../../app/flags';
 import type { FlagId } from '../../../app/flags';
-import { chord } from '../../../commands/registry';
+import { chord, defineCommand } from '../../../commands/registry';
 import type { CommandCategory } from '../../../commands/types';
-import { commandBar, commands } from '../../../registries';
+import { commandBar, commands, contextMenus } from '../../../registries';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
+import { getLocation } from '../../../app/location';
 import { announce } from '../../../ui';
 import type { IconName } from '../../../ui/icons';
+import { currentSection } from '../../tree';
+import { transcriptActions } from '../audio/transcripts/actionRegistry';
 import { targetEditor } from '../formattingBar/target';
 import type { MountedPage } from '../mount';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
@@ -20,6 +23,7 @@ import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
 import { currentTable } from '../tables/current';
 import { later } from '../tables/later';
+import { INSERT_EVENT } from '../../tools/flags';
 
 interface Spec {
   id: `${string}.${string}`;
@@ -111,6 +115,46 @@ addCommand({
   },
 });
 
+// Quiz: a block that asks random questions from a deck and counts the right answers.
+blockRenderers.register(
+  panelRenderer({
+    type: 'quiz',
+    label: 'study.quiz.block',
+    flag: 'study.cards',
+    load: async () => {
+      const { mountQuiz } = await import('../../study');
+      return { mount: (container, props) => mountQuiz(container, props) };
+    },
+  }),
+);
+
+addCommand({
+  id: 'insert.quiz',
+  title: 'study.quiz.insert',
+  keywords: 'study.quiz.insertKeywords',
+  icon: 'Cards',
+  flag: 'study.cards',
+  slash: { group: 'advanced', order: 34 },
+  bar: { group: 'study', priority: 34 },
+  run: async () => {
+    const mounted = shownMounted.get();
+    if (!mounted) return;
+    const study = await import('../../study');
+    const { insertPanelBlock } = await import('../panels/insertPanel');
+    const deck =
+      study.deckById(study.pageDeckId(mounted.page.id)) ??
+      study.createDeck(
+        mounted.page.initial.title || t('study.deck.untitled', { number: study.decksStore.get().length + 1 }),
+      );
+    const id = await insertPanelBlock(
+      'quiz',
+      { deck: deck.id, count: 10 },
+      t('study.quiz.blockFallback', { name: deck.name }),
+    );
+    if (id) announce(t('study.quiz.inserted'));
+  },
+});
+
 addCommand({
   id: 'tools.flashcards',
   title: 'study.deck.open',
@@ -155,6 +199,112 @@ addCommand({
   flag: 'study.cards',
   run: () => makeCards(true),
 });
+
+// Cards from a section: the tree's section menu and the palette read the pages of the section (the one the menu
+// opened on, or the open one), and the Flashcards window shows what was found for the person to keep or leave.
+commands.register(
+  defineCommand({
+    id: 'study.generateSection',
+    title: 'study.generate.section',
+    keywords: 'study.generate.keywords',
+    category: 'general',
+    icon: 'MagicWand',
+    flag: 'study.cards',
+    run: async (ctx) => {
+      const section = currentSection(ctx);
+      if (!section) return void announce(t('study.generate.noSection'));
+      const { sectionText } = await import('../../study');
+      const words = await sectionText(ctx.notes, ctx.platform.pages, section);
+      if (!words.text.trim()) return void announce(t('study.generate.emptySection'));
+      const [{ requestCards }, { openTool }] = await Promise.all([import('../../study'), import('../../tools')]);
+      requestCards(words.text, section.title);
+      openTool('flashcards');
+      if (words.skipped > 0) announce(t('study.generate.sectionSkipped', { count: words.skipped }));
+    },
+  }),
+);
+contextMenus.register({
+  id: 'tree.section.study.cards',
+  menu: 'tree.section',
+  command: 'study.generateSection',
+  group: 'qol',
+  order: 40,
+  flag: 'study.cards',
+});
+
+// "Make cards" on a transcript: the transcript block draws a button for each registered action.
+transcriptActions.register({
+  id: 'study.cards',
+  label: 'study.generate.transcript',
+  flag: 'study.cards',
+  run: async ({ text, source }) => {
+    if (!text.trim()) return void announce(t('study.generate.emptyTranscript'));
+    const [{ requestCards }, { openTool }] = await Promise.all([import('../../study'), import('../../tools')]);
+    requestCards(text, source || t('study.deck.untitled', { number: 1 }));
+    openTool('flashcards');
+  },
+});
+
+// Citations and a bibliography that follow the chosen style: the blocks name their sources and the style is looked up
+// when they are drawn, so a style change (or a change to a source) updates them. They are added from the Citations
+// window, and the bibliography also from the palette and the slash menu.
+for (const [type, label, mount] of [
+  ['citation', 'study.citations.live.blockCitation', 'mountCitation'],
+  ['bibliography', 'study.citations.live.blockBibliography', 'mountBibliography'],
+] as const) {
+  blockRenderers.register(
+    panelRenderer({
+      type,
+      label,
+      flag: 'tools.citations',
+      load: async () => {
+        const citations = await import('../../citations');
+        return { mount: (container, props) => citations[mount](container, props) };
+      },
+    }),
+  );
+}
+
+addCommand({
+  id: 'insert.bibliography',
+  title: 'study.citations.live.insertBibliographyCommand',
+  keywords: 'study.citations.live.insertBibliographyKeywords',
+  icon: 'Quotes',
+  flag: 'tools.citations',
+  slash: { group: 'advanced', order: 35 },
+  bar: { group: 'study', priority: 35 },
+  run: async () => {
+    const [citations, { insertPanelBlock }] = await Promise.all([
+      import('../../citations'),
+      import('../panels/insertPanel'),
+    ]);
+    const here = getLocation();
+    const notebook = here.view === 'workspace' && here.notebookId ? String(here.notebookId) : citations.SHARED;
+    const sources = citations.sourcesOf(notebook);
+    if (sources.length === 0) return void announce(t('study.citations.none'));
+    const text = citations.bibliography(sources, citations.styleStore.get());
+    const id = await insertPanelBlock('bibliography', { notebook, sources: null }, text);
+    if (id) announce(t('study.citations.live.bibliographyInserted'));
+  },
+});
+
+// The Citations window asks for a block with a "block" detail on the insert event, and is told at once if a page takes it.
+if (typeof window !== 'undefined') {
+  window.addEventListener(INSERT_EVENT, (event) => {
+    const detail = (
+      event as CustomEvent<{
+        block?: { type: string; data: Record<string, unknown>; fallback: string };
+        handled: boolean;
+      }>
+    ).detail;
+    const block = detail?.block;
+    if (!block || shownQueue.get() === null) return;
+    detail.handled = true;
+    void import('../panels/insertPanel').then(({ insertPanelBlock }) =>
+      insertPanelBlock(block.type, block.data, block.fallback),
+    );
+  });
+}
 
 // Watching the text of the shown page. The study and productivity features read lines of the page, so one watcher
 // serves them: it runs `run` when a block changes (a moment later, and every few seconds as a fallback), but only
@@ -256,6 +406,51 @@ for (const [tool, flag, title, keywords, icon] of [
     run: async () => (await import('../../tools')).openTool(tool),
   });
 }
+
+// The dictionary and thesaurus: open it from the palette, or look up the word selected on the page.
+addCommand({
+  id: 'tools.dictionary',
+  title: 'study.dictionary.open',
+  keywords: 'study.dictionary.keywords',
+  category: 'general',
+  icon: 'BookOpenText',
+  flag: 'tools.dictionary',
+  anywhere: true,
+  run: async () => (await import('../../tools')).openTool('dictionary'),
+});
+addCommand({
+  id: 'tools.dictionary.lookup',
+  title: 'study.dictionary.lookupSelection',
+  keywords: 'study.dictionary.keywords',
+  category: 'general',
+  icon: 'BookOpenText',
+  flag: 'tools.dictionary',
+  keys: ['Ctrl+Alt+D'],
+  run: async () => {
+    const editor = targetEditor();
+    const { from, to } = editor?.state.selection ?? { from: 0, to: 0 };
+    const word = editor && from !== to ? editor.state.doc.textBetween(from, to, ' ').trim() : '';
+    if (!word) return void announce(t('study.dictionary.selectFirst'));
+    const tools = await import('../../tools');
+    tools.requestWord(word);
+    tools.openTool('dictionary');
+  },
+});
+
+// "Reset tool windows" puts every tool window back at its first size and place, on this monitor.
+addCommand({
+  id: 'tools.resetWindows',
+  title: 'study.toolWindows.reset',
+  keywords: 'study.toolWindows.resetKeywords',
+  category: 'general',
+  icon: 'Timer',
+  flag: 'tools.windows',
+  anywhere: true,
+  run: async () => {
+    await (await import('../../tools')).resetToolWindows();
+    announce(t('study.toolWindows.resetDone'));
+  },
+});
 
 // Parts the tools draw inside page text: answers on math lines and due-date chips. They join the text editors shortly
 // after start-up, in the tools' own chunk.

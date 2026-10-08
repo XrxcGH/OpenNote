@@ -4,11 +4,15 @@
 // suggested (nothing is added until it is chosen).
 import { useId, useState } from 'react';
 import { useFlag } from '../../../../app/flags';
+import { useRegistry } from '../../../../registries/registry';
 import type { BlockJson } from '../../../../services/pages/types';
 import { useStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
 import { Button, showToast, Switch } from '../../../../ui';
+import { shownPage } from '../../history/shown';
 import { describeError } from '../controller';
+import { transcriptActions } from './actionRegistry';
+import type { TranscriptAction } from './actionRegistry';
 import { playbackUi } from '../playback';
 import {
   actionWords,
@@ -224,6 +228,27 @@ function ChapterList({ chapters, recording }: { chapters: readonly Chapter[]; re
   );
 }
 
+/** The button a feature added to the transcript's header. */
+function RegisteredAction({ action, data }: { action: TranscriptAction; data: TranscriptData }) {
+  const on = useFlag(action.flag ?? 'transcripts.block');
+  if (action.flag && !on) return null;
+  return (
+    <Button
+      variant="secondary"
+      onClick={() =>
+        void Promise.resolve(
+          action.run({
+            text: data.lines.map((line) => line.text).join('\n'),
+            source: shownPage.get()?.initial.title ?? '',
+          }),
+        )
+      }
+    >
+      {t(action.label)}
+    </Button>
+  );
+}
+
 export function TranscriptView({ block }: { block: BlockJson }) {
   const recording = recordingOf(block);
   const data = useStore(transcripts, (held) => (recording ? (held.get(recording) ?? null) : null));
@@ -242,6 +267,7 @@ export function TranscriptView({ block }: { block: BlockJson }) {
   const notesOn = useFlag('transcripts.notes');
   const actionsOn = useFlag('transcripts.actions');
   const recapOn = useFlag('transcripts.recap');
+  const added = useRegistry(transcriptActions);
   const headingId = useId();
   if (!data) return <p className={styles.help}>{t('audioMore.transcript.noLines')}</p>;
   const save: Save = async (next, refresh = true) => {
@@ -294,6 +320,9 @@ export function TranscriptView({ block }: { block: BlockJson }) {
               </Button>
             </>
           )}
+          {added.map((action) => (
+            <RegisteredAction key={action.id} action={action} data={data} />
+          ))}
           {recapOn && (
             <Button variant="secondary" onClick={() => void import('./dialogs').then((module) => module.openRecap())}>
               {t('audioMore.transcript.copyRecap')}

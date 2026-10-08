@@ -4,7 +4,9 @@ import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
 import { clockText, minutesOfText } from '../upcoming';
-import type { ClassSlot } from '../upcoming';
+import type { ClassSection, ClassSlot } from '../upcoming';
+import { ClassTemplate } from './ClassTemplate';
+import { useNodeChoices } from './nodeChoices';
 import { WEEK, newId, weekday } from './upcomingShared';
 import { setTimetable, timetableStore } from './upcomingStores';
 import styles from './tools.module.css';
@@ -17,6 +19,8 @@ export function ClassForm() {
   const [start, setStart] = useState('09:00');
   const [end, setEnd] = useState('09:50');
   const [room, setRoom] = useState('');
+  const [place, setPlace] = useState('');
+  const choices = useNodeChoices().filter((one) => one.kind === 'section');
   const [problem, setProblem] = useState('');
 
   const add = () => {
@@ -24,13 +28,26 @@ export function ClassForm() {
       return setProblem(t('study.timetable.needFields'));
     }
     setProblem('');
+    const chosen = choices.find((one) => one.id === place);
+    const section: ClassSection | null = chosen
+      ? { id: chosen.id, label: chosen.label, notebookId: chosen.notebookId }
+      : null;
     setTimetable([
       ...slots,
-      { id: newId('k'), name: name.trim(), days: days as ClassSlot['days'], start, end, room: room.trim() },
+      {
+        id: newId('k'),
+        name: name.trim(),
+        days: days as ClassSlot['days'],
+        start,
+        end,
+        room: room.trim(),
+        ...(section ? { section } : {}),
+      },
     ]);
     setName('');
     setDays([]);
     setRoom('');
+    setPlace('');
     announce(t('study.timetable.added'));
   };
 
@@ -62,6 +79,17 @@ export function ClassForm() {
         </label>
       </div>
       <TextField label={t('study.timetable.room')} value={room} onChange={setRoom} />
+      <label className={extra.field}>
+        {t('study.timetable.section')}
+        <select className={extra.input} value={place} onChange={(event) => setPlace(event.target.value)}>
+          <option value="">{t('study.timetable.noSection')}</option>
+          {choices.map((one) => (
+            <option key={one.id} value={one.id}>
+              {one.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className={styles.buttons}>
         <Button onClick={add}>{t('study.timetable.addButton')}</Button>
       </div>
@@ -77,6 +105,9 @@ export function ClassForm() {
             <span className={styles.itemDue}>
               {slot.days.map(weekday).join(' ')} {clockText(minutesOfText(slot.start))}
             </span>
+            {slot.section ? (
+              <span className={styles.note}>{t('study.timetable.inSection', { section: slot.section.label })}</span>
+            ) : null}
             <Button
               variant="quiet"
               aria-label={t('study.timetable.remove', { name: slot.name })}
@@ -87,6 +118,7 @@ export function ClassForm() {
           </li>
         ))}
       </ul>
+      <ClassTemplate />
     </>
   );
 }

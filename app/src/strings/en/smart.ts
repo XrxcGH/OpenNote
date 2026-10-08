@@ -71,6 +71,10 @@ export const smart = {
       phaseBreak: 'Break after round {cycle} of {cycles}',
       status: { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Finished' },
       finished: '{name} finished.',
+      notify: 'Notify me when {name} ends',
+      chip: '{name}, {time} left',
+      chipOpen: 'Timers: {summary}. Open the Timers window.',
+      chipMany: '{count} timers running',
       tooLong: 'Choose a time of at least one second.',
     },
     calculator: {

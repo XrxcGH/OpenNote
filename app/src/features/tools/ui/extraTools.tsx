@@ -3,6 +3,7 @@
 import { CitationsPanel } from '../../citations';
 import { DeckPanel } from '../../study';
 import { ConverterTool } from './ConverterTool';
+import { DictionaryTool } from './DictionaryTool';
 import { ReferenceTool } from './ReferenceTool';
 import type { ToolId } from './tools';
 
@@ -11,5 +12,6 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'converter') return <ConverterTool />;
   if (tool === 'reference') return <ReferenceTool />;
   if (tool === 'citations') return <CitationsPanel />;
+  if (tool === 'dictionary') return <DictionaryTool />;
   return null;
 }

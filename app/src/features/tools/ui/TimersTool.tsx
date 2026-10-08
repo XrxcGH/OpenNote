@@ -1,40 +1,17 @@
 // Timers (Phase 10): countdowns, stopwatches with laps, and focus timers with work and break lengths. Several can
 // run at once. A timer counts by the clock, so it stays right across sleep, and one that ended while the computer
-// slept shows as finished on waking. There are no streaks, totals, or history, and nothing makes a sound or a
-// notice on its own: a finished timer says so here, and politely to a screen reader.
-import { useEffect, useReducer, useRef, useState } from 'react';
+// slept shows as finished on waking. There are no streaks, totals, or history, and nothing makes a sound. A finished
+// timer says so politely to a screen reader, and shows a Windows notification only if the person asked for one for
+// that timer (timerWatch.ts, which also works when this window is closed).
+import { useEffect, useReducer, useState } from 'react';
 import { t } from '../../../strings/t';
-import { Button, TextField, announce } from '../../../ui';
-import { createTimers, restoreTimerSet, systemClock } from '../timers';
+import { Button, Switch, TextField } from '../../../ui';
 import type { TimerConfig, TimerKind, TimerView, Timers } from '../timers';
-import { showNotice } from './notify';
-import { loadStored, saveStored } from './storage';
+import { enableReminders, remindersOn } from './notify';
+import { clockText, stopwatchText, timersForWindow } from './timerSet';
 import styles from './tools.module.css';
 
-const STORE = 'timers';
-let shared: Timers | null = null;
-
-/** The one set of timers for this window, restored from the device and saved after every change. */
-function timersForWindow(): Timers {
-  if (!shared) {
-    shared = createTimers(systemClock(), restoreTimerSet(loadStored(STORE, null)));
-    const timers = shared;
-    timers.subscribe(() => saveStored(STORE, timers.snapshot()));
-  }
-  return shared;
-}
-
-/** Hours, minutes, and seconds: 1:05:09, or 5:09 under an hour. */
-export function clockText(ms: number): string {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const seconds = total % 60;
-  const two = (value: number) => String(value).padStart(2, '0');
-  return hours > 0 ? `${hours}:${two(minutes)}:${two(seconds)}` : `${minutes}:${two(seconds)}`;
-}
-
-const stopwatchText = (ms: number) => clockText(Math.floor(ms / 1000) * 1000);
+export { clockText };
 
 function TimerCard({ view, timers }: { view: TimerView; timers: Timers }) {
   const shown = view.kind === 'stopwatch' ? stopwatchText(view.elapsedMs) : clockText(view.leftMs ?? 0);
@@ -45,6 +22,15 @@ function TimerCard({ view, timers }: { view: TimerView; timers: Timers }) {
       })
     : null;
   const act = (action: Parameters<Timers['act']>[1]) => () => timers.act(view.id, action);
+  const [blocked, setBlocked] = useState(false);
+  const chooseNotify = async (next: boolean) => {
+    if (next && !remindersOn() && !(await enableReminders())) {
+      setBlocked(true);
+      return;
+    }
+    setBlocked(false);
+    timers.setNotify(view.id, next);
+  };
   return (
     <li className={styles.card} data-status={view.status}>
       <div className={styles.cardHead}>
@@ -55,6 +41,12 @@ function TimerCard({ view, timers }: { view: TimerView; timers: Timers }) {
         {shown}
       </div>
       {phase ? <div className={styles.phase}>{phase}</div> : null}
+      <Switch
+        label={t('smart.tools.timers.notify', { name: view.label })}
+        checked={view.notify}
+        onChange={chooseNotify}
+      />
+      {blocked ? <p className={styles.note}>{t('study.reminders.blocked')}</p> : null}
       <div className={styles.buttons}>
         {view.status === 'idle' ? <Button onClick={act('start')}>{t('smart.tools.timers.start')}</Button> : null}
         {view.status === 'running' ? <Button onClick={act('pause')}>{t('smart.tools.timers.pause')}</Button> : null}
@@ -166,7 +158,6 @@ function NewTimer({ timers, count }: { timers: Timers; count: number }) {
 export function TimersTool() {
   const [timers] = useState(timersForWindow);
   const [, refresh] = useReducer((count: number) => count + 1, 0);
-  const finished = useRef(new Set<string>());
   useEffect(() => timers.subscribe(refresh), [timers]);
   // Check again when something is due to change; a timer's own wake time is the soonest of them.
   useEffect(() => {
@@ -174,15 +165,6 @@ export function TimersTool() {
     return () => clearInterval(interval);
   }, []);
   const views = timers.views();
-  useEffect(() => {
-    for (const view of views) {
-      if (view.status === 'done' && !finished.current.has(view.id)) {
-        finished.current.add(view.id);
-        announce(t('smart.tools.timers.finished', { name: view.label }));
-        showNotice(t('study.reminders.timer'), view.label);
-      } else if (view.status !== 'done') finished.current.delete(view.id);
-    }
-  });
 
   return (
     <div className={styles.tool}>

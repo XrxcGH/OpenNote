@@ -3,7 +3,10 @@
 import { createStore } from '../../state/store';
 import { mergeSources } from './model';
 import type { Source } from './model';
-import { STYLE_IDS } from './styles';
+import { readStyleFile } from './csl';
+import type { StyleFile } from './csl';
+import { addedStyles, addStyleFile, removeStyleFile } from './styleList';
+import { STYLES } from './styles';
 import type { StyleId } from './styles';
 
 const PREFIX = 'opennote.citations.';
@@ -71,10 +74,16 @@ export function removeSource(notebook: string, id: string): void {
   );
 }
 
+// Style files the person added come back on the next start, before the chosen style is looked up.
+for (const saved of read<unknown[]>('style.files', [])) {
+  const file = readStyleFile(JSON.stringify(saved));
+  if ('style' in file) addStyleFile(file.style);
+}
+
 export const styleStore = createStore<StyleId>(
   (() => {
     const saved = read<string>('style', 'apa');
-    return (STYLE_IDS as readonly string[]).includes(saved) ? (saved as StyleId) : 'apa';
+    return Object.hasOwn(STYLES, saved) ? saved : 'apa';
   })(),
   'citation style',
 );
@@ -82,4 +91,19 @@ export const styleStore = createStore<StyleId>(
 export function setStyle(style: StyleId): void {
   styleStore.set(style);
   write('style', style);
+}
+
+/** Adds a style file the person chose and picks it. Returns false when its id belongs to a style the app has. */
+export function addStyle(file: StyleFile): boolean {
+  if (!addStyleFile(file)) return false;
+  write('style.files', addedStyles.get());
+  setStyle(file.id);
+  return true;
+}
+
+/** Removes a style file the person added. A source list keeps working: the chosen style falls back to APA. */
+export function removeStyle(id: StyleId): void {
+  removeStyleFile(id);
+  write('style.files', addedStyles.get());
+  if (styleStore.get() === id) setStyle('apa');
 }

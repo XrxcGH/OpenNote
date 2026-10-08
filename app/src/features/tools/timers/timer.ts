@@ -110,6 +110,10 @@ export function applyAction(state: TimerState, action: TimerAction, now: number)
   }
 }
 
+export function setTimerNotify(state: TimerState, notify: boolean): TimerState {
+  return { ...state, notify };
+}
+
 export function renameTimer(state: TimerState, label: string): TimerState {
   return { ...state, label: label.trim() };
 }
@@ -150,5 +154,6 @@ export function viewTimer(timer: TimerState, now: number): TimerView {
     nextChangeAt: focus?.phaseEndsAt ?? endsAt,
     focus,
     laps: state.laps,
+    notify: state.notify === true,
   };
 }

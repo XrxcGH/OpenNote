@@ -8,6 +8,7 @@ import { Button, announce } from '../../../ui';
 import { dateKey } from '../upcoming';
 import type { Due, UpcomingGroupId, UpcomingGroups, UpcomingItem } from '../upcoming';
 import { chooseReminder, hasReminder } from './itemReminder';
+import { repeatBadge } from './repeatWords';
 import { readReminders } from './upcomingStores';
 import styles from './tools.module.css';
 
@@ -27,11 +28,13 @@ export interface GroupsProps {
   shown: readonly (UpcomingGroupId | 'undated')[];
   onChange(id: string, patch: Partial<UpcomingItem> | null): void;
   onSkip(id: string): void;
+  /** Checks a line that lives on a page, which writes the check into the page. */
+  onCheckPage(item: UpcomingItem, done: boolean): void;
   /** Says something in the note under the form, such as why a reminder cannot show. */
   onNote(text: string): void;
 }
 
-export function Groups({ groups, shown, onChange, onSkip, onNote }: GroupsProps) {
+export function Groups({ groups, shown, onChange, onSkip, onCheckPage, onNote }: GroupsProps) {
   const remindersAllowed = useFlag('tools.reminders');
   const [pageLines, setPageLines] = useState(() => readReminders().pageLines);
 
@@ -56,16 +59,20 @@ export function Groups({ groups, shown, onChange, onSkip, onNote }: GroupsProps)
                 <input
                   type="checkbox"
                   checked={item.done}
-                  disabled={Boolean(item.page)}
+                  disabled={Boolean(item.page) && !item.page?.task}
                   aria-label={t('smart.tools.upcoming.done', { title: item.title })}
-                  onChange={(event) => onChange(item.id, { done: event.target.checked })}
+                  onChange={(event) =>
+                    item.page
+                      ? onCheckPage(item, event.target.checked)
+                      : onChange(item.id, { done: event.target.checked })
+                  }
                 />
                 <span className={styles.itemTitle}>
                   {item.title}
                   {item.page ? (
                     <span className={styles.note}> {t('study.dueDates.fromPage', { page: item.page.title })}</span>
                   ) : null}
-                  {item.repeat ? <span className={styles.note}> {t('study.repeat.badge')}</span> : null}
+                  {item.repeat ? <span className={styles.note}> {repeatBadge(item.repeat)}</span> : null}
                 </span>
                 {item.due ? (
                   <span className={styles.itemDue} title={dateKey(item.due.date)}>
@@ -82,7 +89,7 @@ export function Groups({ groups, shown, onChange, onSkip, onNote }: GroupsProps)
                     {t('study.reminders.item')}
                   </Button>
                 ) : null}
-                {item.repeat ? (
+                {item.repeat && !item.page ? (
                   <Button
                     variant="quiet"
                     aria-label={t('study.repeat.skipNamed', { title: item.title })}

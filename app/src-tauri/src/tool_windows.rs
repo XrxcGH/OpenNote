@@ -4,8 +4,26 @@
 //! [`tool_window_open`]. That builds a second window with the main window's boot payload and WebView2 data folder.
 //! The tool follows the theme and keeps its state, which it saves in the app's browser storage. The window loads
 //! the same interface and shows only the tool its script names.
+//!
+//! Each window saves its size, place, and monitor as it moves and closes, and opens there again (see [`place`]).
+//! [`tool_windows_reset`] forgets them and puts the open windows back.
 
-use tauri::{window::Color, AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+mod place;
+
+use std::{
+    path::PathBuf,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread,
+    time::Duration,
+};
+
+use tauri::{
+    window::Color, AppHandle, LogicalSize, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow,
+    WebviewWindowBuilder, WindowEvent,
+};
 
 use crate::{
     appearance::Current,
@@ -96,6 +114,95 @@ pub fn script(boot_script: &str, tool: &Tool) -> String {
     format!("{boot_script}\nwindow.__OPENNOTE_TOOL__ = \"{}\";", tool.id)
 }
 
+/// How long moves and resizes are folded together before a tool window's place is saved.
+const SAVE_DELAY: Duration = Duration::from_millis(400);
+
+fn places_file(app: &AppHandle) -> PathBuf {
+    app.state::<Paths>().state_file.with_file_name(place::FILE)
+}
+
+fn edge(value: u32) -> i32 {
+    i32::try_from(value).unwrap_or(i32::MAX)
+}
+
+fn describe(monitor: &tauri::Monitor, primary: Option<&tauri::Monitor>) -> place::Monitor {
+    let (position, size, work) = (monitor.position(), monitor.size(), monitor.work_area());
+    place::Monitor {
+        name: monitor.name().cloned(),
+        area: [position.x, position.y, position.x + edge(size.width), position.y + edge(size.height)],
+        work: [
+            work.position.x,
+            work.position.y,
+            work.position.x + edge(work.size.width),
+            work.position.y + edge(work.size.height),
+        ],
+        scale: monitor.scale_factor(),
+        primary: primary.is_some_and(|one| one.position() == monitor.position() && one.size() == monitor.size()),
+    }
+}
+
+fn monitors(app: &AppHandle) -> Vec<place::Monitor> {
+    let primary = app.primary_monitor().ok().flatten();
+    app.available_monitors()
+        .unwrap_or_default()
+        .iter()
+        .map(|monitor| describe(monitor, primary.as_ref()))
+        .collect()
+}
+
+/// Saves where a tool's window is now. A minimized window has no place worth keeping.
+fn save_now(app: &AppHandle, tool: &str, window: &WebviewWindow) {
+    if window.is_minimized().unwrap_or(false) {
+        return;
+    }
+    let (Ok(position), Ok(size), Ok(Some(current))) =
+        (window.outer_position(), window.inner_size(), window.current_monitor())
+    else {
+        return;
+    };
+    let primary = app.primary_monitor().ok().flatten();
+    let now = place::Now {
+        position: (position.x, position.y),
+        size: (size.width, size.height),
+    };
+    if let Some(saved) = place::capture(&now, &describe(&current, primary.as_ref())) {
+        if let Err(error) = place::save(&places_file(app), tool, saved) {
+            log::warn!("The {tool} window's place was not saved: {error}");
+        }
+    }
+}
+
+/// Moves a new window to the place it had, if one is saved, and shows it.
+fn restore_and_show(app: &AppHandle, tool: &str, window: &WebviewWindow) {
+    let saved = place::load(&places_file(app)).remove(tool);
+    if let Some(open) = saved.and_then(|saved| place::opening(&saved, &monitors(app))) {
+        let _ = window.set_size(PhysicalSize::new(open.size.0, open.size.1));
+        let _ = window.set_position(PhysicalPosition::new(open.position.0, open.position.1));
+    }
+    let _ = window.show();
+}
+
+/// Watches a tool window: its place is saved shortly after it moves or resizes, and when it closes.
+fn watch(app: &AppHandle, tool: &'static str, window: &WebviewWindow) {
+    let pending = Arc::new(AtomicBool::new(false));
+    let (app, handle) = (app.clone(), window.clone());
+    window.on_window_event(move |event| match event {
+        WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
+            if pending.swap(true, Ordering::AcqRel) {
+                return;
+            }
+            let (pending, app, handle) = (Arc::clone(&pending), app.clone(), handle.clone());
+            thread::spawn(move || {
+                thread::sleep(SAVE_DELAY);
+                pending.store(false, Ordering::Release);
+                save_now(&app, tool, &handle);
+            });
+        }
+        WindowEvent::CloseRequested { .. } => save_now(&app, tool, &handle),
+        _ => {}
+    });
+}
+
 /// Opens a tool in a window of its own, or brings its window forward if it is open. `pinned` keeps it above other
 /// windows.
 #[tauri::command]
@@ -114,19 +221,36 @@ pub fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> IpcResult
     let os = app.state::<Current>().get();
     let data = boot::payload(&app.state::<Startup>(), &settings, &state, &os, install::status(&paths));
     let Rgb(r, g, b) = boot::window_color(settings.appearance.theme, &os, boot::system_window_color());
-    WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html".into()))
+    let window = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html".into()))
         .title(spec.title)
         .inner_size(spec.width, spec.height)
         .min_inner_size(320.0, 360.0)
         .always_on_top(pinned)
+        .visible(false)
         .background_color(Color(r, g, b, 255))
         .initialization_script(script(&boot::initialization_script(&data), spec))
         .data_directory(paths.webview.clone())
         .disable_drag_drop_handler()
         .zoom_hotkeys_enabled(false)
         .build()
-        .map(|_| ())
-        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
+        .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
+    restore_and_show(&app, spec.id, &window);
+    watch(&app, spec.id, &window);
+    Ok(())
+}
+
+/// Forgets the saved size and place of every tool window and puts the open ones back at their first size, in the
+/// middle of their monitor.
+#[tauri::command]
+pub fn tool_windows_reset(app: AppHandle) -> IpcResult<()> {
+    place::clear(&places_file(&app)).map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?;
+    for spec in TOOLS {
+        if let Some(open) = app.get_webview_window(&label(spec)) {
+            let _ = open.set_size(LogicalSize::new(spec.width, spec.height));
+            let _ = open.center();
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]

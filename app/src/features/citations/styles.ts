@@ -4,8 +4,10 @@
 // unusual sources.
 import type { Person, Source } from './model';
 
-export type StyleId = 'apa' | 'mla' | 'chicago' | 'harvard' | 'ieee';
-export const STYLE_IDS: readonly StyleId[] = ['apa', 'mla', 'chicago', 'harvard', 'ieee'];
+export type BuiltinStyleId = 'apa' | 'mla' | 'chicago' | 'harvard' | 'ieee';
+export const BUILTIN_STYLE_IDS: readonly BuiltinStyleId[] = ['apa', 'mla', 'chicago', 'harvard', 'ieee'];
+/** A style's id: one of the five above, a bundled style file (cslStyles.ts), or a style file the person added. */
+export type StyleId = string;
 
 const MONTH_NAMES = [
   'January',
@@ -21,13 +23,13 @@ const MONTH_NAMES = [
   'November',
   'December',
 ];
-const monthName = (month: string): string => MONTH_NAMES[Number(month) - 1] ?? '';
-const shortMonth = (month: string): string => {
+export const monthName = (month: string): string => MONTH_NAMES[Number(month) - 1] ?? '';
+export const shortMonth = (month: string): string => {
   const name = monthName(month);
   return name.length > 4 ? `${name.slice(0, 3)}.` : name;
 };
 
-const initials = (given: string, dots = true): string =>
+export const initials = (given: string, dots = true): string =>
   given
     .split(/[\s-]+/)
     .filter(Boolean)
@@ -112,7 +114,7 @@ const apa = {
 };
 
 /** The names for an in-text citation: one family name, two joined, or the first with "et al.". */
-function inTextNames(source: Source, joiner: string): string {
+export function inTextNames(source: Source, joiner: string): string {
   const families = source.authors.map((person) => person.family);
   if (families.length <= 2) return families.join(` ${joiner} `);
   return `${families[0]} et al.`;
@@ -347,7 +349,7 @@ export interface CitationStyle {
   numbered: boolean;
 }
 
-export const STYLES: Readonly<Record<StyleId, CitationStyle>> = {
+export const STYLES: Record<StyleId, CitationStyle> = {
   apa: { ...apa, numbered: false },
   mla: { ...mla, numbered: false },
   chicago: { ...chicago, numbered: false },
@@ -355,9 +357,12 @@ export const STYLES: Readonly<Record<StyleId, CitationStyle>> = {
   ieee: { ...ieee, numbered: true },
 };
 
+/** The style with this id, or APA when it is gone (a style file that was removed). */
+export const styleOf = (id: StyleId): CitationStyle => STYLES[id] ?? STYLES.apa;
+
 /** The sources in the order a bibliography lists them: alphabetical by lead and year, or as given for IEEE. */
 export function bibliographyOrder(sources: readonly Source[], style: StyleId): Source[] {
-  if (STYLES[style].numbered) return [...sources];
+  if (styleOf(style).numbered) return [...sources];
   return [...sources].sort(
     (a, b) => lead(a).localeCompare(lead(b)) || a.year.localeCompare(b.year) || a.title.localeCompare(b.title),
   );
@@ -366,7 +371,7 @@ export function bibliographyOrder(sources: readonly Source[], style: StyleId): S
 /** The bibliography as Markdown lines. */
 export function bibliography(sources: readonly Source[], style: StyleId): string {
   const ordered = bibliographyOrder(sources, style);
-  return ordered.map((source, index) => STYLES[style].reference(source, index + 1)).join('\n\n');
+  return ordered.map((source, index) => styleOf(style).reference(source, index + 1)).join('\n\n');
 }
 
 const htmlOf = (markdown: string): string =>
@@ -374,11 +379,12 @@ const htmlOf = (markdown: string): string =>
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
 /** The bibliography as HTML paragraphs, which the editor takes in with the titles in italics. */
 export function bibliographyHtml(sources: readonly Source[], style: StyleId): string {
   return bibliographyOrder(sources, style)
-    .map((source, index) => `<p>${htmlOf(STYLES[style].reference(source, index + 1))}</p>`)
+    .map((source, index) => `<p>${htmlOf(styleOf(style).reference(source, index + 1))}</p>`)
     .join('');
 }

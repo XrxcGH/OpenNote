@@ -3,7 +3,9 @@
 // the same parser as the Upcoming box, shown beside the line, and fed to Upcoming.
 import { dateKey, minutesOf } from './date';
 import type { Due } from './date';
+import type { Repeat } from './group';
 import { findDue } from './parseDue';
+import { parseRepeat } from './repeatPhrases';
 import { FILLERS } from './words';
 import type { ParseContext } from './parseDue';
 
@@ -17,6 +19,10 @@ export interface PageDue {
   done: boolean;
   /** The date phrase as typed in the line. */
   phrase: string;
+  /** Whether the line has a checkbox, which Upcoming can check off in the page. */
+  task: boolean;
+  /** How often the line repeats, when it says so ("every week"). */
+  repeat?: Repeat;
 }
 
 const TASK = /^\s*(?:[-*+]|\d+[.)])\s+\[( |x|X)\]\s+(.*)$/;
@@ -42,7 +48,8 @@ export function findPageDues(blocks: readonly { id: string; markdown: string }[]
     block.markdown.split('\n').forEach((line, index) => {
       const candidate = dueCandidate(line);
       if (!candidate || candidate.text === '') return;
-      const due = findDue(candidate.text, context);
+      const repeat = parseRepeat(candidate.text);
+      const due = findDue(repeat ? repeat.rest : candidate.text, context);
       if (!due) return;
       found.push({
         block: block.id,
@@ -51,6 +58,8 @@ export function findPageDues(blocks: readonly { id: string; markdown: string }[]
         due: due.due,
         done: candidate.done,
         phrase: datePart(due.phrase),
+        task: TASK.test(line),
+        ...(repeat ? { repeat: repeat.repeat } : {}),
       });
     });
   }

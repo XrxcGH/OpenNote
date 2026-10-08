@@ -14,6 +14,8 @@ Open Insert, then Flashcards. A page can hold several decks.
 - Set an exam date for a deck and the schedule works back from it.
 - Import and export Anki decks (`.apkg`) and CSV files.
 
+Open a deck and press Quiz, or insert a quiz block, to be asked a random set of the deck's cards. Type each answer and check it. If the check missed a good answer, press "I had it right". The end tells you how many were right and lists the cards to look at again. A quiz does not change when cards come back for review, and it keeps no score history.
+
 Study tape covers part of a page. Press it to show what is under it.
 
 ## Upcoming
@@ -26,7 +28,7 @@ The Upcoming window lists exams, classes, and tasks.
 
 ## Small tools
 
-Press Ctrl+K and choose one by name. Each opens in its own window.
+Press Ctrl+K and choose one by name. Each opens in its own window, which remembers its size, its place, and its monitor. Choose Reset tool windows to put them all back. You can give each tool its own shortcut in Settings, under Keyboard shortcuts.
 
 | Tool | What it does |
 |---|---|

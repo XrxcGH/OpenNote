@@ -50,6 +50,7 @@ describe('a reminder for each item', () => {
         shown={['later']}
         onChange={() => undefined}
         onSkip={() => undefined}
+        onCheckPage={() => undefined}
         onNote={() => undefined}
       />,
     );

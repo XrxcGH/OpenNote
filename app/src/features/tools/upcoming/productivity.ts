@@ -1,6 +1,17 @@
 // Upcoming's plain-data helpers for exams, the class timetable, repeating to-dos, and calendar-file updates
 // (Productivity and study tools). Everything is data in and data out, relative to an injected "now" and zone.
-import { addDays, compareDates, dateKey, dayOfWeek, daysBetween, minutesOf, parseDateKey, toDays } from './date';
+import {
+  addDays,
+  addMonths,
+  compareDates,
+  dateKey,
+  dayOfWeek,
+  daysBetween,
+  daysInMonth,
+  minutesOf,
+  parseDateKey,
+  toDays,
+} from './date';
 import type { CivilDate, Due, Weekday } from './date';
 import type { Repeat, UpcomingItem } from './group';
 import type { IcsCalendar, IcsComponent } from './ics';
@@ -82,8 +93,28 @@ export interface ClassSlot {
   start: string;
   end: string;
   room: string;
+  /** The section the class's notes go in. The name is kept so it still reads right if the section is gone. */
+  section?: ClassSection;
   source?: string;
 }
+
+/** The section a class is linked to. */
+export interface ClassSection {
+  id: string;
+  label: string;
+  /** The notebook the section is in. */
+  notebookId: string;
+}
+
+export const isClassSection = (value: unknown): value is ClassSection => {
+  const section = value as ClassSection;
+  return (
+    Boolean(section) &&
+    typeof section.id === 'string' &&
+    typeof section.label === 'string' &&
+    typeof section.notebookId === 'string'
+  );
+};
 
 /** Minutes after midnight for "HH:MM", or NaN. */
 export function minutesOfText(text: string): number {
@@ -216,30 +247,98 @@ export const isRepeat = (value: unknown): value is Repeat => {
     Number.isInteger(repeat.every) &&
     repeat.every >= 1 &&
     repeat.every <= 365 &&
-    (repeat.unit === 'day' || repeat.unit === 'week') &&
-    (repeat.mode === 'schedule' || repeat.mode === 'afterFinish')
+    (repeat.unit === 'day' || repeat.unit === 'week' || repeat.unit === 'weekday' || repeat.unit === 'month') &&
+    (repeat.mode === 'schedule' || repeat.mode === 'afterFinish') &&
+    (repeat.days === undefined ||
+      (Array.isArray(repeat.days) && repeat.days.every((day) => Number.isInteger(day) && day >= 0 && day <= 6))) &&
+    (repeat.dayOfMonth === undefined ||
+      repeat.dayOfMonth === -1 ||
+      (Number.isInteger(repeat.dayOfMonth) && repeat.dayOfMonth >= 1 && repeat.dayOfMonth <= 31))
   );
 };
+
+const isWeekday = (date: CivilDate): boolean => dayOfWeek(date) >= 1 && dayOfWeek(date) <= 5;
+
+/** The first date after `date` that falls on one of the days. */
+function dayAfter(date: CivilDate, onDay: (date: CivilDate) => boolean): CivilDate {
+  let next = addDays(date, 1);
+  for (let guard = 0; guard < 8 && !onDay(next); guard += 1) next = addDays(next, 1);
+  return next;
+}
+
+/** The date in the month `months` from this one on the repeat's day of the month, or the start's day if it names none. */
+function inMonth(repeat: Repeat, from: CivilDate, months: number, anchorDay: number): CivilDate {
+  const target = addMonths({ ...from, day: 1 }, months);
+  const last = daysInMonth(target.year, target.month);
+  const wanted = repeat.dayOfMonth ?? anchorDay;
+  return { ...target, day: wanted === -1 ? last : Math.min(wanted, last) };
+}
+
+/** The date one step on from `date`, in the repeat's own rhythm. */
+function stepFrom(repeat: Repeat, date: CivilDate, anchorDay: number): CivilDate {
+  switch (repeat.unit) {
+    case 'weekday':
+      return dayAfter(date, isWeekday);
+    case 'month':
+      return inMonth(repeat, date, repeat.every, anchorDay);
+    case 'week':
+      return repeat.days && repeat.days.length > 0
+        ? dayAfter(date, (day) => repeat.days!.includes(dayOfWeek(day)))
+        : addDays(date, repeat.every * 7);
+    default:
+      return addDays(date, repeat.every);
+  }
+}
 
 /**
  * The next due date after finishing or skipping. A scheduled repeat keeps its rhythm but never lands on a day that
  * has passed, so a week of missed repeats leaves one task, not seven. "N days after I finish" counts from today.
  */
 export function nextDue(repeat: Repeat, due: Due | null, today: CivilDate): Due {
-  const step = repeat.every * (repeat.unit === 'week' ? 7 : 1);
   const time = due?.time ?? null;
-  if (repeat.mode === 'afterFinish') return { date: addDays(today, step), time };
   const base = due?.date ?? today;
-  let next = addDays(base, step);
-  if (compareDates(next, today) <= 0) {
-    const passed = daysBetween(base, today);
-    next = addDays(base, step * (Math.floor(passed / step) + 1));
+  const anchorDay = base.day;
+  if (repeat.mode === 'afterFinish') {
+    // Counting from today, a day-based repeat is today plus the step; the others take their first day after today.
+    const date =
+      repeat.unit === 'weekday' || (repeat.unit === 'week' && repeat.days?.length)
+        ? stepFrom(repeat, today, today.day)
+        : repeat.unit === 'month'
+          ? inMonth(repeat, today, repeat.every, today.day)
+          : addDays(today, repeat.every * (repeat.unit === 'week' ? 7 : 1));
+    return { date, time };
+  }
+  let next = stepFrom(repeat, base, anchorDay);
+  for (let guard = 0; guard < 5000 && compareDates(next, today) <= 0; guard += 1) {
+    next = stepFrom(repeat, next, anchorDay);
   }
   return { date: next, time };
+}
+
+/** The first date a repeat falls on when the person gave none: today if it fits, or the next day that does. */
+export function firstDue(repeat: Repeat, today: CivilDate): Due {
+  const fits =
+    repeat.unit === 'weekday'
+      ? isWeekday(today)
+      : repeat.unit === 'week' && repeat.days?.length
+        ? repeat.days.includes(dayOfWeek(today))
+        : repeat.unit === 'month' && repeat.dayOfMonth !== undefined
+          ? compareDates(inMonth(repeat, today, 0, today.day), today) === 0
+          : true;
+  if (fits) return { date: today, time: null };
+  if (repeat.unit === 'month') {
+    const thisMonth = inMonth(repeat, today, 0, today.day);
+    return { date: compareDates(thisMonth, today) > 0 ? thisMonth : inMonth(repeat, today, 1, today.day), time: null };
+  }
+  return { date: stepFrom(repeat, today, today.day), time: null };
 }
 
 /** The item that follows a finished or skipped repeating one, or null if it does not repeat. */
 export function followingItem(item: UpcomingItem, today: CivilDate, newId: string): UpcomingItem | null {
   if (!item.repeat) return null;
-  return { ...item, id: newId, done: false, due: nextDue(item.repeat, item.due, today) };
+  const repeat =
+    item.repeat.unit === 'month' && item.repeat.dayOfMonth === undefined && item.due
+      ? { ...item.repeat, dayOfMonth: item.due.date.day }
+      : item.repeat;
+  return { ...item, id: newId, done: false, repeat, due: nextDue(repeat, item.due, today) };
 }

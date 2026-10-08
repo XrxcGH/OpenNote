@@ -24,10 +24,11 @@ import type { Card, Deck } from '../deck/types';
 import { CardEditor } from './CardEditor';
 import { GenerateView } from './GenerateView';
 import { ImportView } from './ImportView';
+import { Quiz } from './Quiz';
 import { Review } from './Review';
 import styles from './study.module.css';
 
-type View = 'deck' | 'review' | 'edit' | 'import' | 'generate';
+type View = 'deck' | 'review' | 'edit' | 'import' | 'generate' | 'quiz';
 
 const summary = (card: Card): string =>
   (card.kind === 'occlusion' ? card.front || card.image?.alt || '' : card.front).slice(0, 120);
@@ -177,6 +178,9 @@ function DeckView({
         <Button variant="primary" onClick={() => setView('review')} disabled={deck.cards.length === 0}>
           {t('study.deck.review')}
         </Button>
+        <Button onClick={() => setView('quiz')} disabled={deck.cards.length === 0}>
+          {t('study.quiz.open')}
+        </Button>
         <Button onClick={() => setView('edit')}>{t('study.deck.edit')}</Button>
         <Button variant="quiet" onClick={() => setName(deck.name)}>
           {t('study.deck.rename')}
@@ -198,6 +202,7 @@ function DeckView({
       {deck.id.startsWith('page:') ? <p className={styles.note}>{t('study.deck.pageDeck')}</p> : null}
       <ExamLine deck={deck} />
       {view === 'review' ? <Review key="review" deck={deck} /> : null}
+      {view === 'quiz' ? <Quiz key="quiz" deck={deck} /> : null}
       {view === 'edit' ? <CardsView deck={deck} /> : null}
     </div>
   );

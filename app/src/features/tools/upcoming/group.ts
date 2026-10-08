@@ -6,11 +6,19 @@
 import { addDays, compareDates, compareDues, startOfWeek, type Due, type Weekday } from './date';
 import { dateIn, dueInstant } from './zone';
 
-/** How a to-do repeats. 'schedule' keeps its rhythm; 'afterFinish' counts from the day it was finished. */
+/**
+ * How a to-do repeats. 'schedule' keeps its rhythm; 'afterFinish' counts from the day it was finished. A 'weekday'
+ * repeat falls on Monday to Friday. A 'week' repeat may name its days (every Monday and Wednesday). A 'month' repeat
+ * keeps the day of the month it started on, or names one (-1 is the last day).
+ */
 export interface Repeat {
   every: number;
-  unit: 'day' | 'week';
+  unit: 'day' | 'week' | 'weekday' | 'month';
   mode: 'schedule' | 'afterFinish';
+  /** A weekly repeat on certain days, 0 for Sunday. */
+  days?: Weekday[];
+  /** A monthly repeat on a day of the month, from 1 to 31, or -1 for the last day. */
+  dayOfMonth?: number;
 }
 
 export interface UpcomingItem {
@@ -28,7 +36,7 @@ export interface UpcomingItem {
   /** The calendar file the item came from, so an update from that file can replace it. */
   source?: string;
   /** Set on an item read from a line of a page. The page owns it, so Upcoming shows it and does not change it. */
-  page?: { id: string; title: string; block: string; line: number };
+  page?: { id: string; title: string; block: string; line: number; task?: boolean };
 }
 
 export type UpcomingGroupId = 'overdue' | 'today' | 'thisWeek' | 'later';

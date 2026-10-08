@@ -7,12 +7,17 @@ import { useMemo, useState } from 'react';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
-import { findDue, followingItem, groupUpcoming } from '../upcoming';
+import { findDue, firstDue, followingItem, groupUpcoming, parseRepeat } from '../upcoming';
 import type { GroupContext, Repeat, UpcomingGroupId, UpcomingItem } from '../upcoming';
 import { dateIn } from '../upcoming/zone';
+import { openPage } from '../../search';
+import { commandContext } from '../../../commands/registry';
+import { UpcomingCalendar } from './UpcomingCalendar';
+import type { CalendarMode } from './UpcomingCalendar';
 import { loadStored, saveStored } from './storage';
 import { CalendarFile } from './CalendarFile';
 import { Groups } from './UpcomingList';
+import { setPageItemDone } from './pageCheckOff';
 import { RemindersSwitch } from './RemindersSwitch';
 import { Overview } from './UpcomingOverview';
 import { Planner } from './UpcomingPlanner';
@@ -40,6 +45,9 @@ function context(): GroupContext {
   return { now: Date.now(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
 }
 
+type View = 'list' | CalendarMode;
+const VIEWS: readonly View[] = ['list', 'week', 'month'];
+
 type RepeatChoice = 'none' | 'daily' | 'weekly' | 'afterDays';
 
 function repeatOf(choice: RepeatChoice, days: number): Repeat | undefined {
@@ -56,6 +64,8 @@ export function UpcomingTool() {
   const [note, setNote] = useState('');
   const [repeatChoice, setRepeatChoice] = useState<RepeatChoice>('none');
   const [repeatDays, setRepeatDays] = useState('3');
+  const [view, setView] = useState<View>('list');
+  const [chosen, setChosen] = useState(() => dateIn(Date.now(), context().timeZone));
   const pages = useStore(pageItemsStore, (current) => current);
   const pageItems = useMemo(() => Object.values(pages).flatMap((entry) => entry.items), [pages]);
   const everything = useMemo(() => [...saved.items, ...pageItems], [saved.items, pageItems]);
@@ -68,18 +78,22 @@ export function UpcomingTool() {
   const add = () => {
     const title = text.trim();
     if (!title) return;
-    const found = findDue(title, context());
-    const repeat = found ? repeatOf(repeatChoice, Number(repeatDays)) : undefined;
+    // Words such as "every weekday" or "monthly on the 1st" set the repeat and are taken out of the title.
+    const typed = parseRepeat(title);
+    const words = typed ? typed.rest : title;
+    const found = words ? findDue(words, context()) : null;
+    const due = found?.due ?? (typed ? firstDue(typed.repeat, today()) : null);
+    const repeat = typed ? typed.repeat : found ? repeatOf(repeatChoice, Number(repeatDays)) : undefined;
     const item: UpcomingItem = {
       id: `u${saved.next}`,
-      title: found?.title.trim() || title,
-      due: found?.due ?? null,
+      title: (found?.title.trim() || words).trim() || title,
+      due,
       done: false,
       ...(repeat ? { repeat } : {}),
     };
     update({ items: [...saved.items, item], next: saved.next + 1 });
     setText('');
-    setNote(found ? '' : repeatChoice === 'none' ? t('smart.tools.upcoming.undated') : t('study.repeat.needsDate'));
+    setNote(due ? '' : repeatChoice === 'none' ? t('smart.tools.upcoming.undated') : t('study.repeat.needsDate'));
     announce(t('smart.tools.upcoming.added'));
   };
 
@@ -109,6 +123,28 @@ export function UpcomingTool() {
         : saved.items.filter((item) => item.id !== id),
     });
   };
+  /** Left and Right move between the views, as in any tab strip. */
+  const moveTab = (event: React.KeyboardEvent) => {
+    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    if (step === 0) return;
+    event.preventDefault();
+    const next = VIEWS[(VIEWS.indexOf(view) + step + VIEWS.length) % VIEWS.length];
+    setView(next);
+    document.getElementById(`upcoming-tab-${next}`)?.focus();
+  };
+  /** Checks a line on a page. The check goes into the page; a page that changed since is left alone. */
+  const checkPage = (item: UpcomingItem, done: boolean) => {
+    void setPageItemDone(item, done).then((result) => {
+      const text =
+        result === 'done'
+          ? t(done ? 'study.dueDates.checkedOff' : 'study.dueDates.reopened', { title: item.title })
+          : t(result === 'moved' ? 'study.dueDates.moved' : 'study.dueDates.checkFailed', { title: item.title });
+      setNote(result === 'done' ? '' : text);
+      announce(text);
+    });
+  };
+  const checkAny = (item: UpcomingItem, done: boolean) =>
+    item.page ? checkPage(item, done) : change(item.id, { done });
   const groupsShown = [...GROUPS, 'undated' as const].filter((id) => groups[id].length > 0);
 
   return (
@@ -168,14 +204,49 @@ export function UpcomingTool() {
           {note}
         </p>
       ) : null}
-      {groupsShown.length === 0 ? <p className={styles.empty}>{t('smart.tools.upcoming.empty')}</p> : null}
-      <Groups
-        groups={groups}
-        shown={groupsShown}
-        onChange={change}
-        onSkip={(id) => advance(id, false)}
-        onNote={setNote}
-      />
+      <div className={styles.tabs} role="tablist" aria-label={t('study.views.views')} onKeyDown={moveTab}>
+        {VIEWS.map((one) => (
+          <button
+            key={one}
+            type="button"
+            role="tab"
+            id={`upcoming-tab-${one}`}
+            aria-selected={view === one}
+            aria-controls="upcoming-panel"
+            tabIndex={view === one ? 0 : -1}
+            className={styles.tab}
+            onClick={() => setView(one)}
+          >
+            {t(`study.views.tabs.${one}`)}
+          </button>
+        ))}
+      </div>
+      <div id="upcoming-panel" role="tabpanel" aria-labelledby={`upcoming-tab-${view}`} className={styles.tool}>
+        {view === 'list' ? (
+          <>
+            {groupsShown.length === 0 ? <p className={styles.empty}>{t('smart.tools.upcoming.empty')}</p> : null}
+            <Groups
+              groups={groups}
+              shown={groupsShown}
+              onChange={change}
+              onSkip={(id) => advance(id, false)}
+              onCheckPage={checkPage}
+              onNote={setNote}
+            />
+          </>
+        ) : (
+          <UpcomingCalendar
+            mode={view}
+            items={everything}
+            selected={chosen}
+            onSelect={setChosen}
+            onCheck={checkAny}
+            onOpenPage={(item) => {
+              if (item.page) void openPage(commandContext('palette').notes, item.page.id);
+            }}
+          />
+        )}
+      </div>
       <Planner />
       <RemindersSwitch />
     </div>
