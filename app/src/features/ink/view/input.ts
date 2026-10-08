@@ -361,7 +361,12 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
         // Keep holding the snapped shape and move: it grows and turns with the pen until the pen lifts.
         const moved = Math.hypot(last.x - hold.snapAt.x, last.y - hold.snapAt.y) * zoom > HOLD_SLOP_PX;
         hold.live = moved
-          ? applyReshape(hold.shape.points, hold.pivot, reshapeFor(hold.pivot, hold.snapAt, last))
+          ? snapLive(
+              g,
+              surface,
+              hold.shape,
+              applyReshape(hold.shape.points, hold.pivot, reshapeFor(hold.pivot, hold.snapAt, last)),
+            )
           : null;
       } else if (Math.hypot(last.x - hold.x, last.y - hold.y) * zoom > HOLD_SLOP_PX) {
         g.hold = { ...hold, x: last.x, y: last.y, at: performance.now(), shape: null };
@@ -441,6 +446,15 @@ function toPaper(g: InkGesture, surface: InkSurface, match: ShapeMatch, linger =
   const { shape, marks } = snapShape(snap, match.shape);
   showSnapMarks(surface, marks, linger);
   return shape === match.shape ? match : { ...match, shape, points: shapePoints(shape) };
+}
+
+/**
+ * The points of a held shape the pen grew or turned, read back and snapped to the paper's lines, so the preview and
+ * its rings follow the lines while the pen moves, as the shape will when the pen lifts.
+ */
+function snapLive(g: InkGesture, surface: InkSurface, shape: ShapeMatch, points: Vec[]): Vec[] {
+  if (!paperSnapNow(surface.cameraNow().zoom, g.alt)) return points;
+  return [...toPaper(g, surface, reread({ ...shape, points }, g.style.width)).points];
 }
 
 /** The shape a held shape became after the pen grew or turned it, read back from its points. */
