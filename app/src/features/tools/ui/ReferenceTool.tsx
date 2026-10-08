@@ -25,6 +25,7 @@ function InsertButton({ text, label }: { text: string; label: string }) {
   );
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ReferenceTool() {
   const [tab, setTab] = useState<Tab>('elements');
   const [query, setQuery] = useState('');

@@ -1,6 +1,6 @@
-// Text on ruled paper, measured in a real browser. With the paper's rules set as the page's grid, body text, a
+// Text on ruled paper, measured in a real browser, with the paper's rules set as the page's grid. Body text, a
 // heading, a list, and a text box dropped at an arbitrary height all put their first baseline the lift above a rule
-// (core/ruled.ts), and every block is a whole number of rules tall, so the text after it is back on its rule. Plain
+// (core/ruled.ts). Every block is a whole number of rules tall, so the text after it is back on its rule. Plain
 // paper changes nothing.
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanupPages, renderPage } from '../test/harness';

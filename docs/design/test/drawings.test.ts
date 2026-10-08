@@ -122,7 +122,7 @@ describe('where the vine and its leaves meet', () => {
   });
 
   it("keeps the leaves clear of both of the window's bars and the sill", () => {
-    // Both bars, the upright and the crosspiece, with the points along their straight lines.
+    // Both bars (upright, crosspiece) with the points along their straight lines.
     const bars = densify(outlineOf(only(window, 'window-bars')), 0.25);
     const sill = densify(outlineOf(only(window, 'sill')), 0.25);
     for (const leaf of leaves) {

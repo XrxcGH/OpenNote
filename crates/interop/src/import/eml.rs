@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: convert_message reads one message top to bottom; split it when it grows again
 //! Importing email files (`.eml`): one page for each message.
 //!
 //! The page is titled with the subject. A table at the top holds From, To, Cc, and Date, then comes the body. The

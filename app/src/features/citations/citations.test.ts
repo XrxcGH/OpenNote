@@ -87,7 +87,9 @@ describe('BibTeX', () => {
 
 describe('RIS', () => {
   const RIS =
-    'TY  - JOUR\nAU  - Smith, Jane Q.\nAU  - Lee, Wei\nTI  - Sleep and Memory\nJO  - Journal of Learning\nPY  - 2020///\nVL  - 12\nSP  - 45\nEP  - 67\nER  - \n\nTY  - SOUND\nTI  - Lecture One\nPY  - 2021\nER  - \n\nTY  - JOUR\nER  - ';
+    'TY  - JOUR\nAU  - Smith, Jane Q.\nAU  - Lee, Wei\nTI  - Sleep and Memory\nJO  - Journal of Learning\n' +
+    'PY  - 2020///\nVL  - 12\nSP  - 45\nEP  - 67\nER  - \n\n' +
+    'TY  - SOUND\nTI  - Lecture One\nPY  - 2021\nER  - \n\nTY  - JOUR\nER  - ';
   it('reads records and counts the ones with no title', () => {
     const { sources, skipped } = parseRis(RIS);
     expect(sources.map((s) => [s.type, s.title, s.year])).toEqual([
