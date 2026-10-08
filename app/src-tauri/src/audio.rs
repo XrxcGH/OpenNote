@@ -52,6 +52,8 @@ pub mod error_codes {
     pub const FORMAT: &str = "audioFormat";
     pub const CORRUPT: &str = "audioCorrupt";
     pub const WRITER: &str = "audioWriter";
+    /// The recording asked to be recovered is the one running now, perhaps in another window.
+    pub const RUNNING: &str = "audioRunning";
 }
 
 struct Inner {
@@ -292,10 +294,20 @@ pub async fn audio_recover(
     entry: RecordingEntry,
 ) -> IpcResult<Finished> {
     let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
-    blocking(&state, move |state| {
-        state.lock().recover(&dir, &entry).map_err(audio_error)
-    })
-    .await
+    blocking(&state, move |state| recover_unless_running(&state.lock(), &dir, &entry)).await
+}
+
+/// Recovers a recording a crash cut off, or refuses with `audioRunning` when it is the one running now. Every
+/// window shares this process's recorder but keeps its own idea of what records, so a page opened in a second
+/// window while the first records it must learn that from here and leave the entry alone.
+fn recover_unless_running(service: &AudioService, dir: &Path, entry: &RecordingEntry) -> IpcResult<Finished> {
+    if service.is_running(&entry.id) {
+        return Err(IpcError::new(
+            error_codes::RUNNING,
+            "This recording is still running. Its entry is saved when it stops.",
+        ));
+    }
+    service.recover(dir, entry).map_err(audio_error)
 }
 
 #[tauri::command]
@@ -643,6 +655,26 @@ mod tests {
         assert!(done[&asset].get("state").is_none(), "{done}");
         assert!(file.is_file());
         bridge.shutdown();
+    }
+
+    /// F5-5: the interface gives up on a recording only for `audioCorrupt`, and leaves `audioRunning` alone, so a
+    /// recording with no files must answer the first, and the codes must differ.
+    #[test]
+    fn a_recording_with_no_files_is_corrupt_and_not_running() {
+        let dir = tempfile::tempdir().unwrap();
+        let entry: RecordingEntry = serde_json::from_value(json!({
+            "id": "r1",
+            "state": "recording",
+            "started": "2026-10-07T12:00:00Z",
+            "tracks": [],
+        }))
+        .expect("an entry");
+        let state = state();
+        let service = state.lock();
+        assert!(!service.is_running(&entry.id));
+        let error = recover_unless_running(&service, dir.path(), &entry).unwrap_err();
+        assert_eq!(error.code, error_codes::CORRUPT, "{}", error.message);
+        assert_ne!(error_codes::RUNNING, error_codes::CORRUPT);
     }
 
     #[test]

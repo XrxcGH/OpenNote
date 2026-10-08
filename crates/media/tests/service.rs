@@ -339,7 +339,13 @@ fn the_running_recording_is_not_recovered_when_its_page_opens_again() {
     // Prepared but not begun: the files don't exist yet, and the entry must stay.
     let refused = setup.service.recover(dir.path(), &prepared.entry).unwrap_err();
     assert!(refused.to_string().contains("still running"), "{refused}");
+    assert!(
+        setup.service.is_running(&prepared.entry.id),
+        "a prepared recording counts as running"
+    );
     setup.service.begin().unwrap();
+    assert!(setup.service.is_running(&prepared.entry.id));
+    assert!(!setup.service.is_running("another-recording"));
     let handle = setup.fake.handle(0);
     handle.produce_ms(1_000);
     wait_until(|| {
@@ -352,6 +358,7 @@ fn the_running_recording_is_not_recovered_when_its_page_opens_again() {
     assert!(setup.service.recover(dir.path(), &prepared.entry).is_err());
     handle.produce_ms(1_000);
     let finished = setup.service.stop().unwrap();
+    assert!(!setup.service.is_running(&prepared.entry.id));
     assert_eq!(finished.entry.state, RecordingState::Complete);
     assert_eq!(finished.summary.tracks[0].timeline.frames, 96_000);
     // Once it has stopped, the same entry recovers to the same audio, untouched.

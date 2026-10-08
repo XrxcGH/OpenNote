@@ -401,8 +401,9 @@ impl AudioService {
         })
     }
 
-    /// Whether `id` is the recording that is running, or the one prepared to begin.
-    fn is_running(&self, id: &str) -> bool {
+    /// Whether `id` is the recording that is running, or the one prepared to begin. A page that opens with an
+    /// entry still in the `recording` state asks this first: in another window, that entry is the live recording.
+    pub fn is_running(&self, id: &str) -> bool {
         let active = self.active.as_ref().map(|active| active.plan.id.as_str());
         let pending = self.pending.as_ref().map(|pending| pending.plan.id.as_str());
         active == Some(id) || pending == Some(id)
