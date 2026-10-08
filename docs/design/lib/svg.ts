@@ -100,7 +100,7 @@ export function text(x: number, y: number, content: string, s: TextStyle = {}): 
   return `<text ${textAttrs(x, y, s)}>${escapeXml(content)}</text>`;
 }
 
-/** A run of words inside a line of text, in its own color, weight or slant. */
+/** A run of words inside a line of text, in its own color, weight, or slant. */
 export interface Run {
   text: string;
   fill?: string;

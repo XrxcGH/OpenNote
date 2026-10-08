@@ -147,7 +147,7 @@ function page(p: Palette): string {
       [x + 196, top + 198],
       p.pen('Fern'),
     ),
-    // Three months, each a Sales bar and a Cost bar side by side, from the table in the tables wireframe.
+    // Three months, each with its Sales bar beside its Cost bar, from the table in the tables wireframe.
     ...months.flatMap(([sales, cost], i) =>
       [sales, cost].map((value, j) => {
         const bh = Math.round(value * 0.45);

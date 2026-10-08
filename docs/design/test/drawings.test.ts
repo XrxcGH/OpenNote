@@ -122,7 +122,7 @@ describe('where the vine and its leaves meet', () => {
   });
 
   it("keeps the leaves clear of both of the window's bars and the sill", () => {
-    // Both bars, the upright and the crosspiece, with the points along their straight lines.
+    // The upright bar with the crosspiece, each with the points along their straight lines.
     const bars = densify(outlineOf(only(window, 'window-bars')), 0.25);
     const sill = densify(outlineOf(only(window, 'sill')), 0.25);
     for (const leaf of leaves) {
@@ -323,10 +323,10 @@ describe('inside their pictures', () => {
   });
 });
 
-describe('text', () => {
-  const lines = (root: El) =>
-    [...walk(root)].filter((e) => e.tag === 'text').map((e) => ({ e, box: textBox(e), y: Number(e.attrs.y) }));
+const lines = (root: El) =>
+  [...walk(root)].filter((e) => e.tag === 'text').map((e) => ({ e, box: textBox(e), y: Number(e.attrs.y) }));
 
+describe('lines of text', () => {
   it('sets the pieces of a line one after another in one text, never as pieces that crowd or overlap', () => {
     for (const { name, root } of pictures) {
       const all = lines(root).filter((t) => (t.e.attrs['text-anchor'] ?? 'start') === 'start');
@@ -344,6 +344,30 @@ describe('text', () => {
     }
   });
 
+  it('fits each highlight to the words it marks, as far past one end as the other', () => {
+    const p = palette('light');
+    const highlighters = new Set(['Honey', 'Mint'].map((name) => p.highlighter(name)));
+    let checked = 0;
+    for (const { name, root } of pictures) {
+      const texts = lines(root);
+      for (const band of [...walk(root)].filter((e) => e.tag === 'rect' && highlighters.has(e.attrs.fill ?? ''))) {
+        const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((k) => Number(band.attrs[k]));
+        // The words it marks start just inside it and sit on a baseline within it.
+        const words = texts.find((t) => t.box.x0 >= x && t.box.x0 <= x + 8 && t.y > y && t.y <= y + h);
+        if (!words) continue;
+        const [before, after] = [words.box.x0 - x, x + w - words.box.x1];
+        assert.ok(
+          Math.abs(before - after) <= 1.5,
+          `${name}: "${words.e.text}" has ${before} and ${after.toFixed(1)} px`,
+        );
+        checked++;
+      }
+    }
+    assert.ok(checked >= 3, `${checked} highlights over words`);
+  });
+});
+
+describe('words and controls on cards', () => {
   it('keeps the words on a card or dialog inside it', () => {
     for (const { name, root } of pictures) {
       const order = [...walk(root)];
@@ -368,32 +392,6 @@ describe('text', () => {
     }
   });
 
-  it('draws no keep-out zone of the window over a card or dialog in front of it', () => {
-    const over: string[] = [];
-    for (const { name, root } of pictures) {
-      const order = [...walk(root)];
-      const box = (e: El) => ({
-        x0: +e.attrs.x,
-        y0: +e.attrs.y,
-        x1: +e.attrs.x + +e.attrs.width,
-        y1: +e.attrs.y + +e.attrs.height,
-      });
-      // A raised card, dialog or menu has rounded corners; a sheet of paper, whose margins may be marked, has none.
-      const cards = order.filter(
-        (e) => e.tag === 'rect' && e.attrs.filter === 'url(#shadow)' && Number(e.attrs.rx) > 0,
-      );
-      for (const zone of order.filter((e) => e.tag === 'rect' && e.attrs.fill === 'url(#hatch)')) {
-        const z = box(zone);
-        for (const card of cards.filter((c) => order.indexOf(c) < order.indexOf(zone)).map(box)) {
-          const apart = z.x1 <= card.x0 || card.x1 <= z.x0 || z.y1 <= card.y0 || card.y1 <= z.y0;
-          if (!apart)
-            over.push(`${name}: a keep-out zone at ${z.x0},${z.y0} is drawn over a card at ${card.x0},${card.y0}`);
-        }
-      }
-    }
-    assert.deepEqual(over, []);
-  });
-
   it('keeps every button and field clear of the others', () => {
     for (const { name, root } of pictures) {
       const controls = [...walk(root)]
@@ -408,7 +406,37 @@ describe('text', () => {
       }
     }
   });
+});
 
+describe('keep-out zones', () => {
+  it('draws no keep-out zone of the window over a card or dialog in front of it', () => {
+    const over: string[] = [];
+    for (const { name, root } of pictures) {
+      const order = [...walk(root)];
+      const box = (e: El) => ({
+        x0: +e.attrs.x,
+        y0: +e.attrs.y,
+        x1: +e.attrs.x + +e.attrs.width,
+        y1: +e.attrs.y + +e.attrs.height,
+      });
+      // A raised card, dialog, or menu has rounded corners; a sheet of paper, whose margins may be marked, has none.
+      const cards = order.filter(
+        (e) => e.tag === 'rect' && e.attrs.filter === 'url(#shadow)' && Number(e.attrs.rx) > 0,
+      );
+      for (const zone of order.filter((e) => e.tag === 'rect' && e.attrs.fill === 'url(#hatch)')) {
+        const z = box(zone);
+        for (const card of cards.filter((c) => order.indexOf(c) < order.indexOf(zone)).map(box)) {
+          const apart = z.x1 <= card.x0 || card.x1 <= z.x0 || z.y1 <= card.y0 || card.y1 <= z.y0;
+          if (!apart)
+            over.push(`${name}: a keep-out zone at ${z.x0},${z.y0} is drawn over a card at ${card.x0},${card.y0}`);
+        }
+      }
+    }
+    assert.deepEqual(over, []);
+  });
+});
+
+describe('ink marks', () => {
   it('circles something with every circled mark, never an empty patch of page', () => {
     let checked = 0;
     for (const { name, root } of pictures) {
@@ -446,28 +474,6 @@ describe('text', () => {
         }
       }
     }
-  });
-
-  it('fits each highlight to the words it marks, as far past one end as the other', () => {
-    const p = palette('light');
-    const highlighters = new Set(['Honey', 'Mint'].map((name) => p.highlighter(name)));
-    let checked = 0;
-    for (const { name, root } of pictures) {
-      const texts = lines(root);
-      for (const band of [...walk(root)].filter((e) => e.tag === 'rect' && highlighters.has(e.attrs.fill ?? ''))) {
-        const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((k) => Number(band.attrs[k]));
-        // The words it marks start just inside it and sit on a baseline within it.
-        const words = texts.find((t) => t.box.x0 >= x && t.box.x0 <= x + 8 && t.y > y && t.y <= y + h);
-        if (!words) continue;
-        const [before, after] = [words.box.x0 - x, x + w - words.box.x1];
-        assert.ok(
-          Math.abs(before - after) <= 1.5,
-          `${name}: "${words.e.text}" has ${before} and ${after.toFixed(1)} px`,
-        );
-        checked++;
-      }
-    }
-    assert.ok(checked >= 3, `${checked} highlights over words`);
   });
 });
 

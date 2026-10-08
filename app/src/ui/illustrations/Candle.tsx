@@ -30,8 +30,8 @@ export function CandleArt() {
 }
 
 /**
- * The glow reaches past the candle's own box, above the flame and to both sides, so the candle on its own gets a
- * margin as wide as the glow overhangs. Without it the glow would end in a hard edge at the top and sides.
+ * The glow reaches past the candle's own box on three sides (above the flame and on its left and right), so the
+ * candle on its own gets a margin as wide as the glow overhangs. Without it the glow would end in a hard edge at the top and sides.
  */
 const GLOW_X = CANDLE.halo.r - CANDLE.halo.cx;
 const GLOW_Y = CANDLE.halo.r - CANDLE.halo.cy;

@@ -1,8 +1,9 @@
-// How wide a line of text is in the wireframes, from the advance widths of the fonts it falls back to on Windows:
-// Segoe UI for the interface and Cambria for the page's reading text (the app's own Atkinson Hyperlegible Next and
-// Literata ship inside the app, not with Windows, so a browser showing these SVGs and the PNGs rendered from them
-// use the fallbacks). Labels, buttons, tools and highlights are sized from these numbers, so a pill fits its words
-// and the gaps between tools are even. Widths are thousandths of the font size, for the characters from space to ~.
+// How wide a line of text is in the wireframes. The numbers are the advance widths of the fonts the SVGs fall back to
+// on Windows: Segoe UI for the interface and Cambria for the page's reading text. The app's own Atkinson Hyperlegible
+// Next and Literata ship inside the app, not with Windows, so a browser showing these SVGs uses the fallbacks, and so
+// do the PNGs rendered from them. Labels, buttons, tools, and highlights are sized from these numbers, so a pill fits
+// its words and the gaps between tools are even. Widths are thousandths of the font size, for the characters from
+// space to ~.
 
 type Face = 'ui400' | 'ui600' | 'ui700' | 'reading400' | 'reading700' | 'reading400i';
 

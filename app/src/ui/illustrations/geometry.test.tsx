@@ -49,7 +49,7 @@ describe('how books are bound', () => {
   it('sets the bands on every spine the same distance in from its end and apart', () => {
     const paths = [...drawn(renderUi(<Books />).container).querySelectorAll<SVGGeometryElement>('path')];
     const books = paths.slice(0, 4).map((book) => book.getBBox());
-    // The bands are vertical strokes, written as moves and vertical lines.
+    // The bands are vertical strokes, each written as a move then a vertical line.
     const bands: { x: number; y: number }[] = [];
     let [x, y] = [0, 0];
     for (const [, cmd, args] of (paths[4].getAttribute('d') ?? '').matchAll(/([MmVv])([^MmVv]*)/g)) {

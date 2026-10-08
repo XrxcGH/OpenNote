@@ -111,7 +111,7 @@ function plotOptions(
   const values = {
     label: data.series.length === 1 ? data.series[0].name : null,
     grid: true,
-    // The value axis ends on a labelled tick, so the tallest bar or point stays under the top grid line.
+    // The value axis ends on a labeled tick, so the tallest bar or point stays under the top grid line.
     nice: true,
     tickFormat: valueFormat(valueColumn, locale),
   };
