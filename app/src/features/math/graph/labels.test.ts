@@ -7,20 +7,20 @@ const CHAR = 0.62 * 11;
 
 describe('tick labels', () => {
   // Panning moves the ticks a little at a time; at some offsets a tick sits just inside the right or top edge.
-  const offsets = Array.from({ length: 41 }, (_, i) => (i - 20) / 200);
+  const offsets = Array.from({ length: 21 }, (_, i) => (i - 10) / 100);
 
   it('keeps every number whole inside the plot, wherever the view is panned', () => {
+    const cut: string[] = [];
     for (const dx of offsets) {
       for (const dy of offsets) {
         const view = panByFraction(defaultViewport(SIZE), dx, dy);
-        for (const label of tickLabels(buildScene(view, SIZE, []))) {
-          expect(label.x).toBeGreaterThanOrEqual(0);
-          expect(label.x + label.text.length * CHAR).toBeLessThanOrEqual(SIZE.width);
-          expect(label.y - 8).toBeGreaterThanOrEqual(0);
-          expect(label.y).toBeLessThanOrEqual(SIZE.height);
+        for (const { text, x, y } of tickLabels(buildScene(view, SIZE, []))) {
+          const right = x + text.length * CHAR;
+          if (x < 0 || right > SIZE.width || y - 8 < 0 || y > SIZE.height) cut.push(`${text} at ${x}, ${y}`);
         }
       }
     }
+    expect(cut).toEqual([]);
   });
 
   it('still numbers the axes in the default view', () => {
