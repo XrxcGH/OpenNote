@@ -8,9 +8,12 @@ use opennote_core::Timestamp;
 /// which zone it meant and a wrong guess would only shift the date by hours.
 ///
 /// Accepted forms: `2024-01-05T14:30:00Z`, `2024-01-05 14:30:00`, `2024-01-05 14:30`, `2024-01-05`, and
-/// Evernote's `20240105T143000Z`.
+/// Evernote's `20240105T143000Z`, and the email form `Tue, 06 Oct 2026 10:00:00 +0000` (RFC 5322).
 pub fn parse_date(text: &str) -> Option<Timestamp> {
     let text = text.trim().trim_matches(['"', '\'']);
+    if let Some(time) = email_date(text) {
+        return Some(time);
+    }
     let compact = compact_to_rfc3339(text);
     let text = compact.as_deref().unwrap_or(text);
     let mut normal = text.replacen(' ', "T", 1);
@@ -28,6 +31,32 @@ pub fn parse_date(text: &str) -> Option<Timestamp> {
         normal.push('Z');
     }
     Timestamp::parse(&normal).ok()
+}
+
+/// An email `Date:` header: `[Day,] D Mon YYYY HH:MM[:SS] zone`, where the zone is `+hhmm`, `-hhmm`, `GMT`, `UT`,
+/// or `Z`, and a comment such as `(CEST)` may follow.
+fn email_date(text: &str) -> Option<Timestamp> {
+    const MONTHS: [&str; 12] = [
+        "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+    ];
+    let text = text.split_once(',').map_or(text, |(_, rest)| rest);
+    let mut parts = text.split_whitespace();
+    let day: u32 = parts.next()?.parse().ok()?;
+    let month = parts.next()?.to_ascii_lowercase();
+    let month = MONTHS.iter().position(|m| month.starts_with(m))? + 1;
+    let year: u32 = parts.next()?.parse().ok()?;
+    let time = parts.next()?;
+    let time = if time.len() == 5 {
+        format!("{time}:00")
+    } else {
+        time.to_owned()
+    };
+    let zone = match parts.next().unwrap_or("Z") {
+        "GMT" | "UT" | "UTC" | "Z" | "z" => "Z".to_owned(),
+        zone if zone.len() == 5 && zone.starts_with(['+', '-']) => format!("{}:{}", &zone[..3], &zone[3..]),
+        _ => return None,
+    };
+    Timestamp::parse(&format!("{year:04}-{month:02}-{day:02}T{time}{zone}")).ok()
 }
 
 /// `20240105T143000Z` as `2024-01-05T14:30:00Z`.
@@ -124,6 +153,16 @@ pub fn from_system_time(time: SystemTime) -> Option<Timestamp> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn reads_email_dates() {
+        let expected = parse_date("2026-10-06T10:00:00Z");
+        assert!(expected.is_some());
+        assert_eq!(parse_date("Tue, 06 Oct 2026 10:00:00 +0000"), expected);
+        assert_eq!(parse_date("6 Oct 2026 12:00:00 +0200 (CEST)"), expected);
+        assert_eq!(parse_date("Tue, 6 Oct 2026 10:00 GMT"), expected);
+        assert_eq!(parse_date("Tue, 6 Foo 2026 10:00 GMT"), None);
+    }
 
     #[test]
     fn reads_the_formats_of_other_apps() {
