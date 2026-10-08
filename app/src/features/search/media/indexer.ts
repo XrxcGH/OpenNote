@@ -35,6 +35,9 @@ export async function indexMediaText(entry: MediaText): Promise<boolean> {
 }
 
 const scanned = new Set<string>();
+/** Failed reads per picture: the page is looked at again every few seconds, so a picture that fails is given up on. */
+const failures = new Map<string, number>();
+const MAX_FAILURES = 3;
 
 async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | null> {
   try {
@@ -56,31 +59,51 @@ async function scan(mounted: MountedPage, current: () => boolean): Promise<void>
     const asset = typeof block.data.asset === 'string' ? block.data.asset : null;
     const key = `${page}/${block.id}`;
     if (block.type !== 'image' || !asset || known.has(block.id) || scanned.has(key)) continue;
+    if ((failures.get(key) ?? 0) >= MAX_FAILURES) continue;
     const api = await loadApi();
     if (!(await api.searchTextReady('image'))) return;
     const blob = await imageBlob(mounted, asset);
     if (!blob || !current()) continue;
     const found = await api.searchTextInImage(blob);
-    if (!found) continue;
+    if (!found) {
+      failures.set(key, (failures.get(key) ?? 0) + 1);
+      continue;
+    }
     scanned.add(key);
     await indexMediaText({ page, block: block.id, kind: 'image', text: found.text.trim() || NO_WORDS });
   }
 }
 
+/** How often the shown page is looked at again, so a picture pasted into it is read within a minute. */
+const RESCAN_MS = 10_000;
+
 /** Watches the shown page and reads its pictures. Returns a function that stops. */
 export function startMediaIndexer(): () => void {
   if (!isEnabled('search.indexMedia') || !isEnabled('intel.searchText')) return () => undefined;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let again: ReturnType<typeof setInterval> | null = null;
+  let scanning = false;
+  const run = (mounted: MountedPage) => {
+    if (scanning) return;
+    scanning = true;
+    void scan(mounted, () => shownMounted.get() === mounted)
+      .catch(() => undefined)
+      .finally(() => {
+        scanning = false;
+      });
+  };
   const stop = shownMounted.subscribe(() => {
     if (timer) clearTimeout(timer);
+    if (again) clearInterval(again);
+    again = null;
     const mounted = shownMounted.get();
     if (!mounted) return;
-    timer = setTimeout(() => {
-      void scan(mounted, () => shownMounted.get() === mounted).catch(() => undefined);
-    }, START_DELAY_MS);
+    timer = setTimeout(() => run(mounted), START_DELAY_MS);
+    again = setInterval(() => run(mounted), RESCAN_MS);
   });
   return () => {
     stop();
     if (timer) clearTimeout(timer);
+    if (again) clearInterval(again);
   };
 }
