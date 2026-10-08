@@ -95,6 +95,10 @@ export function createFakeExt(): FakeExt {
         files.delete(p.name ?? '');
         return null;
       }
+      if (method === 'store.list') {
+        const prefix = p.prefix ?? '';
+        return [...files.keys()].filter((name) => name.startsWith(prefix)).sort();
+      }
       if (method === 'vocabulary.correct') return correct(p.vocabulary ?? '', p.text ?? '');
       if (method === 'models.list') {
         const list: ModelList = {

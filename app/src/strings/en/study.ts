@@ -14,6 +14,8 @@ export const study = {
     deckName: 'Deck name',
     create: 'Create deck',
     untitled: 'Deck {number}',
+    saveFailed: "Flashcards couldn't be saved on this device. Your changes stay open until you close OpenNote.",
+    loadFailed: "Flashcards couldn't be read from this device.",
     none: 'There are no decks yet. Make one, import one, or type a line like "Question :: Answer" on a page.',
     cardCount: '{count, plural, =0 {No cards} one {# card} other {# cards}}',
     counts: '{due} due, {fresh} new today',

@@ -47,6 +47,8 @@ export interface IntelExt {
   get(name: string): Promise<string | null>;
   put(name: string, text: string): Promise<void>;
   remove(name: string): Promise<void>;
+  /** The names kept on this device that start with `prefix`, sorted. */
+  list(prefix: string): Promise<string[]>;
   /** Fixes the words in `text` that the vocabulary lists, and reports each replacement. */
   correctVocabulary(vocabulary: string, text: string): Promise<VocabularyCorrection>;
   models: {
@@ -94,6 +96,7 @@ export function createIntelExt(transport: IntelTransport): IntelExt {
     get: (name) => call<string | null>('store.get', { name }),
     put: async (name, text) => void (await call('store.put', { name, text })),
     remove: async (name) => void (await call('store.remove', { name })),
+    list: (prefix) => call<string[]>('store.list', { prefix }),
     correctVocabulary: (vocabulary, text) => call<VocabularyCorrection>('vocabulary.correct', { vocabulary, text }),
     models: {
       list: () => call<ModelList>('models.list'),
