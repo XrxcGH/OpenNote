@@ -30,3 +30,18 @@ describe('the snapshot of the shown page', () => {
     expect(textOf(snapshotPage(harness.mounted, 'Test page'))).toEqual(['Typed line of text']);
   });
 });
+
+describe('the snapshot after an editor closes', () => {
+  it('has the last typed text while the save of it is still queued', async () => {
+    const fixture = textPageFixture('Opened with this');
+    const harness = await renderPage({ fixture });
+    const id = fixture.page.blocks[0].id;
+    const editor = harness.mounted.pool.mount(id, null, 'idle')!;
+    editor.commands.insertContentAt(editor.state.doc.content.size - 1, ' and typed this');
+    // The pool closes an editor once its typing is cut into a save, before the save itself has run.
+    const saving = harness.mounted.sync.flushAll('timer');
+    (harness.mounted.layer.view(id) as unknown as { unmount(): void }).unmount();
+    expect(textOf(snapshotPage(harness.mounted, 'Test page'))).toEqual(['Opened with this and typed this']);
+    await saving;
+  });
+});

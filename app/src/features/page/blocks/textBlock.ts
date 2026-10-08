@@ -141,6 +141,11 @@ class TextBlockView implements LazyBlockView, LiveText {
   rendered = false;
   private markdown: string;
   private doc: PMNode | null = null;
+  /**
+   * The Markdown of the text an editor held when it closed. Its save can still be queued then, so the editor's last
+   * accepted save (this.markdown, which the next editor diffs against) can lack the last typing.
+   */
+  private typed: string | null = null;
   private editor: Editor | null = null;
   private sync: TextSyncHandle | null = null;
   private draft: PendingInsert | null;
@@ -201,7 +206,7 @@ class TextBlockView implements LazyBlockView, LiveText {
   }
 
   liveMarkdown(): string {
-    return this.editor ? serializeTextBlock(this.editor.state.doc, this.ctx.cache) : this.markdown;
+    return this.editor ? serializeTextBlock(this.editor.state.doc, this.ctx.cache) : (this.typed ?? this.markdown);
   }
 
   /** Draws the static text. Its code is colored in idle time, so it looks the same before an editor mounts. */
@@ -217,6 +222,7 @@ class TextBlockView implements LazyBlockView, LiveText {
     this.refreshChecklist();
     if (this.editor || markdown === this.markdown) return;
     this.markdown = markdown;
+    this.typed = null;
     this.doc = null;
     if (!this.rendered) return;
     this.rendered = false;
@@ -240,6 +246,7 @@ class TextBlockView implements LazyBlockView, LiveText {
     const doc = this.doc ?? parseTextBlock(this.markdown);
     const editor = createBlockEditor(this.editRoot, doc, { kind: 'text', block: this.block.id, host: this.ctx.host });
     const sync = attachTextSync(editor, this.block.id, this.ctx.sync, this.ctx.cache, this.markdown, this.draft);
+    this.typed = null;
     syncs.set(editor, sync);
     editor.on('update', this.onUpdate);
     editor.on('blur', this.onBlur);
@@ -254,6 +261,7 @@ class TextBlockView implements LazyBlockView, LiveText {
     if (!editor || !sync) return;
     this.doc = editor.state.doc;
     this.markdown = sync.lastSent();
+    this.typed = serializeTextBlock(editor.state.doc, this.ctx.cache);
     this.draft = null;
     sync.detach();
     editor.off('update', this.onUpdate);
