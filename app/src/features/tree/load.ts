@@ -64,7 +64,7 @@ async function loadAlongLocation(notes: NotesService, tree: InitialTree): Promis
     }
   }
   expandAlong(path);
-  await Promise.all(sessionStore.get().expanded.map((id) => ensureChildren(id as NodeId)));
+  await loadExpanded();
 }
 
 /** Binds the tree to a service and loads it. Safe to call again with the same service. */
@@ -148,12 +148,29 @@ export function ensureChildren(parentId: NodeId): Promise<void> {
   return load;
 }
 
+/**
+ * Loads the children of every open container. A group inside an open notebook is known only once the notebook's
+ * children are in, so this goes level by level until no open container is left to load.
+ */
+export async function loadExpanded(): Promise<void> {
+  const tried = new Set<string>();
+  for (;;) {
+    const state = treeStore.get();
+    const ready = sessionStore
+      .get()
+      .expanded.filter((id) => !tried.has(id) && state.nodes[id as NodeId] !== undefined);
+    if (ready.length === 0) return;
+    for (const id of ready) tried.add(id);
+    await Promise.all(ready.map((id) => ensureChildren(id as NodeId)));
+  }
+}
+
 async function reset(notes: NotesService): Promise<void> {
   const tree = await notes.loadInitial(pathOf(getLocation())).catch(() => null);
   if (!tree || bound !== notes) return;
   treeStore.set((state) => ({ ...state, nodes: {}, children: {} }));
   applyInitial(tree);
-  await Promise.all(sessionStore.get().expanded.map((id) => ensureChildren(id as NodeId)));
+  await loadExpanded();
 }
 
 export function applyEvent(event: NotesEvent): void {

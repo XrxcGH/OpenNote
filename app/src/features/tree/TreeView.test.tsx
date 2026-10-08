@@ -26,6 +26,12 @@ async function focusRow(tree: () => HTMLElement, name: string) {
 }
 
 describe('the tree pattern', () => {
+  it('lists the sections of a group that was open at the last start, inside an open notebook', async () => {
+    await renderTree({ boot: { state: { expanded: ['n-biology', 'g-exam-prep'] } } });
+    await findRow(notebooksTree, 'Midterm');
+    expect(row(notebooksTree(), 'Exam prep').getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('gives rows their level, position, set size, and expanded state', async () => {
     await renderTree();
     const biology = row(notebooksTree(), 'Biology 101');
