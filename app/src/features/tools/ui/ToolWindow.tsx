@@ -18,6 +18,8 @@ export interface ToolWindowProps {
   tool: ToolDef;
   /** Where a window without a saved place starts, so the first windows do not sit on top of each other. */
   index: number;
+  /** The width, with gaps, of the windows open before this one. */
+  taken?: number;
   pinned: boolean;
   onPin(): void;
   onClose(): void;
@@ -27,12 +29,13 @@ export interface ToolWindowProps {
 
 const clamp = (value: number, low: number, high: number) => Math.min(high, Math.max(low, value));
 
-export function ToolWindow({ tool, index, pinned, onPin, onClose, onPopOut, children }: ToolWindowProps) {
+export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onPopOut, children }: ToolWindowProps) {
   const title = t(tool.title);
   const [place, setPlace] = useState<Place>(() =>
     loadStored<Place>(`place.${tool.id}`, {
-      x: Math.max(16, window.innerWidth - tool.width - 32 - index * 28),
-      y: 72 + index * 28,
+      // A new window opens left of the ones already open, so none hides another; with no room it cascades.
+      x: Math.max(16 + index * 28, window.innerWidth - tool.width - 32 - taken),
+      y: 72 + (window.innerWidth - tool.width - 32 - taken < 16 + index * 28 ? index * 28 : 0),
     }),
   );
   const drag = useRef<{ x: number; y: number; place: Place } | null>(null);
