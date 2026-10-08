@@ -218,7 +218,7 @@ const BIBTEX_ESCAPES: Record<string, string> = {
 /**
  * A value as BibTeX text that reads back as the same characters. Every special character is replaced in the same
  * pass, so the backslashes this adds are never escaped again. Braces become text commands rather than `\{`, because
- * BibTeX counts every brace, escaped or not, when it finds where a value ends.
+ * BibTeX counts every brace (escaped or not) when it finds where a value ends.
  */
 const escapeBibtex = (text: string): string =>
   text.replace(/[\\{}~^&%$#_]/g, (char) => BIBTEX_ESCAPES[char] ?? `\\${char}`);

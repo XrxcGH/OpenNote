@@ -252,7 +252,8 @@ describe('ordinary web tables and the clipboard choice', () => {
       ['ipt>alert(1)', 'ab', 'C:\\Notes\\x'],
     ]);
     // Comments, scripts, and head content around a table are not words; a tag split to slip past a pattern is.
-    const quiet = `<html><head><title>t</title><style>td{}</style></head><body><!--StartFragment-->${one}<!-- <p>x</p> --><script>y</script></body></html>`;
+    const head = '<html><head><title>t</title><style>td{}</style></head>';
+    const quiet = `${head}<body><!--StartFragment-->${one}<!-- <p>x</p> --><script>y</script></body></html>`;
     expect(tableFromClipboard({ html: quiet }, EN_US)?.source).toBe('html');
     for (const around of ['<scr<script>ipt>words</script>', '<!<!-- -->-- words -->', '<<p>p>words'])
       expect(tableFromClipboard({ html: around + one, text: tsv }, EN_US)?.source, around).toBe('delimited');

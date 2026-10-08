@@ -9,7 +9,15 @@
 
 ## Decision
 
-We will write the OpenNote Markdown export (spec 7: front matter with title, dates, and tags; sections as folders; pictures in `assets/`) into a ZIP archive with the extension `.opennote`, plus a manifest `opennote-share.json` (`format`, `version`, `title`, `scope`, `pages`, `locked`). The archive reads back through the Markdown importer, which makes every ID anew and rewrites links between pages. A password locks the whole archive with audited RustCrypto crates: Argon2id (`argon2`; 64 MiB, 3 passes, 1 lane, 16 byte salt) makes a 256 bit key, and XChaCha20-Poly1305 (`chacha20poly1305`) encrypts and authenticates the archive under a random 24 byte nonce from the operating system, with the whole header as associated data. The cost parameters are stored in the header, and a reader refuses any outside 8 to 256 MiB, 1 to 10 passes, and 1 to 4 lanes before doing any work. Keys are zeroed after use. The locked file begins with `ONSHARE2`. A wrong password and a damaged file give the same error. Files that begin with `ONSHARE1` came from a hand-built SHA-256 construction in unreleased betas and are not read; the importer says so.
+We will write the OpenNote Markdown export (spec 7: front matter with title, dates, and tags; sections as folders; pictures in `assets/`) into a ZIP archive with the extension `.opennote`, plus a manifest `opennote-share.json` (`format`, `version`, `title`, `scope`, `pages`, `locked`). The archive reads back through the Markdown importer, which makes every ID anew and rewrites links between pages.
+
+A password locks the whole archive with audited RustCrypto crates:
+
+- Argon2id (`argon2`; 64 MiB, 3 passes, 1 lane, 16 byte salt) makes a 256 bit key.
+- XChaCha20-Poly1305 (`chacha20poly1305`) encrypts and authenticates the archive under a random 24 byte nonce from the operating system. The whole header is the associated data.
+- The header stores the cost parameters. A reader refuses any outside 8 to 256 MiB, 1 to 10 passes, and 1 to 4 lanes before doing any work.
+- Keys are zeroed after use. A wrong password and a damaged file give the same error.
+- The locked file begins with `ONSHARE2`. Files that begin with `ONSHARE1` came from a hand-built SHA-256 construction in unreleased betas. They are not read, and the importer says so.
 
 ## Options considered
 
