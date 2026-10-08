@@ -52,7 +52,7 @@ register(
     when: (ctx) => isPage(ctx) && !one(ctx)?.pinned,
     run: async (ctx) => {
       const node = one(ctx);
-      if (node) await (await loadQolActions()).setPinned(node.id, true);
+      if (node) await (await loadQolActions()).setPinned(node.id, true, ctx.notes);
     },
   }),
   defineCommand({
