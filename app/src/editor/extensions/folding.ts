@@ -20,6 +20,8 @@ import {
   foldKeysFor,
   foldableAt,
   foldables,
+  foldsHiding,
+  foldsOf,
   hiddenRanges,
   positionsFor,
   rememberFolds,
@@ -27,6 +29,7 @@ import {
 } from '../commands/fold';
 import type { FoldKind } from '../commands/fold';
 import type { EditorHost } from '../host';
+import { META_REMOTE } from '../meta';
 import styles from './content.module.css';
 
 interface PluginValue {
@@ -252,9 +255,35 @@ function apply(host: EditorHost, tr: Transaction, value: PluginValue, state: Edi
   return { folded, ...update(host, tr, value.decorations, folded) };
 }
 
+/**
+ * An undo or redo (a change from the core) that changes something inside a fold opens that fold, so the change is
+ * where the person can see it. Folds the change doesn't touch stay shut.
+ */
+function openFoldsAfterUndo(transactions: readonly Transaction[], state: EditorState): Transaction | null {
+  const hiding = new Set<number>();
+  const note = (pos: number) => foldsHiding(state, Math.min(Math.max(pos, 0), state.doc.content.size)).forEach((f) => hiding.add(f));
+  for (const tr of transactions) {
+    if (!tr.docChanged || !tr.getMeta(META_REMOTE)) continue;
+    tr.mapping.maps.forEach((map, index) => {
+      map.forEach((_from, _to, start, end) => {
+        const rest = tr.mapping.slice(index + 1);
+        note(rest.map(start, 1));
+        if (end > start) note(rest.map(end, -1) - 1);
+      });
+    });
+    note(state.selection.head);
+  }
+  if (hiding.size === 0) return null;
+  return setFolds(
+    state.tr,
+    foldsOf(state).filter((fold) => !hiding.has(fold)),
+  );
+}
+
 function foldingPlugin(host: EditorHost): Plugin<PluginValue> {
   return new Plugin<PluginValue>({
     key: foldKey as never,
+    appendTransaction: (transactions, _old, state) => openFoldsAfterUndo(transactions, state),
     state: {
       init: (_config, state) => {
         rememberFolds(state.doc, []);

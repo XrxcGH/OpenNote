@@ -3,7 +3,8 @@
 // edges. Levels refuse past heading 1 and 6. Fold buttons are real buttons with aria-expanded, and folded content
 // gets `hidden`. Fold keys survive a reload, and unfoldTo uncovers a position.
 import { afterEach, describe, expect, it } from 'vitest';
-import { foldKeysFor, foldsOf, positionsFor, setFolds, unfoldTo } from '../commands/fold';
+import { foldKeysFor, foldsOf, positionsFor, setFolds, unfoldAroundDom, unfoldTo } from '../commands/fold';
+import { META_REMOTE } from '../meta';
 import { runOutline } from '../commands/outlineRun';
 import { mountEditor } from '../commands/testing';
 import type { TestEditor } from '../commands/testing';
@@ -141,5 +142,32 @@ describe('folding', () => {
     expect(unfoldTo(page.editor, inside)).toBe(true);
     expect(foldsOf(page.editor.state)).toEqual([]);
     expect(unfoldTo(page.editor, inside)).toBe(false);
+  });
+});
+
+describe('opening folds for what the person is taken to', () => {
+  it('unfolds around a DOM node, as a link, a search result, read aloud, and find do', () => {
+    const page = mount('## A\n\nHidden text\n\n## B\n\nMore');
+    page.editor.view.dispatch(setFolds(page.editor.state.tr, [0]));
+    const hidden = [...page.root.querySelectorAll('p')].find((node) => node.textContent === 'Hidden text');
+    expect(hidden).toBeDefined();
+    expect(unfoldAroundDom(hidden!)).toBe(true);
+    expect(foldsOf(page.editor.state)).toEqual([]);
+    expect(unfoldAroundDom(hidden!)).toBe(false);
+    expect(unfoldAroundDom(document.createElement('p'))).toBe(false);
+  });
+
+  it('opens the fold an undo lands in, and leaves other folds shut', () => {
+    const page = mount('## A\n\nHidden text\n\n## B\n\nMore text');
+    const inside = page.editor.state.doc.child(0).nodeSize + 2;
+    page.editor.view.dispatch(page.editor.state.tr.insertText('x', inside));
+    const { doc } = page.editor.state;
+    const second = doc.child(0).nodeSize + doc.child(1).nodeSize;
+    page.editor.view.dispatch(setFolds(page.editor.state.tr, [0, second]));
+    expect(foldsOf(page.editor.state)).toEqual([0, second]);
+    // The core's undo puts the text back as a change marked as remote.
+    page.editor.view.dispatch(page.editor.state.tr.delete(inside, inside + 1).setMeta(META_REMOTE, true));
+    expect(page.markdown()).toBe('## A\n\nHidden text\n\n## B\n\nMore text');
+    expect(foldsOf(page.editor.state)).toEqual([second - 1]);
   });
 });

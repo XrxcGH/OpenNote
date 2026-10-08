@@ -2,6 +2,7 @@
 // them. The text comes from each box as it is now (the editor's, or the last text drawn), never from the layer's
 // copy of the block, which is out of date while someone types. Highlights use the CSS Custom Highlight API, so
 // they sit over the editors and the static text alike without changing either.
+import { unfoldAroundDom } from '../../../editor/commands/fold';
 import { serializeTextBlock } from '../../../editor/markdown';
 import type { BlockId, Edit } from '../../../services/pages/types';
 import { liveText } from '../blocks/textBlock';
@@ -130,6 +131,7 @@ export function reveal(mounted: MountedPage, match: FindMatch): void {
   view?.render?.();
   const range = rangeOf(mounted, match);
   const target = range?.startContainer instanceof Element ? range.startContainer : range?.startContainer.parentElement;
+  if (target) unfoldAroundDom(target);
   (target ?? view?.element)?.scrollIntoView?.({ block: 'center' });
 }
 

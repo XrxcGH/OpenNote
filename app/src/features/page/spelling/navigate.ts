@@ -2,6 +2,7 @@
 // text block, whether its editor is mounted or not. The block mounts, the word is selected, and the spelling menu
 // opens with the suggestions; Enter takes the first.
 import type { Editor } from '@tiptap/core';
+import { unfoldTo } from '../../../editor/commands/fold';
 import {
   isCheckable,
   rangeOver,
@@ -78,6 +79,7 @@ function mountAt(pool: EditorPool, spot: Spot): { editor: Editor; from: number; 
   const from = editor.view.posAtDOM(range.startContainer, range.startOffset);
   const to = editor.view.posAtDOM(range.endContainer, range.endOffset);
   pool.mount(block, { kind: 'selection', anchor: from, head: to }, 'target');
+  unfoldTo(editor, from);
   editor.view.focus();
   return { editor, from, to };
 }

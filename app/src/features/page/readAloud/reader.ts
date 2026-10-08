@@ -1,6 +1,7 @@
 // The reader (ARCHITECTURE.md sections 19.2 and 19.3): speaks a sequence one utterance at a time, highlights the
 // spoken word with the read-aloud CSS Custom Highlight, and keeps the word in view. Next and previous paragraph
 // cancel the utterance and start another. If the person edits the paragraph being read, reading stops at its end.
+import { unfoldAroundDom } from '../../../editor/commands/fold';
 import { rangeOver, textblockText } from '../../../editor/extensions/spellingText';
 import { createStore } from '../../../state/store';
 import type { Store } from '../../../state/store';
@@ -74,6 +75,8 @@ export function createReader(engine: SpeechEngine, options: ReaderOptions): Read
     const item = items[index];
     if (!item) return finish();
     state.set((current) => ({ ...current, status: 'playing', index, total: items.length }));
+    // Reading something inside a folded section opens it, so the person sees the words being read.
+    unfoldAroundDom(item.element);
     textAtStart = textNow(item);
     setHighlight(null);
     if (!item.source) item.element.scrollIntoView?.({ block: 'nearest' });
