@@ -123,7 +123,7 @@ pub fn export_tables(
         }
     }
     if tables.is_empty() {
-        return Err(InteropError::Missing(format!("table in {}", plan.title)));
+        return Err(InteropError::NoTables(plan.title.clone()));
     }
     let files = match format {
         TableFormat::Xlsx => {

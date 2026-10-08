@@ -61,5 +61,14 @@ export function importErrorText(error: IpcError): string {
 export function exportErrorText(error: IpcError): string {
   if (error.code === 'io') return t('interop.export.failed.io');
   if (error.code === 'unsupported') return t('interop.export.failed.unsupported');
-  return t('interop.export.failed.other', { detail: error.message });
+  if (error.code === 'noTables') return t('interop.export.failed.noTables');
+  return t('interop.export.failed.other', { detail: sentence(error.message) });
+}
+
+/** The host's words as a sentence: a capital first letter and a full stop. */
+function sentence(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return trimmed;
+  const capital = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  return /[.!?]$/.test(capital) ? capital : `${capital}.`;
 }

@@ -27,6 +27,9 @@ pub enum InteropError {
     /// The source has no page, section, or asset with this ID.
     #[error("the source has no {0}")]
     Missing(String),
+    /// A table export found no table in what it was asked to export.
+    #[error("there is no table in {0}")]
+    NoTables(String),
     /// The destination refused a page or section.
     #[error("the destination refused the import: {0}")]
     Sink(String),
