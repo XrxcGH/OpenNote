@@ -56,8 +56,15 @@ fn placement_of(def: &ConnectorDef) -> Placement {
 
 /// Whether the connection was granted `wanted`. Services spell a granted scope in different ways, such as
 /// Microsoft's `https://graph.microsoft.com/Notes.Read` for `Notes.Read`, and in any case.
+///
+/// The sign-in scopes (`openid`, `email`, `profile`, `offline_access`) count as granted on any connection: the
+/// sign-in itself proves them, and services leave them out of the token answer (Microsoft) or spell them as
+/// URLs such as `https://www.googleapis.com/auth/userinfo.email` (Google).
 fn granted(connection: &Connection, wanted: &str) -> bool {
     let short = |scope: &str| scope.rsplit('/').next().unwrap_or(scope).to_lowercase();
+    if matches!(short(wanted).as_str(), "openid" | "email" | "profile" | "offline_access") {
+        return true;
+    }
     connection
         .scopes
         .iter()
