@@ -1,23 +1,33 @@
-// What happens around a finished pen stroke beyond storing it. A pen edit of typed text may take the stroke. Ink on
-// text may go into an anchored block. The writing pen reads the words a moment after. A grid drawn in lines is offered
-// as a table. input.ts calls the hooks at two points.
+// What happens around a finished pen stroke beyond storing it. A pen edit of typed text may take the stroke, or words
+// written in a gap of it. Ink on text may go into an anchored block. The writing pen reads the words a moment after. A
+// grid drawn in lines is offered as a table. input.ts calls the hooks at two points.
 import type { InkStroke } from '../model/types';
+import { createGapWriter } from './gapWriting';
 import { createGridWatch } from './gridTable';
 import { createWritingPen } from './handwriting';
 import type { InkHost } from './host';
 import { anchorStrokes, autoAnchor } from './anchoring';
 import type { Anchored } from './anchoring';
 import { penEdit } from './penEditing';
+import { drawState } from './state';
 import type { DrawTool } from './state';
 import type { InkSurface } from './surface';
 
 export function createStrokeHooks(host: InkHost, surfaceOf: () => InkSurface | null) {
   const writing = createWritingPen(host, surfaceOf);
   const grid = createGridWatch(host, surfaceOf);
+  // Words written in a gap of typed text that could not be read are saved as ink, anchored as any stroke would be.
+  const gap = createGapWriter(host, (strokes, surface) => {
+    const anchored = autoAnchor() && !surface.readOnly ? anchorStrokes(host, surface, strokes) : null;
+    return anchored ? surface.add(anchored.strokes, anchored.edits) : surface.add(strokes);
+  });
   return {
     /** Before the stroke is added: true when it edited typed text, so it is not added as ink. */
-    before(stroke: InkStroke, surface: InkSurface): Promise<boolean> {
-      return penEdit(host, surface, stroke);
+    async before(stroke: InkStroke, surface: InkSurface): Promise<boolean> {
+      if (gap.take(stroke, surface)) return true;
+      if (await penEdit(host, surface, stroke)) return true;
+      // The writing pen reads its own words, gaps included.
+      return drawState.get().tool !== 'writing' && gap.start(stroke, surface);
     },
     /** Ink drawn on typed text goes into an anchored block, so it follows the words. Null when it is not on text. */
     anchor(strokes: readonly InkStroke[], surface: InkSurface): Anchored | null {
@@ -29,7 +39,10 @@ export function createStrokeHooks(host: InkHost, surfaceOf: () => InkSurface | n
       if (strokes.length === 1) grid.note(strokes[0]);
     },
     toggleWrittenInk: () => writing.toggleInk(),
-    destroy: () => writing.destroy(),
+    destroy: () => {
+      writing.destroy();
+      gap.destroy();
+    },
   };
 }
 

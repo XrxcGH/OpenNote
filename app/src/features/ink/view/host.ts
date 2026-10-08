@@ -83,6 +83,8 @@ export interface TextEditing {
   select(block: string, from: number, to: number): Promise<boolean>;
   /** Undoes the last text edit of a block. */
   undo(block: string): Promise<void>;
+  /** The paragraph at a position: where its text starts, its text, and the caret's offset in it when the caret is there. */
+  paragraph?(block: string, pos: number): Promise<{ start: number; text: string; caret: number | null } | null>;
 }
 
 /** The page view's seams, as features/page/registrations/ink.ts passes them. */

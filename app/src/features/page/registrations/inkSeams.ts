@@ -85,6 +85,19 @@ export function words(block: string, a: number, b: number): { from: number; to: 
   return { from: start + from, to: start + to, text: word };
 }
 
+/** The paragraph at a position: where its text starts, its text, and the caret's offset in it when the caret is there. */
+export function paragraph(block: string, pos: number): { start: number; text: string; caret: number | null } | null {
+  const editor = editorOf(block);
+  if (!editor) return null;
+  const doc = editor.state.doc;
+  const $pos = doc.resolve(Math.min(pos, doc.content.size));
+  if (!$pos.parent.isTextblock) return null;
+  const start = $pos.start();
+  const { empty, head } = editor.state.selection;
+  const inside = empty && editor.isFocused && head >= start && head <= $pos.end();
+  return { start, text: $pos.parent.textContent, caret: inside ? head - start : null };
+}
+
 export function remove(block: string, from: number, to: number): boolean {
   return editorOf(block)?.chain().deleteRange({ from, to }).run() ?? false;
 }

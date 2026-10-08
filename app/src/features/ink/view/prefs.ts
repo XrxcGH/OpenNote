@@ -24,7 +24,7 @@ export interface InkPrefs {
   /** Whether the zoom writing box is open. */
   readonly zoomBox: boolean;
   /** Which pen edits of typed text are on. */
-  readonly penEdit: Readonly<Record<'strike' | 'space' | 'split' | 'circle', boolean>>;
+  readonly penEdit: Readonly<Record<'strike' | 'space' | 'split' | 'circle' | 'write', boolean>>;
   /** Pens by `persistentDeviceId`, or `default`. */
   readonly pens: Readonly<Record<string, PenDevice>>;
   /** The key of the pen seen last, which the settings page edits. */
@@ -52,7 +52,7 @@ const DEFAULTS: InkPrefs = {
   gridSnap: false,
   gridMm: 5,
   zoomBox: false,
-  penEdit: { strike: true, space: true, split: true, circle: true },
+  penEdit: { strike: true, space: true, split: true, circle: true, write: true },
   pens: {},
   lastPen: 'default',
   seenPens: ['default'],
@@ -112,6 +112,7 @@ function load(): InkPrefs {
         space: raw.penEdit?.space !== false,
         split: raw.penEdit?.split !== false,
         circle: raw.penEdit?.circle !== false,
+        write: raw.penEdit?.write !== false,
       },
       pens,
       lastPen: typeof raw.lastPen === 'string' ? raw.lastPen : 'default',

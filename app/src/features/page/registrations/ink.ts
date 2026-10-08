@@ -47,6 +47,7 @@ function start(): void {
           split: (block, pos) => import('./inkSeams').then((seams) => seams.split(block, pos)),
           select: (block, from, to) => import('./inkSeams').then((seams) => seams.select(block, from, to)),
           undo: (block) => import('./inkSeams').then((seams) => seams.undoText(block)),
+          paragraph: (block, pos) => import('./inkSeams').then((seams) => seams.paragraph(block, pos)),
         },
         audio: {
           playFrom: (ids) => import('../audio/stamps').then((stamps) => stamps.playFromInk(ids)),

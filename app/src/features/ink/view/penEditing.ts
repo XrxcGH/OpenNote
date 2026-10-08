@@ -15,8 +15,9 @@ import type { InkHost } from './host';
 import { inkPrefs } from './prefs';
 import type { InkSurface } from './surface';
 
-export type EditGesture = 'strike' | 'space' | 'split' | 'circle';
-export const EDIT_GESTURES: readonly EditGesture[] = ['strike', 'space', 'split', 'circle'];
+/** The shapes `classifyEdit` reads, and writing in a gap (gapWriting.ts), which is read by where it starts. */
+export type EditGesture = 'strike' | 'space' | 'split' | 'circle' | 'write';
+export const EDIT_GESTURES: readonly EditGesture[] = ['strike', 'space', 'split', 'circle', 'write'];
 
 /** The height of a line of text in page units, when the text says nothing else. */
 export const LINE_HEIGHT = 26;
@@ -25,7 +26,7 @@ const STRAIGHT = 0.06;
 const DEGREES = Math.PI / 180;
 
 /** What a finished pen path asks of typed text, judged by its shape alone. */
-export function classifyEdit(points: readonly Vec[], lineHeight = LINE_HEIGHT): EditGesture | null {
+export function classifyEdit(points: readonly Vec[], lineHeight = LINE_HEIGHT): Exclude<EditGesture, 'write'> | null {
   if (points.length < 3) return null;
   const box = boundsOf(points);
   const w = box.maxX - box.minX;

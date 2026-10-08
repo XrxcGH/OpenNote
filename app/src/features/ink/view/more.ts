@@ -58,6 +58,7 @@ const EDIT_TITLES: Record<EditGesture, MessageKey> = {
   space: 'ink.penEdit.addSpace',
   split: 'ink.penEdit.splitParagraph',
   circle: 'ink.penEdit.circleSelect',
+  write: 'ink.penEdit.writeInGap',
 };
 
 /** Each pen edit of typed text has its own switch in the command list. */
