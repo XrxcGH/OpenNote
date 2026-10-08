@@ -1,5 +1,5 @@
 // Density (ARCHITECTURE.md section 9.8): the size of buttons and rows. "Automatic" starts from the primary pointer,
-// then follows the last pointer used: a touch or pen pointerup switches to touch sizes, a mouse pointerup switches
+// then follows the last pointer used: a touch pointerup switches to touch sizes (a pen does not: the first stroke would resize the ribbon and move the page under the pen), a mouse pointerup switches
 // back. It switches on pointerup only, never in the middle of a gesture. "Standard" and "Large" stay as chosen.
 // A switch keeps the focused row where it was, so a magnifier user doesn't lose the spot.
 
@@ -7,9 +7,9 @@ import { setDensity } from '../../state/layout';
 import type { Density } from '../../state/layout';
 import { getSettings, settingsStore } from '../../state/settings';
 
-/** Touch and pen use touch sizes. */
+/** Touch uses touch sizes. A pen is precise and leaves the sizes as they are. */
 function densityOf(pointerType: string): Density | null {
-  if (pointerType === 'touch' || pointerType === 'pen') return 'touch';
+  if (pointerType === 'touch') return 'touch';
   return pointerType === 'mouse' ? 'mouse' : null;
 }
 

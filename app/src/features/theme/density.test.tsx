@@ -12,6 +12,8 @@ describe('density', () => {
   it('starts from the primary pointer and follows the last pointer on pointerup', async () => {
     await renderApp();
     expect(density()).toBe('mouse');
+    pointerUp('pen');
+    expect(density()).toBe('mouse');
     fireEvent.pointerDown(window, { pointerType: 'touch' });
     expect(density()).toBe('mouse');
     pointerUp('touch');
