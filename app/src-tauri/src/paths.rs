@@ -252,6 +252,9 @@ mod tests {
     fn spells_one_windows_profile_the_same_with_either_slash() {
         let back = Paths::under_profile(Path::new("C:\\one\\profile")).profile_key();
         assert_eq!(back, Paths::under_profile(Path::new("C:/one/profile")).profile_key());
-        assert_eq!(back, Paths::under_profile(Path::new("c:\\ONE\\profile\\")).profile_key());
+        assert_eq!(
+            back,
+            Paths::under_profile(Path::new("c:\\ONE\\profile\\")).profile_key()
+        );
     }
 }
