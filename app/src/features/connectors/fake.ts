@@ -161,6 +161,10 @@ export function createFakeConnectors(options: FakeOptions = {}): FakeConnectors 
       if (offline()) return Promise.reject(new ConnectorError('offline'));
       if (item.state.kind === 'expired') return Promise.reject(new ConnectorError('expired'));
       if (item.state.kind !== 'connected') return Promise.reject(new ConnectorError('notConnected'));
+      // The real host refuses access the connector doesn't have; a feature that misspells one fails its test here.
+      if (access.some((name) => !item.access.some((one) => one.capability === name))) {
+        return Promise.reject(new ConnectorError('missingAccess'));
+      }
       return Promise.resolve(
         options.respond?.(id, request) ?? { status: 200, contentType: 'application/json', body: '{}' },
       );

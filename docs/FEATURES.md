@@ -76,7 +76,7 @@ Linked accounts (Phase 11):
 | Windows share target and Snipping Tool | "Share to OpenNote" from any app, and screenshots go straight to the current page | Built, untested by hand. The Snipping Tool offer is built. The share target needs the owner (package identity and signing). |
 | Phone camera | Scan a QR code shown in OpenNote to send photos and document scans from a phone | Not built yet |
 | Zotero and BibTeX | Cite sources while writing and export a bibliography in any common style | Built, untested by hand |
-| Canvas, Moodle, and Google Classroom | Import assignments into a section and submit a page as PDF | Needs the owner. Canvas and Moodle sign-in with a token is built. No import or submit uses it yet. |
+| Canvas, Moodle, and Google Classroom | Import assignments into a section and submit a page as PDF | Built, untested by hand. Bring in course assignments makes a section and pages and fills Upcoming. Submit page as PDF hands in to Canvas and Moodle, and saves to Drive for Classroom, which takes no file from other apps. Classroom needs the owner's Google client ID. |
 | Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline | Not built yet. The embed block is not built. |
 | Kindle and Readwise | Import book highlights into a notebook | Built, untested by hand. Kindle clippings and a Readwise CSV file are built. Sync Readwise reads the Readwise API into a notebook, a page for each book, and syncs again from where it left off. |
 | Slack and Teams chat | Share a page as a link, PDF, or image | Built, untested by hand. Share page to Slack and Share page to Teams post as you to a channel you choose. Both need the owner's client IDs. |

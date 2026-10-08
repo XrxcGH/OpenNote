@@ -46,3 +46,11 @@ The note remembers which meeting it came from. A recording you start on that pag
 Open a page, press Ctrl+K, and choose Share page to Slack or Share page to Teams. Pick the channel (in Teams, the team and then the channel), then pick what to post: a PDF of the page, a picture of the page or of the lasso selection, or a link.
 
 The post is made as you, and nothing is sent until you press Post. A link opens the page in OpenNote, so it works only for people who have OpenNote and the same notebook. In Teams a picture shows in the message, and a PDF is put in the channel's Files folder with a link to it in the message.
+
+### Courses and assignments
+
+Connect Canvas or Moodle with your personal token, or Google for Classroom. Then press Ctrl+K and choose Bring in course assignments. Pick a course, or all of them. Each course becomes a section in the notebook you have open, with a page for each assignment. The top of the page holds the due date, a link to the assignment, and its instructions. Assignments with a due date also appear in Upcoming, and the ones you have already handed in are ticked.
+
+Bring them in again at any time. OpenNote updates what your school changed and never touches the lines you wrote on a page.
+
+To hand in work, open the page, press Ctrl+K, and choose Submit page as PDF. Pick the course and the assignment, and OpenNote turns the page into a PDF and hands it in. Canvas and Moodle take the file directly. Google Classroom does not accept a file from another app, so OpenNote saves the PDF in your Google Drive and copies its link. In Classroom you attach it from Drive and turn it in yourself.

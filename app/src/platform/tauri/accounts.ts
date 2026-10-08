@@ -39,5 +39,7 @@ export function createTauriAccounts(): AccountsHost {
         parts: [...parts],
         contentType,
       }),
+    uploadPublic: (connector, url, parts, contentType) =>
+      call<ConnectorResponse>('transfer.public', { connector, url, parts: [...parts], contentType }),
   };
 }

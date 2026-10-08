@@ -133,7 +133,10 @@ export const connectors = {
     driveRead: 'Read your Google Docs, Sheets, and Slides so OpenNote can import them. It cannot change them.',
     youtubeUpload: 'Upload videos to your YouTube channel.',
     youtubeCaptions: 'Read the captions of your YouTube videos.',
-    classroomSubmit: 'Attach a file to your own Classroom assignment and turn it in.',
+    driveAppData:
+      'Keep OpenNote’s own settings file in a private folder of your Google Drive, which no other app can see.',
+    canvasSubmit: 'Hand in a file to the assignments you choose.',
+    moodleSubmit: 'Hand in a file to the assignments you choose.',
     webdavFiles: 'Read and change the files in the WebDAV folder you connect.',
   },
   confirm: {

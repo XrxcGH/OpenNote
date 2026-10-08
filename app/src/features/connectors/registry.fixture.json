@@ -20,11 +20,23 @@
       {
         "capability": "tasksWrite",
         "writes": true
+      },
+      {
+        "capability": "onedriveFiles",
+        "writes": true
+      },
+      {
+        "capability": "teamsPost",
+        "writes": true
+      },
+      {
+        "capability": "teamsRead",
+        "writes": false
       }
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": ["importOneNote", "outlookCalendar", "microsoftToDo"],
+    "features": ["importOneNote", "outlookCalendar", "microsoftToDo", "shareToTeams", "sendToOneDrive"],
     "group": "microsoft",
     "hosts": ["login.microsoftonline.com", "graph.microsoft.com"],
     "id": "microsoft",
@@ -60,11 +72,35 @@
       {
         "capability": "youtubeRead",
         "writes": false
+      },
+      {
+        "capability": "driveRead",
+        "writes": false
+      },
+      {
+        "capability": "youtubeUpload",
+        "writes": true
+      },
+      {
+        "capability": "youtubeCaptions",
+        "writes": true
+      },
+      {
+        "capability": "driveAppData",
+        "writes": true
       }
     ],
     "auth": "oauth",
     "baseUrl": null,
-    "features": ["googleCalendar", "googleTasks", "googleClassroom", "googleDrive", "youtubeCaptions"],
+    "features": [
+      "googleCalendar",
+      "googleTasks",
+      "googleClassroom",
+      "googleDrive",
+      "googleOffice",
+      "youtubeCaptions",
+      "youtubeUpload"
+    ],
     "group": "google",
     "hosts": [
       "accounts.google.com",
@@ -149,7 +185,7 @@
     "baseUrl": null,
     "features": ["shareToSlack"],
     "group": "other",
-    "hosts": ["slack.com"],
+    "hosts": ["slack.com", "files.slack.com"],
     "id": "slack",
     "lastUsedUnix": null,
     "name": "Slack",
@@ -169,7 +205,7 @@
     "baseUrl": null,
     "features": ["vimeoCaptions"],
     "group": "other",
-    "hosts": ["api.vimeo.com"],
+    "hosts": ["api.vimeo.com", "captions.cloud.vimeo.com"],
     "id": "vimeo",
     "lastUsedUnix": null,
     "name": "Vimeo",
@@ -203,6 +239,10 @@
       {
         "capability": "canvasRead",
         "writes": false
+      },
+      {
+        "capability": "canvasSubmit",
+        "writes": true
       }
     ],
     "auth": "tokenAndUrl",
@@ -223,6 +263,10 @@
       {
         "capability": "moodleRead",
         "writes": false
+      },
+      {
+        "capability": "moodleSubmit",
+        "writes": true
       }
     ],
     "auth": "tokenAndUrl",
@@ -233,6 +277,26 @@
     "id": "moodle",
     "lastUsedUnix": null,
     "name": "Moodle",
+    "pending": false,
+    "state": {
+      "kind": "notConnected"
+    }
+  },
+  {
+    "access": [
+      {
+        "capability": "webdavFiles",
+        "writes": true
+      }
+    ],
+    "auth": "tokenAndUrl",
+    "baseUrl": null,
+    "features": ["sendToWebdav"],
+    "group": "storage",
+    "hosts": [],
+    "id": "webdav",
+    "lastUsedUnix": null,
+    "name": "WebDAV",
     "pending": false,
     "state": {
       "kind": "notConnected"

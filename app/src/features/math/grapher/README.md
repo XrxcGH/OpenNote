@@ -8,13 +8,13 @@ Reading and running expressions belong to the shared engine in `core/expr`. `dia
 
 Everything is exported from `index.ts`.
 
-| Name                                               | What it does                                                                             |
-| -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `compileExpression(source, { parameters })`        | Reads and compiles text. Returns `evaluate(x, params)` or a problem with a place.        |
-| `differentiateExpression(source, options, order)`  | The derivative with respect to x, compiled, and its text. Parameters count as constants. |
-| `findParameters(source)`                           | The letters that need a value, so the screen can add a slider for each.                  |
-| `sampleFunction`, `buildScene`, `sceneToSvg`       | Adaptive sampling, the scene of grid and curves, and a standalone SVG.                   |
-| `defaultViewport`, `zoomAround`, `panByPixels`     | Viewport math for zoom and pan.                                                          |
+| Name                                              | What it does                                                                             |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `compileExpression(source, { parameters })`       | Reads and compiles text. Returns `evaluate(x, params)` or a problem with a place.        |
+| `differentiateExpression(source, options, order)` | The derivative with respect to x, compiled, and its text. Parameters count as constants. |
+| `findParameters(source)`                          | The letters that need a value, so the screen can add a slider for each.                  |
+| `sampleFunction`, `buildScene`, `sceneToSvg`      | Adaptive sampling, the scene of grid and curves, and a standalone SVG.                   |
+| `defaultViewport`, `zoomAround`, `panByPixels`    | Viewport math for zoom and pan.                                                          |
 
 ## What the screens need
 

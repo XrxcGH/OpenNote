@@ -83,5 +83,17 @@ export function createFakeAccountsHost(connectors: () => ConnectorsClient): Fake
       uploads.push({ connector, url: request.url, contentType, body });
       return connectors().request(connector, access, { ...request, body, contentType });
     },
+    async uploadPublic(connector, url, parts, contentType) {
+      const joined = parts.map(partBytes);
+      const all = new Uint8Array(joined.reduce((sum, one) => sum + one.length, 0));
+      let at = 0;
+      for (const one of joined) {
+        all.set(one, at);
+        at += one.length;
+      }
+      const body = new TextDecoder().decode(all);
+      uploads.push({ connector, url, contentType, body });
+      return connectors().request(connector, [], { method: 'POST', url, body, contentType });
+    },
   };
 }

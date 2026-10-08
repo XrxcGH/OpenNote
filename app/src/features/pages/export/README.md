@@ -15,18 +15,18 @@ This folder turns a page into other forms: Markdown, standalone HTML, and the se
 
 All of it is re-exported from `features/pages`. The Markdown tree and renderers are under the `markdown` namespace.
 
-| Name | Purpose |
-|---|---|
-| `readExportPage(json, strokes?, language?)` | A page.json as `ExportPage` |
-| `exportStrokes(records)` | The live strokes of a page from its ink segment records, in page units |
-| `readingOrder(blocks, preferred?)` | Blocks in reading order |
-| `exportMarkdown(page, options?)` | `{ markdown, parts, assets }` |
-| `exportHtml(page, options?)` | `{ html, assets }` |
-| `renderBlock(block, context)` | One block as HTML, for the print document |
-| `inkShapes`, `inkSvg`, `shapesInBand` | Ink as shapes, and the svg for one band of the page |
-| `documentCss(theme, styles?)`, `lightTheme(fontFaces?)`, `readStyles(raw)` | The stylesheet and its inputs |
-| `escapeText`, `rewriteLinks`, `writeDestination` | Markdown escaping and link rewriting (format spec 7.5, 7.6) |
-| `dataUri(mime, bytes)` | A data URI, so HTML can hold its images |
+| Name                                                                       | Purpose                                                                |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `readExportPage(json, strokes?, language?)`                                | A page.json as `ExportPage`                                            |
+| `exportStrokes(records)`                                                   | The live strokes of a page from its ink segment records, in page units |
+| `readingOrder(blocks, preferred?)`                                         | Blocks in reading order                                                |
+| `exportMarkdown(page, options?)`                                           | `{ markdown, parts, assets }`                                          |
+| `exportHtml(page, options?)`                                               | `{ html, assets }`                                                     |
+| `renderBlock(block, context)`                                              | One block as HTML, for the print document                              |
+| `inkShapes`, `inkSvg`, `shapesInBand`                                      | Ink as shapes, and the svg for one band of the page                    |
+| `documentCss(theme, styles?)`, `lightTheme(fontFaces?)`, `readStyles(raw)` | The stylesheet and its inputs                                          |
+| `escapeText`, `rewriteLinks`, `writeDestination`                           | Markdown escaping and link rewriting (format spec 7.5, 7.6)            |
+| `dataUri(mime, bytes)`                                                     | A data URI, so HTML can hold its images                                |
 
 ## Rules worth knowing
 

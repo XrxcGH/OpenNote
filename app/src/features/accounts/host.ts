@@ -43,6 +43,17 @@ export interface AccountsHost {
     parts: readonly UploadPart[],
     contentType: string,
   ): Promise<ConnectorResponse>;
+  /**
+   * Sends the joined parts as a POST to an address that the service itself gave in an earlier answer (an upload
+   * address on its storage), with no token. The connector must be connected. Only a plain https address on a name
+   * (not a number, and not this computer) is sent to.
+   */
+  uploadPublic(
+    connector: string,
+    url: string,
+    parts: readonly UploadPart[],
+    contentType: string,
+  ): Promise<ConnectorResponse>;
 }
 
 /** The host's account calls. */

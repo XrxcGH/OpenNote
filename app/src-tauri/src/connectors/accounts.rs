@@ -221,6 +221,7 @@ pub(super) fn call(connectors: &Connectors, root: &Path, name: &str, args: &Valu
         }
         "transfer.download" => transfer_down(connectors, root, args),
         "transfer.upload" => transfer_up(connectors, root, args),
+        "transfer.public" => transfer_public(connectors, root, args),
         _ => Err(invalid("name", &format!("{name} isn't an accounts call."))),
     }
 }
@@ -271,6 +272,54 @@ fn transfer_up(connectors: &Connectors, root: &Path, args: &Value) -> IpcResult<
     Ok(response_json(response))
 }
 
+/// Whether the address is a plain https address on a name, which is where a service's own answer may send an upload
+/// (Canvas hands out the address of its file storage). Numbers, this computer, local names, ports, and sign-in
+/// details in the address are all refused.
+pub(super) fn public_upload_host(text: &str) -> Option<String> {
+    let url = url::Url::parse(text).ok()?;
+    if url.scheme() != "https" || url.port().is_some() || !url.username().is_empty() || url.password().is_some() {
+        return None;
+    }
+    let host = match url.host()? {
+        url::Host::Domain(name) => name.to_ascii_lowercase(),
+        _ => return None,
+    };
+    let local = host == "localhost" || host.ends_with(".localhost") || host.ends_with(".local") || host.ends_with(".internal");
+    (host.contains('.') && !local).then_some(host)
+}
+
+/// A POST with no token to the upload address a service gave in an answer. The connector must be connected, so only
+/// a feature the person has set up can send, and the bytes are whatever the feature joined.
+fn transfer_public(connectors: &Connectors, root: &Path, args: &Value) -> IpcResult<Value> {
+    let id: String = arg(args, "connector")?;
+    let address: String = arg(args, "url")?;
+    let parts: Vec<Part> = arg(args, "parts")?;
+    let content_type: String = arg(args, "contentType")?;
+    let connected = matches!(
+        connectors.view(&id).map_err(IpcError::from)?.state,
+        super::view::StateView::Connected { .. }
+    );
+    if !connected {
+        return Err(invalid("connector", "That account isn't connected."));
+    }
+    if connectors.offline() {
+        return Err(invalid("url", "OpenNote is working offline."));
+    }
+    let host = public_upload_host(&address).ok_or_else(|| invalid("url", "That upload address can't be used."))?;
+    let mut http = HttpRequest::new(super::registry::Method::Post, address);
+    http.body = Some(Body::Bytes {
+        content_type,
+        data: join_parts(root, &parts)?,
+    });
+    let policy = super::http::HostPolicy::new([host]);
+    let response = connectors
+        .0
+        .http
+        .send(&policy, &http, super::session::DEFAULT_MAX_BYTES)
+        .map_err(|_| invalid("url", "The upload didn't go through."))?;
+    Ok(response_json(response))
+}
+
 #[tauri::command]
 pub async fn accounts_call(
     connectors: State<'_, Connectors>,
@@ -289,6 +338,29 @@ pub async fn accounts_call(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_public_upload_goes_only_to_a_plain_https_name() {
+        assert_eq!(
+            public_upload_host("https://Files.School.example/upload?id=1").as_deref(),
+            Some("files.school.example")
+        );
+        for bad in [
+            "http://files.school.example/up",
+            "https://files.school.example:8443/up",
+            "https://127.0.0.1/up",
+            "https://[::1]/up",
+            "https://10.0.0.5/up",
+            "https://localhost/up",
+            "https://printer.local/up",
+            "https://intranet/up",
+            "https://user:pass@files.school.example/up",
+            "file:///C:/secret",
+            "not a url",
+        ] {
+            assert_eq!(public_upload_host(bad), None, "{bad}");
+        }
+    }
 
     #[test]
     fn names_are_checked_before_they_reach_the_disk() {

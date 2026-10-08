@@ -12,4 +12,5 @@ export { TOOLS, isToolId } from './ui/tools';
 export type { ToolId } from './ui/tools';
 export { runReminderCheck, showNotice, remindersOn } from './ui/notify';
 export { setPageItems } from './ui/upcomingStores';
+export { setSourceItems, sourceItems } from './ui/upcomingMerge';
 export { registerToolsEditor } from './editor/register';

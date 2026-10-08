@@ -112,6 +112,7 @@ fn the_listed_services_are_all_there() {
         "readwise",
         "canvas",
         "moodle",
+        "webdav",
     ] {
         assert!(ids.contains(&id), "{id}");
     }

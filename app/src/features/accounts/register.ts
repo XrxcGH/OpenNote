@@ -46,6 +46,21 @@ const SPECS: readonly Spec[] = [
     run: () => import('./share/commands').then((module) => module.shareTeams()),
   },
   {
+    id: 'lms.bring',
+    title: 'accounts.lms.commands.bring',
+    keywords: 'accounts.lms.commands.keywords',
+    flag: 'accounts.lms',
+    run: () => import('./lms/commands').then((module) => module.bringAssignments()),
+  },
+  {
+    id: 'lms.submit',
+    title: 'accounts.lms.commands.submit',
+    keywords: 'accounts.lms.commands.keywords',
+    flag: 'accounts.lms',
+    needsPage: true,
+    run: () => import('./lms/commands').then((module) => module.submitPage()),
+  },
+  {
     id: 'readwise.sync',
     title: 'accounts.readwise.commands.sync',
     keywords: 'accounts.readwise.commands.keywords',

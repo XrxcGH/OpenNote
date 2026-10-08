@@ -3,7 +3,7 @@
 // one off makes the next, and Skip this one makes the next without finishing. Dates written on pages ("- [ ] Read by
 // Friday") appear here too. A calendar file (.ics) adds classes, exams, and assignments, and can be updated later.
 // Items stay on this device. Nothing here counts, scores, or nags.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
@@ -13,6 +13,7 @@ import { dateIn } from '../upcoming/zone';
 import { loadStored, saveStored } from './storage';
 import { CalendarFile, Overview, Planner, RemindersSwitch } from './UpcomingExtras';
 import { pageItemsStore } from './upcomingStores';
+import { UPCOMING_CHANGED } from './upcomingMerge';
 import styles from './tools.module.css';
 import extra from './extra.module.css';
 
@@ -124,6 +125,12 @@ function Groups({ groups, shown, onChange, onSkip }: GroupsProps) {
 
 export function UpcomingTool() {
   const [saved, setSaved] = useState(readSaved);
+  // Another feature (a course's assignments) can change the list while this window is open.
+  useEffect(() => {
+    const reread = () => setSaved(readSaved());
+    window.addEventListener(UPCOMING_CHANGED, reread);
+    return () => window.removeEventListener(UPCOMING_CHANGED, reread);
+  }, []);
   const [text, setText] = useState('');
   const [note, setNote] = useState('');
   const [repeatChoice, setRepeatChoice] = useState<RepeatChoice>('none');

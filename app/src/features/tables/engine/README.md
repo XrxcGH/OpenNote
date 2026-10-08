@@ -14,17 +14,17 @@ This folder holds the core of Phase 7: typed tables, formulas, quick math, pasti
 
 ## Modules
 
-| File or folder | What it does |
-|---|---|
-| `values.ts`, `locale.ts`, `dates.ts` | Values and error tokens, regional number reading, and calendar days |
-| `model.ts`, `edit.ts` | Typed columns and cells, and edits that return a new, recalculated table |
-| `canonical.ts`, `format.ts` | Locale-free cell text for storage, and display text in the person's region |
-| `formula/` | The formula dialect, the compiler, and the functions. Reading text is the shared engine's job (`core/expr`) |
-| `recalc.ts` | Dependency-ordered recalculation with cycle detection |
-| `sort.ts`, `filter.ts`, `totals.ts` | Multi-column sort, filters, and the totals row |
-| `quickMath.ts` | The "2.5*9.81=" evaluator, on the same engine |
-| `paste/` | Delimited text, Excel, Sheets, and LibreOffice tables, and type inference |
-| `chart/` | The chart spec builder, palette slots, and two-click defaults |
+| File or folder                       | What it does                                                                                                |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `values.ts`, `locale.ts`, `dates.ts` | Values and error tokens, regional number reading, and calendar days                                         |
+| `model.ts`, `edit.ts`                | Typed columns and cells, and edits that return a new, recalculated table                                    |
+| `canonical.ts`, `format.ts`          | Locale-free cell text for storage, and display text in the person's region                                  |
+| `formula/`                           | The formula dialect, the compiler, and the functions. Reading text is the shared engine's job (`core/expr`) |
+| `recalc.ts`                          | Dependency-ordered recalculation with cycle detection                                                       |
+| `sort.ts`, `filter.ts`, `totals.ts`  | Multi-column sort, filters, and the totals row                                                              |
+| `quickMath.ts`                       | The "2.5*9.81=" evaluator, on the same engine                                                               |
+| `paste/`                             | Delimited text, Excel, Sheets, and LibreOffice tables, and type inference                                   |
+| `chart/`                             | The chart spec builder, palette slots, and two-click defaults                                               |
 
 ## How the pieces fit
 

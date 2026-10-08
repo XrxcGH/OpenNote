@@ -6,13 +6,13 @@
 
 All of it is re-exported from `features/pages`.
 
-| Name | Purpose |
-|---|---|
-| `slidesOf(page, options?)` | The slides of an `ExportPage`. `split` is `headings`, `dividers`, or `both` (the default), and `headingLevel` is the deepest heading that starts a slide (default 2) |
-| `slideOfBlock(slides, blockId)` | The slide a block is on, to start a presentation at the cursor |
-| `moveSlide(index, delta, count)` | The slide an arrow key, Page Down, or a swipe goes to, kept within the deck |
-| `slideTitles(slides, fallback)` | Titles for a slide navigator, with the caller's own words for a slide that has no heading |
-| `slideHtml(slide, cx, label?)` | One slide as a `<section class="slide">` with an `aria-label`, using the HTML export's renderers |
+| Name                             | Purpose                                                                                                                                                              |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `slidesOf(page, options?)`       | The slides of an `ExportPage`. `split` is `headings`, `dividers`, or `both` (the default), and `headingLevel` is the deepest heading that starts a slide (default 2) |
+| `slideOfBlock(slides, blockId)`  | The slide a block is on, to start a presentation at the cursor                                                                                                       |
+| `moveSlide(index, delta, count)` | The slide an arrow key, Page Down, or a swipe goes to, kept within the deck                                                                                          |
+| `slideTitles(slides, fallback)`  | Titles for a slide navigator, with the caller's own words for a slide that has no heading                                                                            |
+| `slideHtml(slide, cx, label?)`   | One slide as a `<section class="slide">` with an `aria-label`, using the HTML export's renderers                                                                     |
 
 ## Rules
 

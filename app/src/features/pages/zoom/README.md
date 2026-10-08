@@ -12,16 +12,16 @@ This folder holds the rules for zooming and moving around a page. They cover the
 
 All of it is re-exported from `features/pages`.
 
-| Name | Purpose |
-|---|---|
-| `ZOOM_STEPS`, `stepZoom(zoom, ±1)` | The 25% to 400% ladder. It steps from any zoom, including a fitted one between two steps |
-| `wheelZoom`, `pinchZoom` | Smooth zoom for Ctrl+wheel and pinch. Both snap to 100% within 4% |
-| `fitWidth`, `fitSheet`, `fitSpread`, `openingZoom` | The zoom that fits a sheet, a spread of sheets, or the width. `openingZoom` is 100% when the sheet fits, else the fit width, but never below 50% |
-| `zoomAt(view, zoom, anchor)` | Zooms about a window position. The page position under the anchor stays under it |
-| `boundsFor(mode, sheet, sheets, content?)` | What the window may show |
-| `clampView`, `switchView` | Keeps a view within bounds. Switching mode keeps zoom and position, and reports `moved` when it must change them |
-| `currentSheet`, `visibleSheets`, `viewOfSheet`, `viewOfWholeSheet`, `flipTarget` | The sheet counter, the sheets to render, "Go to sheet", and flipping sideways |
-| `detailLevel`, `lineEvery`, `showsPaper`, `tileScale` | How much to draw at a zoom |
+| Name                                                                             | Purpose                                                                                                                                          |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ZOOM_STEPS`, `stepZoom(zoom, ±1)`                                               | The 25% to 400% ladder. It steps from any zoom, including a fitted one between two steps                                                         |
+| `wheelZoom`, `pinchZoom`                                                         | Smooth zoom for Ctrl+wheel and pinch. Both snap to 100% within 4%                                                                                |
+| `fitWidth`, `fitSheet`, `fitSpread`, `openingZoom`                               | The zoom that fits a sheet, a spread of sheets, or the width. `openingZoom` is 100% when the sheet fits, else the fit width, but never below 50% |
+| `zoomAt(view, zoom, anchor)`                                                     | Zooms about a window position. The page position under the anchor stays under it                                                                 |
+| `boundsFor(mode, sheet, sheets, content?)`                                       | What the window may show                                                                                                                         |
+| `clampView`, `switchView`                                                        | Keeps a view within bounds. Switching mode keeps zoom and position, and reports `moved` when it must change them                                 |
+| `currentSheet`, `visibleSheets`, `viewOfSheet`, `viewOfWholeSheet`, `flipTarget` | The sheet counter, the sheets to render, "Go to sheet", and flipping sideways                                                                    |
+| `detailLevel`, `lineEvery`, `showsPaper`, `tileScale`                            | How much to draw at a zoom                                                                                                                       |
 
 ## Rules
 

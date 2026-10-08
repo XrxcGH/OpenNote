@@ -44,6 +44,8 @@ function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): 
   const [busy, setBusy] = useState(false);
   const form = useRef<HTMLFormElement>(null);
   const school = info.auth === 'tokenAndUrl';
+  // WebDAV takes a user name and a password, not a token, and a server address, not a school's.
+  const webdav = info.id === 'webdav';
   useEffect(() => form.current?.querySelector('input')?.focus(), []);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -64,15 +66,15 @@ function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): 
     >
       {school && (
         <TextField
-          label={t('connectors.detail.addressLabel')}
-          help={t('connectors.detail.addressHelp')}
+          label={t(webdav ? 'connectors.detail.webdavAddressLabel' : 'connectors.detail.addressLabel')}
+          help={t(webdav ? 'connectors.detail.webdavAddressHelp' : 'connectors.detail.addressHelp')}
           value={address}
           onChange={setAddress}
         />
       )}
       <TextField
-        label={t('connectors.detail.tokenLabel')}
-        help={t('connectors.detail.tokenHelp')}
+        label={t(webdav ? 'connectors.detail.webdavTokenLabel' : 'connectors.detail.tokenLabel')}
+        help={t(webdav ? 'connectors.detail.webdavTokenHelp' : 'connectors.detail.tokenHelp')}
         value={token}
         onChange={setToken}
         secret

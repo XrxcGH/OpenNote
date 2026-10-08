@@ -16,7 +16,7 @@ use super::{
     loopback::{Callback, Ended, Listener},
     oauth::{Exchange, Tokens},
     pkce,
-    registry::{Auth, ConnectorDef, OAuthDef, Redirect, SecretUse, TokenDef},
+    registry::{Auth, ConnectorDef, Method, OAuthDef, Redirect, SecretUse, TokenDef},
     secret::Secret,
     service::{Cached, Connectors},
     session::{with_token, DEFAULT_LIFETIME},
@@ -206,6 +206,10 @@ impl Connectors {
                     .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
                     .collect(),
             );
+        }
+        // A folder listing asks for the folder alone, which servers answer and a listing of everything they refuse.
+        if token_def.check_method == Method::Propfind {
+            request = request.header("Depth", "0");
         }
         let request = with_token(request, token_def.placement, token).ok_or_else(|| fail(Failure::BadInput))?;
         let response = self.0.http.send(policy, &request, MAX_CHECK).map_err(|error| {

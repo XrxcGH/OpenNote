@@ -2,6 +2,7 @@
 // embeds, and the narrated video. One owner (the accounts and media lane), so parallel work never edits it. Each
 // feature has its own group below.
 
+import { accountsLms } from './accountsLms';
 import { accountsMeetings } from './accountsMeetings';
 import { accountsReadwise } from './accountsReadwise';
 import { accountsShare } from './accountsShare';
@@ -10,6 +11,7 @@ export const accounts = {
   readwise: accountsReadwise,
   meetings: accountsMeetings,
   share: accountsShare,
+  lms: accountsLms,
   common: {
     notConnected: '{service} isn’t connected. Connect it in Settings, then Connectors.',
     needsAccess: 'The {service} connection doesn’t allow this yet. Connect it again in Settings, then Connectors.',

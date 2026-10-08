@@ -23,13 +23,13 @@ A recording's transcript, on the page. It is part of [audio recording](../README
 
 ## Where things are
 
-| File | Holds |
-| --- | --- |
-| `model.ts` | The data, and every change to it as a pure function. Parsing captions and text, quotes, the recap. |
-| `store.ts` | Finding and saving the transcript block, the ticked lines, the saved speaker names. |
-| `engine.ts` | The seam where the speech engine registers. |
-| `actions.ts`, `commands.ts` | What the screens and commands do. |
-| `TranscriptBlock.tsx`, `blockRenderer.tsx`, `dialogs.tsx` | The screens. |
+| File                                                      | Holds                                                                                              |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `model.ts`                                                | The data, and every change to it as a pure function. Parsing captions and text, quotes, the recap. |
+| `store.ts`                                                | Finding and saving the transcript block, the ticked lines, the saved speaker names.                |
+| `engine.ts`                                               | The seam where the speech engine registers.                                                        |
+| `actions.ts`, `commands.ts`                               | What the screens and commands do.                                                                  |
+| `TranscriptBlock.tsx`, `blockRenderer.tsx`, `dialogs.tsx` | The screens.                                                                                       |
 
 ## How a transcript is kept
 

@@ -105,6 +105,38 @@ export async function replaceMarkdown(
   }
 }
 
+/**
+ * Replaces blocks that this code wrote at the top of a page with new text blocks, which go to the top again. The
+ * blocks the person wrote below stay where they are. Answers the new IDs.
+ */
+export async function replaceHeader(
+  pages: PagesClient,
+  pageId: string,
+  blockIds: readonly string[],
+  markdown: readonly string[],
+): Promise<string[]> {
+  const open = await pages.open(pageId, { viewport: null });
+  try {
+    const present = blockIds.filter((id) => open.initial.blocks.some((block) => block.id === id));
+    if (present.length > 0) await open.send({ edits: [{ edit: 'deleteBlocks', blocks: present }] });
+    const first = open.initial.blocks.find((block) => !present.includes(block.id));
+    const made: string[] = [];
+    let previous: string | undefined;
+    for (const text of markdown) {
+      const id = newId();
+      const block = { id, type: 'text', data: { markdown: text } };
+      const place = previous ? { after: previous } : first ? { before: first.id } : {};
+      await open.send({ edits: [{ edit: 'insertBlock', block, ...place }] });
+      made.push(id);
+      previous = id;
+    }
+    await open.saveNow();
+    return made;
+  } finally {
+    await open.close();
+  }
+}
+
 /** What a page keeps in its view under one key, such as the event a meeting note came from. */
 export async function readPageKey<T>(pages: PagesClient, pageId: string, key: string): Promise<T | null> {
   const open = await pages.open(pageId, { viewport: null });

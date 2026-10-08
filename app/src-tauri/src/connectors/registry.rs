@@ -24,6 +24,10 @@ pub enum Method {
     Put,
     Patch,
     Delete,
+    /// WebDAV: list a folder (`Depth` says how deep).
+    Propfind,
+    /// WebDAV: make a folder.
+    Mkcol,
 }
 
 impl Method {
@@ -34,11 +38,21 @@ impl Method {
             Self::Put => "PUT",
             Self::Patch => "PATCH",
             Self::Delete => "DELETE",
+            Self::Propfind => "PROPFIND",
+            Self::Mkcol => "MKCOL",
         }
     }
 
     pub fn parse(text: &str) -> Option<Method> {
-        [Self::Get, Self::Post, Self::Put, Self::Patch, Self::Delete]
+        [
+            Self::Get,
+            Self::Post,
+            Self::Put,
+            Self::Patch,
+            Self::Delete,
+            Self::Propfind,
+            Self::Mkcol,
+        ]
             .into_iter()
             .find(|method| method.as_str().eq_ignore_ascii_case(text))
     }
@@ -138,6 +152,8 @@ pub enum Placement {
     Header(&'static str),
     /// A field of the form body.
     FormField(&'static str),
+    /// `Authorization: Basic <base64 of the token>`, where the token is `user:password` (WebDAV).
+    Basic,
 }
 
 /// A personal token the person pastes. With `needs_base_url`, the person also gives the school's address, and

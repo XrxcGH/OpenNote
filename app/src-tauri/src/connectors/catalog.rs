@@ -29,7 +29,13 @@ pub static CONNECTORS: &[ConnectorDef] = &[
         id: "microsoft",
         name: "Microsoft",
         group: Group::Microsoft,
-        features: &["importOneNote", "outlookCalendar", "microsoftToDo"],
+        features: &[
+            "importOneNote",
+            "outlookCalendar",
+            "microsoftToDo",
+            "shareToTeams",
+            "sendToOneDrive",
+        ],
         hosts: &["login.microsoftonline.com", "graph.microsoft.com"],
         access: &[
             read("openid", "account"),
@@ -40,6 +46,10 @@ pub static CONNECTORS: &[ConnectorDef] = &[
             read("Notes.Read", "onenoteRead"),
             read("Calendars.Read", "calendarRead"),
             write("Tasks.ReadWrite", "tasksWrite"),
+            write("Files.ReadWrite", "onedriveFiles"),
+            write("ChannelMessage.Send", "teamsPost"),
+            read("Team.ReadBasic.All", "teamsRead"),
+            read("Channel.ReadBasic.All", "teamsRead"),
         ],
         auth: Auth::OAuth(OAuthDef {
             authorize_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
@@ -64,7 +74,9 @@ pub static CONNECTORS: &[ConnectorDef] = &[
             "googleTasks",
             "googleClassroom",
             "googleDrive",
+            "googleOffice",
             "youtubeCaptions",
+            "youtubeUpload",
         ],
         hosts: &[
             "accounts.google.com",
@@ -89,6 +101,10 @@ pub static CONNECTORS: &[ConnectorDef] = &[
             ),
             write("https://www.googleapis.com/auth/drive.file", "driveFiles"),
             read("https://www.googleapis.com/auth/youtube.readonly", "youtubeRead"),
+            read("https://www.googleapis.com/auth/drive.readonly", "driveRead"),
+            write("https://www.googleapis.com/auth/youtube.upload", "youtubeUpload"),
+            write("https://www.googleapis.com/auth/youtube.force-ssl", "youtubeCaptions"),
+            write("https://www.googleapis.com/auth/drive.appdata", "driveAppData"),
         ],
         auth: Auth::OAuth(OAuthDef {
             authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
@@ -115,6 +131,7 @@ pub static CONNECTORS: &[ConnectorDef] = &[
         hosts: &["www.dropbox.com", "api.dropboxapi.com", "content.dropboxapi.com"],
         access: &[
             read("account_info.read", "dropboxAccount"),
+            read("files.metadata.read", "dropboxRead"),
             read("files.content.read", "dropboxRead"),
             write("files.content.write", "dropboxWrite"),
         ],
@@ -172,7 +189,7 @@ pub static CONNECTORS: &[ConnectorDef] = &[
         name: "Slack",
         group: Group::Other,
         features: &["shareToSlack"],
-        hosts: &["slack.com"],
+        hosts: &["slack.com", "files.slack.com"],
         access: &[
             write("chat:write", "slackPost"),
             write("files:write", "slackFiles"),
@@ -204,7 +221,7 @@ pub static CONNECTORS: &[ConnectorDef] = &[
         name: "Vimeo",
         group: Group::Other,
         features: &["vimeoCaptions"],
-        hosts: &["api.vimeo.com"],
+        hosts: &["api.vimeo.com", "captions.cloud.vimeo.com"],
         access: &[read("public", "vimeoRead"), read("private", "vimeoRead")],
         auth: Auth::OAuth(OAuthDef {
             authorize_url: "https://api.vimeo.com/oauth/authorize",
@@ -244,7 +261,7 @@ pub static CONNECTORS: &[ConnectorDef] = &[
         group: Group::Learning,
         features: &["canvasAssignments"],
         hosts: &[],
-        access: &[read("", "canvasRead")],
+        access: &[read("", "canvasRead"), write("", "canvasSubmit")],
         auth: Auth::Token(TokenDef {
             needs_base_url: true,
             placement: Placement::Header("Bearer"),
@@ -260,7 +277,7 @@ pub static CONNECTORS: &[ConnectorDef] = &[
         group: Group::Learning,
         features: &["moodleAssignments"],
         hosts: &[],
-        access: &[read("", "moodleRead")],
+        access: &[read("", "moodleRead"), write("", "moodleSubmit")],
         auth: Auth::Token(TokenDef {
             needs_base_url: true,
             placement: Placement::FormField("wstoken"),
@@ -271,6 +288,23 @@ pub static CONNECTORS: &[ConnectorDef] = &[
                 ("moodlewsrestformat", "json"),
             ],
             account_pointer: "/fullname",
+        }),
+    },
+    ConnectorDef {
+        id: "webdav",
+        name: "WebDAV",
+        group: Group::Storage,
+        features: &["sendToWebdav"],
+        hosts: &[],
+        access: &[write("", "webdavFiles")],
+        auth: Auth::Token(TokenDef {
+            needs_base_url: true,
+            // The token is "user:password", and the connector sends it as Basic.
+            placement: Placement::Basic,
+            check_method: Method::Propfind,
+            check_url: "/",
+            check_form: NO_PARAMS,
+            account_pointer: "",
         }),
     },
 ];

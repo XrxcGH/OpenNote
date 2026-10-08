@@ -34,6 +34,11 @@ const FORBIDDEN_HEADERS: [&str; 5] = [
 pub(super) fn with_token(mut request: HttpRequest, placement: Placement, token: &Secret) -> Option<HttpRequest> {
     match placement {
         Placement::Header(scheme) => Some(request.header("Authorization", format!("{scheme} {}", token.expose()))),
+        Placement::Basic => {
+            use base64::{engine::general_purpose::STANDARD, Engine as _};
+            let encoded = STANDARD.encode(token.expose());
+            Some(request.header("Authorization", format!("Basic {encoded}")))
+        }
         Placement::FormField(name) => {
             let mut fields = match request.body.take() {
                 None => Vec::new(),
