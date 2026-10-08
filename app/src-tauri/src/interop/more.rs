@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Manager};
 
-use super::jobs;
+use super::{grants, jobs};
 use crate::ipc::{IpcError, IpcResult};
 
 /// Runs the operation `op` with its arguments.
@@ -58,15 +58,16 @@ struct SaveReport {
 
 /// Writes the Markdown report of a finished import into a folder the person chose.
 fn save_report(args: SaveReport) -> IpcResult<Value> {
-    let folder = Path::new(&args.folder);
+    let folder = grants::require(&args.folder)?;
     if !folder.is_dir() {
         return Err(IpcError::invalid("folder", "Choose a folder that exists."));
     }
     let markdown = jobs::report_for(&args.job)
         .ok_or_else(|| IpcError::invalid("job", "That import has no report to save any more."))?;
-    let path = unique_path(folder, "OpenNote import report", "md");
+    let path = unique_path(&folder, "OpenNote import report", "md");
     std::fs::write(&path, markdown)
         .map_err(|e| IpcError::invalid("folder", &format!("The report could not be saved: {e}")))?;
+    grants::grant(&path);
     Ok(json!({ "path": path.to_string_lossy() }))
 }
 

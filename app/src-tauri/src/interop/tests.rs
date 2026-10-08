@@ -8,7 +8,7 @@ use opennote_interop::{CancelToken, Control, Event, ImportOptions, InteropError,
 use serde_json::{json, Value};
 
 use super::{
-    commands::run_import,
+    commands::{import_alone, run_import},
     export::{self, ExportFormat, ExportPage, ExportRequest, ExportScope, ExportSection, TreeSource},
     jobs,
     restore::{self, ImportedTree},
@@ -162,6 +162,44 @@ fn a_crashed_imports_working_folder_is_cleaned_up() {
     restore::clean_staging(dir.path());
     assert!(!stale.exists());
     assert!(dir.path().join("Biology").is_dir());
+}
+
+#[test]
+fn a_one_file_export_reveals_the_file_so_it_can_be_updated_later() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let file = dir.path().join("table.docx");
+    fs::write(&file, b"docx").expect("a file");
+    let done = super::commands::ExportDone::from(opennote_interop::Exported {
+        root: dir.path().to_path_buf(),
+        files: vec![file.clone()],
+        report: opennote_interop::Report::new(opennote_interop::ReportKind::Export, "table"),
+    });
+    assert_eq!(done.reveal, file.to_string_lossy());
+}
+
+#[test]
+fn a_second_import_does_not_remove_the_working_folder_of_one_still_running() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let folder = dir.path().to_path_buf();
+    let (started, wait) = std::sync::mpsc::channel();
+    let first = {
+        let folder = folder.clone();
+        std::thread::spawn(move || {
+            import_alone(&folder, || {
+                let staging = folder.join(".importing-first");
+                fs::create_dir_all(&staging).expect("a working folder");
+                started.send(()).expect("send");
+                std::thread::sleep(std::time::Duration::from_millis(300));
+                staging.is_dir()
+            })
+        })
+    };
+    wait.recv().expect("the first import started");
+    import_alone(&folder, || ());
+    assert!(
+        first.join().expect("the first import"),
+        "the running import kept its folder"
+    );
 }
 
 fn request(format: ExportFormat, scope: ExportScope, folder: &Path, pages: &[String]) -> ExportRequest {

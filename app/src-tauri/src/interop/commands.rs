@@ -5,7 +5,7 @@
 
 use std::{
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{Arc, Mutex, PoisonError},
     time::Duration,
 };
 
@@ -19,6 +19,7 @@ use tauri::{AppHandle, Emitter, State, WebviewWindow};
 
 use super::{
     export::{self, ExportRequest, TreeSource},
+    grants,
     jobs::{self, Emit, Job},
     pick::{self, PickKind},
     restore::{self, ImportedTree},
@@ -78,6 +79,7 @@ fn failure(error: InteropError) -> IpcError {
         InteropError::Format { .. } => "unreadable",
         InteropError::Io { .. } => codes::IO,
         InteropError::TooBig(_) => "tooBig",
+        InteropError::NoTables(_) => "noTables",
         InteropError::Canceled => "canceled",
         _ => codes::INTERNAL,
     };
@@ -111,13 +113,18 @@ async fn blocking<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) 
 pub async fn interop_pick(window: WebviewWindow, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
     // A window handle isn't `Send`, so it crosses to the dialog's thread as a number.
     let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
-    blocking(move || pick::pick(owner, kind, initial)).await?
+    let picked = blocking(move || pick::pick(owner, kind, initial)).await??;
+    if let Some(path) = &picked {
+        grants::grant(path);
+    }
+    Ok(picked)
 }
 
 /// What a file, folder, or archive is, and whether it can be imported.
 #[tauri::command]
 pub async fn interop_detect(path: String) -> IpcResult<Detected> {
-    blocking(move || opennote_interop::detect(Path::new(&path)))
+    let path = grants::require(&path)?;
+    blocking(move || opennote_interop::detect(&path))
         .await?
         .map_err(failure)
 }
@@ -134,7 +141,10 @@ pub struct LocalSources {
 #[tauri::command]
 pub async fn interop_local_sources() -> IpcResult<LocalSources> {
     blocking(|| LocalSources {
-        sticky_notes: opennote_interop::sticky_notes_database().map(|path| path.to_string_lossy().into_owned()),
+        sticky_notes: opennote_interop::sticky_notes_database().map(|path| {
+            grants::grant(&path);
+            path.to_string_lossy().into_owned()
+        }),
     })
     .await
 }
@@ -184,6 +194,7 @@ pub async fn interop_preview(
     path: String,
     choices: Option<ImportChoices>,
 ) -> IpcResult<Outcome<PreviewView>> {
+    let path = grants::require(&path)?;
     let device = bridge.with(|bridge| Ok(bridge.core.device()))?;
     let (guard, control) = Job::start(&job, emitter(&app));
     let options = choices.unwrap_or_default().options();
@@ -191,7 +202,7 @@ pub async fn interop_preview(
         let _guard = guard;
         let clock = SystemClock::new();
         let env = ImportEnv::new(&clock, device).with_control(control);
-        opennote_interop::preview(Path::new(&path), &options, &env)
+        opennote_interop::preview(&path, &options, &env)
     })
     .await?;
     outcome(result, |preview| Ok(PreviewView::from(preview)))
@@ -230,6 +241,17 @@ pub(super) fn run_import(
     Ok((report, dir))
 }
 
+/// Imports one at a time: each import first removes the working folders crashed imports left, which would
+/// otherwise remove the working folder of an import still running.
+static IMPORTS: Mutex<()> = Mutex::new(());
+
+/// Runs `work` as the only import, after cleaning up what crashed imports left in `folder`.
+pub(super) fn import_alone<T>(folder: &Path, work: impl FnOnce() -> T) -> T {
+    let _only = IMPORTS.lock().unwrap_or_else(PoisonError::into_inner);
+    restore::clean_staging(folder);
+    work()
+}
+
 /// Imports into a new notebook folder in the notes folder, opens it in the core, and answers with its tree. The
 /// notebook is in the notes tree when this answers, and the notes events have told the interface.
 #[tauri::command]
@@ -243,14 +265,14 @@ pub async fn interop_import(
     let Some(parent) = notes_folder(&app) else {
         return Err(IpcError::invalid("folder", "Choose a notes folder first."));
     };
+    let path = grants::require(&path)?;
     let device = bridge.with(|bridge| Ok(bridge.core.device()))?;
     let (guard, control) = Job::start(&job, emitter(&app));
     let options = choices.unwrap_or_default().options();
     let folder = parent.clone();
     let result = blocking(move || {
         let _guard = guard;
-        restore::clean_staging(&folder);
-        run_import(&folder, Path::new(&path), &options, device, control)
+        import_alone(&folder, || run_import(&folder, &path, &options, device, control))
     })
     .await?;
     outcome(result, |(report, dir)| {
@@ -281,7 +303,7 @@ pub fn interop_cancel(job: String) {
 #[serde(rename_all = "camelCase")]
 pub struct ExportDone {
     /// The folder or file to show in Explorer.
-    reveal: String,
+    pub(super) reveal: String,
     pages: usize,
     files: usize,
     losses: Vec<LossGroup>,
@@ -292,11 +314,11 @@ pub struct ExportDone {
 impl From<Exported> for ExportDone {
     fn from(exported: Exported) -> ExportDone {
         let (lost_pages, skipped) = exported.report.loss_counts();
-        // One file exports show that file; folders show the new folder.
-        let reveal = if exported.root.is_dir() {
-            exported.root.clone()
-        } else {
-            exported.files.first().cloned().unwrap_or_else(|| exported.root.clone())
+        // One file exports show that file, which "Update the copy" also needs; folders show the new folder. The
+        // root of a one-file format is the chosen folder itself, so the number of files decides.
+        let reveal = match exported.files.as_slice() {
+            [file] => file.clone(),
+            _ => exported.root.clone(),
         };
         ExportDone {
             reveal: reveal.to_string_lossy().into_owned(),
@@ -336,13 +358,17 @@ pub async fn interop_export(
         )
     })
     .await?;
-    outcome(result, |exported| Ok(ExportDone::from(exported)))
+    outcome(result, |exported| {
+        let done = ExportDone::from(exported);
+        grants::grant(&done.reveal);
+        Ok(done)
+    })
 }
 
 /// Shows a file or folder in Explorer.
 #[tauri::command]
 pub async fn interop_reveal(path: String) -> IpcResult<()> {
-    let target = PathBuf::from(path);
+    let target = grants::require_within(&path)?;
     if !target.is_absolute() || !target.exists() {
         return Err(IpcError::invalid("path", "That file or folder isn't there."));
     }
