@@ -65,6 +65,9 @@ function paperName(view: PageViewSpec): PaperName | 'custom' {
     : 'custom';
 }
 
+/** How far a pen moves between down and up for the contact to count as writing, in CSS px. */
+const PEN_STROKE_PX = 6;
+
 class PagesView {
   private spec: PageViewSpec;
   private layout: PageLayout;
@@ -133,9 +136,14 @@ class PagesView {
         goTo: (sheet) => this.api.goToSheet(sheet),
         add: () => this.api.addSheet(),
       });
-      const host = mounted.viewport.viewport;
-      host.addEventListener('pointerup', this.onPenUp);
-      this.stops.push(() => host.removeEventListener('pointerup', this.onPenUp));
+      // The router claims a pen's pointers in the capture phase and stops them, so this listens higher, on the
+      // window, before the router sees them.
+      window.addEventListener('pointerdown', this.onPenDown, { capture: true, passive: true });
+      window.addEventListener('pointerup', this.onPenUp, { capture: true, passive: true });
+      this.stops.push(() => {
+        window.removeEventListener('pointerdown', this.onPenDown, { capture: true });
+        window.removeEventListener('pointerup', this.onPenUp, { capture: true });
+      });
     }
     this.reading = attachReading(mounted, () => this.spec.mode === 'paginated');
     // The title can grow a line, the first line can change its size, and the fonts load after the page does.
@@ -284,9 +292,20 @@ class PagesView {
     this.strip?.refresh();
   }
 
+  private readonly penDown = new Map<number, { x: number; y: number }>();
+
+  private readonly onPenDown = (event: PointerEvent): void => {
+    if (event.pointerType === 'pen') this.penDown.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  };
+
   /** Writing near the bottom of the last sheet with a pen adds a sheet with the same paper. */
   private readonly onPenUp = (event: PointerEvent): void => {
+    const down = this.penDown.get(event.pointerId);
+    this.penDown.delete(event.pointerId);
     if (event.pointerType !== 'pen' || this.spec.mode !== 'paginated' || this.spec.layout === 'flow') return;
+    // A tap is not writing: the pen must have travelled.
+    if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) < PEN_STROKE_PX) return;
+    if (!this.mounted.viewport.viewport.contains(event.target instanceof Node ? event.target : null)) return;
     const { y } = this.mounted.viewport.toWorld(event.clientX, event.clientY);
     const { sheet } = this.layout;
     if (y > this.sheets * sheet.height - sheet.height * 0.1 && this.sheets < MAX_SHEETS) {
