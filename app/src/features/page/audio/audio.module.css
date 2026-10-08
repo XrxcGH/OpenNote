@@ -1,0 +1,174 @@
+@layer components {
+  /* The recording dot is the one looping animation in the app: a slow pulse that stops with reduced motion. */
+  .dot {
+    display: inline-block;
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+    flex: none;
+    border-radius: var(--radius-pill);
+    background: var(--color-status-recording);
+  }
+
+  /* BRAND.md allows one slow loop, the recording dot's two-second pulse, so the cycle is a property of its own. */
+  .dot[data-live='true'] {
+    --pulse-cycle: 2s;
+    animation: pulse var(--pulse-cycle) ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dot[data-live='true'] {
+      animation: none;
+    }
+  }
+
+  :global(:root[data-motion='reduce']) .dot[data-live='true'] {
+    animation: none;
+  }
+
+  .meter {
+    position: relative;
+    inline-size: 100%;
+    min-inline-size: var(--space-8);
+    block-size: var(--space-2);
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  .meterBar {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    background: var(--color-accent-primary);
+    transition: inline-size var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+
+  .meter[data-clipped] .meterBar {
+    background: var(--color-status-danger);
+  }
+
+  .meterHold {
+    position: absolute;
+    inset-block: 0;
+    inline-size: 2px;
+    background: var(--color-text-primary);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-target-min);
+    padding-inline: var(--space-3);
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-hover);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-caption-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-caption-line);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .tool {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .tool:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .tool[aria-pressed='true'],
+  .tool[aria-expanded='true'] {
+    background: var(--color-surface-selected);
+  }
+
+  .tool[aria-disabled='true'] {
+    color: var(--color-text-muted);
+    cursor: default;
+  }
+
+  .tool:focus-visible,
+  .chip:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  :global(:root[data-density='touch']) .tool {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .toolGroup {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .panel {
+    display: grid;
+    gap: var(--space-4);
+    min-inline-size: 16rem;
+    max-inline-size: 22rem;
+    padding: var(--space-4);
+    color: var(--color-text-primary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .panel h2 {
+    margin: 0;
+    font-size: var(--type-body-size);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .select {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .warning {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-status-warning);
+  }
+}

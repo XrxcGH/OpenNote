@@ -1,0 +1,242 @@
+/* The consent, review, feedback, safe start, Help, and Privacy screens. Tokens only (BRAND.md section 11). */
+@layer components {
+  .body {
+    display: grid;
+    gap: var(--space-4);
+    margin-block-start: var(--space-4);
+    outline: none;
+  }
+
+  .body h2,
+  .body h3,
+  .block h3 {
+    margin: 0;
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .body p,
+  .body ul,
+  .block p,
+  .block ul {
+    margin: 0;
+  }
+
+  .body ul {
+    padding-inline-start: var(--space-6);
+  }
+
+  .help {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .error {
+    color: var(--color-status-danger);
+  }
+
+  /* The text that is read before anything is sent or saved: all of it, selectable, and scrollable by keyboard. */
+  .text {
+    box-sizing: border-box;
+    max-block-size: 40vh;
+    margin: 0;
+    padding: var(--space-4);
+    overflow: auto;
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+  }
+
+  .text:focus-visible,
+  .area:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .area {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: calc(var(--target-size) * 3);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font: inherit;
+    resize: vertical;
+  }
+
+  .label {
+    display: block;
+    margin-block-end: var(--space-2);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--type-small-line);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-block-start: var(--space-5);
+  }
+
+  .startActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .measure {
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .split {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  @media (min-width: 640px) {
+    .split {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 14rem);
+    }
+  }
+
+  .parts {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .parts li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  /* Settings blocks */
+  .block {
+    display: grid;
+    gap: var(--space-3);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .block h2 {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .rows {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .row:last-child {
+    border-block-end: 0;
+  }
+
+  .rowTitle {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .reportRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+  }
+
+  /* A check's status shows as words beside its mark, so color is never the only signal. */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .mark {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    border-radius: var(--radius-full, 50%);
+    flex: none;
+  }
+
+  .mark[data-status='pass'] {
+    background: var(--color-status-success);
+  }
+
+  .mark[data-status='warn'] {
+    background: var(--color-status-warning);
+  }
+
+  .mark[data-status='fail'] {
+    background: var(--color-status-danger);
+  }
+
+  .mark[data-status='skipped'] {
+    background: var(--color-border-control);
+  }
+
+  .headline {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--target-size);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+    cursor: pointer;
+  }
+
+  .chip:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .chip:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .mark {
+      background: CanvasText;
+      forced-color-adjust: none;
+    }
+  }
+}

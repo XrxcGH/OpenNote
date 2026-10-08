@@ -13,7 +13,11 @@ import type { BlockId, Edit, Frame, ImportedAsset, NewBlock } from '../../../ser
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
+import { attachFiles } from '../attachments/attach';
+import { droppedLink } from '../attachments/dropLink';
+import { insertDroppedLink } from '../attachments/linkDrop';
 import { assetTable } from '../images/assets';
+import { offerActualSize, pasteSizeChoice, sizingFor } from '../qol/pasteSize';
 import type { Placement } from '../images/insert';
 import {
   currentBlock,
@@ -281,12 +285,14 @@ async function addImages(
   place: Placement,
 ): Promise<void> {
   const { imported, linked } = await importAll(mounted, requests, facts, saveWebImages);
-  const images = imageEdits(mounted, imported, place);
+  const choice = pasteSizeChoice(mounted);
+  const images = imageEdits(mounted, imported, place, sizingFor(choice));
   const links = linked.length > 0 ? blockEdits(mounted, [imageLinks(linked)], place) : { edits: [], blocks: [] };
   const edits = [...images.edits, ...links.edits.map((edit) => afterLast(edit, images.blocks))];
   if (edits.length === 0) return;
   const ack = await mounted.sync.send({ edits });
   showInserted(mounted, edits, ack.orderKeys);
+  if (choice === 'ask') offerActualSize(mounted, images.blocks);
 }
 
 /** Runs one paste or drop on a page view. */
@@ -308,6 +314,24 @@ export async function runPaste(
   if (editor && at) editor.commands.setTextSelection(at.pos);
   const blockId = active?.block ?? currentBlock(mounted);
 
+  // Files that are not pictures, such as Word, Excel, and PDF files, become attachments.
+  const attachable = request.files.filter((file) => !files.includes(file));
+  let attached = false;
+  if (attachable.length > 0 && mounted.host.flag('page.dropFiles') && mounted.host.flag('page.attachments')) {
+    const place = request.point
+      ? placementAfter(mounted, blockId, request.point)
+      : placementAfter(mounted, blockId, undefined);
+    await attachFiles(mounted, attachable, place);
+    attached = true;
+    if (files.length === 0 && !request.html && !request.text) return;
+  }
+
+  // A link dragged from a browser becomes a link, with the link's own text.
+  if (request.origin === 'drop' && !request.plain && files.length === 0 && mounted.host.flag('page.dropFiles')) {
+    const link = droppedLink(request.text, request.html);
+    if (link) return void (await insertDroppedLink(mounted, editor, blockId, link));
+  }
+
   // OpenNote's own blocks, from another page or this one.
   const payload = readBlockPayload(request.html);
   if (payload && !request.plain) {
@@ -321,10 +345,10 @@ export async function runPaste(
     const place = request.point
       ? placementAfter(mounted, null, request.point)
       : placementAfter(mounted, blockId, undefined);
-    await insertImages(mounted, fileItems(files), place);
+    await insertImages(mounted, fileItems(files), place, pasteSizeChoice(mounted));
     return;
   }
-  if (others > 0 && !request.html && !request.text) {
+  if (others > 0 && !attached && !request.html && !request.text) {
     showToast({ message: t('images.onlyImages') });
     return;
   }

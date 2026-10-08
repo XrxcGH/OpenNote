@@ -204,6 +204,13 @@ impl PageHandle {
         self.session.import_asset(source)
     }
 
+    /// Hands the page an asset whose file was written in its `assets` folder by something other than an import,
+    /// such as the recorder. The `addAsset` edit then puts it in the table, and replaces an entry that is still
+    /// marked as growing.
+    pub fn adopt_asset(&self, asset: Asset) {
+        self.session.adopt_asset(asset);
+    }
+
     /// Reads an asset, or a byte range of it.
     pub fn asset_bytes(&self, asset: AssetId, range: Option<Range<u64>>) -> Result<AssetBytes, CoreError> {
         self.session.asset_bytes(asset, range)
@@ -279,6 +286,16 @@ impl PageHandle {
     /// The page's open conflicts.
     pub fn conflicts(&self) -> Result<Vec<ConflictInfo>, CoreError> {
         self.session.conflicts()
+    }
+
+    /// The page as it is now, as plain text, for a side-by-side view of a conflict.
+    pub fn text(&self) -> String {
+        self.session.current_text()
+    }
+
+    /// The other version of a conflict as plain text.
+    pub fn conflict_text(&self, rev: RevisionId) -> Result<String, CoreError> {
+        self.session.conflict_page(rev).map(|(_, _, page)| page.plain_text())
     }
 
     /// The other version of a conflict, read-only.

@@ -15,6 +15,15 @@
     margin: 0;
   }
 
+  /* Next to a wrapped image, paragraphs give up paint containment so their lines can wrap around it. */
+  :global([data-wrap-active]) .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
+    contain: none;
+  }
+
+  .textBox {
+    inset-block-start: var(--frame-y);
+  }
+
   .text {
     color: var(--color-text-primary);
     font-family: var(--font-reading);
@@ -87,27 +96,29 @@
   }
 
   .text :global(.ProseMirror) mark {
+    --chip-fill: var(--color-selection-highlight);
+
     padding-inline: 0.1em;
     border-radius: 2px;
-    background: var(--color-selection-highlight);
+    background: var(--chip-fill);
     color: inherit;
   }
 
   /* The other highlighters are the pens' colors, washed out like a highlighter on paper (BRAND.md section 4). */
   .text :global(.ProseMirror) mark[data-color='mint'] {
-    background: color-mix(in srgb, var(--ink-fern) 22%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-fern) 22%, transparent);
   }
 
   .text :global(.ProseMirror) mark[data-color='rose'] {
-    background: color-mix(in srgb, var(--ink-brick) 20%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-brick) 20%, transparent);
   }
 
   .text :global(.ProseMirror) mark[data-color='apricot'] {
-    background: color-mix(in srgb, var(--ink-amber) 24%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-amber) 24%, transparent);
   }
 
   .text :global(.ProseMirror) mark[data-color='lilac'] {
-    background: color-mix(in srgb, var(--ink-plum) 20%, transparent);
+    --chip-fill: color-mix(in srgb, var(--ink-plum) 20%, transparent);
   }
 
   .text :global(.ProseMirror) span[data-color='ink'] {
@@ -163,14 +174,14 @@
     color: var(--color-accent-clay);
   }
 
-  .text :global(.ProseMirror) li[data-checked]::marker {
-    content: '\2610\00a0\00a0';
-    color: var(--color-text-secondary);
+  /* A task item draws its own checkbox (the node view in editor/extensions/listItem.ts, styled in content.module.css),
+     so it gets no list marker of its own: a generated ballot box here showed beside the real one. */
+  .text :global(.ProseMirror) li[data-checked] {
+    list-style: none;
   }
 
-  .text :global(.ProseMirror) li[data-checked='true']::marker {
-    content: '\2611\00a0\00a0';
-    color: var(--color-accent-primary);
+  .text :global(.ProseMirror) li[data-checked]::marker {
+    content: none;
   }
 
   .text :global(.ProseMirror) li[data-checked='true'] > p {
@@ -303,5 +314,144 @@
     color: var(--color-text-secondary);
     background: var(--color-surface-sunken);
     font-size: var(--type-note-size);
+  }
+
+  /*
+   * Ruled paper (layout/rules.ts). When the paper has rules, --rule is their spacing. It is also the unit of layout:
+   * every line of text sits on a rule the way handwriting does, its letters in the gap above the rule and its
+   * descenders below it. A line takes the whole number of rules above 1.25 times its size (--rule-line), so a
+   * heading takes two rules and its capitals stay inside its gap. Margins between text elements go, because a
+   * paragraph on ruled paper is the next line.
+   *
+   * The baseline comes from the font itself, not from a guess at its metrics. Text-box-trim cuts each block of
+   * lines down to the cap height of its first line and the alphabetic baseline of its last. A padding of one
+   * line less one cap height above it puts the first baseline one line below the block's top. A block that starts
+   * on a rule therefore ends on the rule its last baseline sits on, and the next block starts there.
+   *
+   * Every baseline then rises off its rule by the lift (--rule-lift, core/ruled.ts), the same for every size of
+   * text. The top padding gives it back and the bottom padding takes it. The block keeps its height, and the next
+   * block still starts on a rule. The letters clear the rule by a thin gap of paper; descenders may cross it.
+   */
+  :global([data-ruled]) {
+    --rule-line: round(up, 1.25em, var(--rule));
+
+    /*
+     * An inline background (a highlight, inline code, a search hit, the words being read aloud) sits in the gap
+     * between two rules, not over the rule under its line. A browser paints it over the font's ascent and descent,
+     * which reach below the baseline past the lift and over the rule. So the box is cut to where it belongs,
+     * measured from the baseline.
+     *
+     * It rises --chip-rise above the baseline: a font's height, but never up to the rule above, with a pixel of
+     * paper under that rule. It drops --chip-drop below it, which ends the box a pixel above the rule beneath (two
+     * pixels below the baseline with the usual lift of 3). The letters sit inside the box with room under them,
+     * and the rule beneath stays fully in view. The letters stay where they are. Descenders may cross the box
+     * and the rule. The sizes are whole pixels, so the box ends on a pixel.
+     */
+    --chip-rise: round(min(1.15em, calc(var(--rule) - var(--rule-lift) - 2px)), 1px);
+    --chip-drop: calc(var(--rule-lift) - 1px);
+    --chip-size: calc(var(--chip-rise) + var(--chip-drop));
+    --chip-offset: calc(-1 * var(--chip-rise));
+  }
+
+  /*
+   * A highlight and inline code keep their rounded corners and the system's colors in forced colors. Both have the
+   * side padding of a highlight (inline code has none on plain paper). Text-box-trim cuts the inline box to the cap
+   * height above the alphabetic baseline. The padding above and below puts its top and bottom where --chip-rise
+   * and --chip-drop say. The other boxes (find hits, the words
+   * being read aloud) are painted by the browser as highlights, which have no padding or corners: they are a thick
+   * text decoration over the same rows (qol.module.css, readAloud.module.css, audio/block.module.css).
+   */
+  :global([data-ruled]) .text :global(.ProseMirror) :is(mark, :not(pre) > code) {
+    padding-inline: 0.1em;
+    padding-block: max(0px, calc(var(--chip-rise) - 1cap)) var(--chip-drop);
+    text-box: trim-both cap alphabetic;
+  }
+
+  :global([data-ruled]) .block {
+    display: flow-root;
+    margin-block-end: var(--rule-pad, 0px);
+  }
+
+  :global([data-ruled]) .text {
+    line-height: var(--rule);
+  }
+
+  /* A floating text box's top is the rule nearest to where it was put, in its own sheet when the page is paginated. */
+  :global([data-ruled]) .textBox {
+    inset-block-start: calc(
+      var(--frame-y) - mod(var(--frame-y), var(--rule-sheet)) + var(--rule-origin) +
+        round(
+          nearest,
+          max(mod(var(--frame-y), var(--rule-sheet)), mod(var(--rule-origin), var(--rule))) - var(--rule-origin),
+          var(--rule)
+        )
+    );
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) :is(p, ul, ol, li, blockquote, pre, h1, h2, h3, h4, h5, h6, hr) {
+    margin-block: 0;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6, [data-callout-title]) {
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
+    line-height: var(--rule-line);
+    text-box: trim-both cap alphabetic;
+    /* The block ends at its last baseline, so descenders paint below it. */
+    overflow-clip-margin: 0.5em;
+  }
+
+  /* Inline text of another size never makes its line taller than its block's rules. */
+  :global([data-ruled]) .text :global(.ProseMirror) :is(span, a, mark, em, strong, s, u, sub, sup, code) {
+    line-height: 0;
+  }
+
+  /*
+   * A code block and a callout have their own background, which hides the rules behind them. Their lines stay on
+   * the rules. The box starts on a rule, and its first baseline is one line down. Below its last baseline it takes
+   * one more rule (some of it padding, the rest margin), so the text after it is back on a rule.
+   */
+  :global([data-ruled]) .text :global(.ProseMirror) pre {
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) calc(1lh - 1cap + var(--rule-lift));
+    margin-block-end: 1cap;
+    line-height: var(--rule-line);
+    text-box: trim-both cap alphabetic;
+    /* The trimmed lines leave a little room below the last one that is empty but scrollable: a wheel over the block
+       would scroll its lines off their rules instead of the page. It scrolls sideways only. */
+    overflow-y: hidden;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) pre code {
+    line-height: inherit;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) [data-callout] {
+    padding-block: 0 calc(var(--rule-line) - 1cap);
+    margin-block: 0 1cap;
+  }
+
+  /* The title's dot is inline, so the title is a block of lines the trim can reach, centered on the capitals. */
+  :global([data-ruled]) .text :global(.ProseMirror) [data-callout-title] {
+    display: block;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) [data-callout-title]::before {
+    display: inline-block;
+    margin-inline-end: var(--space-2);
+    vertical-align: calc(0.5cap - 0.275em);
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) h2 {
+    border-block-end: 0;
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) hr {
+    box-sizing: border-box;
+    block-size: var(--rule);
+    border-block-start: 0;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  :global([data-ruled]) .text :global(.ProseMirror) :is(table, figure) {
+    margin-block: 0 var(--rule-pad, 0px);
   }
 }

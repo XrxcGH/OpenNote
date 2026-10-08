@@ -1,0 +1,10 @@
+{
+  "source": {
+    "kind": "pixels",
+    "width": 4,
+    "height": 2,
+    "format": "gray8",
+    "pixels": "//8AAP8AAP8="
+  },
+  "language": "en-US"
+}

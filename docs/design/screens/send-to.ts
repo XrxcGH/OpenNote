@@ -1,7 +1,7 @@
 // "Send to": convert a page, section, or selection and upload it to a linked account.
 
 import { type Palette, captionKeepOut, circle, line, palette, rect, region, tag, text, NOTE } from '../lib/svg.ts';
-import { BODY_TOP, EDITOR_X, WIDE, editorBackground, standardWindow } from '../lib/chrome.ts';
+import { BODY_TOP, EDITOR_X, HOME_TOOLS, WIDE, editorBackground, standardWindow } from '../lib/chrome.ts';
 import { samplePage } from './workspace.ts';
 import { type Screen, makeScreen } from './screen.ts';
 
@@ -96,9 +96,8 @@ export function sendTo(): Screen {
     ...standardWindow(p, {
       title: { breadcrumb: 'Biology 101  ›  Lectures  ›  Cell structure' },
       tab: 'Home',
-      tools: [{ label: 'B' }, { label: 'I' }, { label: '↗ Send to', active: true }],
+      tools: HOME_TOOLS,
       tree,
-      pagesHeading: 'Lectures',
       pages,
     }),
     editorBackground(p),

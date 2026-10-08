@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE en-export SYSTEM "http://xml.evernote.com/pub/evernote-export4.dtd">
+<en-export export-date="20240301T120000Z" application="Evernote" version="10.0">
+  <note>
+    <title>Lab notes &amp; ideas</title>
+    <created>20240105T143000Z</created>
+    <updated>20240106T101500Z</updated>
+    <tag>biology</tag>
+    <tag>exam/unit-3</tag>
+    <note-attributes>
+      <author>Sam</author>
+      <source-url>https://example.org/source</source-url>
+    </note-attributes>
+    <content><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+<en-note>
+<div>Plants make <b>sugar</b> from <i>light</i> and <u>water</u>.&nbsp;See <a href="https://example.org/leaf">the leaf</a> and <a href="evernote:///view/1/2/3/4/">another note</a>.</div>
+<div><span style="font-weight: bold; color: rgb(192, 0, 0); font-family: Arial; font-size: 18px;">Red and bold</span></div>
+<div><br/></div>
+<div><en-todo checked="true"/>Read chapter 8</div>
+<div><en-todo/>Write the report</div>
+<ul><li>First point</li><li>Second <b>point</b></li></ul>
+<div><en-media hash="2cd8bde463f5d82aae0f0cec061d6b8f" type="image/png"/></div>
+<div>Data: <en-media hash="948f0bf3b78b3a6a9000b60786b201ae" type="application/pdf"/></div>
+<blockquote><div>Life finds a way.</div></blockquote>
+<div style="-en-codeblock:true; font-family: Monaco;"><div>let x = 1;</div><div>let y = 2;</div></div>
+<table><tbody><tr><th>Stage</th><th>Where</th></tr><tr><td>Light</td><td>Thylakoid</td></tr></tbody></table>
+<div>Secret: <en-crypt hint="pet">ABCDEF</en-crypt></div>
+</en-note>]]></content>
+    <resource>
+      <data encoding="base64">
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAf
+FcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAA
+AABJRU5ErkJggg==
+      </data>
+      <mime>image/png</mime>
+      <resource-attributes>
+        <file-name>Leaf section.png</file-name>
+      </resource-attributes>
+    </resource>
+    <resource>
+      <data encoding="base64">JVBERi0xLjQgdGlueQ==</data>
+      <mime>application/pdf</mime>
+      <resource-attributes>
+        <file-name>data.pdf</file-name>
+      </resource-attributes>
+    </resource>
+    <resource>
+      <data encoding="base64">bG9vc2UgYXR0YWNobWVudA==</data>
+      <mime>text/plain</mime>
+      <resource-attributes>
+        <file-name>loose.txt</file-name>
+      </resource-attributes>
+    </resource>
+  </note>
+  <note>
+    <title>Web clip</title>
+    <content><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE en-note SYSTEM "http://xml.evernote.com/pub/enml2.dtd">
+<en-note><div>A clipped line.</div><div><img src="https://example.org/pic.png" alt="A picture"/></div></en-note>]]></content>
+    <note-attributes>
+      <source-url>https://example.org/article</source-url>
+    </note-attributes>
+  </note>
+</en-export>

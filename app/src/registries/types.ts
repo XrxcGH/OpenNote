@@ -15,6 +15,7 @@ export type MenuId =
   | 'tree.sectionGroup'
   | 'tree.section'
   | 'tree.page'
+  | 'tree.sort'
   | 'splitter.notebooks'
   | 'splitter.pages'
   | 'view.paneWidths'
@@ -30,7 +31,10 @@ export type MenuId =
   | 'history.change'
   | 'page.ink'
   | 'ink.penSlot'
-  | 'ink.palette';
+  | 'ink.palette'
+  | 'pages.paper'
+  | 'pages.background'
+  | 'pages.export';
 
 /**
  * Props of a command bar item that draws itself, such as Phase 5's pen swatches (AMENDMENTS.md, Phase 5 P2-4).
@@ -143,6 +147,8 @@ export interface PaletteResult {
   icon?: IconName;
   score: number;
   run(): void | Promise<void>;
+  /** Ctrl+Enter: opens the result in a new tab, for results that are places in the workspace. */
+  openInTab?(): void | Promise<void>;
 }
 
 export interface PaletteProvider {
@@ -162,6 +168,16 @@ export interface ShortcutListSectionDef {
   order: number;
   Component: ComponentType;
   flag?: FlagId;
+}
+
+/**
+ * Where print and export (Phase 6) read a page's handwriting. Phase 5's ink view registers one for the shown page, so
+ * neither feature imports the other.
+ */
+export interface ExportInkSource {
+  readonly id: string;
+  /** The page's live strokes as ink segment records (format spec 8.3), or null when this source doesn't hold it. */
+  records(pageId: string): Promise<Uint8Array | null>;
 }
 
 /**

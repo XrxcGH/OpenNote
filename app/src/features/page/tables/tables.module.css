@@ -44,6 +44,21 @@
     background: var(--color-surface-selected);
   }
 
+  /* Ruled paper (blocks.module.css): each row is whole rules, its text on the rule its row line is drawn on. */
+  :global([data-ruled]) .scroller {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .table :is(:global(td), :global(th)) {
+    padding-block: 0;
+  }
+
+  :global([data-ruled]) .table :is(:global(td > p), :global(th > p)) {
+    padding-block: calc(1lh - 1cap - var(--rule-lift)) var(--rule-lift);
+    line-height: var(--rule-line);
+    text-box: trim-both cap alphabetic;
+  }
+
   .toolbarWrap {
     position: absolute;
     inset-block-end: 100%;

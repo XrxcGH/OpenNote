@@ -91,7 +91,8 @@ export const ROOM_RIGHT = 480;
 
 /**
  * The world's size while a page is open (ARCHITECTURE.md section 5.1): the content (with its room to the right)
- * plus half a viewport below, at least the viewport, and never smaller than before, so content never jumps.
+ * plus half a viewport below, and at least the viewport. Its height never shrinks, so content never jumps. Its width
+ * follows the viewport down to the content's, rounded down, so a page that fits never scrolls sideways.
  */
 export function worldSize(
   content: { w: number; h: number },
@@ -101,7 +102,7 @@ export function worldSize(
 ): { w: number; h: number } {
   const seenW = viewport.w / zoom;
   const seenH = viewport.h / zoom;
-  const w = Math.ceil(Math.max(content.w, seenW, previous?.w ?? 0));
+  const w = Math.max(Math.ceil(content.w), Math.floor(seenW));
   const h = Math.ceil(Math.max(content.h + seenH / 2, seenH, previous?.h ?? 0));
   return { w, h };
 }

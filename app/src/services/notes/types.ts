@@ -57,6 +57,10 @@ export interface NodeSummary {
   readonly modified: string;
   /** For example, written by a newer app version. */
   readonly readOnly: boolean;
+  /** A pinned page. Storage that keeps no pins leaves it out. */
+  readonly pinned?: boolean;
+  /** Hidden from the tree until Show archived. Storage that keeps no archive leaves it out. */
+  readonly archived?: boolean;
 }
 
 /** Where nodes go. `beforeId: null` means at the end of the parent's children. */

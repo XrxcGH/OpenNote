@@ -1,0 +1,10 @@
+{
+  "color": "DEFAULT",
+  "isTrashed": false,
+  "isPinned": false,
+  "isArchived": true,
+  "textContent": "Call the plumber about the kitchen sink before the weekend because it keeps dripping all night long",
+  "attachments": [{ "filePath": "rec.3gp", "mimetype": "audio/3gpp" }],
+  "userEditedTimestampUsec": 1790003600000000,
+  "createdTimestampUsec": 1790000000000000
+}

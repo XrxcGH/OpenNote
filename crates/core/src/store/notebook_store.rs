@@ -46,7 +46,7 @@ mod transfer;
 mod view;
 
 pub use arrange::FlatPage;
-pub use create::create_notebook;
+pub use create::{convert_to_notebook, create_notebook};
 #[cfg(any(test, feature = "testing"))]
 pub use formats::SimpleFormats;
 pub use formats::{CanonicalFormats, TreeFormats};

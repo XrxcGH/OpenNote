@@ -23,6 +23,7 @@ import { highlightExtensions } from './highlight';
 import { imageExtensions } from './image';
 import { keysExtensions } from './keys';
 import { listItemExtensions } from './listItem';
+import { graphFenceExtensions } from './graphFence';
 import { mathBlockExtensions, mathInlineExtensions } from './math';
 import { outlineExtensions } from './outline';
 import { slashExtensions } from './slash';
@@ -94,6 +95,7 @@ function textKit(host: EditorHost): Extensions {
     ...codeBlockExtensions(host),
     ...mathBlockExtensions(host),
     ...mathInlineExtensions(host),
+    ...graphFenceExtensions(host),
     ...imageExtensions(host),
     ...markKit(host),
     ...behaviorKit(host),

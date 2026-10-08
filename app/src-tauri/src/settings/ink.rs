@@ -143,6 +143,20 @@ pub enum Handedness {
     #[default]
     Right,
     Left,
+    /// Phase 5: the palm filter learns the writing hand from where the palm rests.
+    Auto,
+}
+
+/// Phase 5: when a finger draws while an ink tool is active.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub enum FingerDraw {
+    /// Until a pen is seen on this device.
+    #[default]
+    Auto,
+    On,
+    Off,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -151,6 +165,8 @@ pub enum Handedness {
 pub struct TouchInk {
     /// Draw with a finger when no pen is near.
     pub draws: bool,
+    /// When a finger draws; it replaces `draws`, which older versions read.
+    pub finger: FingerDraw,
     /// How long a touch stroke waits for a pen before it's committed, 300 to 2,000 ms.
     pub palm_grace_ms: u32,
     pub two_finger_scroll_near_pen: bool,
@@ -160,6 +176,7 @@ impl Default for TouchInk {
     fn default() -> Self {
         Self {
             draws: false,
+            finger: FingerDraw::Auto,
             palm_grace_ms: 500,
             two_finger_scroll_near_pen: true,
         }

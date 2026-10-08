@@ -77,13 +77,17 @@ impl Verifier<'_> {
         }
     }
 
-    /// Every asset file has its checked name, its size, and its hash.
+    /// Every asset file has its checked name, its size, and its hash. A recording that is still being
+    /// written has neither a final size nor a hash yet, so only its name is checked.
     fn assets(&mut self, dir: &Path, page: &Page) {
         for asset in page.assets.values() {
             let Ok(path) = NotebookLayout::asset_path(dir, asset) else {
                 self.problem(&dir.join(ASSETS_DIR), "asset.name", asset.file.clone());
                 continue;
             };
+            if asset.is_recording() {
+                continue;
+            }
             let Some(bytes) = self.read(&path, asset.bytes) else {
                 continue;
             };

@@ -1,0 +1,102 @@
+/* The audio lane's later screens: the Recording section of Settings, the storage list, the meeting prompt, and the
+   transcript. Tokens only (BRAND.md section 14). */
+@layer components {
+  .section {
+    display: grid;
+    gap: var(--space-4);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .intro,
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .select {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  :global(:root[data-density='touch']) .select {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .select:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 50vh;
+    overflow-y: auto;
+  }
+
+  .item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .itemText {
+    display: grid;
+    gap: var(--space-1);
+    min-inline-size: 0;
+  }
+
+  .prompt {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .region {
+    position: relative;
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    touch-action: none;
+    cursor: crosshair;
+  }
+
+  .regionImage {
+    display: block;
+    max-inline-size: min(100%, 60rem);
+    max-block-size: 55vh;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .regionBox {
+    position: absolute;
+    border: var(--size-focus-ring-width) solid var(--color-accent-primary);
+    background: color-mix(in srgb, var(--color-accent-primary) 18%, transparent);
+    pointer-events: none;
+  }
+}

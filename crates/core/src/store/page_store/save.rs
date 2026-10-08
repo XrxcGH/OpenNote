@@ -10,7 +10,7 @@ use crate::error::{FsError, FsErrorKind, JournalError};
 use crate::fail_point;
 use crate::id::RevisionId;
 use crate::limits::Policy;
-use crate::model::{Access, Block, BlockData, Blocks, Ink, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef};
+use crate::model::{Access, Asset, Block, BlockData, Blocks, Ink, JsonMap, Page, ReadOnlyReason, Revision, SegmentRef};
 use crate::store::fs::Fs;
 use crate::store::layout::{NotebookLayout, ASSETS_DIR};
 
@@ -94,9 +94,10 @@ impl PageStore {
         Ok((next, bytes))
     }
 
-    /// S4: every asset in the table exists with its size.
+    /// S4: every asset in the table exists with its size. A recording that is still being written has
+    /// no final size, and before it begins no file, so it is left out.
     fn check_assets(&self, dir: &Path, page: &Page) -> Result<(), SaveError> {
-        if page.assets.is_empty() {
+        if page.assets.values().all(|a| a.is_recording()) {
             return Ok(());
         }
         let listing: HashMap<String, u64> = match self.config.fs.read_dir(&dir.join(ASSETS_DIR)) {
@@ -104,7 +105,8 @@ impl PageStore {
             Err(err) if err.kind == FsErrorKind::NotFound => HashMap::new(),
             Err(err) => return Err(SaveError::Fs(err)),
         };
-        match page.assets.values().find(|a| listing.get(&a.file) != Some(&a.bytes)) {
+        let wrong = |a: &&Asset| !a.is_recording() && listing.get(&a.file) != Some(&a.bytes);
+        match page.assets.values().find(wrong) {
             Some(asset) => Err(SaveError::MissingAsset(asset.id)),
             None => Ok(()),
         }

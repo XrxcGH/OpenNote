@@ -22,7 +22,7 @@ import {
   marksAllowed,
 } from '../../../editor/commands/state';
 import type { BlockKindName, FoldsDetail, FoldsRequestDetail, MergeBlocksDetail } from '../../../editor/commands/state';
-import { commandBar, commands, contextMenus, pageCreated } from '../../../registries';
+import { commandBar, commands, contextMenus } from '../../../registries';
 import type { CommandBarItem, ContextMenuItem } from '../../../registries/types';
 import type { MessageKey } from '../../../strings/t';
 import { t } from '../../../strings/t';
@@ -396,12 +396,7 @@ if (typeof document !== 'undefined') {
   });
 }
 
-// A new page gets the date and time under its title, and Settings, then Editing, gets WP4's two parts.
-pageCreated.register({
-  id: 'editor.dateLine',
-  order: 10,
-  run: async (pageId) => (await import('../formattingBar/dateLine')).addDateLine(pageId),
-});
+// Settings, then Editing, gets WP4's two parts.
 editingSettingsParts.register({
   id: 'editor.typing',
   title: 'editor.general.title',

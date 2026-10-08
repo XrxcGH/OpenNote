@@ -45,6 +45,20 @@ pub fn create_notebook(env: &TreeEnv, parent_dir: &Path, title: &str) -> Result<
     Ok(dir)
 }
 
+/// Turns an existing folder into a notebook in place: writes its `notebook.json` and `README.md` and leaves every
+/// other file as it is. A folder that already is a notebook is left alone.
+pub fn convert_to_notebook(env: &TreeEnv, dir: &Path, title: &str) -> Result<(), CoreError> {
+    check_title(env, title)?;
+    let fs = env.fs.as_ref();
+    if fs.metadata(&dir.join(NOTEBOOK_JSON)).is_ok() {
+        return Ok(());
+    }
+    let file = NotebookFile::new(NotebookId::generate(env.clock.as_ref()), title, env.clock.now());
+    fs.replace_durable(&dir.join(NOTEBOOK_JSON), &env.codec.write_notebook(&file))?;
+    let _ = fs.write_derived(&dir.join(README_MD), &env.formats.readme(title));
+    Ok(())
+}
+
 /// Fails for a title longer than the limit (spec 16).
 pub(crate) fn check_title(env: &TreeEnv, title: &str) -> Result<(), CoreError> {
     let chars = title.chars().count();

@@ -8,6 +8,7 @@ import {
   checkSignedComment,
   manifestFile,
   manifestFor,
+  notesFor,
   platformEntry,
   readReleaseFile,
   readSignature,
@@ -219,5 +220,25 @@ describe('writeManifest', () => {
       'The signature of OpenNote_Windows32.exe names the file OpenNote_Windows64.exe',
     );
     expect(existsSync(join(dir, 'latest.json'))).toBe(false);
+  });
+});
+
+describe('notesFor', () => {
+  it('prefers the notes file, then RELEASE_NOTES, then a one-line default', () => {
+    const dir = releaseDir('0.5.0');
+    const file = join(dir, 'notes.txt');
+    writeFileSync(file, '  Faster start-up.\n');
+    expect(notesFor('v0.5.0', { RELEASE_NOTES_FILE: file, RELEASE_NOTES: 'from the variable' })).toBe(
+      'Faster start-up.',
+    );
+    expect(notesFor('v0.5.0', { RELEASE_NOTES: ' from the variable ' })).toBe('from the variable');
+    expect(notesFor('v0.5.0', {})).toBe('OpenNote v0.5.0');
+  });
+
+  it('falls back when the notes file is missing or empty', () => {
+    const dir = releaseDir('0.5.0');
+    writeFileSync(join(dir, 'empty.txt'), '\n');
+    expect(notesFor('v0.5.0', { RELEASE_NOTES_FILE: join(dir, 'empty.txt') })).toBe('OpenNote v0.5.0');
+    expect(notesFor('v0.5.0', { RELEASE_NOTES_FILE: join(dir, 'missing.txt'), RELEASE_NOTES: 'kept' })).toBe('kept');
   });
 });

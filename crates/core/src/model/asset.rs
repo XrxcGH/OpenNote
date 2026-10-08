@@ -36,10 +36,20 @@ pub struct Asset {
     pub extra: JsonMap,
 }
 
+/// The `state` of an audio file that is still growing (spec 10.2).
+pub const STATE_RECORDING: &str = "recording";
+
 impl Asset {
     /// The hash as 64 lowercase hexadecimal digits, as `page.json` writes it.
     pub fn sha256_hex(&self) -> String {
         hex(&self.sha256)
+    }
+
+    /// Whether this is an audio file that is still being written, or that a crash cut off before
+    /// anyone closed it (spec 10.2 and 10.3). Its file may not exist yet and grows past `bytes`, and
+    /// its hash is not the file's, so the checks of size and hash skip it until recording ends.
+    pub fn is_recording(&self) -> bool {
+        self.extra.get("state").and_then(|state| state.as_str()) == Some(STATE_RECORDING)
     }
 }
 

@@ -1,8 +1,9 @@
-// Chooses the notes service and makes it available to components (ARCHITECTURE.md section 12.5). Phase 2 uses the
-// in-memory service, seeded from the notes snapshot when there is one. Without one, the web platform and the dev
-// channel start from the sample library, and a real profile starts empty. Test builds save the snapshot behind
-// notes.memorySnapshot; a real profile without it keeps nothing and says so (the service is volatile). Phase 3's
-// storage-backed service takes over behind storage.core.
+// Chooses the notes service and makes it available to components (ARCHITECTURE.md section 12.5). A real profile
+// uses the service over the core (core/service.ts), which keeps the notes in the notes folder: a folder for each
+// notebook, with its sections, pages, and Trash. The web platform, which the dev server and the tests run on, uses
+// the in-memory service with the sample library, and saves it to the Phase 2 snapshot behind its flag. A real
+// profile without storage.core falls back to the in-memory service, which keeps nothing unless the snapshot flag
+// is on and says so (the service is volatile).
 //
 // The first loadInitial starts here, before React renders, so the tree and the last page arrive in one call.
 
@@ -11,6 +12,7 @@ import type { ReactNode } from 'react';
 import { isEnabled } from '../../app/flags';
 import { getLocation } from '../../app/location';
 import type { Platform } from '../../platform/types';
+import { createCoreNotesService } from './core/service';
 import { createMemoryNotesService } from './memory';
 import { parseSnapshot } from './snapshot';
 import type { SnapshotData } from './snapshot';
@@ -64,11 +66,16 @@ export function initialTree(
   return early;
 }
 
-export async function createNotesService(platform: Platform): Promise<NotesService> {
-  const snapshot = isEnabled('notes.memorySnapshot') ? (platform.notesSnapshot ?? undefined) : undefined;
+async function memoryService(platform: Platform): Promise<NotesService> {
+  const keeps = isEnabled('storage.core') || isEnabled('notes.memorySnapshot');
+  const snapshot = keeps ? (platform.notesSnapshot ?? undefined) : undefined;
   // A real profile without the snapshot has nothing that keeps the notes, so the service must not say they're saved.
   const volatile = !snapshot && platform.kind === 'tauri';
-  const service = createMemoryNotesService({ seed: await seedFrom(platform), snapshot, volatile });
+  return createMemoryNotesService({ seed: await seedFrom(platform), snapshot, volatile });
+}
+
+export async function createNotesService(platform: Platform): Promise<NotesService> {
+  const service = platform.notesCore ? createCoreNotesService(platform.notesCore) : await memoryService(platform);
   const early = service.loadInitial(pathOf(getLocation()));
   initialLoads.set(service, early);
   early.catch(() => initialLoads.delete(service));

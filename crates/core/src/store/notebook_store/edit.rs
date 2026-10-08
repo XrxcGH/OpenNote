@@ -309,6 +309,64 @@ impl NotebookStore {
         Ok(())
     }
 
+    /// Archives or restores a group, section, or page. The mark is the unknown key `archived` in its tree file
+    /// entry, so versions that don't know it keep it.
+    pub fn set_archived(&mut self, node: NodeRef, archived: bool) -> Result<(), CoreError> {
+        let now = self.now();
+        match node {
+            NodeRef::Group(id) => {
+                self.check_writable()?;
+                let group = self.notebook.groups.iter_mut().find(|g| g.id == id);
+                let group = group.ok_or_else(|| not_found(format!("group {id}")))?;
+                if crate::model::set_archived(&mut group.extra, archived) {
+                    group.changed = now;
+                    self.write_notebook()?;
+                }
+            }
+            NodeRef::Section(id) => {
+                self.check_section_writable(id)?;
+                let changed = self.sections.get_mut(&id).is_some_and(|s| {
+                    let changed = crate::model::set_archived(&mut s.file.extra, archived);
+                    if changed {
+                        s.file.changed = now;
+                    }
+                    changed
+                });
+                if changed {
+                    self.write_section(id)?;
+                }
+            }
+            NodeRef::Page(id) => {
+                let section = self.section_of(id).ok_or_else(|| not_found(format!("page {id}")))?;
+                self.check_section_writable(section)?;
+                let changed = self.sections.get_mut(&section).is_some_and(|s| {
+                    let Some(entry) = s.file.pages.iter_mut().find(|e| e.id == id) else {
+                        return false;
+                    };
+                    let changed = crate::model::set_archived(&mut entry.extra, archived);
+                    if changed {
+                        entry.changed = now;
+                    }
+                    changed
+                });
+                if changed {
+                    self.write_section(section)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Archives or restores the notebook itself.
+    pub fn set_notebook_archived(&mut self, archived: bool) -> Result<(), CoreError> {
+        self.check_writable()?;
+        if crate::model::set_archived(&mut self.notebook.extra, archived) {
+            self.notebook.changed = self.now();
+            self.write_notebook()?;
+        }
+        Ok(())
+    }
+
     /// Changes a node's color, or a page's pin. Colors of groups and sections change their tree file, and
     /// colors and pins of pages change their entry.
     pub fn set_props(&mut self, node: NodeRef, props: &NodeProps) -> Result<(), CoreError> {

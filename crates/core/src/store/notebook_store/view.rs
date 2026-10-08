@@ -29,6 +29,7 @@ impl NotebookStore {
             sections,
             access: self.access(),
             notices: self.notices.clone(),
+            archived: crate::model::is_archived(&self.notebook.extra),
         }
     }
 
@@ -84,6 +85,7 @@ impl NotebookStore {
             pages,
             access,
             encrypted: state.encrypted(),
+            archived: crate::model::is_archived(&file.extra),
         }
     }
 
@@ -100,6 +102,7 @@ impl NotebookStore {
             order: entry.order.clone(),
             level,
             pinned: entry.pinned,
+            archived: crate::model::is_archived(&entry.extra),
             color: entry.color.clone(),
             created,
             modified: cached.map(|c| c.modified),

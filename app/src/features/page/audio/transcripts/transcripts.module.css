@@ -1,0 +1,201 @@
+/* The transcript block and its dialogs. Tokens only (BRAND.md section 14). */
+@layer components {
+  .card {
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+  }
+
+  .transcript {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .header h3,
+  .summary h4,
+  .suggestions h4 {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .actions,
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .summary {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .summary p {
+    margin: 0;
+  }
+
+  .help,
+  .label {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .lines {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-block-size: 24rem;
+    overflow-y: auto;
+  }
+
+  .line {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+  }
+
+  .line[data-active='true'] {
+    background: var(--color-surface-selected);
+  }
+
+  .time {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .words {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-inline-size: 0;
+    flex: 1;
+  }
+
+  .speaker {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .edit,
+  .paste {
+    inline-size: 100%;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-base);
+    color: var(--color-text-primary);
+    font: inherit;
+    resize: vertical;
+  }
+
+  .select {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .edit:focus-visible,
+  .paste:focus-visible,
+  .select:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .suggestions {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border: 1px dashed var(--color-border-default);
+    border-radius: var(--radius-md);
+  }
+
+  .rows {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .badge {
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-hover);
+    font-size: var(--type-caption-size);
+  }
+
+  .footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .suggest {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-start: var(--space-3);
+  }
+
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+    margin-block-start: var(--space-2);
+  }
+
+  .choice {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .previewHeading {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: var(--type-small-size);
+  }
+
+  .preview {
+    max-block-size: 14rem;
+    margin: 0;
+    padding: var(--space-3);
+    overflow: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    font: inherit;
+    white-space: pre-wrap;
+  }
+}

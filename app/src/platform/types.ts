@@ -2,8 +2,14 @@
 // platform/tauri implements it over Tauri commands and events. platform/web implements it with in-memory fakes,
 // so the whole interface also runs in a plain browser for development and tests.
 
+import type { NotesCoreClient } from '../services/notes/core/service';
+import type { AudioHost, RecordingEntry } from '../core/audio';
+import type { ConnectorsClient } from '../features/connectors';
+import type { DiagnosticsClient } from '../features/diagnostics';
 import type { ImportedAsset, PageService } from '../services/pages/types';
+import type { SearchClient } from '../services/search/types';
 import type { MessageKey } from '../strings/t';
+import type { InteropClient } from './interop';
 import type { BootData } from './bindings/BootData';
 import type { CaptionLayout } from './bindings/CaptionLayout';
 import type { CaptionState } from './bindings/CaptionState';
@@ -56,6 +62,8 @@ export type { WindowPlacement } from './bindings/WindowPlacement';
 
 export type Unsubscribe = () => void;
 
+export type { SearchClient };
+
 /** An RFC 7396 merge patch: every key optional, objects patched recursively, and null removes a key. */
 export type MergePatch<T> = {
   [K in keyof T]?: (T[K] extends readonly unknown[] ? T[K] : T[K] extends object ? MergePatch<T[K]> : T[K]) | null;
@@ -79,15 +87,60 @@ export interface Platform {
   readonly updater: UpdaterClient;
   readonly shell: ShellClient;
   readonly pages: PagesClient;
+  /** Search and linking over the index (Phase 8). */
+  readonly search: SearchClient;
+  /** Phase 13: crash reports, the self-check, the feedback file, safe start, and Work offline. */
+  readonly diagnostics: DiagnosticsClient;
+  /** Accounts that features sign in to, such as Microsoft and Google, with their tokens kept in the shell. */
+  readonly connectors: ConnectorsClient;
   readonly spelling: SpellingClient;
   readonly clipboard: ClipboardClient;
   readonly images: ImagesClient;
+  readonly pageExtras: PageExtrasClient;
+  readonly exports: ExportsClient;
+  /** Phase 9: recording and playback. */
+  readonly audio: AudioClient;
   /** Null unless the read-aloud fallback is built. */
   readonly speech: SpeechClient | null;
+  /** Phase 11: import and export. */
+  readonly interop: InteropClient;
   /** Phase 2 only, behind notes.memorySnapshot. */
   readonly notesSnapshot: NotesSnapshotClient | null;
+  /** The notes bridge over the core, which keeps the tree in the notes folder. Null on the web platform. */
+  readonly notesCore: NotesCoreClient | null;
   readonly perf: PerfClient;
   log(level: LogLevel, message: string): void;
+}
+
+/** Phase 9's audio client: the media crate's commands, and the folder that keeps a page's recordings. */
+export interface AudioClient {
+  readonly host: AudioHost;
+  /**
+   * The host keeps each track in the page's own folder as an asset of the page, so the page's table must list it
+   * (`addAsset` when a track is made or changes, `removeAsset` when an edit replaces it). The fake host keeps no
+   * files, so the page has nothing to list.
+   */
+  readonly keepsAssets: boolean;
+  /** The folder of a page's recordings, which the host's start, recover, and playback commands take. */
+  assetsDir(page: string): Promise<string>;
+  /**
+   * Hands the open page the tracks of an entry, read from the files in its folder as they are now. The flag
+   * `growing` says the files are still being written. The `addAsset` edits that follow put the tracks in the
+   * page's table.
+   */
+  adoptTracks(assetsDir: string, entry: RecordingEntry, growing: boolean): Promise<void>;
+  /** Trims the silence at both ends, or answers null when there is none worth trimming. */
+  trimSilence(assetsDir: string, entry: RecordingEntry): Promise<AudioEdit | null>;
+  /** Removes the audio between two positions, in nanoseconds. */
+  removePart(assetsDir: string, entry: RecordingEntry, startNs: number, endNs: number): Promise<AudioEdit>;
+  /** Deletes the files of a recording the page no longer lists. Answers with the bytes freed. */
+  deleteFiles(assetsDir: string, entry: RecordingEntry): Promise<number>;
+}
+
+/** A recording after an edit: the entry that takes the old one's place, and its new length. */
+export interface AudioEdit {
+  entry: RecordingEntry;
+  durationNs: number;
 }
 
 export interface SettingsClient {
@@ -211,6 +264,68 @@ export interface ImagesClient {
   importBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
   importUrl(page: string, url: string): Promise<ImportedAsset>;
   importClip(page: string, token: string): Promise<ImportedAsset>;
+}
+
+/** The text cursor settings Windows keeps: its width in device pixels, and how long it shows (null: it never blinks). */
+export interface CaretMetrics {
+  widthPx: number;
+  blinkMs: number | null;
+}
+
+/** An attached file whose changes its own app saved back: the page's attachment now points at `asset`. */
+export interface AttachmentSaved {
+  page: string;
+  previous: string;
+  asset: ImportedAsset;
+}
+
+/** Native help for the typed-notes extras: the caret, link titles, and attached files that save back. */
+export interface PageExtrasClient {
+  caretMetrics(): Promise<CaretMetrics>;
+  /** The page title of a web address, or null. Never runs while Work offline is on. */
+  linkTitle(url: string): Promise<string | null>;
+  attachBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
+  /** Opens the attachment in its own app and saves each change back (see onAttachmentSaved). */
+  openAttachment(page: string, asset: string, name: string): Promise<void>;
+  /** Stops watching a page's attachments, when the page closes. */
+  stopAttachments(page: string): Promise<void>;
+  onAttachmentSaved(listener: (saved: AttachmentSaved) => void): Unsubscribe;
+}
+
+/** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */
+/**
+ * Printing a page to PDF and saving what an export makes (Phase 6, ADR 0006). The desktop app prints in a hidden
+ * WebView2 window; the web platform's fake prints nothing and writes a stand-in file, so the interface runs in tests.
+ */
+export interface ExportsClient {
+  /** Opens the hidden print window on a `PrepareInput` (as JSON) and returns the `PrepareResult` it planned. */
+  printPrepare(job: string, input: unknown): Promise<unknown>;
+  /**
+   * Prints the window's document to PDF. The size is the first sheet's box in inches. `tagged` and `outline` ask for
+   * structure tags with a language, and for bookmarks from the headings; the host prints through the DevTools route
+   * for them, and falls back to the plain route if that fails.
+   */
+  printRender(
+    job: string,
+    size: { width: number; height: number },
+    background: boolean,
+    options?: { tagged?: boolean; outline?: boolean },
+  ): Promise<Uint8Array>;
+  printClose(job: string): Promise<void>;
+  /** Shows the Save dialog. Resolves to the chosen path, or null when the person cancels. */
+  pickSave(request: { suggested: string; label: string; extension: string }): Promise<string | null>;
+  /** Writes the file at a chosen path and any files beside it (paths relative to its folder). */
+  write(path: string, files: readonly { path: string; bytes: Uint8Array }[]): Promise<void>;
+  /**
+   * Puts a PNG, the picture of a selection, in a Word file and returns the file's bytes. `alt` is the selection's text,
+   * which becomes the picture's description. The caller saves the bytes through the Save dialog.
+   */
+  selectionDocx(
+    png: Uint8Array,
+    facts: { title: string; alt: string; width: number; height: number },
+  ): Promise<Uint8Array>;
+  /** Opens a file this session exported in its default app, or shows it in File Explorer. */
+  open(path: string, reveal: boolean): Promise<void>;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */

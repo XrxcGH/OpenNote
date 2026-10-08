@@ -141,6 +141,37 @@ const SAMPLER_TEXT = [
   '$$\nx^2 + y^2\n$$',
 ].join('\n\n');
 
+/**
+ * Every kind of line on ruled paper, each with "Hxn" in it: letters that sit flat on their baseline, so a test can
+ * find the baseline in a screenshot. Lines stay short, so the right side of the column is free of text.
+ */
+const RULED_TEXT = [
+  'Hxn on a rule, then Hxn again.',
+  'Hxn with H<sub>2</sub>O and x<sup>2</sup> in it.',
+  'Hxn and <span data-size="large">Hxn</span> large.',
+  'Hxn by ==a mark== and `some code`.',
+  '# Hxn one',
+  '## Hxn two',
+  '### Hxn three',
+  '#### Hxn four',
+  '##### Hxn five',
+  '###### Hxn six',
+  '- Hxn bullet\n- Hxn bullet',
+  '1. Hxn number\n2. Hxn number',
+  '- [ ] Hxn task\n- [x] Hxn done',
+  '> Hxn quote\n>\n> Hxn quote',
+  '> [!note] Hxn callout\n>\n> Hxn body',
+  '```\nHxn code\nHxn code\n```',
+  'Hxn after code.',
+].join('\n\n');
+
+function ruledTable(order: number): BlockJson {
+  const columns = [0, 1].map(() => ({ id: fixtureId(), width: 140 }));
+  const row = () => ({ id: fixtureId(), cells: Object.fromEntries(columns.map((c) => [c.id, { markdown: 'Hxn' }])) });
+  const data: TableData = { header: true, columns, rows: [row(), row()] };
+  return block('table', order, data as unknown as Record<string, unknown>);
+}
+
 function build(): Record<string, () => PageFixture> {
   return {
     sampler: () =>
@@ -150,6 +181,7 @@ function build(): Record<string, () => PageFixture> {
         block('image', 2, { asset: null, alt: 'A missing image' }),
         block('image', 3, { asset: null, alt: 'A cropped image', crop: { x: 0.1, y: 0.1, w: 0.5, h: 0.5 } }),
       ]),
+    smart: () => page('Smart notes', [text(0, 'Start here.'), table(1, 4)]),
     short: () => page('Short note', [text(0, '# Short note\n\nA few words to type after.')]),
     twentyPage: () => page('A twenty-page note', [text(0, longNoteMarkdown())]),
     twentyPageOutline: () => page('An outline', [text(0, outlineMarkdown())]),
@@ -182,11 +214,37 @@ function build(): Record<string, () => PageFixture> {
           return text(i, sentences(seeded(i), 3));
         }),
       ),
+    ruled: () => page('Ruled', [text(0, RULED_TEXT), ruledTable(1), text(2, 'Hxn after the table.')]),
+    // The ruled lines ten times over, enough to fill five sheets of any paper (and the narrowest rules on the largest
+    // paper). The paper is a custom size whose height is not a whole number of page units, so a test can check the
+    // rules and the lines on sheets after a break. The View tab's paper sizes replace the custom one.
+    ruledSheets: () =>
+      page(
+        'Ruled sheets',
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((n) => [
+          text(3 * n, RULED_TEXT),
+          ruledTable(3 * n + 1),
+          text(3 * n + 2, 'Hxn after the table.'),
+        ]),
+        {
+          layout: 'flow',
+          paper: { size: 'custom', orientation: 'portrait', width: 650, height: 901.37 },
+        },
+      ),
   };
 }
 
 export type PageFixtureName =
-  'sampler' | 'short' | 'twentyPage' | 'twentyPageOutline' | 'twentyPageCallout' | 'freeform8' | 'budget500';
+  | 'sampler'
+  | 'smart'
+  | 'short'
+  | 'twentyPage'
+  | 'twentyPageOutline'
+  | 'twentyPageCallout'
+  | 'freeform8'
+  | 'budget500'
+  | 'ruled'
+  | 'ruledSheets';
 
 const made = new Map<PageFixtureName, PageFixture>();
 const makers = build();

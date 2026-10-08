@@ -6,7 +6,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const REPO = 'XrxcGH/OpenNote';
+/** The GitHub repository that hosts the releases. The updater only downloads from github.com. */
+export const REPO = 'XrxcGH/OpenNote';
 
 /** One file a release ships: the Tauri updater's platform key, the Rust target it's built for, and its name. */
 export interface ReleaseFile {
@@ -141,10 +142,20 @@ export function writeManifest(
   return { name, manifest };
 }
 
+/**
+ * The manifest's release notes: the text in the file named by RELEASE_NOTES_FILE (release/notes.ts writes it), else
+ * RELEASE_NOTES, else a one-line default. The app shows at most 8 lines of them in its update notice.
+ */
+export function notesFor(tag: string, env: Record<string, string | undefined>): string {
+  const file = env.RELEASE_NOTES_FILE;
+  const fromFile = file && existsSync(file) ? readFileSync(file, 'utf8').trim() : '';
+  return fromFile || env.RELEASE_NOTES?.trim() || `OpenNote ${tag}`;
+}
+
 function main(): void {
   const [dir, tag] = process.argv.slice(2);
   if (!dir || !tag) throw new Error('Usage: node app/scripts/write-manifest.ts <release-dir> <tag>');
-  const notes = process.env.RELEASE_NOTES ?? `OpenNote ${tag}`;
+  const notes = notesFor(tag, process.env);
   const { name, manifest } = writeManifest(dir, tag, notes, new Date().toISOString());
   const files = Object.keys(manifest.platforms).length;
   console.log(`Wrote ${name} for ${manifest.version}, with ${files} files.`);

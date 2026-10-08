@@ -99,9 +99,10 @@ fn write_segment(
     })
 }
 
-/// Checks that every asset the page refers to exists with its expected size (step S4).
+/// Checks that every asset the page refers to exists with its expected size (step S4). A recording that
+/// is still being written has no final size yet, so it is left out.
 fn check_assets(files: &PageFiles<'_>, page: &Page) -> Result<(), CoreError> {
-    for asset in page.assets.values() {
+    for asset in page.assets.values().filter(|asset| !asset.is_recording()) {
         let path = NotebookLayout::asset_path(files.dir, asset)?;
         let meta = files.fs.metadata(&path).map_err(|e| match e.kind {
             FsErrorKind::NotFound => CoreError::NotFound(format!("asset {}", asset.id)),

@@ -60,6 +60,10 @@ pub struct NodeInfo {
     pub modified: Timestamp,
     /// Whether it may not change.
     pub read_only: bool,
+    /// A pinned page. Always false for everything else.
+    pub pinned: bool,
+    /// Archived: hidden from the tree until "Show archived".
+    pub archived: bool,
 }
 
 fn pen(color: &Option<Color>) -> Option<Color> {
@@ -83,6 +87,8 @@ pub fn notebook_node(tree: &NotebookTree) -> NodeInfo {
         created: tree.created,
         modified: tree.changed,
         read_only: tree.access.is_read_only(),
+        pinned: false,
+        archived: tree.archived,
     }
 }
 
@@ -99,6 +105,8 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             created: group.created,
             modified: group.changed,
             read_only: tree.access.is_read_only(),
+            pinned: false,
+            archived: crate::model::is_archived(&group.extra),
         },
         TreeChild::Section(section) => NodeInfo {
             id: section.id.to_string(),
@@ -111,6 +119,8 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             created: section.created,
             modified: section.changed,
             read_only: section.access.is_read_only(),
+            pinned: false,
+            archived: section.archived,
         },
     }
 }
@@ -150,6 +160,8 @@ pub fn children_of(tree: &NotebookTree, parent: Id) -> Option<Vec<NodeInfo>> {
         created: page.created,
         modified: page.modified.unwrap_or(page.created),
         read_only: read_only || !matches!(page.state, PageNodeState::Normal | PageNodeState::Moving),
+        pinned: page.pinned,
+        archived: page.archived,
     });
     Some(pages.collect())
 }

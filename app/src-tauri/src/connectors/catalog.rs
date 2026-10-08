@@ -1,0 +1,276 @@
+//! The catalog: the entries of the registry, one per service. `registry.rs` defines what an entry holds and how to
+//! look one up. To add a service, put an entry here, then its strings in `strings/en/connectors.ts`.
+
+use super::registry::{
+    Access, AccountFrom, Auth, ConnectorDef, Group, Method, OAuthDef, Placement, Pointers, Redirect, Revoke, SecretUse,
+    TokenDef, STANDARD_RESPONSE,
+};
+
+const fn read(scope: &'static str, capability: &'static str) -> Access {
+    Access {
+        scope,
+        capability,
+        writes: false,
+    }
+}
+
+const fn write(scope: &'static str, capability: &'static str) -> Access {
+    Access {
+        scope,
+        capability,
+        writes: true,
+    }
+}
+
+const NO_PARAMS: &[(&str, &str)] = &[];
+
+pub static CONNECTORS: &[ConnectorDef] = &[
+    ConnectorDef {
+        id: "microsoft",
+        name: "Microsoft",
+        group: Group::Microsoft,
+        features: &["importOneNote", "outlookCalendar", "microsoftToDo"],
+        hosts: &["login.microsoftonline.com", "graph.microsoft.com"],
+        access: &[
+            read("openid", "account"),
+            read("email", "account"),
+            read("profile", "account"),
+            read("User.Read", "account"),
+            read("offline_access", "stayConnected"),
+            read("Notes.Read", "onenoteRead"),
+            read("Calendars.Read", "calendarRead"),
+            write("Tasks.ReadWrite", "tasksWrite"),
+        ],
+        auth: Auth::OAuth(OAuthDef {
+            authorize_url: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+            token_url: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+            revoke: Revoke::None,
+            scope_param: "scope",
+            scope_separator: " ",
+            extra_params: &[("prompt", "select_account")],
+            pkce: true,
+            secret: SecretUse::Never,
+            redirect: Redirect::AnyPort,
+            account: AccountFrom::IdToken,
+            response: STANDARD_RESPONSE,
+        }),
+    },
+    ConnectorDef {
+        id: "google",
+        name: "Google",
+        group: Group::Google,
+        features: &[
+            "googleCalendar",
+            "googleTasks",
+            "googleClassroom",
+            "googleDrive",
+            "youtubeCaptions",
+        ],
+        hosts: &[
+            "accounts.google.com",
+            "oauth2.googleapis.com",
+            "www.googleapis.com",
+            "tasks.googleapis.com",
+            "classroom.googleapis.com",
+            "youtube.googleapis.com",
+        ],
+        access: &[
+            read("openid", "account"),
+            read("email", "account"),
+            read("https://www.googleapis.com/auth/calendar.readonly", "calendarRead"),
+            write("https://www.googleapis.com/auth/tasks", "tasksWrite"),
+            read(
+                "https://www.googleapis.com/auth/classroom.courses.readonly",
+                "classroomRead",
+            ),
+            read(
+                "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+                "classroomRead",
+            ),
+            write("https://www.googleapis.com/auth/drive.file", "driveFiles"),
+            read("https://www.googleapis.com/auth/youtube.readonly", "youtubeRead"),
+        ],
+        auth: Auth::OAuth(OAuthDef {
+            authorize_url: "https://accounts.google.com/o/oauth2/v2/auth",
+            token_url: "https://oauth2.googleapis.com/token",
+            revoke: Revoke::Form {
+                url: "https://oauth2.googleapis.com/revoke",
+                with_client: false,
+            },
+            scope_param: "scope",
+            scope_separator: " ",
+            extra_params: &[("access_type", "offline"), ("prompt", "consent")],
+            pkce: true,
+            secret: SecretUse::Optional,
+            redirect: Redirect::AnyPort,
+            account: AccountFrom::IdToken,
+            response: STANDARD_RESPONSE,
+        }),
+    },
+    ConnectorDef {
+        id: "dropbox",
+        name: "Dropbox",
+        group: Group::Storage,
+        features: &["syncDropbox", "sendToDropbox"],
+        hosts: &["www.dropbox.com", "api.dropboxapi.com", "content.dropboxapi.com"],
+        access: &[
+            read("account_info.read", "dropboxAccount"),
+            read("files.content.read", "dropboxRead"),
+            write("files.content.write", "dropboxWrite"),
+        ],
+        auth: Auth::OAuth(OAuthDef {
+            authorize_url: "https://www.dropbox.com/oauth2/authorize",
+            token_url: "https://api.dropboxapi.com/oauth2/token",
+            revoke: Revoke::BearerPost {
+                url: "https://api.dropboxapi.com/2/auth/token/revoke",
+            },
+            scope_param: "scope",
+            scope_separator: " ",
+            extra_params: &[("token_access_type", "offline")],
+            pkce: true,
+            secret: SecretUse::Optional,
+            redirect: Redirect::FixedPort(53682),
+            account: AccountFrom::Call {
+                method: Method::Post,
+                url: "https://api.dropboxapi.com/2/users/get_current_account",
+                pointer: "/email",
+            },
+            response: STANDARD_RESPONSE,
+        }),
+    },
+    ConnectorDef {
+        id: "box",
+        name: "Box",
+        group: Group::Storage,
+        features: &["syncBox", "sendToBox"],
+        hosts: &["account.box.com", "api.box.com", "upload.box.com"],
+        // Box sets its scopes on the app registration, so none goes on the sign-in address.
+        access: &[write("", "boxFiles")],
+        auth: Auth::OAuth(OAuthDef {
+            authorize_url: "https://account.box.com/api/oauth2/authorize",
+            token_url: "https://api.box.com/oauth2/token",
+            revoke: Revoke::Form {
+                url: "https://api.box.com/oauth2/revoke",
+                with_client: true,
+            },
+            scope_param: "",
+            scope_separator: " ",
+            extra_params: NO_PARAMS,
+            pkce: true,
+            secret: SecretUse::Required,
+            redirect: Redirect::FixedPort(53683),
+            account: AccountFrom::Call {
+                method: Method::Get,
+                url: "https://api.box.com/2.0/users/me",
+                pointer: "/login",
+            },
+            response: STANDARD_RESPONSE,
+        }),
+    },
+    ConnectorDef {
+        id: "slack",
+        name: "Slack",
+        group: Group::Other,
+        features: &["shareToSlack"],
+        hosts: &["slack.com"],
+        access: &[
+            write("chat:write", "slackPost"),
+            write("files:write", "slackFiles"),
+            read("channels:read", "slackChannels"),
+        ],
+        auth: Auth::OAuth(OAuthDef {
+            authorize_url: "https://slack.com/oauth/v2/authorize",
+            token_url: "https://slack.com/api/oauth.v2.access",
+            revoke: Revoke::BearerPost {
+                url: "https://slack.com/api/auth.revoke",
+            },
+            scope_param: "user_scope",
+            scope_separator: ",",
+            extra_params: NO_PARAMS,
+            pkce: false,
+            secret: SecretUse::Required,
+            redirect: Redirect::FixedPort(53681),
+            account: AccountFrom::TokenResponse("/team/name"),
+            response: Pointers {
+                access: "/authed_user/access_token",
+                refresh: "/authed_user/refresh_token",
+                expires_in: "/authed_user/expires_in",
+                scope: "/authed_user/scope",
+            },
+        }),
+    },
+    ConnectorDef {
+        id: "vimeo",
+        name: "Vimeo",
+        group: Group::Other,
+        features: &["vimeoCaptions"],
+        hosts: &["api.vimeo.com"],
+        access: &[read("public", "vimeoRead"), read("private", "vimeoRead")],
+        auth: Auth::OAuth(OAuthDef {
+            authorize_url: "https://api.vimeo.com/oauth/authorize",
+            token_url: "https://api.vimeo.com/oauth/access_token",
+            revoke: Revoke::BearerDelete {
+                url: "https://api.vimeo.com/tokens",
+            },
+            scope_param: "scope",
+            scope_separator: " ",
+            extra_params: NO_PARAMS,
+            pkce: false,
+            secret: SecretUse::Required,
+            redirect: Redirect::FixedPort(53684),
+            account: AccountFrom::TokenResponse("/user/name"),
+            response: STANDARD_RESPONSE,
+        }),
+    },
+    ConnectorDef {
+        id: "readwise",
+        name: "Readwise",
+        group: Group::Other,
+        features: &["readwiseHighlights"],
+        hosts: &["readwise.io"],
+        access: &[read("", "readwiseRead")],
+        auth: Auth::Token(TokenDef {
+            needs_base_url: false,
+            placement: Placement::Header("Token"),
+            check_method: Method::Get,
+            check_url: "https://readwise.io/api/v2/auth/",
+            check_form: NO_PARAMS,
+            account_pointer: "",
+        }),
+    },
+    ConnectorDef {
+        id: "canvas",
+        name: "Canvas",
+        group: Group::Learning,
+        features: &["canvasAssignments"],
+        hosts: &[],
+        access: &[read("", "canvasRead")],
+        auth: Auth::Token(TokenDef {
+            needs_base_url: true,
+            placement: Placement::Header("Bearer"),
+            check_method: Method::Get,
+            check_url: "/api/v1/users/self",
+            check_form: NO_PARAMS,
+            account_pointer: "/name",
+        }),
+    },
+    ConnectorDef {
+        id: "moodle",
+        name: "Moodle",
+        group: Group::Learning,
+        features: &["moodleAssignments"],
+        hosts: &[],
+        access: &[read("", "moodleRead")],
+        auth: Auth::Token(TokenDef {
+            needs_base_url: true,
+            placement: Placement::FormField("wstoken"),
+            check_method: Method::Post,
+            check_url: "/webservice/rest/server.php",
+            check_form: &[
+                ("wsfunction", "core_webservice_get_site_info"),
+                ("moodlewsrestformat", "json"),
+            ],
+            account_pointer: "/fullname",
+        }),
+    },
+];

@@ -186,8 +186,20 @@ impl NotebookStore {
         index: usize,
         level: u8,
     ) -> Result<(), CoreError> {
+        let leveled: Vec<(PageId, u8)> = roots.iter().map(|&root| (root, level)).collect();
+        self.move_page_blocks(&leveled, target, index)
+    }
+
+    /// Moves pages as [`NotebookStore::move_pages`] does, with each moved page at its own level, so a move of
+    /// several page blocks can fit each block after the one before it, as the notes contract's move does.
+    pub fn move_page_blocks(
+        &mut self,
+        roots: &[(PageId, u8)],
+        target: SectionId,
+        index: usize,
+    ) -> Result<(), CoreError> {
         self.check_section_writable(target)?;
-        let blocks = self.moved_blocks(roots, level)?;
+        let blocks = self.moved_blocks(roots)?;
         let moved: HashSet<PageId> = blocks.iter().flat_map(|(_, b)| b.iter().map(|f| f.id)).collect();
         let mut flat: Vec<FlatPage> = self
             .flat_pages(target)?
@@ -233,23 +245,23 @@ impl NotebookStore {
         Ok(())
     }
 
-    /// The flat blocks of the moved pages, by source section, with levels shifted so each root is at `level`.
-    fn moved_blocks(&self, roots: &[PageId], level: u8) -> Result<Vec<(SectionId, Vec<FlatPage>)>, CoreError> {
+    /// The flat blocks of the moved pages, by source section, with levels shifted so each root is at its level.
+    fn moved_blocks(&self, roots: &[(PageId, u8)]) -> Result<Vec<(SectionId, Vec<FlatPage>)>, CoreError> {
         let mut subtrees = Vec::with_capacity(roots.len());
-        for &root in roots {
+        for &(root, level) in roots {
             let (section, block) = self.subtree(root)?;
             self.check_section_writable(section)?;
-            subtrees.push((root, section, block));
+            subtrees.push((root, level, section, block));
         }
         let inside = |root: PageId| {
             subtrees
                 .iter()
-                .any(|(other, _, block)| *other != root && block.iter().any(|f| f.id == root))
+                .any(|(other, _, _, block)| *other != root && block.iter().any(|f| f.id == root))
         };
         let mut blocks = Vec::new();
         let mut seen = HashSet::new();
-        for (root, section, block) in &subtrees {
-            if inside(*root) || !seen.insert(*root) {
+        for &(root, level, section, ref block) in &subtrees {
+            if inside(root) || !seen.insert(root) {
                 continue;
             }
             let base = block.first().map_or(0, |f| f.level);
@@ -260,7 +272,7 @@ impl NotebookStore {
                 let level = level.ok_or_else(|| invalid_move("subpages nest at most 2 levels deep"))?;
                 shifted.push(FlatPage { id: f.id, level });
             }
-            blocks.push((*section, shifted));
+            blocks.push((section, shifted));
         }
         Ok(blocks)
     }

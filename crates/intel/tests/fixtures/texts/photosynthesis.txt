@@ -1,0 +1,15 @@
+Biology 101: Photosynthesis
+
+Photosynthesis is the process plants use to turn light energy into chemical energy. It takes place in the chloroplasts, which are found in the cells of leaves. Chlorophyll is the green pigment inside the chloroplasts. It absorbs sunlight to start the process.
+
+The process has two stages. In the light reactions, chlorophyll absorbs sunlight. It uses that energy to split water molecules, which releases oxygen. The energy from the light is stored in two energy-carrying molecules. In the Calvin cycle, the plant uses that stored energy to turn carbon dioxide into glucose.
+
+- Light reactions happen in the thylakoid membranes.
+- The Calvin cycle happens in the stroma.
+- Oxygen is a by-product of splitting water.
+
+Plants need three things for photosynthesis: sunlight, water, and carbon dioxide. Water enters through the roots, and carbon dioxide enters through small openings in the leaves called stomata. A plant that gets too little light makes less glucose and grows slowly.
+
+Glucose is used right away for energy or stored as starch. This is why photosynthesis matters for every food chain: the glucose and oxygen it produces feed nearly all life on Earth.
+
+Exam tip: know the two stages of photosynthesis and where each one happens.

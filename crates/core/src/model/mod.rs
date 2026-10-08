@@ -32,8 +32,8 @@ pub use blocks::Blocks;
 pub use history::{VersionEntry, VersionReason, VersionsFile};
 pub use ink::{Ink, InkRecord, SegmentRef, StrokeProps};
 pub use notebook::{
-    Group, NotebookFile, NotebookStyles, NotebookTree, PageNode, PageNodeState, SectionNode, StyleSpec, TreeChild,
-    MAX_STYLES, MAX_STYLE_NAME_CHARS, STYLE_NAMES,
+    is_archived, set_archived, Group, NotebookFile, NotebookStyles, NotebookTree, PageNode, PageNodeState, SectionNode,
+    StyleSpec, TreeChild, ARCHIVED_KEY, MAX_STYLES, MAX_STYLE_NAME_CHARS, STYLE_NAMES,
 };
 pub use page::{Access, DeviceRef, FormatInfo, Page, ReadOnlyReason, Rect, Revision, Warning};
 pub use section::{Moving, PageEntry, SectionFile};

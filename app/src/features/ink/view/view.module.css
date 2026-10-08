@@ -1,0 +1,140 @@
+@layer components {
+  /* The Draw tab's tools and pens look like the command bar's own tools. */
+  .group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .tool {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-4);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  :global(:root[data-density='touch']) .tool {
+    min-block-size: var(--size-target-touch);
+  }
+
+  .tool:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .tool[aria-pressed='true'] {
+    background: var(--color-surface-selected);
+  }
+
+  .tool:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  /* A pen slot: a swatch in the slot's color, a fat bar for highlighters. */
+  .swatch {
+    display: inline-block;
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 50%;
+  }
+
+  .swatch[data-tool='highlighter'] {
+    border-radius: var(--radius-sm);
+  }
+
+  .swatch[data-tool='pencil'] {
+    border-style: dashed;
+  }
+
+  /* The lasso's frame and its bar, over the page in screen space. */
+  :global(.ink-selection-frame) {
+    border: 1px dashed var(--color-accent-primary);
+    border-radius: var(--radius-sm);
+  }
+
+  :global(.ink-selection-frame) [data-ink-move] {
+    position: absolute;
+    inset: 0;
+    border: none;
+    background: transparent;
+    cursor: move;
+  }
+
+  :global(.ink-selection-frame) [data-ink-move]:focus-visible,
+  :global(.ink-selection-frame) [data-ink-corner]:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  }
+
+  :global(.ink-selection-frame) [data-ink-corner] {
+    position: absolute;
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    border: 1px solid var(--color-accent-primary);
+    border-radius: 50%;
+    background: var(--color-surface-page);
+  }
+
+  :global(.ink-selection-frame) [data-ink-corner='nw'] {
+    inset-block-start: calc(var(--space-5) / -2);
+    inset-inline-start: calc(var(--space-5) / -2);
+    cursor: nwse-resize;
+  }
+
+  :global(.ink-selection-frame) [data-ink-corner='ne'] {
+    inset-block-start: calc(var(--space-5) / -2);
+    inset-inline-end: calc(var(--space-5) / -2);
+    cursor: nesw-resize;
+  }
+
+  :global(.ink-selection-frame) [data-ink-corner='se'] {
+    inset-block-end: calc(var(--space-5) / -2);
+    inset-inline-end: calc(var(--space-5) / -2);
+    cursor: nwse-resize;
+  }
+
+  :global(.ink-selection-frame) [data-ink-corner='sw'] {
+    inset-block-end: calc(var(--space-5) / -2);
+    inset-inline-start: calc(var(--space-5) / -2);
+    cursor: nesw-resize;
+  }
+
+  :global(.ink-selection-frame) [data-ink-selection-bar] {
+    position: absolute;
+    inset-block-end: calc(100% + var(--space-3));
+    inset-inline-start: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-app);
+    white-space: nowrap;
+  }
+
+  /* The handle on the right side of the lasso's frame: drag it to rewrap handwriting to a new width. */
+  :global(.ink-selection-frame) [data-ink-side] {
+    position: absolute;
+    inset-block-start: calc(50% - var(--space-5) / 2);
+    inset-inline-end: calc(var(--space-5) / -2);
+    inline-size: var(--space-5);
+    block-size: var(--space-5);
+    border: 1px solid var(--color-accent-primary);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    cursor: ew-resize;
+  }
+
+  :global(.ink-selection-frame) [data-ink-side]:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+  }
+}

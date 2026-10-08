@@ -286,6 +286,28 @@ fn renaming_and_recoloring_change_one_file() {
 }
 
 #[test]
+fn archiving_marks_an_unknown_key_that_the_next_open_still_sees() {
+    let (kit, mut store, section, [a, b, _c]) = with_pages();
+    let group = store.create_group("G", None, None).unwrap();
+    store.set_archived(NodeRef::Page(a), true).unwrap();
+    store.set_archived(NodeRef::Section(section), true).unwrap();
+    store.set_archived(NodeRef::Group(group), true).unwrap();
+    store.set_notebook_archived(true).unwrap();
+    let tree = kit.open().unwrap().tree();
+    assert!(tree.archived && tree.groups[0].extra.contains_key(crate::model::ARCHIVED_KEY));
+    let node = tree.section(section).unwrap();
+    assert!(node.archived);
+    assert!(node.pages.iter().find(|page| page.id == a).unwrap().archived);
+    assert!(!node.pages.iter().find(|page| page.id == b).unwrap().archived);
+    // Putting an item back removes the key, so the file is as it was.
+    store.set_archived(NodeRef::Page(a), false).unwrap();
+    store.set_notebook_archived(false).unwrap();
+    let tree = kit.open().unwrap().tree();
+    assert!(!tree.archived);
+    assert!(!tree.section(section).unwrap().pages.iter().any(|page| page.archived));
+}
+
+#[test]
 fn a_notebook_keeps_its_named_styles() {
     let (kit, mut store, section, _) = with_pages();
     let styles = |size: f64| {

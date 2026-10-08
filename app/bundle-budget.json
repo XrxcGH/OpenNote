@@ -1,7 +1,22 @@
 {
-  "startup": { "jsKb": 185, "cssKb": 18 },
-  "after": { "within": "features/page/", "entry": "features/page/PageBody" },
+  "startup": { "jsKb": 300, "cssKb": 22 },
+  "after": {
+    "within": [
+      "features/page/",
+      "features/pages/",
+      "features/math/",
+      "features/tables/",
+      "editor/extensions/graphFence",
+      "@observablehq/plot"
+    ],
+    "entry": "features/page/PageBody"
+  },
   "lazyKb": {
+    "mermaid/node_modules/katex": 80,
+    "node_modules/mermaid": 600,
+    "@mermaid-js/parser": 130,
+    "features/pages/live": 40,
+    "features/pages/ui": 60,
     "editor/markdown/worker": 45,
     "editor/highlight": 20,
     "highlight.js/lib/languages": 5,
@@ -9,14 +24,21 @@
     "features/page/readAloud": 10,
     "features/page/styles": 15,
     "features/page/readingOrder": 15,
-    "features/page/PageBody": 225,
+    "features/page/PageBody": 242,
+    "@observablehq/plot": 135,
+    "features/math": 175,
+    "features/tables": 50,
+    "features/search/links": 195,
+    "features/search/lineTags": 160,
     "features/page": 40,
+    "features/ink/view/install": 110,
     "features/palette": 40,
     "features/settings": 40,
     "features/setup": 40,
     "features/shortcuts": 40,
     "features/trash": 40,
-    "features/updates": 40
+    "features/updates": 40,
+    "features/tools": 260
   },
   "lazyDefaultKb": 40
 }

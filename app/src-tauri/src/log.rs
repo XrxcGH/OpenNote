@@ -61,9 +61,17 @@ pub fn truncate(message: &str, max_bytes: usize) -> &str {
     &message[..end]
 }
 
-/// Replaces the person's profile folder in `message` with `%USERPROFILE%`, so a log they share doesn't carry
-/// their user name. Comparison ignores case, as Windows paths do.
+/// Keeps the person's profile folder and every secret out of `message`. The profile folder becomes
+/// `%USERPROFILE%`, so a log they share doesn't carry their user name. A token, an authorization code, and the
+/// value after a word such as `password` or `client_secret` become `<token>`, so a message that holds one by
+/// mistake (a failed request that echoes its body, say) still leaves nothing in the file.
 pub fn redact(message: &str, profile: &Path) -> String {
+    opennote_crashreport::redact_secrets(&hide_profile(message, profile))
+}
+
+/// Replaces the person's profile folder in `message` with `%USERPROFILE%`. Comparison ignores case, as Windows
+/// paths do.
+fn hide_profile(message: &str, profile: &Path) -> String {
     let profile = profile.to_string_lossy();
     if profile.is_empty() {
         return message.to_owned();
@@ -198,7 +206,27 @@ impl log::Log for FileSink {
     }
 }
 
+/// What a panic's log line says in place of a message built at run time.
+const RUN_TIME_MESSAGE: &str = "a message built at run time, left out";
+
+/// The log line for a panic: where it started and, when it is a string literal in the program, its message. A
+/// message built at run time can hold note content, so it is left out, as the crash report leaves it out.
+fn panic_line(location: Option<&std::panic::Location<'_>>, payload: &(dyn std::any::Any + Send)) -> String {
+    let location = location.map_or_else(
+        || "an unknown place".to_owned(),
+        |l| format!("{}:{}:{}", l.file(), l.line(), l.column()),
+    );
+    let message = payload
+        .downcast_ref::<&'static str>()
+        .copied()
+        .unwrap_or(RUN_TIME_MESSAGE);
+    format!("Panic: panicked at {location}: {message}")
+}
+
 /// Starts logging to `dir`, and logs panics too. Safe to call once; later calls are ignored.
+///
+/// It replaces the panic hook and doesn't call the one before it. `opennote_crashreport::install` calls the hook
+/// it replaces. So install it after this, or panics stop reaching the log.
 pub fn init(dir: &Path, profile: &Path) {
     let sink = FileSink {
         dir: dir.to_owned(),
@@ -212,7 +240,9 @@ pub fn init(dir: &Path, profile: &Path) {
         } else {
             log::LevelFilter::Info
         });
-        std::panic::set_hook(Box::new(|info| log::error!("Panic: {info}")));
+        std::panic::set_hook(Box::new(|info| {
+            log::error!("{}", panic_line(info.location(), info.payload()));
+        }));
     }
 }
 
@@ -260,6 +290,51 @@ mod tests {
         );
         assert_eq!(redact("Nothing to hide", profile), "Nothing to hide");
         assert_eq!(redact("Nothing to hide", Path::new("")), "Nothing to hide");
+    }
+
+    #[test]
+    fn keeps_tokens_out_of_messages() {
+        // Built in pieces so secret scanners do not take the test values for real ones.
+        let access = format!(
+            "{}.{}",
+            concat!("ya", "29"),
+            "a0AfB-byCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+        );
+        let refresh = concat!("1//0g", "Zx9Qw3Er5Ty7Ui1Op4As6Df8Gh2Jk0LmN");
+        let profile = Path::new("");
+        for message in [
+            format!("Renewing the sign-in failed: access_token={access}"),
+            format!("The service answered {{\"refresh_token\":\"{refresh}\"}}"),
+            format!("Request refused (Authorization: Bearer {access})"),
+            format!("Got {refresh} back"),
+            "Sent client_secret=abc123 to the token endpoint".to_owned(),
+        ] {
+            let logged = redact(&message, profile);
+            assert!(
+                !logged.contains("a0AfB") && !logged.contains("Zx9Qw3") && !logged.contains("abc123"),
+                "{logged}"
+            );
+            assert!(logged.contains("<token>"), "{logged}");
+        }
+        assert_eq!(
+            redact("Connected the Google connector.", profile),
+            "Connected the Google connector."
+        );
+    }
+
+    #[test]
+    fn a_panic_line_keeps_only_a_literal_message() {
+        let here = std::panic::Location::caller();
+        let at = format!("{}:{}:{}", here.file(), here.line(), here.column());
+        let literal: Box<dyn std::any::Any + Send> = Box::new("index out of bounds");
+        assert_eq!(
+            panic_line(Some(here), literal.as_ref()),
+            format!("Panic: panicked at {at}: index out of bounds")
+        );
+        let built: Box<dyn std::any::Any + Send> = Box::new(String::from("no section named Holiday plans"));
+        let line = panic_line(None, built.as_ref());
+        assert_eq!(line, format!("Panic: panicked at an unknown place: {RUN_TIME_MESSAGE}"));
+        assert!(!line.contains("Holiday"));
     }
 
     #[test]

@@ -1,0 +1,122 @@
+/* The graph view. A selected page is larger and ringed as well as colored, and its lines are thicker. */
+@layer components {
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: end;
+  }
+
+  .pick {
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--type-small-size);
+  }
+
+  .select {
+    min-block-size: var(--size-chrome-hit);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .select:focus-visible,
+  .link:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .zoom {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .note,
+  .muted {
+    margin: var(--space-2) 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .canvas {
+    inline-size: 100%;
+    max-block-size: 45vh;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+  }
+
+  .edge {
+    stroke: var(--color-border-control);
+    stroke-width: 1;
+  }
+
+  .edge[data-hot='true'] {
+    stroke: var(--color-accent-primary);
+    stroke-width: 2.5;
+  }
+
+  .node {
+    cursor: pointer;
+  }
+
+  .node circle {
+    fill: var(--color-text-secondary);
+    stroke: var(--color-surface-page);
+    stroke-width: 2;
+  }
+
+  .node[data-selected='true'] circle {
+    fill: var(--color-accent-primary);
+    stroke: var(--color-text-primary);
+    stroke-width: 3;
+  }
+
+  .node text {
+    fill: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    paint-order: stroke;
+    stroke: var(--color-surface-sunken);
+    stroke-width: 3px;
+  }
+
+  .connections {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-3);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .sub {
+    margin: var(--space-2) 0 var(--space-1);
+    font-size: var(--type-body-size);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent-primary);
+    font: inherit;
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}

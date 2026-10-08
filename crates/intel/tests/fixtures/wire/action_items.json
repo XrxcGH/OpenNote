@@ -1,0 +1,18 @@
+[
+  {
+    "kind": "decision",
+    "text": "We decided to cover the Calvin cycle next.",
+    "segment": 1,
+    "startMs": 20000,
+    "owner": null,
+    "due": null
+  },
+  {
+    "kind": "task",
+    "text": "Maria will write the index chapter by Friday.",
+    "segment": 8,
+    "startMs": 160000,
+    "owner": "Maria",
+    "due": "by Friday"
+  }
+]

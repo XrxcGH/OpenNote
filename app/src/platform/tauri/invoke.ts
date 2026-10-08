@@ -5,6 +5,8 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
 import type {
+  AttachmentSaved,
+  CaretMetrics,
   CaptionLayout,
   CaptionState,
   DeviceStatePatch,
@@ -27,12 +29,15 @@ import type {
 } from '../types';
 import type { ExitResult } from '../bindings/ExitResult';
 import type { ImportedAsset, PageRect } from '../../services/pages/types';
+import type { IndexUpdate } from '../../services/search/types';
 import type { ClipboardFacts } from '../types';
+import type { IntelCommands } from '../../services/intel';
+import type { IntelChoiceCommands } from './intel';
 
 type None = Record<string, never>;
 
 /** Every app command: its arguments and what it returns. */
-export interface Commands {
+export interface Commands extends IntelCommands, IntelChoiceCommands {
   settings_update: { args: { patch: SettingsPatch }; result: Settings };
   settings_reset: { args: { section: SettingsSectionKey }; result: Settings };
   state_update: { args: { patch: DeviceStatePatch }; result: null };
@@ -70,10 +75,16 @@ export interface Commands {
   page_redo: { args: { page: string; client: string }; result: ArrayBuffer };
   page_save_now: { args: { page: string }; result: null };
   page_close: { args: { page: string; client: string }; result: null };
+  // Phase 8: every search and link method, by name.
+  search_call: { args: { method: string; args: Record<string, unknown> }; result: unknown };
   clipboard_facts: { args: None; result: ClipboardFacts };
   clipboard_read: { args: None; result: ArrayBuffer };
   image_import_url: { args: { page: string; url: string }; result: ImportedAsset };
   image_import_clip: { args: { page: string; token: string }; result: ImportedAsset };
+  page_extras_caret: { args: None; result: CaretMetrics };
+  page_extras_link_title: { args: { url: string }; result: string | null };
+  attachment_open: { args: { page: string; asset: string; name: string }; result: null };
+  attachment_stop: { args: { page: string }; result: null };
   spell_languages: { args: None; result: { tag: string; name: string; isDefault: boolean }[] };
   spell_check: {
     args: { items: readonly { id: string; text: string }[]; languages: readonly string[] };
@@ -84,6 +95,14 @@ export interface Commands {
   spell_remove_word: { args: { word: string }; result: null };
   speech_voices: { args: None; result: { id: string; name: string; language: string }[] };
   speech_synthesize: { args: { text: string; voice: string }; result: ArrayBuffer };
+  print_prepare: { args: { job: string; input: unknown }; result: unknown };
+  print_render: {
+    args: { job: string; width: number; height: number; background: boolean; tagged?: boolean; outline?: boolean };
+    result: ArrayBuffer;
+  };
+  print_close: { args: { job: string }; result: null };
+  export_pick_save: { args: { suggested: string; label: string; extension: string }; result: string | null };
+  export_open: { args: { path: string; reveal: boolean }; result: null };
 }
 
 /** A command that takes its input as a raw body with a JSON header, such as image_import. */
@@ -104,6 +123,8 @@ export interface Events {
   'window://forwarded-args': string[];
   'app://before-exit': ExitReason;
   'updater://status': UpdaterStatus;
+  'search:updated': IndexUpdate;
+  'attachment://saved': AttachmentSaved;
 }
 
 /** Any rejection as an IpcError. A command the shell doesn't have yet reads as code notImplemented. */

@@ -37,7 +37,7 @@ describe('the command bar tabs', () => {
     command('fern', 'commands.colors.fern', { keys: [chord('Ctrl+Alt+F')] });
     tool('ink');
     tool('fern', { tab: 'view' });
-    tool('hidden', { tab: 'draw', flag: 'commandBar.draw' });
+    tool('hidden', { tab: 'insert', flag: 'commandBar.insert' });
     await renderApp({ boot: { channel: 'stable' } });
     const tabs = screen.getAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent)).toEqual(['Home', 'View']);

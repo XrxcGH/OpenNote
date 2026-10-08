@@ -7,7 +7,8 @@ import type { Channel } from '../../app/flags';
 import type { Platform } from '../../platform/types';
 import { createTestPlatform } from '../../test/platform';
 import { createNotesService } from '.';
-import type { NodeId } from '.';
+import type { NodeId, NotesEvent } from '.';
+import type { NotesCoreClient } from './core/service';
 
 /** A real profile: the Tauri platform, where the snapshot is there only when the flag is on. */
 function realProfile(channel: Channel, snapshot: Platform['notesSnapshot'] = null): Platform {
@@ -55,7 +56,7 @@ describe('the notes service on a real profile', () => {
 });
 
 describe('what the notes service says about saving on a real profile', () => {
-  it("doesn't claim notes are saved when nothing keeps them (beta and stable, where the snapshot is off)", async () => {
+  it("doesn't claim notes are saved when nothing keeps them (the platform has no snapshot)", async () => {
     const { notes } = await titles(realProfile('stable'));
     expect(notes.saveStatus()).toBe('saved');
     expect(notes.hasUnsavedChanges()).toBe(false);
@@ -73,16 +74,56 @@ describe('what the notes service says about saving on a real profile', () => {
     expect(notes.saveStatus()).toBe('error');
   });
 
-  it('saves to the snapshot, and reports saved, where the snapshot is on (dev and nightly)', async () => {
-    const saves: string[] = [];
-    const snapshot = {
-      load: () => Promise.resolve(null),
-      save: (json: string) => (saves.push(json), Promise.resolve()),
+  it.each(['nightly', 'beta', 'stable'] as const)(
+    'saves to the snapshot, and reports saved, on the %s channel (storage.core is on)',
+    async (channel) => {
+      const saves: string[] = [];
+      const snapshot = {
+        load: () => Promise.resolve(null),
+        save: (json: string) => (saves.push(json), Promise.resolve()),
+      };
+      const { notes } = await titles(realProfile(channel, snapshot));
+      await notes.create({ kind: 'notebook', placement: { parentId: null, beforeId: null }, title: 'Thesis' });
+      await notes.flush();
+      expect(notes.saveStatus()).toBe('saved');
+      expect(notes.hasUnsavedChanges()).toBe(false);
+      expect(JSON.parse(saves[0]).notebooks.map((node: { title: string }) => node.title)).toEqual(['Thesis']);
+    },
+  );
+});
+
+describe('the notes service over the core', () => {
+  it('serves a platform that has the notes bridge, through its commands and events', async () => {
+    const calls: string[] = [];
+    let send: ((event: NotesEvent) => void) | null = null;
+    const notesCore: NotesCoreClient = {
+      invoke: (command) => {
+        calls.push(command);
+        if (command === 'notes_list_notebooks') {
+          // checks-disable-next-line brand-consistency: a stored color that isn't a pen name, which reads as none
+          return Promise.resolve([{ id: 'n-1', kind: 'notebook', title: 'Thesis', color: 'teal' }]);
+        }
+        if (command === 'notes_rename') return Promise.reject({ code: 'invalid-name', message: 'x', field: 'empty' });
+        return Promise.resolve({ library: { folder: 'Notes', readOnly: false }, notebooks: [], children: {} });
+      },
+      listen: (handler) => {
+        send = handler;
+        return () => (send = null);
+      },
     };
-    const { notes } = await titles(realProfile('nightly', snapshot));
-    await notes.create({ kind: 'notebook', placement: { parentId: null, beforeId: null }, title: 'Thesis' });
-    await notes.flush();
-    expect(notes.saveStatus()).toBe('saved');
-    expect(JSON.parse(saves[0]).notebooks.map((node: { title: string }) => node.title)).toEqual(['Thesis']);
+    const platform = { ...realProfile('beta'), notesCore };
+    initFlags('beta');
+    const notes = await createNotesService(platform);
+    const [notebook] = await notes.listNotebooks();
+    expect(notebook).toMatchObject({ title: 'Thesis', color: null });
+    await expect(notes.rename('n-1' as NodeId, '')).rejects.toMatchObject({ code: 'invalid-name', reason: 'empty' });
+    const events: NotesEvent[] = [];
+    const stop = notes.watch((event) => events.push(event));
+    send!({ type: 'reset' });
+    stop();
+    expect(send).toBeNull();
+    expect(events).toContainEqual({ type: 'reset' });
+    expect(calls).toContain('notes_load_initial');
+    expect(notes.hasUnsavedChanges()).toBe(false);
   });
 });

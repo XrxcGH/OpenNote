@@ -1,0 +1,7 @@
+{
+  "ocr": true,
+  "handwriting": true,
+  "readAloud": true,
+  "summaries": true,
+  "transcription": true
+}

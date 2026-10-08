@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OpenNote",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.4",
   "identifier": "org.opennote.app",
   "build": {
     "frontendDist": "../dist",
@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: http://opennote-asset.localhost blob: data:; worker-src 'self'"
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost 'self' opennote-asset: http://opennote-asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: http://opennote-asset.localhost blob: data:; media-src blob:; worker-src 'self'"
     }
   },
   "bundle": {

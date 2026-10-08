@@ -33,6 +33,43 @@ export interface EditorHost {
   spelling(): SpellingService | null;
   /** Selects blocks as objects: when a selection grows past one block, on the second Ctrl+A, or on Escape. */
   selectBlocks(blocks: readonly BlockId[], reason: 'escalate' | 'selectAll' | 'escape'): void;
+  /** Loads the LaTeX drawing code (Phase 10) on first use. Absent or null shows math as its source. */
+  math?(): Promise<MathRenderer> | null;
+  /** Loads the function grapher (Phase 10) on first use. Absent or null leaves a graph as its code block. */
+  graph?(): Promise<GraphRenderer> | null;
+}
+
+/** What a graph is given: the text of its code block, and a way to replace that text. */
+export interface GraphProps {
+  source: string;
+  editable: boolean;
+  onSource(next: string): void;
+}
+
+export interface GraphHandle {
+  update(props: GraphProps): void;
+  destroy(): void;
+}
+
+/** Draws a graph into an element the editor owns. */
+export interface GraphRenderer {
+  mount(container: HTMLElement, props: GraphProps): GraphHandle;
+}
+
+/** One drawn equation, or what is wrong with its LaTeX and where. */
+export type MathDrawing = { ok: true; html: string } | { ok: false; message: string; position: number; length: number };
+
+/** What an action did to some LaTeX: new LaTeX, or why it could not. */
+export type MathActionResult =
+  { ok: true; latex: string } | { ok: false; reason: 'unsupported' | 'unchanged' | 'none' | 'letters' };
+
+export interface MathRenderer {
+  render(source: string, display: boolean): MathDrawing;
+  /** Simplify and Solve for the source field, when the page offers them. */
+  actions?: {
+    simplify(latex: string): MathActionResult;
+    solve(latex: string): MathActionResult;
+  };
 }
 
 /** The settings.editing defaults, for hosts in tests and before settings load. */

@@ -8,6 +8,7 @@ import { commandContext } from '../../commands/registry';
 import type { PaletteProvider, PaletteResult } from '../../registries/types';
 import type { NodeId, NodeSummary, NotesService } from '../../services/notes/types';
 import { sessionStore } from '../../state/session';
+import { openInNewTab } from '../qol';
 import { score } from './score';
 
 export interface NodeEntry {
@@ -75,6 +76,11 @@ export function locationOf(entry: NodeEntry): Location {
   return { view: 'workspace', notebookId, sectionId, pageId: node.id };
 }
 
+/** Opens a place in a new tab when it is a workspace place. */
+function openWorkspaceTab(location: Location): void {
+  if (location.view === 'workspace') openInNewTab(location);
+}
+
 const GROUPS = { notebook: 'notebooks', section: 'sections', page: 'pages' } as const;
 
 function resultFor(entry: NodeEntry, points: number, inks: ReadonlyMap<NodeId, string>): PaletteResult {
@@ -89,6 +95,7 @@ function resultFor(entry: NodeEntry, points: number, inks: ReadonlyMap<NodeId, s
     ink,
     score: points,
     run: () => navigate(locationOf(entry), { focus: 'target' }),
+    ...(node.kind === 'notebook' ? {} : { openInTab: () => openWorkspaceTab(locationOf(entry)) }),
   };
 }
 

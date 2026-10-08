@@ -3,6 +3,7 @@
 import { common } from './common';
 import { commands } from './commands';
 import { titleBar } from './titleBar';
+import { frame } from './frame';
 import { layout } from './layout';
 import { tree } from './tree';
 import { page } from './page';
@@ -13,6 +14,7 @@ import { setup } from './setup';
 import { theme } from './theme';
 import { updates } from './updates';
 import { errors } from './errors';
+import { diagnostics } from './diagnostics';
 import { keys } from './keys';
 import { pageSync } from './pageSync';
 import { editor } from './editor';
@@ -23,11 +25,28 @@ import { code } from './code';
 import { spelling } from './spelling';
 import { readAloud } from './readAloud';
 import { history } from './history';
+import { ink } from './ink';
+import { pageViews } from './pageViews';
+import { pagesPlus } from './pagesPlus';
+import { smart } from './smart';
+import { search } from './search';
+import { audio } from './audio';
+import { audioMore } from './audioMore';
+import { interop } from './interop';
+import { moreInterop } from './moreInterop';
+import { intel } from './intel';
+import { pageExtras } from './pageExtras';
+import { study } from './study';
+import { qolSearch } from './qolSearch';
+import { intelPlus } from './intelPlus';
+import { qol } from './qol';
+import { connectors } from './connectors';
 
 export const en = {
   common,
   commands,
   titleBar,
+  frame,
   layout,
   tree,
   page,
@@ -38,6 +57,7 @@ export const en = {
   theme,
   updates,
   errors,
+  diagnostics,
   keys,
   pageSync,
   editor,
@@ -48,4 +68,20 @@ export const en = {
   spelling,
   readAloud,
   history,
+  ink,
+  pageViews,
+  pagesPlus,
+  smart,
+  search,
+  audio,
+  audioMore,
+  interop,
+  moreInterop,
+  intel,
+  pageExtras,
+  study,
+  qolSearch,
+  intelPlus,
+  qol,
+  connectors,
 } as const;

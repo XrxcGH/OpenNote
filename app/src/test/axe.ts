@@ -7,6 +7,9 @@ export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa',
 
 /** Waits for enter and exit transitions, which blend colors: axe would measure a dialog that is half faded in. */
 async function settleAnimations(): Promise<void> {
+  // A transition starts at the next style update, so wait for two frames before listing what is running. Without
+  // this, a loaded machine lists nothing and then measures a tooltip that is half faded in.
+  await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
   const finite = document
     .getAnimations()
     .filter((animation) => animation.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY);

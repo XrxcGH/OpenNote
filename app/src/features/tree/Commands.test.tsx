@@ -292,6 +292,10 @@ describe('context menu contents', () => {
       'Color',
       'Move up',
       'Move down',
+      'Create shortcut',
+      'Check notebook',
+      'Archive',
+      'Export…',
       'Delete',
     ]);
     await pressChord('Escape');
@@ -304,11 +308,27 @@ describe('context menu contents', () => {
       'Move up',
       'Move down',
       'Move to',
+      'Archive',
       'Delete',
     ]);
     await pressChord('Escape');
     await openMenuOn(notebooksTree, 'Labs');
-    expect(menuLabels()).toEqual(['New page', 'Rename', 'Color', 'Move up', 'Move down', 'Move to', 'Delete']);
+    expect(menuLabels()).toEqual([
+      'New page',
+      'Rename',
+      'Color',
+      'Move up',
+      'Move down',
+      'Move to',
+      'Open in new tab',
+      'Duplicate',
+      'Copy to',
+      'Create shortcut',
+      'Check accessibility',
+      'Archive',
+      'Export…',
+      'Delete',
+    ]);
     await pressChord('Escape');
     await openLectures();
     await openMenuOn(pagesTree, 'Mitosis');
@@ -320,6 +340,16 @@ describe('context menu contents', () => {
       'Move up',
       'Move down',
       'Move to',
+      'Open in new tab',
+      'Open in new window',
+      'Pin page',
+      'Duplicate',
+      'Copy to',
+      'Create shortcut',
+      'Check accessibility',
+      'Archive',
+      'Copy link to this page',
+      'Export…',
       'Delete',
     ]);
   });

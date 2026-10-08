@@ -250,6 +250,7 @@ fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
             .collect(),
         access: Access::ReadWrite,
         encrypted: false,
+        archived: false,
     };
     NotebookTree {
         notebook: notebook.id,
@@ -262,6 +263,7 @@ fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
         sections: sections.iter().map(node).collect(),
         access: Access::ReadWrite,
         notices: Vec::new(),
+        archived: false,
     }
 }
 
@@ -277,6 +279,7 @@ fn page_node(entry: &PageEntry, level: u8) -> PageNode {
         created: entry.changed,
         modified: None,
         state: PageNodeState::Normal,
+        archived: false,
     }
 }
 

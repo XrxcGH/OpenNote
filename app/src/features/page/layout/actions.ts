@@ -17,6 +17,38 @@ import { isFloating } from '../blocks/textBlock';
 import styles from './layout.module.css';
 import type { PageViewport } from '../viewport/viewport';
 import type { Flow } from './flow';
+import { snapY } from './rules';
+
+/** An RFC 7396 merge patch over a view: null removes a key, an object merges, anything else replaces. */
+function mergePatch(view: PageViewJson, patch: Record<string, unknown>): PageViewJson {
+  const out: Record<string, unknown> = { ...view };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) delete out[key];
+    else if (typeof value === 'object' && !Array.isArray(value) && typeof out[key] === 'object' && out[key] !== null) {
+      out[key] = mergePatch(out[key] as PageViewJson, value as Record<string, unknown>);
+    } else out[key] = value;
+  }
+  return out as PageViewJson;
+}
+
+/** The page's view in this window, the flow that follows it, and the listeners that hear each change. */
+function viewChannel(initial: PageViewJson, flow: Flow) {
+  let view: PageViewJson = initial;
+  const listeners = new Set<(view: PageViewJson) => void>();
+  return {
+    get: () => view,
+    /** Replaces the view, moves the flow to it, and tells the listeners. */
+    set(next: PageViewJson) {
+      view = next;
+      flow.setView(view);
+      listeners.forEach((listener) => listener(view));
+    },
+    listen(listener: (view: PageViewJson) => void) {
+      listeners.add(listener);
+      return () => void listeners.delete(listener);
+    },
+  };
+}
 
 /** A new text box goes this far below the block it follows. */
 export const BELOW_GAP = 16;
@@ -39,12 +71,18 @@ export interface PageLayout extends Omit<PageActions, 'objectCommand' | 'objectE
   pressEmpty(point: Point): void;
   /** Undo or another window changed the view. */
   setView(view: PageViewJson): void;
+  /** The page's view as this window knows it now, with Phase 6's fields (mode, paper, background). */
+  view(): PageViewJson;
+  /** Calls `listener` after any change to the view, from this window, undo, or another window. */
+  onView(listener: (view: PageViewJson) => void): () => void;
+  /** Records a view change made by Phase 6's page setup: the page sends the patch, and the flow follows. */
+  patchView(patch: Record<string, unknown>): void;
   stop(): void;
 }
 
 export function createPageLayout(parts: LayoutParts): PageLayout {
   const { page, sync, layer, pool, flow, viewport } = parts;
-  let view: PageViewJson = { ...page.initial.view };
+  const channel = viewChannel({ ...page.initial.view }, flow);
   let reading = parts.reading;
   let lastFocused: BlockId | null = null;
   const stopActive = pool.onActiveChange((block) => {
@@ -73,7 +111,9 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
   const caretAt = (at: Point, floating: boolean) => {
     const now = new Date().toISOString();
     const id = newId();
-    const frame = floating ? { x: Math.max(0, Math.round(at.x)), y: Math.max(0, Math.round(at.y)) } : undefined;
+    // On ruled paper a new text box starts on a rule, so its first line is on the rules.
+    const top = Math.max(0, Math.round(at.y));
+    const frame = floating ? { x: Math.max(0, Math.round(at.x)), y: Math.round(snapY(top, flow.rules())) } : undefined;
     const block: BlockJson = { id, type: 'text', order: '~', created: now, modified: now, data: { markdown: '' } };
     if (frame) block.frame = frame;
     const after = floating ? insertAfter() : layer.blocks().at(-1)?.id;
@@ -97,18 +137,17 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
     newTextBox: () => caretAt(newTextBoxPoint(), true),
     pressEmpty(point) {
       if (page.readOnly) return;
-      if (reading || view.layout === 'flow') {
+      if (reading || channel.get().layout === 'flow') {
         const last = [...layer.blocks()].reverse().find((block) => block.type === 'text' && !block.frame?.y);
         if (last) return void pool.mount(last.id, { kind: 'end' }, 'target');
         return caretAt(point, false);
       }
       caretAt({ x: point.x, y: point.y - HALF_LINE }, true);
     },
-    layout: () => (view.layout === 'flow' ? 'flow' : 'freeform'),
+    layout: () => (channel.get().layout === 'flow' ? 'flow' : 'freeform'),
     setLayout(layout) {
-      if ((view.layout ?? 'freeform') === layout) return;
-      view = { ...view, layout };
-      flow.setView(view);
+      if ((channel.get().layout ?? 'freeform') === layout) return;
+      channel.set({ ...channel.get(), layout });
       void sync.send({ edits: [{ edit: 'setPage', view: { layout } }] });
       announce(t(layout === 'flow' ? 'page.layout.nowFlow' : 'page.layout.nowFreeform'));
     },
@@ -122,9 +161,12 @@ export function createPageLayout(parts: LayoutParts): PageLayout {
       savePageView(page.id, { view: on ? 'reading' : 'canvas' });
       announce(t(on ? 'page.reading.nowReading' : 'page.reading.nowCanvas'));
     },
-    setView(next) {
-      view = { ...view, ...next };
-      flow.setView(view);
+    setView: (next) => channel.set({ ...channel.get(), ...next }),
+    view: channel.get,
+    onView: channel.listen,
+    patchView(patch) {
+      channel.set(mergePatch(channel.get(), patch));
+      void sync.send({ edits: [{ edit: 'setPage', view: patch }] });
     },
     stop() {
       stopActive();

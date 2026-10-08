@@ -16,7 +16,7 @@ fn settings_defaults_match_phase_5s_schema() {
         ],
         "penSelectsAndTypes": false,
         "handedness": "right",
-        "touch": { "draws": false, "palmGraceMs": 500, "twoFingerScrollNearPen": true },
+        "touch": { "draws": false, "finger": "auto", "palmGraceMs": 500, "twoFingerScrollNearPen": true },
         "eraser": { "mode": "stroke", "size": 4, "erases": "all", "returnToLastTool": false, "showTarget": true },
         "lasso": { "shape": "free", "picks": ["ink", "highlighter", "text", "images", "shapes"], "inside": "mostly" },
         "shapes": { "hold": true, "holdMs": 500, "inkToShape": false },

@@ -6,6 +6,7 @@ import { commandContext } from '../../../commands/registry';
 import { serializeTextBlock } from '../../../editor/markdown';
 import type { ClipboardClient } from '../../../platform/types';
 import { DOMSerializer } from '@tiptap/pm/model';
+import { fileBlockRenderer } from '../blocks/fileBlock';
 import { imageBlockRenderer } from '../blocks/imageBlock';
 import type { MountedPage } from '../mount';
 import { blockRenderers } from '../registries';
@@ -15,6 +16,7 @@ import type { PasteRequest } from '../paste/pipeline';
 import { shownMedia } from './shown';
 
 if (!blockRenderers.get(imageBlockRenderer.id)) blockRenderers.register(imageBlockRenderer);
+if (!blockRenderers.get(fileBlockRenderer.id)) blockRenderers.register(fileBlockRenderer);
 
 /** The shell's clipboard client, when commands are configured (the app and the page harness). */
 function clipboardClient(): ClipboardClient | null {

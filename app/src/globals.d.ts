@@ -12,6 +12,8 @@ interface Window {
   __OPENNOTE_DEV__?: OpenNoteDevOptions;
   /** Test hooks, only in `vite build --mode test` builds. */
   __OPENNOTE_TEST__?: Record<string, (...args: never[]) => unknown>;
+  /** The component gallery's entries, for the screenshot and axe tests to walk (app/src/dev/gallery). */
+  __OPENNOTE_GALLERY__?: { id: string; title: string; group: string }[];
 }
 
 interface ImportMetaEnv {

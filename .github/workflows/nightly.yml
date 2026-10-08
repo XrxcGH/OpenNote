@@ -1,31 +1,267 @@
 name: nightly
 
-# The nightly run (ARCHITECTURE.md section 21.10). This skeleton builds the app with the test endpoints and runs
-# every E2E spec. WP1 grows it with the other architectures, 200% text, start-up baselines, and the frame probe;
-# WP2 adds the updater specs, and WP4 the NVDA canary. A failure opens an issue, as docs/DEVELOPMENT.md section 8
-# requires.
-
+# The long-running hardening tests of DEVELOPMENT.md section 8: fuzzing, the kill harness, property tests with
+# many cases, and the performance budgets. The e2e-full job runs every E2E spec in the full app on Windows. It is
+# the Phase 3 skeleton, which later phases grow with other architectures, 200% text, start-up baselines, and the
+# frame probe.
+#
+# The jobs run every night on the default branch and on demand. A failure opens an issue, or adds a comment to the
+# one that is already open. See docs/HARDENING.md.
+#
+# Like release.yml, every job gets only the permissions it needs, nothing persists git credentials, and the
+# actions are pinned to full commit SHAs. No job uses a secret. Only the last job can write, and it can write
+# issues only.
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '17 2 * * *'
   workflow_dispatch:
+    inputs:
+      fuzz_minutes:
+        description: Minutes to fuzz each target
+        type: number
+        default: 30
+      kills:
+        description: Kills in the crash-safety test
+        type: number
+        default: 1000
+      proptest_cases:
+        description: Cases for each property test
+        type: number
+        default: 10000
+      pages:
+        description: Pages in the performance notebook
+        type: number
+        default: 1000
 
-permissions:
-  contents: read
+permissions: {}
+
+# Two nightly runs never overlap, so the fuzz corpus cache is never written by two runs at once.
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  e2e-full:
-    runs-on: windows-latest
+  plan:
+    # One fuzz job per target, read from the fuzz_targets folder so a new target is never forgotten.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - name: List the fuzz targets
+        id: targets
+        run: |
+          targets=$(ls crates/core/fuzz/fuzz_targets/*.rs | xargs -n1 basename -s .rs | jq -R . | jq -sc .)
+          if [ "$targets" = "[]" ]; then
+            echo "::error::No fuzz targets found in crates/core/fuzz/fuzz_targets."
+            exit 1
+          fi
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+
+  fuzz:
+    # Runs each cargo-fuzz target for the same time, in parallel. The corpus is kept between nights in the
+    # Actions cache, so each night starts where the last one ended.
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    env:
+      FUZZ_TARGET: ${{ matrix.target }}
+      FUZZ_MINUTES: ${{ inputs.fuzz_minutes || '30' }}
+      FUZZ_DIR: ${{ github.workspace }}/crates/core/fuzz
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: nightly
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: crates/core/fuzz
+          shared-key: nightly-fuzz
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked --version 0.13.2
+      - name: Restore the corpus
+        id: corpus
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: crates/core/fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: fuzz-corpus-${{ matrix.target }}-
+      - name: Fuzz ${{ matrix.target }}
+        run: |
+          if ! [[ "$FUZZ_MINUTES" =~ ^[0-9]+$ ]]; then
+            echo "::error::fuzz_minutes must be a whole number."
+            exit 1
+          fi
+          mkdir -p "$FUZZ_DIR/corpus/$FUZZ_TARGET" "$FUZZ_DIR/regressions/$FUZZ_TARGET"
+          cd crates/core
+          # The first folder collects new inputs. The second holds the crashes fixed in the past, as seeds.
+          cargo fuzz run "$FUZZ_TARGET" \
+            "$FUZZ_DIR/corpus/$FUZZ_TARGET" "$FUZZ_DIR/regressions/$FUZZ_TARGET" \
+            -- -max_total_time=$((FUZZ_MINUTES * 60)) -rss_limit_mb=2048
+      - name: Keep the corpus, even when the run found a crash
+        if: ${{ always() && steps.corpus.outcome == 'success' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: crates/core/fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Keep the crashing input
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fuzz-crash-${{ matrix.target }}
+          path: crates/core/fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: ignore
+          retention-days: 30
+
+  kill:
+    # Kills a writer during saves and checks that no page is damaged or lost (DEVELOPMENT.md section 6).
+    # The seed is the run number, so a failure can be replayed with the same seed.
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      KILLS: ${{ inputs.kills || '1000' }}
+      KILL_NOTEBOOK: ${{ github.workspace }}/kill-notebook
+      # Optimized code runs more saves in the same time than debug code, and keeps debug assertions.
+      CARGO_PROFILE_DEV_OPT_LEVEL: 2
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: nightly-kill
+      - name: Build the kill harness
+        run: cargo build -p opennote-crashtest
+      - name: Kill the writer ${{ inputs.kills || '1000' }} times
+        run: |
+          mkdir -p "$KILL_NOTEBOOK"
+          echo "Seed: $GITHUB_RUN_ID"
+          target/debug/opennote-crashtest run --notebook "$KILL_NOTEBOOK" --iterations "$KILLS" --seed "$GITHUB_RUN_ID"
+      - name: Keep the notebook the harness checked
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kill-notebook
+          path: kill-notebook
+          if-no-files-found: ignore
+          retention-days: 30
+
+  proptest:
+    # The core tests with far more random cases than a pull request runs.
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+    env:
+      PROPTEST_CASES: ${{ inputs.proptest_cases || '10000' }}
+      CARGO_PROFILE_DEV_OPT_LEVEL: 2
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: nightly-proptest
+      - name: Core tests with ${{ inputs.proptest_cases || '10000' }} cases for each property
+        run: cargo test -p opennote-core --all-features
+      - name: Keep the failing cases
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: proptest-regressions
+          path: crates/core/**/proptest-regressions
+          if-no-files-found: ignore
+          retention-days: 30
+
+  perf:
+    # The full benchmarks with their budget check. A run on a hosted runner catches large regressions. The
+    # budgets of BRAND.md section 10 still count only on the reference laptop.
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    env:
+      PAGES: ${{ inputs.pages || '1000' }}
+      PERF_DIR: ${{ github.workspace }}/perf-scratch
+      PERF_RESULTS: ${{ github.workspace }}/perf.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: nightly-perf
+      - name: Build the benchmarks
+        run: cargo build --release -p opennote-perf
+      - name: Run every suite and check the budgets
+        run: |
+          mkdir -p "$PERF_DIR"
+          target/release/opennote-perf bench all --pages "$PAGES" --machine github-ubuntu-latest \
+            --out "$PERF_RESULTS" "$PERF_DIR"
+      - name: Show the results
+        if: always()
+        run: |
+          [ -f "$PERF_RESULTS" ] || exit 0
+          {
+            echo '| Measure | Value | Budget |'
+            echo '|---|---|---|'
+            jq -r '.results[] | "| \(.name) | \(.value) \(.unit) | \(.gate // "none") |"' "$PERF_RESULTS"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-results
+          path: perf.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  e2e-full:
+    # Builds the app with the test endpoints and runs every E2E spec on Windows, where the real window lives.
+    runs-on: windows-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: nightly-e2e
       - name: Install tools
         run: npm ci
       - name: Test build of the app
@@ -42,24 +278,54 @@ jobs:
         run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nightly-e2e-logs
           path: tests/e2e/logs
+          if-no-files-found: ignore
           retention-days: 14
 
-  report-failure:
-    needs: [e2e-full]
-    if: failure()
+  report:
+    # Opens an issue when any job failed, or adds a comment to the issue that is already open. It is the only
+    # job that can write, it can only write issues, and it never checks out the code.
+    needs: [plan, fuzz, kill, proptest, perf, e2e-full]
+    if: ${{ always() && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       issues: write
     steps:
-      - name: Open an issue
+      - name: Open or update the issue
         env:
           GH_TOKEN: ${{ github.token }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GH_REPO: ${{ github.repository }}
+          PLAN_RESULT: ${{ needs.plan.result }}
+          FUZZ_RESULT: ${{ needs.fuzz.result }}
+          KILL_RESULT: ${{ needs.kill.result }}
+          PROPTEST_RESULT: ${{ needs.proptest.result }}
+          PERF_RESULT: ${{ needs.perf.result }}
+          E2E_RESULT: ${{ needs.e2e-full.result }}
         run: |
-          gh issue create --repo "$GITHUB_REPOSITORY" \
-            --title "Nightly run failed on $(date -u +%Y-%m-%d)" \
-            --body "The nightly run failed: $RUN_URL"
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          {
+            echo "The nightly tests failed on $(date -u +%F). Failed jobs:"
+            echo
+            [ "$PLAN_RESULT" = failure ] && echo "- Listing the fuzz targets"
+            [ "$FUZZ_RESULT" = failure ] && echo "- Fuzzing: a crashing input is in the run's artifacts"
+            [ "$KILL_RESULT" = failure ] && echo "- Crash safety: replay with seed $GITHUB_RUN_ID"
+            [ "$PROPTEST_RESULT" = failure ] && echo "- Property tests: the log has the failing case"
+            [ "$PERF_RESULT" = failure ] && echo "- Performance: the results are in the run's artifacts"
+            [ "$E2E_RESULT" = failure ] && echo "- E2E specs: the logs are in the run's artifacts"
+            echo
+            echo "Run: $run_url"
+            echo
+            echo "See docs/HARDENING.md for how to reproduce each failure."
+          } > body.md
+          gh label create nightly-failure --color B60205 --description "A nightly test run failed" --force
+          number=$(gh issue list --label nightly-failure --state open --limit 1 \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body-file body.md
+          else
+            gh issue create --title "The nightly tests are failing" --label nightly-failure --body-file body.md
+          fi

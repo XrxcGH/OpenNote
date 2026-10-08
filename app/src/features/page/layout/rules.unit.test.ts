@@ -1,0 +1,127 @@
+// The snapping math for ruled paper: which rule a text box snaps to, how a nudge steps, how tall a block is padded to
+// be, and how far the flow's first line is from a rule.
+import { describe, expect, it } from 'vitest';
+import { ruleLift } from '../../../core/ruled';
+import { firstRuleBelow, leadFor, ruleProperties, snapY, stepY, wholeRules } from './rules';
+import type { RuleGrid } from './rules';
+
+const GRID: RuleGrid = { step: 20, origin: 50, sheet: null };
+const SHEETS: RuleGrid = { step: 20, origin: 50, sheet: 1000 };
+
+describe('snapY', () => {
+  it('moves to the nearest rule', () => {
+    expect(snapY(50, GRID)).toBe(50);
+    expect(snapY(59, GRID)).toBe(50);
+    expect(snapY(61, GRID)).toBe(70);
+    expect(snapY(0, GRID)).toBe(10);
+  });
+
+  it('never goes above the first rule of the page or of a sheet', () => {
+    expect(snapY(-5, GRID)).toBe(10);
+    expect(snapY(0, SHEETS)).toBe(10);
+    expect(snapY(1000, SHEETS)).toBe(1010);
+    expect(stepY(10, -1, GRID)).toBe(10);
+  });
+
+  it('rounds a tie up, as CSS round(nearest) does', () => {
+    expect(snapY(60, GRID)).toBe(70);
+  });
+
+  it('leaves plain paper alone', () => {
+    expect(snapY(123.7, null)).toBe(123.7);
+  });
+
+  it('starts the lattice again on every sheet', () => {
+    expect(snapY(1061, SHEETS)).toBe(1070);
+    expect(snapY(2049, SHEETS)).toBe(2050);
+    expect(snapY(1990, SHEETS)).toBe(1990);
+  });
+});
+
+describe('stepY', () => {
+  it('moves a box one rule at a time', () => {
+    expect(stepY(70, 1, GRID)).toBe(90);
+    expect(stepY(70, -1, GRID)).toBe(50);
+  });
+
+  it('goes to the next rule in its direction from between two rules', () => {
+    expect(stepY(65, 1, GRID)).toBe(70);
+    expect(stepY(65, -1, GRID)).toBe(50);
+  });
+
+  it('moves one unit on plain paper', () => {
+    expect(stepY(10, 1, null)).toBe(11);
+  });
+});
+
+describe('wholeRules', () => {
+  it('rounds a height up to whole rules, at least one', () => {
+    expect(wholeRules(0, GRID)).toBe(20);
+    expect(wholeRules(20, GRID)).toBe(20);
+    expect(wholeRules(20.3, GRID)).toBe(20);
+    expect(wholeRules(21, GRID)).toBe(40);
+    expect(wholeRules(81, GRID)).toBe(100);
+  });
+
+  it('leaves plain paper alone', () => {
+    expect(wholeRules(33, null)).toBe(33);
+  });
+});
+
+describe('leadFor', () => {
+  it('is how far down the next rule is', () => {
+    expect(leadFor(50, GRID)).toBe(0);
+    expect(leadFor(45, GRID)).toBe(5);
+    expect(leadFor(51, GRID)).toBe(19);
+    expect(leadFor(130, GRID)).toBe(0);
+  });
+
+  it('counts from the top margin of the sheet the flow starts on', () => {
+    expect(leadFor(1045, SHEETS)).toBe(5);
+  });
+});
+
+describe('ruleProperties', () => {
+  it('names the spacing, the origin, and the sheet height for the stylesheet', () => {
+    expect(ruleProperties(SHEETS)).toMatchObject({
+      '--rule': '20px',
+      '--rule-origin': '50px',
+      '--rule-sheet': '1000px',
+    });
+    expect(ruleProperties(GRID)['--rule-sheet']).toBe('1000000000px');
+  });
+});
+
+describe('ruleLift', () => {
+  it('lifts text 12 percent of the spacing, to a whole page unit, never under 2', () => {
+    expect(ruleLift(26)).toBe(3);
+    expect(ruleLift(33)).toBe(4);
+    expect(ruleLift(38)).toBe(5);
+    expect(ruleLift(19)).toBe(2);
+    expect(ruleLift(10)).toBe(2);
+    expect(ruleProperties({ step: 26, origin: 72, sheet: null })['--rule-lift']).toBe('3px');
+  });
+});
+
+describe('firstRuleBelow', () => {
+  it('is one rule below a flow that starts on a rule', () => {
+    expect(firstRuleBelow(150, GRID)).toBe(170);
+    expect(firstRuleBelow(150, SHEETS)).toBe(170);
+  });
+
+  it('counts the lead that brings the first line of the flow to a rule', () => {
+    expect(firstRuleBelow(141, GRID)).toBe(170);
+  });
+
+  it('is the rule beneath the middle of the letters when the first line takes several rules', () => {
+    // A line two rules tall, from 150 to 190, with letters about 163 to 187: they sit above the rule at 190.
+    expect(firstRuleBelow(150, GRID, 175)).toBe(190);
+    // The middle of the letters just above a rule belongs to the line that rule ends.
+    expect(firstRuleBelow(150, GRID, 189)).toBe(190);
+    expect(firstRuleBelow(150, GRID, 191)).toBe(210);
+  });
+
+  it('never goes above the first rule below the top of the flow', () => {
+    expect(firstRuleBelow(150, GRID, 100)).toBe(170);
+  });
+});

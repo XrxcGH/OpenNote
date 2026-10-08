@@ -67,7 +67,9 @@ function sameNode(a: NodeSummary, b: NodeSummary): boolean {
     a.pageLevel === b.pageLevel &&
     a.childCount === b.childCount &&
     a.modified === b.modified &&
-    a.readOnly === b.readOnly
+    a.readOnly === b.readOnly &&
+    a.pinned === b.pinned &&
+    a.archived === b.archived
   );
 }
 

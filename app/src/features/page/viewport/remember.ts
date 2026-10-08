@@ -15,7 +15,10 @@ export function restoreView(pageId: string, viewport: PageViewport): void {
   const seen = viewport.camera().viewport;
   viewport.zoomAt(zoom, { x: seen.x, y: seen.y }, 'commandZoom');
   // Blocks below the viewport may not have their heights yet, so the world makes room for the saved place first.
-  viewport.setContent({ w: (saved.scrollX + seen.w) / zoom, h: (saved.scrollY + seen.h) / zoom, floating: false });
+  // The room is the viewport's inside, without its scroll bar gutter, so a page that fits never scrolls sideways.
+  const inside = viewport.sizer.parentElement;
+  const w = Math.floor((saved.scrollX + (inside?.clientWidth || seen.w)) / zoom);
+  viewport.setContent({ w, h: (saved.scrollY + seen.h) / zoom, floating: false });
   viewport.scrollTo(saved.scrollX, saved.scrollY);
 }
 

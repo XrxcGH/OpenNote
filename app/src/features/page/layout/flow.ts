@@ -5,6 +5,8 @@ import type { PageViewJson } from '../../../services/pages/types';
 import { fitWidthZoom } from '../viewport/camera';
 import { observeResize } from '../viewport/viewport';
 import type { PageViewport } from '../viewport/viewport';
+import { FINE, RULE_PROPERTIES, leadFor, ruleProperties } from './rules';
+import type { RuleGrid } from './rules';
 import styles from './layout.module.css';
 
 export interface Flow {
@@ -15,16 +17,29 @@ export interface Flow {
   setReading(on: boolean): void;
   /** The zoom that fits the widest content, at least the flow column, to the viewport's width. */
   fitWidth(): number;
+  /** Ruled paper: lays the page out in the paper's rule spacing (see rules.ts), or back to free layout with null. */
+  setRules(grid: RuleGrid | null): void;
+  /** The rules the page is laid out in, or null on plain paper. */
+  rules(): RuleGrid | null;
+  /**
+   * Measures the ruled pads again, now, and says whether any changed. A page break moves a block without resizing it,
+   * which no observer reports, and the pad under a table or an image depends on where its end lies in its sheet's
+   * rules: the paginator measures again after a pad moves, until none does.
+   */
+  realign(): boolean;
   stop(): void;
 }
 
-/** The right and bottom edges of everything in the world, in page units. */
+/**
+ * The right and bottom edges of everything in the world, in page units. An ink block's slot is an empty box the ink
+ * view draws over, not content, so a page of text with handwriting on it still never scrolls sideways.
+ */
 function contentExtent(world: HTMLElement, flow: HTMLElement): { w: number; h: number; floating: boolean } {
   let w = flow.offsetLeft + flow.offsetWidth;
   let h = flow.offsetTop + flow.offsetHeight;
   let floating = false;
   for (const child of flow.children) {
-    if (!(child instanceof HTMLElement)) continue;
+    if (!(child instanceof HTMLElement) || child.dataset.ink !== undefined) continue;
     w = Math.max(w, child.offsetLeft + child.offsetWidth);
     h = Math.max(h, child.offsetTop + child.offsetHeight);
     floating ||= child.style.left !== '';
@@ -40,16 +55,22 @@ export function createFlow(viewport: PageViewport): Flow {
   flow.className = styles.flow;
   viewport.world.append(flow);
   let frame = 0;
-  // The world grows in the next frame: growing it from the observer would make the observer loop.
+  let lastWidth = 0;
+  // The world grows in the next frame: growing it from the observer would make the observer loop. When the flow got
+  // narrower (the window or a pane did), the world's width goes back down with it.
   const grow = () => {
     frame ||= requestAnimationFrame(() => {
       frame = 0;
-      viewport.setContent(contentExtent(viewport.world, flow));
+      // Sheets set their own width, which a narrower column does not change.
+      const narrower = flow.offsetWidth < lastWidth && viewport.world.dataset.sheets === undefined;
+      lastWidth = flow.offsetWidth;
+      viewport.setContent({ ...contentExtent(viewport.world, flow), narrower });
     });
   };
   const stopFlow = observeResize(flow, grow);
   const mutations = typeof MutationObserver === 'undefined' ? null : new MutationObserver(grow);
   mutations?.observe(flow, { childList: true, attributes: true, attributeFilter: ['style'], subtree: false });
+  const ruled = createRuleAligner(viewport, flow);
   return {
     element: flow,
     setView(view) {
@@ -67,10 +88,118 @@ export function createFlow(viewport: PageViewport): Flow {
       const { w } = contentExtent(viewport.world, flow);
       return fitWidthZoom(w + flow.offsetLeft, viewport.camera().viewport.w);
     },
+    setRules: ruled.set,
+    rules: ruled.current,
+    realign: ruled.align,
     stop() {
+      ruled.stop();
       stopFlow();
       mutations?.disconnect();
       cancelAnimationFrame(frame);
     },
+  };
+}
+
+/** The blocks inside a text block that come in no particular height, and so are padded to whole rules. */
+const PADDED_INSIDE = 'table, figure';
+
+/**
+ * Keeps the flow on the rules. The stylesheet puts text on the rules, and this adds what CSS cannot know. One is the
+ * lead that brings the flow's first line to a rule below the title. The other is the margin that rounds a table, an
+ * image, or any block that does not come in whole rules up to one, so the text after it is back on a rule.
+ */
+function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
+  const { world } = viewport;
+  let grid: RuleGrid | null = null;
+  let frame = 0;
+  const watched = new Set<Element>();
+  const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => schedule());
+  const mutations = typeof MutationObserver === 'undefined' ? null : new MutationObserver(() => schedule());
+
+  /** How far down the page an element ends, in page units from the top of the world. */
+  const bottomOf = (rect: DOMRect) => (rect.bottom - world.getBoundingClientRect().top) / viewport.camera().zoom;
+  /** Sets a custom property, and says whether that changed it. */
+  const setVar = (element: HTMLElement, name: string, value: string): boolean => {
+    if (element.style.getPropertyValue(name) === value) return false;
+    element.style.setProperty(name, value);
+    return true;
+  };
+
+  /**
+   * Pads an element down to the next rule below its end. The rule is the one of the sheet the element ends on: a
+   * block that a page break pushed onto the next sheet ends in that sheet's rules, not in a whole number of rules
+   * from its own top.
+   */
+  function pad(element: HTMLElement): boolean {
+    if (!grid) return false;
+    const rect = element.getBoundingClientRect();
+    const extra = rect.height === 0 ? 0 : leadFor(bottomOf(rect), grid, FINE);
+    return setVar(element, '--rule-pad', `${Math.round(extra * 100) / 100}px`);
+  }
+
+  /** Pads the flow to its rules, and says whether any pad changed. */
+  function align(): boolean {
+    frame = 0;
+    if (!grid) return false;
+    // The flow's first line goes to a rule: a lead below whatever sits above it, measured with no lead.
+    if (grid.sheet === null) {
+      setVar(flow, '--rule-lead', '0px');
+      setVar(flow, '--rule-lead', `${Math.round(leadFor(flow.offsetTop, grid) * 100) / 100}px`);
+    } else flow.style.removeProperty('--rule-lead');
+    const found = new Set<Element>();
+    let moved = false;
+    for (const child of flow.children) {
+      if (!(child instanceof HTMLElement) || child.dataset.ink !== undefined || child.style.left !== '') continue;
+      found.add(child);
+      moved = pad(child) || moved;
+    }
+    for (const inner of flow.querySelectorAll<HTMLElement>(PADDED_INSIDE)) {
+      found.add(inner);
+      moved = pad(inner) || moved;
+    }
+    for (const element of watched) if (!found.has(element)) resizes?.unobserve(element);
+    for (const element of found) if (!watched.has(element)) resizes?.observe(element);
+    watched.clear();
+    found.forEach((element) => watched.add(element));
+    return moved;
+  }
+
+  function schedule(): void {
+    if (grid) frame ||= requestAnimationFrame(align);
+  }
+
+  function clear(): void {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    delete world.dataset.ruled;
+    for (const name of RULE_PROPERTIES) world.style.removeProperty(name);
+    flow.style.removeProperty('--rule-lead');
+    for (const element of watched) {
+      resizes?.unobserve(element);
+      (element as HTMLElement).style.removeProperty('--rule-pad');
+    }
+    watched.clear();
+    resizes?.unobserve(flow);
+    mutations?.disconnect();
+  }
+
+  return {
+    current: () => grid,
+    align,
+    set(next: RuleGrid | null): void {
+      const was = grid;
+      grid = next;
+      if (!next) return clear();
+      world.dataset.ruled = '';
+      for (const [name, value] of Object.entries(ruleProperties(next))) setVar(world, name, value);
+      if (!was) {
+        resizes?.observe(flow);
+        mutations?.observe(flow, { childList: true, subtree: true });
+        // The fonts load after the page does and can change what sits above the flow.
+        void document.fonts?.ready.then(schedule);
+      }
+      align();
+    },
+    stop: clear,
   };
 }

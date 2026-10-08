@@ -34,7 +34,6 @@
     "markdownShortcuts": true,
     "slashMenu": true,
     "formattingBar": "touchAndPen",
-    "newPageDateTime": true,
     "autocorrect": {
       "enabled": true,
       "entries": []
@@ -114,6 +113,7 @@
     "handedness": "right",
     "touch": {
       "draws": false,
+      "finger": "auto",
       "palmGraceMs": 500,
       "twoFingerScrollNearPen": true
     },

@@ -2,33 +2,23 @@
 
 import { type Palette, captionKeepOut, circle, line, palette, rect, region, tag, text, NOTE } from '../lib/svg.ts';
 import { WIDE, miniApp, titleBar } from '../lib/chrome.ts';
+import { SETTINGS_SECTIONS, chip } from '../lib/parts.ts';
 import { type Screen, makeScreen } from './screen.ts';
 
 const NAV_W = 240;
 const TOP = WIDE.title;
 
 function nav(p: Palette): string {
-  const items = [
-    'General',
-    'Appearance',
-    'Pen and ink',
-    'Recording',
-    'Privacy and AI',
-    'Updates',
-    'Shortcuts',
-    'About',
-  ];
   const parts = [
     rect({ x: 0, y: TOP, w: NAV_W, h: WIDE.height - TOP }, { fill: p.c('surface.app') }),
     line([NAV_W, TOP], [NAV_W, WIDE.height], p.c('border.subtle')),
-    text(20, TOP + 34, '‹ Back to notes', { size: 13, weight: 600, fill: p.c('text.link') }),
-    text(20, TOP + 76, 'Settings', { size: 20, weight: 600, fill: p.c('text.primary') }),
+    text(20, TOP + 30, '‹ Back to notes', { size: 13, weight: 600, fill: p.c('text.link') }),
   ];
-  items.forEach((item, i) => {
-    const y = TOP + 96 + i * 36;
+  SETTINGS_SECTIONS.forEach((item, i) => {
+    const y = TOP + 50 + i * 34;
     if (item === 'Appearance')
-      parts.push(rect({ x: 8, y, w: NAV_W - 16, h: 32 }, { fill: p.c('surface.selected'), r: 6 }));
-    parts.push(text(20, y + 21, item, { size: 14, fill: p.c('text.primary') }));
+      parts.push(rect({ x: 8, y, w: NAV_W - 16, h: 30 }, { fill: p.c('surface.selected'), r: 6 }));
+    parts.push(text(20, y + 20, item, { size: 14, fill: p.c('text.primary') }));
   });
   return parts.join('');
 }
@@ -39,13 +29,6 @@ function radio(p: Palette, x: number, y: number, label: string, on: boolean): st
     ring +
     (on ? circle(x + 8, y - 5, 4, p.c('accent.primary')) : '') +
     text(x + 24, y, label, { size: 14, fill: p.c('text.primary') })
-  );
-}
-
-function toggle(p: Palette, x: number, y: number, on: boolean): string {
-  return (
-    rect({ x, y, w: 40, h: 22 }, { fill: p.c(on ? 'accent.primary' : 'border.control'), r: 11 }) +
-    circle(on ? x + 29 : x + 11, y + 11, 8, p.c('surface.page'))
   );
 }
 
@@ -73,7 +56,7 @@ function appearance(p: Palette, x: number): string {
     parts.push(radio(p, cx + 10, TOP + 228, label, on));
   });
   parts.push(
-    text(x, TOP + 272, 'Quick toggle: ☾ in the title bar, or Ctrl+Shift+D (Change…)', {
+    text(x, TOP + 272, 'Quick toggle: the sun and moon button in the title bar, or Ctrl+Shift+D', {
       size: 13,
       fill: p.c('text.secondary'),
     }),
@@ -84,16 +67,12 @@ function appearance(p: Palette, x: number): string {
     radio(p, x, TOP + 376, 'Always paper white', false),
   );
   parts.push(text(x, TOP + 426, 'Text size', { size: 15, weight: 600, fill: p.c('text.primary') }));
-  parts.push(
-    rect({ x, y: TOP + 444, w: 360, h: 4 }, { fill: p.c('border.subtle'), r: 2 }),
-    rect({ x, y: TOP + 444, w: 120, h: 4 }, { fill: p.c('accent.primary'), r: 2 }),
-    circle(x + 120, TOP + 446, 9, p.c('accent.primary')),
+  ['80%', '90%', '100%', '110%', '125%', '150%', '175%', '200%'].forEach((size, i) =>
+    parts.push(chip(p, x + i * 62, TOP + 438, size, size === '100%', 54)),
   );
-  parts.push(text(x + 380, TOP + 452, '100%', { size: 13, fill: p.c('text.secondary') }));
-  parts.push(
-    text(x, TOP + 500, 'Reduce motion', { size: 15, weight: 600, fill: p.c('text.primary') }),
-    text(x, TOP + 522, 'Follows the Windows animation setting', { size: 13, fill: p.c('text.secondary') }),
-    toggle(p, x + 460, TOP + 494, true),
+  parts.push(text(x, TOP + 500, 'Interface size', { size: 15, weight: 600, fill: p.c('text.primary') }));
+  ['90%', '100%', '110%', '125%', '150%'].forEach((size, i) =>
+    parts.push(chip(p, x + i * 62, TOP + 512, size, size === '100%', 54)),
   );
   return parts.join('');
 }
@@ -141,8 +120,8 @@ export function settings(): Screen {
     appearance(p, content),
     updates(p, updatesX),
     captionKeepOut(WIDE.width),
-    region({ x: 2, y: TOP + 88, w: NAV_W - 4, h: 300 }, ''),
-    tag(8, TOP + 420, 'Settings sections 240', NOTE.region),
+    region({ x: 2, y: TOP + 44, w: NAV_W - 4, h: 460 }, ''),
+    tag(8, TOP + 560, 'Settings sections 240', NOTE.region),
     region({ x: WIDE.width - 138 - 240, y: 6, w: 110, h: 28 }, ''),
     tag(WIDE.width - 138 - 460, 78, 'Update notice lives in the title bar, never a pop-up', NOTE.region),
     tag(

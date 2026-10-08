@@ -273,6 +273,9 @@ class Queue implements SyncQueue, QueueInternals {
     try {
       const ack = await this.host.page.send(batch);
       this.mirror.sent(batch, ack);
+      // A new text box shows with a stand-in key until its first change reaches the core, and blocks inserted
+      // after it must sort below it.
+      for (const [id, order] of Object.entries(ack.orderKeys)) this.host.frames.reorder(id, order);
       this.setState(ack);
       return ack;
     } catch (error) {

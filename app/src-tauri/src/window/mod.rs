@@ -6,8 +6,18 @@
 //! placement, and the WebView2 settings.
 
 pub mod caption;
+pub mod custom_frame;
 pub mod frame;
 pub mod placement;
+#[cfg(windows)]
+pub mod resize_border;
+#[cfg(windows)]
+pub mod snap_overlay;
+#[cfg(windows)]
+pub mod subclass;
+pub mod system_menu;
+#[cfg(all(test, windows))]
+mod test_windows;
 pub mod webview;
 
 use std::{
@@ -55,8 +65,10 @@ struct Background(Rgb);
 /// Builds the main window from its config, with its placement, colors, boot script, zoom, and WebView2 settings,
 /// and shows it (section 8.5).
 ///
-/// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Until those land,
-/// this keeps the native frame, so the window can still be moved, resized from the title bar, and closed.
+/// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Those are behind the
+/// `shell.customFrame` flag, so the window keeps the native frame unless the flag is on; the page's caption layout
+/// report switches the frame either way ([`custom_frame`]). A window created without the native frame gets it back
+/// when the page reports no caption buttons in time or its process fails.
 pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let windows = &app.config().app.windows;
     let config = windows
@@ -81,8 +93,9 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     app.manage(Current::new(os));
     app.manage(Background(color));
 
+    let undecorated = custom_frame::at_start(data.channel, &data.flag_overrides, &settings.experimental.flags);
     let builder = WebviewWindowBuilder::from_config(app, config)?
-        .decorations(true)
+        .decorations(!undecorated)
         .background_color(Color(r, g, b, 255))
         .initialization_script(boot::initialization_script(&data))
         .data_directory(paths.webview.clone())
@@ -97,6 +110,11 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let window = builder.build()?;
     perf::mark("windowCreated", None);
     webview::configure(&window);
+    let lost = window.clone();
+    webview::on_page_lost(&window, move || custom_frame::fall_back(&lost, true));
+    if undecorated {
+        custom_frame::await_first_report(&window);
+    }
     zoom::apply(&window, settings.appearance.text_size.percent(), os.text_scale);
     if let Err(error) = frame::set_theme(&window, data.resolved_theme) {
         log::warn!("Couldn't color the window frame: {error}");
@@ -174,6 +192,13 @@ pub fn show(app: &AppHandle) {
 /// Brings the main window forward for a second launch, and passes its arguments to the interface as
 /// `window://forwarded-args`.
 pub fn receive_forwarded(app: &AppHandle, args: Vec<String>) {
+    // The jump list's "New quick note" opens the capture window and leaves the main window where it is.
+    if args.iter().any(|arg| arg == crate::shellqol::QUICK_NOTE_ARG) {
+        if let Err(error) = crate::shellqol::windows_ops::open_capture(app) {
+            log::warn!("Couldn't open quick capture: {error}");
+        }
+        return;
+    }
     if let Some(window) = app.get_webview_window(MAIN) {
         let _ = window.unminimize();
         let _ = window.show();
@@ -224,10 +249,15 @@ pub fn window_set_title(window: WebviewWindow, title: String) -> IpcResult<()> {
     Ok(window.set_title(&title)?)
 }
 
-/// Opens the real system menu at `at`, or at the title bar's start corner when `at` is `None` (section 10.7).
+/// Opens the real system menu at `at`, in physical pixels relative to the client area, or at the title bar's start
+/// corner when `at` is `None` (section 10.7).
 #[tauri::command]
 pub fn window_show_system_menu(window: WebviewWindow, at: Option<Point>) -> IpcResult<()> {
-    frame::show_system_menu(&window, at)
+    let usable = |value: f64| value.is_finite() && value.abs() <= 100_000.0;
+    if at.is_some_and(|at| !usable(at.x) || !usable(at.y)) {
+        return Err(IpcError::invalid("at", "The menu's position isn't a usable point."));
+    }
+    system_menu::show(&window, at)
 }
 
 /// Sets the frame colors for the theme the page shows.

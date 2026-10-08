@@ -1,0 +1,92 @@
+/*
+ * A mind map (Further features, Phase 7): the nested list laid out left to right, with the main idea on the left and
+ * branches to its right. The lines are plain borders on tokens. A folded branch shows how many it hides.
+ */
+@layer components {
+  .root {
+    display: grid;
+    gap: var(--space-3);
+    overflow-x: auto;
+    padding-block: var(--space-2);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .tree,
+  .children {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding-block: var(--space-1);
+    border-radius: var(--radius-md);
+  }
+
+  .item:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .children {
+    display: grid;
+    gap: var(--space-1);
+    padding-inline-start: var(--space-4);
+    border-inline-start: 2px solid var(--color-border-control);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-target-min);
+    padding: var(--space-1) var(--space-3);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-lg);
+    white-space: nowrap;
+  }
+
+  .chip[data-root] {
+    background: var(--color-accent-primary);
+    color: var(--color-text-on-accent);
+    border-color: var(--color-accent-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .item[aria-selected='true'] > .chip {
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 1px var(--color-accent-primary);
+  }
+
+  .input {
+    min-inline-size: 10ch;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    outline: none;
+  }
+
+  .count {
+    font-size: var(--type-small-size);
+    opacity: 0.8;
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+  }
+}

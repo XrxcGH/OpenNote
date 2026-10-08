@@ -1,0 +1,7 @@
+Cell biology is the study of how cells work. Every living thing is made of cells, and the cell is
+the smallest unit that can carry out the processes of life. Some organisms, such as bacteria, have only
+one cell. Others, such as people, have trillions of cells.
+
+Cells have parts called organelles. The nucleus holds the genes, which carry the instructions for the
+cell. The mitochondria make the energy the cell needs. Ribosomes build the proteins that do most of the
+work. Together, the organelles let the cell grow, repair itself, and divide.

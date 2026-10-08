@@ -6,17 +6,24 @@ import type { BootOverrides } from '../../boot/defaults';
 import type { NotesFixture } from '../../services/notes/fixtures';
 import { DEFAULT_SETTINGS } from '../../state/settings';
 import type { Platform } from '../types';
+import { createWebAudio } from './audio';
+import { createWebConnectors } from './connectors';
+import { createWebDiagnostics } from './diagnostics';
 import { createWebInstall } from './install';
+import { createWebInterop } from './interop';
 import { createWebLifecycle } from './lifecycle';
 import type { WebLifecycle } from './lifecycle';
 import { createWebLog } from './log';
 import { createWebOs } from './os';
 import { createWebClipboard } from './clipboard';
+import { createWebExports } from './exports';
 import { createWebImages } from './images';
+import { createWebPageExtras } from './pageExtras';
 import { createWebPages } from './pages';
 import { createWebSpeech } from './speech';
 import { createWebSpelling } from './spelling';
 import { createWebPerf } from './perf';
+import { createWebSearch } from './search';
 import { createWebSettings } from './settings';
 import { createWebShell } from './shell';
 import { createWebSnapshot } from './snapshot';
@@ -41,6 +48,8 @@ export interface WebPlatform extends Platform {
   readonly window: WebWindow;
   readonly lifecycle: WebLifecycle;
   readonly perf: ReturnType<typeof createWebPerf>;
+  /** The fake import and export, with the log of what the interface asked it for. */
+  readonly interop: ReturnType<typeof createWebInterop>;
   /** Changes the fake Windows appearance and sends the change event. */
   setOs: ReturnType<typeof createWebOs>['set'];
   readonly logEntries: ReturnType<typeof createWebLog>['entries'];
@@ -51,6 +60,7 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
   const lifecycle = createWebLifecycle();
   const os = createWebOs(boot.os, options.followBrowser ?? false);
   const log = createWebLog();
+  const pages = createWebPages();
   return {
     kind: 'web',
     boot,
@@ -62,12 +72,20 @@ export function createWebPlatform(options: WebPlatformOptions = {}): WebPlatform
     install: createWebInstall(boot.install),
     updater: createWebUpdater(boot.updater),
     shell: createWebShell(),
-    pages: createWebPages(),
+    pages,
+    search: createWebSearch(pages),
+    diagnostics: createWebDiagnostics(),
+    connectors: createWebConnectors(),
     spelling: createWebSpelling(),
     clipboard: createWebClipboard(),
     images: createWebImages(),
+    pageExtras: createWebPageExtras(),
+    exports: createWebExports(),
+    audio: createWebAudio(),
     speech: createWebSpeech(),
+    interop: createWebInterop(),
     notesSnapshot: createWebSnapshot(options.fixture ?? 'sample'),
+    notesCore: null,
     perf: createWebPerf(),
     log: log.log,
     setOs: os.set,

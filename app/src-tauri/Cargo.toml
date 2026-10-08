@@ -1,6 +1,6 @@
 [package]
 name = "opennote"
-version = "0.1.0"
+version = "0.1.0-beta.4"
 description = "Open-source note-taking app combining writing, drawing, and recording"
 edition = "2021"
 license = "Apache-2.0"
@@ -20,9 +20,25 @@ base64 = "0.22.1"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+base64 = "0.23.1"
+crc32fast = "1.5.2"
+flate2 = "1.1.10"
+# Connectors: PKCE and sign-in state need the operating system's random generator, the token endpoints take
+# form bodies, and the account name is read from the payload of an ID token. All three are already built.
+getrandom = "0.3.4"
 log.workspace = true
 opennote-core = { path = "../../crates/core" }
+opennote-crashreport = { path = "../../crates/crashreport" }
+opennote-diagnostics = { path = "../../crates/diagnostics" }
+opennote-intel = { path = "../../crates/intel" }
+opennote-interop = { path = "../../crates/interop" }
+# Phase 9: recording to Opus needs libopus, which builds with CMake (preinstalled on the Windows runners).
+opennote-media = { path = "../../crates/media", features = ["opus"] }
+opennote-search = { path = "../../crates/search" }
 opennote-updater = { path = "../../crates/updater" }
+# Phase 10: Anki packages are zip files that hold a SQLite collection, with the same SQLite build as the search crate.
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+notify = "8.2.0"
 semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -30,9 +46,13 @@ sha2.workspace = true
 tauri = { version = "2", features = [] }
 # Web images for paste (Phase 4 ARCHITECTURE.md section 12.2), with the same TLS stack and version as the updater.
 ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default"] }
+tempfile.workspace = true
+url = "2.5.8"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = "0.39.1"
+# For `#[implement]`, which the Snap Layouts overlay's UI Automation provider uses.
+windows-core = "0.62.2"
 
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.62.2"
@@ -42,10 +62,12 @@ features = [
   "UI_ViewManagement",
   "Win32_Foundation",
   "Win32_Globalization",
+  "Win32_Media_MediaFoundation",
   "Win32_Graphics_Dwm",
   "Win32_Graphics_Gdi",
   "Win32_Graphics_Imaging",
   "Win32_Security",
+  "Win32_Security_Credentials",
   "Win32_Storage_FileSystem",
   "Win32_System_Com",
   "Win32_System_Com_StructuredStorage",
@@ -53,10 +75,14 @@ features = [
   "Win32_System_LibraryLoader",
   "Win32_System_Memory",
   "Win32_System_Ole",
+  "Win32_System_Power",
   "Win32_System_Registry",
+  "Win32_System_Time",
   "Win32_System_Threading",
   "Win32_System_Variant",
   "Win32_UI_Accessibility",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
   "Win32_UI_Shell",
   "Win32_UI_Shell_Common",
   "Win32_UI_Shell_PropertiesSystem",

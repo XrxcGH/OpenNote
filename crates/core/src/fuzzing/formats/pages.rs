@@ -233,6 +233,7 @@ fn build_page_node(input: &mut Input<'_>, n: u32) -> PageNode {
         order: OrderKey::parse("a0").expect("a valid order key"),
         level: u8::try_from(input.below(4)).unwrap_or(0),
         pinned: false,
+        archived: false,
         color: None,
         created: Timestamp::EPOCH,
         modified: None,
@@ -266,6 +267,7 @@ fn build_tree(input: &mut Input<'_>) -> NotebookTree {
             pages: (0..input.below(4)).map(|p| build_page_node(input, p)).collect(),
             access: Access::ReadWrite,
             encrypted: input.bool(),
+            archived: false,
         })
         .collect();
     NotebookTree {
@@ -279,5 +281,6 @@ fn build_tree(input: &mut Input<'_>) -> NotebookTree {
         sections,
         access: Access::ReadWrite,
         notices: Vec::new(),
+        archived: false,
     }
 }

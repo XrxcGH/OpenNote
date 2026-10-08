@@ -8,6 +8,7 @@ import { osStore } from '../../../state/os';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
+import { intelSpeechEngine } from '../../intel';
 import { shownPool } from '../pool/shown';
 import { shownViewport } from '../viewport/viewport';
 import { createWebSpeechEngine } from './engine';
@@ -19,6 +20,8 @@ import { readingSequence, scopedSequence } from './sequence';
 import styles from './readAloud.module.css';
 
 let engine: SpeechEngine | null = null;
+/** Whether the engine is the on-device one (Phase 12), which the person turns on in Settings. */
+let onDevice = false;
 let reader: Reader | null = null;
 let bar: { host: HTMLElement; root: Root } | null = null;
 let stopWatching: (() => void) | null = null;
@@ -39,7 +42,10 @@ function openSpeechSettings(): void {
 }
 
 function ensureReader(): Reader | null {
-  engine ??= createWebSpeechEngine();
+  const device = intelSpeechEngine();
+  if ((device !== null) !== onDevice) resetReadAloud();
+  onDevice = device !== null;
+  engine ??= device ?? createWebSpeechEngine();
   if (!engine) return null;
   reader ??= createReader(engine, {
     speakOptions: () => {

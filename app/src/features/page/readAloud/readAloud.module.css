@@ -49,6 +49,17 @@
     color: inherit;
   }
 
+  /* On ruled paper the word sits in the gap between two rules, not over the one beneath it (blocks.module.css). */
+  @media (forced-colors: none) {
+    :global([data-ruled] ::highlight(read-aloud)) {
+      background-color: transparent;
+      text-decoration: underline solid var(--color-accent-primary-subtle);
+      text-decoration-thickness: var(--chip-size);
+      text-decoration-skip-ink: none;
+      text-underline-offset: var(--chip-offset);
+    }
+  }
+
   @media (forced-colors: active) {
     :global(::highlight(read-aloud)) {
       background-color: Highlight;

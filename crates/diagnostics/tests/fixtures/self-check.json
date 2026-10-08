@@ -1,0 +1,112 @@
+{
+  "createdUnix": 1790000000,
+  "items": [
+    {
+      "detail": {
+        "failBelow": 52428800,
+        "freeBytes": 314572800,
+        "kind": "freeSpace",
+        "warnBelow": 524288000
+      },
+      "id": "diskNotebook",
+      "status": "warn"
+    },
+    {
+      "detail": {
+        "kind": "unavailable",
+        "reason": "PermissionDenied"
+      },
+      "id": "diskApp",
+      "status": "warn"
+    },
+    {
+      "detail": {
+        "kind": "writable",
+        "reason": "NotFound",
+        "writable": false
+      },
+      "id": "notebookWritable",
+      "status": "fail"
+    },
+    {
+      "detail": {
+        "fileSystem": "NTFS",
+        "kind": "storage",
+        "notes": [
+          "networkShare",
+          "noMetadataLog",
+          {
+            "syncFolder": "oneDrive"
+          }
+        ]
+      },
+      "id": "notebookStorage",
+      "status": "warn"
+    },
+    {
+      "detail": {
+        "byCode": [
+          {
+            "code": "page.checksum",
+            "count": 2
+          },
+          {
+            "code": "section.reference",
+            "count": 1
+          }
+        ],
+        "failed": null,
+        "files": 40,
+        "kind": "health",
+        "problemCount": 3,
+        "problems": [
+          {
+            "code": "page.checksum",
+            "file": "Lectures/Mitosis/page.json"
+          }
+        ],
+        "unsavedChanges": true
+      },
+      "id": "notebookHealth",
+      "status": "fail"
+    },
+    {
+      "detail": {
+        "blockedVersions": [
+          "0.4.1"
+        ],
+        "daysSinceCheck": 1,
+        "kind": "updates",
+        "lastCheck": "2026-09-20T10:00:00Z",
+        "pending": {
+          "attempts": 2,
+          "from": "0.4.0",
+          "version": "0.5.0"
+        },
+        "rolledBack": {
+          "at": "2026-09-20T10:09:12Z",
+          "from": "0.5.0",
+          "to": "0.4.0"
+        },
+        "stagedVersion": "0.5.0"
+      },
+      "id": "updates",
+      "status": "warn"
+    },
+    {
+      "detail": {
+        "count": 2,
+        "kind": "reports"
+      },
+      "id": "crashReports",
+      "status": "pass"
+    },
+    {
+      "detail": {
+        "kind": "notApplicable"
+      },
+      "id": "diskNotebook",
+      "status": "skipped"
+    }
+  ]
+}

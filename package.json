@@ -13,6 +13,7 @@
     "app:build": "npm run tokens && vite build --config app/vite.config.ts",
     "app:build:test": "npm run tokens && vite build --config app/vite.config.ts --mode test",
     "app:preview:test": "vite preview --config app/vite.config.ts --mode test",
+    "app:gallery": "vite --config app/vite.config.ts --open /gallery.html",
     "app:test": "vitest run --config app/vitest.config.ts --project unit",
     "test:components": "vitest run --config app/vitest.config.ts --project components",
     "test:ui": "npm run app:build:test && playwright test --config tests/ui/playwright.config.ts",
@@ -29,6 +30,7 @@
     "checks:all": "node checks/cli.ts --all",
     "checks:fix": "node checks/cli.ts --fix",
     "test:checks": "node --test \"checks/test/**/*.test.ts\"",
+    "test:design": "node --test \"docs/design/test/**/*.test.ts\"",
     "setup-hooks": "git config core.hooksPath .githooks",
     "typecheck": "tsc -p checks/tsconfig.json && tsc -p docs/design/tsconfig.json && tsc -p spikes/web/tsconfig.json && tsc -p eslint/tsconfig.json && tsc -p tests/tsconfig.json && npm run app:typecheck",
     "format": "prettier --write \"checks/**/*.ts\" \"docs/design/**/*.ts\" \"app/**/*.{ts,tsx,css}\" \"spikes/web/**/*.ts\" \"tests/**/*.ts\" \"eslint/*.{js,ts}\" eslint.config.js",
@@ -36,7 +38,9 @@
     "design": "node docs/design/generate.ts",
     "spikes:web": "vite build --config spikes/web/vite.config.ts",
     "spikes": "npm run spikes:web && cargo run --profile spikes -p opennote-spikes --",
-    "test": "npm run test:checks && npm run test:lint-rules && npm run app:test",
+    "release:check": "node app/scripts/release/checklist.ts",
+    "test": "npm run test:checks && npm run test:design && npm run test:lint-rules && npm run test:matrix && npm run app:test",
+    "test:matrix": "node --test tests/ui/matrix.test.ts",
     "test:lint-rules": "node --test eslint/rules.test.ts"
   },
   "devDependencies": {
@@ -56,7 +60,6 @@
     "fast-check": "^4.10.2",
     "globals": "^17.12.0",
     "jsdom": "^30.1.1",
-    "perfect-freehand": "^1.2.3",
     "prettier": "^3.9.9",
     "spdx-license-list": "^6.12.0",
     "typescript": "~6.0.0",
@@ -69,6 +72,7 @@
     "@fontsource-variable/atkinson-hyperlegible-next": "^5.3.0",
     "@fontsource-variable/literata": "^5.3.0",
     "@fontsource/atkinson-hyperlegible-mono": "^5.3.0",
+    "@observablehq/plot": "^0.6.17",
     "@phosphor-icons/react": "^2.1.10",
     "@tauri-apps/api": "^2.12.0",
     "@tiptap/core": "3.31.4",
@@ -80,11 +84,14 @@
     "@tiptap/starter-kit": "3.31.4",
     "@tiptap/suggestion": "3.31.4",
     "highlight.js": "11.11.2",
+    "katex": "^0.18.10",
     "lowlight": "3.3.0",
     "markdown-it": "15.0.2",
+    "mermaid": "^12.1.0",
+    "perfect-freehand": "^1.2.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
-  "version": "0.1.0",
+  "version": "0.1.0-beta.4",
   "license": "Apache-2.0"
 }

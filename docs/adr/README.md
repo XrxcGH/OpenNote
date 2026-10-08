@@ -51,6 +51,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0005](0005-freeform-text.md) | Build each text container as its own Tiptap editor on one zoomable world, with contained blocks and ink in cached tiles | Accepted, pending the owner's review of the typing budget | 2026-09-30 |
 | [0006](0006-pdf-export.md) | Export PDFs with WebView2 PrintToPdf from a hidden WebView, with print CSS and layout rules that keep the screen and paper in step | Accepted | 2026-09-30 |
 | [0007](0007-audio-capture.md) | Record the microphone and system audio with cpal on WASAPI, align both to the performance counter, and store Opus in 1-second Ogg pages | Accepted | 2026-09-30 |
+| [0008](0008-note-file-format.md) | Store a notebook as a folder of plain files, with `page.json` as the source of truth, in the open note format | Proposed | 2026-09-30 |
 | [0010](0010-interface-components-and-state.md) | Build the interface from hand-written accessible components, a small external store, registries, and a platform seam | Proposed | 2026-09-30 |
 | [0011](0011-self-updater.md) | Update with a Tauri-free updater: per-architecture files, signature checks, a staged swap, and rollback; move the app to the user's Programs folder | Proposed | 2026-09-30 |
 | [0012](0012-window-frame-and-appearance.md) | Keep the native window frame, with the app's title bar below it, and read the Windows appearance in Rust | Accepted | 2026-09-30 |
@@ -58,6 +59,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0014](0014-notes-service-contract.md) | Define a narrow notes service contract between the shell and storage, with a shared test suite, and the changes that let Phase 3's format serve it | Proposed, to be accepted jointly by the Phase 2 and Phase 3 owners | 2026-09-30 |
 | [0015](0015-app-lifecycle.md) | Hold one process per profile, start in a fixed order before Tauri, and send every close through one exit handshake | Proposed | 2026-09-30 |
 | [0016](0016-phase-2-test-stack.md) | Test in layers: Vitest, Vitest browser mode, Playwright, and WebdriverIO with tauri-driver, on installed browsers | Proposed | 2026-09-30 |
+| [0017](0017-custom-window-frame.md) | Draw the title bar and caption buttons in HTML behind the `shell.customFrame` flag, with a native overlay over Maximize for Snap Layouts | Proposed, pending manual checks | 2026-09-30 |
 | [0020](0020-typed-notes-editor.md) | Build each text block as its own Tiptap editor, render static DOM first, and mount editors in place | Proposed, pending the reference laptop run and the owner's approval | 2026-10-02 |
 | [0021](0021-code-highlighting.md) | Highlight code blocks with lowlight and lazily loaded highlight.js grammars, not CodeMirror 6 | Proposed, pending the owner's approval of the change to DEVELOPMENT.md section 2 | 2026-10-02 |
 | [0022](0022-page-viewport.md) | Pan with a native scroll container, pan and pinch touch in the app, and zoom with one transform | Proposed, pending spike S5 on real touch hardware | 2026-10-02 |
@@ -65,3 +67,25 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0024](0024-typed-notes-keyboard.md) | Keep Tab inside an editor, leave it with Escape, let AltGr text win, and move between blocks in reading order | Proposed, pending the owner's confirmation of the OneNote set's editor keys | 2026-10-02 |
 | [0025](0025-paste-and-images.md) | Handle every paste and drop in one pipeline whose schema allowlists what reaches the page, and import images through it | Proposed, pending real captures for spike S4 and the image memory measurement in spike S3 | 2026-10-03 |
 | [0026](0026-text-box-layout.md) | Size text boxes to their content, move boxes below an edited one to keep clear of it, and fix a page's reading order | Proposed, pending the Phase 3 owner's agreement to P3-1 and P3-11 | 2026-10-02 |
+| [0027](0027-palm-rejection.md) | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices | Accepted | 2026-10-03 |
+| [0030](0030-connectors-and-sign-in.md) | Sign in to connected accounts through the system browser with a loopback redirect, and keep every token in Windows Credential Manager | Proposed, pending a sign-in with real client IDs | 2026-10-03 |
+| [0035](0035-share-as-a-file.md) | Share as a file is a ZIP of Markdown with a manifest, optionally locked with a password | Accepted. The back end is written, and no screen uses it yet | 2026-10-03 |
+
+The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
+
+## Where the records stand in beta 4
+
+Most records are still Proposed, because each waits on a check by a person. Agents wrote the code to match every record. The ones below wait on the owner or on a hand test.
+
+| ADR | Waiting on |
+|---|---|
+| 0001 and 0004 | The owner's camera check of ink latency, and the budget review |
+| 0005 | The owner's review of the typing budget |
+| 0017 | The manual checks of the custom title bar. Beta 4 turns it on (`shell.customFrame` and `window.snapLayouts`), so the hand test covers it |
+| 0020 and 0021 | A run on the reference laptop, and the owner's approval to change DEVELOPMENT.md section 2 |
+| 0022 | Touch checks on real hardware (spike S5) |
+| 0023 | A run with NVDA and Narrator |
+| 0024 | The owner's confirmation of the OneNote set's editor keys |
+| 0025 | Real captures (spike S4) and the image memory measurement (spike S3) |
+| 0026 | The Phase 3 owner's agreement |
+| 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |

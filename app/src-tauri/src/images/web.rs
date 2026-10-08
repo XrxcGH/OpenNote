@@ -250,6 +250,55 @@ fn download(url: &str, policy: Policy) -> Result<Download, IpcError> {
     Err(failed("The image's address redirects too many times."))
 }
 
+/// The most of a page that is read to find its title.
+const HEAD_LIMIT: u64 = 256 * 1024;
+
+/// The first 256 KB of a web page, for its title (Link titles on paste). It follows the same rules as an image
+/// download: the system's TLS, at most 3 redirects on one scheme, no cookies, no `Referer`, no proxy, and no
+/// address on the local network. Only HTML answers count.
+pub(crate) fn fetch_html_head(url: &str, allow_loopback: bool) -> Result<Vec<u8>, IpcError> {
+    let agent = agent(Policy { allow_loopback });
+    let mut current = parse_url(url)?;
+    for _ in 0..=MAX_REDIRECTS {
+        let response = agent
+            .get(&url_text(&current))
+            .header("Accept", "text/html,application/xhtml+xml")
+            .call()
+            .map_err(|error| failed(format!("The page couldn't be reached: {error}")))?;
+        let status = response.status().as_u16();
+        if (300..400).contains(&status) {
+            let location = response
+                .headers()
+                .get("location")
+                .and_then(|value| value.to_str().ok())
+                .ok_or_else(|| failed("The page's redirect has no address."))?;
+            current = redirect(&current, location)?;
+            continue;
+        }
+        if status != 200 {
+            return Err(failed(format!("The page's server answered {status}.")));
+        }
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(content_type.contains("text/html") || content_type.contains("application/xhtml")) {
+            return Err(failed("The address isn't a web page."));
+        }
+        let mut bytes = Vec::new();
+        response
+            .into_body()
+            .into_reader()
+            .take(HEAD_LIMIT)
+            .read_to_end(&mut bytes)
+            .map_err(|error| failed(format!("The page stopped loading: {error}")))?;
+        return Ok(bytes);
+    }
+    Err(failed("The page redirects too many times."))
+}
+
 /// The last part of the address's path, as the asset's original name.
 fn name_from(uri: &Uri) -> String {
     let last = uri.path().rsplit('/').next().unwrap_or("");
@@ -274,6 +323,10 @@ fn fetch_checked(url: &str, policy: Policy, convert: bool) -> Result<Checked, Ip
 
 #[tauri::command]
 pub async fn image_import_url(app: AppHandle, page: String, url: String) -> IpcResult<ImportedAsset> {
+    // Work offline blocks every network use, including this one (docs/FEATURES.md, Privacy panel).
+    if crate::hardening::offline() {
+        return Err(failed("Work offline is on."));
+    }
     let convert = convert_enabled(&app);
     on_blocking(move || {
         let handle = open_page(&app, &page)?;

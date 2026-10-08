@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 944" width="1440" height="944" role="img">
-<title>First run, step 4: smart features</title>
+<title>First run, step 3: on-device intelligence</title>
 <defs>
 <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
 <rect width="8" height="8" fill="#C2185B" fill-opacity="0.08"/>
@@ -9,29 +9,31 @@
 </defs>
 <rect x="0" y="0" width="1440" height="900" rx="0" fill="#F3EEE6"/>
 <rect x="0" y="0" width="1440" height="40" rx="0" fill="#F3EEE6"/><rect x="14" y="10" width="16" height="20" rx="3" fill="#FFFCF6" stroke="#2B2521" stroke-width="1.5"/><path d="M17 24c2-6 5-7 6-3s3 4 5-2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#3B6A4D" stroke-width="1.8"/><text x="40" y="25" font-size="13" font-weight="600" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">OpenNote</text><text x="1325" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">—</text><text x="1371" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">▢</text><text x="1417" y="25" font-size="13" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">✕</text>
+<defs><radialGradient id="ambient3" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 40) scale(1008 688)"><stop offset="0" stop-color="#FFF0D4"/><stop offset="1" stop-color="#FFF0D4" stop-opacity="0"/></radialGradient><radialGradient id="ambient3p"><stop offset="0" stop-color="#FCE4B8"/><stop offset="1" stop-color="#FCE4B8" stop-opacity="0"/></radialGradient></defs><rect x="0" y="40" width="1440" height="860" rx="0" fill="#EAE3D8"/><rect x="0" y="40" width="1440" height="860" fill="url(#ambient3)"/>
 <rect x="360" y="114" width="720" height="672" rx="16" fill="#FFFDF9" filter="url(#shadow)"/>
-<circle cx="672" cy="154" r="5" fill="#3B6A4D"/>
-<circle cx="696" cy="154" r="5" fill="#3B6A4D"/>
-<circle cx="720" cy="154" r="5" fill="#3B6A4D"/>
-<circle cx="744" cy="154" r="5" fill="#3B6A4D"/>
-<circle cx="768" cy="154" r="5" fill="#E3DACC"/>
-<text x="720" y="184" font-size="13" font-weight="400" fill="#6B6054" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Step 4 of 5</text>
-<text x="720" y="230" font-size="30" font-weight="600" fill="#2B2521" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Smart features</text>
-<text x="720" y="260" font-size="15" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Everything runs on this device. Nothing leaves it.</text>
-<rect x="394" y="294" width="652" height="84" rx="10" fill="#FFFCF6" stroke="#3B6A4D" stroke-width="3"/>
-<circle cx="417" cy="323" r="9" fill="none" stroke="#3B6A4D" stroke-width="2"/>
-<circle cx="417" cy="323" r="5" fill="#3B6A4D"/>
+<circle cx="660" cy="154" r="5" fill="#3B6A4D"/>
+<circle cx="684" cy="154" r="5" fill="#3B6A4D"/>
+<circle cx="708" cy="154" r="5" fill="#3B6A4D"/>
+<circle cx="732" cy="154" r="5" fill="#E3DACC"/>
+<circle cx="756" cy="154" r="5" fill="#E3DACC"/>
+<circle cx="780" cy="154" r="5" fill="#E3DACC"/>
+<text x="720" y="184" font-size="13" font-weight="400" fill="#6B6054" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Step 3 of 6</text>
+<text x="720" y="230" font-size="30" font-weight="600" fill="#2B2521" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">On-device intelligence</text>
+<text x="720" y="260" font-size="15" font-weight="400" fill="#5C534A" text-anchor="middle" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Smart features read your notes on this computer. Nothing leaves the device.</text>
+<rect x="394" y="294" width="652" height="84" rx="10" fill="#FFFCF6" stroke="#E3DACC" stroke-width="1"/>
+<circle cx="417" cy="323" r="9" fill="none" stroke="#877B6C" stroke-width="2"/>
 <text x="436" y="328" font-size="14" font-weight="400" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Recommended</text>
-<text x="436" y="348" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Transcription, handwriting, text in images, and summaries. About 600 MB.</text>
+<text x="436" y="348" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Transcription, handwriting, text in images, and summaries. The speech model is 148 MB.</text>
 <rect x="394" y="394" width="652" height="84" rx="10" fill="#FFFCF6" stroke="#E3DACC" stroke-width="1"/>
 <circle cx="417" cy="423" r="9" fill="none" stroke="#877B6C" stroke-width="2"/>
 <text x="436" y="428" font-size="14" font-weight="400" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Custom</text>
-<text x="436" y="448" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Choose each feature, and a local model or your own cloud key.</text>
-<rect x="394" y="494" width="652" height="84" rx="10" fill="#FFFCF6" stroke="#E3DACC" stroke-width="1"/>
-<circle cx="417" cy="523" r="9" fill="none" stroke="#877B6C" stroke-width="2"/>
+<text x="436" y="448" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Pick each feature yourself. Each one runs on this device.</text>
+<rect x="394" y="494" width="652" height="84" rx="10" fill="#FFFCF6" stroke="#3B6A4D" stroke-width="3"/>
+<circle cx="417" cy="523" r="9" fill="none" stroke="#3B6A4D" stroke-width="2"/>
+<circle cx="417" cy="523" r="5" fill="#3B6A4D"/>
 <text x="436" y="528" font-size="14" font-weight="400" fill="#2B2521" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Not now</text>
-<text x="436" y="548" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Everything stays off. Turn features on later in Settings.</text>
-<text x="408" y="614" font-size="13" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Models download in the background. You can start taking notes right away.</text>
+<text x="436" y="548" font-size="12" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Everything stays off. You can turn features on later in Settings.</text>
+<text x="408" y="614" font-size="13" font-weight="400" fill="#6B6054" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Nothing downloads unless you choose to, and only after you finish setup.</text>
 <text x="408" y="740" font-size="15" font-weight="600" fill="#3B6A4D" text-anchor="start" font-family="'Atkinson Hyperlegible Next', 'Segoe UI', system-ui, sans-serif">Back</text>
 <g data-fit="8" data-center="both">
 <rect x="894" y="714" width="150" height="40" rx="8" fill="#3B6A4D"/>

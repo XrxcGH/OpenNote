@@ -12,6 +12,12 @@
     font-size: var(--type-note-size);
   }
 
+  /* Ruled paper (rules.ts): the flow's first line goes to a rule, below whatever is above it. A padding, so the lead
+     never collapses into the margin above the flow. */
+  :global([data-ruled]) .flow {
+    padding-block-start: var(--rule-lead, 0px);
+  }
+
   /* The compact size class's switch between the Reading view and the canvas, above the blocks. */
   .viewSwitch {
     margin: 0 0 var(--space-4) var(--space-6);

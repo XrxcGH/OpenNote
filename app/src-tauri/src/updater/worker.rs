@@ -115,6 +115,14 @@ pub fn check(service: &Service, scheduler: &mut Scheduler, trigger: Trigger) {
     };
     let settings = service.settings();
     let before = service.shared().phase.clone();
+    if crate::hardening::offline() {
+        // Work offline: no request is made. A scheduled check waits quietly; a person is told why nothing happened.
+        failed(service, &UpdateError::Fetch(FetchError::Offline), trigger, before, None);
+        if trigger == Trigger::Schedule {
+            scheduler.failed(SystemTime::now());
+        }
+        return;
+    }
     // A ready update stays ready while a scheduled check runs.
     if trigger == Trigger::Person || !is_ready(before.as_ref()) {
         service.set_phase(Some(UpdaterPhase::Checking));
@@ -203,6 +211,10 @@ fn must_wait_for_unmetered(settings: &Settings) -> bool {
 
 /// Downloads the version the last check offered, after the person chose Download.
 fn download_offer(service: &Service) {
+    if crate::hardening::offline() {
+        log::info!("Ignored Download: Work offline is on.");
+        return;
+    }
     let offer = service.shared().offer.clone();
     match offer {
         Some(offer) => download(service, offer),

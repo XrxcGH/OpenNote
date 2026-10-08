@@ -1,0 +1,13 @@
+{
+  "PackageIdentifier": "XrxcGH.OpenNote",
+  "PackageName": "OpenNote",
+  "Publisher": "OpenNote",
+  "PublisherUrl": "https://github.com/XrxcGH",
+  "PackageUrl": "https://github.com/XrxcGH/OpenNote",
+  "License": "Apache-2.0",
+  "LicenseUrl": "https://github.com/XrxcGH/OpenNote/blob/main/LICENSE",
+  "ShortDescription": "Open-source note-taking app that combines writing, drawing, and recording.",
+  "Moniker": "opennote",
+  "Command": "opennote",
+  "Tags": ["notes", "note-taking", "handwriting", "pen", "ink", "markdown", "open-source"]
+}

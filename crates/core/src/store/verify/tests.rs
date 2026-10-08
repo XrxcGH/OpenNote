@@ -73,6 +73,22 @@ fn damaged_and_missing_files_are_problems() {
 }
 
 #[test]
+fn a_recording_that_is_still_growing_is_not_a_checksum_problem() {
+    let h = notebook();
+    let mut page = h.store.load(&h.dir).unwrap().page;
+    let mut audio = page.assets.values().next().unwrap().clone();
+    audio.id = "01m3sa43z1tp9rdr5e8df2jbxz".parse().unwrap();
+    audio.file = format!("{}-mic.ogg", audio.id);
+    audio.bytes = 0;
+    audio.extra.insert("state".into(), "recording".into());
+    page.assets.insert(audio.id, audio.clone());
+    h.fs.put(&NotebookLayout::asset_path(&h.dir, &audio).unwrap(), &[1u8; 300]);
+    h.fs.put(&NotebookLayout::page_json(&h.dir), &h.codec.write_page(&page));
+    let report = verify(&h);
+    assert!(report.is_clean(), "{:?}", report.problems);
+}
+
+#[test]
 fn the_tree_must_match_the_folders() {
     let h = notebook();
     let section_dir = h.dir.parent().unwrap().to_path_buf();

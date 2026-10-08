@@ -2,9 +2,16 @@
 
 import { isEnabled } from '../../app/flags';
 import type { BootData, Platform } from '../types';
+import { createTauriExports } from './exports';
+import { createTauriAudio } from './audio';
+import { createTauriConnectors } from './connectors';
+import { createTauriDiagnostics } from './diagnostics';
 import { createTauriInstall } from './install';
+import { createTauriInterop } from './interop';
 import { createTauriClipboard } from './clipboard';
 import { createTauriImages } from './images';
+import { createTauriPageExtras } from './pageExtras';
+import { createTauriNotesCore } from './notes';
 import { createTauriPages } from './pages';
 import { createTauriSpeech } from './speech';
 import { createTauriSpelling } from './spelling';
@@ -12,6 +19,7 @@ import { createTauriLifecycle } from './lifecycle';
 import { tauriLog } from './log';
 import { createTauriOs } from './os';
 import { createTauriPerf } from './perf';
+import { createTauriSearch } from './search';
 import { createTauriSettings } from './settings';
 import { createTauriShell } from './shell';
 import { createTauriSnapshot } from './snapshot';
@@ -19,7 +27,7 @@ import { createTauriState } from './state';
 import { createTauriUpdater } from './updater';
 import { createTauriWindow } from './window';
 
-/** Call after initFlags, so the notes snapshot follows its flag. */
+/** Call after initFlags, so the notes service follows its flags. */
 export function createTauriPlatform(boot: BootData): Platform {
   const images = createTauriImages();
   return {
@@ -34,11 +42,20 @@ export function createTauriPlatform(boot: BootData): Platform {
     updater: createTauriUpdater(boot.updater),
     shell: createTauriShell(),
     pages: createTauriPages(images),
+    search: createTauriSearch(),
+    diagnostics: createTauriDiagnostics(),
+    connectors: createTauriConnectors(),
     spelling: createTauriSpelling(),
     clipboard: createTauriClipboard(),
     images,
+    pageExtras: createTauriPageExtras(),
+    exports: createTauriExports(),
+    audio: createTauriAudio(),
     speech: createTauriSpeech(),
-    notesSnapshot: isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
+    // With storage.core, the core keeps the notes; the Phase 2 snapshot is only for a build without it.
+    notesSnapshot: !isEnabled('storage.core') && isEnabled('notes.memorySnapshot') ? createTauriSnapshot() : null,
+    notesCore: isEnabled('storage.core') ? createTauriNotesCore() : null,
+    interop: createTauriInterop(),
     perf: createTauriPerf(),
     log: tauriLog,
   };

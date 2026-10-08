@@ -14,6 +14,27 @@ pub const PROFILE_DIR_VAR: &str = "OPENNOTE_PROFILE_DIR";
 
 const APP_FOLDER: &str = "OpenNote";
 
+/// The file whose presence next to the program turns on portable mode.
+pub const PORTABLE_FILE: &str = "portable";
+
+/// The folder beside the program that holds everything in portable mode.
+pub const PORTABLE_FOLDER: &str = "OpenNote-data";
+
+/// The profile folder portable mode uses: `OpenNote-data` beside the program, when a file named `portable` is
+/// there too. Settings, caches, models, and the Documents default all live inside it, so nothing goes to the
+/// Windows profile. The notes folder the person picks is theirs and stays wherever they chose.
+pub fn portable_profile(program_dir: &Path) -> Option<PathBuf> {
+    program_dir
+        .join(PORTABLE_FILE)
+        .is_file()
+        .then(|| program_dir.join(PORTABLE_FOLDER))
+}
+
+/// The profile override: the environment variable wins (tests and E2E runs), then portable mode.
+pub fn profile_override(env: Option<PathBuf>, program_dir: Option<&Path>) -> Option<PathBuf> {
+    env.or_else(|| program_dir.and_then(portable_profile))
+}
+
 /// Whether `path` is a full path to a place on this PC. A network path (`\\host\share`) and the device paths
 /// (`\\?\`, `\\.\`) aren't: touching one makes Windows sign in to that host, and the app writes only
 /// where the person's own folders are.
@@ -198,6 +219,22 @@ mod tests {
         ] {
             assert!(!is_local_path(Path::new(other)), "{other}");
         }
+    }
+
+    #[test]
+    fn a_portable_file_moves_the_profile_beside_the_program() {
+        let dir = tempfile::tempdir().expect("a temp folder");
+        assert_eq!(portable_profile(dir.path()), None);
+        std::fs::write(dir.path().join(PORTABLE_FILE), b"").expect("the marker file");
+        let profile = portable_profile(dir.path()).expect("portable mode is on");
+        assert_eq!(profile, dir.path().join(PORTABLE_FOLDER));
+        let paths = Paths::resolve(Some(profile.clone())).expect("resolves");
+        assert!(paths.settings_file.starts_with(&profile) && paths.webview.starts_with(&profile));
+        // The environment variable still wins, so tests can run from a portable folder.
+        let env = PathBuf::from(r"C:\profile");
+        assert_eq!(profile_override(Some(env.clone()), Some(dir.path())), Some(env));
+        assert_eq!(profile_override(None, Some(dir.path())), Some(profile));
+        assert_eq!(profile_override(None, None), None);
     }
 
     #[test]

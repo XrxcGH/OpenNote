@@ -2,12 +2,15 @@
 // behind its flag, hidden rather than disabled, until it meets the definition of done. app/flags.ts joins these to
 // Phase 2's list, so they load at start-up, before the page's chunk.
 import type { FlagDef, FlagId } from '../../app/flags';
+import { QOL_PAGE_FLAGS } from './qolFlags';
+
+export type { QolPageFlagId } from './qolFlags';
 
 export type PageFlagId = Extract<FlagId, `page.${string}` | 'editor.spelling' | 'editor.readAloud'>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
-/** On in development and nightly builds, off in Beta and Stable until the feature is done. */
-const building = { dev: true, nightly: true, beta: false, stable: false };
+/** On in development, nightly, and Beta builds, for testers; off in Stable until the feature is done. */
+const building = { dev: true, nightly: true, beta: true, stable: false };
 const off = { dev: false, nightly: false, beta: false, stable: false };
 
 const flag = (id: PageFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({
@@ -25,13 +28,14 @@ export const PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.slashMenu', 'The slash menu and Turn into.', building),
   flag('page.styles', 'Editable text styles.', building),
   flag('page.outline', 'Outline moves and folding.', building),
-  flag('page.typingHelpers', 'AutoCorrect, date and time helpers, and the date line on new pages.', building),
+  flag('page.typingHelpers', 'AutoCorrect, and the date and time helpers.', building),
   flag('page.pasteExtras', 'Source links, PDF line joining, and saving web images.', building),
   flag('page.formattingBar', 'The formatting bar after touch and pen selections.', building),
   flag('page.readingOrder', 'The Reading order pane.', building),
   flag('page.history', 'Compare versions, restoring parts, named versions, and deleting history.', building),
   flag('page.imageRenditions', 'Display-size image renditions, if spike S3 needs them.', off),
-  flag('page.heicImport', 'Converting HEIC and TIFF images at import.', off),
+  flag('page.heicImport', 'Converting HEIC and TIFF images at import.', building),
   flag('editor.spelling', 'Spell check and its settings.', building),
   flag('editor.readAloud', 'Read aloud.', building),
+  ...QOL_PAGE_FLAGS,
 ];
