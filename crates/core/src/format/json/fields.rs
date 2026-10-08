@@ -166,6 +166,16 @@ impl Fields {
         self.take(key).map(|v| self.as_f64(key, &v)).transpose()
     }
 
+    /// An optional geometry value, rounded to 0.01 as the file writes it.
+    pub fn opt_geometry(&mut self, key: &str) -> Result<Option<f64>, FormatError> {
+        Ok(self.opt_f64(key)?.map(super::geometry))
+    }
+
+    /// A geometry value found under `key`, rounded to 0.01 as the file writes it.
+    pub fn as_geometry(&self, key: &str, value: &Value) -> Result<f64, FormatError> {
+        self.as_f64(key, value).map(super::geometry)
+    }
+
     /// A number found under `key`.
     pub fn as_f64(&self, key: &str, value: &Value) -> Result<f64, FormatError> {
         value

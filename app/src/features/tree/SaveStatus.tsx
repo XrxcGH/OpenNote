@@ -9,6 +9,7 @@ import { CloudWarningIcon } from '@phosphor-icons/react/dist/csr/CloudWarning';
 import { useEffect } from 'react';
 import type { ComponentType } from 'react';
 import type { SaveStatus as Status } from '../../services/notes';
+import { anySaveFailing, combinedStatus, saveHealthStore } from '../../services/pages/saveHealth';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
@@ -24,7 +25,9 @@ const ICONS: Record<Status, ComponentType<IconProps>> = {
 };
 
 export function SaveStatus({ presentation }: { presentation: 'full' | 'icon' | 'menuItem' }) {
-  const status = useStore(treeStore, (state) => state.saveStatus);
+  const notes = useStore(treeStore, (state) => state.saveStatus);
+  const pageFailing = useStore(saveHealthStore, anySaveFailing);
+  const status = combinedStatus(notes, pageFailing);
   useEffect(() => {
     if (status === 'error') announce(t('tree.save.errorAnnounce'), 'assertive');
   }, [status]);

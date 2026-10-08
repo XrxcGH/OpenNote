@@ -117,8 +117,12 @@ fn check_element_ids(page: &Page, block: &Block) -> Result<(), EditError> {
     Ok(())
 }
 
-/// A frame with no values and no unknown keys is no frame.
-fn normal_frame(frame: Frame) -> Option<Frame> {
+/// A frame with no values and no unknown keys is no frame. Its values are rounded to 0.01, as the file holds
+/// them, so the page in memory reads back from its bytes unchanged.
+fn normal_frame(mut frame: Frame) -> Option<Frame> {
+    for value in [&mut frame.x, &mut frame.y, &mut frame.w, &mut frame.h, &mut frame.rotate] {
+        *value = value.map(crate::format::json::geometry);
+    }
     (frame != Frame::default()).then_some(frame)
 }
 
