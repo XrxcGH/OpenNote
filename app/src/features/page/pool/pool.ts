@@ -24,6 +24,11 @@ export interface EditorPool {
   active(): { block: BlockId; editor: Editor } | null;
   onActiveChange(listener: (block: BlockId | null) => void): () => void;
   demote(block: BlockId): void;
+  /**
+   * Puts static text back in place of a block's editor even while it is focused or on screen, so text the block
+   * was given from elsewhere shows. Only an editor with nothing unsent; the caret is remembered for the next mount.
+   */
+  reload(block: BlockId): void;
   /** While on, no idle mounts and no demotion. */
   setScreenReader(on: boolean): void;
 }
@@ -147,6 +152,18 @@ class Pool implements PagePool {
     entry.stop = null;
     entry.editor = null;
     entry.mountable.unmount();
+  }
+
+  reload(block: BlockId): void {
+    const entry = this.entries.get(block);
+    if (!entry?.editor || !entry.mountable || entry.mountable.dirty()) return;
+    const { from, to } = entry.editor.state.selection;
+    entry.remembered = { anchor: from, head: to };
+    entry.stop?.();
+    entry.stop = null;
+    entry.editor = null;
+    entry.mountable.unmount();
+    if (this.focused === block) this.setActive(null);
   }
 
   setScreenReader(on: boolean): void {
