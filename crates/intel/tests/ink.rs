@@ -61,11 +61,12 @@ fn reads_two_words_with_alternatives_and_stroke_keys() {
 
 #[test]
 fn separate_rows_become_separate_lines_from_top_to_bottom() {
-    // OPEN and HELLO are the words the test above reads on every runner. The rows do not start at the same x. With
-    // two left-aligned rows, the recognizer on CI's Windows Server left out the lower row's first letter (a lone T,
-    // then the H of HELLO), as it would a list bullet. This test is about rows, not lists.
+    // OPEN and HELLO are the words the test above reads on every runner. The analyzer finds lists: on CI's Windows
+    // Server it took the first letter of a lower row that starts at or a little right of the upper row's left edge
+    // (a lone T, then the H of HELLO) for a list bullet and left it out of the words. Here the lower row starts past
+    // the end of the upper one, where no list item would, because this test is about rows, not lists.
     let mut all = write_word("OPEN", (20.0, 20.0), 40.0, 0);
-    all.extend(write_word("HELLO", (80.0, 120.0), 40.0, 50));
+    all.extend(write_word("HELLO", (200.0, 120.0), 40.0, 50));
     let found = recognize(&all, StrokeKind::Writing);
     let texts: Vec<String> = found.lines.iter().map(|l| l.text.to_uppercase()).collect();
     assert_eq!(texts, ["OPEN", "HELLO"], "{found:?}");
