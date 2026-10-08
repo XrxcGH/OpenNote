@@ -373,8 +373,16 @@ class PagesView {
    */
   private publishPaper(): void {
     const { background, sheet } = this.layout;
-    this.lattice = paperLattice(background, sheet, this.spec.mode === 'paginated', this.paperFrom());
-    shownPaper.set(this.lattice);
+    const next = paperLattice(background, sheet, this.spec.mode === 'paginated', this.paperFrom());
+    // The same lines are the same lattice: a new object on every layout pass would wake the Draw tab and the ink view
+    // each time, and their redraw can lay the page out again.
+    const same =
+      next !== null && this.lattice !== null && shownPaper.get() === this.lattice
+        ? JSON.stringify(next) === JSON.stringify(this.lattice)
+        : next === null && this.lattice === null && shownPaper.get() === null;
+    if (same) return;
+    this.lattice = next;
+    shownPaper.set(next);
   }
 
   /** The middle of the letters of the page's first line of text, in page units from the top of the world. */
