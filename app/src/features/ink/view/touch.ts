@@ -9,11 +9,16 @@ import type { CameraOp, InkPipeline, PipelineHost, PointerRecord, TouchInk } fro
 import type { TouchStrokePhase } from '../input/pipeline';
 import { createStrokeBuilder } from '../input/strokeBuilder';
 import { applyHold, holdFor } from '../snap';
+import { MIN_GLIDE_SPEED, glide } from '../input/touchNav';
 import type { Hold } from '../snap';
 import type { InkHost, InkPointerTool } from './host';
 import { snapToolsNow } from './snapTools';
 import { activeSlot, drawState, styleOf, writesInk } from './state';
+import type { DrawTool } from './state';
 import type { InkSurface } from './surface';
+
+/** The tools the palm filter manages touch for: every pen tool, not only the ones that write ink. */
+const penTool = (tool: DrawTool): boolean => tool !== 'select';
 
 type Palm = typeof import('./palm');
 
@@ -52,6 +57,10 @@ export class TouchTool {
   private readonly shown = new Map<number, TouchInk>();
   /** What the snap tools hold each touch stroke to. */
   private readonly holds = new Map<number, Hold>();
+  /** Where each live contact is, for the tap and long press the filter allows. */
+  private readonly at = new Map<number, { x: number; y: number }>();
+  private glideFrame = 0;
+  private stopTool: (() => void) | null = null;
   private pipeline: InkPipeline | null = null;
   private tick: ReturnType<typeof setInterval> | null = null;
   // The palm filter is the largest part of ink input, so it loads in its own chunk, right after the ink view.
@@ -70,44 +79,73 @@ export class TouchTool {
       accepts: (event) => this.accepts(event),
       down: (event, ctx) => {
         ctx.capture(event.pointerId);
+        this.stopGlide();
+        this.at.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        this.syncViewport();
         focusPage(host.viewport.get()?.viewport);
         this.ensure().handle(fill(this.record, event, 'down'));
         return 'claim';
       },
       move: (events) => {
         const pipeline = this.ensure();
-        for (const event of events) pipeline.handle(fill(this.record, event, 'move'));
+        for (const event of events) {
+          this.at.set(event.pointerId, { x: event.clientX, y: event.clientY });
+          pipeline.handle(fill(this.record, event, 'move'));
+        }
         return 'claim';
       },
-      up: (event) => this.ensure().handle(fill(this.record, event, 'up')),
-      cancel: () => this.pipeline?.system('blur', performance.now()),
+      up: (event) => {
+        this.at.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        this.ensure().handle(fill(this.record, event, 'up'));
+        this.at.delete(event.pointerId);
+      },
+      // One contact the system cancels (a thumb at the edge, an OS palm verdict) ends alone, as a cancel; only the
+      // router stopping, with no pointer to name, ends them all.
+      cancel: (_ctx, event) => {
+        if (event?.pointerType === 'touch') {
+          this.ensure().handle(fill(this.record, event, 'cancel'));
+          this.at.delete(event.pointerId);
+        } else this.pipeline?.system('blur', performance.now());
+      },
     };
+    this.stopTool = drawState.subscribe(() => this.pipeline?.setInkToolActive(writesInk(drawState.get().tool)));
     for (const type of PEN_EVENTS) window.addEventListener(type, this.onPen, { capture: true, passive: true });
     window.addEventListener('blur', this.onBlur);
   }
 
-  /** Settings changed: the next touch builds a filter with the new ones. */
+  /** Settings changed: the live filter takes the new ones, so a contact in progress keeps its place. */
   reset(): void {
-    this.pipeline = null;
-    if (this.tick) clearInterval(this.tick);
-    this.tick = null;
+    if (this.pipeline && this.palm) this.pipeline.filter.configure(palmSettings(this.palm));
+  }
+
+  /** The page changed: strokes the filter holds commit now, to the page they were drawn on. */
+  pageSwitch(): void {
+    this.pipeline?.system('pageSwitch', performance.now());
+    this.shown.clear();
+    this.holds.clear();
+    this.snapshots.clear();
+    this.at.clear();
   }
 
   destroy(): void {
+    this.stopTool?.();
+    this.stopGlide();
     for (const type of PEN_EVENTS) window.removeEventListener(type, this.onPen, { capture: true });
     window.removeEventListener('blur', this.onBlur);
-    this.reset();
+    this.pipeline = null;
+    if (this.tick) clearInterval(this.tick);
+    this.tick = null;
   }
 
   private accepts(event: PointerEvent): boolean {
     return event.pointerType === 'touch' && this.active();
   }
 
-  /** A pen tool is active on an editable page, and the palm filter has loaded. */
+  /** A pen tool is active on an editable page, and the palm filter has loaded. Every pen tool counts: a palm must not pan the page under the eraser either. */
   private active(): boolean {
     const surface = this.surfaceOf();
     if (!surface || surface.readOnly || !this.palm) return false;
-    return writesInk(drawState.get().tool) && isEnabled('ink.core') && isEnabled('ink.palm');
+    return penTool(drawState.get().tool) && isEnabled('ink.core') && isEnabled('ink.palm');
   }
 
   /**
@@ -116,6 +154,7 @@ export class TouchTool {
    */
   private readonly onPen = (event: PointerEvent) => {
     if (event.pointerType !== 'pen') return;
+    if (event.type === 'pointerdown') this.stopGlide();
     if (!this.pipeline && !this.active()) return;
     const type =
       event.type === 'pointerdown'
@@ -134,12 +173,19 @@ export class TouchTool {
     if (this.pipeline) return this.pipeline;
     const palm = this.palm!;
     const made = palm.createInkPipeline(this.pipelineHost(), palmSettings(palm), { platform: 'windows' });
-    made.setInkToolActive(true);
+    made.setInkToolActive(writesInk(drawState.get().tool));
     this.pipeline = made;
+    this.syncViewport();
     this.tick = setInterval(() => {
       if (made.needsTick()) made.tick(performance.now());
     }, 100);
     return made;
+  }
+
+  /** Tells the filter the page's size, for the edge-grip and edge-start rules. */
+  private syncViewport(): void {
+    const el = this.host.viewport.get()?.viewport;
+    if (el && this.pipeline) this.pipeline.filter.setViewport(el.clientWidth, el.clientHeight);
   }
 
   private pipelineHost(): PipelineHost {
@@ -154,8 +200,8 @@ export class TouchTool {
       },
       touchStroke: (id, phase, ink) => this.touchStroke(id, phase, ink),
       camera: (op, id, a, b, c) => this.camera(op, id, a, b, c),
-      tap: () => undefined,
-      contextMenu: () => undefined,
+      tap: (id, allowed) => this.tapAt(id, allowed),
+      contextMenu: (id, allowed) => this.pressAt(id, allowed),
       // A silent gesture takes back one the filter delivered just before a pen arrived; neither shows feedback here.
       gesture: (kind, _silent) => this.onGesture?.(kind),
       touchPolicy: () => undefined,
@@ -209,6 +255,68 @@ export class TouchTool {
     for (const shown of this.shown.values()) surface.drawLive(shown.builder.points, style);
   }
 
+  /** The element under a contact, ignoring the ink layers drawn over the page. */
+  private under(id: number): { el: Element; x: number; y: number } | null {
+    const at = this.at.get(id);
+    if (!at) return null;
+    const el = document.elementsFromPoint(at.x, at.y).find((e) => !(e instanceof HTMLCanvasElement));
+    return el ? { el, x: at.x, y: at.y } : null;
+  }
+
+  /** A tap the filter allows does what a tap does: clicks a checkbox or link, or puts the caret where it landed. */
+  private tapAt(id: number, allowed: boolean): void {
+    const hit = allowed ? this.under(id) : null;
+    if (!hit) return;
+    const { el, x, y } = hit;
+    const editable = el.closest('[contenteditable="true"]');
+    if (editable instanceof HTMLElement) {
+      editable.focus({ preventScroll: true });
+      const range = document.caretRangeFromPoint?.(x, y);
+      const selection = window.getSelection();
+      if (range && selection && editable.contains(range.startContainer)) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    }
+    const target = el.closest('a, button, input, label, summary, [role="button"], [role="checkbox"], [role="link"]');
+    if (target instanceof HTMLElement) target.click();
+  }
+
+  /** A long press the filter allows opens the context menu at the contact. */
+  private pressAt(id: number, allowed: boolean): void {
+    const hit = allowed ? this.under(id) : null;
+    if (!hit) return;
+    hit.el.dispatchEvent(
+      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: hit.x, clientY: hit.y }),
+    );
+  }
+
+  private stopGlide(): void {
+    if (this.glideFrame) cancelAnimationFrame(this.glideFrame);
+    this.glideFrame = 0;
+  }
+
+  /** A flick glides on, slowing smoothly, until it is slow, the pen or a finger lands, or the camera is held. */
+  private fling(vx: number, vy: number): void {
+    this.stopGlide();
+    const viewport = this.host.viewport.get();
+    if (!viewport || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    let vX = vx;
+    let vY = vy;
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(now - last, 50);
+      last = now;
+      const x = glide(vX, dt);
+      const y = glide(vY, dt);
+      viewport.viewport.scrollBy({ left: -x.distance, top: -y.distance, behavior: 'instant' });
+      vX = x.speed;
+      vY = y.speed;
+      this.glideFrame = Math.hypot(vX, vY) < MIN_GLIDE_SPEED ? 0 : requestAnimationFrame(step);
+    };
+    this.glideFrame = requestAnimationFrame(step);
+  }
+
   private camera(op: CameraOp, id: number, a: number, b: number, c: number): void {
     const viewport = this.host.viewport.get();
     if (!viewport) return;
@@ -223,6 +331,10 @@ export class TouchTool {
       viewport.setZoom(at.zoom);
       scroller.scrollTo({ left: at.left, top: at.top, behavior: 'instant' });
     } else if (op === 'release') this.snapshots.delete(id);
+    else if (op === 'fling') {
+      this.snapshots.delete(id);
+      this.fling(a, b);
+    }
   }
 }
 

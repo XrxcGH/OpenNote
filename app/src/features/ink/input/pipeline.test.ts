@@ -116,6 +116,30 @@ describe('the ink pipeline', () => {
   });
 });
 
+describe('contacts the pipeline ends', () => {
+  it('ends only the cancelled contact and lets go of its camera snapshot and its tick', () => {
+    const { h, calls } = host();
+    const p = createInkPipeline(h, {}, { pxPerMm: PPM });
+    p.handle(rec('down', 'touch', 1, 0, 40, 100));
+    p.handle(rec('down', 'touch', 2, 5, 120, 100));
+    p.handle(rec('cancel', 'touch', 1, 50, 40, 100));
+    expect(calls).toContain('camera release 1');
+    expect(calls).not.toContain('camera release 2');
+    p.handle(rec('up', 'touch', 2, 900, 120, 100, 0));
+    expect(p.needsTick()).toBe(false);
+  });
+
+  it('forgets every contact when the window loses focus', () => {
+    const { h, calls } = host();
+    const p = createInkPipeline(h, {}, { pxPerMm: PPM });
+    p.handle(rec('down', 'touch', 1, 0, 40, 100));
+    p.handle(rec('down', 'touch', 2, 5, 120, 100));
+    p.system('blur', 20);
+    expect(calls.filter((c) => c.startsWith('camera release'))).toEqual(['camera release 1', 'camera release 2']);
+    expect(p.filter.needsTick() || p.needsTick()).toBe(p.filter.needsTick());
+  });
+});
+
 describe('managed touch navigation', () => {
   it('scrolls by each move from where the scroll started', () => {
     const nav = new TouchNav();

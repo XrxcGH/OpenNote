@@ -42,7 +42,7 @@ export interface InkPointerTool {
   down(event: PointerEvent, ctx: InkRouterContext): 'claim' | 'watch';
   move?(events: readonly PointerEvent[], ctx: InkRouterContext): 'claim' | 'watch' | 'release';
   up?(event: PointerEvent, ctx: InkRouterContext): void;
-  cancel?(ctx: InkRouterContext): void;
+  cancel?(ctx: InkRouterContext, event?: PointerEvent): void;
 }
 
 export interface InkQueue {

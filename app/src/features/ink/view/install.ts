@@ -44,13 +44,14 @@ export const shownStrokeReader = {
   get: (ids: readonly string[]): Stroke[] => (current?.surface.strokes(ids) ?? []).map(placed),
 };
 
-function follow(host: InkHost): () => void {
+function follow(host: InkHost, beforeSwitch: () => void): () => void {
   const sync = () => {
     const page = host.page.get();
     const viewport = host.viewport.get();
     const queue = host.queue.get();
     const same = current && current.surface.parts.page === page && current.surface.parts.viewport === viewport;
     if (same) return;
+    if (current) beforeSwitch();
     current?.stop();
     current = null;
     surfaceStore.set(null);
@@ -99,7 +100,7 @@ export function installInk(host: InkHost): () => void {
     () => pen.destroy(),
     () => touch.destroy(),
     drawState.subscribe(() => host.setActiveTool(routerTool(drawState.get()))),
-    follow(host),
+    follow(host, () => touch.pageSwitch()),
     installMore({ host, surface: () => current?.surface ?? null, surfaces: surfaceStore }),
     registerExportStrokes(() => current?.surface ?? null),
     // New settings take effect at the next touch.

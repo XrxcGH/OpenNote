@@ -26,7 +26,8 @@ export interface PointerToolDef {
   down(event: PointerEvent, ctx: RouterContext): 'claim' | 'watch';
   move?(events: readonly PointerEvent[], ctx: RouterContext): 'claim' | 'watch' | 'release';
   up?(event: PointerEvent, ctx: RouterContext): void;
-  cancel?(ctx: RouterContext): void;
+  /** The pointer's own cancel or capture loss names it; stopping the router names none. */
+  cancel?(ctx: RouterContext, event?: PointerEvent): void;
 }
 
 const tools = new Map<string, PointerToolDef>();
@@ -147,7 +148,7 @@ export function createRouter(host: RouterHost): () => void {
     if (!entry) return;
     routed.delete(event.pointerId);
     const ctx = context();
-    (entry.owner ? [entry.owner] : entry.watchers).forEach((tool) => tool.cancel?.(ctx));
+    (entry.owner ? [entry.owner] : entry.watchers).forEach((tool) => tool.cancel?.(ctx, event));
   };
 
   const lost = (event: PointerEvent) => {

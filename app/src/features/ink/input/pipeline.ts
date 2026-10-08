@@ -153,6 +153,11 @@ class Pipeline implements InkPipeline {
   system(signal: SystemSignal, t: number): void {
     this.filter.system(signal, t);
     this.drain(t);
+    // Every contact was ended into the filter's ignore state; keep none to tick for or to hold a camera snapshot.
+    if (signal !== 'penCaptureLost') {
+      for (const id of this.live.keys()) this.host.camera('release', id, 0, 0, 0);
+      this.live.clear();
+    }
     if (signal !== 'penCaptureLost') this.taps.cancel();
     this.syncPolicy();
   }
@@ -308,7 +313,7 @@ class Pipeline implements InkPipeline {
       const v = this.nav.end(r.id, r.t);
       if (v.vx !== 0 || v.vy !== 0) this.host.camera('fling', r.id, v.vx, v.vy, 0);
       else this.host.camera('release', r.id, 0, 0, 0);
-    }
+    } else this.host.camera('release', r.id, 0, 0, 0);
     this.host.tap(r.id, (bits & End.TapAllowed) !== 0 && !(e?.suppressed ?? true));
     this.taps.up(r.id, r.t, canceled);
     this.live.delete(r.id);
