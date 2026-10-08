@@ -77,15 +77,34 @@ export function bundledFontFaces(): string {
   ].join('\n');
 }
 
+/** A file a test serves at a URL. */
+export interface ServedFile {
+  readonly mime: string;
+  readonly bytes: Uint8Array;
+}
+
 export interface EdgeSurface extends PrintSurface {
   readonly page: Page;
   /** The last prepared result, with the print document. */
   last(): PrepareResult | undefined;
 }
 
-/** Opens a surface in a new page of the browser. `dispose` closes only the page. */
-export async function edgeSurface(browser: Browser, fontFaces = ''): Promise<EdgeSurface> {
+/**
+ * Opens a surface in a new page of the browser. `dispose` closes only the page. `served` answers requests for those
+ * URLs with those files, as the app's asset scheme answers the print window, so pictures load from the URLs the app
+ * gives them, under the print document's own Content Security Policy.
+ */
+export async function edgeSurface(
+  browser: Browser,
+  fontFaces = '',
+  served: Readonly<Record<string, ServedFile>> = {},
+): Promise<EdgeSurface> {
   const page = await browser.newPage();
+  for (const [url, file] of Object.entries(served)) {
+    await page.route(url, (route) =>
+      route.fulfill({ status: 200, contentType: file.mime, body: Buffer.from(file.bytes) }),
+    );
+  }
   await page.goto('about:blank');
   await page.addScriptTag({ content: await printBundle() });
   let last: PrepareResult | undefined;

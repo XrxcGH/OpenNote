@@ -5,7 +5,7 @@ import type { Browser } from '@playwright/test';
 import type { ExportPage } from '../export/source';
 import { exportPdf, type PdfExportResult } from '../pdf/job';
 import type { PrintOptions } from '../print/sheets';
-import { bundledFontFaces, edgeSurface, type EdgeSurface } from './edgeSurface';
+import { bundledFontFaces, edgeSurface, type EdgeSurface, type ServedFile } from './edgeSurface';
 
 let faces: string | undefined;
 
@@ -18,6 +18,8 @@ export interface Run {
 export interface SheetDom {
   /** The visible text of the sheet, with runs of white space as one space. */
   readonly text: string;
+  /** The width each picture on the sheet decoded to, in order: 0 for one that did not load. */
+  readonly pictures: readonly number[];
   readonly slices: readonly {
     readonly top: number;
     readonly bottom: number;
@@ -61,21 +63,26 @@ export async function readSheets(surface: EdgeSurface): Promise<SheetDom[]> {
           last: el.lastElementChild?.tagName ?? '',
         };
       });
-      return { text: sheet.innerText.replace(/\s+/g, ' ').trim(), slices };
+      const pictures = Array.from(sheet.querySelectorAll('img'), (img) => img.naturalWidth);
+      return { text: sheet.innerText.replace(/\s+/g, ' ').trim(), pictures, slices };
     });
   });
 }
 
-/** Prints a page to PDF in the browser, keeps the surface open long enough to read the sheets, and closes it. */
+/**
+ * Prints a page to PDF in the browser, keeps the surface open long enough to read the sheets, and closes it. `served`
+ * answers requests for those URLs, such as the app's asset scheme, with those files.
+ */
 export async function printPage(
   browser: Browser,
   page: ExportPage,
   print: PrintOptions = {},
   assetUrls: Record<string, string> = {},
   request: { tagged?: boolean; outline?: boolean } = {},
+  served: Readonly<Record<string, ServedFile>> = {},
 ): Promise<Run> {
   faces ??= bundledFontFaces();
-  const surface = await edgeSurface(browser, faces);
+  const surface = await edgeSurface(browser, faces, served);
   let sheets: SheetDom[] = [];
   const inner = {
     ...surface,
