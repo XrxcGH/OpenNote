@@ -125,6 +125,7 @@ pub fn run(context: EarlyContext) {
             window::caption::init(app.handle());
             window::create(app.handle())?;
             shellqol::start(app.handle());
+            page_extras::attach::sweep_old_copies();
             Ok(())
         })
         .invoke_handler(commands())
@@ -133,6 +134,7 @@ pub fn run(context: EarlyContext) {
     app.run(|app, event| {
         if let tauri::RunEvent::Exit = event {
             audio::shutdown(app);
+            page_extras::attach::shutdown();
             flush_files(app);
             app.state::<core_bridge::CoreBridge>().shutdown();
             app.state::<hardening::Hardening>().end_clean();
@@ -319,6 +321,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_extras::title::page_extras_link_title,
         page_extras::attach::attachment_import,
         page_extras::attach::attachment_open,
+        page_extras::attach::attachment_applied,
         intel::intel_ext_call,
         connectors::connectors_list,
         connectors::connectors_connect,

@@ -16,5 +16,6 @@ export function createTauriPageExtras(): PageExtrasClient {
       }),
     openAttachment: (page, asset, name) => invoke('attachment_open', { page, asset, name }),
     onAttachmentSaved: (listener) => listen('attachment://saved', listener),
+    attachmentApplied: (page, asset) => invoke('attachment_applied', { page, asset }).then(() => undefined),
   };
 }

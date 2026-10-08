@@ -93,13 +93,22 @@ export function previewLines(text: string, lines = 8, width = 90): string {
  */
 export function savedBackEdits(blocks: readonly BlockJson[], saved: AttachmentSaved): Edit[] | null {
   const assetOf = (block: BlockJson) => (typeof block.data.asset === 'string' ? block.data.asset : null);
-  const pointing = blocks.filter((block) => block.type === 'file' && assetOf(block) === saved.previous);
+  // Any version the copy has been: after an undo, the block may show an earlier one than the last saved back.
+  const replaces = new Set(saved.replaces ?? [saved.previous]);
+  replaces.delete(saved.asset.id);
+  const pointing = blocks.filter((block) => {
+    const asset = assetOf(block);
+    return block.type === 'file' && asset !== null && replaces.has(asset);
+  });
   if (pointing.length === 0) return null;
   const edits: Edit[] = [{ edit: 'addAsset', asset: saved.asset.id }];
   for (const block of pointing) {
     edits.push({ edit: 'patchBlock', block: block.id, data: { asset: saved.asset.id } });
   }
-  const others = blocks.some((block) => !pointing.includes(block) && assetOf(block) === saved.previous);
-  if (!others) edits.push({ edit: 'removeAsset', asset: saved.previous });
+  const dropped = new Set(pointing.map(assetOf));
+  for (const asset of dropped) {
+    const others = blocks.some((block) => !pointing.includes(block) && assetOf(block) === asset);
+    if (asset !== null && !others) edits.push({ edit: 'removeAsset', asset });
+  }
   return edits;
 }

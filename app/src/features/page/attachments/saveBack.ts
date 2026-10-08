@@ -1,7 +1,7 @@
 // Saving back: when the app that opened an attachment saves a change, the
 // shell imports the new file as an asset and tells the page. This points the page's attachment at it in one step,
-// so Ctrl+Z brings back the version before. The shell keeps watching after the page closes, and then points the
-// attachment at the new asset itself.
+// so Ctrl+Z brings back the version before, and says so. A change no window says it made within a few seconds (the
+// page closed, or is read-only) the shell makes itself, as it does for one saved after the page closed.
 import { commandContext } from '../../../commands/registry';
 import type { MountedPage } from '../mount';
 import { assetTable } from '../images/assets';
@@ -24,11 +24,12 @@ export function attachSaveBack(mounted: MountedPage): () => void {
     void mounted.sync
       .send({ edits })
       .then(() => {
-        for (const block of blocks) {
-          if (block.type === 'file' && block.data.asset === saved.previous) {
-            mounted.layer.upsert({ ...block, data: { ...block.data, asset: saved.asset.id } });
-          }
+        for (const edit of edits) {
+          if (edit.edit !== 'patchBlock') continue;
+          const block = blocks.find((candidate) => candidate.id === edit.block);
+          if (block) mounted.layer.upsert({ ...block, data: { ...block.data, asset: saved.asset.id } });
         }
+        return client.attachmentApplied(saved.page, saved.asset.id);
       })
       .catch(() => undefined);
   });

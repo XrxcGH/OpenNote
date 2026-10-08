@@ -275,7 +275,10 @@ export interface CaretMetrics {
 /** An attached file whose changes its own app saved back: the page's attachment now points at `asset`. */
 export interface AttachmentSaved {
   page: string;
+  /** The asset the copy was last saved back as. */
   previous: string;
+  /** Every asset the copy has been, oldest first: after an undo, a block may show an earlier one. */
+  replaces?: string[];
   asset: ImportedAsset;
 }
 
@@ -291,6 +294,11 @@ export interface PageExtrasClient {
    */
   openAttachment(page: string, asset: string, name: string): Promise<'app' | 'folder'>;
   onAttachmentSaved(listener: (saved: AttachmentSaved) => void): Unsubscribe;
+  /**
+   * Says the page now points its attachment at a change saved back. Until a window says so, the shell makes the
+   * change itself after a few seconds, so a page that closed first still gets it.
+   */
+  attachmentApplied(page: string, asset: string): Promise<void>;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */
