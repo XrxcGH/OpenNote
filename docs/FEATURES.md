@@ -163,6 +163,7 @@ These answer known complaints about other note apps:
 - **Links:** internal links survive renames and moves. Status: Built, untested by hand.
 - **Tabs and windows:** open several pages side by side in tabs or windows. Status: Built, untested by hand.
 - **Snap tools:** a ruler, protractor, and snap-to-grid for neat diagrams. Status: Built, untested by hand.
+- **Snap to paper lines:** on ruled, grid, and dot paper, lines, arrows, every shape, ink-to-shape shapes, library shapes, and shape handles snap to the lines the paper draws (grid crossings, dots, rules, and the margin line), on every sheet and at every zoom. Boxes keep whole spacings, a nearly level line lies on a rule, arrow keys move a selected shape one spacing, and Alt turns snapping off for one stroke or drag. Freehand ink never snaps. On by default; the Draw tab's switch reads Snap to paper lines. Flag `ink.paperSnap`, on through Beta. Status: Built, untested by hand.
 - **Offline:** everything works offline, and conflicts are shown side by side, never silently overwritten. Status: Built, untested by hand. Conflicts show side by side.
 - **Export:** a whole notebook exports in one step, so data is never locked in. Status: Built, untested by hand.
 

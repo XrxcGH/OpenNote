@@ -48,6 +48,14 @@ Press Ctrl+K and choose one of these by name.
 | Replay ink | Plays your strokes back, and plays a recording along with them. |
 | Ruler, Protractor, and Snap to grid | Help you draw neat diagrams. |
 
+### Snap to paper lines
+
+On lined, grid, or dot paper, lines, arrows, and shapes snap to the paper's own lines as you draw them. On grid paper a corner near a crossing lands on it, and on dot paper it lands on a dot. On lined paper a shape snaps to the rules and to the margin line, and a line drawn close to level lies on a rule. Rectangles and ellipses keep their sizes in whole squares. Moving or resizing a shape by its handles snaps too, and the arrow keys move a selected shape one square at a time. A small ring shows where a point snapped.
+
+- Hold Alt while you draw or drag to place a shape freely, just that once.
+- Turn it off with Snap to paper lines in the Draw tab. The setting is remembered. On plain paper the same switch is Snap to grid, with its own grid size.
+- Handwriting and other freehand ink never snap.
+
 ## Handwriting to text
 
 Lasso your writing and choose Convert to text. The Writing pen converts as you write. Both use on-device intelligence, which you turn on in Settings. See [on-device intelligence](on-device-intelligence.md).
