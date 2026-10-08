@@ -41,6 +41,15 @@ function baseline(harness: PageHarness, element: Element): number {
   return y;
 }
 
+/**
+ * The top of `element` in page units from the top of the world. Not offsetTop: that counts from the offset parent,
+ * which browsers choose differently under the camera's transform, and it is rounded to a whole pixel.
+ */
+function topOf(harness: PageHarness, element: Element): number {
+  const { zoom } = harness.viewport.camera();
+  return (element.getBoundingClientRect().top - harness.viewport.world.getBoundingClientRect().top) / zoom;
+}
+
 /** How far `y` is from the nearest rule. */
 const offRule = (y: number, grid: RuleGrid = GRID) => {
   const k = Math.round((y - grid.origin) / grid.step);
@@ -99,7 +108,7 @@ describe('ruled paper', () => {
       const wrapper = harness.viewport.world.querySelector<HTMLElement>('[data-block-id]')!;
       const line = wrapper.querySelector('.ProseMirror > p')!;
       expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
-      expect(offRule((wrapper.offsetTop ?? 0) - 0)).toBeLessThan(TOLERANCE);
+      expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
       const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
       expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
       await cleanupPages();

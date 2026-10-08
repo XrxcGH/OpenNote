@@ -149,6 +149,12 @@ fn detect_database(path: &Path) -> Result<Detected> {
 
 /// A shared OpenNote file: a ZIP archive of Markdown notes, or the same locked with a password.
 fn detect_share(path: &Path) -> Result<Detected> {
+    if starts_with(path, crate::lock::EARLY_BETA_MAGIC) {
+        return Err(InteropError::unsupported(
+            file_name(path),
+            "This file was locked by an early beta of OpenNote. Share it again from a current version.",
+        ));
+    }
     if starts_with(path, crate::lock::MAGIC) {
         return Ok(Detected {
             kind: SourceKind::Markdown,
