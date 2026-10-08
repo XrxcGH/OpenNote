@@ -27,6 +27,10 @@ const MAX_TABLE_BYTES: usize = 32 << 20;
 /// About how many bytes of JSON a cell or a row takes besides its text.
 const CELL_COST: usize = 64;
 
+/// The most cells a table may take: as many as fit in [`MAX_TABLE_BYTES`] even when empty. An importer that repeats
+/// or pads cells because a file says so (a span, a repeat count) stops adding them here.
+pub(super) const MAX_TABLE_CELLS: usize = MAX_TABLE_BYTES / CELL_COST;
+
 /// Imports a CSV file, or a folder of them, into a new notebook.
 pub fn import_csv(path: &Path, env: &ImportEnv<'_>, sink: &mut dyn ImportSink) -> Result<Report> {
     import_folder(path, &CsvReader, env, sink)
