@@ -128,6 +128,8 @@ pub struct Bridge {
     pub(crate) open: HashMap<(PageId, ClientId), PageHandle>,
     /// The notebook each open page was opened in.
     homes: HashMap<(PageId, ClientId), NotebookId>,
+    /// The window each open page's client lives in, so a window that goes closes the sessions it left open.
+    owners: HashMap<(PageId, ClientId), String>,
     pub(crate) notes: NotesState,
     pub(crate) relay: Arc<Relay>,
 }
@@ -192,6 +194,7 @@ impl Bridge {
             root: root.to_path_buf(),
             open: HashMap::new(),
             homes: HashMap::new(),
+            owners: HashMap::new(),
             notes: NotesState::default(),
             relay,
         })
@@ -220,6 +223,41 @@ impl Bridge {
         self.homes.insert((id, client.clone()), notebook.id());
         self.open.insert((id, client), handle.clone());
         Ok(handle)
+    }
+
+    /// [`Bridge::handle`] for a client that lives in the window labelled `window`.
+    pub(crate) fn handle_in(&mut self, page: &str, client: &str, window: &str) -> IpcResult<PageHandle> {
+        let handle = self.handle(page, client)?;
+        self.owners
+            .insert((handle.id(), handle.client().clone()), window.to_owned());
+        Ok(handle)
+    }
+
+    /// Closes a client's session of a page: the page saves, and the session forgets the client.
+    fn close_client(&mut self, key: &(PageId, ClientId)) -> IpcResult<()> {
+        self.homes.remove(key);
+        self.owners.remove(key);
+        match self.open.remove(key) {
+            Some(handle) => handle.close(&key.1).map_err(internal),
+            None => Ok(()),
+        }
+    }
+
+    /// Closes the sessions a window left open. A window that closes goes without unmounting its pages, so their
+    /// clients would stay in the session for good. Returns how many it closed.
+    pub(crate) fn close_window(&mut self, window: &str) -> usize {
+        let keys: Vec<(PageId, ClientId)> = self
+            .owners
+            .iter()
+            .filter(|(_, owner)| owner.as_str() == window)
+            .map(|(key, _)| key.clone())
+            .collect();
+        for key in &keys {
+            if let Err(error) = self.close_client(key) {
+                ::log::warn!("Couldn't close a page the {window} window left open: {}", error.message);
+            }
+        }
+        keys.len()
     }
 
     fn open_handles(&self, page: &str) -> Vec<PageHandle> {
@@ -251,6 +289,7 @@ impl Bridge {
             .collect();
         for key in stale {
             self.homes.remove(&key);
+            self.owners.remove(&key);
             if let Some(handle) = self.open.remove(&key) {
                 let _ = handle.close(&key.1);
             }
@@ -289,6 +328,12 @@ impl CoreBridge {
                 ::log::warn!("Couldn't send {name} to the interface: {error}");
             }
         }));
+    }
+
+    /// Closes the page sessions of a window that went, if the core has started. See [`Bridge::close_window`].
+    pub fn close_window(&self, window: &str) -> usize {
+        let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        state.as_mut().map_or(0, |bridge| bridge.close_window(window))
     }
 
     /// Runs `work` on the bridge, starting the core first if it hasn't started. A start that fails is logged and
@@ -428,13 +473,14 @@ fn edit_error(error: opennote_core::EditError) -> IpcError {
 #[tauri::command]
 pub async fn page_open(
     app: AppHandle,
+    window: tauri::WebviewWindow,
     bridge: State<'_, CoreBridge>,
     page: String,
     client: String,
     viewport: Option<Rect>,
 ) -> IpcResult<Response> {
     run_notes(&app, &bridge, |bridge| {
-        let handle = bridge.handle(&page, &client)?;
+        let handle = bridge.handle_in(&page, &client, window.label())?;
         let envelope = handle.envelope(viewport).map_err(internal)?;
         Ok(Response::new(envelope.bytes))
     })
@@ -503,11 +549,7 @@ pub async fn page_close(bridge: State<'_, CoreBridge>, page: String, client: Str
             return Ok(());
         };
         let client = ClientId::parse(&client).map_err(|error| invalid("client", error))?;
-        bridge.homes.remove(&(id, client.clone()));
-        if let Some(handle) = bridge.open.remove(&(id, client.clone())) {
-            handle.close(&client).map_err(internal)?;
-        }
-        Ok(())
+        bridge.close_client(&(id, client))
     })
 }
 

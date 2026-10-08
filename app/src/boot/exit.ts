@@ -47,3 +47,19 @@ export async function answerBeforeExit(platform: Platform, reason: ExitReason): 
 export function installExitHandshake(platform: Platform): Unsubscribe {
   return platform.lifecycle.onBeforeExit((reason) => void answerBeforeExit(platform, reason));
 }
+
+/** What a window shows: the app, a page or quick capture beside it, or a tool popped out of it. */
+export type WindowKind = 'main' | 'page' | 'capture' | 'tool';
+
+/**
+ * Joins this window to the exit handshake. Every window that edits pages answers it: Rust asks all of them when
+ * the app exits, and a page or quick capture window alone when it closes, so the typing it hasn't sent yet is
+ * saved first. The main window tells Rust it listens with its first paint (reportFirstPaint); the others say so at
+ * once. A tool window keeps its state in browser storage and has nothing to save.
+ */
+export function joinExitHandshake(platform: Platform, kind: WindowKind): Unsubscribe | null {
+  if (kind === 'tool') return null;
+  const stop = installExitHandshake(platform);
+  if (kind !== 'main') platform.lifecycle.firstPaint();
+  return stop;
+}

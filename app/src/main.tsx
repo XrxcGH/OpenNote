@@ -8,7 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { RootBoundary } from './app/RootBoundary';
 import { startApp } from './app/start';
-import { installExitHandshake } from './boot/exit';
+import { joinExitHandshake } from './boot/exit';
 import { reportFirstPaint } from './boot/marks';
 import { PageWindow } from './features/qol';
 import { QuickCapture } from './features/quickCapture';
@@ -50,9 +50,8 @@ createRoot(root).render(
     )}
   </StrictMode>,
 );
-// A tool's own window is not the app's window: it neither answers the exit handshake nor reports first paint.
-// The page and quick capture windows are the same.
-if (!tool && !extra) {
-  installExitHandshake(platform);
-  reportFirstPaint(platform);
-}
+// Every window that edits pages answers the exit handshake, so closing it or the app saves its typing first. Only
+// the main window reports its first paint; a tool's own window has nothing to save.
+const kind = tool ? 'tool' : extra === 'page' || extra === 'capture' ? extra : 'main';
+joinExitHandshake(platform, kind);
+if (kind === 'main') reportFirstPaint(platform);

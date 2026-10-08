@@ -231,10 +231,15 @@ pub fn window_toggle_maximize(window: WebviewWindow) -> IpcResult<()> {
     }
 }
 
-/// Closes the app through the exit handshake, as the caption button, Alt+F4, and the taskbar do.
+/// Closes the window it is called from through the exit handshake, as the caption button, Alt+F4, and the taskbar
+/// do: the main window closes the app, and a window beside it closes on its own after it saves.
 #[tauri::command]
-pub fn window_close(app: AppHandle) -> IpcResult<()> {
-    lifecycle::request_exit(&app, ExitReason::Close);
+pub fn window_close(app: AppHandle, window: WebviewWindow) -> IpcResult<()> {
+    if window.label() == MAIN {
+        lifecycle::request_exit(&app, ExitReason::Close);
+    } else {
+        window.close()?;
+    }
     Ok(())
 }
 

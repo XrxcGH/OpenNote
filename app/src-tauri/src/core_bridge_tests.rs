@@ -102,6 +102,34 @@ fn only_pages_of_open_notebooks_open_and_page_ids_are_checked() {
     assert_eq!(core_error(CoreError::NotFound("version".into())).code, "notFound");
 }
 
+/// F3-3: a page window that closed went without closing its pages, so its client stayed in the session for good.
+#[test]
+fn a_window_that_goes_closes_the_page_sessions_it_left_open_and_no_others() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let notes = dir.path().join("Notes");
+    let bridge = CoreBridge::at(dir.path().join("local"));
+    let page = a_page(&bridge, &notes);
+    bridge
+        .notes(Some(notes.clone()), |bridge| {
+            bridge.handle_in(&page, "main-1", "main")?;
+            bridge.handle_in(&page, "wabc12345-1", "page-x")?;
+            Ok(())
+        })
+        .expect("the bridge");
+    assert_eq!(bridge.close_window("page-x"), 1);
+    assert_eq!(bridge.close_window("page-x"), 0, "it closes each session once");
+    let open = bridge
+        .notes(Some(notes), |bridge| {
+            Ok((
+                bridge.open_handle(&page, "main-1").is_ok(),
+                bridge.open_handle(&page, "wabc12345-1").is_ok(),
+            ))
+        })
+        .expect("the bridge");
+    bridge.shutdown();
+    assert_eq!(open, (true, false));
+}
+
 #[test]
 fn a_page_moved_to_trash_loses_its_open_session() {
     let dir = tempfile::tempdir().expect("a temp folder");

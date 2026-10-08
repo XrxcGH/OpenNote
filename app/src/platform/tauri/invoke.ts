@@ -4,6 +4,7 @@
 
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import type {
   AttachmentSaved,
   CaretMetrics,
@@ -155,11 +156,20 @@ export function fire<C extends keyof Commands>(
   invoke(command, ...args).catch((error: IpcError) => console.debug(`${command}: ${error.message}`));
 }
 
-/** Listens for an event. The returned function stops listening, even before Tauri confirms the listener. */
-export function listen<E extends keyof Events>(event: E, handler: (payload: Events[E]) => void): Unsubscribe {
+/**
+ * Listens for an event. The returned function stops listening, even before Tauri confirms the listener. A plain
+ * listener hears the event whichever window Rust sends it to; `here` hears only what is sent to this window, for
+ * events that ask one window something, such as app://before-exit.
+ */
+export function listen<E extends keyof Events>(
+  event: E,
+  handler: (payload: Events[E]) => void,
+  here = false,
+): Unsubscribe {
   let stopped = false;
   let stop: Unsubscribe | null = null;
-  tauriListen<Events[E]>(event, ({ payload }) => handler(payload))
+  const options = here ? { target: getCurrentWebviewWindow().label } : undefined;
+  tauriListen<Events[E]>(event, ({ payload }) => handler(payload), options)
     .then((unlisten) => (stopped ? unlisten() : (stop = unlisten)))
     .catch((error: unknown) => console.debug(`${event}: ${String(error)}`));
   return () => {
