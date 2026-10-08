@@ -197,7 +197,7 @@ pub(crate) async fn blocking<T: Send + 'static>(
 
 #[tauri::command]
 pub async fn audio_assets_dir(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<String> {
-    let dir = bridge.with(|bridge| assets_dir(bridge, &page))?;
+    let dir = bridge.run(move |bridge| bridge.with(|bridge| assets_dir(bridge, &page))).await?;
     Ok(dir.to_string_lossy().into_owned())
 }
 
@@ -217,7 +217,10 @@ pub async fn audio_prepare(
     bridge: State<'_, CoreBridge>,
     mut request: StartRequest,
 ) -> IpcResult<Prepared> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &request.assets_dir.to_string_lossy()))?;
+    let assets_dir = request.assets_dir.to_string_lossy().into_owned();
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     request.assets_dir = dir;
     blocking(&state, move |state| state.lock().prepare(request).map_err(audio_error)).await
 }
@@ -232,12 +235,16 @@ pub async fn audio_adopt_tracks(
     entry: RecordingEntry,
     growing: bool,
 ) -> IpcResult<()> {
-    let (dir, page) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, page) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     let assets = blocking(&state, move |state| {
         track_assets(&state.0.services, &dir, &entry, growing)
     })
     .await?;
-    bridge.with(|bridge| adopt(bridge, page, assets))
+    bridge
+        .run(move |bridge| bridge.with(|bridge| adopt(bridge, page, assets)))
+        .await
 }
 
 #[tauri::command]
@@ -291,7 +298,9 @@ pub async fn audio_recover(
     assets_dir: String,
     entry: RecordingEntry,
 ) -> IpcResult<Finished> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |state| {
         state.lock().recover(&dir, &entry).map_err(audio_error)
     })
@@ -306,7 +315,9 @@ pub async fn audio_open_playback(
     entry: RecordingEntry,
     device: Option<String>,
 ) -> IpcResult<PlaybackInfo> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |state| {
         state
             .lock()
@@ -381,7 +392,9 @@ pub async fn audio_trim_silence(
     assets_dir: String,
     entry: RecordingEntry,
 ) -> IpcResult<Option<Edited>> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |state| {
         let services = &state.0.services;
         let summary = entry.summary().map_err(audio_error)?;
@@ -402,7 +415,9 @@ pub async fn audio_remove_part(
     start_ns: u64,
     end_ns: u64,
 ) -> IpcResult<Edited> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     if end_ns <= start_ns {
         return Err(IpcError::invalid("endNs", "The part to remove ends before it starts."));
     }
@@ -426,7 +441,9 @@ pub async fn audio_delete_files(
     assets_dir: String,
     entry: RecordingEntry,
 ) -> IpcResult<u64> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |_| {
         let summary = entry.summary().map_err(audio_error)?;
         storage::delete_audio(&dir, &summary).map_err(audio_error)

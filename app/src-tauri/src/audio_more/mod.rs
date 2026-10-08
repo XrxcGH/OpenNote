@@ -65,7 +65,9 @@ pub async fn audio_split(
     entry: RecordingEntry,
     at_ns: u64,
 ) -> IpcResult<Split> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |state| {
         let services = state.services();
         let summary = entry.summary().map_err(audio_error)?;
@@ -90,7 +92,9 @@ pub async fn audio_enhance(
     assets_dir: String,
     entry: RecordingEntry,
 ) -> IpcResult<Edited> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |state| {
         let services = state.services();
         let summary = entry.summary().map_err(audio_error)?;
@@ -118,7 +122,9 @@ pub async fn audio_compress(
     entry: RecordingEntry,
     quality: String,
 ) -> IpcResult<Edited> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |state| {
         let services = state.services();
         let summary = entry.summary().map_err(audio_error)?;
@@ -150,7 +156,7 @@ pub struct Stored {
 /// What every recording of every open notebook takes, largest first. Pages in locked sections are left out.
 #[tauri::command]
 pub async fn audio_storage_scan(state: State<'_, AudioState>, bridge: State<'_, CoreBridge>) -> IpcResult<Vec<Stored>> {
-    let notebooks = bridge.notebooks();
+    let notebooks = bridge.run(|bridge| Ok(bridge.notebooks())).await?;
     blocking(&state, move |_| {
         let mut found = Vec::new();
         for notebook in notebooks {
@@ -212,13 +218,17 @@ fn recordings_of(page_dir: &Path) -> Vec<RecordingEntry> {
 #[tauri::command]
 pub async fn audio_purge_history(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<u32> {
     let id = PageId::parse(&page).map_err(|_| IpcError::invalid("page", "That isn't a page ID."))?;
-    let notebook = bridge.with(|bridge| {
-        bridge
-            .core
-            .find_node(id.0)
-            .map(|(notebook, _)| notebook)
-            .ok_or_else(|| IpcError::new("notFound", "That page isn't in a notebook."))
-    })?;
+    let notebook = bridge
+        .run(move |bridge| {
+            bridge.with(|bridge| {
+                bridge
+                    .core
+                    .find_node(id.0)
+                    .map(|(notebook, _)| notebook)
+                    .ok_or_else(|| IpcError::new("notFound", "That page isn't in a notebook."))
+            })
+        })
+        .await?;
     tauri::async_runtime::spawn_blocking(move || {
         notebook
             .delete_history(HistoryScope::Page(id), false)
@@ -241,7 +251,9 @@ pub async fn audio_export(
     dest: String,
     format: String,
 ) -> IpcResult<u64> {
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &assets_dir))?;
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     let dest = PathBuf::from(dest);
     if !grants.take(&dest) {
         return Err(IpcError::invalid("dest", "Choose where to save before exporting."));
@@ -311,7 +323,10 @@ pub async fn audio_import_file(
         InvokeBody::Raw(bytes) => bytes.clone(),
         InvokeBody::Json(_) => return Err(IpcError::invalid("body", "The file must come as raw bytes.")),
     };
-    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &header.assets_dir))?;
+    let assets_dir = header.assets_dir.clone();
+    let (dir, _) = bridge
+        .run(move |bridge| bridge.with(|bridge| checked_dir(bridge, &assets_dir)))
+        .await?;
     blocking(&state, move |state| {
         let services = state.services();
         let extension: String = Path::new(&header.name)

@@ -315,12 +315,16 @@ pub async fn notes_load_initial(
     bridge: State<'_, CoreBridge>,
     path: Vec<String>,
 ) -> IpcResult<InitialTree> {
-    run_notes(&app, &bridge, |bridge| bridge.load_initial(&path))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.load_initial(&path)))
+        .await
 }
 
 #[tauri::command]
 pub async fn notes_list_notebooks(app: AppHandle, bridge: State<'_, CoreBridge>) -> IpcResult<Vec<NodeSummary>> {
-    run_notes(&app, &bridge, |bridge| Ok(bridge.list_notebooks()))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| Ok(bridge.list_notebooks())))
+        .await
 }
 
 #[tauri::command]
@@ -329,17 +333,23 @@ pub async fn notes_list_children(
     bridge: State<'_, CoreBridge>,
     parent_id: String,
 ) -> IpcResult<Vec<NodeSummary>> {
-    run_notes(&app, &bridge, |bridge| bridge.list_children(&parent_id))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.list_children(&parent_id)))
+        .await
 }
 
 #[tauri::command]
 pub async fn notes_get(app: AppHandle, bridge: State<'_, CoreBridge>, id: String) -> IpcResult<Option<NodeSummary>> {
-    run_notes(&app, &bridge, |bridge| Ok(bridge.get_node(&id)))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| Ok(bridge.get_node(&id))))
+        .await
 }
 
 #[tauri::command]
 pub async fn notes_create(app: AppHandle, bridge: State<'_, CoreBridge>, input: CreateInput) -> IpcResult<NodeSummary> {
-    run_notes(&app, &bridge, |bridge| bridge.create(input))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.create(input)))
+        .await
 }
 
 /// Renames a node. A page's title is the one in its `page.json`, which its heading shows too.
@@ -350,7 +360,9 @@ pub async fn notes_rename(
     id: String,
     title: String,
 ) -> IpcResult<NodeSummary> {
-    run_notes(&app, &bridge, |bridge| bridge.rename(&id, &title))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.rename(&id, &title)))
+        .await
 }
 
 #[tauri::command]
@@ -360,7 +372,9 @@ pub async fn notes_set_color(
     id: String,
     color: Option<String>,
 ) -> IpcResult<NodeSummary> {
-    run_notes(&app, &bridge, |bridge| bridge.set_color(&id, color))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.set_color(&id, color)))
+        .await
 }
 
 #[tauri::command]
@@ -370,7 +384,9 @@ pub async fn notes_move(
     ids: Vec<String>,
     placement: Placement,
 ) -> IpcResult<()> {
-    run_notes(&app, &bridge, |bridge| bridge.move_nodes(&ids, &placement))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.move_nodes(&ids, &placement)))
+        .await
 }
 
 #[tauri::command]
@@ -380,12 +396,16 @@ pub async fn notes_set_page_level(
     ids: Vec<String>,
     level: u8,
 ) -> IpcResult<()> {
-    run_notes(&app, &bridge, |bridge| bridge.set_page_level(&ids, level))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.set_page_level(&ids, level)))
+        .await
 }
 
 #[tauri::command]
 pub async fn notes_trash(app: AppHandle, bridge: State<'_, CoreBridge>, ids: Vec<String>) -> IpcResult<ReceiptOut> {
-    run_notes(&app, &bridge, |bridge| bridge.trash(&ids))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.trash(&ids)))
+        .await
 }
 
 #[tauri::command]
@@ -394,12 +414,16 @@ pub async fn notes_restore(
     bridge: State<'_, CoreBridge>,
     receipt_id: String,
 ) -> IpcResult<Vec<NodeSummary>> {
-    run_notes(&app, &bridge, |bridge| bridge.restore(&receipt_id))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.restore(&receipt_id)))
+        .await
 }
 
 #[tauri::command]
 pub async fn notes_list_trash(app: AppHandle, bridge: State<'_, CoreBridge>) -> IpcResult<Vec<TrashedItem>> {
-    run_notes(&app, &bridge, |bridge| bridge.list_trash())
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.list_trash()))
+        .await
 }
 
 #[tauri::command]
@@ -408,21 +432,29 @@ pub async fn notes_restore_from_trash(
     bridge: State<'_, CoreBridge>,
     ids: Vec<String>,
 ) -> IpcResult<Vec<NodeSummary>> {
-    run_notes(&app, &bridge, |bridge| bridge.restore_from_trash(&ids))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.restore_from_trash(&ids)))
+        .await
 }
 
 /// Deletes Trash items for good. A notebook in Trash keeps its folder, which File Explorer can delete.
 #[tauri::command]
 pub async fn notes_purge(app: AppHandle, bridge: State<'_, CoreBridge>, ids: Vec<String>) -> IpcResult<()> {
-    run_notes(&app, &bridge, |bridge| bridge.purge(&ids))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.purge(&ids)))
+        .await
 }
 
 #[tauri::command]
 pub async fn notes_status(app: AppHandle, bridge: State<'_, CoreBridge>) -> IpcResult<StatusOut> {
-    run_notes(&app, &bridge, |bridge| Ok(bridge.notes_status()))
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| Ok(bridge.notes_status())))
+        .await
 }
 
 #[tauri::command]
 pub async fn notes_flush(app: AppHandle, bridge: State<'_, CoreBridge>) -> IpcResult<()> {
-    run_notes(&app, &bridge, |bridge| bridge.notes_flush())
+    bridge
+        .run(move |bridge| run_notes(&app, bridge, |bridge| bridge.notes_flush()))
+        .await
 }

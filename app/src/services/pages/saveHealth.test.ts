@@ -4,9 +4,13 @@ import { resetStores } from '../../state/store';
 import {
   anySaveFailing,
   combinedStatus,
+  coreBusy,
+  coreStalled,
+  pageClosed,
   pageSaveFailed,
   pageSaved,
   saveHealthStore,
+  setCoreStalled,
   watchSaveHealth,
 } from './saveHealth';
 
@@ -37,10 +41,37 @@ describe('save health', () => {
     expect(anySaveFailing(saveHealthStore.get())).toBe(false);
   });
 
+  it('forgets a page that closed, since no save will be reported for it', () => {
+    pageSaveFailed('p1');
+    pageSaveFailed('p2');
+    pageClosed('p1');
+    expect([...saveHealthStore.get().failing]).toEqual(['p2']);
+    pageClosed('p3');
+    expect([...saveHealthStore.get().failing]).toEqual(['p2']);
+  });
+
+  it('says the core is stalled from core:stalled until core:responsive', () => {
+    const client = fakeClient();
+    const stop = watchSaveHealth(client);
+    expect(coreStalled(saveHealthStore.get())).toBe(false);
+    client.emit('core:stalled', { what: 'page_apply', seconds: 10 });
+    expect(coreStalled(saveHealthStore.get())).toBe(true);
+    client.emit('core:stalled', { what: 'page_apply', seconds: 20 });
+    expect(coreStalled(saveHealthStore.get())).toBe(true);
+    client.emit('core:responsive', {});
+    expect(coreStalled(saveHealthStore.get())).toBe(false);
+    setCoreStalled(true);
+    expect(combinedStatus('saving', false, coreStalled(saveHealthStore.get()))).toBe('stalled');
+    client.emit('core:responsive', {});
+    coreBusy();
+    expect(coreStalled(saveHealthStore.get())).toBe(true);
+    stop();
+  });
+
   it('hears core:save-failed and core:saved, and nothing without a page', () => {
     const client = fakeClient();
     const stop = watchSaveHealth(client);
-    expect(client.listening()).toEqual(['core:save-failed', 'core:saved']);
+    expect(client.listening()).toEqual(['core:save-failed', 'core:saved', 'core:stalled', 'core:responsive']);
     client.emit('core:save-failed', { page: 'p1', kind: 'io', message: 'blocks differs after reading back' });
     client.emit('core:save-failed', { kind: 'io' });
     client.emit('core:save-failed', null);
@@ -57,5 +88,7 @@ describe('save health', () => {
     expect(combinedStatus('saving', true)).toBe('saving');
     expect(combinedStatus('offline', true)).toBe('offline');
     expect(combinedStatus('error', false)).toBe('error');
+    expect(combinedStatus('saved', false, true)).toBe('stalled');
+    expect(combinedStatus('saving', true, true)).toBe('stalled');
   });
 });

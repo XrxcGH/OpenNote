@@ -3,7 +3,7 @@
 
 import { act, cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { pageSaveFailed, pageSaved } from '../../services/pages/saveHealth';
+import { pageSaveFailed, pageSaved, setCoreStalled } from '../../services/pages/saveHealth';
 import { announcements, renderUi } from '../../test';
 import { SaveStatus } from './SaveStatus';
 import { treeStore } from './store';
@@ -23,5 +23,15 @@ describe('the save status', () => {
     expect(screen.getByText("Couldn't save")).toBeTruthy();
     act(() => pageSaved('p1'));
     expect(screen.getByText('Saved')).toBeTruthy();
+  });
+
+  it('says the core is not responding while a command holds it, whatever the tree says', () => {
+    renderUi(<SaveStatus presentation="full" />);
+    act(() => treeStore.set((state) => ({ ...state, saveStatus: 'saving' })));
+    act(() => setCoreStalled(true));
+    expect(screen.getByText('Not responding')).toBeTruthy();
+    expect(announcements().some((said) => said.startsWith("OpenNote's core isn't responding"))).toBe(true);
+    act(() => setCoreStalled(false));
+    expect(screen.getByText('Saving')).toBeTruthy();
   });
 });

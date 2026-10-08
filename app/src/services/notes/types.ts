@@ -18,7 +18,7 @@ export type NodeKind = 'notebook' | 'sectionGroup' | 'section' | 'page';
 export type ChipColor = 'ink' | 'indigo' | 'brick' | 'fern' | 'plum' | 'amber' | 'walnut';
 /** Subpage depth, as in OneNote. */
 export type PageLevel = 0 | 1 | 2;
-export type SaveStatus = 'saved' | 'saving' | 'offline' | 'error';
+export type SaveStatus = 'saved' | 'saving' | 'offline' | 'error' | 'stalled';
 
 /** Every chip color, in the tokens' order, for menus and for checking stored values. */
 // checks-disable-next-line brand-consistency: the same pen names as ChipColor, listed for use at run time

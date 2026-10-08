@@ -161,6 +161,9 @@ export const tree = {
     offline: 'Offline',
     error: "Couldn't save",
     errorAnnounce: "Couldn't save your notes. OpenNote keeps the changes and tries again.",
+    stalled: 'Not responding',
+    stalledAnnounce:
+      "OpenNote's core isn't responding. Your changes are kept in its journal, and come back when you open OpenNote again.",
   },
   exit: {
     unsaved: "Some notes aren't saved yet. Try closing again in a moment.",

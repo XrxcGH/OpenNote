@@ -208,7 +208,9 @@ export type PageErrorCode =
   | 'tooLarge'
   | 'downloadFailed'
   | 'staleToken'
-  | 'notImplemented';
+  | 'notImplemented'
+  /** The command gave up waiting for the core, which another command has held for too long. */
+  | 'coreBusy';
 
 /** `resync` says the page is out of date, so the view reopens it and remounts its editors. */
 export class PageServiceError extends Error {

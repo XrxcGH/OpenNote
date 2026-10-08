@@ -10,11 +10,13 @@
 //! (see [`crate::notes::migrate`]).
 
 use std::{
+    borrow::Cow,
     collections::HashMap,
     fs,
+    panic::Location,
     path::{Path, PathBuf},
-    sync::{mpsc, Arc, Mutex, OnceLock, PoisonError},
-    time::Duration,
+    sync::{mpsc, Arc, Mutex, OnceLock, PoisonError, TryLockError},
+    time::{Duration, Instant},
 };
 
 use opennote_core::{
@@ -46,6 +48,46 @@ pub mod search;
 
 /// How long the exit flush may take before the journals keep the rest for the next start (core plan 9.3).
 const EXIT_FLUSH: Duration = Duration::from_secs(5);
+
+/// How long one command may hold the core before the log and the interface hear which one, and how often they
+/// hear it again while it goes on. The core serves one command at a time, so a command that never returns stops
+/// every later one; beta 4's T2-3 was such a stop, and nothing said what the core was doing. Now the watchdog
+/// names the holder, the interface shows that the core isn't responding, and the exit goes on without it.
+const HELD_WARNING: Duration = Duration::from_secs(10);
+
+/// How long a command waits for the core before it fails as [`BUSY`] instead of joining the queue behind a
+/// command that never returns. The interface sends its commands over the webview's IPC channel, which carries
+/// only a handful at a time: once that many wait on the core, nothing else gets through, not even the window's
+/// Close or a log line (beta 4's T2-3). A command that fails after this wait keeps the channel open, and the
+/// interface says the core isn't responding instead of saying "Saving" for the rest of the session.
+const COMMAND_WAIT: Duration = Duration::from_secs(15);
+
+/// The error code of a command that gave up waiting for the core. The message names what holds it.
+pub const BUSY: &str = "coreBusy";
+
+/// The event that says a command has held the core for too long, with `what` holds it and for how many
+/// `seconds`, and the one that says the core answers again.
+pub const STALLED_EVENT: &str = "core:stalled";
+pub const RESPONSIVE_EVENT: &str = "core:responsive";
+
+/// What holds the core now: since when, and which command.
+type Held = Arc<Mutex<Option<(Instant, Cow<'static, str>)>>>;
+
+/// Clears the holder when the command returns, or unwinds.
+struct Holding(Held);
+
+impl Drop for Holding {
+    fn drop(&mut self) {
+        *self.0.lock().unwrap_or_else(PoisonError::into_inner) = None;
+    }
+}
+
+/// Where a command was called from, for the watchdog: the file and line, with the workspace path trimmed.
+fn called_from(location: &Location<'_>) -> String {
+    let file = location.file().replace('\\', "/");
+    let file = file.rsplit_once("/src/").map_or(file.as_str(), |(_, rest)| rest);
+    format!("the command at {file}:{}", location.line())
+}
 
 /// The longest page ID the commands take. Page IDs are 26 characters.
 const MAX_PAGE_ID: usize = 128;
@@ -109,7 +151,9 @@ impl EventSink for AppEvents {
     }
 }
 
-/// The managed state behind the notes and page commands.
+/// The managed state behind the notes and page commands. Cloning shares it, so a command can take it onto a
+/// blocking thread (see [`CoreBridge::run`]).
+#[derive(Clone)]
 pub struct CoreBridge {
     /// This device's files, `%LOCALAPPDATA%\OpenNote`: the core's own data and a beta 1 profile's files.
     root: PathBuf,
@@ -117,6 +161,15 @@ pub struct CoreBridge {
     state: Arc<Mutex<Option<Bridge>>>,
     relay: Arc<Relay>,
     search: Arc<search::Hub>,
+    /// The command that holds the core now, for the watchdog and the exit.
+    held: Held,
+    /// After how long a held core is reported: [`HELD_WARNING`], shorter in tests.
+    warn_after: Duration,
+    /// How long a command waits for the core: [`COMMAND_WAIT`], shorter in tests.
+    command_wait: Duration,
+    /// Set once the watchdog runs. It starts with the first command, before the core does, so a start that
+    /// never returns is reported too.
+    watched: Arc<OnceLock<()>>,
 }
 
 /// The started core with what the commands keep beside it.
@@ -270,7 +323,65 @@ impl CoreBridge {
             state: Arc::new(Mutex::new(None)),
             relay: Arc::default(),
             search: Arc::default(),
+            held: Arc::default(),
+            warn_after: HELD_WARNING,
+            command_wait: COMMAND_WAIT,
+            watched: Arc::default(),
         }
+    }
+
+    /// The same bridge, reporting a held core after `warn_after`. For tests.
+    #[cfg(test)]
+    pub fn warning_after(mut self, warn_after: Duration) -> CoreBridge {
+        self.warn_after = warn_after;
+        self
+    }
+
+    /// The same bridge, with commands giving up on a held core after `command_wait`. For tests.
+    #[cfg(test)]
+    pub fn waiting_at_most(mut self, command_wait: Duration) -> CoreBridge {
+        self.command_wait = command_wait;
+        self
+    }
+
+    /// Takes the core, waiting at most `timeout` for the command that holds it. `None` when it is still held
+    /// after that.
+    fn take_core_within(&self, timeout: Duration) -> Option<std::sync::MutexGuard<'_, Option<Bridge>>> {
+        let deadline = Instant::now().checked_add(timeout);
+        loop {
+            match self.state.try_lock() {
+                Ok(state) => return Some(state),
+                Err(TryLockError::Poisoned(poisoned)) => return Some(poisoned.into_inner()),
+                Err(TryLockError::WouldBlock) if deadline.is_some_and(|d| Instant::now() < d) => {
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Err(TryLockError::WouldBlock) => return None,
+            }
+        }
+    }
+
+    /// Runs `work` on a blocking thread and answers when it is done. Every command that touches the core goes
+    /// through it. The core serves one command at a time, so a command waits for the one before it; waiting on
+    /// one of the async runtime's few worker threads meant that one command that never returned took every
+    /// worker in turn, and then nothing the interface asked for came back, not even what has nothing to do
+    /// with the core (beta 4's T2-3). On a blocking thread a wait costs nothing else: unrelated commands keep
+    /// answering, and the watchdog says what the core is busy with.
+    pub async fn run<T: Send + 'static>(
+        &self,
+        work: impl FnOnce(&CoreBridge) -> IpcResult<T> + Send + 'static,
+    ) -> IpcResult<T> {
+        let bridge = self.clone();
+        tauri::async_runtime::spawn_blocking(move || work(&bridge))
+            .await
+            .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
+    }
+
+    /// What holds the core now, for the log.
+    fn holder(&self) -> String {
+        let holder = self.held.lock().unwrap_or_else(PoisonError::into_inner);
+        holder.as_ref().map_or("nothing holds it now".to_owned(), |(since, what)| {
+            format!("{what} has held it for {} s", since.elapsed().as_secs())
+        })
     }
 
     /// Sends the core's events through `emit`. The first call wins.
@@ -292,9 +403,30 @@ impl CoreBridge {
     }
 
     /// Runs `work` on the bridge, starting the core first if it hasn't started. A start that fails is logged and
-    /// tried again by the next command.
+    /// tried again by the next command. The watchdog knows the command by where it was called from.
+    #[track_caller]
     pub fn with<T>(&self, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
-        let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        self.with_named(called_from(Location::caller()), work)
+    }
+
+    /// [`CoreBridge::with`], with the command's name for the watchdog should it hold the core too long.
+    pub fn with_named<T>(
+        &self,
+        what: impl Into<Cow<'static, str>>,
+        work: impl FnOnce(&mut Bridge) -> IpcResult<T>,
+    ) -> IpcResult<T> {
+        self.watched.get_or_init(|| self.watch_held());
+        let what = what.into();
+        let Some(mut state) = self.take_core_within(self.command_wait) else {
+            let holder = self.holder();
+            ::log::error!("{what} gave up waiting for the core: {holder}");
+            return Err(IpcError::new(
+                BUSY,
+                format!("OpenNote's core is busy ({holder}). Try again in a moment."),
+            ));
+        };
+        *self.held.lock().unwrap_or_else(PoisonError::into_inner) = Some((Instant::now(), what.into()));
+        let _holding = Holding(self.held.clone());
         if state.is_none() {
             match Bridge::start(&self.root, self.relay.clone(), &self.search) {
                 Ok(bridge) => {
@@ -315,8 +447,19 @@ impl CoreBridge {
 
     /// Runs a notes command in the notes folder `folder`, after the folder's notebooks are open and a beta 1
     /// profile is migrated, and sends the notes events for what it changed.
+    #[track_caller]
     pub fn notes<T>(&self, folder: Option<PathBuf>, work: impl FnOnce(&mut Bridge) -> IpcResult<T>) -> IpcResult<T> {
-        self.with(|bridge| {
+        self.notes_named(called_from(Location::caller()), folder, work)
+    }
+
+    /// [`CoreBridge::notes`], with the command's name for the watchdog.
+    pub fn notes_named<T>(
+        &self,
+        what: impl Into<Cow<'static, str>>,
+        folder: Option<PathBuf>,
+        work: impl FnOnce(&mut Bridge) -> IpcResult<T>,
+    ) -> IpcResult<T> {
+        self.with_named(what, |bridge| {
             bridge.use_folder(folder);
             let result = work(bridge);
             bridge.drop_stale_handles();
@@ -325,6 +468,54 @@ impl CoreBridge {
             bridge.send_tree_events();
             result
         })
+    }
+
+    /// Starts the watchdog that reports a command holding the core for longer than `warn_after`: an error in
+    /// the log, and [`STALLED_EVENT`] to the interface, again every `warn_after` while it goes on, and then
+    /// [`RESPONSIVE_EVENT`] once the command returns. It can't free the core, but the log then says what to
+    /// look at, and the title bar says the core isn't responding, where a silent hang said "Saving" forever.
+    fn watch_held(&self) {
+        let held = Arc::downgrade(&self.held);
+        let relay = Arc::downgrade(&self.relay);
+        let warn_after = self.warn_after;
+        let spawned = std::thread::Builder::new()
+            .name("opennote-core-watchdog".into())
+            .spawn(move || {
+                // The hold last reported, by its start, and when it was reported.
+                let mut reported: Option<(Instant, Instant)> = None;
+                loop {
+                    std::thread::sleep(warn_after / 4);
+                    let Some(held) = held.upgrade() else { return };
+                    let now = held.lock().unwrap_or_else(PoisonError::into_inner).clone();
+                    let send = |name, payload| {
+                        if let Some(relay) = relay.upgrade() {
+                            relay.send(name, payload);
+                        }
+                    };
+                    let Some((since, what)) = now else {
+                        if reported.take().is_some() {
+                            ::log::info!("The core answers again");
+                            send(RESPONSIVE_EVENT, serde_json::json!({}));
+                        }
+                        continue;
+                    };
+                    let elapsed = since.elapsed();
+                    let due = match reported {
+                        Some((hold, at)) if hold == since => at.elapsed() >= warn_after,
+                        _ => elapsed >= warn_after,
+                    };
+                    if !due {
+                        continue;
+                    }
+                    reported = Some((since, Instant::now()));
+                    let seconds = elapsed.as_secs();
+                    ::log::error!("{what} has held the core for {seconds} s, and every other command waits for it");
+                    send(STALLED_EVENT, serde_json::json!({ "what": what, "seconds": seconds }));
+                }
+            });
+        if let Err(error) = spawned {
+            ::log::warn!("Couldn't start the core watchdog: {error}");
+        }
     }
 
     /// Starts the worker that turns tree changes the core makes on its own into notes events.
@@ -365,8 +556,22 @@ impl CoreBridge {
 
     /// Saves every page and stops the core. The app calls it on exit.
     pub fn shutdown(&self) {
+        self.shutdown_within(EXIT_FLUSH);
+    }
+
+    /// [`CoreBridge::shutdown`], waiting at most `timeout` for a command that holds the core. A command that
+    /// never returns must not keep the window open with nothing to show for it: the exit goes on without the
+    /// final save, and the journals keep every edit for the next start (spec 20).
+    pub fn shutdown_within(&self, timeout: Duration) {
         *self.relay.trees.lock().unwrap_or_else(PoisonError::into_inner) = None;
-        let state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        let Some(state) = self.take_core_within(timeout) else {
+            ::log::error!(
+                "The core is still busy at exit ({}), so OpenNote exits without a final save. \
+                 The journals keep the edits for the next start.",
+                self.holder()
+            );
+            return;
+        };
         if let Some(bridge) = state.as_ref() {
             if let Err(error) = bridge.core.flush_all(EXIT_FLUSH) {
                 ::log::error!("Couldn't save the open pages: {error}");
@@ -392,13 +597,24 @@ pub(crate) fn notes_folder(app: &AppHandle) -> Option<PathBuf> {
 }
 
 /// Runs a notes command for the app: its events go to the window, in the notes folder from settings.
+#[track_caller]
 pub(crate) fn run_notes<T>(
     app: &AppHandle,
     bridge: &CoreBridge,
     work: impl FnOnce(&mut Bridge) -> IpcResult<T>,
 ) -> IpcResult<T> {
+    run_notes_named(app, bridge, called_from(Location::caller()), work)
+}
+
+/// [`run_notes`], with the command's name for the watchdog.
+pub(crate) fn run_notes_named<T>(
+    app: &AppHandle,
+    bridge: &CoreBridge,
+    what: impl Into<Cow<'static, str>>,
+    work: impl FnOnce(&mut Bridge) -> IpcResult<T>,
+) -> IpcResult<T> {
     bridge.listen_app(app);
-    bridge.notes(notes_folder(app), work)
+    bridge.notes_named(what, notes_folder(app), work)
 }
 
 /// An open page of the core, for Phase 4's image commands (P3-8).
@@ -433,11 +649,15 @@ pub async fn page_open(
     client: String,
     viewport: Option<Rect>,
 ) -> IpcResult<Response> {
-    run_notes(&app, &bridge, |bridge| {
-        let handle = bridge.handle(&page, &client)?;
-        let envelope = handle.envelope(viewport).map_err(internal)?;
-        Ok(Response::new(envelope.bytes))
-    })
+    bridge
+        .run(move |bridge| {
+            run_notes_named(&app, bridge, "page_open", |bridge| {
+                let handle = bridge.handle(&page, &client)?;
+                let envelope = handle.envelope(viewport).map_err(internal)?;
+                Ok(Response::new(envelope.bytes))
+            })
+        })
+        .await
 }
 
 /// One transaction from the interface, in the client's sequence (core plan 11.4).
@@ -451,70 +671,96 @@ pub async fn page_apply(
     ui: Option<Value>,
     edits: Vec<Edit>,
 ) -> IpcResult<TxnAck> {
-    bridge.with(|bridge| {
-        let handle = bridge.open_handle(&page, &client)?;
-        let request = TxnRequest {
-            page: handle.id(),
-            client: handle.client().clone(),
-            client_seq,
-            coalesce,
-            ui,
-            edits,
-        };
-        handle.apply(request).map_err(edit_error)
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("page_apply", |bridge| {
+                let handle = bridge.open_handle(&page, &client)?;
+                let request = TxnRequest {
+                    page: handle.id(),
+                    client: handle.client().clone(),
+                    client_seq,
+                    coalesce,
+                    ui,
+                    edits,
+                };
+                handle.apply(request).map_err(edit_error)
+            })
+        })
+        .await
 }
 
 /// The applied-changes frame of the undone step, or no bytes when there is nothing to undo.
 #[tauri::command]
 pub async fn page_undo(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Response> {
-    bridge.with(|bridge| {
-        let handle = bridge.open_handle(&page, &client)?;
-        let frame = handle.undo(handle.client()).map_err(edit_error)?;
-        Ok(Response::new(frame.map(|frame| frame.bytes).unwrap_or_default()))
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("page_undo", |bridge| {
+                let handle = bridge.open_handle(&page, &client)?;
+                let frame = handle.undo(handle.client()).map_err(edit_error)?;
+                Ok(Response::new(frame.map(|frame| frame.bytes).unwrap_or_default()))
+            })
+        })
+        .await
 }
 
 #[tauri::command]
 pub async fn page_redo(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Response> {
-    bridge.with(|bridge| {
-        let handle = bridge.open_handle(&page, &client)?;
-        let frame = handle.redo(handle.client()).map_err(edit_error)?;
-        Ok(Response::new(frame.map(|frame| frame.bytes).unwrap_or_default()))
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("page_redo", |bridge| {
+                let handle = bridge.open_handle(&page, &client)?;
+                let frame = handle.redo(handle.client()).map_err(edit_error)?;
+                Ok(Response::new(frame.map(|frame| frame.bytes).unwrap_or_default()))
+            })
+        })
+        .await
 }
 
 /// Saves the page now, as Ctrl+S does.
 #[tauri::command]
 pub async fn page_save_now(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<()> {
-    bridge.with(|bridge| {
-        for handle in bridge.open_handles(&page) {
-            handle.save_now().map_err(internal)?;
-        }
-        Ok(())
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("page_save_now", |bridge| {
+                for handle in bridge.open_handles(&page) {
+                    handle.save_now().map_err(internal)?;
+                }
+                Ok(())
+            })
+        })
+        .await
 }
 
 /// Closes the client's session of the page. The core saves it in the background.
 #[tauri::command]
 pub async fn page_close(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<()> {
-    bridge.with(|bridge| {
-        let Ok(id) = PageId::parse(&page) else {
-            return Ok(());
-        };
-        let client = ClientId::parse(&client).map_err(|error| invalid("client", error))?;
-        bridge.homes.remove(&(id, client.clone()));
-        if let Some(handle) = bridge.open.remove(&(id, client.clone())) {
-            handle.close(&client).map_err(internal)?;
-        }
-        Ok(())
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("page_close", |bridge| {
+                let Ok(id) = PageId::parse(&page) else {
+                    return Ok(());
+                };
+                let client = ClientId::parse(&client).map_err(|error| invalid("client", error))?;
+                bridge.homes.remove(&(id, client.clone()));
+                if let Some(handle) = bridge.open.remove(&(id, client.clone())) {
+                    handle.close(&client).map_err(internal)?;
+                }
+                Ok(())
+            })
+        })
+        .await
 }
 
 /// The page's saved versions, newest first (core plan 8).
 #[tauri::command]
 pub async fn history_list(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<Vec<VersionEntry>> {
-    bridge.with(|bridge| bridge.open_handle(&page, &client)?.history().map_err(core_error))
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("history_list", |bridge| {
+                bridge.open_handle(&page, &client)?.history().map_err(core_error)
+            })
+        })
+        .await
 }
 
 /// A saved version as a read-only page envelope.
@@ -525,11 +771,15 @@ pub async fn history_open(
     client: String,
     revision: String,
 ) -> IpcResult<Response> {
-    bridge.with(|bridge| {
-        let handle = bridge.open_handle(&page, &client)?;
-        let envelope = handle.open_version(revision_id(&revision)?).map_err(core_error)?;
-        Ok(Response::new(envelope.bytes))
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("history_open", |bridge| {
+                let handle = bridge.open_handle(&page, &client)?;
+                let envelope = handle.open_version(revision_id(&revision)?).map_err(core_error)?;
+                Ok(Response::new(envelope.bytes))
+            })
+        })
+        .await
 }
 
 /// Restores a version in place, or as a new page, which the notes events then add to the tree.
@@ -542,12 +792,16 @@ pub async fn history_restore(
     revision: String,
     as_copy: bool,
 ) -> IpcResult<RestoreResult> {
-    run_notes(&app, &bridge, |bridge| {
-        let handle = bridge.open_handle(&page, &client)?;
-        handle
-            .restore_version(revision_id(&revision)?, as_copy)
-            .map_err(core_error)
-    })
+    bridge
+        .run(move |bridge| {
+            run_notes_named(&app, bridge, "history_restore", |bridge| {
+                let handle = bridge.open_handle(&page, &client)?;
+                handle
+                    .restore_version(revision_id(&revision)?, as_copy)
+                    .map_err(core_error)
+            })
+        })
+        .await
 }
 
 /// Brings blocks back from a version as one transaction of the client (P3-7).
@@ -560,12 +814,16 @@ pub async fn history_restore_blocks(
     revision: String,
     blocks: Vec<BlockId>,
 ) -> IpcResult<TxnAck> {
-    bridge.with(|bridge| {
-        let handle = bridge.open_handle(&page, &client)?;
-        handle
-            .restore_blocks(client_seq, revision_id(&revision)?, &blocks)
-            .map_err(edit_error)
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("history_restore_blocks", |bridge| {
+                let handle = bridge.open_handle(&page, &client)?;
+                handle
+                    .restore_blocks(client_seq, revision_id(&revision)?, &blocks)
+                    .map_err(edit_error)
+            })
+        })
+        .await
 }
 
 /// Names a version, or marks it to keep forever.
@@ -578,12 +836,16 @@ pub async fn history_name(
     name: Option<String>,
     keep: bool,
 ) -> IpcResult<()> {
-    bridge.with(|bridge| {
-        let handle = bridge.open_handle(&page, &client)?;
-        handle
-            .name_version(revision_id(&revision)?, name, keep)
-            .map_err(core_error)
-    })
+    bridge
+        .run(move |bridge| {
+            bridge.with_named("history_name", |bridge| {
+                let handle = bridge.open_handle(&page, &client)?;
+                handle
+                    .name_version(revision_id(&revision)?, name, keep)
+                    .map_err(core_error)
+            })
+        })
+        .await
 }
 
 #[cfg(test)]
