@@ -8,13 +8,13 @@ fn scrubber() -> Scrubber {
     scrubber
 }
 
-/// Asserts that none of `secrets` survives scrubbing `input`, in any letter case.
-fn assert_gone(input: &str, secrets: &[&str]) {
+/// Asserts that none of `leaks` survives scrubbing `input`, in any letter case.
+fn assert_gone(input: &str, leaks: &[&str]) {
     let output = scrubber().text(input);
-    for secret in secrets {
+    for leak in leaks {
         assert!(
-            !output.to_lowercase().contains(&secret.to_lowercase()),
-            "{secret:?} survived in {output:?} (from {input:?})"
+            !output.to_lowercase().contains(&leak.to_lowercase()),
+            "{leak:?} survived in {output:?} (from {input:?})"
         );
     }
 }
@@ -60,8 +60,8 @@ fn removes_text_in_backticks_and_in_marks_written_either_way() {
         ("ページ「秘密の計画」がありません", &["秘密", "計画"]),
         ("ページ『秘密の計画』がありません", &["秘密", "計画"]),
     ];
-    for (input, secrets) in cases {
-        assert_gone(input, secrets);
+    for (input, leaks) in cases {
+        assert_gone(input, leaks);
     }
     assert_eq!(
         scrubber().text("Seite »Geheime Plaene« nicht gefunden"),

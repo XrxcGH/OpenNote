@@ -47,13 +47,17 @@ commands.register(
   }),
 );
 
-contextMenus.register({
-  id: 'search.tree.copyLink',
-  menu: 'tree.page',
-  command: 'search.copyPageLink',
-  group: 'share',
-  order: 70,
-  flag: 'search.paragraphLinks',
+// The menus put their groups in the order each first registered, and this folder loads before the tree's, so the
+// item waits until the tree has registered its groups, as the import and export items do.
+queueMicrotask(() => {
+  contextMenus.register({
+    id: 'search.tree.copyLink',
+    menu: 'tree.page',
+    command: 'search.copyPageLink',
+    group: 'share',
+    order: 70,
+    flag: 'search.paragraphLinks',
+  });
 });
 contextMenus.register({
   id: 'search.text.copyLink',

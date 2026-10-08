@@ -5,6 +5,7 @@
 //
 // Everything here is plain functions on plain data, so each change is a new value and nothing is edited in place.
 
+import { stripTags } from '../../../../core/stripTags';
 import { momentHref } from './moment';
 
 export { momentHref, parseMomentHref, TRANSCRIPT_TYPE } from './moment';
@@ -208,7 +209,7 @@ export function parseTranscript(text: string, durationMs: number): { segments: S
     if (start === null || end === null) continue;
     const words: string[] = [];
     while (i + 1 < rows.length && rows[i + 1].trim() !== '') words.push(rows[(i += 1)].trim());
-    cues.push({ startMs: start, endMs: end, text: words.join(' ').replace(/<[^>]+>/g, '') });
+    cues.push({ startMs: start, endMs: end, text: stripTags(words.join(' ')) });
   }
   if (cues.length > 0) return { segments: cues, timed: true };
   const stamped: Segment[] = [];
