@@ -150,7 +150,7 @@ fn split_edges(pieces: &[Inline], i: usize, out: &mut Vec<Inline>) {
         out.push(pieces[i].clone());
         return;
     };
-    if marks.code || !has_delimiters(marks) {
+    if marks.code || marks.math || !has_delimiters(marks) {
         out.push(pieces[i].clone());
         return;
     }
@@ -177,6 +177,7 @@ fn split_edges(pieces: &[Inline], i: usize, out: &mut Vec<Inline>) {
 fn edge(piece: &Inline, last: bool) -> Option<char> {
     match piece {
         Inline::Text { marks, .. } if marks.code => Some('`'),
+        Inline::Text { text, marks } if marks.math && inline_math(text) => Some('$'),
         Inline::Text { text, .. } if last => text.chars().next_back(),
         Inline::Text { text, .. } => text.chars().next(),
         Inline::Image { .. } => Some(if last { ')' } else { '!' }),
@@ -191,6 +192,7 @@ fn render_pieces(pieces: &[Inline], breaks: Breaks) -> Vec<String> {
         let next = pieces.get(i + 1).and_then(|p| edge(p, false));
         outs.push(match piece {
             Inline::Text { text, marks } if marks.code => code_span(text),
+            Inline::Text { text, marks } if marks.math && inline_math(text) => format!("${text}$"),
             Inline::Text { text, .. } => escape_around(text, prev, next),
             Inline::HardBreak | Inline::SoftBreak => match breaks {
                 Breaks::Html => "<br>".to_owned(),
@@ -203,6 +205,14 @@ fn render_pieces(pieces: &[Inline], breaks: Breaks) -> Vec<String> {
         });
     }
     outs
+}
+
+/// Whether TeX can be written as `$...$`: one line, no space at either edge, and no `$` of its own.
+pub fn inline_math(text: &str) -> bool {
+    !text.is_empty()
+        && !text.contains(['\n', '$'])
+        && !text.starts_with(char::is_whitespace)
+        && !text.ends_with(char::is_whitespace)
 }
 
 /// A code span with the fewest backticks that work, padded where spec 7.7 says.
