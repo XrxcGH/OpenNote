@@ -1,6 +1,7 @@
 // The decks on this device and their review history. They are the person's work, so they live in this device's
-// store (deckFiles.ts), not in the browser's storage: each deck, each deck's history, and each picture is an item of
-// its own, a failed save is reported, and decks kept in the browser's storage by earlier versions move over once.
+// store (deckFiles.ts), not in the browser's storage: each deck, each reviewed card's state, and each picture is an
+// item of its own, a failed save is reported, and decks kept in the browser's storage by earlier versions move over
+// once.
 // The main window and a popped-out Flashcards window each keep the decks in memory. Each writes only the decks it
 // changed, and tells the other windows, which read those decks back, so neither window overwrites the other's work.
 import { t } from '../../../strings/t';
@@ -9,17 +10,20 @@ import { showToast } from '../../../ui';
 import { dayKey } from './dates';
 import {
   DECK_PREFIX,
+  PICTURE_PREFIX,
   STATES_PREFIX,
   deckName,
-  idOfName,
+  deckStatesPrefix,
   joinPictures,
   pictureName,
   pictureRefs,
   readDeck,
   readItem,
+  readStateItem,
   readStates,
   splitPictures,
-  statesName,
+  stateName,
+  writeStateItem,
 } from './deckFiles';
 import type { DeckFiles } from './deckFiles';
 import { capToExam, nextState } from './schedule';
@@ -39,6 +43,8 @@ export function newId(prefix: string): string {
 
 export const decksStore = createStore<readonly Deck[]>([], 'study decks');
 export const statesStore = createStore<Readonly<Record<string, States>>>({}, 'study states');
+/** The decks have been read from the store: until then an empty list means "not read yet", not "no decks". */
+export const decksLoadedStore = createStore<boolean>(false, 'study decks loaded');
 
 let store: Promise<DeckFiles> | null = null;
 /** The device store, loaded once: every read and write goes to the same one. */
@@ -51,7 +57,8 @@ function files(): Promise<DeckFiles> {
 
 // ---- Telling the other windows -------------------------------------------------------------------------------------
 
-type Change = { kind: 'deck' | 'states'; id: string };
+/** A deck, or some of a deck's card states (`cards`; all of them when left out), changed in another window. */
+type Change = { kind: 'deck' | 'states'; id: string; cards?: string[] };
 const channel: BroadcastChannel | null = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(CHANNEL);
 channel?.addEventListener('message', (event: MessageEvent<Change>) => void readBack(event.data));
 // A channel must not keep a process open (tests run this module in Node).
@@ -72,10 +79,27 @@ function keptNow(id: string): void {
 const keptPictures = new Set<string>();
 /** Items changed here whose write has not started yet: a change read back from another window must not undo them. */
 const pending = new Set<string>();
+/** Each item's writes and read-backs, one after another, so a read-back never lands in the middle of a write. */
 const chains = new Map<string, Promise<void>>();
+/** The cards reviewed here whose state is not written yet, by deck. */
+const reviewed = new Map<string, Set<string>>();
+
+/** Runs `step` after everything queued for `key`. */
+function queue(key: string, step: () => Promise<void>): Promise<void> {
+  const next = (chains.get(key) ?? Promise.resolve()).then(step);
+  chains.set(key, next);
+  return next;
+}
+
+/** The states of the cards reviewed here and not written yet. */
+function unwritten(id: string, states: States | undefined): States {
+  const cards = reviewed.get(id);
+  if (!cards || !states) return {};
+  return Object.fromEntries([...cards].filter((card) => states[card]).map((card) => [card, states[card]]));
+}
 let lastReport = 0;
 
-function reportFailure(key: 'study.deck.saveFailed' | 'study.deck.loadFailed'): void {
+function reportFailure(key: 'study.deck.saveFailed' | 'study.deck.loadFailed' | 'study.deck.pictureMissing'): void {
   if (Date.now() - lastReport < 5000) return;
   lastReport = Date.now();
   showToast({ message: t(key), tone: 'danger' });
@@ -84,19 +108,38 @@ function reportFailure(key: 'study.deck.saveFailed' | 'study.deck.loadFailed'): 
 /** Decks removed here, until their pictures are cleared. */
 const removed = new Map<string, Deck>();
 
-/** Removes a deck's item, and the pictures no other deck shows. */
+/** The pictures the decks in the store and in this window name: the store's, so a deck another window just wrote counts. */
+async function picturesInUse(store: DeckFiles): Promise<Set<string>> {
+  const used = new Set<string>();
+  for (const deck of decksStore.get()) for (const hash of (await splitPictures(deck)).pictures.keys()) used.add(hash);
+  for (const deck of decksStore.get()) for (const hash of pictureRefs(deck)) used.add(hash);
+  for (const name of await store.list(DECK_PREFIX)) {
+    const item = readItem((await store.get(name)) ?? '');
+    if (item) for (const hash of pictureRefs(item.deck)) used.add(hash);
+  }
+  return used;
+}
+
+/**
+ * Removes a deck's item, and the pictures no other deck names. Another window may write a deck naming one of them
+ * while they are removed: they are looked for again afterwards, and one now named is put back (the other window
+ * also puts back a picture it names and finds missing, see writeDeck).
+ */
 async function removeDeckItem(store: DeckFiles, id: string): Promise<void> {
   await store.remove(deckName(id));
   const gone = removed.get(id);
   removed.delete(id);
   if (!gone) return;
-  const shown = new Set<string>();
-  for (const deck of decksStore.get()) for (const hash of (await splitPictures(deck)).pictures.keys()) shown.add(hash);
-  for (const hash of (await splitPictures(gone)).pictures.keys()) {
-    if (shown.has(hash)) continue;
+  const pictures = (await splitPictures(gone)).pictures;
+  const used = await picturesInUse(store);
+  const cleared = [...pictures.keys()].filter((hash) => !used.has(hash));
+  for (const hash of cleared) {
     await store.remove(pictureName(hash));
     keptPictures.delete(hash);
   }
+  if (cleared.length === 0) return;
+  const usedNow = await picturesInUse(store);
+  for (const hash of cleared) if (usedNow.has(hash)) await store.put(pictureName(hash), pictures.get(hash)!);
 }
 
 async function writeDeck(store: DeckFiles, id: string): Promise<void> {
@@ -110,12 +153,38 @@ async function writeDeck(store: DeckFiles, id: string): Promise<void> {
   }
   keptNow(id);
   await store.put(deckName(id), JSON.stringify({ version: 1, at: firstKept.get(id), deck: split.deck }));
+  // A picture kept earlier may have been removed by another window that dropped the last deck it knew to name it.
+  if (split.pictures.size === 0) return;
+  const kept = new Set(await store.list(PICTURE_PREFIX));
+  for (const [hash, src] of split.pictures) if (!kept.has(pictureName(hash))) await store.put(pictureName(hash), src);
 }
 
-async function writeStates(store: DeckFiles, id: string): Promise<void> {
-  const states = statesStore.get()[id];
-  if (!states || !decksStore.get().some((deck) => deck.id === id)) return store.remove(statesName(id));
-  await store.put(statesName(id), JSON.stringify(states));
+/**
+ * Writes the state of each card reviewed here, each to its own item, so a card another window reviewed in the
+ * meantime is never written over. Returns the cards written. A removed deck's states are all removed.
+ */
+async function writeStates(store: DeckFiles, id: string): Promise<string[] | undefined> {
+  if (!decksStore.get().some((deck) => deck.id === id)) {
+    reviewed.delete(id);
+    for (const name of await store.list(deckStatesPrefix(id))) await store.remove(name);
+    return undefined;
+  }
+  const states = statesStore.get()[id] ?? {};
+  const cards = [...(reviewed.get(id) ?? [])].filter((card) => states[card]);
+  reviewed.delete(id);
+  const written: string[] = [];
+  try {
+    for (const card of cards) {
+      await store.put(stateName(id, card), writeStateItem({ deck: id, card, state: states[card] }));
+      written.push(card);
+    }
+  } catch (error) {
+    // Not written: they go with the next write.
+    const left = cards.filter((card) => !written.includes(card));
+    if (left.length > 0) reviewed.set(id, new Set([...left, ...(reviewed.get(id) ?? [])]));
+    throw error;
+  }
+  return written;
 }
 
 /** Writes one deck or one history after the writes before it, as it is when the write starts. */
@@ -123,21 +192,24 @@ function save(change: Change): Promise<void> {
   const key = `${change.kind}:${change.id}`;
   if (pending.has(key)) return chains.get(key) ?? Promise.resolve();
   pending.add(key);
-  const run = async () => {
+  return queue(key, async () => {
     await loaded;
+    // From here a new change queues a write of its own, after this one.
     pending.delete(key);
     try {
       const store = await files();
-      await (change.kind === 'deck' ? writeDeck(store, change.id) : writeStates(store, change.id));
-      channel?.postMessage(change);
+      if (change.kind === 'deck') {
+        await writeDeck(store, change.id);
+        channel?.postMessage(change);
+      } else {
+        const cards = await writeStates(store, change.id);
+        channel?.postMessage(cards ? { ...change, cards } : change);
+      }
     } catch {
       // The change stays in memory, so the person can keep working, and they hear that it isn't kept.
       reportFailure('study.deck.saveFailed');
     }
-  };
-  const next = (chains.get(key) ?? Promise.resolve()).then(run);
-  chains.set(key, next);
-  return next;
+  });
 }
 
 /** Resolves once every change made so far is written (or has failed). */
@@ -152,37 +224,73 @@ async function readPictures(store: DeckFiles, decks: readonly Deck[]): Promise<M
   const pictures = new Map<string, string>();
   for (const hash of new Set(decks.flatMap(pictureRefs))) {
     const src = await store.get(pictureName(hash));
-    if (src === null) continue;
+    // The card keeps naming the picture, so a later save doesn't forget it, and the person hears it is missing.
+    if (src === null) {
+      reportFailure('study.deck.pictureMissing');
+      continue;
+    }
     pictures.set(hash, src);
     keptPictures.add(hash);
   }
   return pictures;
 }
 
-async function readDeckItem(store: DeckFiles, id: string): Promise<{ at: number; deck: Deck } | null> {
-  const text = await store.get(deckName(id));
+/** The deck kept as the item `name`, or null when there is none. */
+async function readDeckItem(store: DeckFiles, name: string): Promise<{ at: number; deck: Deck } | null> {
+  const text = await store.get(name);
   const item = text === null ? null : readItem(text);
-  if (!item || item.deck.id !== id) return null;
-  firstKept.set(id, item.at);
+  // A name is an ID or its hash: the item names its deck, and must be the deck's.
+  if (!item || deckName(item.deck.id) !== name) return null;
+  firstKept.set(item.deck.id, item.at);
   return { at: item.at, deck: joinPictures(item.deck, await readPictures(store, [item.deck])) };
 }
 
-/** Takes in a deck or history that another window wrote. */
+/**
+ * Takes in a deck or history that another window wrote. It waits for this window's write of the same item, and
+ * then reads what the store holds, so both windows end up with the same deck. A change made here and not yet
+ * written wins: its write comes next, and the other window reads that back.
+ */
 async function readBack(change: Change): Promise<void> {
-  if (!change || typeof change.id !== 'string') return;
+  if (!change || (change.kind !== 'deck' && change.kind !== 'states') || typeof change.id !== 'string') return;
   await loaded;
-  if (pending.has(`${change.kind}:${change.id}`)) return;
+  const key = `${change.kind}:${change.id}`;
+  // A deck changed here and not yet written wins. Card states are items of their own, so they are always taken in.
+  if (change.kind === 'deck' && pending.has(key)) return;
+  return queue(key, () => (change.kind === 'deck' ? readDeckBack(change.id, key) : readStatesBack(change)));
+}
+
+async function readStatesBack(change: Change): Promise<void> {
   try {
     const store = await files();
-    if (change.kind === 'states') {
-      const states = readStates(await store.get(statesName(change.id)));
-      statesStore.set((current) => ({ ...current, [change.id]: states }));
-      return;
+    const cards = Array.isArray(change.cards) ? change.cards.filter((card) => typeof card === 'string') : null;
+    const names = cards
+      ? cards.map((card) => stateName(change.id, card))
+      : await store.list(deckStatesPrefix(change.id));
+    const read: States = {};
+    for (const name of names) {
+      const item = readStateItem(await store.get(name));
+      if (item?.deck === change.id) read[item.card] = item.state;
     }
-    const read = await readDeckItem(store, change.id);
+    // Cards reviewed here and not yet written keep their state; all of a deck's states replace what was here.
+    statesStore.set((current) => ({
+      ...current,
+      [change.id]: { ...(cards ? current[change.id] : {}), ...read, ...unwritten(change.id, current[change.id]) },
+    }));
+  } catch {
+    reportFailure('study.deck.loadFailed');
+  }
+}
+
+async function readDeckBack(id: string, key: string): Promise<void> {
+  if (pending.has(key)) return;
+  try {
+    const store = await files();
+    const read = await readDeckItem(store, deckName(id));
+    // A change made here while the deck was read wins: its write comes next.
+    if (pending.has(key)) return;
     const decks = decksStore.get();
-    if (!read) return decksStore.set(decks.filter((deck) => deck.id !== change.id));
-    const at = decks.findIndex((deck) => deck.id === change.id);
+    if (!read) return decksStore.set(decks.filter((deck) => deck.id !== id));
+    const at = decks.findIndex((deck) => deck.id === id);
     decksStore.set(at >= 0 ? decks.map((deck, i) => (i === at ? read.deck : deck)) : [...decks, read.deck]);
   } catch {
     reportFailure('study.deck.loadFailed');
@@ -217,12 +325,17 @@ async function migrate(store: DeckFiles): Promise<void> {
   let failed = false;
   for (const [index, deck] of old.decks.entries()) {
     try {
-      if ((await store.get(deckName(deck.id))) !== null) continue;
-      const split = await splitPictures(deck);
-      for (const [hash, src] of split.pictures) await store.put(pictureName(hash), src);
-      await store.put(deckName(deck.id), JSON.stringify({ version: 1, at: base + index, deck: split.deck }));
-      const states = old.states.get(deck.id);
-      if (states) await store.put(statesName(deck.id), JSON.stringify(states));
+      // A deck or history already in the store was moved by an earlier run, which may have stopped between them.
+      if ((await store.get(deckName(deck.id))) === null) {
+        const split = await splitPictures(deck);
+        for (const [hash, src] of split.pictures) await store.put(pictureName(hash), src);
+        await store.put(deckName(deck.id), JSON.stringify({ version: 1, at: base + index, deck: split.deck }));
+      }
+      for (const [card, state] of Object.entries(old.states.get(deck.id) ?? {})) {
+        if ((await store.get(stateName(deck.id, card))) === null) {
+          await store.put(stateName(deck.id, card), writeStateItem({ deck: deck.id, card, state }));
+        }
+      }
     } catch {
       failed = true;
     }
@@ -244,13 +357,12 @@ async function load(): Promise<void> {
     const store = await files();
     await migrate(store);
     for (const name of await store.list(DECK_PREFIX)) {
-      const id = idOfName(name, DECK_PREFIX);
-      const read = id === null ? null : await readDeckItem(store, id);
+      const read = await readDeckItem(store, name);
       if (read) found.push(read);
     }
     for (const name of await store.list(STATES_PREFIX)) {
-      const id = idOfName(name, STATES_PREFIX);
-      if (id !== null) states[id] = readStates(await store.get(name));
+      const item = readStateItem(await store.get(name));
+      if (item) states[item.deck] = { ...states[item.deck], [item.card]: item.state };
     }
   } catch {
     reportFailure('study.deck.loadFailed');
@@ -261,7 +373,13 @@ async function load(): Promise<void> {
   const changedIds = new Set([...pending].filter((key) => key.startsWith('deck:')).map((key) => key.slice(5)));
   const decks = found.map((one) => one.deck).filter((deck) => !changedIds.has(deck.id));
   decksStore.set([...decks, ...changedHere.filter((deck) => changedIds.has(deck.id))]);
-  statesStore.set((current) => ({ ...states, ...current }));
+  // Reviews made while the store was being read win over what it held.
+  statesStore.set((current) => {
+    const next = { ...states };
+    for (const [id, cards] of Object.entries(current)) next[id] = { ...next[id], ...cards };
+    return next;
+  });
+  decksLoadedStore.set(true);
 }
 
 const loaded: Promise<void> = load();
@@ -335,6 +453,7 @@ export function recordReview(deckId: string, cardId: string, grade: Grade, now: 
   const deck = deckById(deckId);
   const next = capToExam(nextState(states[cardId], grade, today), deck?.exam, today);
   statesStore.set((current) => ({ ...current, [deckId]: { ...current[deckId], [cardId]: next } }));
+  reviewed.set(deckId, (reviewed.get(deckId) ?? new Set()).add(cardId));
   void save({ kind: 'states', id: deckId });
 }
 

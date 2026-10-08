@@ -1,7 +1,7 @@
 // How decks are kept in this device's store (the shell's device folder): one item for each deck, one for each
-// deck's review history, and one for each picture, so a deck full of pictures never pushes the other decks out and
+// reviewed card's state, and one for each picture, so a deck full of pictures never pushes the other decks out and
 // each window writes only what it changed. Pictures are kept once by their content and named in the deck.
-import type { Card, Deck, States } from './types';
+import type { Card, CardState, Deck, States } from './types';
 
 /** The store the decks live in: the shell's device store, or the fake on the web platform. */
 export interface DeckFiles {
@@ -20,23 +20,44 @@ const SUFFIX = '.json';
 const PICTURE_REF = 'opennote-picture:';
 
 /** A store name may hold letters, digits, dots, dashes, and underscores: anything else in an ID is escaped. */
-export function encodeId(id: string): string {
+function encodeId(id: string): string {
   return [...id].map((c) => (/[A-Za-z0-9-]/.test(c) ? c : `_${c.codePointAt(0)!.toString(16)}.`)).join('');
 }
 
-export function decodeId(name: string): string {
-  return name.replace(/_([0-9a-f]+)\./g, (_m, hex: string) => String.fromCodePoint(parseInt(hex, 16)));
+/** A store name is at most this long (the shell's limit). */
+export const NAME_LIMIT = 80;
+
+/** A short, steady hash of `text`: 64-bit FNV-1a, in hex. */
+function hash64(text: string): string {
+  let hash = 0xcbf29ce484222325n;
+  for (const byte of new TextEncoder().encode(text)) {
+    hash = ((hash ^ BigInt(byte)) * 0x100000001b3n) & 0xffffffffffffffffn;
+  }
+  return hash.toString(16).padStart(16, '0');
 }
 
-export const deckName = (id: string): string => `${DECK_PREFIX}${encodeId(id)}${SUFFIX}`;
-export const statesName = (id: string): string => `${STATES_PREFIX}${encodeId(id)}${SUFFIX}`;
+/**
+ * An ID as it is spelled in a store name, in at most `room` characters: spelled out when it fits, else `__` and its
+ * hash (`encodeId` never writes `__`, so the two never meet). The item itself names the ID, so a hash is enough.
+ */
+function idKey(id: string, room: number): string {
+  const encoded = encodeId(id);
+  return encoded.length <= room ? encoded : `__${hash64(id)}`;
+}
+
+export const deckName = (id: string): string =>
+  `${DECK_PREFIX}${idKey(id, NAME_LIMIT - DECK_PREFIX.length - SUFFIX.length)}${SUFFIX}`;
+/** `_.` never occurs inside an ID's key, so it ends the deck's part of a card state's name. */
+const STATE_SEP = '_.';
+/** How much of a card state's name each ID may take, so the name fits the limit. */
+const STATE_ROOM = Math.floor((NAME_LIMIT - STATES_PREFIX.length - STATE_SEP.length - SUFFIX.length) / 2);
+/** The items of one deck's review history start with this. */
+export const deckStatesPrefix = (deck: string): string => `${STATES_PREFIX}${idKey(deck, STATE_ROOM)}${STATE_SEP}`;
+/** One card's review state is an item of its own, so two windows reviewing one deck never write over each other. */
+export const stateName = (deck: string, card: string): string =>
+  `${deckStatesPrefix(deck)}${idKey(card, STATE_ROOM)}${SUFFIX}`;
+
 export const pictureName = (hash: string): string => `${PICTURE_PREFIX}${hash}`;
-
-/** The deck ID an item's name stands for, or null when the name is not one of `prefix`'s. */
-export function idOfName(name: string, prefix: string): string | null {
-  if (!name.startsWith(prefix) || !name.endsWith(SUFFIX)) return null;
-  return decodeId(name.slice(prefix.length, -SUFFIX.length));
-}
 
 /** What a deck item holds. `at` orders the decks by when each was first kept. */
 export interface DeckItem {
@@ -86,10 +107,13 @@ export function pictureRefs(deck: Deck): string[] {
     .map((src) => src.slice(PICTURE_REF.length));
 }
 
-/** The deck with each named picture put back. A picture that is missing becomes empty. */
+/**
+ * The deck with each named picture put back. A picture that is missing keeps its name, so saving the deck again
+ * doesn't forget it (the card shows no picture, and the reader reports it).
+ */
 export function joinPictures(deck: Deck, pictures: ReadonlyMap<string, string>): Deck {
   const back = (src: string) =>
-    src.startsWith(PICTURE_REF) ? (pictures.get(src.slice(PICTURE_REF.length)) ?? '') : src;
+    src.startsWith(PICTURE_REF) ? (pictures.get(src.slice(PICTURE_REF.length)) ?? src) : src;
   return { ...deck, cards: deck.cards.map((card) => mapPictures(card, back)) };
 }
 
@@ -112,6 +136,33 @@ export function readItem(text: string): DeckItem | null {
     const item = JSON.parse(text) as Partial<DeckItem>;
     const deck = readDeck(item.deck);
     return deck ? { version: 1, at: typeof item.at === 'number' ? item.at : 0, deck } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** What a card state item holds: the deck and card it belongs to, and the state. */
+export interface StateItem {
+  deck: string;
+  card: string;
+  state: CardState;
+}
+
+export const writeStateItem = (item: StateItem): string => JSON.stringify(item);
+
+/** A card state item, or null when the text is not one. */
+export function readStateItem(text: string | null): StateItem | null {
+  if (!text) return null;
+  try {
+    const item = JSON.parse(text) as Partial<StateItem> | null;
+    const ok =
+      item &&
+      typeof item === 'object' &&
+      typeof item.deck === 'string' &&
+      typeof item.card === 'string' &&
+      typeof item.state === 'object' &&
+      typeof item.state?.due === 'string';
+    return ok ? (item as StateItem) : null;
   } catch {
     return null;
   }
