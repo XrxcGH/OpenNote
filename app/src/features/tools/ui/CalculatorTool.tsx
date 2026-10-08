@@ -2,7 +2,7 @@
 // pad for touch and pen, and unit conversion ("5 km to mi"), and a graphing tab that is the function grapher. It
 // runs on the same expression engine as table formulas and the grapher, so results match. History stays on this
 // device and can be cleared. "Insert into page" hands the answer, or the graph, to the page that is open.
-import { lazy, Suspense, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
@@ -19,7 +19,7 @@ import {
   submit,
 } from '../calculator';
 import { INSERT_EVENT } from '../flags';
-import { loadStored, saveStored } from './storage';
+import { loadStored, saveStored, watchStored } from './storage';
 import styles from './tools.module.css';
 
 const Graph = lazy(() => import('../../math').then((loaded) => ({ default: loaded.GraphView })));
@@ -94,6 +94,7 @@ function Scientific() {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [problem, setProblem] = useState('');
   const field = useRef<HTMLInputElement>(null);
+  useEffect(() => watchStored(STORE, () => setSession(restoreSession(loadStored(STORE, null)))), []);
 
   const keep = (next: CalcSession) => {
     setSession(next);

@@ -20,6 +20,19 @@ export function saveStored(name: string, value: unknown): void {
   }
 }
 
+/**
+ * Calls `changed` when another window of the app writes `name`. The tool windows and the main window share this
+ * storage, so each re-reads what the other saved rather than writing its older copy over it.
+ */
+export function watchStored(name: string, changed: () => void): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+  const listen = (event: StorageEvent) => {
+    if (event.key === PREFIX + name || event.key === null) changed();
+  };
+  window.addEventListener('storage', listen);
+  return () => window.removeEventListener('storage', listen);
+}
+
 export function forgetStored(name: string): void {
   try {
     localStorage.removeItem(PREFIX + name);

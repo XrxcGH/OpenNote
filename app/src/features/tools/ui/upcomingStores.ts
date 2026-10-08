@@ -5,7 +5,7 @@ import type { ClassSlot, Exam } from '../upcoming';
 import { dateKey } from '../upcoming';
 import { findPageDues } from '../upcoming/pageDue';
 import type { UpcomingItem } from '../upcoming';
-import { loadStored, saveStored } from './storage';
+import { loadStored, saveStored, watchStored } from './storage';
 
 const EXAMS = 'exams';
 const TIMETABLE = 'timetable';
@@ -14,18 +14,21 @@ export const REMINDERS = 'reminders';
 
 const list = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : []);
 
-export const examsStore = createStore<readonly Exam[]>(
+const readExams = (): Exam[] =>
   list<Exam>(loadStored<unknown>(EXAMS, [])).filter(
     (exam) => typeof exam?.id === 'string' && typeof exam.date === 'string',
-  ),
-  'tools exams',
-);
-export const timetableStore = createStore<readonly ClassSlot[]>(
+  );
+const readTimetable = (): ClassSlot[] =>
   list<ClassSlot>(loadStored<unknown>(TIMETABLE, [])).filter(
     (slot) => typeof slot?.id === 'string' && Array.isArray(slot.days),
-  ),
-  'tools timetable',
-);
+  );
+
+export const examsStore = createStore<readonly Exam[]>(readExams(), 'tools exams');
+export const timetableStore = createStore<readonly ClassSlot[]>(readTimetable(), 'tools timetable');
+
+// Another window of the app (a popped-out tool) saved a list: take it instead of writing this window's older copy.
+watchStored(EXAMS, () => examsStore.set(readExams()));
+watchStored(TIMETABLE, () => timetableStore.set(readTimetable()));
 
 export function setExams(next: readonly Exam[]): void {
   examsStore.set(next);
@@ -46,6 +49,8 @@ export const pageItemsStore = createStore<Readonly<Record<string, PageEntry>>>(
   loadStored<Record<string, PageEntry>>(PAGE_ITEMS, {}),
   'tools page items',
 );
+
+watchStored(PAGE_ITEMS, () => pageItemsStore.set(loadStored<Record<string, PageEntry>>(PAGE_ITEMS, {})));
 
 /** Reads the due dates written on a page and keeps them for Upcoming. Pages with none are forgotten. */
 export function setPageItems(

@@ -27,6 +27,8 @@ export interface Timers {
   nextWake(): number | null;
   /** The saved form. Finished timers are marked done first. */
   snapshot(): TimerSet;
+  /** Takes a set another window saved. */
+  replace(next: TimerSet): void;
   /** Calls the listener after every change. Returns a function that stops it. */
   subscribe(listener: () => void): () => void;
 }
@@ -47,6 +49,7 @@ export function createTimers(clock: Clock, initial: TimerSet = EMPTY_TIMER_SET):
     act: (id, action) => change(actOnTimer(set, id, action, clock())),
     rename: (id, label) => change(renameTimerIn(set, id, label)),
     remove: (id) => change(removeTimer(set, id)),
+    replace: (next) => change(next),
     pauseAll: () => change(pauseAll(set, clock())),
     views: () => viewTimers(set, clock()),
     nextWake: () => nextWake(set, clock()),
