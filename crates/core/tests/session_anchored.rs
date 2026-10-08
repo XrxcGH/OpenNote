@@ -47,7 +47,10 @@ fn ink_anchored_at_a_measured_offset_saves_with_the_offset_as_the_file_holds_it(
             y: Some(10.0),
             ..Frame::default()
         }),
-        data: json!({"role": "anchored", "anchor": anchor}).as_object().cloned().unwrap(),
+        data: json!({"role": "anchored", "anchor": anchor})
+            .as_object()
+            .cloned()
+            .unwrap(),
         fallback: None,
     };
     let setup = vec![
@@ -71,7 +74,12 @@ fn ink_anchored_at_a_measured_offset_saves_with_the_offset_as_the_file_holds_it(
     assert_eq!(block["data"]["anchor"].get("dy"), None, "a zero offset is left out");
     assert_eq!(block["frame"]["x"], 0.0);
     // The saved page reads back as the session holds it, so the next save has nothing to differ on.
-    handle.apply(real.request(vec![Edit::SetText { block: text, markdown: "Now".into() }])).unwrap();
+    handle
+        .apply(real.request(vec![Edit::SetText {
+            block: text,
+            markdown: "Now".into(),
+        }]))
+        .unwrap();
     handle.save_now().expect("the second save");
 }
 

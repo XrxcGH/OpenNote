@@ -110,9 +110,15 @@ fn a_command_that_holds_the_core_too_long_is_reported_and_the_core_answers_again
     let event = |name: &str, after: usize, what: Option<&str>| -> Option<(usize, Value)> {
         let deadline = std::time::Instant::now() + Duration::from_secs(5);
         while std::time::Instant::now() < deadline {
-            let found = heard.lock().expect("the events").iter().enumerate().skip(after).find_map(|(i, (n, p))| {
-                (*n == name && what.is_none_or(|what| p["what"] == what)).then(|| (i, p.clone()))
-            });
+            let found = heard
+                .lock()
+                .expect("the events")
+                .iter()
+                .enumerate()
+                .skip(after)
+                .find_map(|(i, (n, p))| {
+                    (*n == name && what.is_none_or(|what| p["what"] == what)).then(|| (i, p.clone()))
+                });
             if found.is_some() {
                 return found;
             }
@@ -137,12 +143,18 @@ fn a_command_that_holds_the_core_too_long_is_reported_and_the_core_answers_again
             event(STALLED_EVENT, 0, Some("a stuck command")).expect("the interface hears that the core stalled");
         seen_until = at + 1;
         assert!(stalled["seconds"].is_u64(), "{stalled}");
-        assert!(bridge.holder().starts_with("a stuck command has held it for"), "{}", bridge.holder());
+        assert!(
+            bridge.holder().starts_with("a stuck command has held it for"),
+            "{}",
+            bridge.holder()
+        );
         let _ = release.send(());
     });
     event(RESPONSIVE_EVENT, seen_until, None).expect("the interface hears that the core answers again");
     assert_eq!(bridge.holder(), "nothing holds it now");
-    bridge.with_named("a command after it", |_| Ok(())).expect("the core is free");
+    bridge
+        .with_named("a command after it", |_| Ok(()))
+        .expect("the core is free");
     bridge.shutdown();
 }
 
@@ -154,9 +166,7 @@ fn the_watchdog_knows_a_command_by_where_it_was_called_from() {
     let bridge = CoreBridge::at(dir.path().join("local"));
     let holder = bridge.with(|_| Ok(bridge.holder())).expect("runs");
     assert!(holder.starts_with("the command at core_bridge_tests.rs:"), "{holder}");
-    let holder = bridge
-        .notes(None, |_| Ok(bridge.holder()))
-        .expect("runs");
+    let holder = bridge.notes(None, |_| Ok(bridge.holder())).expect("runs");
     assert!(holder.starts_with("the command at core_bridge_tests.rs:"), "{holder}");
     bridge.shutdown();
 }
@@ -271,8 +281,9 @@ fn concurrent_edits_saves_renames_and_closes_never_wait_for_each_other_forever()
 }
 
 /// A command behind one that never returns fails as busy after its wait, naming the holder, instead of joining
-/// the queue: the webview's IPC channel carries only a few commands at once, so a queue of them froze every
-/// command, Close and the log included (beta 4's T2-3). The core serves the next command once the holder returns.
+/// the queue. The webview's IPC channel carries only a few commands at once, so a queue of them froze every
+/// command. Close and the log froze with them (beta 4's T2-3). The core serves the next command once the holder
+/// returns.
 #[test]
 fn a_command_gives_up_on_a_held_core_and_names_the_holder() {
     let dir = tempfile::tempdir().expect("a temp folder");
@@ -297,7 +308,11 @@ fn a_command_gives_up_on_a_held_core_and_names_the_holder() {
             .expect_err("the next command gives up");
         assert!(at.elapsed() < Duration::from_secs(2), "it waited {:?}", at.elapsed());
         assert_eq!(error.code, BUSY);
-        assert!(error.message.contains("a stuck command"), "the message names the holder: {}", error.message);
+        assert!(
+            error.message.contains("a stuck command"),
+            "the message names the holder: {}",
+            error.message
+        );
         release.send(()).expect("the holder is released");
     });
     bridge
@@ -326,7 +341,10 @@ fn the_exit_gives_up_on_a_command_that_holds_the_core_too_long() {
         bridge.shutdown_within(Duration::from_millis(150));
         at.elapsed()
     });
-    assert!(took < Duration::from_millis(800), "the exit waited {took:?} for the command");
+    assert!(
+        took < Duration::from_millis(800),
+        "the exit waited {took:?} for the command"
+    );
     assert!(
         bridge.held.lock().expect("the holder").is_none(),
         "the holder is cleared once the command returns"

@@ -197,7 +197,9 @@ pub(crate) async fn blocking<T: Send + 'static>(
 
 #[tauri::command]
 pub async fn audio_assets_dir(bridge: State<'_, CoreBridge>, page: String) -> IpcResult<String> {
-    let dir = bridge.run(move |bridge| bridge.with(|bridge| assets_dir(bridge, &page))).await?;
+    let dir = bridge
+        .run(move |bridge| bridge.with(|bridge| assets_dir(bridge, &page)))
+        .await?;
     Ok(dir.to_string_lossy().into_owned())
 }
 

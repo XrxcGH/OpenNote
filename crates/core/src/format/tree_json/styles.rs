@@ -18,9 +18,9 @@ pub(super) fn read_styles(value: Value) -> Result<NotebookStyles, FormatError> {
 }
 
 /// Reads one style. Each number is rounded as [`write_style`] writes it (sizes and spacing to 0.01, the line
-/// height to two decimals), so a style in memory is the style its bytes read back as, whether it came from the
-/// file or from an edit: [`crate::store::notebook_store::NotebookStore::set_notebook_styles`] compares the two
-/// to tell a change from a repeat.
+/// height to two decimals). A style in memory is then the style its bytes read back as, whether it came from
+/// the file or from an edit. [`crate::store::notebook_store::NotebookStore::set_notebook_styles`] compares the
+/// two to tell a change from a repeat.
 fn read_style(value: Value, context: &str) -> Result<StyleSpec, FormatError> {
     let mut fields = Fields::new(value, context)?;
     Ok(StyleSpec {

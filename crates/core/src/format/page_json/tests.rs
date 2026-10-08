@@ -233,10 +233,18 @@ fn geometry_is_read_as_the_file_writes_it_so_a_page_reads_back_as_itself() {
         }
     ]);
     let page = read(&value).unwrap().page;
-    let text = page.blocks.iter().find(|b| matches!(b.data, BlockData::Text(_))).unwrap();
+    let text = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Text(_)))
+        .unwrap();
     let frame = text.frame.as_ref().unwrap();
     assert_eq!((frame.x, frame.y, frame.w), (Some(96.0), Some(120.01), Some(624.5)));
-    let ink = page.blocks.iter().find(|b| matches!(b.data, BlockData::Ink(_))).unwrap();
+    let ink = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Ink(_)))
+        .unwrap();
     let BlockData::Ink(data) = &ink.data else { panic!() };
     let anchor = data.anchor.as_ref().unwrap();
     assert_eq!((anchor.dx, anchor.dy), (12.35, 0.0));

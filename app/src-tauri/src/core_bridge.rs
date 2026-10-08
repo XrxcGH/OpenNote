@@ -15,7 +15,7 @@ use std::{
     fs,
     panic::Location,
     path::{Path, PathBuf},
-    sync::{mpsc, Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError},
+    sync::{mpsc, Arc, Mutex, OnceLock, PoisonError},
     time::{Duration, Instant},
 };
 
@@ -44,91 +44,14 @@ use crate::{
 };
 
 // Phase 8: search and linking over this core. One command carries every method.
+mod held;
 pub mod search;
+
+use held::{called_from, Door, Held, Holding, COMMAND_WAIT, HELD_WARNING};
+pub use held::{BUSY, RESPONSIVE_EVENT, STALLED_EVENT};
 
 /// How long the exit flush may take before the journals keep the rest for the next start (core plan 9.3).
 const EXIT_FLUSH: Duration = Duration::from_secs(5);
-
-/// How long one command may hold the core before the log and the interface hear which one, and how often they
-/// hear it again while it goes on. The core serves one command at a time, so a command that never returns stops
-/// every later one; beta 4's T2-3 was such a stop, and nothing said what the core was doing. Now the watchdog
-/// names the holder, the interface shows that the core isn't responding, and the exit goes on without it.
-const HELD_WARNING: Duration = Duration::from_secs(10);
-
-/// How long a command waits for the core before it fails as [`BUSY`] instead of joining the queue behind a
-/// command that never returns. The interface sends its commands over the webview's IPC channel, which carries
-/// only a handful at a time: once that many wait on the core, nothing else gets through, not even the window's
-/// Close or a log line (beta 4's T2-3). A command that fails after this wait keeps the channel open, and the
-/// interface says the core isn't responding instead of saying "Saving" for the rest of the session. It is longer
-/// than the core's journal `OPEN_TIMEOUT` (10 s, journal_thread.rs), the one bounded wait a command makes on
-/// another thread while it holds the core, so a stuck journal open gives up before the commands behind it do.
-///
-/// The channel's limit stays: the interface keeps one edit in flight per page, but with many pages open their
-/// edits and the tree's and search's commands can still fill the channel for one such wait while the core is
-/// held. The watchdog reports the holder after [`HELD_WARNING`] all the same.
-const COMMAND_WAIT: Duration = Duration::from_secs(15);
-
-/// The error code of a command that gave up waiting for the core. The message names what holds it.
-pub const BUSY: &str = "coreBusy";
-
-/// The event that says a command has held the core for too long, with `what` holds it and for how many
-/// `seconds`, and the one that says the core answers again.
-pub const STALLED_EVENT: &str = "core:stalled";
-pub const RESPONSIVE_EVENT: &str = "core:responsive";
-
-/// What holds the core now: since when, and which command.
-type Held = Arc<Mutex<Option<(Instant, Cow<'static, str>)>>>;
-
-/// The door the commands queue at: whether the core is taken, and the condition the waiters sleep on until
-/// the holder leaves. Serializing the commands here, not on the core's own lock, is what lets a command give up
-/// after a bounded wait without polling.
-type Door = Arc<(Mutex<bool>, Condvar)>;
-
-/// The taken core: the core's state, given back through the door when dropped (after the state's own guard).
-struct CoreGuard<'a> {
-    state: MutexGuard<'a, Option<Bridge>>,
-    _turn: Turn<'a>,
-}
-
-impl std::ops::Deref for CoreGuard<'_> {
-    type Target = Option<Bridge>;
-    fn deref(&self) -> &Option<Bridge> {
-        &self.state
-    }
-}
-
-impl std::ops::DerefMut for CoreGuard<'_> {
-    fn deref_mut(&mut self) -> &mut Option<Bridge> {
-        &mut self.state
-    }
-}
-
-/// Frees the door and wakes the next waiter when a command returns, or unwinds.
-struct Turn<'a>(&'a Door);
-
-impl Drop for Turn<'_> {
-    fn drop(&mut self) {
-        let (taken, freed) = &**self.0;
-        *taken.lock().unwrap_or_else(PoisonError::into_inner) = false;
-        freed.notify_one();
-    }
-}
-
-/// Clears the holder when the command returns, or unwinds.
-struct Holding(Held);
-
-impl Drop for Holding {
-    fn drop(&mut self) {
-        *self.0.lock().unwrap_or_else(PoisonError::into_inner) = None;
-    }
-}
-
-/// Where a command was called from, for the watchdog: the file and line, with the workspace path trimmed.
-fn called_from(location: &Location<'_>) -> String {
-    let file = location.file().replace('\\', "/");
-    let file = file.rsplit_once("/src/").map_or(file.as_str(), |(_, rest)| rest);
-    format!("the command at {file}:{}", location.line())
-}
 
 /// The longest page ID the commands take. Page IDs are 26 characters.
 const MAX_PAGE_ID: usize = 128;
@@ -388,38 +311,12 @@ impl CoreBridge {
         self
     }
 
-    /// Takes the core, waiting at most `timeout` for the command that holds it. `None` when it is still held
-    /// after that. Commands queue at the door: a waiter sleeps on its condition variable until the holder
-    /// leaves, not on a poll, so a contended command starts the moment the one before it ends.
-    fn take_core_within(&self, timeout: Duration) -> Option<CoreGuard<'_>> {
-        let deadline = Instant::now().checked_add(timeout);
-        let (taken, freed) = &*self.door;
-        let mut taken = taken.lock().unwrap_or_else(PoisonError::into_inner);
-        while *taken {
-            let left = deadline.map_or(Duration::MAX, |d| d.saturating_duration_since(Instant::now()));
-            if left.is_zero() {
-                return None;
-            }
-            taken = freed
-                .wait_timeout(taken, left)
-                .unwrap_or_else(PoisonError::into_inner)
-                .0;
-        }
-        *taken = true;
-        drop(taken);
-        let state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-        Some(CoreGuard {
-            state,
-            _turn: Turn(&self.door),
-        })
-    }
-
     /// Runs `work` on a blocking thread and answers when it is done. Every command that touches the core goes
-    /// through it. The core serves one command at a time, so a command waits for the one before it; waiting on
-    /// one of the async runtime's few worker threads meant that one command that never returned took every
-    /// worker in turn, and then nothing the interface asked for came back, not even what has nothing to do
-    /// with the core (beta 4's T2-3). On a blocking thread a wait costs nothing else: unrelated commands keep
-    /// answering, and the watchdog says what the core is busy with.
+    /// through it. The core serves one command at a time, so a command waits for the one before it. That wait
+    /// used to sit on one of the async runtime's few worker threads. One command that never returned then took
+    /// every worker in turn, and nothing the interface asked for came back, core or not (beta 4's T2-3). On a
+    /// blocking thread a wait costs nothing else: unrelated commands keep answering, and the watchdog says what
+    /// the core is busy with.
     pub async fn run<T: Send + 'static>(
         &self,
         work: impl FnOnce(&CoreBridge) -> IpcResult<T> + Send + 'static,
@@ -428,16 +325,6 @@ impl CoreBridge {
         tauri::async_runtime::spawn_blocking(move || work(&bridge))
             .await
             .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
-    }
-
-    /// What holds the core now, for the log.
-    fn holder(&self) -> String {
-        let holder = self.held.lock().unwrap_or_else(PoisonError::into_inner);
-        holder
-            .as_ref()
-            .map_or("nothing holds it now".to_owned(), |(since, what)| {
-                format!("{what} has held it for {} s", since.elapsed().as_secs())
-            })
     }
 
     /// Sends the core's events through `emit`. The first call wins.
@@ -524,54 +411,6 @@ impl CoreBridge {
             bridge.send_tree_events();
             result
         })
-    }
-
-    /// Starts the watchdog that reports a command holding the core for longer than `warn_after`: an error in
-    /// the log, and [`STALLED_EVENT`] to the interface, again every `warn_after` while it goes on, and then
-    /// [`RESPONSIVE_EVENT`] once the command returns. It can't free the core, but the log then says what to
-    /// look at, and the title bar says the core isn't responding, where a silent hang said "Saving" forever.
-    fn watch_held(&self) {
-        let held = Arc::downgrade(&self.held);
-        let relay = Arc::downgrade(&self.relay);
-        let warn_after = self.warn_after;
-        let spawned = std::thread::Builder::new()
-            .name("opennote-core-watchdog".into())
-            .spawn(move || {
-                // The hold last reported, by its start, and when it was reported.
-                let mut reported: Option<(Instant, Instant)> = None;
-                loop {
-                    std::thread::sleep(warn_after / 4);
-                    let Some(held) = held.upgrade() else { return };
-                    let now = held.lock().unwrap_or_else(PoisonError::into_inner).clone();
-                    let send = |name, payload| {
-                        if let Some(relay) = relay.upgrade() {
-                            relay.send(name, payload);
-                        }
-                    };
-                    let Some((since, what)) = now else {
-                        if reported.take().is_some() {
-                            ::log::info!("The core answers again");
-                            send(RESPONSIVE_EVENT, serde_json::json!({}));
-                        }
-                        continue;
-                    };
-                    let elapsed = since.elapsed();
-                    let due = match reported {
-                        Some((hold, at)) if hold == since => at.elapsed() >= warn_after,
-                        _ => elapsed >= warn_after,
-                    };
-                    if !due {
-                        continue;
-                    }
-                    reported = Some((since, Instant::now()));
-                    let seconds = elapsed.as_secs();
-                    ::log::error!("{what} has held the core for {seconds} s, and every other command waits for it");
-                    send(STALLED_EVENT, serde_json::json!({ "what": what, "seconds": seconds }));
-                }
-            });
-        if let Err(error) = spawned {
-            ::log::warn!("Couldn't start the core watchdog: {error}");
-        }
     }
 
     /// Starts the worker that turns tree changes the core makes on its own into notes events.

@@ -38,8 +38,8 @@ export function setCoreStalled(stalled: boolean): void {
 }
 
 /**
- * A command gave up waiting for the core (the `coreBusy` error): the core is stalled, whether or not its
- * watchdog's event has arrived yet. `core:responsive` clears it once the holder returns.
+ * A command gave up waiting for the core (the `coreBusy` error): the core is stalled, even before its watchdog's
+ * event arrives. `core:responsive` clears it once the holder returns.
  */
 export function coreBusy(): void {
   setCoreStalled(true);

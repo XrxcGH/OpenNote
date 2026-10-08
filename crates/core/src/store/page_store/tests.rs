@@ -285,12 +285,11 @@ fn a_page_that_reads_back_differently_is_not_saved() {
     assert_eq!(h.store.fingerprint(&h.dir).unwrap(), None);
     // The segment written for the pending stroke went with the failed save: a retry writes its own, and a save
     // that fails every time (beta 4's T2-1 did, every 30 seconds) must not fill `ink/` with orphans.
-    let orphans: Vec<_> = h
-        .fs
-        .files()
-        .into_iter()
-        .filter(|p| p.extension().is_some_and(|e| e == "onk"))
-        .collect();
+    let orphans: Vec<_> =
+        h.fs.files()
+            .into_iter()
+            .filter(|p| p.extension().is_some_and(|e| e == "onk"))
+            .collect();
     assert!(orphans.is_empty(), "{orphans:?}");
     assert!(h.store.written.lock().unwrap().is_empty());
 }
@@ -402,7 +401,12 @@ fn ink_anchored_at_a_fractional_offset_saves() {
     let h = Harness::new();
     let mut page = sample_page();
     h.put_assets(&page);
-    let text = page.blocks.iter().find(|b| matches!(b.data, BlockData::Text(_))).unwrap().id;
+    let text = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, BlockData::Text(_)))
+        .unwrap()
+        .id;
     let mut anchored = Block::clone(page.blocks.get(sample_ink_block()).unwrap());
     anchored.id = BlockId(Id::parse("01m3sa1242ayy4avvsz3yx5gxk").unwrap());
     anchored.data = BlockData::Ink(InkBlockData {

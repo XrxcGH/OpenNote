@@ -259,7 +259,11 @@ fn read_image(map: &JsonMap) -> Result<ImageData, String> {
 fn read_crop(map: &JsonMap) -> Result<Crop, String> {
     let mut view = View::new(map);
     // Crops are written with 6 decimals.
-    let mut part = |key| view.number(key).map(|v| v.map(|v| fixed_value(v, 6)))?.ok_or(format!("crop.{key}: missing"));
+    let mut part = |key| {
+        view.number(key)
+            .map(|v| v.map(|v| fixed_value(v, 6)))?
+            .ok_or(format!("crop.{key}: missing"))
+    };
     Ok(Crop {
         x: part("x")?,
         y: part("y")?,

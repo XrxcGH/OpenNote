@@ -120,8 +120,8 @@ fn merged_copies_take_the_styles_of_the_copy_changed_later() {
     assert_eq!(merge_notebooks(&theirs, &ours).styles, ours.styles);
 }
 
-/// Styles are written rounded (sizes and spacing to 0.01, the line height to two decimals), and read back the
-/// same way, so a style in memory is the style its bytes read back as: setting the same style twice is a
+/// Styles are written rounded (sizes and spacing to 0.01, the line height to two decimals) and read back the
+/// same way. A style in memory is then the style its bytes read back as. Setting the same style twice is a
 /// repeat, not a change, however many decimals the interface sent (the T2-1 pattern, in `notebook.json`).
 #[test]
 fn styles_read_as_rounded_as_they_are_written() {

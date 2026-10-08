@@ -184,7 +184,9 @@ pub async fn interop_preview(
     path: String,
     choices: Option<ImportChoices>,
 ) -> IpcResult<Outcome<PreviewView>> {
-    let device = bridge.run(|bridge| bridge.with(|bridge| Ok(bridge.core.device()))).await?;
+    let device = bridge
+        .run(|bridge| bridge.with(|bridge| Ok(bridge.core.device())))
+        .await?;
     let (guard, control) = Job::start(&job, emitter(&app));
     let options = choices.unwrap_or_default().options();
     let result = blocking(move || {
@@ -243,7 +245,9 @@ pub async fn interop_import(
     let Some(parent) = notes_folder(&app) else {
         return Err(IpcError::invalid("folder", "Choose a notes folder first."));
     };
-    let device = bridge.run(|bridge| bridge.with(|bridge| Ok(bridge.core.device()))).await?;
+    let device = bridge
+        .run(|bridge| bridge.with(|bridge| Ok(bridge.core.device())))
+        .await?;
     let (guard, control) = Job::start(&job, emitter(&app));
     let options = choices.unwrap_or_default().options();
     let folder = parent.clone();

@@ -247,7 +247,7 @@ function events(session: Session, frames: ReturnType<typeof listeners<AppliedFra
 
 export function createTauriPageService(client: CoreClient, images: ImagesClient): PageService {
   let clients = 0;
-  // The title bar's status hears every page's saves, open or closing, for as long as the service lives.
+  // The title bar's status hears the saves of every open or closing page for as long as the service lives.
   watchSaveHealth(client);
   return {
     async open(pageId, { viewport }): Promise<OpenPage> {
