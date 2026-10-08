@@ -69,13 +69,29 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
     });
     return false;
   }
-  showToast({ id: WORKING, message: t('audioMore.transcript.engineWorking') });
+  const stop = new AbortController();
+  const working = (message: string) =>
+    showToast({
+      id: WORKING,
+      message,
+      action: { label: t('intelSpeech.transcribe.stop'), run: () => stop.abort() },
+    });
+  working(t('audioMore.transcript.engineWorking'));
+  // Progress shows in steps of ten, so a screen reader hears a few updates and not a hundred.
+  let shown = 0;
   try {
     const page = shownPage.get()?.id ?? '';
     const which = extrasOf(entry).transcribeWith === 'enhanced' ? 'enhanced' : 'original';
     const result = await engine.transcribe({
       assetsDir: await platformAudio().assetsDir(page),
       entry: playable(entry, which),
+      signal: stop.signal,
+      onProgress: (fraction) => {
+        const percent = Math.floor(fraction * 10) * 10;
+        if (percent <= shown || percent >= 100) return;
+        shown = percent;
+        working(t('intelSpeech.transcribe.progress', { percent }));
+      },
     });
     const data = fromSegments(entry.id, result.segments, 'engine', result.language);
     const summary = await quietSummary(data);
@@ -83,6 +99,15 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
     showToast({ id: WORKING, message: t('audioMore.transcript.engineDone') });
     return true;
   } catch (error) {
+    const reason = (error as { reason?: string } | null)?.reason;
+    // Stopping, saying not now, and a missing model were each already answered, so they end quietly.
+    if (reason === 'canceled' || reason === 'off' || reason === 'noModel') {
+      showToast({
+        id: WORKING,
+        message: t(reason === 'canceled' ? 'intelSpeech.transcribe.canceled' : 'intelSpeech.transcribe.notMade'),
+      });
+      return false;
+    }
     showToast({
       id: WORKING,
       message: t('audioMore.transcript.engineFailed', { message: describeError(error) }),

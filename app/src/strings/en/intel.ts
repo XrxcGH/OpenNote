@@ -24,6 +24,10 @@ export const intel = {
       label: 'Summaries and keywords',
       help: 'Picks the sentences and keywords that best stand for a page. It writes nothing new.',
     },
+    transcription: {
+      label: 'Transcription',
+      help: 'Turns recordings into text with a speech model you download once. It runs on the processor.',
+    },
     status: {
       off: 'Off',
       ready: 'On and ready',
@@ -42,6 +46,7 @@ export const intel = {
     handwriting: 'OpenNote can turn this handwriting into text, using Windows recognition.',
     readAloud: 'OpenNote can read this page aloud in a voice installed on Windows.',
     summaries: 'OpenNote can pick the sentences and keywords that best stand for this page.',
+    transcription: 'OpenNote can turn this recording into text, with a speech model on this device.',
     where: 'It runs on this device, and nothing leaves it. You can turn it off in Settings.',
     turnOn: 'Turn on',
     notNow: 'Not now',
@@ -51,11 +56,13 @@ export const intel = {
     handwriting: 'handwriting recognition',
     readAloud: 'read aloud',
     summaries: 'summaries and keywords',
+    transcription: 'transcription',
   },
   problems: {
     languageUnavailable: 'Windows has no text recognition language installed.',
     voiceUnavailable: 'Windows has no voice installed.',
     handwritingUnavailable: 'Windows has no handwriting recognition installed.',
+    speechModelMissing: 'no speech model is downloaded yet. Download one under Models.',
     unsupported: "This isn't available on this computer.",
     failed: "Couldn't do that. Try again.",
   },

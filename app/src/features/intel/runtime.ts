@@ -11,7 +11,7 @@ import { confirm, showToast } from '../../ui';
 import { intelState, isOn, OFF } from './choices';
 
 /** The features this phase's interface offers. Transcription is Phase 9's. */
-export const ON_DEVICE_FEATURES = ['ocr', 'handwriting', 'readAloud', 'summaries'] as const;
+export const ON_DEVICE_FEATURES = ['ocr', 'handwriting', 'readAloud', 'summaries', 'transcription'] as const;
 export type OnDeviceFeature = (typeof ON_DEVICE_FEATURES)[number];
 
 let hostPromise: Promise<IntelHost> | null = null;
@@ -111,6 +111,7 @@ const FEATURE_NAME = {
   handwriting: 'intel.features.handwriting',
   readAloud: 'intel.features.readAloud',
   summaries: 'intel.features.summaries',
+  transcription: 'intel.features.transcription',
 } as const satisfies Record<OnDeviceFeature, `intel.features.${OnDeviceFeature}`>;
 
 const OFFER_BODY = {
@@ -118,6 +119,7 @@ const OFFER_BODY = {
   handwriting: 'intel.offer.handwriting',
   readAloud: 'intel.offer.readAloud',
   summaries: 'intel.offer.summaries',
+  transcription: 'intel.offer.transcription',
 } as const satisfies Record<OnDeviceFeature, `intel.offer.${OnDeviceFeature}`>;
 
 function openWindowsSettings(page: 'speech' | 'language'): void {

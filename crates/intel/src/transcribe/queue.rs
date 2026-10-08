@@ -297,6 +297,7 @@ fn run_engine(
     let settings = EngineSettings {
         language: request.options.language.clone(),
         device,
+        prompt: request.options.prompt.clone(),
     };
     let engine = &shared.engine;
     let audio = &mut *request.audio;

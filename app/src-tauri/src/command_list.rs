@@ -47,6 +47,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "intel_keywords", "intel_action_items", "intel_chapters", "intel_vocabulary_offer",
     "intel_speech_voices", "intel_speech_synthesize", "intel_read_aloud_start", "intel_read_aloud_next",
     "intel_read_aloud_cancel", "intel_clip_audio", "intel_ext_call",
+    "intel_transcribe", "intel_transcribe_cancel",
     "page_extras_caret", "page_extras_link_title", "attachment_import", "attachment_open", "attachment_stop",
     "connectors_list", "connectors_connect", "connectors_cancel", "connectors_disconnect", "connectors_request",
 ];

@@ -34,6 +34,19 @@ Settings has a Recording section for the defaults.
 
 A transcript block lists each line with its time, and a click jumps to that moment. You can rename a speaker once, and every line updates. You can turn lines into notes, pull out action items and chapters, and copy a meeting recap.
 
-In beta 4 OpenNote cannot turn speech into text by itself yet. The transcript block, speakers, and recaps are built, and the speech engine is not. See [on-device intelligence](on-device-intelligence.md).
+### Make a transcript on this device
+
+OpenNote turns speech into text with a Whisper speech model that runs on your computer. Nothing is sent anywhere.
+
+1. Open Settings, then On-device intelligence, and turn on Transcription.
+2. Under Models, download a speech model. Each one shows its size before it downloads. The base English model is the one most people want.
+3. On a recording, open More and choose Make a transcript.
+
+The transcript is made in the background, one recording at a time, and a note shows how far along it is. Choose Stop on that note to stop it. A long recording takes a few minutes.
+
+- The notebook's custom vocabulary is given to the model first, and its spellings are fixed in the result. See [on-device intelligence](on-device-intelligence.md).
+- If you used Enhance voice, you can choose to make the transcript from the original or the enhanced voice, in the recording's More menu.
+- The model runs on the processor. Graphics and NPU chips are not used yet.
+- The audio is read from the page's own files. No copy is made.
 
 Recording is built. Agents started a recording once and it worked. Nobody has tried the rest by hand.

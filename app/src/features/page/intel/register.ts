@@ -45,3 +45,11 @@ commands.register(
 );
 
 void import('../../intel').then((module) => module.loadApi()).then((api) => api.loadIntel());
+
+// The on-device transcriber behind "Make transcript", so a recording can become text on this device.
+if (isEnabled('intel.transcription') && isEnabled('transcripts.block')) {
+  void Promise.all([
+    import('../../intel').then((module) => module.loadApi()),
+    import('../audio/transcripts/engine'),
+  ]).then(([api, seam]) => seam.registerTranscriptEngine(api.onDeviceTranscriptEngine));
+}

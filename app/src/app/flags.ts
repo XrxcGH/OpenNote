@@ -149,7 +149,8 @@ type IntelFlagId =
   | 'intel.handwritingExtras'
   | 'intel.meaning'
   | 'intel.ask'
-  | 'intel.writing';
+  | 'intel.writing'
+  | 'intel.transcription';
 
 type Phase5FlagId =
   | 'ink.core'

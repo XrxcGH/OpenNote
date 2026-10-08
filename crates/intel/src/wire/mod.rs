@@ -25,9 +25,13 @@ use crate::vocabulary::Vocabulary;
 
 mod hub;
 mod speech;
+mod transcribe;
 
 pub use self::hub::{SpeechHub, MAX_CLIPS, MAX_SESSIONS};
 pub use self::speech::{ReadAloudNotice, ReadAloudRequest, ReadAloudStarted, SpeechClip, SynthesizeRequest};
+pub use self::transcribe::{
+    vocabulary_prompt, Finisher, Pcm48k, TranscribeChoices, TranscribeHub, TranscribeUpdate, TranscriptLine,
+};
 
 // The result types, so the command layer names everything it passes through from this module.
 pub use crate::engines::FeatureStatus;

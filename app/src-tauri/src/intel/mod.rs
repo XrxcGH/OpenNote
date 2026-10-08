@@ -30,6 +30,9 @@ use crate::{
 
 mod ext;
 mod models;
+mod transcribe;
+
+pub use transcribe::{intel_transcribe, intel_transcribe_cancel};
 
 #[cfg(test)]
 mod tests;
@@ -101,6 +104,10 @@ struct Inner {
     engines: OnceLock<RwLock<Engines>>,
     hub: SpeechHub,
     ext: ext::Ext,
+    /// This device's folder, which holds the downloaded models.
+    device: PathBuf,
+    /// The transcription jobs, made on the first one, when the app handle for their events is known.
+    transcribe: OnceLock<opennote_intel::wire::TranscribeHub>,
 }
 
 /// The app's on-device intelligence: the person's choices, the engines behind them, and the read-aloud hub.
@@ -114,13 +121,16 @@ impl IntelState {
 
     fn at(file: PathBuf) -> IntelState {
         let settings = load(&file);
-        let ext = ext::Ext::new(file.parent().unwrap_or_else(|| Path::new(".")));
+        let device = file.parent().unwrap_or_else(|| Path::new(".")).to_path_buf();
+        let ext = ext::Ext::new(&device);
         IntelState(Arc::new(Inner {
             file,
             settings: Mutex::new(settings),
             engines: OnceLock::new(),
             hub: SpeechHub::new(),
             ext,
+            device,
+            transcribe: OnceLock::new(),
         }))
     }
 
@@ -138,10 +148,32 @@ impl IntelState {
             None => {
                 // Made while holding the choices, so a change that lands meanwhile waits and then updates them.
                 let settings = self.0.settings.lock().unwrap_or_else(PoisonError::into_inner);
-                self.0.engines.get_or_init(|| RwLock::new(Engines::platform(*settings)))
+                self.0.engines.get_or_init(|| {
+                    let mut engines = Engines::platform(*settings);
+                    engines.set_speech_model(transcribe::installed_speech_model(&self.0.device).as_deref());
+                    RwLock::new(engines)
+                })
             }
         };
         engines.read().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// This device's folder.
+    fn device(&self) -> &Path {
+        &self.0.device
+    }
+
+    /// Makes `model` the speech model the engines use, if it isn't already.
+    fn use_speech_model(&self, model: &Path) {
+        // Make the engines first, so the change below lands on them.
+        drop(self.engines());
+        let engines = self.0.engines.get();
+        if let Some(engines) = engines {
+            let mut engines = engines.write().unwrap_or_else(PoisonError::into_inner);
+            if engines.speech_model().as_deref() != Some(model) {
+                engines.set_speech_model(Some(model));
+            }
+        }
     }
 
     /// What the person has turned on.

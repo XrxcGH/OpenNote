@@ -23,6 +23,7 @@ Later, open Settings, then On-device intelligence. Each feature shows what it do
 | Search by meaning | Search finds pages by what they mean. A Related pages list shows pages like this one. |
 | Ask your notes | Press Ctrl+K and choose Ask. The answer lists the pages it used. |
 | Writing tools | Select text, then proofread, rewrite, shorten, make a list, or tidy it. |
+| Transcription | Download a speech model, then choose Make a transcript on a recording. See [recording](recording.md). |
 | Custom vocabulary | Add names and course terms for each notebook. |
 
 Work that runs in the background shows in an activity panel. You can stop it there.
@@ -35,6 +36,6 @@ Work that runs in the background shows in an activity panel. You can stop it the
 
 ## Not built yet
 
-Turning speech into text, dictation, live captions, telling speakers apart, turning handwritten math into an equation, and translating on your device are not built. See the [feature list](../FEATURES.md).
+Dictation, live captions, telling speakers apart, turning handwritten math into an equation, and translating on your device are not built. See the [feature list](../FEATURES.md).
 
 On-device intelligence is built. Agents checked it with tests and by opening its settings. Nobody has tried it by hand.

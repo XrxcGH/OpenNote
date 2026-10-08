@@ -97,6 +97,50 @@ impl Engines {
         }
     }
 
+    /// Uses the Whisper model in the file at `model` for transcription, dictation, and live captions, or no model
+    /// with `None`. The file is read on the first job, so this costs nothing until then. The app calls it when a
+    /// speech model finishes downloading or the person picks another.
+    pub fn set_speech_model(&mut self, model: Option<&std::path::Path>) {
+        self.transcription =
+            model.map(|path| Arc::new(crate::whisper::WhisperEngine::new(path)) as Arc<dyn TranscriptionEngine>);
+        if model.is_none() {
+            crate::whisper::unload();
+        }
+        self.readiness = Default::default();
+    }
+
+    /// The speech model file in use, if any.
+    pub fn speech_model(&self) -> Option<std::path::PathBuf> {
+        self.transcription.as_ref().and_then(|engine| engine.model_file())
+    }
+
+    /// `engine` behind the transcription switch: it refuses to start while transcription is off, and a running
+    /// job stops when the person turns it off.
+    pub fn gate_transcription(
+        &self,
+        engine: Arc<dyn TranscriptionEngine>,
+    ) -> Result<Arc<dyn TranscriptionEngine>, IntelError> {
+        Ok(Arc::new(self.gated(Feature::Transcription, &Ok(engine))?))
+    }
+
+    /// Transcribes a short clip held in memory, such as dictation or a stretch of live captions: 16 kHz mono
+    /// samples, with the vocabulary hint `prompt`. Needs `transcription` and a speech model.
+    pub fn transcribe_clip(
+        &self,
+        samples: &[f32],
+        language: Option<&crate::geometry::Language>,
+        prompt: &str,
+    ) -> Result<Vec<crate::transcribe::Segment>, IntelError> {
+        self.require(Feature::Transcription)?;
+        let engine = self.transcription.as_ref().ok_or(IntelError::Unsupported {
+            feature: Feature::Transcription.label(),
+        })?;
+        let path = engine_path(engine.as_ref()).ok_or(IntelError::Unsupported {
+            feature: Feature::Transcription.label(),
+        })?;
+        crate::whisper::WhisperEngine::new(path).transcribe_samples(samples, language, prompt)
+    }
+
     /// Installs the transcription engine, such as whisper.cpp once it lands.
     pub fn with_transcription_engine(mut self, engine: Arc<dyn TranscriptionEngine>) -> Engines {
         self.transcription = Some(engine);
@@ -244,10 +288,12 @@ impl Engines {
                     Feature::Handwriting => self.problem(feature, &self.ink, |e| e.check_ready()),
                     Feature::ReadAloud => self.problem(feature, &self.speech, |e| e.check_ready()),
                     Feature::Summaries => None,
-                    Feature::Transcription => self
-                        .transcription
-                        .is_none()
-                        .then(|| "no transcription engine is installed yet".to_owned()),
+                    Feature::Transcription => match &self.transcription {
+                        None => Some("no speech model is downloaded yet".to_owned()),
+                        Some(engine) => engine_path(engine.as_ref())
+                            .filter(|path| !path.is_file())
+                            .map(|_| "the speech model is missing. Download it again".to_owned()),
+                    },
                 };
                 FeatureStatus {
                     feature,
@@ -258,4 +304,9 @@ impl Engines {
             })
             .collect()
     }
+}
+
+/// The model file of a Whisper engine, from its name. Other engines, such as test stand-ins, have none.
+fn engine_path(engine: &dyn TranscriptionEngine) -> Option<std::path::PathBuf> {
+    engine.model_file()
 }

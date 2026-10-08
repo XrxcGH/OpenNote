@@ -30,4 +30,5 @@ export const INTEL_FLAGS: readonly FlagDef[] = [
   flag('intel.meaning', 'Find by meaning, and Related pages.', building),
   flag('intel.ask', 'Ask your notes, with the pages it used.', building),
   flag('intel.writing', 'Writing tools: proofread, rewrite, shorten, make a list, tidy structure.', building),
+  flag('intel.transcription', 'Transcription on this device with a downloaded Whisper model.', building),
 ];

@@ -20,6 +20,7 @@ const FLAG = {
   handwriting: 'intel.handwriting',
   readAloud: 'intel.readAloud',
   summaries: 'intel.summaries',
+  transcription: 'intel.transcription',
 } as const satisfies Record<OnDeviceFeature, FlagId>;
 
 const TEXT = {
@@ -42,6 +43,11 @@ const TEXT = {
     label: 'intel.settings.summaries.label',
     help: 'intel.settings.summaries.help',
     needs: 'intel.settings.needsGeneric',
+  },
+  transcription: {
+    label: 'intel.settings.transcription.label',
+    help: 'intel.settings.transcription.help',
+    needs: 'intel.problems.speechModelMissing',
   },
 } as const satisfies Record<OnDeviceFeature, { label: MessageKey; help: MessageKey; needs: MessageKey }>;
 

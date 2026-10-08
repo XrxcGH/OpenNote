@@ -5,13 +5,17 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { initFlags } from '../../app/flags';
 import { expectNoAxeViolations, renderUi } from '../../test';
+import { INTEL_FLAGS } from './flags';
 import IntelSection from './SettingsSection';
 import { installTestHost } from './testing';
 import type { TestHost } from './testing';
 
 let host: TestHost;
+/** The flags of features still being built, all off, so the section shows what Stable has. */
+const BUILDING_OFF = Object.fromEntries(INTEL_FLAGS.filter((one) => !one.enabled.stable).map((one) => [one.id, false]));
+
 beforeEach(() => {
-  initFlags('dev');
+  initFlags('dev', BUILDING_OFF);
   host = installTestHost();
 });
 
@@ -35,9 +39,17 @@ describe('the On-device intelligence section', () => {
   });
 
   it('shows Handwriting once its flag is on', async () => {
-    initFlags('dev', { 'intel.handwriting': true });
+    initFlags('dev', BUILDING_OFF, { 'intel.handwriting': true });
     renderUi(<IntelSection />);
     expect((await switchNamed('Handwriting')).getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('shows Transcription once its flag is on, and says when no speech model is downloaded', async () => {
+    initFlags('dev', BUILDING_OFF, { 'intel.transcription': true });
+    host = installTestHost({ settings: { transcription: true }, unavailable: ['transcription'] });
+    renderUi(<IntelSection />);
+    expect((await switchNamed('Transcription')).getAttribute('aria-checked')).toBe('true');
+    await screen.findByText(/On, but not ready: no speech model is downloaded yet/);
   });
 
   it('turns a feature on and saves it, then says it is ready', async () => {

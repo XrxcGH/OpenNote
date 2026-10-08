@@ -172,6 +172,8 @@
     "allow-attachment-open",
     "allow-attachment-stop",
     "allow-intel-ext-call",
+    "allow-intel-transcribe",
+    "allow-intel-transcribe-cancel",
     "allow-connectors-list",
     "allow-connectors-connect",
     "allow-connectors-cancel",

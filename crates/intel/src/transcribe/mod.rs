@@ -79,6 +79,8 @@ pub struct TranscribeOptions {
     pub language: Option<Language>,
     /// The device to prefer.
     pub device: DevicePreference,
+    /// Words to prefer, such as the notebook's vocabulary, given to the engine before the audio. Empty for none.
+    pub prompt: String,
 }
 
 /// What an engine receives: the language and the device the queue chose.
@@ -88,6 +90,8 @@ pub struct EngineSettings {
     pub language: Option<Language>,
     /// The device to run on. It is always one the engine listed.
     pub device: Device,
+    /// Words to prefer, such as the notebook's vocabulary. Empty for none.
+    pub prompt: String,
 }
 
 /// A stretch of speech and its text.
@@ -134,6 +138,11 @@ pub trait TranscriptionEngine: Send + Sync {
 
     /// The devices this engine can run on here, which always include the processor.
     fn devices(&self) -> Vec<Device>;
+
+    /// The model file the engine reads, if it reads one. Settings use it to tell whether the model is still there.
+    fn model_file(&self) -> Option<std::path::PathBuf> {
+        None
+    }
 
     /// Transcribes one recording from the start of `audio`.
     ///

@@ -11,6 +11,8 @@ export interface TranscribeRequest {
   entry: RecordingEntry;
   /** Reports how far along it is, from 0 to 1. */
   onProgress?(fraction: number): void;
+  /** Stops the job; the promise then rejects. */
+  signal?: AbortSignal;
 }
 
 export interface TranscribeResult {

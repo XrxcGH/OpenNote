@@ -70,6 +70,7 @@ pub mod text;
 pub mod tidy;
 pub mod transcribe;
 pub mod vocabulary;
+pub mod whisper;
 pub mod wire;
 
 pub use engines::{Engines, FeatureStatus};

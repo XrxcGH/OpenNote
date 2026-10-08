@@ -27,6 +27,6 @@
     "feature": "transcription",
     "enabled": true,
     "available": false,
-    "unavailableReason": "no transcription engine is installed yet"
+    "unavailableReason": "no speech model is downloaded yet"
   }
 ]

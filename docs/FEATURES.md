@@ -59,7 +59,7 @@ Linked accounts (Phase 11):
 (Phase 9)
 
 - Paste a YouTube, Vimeo, or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings. Status: Not built yet.
-- Transcripts come from the platform's captions when available, or from on-device transcription of audio the person has the right to use. Status: Needs the owner. Captions need platform keys or sign-in, and the on-device speech engine is not built.
+- Transcripts come from the platform's captions when available, or from on-device transcription of audio the person has the right to use. Status: Needs the owner. Captions need platform keys or sign-in. On-device transcription of a recording or a dropped audio file is built, untested by hand.
 - Recordings can be exported as audio or as a narrated video of the page, and uploaded to a linked YouTube account as private or unlisted. Status: Built, untested by hand. Export as audio is built. A narrated video is not built yet. YouTube upload needs the owner.
 
 ## More integrations
