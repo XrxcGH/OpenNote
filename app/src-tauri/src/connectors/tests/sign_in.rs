@@ -166,3 +166,15 @@ fn a_waiting_sign_in_shows_as_pending_can_be_canceled_and_blocks_a_second() {
     assert_eq!(waiting.join().expect("finished"), Err(Failure::Canceled));
     assert!(!rig.connectors.view("example").expect("a view").pending);
 }
+
+#[test]
+fn a_sign_in_whose_record_cannot_be_saved_leaves_no_credential_behind() {
+    let server = MockServer::start();
+    let rig = oauth_rig(&server);
+    // A folder where the connections file goes makes every write of it fail.
+    fs::create_dir_all(rig.dir.path().join(CONNECTIONS_FILE)).expect("makes the folder");
+    rig.visit(Visit::Approve("good"));
+    assert_eq!(connect(&rig), Err(Failure::Storage));
+    assert_eq!(rig.store.get("OpenNote/example/sam@example.com"), Ok(None));
+    assert_eq!(rig.state("example"), StateView::NotConnected);
+}

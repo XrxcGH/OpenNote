@@ -231,21 +231,11 @@ impl Connectors {
     /// Keeps a new connection: the secret in the credential store, the metadata in the connections file.
     fn finish(&self, def: &ConnectorDef, new: NewConnection) -> Result<()> {
         let storage = || ConnectorError::new(Failure::Storage, def.id);
-        self.0
-            .store
-            .put(&target_name(def.id, &new.account), &new.secret)
-            .map_err(|_| storage())?;
+        let target = target_name(def.id, &new.account);
+        self.0.store.put(&target, &new.secret).map_err(|_| storage())?;
         let mut state = self.lock();
-        // Connecting as another account replaces the old one, and the old credential goes with it.
-        let replaced = state
-            .connections
-            .get(def.id)
-            .filter(|old| old.account != new.account)
-            .map(|old| old.account.clone());
-        if let Some(old) = replaced {
-            let _ = self.0.store.delete(&target_name(def.id, &old));
-        }
-        state.connections.insert(
+        let account = new.account.clone();
+        let previous = state.connections.insert(
             def.id.to_owned(),
             files::Connection {
                 account: new.account,
@@ -257,11 +247,36 @@ impl Connectors {
                 last_used_unix: None,
             },
         );
-        state.access.remove(def.id);
+        let previous_access = state.access.remove(def.id);
         if let Some(cached) = new.access {
             state.access.insert(def.id.to_owned(), cached);
         }
-        self.save(&state, def.id)
+        if let Err(error) = self.save(&state, def.id) {
+            // Without a record of the connection nothing could ever remove the credential, so it goes too,
+            // unless it replaced the same account's older one, which the kept record still points at.
+            match previous {
+                Some(old) => {
+                    if old.account != account {
+                        let _ = self.0.store.delete(&target);
+                    }
+                    state.connections.insert(def.id.to_owned(), old);
+                }
+                None => {
+                    let _ = self.0.store.delete(&target);
+                    state.connections.remove(def.id);
+                }
+            }
+            state.access.remove(def.id);
+            if let Some(cached) = previous_access {
+                state.access.insert(def.id.to_owned(), cached);
+            }
+            return Err(error);
+        }
+        // Connecting as another account replaces the old one, and the old credential goes with it.
+        if let Some(old) = previous.filter(|old| old.account != account) {
+            let _ = self.0.store.delete(&target_name(def.id, &old.account));
+        }
+        Ok(())
     }
 }
 
