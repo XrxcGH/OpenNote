@@ -119,6 +119,44 @@ describe('snapShape', () => {
     expect(shape.corners[2]).toEqual({ x: 246, y: 242 });
   });
 
+  it('squares a rectangle drawn a few degrees off to the page, so its sides lie along the lines', () => {
+    const turn = (3 * Math.PI) / 180;
+    const c = { x: 196, y: 192 };
+    const corners = [
+      [-58, -41],
+      [58, -41],
+      [58, 41],
+      [-58, 41],
+    ].map(([dx, dy]) => ({
+      x: c.x + dx * Math.cos(turn) - dy * Math.sin(turn),
+      y: c.y + dx * Math.sin(turn) + dy * Math.cos(turn),
+    })) as [Vec, Vec, Vec, Vec];
+    const { shape } = snapShape(at(grid), { kind: 'rectangle', corners, square: false });
+    if (shape.kind !== 'rectangle') throw new Error('not a rectangle');
+    for (const corner of shape.corners) expect(onPaper(grid, corner)).toBe(true);
+    expect(shape.corners[0].y).toBeCloseTo(shape.corners[1].y);
+    expect(shape.corners[1].x).toBeCloseTo(shape.corners[2].x);
+  });
+
+  it('squares an ellipse turned near a quarter, and its outline touches the lines it snapped to', () => {
+    const turned = snapShape(at(grid), {
+      kind: 'ellipse',
+      center: { x: 197, y: 213 },
+      rx: 41,
+      ry: 61,
+      rotation: Math.PI / 2 + 0.03,
+    });
+    if (turned.shape.kind !== 'ellipse') throw new Error('not an ellipse');
+    expect(turned.shape).toMatchObject({ center: { x: 196, y: 212 }, rx: 60, ry: 40, rotation: 0 });
+    const outline = shapePoints(turned.shape);
+    const ys = outline.map((p) => p.y);
+    const xs = outline.map((p) => p.x);
+    expect(Math.min(...ys)).toBeCloseTo(172, 6);
+    expect(Math.max(...ys)).toBeCloseTo(252, 6);
+    expect(Math.min(...xs)).toBeCloseTo(136, 6);
+    expect(Math.max(...xs)).toBeCloseTo(256, 6);
+  });
+
   it('snaps an ellipse by its box, and keeps a circle round', () => {
     const ellipse = snapShape(at(grid), { kind: 'ellipse', center: { x: 197, y: 213 }, rx: 61, ry: 41, rotation: 0 });
     if (ellipse.shape.kind !== 'ellipse') throw new Error('not an ellipse');

@@ -48,8 +48,11 @@ export interface SnappedShape {
 
 /** A line within this slope of horizontal or vertical is drawn level and stays level when it snaps (5 degrees). */
 const LEVEL = Math.tan((5 * Math.PI) / 180);
-/** A rectangle or an ellipse turned less than this from square to the page snaps its box (about 0.6 degrees). */
-const SQUARE = 0.02;
+/**
+ * A rectangle or an ellipse turned less than 5 degrees from square to the page is squared to it when it snaps, so its
+ * sides lie along the lines; one turned further keeps its turn and moves onto the paper by one point.
+ */
+const SQUARE = Math.sin((10 * Math.PI) / 180);
 const TINY = 1e-6;
 
 const isVec = (value: unknown): value is Vec =>
@@ -145,7 +148,7 @@ function boundsOf(points: readonly Vec[]): Bounds {
   return { minX, minY, maxX, maxY };
 }
 
-/** True when an angle is within SQUARE of a multiple of 90 degrees. */
+/** True when an angle is within 5 degrees of a multiple of 90 degrees. */
 const square = (angle: number) => Math.abs(Math.sin(2 * angle)) < SQUARE;
 
 /** A point snapped, and the shape moved so that point lands where it snapped. */
@@ -205,9 +208,15 @@ export function snapShape(snap: PaperSnap, shape: Shape): SnappedShape {
     case 'rectangle': {
       const [c0, c1] = shape.corners;
       if (!square(Math.atan2(c1.y - c0.y, c1.x - c0.x))) return moveOnto(snap, shape, c0);
+      // Square to the page, so its sides lie along the lines: each corner takes its side of the snapped box.
       const from = boundsOf(shape.corners);
       const { box, marks } = snapBox(snap, from);
-      return { shape: mapShape(shape, boxMap(from, box)), marks };
+      const middle = { x: (from.minX + from.maxX) / 2, y: (from.minY + from.maxY) / 2 };
+      const corners = shape.corners.map((c) => ({
+        x: c.x < middle.x ? box.minX : box.maxX,
+        y: c.y < middle.y ? box.minY : box.maxY,
+      })) as unknown as typeof shape.corners;
+      return { shape: { ...shape, corners }, marks };
     }
     case 'triangle': {
       const hits = shape.corners.map((corner) => snapPoint(snap, corner));
@@ -234,12 +243,14 @@ export function snapShape(snap: PaperSnap, shape: Shape): SnappedShape {
       const { box, marks } = snapBox(snap, from);
       const w = (box.maxX - box.minX) / 2;
       const h = (box.maxY - box.minY) / 2;
+      // Square to the page, so its sides touch the lines.
       return {
         shape: {
           ...shape,
           center: { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 },
-          rx: across ? w : h,
-          ry: across ? h : w,
+          rx: w,
+          ry: h,
+          rotation: 0,
         },
         marks,
       };
