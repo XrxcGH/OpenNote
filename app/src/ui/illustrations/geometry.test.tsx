@@ -114,6 +114,11 @@ describe('where things meet', () => {
     // Every point of the vine is outside the pot's body; where it crosses the rim it lies on top of it.
     const through = along(trailing, 800).filter((p) => pot.isPointInFill(p));
     expect(through).toEqual([]);
+    // The same for the shelf plant's tendril in the "No notebooks yet" drawing.
+    const shelf = drawn(renderUi(<EmptyArt kind="notebooks" />).container);
+    const shelfPot = shelf.querySelector<SVGGeometryElement>('path[d^="M82.4"]') as SVGGeometryElement;
+    const tendril = shelf.querySelector<SVGGeometryElement>('path[d^="M82.2"]') as SVGGeometryElement;
+    expect(along(tendril, 800).filter((p) => shelfPot.isPointInFill(p))).toEqual([]);
   });
 
   it("keeps the plant's left leaf clear of the window's middle bar", () => {
