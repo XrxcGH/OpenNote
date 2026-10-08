@@ -98,7 +98,7 @@ impl Paths {
         let root = self.roaming.to_string_lossy();
         // Windows paths ignore case, so C:\Users and c:\users name the same profile.
         let root = if cfg!(windows) {
-            root.to_lowercase()
+            root.to_lowercase().replace('/', "\\").trim_end_matches('\\').to_owned()
         } else {
             root.into_owned()
         };
@@ -245,5 +245,13 @@ mod tests {
         assert!(key.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()));
         assert_eq!(key, Paths::under_profile(Path::new("C:\\one")).profile_key());
         assert_ne!(key, Paths::under_profile(Path::new("C:\\two")).profile_key());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn spells_one_windows_profile_the_same_with_either_slash() {
+        let back = Paths::under_profile(Path::new("C:\\one\\profile")).profile_key();
+        assert_eq!(back, Paths::under_profile(Path::new("C:/one/profile")).profile_key());
+        assert_eq!(back, Paths::under_profile(Path::new("c:\\ONE\\profile\\")).profile_key());
     }
 }
