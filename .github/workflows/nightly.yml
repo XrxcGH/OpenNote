@@ -1,7 +1,8 @@
 name: nightly
 
 # The long-running hardening tests of DEVELOPMENT.md section 8: fuzzing, the kill harness, property tests with
-# many cases, and the performance budgets. The e2e-full job runs every E2E spec in the full app on Windows. It is
+# many cases, the performance budgets, a two-hour random-editing soak, and an NVDA run of the keyboard and screen
+# reader checklist. The e2e-full job runs every E2E spec in the full app on Windows. It is
 # the Phase 3 skeleton, which later phases grow with other architectures, 200% text, start-up baselines, and the
 # frame probe.
 #
@@ -32,6 +33,10 @@ on:
         description: Pages in the performance notebook
         type: number
         default: 1000
+      soak_minutes:
+        description: Minutes of random editing in the soak
+        type: number
+        default: 120
 
 permissions: {}
 
@@ -285,10 +290,89 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  soak:
+    # A scripted person edits one long note at random for two hours and the job holds memory, nodes, and typing
+    # time flat from the first quarter to the last (A4-35, tests/soak). The seed is the run number, so a failure
+    # can be replayed with OPENNOTE_SOAK_SEED.
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    permissions:
+      contents: read
+    env:
+      OPENNOTE_SOAK_MINUTES: ${{ inputs.soak_minutes || '120' }}
+      OPENNOTE_SOAK_SEED: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Edit at random for ${{ inputs.soak_minutes || '120' }} minutes
+        run: |
+          if ! [[ "$OPENNOTE_SOAK_MINUTES" =~ ^[0-9]+$ ]]; then
+            echo "::error::soak_minutes must be a whole number."
+            exit 1
+          fi
+          npm run soak
+      - name: Show the samples
+        if: always()
+        run: node tests/soak/summary.ts >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the samples
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: soak-results
+          path: tests/soak/results/soak.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  nvda:
+    # NVDA, driven by Guidepup, walks the keyboard and screen reader checklist of tests/nvda in a headed browser and
+    # records what it said (A4-42). The Guidepup packages are installed here, not in package.json, so no other job
+    # needs them. A phrase NVDA did not say fails the job, and nvda.json has everything it did say.
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install tools
+        run: npm ci
+      - name: Install Guidepup
+        run: npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+      - name: Set up NVDA
+        run: npx --yes @guidepup/setup@0.29.1 setup --ci
+      - name: Walk the checklist with NVDA
+        env:
+          OPENNOTE_NVDA: '1'
+        run: npm run nvda
+      - name: Show the results
+        if: always()
+        shell: bash
+        run: '[ -f tests/nvda/results/nvda.md ] && cat tests/nvda/results/nvda.md >> "$GITHUB_STEP_SUMMARY" || true'
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nvda-results
+          path: tests/nvda/results/nvda.*
+          if-no-files-found: ignore
+          retention-days: 90
+
   report:
     # Opens an issue when any job failed, or adds a comment to the issue that is already open. It is the only
     # job that can write, it can only write issues, and it never checks out the code.
-    needs: [plan, fuzz, kill, proptest, perf, e2e-full]
+    needs: [plan, fuzz, kill, proptest, perf, e2e-full, soak, nvda]
     if: ${{ always() && github.ref == 'refs/heads/main' && contains(needs.*.result, 'failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -305,6 +389,8 @@ jobs:
           PROPTEST_RESULT: ${{ needs.proptest.result }}
           PERF_RESULT: ${{ needs.perf.result }}
           E2E_RESULT: ${{ needs.e2e-full.result }}
+          SOAK_RESULT: ${{ needs.soak.result }}
+          NVDA_RESULT: ${{ needs.nvda.result }}
         run: |
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           {
@@ -316,6 +402,8 @@ jobs:
             [ "$PROPTEST_RESULT" = failure ] && echo "- Property tests: the log has the failing case"
             [ "$PERF_RESULT" = failure ] && echo "- Performance: the results are in the run's artifacts"
             [ "$E2E_RESULT" = failure ] && echo "- E2E specs: the logs are in the run's artifacts"
+            [ "$SOAK_RESULT" = failure ] && echo "- Random-editing soak: the samples are in the run's artifacts; replay with the run number as the seed"
+            [ "$NVDA_RESULT" = failure ] && echo "- NVDA checklist: the spoken log is in the run's artifacts"
             echo
             echo "Run: $run_url"
             echo

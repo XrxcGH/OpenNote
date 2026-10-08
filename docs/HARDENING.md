@@ -26,8 +26,14 @@ The [nightly workflow](../.github/workflows/nightly.yml) runs every night on the
 | `kill` | The kill harness in `tests/crash`, which stops a writer during saves and checks every page | 1,000 kills |
 | `proptest` | All tests of `opennote-core`, with more random cases | 10,000 cases |
 | `perf` | The benchmarks in `tests/perf/core`, with their budget check | A 1,000-page notebook |
+| `soak` | A scripted person edits one long note at random in the web build (`tests/soak`) and the job holds memory, nodes, and typing time flat | 120 minutes |
+| `nvda` | NVDA, driven by Guidepup, walks the keyboard and screen reader checklist in `tests/nvda` on Windows and records what it said | 6 checks |
 
 The fuzz corpus is kept in the Actions cache, so each night starts from the inputs found the night before. A crashing input is uploaded with the run.
+
+The soak types, deletes, undoes, formats, moves, scrolls, and switches pages for the whole time. Every minute it forces a garbage collection and reads the heap, the nodes, and the listeners, and it times a fixed burst of keys. It fails when memory or nodes grow by half from the first quarter to the last, when typing slows by half, or when the page crashes or throws. The seed is the run number. The samples are kept for 90 days, with the table in the run summary.
+
+The NVDA job installs Guidepup and NVDA on the runner. It checks the phrases NVDA says, not its exact words: the names and roles the app sets, such as the notebook tree and the page text box. Each run keeps the table and everything NVDA said for 90 days. Add an item in `tests/nvda/checklist.ts`.
 
 The performance job runs on a hosted runner. It catches large regressions. The budgets in BRAND.md still count only when they pass on the reference laptop.
 
@@ -47,6 +53,13 @@ PROPTEST_CASES=10000 cargo test -p opennote-core --all-features
 
 # The benchmarks and their budget check
 cargo run --release -p opennote-perf -- bench all --pages 1000 ./perf-scratch
+
+# The soak for five minutes, with the seed from a failed run
+OPENNOTE_SOAK_MINUTES=5 OPENNOTE_SOAK_SEED=123456 npm run soak
+
+# The NVDA checklist, on Windows with NVDA set up by `npx @guidepup/setup setup`
+npm install --no-save --no-package-lock @guidepup/guidepup@0.35.0
+OPENNOTE_NVDA=1 npm run nvda
 ```
 
 To replay a crash that fuzzing found, download the `fuzz-crash-<target>` artifact and run `cargo +nightly fuzz run <target> <file>`. Once the bug is fixed, copy the file to `crates/core/fuzz/regressions/<target>`. Every pull request replays that folder with stable Rust, so the bug can't return.

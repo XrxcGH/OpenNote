@@ -15,3 +15,5 @@ tests/e2e/logs/
 tests/ui/report/
 tests/ui/results/
 tests/perf/typing/results/
+tests/soak/results/
+tests/nvda/results/
