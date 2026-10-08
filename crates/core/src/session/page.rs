@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::{CoreError, EditError};
 use crate::id::{AssetId, BlockId, ClientId, PageId, RevisionId, StrokeId};
 use crate::limits::Limits;
-use crate::model::{Asset, DeviceRef, Page, Rect, Revision, VersionEntry};
+use crate::model::{Asset, BlockData, DeviceRef, Page, Rect, Revision, VersionEntry};
 use crate::ops::resolve::{StrokeTxnMeta, TxnRequest};
 use crate::ops::AppliedChanges;
 use crate::order::OrderKey;
@@ -286,6 +286,18 @@ impl PageHandle {
     /// The page's open conflicts.
     pub fn conflicts(&self) -> Result<Vec<ConflictInfo>, CoreError> {
         self.session.conflicts()
+    }
+
+    /// The file blocks that show `asset`. The shell points them at a newer copy when an attachment edited in its own
+    /// app is saved back while the page isn't open in the interface.
+    pub fn file_blocks_of(&self, asset: AssetId) -> Vec<BlockId> {
+        let st = self.session.state();
+        st.page
+            .blocks
+            .iter()
+            .filter(|block| matches!(&block.data, BlockData::File(file) if file.asset == asset))
+            .map(|block| block.id)
+            .collect()
     }
 
     /// The page as it is now, as plain text, for a side-by-side view of a conflict.

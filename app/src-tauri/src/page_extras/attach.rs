@@ -1,8 +1,9 @@
 //! Attached files that save back. A file attached to a page is an asset of that page. Opening it writes a copy to a
 //! temporary folder, hands the copy to Windows to open in its own app, and watches the copy. Each time the app
 //! has saved a change (the file stops changing for one check), the core imports the new bytes as a new asset and
-//! the interface is told, so it can point the attachment at the new asset in one undo step. The WebView names a
-//! page and an asset, never a path.
+//! the attachment is pointed at it: by the interface in one undo step when the page is open, or by the shell
+//! when it isn't, so a change saved after the person moved on still reaches the note. The WebView names a page and
+//! an asset, never a path.
 
 use std::{
     path::{Path, PathBuf},
@@ -15,15 +16,20 @@ use std::{
 };
 
 use opennote_core::{
+    model::JsonMap,
+    ops::resolve::{Edit, TxnRequest},
+    session::page::PageHandle,
     store::assets::{mime_for_name, AssetSource},
-    AssetId,
+    AssetId, EditError,
 };
 use serde::{Deserialize, Serialize};
-use tauri::{ipc::InvokeBody, AppHandle, Emitter};
+use serde_json::Value;
+use tauri::{ipc::InvokeBody, AppHandle, Emitter, Manager};
 
 use crate::{
+    core_bridge::{run_notes, Bridge, CoreBridge},
     images::{
-        import::{asset_json, on_blocking, open_page, percent_decode},
+        import::{asset_json, errors, on_blocking, open_page, percent_decode},
         ImportedAsset,
     },
     ipc::{codes, IpcError, IpcResult},
@@ -197,16 +203,204 @@ pub async fn attachment_import(app: AppHandle, request: tauri::ipc::Request<'_>)
     .await
 }
 
+/// The client the shell saves an attachment back as, when no window has the page open.
+const SAVE_BACK_CLIENT: &str = "attachments";
+
+/// A copy being watched. A watch outlives the page's view: a change saved after the person moved to another page
+/// still comes back into the note. It ends when the app does, or after [`WATCH_LIMIT`].
 struct Watch {
     page: String,
+    /// The asset the copy matches now: the one it was made from, then each change saved back.
+    asset: String,
     stop: Arc<AtomicBool>,
     path: PathBuf,
 }
 
 static WATCHES: Mutex<Vec<Watch>> = Mutex::new(Vec::new());
 
+fn temp_root() -> PathBuf {
+    std::env::temp_dir().join("OpenNote").join("attachments")
+}
+
 fn temp_folder(asset: &str) -> PathBuf {
-    std::env::temp_dir().join("OpenNote").join("attachments").join(asset)
+    temp_root().join(asset)
+}
+
+/// The file in an asset's folder that names the copy it was saved back from, when that copy lives in the folder of
+/// an earlier asset.
+const COPY_MARK: &str = "copy-path.txt";
+
+/// Where the copy of an asset named `name` is: the copy it was saved back from, if that is still there, so changes
+/// made to it after its watch ended are found; otherwise a new one in the asset's own folder.
+fn copy_path(asset: &str, name: &str) -> PathBuf {
+    let marked = std::fs::read_to_string(temp_folder(asset).join(COPY_MARK))
+        .ok()
+        .map(|text| PathBuf::from(text.trim()))
+        // Only a copy of ours, of the same name: the name decided how it may open.
+        .filter(|path| {
+            path.starts_with(temp_root()) && path.file_name().is_some_and(|file| file == name) && path.exists()
+        });
+    marked.unwrap_or_else(|| temp_folder(asset).join(name))
+}
+
+/// Notes in `asset`'s folder that its copy is the file at `path`. Returns the folder, so the watch can remove it
+/// with the copy.
+fn mark_copy(asset: &str, path: &Path) -> Option<PathBuf> {
+    let folder = temp_folder(asset);
+    if path.parent() == Some(folder.as_path()) {
+        return None;
+    }
+    std::fs::create_dir_all(&folder).ok()?;
+    std::fs::write(folder.join(COPY_MARK), path.to_string_lossy().as_bytes()).ok()?;
+    Some(folder)
+}
+
+/// The watched copy of a page's asset, if it is still there: the copy a watch made of it, or one now at `path`, where
+/// a copy of it goes. A copy whose change came back but whose page didn't take it yet is still the asset's copy, so
+/// a second watch never starts on one file.
+fn watched_copy(page: &str, asset: &str, path: &Path) -> Option<PathBuf> {
+    let watches = WATCHES.lock().ok()?;
+    let watch = watches
+        .iter()
+        .find(|watch| watch.page == page && (watch.asset == asset || watch.path == path))?;
+    watch.path.exists().then(|| watch.path.clone())
+}
+
+/// Ends the watches of a page's asset or of the copy at `path`, such as one whose copy was deleted.
+fn stop_watches(page: &str, asset: &str, path: &Path) {
+    if let Ok(mut watches) = WATCHES.lock() {
+        watches.retain(|watch| {
+            let matches = watch.page == page && (watch.asset == asset || watch.path == path);
+            if matches {
+                watch.stop.store(true, Ordering::Relaxed);
+            }
+            !matches
+        });
+    }
+}
+
+/// What a note found where it puts an attachment's copy.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Copy {
+    /// Nothing: the copy was written from the asset.
+    Written,
+    /// A copy with the asset's bytes, or one the app holding it won't let anyone read. It is opened as it is.
+    Kept,
+    /// A copy with other bytes: changes saved after its watch ended, such as after the app was closed. They are
+    /// saved back before the copy opens, never overwritten.
+    Edited,
+}
+
+/// Makes sure `path` holds a copy of the asset whose bytes `asset` reads, without ever overwriting a copy that
+/// differs from it.
+fn prepare_copy(path: &Path, asset: impl FnOnce() -> IpcResult<Vec<u8>>) -> IpcResult<Copy> {
+    let bytes = asset()?;
+    if path.exists() {
+        return Ok(match std::fs::read(path) {
+            Ok(copy) if copy != bytes => Copy::Edited,
+            _ => Copy::Kept,
+        });
+    }
+    if let Some(folder) = path.parent() {
+        std::fs::create_dir_all(folder).map_err(io_error)?;
+    }
+    std::fs::write(path, bytes).map_err(io_error)?;
+    Ok(Copy::Written)
+}
+
+/// Runs `work` on the page: through a window's open session when there is one, or through a session of the
+/// shell's own, opened for the work and closed after it.
+fn with_page<T>(app: &AppHandle, page: &str, work: impl FnOnce(&PageHandle) -> IpcResult<T>) -> IpcResult<T> {
+    if let Ok(handle) = open_page(app, page) {
+        return work(&handle);
+    }
+    let bridge = app.state::<CoreBridge>();
+    run_notes(app, &bridge, |bridge| {
+        let handle = bridge.handle(page, SAVE_BACK_CLIENT)?;
+        let result = work(&handle);
+        let closed = bridge.close_handle(page, SAVE_BACK_CLIENT);
+        let value = result?;
+        closed.map(|()| value)
+    })
+}
+
+/// Saves the copy's bytes back as a new asset of the page in place of `previous`, and tells the interface. When a
+/// window has the page open, the interface points the attachment at the new asset, as one undo step. When none
+/// has, the shell does it itself, so a change saved after the page closed still reaches the note.
+fn save_back(app: &AppHandle, page: &str, previous: &str, path: &Path) -> IpcResult<ImportedAsset> {
+    let asset = match open_page(app, page) {
+        Ok(handle) => import_copy(&handle, path)?,
+        Err(_) => {
+            let bridge = app.state::<CoreBridge>();
+            run_notes(app, &bridge, |bridge| save_back_closed(bridge, page, previous, path))?
+        }
+    };
+    let saved = Saved {
+        page: page.to_owned(),
+        previous: previous.to_owned(),
+        asset: asset.clone(),
+    };
+    let _ = app.emit(SAVED_EVENT, saved);
+    Ok(asset)
+}
+
+fn import_copy(handle: &PageHandle, path: &Path) -> IpcResult<ImportedAsset> {
+    let imported = handle.import_asset(AssetSource::path(path)).map_err(io_error)?;
+    Ok(ImportedAsset {
+        id: imported.id.to_string(),
+        asset: asset_json(&imported),
+    })
+}
+
+/// [`save_back`] for a page no window has open: imports the copy, and points the page's file blocks that showed
+/// `previous` at it, in one transaction of the shell's own session. The earlier asset stays in the page, so undo
+/// can bring it back.
+fn save_back_closed(bridge: &mut Bridge, page: &str, previous: &str, path: &Path) -> IpcResult<ImportedAsset> {
+    let previous =
+        AssetId::parse(previous).map_err(|_| IpcError::invalid("asset", "The attachment's ID isn't valid."))?;
+    let handle = bridge.handle(page, SAVE_BACK_CLIENT)?;
+    let result = import_copy(&handle, path).and_then(|asset| {
+        let blocks = handle.file_blocks_of(previous);
+        if blocks.is_empty() {
+            return Ok(asset);
+        }
+        let id = AssetId::parse(&asset.id).map_err(io_error)?;
+        let mut edits = vec![Edit::AddAsset { asset: id }];
+        for block in blocks {
+            let mut data = JsonMap::new();
+            data.insert("asset".to_owned(), Value::String(asset.id.clone()));
+            edits.push(Edit::PatchBlock {
+                block,
+                lock: None,
+                data: Some(data),
+                fallback: None,
+            });
+        }
+        apply_next(&handle, edits)?;
+        Ok(asset)
+    });
+    let closed = bridge.close_handle(page, SAVE_BACK_CLIENT);
+    let asset = result?;
+    closed.map(|()| asset)
+}
+
+/// Applies edits as the next transaction of the handle's client. The shell's client may have sent some before in
+/// this session of the page, so a refused number is replaced by the one the page expects.
+fn apply_next(handle: &PageHandle, edits: Vec<Edit>) -> IpcResult<()> {
+    let request = |client_seq| TxnRequest {
+        page: handle.id(),
+        client: handle.client().clone(),
+        client_seq,
+        coalesce: None,
+        ui: None,
+        edits: edits.clone(),
+    };
+    let edit_error = |error: EditError| IpcError::new(error.code(), error.to_string());
+    match handle.apply(request(1)) {
+        Ok(_) => Ok(()),
+        Err(EditError::OutOfOrder { expected }) => handle.apply(request(expected)).map(|_| ()).map_err(edit_error),
+        Err(error) => Err(edit_error(error)),
+    }
 }
 
 /// Opens the attached file in its own app, or shows it in its folder when it is not a type a note opens (see
@@ -222,22 +416,27 @@ pub async fn attachment_open(app: AppHandle, page: String, asset: String, name: 
         ));
     }
     on_blocking(move || {
-        let handle = open_page(&app, &page)?;
         let id = AssetId::parse(&asset).map_err(|_| IpcError::invalid("asset", "The attachment's ID isn't valid."))?;
-        let folder = temp_folder(&asset);
-        let path = folder.join(&name);
-        let watching = WATCHES
-            .lock()
-            .map(|watches| watches.iter().any(|watch| watch.path == path))
-            .unwrap_or(false);
-        if !(watching && path.exists()) {
-            let bytes = handle.asset_bytes(id, None).map_err(io_error)?.bytes;
-            std::fs::create_dir_all(&folder).map_err(io_error)?;
-            std::fs::write(&path, bytes).map_err(io_error)?;
-        }
-        if !watching {
-            start_watch(app, page, asset, path.clone());
-        }
+        let path = copy_path(&asset, &name);
+        let path = match watched_copy(&page, &asset, &path) {
+            Some(path) => path,
+            None => {
+                stop_watches(&page, &asset, &path);
+                let read = || {
+                    with_page(&app, &page, |handle| {
+                        Ok(handle.asset_bytes(id, None).map_err(io_error)?.bytes)
+                    })
+                };
+                // A copy left from an earlier watch holds changes that never came back: they come back now.
+                let current = match prepare_copy(&path, read)? {
+                    Copy::Edited => save_back(&app, &page, &asset, &path)?.id,
+                    Copy::Written | Copy::Kept => asset,
+                };
+                let marks = mark_copy(&current, &path).into_iter().collect();
+                start_watch(app, page, current, path.clone(), marks);
+                path
+            }
+        };
         mark_from_internet(&path);
         if opening == Opening::App {
             open_default(&path).map(|()| Shown::App)
@@ -248,20 +447,6 @@ pub async fn attachment_open(app: AppHandle, page: String, asset: String, name: 
     .await
 }
 
-/// Stops watching a page's attachments and removes the copies, when the page closes.
-#[tauri::command]
-pub async fn attachment_stop(page: String) -> IpcResult<()> {
-    let mut watches = WATCHES.lock().map_err(io_error)?;
-    watches.retain(|watch| {
-        if watch.page != page {
-            return true;
-        }
-        watch.stop.store(true, Ordering::Relaxed);
-        false
-    });
-    Ok(())
-}
-
 type Stamp = (u64, Option<SystemTime>);
 
 fn stamp(path: &Path) -> Option<Stamp> {
@@ -269,11 +454,14 @@ fn stamp(path: &Path) -> Option<Stamp> {
     Some((meta.len(), meta.modified().ok()))
 }
 
-fn start_watch(app: AppHandle, page: String, asset: String, path: PathBuf) {
+/// Watches the copy at `path` of the page's `asset`. `marks` are folders whose [`COPY_MARK`] points at the copy; they
+/// go with it.
+fn start_watch(app: AppHandle, page: String, asset: String, path: PathBuf, mut marks: Vec<PathBuf>) {
     let stop = Arc::new(AtomicBool::new(false));
     if let Ok(mut watches) = WATCHES.lock() {
         watches.push(Watch {
             page: page.clone(),
+            asset: asset.clone(),
             stop: stop.clone(),
             path: path.clone(),
         });
@@ -295,22 +483,20 @@ fn start_watch(app: AppHandle, page: String, asset: String, path: PathBuf) {
                 pending = Some(now);
                 continue;
             }
-            let Ok(handle) = open_page(&app, &page) else { break };
-            match handle.import_asset(AssetSource::path(&path)) {
-                Ok(imported) => {
+            match save_back(&app, &page, &current, &path) {
+                Ok(saved) => {
                     seen = Some(now);
                     pending = None;
-                    let saved = Saved {
-                        page: page.clone(),
-                        previous: current.clone(),
-                        asset: ImportedAsset {
-                            id: imported.id.to_string(),
-                            asset: asset_json(&imported),
-                        },
-                    };
-                    current = saved.asset.id.clone();
-                    let _ = app.emit(SAVED_EVENT, saved);
+                    current = saved.id;
+                    marks.extend(mark_copy(&current, &path));
+                    if let Ok(mut watches) = WATCHES.lock() {
+                        if let Some(watch) = watches.iter_mut().find(|watch| Arc::ptr_eq(&watch.stop, &stop)) {
+                            watch.asset = current.clone();
+                        }
+                    }
                 }
+                // The page is gone, so nothing can take the change. The copy is kept.
+                Err(error) if error.code == errors::NOT_FOUND => break,
                 // The app may still hold the file; the next check tries again.
                 Err(_) => pending = None,
             }
@@ -318,8 +504,18 @@ fn start_watch(app: AppHandle, page: String, asset: String, path: PathBuf) {
         if let Ok(mut watches) = WATCHES.lock() {
             watches.retain(|watch| !Arc::ptr_eq(&watch.stop, &stop));
         }
-        let _ = std::fs::remove_file(&path);
-        let _ = std::fs::remove_dir(temp_folder(&current));
+        // A copy whose last change came back is removed. One with a change that didn't is kept, and the next open
+        // saves it back.
+        if stamp(&path) == seen {
+            let _ = std::fs::remove_file(&path);
+            if let Some(folder) = path.parent() {
+                let _ = std::fs::remove_dir(folder);
+            }
+            for folder in marks {
+                let _ = std::fs::remove_file(folder.join(COPY_MARK));
+                let _ = std::fs::remove_dir(folder);
+            }
+        }
     });
 }
 
@@ -439,6 +635,114 @@ mod tests {
         ] {
             assert_eq!(opening(name), Opening::Folder, "{name}");
         }
+    }
+
+    #[test]
+    fn a_copy_with_changes_is_never_overwritten_with_the_older_asset() {
+        // F3-2: a copy edited after its watch ended was rewritten with the asset's old bytes on the next open.
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let path = dir.path().join("asset").join("Budget.xlsx");
+        let asset = || Ok(b"old cells".to_vec());
+        assert_eq!(prepare_copy(&path, asset).expect("writes"), Copy::Written);
+        assert_eq!(std::fs::read(&path).expect("reads"), b"old cells");
+        assert_eq!(prepare_copy(&path, asset).expect("keeps"), Copy::Kept);
+        std::fs::write(&path, b"new cells").expect("the other app saves");
+        assert_eq!(prepare_copy(&path, asset).expect("keeps"), Copy::Edited);
+        assert_eq!(std::fs::read(&path).expect("reads"), b"new cells");
+    }
+
+    #[test]
+    fn a_saved_back_asset_finds_the_copy_it_came_from() {
+        // After a save-back the attachment shows a newer asset, but its copy stays in the first asset's folder.
+        // Changes made to that copy after its watch ended must be found when the newer asset opens.
+        let first = format!("test-{}", std::process::id());
+        let later = format!("{first}-later");
+        let copy = temp_folder(&first).join("Budget.xlsx");
+        std::fs::create_dir_all(temp_folder(&first)).expect("a folder");
+        std::fs::write(&copy, b"edited").expect("writes");
+        assert_eq!(
+            copy_path(&later, "Budget.xlsx"),
+            temp_folder(&later).join("Budget.xlsx")
+        );
+        let marked = mark_copy(&later, &copy).expect("marked");
+        assert_eq!(copy_path(&later, "Budget.xlsx"), copy);
+        // A copy of another name is never opened in place of this one: its name decided how it may open.
+        assert_eq!(copy_path(&later, "Budget.exe"), temp_folder(&later).join("Budget.exe"));
+        let _ = std::fs::remove_dir_all(marked);
+        let _ = std::fs::remove_dir_all(temp_folder(&first));
+    }
+
+    /// A page with a file block that shows an attachment, in a notebook of `notes`. Returns the page and the asset.
+    fn a_page_with_an_attachment(bridge: &CoreBridge, notes: &Path) -> (String, AssetId) {
+        bridge
+            .notes(Some(notes.to_path_buf()), |bridge| {
+                let create = |bridge: &mut Bridge, kind: &str, parent: Option<String>| {
+                    let input =
+                        serde_json::json!({ "kind": kind, "placement": { "parentId": parent, "beforeId": null } });
+                    let node = bridge.dispatch("notes_create", &serde_json::json!({ "input": input }))?;
+                    Ok::<_, IpcError>(node["id"].as_str().unwrap_or_default().to_owned())
+                };
+                let notebook = create(bridge, "notebook", None)?;
+                let section = create(bridge, "section", Some(notebook))?;
+                let page = create(bridge, "page", Some(section))?;
+                let handle = bridge.handle(&page, "main-1")?;
+                let asset = handle
+                    .import_asset(AssetSource::bytes(
+                        "Budget.csv".to_owned(),
+                        "text/csv".to_owned(),
+                        b"a,b\n1,2\n".to_vec(),
+                    ))
+                    .map_err(io_error)?;
+                let block: opennote_core::ops::resolve::NewBlock = serde_json::from_value(serde_json::json!({
+                    "id": "01k6f00000000000000000b001", "type": "file", "data": { "asset": asset.id.to_string() }
+                }))
+                .map_err(io_error)?;
+                apply_next(
+                    &handle,
+                    vec![
+                        Edit::AddAsset { asset: asset.id },
+                        Edit::InsertBlock {
+                            block,
+                            after: None,
+                            before: None,
+                        },
+                    ],
+                )?;
+                // The person moves to another page: the window's session closes.
+                bridge.close_handle(&page, "main-1")?;
+                Ok((page, asset.id))
+            })
+            .expect("a page")
+    }
+
+    #[test]
+    fn a_change_saved_after_the_page_closed_reaches_the_note() {
+        // F3-2: the watch gave up when the page wasn't open in a window, so the change never came back.
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let notes = dir.path().join("Notes");
+        let bridge = CoreBridge::at(dir.path().join("local"));
+        let (page, previous) = a_page_with_an_attachment(&bridge, &notes);
+        let copy = dir.path().join("copy").join("Budget.csv");
+        std::fs::create_dir_all(copy.parent().expect("a folder")).expect("a folder");
+        std::fs::write(&copy, b"a,b\n1,3\n").expect("the other app saves");
+        let (saved, blocks, bytes, closed) = bridge
+            .notes(Some(notes), |bridge| {
+                let saved = save_back_closed(bridge, &page, &previous.to_string(), &copy)?;
+                let closed = !bridge
+                    .open
+                    .keys()
+                    .any(|(_, client)| client.as_str() == SAVE_BACK_CLIENT);
+                let handle = bridge.handle(&page, "main-1")?;
+                let new = AssetId::parse(&saved.id).map_err(io_error)?;
+                let bytes = handle.asset_bytes(new, None).map_err(io_error)?.bytes;
+                Ok((new, handle.file_blocks_of(new).len(), bytes, closed))
+            })
+            .expect("saves back");
+        bridge.shutdown();
+        assert_ne!(saved, previous);
+        assert_eq!(blocks, 1, "the file block shows the new copy");
+        assert_eq!(bytes, b"a,b\n1,3\n");
+        assert!(closed, "the shell's own session of the page is closed again");
     }
 
     #[cfg(windows)]

@@ -14,7 +14,6 @@ export function createWebPageExtras(): PageExtrasClient {
         code: 'notImplemented',
         message: 'Opening an attachment in its own app needs the desktop app.',
       } satisfies IpcError),
-    stopAttachments: () => Promise.resolve(),
     onAttachmentSaved: () => () => undefined,
   };
 }

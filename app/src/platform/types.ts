@@ -290,8 +290,6 @@ export interface PageExtrasClient {
    * or video file, and saves each change back (see onAttachmentSaved). Answers where it was shown.
    */
   openAttachment(page: string, asset: string, name: string): Promise<'app' | 'folder'>;
-  /** Stops watching a page's attachments, when the page closes. */
-  stopAttachments(page: string): Promise<void>;
   onAttachmentSaved(listener: (saved: AttachmentSaved) => void): Unsubscribe;
 }
 

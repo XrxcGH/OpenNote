@@ -222,6 +222,19 @@ impl Bridge {
         Ok(handle)
     }
 
+    /// Closes the client's session of a page, if it has one. The core saves the page in the background.
+    pub(crate) fn close_handle(&mut self, page: &str, client: &str) -> IpcResult<()> {
+        let Ok(id) = PageId::parse(page) else {
+            return Ok(());
+        };
+        let client = ClientId::parse(client).map_err(|error| invalid("client", error))?;
+        self.homes.remove(&(id, client.clone()));
+        if let Some(handle) = self.open.remove(&(id, client.clone())) {
+            handle.close(&client).map_err(internal)?;
+        }
+        Ok(())
+    }
+
     fn open_handles(&self, page: &str) -> Vec<PageHandle> {
         let Ok(id) = PageId::parse(page) else {
             return Vec::new();
@@ -498,17 +511,7 @@ pub async fn page_save_now(bridge: State<'_, CoreBridge>, page: String) -> IpcRe
 /// Closes the client's session of the page. The core saves it in the background.
 #[tauri::command]
 pub async fn page_close(bridge: State<'_, CoreBridge>, page: String, client: String) -> IpcResult<()> {
-    bridge.with(|bridge| {
-        let Ok(id) = PageId::parse(&page) else {
-            return Ok(());
-        };
-        let client = ClientId::parse(&client).map_err(|error| invalid("client", error))?;
-        bridge.homes.remove(&(id, client.clone()));
-        if let Some(handle) = bridge.open.remove(&(id, client.clone())) {
-            handle.close(&client).map_err(internal)?;
-        }
-        Ok(())
-    })
+    bridge.with(|bridge| bridge.close_handle(&page, &client))
 }
 
 /// The page's saved versions, newest first (core plan 8).

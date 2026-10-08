@@ -84,7 +84,6 @@ export interface Commands extends IntelCommands, IntelChoiceCommands {
   page_extras_caret: { args: None; result: CaretMetrics };
   page_extras_link_title: { args: { url: string }; result: string | null };
   attachment_open: { args: { page: string; asset: string; name: string }; result: 'app' | 'folder' };
-  attachment_stop: { args: { page: string }; result: null };
   spell_languages: { args: None; result: { tag: string; name: string; isDefault: boolean }[] };
   spell_check: {
     args: { items: readonly { id: string; text: string }[]; languages: readonly string[] };
