@@ -3,7 +3,7 @@
 use serde_json::Value;
 
 use crate::error::FormatError;
-use crate::format::json::{expect_object, Fields, Json, Obj};
+use crate::format::json::{expect_object, fixed_value, Fields, Json, Obj};
 use crate::model::{NotebookStyles, StyleSpec, STYLE_NAMES};
 
 /// Reads `styles`. Style names and keys a version 1 reader doesn't know are kept (spec 2.9).
@@ -17,15 +17,19 @@ pub(super) fn read_styles(value: Value) -> Result<NotebookStyles, FormatError> {
         .collect()
 }
 
+/// Reads one style. Each number is rounded as [`write_style`] writes it (sizes and spacing to 0.01, the line
+/// height to two decimals), so a style in memory is the style its bytes read back as, whether it came from the
+/// file or from an edit: [`crate::store::notebook_store::NotebookStore::set_notebook_styles`] compares the two
+/// to tell a change from a repeat.
 fn read_style(value: Value, context: &str) -> Result<StyleSpec, FormatError> {
     let mut fields = Fields::new(value, context)?;
     Ok(StyleSpec {
         font: fields.opt_str("font")?,
-        size: fields.opt_f64("size")?,
+        size: fields.opt_geometry("size")?,
         color: fields.color("color")?,
-        space_before: fields.opt_f64("spaceBefore")?,
-        space_after: fields.opt_f64("spaceAfter")?,
-        line_height: fields.opt_f64("lineHeight")?,
+        space_before: fields.opt_geometry("spaceBefore")?,
+        space_after: fields.opt_geometry("spaceAfter")?,
+        line_height: fields.opt_f64("lineHeight")?.map(|v| fixed_value(v, 2)),
         extra: fields.rest(),
     })
 }
