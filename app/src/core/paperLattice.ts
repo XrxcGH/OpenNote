@@ -2,6 +2,7 @@
 // paper renderer (features/pages/paper/patterns.ts) draws from it and the drawing tools snap to it, so a point that
 // snaps sits exactly on a line the page shows, on every sheet and at every zoom. It is pure arithmetic, shared by
 // the page view, print, and the ink view without either importing the other.
+import type { RuleGrid } from './ruled';
 
 /** A box in page units. */
 export interface LatticeRect {
@@ -211,4 +212,13 @@ export function stepToLine(lattice: PaperLattice, v: number, axis: 'x' | 'y', di
   const tolerance = LATTICE_EPS / step;
   const next = direction === 1 ? Math.floor(t + tolerance) + 1 : Math.ceil(t - tolerance) - 1;
   return origin + next * step - v;
+}
+
+/**
+ * The rules text is laid out in (core/ruled.ts), read from the lattice the paper draws: rule k at the lattice's
+ * origin plus whole spacings, down the page or down each sheet. Text boxes snap through it, so text and drawn shapes
+ * land on the same lines.
+ */
+export function ruleGridOf(lattice: PaperLattice): RuleGrid {
+  return { step: lattice.step, origin: lattice.origin.y, sheet: lattice.sheet };
 }
