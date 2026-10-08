@@ -23,6 +23,13 @@ const pageShown = () => shownMounted.get() !== null;
 
 const SPECS: readonly Spec[] = [
   {
+    id: 'meetings.new',
+    title: 'accounts.meetings.commands.new',
+    keywords: 'accounts.meetings.commands.keywords',
+    flag: 'accounts.meetings',
+    run: () => import('./meetings/commands').then((module) => module.newMeetingNote()),
+  },
+  {
     id: 'readwise.sync',
     title: 'accounts.readwise.commands.sync',
     keywords: 'accounts.readwise.commands.keywords',

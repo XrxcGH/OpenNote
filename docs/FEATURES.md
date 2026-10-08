@@ -68,8 +68,8 @@ Linked accounts (Phase 11):
 
 | Integration | What it does | Status |
 |---|---|---|
-| Outlook and Google Calendar | Opens a meeting note from any event, filled in with the title, time, attendees, and agenda | Needs the owner. Needs a Microsoft or Google sign-in. |
-| Teams, Zoom, and Google Meet | Records meeting audio without a bot (Phase 9) and links the note back to the calendar event | Built, untested by hand. The recording and the prompt are built. Linking to the calendar event needs the owner. |
+| Outlook and Google Calendar | Opens a meeting note from any event, filled in with the title, time, attendees, and agenda | Built, untested by hand. New meeting note reads Outlook, Google Calendar, or an .ics file. Outlook and Google need the owner's client IDs; the .ics file does not. |
+| Teams, Zoom, and Google Meet | Records meeting audio without a bot (Phase 9) and links the note back to the calendar event | Built, untested by hand. The recording and the prompt are built. A meeting note and the recordings made on it name the same calendar event. |
 | Microsoft To Do and Google Tasks | Two-way sync of checkboxes, due dates, and reminders | Needs the owner |
 | Outlook and Gmail | "Save to OpenNote" from an email keeps the text and attachments with a link back | Needs the owner. A .eml file import is built, untested by hand. |
 | Web clipper for Edge, Chrome, and Firefox | Clips a full page, a region, or a clean article into any section | Not built yet |

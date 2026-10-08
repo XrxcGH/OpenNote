@@ -1,0 +1,45 @@
+// New meeting note: choosing where the meeting is, choosing the meeting, and the note it makes.
+
+export const accountsMeetings = {
+  commands: {
+    new: 'New meeting note',
+    keywords: 'meeting note calendar event outlook google ics agenda attendees',
+  },
+  source: {
+    title: 'New meeting note',
+    description: 'Choose where the meeting is. OpenNote reads only the last day and the next week.',
+    confirm: 'Show meetings',
+    outlook: 'Outlook calendar',
+    google: 'Google Calendar',
+    ics: 'A calendar file (.ics)',
+    connectHint: 'To pick from Outlook or Google, connect it in Settings, then Connectors.',
+  },
+  event: {
+    title: 'Which meeting?',
+    description: 'The note is filled in from the meeting.',
+    confirm: 'Make the note',
+    none: 'There are no meetings in that time.',
+    untitled: 'Untitled meeting',
+    allDay: '{date}, all day',
+    span: '{date}, {start} to {end}',
+    at: '{date}, {start}',
+    where: '{when} · {place}',
+  },
+  note: {
+    when: 'When: {when}',
+    where: 'Where: {place}',
+    with: 'With: {people}',
+    withMore: '{people}, and {count} more',
+    join: 'Join: {link}',
+    agenda: 'Agenda',
+    notes: 'Notes',
+    noAgenda: 'The invitation has no agenda.',
+    title: '{title}, {date}',
+    section: 'Meetings',
+  },
+  done: 'Made the note for {title}.',
+  opened: 'You already have a note for {title}. Opened it.',
+  icsEmpty: 'That file has no meetings in it.',
+  icsFailed: 'OpenNote couldn’t read that calendar file.',
+  fetching: 'Reading your calendar…',
+} as const;

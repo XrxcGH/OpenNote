@@ -56,15 +56,23 @@ export const connectors = {
     clientIdHelp: 'From the app you registered with the service. A client ID is not a secret.',
     clientSecretLabel: 'Client secret (only if the service gave you one)',
     clientSecretHelp: 'OpenNote keeps it on this device only, in the connectors file.',
+    webdavAddressLabel: 'Server address',
+    webdavAddressHelp:
+      'The folder address, such as cloud.example.org/remote.php/dav/files/sam. It must start with https.',
+    webdavTokenLabel: 'User name and password',
+    webdavTokenHelp:
+      'Type them as name:password. Use an app password if the server offers one. OpenNote keeps them in Windows Credential Manager.',
     addressLabel: 'School address',
     addressHelp: "The address you use to sign in to your school's site, such as school.instructure.com.",
   },
   service: {
     microsoft: {
-      unlocks: 'Import notebooks from OneNote, open meeting notes from Outlook events, and sync Microsoft To Do.',
+      unlocks:
+        'Import notebooks from OneNote, open meeting notes from Outlook events, sync Microsoft To Do, send pages to OneDrive, and share to Teams.',
     },
     google: {
-      unlocks: 'Meeting notes from Calendar events, Google Tasks, Classroom assignments, Drive, and YouTube captions.',
+      unlocks:
+        'Meeting notes from Calendar events, Google Tasks, Classroom assignments, Drive, Docs, Sheets, and Slides, YouTube captions, and uploading a recording video to YouTube.',
     },
     slack: { unlocks: 'Share a page to a Slack channel.' },
     dropbox: { unlocks: 'Sync folders with Dropbox and send pages to it.' },
@@ -73,6 +81,7 @@ export const connectors = {
     readwise: { unlocks: 'Bring your book highlights from Readwise into a notebook.' },
     canvas: { unlocks: "Bring assignments from your school's Canvas into a section." },
     moodle: { unlocks: "Bring assignments from your school's Moodle into a section." },
+    webdav: { unlocks: 'Send pages to a folder on a WebDAV server, such as Nextcloud.' },
   },
   feature: {
     importOneNote: 'Import from OneNote',
@@ -92,6 +101,11 @@ export const connectors = {
     readwiseHighlights: 'Readwise highlights',
     canvasAssignments: 'Canvas assignments',
     moodleAssignments: 'Moodle assignments',
+    shareToTeams: 'Share to Teams',
+    sendToOneDrive: 'Send to OneDrive',
+    googleOffice: 'Google Docs, Sheets, and Slides',
+    youtubeUpload: 'Upload a recording video to YouTube',
+    sendToWebdav: 'Send to a WebDAV server',
   },
   access: {
     account: 'See your account name and email address.',
@@ -113,6 +127,14 @@ export const connectors = {
     readwiseRead: 'Read your Readwise highlights.',
     canvasRead: 'Read your courses and assignments.',
     moodleRead: 'Read your courses and assignments.',
+    onedriveFiles: 'Read and change the files in your OneDrive.',
+    teamsPost: 'Post messages to the Teams channels you choose.',
+    teamsRead: 'See the teams and channels you belong to.',
+    driveRead: 'Read your Google Docs, Sheets, and Slides so OpenNote can import them. It cannot change them.',
+    youtubeUpload: 'Upload videos to your YouTube channel.',
+    youtubeCaptions: 'Read the captions of your YouTube videos.',
+    classroomSubmit: 'Attach a file to your own Classroom assignment and turn it in.',
+    webdavFiles: 'Read and change the files in the WebDAV folder you connect.',
   },
   confirm: {
     title: 'Disconnect {name}?',

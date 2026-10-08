@@ -98,6 +98,8 @@ export interface EntryExtras {
   audioRemoved?: boolean;
   /** Screen snaps: the image block, and the capture time it was taken at. */
   snaps?: { block: string; captureNs: number }[];
+  /** The calendar event of the meeting note it was recorded on (New meeting note), so both name the same meeting. */
+  calendarEvent?: { source: string; id: string; title: string; start: string };
 }
 
 export const extrasOf = (entry: RecordingEntry): EntryExtras => entry as unknown as EntryExtras;

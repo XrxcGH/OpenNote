@@ -130,6 +130,15 @@ function watch(active: Run): void {
 }
 
 /** Starts recording into a new block of the shown page. */
+/**
+ * The recording, stamped with the calendar event of the page when the page is a meeting note (New meeting note keeps
+ * the event in the page's view), so the recording and the note name the same meeting.
+ */
+function stamped<T extends RecordingEntry>(entry: T, page: { initial: { view: Record<string, unknown> } }): T {
+  const event = page.initial.view.meetingEvent;
+  return event && typeof event === 'object' ? ({ ...entry, calendarEvent: event } as T) : entry;
+}
+
 export async function startRecording(): Promise<boolean> {
   if (recordingUi.get().phase !== 'idle') {
     announce(t('audio.errors.busy'));
@@ -159,7 +168,7 @@ export async function startRecording(): Promise<boolean> {
       async (prepared) => {
         source = prepared.microphone.device.name;
         recording = prepared.entry.id;
-        block = await insertRecordingBlock(prepared.entry);
+        block = await insertRecordingBlock(stamped(prepared.entry, page));
         await page.saveNow();
       },
       async () => {
@@ -168,11 +177,12 @@ export async function startRecording(): Promise<boolean> {
       },
     );
     if (!block) throw new Error('The recording block is missing.');
+    const stampedEntry = stamped(entry, page);
     run = {
       session,
       page: page.id,
       block,
-      entry,
+      entry: stampedEntry,
       flags: new Flags(),
       pausedTotalNs: 0,
       pausedSinceNs: null,
@@ -187,7 +197,7 @@ export async function startRecording(): Promise<boolean> {
       }),
     };
     update({ phase: 'recording', block, recording: entry.id, source });
-    await writeEntry(page.id, block, entry);
+    await writeEntry(page.id, block, stampedEntry);
     watch(run);
     announce(t('audio.announce.started'));
     void import('./watch').then((module) => module.activate());
@@ -219,8 +229,9 @@ export async function stopRecording(reason?: StopReason): Promise<void> {
   try {
     const finished = await active.session.stop();
     // The snaps taken while recording are in the running entry, and the host's entry doesn't know them.
-    const snaps = extrasOf(active.entry).snaps;
-    const entry = active.flags.into(snaps ? ({ ...finished.entry, snaps } as RecordingEntry) : finished.entry);
+    const { snaps, calendarEvent } = extrasOf(active.entry);
+    const carried = { ...(snaps ? { snaps } : {}), ...(calendarEvent ? { calendarEvent } : {}) };
+    const entry = active.flags.into({ ...finished.entry, ...carried } as RecordingEntry);
     await writeEntry(active.page, active.block, entry, { track: 'finished' });
     const time = clock(activeNs(entry) / 1e6);
     const message = stoppedMessage(reason, time);

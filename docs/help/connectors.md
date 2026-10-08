@@ -32,3 +32,11 @@ Each feature below needs its account connected first. If it is not, the command 
 Connect Readwise with your token, then press Ctrl+K and choose Sync Readwise. OpenNote makes a notebook named Readwise with a section for each kind of reading, such as Books and Articles, and a page for each book. Each highlight is one block on the page, with your note, its place in the book, and its tags.
 
 The first sync reads everything. Later syncs read only what changed since the last one. A highlight you edit at Readwise is updated on its page, and one you delete there is removed. Blocks you write yourself on a page are never changed. If Readwise asks OpenNote to slow down, what was synced so far stays, and you can sync again in a minute.
+
+### New meeting note
+
+Press Ctrl+K and choose New meeting note. Pick where the meeting is: your Outlook calendar, your Google calendar, or a calendar file (.ics) from your computer. OpenNote reads the last day and the next seven, and shows them in a list. Choose one with the arrow keys and Enter.
+
+The note goes in a section named Meetings in the notebook you have open. It holds the time, the place, who is invited, the join link, and the agenda from the invitation, with an empty Notes heading to type under. Choose the same meeting again and OpenNote opens the note you already have.
+
+The note remembers which meeting it came from. A recording you start on that page remembers it too, so the two always name the same meeting.
