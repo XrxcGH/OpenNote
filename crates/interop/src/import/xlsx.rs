@@ -134,7 +134,7 @@ fn convert_parts<R: std::io::Read + std::io::Seek>(
             report.skipped("sheet", "The sheet has no cells with values.");
             builder.push_blocks(vec![Block::Paragraph(vec![Inline::text("This sheet was empty.")])]);
         } else {
-            let kept = rows_that_fit(&grid.rows);
+            let kept = rows_that_fit(grid.rows.iter().map(|r| r.iter().map(String::len).sum()), grid.width);
             let rows: Vec<Vec<Vec<Inline>>> = grid
                 .rows
                 .iter()
