@@ -5,6 +5,7 @@
 
 import { isEnabled } from '../../app/flags';
 import { getLocation, navigate, onNavigate } from '../../app/location';
+import { isMainWindow } from '../../app/windowKind';
 import { chord, defineCommand } from '../../commands/registry';
 import type { CommandContext, CommandDef, CommandId } from '../../commands/types';
 import { shellCall } from '../../platform/shellqol';
@@ -449,8 +450,7 @@ setupSteps.register({
 
 // ---- Listeners ----
 
-/** A page window or the quick capture window shows one thing only, so it skips what the main window does. */
-const isMainWindow = () => (window as { __OPENNOTE_WINDOW__?: unknown }).__OPENNOTE_WINDOW__ === undefined;
+// Only the main window runs these: a page, capture, or tool window shows one thing and skips them.
 
 if (typeof window !== 'undefined' && isMainWindow()) {
   trackTabs();

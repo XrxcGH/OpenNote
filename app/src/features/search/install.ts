@@ -9,6 +9,7 @@ import type { IndexUpdate } from '../../services/search/types';
 import { setSearchClient } from './client';
 import { installDeepLinks } from './deeplink/install';
 import { startTitleFeed } from './feed';
+import { isMainWindow } from '../../app/windowKind';
 import { startMediaIndexer } from './media/indexer';
 import type { TitleFeed } from './feed';
 
@@ -41,7 +42,8 @@ export function installSearch(platform: Platform, notes: NotesService): () => vo
   setSearchClient(platform.search);
   if (pageIdOf(getLocation()) !== null) loadLinkLayer();
   const handle = (update: IndexUpdate) => {
-    const plans = update.renames ?? [];
+    // Every window hears the update; the main window alone asks about the links, once.
+    const plans = isMainWindow() ? (update.renames ?? []) : [];
     if (plans.length === 0) return;
     void import('./rename').then(({ applyRename }) => plans.forEach((plan) => void applyRename(platform, plan)));
   };
