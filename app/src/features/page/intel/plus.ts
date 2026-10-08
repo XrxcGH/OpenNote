@@ -102,23 +102,28 @@ WRITING_TOOLS.forEach(([tool, id], order) => {
 // Search by meaning keeps its index current: it reads the page that opens, and at start-up it catches up on the rest.
 void api().then((module) => module.resumeExtras());
 
-// Reads the text in images the page shows that the device hasn't read yet, through the activity panel's queue. It
-// does nothing while text in images is off, and it never asks to turn it on.
+// Reads the text in images the page shows that the device hasn't read yet, through the activity panel's queue, and
+// indexes the page for search by meaning. It does nothing while text in images is off, never asks to turn it on, and
+// keeps nothing of a page in an encrypted section.
 const imageTextHook: MountedPageHook = {
   id: 'intel.backgroundImageText',
   attach(mounted: MountedPage) {
     let active = true;
     let stop: () => void = () => undefined;
     const reads = isEnabled('intel.backgroundOcr');
-    void api().then((module) => {
-      if (active && reads) {
-        stop = module.watchImagesForText(
-          mounted.viewport.world,
-          (img) => img.alt || t('intelPlus.background.unnamedImage'),
-        );
-      }
-    });
-    if (isEnabled('intel.meaning')) void api().then((module) => module.indexPage({ ...mounted.page.initial }));
+    const meaning = isEnabled('intel.meaning');
+    if (reads || meaning) {
+      void api().then(async (module) => {
+        if (await module.pageIsProtected(mounted.page.initial.id)) return;
+        if (meaning) module.indexPage({ ...mounted.page.initial });
+        if (active && reads) {
+          stop = module.watchImagesForText(
+            mounted.viewport.world,
+            (img) => img.alt || t('intelPlus.background.unnamedImage'),
+          );
+        }
+      });
+    }
     return () => {
       active = false;
       stop();

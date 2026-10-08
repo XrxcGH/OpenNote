@@ -64,6 +64,8 @@ pub struct NodeInfo {
     pub pinned: bool,
     /// Archived: hidden from the tree until "Show archived".
     pub archived: bool,
+    /// An encrypted section, or a page in one (spec 5.7). Nothing of it may be indexed or cached.
+    pub encrypted: bool,
 }
 
 fn pen(color: &Option<Color>) -> Option<Color> {
@@ -89,6 +91,7 @@ pub fn notebook_node(tree: &NotebookTree) -> NodeInfo {
         read_only: tree.access.is_read_only(),
         pinned: false,
         archived: tree.archived,
+        encrypted: false,
     }
 }
 
@@ -107,6 +110,7 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             read_only: tree.access.is_read_only(),
             pinned: false,
             archived: crate::model::is_archived(&group.extra),
+            encrypted: false,
         },
         TreeChild::Section(section) => NodeInfo {
             id: section.id.to_string(),
@@ -121,6 +125,7 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             read_only: section.access.is_read_only(),
             pinned: false,
             archived: section.archived,
+            encrypted: section.encrypted,
         },
     }
 }
@@ -162,6 +167,7 @@ pub fn children_of(tree: &NotebookTree, parent: Id) -> Option<Vec<NodeInfo>> {
         read_only: read_only || !matches!(page.state, PageNodeState::Normal | PageNodeState::Moving),
         pinned: page.pinned,
         archived: page.archived,
+        encrypted: section.encrypted,
     });
     Some(pages.collect())
 }

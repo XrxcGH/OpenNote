@@ -67,7 +67,7 @@ These came after the first set. Each has its own flag, on in development, nightl
 | Ask your notes | `intel.ask` | `ask/` | Answers from the best passages and lists the pages it used. The quoting engine sits behind `AnswerEngine`, so a local language model can replace it |
 | Writing tools | `intel.writing` | `writing/`, `page/intel/writing.ts` | Proofread, Rewrite in plain words, Shorten, Make a list, and Tidy structure, as marked suggestions. The rules engine sits behind `WritingEngine` |
 
-The device store and the downloads share one command, `intel_ext_call` (`services/intel/ext.ts`), so a new method adds no permission. Pages that are protected are never indexed: `meaningIndex().setProtectedCheck(...)` is the seam for locked sections.
+The device store and the downloads share one command, `intel_ext_call` (`services/intel/ext.ts`), so a new method adds no permission. Pages of an encrypted section are protected, and nothing of them is kept on this device: `protectedPages.ts` learns which pages they are from the tree (`NodeSummary.encrypted`, at start-up and as the tree changes, and for each page that opens), the meaning index and the words read in images refuse them, and each drops and re-saves its file the moment a page is found protected. A new index or cache of page text registers with `onPagesProtected` and asks `isProtectedPage` before it keeps anything. The feature that encrypts a section can call `setPagesProtected` from the API to drop its pages at once.
 
 ## Not built, and why
 
