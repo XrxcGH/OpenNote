@@ -19,6 +19,7 @@
     "allow-app-first-paint",
     "allow-app-ready",
     "allow-app-exit-ready",
+    "allow-app-close-anyway",
     "allow-perf-mark",
     "allow-log-write",
     "allow-audio-assets-dir",

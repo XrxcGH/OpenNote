@@ -12,14 +12,18 @@ import type { ExitReason, Platform, Unsubscribe } from '../platform/types';
 
 type Refusal = Extract<BeforeExitAnswer, { ok: false }>;
 
-/** Says in a toast why the window stays open. Closing anyway starts a new close, and the hook lets it through. */
+/**
+ * Says in a toast why the window stays open. Closing anyway starts the refused close again, and the hook lets it
+ * through. Rust knows what this window refused: the app's exit, which may have begun in another window, or this
+ * window's own close. Closing just this window would leave the app open after a refused exit.
+ */
 function explainRefusal(platform: Platform, refusal: Refusal): void {
   const { closeAnyway } = refusal;
   const action = closeAnyway && {
     label: t('common.closeAnyway'),
     run() {
       closeAnyway();
-      platform.window.close();
+      platform.lifecycle.closeAnyway();
     },
   };
   enqueueToast({ id: 'exit.refused', message: refusal.message ?? t(refusal.reason), tone: 'danger', action });

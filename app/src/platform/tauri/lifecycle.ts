@@ -11,5 +11,6 @@ export function createTauriLifecycle(): LifecycleClient {
     // what is sent to it: the main window mustn't answer a page window's close.
     onBeforeExit: (listener) => listen('app://before-exit', listener, true),
     exitReady: (result) => fire('app_exit_ready', { result }),
+    closeAnyway: () => fire('app_close_anyway'),
   };
 }

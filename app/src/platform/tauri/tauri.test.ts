@@ -3,7 +3,7 @@
 // Tauri maps them to the Rust parameters), and the event names.
 
 import { emit } from '@tauri-apps/api/event';
-import { clearMocks, mockIPC } from '@tauri-apps/api/mocks';
+import { clearMocks, mockIPC, mockWindows } from '@tauri-apps/api/mocks';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultBootData } from '../../boot/defaults';
 import type { Platform } from '../types';
@@ -28,6 +28,8 @@ beforeEach(async () => {
     },
     { shouldMockEvents: true },
   );
+  // Every Tauri window knows its own label, which listeners for this window alone and the page client read.
+  mockWindows('main');
   platform = createTauriPlatform(defaultBootData());
   // The updater asks for its status at start-up (WP2). The tests below look only at what they send themselves.
   await settle();
@@ -83,11 +85,13 @@ describe('commands', () => {
     platform.lifecycle.firstPaint();
     platform.lifecycle.ready(timings);
     platform.lifecycle.exitReady({ ok: false, reason: 'errors.commandFailed' });
+    platform.lifecycle.closeAnyway();
     await settle();
     expect(calls).toEqual([
       { command: 'app_first_paint', args: {} },
       { command: 'app_ready', args: { timings } },
       { command: 'app_exit_ready', args: { result: { ok: false, reason: 'errors.commandFailed' } } },
+      { command: 'app_close_anyway', args: {} },
     ]);
   });
 

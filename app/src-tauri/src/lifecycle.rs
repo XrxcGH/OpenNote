@@ -112,6 +112,11 @@ struct ExitInner {
     ready: BTreeSet<String>,
     /// The windows asked to close on their own, with their handshake's id.
     closing: BTreeMap<String, u64>,
+    /// What each window refused last, for its "Close anyway".
+    refusals: BTreeMap<String, Refusal>,
+    /// The windows whose own close came while the app's exit waited. The exit closes them; if it is refused, their
+    /// close is asked again rather than dropped.
+    held: BTreeSet<String>,
 }
 
 /// The app's exit while it waits for its windows.
@@ -120,6 +125,15 @@ struct Pending {
     reason: ExitReason,
     /// The windows that haven't answered yet.
     waiting: BTreeSet<String>,
+    /// A window it waited for went without answering, so not every window agreed.
+    lost: bool,
+}
+
+/// What a window refused: the app's exit, or its own close.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Refusal {
+    App,
+    Window,
 }
 
 /// An exit that began: its id and the windows to ask. No windows means no interface listens yet.
@@ -132,8 +146,9 @@ pub struct Begun {
 /// What a window's answer to `app://before-exit` does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Answer {
-    /// Every window agreed: the app exits.
-    Exit(ExitReason),
+    /// Every window answered and none refused: the app exits. `answered` is false when a window it waited for went
+    /// without answering, so its pages may not have saved, and an update mustn't apply.
+    Exit { reason: ExitReason, answered: bool },
     /// The window agreed, and others still have to.
     Wait,
     /// The window refused, so the app stays open.
@@ -177,32 +192,62 @@ impl ExitState {
         let id = inner.next_id;
         let waiting: BTreeSet<String> = open.into_iter().filter(|label| inner.ready.contains(label)).collect();
         let windows = waiting.iter().cloned().collect();
-        inner.pending = Some(Pending { id, reason, waiting });
+        inner.pending = Some(Pending {
+            id,
+            reason,
+            waiting,
+            lost: false,
+        });
         Some(Begun { id, windows })
     }
 
-    /// A window answered `app://before-exit`.
+    /// A window answered `app://before-exit`. While the app exits, a window's answer is its answer to the exit,
+    /// even when it was asked to close on its own first: the exit closes it too.
     pub fn answer(&self, window: &str, ok: bool) -> Answer {
         let mut inner = self.inner();
-        if inner.closing.remove(window).is_some() {
-            return if ok { Answer::CloseWindow } else { Answer::KeepWindow };
+        let for_exit = inner
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending.waiting.contains(window));
+        if !for_exit {
+            if inner.closing.remove(window).is_none() {
+                return Answer::Stale;
+            }
+            if ok {
+                return Answer::CloseWindow;
+            }
+            inner.refusals.insert(window.to_owned(), Refusal::Window);
+            return Answer::KeepWindow;
         }
+        inner.closing.remove(window);
         let Some(pending) = inner.pending.as_mut() else {
             return Answer::Stale;
         };
-        if !pending.waiting.remove(window) {
-            return Answer::Stale;
-        }
+        pending.waiting.remove(window);
         if !ok {
             inner.pending = None;
+            inner.refusals.insert(window.to_owned(), Refusal::App);
             return Answer::Refused;
         }
         if !pending.waiting.is_empty() {
             return Answer::Wait;
         }
-        let reason = pending.reason;
+        let (reason, answered) = (pending.reason, !pending.lost);
         inner.pending = None;
-        Answer::Exit(reason)
+        Answer::Exit { reason, answered }
+    }
+
+    /// The windows whose own close was held while an exit waited, which a refused exit asks again. A window that
+    /// refused the exit itself is left out: it refused its close too, and its "Close anyway" says so.
+    pub fn take_held(&self, refused_by: &str) -> Vec<String> {
+        let mut inner = self.inner();
+        let held = std::mem::take(&mut inner.held);
+        held.into_iter().filter(|window| window != refused_by).collect()
+    }
+
+    /// What `window` refused last, which its "Close anyway" repeats. Each refusal is taken once.
+    pub fn take_refusal(&self, window: &str) -> Option<Refusal> {
+        self.inner().refusals.remove(window)
     }
 
     /// The time ran out for exit `id`. Returns the reason if it was still waiting.
@@ -219,12 +264,20 @@ impl ExitState {
     }
 
     /// A window went. The exit stops waiting for it, and returns the reason when it was the last one waited for.
+    /// A window that went without answering didn't agree, so an exit it ends counts as unanswered (see
+    /// [`Answer::Exit`]), however the others answered.
     pub fn forget_window(&self, window: &str) -> Option<ExitReason> {
         let mut inner = self.inner();
         inner.ready.remove(window);
         inner.closing.remove(window);
+        inner.refusals.remove(window);
+        inner.held.remove(window);
         let pending = inner.pending.as_mut()?;
-        if !pending.waiting.remove(window) || !pending.waiting.is_empty() {
+        if !pending.waiting.remove(window) {
+            return None;
+        }
+        pending.lost = true;
+        if !pending.waiting.is_empty() {
             return None;
         }
         let reason = pending.reason;
@@ -238,7 +291,11 @@ impl ExitState {
         if !inner.ready.contains(window) {
             return WindowClose::Now;
         }
-        if inner.pending.is_some() || inner.closing.contains_key(window) {
+        if inner.pending.is_some() {
+            inner.held.insert(window.to_owned());
+            return WindowClose::Hold;
+        }
+        if inner.closing.contains_key(window) {
             return WindowClose::Hold;
         }
         inner.next_id += 1;
@@ -277,36 +334,130 @@ impl ExitState {
     }
 }
 
+/// What the handshakes do to the app's windows. The app's handle does it for real, and the tests record it, so the
+/// wiring of closes, answers, and windows that go runs without a Tauri runtime.
+pub(crate) trait Shell: Clone + Send + 'static {
+    /// Runs `work` on the handshakes' state.
+    fn exits<R>(&self, work: impl FnOnce(&ExitState) -> R) -> R;
+    /// The labels of the open windows.
+    fn windows(&self) -> Vec<String>;
+    /// Sends `app://before-exit` with `reason` to one window.
+    fn ask(&self, window: &str, reason: ExitReason);
+    /// Asks a window to close, which runs its close through [`window_close_requested`].
+    fn close(&self, window: &str);
+    /// Closes a window at once, without asking it.
+    fn destroy(&self, window: &str);
+    /// Brings a window to the front.
+    fn focus(&self, window: &str);
+    /// Runs `work` after `delay`, off this thread.
+    fn after(&self, delay: Duration, work: impl FnOnce() + Send + 'static);
+    /// A window went: what it held in Rust is let go, such as the page sessions it left open.
+    fn release(&self, window: &str);
+    /// Saves, starts a planned process, and exits. See [`finish`].
+    fn finish(&self, reason: ExitReason, answered: bool);
+}
+
+impl Shell for AppHandle {
+    fn exits<R>(&self, work: impl FnOnce(&ExitState) -> R) -> R {
+        work(&self.state::<ExitState>())
+    }
+
+    fn windows(&self) -> Vec<String> {
+        self.webview_windows().into_keys().collect()
+    }
+
+    fn ask(&self, window: &str, reason: ExitReason) {
+        if let Err(error) = self.emit_to(window, events::APP_BEFORE_EXIT, reason) {
+            log::warn!("Couldn't send {} to {window}: {error}", events::APP_BEFORE_EXIT);
+        }
+    }
+
+    fn close(&self, window: &str) {
+        if let Some(open) = self.get_webview_window(window) {
+            if let Err(error) = open.close() {
+                log::warn!("Couldn't close the {window} window: {error}");
+            }
+        }
+    }
+
+    fn destroy(&self, window: &str) {
+        if let Some(open) = self.get_webview_window(window) {
+            if let Err(error) = open.destroy() {
+                log::warn!("Couldn't close the {window} window: {error}");
+            }
+        }
+    }
+
+    fn focus(&self, window: &str) {
+        if let Some(open) = self.get_webview_window(window) {
+            let _ = open.unminimize();
+            let _ = open.show();
+            let _ = open.set_focus();
+        }
+    }
+
+    fn after(&self, delay: Duration, work: impl FnOnce() + Send + 'static) {
+        thread::spawn(move || {
+            thread::sleep(delay);
+            work();
+        });
+    }
+
+    fn release(&self, window: &str) {
+        if let Some(audio) = self.try_state::<crate::audio::AudioState>() {
+            audio.forget_window(window);
+        }
+        let Some(bridge) = self.try_state::<crate::core_bridge::CoreBridge>() else {
+            return;
+        };
+        // Retired now, so a window opened again with this label keeps its own sessions, while the old ones close as
+        // soon as the bridge is free.
+        let gone = bridge.window_went(window);
+        let app = self.clone();
+        thread::spawn(move || {
+            let closed = app.state::<crate::core_bridge::CoreBridge>().close_window(&gone);
+            if closed > 0 {
+                log::debug!("Closed {closed} page sessions the {} window left open.", gone.label);
+            }
+        });
+    }
+
+    fn finish(&self, reason: ExitReason, answered: bool) {
+        finish(self, reason, answered);
+    }
+}
+
 /// Starts the exit handshake (section 8.7): holds the close, tells every window whose interface listens why, and
 /// waits for all their answers for up to 3 s (1 s when Windows is ending the session). Every way of closing the
 /// app comes through here. Each window flushes its own pages, so asking only the main window would lose what a
 /// page window hadn't sent yet.
 pub fn request_exit(app: &AppHandle, reason: ExitReason) {
-    let state = app.state::<ExitState>();
-    let open: Vec<String> = app.webview_windows().into_keys().collect();
-    let Some(begun) = state.begin(reason, open) else {
+    begin_exit(app, reason);
+}
+
+/// [`request_exit`] on any shell.
+pub(crate) fn begin_exit<S: Shell>(shell: &S, reason: ExitReason) {
+    let open = shell.windows();
+    let Some(begun) = shell.exits(|state| state.begin(reason, open)) else {
         log::debug!("Already closing, so {reason:?} was ignored.");
         return;
     };
     // Before the first paint the interface has nothing to save and isn't listening.
     if begun.windows.is_empty() {
-        if let Some(reason) = state.expire(begun.id) {
-            finish(app, reason, false);
+        if let Some(reason) = shell.exits(|state| state.expire(begun.id)) {
+            shell.finish(reason, false);
         }
         return;
     }
     for label in &begun.windows {
-        if let Err(error) = app.emit_to(label.as_str(), events::APP_BEFORE_EXIT, reason) {
-            log::warn!("Couldn't send {} to {label}: {error}", events::APP_BEFORE_EXIT);
-        }
+        shell.ask(label, reason);
     }
-    let app = app.clone();
+    let timer = shell.clone();
     let id = begun.id;
-    thread::spawn(move || {
-        thread::sleep(timeout_for(reason));
-        if let Some(reason) = app.state::<ExitState>().expire(id) {
+    shell.after(timeout_for(reason), move || {
+        if let Some(reason) = timer.exits(|state| state.expire(id)) {
             log::warn!("The interface didn't answer the exit request in time, so OpenNote exits without it.");
-            finish(&app, reason, false);
+            timer.finish(reason, false);
         }
     });
 }
@@ -317,47 +468,80 @@ pub fn request_exit(app: &AppHandle, reason: ExitReason) {
 pub fn watch_window(window: &WebviewWindow) {
     let app = window.app_handle().clone();
     let label = window.label().to_owned();
-    let watched = window.clone();
     window.on_window_event(move |event| match event {
-        WindowEvent::CloseRequested { api, .. } => match app.state::<ExitState>().begin_window_close(&label) {
-            WindowClose::Now => {}
-            WindowClose::Hold => api.prevent_close(),
-            WindowClose::Ask(id) => {
+        WindowEvent::CloseRequested { api, .. } => {
+            if window_close_requested(&app, &label) {
                 api.prevent_close();
-                if let Err(error) = app.emit_to(label.as_str(), events::APP_BEFORE_EXIT, ExitReason::Close) {
-                    log::warn!("Couldn't send {} to {label}: {error}", events::APP_BEFORE_EXIT);
-                }
-                let app = app.clone();
-                let label = label.clone();
-                let window = watched.clone();
-                thread::spawn(move || {
-                    thread::sleep(EXIT_TIMEOUT);
-                    if app.state::<ExitState>().expire_window_close(&label, id) {
-                        log::warn!("The {label} window didn't answer its close in time, so it closes without it.");
-                        let _ = window.destroy();
-                    }
-                });
             }
-        },
-        WindowEvent::Destroyed => window_gone(&app, &label),
+        }
+        WindowEvent::Destroyed => window_destroyed(&app, &label),
         _ => {}
     });
 }
 
-/// A window beside the main one went: the exit stops waiting for it, and its page sessions close.
-fn window_gone(app: &AppHandle, label: &str) {
-    if let Some(reason) = app.state::<ExitState>().forget_window(label) {
-        finish(app, reason, true);
-        return;
-    }
-    let app = app.clone();
-    let label = label.to_owned();
-    thread::spawn(move || {
-        let closed = app.state::<crate::core_bridge::CoreBridge>().close_window(&label);
-        if closed > 0 {
-            log::debug!("Closed {closed} page sessions the {label} window left open.");
+/// A window beside the main one was asked to close. Returns whether the close waits: for the window's answer,
+/// which closes it ([`exit_answered`]), or for the time to run out, which closes it anyway.
+pub(crate) fn window_close_requested<S: Shell>(shell: &S, label: &str) -> bool {
+    match shell.exits(|state| state.begin_window_close(label)) {
+        WindowClose::Now => false,
+        WindowClose::Hold => true,
+        WindowClose::Ask(id) => {
+            shell.ask(label, ExitReason::Close);
+            let timer = shell.clone();
+            let label = label.to_owned();
+            shell.after(EXIT_TIMEOUT, move || {
+                if timer.exits(|state| state.expire_window_close(&label, id)) {
+                    log::warn!("The {label} window didn't answer its close in time, so it closes without it.");
+                    timer.destroy(&label);
+                }
+            });
+            true
         }
-    });
+    }
+}
+
+/// A window beside the main one went: what it held is let go, and the exit stops waiting for it. An exit it was
+/// the last one waited for goes ahead as unanswered, as that window never saved.
+pub(crate) fn window_destroyed<S: Shell>(shell: &S, label: &str) {
+    shell.release(label);
+    if let Some(reason) = shell.exits(|state| state.forget_window(label)) {
+        shell.finish(reason, false);
+    }
+}
+
+/// A window's answer to `app://before-exit`, as [`app_exit_ready`] gets it.
+pub(crate) fn exit_answered<S: Shell>(shell: &S, label: &str, result: &ExitResult) {
+    match shell.exits(|state| state.answer(label, result.ok)) {
+        Answer::Exit { reason, answered } => shell.finish(reason, answered),
+        Answer::Refused => {
+            log::info!(
+                "The {label} window kept the app open: {}",
+                result.reason.as_deref().unwrap_or("no reason given")
+            );
+            shell.exits(ExitState::cancel_relaunch);
+            // A window closed while the exit waited had its close held for the exit, which won't come now.
+            for window in shell.exits(|state| state.take_held(label)) {
+                shell.close(&window);
+            }
+            // That window says why, with "Close anyway". The person closed another window, so it comes forward.
+            if label != window::MAIN {
+                shell.focus(label);
+            }
+        }
+        Answer::CloseWindow => shell.destroy(label),
+        Answer::KeepWindow | Answer::Wait | Answer::Stale => {}
+    }
+}
+
+/// "Close anyway" in a window that refused repeats what it refused: the app's exit is asked again, from whichever
+/// window refused it, and a window's own close closes that window.
+pub(crate) fn close_anyway<S: Shell>(shell: &S, label: &str) {
+    match shell.exits(|state| state.take_refusal(label)) {
+        Some(Refusal::App) => begin_exit(shell, ExitReason::Close),
+        Some(Refusal::Window) => shell.close(label),
+        None if label == window::MAIN => begin_exit(shell, ExitReason::Close),
+        None => shell.close(label),
+    }
 }
 
 /// Saves what Rust holds, starts the update's or the move's new process if there is one, and exits. `answered`
@@ -428,20 +612,14 @@ pub fn app_ready(app: AppHandle, window: WebviewWindow, timings: ReadyTimings) -
 /// it open. A window asked to close on its own closes when it agrees.
 #[tauri::command]
 pub fn app_exit_ready(app: AppHandle, window: WebviewWindow, result: ExitResult) -> IpcResult<()> {
-    let state = app.state::<ExitState>();
-    match state.answer(window.label(), result.ok) {
-        Answer::Exit(reason) => finish(&app, reason, true),
-        Answer::Refused => {
-            log::info!(
-                "The {} window kept the app open: {}",
-                window.label(),
-                result.reason.as_deref().unwrap_or("no reason given")
-            );
-            state.cancel_relaunch();
-        }
-        Answer::CloseWindow => window.destroy()?,
-        Answer::KeepWindow | Answer::Wait | Answer::Stale => {}
-    }
+    exit_answered(&app, window.label(), &result);
+    Ok(())
+}
+
+/// "Close anyway" from the toast of a window that refused: repeats the close it refused. See [`close_anyway`].
+#[tauri::command]
+pub fn app_close_anyway(app: AppHandle, window: WebviewWindow) -> IpcResult<()> {
+    close_anyway(&app, window.label());
     Ok(())
 }
 
@@ -518,7 +696,13 @@ mod tests {
             .expect("the first starts");
         assert_eq!(state.begin(ExitReason::Close, open(&["main"])), None);
         assert_eq!(state.begin(ExitReason::RestartToUpdate, open(&["main"])), None);
-        assert_eq!(state.answer("main", true), Answer::Exit(ExitReason::Close));
+        assert_eq!(
+            state.answer("main", true),
+            Answer::Exit {
+                reason: ExitReason::Close,
+                answered: true
+            }
+        );
         // After the answer, a later close may start again.
         let second = state.begin(ExitReason::Close, open(&["main"])).expect("starts again");
         assert_ne!(second.id, first.id);
@@ -585,7 +769,13 @@ mod tests {
         assert_eq!(state.answer("main", true), Answer::Wait);
         assert_eq!(state.answer("capture", true), Answer::Wait);
         assert_eq!(state.answer("main", true), Answer::Stale, "one answer per window");
-        assert_eq!(state.answer("page-p1", true), Answer::Exit(ExitReason::Close));
+        assert_eq!(
+            state.answer("page-p1", true),
+            Answer::Exit {
+                reason: ExitReason::Close,
+                answered: true
+            }
+        );
     }
 
     #[test]
@@ -678,5 +868,248 @@ mod tests {
         state.plan_relaunch(relaunch);
         state.cancel_relaunch();
         assert_eq!(state.take_relaunch(), None);
+    }
+
+    /// A shell that records what the handshakes do, with timers the test runs by hand.
+    #[derive(Clone, Default)]
+    struct Fake(Arc<FakeInner>);
+
+    type Timer = Box<dyn FnOnce() + Send>;
+
+    #[derive(Default)]
+    struct FakeInner {
+        state: ExitState,
+        open: Mutex<Vec<String>>,
+        done: Mutex<Vec<String>>,
+        timers: Mutex<Vec<Timer>>,
+    }
+
+    impl Fake {
+        /// The app with these windows open and listening.
+        fn with(windows: &[&str]) -> Fake {
+            let fake = Fake::default();
+            for window in windows {
+                fake.0.state.mark_ui_ready(window);
+                fake.0.open.lock().unwrap().push((*window).to_owned());
+            }
+            fake
+        }
+
+        fn note(&self, what: String) {
+            self.0.done.lock().unwrap().push(what);
+        }
+
+        /// What happened since the last call.
+        fn take(&self) -> Vec<String> {
+            std::mem::take(&mut *self.0.done.lock().unwrap())
+        }
+
+        /// Lets the time run out for every timer started so far.
+        fn run_timers(&self) {
+            let timers = std::mem::take(&mut *self.0.timers.lock().unwrap());
+            for timer in timers {
+                timer();
+            }
+        }
+
+        /// The window answers, as app_exit_ready does.
+        fn answer(&self, window: &str, ok: bool) {
+            let result = ExitResult {
+                ok,
+                reason: (!ok).then(|| "errors.recording".to_owned()),
+            };
+            exit_answered(self, window, &result);
+        }
+
+        /// The window's webview goes, as Tauri's Destroyed event says.
+        fn gone(&self, window: &str) {
+            self.0.open.lock().unwrap().retain(|open| open != window);
+            window_destroyed(self, window);
+        }
+    }
+
+    impl Shell for Fake {
+        fn exits<R>(&self, work: impl FnOnce(&ExitState) -> R) -> R {
+            work(&self.0.state)
+        }
+        fn windows(&self) -> Vec<String> {
+            self.0.open.lock().unwrap().clone()
+        }
+        fn ask(&self, window: &str, reason: ExitReason) {
+            self.note(format!("ask {window} {reason:?}"));
+        }
+        fn close(&self, window: &str) {
+            self.note(format!("close {window}"));
+        }
+        fn destroy(&self, window: &str) {
+            self.note(format!("destroy {window}"));
+        }
+        fn focus(&self, window: &str) {
+            self.note(format!("focus {window}"));
+        }
+        fn after(&self, _delay: Duration, work: impl FnOnce() + Send + 'static) {
+            self.0.timers.lock().unwrap().push(Box::new(work));
+        }
+        fn release(&self, window: &str) {
+            self.note(format!("release {window}"));
+        }
+        fn finish(&self, reason: ExitReason, answered: bool) {
+            self.note(format!("finish {reason:?} answered={answered}"));
+        }
+    }
+
+    fn says(lines: &[&str]) -> Vec<String> {
+        lines.iter().map(|line| (*line).to_owned()).collect()
+    }
+
+    /// F3-3: a page window's close tore its webview down with its last typing unsent. The close is held, the window
+    /// is asked, it closes when it agrees, and what it held is let go when it has gone.
+    #[test]
+    fn a_page_window_close_asks_it_closes_it_when_it_agrees_and_lets_its_sessions_go() {
+        let fake = Fake::with(&["main", "page-p1"]);
+        assert!(window_close_requested(&fake, "page-p1"), "the close waits");
+        assert_eq!(fake.take(), says(&["ask page-p1 Close"]));
+        assert!(window_close_requested(&fake, "page-p1"), "a second click waits too");
+        assert_eq!(fake.take(), says(&[]), "and doesn't ask again");
+        fake.answer("page-p1", true);
+        assert_eq!(fake.take(), says(&["destroy page-p1"]));
+        fake.gone("page-p1");
+        assert_eq!(fake.take(), says(&["release page-p1"]));
+        fake.run_timers();
+        assert_eq!(fake.take(), says(&[]), "the timer finds the close done");
+        assert!(
+            !window_close_requested(&fake, "tool-timers"),
+            "a window not listening closes at once"
+        );
+    }
+
+    #[test]
+    fn a_page_window_that_does_not_answer_its_close_closes_when_the_time_runs_out() {
+        let fake = Fake::with(&["main", "page-p1"]);
+        assert!(window_close_requested(&fake, "page-p1"));
+        fake.take();
+        fake.run_timers();
+        assert_eq!(fake.take(), says(&["destroy page-p1"]));
+        fake.answer("page-p1", true);
+        assert_eq!(fake.take(), says(&[]), "a late answer finds nothing to do");
+    }
+
+    /// F3-3: the exit asked only the main window, so a page window's unsent typing died with the process.
+    #[test]
+    fn the_app_exit_asks_every_listening_window_and_exits_when_all_agree() {
+        let fake = Fake::with(&["main", "page-p1", "capture"]);
+        fake.0.open.lock().unwrap().push("tool-timers".into());
+        begin_exit(&fake, ExitReason::Close);
+        assert_eq!(
+            fake.take(),
+            says(&["ask capture Close", "ask main Close", "ask page-p1 Close"])
+        );
+        fake.answer("main", true);
+        fake.answer("capture", true);
+        assert_eq!(fake.take(), says(&[]));
+        fake.answer("page-p1", true);
+        assert_eq!(fake.take(), says(&["finish Close answered=true"]));
+        fake.run_timers();
+        assert_eq!(fake.take(), says(&[]), "the timer finds the exit done");
+    }
+
+    /// A window that died during the exit never saved, so the exit it ends mustn't count as agreed: an update
+    /// applies only on an agreed exit.
+    #[test]
+    fn a_window_that_dies_during_the_exit_leaves_it_unanswered() {
+        let fake = Fake::with(&["main", "page-p1"]);
+        begin_exit(&fake, ExitReason::RestartToUpdate);
+        fake.take();
+        fake.answer("main", true);
+        fake.gone("page-p1");
+        assert_eq!(
+            fake.take(),
+            says(&["release page-p1", "finish RestartToUpdate answered=false"])
+        );
+
+        let fake = Fake::with(&["main", "page-p1"]);
+        begin_exit(&fake, ExitReason::RestartToUpdate);
+        fake.gone("page-p1");
+        fake.take();
+        fake.answer("main", true);
+        assert_eq!(
+            fake.take(),
+            says(&["finish RestartToUpdate answered=false"]),
+            "however the others answer after it"
+        );
+    }
+
+    /// A page window that refuses the app's exit says why in its own toast, so it comes to the front, and its
+    /// "Close anyway" asks for the app's exit again, not for that window alone.
+    #[test]
+    fn a_page_window_refusing_the_exit_comes_forward_and_its_close_anyway_retries_the_exit() {
+        let fake = Fake::with(&["main", "page-p1"]);
+        begin_exit(&fake, ExitReason::Close);
+        fake.take();
+        fake.answer("main", true);
+        fake.answer("page-p1", false);
+        assert_eq!(fake.take(), says(&["focus page-p1"]));
+        fake.run_timers();
+        assert_eq!(fake.take(), says(&[]), "the refusal ended the exit");
+        close_anyway(&fake, "page-p1");
+        assert_eq!(fake.take(), says(&["ask main Close", "ask page-p1 Close"]));
+        fake.answer("main", true);
+        fake.answer("page-p1", true);
+        assert_eq!(fake.take(), says(&["finish Close answered=true"]));
+    }
+
+    /// A page window closed while the app's exit waited had its close held for the exit; when the exit was refused,
+    /// that close was dropped and the window stayed open.
+    #[test]
+    fn a_window_closed_while_a_refused_exit_waited_is_asked_to_close_again() {
+        let fake = Fake::with(&["main", "page-p1", "page-p2"]);
+        begin_exit(&fake, ExitReason::Close);
+        assert!(window_close_requested(&fake, "page-p1"), "held for the exit");
+        assert!(window_close_requested(&fake, "page-p2"), "held for the exit");
+        fake.take();
+        fake.answer("page-p1", true);
+        fake.answer("page-p2", false);
+        assert_eq!(
+            fake.take(),
+            says(&["close page-p1", "focus page-p2"]),
+            "the window that refused keeps its close refused, the other is asked again"
+        );
+        assert!(window_close_requested(&fake, "page-p1"));
+        assert_eq!(fake.take(), says(&["ask page-p1 Close"]));
+        fake.answer("page-p1", true);
+        assert_eq!(fake.take(), says(&["destroy page-p1"]));
+    }
+
+    #[test]
+    fn close_anyway_after_a_window_refused_its_own_close_closes_that_window() {
+        let fake = Fake::with(&["main", "page-p1"]);
+        window_close_requested(&fake, "page-p1");
+        fake.answer("page-p1", false);
+        assert_eq!(
+            fake.take(),
+            says(&["ask page-p1 Close"]),
+            "its own close: nothing comes forward"
+        );
+        close_anyway(&fake, "page-p1");
+        assert_eq!(fake.take(), says(&["close page-p1"]));
+        // The main window's own refusal retries the app's exit, as its caption button does.
+        begin_exit(&fake, ExitReason::Close);
+        fake.answer("main", false);
+        fake.take();
+        close_anyway(&fake, "main");
+        assert_eq!(fake.take(), says(&["ask main Close", "ask page-p1 Close"]));
+    }
+
+    #[test]
+    fn a_window_asked_to_close_on_its_own_answers_the_exit_that_starts_meanwhile() {
+        let fake = Fake::with(&["main", "page-p1"]);
+        window_close_requested(&fake, "page-p1");
+        begin_exit(&fake, ExitReason::Close);
+        fake.take();
+        fake.answer("page-p1", true);
+        fake.answer("main", true);
+        assert_eq!(fake.take(), says(&["finish Close answered=true"]));
+        fake.answer("page-p1", true);
+        assert_eq!(fake.take(), says(&[]), "its second answer is stale");
     }
 }

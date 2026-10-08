@@ -74,6 +74,7 @@ describe('a refusal in the exit handshake', () => {
     const platform = createTestPlatform();
     const exitReady = vi.spyOn(platform.lifecycle, 'exitReady');
     const close = vi.spyOn(platform.window, 'close');
+    const retry = vi.spyOn(platform.lifecycle, 'closeAnyway');
     const closeAnyway = vi.fn();
     const answer = { ok: false, reason: 'errors.commandFailed', message: 'The disk is full.', closeAnyway } as const;
     unregister.push(beforeExit.register({ id: 'stuck', order: 10, run: () => Promise.resolve(answer) }));
@@ -85,7 +86,10 @@ describe('a refusal in the exit handshake', () => {
     expect(closeAnyway).not.toHaveBeenCalled();
     await toast?.action?.run();
     expect(closeAnyway).toHaveBeenCalledOnce();
-    expect(close).toHaveBeenCalledOnce();
+    // Rust repeats what this window refused: in a page window that was the app's exit, which closing only this
+    // window wouldn't repeat.
+    expect(retry).toHaveBeenCalledOnce();
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('shows no action when the refusing hook has no way out', async () => {

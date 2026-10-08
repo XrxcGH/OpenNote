@@ -168,6 +168,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         lifecycle::app_first_paint,
         lifecycle::app_ready,
         lifecycle::app_exit_ready,
+        lifecycle::app_close_anyway,
         perf::perf_mark,
         crate::log::log_write,
         audio::audio_assets_dir,
