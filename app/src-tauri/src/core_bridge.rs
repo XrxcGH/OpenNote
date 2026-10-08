@@ -15,7 +15,7 @@ use std::{
     fs,
     panic::Location,
     path::{Path, PathBuf},
-    sync::{mpsc, Arc, Mutex, OnceLock, PoisonError, TryLockError},
+    sync::{mpsc, Arc, Condvar, Mutex, MutexGuard, OnceLock, PoisonError},
     time::{Duration, Instant},
 };
 
@@ -59,7 +59,13 @@ const HELD_WARNING: Duration = Duration::from_secs(10);
 /// command that never returns. The interface sends its commands over the webview's IPC channel, which carries
 /// only a handful at a time: once that many wait on the core, nothing else gets through, not even the window's
 /// Close or a log line (beta 4's T2-3). A command that fails after this wait keeps the channel open, and the
-/// interface says the core isn't responding instead of saying "Saving" for the rest of the session.
+/// interface says the core isn't responding instead of saying "Saving" for the rest of the session. It is longer
+/// than the core's journal `OPEN_TIMEOUT` (10 s, journal_thread.rs), the one bounded wait a command makes on
+/// another thread while it holds the core, so a stuck journal open gives up before the commands behind it do.
+///
+/// The channel's limit stays: the interface keeps one edit in flight per page, but with many pages open their
+/// edits and the tree's and search's commands can still fill the channel for one such wait while the core is
+/// held. The watchdog reports the holder after [`HELD_WARNING`] all the same.
 const COMMAND_WAIT: Duration = Duration::from_secs(15);
 
 /// The error code of a command that gave up waiting for the core. The message names what holds it.
@@ -72,6 +78,41 @@ pub const RESPONSIVE_EVENT: &str = "core:responsive";
 
 /// What holds the core now: since when, and which command.
 type Held = Arc<Mutex<Option<(Instant, Cow<'static, str>)>>>;
+
+/// The door the commands queue at: whether the core is taken, and the condition the waiters sleep on until
+/// the holder leaves. Serializing the commands here, not on the core's own lock, is what lets a command give up
+/// after a bounded wait without polling.
+type Door = Arc<(Mutex<bool>, Condvar)>;
+
+/// The taken core: the core's state, given back through the door when dropped (after the state's own guard).
+struct CoreGuard<'a> {
+    state: MutexGuard<'a, Option<Bridge>>,
+    _turn: Turn<'a>,
+}
+
+impl std::ops::Deref for CoreGuard<'_> {
+    type Target = Option<Bridge>;
+    fn deref(&self) -> &Option<Bridge> {
+        &self.state
+    }
+}
+
+impl std::ops::DerefMut for CoreGuard<'_> {
+    fn deref_mut(&mut self) -> &mut Option<Bridge> {
+        &mut self.state
+    }
+}
+
+/// Frees the door and wakes the next waiter when a command returns, or unwinds.
+struct Turn<'a>(&'a Door);
+
+impl Drop for Turn<'_> {
+    fn drop(&mut self) {
+        let (taken, freed) = &**self.0;
+        *taken.lock().unwrap_or_else(PoisonError::into_inner) = false;
+        freed.notify_one();
+    }
+}
 
 /// Clears the holder when the command returns, or unwinds.
 struct Holding(Held);
@@ -159,6 +200,8 @@ pub struct CoreBridge {
     root: PathBuf,
     /// The started bridge. A start that failed leaves it empty, so the next command tries again.
     state: Arc<Mutex<Option<Bridge>>>,
+    /// Where the commands wait for the core; see [`CoreBridge::take_core_within`].
+    door: Door,
     relay: Arc<Relay>,
     search: Arc<search::Hub>,
     /// The command that holds the core now, for the watchdog and the exit.
@@ -321,6 +364,7 @@ impl CoreBridge {
         CoreBridge {
             root,
             state: Arc::new(Mutex::new(None)),
+            door: Arc::default(),
             relay: Arc::default(),
             search: Arc::default(),
             held: Arc::default(),
@@ -345,19 +389,29 @@ impl CoreBridge {
     }
 
     /// Takes the core, waiting at most `timeout` for the command that holds it. `None` when it is still held
-    /// after that.
-    fn take_core_within(&self, timeout: Duration) -> Option<std::sync::MutexGuard<'_, Option<Bridge>>> {
+    /// after that. Commands queue at the door: a waiter sleeps on its condition variable until the holder
+    /// leaves, not on a poll, so a contended command starts the moment the one before it ends.
+    fn take_core_within(&self, timeout: Duration) -> Option<CoreGuard<'_>> {
         let deadline = Instant::now().checked_add(timeout);
-        loop {
-            match self.state.try_lock() {
-                Ok(state) => return Some(state),
-                Err(TryLockError::Poisoned(poisoned)) => return Some(poisoned.into_inner()),
-                Err(TryLockError::WouldBlock) if deadline.is_some_and(|d| Instant::now() < d) => {
-                    std::thread::sleep(Duration::from_millis(10));
-                }
-                Err(TryLockError::WouldBlock) => return None,
+        let (taken, freed) = &*self.door;
+        let mut taken = taken.lock().unwrap_or_else(PoisonError::into_inner);
+        while *taken {
+            let left = deadline.map_or(Duration::MAX, |d| d.saturating_duration_since(Instant::now()));
+            if left.is_zero() {
+                return None;
             }
+            taken = freed
+                .wait_timeout(taken, left)
+                .unwrap_or_else(PoisonError::into_inner)
+                .0;
         }
+        *taken = true;
+        drop(taken);
+        let state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        Some(CoreGuard {
+            state,
+            _turn: Turn(&self.door),
+        })
     }
 
     /// Runs `work` on a blocking thread and answers when it is done. Every command that touches the core goes
@@ -379,9 +433,11 @@ impl CoreBridge {
     /// What holds the core now, for the log.
     fn holder(&self) -> String {
         let holder = self.held.lock().unwrap_or_else(PoisonError::into_inner);
-        holder.as_ref().map_or("nothing holds it now".to_owned(), |(since, what)| {
-            format!("{what} has held it for {} s", since.elapsed().as_secs())
-        })
+        holder
+            .as_ref()
+            .map_or("nothing holds it now".to_owned(), |(since, what)| {
+                format!("{what} has held it for {} s", since.elapsed().as_secs())
+            })
     }
 
     /// Sends the core's events through `emit`. The first call wins.
@@ -425,7 +481,7 @@ impl CoreBridge {
                 format!("OpenNote's core is busy ({holder}). Try again in a moment."),
             ));
         };
-        *self.held.lock().unwrap_or_else(PoisonError::into_inner) = Some((Instant::now(), what.into()));
+        *self.held.lock().unwrap_or_else(PoisonError::into_inner) = Some((Instant::now(), what));
         let _holding = Holding(self.held.clone());
         if state.is_none() {
             match Bridge::start(&self.root, self.relay.clone(), &self.search) {

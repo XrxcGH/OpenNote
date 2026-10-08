@@ -201,8 +201,10 @@ pub enum TreeOp {
 
 /// How long opening a journal waits for the journal thread. The thread answers in milliseconds; a longer wait
 /// means it is stuck, and the page then runs without a journal (spec 20.12) instead of holding its lock, and
-/// every command behind it, forever.
-const OPEN_TIMEOUT: Duration = Duration::from_secs(20);
+/// every command behind it, forever. It is shorter than the app's `COMMAND_WAIT` (15 s in core_bridge.rs): an
+/// open stuck here holds the core, and it must give up before the commands queued behind it do, so they run
+/// instead of failing as busy.
+const OPEN_TIMEOUT: Duration = Duration::from_secs(10);
 
 impl JournalThread {
     /// Starts the thread.

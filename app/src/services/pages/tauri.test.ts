@@ -3,6 +3,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreClient, DecodedEnvelope } from '../../core/client';
 import type { ImagesClient } from '../../platform/types';
+import { resetStores } from '../../state/store';
+import { coreStalled, saveHealthStore } from './saveHealth';
 import { createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
 
 const AT = '2026-10-01T09:00:00.000Z';
@@ -110,6 +112,17 @@ describe('the Tauri page service’s requests', () => {
     await page.send({ edits: [] });
     const seqs = (calls.pageApply.mock.calls as unknown as [{ clientSeq: number }][]).map(([r]) => r.clientSeq);
     expect(seqs).toEqual([4, 4, 5]);
+  });
+
+  it('says the core is stalled when an edit gives up waiting for it, before the watchdog has', async () => {
+    resetStores();
+    const { core, calls } = fakeCore([envelope([])]);
+    calls.pageApply.mockImplementationOnce(() =>
+      Promise.reject({ code: 'coreBusy', message: 'The core is busy (page_open has held it for 15 s).' }),
+    );
+    const page = await createTauriPageService(core, images).open('p1', { viewport: null });
+    await expect(page.send({ edits: [] })).rejects.toMatchObject({ code: 'coreBusy', resync: false });
+    expect(coreStalled(saveHealthStore.get())).toBe(true);
   });
 
   it('builds asset addresses that WebView2 routes, with each ID kept to one path segment', async () => {
