@@ -43,7 +43,7 @@ pub enum Callback {
 pub enum Ended {
     Canceled,
     TimedOut,
-    /// The return had the wrong or missing state value, or no code.
+    /// The return had the right state value but no usable code.
     Mismatch,
     Io,
 }
@@ -191,8 +191,14 @@ fn judge(head: &str, port: u16, state: &str) -> Verdict {
             .find(|(key, _)| key == name)
             .map(|(_, value)| value.as_str())
     };
+    // Any page in the browser can send a request here, and the fixed ports are public, so a wrong
+    // or missing state is answered and ignored: it never ends the wait for the real return.
     if !get("state").is_some_and(|returned| pkce::same(returned, state)) {
-        return Verdict::finish(Err(Ended::Mismatch));
+        return Verdict {
+            status: 400,
+            page: Page::Failed,
+            end: None,
+        };
     }
     if let Some(error) = get("error") {
         let kept: String = error

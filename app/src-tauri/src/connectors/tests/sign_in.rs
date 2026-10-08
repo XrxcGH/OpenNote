@@ -119,9 +119,11 @@ fn a_no_in_the_browser_connects_nothing() {
 #[test]
 fn an_answer_with_the_wrong_state_is_never_traded_for_tokens() {
     let server = MockServer::start();
-    let rig = oauth_rig(&server);
+    let mut rig = oauth_rig(&server);
+    rig.restart(Duration::from_millis(300));
     rig.visit(Visit::WrongState);
-    assert_eq!(connect(&rig), Err(Failure::Mismatch));
+    // The stray answer is refused and the wait goes on until the real one, or the time limit.
+    assert_eq!(connect(&rig), Err(Failure::TimedOut));
     assert!(server.requests_to("/token").is_empty());
     assert_eq!(rig.state("example"), StateView::NotConnected);
 }
