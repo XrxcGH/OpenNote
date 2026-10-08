@@ -4,7 +4,7 @@
 // name. After a change it writes the IDs, tags, and checked boxes back with `patchBlock`. A block that has no IDs,
 // tags, or links stays as it was, because the plugin writes nothing for it.
 import { Extension } from '@tiptap/core';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
@@ -288,6 +288,18 @@ function elementsPlugin(host: EditorHost, options: ElementOptions): Plugin<Decor
     props: {
       decorations: (state) => key.getState(state),
       handleDOMEvents: {
+        // A right-click acts on the line under the pointer, so the menu's link and tag commands do not use a stale caret.
+        contextmenu(editorView: EditorView, event: Event) {
+          const mouse = event as MouseEvent;
+          const at = editorView.posAtCoords({ left: mouse.clientX, top: mouse.clientY });
+          if (!at) return false;
+          const { from, to } = editorView.state.selection;
+          if (at.pos >= from && at.pos <= to) return false;
+          editorView.focus();
+          const selection = TextSelection.near(editorView.state.doc.resolve(at.pos));
+          editorView.dispatch(editorView.state.tr.setSelection(selection));
+          return false;
+        },
         [ELEMENT_EVENT](editorView: EditorView, event: Event) {
           const action = (event as CustomEvent<ElementAction>).detail;
           const allowed = action.type === 'copyLink' ? options.links : options.tags;
