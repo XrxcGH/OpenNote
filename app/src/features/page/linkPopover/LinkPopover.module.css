@@ -16,6 +16,7 @@
   .anchor {
     position: fixed;
     pointer-events: none;
-    visibility: hidden;
+    /* Not visibility: hidden: an anchor that is hidden hides the popover anchored to it (position-visibility). */
+    opacity: 0;
   }
 }

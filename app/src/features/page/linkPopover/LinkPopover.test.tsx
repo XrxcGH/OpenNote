@@ -25,4 +25,18 @@ describe('the link popover', () => {
     field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await closed;
   });
+
+  it('sits above the page, so its Save link button is the thing under the pointer', async () => {
+    mounted = mountEditor('Visit [site]');
+    const closed = openLinkPopover(mounted.editor);
+    const dialog = await screen.findByRole('dialog', { name: 'Link' });
+    const save = screen.getByRole('button', { name: 'Save link' });
+    await expect.poll(() => dialog.matches(':popover-open')).toBe(true);
+    const box = save.getBoundingClientRect();
+    await expect
+      .poll(() => document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2))
+      .toSatisfy((hit: Element | null) => hit !== null && dialog.contains(hit));
+    dialog.querySelector('input')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await closed;
+  });
 });
