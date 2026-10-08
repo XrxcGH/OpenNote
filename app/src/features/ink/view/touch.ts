@@ -23,6 +23,11 @@ function palmSettings(palm: Palm) {
   return { ...palm.palmSettingsFromInk(ink), handedness: ink.handedness, fingerDraw: ink.touch.finger };
 }
 
+/** A touch this wide (CSS px, about 7 mm) while a pen is in use is a palm, not a finger. */
+const PALM_PX = 28;
+/** How long after the pen's last event a palm-sized touch on a control is held back. */
+const PEN_RECENT_MS = 1500;
+
 const PEN_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'pointercancel'] as const;
 
 /** Copies a pointer event into the pipeline's reused record. */
@@ -84,6 +89,8 @@ export class TouchTool {
     };
     for (const type of PEN_EVENTS) window.addEventListener(type, this.onPen, { capture: true, passive: true });
     window.addEventListener('blur', this.onBlur);
+    window.addEventListener('pointerdown', this.onTouchDown, { capture: true, passive: true });
+    window.addEventListener('click', this.onClick, true);
   }
 
   /** Settings changed: the next touch builds a filter with the new ones. */
@@ -96,6 +103,8 @@ export class TouchTool {
   destroy(): void {
     for (const type of PEN_EVENTS) window.removeEventListener(type, this.onPen, { capture: true });
     window.removeEventListener('blur', this.onBlur);
+    window.removeEventListener('pointerdown', this.onTouchDown, { capture: true });
+    window.removeEventListener('click', this.onClick, true);
     this.reset();
   }
 
@@ -116,6 +125,7 @@ export class TouchTool {
    */
   private readonly onPen = (event: PointerEvent) => {
     if (event.pointerType !== 'pen') return;
+    this.lastPenAt = event.timeStamp;
     if (!this.pipeline && !this.active()) return;
     const type =
       event.type === 'pointerdown'
@@ -126,6 +136,23 @@ export class TouchTool {
             ? 'cancel'
             : 'move';
     this.ensure().handle(fill(this.record, event, type));
+  };
+
+  private lastPenAt = -Infinity;
+  private palmClickUntil = 0;
+
+  /** A palm-sized touch landing while a pen is in use must not press a toolbar button (the click it makes is dropped). */
+  private readonly onTouchDown = (event: PointerEvent) => {
+    if (event.pointerType !== 'touch' || !this.active()) return;
+    const big = Math.max(event.width, event.height) >= PALM_PX;
+    if (big && event.timeStamp - this.lastPenAt < PEN_RECENT_MS) this.palmClickUntil = event.timeStamp + 800;
+  };
+
+  private readonly onClick = (event: MouseEvent) => {
+    if (event.timeStamp > this.palmClickUntil) return;
+    this.palmClickUntil = 0;
+    event.preventDefault();
+    event.stopPropagation();
   };
 
   private readonly onBlur = () => this.pipeline?.system('blur', performance.now());
