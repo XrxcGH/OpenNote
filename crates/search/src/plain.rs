@@ -179,6 +179,8 @@ impl Scan {
                 out.push(c[at + 1]);
                 at + 2
             }
+            // A backslash that ends the line is a hard line break, not a word.
+            '\\' if next.is_none() => at + 1,
             '`' => self.code_span(c, at, out),
             '!' if next == Some('[') => at + 1,
             '[' => self.link(c, at, out),

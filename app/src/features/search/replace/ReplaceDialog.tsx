@@ -5,6 +5,7 @@
 // because the strokes and the picture stay as they were drawn.
 import { useEffect, useMemo, useState } from 'react';
 import { commandContext } from '../../../commands/registry';
+import { readableMarkdown } from '../../../services/search/text';
 import type { TextHit } from '../../../services/search/types';
 import type { OverlayProps } from '../../../shell/commandbar/overlays';
 import { t } from '../../../strings/t';
@@ -70,10 +71,10 @@ function Row({
           aria-label={t('qolSearch.replace.keep', { title: match.pageTitle })}
         />
         <span className={styles.replaceText}>
-          {match.before}
+          {readableMarkdown(match.before)}
           <del className={styles.replaceOld}>{match.found}</del>
           <ins className={styles.replaceNew}>{replacement}</ins>
-          {match.after}
+          {readableMarkdown(match.after)}
         </span>
       </label>
     </li>

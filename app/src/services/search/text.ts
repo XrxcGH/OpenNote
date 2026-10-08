@@ -85,6 +85,14 @@ export function unescapeMarkdown(text: string): string {
   return text.replace(/\\([!-/:-@[-`{-~])/g, '$1');
 }
 
+/**
+ * A piece of Markdown shown as words, such as the words around a match: `\#urgent` reads `#urgent`, a backslash
+ * that ends a line (a hard break) goes, and so does a callout's `[!note]`.
+ */
+export function readableMarkdown(text: string): string {
+  return unescapeMarkdown(text.replace(/\\$/gm, '').replace(/^(\s*(?:>\s*)*)\[![\w-]*\][+-]?[ \t]*/gm, '$1'));
+}
+
 function inCode(markdown: string, at: number): boolean {
   const line = markdown.lastIndexOf('\n', at) + 1;
   const ticks = markdown.slice(line, at).split('`').length - 1;

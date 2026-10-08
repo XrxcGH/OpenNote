@@ -13,15 +13,24 @@ export const CHUNK_MIN = 80;
 
 /** Markdown as the words a person would read. */
 export function plainMarkdown(markdown: string): string {
-  return markdown
+  // Escaped marks are held aside, so `\*` stays a star while the emphasis marks go.
+  const held: string[] = [];
+  const stripped = markdown
+    .replace(/\\$/gm, '')
+    .replace(/\\([!-/:-@[-`{-~])/g, (_all, mark: string) => {
+      held.push(mark);
+      return '';
+    })
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/\[\[([^\]|]*)(?:\|([^\]]*))?\]\]/g, (_all, target: string, label?: string) => label ?? target)
     .replace(/^\s{0,3}(?:#{1,6}|>|[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?/gm, '')
+    .replace(/^\s*\[![\w-]*\][+-]?[ \t]*/gm, '')
     .replace(/[*_`~]+/g, '')
     .replace(/[ \t]+/g, ' ')
     .trim();
+  return stripped.replace(//g, () => held.shift() ?? '');
 }
 
 /** Cuts long text at sentence ends, so no paragraph is longer than `max`. */
