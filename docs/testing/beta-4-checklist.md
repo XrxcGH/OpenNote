@@ -72,7 +72,7 @@ Your real notes stay safe if you do this every time you test beta 4:
 
 ### 1c. Export (Phases 6 and 11)
 
-1. On a page with text, a picture, and ink, open **Share > Export...** (or Ctrl+K, "export").
+1. On a page with text, a picture, and ink, open **More > Export...** (or Ctrl+K, "export").
 2. Export as PDF (from the page's Export / Print): the PDF opens, has the text (you can select it), the ink, and the
    picture, at the right page size.
 3. Export the page as Markdown, as Word (.docx) and as single-file HTML. Open each file; text, headings, and pictures
