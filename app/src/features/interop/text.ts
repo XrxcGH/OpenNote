@@ -18,7 +18,7 @@ export function sizeText(bytes: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'unit',
     unit,
-    unitDisplay: 'short',
+    unitDisplay: unit === 'byte' ? 'long' : 'short',
     maximumFractionDigits: digits,
   }).format(value);
 }

@@ -49,6 +49,9 @@ function Choose({ flow, canceled, refocus }: { flow: ImportFlow; canceled: boole
         <li>{t('interop.import.sources.notion')}</li>
         <li>{t('interop.import.sources.word')}</li>
         <li>{t('interop.import.sources.web')}</li>
+        <li>{t('interop.import.sources.office')}</li>
+        <li>{t('interop.import.sources.mail')}</li>
+        <li>{t('interop.import.sources.highlights')}</li>
         <li>{t('interop.import.sources.other')}</li>
       </ul>
     </div>
