@@ -70,10 +70,16 @@ interface Entry {
   stop: (() => void) | null;
 }
 
+type IdleDeadline = { timeRemaining(): number; didTimeout?: boolean };
 type IdleWindow = Window & {
-  requestIdleCallback?: (callback: (deadline: { timeRemaining(): number }) => void) => number;
+  requestIdleCallback?: (callback: (deadline: IdleDeadline) => void, options?: { timeout: number }) => number;
   cancelIdleCallback?: (handle: number) => void;
 };
+/**
+ * The longest an idle mount waits. A machine that is never idle, such as a slow one busy with other work, would
+ * otherwise never mount the editors in view.
+ */
+const IDLE_TIMEOUT_MS = 1000;
 type Scheduling = { scheduling?: { isInputPending?: () => boolean } };
 
 /** Places the caret for a mount's target. */
@@ -266,12 +272,12 @@ class Pool implements PagePool {
 
   private scheduleIdle(): void {
     if (this.idle || this.screenReader || ![...this.near].some((block) => !this.editor(block))) return;
-    const run = (deadline: { timeRemaining(): number }) => {
+    const run = (deadline: IdleDeadline) => {
       this.idle = 0;
       this.mountOneIdle(deadline);
     };
     this.idle = this.view.requestIdleCallback
-      ? this.view.requestIdleCallback(run)
+      ? this.view.requestIdleCallback(run, { timeout: IDLE_TIMEOUT_MS })
       : this.view.setTimeout(() => run({ timeRemaining: () => 8 }), 50);
   }
 
@@ -282,10 +288,14 @@ class Pool implements PagePool {
     this.idle = 0;
   }
 
-  /** One editor per idle slice, for the nearest block in view without one, unless input is waiting. */
-  private mountOneIdle(deadline: { timeRemaining(): number }): void {
+  /**
+   * One editor per idle slice, for the nearest block in view without one, unless input is waiting. A slice that
+   * came because the wait timed out mounts one even when short, so a busy machine still gets its editors.
+   */
+  private mountOneIdle(deadline: IdleDeadline): void {
     const pending = (this.view.navigator as Navigator & Scheduling).scheduling?.isInputPending?.() ?? false;
-    if (this.screenReader || pending || deadline.timeRemaining() < 4) return this.scheduleIdle();
+    const short = !deadline.didTimeout && deadline.timeRemaining() < 4;
+    if (this.screenReader || pending || short) return this.scheduleIdle();
     const waiting = [...this.near].filter((block) => !this.editor(block) && this.entries.get(block)?.mountable);
     const top = (block: BlockId) => this.entries.get(block)!.mountable!.root.getBoundingClientRect().top;
     const nearest = waiting.sort((a, b) => Math.abs(top(a)) - Math.abs(top(b)))[0];
