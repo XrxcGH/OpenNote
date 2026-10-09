@@ -160,6 +160,19 @@ describe('the compact stack', () => {
   });
 });
 
+describe('the compact app bar title', () => {
+  it('names the open page, also after a resize from a wider layout', async () => {
+    await renderApp({
+      sizeClass: 'wide',
+      boot: { state: { location: { ...lectures, pageId: 'p-mitosis' } } },
+    });
+    act(() => setSizeClass('compact'));
+    await expect.poll(() => layoutStore.get().compactScreen).toBe('page');
+    const bar = await screen.findByRole('navigation', { name: 'Current screen' });
+    await expect.poll(() => bar.querySelector('[class*=screenTitle]')?.textContent).toBe('Mitosis');
+  });
+});
+
 describe('focus through size class changes', () => {
   it('moves focus to the region that now shows the item, never to the body', async () => {
     await renderApp({ sizeClass: 'wide' });

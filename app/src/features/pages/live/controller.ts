@@ -140,7 +140,9 @@ class PagesView {
       // window, before the router sees them.
       window.addEventListener('pointerdown', this.onPenDown, { capture: true, passive: true });
       window.addEventListener('pointerup', this.onPenUp, { capture: true, passive: true });
+      window.addEventListener('pointercancel', this.onPenCancel, { capture: true, passive: true });
       this.stops.push(() => {
+        window.removeEventListener('pointercancel', this.onPenCancel, { capture: true });
         window.removeEventListener('pointerdown', this.onPenDown, { capture: true });
         window.removeEventListener('pointerup', this.onPenUp, { capture: true });
       });
@@ -298,12 +300,17 @@ class PagesView {
     if (event.pointerType === 'pen') this.penDown.set(event.pointerId, { x: event.clientX, y: event.clientY });
   };
 
+  /** A canceled pen contact never wrote anything: forget where it started. */
+  private readonly onPenCancel = (event: PointerEvent): void => {
+    this.penDown.delete(event.pointerId);
+  };
+
   /** Writing near the bottom of the last sheet with a pen adds a sheet with the same paper. */
   private readonly onPenUp = (event: PointerEvent): void => {
     const down = this.penDown.get(event.pointerId);
     this.penDown.delete(event.pointerId);
     if (event.pointerType !== 'pen' || this.spec.mode !== 'paginated' || this.spec.layout === 'flow') return;
-    // A tap is not writing: the pen must have travelled.
+    // A tap is not writing: the pen must have traveled.
     if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) < PEN_STROKE_PX) return;
     if (!this.mounted.viewport.viewport.contains(event.target instanceof Node ? event.target : null)) return;
     const { y } = this.mounted.viewport.toWorld(event.clientX, event.clientY);

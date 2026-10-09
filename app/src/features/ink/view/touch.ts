@@ -141,7 +141,10 @@ export class TouchTool {
     return event.pointerType === 'touch' && this.active();
   }
 
-  /** A pen tool is active on an editable page, and the palm filter has loaded. Every pen tool counts: a palm must not pan the page under the eraser either. */
+  /**
+   * A pen tool is active on an editable page, and the palm filter has loaded. Every pen tool counts: a palm
+   * must not pan the page under the eraser either.
+   */
   private active(): boolean {
     const surface = this.surfaceOf();
     if (!surface || surface.readOnly || !this.palm) return false;

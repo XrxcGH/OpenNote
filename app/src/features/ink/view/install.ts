@@ -103,7 +103,7 @@ export function installInk(host: InkHost): () => void {
     follow(host, () => touch.pageSwitch()),
     installMore({ host, surface: () => current?.surface ?? null, surfaces: surfaceStore }),
     registerExportStrokes(() => current?.surface ?? null),
-    // New settings take effect at the next touch.
+    // A settings change reconfigures the live palm filter at once.
     settingsStore.subscribe(() => touch.reset()),
     settingsSections.register({
       id: 'penAndTouch',

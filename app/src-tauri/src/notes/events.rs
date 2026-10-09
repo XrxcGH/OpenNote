@@ -98,3 +98,77 @@ impl Bridge {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use opennote_core::session::notes::{NodeInfo, NodeKind};
+
+    fn page(id: &str) -> NodeInfo {
+        NodeInfo {
+            id: id.into(),
+            kind: NodeKind::Page,
+            parent_id: None,
+            title: String::new(),
+            color: None,
+            page_level: 0,
+            child_count: 0,
+            created: Default::default(),
+            modified: Default::default(),
+            read_only: false,
+            pinned: false,
+            archived: false,
+        }
+    }
+
+    fn removed(ids: &[&str]) -> TreeEvent {
+        TreeEvent::Removed {
+            ids: ids.iter().map(|id| id.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn a_move_to_an_earlier_notebook_keeps_the_upsert() {
+        // The new notebook's upsert comes first, the old notebook's removal after it.
+        let mut events = vec![
+            TreeEvent::Upserted {
+                nodes: vec![page("p1")],
+            },
+            removed(&["p1", "p2"]),
+        ];
+        drop_moved_removals(&mut events);
+        assert_eq!(
+            events,
+            vec![
+                TreeEvent::Upserted {
+                    nodes: vec![page("p1")]
+                },
+                removed(&["p2"])
+            ]
+        );
+    }
+
+    #[test]
+    fn a_move_to_a_later_notebook_drops_the_whole_removal() {
+        let mut events = vec![
+            removed(&["p1"]),
+            TreeEvent::Upserted {
+                nodes: vec![page("p1")],
+            },
+        ];
+        drop_moved_removals(&mut events);
+        assert_eq!(
+            events,
+            vec![TreeEvent::Upserted {
+                nodes: vec![page("p1")]
+            }]
+        );
+    }
+
+    #[test]
+    fn a_plain_removal_is_untouched() {
+        let mut events = vec![removed(&["p1"])];
+        drop_moved_removals(&mut events);
+        assert_eq!(events, vec![removed(&["p1"])]);
+    }
+}
