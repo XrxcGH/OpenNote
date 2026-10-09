@@ -1,7 +1,9 @@
 // The decks on this device and their review history. Both live in the browser's storage for the app, as the tool
 // windows' other lists do: reading and writing never throw, and blocked storage just means decks start empty.
 // Several windows share that storage, so a save merges with what another window saved (see saveDecks).
-// Moving the decks into the notes folder, where backups reach them, needs a storage command (beta follow-up).
+// The decks and their history are also mirrored into the shell's qol.json (the profile folder), so clearing the
+// web view's storage does not lose them; they are restored from there when the browser storage has no decks.
+import { readPrefs, writePrefs } from '../../qol';
 import { createStore } from '../../../state/store';
 import { dayKey } from './dates';
 import { capToExam, nextState } from './schedule';
@@ -9,6 +11,7 @@ import type { Card, Deck, Grade, States } from './types';
 
 const PREFIX = 'opennote.study.';
 const DECKS = 'decks';
+const REMOVED = 'removed';
 
 function read<T>(name: string, fallback: T): T {
   try {
@@ -63,6 +66,37 @@ function loadStates(deckId: string): States {
 
 export const statesOf = (deckId: string): States => loadStates(deckId);
 
+let mirrorTimer: ReturnType<typeof setTimeout> | undefined;
+/** Copies the decks and their history into the profile's qol.json, soon after the last change. */
+function mirror(): void {
+  if (typeof window === 'undefined') return;
+  clearTimeout(mirrorTimer);
+  mirrorTimer = setTimeout(() => {
+    const decks = decksStore.get();
+    const states: Record<string, States> = {};
+    for (const deck of decks) states[deck.id] = loadStates(deck.id);
+    void writePrefs({ studyDecks: decks, studyStates: states });
+  }, 200);
+}
+
+/** Restores the decks from the profile copy when this web view's storage has none (it was cleared or is new). */
+async function restoreFromProfile(): Promise<void> {
+  try {
+    if (localStorage.getItem(PREFIX + DECKS) !== null) return;
+    const prefs = await readPrefs();
+    const decks = prefs.studyDecks;
+    if (!Array.isArray(decks) || localStorage.getItem(PREFIX + DECKS) !== null) return;
+    const states = (prefs.studyStates ?? {}) as Record<string, States>;
+    write(DECKS, decks);
+    for (const [id, one] of Object.entries(states)) write(`states.${id}`, one);
+    decksStore.set(readDecks());
+    statesStore.set({});
+  } catch {
+    // Nothing to restore.
+  }
+}
+void restoreFromProfile();
+
 /**
  * Saves the deck list. The tool windows share this storage, so the list is merged with what another window saved
  * first: only `touched` (changed here) and `removed` (deleted here) come from this window; the rest follow the saved
@@ -70,18 +104,32 @@ export const statesOf = (deckId: string): States => loadStates(deckId);
  */
 function saveDecks(next: readonly Deck[], touched?: string, removed?: string): void {
   const saved = readDecks();
-  const merged = next.map((deck) => (deck.id === touched ? deck : (saved.find((one) => one.id === deck.id) ?? deck)));
+  // Decks deleted in any window stay gone, even if this window still lists them.
+  const listed = read<unknown>(REMOVED, []);
+  let tombstones = Array.isArray(listed) ? listed.filter((id): id is string => typeof id === 'string') : [];
+  if (removed) tombstones = [...tombstones.filter((id) => id !== removed), removed];
+  if (touched) tombstones = tombstones.filter((id) => id !== touched);
+  const merged = next
+    .filter((deck) => deck.id === touched || !tombstones.includes(deck.id))
+    .map((deck) => (deck.id === touched ? deck : (saved.find((one) => one.id === deck.id) ?? deck)));
   for (const deck of saved) {
-    if (deck.id !== removed && !merged.some((one) => one.id === deck.id)) merged.push(deck);
+    if (!tombstones.includes(deck.id) && !merged.some((one) => one.id === deck.id)) merged.push(deck);
   }
   decksStore.set(merged);
   write(DECKS, merged);
+  write(REMOVED, tombstones.slice(-200));
+  mirror();
 }
 
 // Another window saved decks: show them here.
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
     if (event.key === PREFIX + DECKS) decksStore.set(readDecks());
+    // Another window reviewed cards of a deck: its history replaces the one this window cached.
+    if (event.key?.startsWith(`${PREFIX}states.`)) {
+      const id = event.key.slice(`${PREFIX}states.`.length);
+      statesStore.set((current) => ({ ...current, [id]: read<States>(`states.${id}`, {}) }));
+    }
   });
 }
 
@@ -140,12 +188,14 @@ export function deleteCard(deckId: string, cardId: string): void {
 /** Records a review of one card: the new state is saved and the card's next day is set. */
 export function recordReview(deckId: string, cardId: string, grade: Grade, now: Date = new Date()): void {
   const today = dayKey(now);
-  const states = loadStates(deckId);
+  // Start from what is saved now, so cards another window reviewed are kept.
+  const states = { ...loadStates(deckId), ...read<States>(`states.${deckId}`, {}) };
   const deck = deckById(deckId);
   const next = capToExam(nextState(states[cardId], grade, today), deck?.exam, today);
   const all = { ...states, [cardId]: next };
   statesStore.set((current) => ({ ...current, [deckId]: all }));
   write(`states.${deckId}`, all);
+  mirror();
 }
 
 /** Cards a page types with a line such as "Question :: Answer" belong to the page's deck, found by this ID. */

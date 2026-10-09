@@ -74,6 +74,13 @@ describe('timers', () => {
     expect(screen.getByText('No timers yet. Add one below.')).toBeTruthy();
   });
 
+  it('shows a focus timer as the time left in its phase, not the whole session', async () => {
+    renderUi(<TimersTool />);
+    await userEvent.selectOptions(screen.getByLabelText('Kind'), 'Focus');
+    await userEvent.click(screen.getByRole('button', { name: 'Add timer' }));
+    expect(screen.getByRole('timer', { name: 'Timer 1' }).textContent).toBe('25:00');
+  });
+
   it('refuses a countdown with no time and says why', async () => {
     renderUi(<TimersTool />);
     await userEvent.fill(screen.getByLabelText('Minutes'), '0');

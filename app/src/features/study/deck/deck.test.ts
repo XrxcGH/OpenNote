@@ -157,3 +157,9 @@ describe('text import and export', () => {
     expect(csv).toContain('"y\nOptions: x | y"');
   });
 });
+
+describe('finding no cards', () => {
+  it('finds nothing in plain prose, so no deck has anything to be made from', () => {
+    expect(generateCards('Just a sentence with no cards in it.\nAnd another one here.')).toEqual([]);
+  });
+});
