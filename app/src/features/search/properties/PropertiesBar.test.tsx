@@ -1,4 +1,4 @@
-// T3-16: Escape closes the open properties panel, whether or not focus is inside it.
+// T3-16: Escape closes the open properties panel, whether, or not focus is inside it.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { renderUi } from '../../../test/render';

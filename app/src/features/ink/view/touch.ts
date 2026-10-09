@@ -150,7 +150,7 @@ export class TouchTool {
   /** Palm-sized touches still down or just lifted, by pointer id: when each landed. */
   private readonly palms = new Map<number, number>();
 
-  /** Notes a palm-sized touch, whether it landed before or after the pen: its click is dropped if the pen was in use. */
+  /** Notes a palm-sized touch, whether it landed before, or after the pen: its click is dropped if the pen was in use. */
   private readonly onTouchDown = (event: PointerEvent) => {
     if (event.pointerType !== 'touch' || !this.active()) return;
     if (Math.max(event.width, event.height) >= PALM_PX) this.palms.set(event.pointerId, event.timeStamp);

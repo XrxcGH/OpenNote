@@ -1,4 +1,4 @@
-// T2-11: with the pen only hovering, the other hand scrolls and pans away from the writing hand; touch under the
+// T2-11: with the pen only hovering, the other hand scrolls, and pans away from the writing hand; touch under the
 // writing hand's rest area is held back on purpose (palm-rejection.md step 4 names the other hand).
 
 import { describe, expect, it } from 'vitest';
