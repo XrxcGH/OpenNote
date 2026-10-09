@@ -3,7 +3,6 @@
 //! then a save whose version in page history is named "Added via <app>" or "Changed via <app>". A page in an
 //! encrypted (locked) section is never opened.
 
-use std::sync::atomic::{AtomicU64, Ordering};
 #[cfg(test)]
 use std::{path::PathBuf, sync::Arc};
 
@@ -31,21 +30,6 @@ pub const API_CLIENT: &str = "api";
 
 /// The section daily notes live in, as the interface names it (`qolSearch.daily.sectionTitle`).
 pub const DAILY_SECTION: &str = "Daily notes";
-
-/// Each transaction's sequence number, rising across sessions, and starts.
-static SEQ: AtomicU64 = AtomicU64::new(0);
-
-fn next_seq() -> u64 {
-    let floor = crate::boot::now_epoch_ms() as u64;
-    let mut current = SEQ.load(Ordering::SeqCst);
-    loop {
-        let next = current.max(floor) + 1;
-        match SEQ.compare_exchange(current, next, Ordering::SeqCst, Ordering::SeqCst) {
-            Ok(_) => return next,
-            Err(seen) => current = seen,
-        }
-    }
-}
 
 /// Where the core is: the app's, or a test's.
 #[derive(Clone)]
@@ -185,7 +169,8 @@ fn apply_named(handle: &PageHandle, edits: Vec<Edit>, label: &str) -> IpcResult<
     let request = TxnRequest {
         page: handle.id(),
         client: handle.client().clone(),
-        client_seq: next_seq(),
+        // Each edit has its own session, which starts at sequence 1 and closes after.
+        client_seq: 1,
         coalesce: None,
         ui: None,
         edits,
