@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1440" height="810" viewBox="0 0 960 540">
+<defs>
+<clipPath id="slide">
+<rect width="960" height="540"/>
+</clipPath>
+</defs>
+<g clip-path="url(#slide)">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M0 0H960V18H0Z" fill="#4472c4"/>
+<g>
+<text x="73.2" y="118.97" xml:space="preserve">
+<tspan font-family="Calibri Light, Segoe UI, Arial, sans-serif" font-size="44" fill="#000000">Reading the cell</tspan>
+</text>
+</g>
+<g>
+<text x="73.2" y="172.21" font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">•</text>
+<text x="91.2" y="172.21" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">The membrane lets some things</tspan>
+</text>
+<text x="91.2" y="203.29" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">through and keeps others out,</tspan>
+</text>
+<text x="91.2" y="234.37" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">which is why it is called</tspan>
+</text>
+<text x="91.2" y="265.45" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">selectively permeable.</tspan>
+</text>
+<text x="109.2" y="292.98" font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="22.2" fill="#000000">–</text>
+<text x="127.2" y="292.98" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="22.2" fill="#000000" font-weight="bold">Bold</tspan>
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="22.2" fill="#000000">, </tspan>
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="22.2" fill="#000000" font-style="italic">italic</tspan>
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="22.2" fill="#000000">, and </tspan>
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="22.2" fill="#c00000" text-decoration="underline">red underline</tspan>
+</text>
+<text x="91.2" y="310.74" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="12.95" fill="#000000" text-decoration="line-through">No bullet, struck</tspan>
+</text>
+<text x="91.2" y="326.28" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="12.95" fill="#000000">after a break</tspan>
+</text>
+<text x="73.2" y="354.25" font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">1.</text>
+<text x="100.2" y="354.25" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">First</tspan>
+</text>
+<text x="73.2" y="385.33" font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">2.</text>
+<text x="100.2" y="385.33" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="25.9" fill="#000000">Second</tspan>
+</text>
+</g>
+<g>
+<text x="856.8" y="497.52" text-anchor="end" xml:space="preserve">
+<tspan font-family="Georgia onloadx, Segoe UI, Arial, sans-serif" font-size="12" fill="#1f3864">Source: lab notes &lt;2024&gt;</tspan>
+</text>
+</g>
+<rect x="504" y="143.75" width="180" height="48" fill="#4472c4" stroke="#ffffff" stroke-width="1"/>
+<g>
+<text x="511.2" y="164.63" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="bold">Part</tspan>
+</text>
+</g>
+<rect x="684" y="143.75" width="180" height="48" fill="#4472c4" stroke="#ffffff" stroke-width="1"/>
+<g>
+<text x="691.2" y="164.63" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="bold">Job</tspan>
+</text>
+</g>
+<rect x="504" y="191.75" width="180" height="48" fill="#b4c7e7" stroke="#ffffff" stroke-width="1"/>
+<g>
+<text x="511.2" y="212.63" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="18" fill="#000000">Nucleus</tspan>
+</text>
+</g>
+<rect x="684" y="191.75" width="180" height="48" fill="#b4c7e7" stroke="#ffffff" stroke-width="1"/>
+<g>
+<text x="691.2" y="212.63" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="18" fill="#000000">Keeps DNA</tspan>
+</text>
+</g>
+<rect x="504" y="239.75" width="360" height="48" fill="#fff2cc" stroke="#ffffff" stroke-width="1"/>
+<g>
+<text x="511.2" y="260.63" xml:space="preserve">
+<tspan font-family="Calibri, Segoe UI, Arial, sans-serif" font-size="18" fill="#000000">Both columns</tspan>
+</text>
+</g>
+</g>
+</svg>

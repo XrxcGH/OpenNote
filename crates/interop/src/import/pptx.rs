@@ -2,8 +2,9 @@
 //!
 //! A presentation is a ZIP archive of XML parts. A slide page holds the slide's title as the page title, then its
 //! text, bulleted and numbered lists, tables, and pictures in the order the slide lists them. Speaker notes follow
-//! under a "Speaker notes" heading. The slide's look (background, shapes, fonts, colors) is not drawn, because that
-//! takes a slide renderer, and the report says so.
+//! under a "Speaker notes" heading. Above all of that, a picture of the slide, drawn from its XML by
+//! [`super::slide_draw`], sits locked at the top of the page so handwriting can go on it. The report lists what the
+//! picture leaves out.
 
 use std::collections::HashMap;
 use std::io::{Read, Seek};
@@ -11,6 +12,7 @@ use std::path::Path;
 
 use super::files::{import_files, Converted, ConvertedPage, FileConverter};
 use super::pictures;
+use super::slide_draw::{self, SlideDrawer, PICTURE_WIDTH};
 use super::xmltree::Element;
 use super::zipxml::{dir_of, first_text, read_rels, rels_name, resolve, ElementExt, Parts};
 use crate::dates::parse_date;
@@ -20,6 +22,7 @@ use crate::error::{InteropError, Result};
 use crate::page_builder::PageBuilder;
 use crate::report::{PageReport, Report};
 use crate::sink::{ImportEnv, ImportSink};
+use opennote_core::Timestamp;
 
 /// Imports a PowerPoint file, or a folder of them, into a new notebook. Each file becomes a section.
 pub fn import_pptx(path: &Path, env: &ImportEnv<'_>, sink: &mut dyn ImportSink) -> Result<Report> {
@@ -66,16 +69,7 @@ fn convert_parts<R: Read + Seek>(parts: &mut Parts<R>, name: &str, env: &ImportE
         .xml("ppt/_rels/presentation.xml.rels")?
         .map(|r| read_rels(&r))
         .unwrap_or_default();
-    let now = env.clock.now();
-    let (created, modified) = match parts.xml("docProps/core.xml")? {
-        Some(core) => (
-            first_text(&core, "dcterms:created").and_then(|d| parse_date(&d)),
-            first_text(&core, "dcterms:modified").and_then(|d| parse_date(&d)),
-        ),
-        None => (None, None),
-    };
-    let created = created.unwrap_or(now);
-    let modified = modified.unwrap_or(created).max(created);
+    let (created, modified) = deck_dates(parts, env)?;
 
     let slide_parts: Vec<String> = presentation
         .first("p:sldidlst")
@@ -94,6 +88,7 @@ fn convert_parts<R: Read + Seek>(parts: &mut Parts<R>, name: &str, env: &ImportE
         general: Vec::new(),
     };
     let mut general = PageReport::default();
+    let mut drawer = SlideDrawer::new(&presentation);
     for (n, part) in slide_parts.iter().enumerate() {
         env.control.checkpoint()?;
         let slide = match parts.xml(part) {
@@ -108,65 +103,114 @@ fn convert_parts<R: Read + Seek>(parts: &mut Parts<R>, name: &str, env: &ImportE
             }
             Err(error) => return Err(error),
         };
-        let slide_rels = parts.xml(&rels_name(part))?.map(|r| read_rels(&r)).unwrap_or_default();
-        let dir = dir_of(part).to_owned();
-        let mut stats = Stats::default();
-        let (title, mut blocks) = read_slide(&slide, &slide_rels, &dir, &mut stats);
-        let notes = notes_blocks(parts, &slide_rels, &dir)?;
-        let has_notes = !notes.is_empty();
-        if has_notes {
-            blocks.push(Block::Heading {
-                level: 2,
-                content: vec![Inline::text("Speaker notes")],
-            });
-            blocks.extend(notes);
-        }
-        let title = title.unwrap_or_else(|| format!("Slide {}", n + 1));
-        let mut report = PageReport {
-            title: title.clone(),
-            source: name.to_owned(),
-            entries: Vec::new(),
+        let sheet = SlideRef {
+            n,
+            part,
+            name,
+            created,
+            modified,
         };
-        let mut builder = PageBuilder::new(env, &title, created, modified);
-        let (placed, lost) = pictures::place(&mut blocks, &mut builder, "pptx:", &mut |path| parts.bytes(path));
-        let tables = blocks.iter().filter(|b| matches!(b, Block::Table { .. })).count();
-        builder.push_blocks(blocks);
-        report.came_over("slide text");
-        report.came_over_count(tables, "table", "tables");
-        report.came_over_count(placed, "picture", "pictures");
-        if has_notes {
-            report.came_over("speaker notes");
-        }
-        report.skipped_count(
-            lost,
-            ("picture that could not be read", "pictures that could not be read"),
-            "Its data is missing, damaged, past the size limit, or in a format that screens cannot show, such as EMF.",
-        );
-        report.skipped_count(
-            stats.shapes,
-            ("drawn shape or diagram", "drawn shapes and diagrams"),
-            "OpenNote reads a slide's text and pictures, not what is drawn on it.",
-        );
-        report.skipped_count(
-            stats.charts,
-            (
-                "chart, video, or embedded object",
-                "charts, videos, and embedded objects",
-            ),
-            "These cannot be opened here.",
-        );
-        converted.pages.push(ConvertedPage {
-            section: None,
-            page: builder.finish()?,
-            report,
-        });
+        converted
+            .pages
+            .push(slide_page(parts, &mut drawer, env, &sheet, &slide)?);
     }
     general.simplified(
-        "slide pictures",
-        "A slide's background, layout, and fonts are not drawn, and there is no picture of the slide to write on.",
+        "text on slide pictures",
+        "Text is drawn with the slide's fonts when this computer has them, so a line may wrap a little differently than in PowerPoint.",
     );
     converted.general = general.entries;
     Ok(converted)
+}
+
+/// Which slide a page is made from, and the dates every page of the deck gets.
+struct SlideRef<'a> {
+    n: usize,
+    part: &'a str,
+    name: &'a str,
+    created: Timestamp,
+    modified: Timestamp,
+}
+
+/// The deck's creation and modification dates, or now for a deck that holds none.
+fn deck_dates<R: Read + Seek>(parts: &mut Parts<R>, env: &ImportEnv<'_>) -> Result<(Timestamp, Timestamp)> {
+    let (created, modified) = match parts.xml("docProps/core.xml")? {
+        Some(core) => (
+            first_text(&core, "dcterms:created").and_then(|d| parse_date(&d)),
+            first_text(&core, "dcterms:modified").and_then(|d| parse_date(&d)),
+        ),
+        None => (None, None),
+    };
+    let created = created.unwrap_or_else(|| env.clock.now());
+    Ok((created, modified.unwrap_or(created).max(created)))
+}
+
+/// One slide as a page: its picture, its text, its notes, and what came over.
+fn slide_page<R: Read + Seek>(
+    parts: &mut Parts<R>,
+    drawer: &mut SlideDrawer,
+    env: &ImportEnv<'_>,
+    sheet: &SlideRef<'_>,
+    slide: &Element,
+) -> Result<ConvertedPage> {
+    let SlideRef {
+        n,
+        part,
+        name,
+        created,
+        modified,
+    } = *sheet;
+    let slide_rels = parts.xml(&rels_name(part))?.map(|r| read_rels(&r)).unwrap_or_default();
+    let dir = dir_of(part).to_owned();
+    let mut stats = Stats::default();
+    let (title, mut blocks) = read_slide(slide, &slide_rels, &dir, &mut stats);
+    let drawn = drawer.draw(parts, slide, &slide_rels, &dir);
+    let notes = notes_blocks(parts, &slide_rels, &dir)?;
+    let has_notes = !notes.is_empty();
+    if has_notes {
+        blocks.push(Block::Heading {
+            level: 2,
+            content: vec![Inline::text("Speaker notes")],
+        });
+        blocks.extend(notes);
+    }
+    let title = title.unwrap_or_else(|| format!("Slide {}", n + 1));
+    let mut report = PageReport {
+        title: title.clone(),
+        source: name.to_owned(),
+        entries: Vec::new(),
+    };
+    let mut builder = PageBuilder::new(env, &title, created, modified);
+    let picture = builder.add_asset(
+        &format!("slide-{}.svg", n + 1),
+        Some("image/svg+xml"),
+        drawn.svg.into_bytes(),
+    );
+    builder.push_locked_image(
+        picture,
+        format!("Slide {}: {title}", n + 1),
+        PICTURE_WIDTH,
+        drawn.height,
+    );
+    let (placed, lost) = pictures::place(&mut blocks, &mut builder, "pptx:", &mut |path| parts.bytes(path));
+    let tables = blocks.iter().filter(|b| matches!(b, Block::Table { .. })).count();
+    builder.push_blocks(blocks);
+    report.came_over("slide text");
+    report.came_over_count(tables, "table", "tables");
+    report.came_over_count(placed, "picture", "pictures");
+    if has_notes {
+        report.came_over("speaker notes");
+    }
+    report.skipped_count(
+        lost,
+        ("picture that could not be read", "pictures that could not be read"),
+        "Its data is missing, damaged, past the size limit, or in a format that screens cannot show, such as EMF.",
+    );
+    slide_draw::report(drawn.missed, 1, &mut report);
+    Ok(ConvertedPage {
+        section: None,
+        page: builder.finish()?,
+        report,
+    })
 }
 
 /// The blocks of the speaker notes, or none.
@@ -509,11 +553,14 @@ mod tests {
             .blocks
             .iter()
             .any(|b| matches!(b.data, opennote_core::model::BlockData::Image(_))));
+        let first = page.blocks.iter().next().expect("a first block");
+        assert!(first.lock.is_some(), "the slide picture is locked");
+        assert!(matches!(first.data, opennote_core::model::BlockData::Image(_)));
         assert!(done.pages[0]
             .report
             .entries
             .iter()
-            .any(|e| e.what.contains("drawn shape")));
+            .any(|e| e.what.contains("picture of a slide")));
     }
 
     #[test]

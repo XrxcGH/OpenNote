@@ -30,6 +30,7 @@ mod plain;
 mod pptx;
 mod scan;
 mod sheet;
+mod slide_draw;
 mod sticky;
 mod tags;
 mod textbundle;

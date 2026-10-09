@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1440" height="810" viewBox="0 0 960 540">
+<defs>
+<clipPath id="slide">
+<rect width="960" height="540"/>
+</clipPath>
+<image id="i1" width="1" height="1" preserveAspectRatio="none" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="/>
+<linearGradient id="g1" x1="0.5" y1="0" x2="0.5" y2="1">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="1" stop-color="#deebf7"/>
+</linearGradient>
+<clipPath id="c2">
+<path d="M72 180A108 108 0 1 0 288 180A108 108 0 1 0 72 180Z"/>
+</clipPath>
+<clipPath id="c3">
+<path d="M324 72H396V144H324Z"/>
+</clipPath>
+<clipPath id="c4">
+<path d="M540 72H684V180H540Z"/>
+</clipPath>
+</defs>
+<g clip-path="url(#slide)">
+<rect width="100%" height="100%" fill="url(#g1)"/>
+<g clip-path="url(#c2)">
+<use href="#i1" transform="translate(45 45) scale(270 270)"/>
+</g>
+<path d="M72 180A108 108 0 1 0 288 180A108 108 0 1 0 72 180Z" fill="none" stroke="#70ad47" stroke-width="1"/>
+<g clip-path="url(#c3)">
+<use href="#i1" transform="translate(324 72) scale(72 72)"/>
+</g>
+<g clip-path="url(#c4)">
+<use href="#i1" transform="translate(540 72) scale(144 108)"/>
+</g>
+<path d="M432 351L594 351L594 324L648 378L594 432L594 405L432 405Z" fill="#5b9bd5"/>
+</g>
+</svg>

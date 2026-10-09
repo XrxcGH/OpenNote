@@ -9,8 +9,8 @@ use opennote_core::format::page_json::write_page;
 use opennote_core::limits::Limits;
 use opennote_core::model::validate::validate_page;
 use opennote_core::model::{
-    Asset, Block, BlockData, FileData, FileDisplay, ImageData, JsonMap, Named, Page, Revision, TableCell, TableColumn,
-    TableData, TableRow, TextData,
+    Asset, Block, BlockData, FileData, FileDisplay, Frame, ImageData, JsonMap, Lock, Named, Page, Revision, TableCell,
+    TableColumn, TableData, TableRow, TextData,
 };
 use opennote_core::{AssetId, BlockId, ColumnId, OrderKey, PageId, RevisionId, RowId, Timestamp};
 
@@ -33,6 +33,8 @@ pub struct PageBuilder<'a> {
     env: &'a ImportEnv<'a>,
     page: Page,
     pieces: Vec<BlockData>,
+    /// The size of pieces that are locked in place, by their index in `pieces`.
+    locked: HashMap<usize, (f64, f64)>,
     text: Vec<DocBlock>,
     bytes: BTreeMap<AssetId, Vec<u8>>,
     by_hash: HashMap<[u8; 32], AssetId>,
@@ -65,6 +67,7 @@ impl<'a> PageBuilder<'a> {
             env,
             page,
             pieces: Vec::new(),
+            locked: HashMap::new(),
             text: Vec::new(),
             bytes: BTreeMap::new(),
             by_hash: HashMap::new(),
@@ -154,6 +157,13 @@ impl<'a> PageBuilder<'a> {
         }));
     }
 
+    /// Adds an image block of a set size, locked so it can't be moved or resized: a page's background picture, such
+    /// as a slide, that handwriting is written on. `w` and `h` are in page units.
+    pub fn push_locked_image(&mut self, asset: AssetId, alt: String, w: f64, h: f64) {
+        self.push_image(asset, alt);
+        self.locked.insert(self.pieces.len() - 1, (w, h));
+    }
+
     /// Adds a file block, shown as an icon.
     pub fn push_file(&mut self, asset: AssetId) {
         self.flush_text();
@@ -198,12 +208,20 @@ impl<'a> PageBuilder<'a> {
         let keys = OrderKey::spread(None, None, self.pieces.len())
             .map_err(|e| InteropError::format("block order", e.to_string()))?;
         let now = self.page.modified;
-        for (data, order) in std::mem::take(&mut self.pieces).into_iter().zip(keys) {
+        for (index, (data, order)) in std::mem::take(&mut self.pieces).into_iter().zip(keys).enumerate() {
+            let locked = self.locked.get(&index).map(|&(w, h)| Frame {
+                x: None,
+                y: None,
+                w: Some(w),
+                h: Some(h),
+                rotate: None,
+                extra: JsonMap::new(),
+            });
             let block = Block {
                 id: BlockId::generate(self.env.clock),
                 order,
-                frame: None,
-                lock: None,
+                lock: locked.is_some().then_some(Named::Known(Lock::Position)),
+                frame: locked,
                 created: self.page.created,
                 modified: now,
                 data,
