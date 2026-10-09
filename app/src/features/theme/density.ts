@@ -1,6 +1,7 @@
 // Density (ARCHITECTURE.md section 9.8): the size of buttons and rows. "Automatic" starts from the primary pointer,
-// then follows the last pointer used: a touch pointerup switches to touch sizes (a pen does not: the first stroke would resize the ribbon and
-// move the page under the pen), a mouse pointerup switches back. It switches on pointerup only, never in the middle of a gesture. "Standard" and "Large" stay as chosen.
+// then follows the last pointer used. A touch pointerup switches to touch sizes. A pen does not, because the first
+// stroke would resize the ribbon and move the page under the pen. A mouse pointerup switches back.
+// It switches on pointerup only, never in the middle of a gesture. "Standard" and "Large" stay as chosen.
 // A switch keeps the focused row where it was, so a magnifier user doesn't lose the spot.
 
 import { setDensity } from '../../state/layout';
