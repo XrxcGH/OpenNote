@@ -188,7 +188,11 @@ mod tests {
 
     #[test]
     fn an_element_past_the_cap_is_marked_too_big_and_not_kept() {
-        let xml = "<en-export><note><title>T</title><content>short</content>            <resource><data>AAAAAAAAAAAAAAAAAAAAAAAA</data><mime>image/png</mime></resource>            <resource><data>AAAA</data></resource></note></en-export>";
+        let xml = concat!(
+            "<en-export><note><title>T</title><content>short</content>",
+            "<resource><data>AAAAAAAAAAAAAAAAAAAAAAAA</data><mime>image/png</mime></resource>",
+            "<resource><data>AAAA</data></resource></note></en-export>"
+        );
         let mut notes = Vec::new();
         read_notes_capped(xml.as_bytes(), 16, &mut |note| {
             notes.push(note);

@@ -60,21 +60,16 @@ impl Resolver for Nothing {
     }
 }
 
-/// Exports every table in scope into `out_dir`. It fails with a plain message when there are none.
-pub fn export_tables(
+const SHEET_TYPE: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
+const MAIN_TYPE: &str = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml";
+
+/// Reads the tables of every planned page, noting in the report what a table export leaves out.
+fn collect_tables(
     source: &dyn NoteSource,
-    scope: Scope,
-    format: TableFormat,
-    out_dir: &Path,
+    plan: &plan::Plan,
     control: &Control,
-) -> Result<Exported> {
-    let plan = plan::build(source, scope, format.extension())?;
-    control.begin(Phase::Writing, Unit::Items, Some(plan.pages.len() as u64));
-    let label = match format {
-        TableFormat::Xlsx => "Excel",
-        TableFormat::Csv => "CSV",
-    };
-    let mut report = Report::new(ReportKind::Export, format!("tables of {} as {label}", plan.title));
+    report: &mut Report,
+) -> Result<Vec<Table>> {
     let mut tables = Vec::new();
     for planned in &plan.pages {
         control.checkpoint()?;
@@ -122,13 +117,20 @@ pub fn export_tables(
             report.add_page(page_report);
         }
     }
-    if tables.is_empty() {
-        return Err(InteropError::NoTables(plan.title.clone()));
-    }
+    Ok(tables)
+}
+
+/// The files a table export writes: one workbook, one CSV, or a folder of CSVs.
+fn planned_files(
+    format: TableFormat,
+    tables: &[Table],
+    title: &str,
+    out_dir: &Path,
+) -> Result<Vec<(std::path::PathBuf, Vec<u8>)>> {
     let files = match format {
         TableFormat::Xlsx => {
-            let bytes = workbook(&tables)?;
-            let path = unique_file(out_dir, &plan.title, "xlsx")?;
+            let bytes = workbook(tables)?;
+            let path = unique_file(out_dir, title, "xlsx")?;
             vec![(path, bytes)]
         }
         TableFormat::Csv if tables.len() == 1 => {
@@ -136,10 +138,10 @@ pub fn export_tables(
             vec![(path, csv_bytes(&tables[0].rows))]
         }
         TableFormat::Csv => {
-            let root = new_folder(out_dir, &plan.title)?;
+            let root = new_folder(out_dir, title)?;
             let mut names = Vec::new();
             let mut files = Vec::new();
-            for table in &tables {
+            for table in tables {
                 let stem = sanitize_name(&table.name, "table");
                 let mut file = format!("{stem}.csv");
                 let mut n = 2;
@@ -153,6 +155,29 @@ pub fn export_tables(
             files
         }
     };
+    Ok(files)
+}
+
+/// Exports every table in scope into `out_dir`. It fails with a plain message when there are none.
+pub fn export_tables(
+    source: &dyn NoteSource,
+    scope: Scope,
+    format: TableFormat,
+    out_dir: &Path,
+    control: &Control,
+) -> Result<Exported> {
+    let plan = plan::build(source, scope, format.extension())?;
+    control.begin(Phase::Writing, Unit::Items, Some(plan.pages.len() as u64));
+    let label = match format {
+        TableFormat::Xlsx => "Excel",
+        TableFormat::Csv => "CSV",
+    };
+    let mut report = Report::new(ReportKind::Export, format!("tables of {} as {label}", plan.title));
+    let tables = collect_tables(source, &plan, control, &mut report)?;
+    if tables.is_empty() {
+        return Err(InteropError::NoTables(plan.title.clone()));
+    }
+    let files = planned_files(format, &tables, &plan.title, out_dir)?;
     let mut written = Vec::new();
     for (path, bytes) in files {
         write_file(&path, &bytes)?;
@@ -250,14 +275,14 @@ fn workbook(tables: &[Table]) -> Result<Vec<u8>> {
     }
     let mut zip = ZipWriter::new();
     let overrides: String = (1..=tables.len())
-        .map(|n| format!("<Override PartName=\"/xl/worksheets/sheet{n}.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/>"))
+        .map(|n| format!("<Override PartName=\"/xl/worksheets/sheet{n}.xml\" ContentType=\"{SHEET_TYPE}\"/>"))
         .collect();
     zip.add(
         "[Content_Types].xml",
         format!("{HEADER}<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">\
             <Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>\
             <Default Extension=\"xml\" ContentType=\"application/xml\"/>\
-            <Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/>\
+            <Override PartName=\"/xl/workbook.xml\" ContentType=\"{MAIN_TYPE}\"/>\
             <Override PartName=\"/xl/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml\"/>\
             {overrides}</Types>").as_bytes(),
     )?;
@@ -306,7 +331,8 @@ fn workbook(tables: &[Table]) -> Result<Vec<u8>> {
             <cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>\
             <cellXfs count=\"3\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/>\
             <xf numFmtId=\"0\" fontId=\"1\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyFont=\"1\"/>\
-            <xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyAlignment=\"1\"><alignment wrapText=\"1\" vertical=\"top\"/></xf>\
+            <xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\" applyAlignment=\"1\">\
+            <alignment wrapText=\"1\" vertical=\"top\"/></xf>\
             </cellXfs></styleSheet>").as_bytes(),
     )?;
     for (i, table) in tables.iter().enumerate() {

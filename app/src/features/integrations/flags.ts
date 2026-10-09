@@ -1,4 +1,4 @@
-// Flags of the extra import, export, and integration features (docs/FEATURES.md, Phase 11 and later). Each one works
+// Flags of the extra import, export, and integration features (docs/FEATURES.md, from Phase 11 on). Each one works
 // from its first screen to its result, so they are on in every channel, except Share, which has no interface yet.
 // app/flags.ts joins this list to the others.
 import type { FlagDef } from '../../app/flags';

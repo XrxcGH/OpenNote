@@ -223,7 +223,9 @@ impl Importer<'_, '_> {
             raw.title.trim()
         };
         if raw.too_big {
-            self.report.general.skipped(title.to_owned(), "Its text is too big to import.");
+            self.report
+                .general
+                .skipped(title.to_owned(), "Its text is too big to import.");
             return Ok(());
         }
         let now = env.clock.now();

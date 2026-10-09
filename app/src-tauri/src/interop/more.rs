@@ -1,7 +1,7 @@
 //! The extra interop operations behind one command, `interop_more`. The interface names an operation and sends its
-//! arguments as JSON. One command keeps the list of Tauri commands, the permissions, and the handler list short while
-//! the import and export area grows: saving an import report, sending a copy to a folder, sharing as a file, and
-//! the rest each add a match arm and a function here.
+//! arguments as JSON. One command keeps the list of Tauri commands, the permissions, and the handler list short.
+//! The import and export area keeps growing: saving an import report, sending a copy to a folder, sharing as a
+//! file, and the rest. Each adds a match arm and a function here.
 
 use std::path::{Path, PathBuf};
 
