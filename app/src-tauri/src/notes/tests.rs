@@ -694,3 +694,42 @@ fn a_restored_notebook_goes_back_before_its_old_neighbor_or_to_the_end() {
     lib.ok("notes_restore", json!({ "receiptId": receipt["id"] }));
     assert_eq!(lib.titles(None), ["Gamma", "Alpha"]);
 }
+
+#[test]
+fn a_beta_one_migration_stopped_part_way_runs_again_from_the_backup() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let (local, notes) = (dir.path().join("local"), dir.path().join("Documents").join("OpenNote"));
+    let (cell, _) = beta_one_profile(&local, &notes);
+    crate::notes::migrate::STOP_AFTER.set(Some(1));
+    {
+        let stopped = Lib::at(&local, &notes);
+        // Only the first notebook was made, and its pages left the Pages notebook.
+        assert!(stopped.titles(None).contains(&"Biology".to_owned()));
+    }
+    crate::notes::migrate::STOP_AFTER.set(None);
+    assert!(local.join(crate::notes::migrate::MARKER_FILE).is_file());
+    let lib = Lib::at(&local, &notes);
+    assert_eq!(lib.titles(None), ["Biology", "Work"]);
+    let biology = lib.ok("notes_list_notebooks", json!({}))[0]["id"]
+        .as_str()
+        .expect("an id")
+        .to_owned();
+    let lectures = lib.ok("notes_list_children", json!({ "parentId": biology }))[1]["id"]
+        .as_str()
+        .expect("an id")
+        .to_owned();
+    assert_eq!(
+        lib.titles(Some(&lectures)),
+        ["Cell:0", "Membranes:1", "Heading typed:0"]
+    );
+    assert_eq!(
+        page_json(&lib.page(&cell))["blocks"][0]["data"]["markdown"],
+        "Cells divide"
+    );
+    assert!(!local.join(crate::notes::migrate::MARKER_FILE).exists());
+    assert!(!notes.join("Pages").exists());
+    assert!(local
+        .join(crate::notes::migrate::BACKUP_DIR)
+        .join("migration.json")
+        .is_file());
+}

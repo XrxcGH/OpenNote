@@ -7,7 +7,10 @@
 //! each page's content, history, and images from `Pages` into its new place, and rebuilds the snapshot's Trash.
 //!
 //! First it copies the old files to `%LOCALAPPDATA%\OpenNote\beta-1-backup` and moves the snapshot and the map
-//! there, so a migration that fails part way never runs twice. Then it removes the old `Pages` notebook.
+//! there, and writes a marker, `beta-1-migration.json`, that names the backup and every notebook made so far. A
+//! migration stopped part way (a crash, a power cut, the Pages notebook failing to open) runs again from the
+//! backup at the next start: it removes the notebooks the stopped run made, puts the Pages notebook back from the
+//! backup, and starts over. The marker goes once the migration finished. Then it removes the old `Pages` notebook.
 
 use std::{
     collections::{BTreeMap, HashMap},
@@ -32,6 +35,41 @@ pub const SNAPSHOT_FILE: &str = "phase2-notes.json";
 
 /// Where the migration keeps the old files.
 pub const BACKUP_DIR: &str = "beta-1-backup";
+
+/// The marker of a migration that started and hasn't finished, in this device's files.
+pub const MARKER_FILE: &str = "beta-1-migration.json";
+
+/// The marker's content: where the backup is, where the notebooks go, where the Pages notebook was, and the
+/// notebooks made so far.
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Marker {
+    backup: PathBuf,
+    folder: PathBuf,
+    old_dir: Option<PathBuf>,
+    #[serde(default)]
+    made: Vec<PathBuf>,
+}
+
+impl Marker {
+    fn read(root: &Path) -> Option<Marker> {
+        let text = fs::read_to_string(root.join(MARKER_FILE)).ok()?;
+        serde_json::from_str(&text).ok()
+    }
+
+    fn write(&self, root: &Path) -> io::Result<()> {
+        let json = serde_json::to_vec_pretty(self).map_err(io::Error::other)?;
+        let temp = root.join(format!("{MARKER_FILE}.tmp"));
+        fs::write(&temp, json)?;
+        fs::rename(&temp, root.join(MARKER_FILE))
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    /// Tests stop a migration after this many notebooks, as a crash would.
+    pub(crate) static STOP_AFTER: std::cell::Cell<Option<u32>> = const { std::cell::Cell::new(None) };
+}
 
 /// The bridge notebook of beta 1.
 const OLD_NOTEBOOK: &str = "Pages";
@@ -93,6 +131,8 @@ struct Made {
 
 struct Migration<'a> {
     bridge: &'a mut Bridge,
+    /// The marker of a real migration, which records each notebook made; none for the sample library.
+    marker: Option<(PathBuf, Marker)>,
     folder: PathBuf,
     old: Option<NotebookHandle>,
     map: BTreeMap<String, String>,
@@ -139,10 +179,15 @@ fn fresh_backup(root: &Path) -> PathBuf {
 /// folder). Problems go to the log and the report; the notes that could move have moved.
 pub(crate) fn run(bridge: &mut Bridge, folder: Option<&Path>) -> Option<Report> {
     let root = bridge.root.clone();
-    if !root.join(SNAPSHOT_FILE).is_file() {
+    let result = if let Some(marker) = Marker::read(&root) {
+        ::log::warn!("A beta 1 migration stopped part way; running it again from the backup");
+        resume(bridge, &root, marker)
+    } else if root.join(SNAPSHOT_FILE).is_file() {
+        migrate(bridge, &root, folder)
+    } else {
         return None;
-    }
-    match migrate(bridge, &root, folder) {
+    };
+    match result {
         Ok(report) => {
             ::log::info!("Moved the beta 1 notes into notebooks: {report:?}");
             Some(report)
@@ -172,7 +217,7 @@ fn migrate(bridge: &mut Bridge, root: &Path, folder: Option<&Path>) -> Result<Re
         .into_iter()
         .find(|dir| dir.join(NOTEBOOK_FILE).is_file());
 
-    // The backup first. The snapshot and the map move into it, so this runs once.
+    // The backup first. The snapshot and the map move into it, and the marker says to finish from there.
     let backup = fresh_backup(root);
     fs::create_dir_all(&backup).map_err(|e| format!("making the backup folder: {e}"))?;
     if let Some(dir) = &old_dir {
@@ -181,21 +226,84 @@ fn migrate(bridge: &mut Bridge, root: &Path, folder: Option<&Path>) -> Result<Re
     if map_file.is_file() {
         fs::copy(&map_file, backup.join("pages.json")).map_err(|e| format!("backing up the page map: {e}"))?;
     }
-    fs::rename(&snapshot_file, backup.join(SNAPSHOT_FILE)).map_err(|e| format!("moving the snapshot: {e}"))?;
+    fs::copy(&snapshot_file, backup.join(SNAPSHOT_FILE)).map_err(|e| format!("backing up the snapshot: {e}"))?;
+    let marker = Marker {
+        backup,
+        folder,
+        old_dir,
+        made: Vec::new(),
+    };
+    marker
+        .write(root)
+        .map_err(|e| format!("writing the migration marker: {e}"))?;
+    let _ = fs::remove_file(&snapshot_file);
     let _ = fs::remove_file(&map_file);
+    rebuild(bridge, root, &snapshot, map, marker)
+}
 
-    fs::create_dir_all(&folder).map_err(|e| format!("making the notes folder: {e}"))?;
+/// Runs a stopped migration again from its backup: the notebooks it made go, and the Pages notebook comes back
+/// as it was.
+fn resume(bridge: &mut Bridge, root: &Path, mut marker: Marker) -> Result<Report, String> {
+    for path in std::mem::take(&mut marker.made) {
+        let _ = bridge.core.remove_notebook(&path);
+        let _ = bridge.core.forget_notebook(&path);
+        if path.exists() {
+            fs::remove_dir_all(&path).map_err(|e| format!("removing a notebook of the stopped run: {e}"))?;
+        }
+    }
+    let kept = marker.backup.join(OLD_NOTEBOOK);
+    if let Some(dir) = marker.old_dir.as_ref().filter(|_| kept.join(NOTEBOOK_FILE).is_file()) {
+        if dir.exists() {
+            fs::remove_dir_all(dir).map_err(|e| format!("removing the moved Pages notebook: {e}"))?;
+        }
+        copy_dir(&kept, dir).map_err(|e| format!("putting the Pages notebook back: {e}"))?;
+    }
+    marker
+        .write(root)
+        .map_err(|e| format!("writing the migration marker: {e}"))?;
+    let text =
+        fs::read_to_string(marker.backup.join(SNAPSHOT_FILE)).map_err(|e| format!("reading the snapshot: {e}"))?;
+    let snapshot: Snapshot = serde_json::from_str(&text).map_err(|e| format!("reading the snapshot: {e}"))?;
+    let map: BTreeMap<String, String> = match fs::read_to_string(marker.backup.join("pages.json")) {
+        Ok(text) => serde_json::from_str(&text).map_err(|e| format!("reading the page map: {e}"))?,
+        Err(_) => BTreeMap::new(),
+    };
+    rebuild(bridge, root, &snapshot, map, marker)
+}
+
+/// Makes the notebooks of the snapshot. The marker stays until this finished, so a stop part way runs it again.
+fn rebuild(
+    bridge: &mut Bridge,
+    root: &Path,
+    snapshot: &Snapshot,
+    map: BTreeMap<String, String>,
+    marker: Marker,
+) -> Result<Report, String> {
+    let (folder, old_dir, backup) = (marker.folder.clone(), marker.old_dir.clone(), marker.backup.clone());
+    // A run that can't start says why beside the backup, and runs again at the next start.
+    let failed = |problem: String| {
+        let report = Report {
+            problems: vec![problem.clone()],
+            ..Report::default()
+        };
+        if let Ok(json) = serde_json::to_vec_pretty(&report) {
+            let _ = fs::write(backup.join("migration.json"), json);
+        }
+        problem
+    };
+    fs::create_dir_all(&folder).map_err(|e| failed(format!("making the notes folder: {e}")))?;
     let old = match &old_dir {
         Some(dir) => Some(
             bridge
                 .core
                 .open_notebook(dir)
-                .map_err(|e| format!("opening the Pages notebook: {e}"))?,
+                .map_err(|e| failed(format!("opening the Pages notebook: {e}")))?,
         ),
         None => None,
     };
     let mut migration = Migration {
         bridge,
+        marker: Some((root.to_path_buf(), marker)),
         folder,
         old,
         map,
@@ -203,6 +311,10 @@ fn migrate(bridge: &mut Bridge, root: &Path, folder: Option<&Path>) -> Result<Re
         report: Report::default(),
     };
     for notebook in &snapshot.notebooks {
+        #[cfg(test)]
+        if STOP_AFTER.get().is_some_and(|stop| migration.report.notebooks >= stop) {
+            return Err("stopped by the test".into());
+        }
         if let Err(error) = migration.notebook(notebook) {
             migration
                 .report
@@ -220,6 +332,7 @@ fn migrate(bridge: &mut Bridge, root: &Path, folder: Option<&Path>) -> Result<Re
     if let Ok(json) = serde_json::to_vec_pretty(&report) {
         let _ = fs::write(backup.join("migration.json"), json);
     }
+    let _ = fs::remove_file(root.join(MARKER_FILE));
     Ok(report)
 }
 
@@ -252,6 +365,7 @@ pub(crate) fn make_library(bridge: &mut Bridge, folder: &Path, json: &str) -> Re
     fs::create_dir_all(folder).map_err(|e| e.to_string())?;
     let mut migration = Migration {
         bridge,
+        marker: None,
         folder: folder.to_path_buf(),
         old: None,
         map: BTreeMap::new(),
@@ -268,6 +382,14 @@ impl Migration<'_> {
     fn notebook(&mut self, node: &SnapNode) -> Result<NotebookHandle, CoreError> {
         let title = clean_title(&node.title, "Untitled notebook");
         let notebook = self.bridge.core.create_notebook(&self.folder, &title)?;
+        if let Some((root, marker)) = &mut self.marker {
+            marker.made.push(notebook.path().to_path_buf());
+            if let Err(error) = marker.write(root) {
+                self.report
+                    .problems
+                    .push(format!("writing the migration marker: {error}"));
+            }
+        }
         if let Some(color) = pen(node.color.as_deref()) {
             notebook.set_notebook_color(Some(color))?;
         }
