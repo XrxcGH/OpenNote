@@ -33,9 +33,52 @@ fn main() {
         panic!("{problem}");
     }
     write_if_changed(&out_dir.join("update_keys.rs"), &source);
+    embed_cli(&out_dir);
 
     let manifest = tauri_build::AppManifest::new().commands(APP_COMMANDS);
-    tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest)).expect("the Tauri build step failed");
+    let windows = tauri_build::WindowsAttributes::new().app_manifest(windows_manifest());
+    tauri_build::try_build(
+        tauri_build::Attributes::new()
+            .app_manifest(manifest)
+            .windows_attributes(windows),
+    )
+    .expect("the Tauri build step failed");
+}
+
+/// Copies the `opennote` command-line tool that the release job built (`OPENNOTE_CLI_EXE`) to
+/// `OUT_DIR/opennote-cli.bin`, which `src/install/cli.rs` includes, so the one exe can install the tool. Without the
+/// variable the file is empty, and the app says the tool isn't installed.
+fn embed_cli(out_dir: &Path) {
+    println!("cargo:rerun-if-env-changed=OPENNOTE_CLI_EXE");
+    let bytes = match env::var_os("OPENNOTE_CLI_EXE").filter(|path| !path.is_empty()) {
+        Some(path) => {
+            let path = PathBuf::from(path);
+            println!("cargo:rerun-if-changed={}", path.display());
+            fs::read(&path).unwrap_or_else(|error| panic!("OPENNOTE_CLI_EXE {} can't be read: {error}", path.display()))
+        }
+        None => Vec::new(),
+    };
+    let target = out_dir.join("opennote-cli.bin");
+    if fs::read(&target).ok().as_deref() != Some(bytes.as_slice()) {
+        fs::write(&target, bytes).expect("OUT_DIR is writable");
+    }
+}
+
+/// The exe's Windows manifest, with the sparse package's publisher for "Share to OpenNote" (packaging/msix): the
+/// certificate subject in `OPENNOTE_MSIX_PUBLISHER`, or the development publisher `register-dev.ps1` uses.
+fn windows_manifest() -> String {
+    println!("cargo:rerun-if-changed=windows-app.manifest");
+    println!("cargo:rerun-if-env-changed=OPENNOTE_MSIX_PUBLISHER");
+    let publisher = env::var("OPENNOTE_MSIX_PUBLISHER")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "CN=OpenNote Development".to_owned());
+    assert!(
+        publisher.starts_with("CN=") && !publisher.contains(['"', '<', '>', '&']),
+        "OPENNOTE_MSIX_PUBLISHER must look like CN=Name"
+    );
+    let template = fs::read_to_string("windows-app.manifest").expect("windows-app.manifest is readable");
+    template.replace("publisher=\"PUBLISHER\"", &format!("publisher=\"{publisher}\""))
 }
 
 /// The decoded text of every `*.pub` file in `dir`, sorted by file name. A missing folder has no keys.

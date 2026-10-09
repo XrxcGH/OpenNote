@@ -120,6 +120,9 @@ pub fn run_with(steps: &impl Steps) -> EarlyOutcome {
             return EarlyOutcome::Exit(EXIT_FAILURE);
         }
     };
+    // A "Share to OpenNote" launch saves what was shared first, because a second launch exits at the lock below.
+    // Any other launch returns at once.
+    crate::share::receive_launch(&paths);
     let instance = match steps.acquire_instance(&paths, &args) {
         InstanceOutcome::Owner(guard) => guard,
         InstanceOutcome::Forwarded => return EarlyOutcome::Exit(0),

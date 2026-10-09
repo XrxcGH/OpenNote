@@ -1,0 +1,30 @@
+[package]
+name = "opennote-api"
+version = "0.1.0"
+description = "OpenNote's local API: a loopback listener with per-app grants, approval in the app, an access log, and webhooks"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+# Tokens and pairing codes come from the operating system's random generator, the same version the app uses.
+getrandom = "0.3.4"
+# Pictures a clip or a mail item carries arrive as base64 in the JSON body.
+base64 = "0.22.1"
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.62.2"
+features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Storage_FileSystem",
+  "Win32_System_IO",
+  "Win32_System_Pipes",
+]
+
+[dev-dependencies]
+tempfile.workspace = true

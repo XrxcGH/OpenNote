@@ -66,6 +66,8 @@ pub struct Relay {
     /// The search indexer, which hears every core event and every save.
     index: OnceLock<opennote_search::IndexerHandle>,
     trees: Mutex<Option<mpsc::Sender<NotebookId>>>,
+    /// Hears each saved page's ID, for the local API's webhooks.
+    saved: OnceLock<SavedHook>,
 }
 
 impl Relay {
@@ -84,6 +86,9 @@ impl EventSink for AppEvents {
     fn emit(&self, event: CoreEvent) {
         if let Some(index) = self.0.index.get() {
             index.on_event(&event);
+        }
+        if let (CoreEvent::Saved { page, .. }, Some(saved)) = (&event, self.0.saved.get()) {
+            saved(&page.to_string());
         }
         if let CoreEvent::SaveFailed { .. } = &event {
             ::log::warn!("The core couldn't save a page: {event:?}");
@@ -108,6 +113,8 @@ impl EventSink for AppEvents {
         self.0.send(name, payload);
     }
 }
+
+type SavedHook = Box<dyn Fn(&str) + Send + Sync>;
 
 /// The managed state behind the notes and page commands.
 pub struct CoreBridge {
@@ -222,6 +229,19 @@ impl Bridge {
         Ok(handle)
     }
 
+    /// Closes one client's session of a page, as `page_close` does. The local API opens a page for each request.
+    pub(crate) fn close_client(&mut self, page: &str, client: &str) {
+        let (Ok(id), Ok(client)) = (PageId::parse(page), ClientId::parse(client)) else {
+            return;
+        };
+        self.homes.remove(&(id, client.clone()));
+        if let Some(handle) = self.open.remove(&(id, client.clone())) {
+            if let Err(error) = handle.close(&client) {
+                ::log::warn!("Couldn't close a page session: {error}");
+            }
+        }
+    }
+
     fn open_handles(&self, page: &str) -> Vec<PageHandle> {
         let Ok(id) = PageId::parse(page) else {
             return Vec::new();
@@ -271,6 +291,11 @@ impl CoreBridge {
             relay: Arc::default(),
             search: Arc::default(),
         }
+    }
+
+    /// Calls `saved` with each saved page's ID. The first call wins.
+    pub(crate) fn on_saved(&self, saved: Box<dyn Fn(&str) + Send + Sync>) {
+        let _ = self.relay.saved.set(saved);
     }
 
     /// Sends the core's events through `emit`. The first call wins.
@@ -361,6 +386,12 @@ impl CoreBridge {
             .into_iter()
             .filter(|notebook| !notebook.is_backup())
             .collect()
+    }
+
+    /// Runs a search the way the interface's search box does, for the local API.
+    pub(crate) fn search_query(&self, args: Value) -> IpcResult<Value> {
+        self.with(|_| Ok(()))?;
+        self.search.call("query", args)
     }
 
     /// Saves every page and stops the core. The app calls it on exit.

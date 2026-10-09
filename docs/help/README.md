@@ -44,6 +44,8 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [On-device intelligence](on-device-intelligence.md): reading pictures, summaries, Ask your notes, and handwriting to text.
 - [Privacy and Work offline](privacy-and-work-offline.md): what uses the network, and how to stop it.
 - [Connectors](connectors.md): signing in to other services.
+- [The local API and app permissions](local-api.md): which programs on your PC may read or add notes, and the access log.
+- [The opennote command](command-line.md): add to and search your notes from a terminal or script.
 
 ## Install, update, and remove
 

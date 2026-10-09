@@ -103,6 +103,15 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // The browser clipper and the Outlook add-in (extensions/) run in browsers and Office, and build and test in Node.
+    files: ['extensions/clipper/**/*.js', 'extensions/outlook-addin/**/*.js'],
+    languageOptions: { globals: { ...globals.browser, ...globals.webextensions, Office: 'readonly' } },
+  },
+  {
+    files: ['extensions/*.mjs', 'extensions/test/**/*.mjs', 'packaging/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+  },
+  {
     files: ['checks/layout/audit.js', 'app/public/**/*.js'],
     languageOptions: { globals: globals.browser, sourceType: 'script' },
   },

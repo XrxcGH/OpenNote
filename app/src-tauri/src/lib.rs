@@ -1,6 +1,7 @@
 //! The OpenNote desktop shell: the app's managed state, its commands, and the run loop (ARCHITECTURE.md section
 //! 8.1). `main.rs` runs the early start-up steps, then calls [`run`].
 
+pub mod api;
 pub mod appearance;
 pub mod args;
 pub mod audio;
@@ -34,6 +35,7 @@ pub mod paths;
 pub mod perf;
 pub mod platform_flags;
 pub mod settings;
+pub mod share;
 pub mod shell;
 pub mod shellqol;
 pub mod speech;
@@ -86,6 +88,7 @@ pub fn run(context: EarlyContext) {
     }
     let settings = loaded.store.get();
     install::uninstall::refresh_if_installed(&paths, &settings.experimental.flags);
+    install::cli::refresh(&paths, &settings.experimental.flags);
     let mut notices = loaded.notices;
     notices.extend(state_notice);
     notices.extend(launch.notices(env!("CARGO_PKG_VERSION")));
@@ -103,6 +106,10 @@ pub fn run(context: EarlyContext) {
     let audio = audio::AudioState::new(&paths);
     let intel = intel::IntelState::new(&paths);
     let connectors = connectors::Connectors::new(&paths);
+    let local_api = api::ApiState::new(&paths);
+    let share = share::ShareState {
+        inbox: share::inbox(&paths),
+    };
     let builder = images::register_renditions(tauri::Builder::default());
     let app = builder
         .manage(loaded.store)
@@ -120,6 +127,8 @@ pub fn run(context: EarlyContext) {
         .manage(audio)
         .manage(intel)
         .manage(connectors)
+        .manage(local_api)
+        .manage(share)
         // The instance guard holds the profile's lock, so it lives in managed state until the process exits.
         .manage(instance)
         .setup(|app| {
@@ -129,6 +138,7 @@ pub fn run(context: EarlyContext) {
             window::caption::init(app.handle());
             window::create(app.handle())?;
             shellqol::start(app.handle());
+            api::start(app.handle());
             Ok(())
         })
         .invoke_handler(commands())
@@ -136,6 +146,7 @@ pub fn run(context: EarlyContext) {
         .expect("OpenNote failed to start");
     app.run(|app, event| {
         if let tauri::RunEvent::Exit = event {
+            app.state::<api::ApiState>().stop();
             audio::shutdown(app);
             flush_files(app);
             app.state::<core_bridge::CoreBridge>().shutdown();
@@ -330,5 +341,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         connectors::connectors_cancel,
         connectors::connectors_disconnect,
         connectors::connectors_request,
+        api::api_call,
+        share::share_take,
     ]
 }

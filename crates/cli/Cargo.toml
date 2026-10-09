@@ -1,0 +1,22 @@
+[package]
+name = "opennote-cli"
+version = "0.1.0"
+description = "The opennote command and MCP server: notes from a terminal or an AI assistant, through the local API"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[[bin]]
+name = "opennote-cli"
+path = "src/main.rs"
+
+[dependencies]
+opennote-api = { path = "../api" }
+serde_json.workspace = true
+
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.62.2"
+features = ["Win32_Foundation", "Win32_Security_Credentials"]
+
+[dev-dependencies]
+tempfile.workspace = true

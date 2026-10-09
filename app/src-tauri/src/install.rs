@@ -12,6 +12,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+pub mod cli;
 pub mod path_entry;
 mod shortcut;
 pub mod uninstall;
@@ -314,6 +315,7 @@ pub fn prepare_move(paths: &Paths) -> IpcResult<(PathBuf, PathBuf)> {
         ));
     }
     let target = copy_exe(&current, &dir)?;
+    cli::install(&dir);
     if let Err(error) = create_shortcut(&shortcut_path(paths), &target) {
         // The move still works without the shortcut, and Settings offers it again.
         log::warn!("Couldn't create the Start menu shortcut: {error}");

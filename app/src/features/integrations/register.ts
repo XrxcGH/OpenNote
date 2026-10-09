@@ -3,7 +3,7 @@
 
 import { isEnabled } from '../../app/flags';
 import { commandContext, executeCommand } from '../../commands/registry';
-import { setupSteps } from '../../registries';
+import { settingsSections, setupSteps } from '../../registries';
 import { t } from '../../strings/t';
 import { showToast } from '../../ui';
 import { shownMounted } from '../page';
@@ -70,4 +70,23 @@ async function addScreenshotToPage(): Promise<void> {
   data.items.add(new File([content.imageBmp], 'Screenshot.bmp', { type: 'image/bmp' }));
   const target = mounted.pool.active()?.editor.view.dom ?? mounted.viewport.sizer;
   target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+}
+
+// Settings, then App permissions (flag api.local), beside Privacy, and the questions the local API asks the person
+// before an app connects or changes notes. The questions show wherever the person is, so they listen from the start.
+settingsSections.register({
+  id: 'appPermissions',
+  title: 'platformApi.section',
+  icon: 'PlugsConnected',
+  order: 35.5,
+  flag: 'api.local',
+  load: () => import('./api/AppPermissionsSection'),
+});
+
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  // After start-up has read the flags (app/start.ts), which runs once every feature file has loaded.
+  setTimeout(() => {
+    if (!isEnabled('api.local')) return;
+    void import('./api/approvals').then(({ startApprovals }) => startApprovals());
+  }, 0);
 }
