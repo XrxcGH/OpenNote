@@ -63,7 +63,11 @@ async function scan(mounted: MountedPage, current: () => boolean): Promise<void>
     const api = await loadApi();
     if (!(await api.searchTextReady('image'))) return;
     const blob = await imageBlob(mounted, asset);
-    if (!blob || !current()) continue;
+    if (!current()) return;
+    if (!blob) {
+      failures.set(key, (failures.get(key) ?? 0) + 1);
+      continue;
+    }
     const found = await api.searchTextInImage(blob);
     if (!found) {
       failures.set(key, (failures.get(key) ?? 0) + 1);

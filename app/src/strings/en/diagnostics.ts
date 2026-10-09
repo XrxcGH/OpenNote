@@ -59,7 +59,8 @@ export const diagnostics = {
       reportsNoAddress: 'No address is set, so a report can only stay on this computer.',
       images: 'Saving a web image you paste',
       imagesDetail:
-        'When you turn on Save images from web pastes, OpenNote downloads the pictures of a web page you paste to keep them in your page. It is off until you turn it on.',
+        'When you turn on Save images from web pastes, OpenNote downloads the pictures of a web page you paste ' +
+        'to keep them in your page. It is off until you turn it on.',
       imagesNever: 'Runs only when you paste, never in the background.',
     },
     reportsHeading: 'Crash reports',

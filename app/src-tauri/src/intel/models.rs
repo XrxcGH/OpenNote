@@ -410,7 +410,7 @@ impl Models {
         let spec = spec_of(id).ok_or_else(|| DownloadError::Disk("That model isn't in the catalog.".to_owned()))?;
         self.cancel(id);
         // Wait for the thread to let go of the file. It sees the flag between reads, and a read can last as long as
-        // the connection's timeout, so the wait is longer than that. If it still runs, nothing is deleted and the
+        // the connection's timeout, so the wait is longer than that. If it still runs, nothing is deleted, and the
         // job stays, so the list tells the truth and a second Start can't begin another thread on the same file.
         for _ in 0..REMOVE_WAIT_STEPS {
             if !self.jobs().get(id).is_some_and(|job| job.running) {
@@ -419,7 +419,9 @@ impl Models {
             thread::sleep(Duration::from_millis(20));
         }
         if self.jobs().get(id).is_some_and(|job| job.running) {
-            return Err(DownloadError::Disk("The download is still stopping. Try again in a moment.".to_owned()));
+            return Err(DownloadError::Disk(
+                "The download is still stopping. Try again in a moment.".to_owned(),
+            ));
         }
         for path in [self.0.dir.join(spec.file), part_path(&self.0.dir, spec)] {
             match fs::remove_file(&path) {

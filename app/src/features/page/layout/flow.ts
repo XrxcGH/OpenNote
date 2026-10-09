@@ -65,7 +65,8 @@ export function createFlow(viewport: PageViewport): Flow {
       // Sheets set their own width, which a narrower column does not change.
       const extent = contentExtent(viewport.world, flow);
       // Without a block past the column the extent is exact, so the world follows it down as well as up.
-      const narrower = (flow.offsetWidth < lastWidth || !extent.floating) && viewport.world.dataset.sheets === undefined;
+      const narrower =
+        (flow.offsetWidth < lastWidth || !extent.floating) && viewport.world.dataset.sheets === undefined;
       lastWidth = flow.offsetWidth;
       viewport.setContent({ ...extent, narrower });
     });
@@ -107,9 +108,10 @@ export function createFlow(viewport: PageViewport): Flow {
 const PADDED_INSIDE = 'table, figure';
 
 /**
- * Keeps the flow on the rules. The stylesheet puts text on the rules; this adds what CSS cannot know: the lead that
- * brings the flow's first line to a rule below the title, and the margin that rounds a table, an image, or any block
- * that does not come in whole rules up to one, so the text after it is back on a rule.
+ * Keeps the flow on the rules. The stylesheet puts text on the rules. This adds what CSS cannot know.
+ * One part is the lead that brings the flow's first line to a rule below the title. The other is the margin that
+ * rounds a table, an image, or any block that does not come in whole rules up to one, so the text after it is back
+ * on a rule.
  */
 function createRuleAligner(viewport: PageViewport, flow: HTMLElement) {
   const { world } = viewport;
