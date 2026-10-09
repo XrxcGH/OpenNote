@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Favorite folders and "Update the copy" in the export flow, against the web fake and a stand-in for the host's memory.
+// Favorite folders and "Update the copy" in the export flow, against the web fake, and a stand-in for the host's memory.
 
 import { describe, expect, it } from 'vitest';
 import type { ExportRequest, InteropClient } from '../../platform/interop';
@@ -60,6 +60,19 @@ describe('sending a copy to a folder', () => {
     await flow.update({ ...copy, format: 'docx', path: 'C:\\Users\\Sample\\OneDrive\\Notes\\Plan.docx' });
     expect(requests[1].replace).toBe('C:\\Users\\Sample\\OneDrive\\Notes\\Plan.docx');
     expect(requests[1].folder).toBe('C:\\Users\\Sample\\OneDrive\\Notes');
+  });
+
+  it('replaces the earlier copy when the same page is exported to the same folder again', async () => {
+    const { flow, requests, target } = await setup();
+    const folder = 'C:/Users/Sample/OneDrive/Notes';
+    flow.useFolder(folder);
+    flow.setFormat('docx');
+    await flow.start();
+    const first = flow.extras.get().copies[0];
+    flow.state.set({ step: 'options', scope: target.initial, format: 'docx', folder: folderOf(first.path), error: null });
+    await flow.start();
+    expect(requests).toHaveLength(2);
+    expect(requests[1].replace).toBe(first.path);
   });
 
   it('finds the folder of a path with either slash', () => {

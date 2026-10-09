@@ -226,7 +226,13 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
       // Without a folder yet, Export asks for one first and goes on once the person has chosen.
       if (!optionsOf(run)?.folder) await chooseFolder(run);
       const current = optionsOf(run);
-      if (current?.folder) await exportNow(run, { ...current, folder: current.folder });
+      if (!current?.folder) return;
+      // A second export of the same page to the same folder replaces the copy instead of making "name (2)".
+      const node = deps.target.choices.find((choice) => choice.scope === current.scope)?.node.id;
+      const same = extras
+        .get()
+        .copies.find((copy) => copy.node === node && copy.format === current.format && folderOf(copy.path) === current.folder);
+      await exportNow(run, { ...current, folder: current.folder }, same?.path);
     },
     cancel() {
       if (run.job) deps.interop.cancel(run.job);
