@@ -31,6 +31,8 @@
     border-radius: var(--radius-xl);
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
+    /* A long link or folder path wraps instead of widening the dialog past its edge. */
+    overflow-wrap: anywhere;
     box-shadow: var(--elevation-3);
     transition:
       opacity var(--motion-duration-slow) var(--motion-easing-enter),
@@ -40,6 +42,7 @@
 
   .dialog[open] {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: var(--space-5);
   }
