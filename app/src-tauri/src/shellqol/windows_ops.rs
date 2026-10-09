@@ -63,6 +63,7 @@ fn build(
         .initialization_script(text)
         .data_directory(paths.webview.clone())
         .disable_drag_drop_handler()
+        .on_navigation(crate::window::is_app_url)
         .zoom_hotkeys_enabled(false)
         .build()
         .map(|_| ())

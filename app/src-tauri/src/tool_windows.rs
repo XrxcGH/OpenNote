@@ -123,6 +123,7 @@ pub fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> IpcResult
         .initialization_script(script(&boot::initialization_script(&data), spec))
         .data_directory(paths.webview.clone())
         .disable_drag_drop_handler()
+        .on_navigation(crate::window::is_app_url)
         .zoom_hotkeys_enabled(false)
         .build()
         .map(|_| ())

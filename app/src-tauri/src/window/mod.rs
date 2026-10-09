@@ -69,6 +69,22 @@ struct Background(Rgb);
 /// `shell.customFrame` flag, so the window keeps the native frame unless the flag is on; the page's caption layout
 /// report switches the frame either way ([`custom_frame`]). A window created without the native frame gets it back
 /// when the page reports no caption buttons in time or its process fails.
+/// Whether a webview may load `url`. Every OpenNote window stays on the app's own pages: a dropped file, a
+/// link, or a script that would load anything else is refused, so nothing else runs with the boot data.
+pub fn is_app_url(url: &tauri::Url) -> bool {
+    match url.scheme() {
+        "tauri" => url.host_str() == Some("localhost"),
+        "http" | "https" => {
+            url.host_str() == Some("tauri.localhost")
+                || (cfg!(debug_assertions) && url.host_str() == Some("localhost") && url.port() == Some(1420))
+        }
+        "about" => url.as_str() == "about:blank",
+        // A blob address made by the app's own page, as for a download.
+        "blob" => tauri::Url::parse(url.path()).is_ok_and(|inner| is_app_url(&inner)),
+        _ => false,
+    }
+}
+
 pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let windows = &app.config().app.windows;
     let config = windows
@@ -100,6 +116,7 @@ pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         .initialization_script(boot::initialization_script(&data))
         .data_directory(paths.webview.clone())
         .disable_drag_drop_handler()
+        .on_navigation(is_app_url)
         .zoom_hotkeys_enabled(false);
     #[cfg(all(windows, feature = "test-endpoints"))]
     let builder =
@@ -264,4 +281,34 @@ pub fn window_show_system_menu(window: WebviewWindow, at: Option<Point>) -> IpcR
 #[tauri::command]
 pub fn window_set_frame_theme(window: WebviewWindow, theme: ThemeName) -> IpcResult<()> {
     frame::set_theme(&window, theme)
+}
+
+#[cfg(test)]
+mod navigation_tests {
+    use super::is_app_url;
+
+    fn allowed(url: &str) -> bool {
+        is_app_url(&tauri::Url::parse(url).expect("a URL"))
+    }
+
+    #[test]
+    fn windows_stay_on_the_apps_own_pages() {
+        assert!(allowed("http://tauri.localhost/index.html?tool=timers"));
+        assert!(allowed("https://tauri.localhost/print.html"));
+        assert!(allowed("tauri://localhost/index.html"));
+        assert!(allowed("about:blank"));
+        assert!(allowed(
+            "blob:http://tauri.localhost/0b6a7c1e-1111-2222-3333-444455556666"
+        ));
+    }
+
+    #[test]
+    fn a_dropped_file_or_another_site_is_refused() {
+        assert!(!allowed("file:///C:/Users/sam/Downloads/notes.html"));
+        assert!(!allowed("https://example.com/"));
+        assert!(!allowed("http://opennote-asset.localhost/page/asset"));
+        assert!(!allowed("http://tauri.localhost.example.com/"));
+        assert!(!allowed("blob:https://example.com/0b6a7c1e"));
+        assert!(!allowed("data:text/html,hi"));
+    }
 }

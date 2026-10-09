@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { RootBoundary } from './app/RootBoundary';
 import { startApp } from './app/start';
+import { installDropGuard } from './boot/dropGuard';
 import { installExitHandshake } from './boot/exit';
 import { reportFirstPaint } from './boot/marks';
 import { PageWindow } from './features/qol';
@@ -26,6 +27,8 @@ const extra = (window as { __OPENNOTE_WINDOW__?: { kind?: string } }).__OPENNOTE
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
+
+installDropGuard();
 
 const { platform, notes } = await startApp();
 

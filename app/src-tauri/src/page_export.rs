@@ -138,6 +138,7 @@ pub async fn print_prepare(app: AppHandle, job: String, input: Value) -> IpcResu
         .skip_taskbar(true)
         .focused(false)
         .initialization_script(format!("window.__OPENNOTE_PRINT__ = {setup};"))
+        .on_navigation(crate::window::is_app_url)
         .build();
     if let Err(error) = built {
         app.unlisten(listener);
