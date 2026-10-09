@@ -1,4 +1,4 @@
-// Flags of the extra import, export, and integration features (docs/FEATURES.md, Phase 11 and later). Each one works
+// Flags of the extra import, export, and integration features (docs/FEATURES.md, Phase 11, and later). Each one works
 // from its first screen to its result. The import and export ones are on in every channel; the platform ones are on
 // in Beta. app/flags.ts joins this list to the others, and the shell reads the platform ones in platform_flags.rs.
 import type { FlagDef } from '../../app/flags';

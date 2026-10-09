@@ -1,5 +1,5 @@
 //! The command-line tool's folder in the user's `PATH` (`HKCU\Environment`, value `Path`). Setup adds it only
-//! when the person ticks "Add the opennote command to PATH", and an uninstall takes it out. The folder is
+//! when the person ticks "Add the opennote command to PATH", and removing the app takes it out. The folder is
 //! `bin` inside the app's folder, because Windows names are case-insensitive: `opennote.exe` beside
 //! `OpenNote.exe` would be the same file.
 

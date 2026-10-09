@@ -1,16 +1,22 @@
-// The update-from-earlier-beta test. A copy of the updater's test app (crates/updater/examples/fake_app.rs), built
-// from the last beta tag, updates itself to the release in a folder, the way a beta tester's copy will: it reads the
-// manifest, downloads its exe, checks the hash and the signature, swaps the exe, and starts the new one. The files
-// are served from 127.0.0.1, which only test builds of the updater accept, with each URL in the manifest pointing
-// there. The release workflow runs it after the package job, for a dry run with the throwaway key and for a tag
-// with the committed key.
+// The update-from-earlier-beta test.
+// A copy of the updater's test app (crates/updater/examples/fake_app.rs) is built from the last beta tag.
+// It updates itself to the release in a folder, the way a beta tester's copy will.
+// It reads the manifest, downloads its exe, checks the hash and the signature, swaps the exe, and starts the new one.
+// The files are served from 127.0.0.1, which only test builds of the updater accept.
+// Each URL in the manifest points there.
+// The release workflow runs it after the package job.
+// A dry run uses the throwaway key, and a tag uses the committed key.
 //
 // Usage:
+//
 //   node app/scripts/release/update-test.ts earlier <tag>
-//     Prints the last beta tag before <tag>, or nothing when there is none.
+//
+// Prints the last beta tag before <tag>, or nothing when there is none.
+//
 //   node app/scripts/release/update-test.ts run <release-dir> <tag> --fake-app <exe> --from <version>
 //                                              [--pubkey <file>] [--report <file>]
-//     Without --pubkey it trusts the first key committed in app/src-tauri/keys.
+//
+// Without --pubkey it trusts the first key committed in app/src-tauri/keys.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';

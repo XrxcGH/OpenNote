@@ -171,8 +171,13 @@ jobs:
           targets: ${{ matrix.target }}
       - name: Install tools
         run: npm ci
+      - name: Build the opennote command
+        # The app carries the command-line tool inside it and installs it as bin\opennote.exe (install/cli.rs).
+        run: cargo build --release --locked -p opennote-cli --target $env:RELEASE_TARGET
       - name: Build ${{ matrix.file }}
-        run: npx tauri build --no-bundle --target $env:RELEASE_TARGET
+        run: |
+          $env:OPENNOTE_CLI_EXE = (Resolve-Path "target/$env:RELEASE_TARGET/release/opennote-cli.exe").Path
+          npx tauri build --no-bundle --target $env:RELEASE_TARGET
       - name: Collect the exe
         run: |
           New-Item -ItemType Directory -Force dist-release | Out-Null
@@ -358,7 +363,7 @@ jobs:
 
   update-test:
     # The update-from-earlier-beta test: the updater's test app, built from the last beta tag, updates itself to
-    # this release's x64 exe from a local server, checking the hash and the signature on the way. A dry run checks
+    # this release's x64 exe from a local server, checking the hash, and the signature on the way. A dry run checks
     # against the throwaway key, and a tag against the committed key. It gets no secrets.
     needs: [version, package]
     runs-on: windows-latest

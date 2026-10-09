@@ -44,7 +44,7 @@ pub enum RegValue {
     Number(u32),
 }
 
-/// The part of the registry the entry needs: one key's values, written and removed as a whole.
+/// The part of the registry the entry needs: one key's values, written, and removed as a whole.
 pub trait Registry {
     /// Creates `key` if needed and sets each value.
     fn write(&self, key: &str, values: &[(&str, RegValue)]) -> io::Result<()>;
@@ -161,7 +161,7 @@ fn civil_from_days(days: i64) -> (i64, u32, u32) {
     (year, month, day)
 }
 
-/// What an uninstall removes, worked out from the profile alone.
+/// What uninstalling removes, worked out from the profile alone.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Plan {
     /// The app's folder, `%LOCALAPPDATA%\Programs\OpenNote`.
@@ -227,7 +227,7 @@ fn remove_tree(dir: &Path, keep: Option<&Path>, removed: &mut usize) -> io::Resu
     Ok(())
 }
 
-/// The start-menu and registry part of an uninstall, which the first process does before it hands over.
+/// The start-menu and registry part of uninstalling, which the first process does before it hands over.
 pub fn remove_links(plan: &Plan, registry: &dyn Registry) -> io::Result<()> {
     match fs::remove_file(&plan.shortcut) {
         Ok(()) => {}
@@ -390,7 +390,7 @@ pub fn refresh_if_installed(paths: &Paths, settings_flags: &BTreeMap<String, boo
     }
 }
 
-/// What the process should do with its arguments: nothing, start an uninstall, or finish one.
+/// What the process should do with its arguments: nothing, start the uninstall, or finish one.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Request {
     None,
@@ -417,7 +417,7 @@ pub fn request_from(args: &[String]) -> Request {
     }
 }
 
-/// Runs an uninstall request from the command line, and returns the exit code, or `None` to start normally.
+/// Runs the uninstall request from the command line, and returns the exit code, or `None` to start normally.
 pub fn run_from_args() -> Option<i32> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match request_from(&args) {
@@ -520,7 +520,7 @@ fn finish_now(plan: &Plan) -> i32 {
     }
 }
 
-/// The two message boxes an uninstall shows, before any window exists.
+/// The two message boxes the uninstall shows, before any window exists.
 mod dialog {
     #[cfg(windows)]
     pub fn confirm(text: &str) -> bool {
