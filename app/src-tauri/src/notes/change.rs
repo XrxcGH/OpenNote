@@ -312,6 +312,13 @@ impl Bridge {
             Found::Node(notebook, node) => notebook.rename(*node, &title),
         }
         .map_err(from_core)?;
+        // A notebook named right after it was made gets a folder of that name, not "Untitled notebook".
+        let found = match found {
+            Found::Notebook(notebook) => {
+                Found::Notebook(self.core.name_new_notebook_folder(&notebook).map_err(from_core)?)
+            }
+            other => other,
+        };
         self.summary_of(&found)
     }
 
