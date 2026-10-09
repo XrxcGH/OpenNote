@@ -62,7 +62,10 @@ fn placement_of(def: &ConnectorDef) -> Placement {
 /// URLs such as `https://www.googleapis.com/auth/userinfo.email` (Google).
 fn granted(connection: &Connection, wanted: &str) -> bool {
     let short = |scope: &str| scope.rsplit('/').next().unwrap_or(scope).to_lowercase();
-    if matches!(short(wanted).as_str(), "openid" | "email" | "profile" | "offline_access") {
+    if matches!(
+        short(wanted).as_str(),
+        "openid" | "email" | "profile" | "offline_access"
+    ) {
         return true;
     }
     connection

@@ -44,6 +44,19 @@ fn notebooks_join_the_library_in_order_and_leave_it_for_trash() {
 }
 
 #[test]
+fn restoring_a_notebook_whose_folder_is_gone_keeps_it_in_trash() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Gone").unwrap();
+    let path = notebook.path().to_path_buf();
+    kit.core.remove_notebook(&path).unwrap();
+    kit.fs.inner.remove_dir_all(&path).unwrap();
+    assert!(kit.core.restore_notebook(&path).is_err());
+    let library = kit.core.library();
+    assert_eq!(library.removed.len(), 1);
+    assert!(library.notebooks.is_empty());
+}
+
+#[test]
 fn a_forgotten_notebook_leaves_the_removed_list() {
     let kit = CoreKit::new();
     let notebook = kit.notebook("Old").unwrap();
@@ -167,6 +180,32 @@ fn the_session_marker_tells_a_clean_exit_from_a_crash() {
 }
 
 #[test]
+fn a_backup_save_keeps_the_session_running() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let section = notebook.create_section("Lab", top()).unwrap();
+    let (page, _) = kit.inked_page(&notebook, section).unwrap();
+    let c = client("main-1");
+    let handle = notebook.open_page(page, c.clone()).unwrap();
+    let versions = handle.history().unwrap().len();
+    handle
+        .commit_for_tests(&retitle(kit.clock.as_ref(), &c, "Photosynthesis", "x"))
+        .unwrap();
+    let report = kit.core.save_all(Duration::from_secs(5));
+    assert_eq!((report.saved, report.failed.len(), report.timed_out), (1, 0, false));
+    assert!(!kit.core.has_unsaved());
+    // No exit version, and the device is not marked as stopped: a crash now is still a crash.
+    assert_eq!(handle.history().unwrap().len(), versions);
+    assert!(kit.beside().core.unclean_exit());
+    // The page keeps taking edits.
+    handle
+        .commit_for_tests(&retitle(kit.clock.as_ref(), &c, "x", "y"))
+        .unwrap();
+    assert!(kit.core.has_unsaved());
+    handle.close(&c).unwrap();
+}
+
+#[test]
 fn unsaved_state_and_memory_follow_the_open_pages() {
     let kit = CoreKit::new();
     let notebook = kit.notebook("Biology").unwrap();
@@ -213,4 +252,21 @@ fn threads_save_on_their_own() {
     saver.stop();
     kit.core.shutdown(Duration::from_secs(1));
     kit.core.shutdown(Duration::from_secs(1));
+}
+
+#[test]
+fn a_new_notebook_named_right_away_gets_a_folder_of_that_name() {
+    let kit = CoreKit::new();
+    let first = kit.notebook("Untitled notebook").unwrap();
+    first.rename_notebook("Second book").unwrap();
+    let renamed = kit.core.name_new_notebook_folder(&first).unwrap();
+    assert!(renamed.path().ends_with("Second book"));
+    assert_eq!(renamed.id(), first.id());
+    assert_eq!(kit.core.library().notebooks[0].path, renamed.path());
+    assert!(kit.core.library().notebooks[0].open);
+    // Once it has sections, its folder keeps its name.
+    renamed.create_section("Lab", top()).unwrap();
+    renamed.rename_notebook("Third").unwrap();
+    let kept = kit.core.name_new_notebook_folder(&renamed).unwrap();
+    assert!(kept.path().ends_with("Second book"));
 }
