@@ -234,6 +234,26 @@ pub(crate) fn add_into(a: &mut [f32], b: &[f32]) {
     }
 }
 
+/// One query row attending over `visible` keys, head by head, into `dest`.
+fn attend_row(qrow: &[f32], k: &[f32], v: &[f32], dest: &mut [f32], scores: &mut [f32], heads: usize, scale: f32) {
+    let n_state = qrow.len();
+    let d = n_state / heads;
+    for h in 0..heads {
+        let qh = &qrow[h * d..(h + 1) * d];
+        for (j, s) in scores.iter_mut().enumerate() {
+            *s = dot(qh, &k[j * n_state + h * d..j * n_state + (h + 1) * d]) * scale;
+        }
+        softmax(scores);
+        let oh = &mut dest[h * d..(h + 1) * d];
+        for (j, p) in scores.iter().enumerate() {
+            let vh = &v[j * n_state + h * d..j * n_state + (h + 1) * d];
+            for (o, value) in oh.iter_mut().zip(vh) {
+                *o += p * value;
+            }
+        }
+    }
+}
+
 /// Multi-head attention of `q` (`nq` rows) over `k` and `v` (`nk` rows), all `n_state` wide in `heads` heads. With
 /// `causal`, query row `i` sees key rows up to `offset + i`. Returns `nq` rows of `n_state`.
 #[allow(clippy::too_many_arguments)]
@@ -260,20 +280,8 @@ pub(crate) fn attention(
                 for (row, dest) in chunk.chunks_exact_mut(n_state).enumerate() {
                     let i = first + row;
                     let visible = causal.map_or(nk, |offset| (offset + i + 1).min(nk));
-                    for h in 0..heads {
-                        let qh = &q[i * n_state + h * d..i * n_state + (h + 1) * d];
-                        for (j, s) in scores[..visible].iter_mut().enumerate() {
-                            *s = dot(qh, &k[j * n_state + h * d..j * n_state + (h + 1) * d]) * scale;
-                        }
-                        softmax(&mut scores[..visible]);
-                        let oh = &mut dest[h * d..(h + 1) * d];
-                        for (j, p) in scores[..visible].iter().enumerate() {
-                            let vh = &v[j * n_state + h * d..j * n_state + (h + 1) * d];
-                            for (o, value) in oh.iter_mut().zip(vh) {
-                                *o += p * value;
-                            }
-                        }
-                    }
+                    let qrow = &q[i * n_state..(i + 1) * n_state];
+                    attend_row(qrow, k, v, dest, &mut scores[..visible], heads, scale);
                 }
             };
             if threads == 1 {

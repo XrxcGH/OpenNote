@@ -281,12 +281,8 @@ impl Session {
             self.tail.clear();
             return (Vec::new(), frames * HOP);
         }
-        let t0 = std::time::Instant::now();
         let mel = log_mel(window, &model.filters, model.hparams.n_mels, model.n_bins);
-        let t1 = std::time::Instant::now();
         let features = encode(model, &mel);
-        let t2 = std::time::Instant::now();
-        eprintln!("TIMING mel {:?} encode {:?}", t1 - t0, t2 - t1);
         if self.options.language.is_none() && Special::of(&model.hparams).multilingual {
             self.options.language = Some(detect_language(model, &features));
         }
@@ -311,7 +307,6 @@ impl Session {
                 text: line.text,
             })
             .collect();
-        eprintln!("TIMING decode {:?} tokens {}", t2.elapsed(), decoded.tokens.len());
         self.tail = decoded.tokens;
         (lines, decoded.advance * HOP)
     }
@@ -373,7 +368,7 @@ mod tests {
         apply_rules(&mut logits, &[25, 3], &special, 70);
         assert!(logits[20..26].iter().all(|v| v.is_infinite()));
         assert!(logits[26].is_finite());
-        // After a closing time, only a time or the end may follow.
+        // After a closing time, only a time, or the end may follow.
         let mut logits = vec![0.0; 100];
         apply_rules(&mut logits, &[25, 3, 30], &special, 70);
         assert!(logits[..10].iter().all(|v| v.is_infinite()));

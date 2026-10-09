@@ -30,7 +30,8 @@ mod transcribe;
 pub use self::hub::{SpeechHub, MAX_CLIPS, MAX_SESSIONS};
 pub use self::speech::{ReadAloudNotice, ReadAloudRequest, ReadAloudStarted, SpeechClip, SynthesizeRequest};
 pub use self::transcribe::{
-    vocabulary_prompt, Finisher, Pcm48k, TranscribeChoices, TranscribeHub, TranscribeUpdate, TranscriptLine,
+    check_language, corrected_lines, vocabulary_prompt, Finisher, Pcm48k, TranscribeChoices, TranscribeHub,
+    TranscribeUpdate, TranscriptLine,
 };
 
 // The result types, so the command layer names everything it passes through from this module.
@@ -41,6 +42,7 @@ pub use crate::ocr::OcrResult;
 pub use crate::speech::{SpeechInfo, Voice};
 pub use crate::summarize::{ActionItem, Chapter, Keyword, Summary};
 pub use crate::tidy::TidyPlan;
+pub use crate::transcribe::Device;
 pub use crate::vocabulary::{Change, Corrected, Offer};
 
 /// Where the pixels of an image come from.
