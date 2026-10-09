@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Save to OpenNote</title>
+    <link rel="stylesheet" href="taskpane.css" />
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <script type="module" src="taskpane.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Save to OpenNote</h1>
+      <form id="pair" hidden>
+        <p class="help">
+          In OpenNote, open Settings, then App permissions, and choose Pair a browser extension. Type the port and the
+          code it shows.
+        </p>
+        <label for="port">Port</label>
+        <input id="port" inputmode="numeric" autocomplete="off" required />
+        <label for="code">Pairing code</label>
+        <input id="code" autocomplete="off" spellcheck="false" required />
+        <button type="submit">Pair</button>
+      </form>
+      <form id="save" hidden>
+        <label for="section">Section</label>
+        <select id="section" required></select>
+        <label><input type="checkbox" id="files" checked /> Include attachments</label>
+        <button type="submit" id="go">Save this email</button>
+        <button type="button" id="unpair" class="quiet">Forget this pairing</button>
+      </form>
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+  </body>
+</html>
