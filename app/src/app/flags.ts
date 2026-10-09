@@ -151,7 +151,8 @@ type IntelFlagId =
   | 'intel.ask'
   | 'intel.writing'
   | 'intel.transcription'
-  | 'intel.autoTranscripts';
+  | 'intel.autoTranscripts'
+  | 'intel.cloudKeys';
 
 type Phase5FlagId =
   | 'ink.core'

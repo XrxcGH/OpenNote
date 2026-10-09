@@ -2,12 +2,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { initFlags } from '../../../app/flags';
 import { currentEngine } from '../audio/transcripts/engine';
-import { installTestHost } from '../../intel/testing';
+import { loadTesting } from '../../intel';
 
 describe('page start-up', () => {
   it('registers the Whisper engine for Make a transcript', { timeout: 30_000 }, async () => {
     initFlags('dev');
-    installTestHost();
+    (await loadTesting()).installTestHost();
     expect(currentEngine()).toBeNull();
     await import('./register');
     await vi.waitFor(() => expect(currentEngine()?.id).toBe('whisper'), { timeout: 20_000 });

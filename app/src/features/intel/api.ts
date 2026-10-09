@@ -27,7 +27,7 @@ export { getImageText, onImageText, queueImageText, watchImagesForText } from '.
 export { editVocabularyForCurrentNotebook } from './vocabulary/open';
 export { fixWithVocabulary, offerVocabularyTerm } from './vocabulary/apply';
 export type { RecognizedText, RecognizedWord } from './search';
-export { showPageSummary, summarizeBlocks } from './summary';
+export { cloudSummary, showPageSummary, summarizeBlocks } from './summary';
 export { onDeviceTranscriptEngine, transcribeOnDevice, TranscribeStopped } from './transcribe/engine';
 export type { OnDeviceTranscribeRequest, OnDeviceTranscribeResult } from './transcribe/engine';
 export type { PageSummary, PageText } from './summary';

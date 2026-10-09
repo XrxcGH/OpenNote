@@ -28,6 +28,12 @@ describe('the choices', () => {
     expect(speechModelToDownload(draft)).toBe(RECOMMENDED_SPEECH_MODEL);
   });
 
+  it('claims transcription only when there is a speech engine to run it', () => {
+    const draft = draftForMode('recommended', NOT_NOW, false);
+    expect(featuresOn(draft)).toEqual(['ocr', 'handwriting', 'summaries']);
+    expect(speechModelToDownload(draft)).toBeNull();
+  });
+
   it('lets Custom start from what Recommended chose', () => {
     const custom = draftForMode('custom', draftForMode('recommended', NOT_NOW));
     expect(custom.mode).toBe('custom');

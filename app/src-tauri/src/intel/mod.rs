@@ -28,6 +28,7 @@ use crate::{
     settings::file::write_json,
 };
 
+mod cloud;
 mod ext;
 mod models;
 mod transcribe;
@@ -115,6 +116,11 @@ struct Inner {
 pub struct IntelState(Arc<Inner>);
 
 impl IntelState {
+    /// The cloud calls with the person's own keys (A1-33).
+    pub fn cloud(&self) -> &cloud::Cloud {
+        self.0.ext.cloud()
+    }
+
     pub fn new(paths: &Paths) -> IntelState {
         IntelState::at(paths.local.join(FILE_NAME))
     }

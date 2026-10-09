@@ -54,7 +54,9 @@ describe('Privacy', () => {
     expect(within(uses).getByText('Saving a web image you paste')).toBeTruthy();
     expect(within(uses).queryByText('Blocked while you work offline.')).toBeNull();
     fireEvent.click(screen.getByRole('switch', { name: 'Work offline' }));
-    await waitFor(() => expect(within(uses).getAllByText('Blocked while you work offline.')).toHaveLength(3));
+    await waitFor(() => {
+      expect(within(uses).getAllByText('Blocked while you work offline.').length).toBeGreaterThanOrEqual(4);
+    });
     expect(screen.getByRole('switch', { name: 'Work offline' }).getAttribute('aria-checked')).toBe('true');
     expect(announcements()).toContain('Working offline. OpenNote will not use the network.');
   });

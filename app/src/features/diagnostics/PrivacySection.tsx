@@ -6,7 +6,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import { useFlag } from '../../app/flags';
 import { useUpdaterStatus } from '../../state/updater';
 import { usePageExtrasPrefs } from '../page';
-import { useModelDownloadsLastRan } from '../intel';
+import { useCloudKeyUse, useModelDownloadsLastRan } from '../intel';
 import { formatDate, formatTime } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, Switch, announce, confirm, showToast } from '../../ui';
@@ -47,6 +47,7 @@ function NetworkUse() {
   const lastCheck = useUpdaterStatus((status) => status.lastCheck);
   const { reportEndpoint, reportSentUnix } = usePrivacy();
   const modelsLastRan = useModelDownloadsLastRan();
+  const cloudKeys = useCloudKeyUse();
   const sent = reportSentUnix === null ? null : new Date(reportSentUnix * 1000).toISOString();
   const titlesFlag = useFlag('page.linkTitles');
   const titlesOn = usePageExtrasPrefs((prefs) => prefs.linkTitles);
@@ -89,6 +90,18 @@ function NetworkUse() {
             offline={offline}
           />
         )}
+        <Use
+          title={t('intelSpeech.cloud.privacyTitle')}
+          detail={
+            cloudKeys.features.length === 0
+              ? t('intelSpeech.cloud.privacyNone')
+              : cloudKeys.features
+                  .map((one) => t(`intelSpeech.cloud.privacyLine.${one.feature}`, { host: one.host }))
+                  .join(' ')
+          }
+          status={cloudKeys.features.length === 0 ? t('intelSpeech.cloud.privacyNever') : lastRan(cloudKeys.lastRan)}
+          offline={offline}
+        />
         <ConnectorNetworkUse />
       </ul>
     </section>

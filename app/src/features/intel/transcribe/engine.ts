@@ -2,12 +2,14 @@
 // and it runs the downloaded Whisper model in the shell, in the background, one job at a time. It turns
 // transcription on only after asking, uses the notebook's custom vocabulary, and reports progress as it goes. When no
 // speech model is on this device it says so and offers the download, which asks before it starts.
+import { isEnabled } from '../../../app/flags';
 import { getLocation } from '../../../app/location';
 import type { RecordingEntry } from '../../../core/audio';
 import { speechHost } from '../../../platform/intelSpeech';
 import type { SpeechJobUpdate, SpeechLine } from '../../../platform/intelSpeech';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
+import { loadCloud, usesCloud } from '../cloud/store';
 import { refreshModels, selectedSpeechModel } from '../models/store';
 import { askToTurnOn } from '../runtime';
 import { loadVocabulary } from '../vocabulary/store';
@@ -64,6 +66,7 @@ function runJob(
   request: OnDeviceTranscribeRequest,
   model: string,
   vocabulary: string,
+  cloud = false,
 ): Promise<OnDeviceTranscribeResult> {
   const host = speechHost();
   return new Promise((resolve, reject) => {
@@ -99,6 +102,7 @@ function runJob(
         entry: request.entry,
         model,
         choices: { language: request.language ?? null, vocabulary },
+        ...(cloud ? { engine: 'cloud' as const } : {}),
       })
       .then(
         (id) => {
@@ -127,17 +131,24 @@ export async function transcribeOnDevice(
   if (options.ask === false ? !isOn('transcription') : !(await askToTurnOn('transcription'))) {
     throw new TranscribeStopped('off', t('intelSpeech.transcribe.off'));
   }
+  const vocabularyNow = loadVocabulary(notebookNow());
+  // The person's own cloud key, when they chose it for transcription, needs no model here.
+  if (isEnabled('intel.cloudKeys') && usesCloud('transcription', await loadCloud().catch(() => undefined))) {
+    return runJob(request, '', await vocabularyNow, true);
+  }
   const model =
     options.ask === false ? pickSpeechModel(await refreshModels(), await selectedSpeechModel()) : await modelToUse();
   if (!model) throw new TranscribeStopped('noModel', t('intelSpeech.transcribe.noModel'));
-  const vocabulary = await loadVocabulary(notebookNow());
-  return runJob(request, model, vocabulary);
+  return runJob(request, model, await vocabularyNow);
 }
 
 /** The engine in the shape the page's transcript seam takes. */
 export const onDeviceTranscriptEngine = {
   id: 'whisper',
-  cloud: false,
+  /** True while the person's own cloud key runs transcription, so background jobs wait out Work offline. */
+  get cloud(): boolean {
+    return isEnabled('intel.cloudKeys') && usesCloud('transcription');
+  },
   transcribe: (request: OnDeviceTranscribeRequest) =>
     transcribeOnDevice(request, { ask: request.interactive !== false }),
 };

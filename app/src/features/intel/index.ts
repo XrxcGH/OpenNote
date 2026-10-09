@@ -19,5 +19,8 @@ export const commitSmartFeatures = (...args: Parameters<typeof import('./setup/c
 /** When a model download last started, for the Privacy panel. */
 export { useModelDownloadsLastRan } from './models/lastRan';
 
+/** Which features use a cloud service with the person's own key, for the Privacy panel. */
+export { useCloudKeyUse } from './cloud/lastRan';
+
 /** Test helpers (a host over the fake transport), for other features' tests. Loaded only when a test asks. */
 export const loadTesting = () => import('./testing');

@@ -42,6 +42,20 @@ export interface VocabularyCorrection {
   changes: VocabularyChange[];
 }
 
+/** The features that can use the person's own cloud key instead of this device (A1-33). */
+export type CloudFeature = 'transcription' | 'summaries';
+
+/** A feature's cloud key, as the interface may know it: whether there is one, never the key itself. */
+export interface CloudStatus {
+  feature: CloudFeature;
+  provider: string;
+  /** The one server the feature's input goes to with the key. */
+  host: string;
+  hasKey: boolean;
+  /** Seconds since 1970 when the service was last used for this feature, or null. */
+  lastUsedUnix: number | null;
+}
+
 export interface IntelExt {
   /** The text kept under a name on this device, or null. */
   get(name: string): Promise<string | null>;
@@ -57,6 +71,14 @@ export interface IntelExt {
     cancel(id: string): Promise<void>;
     /** Deletes the model and any part of it. */
     remove(id: string): Promise<void>;
+  };
+  cloud: {
+    status(): Promise<CloudStatus[]>;
+    /** Saves the key in Windows Credential Manager. Rejects with `invalid` for text that can't be a key. */
+    setKey(feature: CloudFeature, key: string): Promise<void>;
+    forget(feature: CloudFeature): Promise<void>;
+    /** A summary from the service. Rejects with `offline` while Work offline is on. */
+    summarize(text: string): Promise<string>;
   };
 }
 
@@ -100,6 +122,12 @@ export function createIntelExt(transport: IntelTransport): IntelExt {
       start: async (id) => void (await call('models.start', { id })),
       cancel: async (id) => void (await call('models.cancel', { id })),
       remove: async (id) => void (await call('models.remove', { id })),
+    },
+    cloud: {
+      status: () => call<CloudStatus[]>('cloud.status'),
+      setKey: async (feature, key) => void (await call('cloud.setKey', { feature, key })),
+      forget: async (feature) => void (await call('cloud.forget', { feature })),
+      summarize: async (text) => (await call<{ summary: string }>('cloud.summarize', { text })).summary,
     },
   };
 }

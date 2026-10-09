@@ -154,6 +154,8 @@ export async function summarizeTranscript(data: TranscriptData): Promise<string 
   const api = await loadApi();
   if (!(await api.askToTurnOn('summaries'))) return null;
   try {
+    const fromCloud = await api.cloudSummary(plainText(data).slice(0, MAX_SUMMARY_CHARS), { quiet: true });
+    if (fromCloud) return fromCloud.join(' ');
     const client = await api.intelClient();
     const summary = await client.summarize(plainText(data).slice(0, MAX_SUMMARY_CHARS), { maxSentences: 3 });
     return summary.sentences.map((sentence) => sentence.text).join(' ');
@@ -169,6 +171,8 @@ export async function quietSummary(data: TranscriptData): Promise<string | null>
     const api = await loadApi();
     await api.loadIntel();
     if (!api.isOn('summaries') || data.lines.length === 0) return null;
+    const fromCloud = await api.cloudSummary(plainText(data).slice(0, MAX_SUMMARY_CHARS), { quiet: true });
+    if (fromCloud) return fromCloud.join(' ');
     const client = await api.intelClient();
     const summary = await client.summarize(plainText(data).slice(0, MAX_SUMMARY_CHARS), { maxSentences: 3 });
     return summary.sentences.map((sentence) => sentence.text).join(' ');

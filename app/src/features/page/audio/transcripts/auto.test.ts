@@ -1,6 +1,6 @@
-// Every recording gets a transcript and summary: a saved recording queues a background job only after the person
-// turned it on and while transcription is on, the transcript with its summary lands after the recording, a cloud
-// engine waits out Work offline, and the choice is kept on this device.
+// Every recording gets a transcript and summary. A saved recording queues a background job only after the person
+// turned it on. The transcript and summary land after the recording. A cloud engine waits out Work offline.
+// The choice is kept on this device.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initFlags } from '../../../../app/flags';
 import type { RecordingEntry } from '../../../../core/audio';

@@ -11,6 +11,7 @@ use std::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+use super::cloud::{Cloud, CloudError, CloudFeature};
 use super::models::{DownloadError, Models};
 use crate::{
     ipc::{codes, IpcError},
@@ -33,6 +34,7 @@ pub struct ExtRequest {
 pub struct Ext {
     store: PathBuf,
     models: Models,
+    cloud: Cloud,
 }
 
 fn invalid(message: &str, field: &str) -> IpcError {
@@ -79,10 +81,34 @@ impl Ext {
     }
 
     pub fn with_models(device: &Path, models: Models) -> Ext {
+        let cloud = Cloud::new(
+            &device.join("intel"),
+            crate::connectors::platform_store(),
+            std::sync::Arc::new(crate::connectors::UreqHttp::default()),
+        );
+        Ext::with_parts(device, models, cloud)
+    }
+
+    pub fn with_parts(device: &Path, models: Models, cloud: Cloud) -> Ext {
         Ext {
             store: device.join("intel"),
             models,
+            cloud,
         }
+    }
+
+    /// The cloud calls, which the transcription command shares.
+    pub fn cloud(&self) -> &Cloud {
+        &self.cloud
+    }
+
+    fn cloud_error(error: &CloudError) -> IpcError {
+        IpcError::new(error.code(), error.message())
+    }
+
+    fn cloud_feature(params: &Value) -> Result<CloudFeature, IpcError> {
+        CloudFeature::parse(text(params, "feature")?)
+            .ok_or_else(|| invalid("That feature can't use a cloud key.", "feature"))
     }
 
     fn file(&self, name: &str) -> Result<PathBuf, IpcError> {
@@ -154,6 +180,25 @@ impl Ext {
                 .remove(text(params, "id")?)
                 .map(|()| Value::Null)
                 .map_err(|error| Self::download_error(&error)),
+            "cloud.status" => serde_json::to_value(self.cloud.status())
+                .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string())),
+            "cloud.setKey" => {
+                let feature = Ext::cloud_feature(params)?;
+                self.cloud
+                    .set_key(feature, text(params, "key")?)
+                    .map(|()| Value::Null)
+                    .map_err(|error| Ext::cloud_error(&error))
+            }
+            "cloud.forget" => self
+                .cloud
+                .forget(Ext::cloud_feature(params)?)
+                .map(|()| Value::Null)
+                .map_err(|error| Ext::cloud_error(&error)),
+            "cloud.summarize" => self
+                .cloud
+                .summarize(text(params, "text")?, offline, safe_mode)
+                .map(|summary| json!({ "summary": summary }))
+                .map_err(|error| Ext::cloud_error(&error)),
             other => Err(invalid(&format!("There is no method called {other}."), "method")),
         }
     }

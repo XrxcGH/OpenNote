@@ -9,6 +9,7 @@ import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import type { MessageKey } from '../../strings/t';
 import { announce, Button, Switch } from '../../ui';
+import { CloudChoice } from './cloud/CloudChoice';
 import styles from './intel.module.css';
 import { intelState } from './choices';
 import PlusSection from './PlusSection';
@@ -66,6 +67,7 @@ function openWindowsSettings(page: 'speech' | 'language'): void {
 
 function FeatureRow({ feature }: { feature: OnDeviceFeature }) {
   const shown = useFlag(FLAG[feature]);
+  const cloudKeys = useFlag('intel.cloudKeys');
   const on = useStore(intelState, (state) => state.choices[feature]);
   const status = useStore(intelState, (state) => state.status?.find((one) => one.feature === feature) ?? null);
   const helpId = useId();
@@ -104,6 +106,9 @@ function FeatureRow({ feature }: { feature: OnDeviceFeature }) {
         <div className={styles.actions}>
           <Button onClick={() => openWindowsSettings(fix.page)}>{t(fix.label)}</Button>
         </div>
+      )}
+      {on && cloudKeys && (feature === 'transcription' || feature === 'summaries') && (
+        <CloudChoice feature={feature} name={t(text.label)} />
       )}
     </li>
   );

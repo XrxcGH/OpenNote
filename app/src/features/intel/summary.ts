@@ -1,10 +1,40 @@
 // A summary of a page (Phase 12): the sentences that best stand for it, and its keywords, picked from its own words.
 // The page hands over its blocks as text, and each sentence is linked back to the block it came from. Nothing is
 // written or sent: the crate chooses sentences and does not use a model.
+import { isEnabled } from '../../app/flags';
+import { toExtError } from '../../services/intel';
 import type { IntelClient, Keyword, Summary } from '../../services/intel';
 import { showToast } from '../../ui';
 import { t } from '../../strings/t';
-import { askToTurnOn, intelClient, reportProblem } from './runtime';
+import { askToTurnOn, intelClient, intelExt, reportProblem } from './runtime';
+
+/** Splits a summary into its sentences. */
+export function sentencesOf(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((one) => one.trim())
+    .filter(Boolean);
+}
+
+/**
+ * A summary from the cloud service, when the person chose their own key for summaries (A1-33). Null means use this
+ * device: the choice is "on this device", or the service can't be used now (Work offline, a refused key), which is
+ * said unless `quiet`.
+ */
+export async function cloudSummary(text: string, options: { quiet?: boolean } = {}): Promise<string[] | null> {
+  if (!isEnabled('intel.cloudKeys')) return null;
+  const { loadCloud, usesCloud } = await import('./cloud/store');
+  if (!usesCloud('summaries', await loadCloud().catch(() => undefined))) return null;
+  try {
+    return sentencesOf(await (await intelExt()).cloud.summarize(text));
+  } catch (error) {
+    if (!options.quiet) {
+      const offline = toExtError(error).code === 'offline';
+      showToast({ message: t(offline ? 'intelSpeech.cloud.offlineFallback' : 'intelSpeech.cloud.failedFallback') });
+    }
+    return null;
+  }
+}
 
 /** A block's text, and how to bring the block into view. */
 export interface PageText {
@@ -86,6 +116,15 @@ export async function summarizeBlocks(
   const sent = text.slice(0, MAX_SUMMARY_CHARS);
   try {
     const client = await (options.client ?? intelClient)();
+    const fromCloud = await cloudSummary(sent);
+    if (fromCloud) {
+      const keywords = await client.keywords(sent, { maxKeywords: options.maxKeywords ?? 8 });
+      return {
+        sentences: fromCloud.map((line) => ({ text: line, reveal: null })),
+        keywords: keywords.map((keyword) => keyword.text),
+        total: sentencesOf(sent).length,
+      };
+    }
     const [summary, keywords] = await Promise.all([
       client.summarize(sent, { maxSentences: options.maxSentences ?? 5 }),
       client.keywords(sent, { maxKeywords: options.maxKeywords ?? 8 }),
