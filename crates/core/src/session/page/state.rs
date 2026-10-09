@@ -237,7 +237,7 @@ impl PageSession {
         st.used = now;
         st.hint.add(changes);
         st.versions.edited = true;
-        if before_first_edit && st.page.revision.device.id != self.ctx.device().id {
+        if before_first_edit {
             st.versions.before_save.get_or_insert(VersionReason::BeforeEdit);
         }
         if changes.blocks_removed.len() > LARGE_DELETE_BLOCKS || changes.strokes_removed.len() > LARGE_DELETE_STROKES {

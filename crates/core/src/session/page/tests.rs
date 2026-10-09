@@ -267,7 +267,11 @@ fn closing_after_edits_keeps_a_version_and_restoring_as_a_copy_adds_a_page() {
     handle.clone().close(&c).unwrap();
     let again = s.notebook.open_page(s.page, c.clone()).unwrap();
     let history = again.history().unwrap();
-    assert_eq!(history.len(), 1);
+    assert_eq!(
+        history.len(),
+        2,
+        "the first edit keeps the page as it was, and the close keeps the result"
+    );
     assert_eq!(history[0].reason, crate::model::Named::Known(VersionReason::Closed));
     again
         .name_version(history[0].revision, Some("Final".into()), true)
