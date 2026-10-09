@@ -178,6 +178,15 @@ impl Library {
         self.save(fs)
     }
 
+    /// Points a notebook's entry at its folder's new place, keeping its position.
+    pub fn repath(&mut self, fs: &dyn Fs, from: &Path, to: &Path) -> Result<(), CoreError> {
+        let Some(entry) = self.position(from).and_then(|i| self.file.notebooks.get_mut(i)) else {
+            return Ok(());
+        };
+        to.clone_into(&mut entry.path);
+        self.save(fs)
+    }
+
     /// Updates the ID and title the library shows for a notebook, if it is in the library.
     pub fn update(&mut self, fs: &dyn Fs, path: &Path, notebook: NotebookId, title: &str) -> Result<(), CoreError> {
         let Some(entry) = self.position(path).and_then(|i| self.file.notebooks.get_mut(i)) else {
@@ -206,7 +215,7 @@ impl Library {
     }
 
     /// Puts a removed notebook back where it was, or at the end if the list is now shorter.
-    pub fn restore(&mut self, fs: &dyn Fs, path: &Path) -> Result<LibraryEntry, CoreError> {
+    pub fn restore(&mut self, fs: &dyn Fs, path: &Path) -> Result<RemovedEntry, CoreError> {
         let i = self
             .file
             .removed
@@ -219,7 +228,14 @@ impl Library {
             self.file.notebooks.insert(at, removed.entry.clone());
         }
         self.save(fs)?;
-        Ok(removed.entry)
+        Ok(removed)
+    }
+
+    /// Undoes [`Library::restore`] when the notebook couldn't open, so it stays in Trash.
+    pub fn unrestore(&mut self, fs: &dyn Fs, removed: RemovedEntry) -> Result<(), CoreError> {
+        self.file.notebooks.retain(|n| !same_path(&n.path, &removed.entry.path));
+        self.file.removed.push(removed);
+        self.save(fs)
     }
 
     /// Forgets a removed notebook, after the app deleted its folder or the person chose to forget it.
