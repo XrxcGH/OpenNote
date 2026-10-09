@@ -47,10 +47,12 @@ pub struct ImportChoices {
     pub report_page: bool,
     /// How to cut Word files into pages: `auto`, `single`, `byTitle`, or `byPageBreak`.
     pub word_pages: Option<String>,
+    /// The password of a locked shared file (`.opennote`). It is never logged.
+    pub password: Option<super::export::Secret>,
 }
 
 impl ImportChoices {
-    fn options(&self) -> ImportOptions {
+    pub(super) fn options(&self) -> ImportOptions {
         let word_pages = match self.word_pages.as_deref() {
             Some("single") => WordPages::Single,
             Some("byTitle") => WordPages::ByTitle,
@@ -61,8 +63,12 @@ impl ImportChoices {
             kind: None,
             word_pages,
             report_page: self.report_page,
-            // Share as a file stopped before the interface asked for a locked file's password.
-            password: None,
+            password: self
+                .password
+                .as_ref()
+                .and_then(super::export::Secret::get)
+                .filter(|p| p.chars().count() <= super::export::MAX_PASSWORD_CHARS)
+                .map(str::to_owned),
         }
     }
 }
@@ -111,7 +117,12 @@ async fn blocking<T: Send + 'static>(work: impl FnOnce() -> T + Send + 'static) 
 pub async fn interop_pick(window: WebviewWindow, kind: PickKind, initial: Option<String>) -> IpcResult<Option<String>> {
     // A window handle isn't `Send`, so it crosses to the dialog's thread as a number.
     let owner = window.hwnd().map(|hwnd| hwnd.0 as isize).unwrap_or(0);
-    blocking(move || pick::pick(owner, kind, initial)).await?
+    let picked = blocking(move || pick::pick(owner, kind, initial)).await??;
+    // A file the person picks may also open as a page that saves back (A3-18).
+    if let (PickKind::File, Some(path)) = (kind, picked.as_deref()) {
+        let _ = super::open_files::grant(Path::new(path));
+    }
+    Ok(picked)
 }
 
 /// What a file, folder, or archive is, and whether it can be imported.
@@ -325,6 +336,8 @@ pub async fn interop_export(
         bridge.core.flush_all(SAVE_OPEN_PAGES).map_err(internal)?;
         TreeSource::build(bridge, &request).map_err(failure)
     })?;
+    // The pages a PDF export prints arrived before it, under its job name.
+    let pdf = super::pdf_stage::take(&job);
     let (guard, control) = Job::start(&job, emitter(&app));
     let result = blocking(move || {
         let _guard = guard;
@@ -332,7 +345,7 @@ pub async fn interop_export(
         control.run(
             &what,
             |exported: &Exported| exported.report.pages.len() as u64,
-            |control| export::run(&source, &request, control),
+            |control| export::run(&source, &request, &pdf, control),
         )
     })
     .await?;
@@ -439,7 +452,10 @@ mod tests {
             json!({
                 "status": "done",
                 "result": {
-                    "detected": { "kind": "googleKeep", "label": "Google Keep export", "supported": true, "zipped": false, "advice": null, "needsPassword": false },
+                    "detected": {
+                        "kind": "googleKeep", "label": "Google Keep export", "supported": true,
+                        "zipped": false, "advice": null, "needsPassword": false
+                    },
                     "notebookTitle": "Keep",
                     "sections": [{ "title": "Notes", "pages": 4 }],
                     "pages": 4, "blocks": 9, "assets": 1, "assetBytes": 2048,

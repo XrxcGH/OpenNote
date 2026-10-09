@@ -1,8 +1,8 @@
 //! Sharing a page, a section, or a notebook as one file that opens in OpenNote as a new notebook.
 //!
 //! The file is a ZIP archive with the extension `.opennote`. It holds `opennote-share.json` (a small manifest) and
-//! the OpenNote Markdown export of what is shared, in a folder named for it. That is the format the Markdown
-//! importer reads, so opening the file needs nothing new: sections, pages, tags, properties, links between pages,
+//! the OpenNote Markdown export of what is shared, in a folder named for it. The Markdown importer reads that
+//! format, so opening the file needs nothing new. Sections, pages, tags, properties, links between pages,
 //! and pictures come back, and every page gets a new ID, so a file shared to the same PC never collides with the
 //! original. A password locks the whole archive (see [`crate::lock`]). The format is described in
 //! `docs/adr/0035-share-as-a-file.md`.
@@ -36,6 +36,20 @@ pub fn export_share(
     out_dir: &Path,
     control: &Control,
 ) -> Result<Exported> {
+    export_share_with(source, scope, password, None, out_dir, control)
+}
+
+/// Like [`export_share`]. `history` holds earlier versions of the shared pages as pages of their own, in a section
+/// such as "Page history". Its sections go into the file beside the shared ones, so opening the file brings them
+/// back as readable pages, each titled with its page and date.
+pub fn export_share_with(
+    source: &dyn NoteSource,
+    scope: Scope,
+    password: Option<&str>,
+    history: Option<&dyn NoteSource>,
+    out_dir: &Path,
+    control: &Control,
+) -> Result<Exported> {
     let staging = tempfile::tempdir().map_err(|e| InteropError::io(std::env::temp_dir(), e))?;
     let mut inner = export_files_with(source, scope, Format::Markdown, staging.path(), control)?;
     let title = inner
@@ -59,6 +73,23 @@ pub fn export_share(
     zip.add(MANIFEST, manifest.to_string().as_bytes())?;
     let mut total = 0u64;
     add_folder(&mut zip, &inner.root, &title, &mut total)?;
+    let mut versions = 0usize;
+    if let Some(history) = history.filter(|h| h.sections().iter().any(|s| !s.pages.is_empty())) {
+        let older = tempfile::tempdir().map_err(|e| InteropError::io(std::env::temp_dir(), e))?;
+        let made = export_files_with(history, Scope::Notebook, Format::Markdown, older.path(), control)?;
+        versions = made.report.pages.len();
+        // Only the history's section folders go in, beside the shared sections.
+        let mut folders: Vec<_> = fs::read_dir(&made.root)
+            .map_err(|e| InteropError::io(&made.root, e))?
+            .flatten()
+            .filter(|entry| entry.path().is_dir())
+            .collect();
+        folders.sort_by_key(fs::DirEntry::file_name);
+        for folder in folders {
+            let prefix = format!("{title}/{}", folder.file_name().to_string_lossy());
+            add_folder(&mut zip, &folder.path(), &prefix, &mut total)?;
+        }
+    }
     let mut bytes = zip.finish()?;
     if let Some(password) = password.filter(|p| !p.is_empty()) {
         bytes = lock::lock(password, &bytes)?;
@@ -72,10 +103,18 @@ pub fn export_share(
         n += 1;
     }
     fs::write(&path, bytes).map_err(|e| InteropError::io(&path, e))?;
-    inner.report.general.skipped(
-        "page history",
-        "A shared file holds the pages as they are now, not their earlier versions.",
-    );
+    if versions > 0 {
+        inner.report.general.came_over(crate::report::counted(
+            versions,
+            "earlier version of a page",
+            "earlier versions of pages",
+        ));
+    } else {
+        inner.report.general.skipped(
+            "page history",
+            "A shared file holds the pages as they are now, not their earlier versions.",
+        );
+    }
     inner.report.general.simplified(
         "handwriting",
         "Handwriting is shared as a picture of each page's ink, which cannot be edited after opening.",

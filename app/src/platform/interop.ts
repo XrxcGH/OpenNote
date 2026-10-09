@@ -33,6 +33,8 @@ export interface DetectedSource {
   supported: boolean;
   zipped: boolean;
   advice: string | null;
+  /** A shared file locked with a password, which the import needs. */
+  needsPassword?: boolean;
 }
 
 /** What was simplified or skipped for one reason. */
@@ -48,6 +50,8 @@ export interface LossGroup {
 export interface ImportChoices {
   /** Add an "Import report" page to the new notebook. */
   reportPage: boolean;
+  /** The password of a locked shared file (.opennote). */
+  password?: string;
   wordPages?: 'auto' | 'single' | 'byTitle' | 'byPageBreak';
 }
 
@@ -98,7 +102,7 @@ export interface ImportResult {
   skipped: number;
 }
 
-export type ExportFormat = 'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv';
+export type ExportFormat = 'markdown' | 'html' | 'htmlSingle' | 'docx' | 'pdf' | 'pptx' | 'xlsx' | 'csv' | 'share';
 export type ExportScope = 'notebook' | 'section' | 'page';
 
 export interface ExportRequest {
@@ -112,6 +116,10 @@ export interface ExportRequest {
   folder: string;
   /** A file an earlier export made, which this one replaces ("Update the copy"). Only for formats that make one file. */
   replace?: string;
+  /** Share as a file: a password that locks the file. Kept in memory only, and never logged. */
+  password?: string;
+  /** Share as a file: put each page's earlier versions in the file. */
+  history?: boolean;
 }
 
 export interface ExportResult {

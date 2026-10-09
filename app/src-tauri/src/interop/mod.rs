@@ -13,6 +13,8 @@ pub mod commands;
 mod export;
 mod jobs;
 pub mod more;
+pub mod open_files;
+mod pdf_stage;
 pub mod pick;
 mod restore;
 #[cfg(test)]

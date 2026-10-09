@@ -75,6 +75,8 @@ pub fn run(context: EarlyContext) {
     perf::mark("settingsLoaded", None);
     let mut launch = boot::Launch { args, guard };
     deeplink::remember_launch(&launch.args.rest);
+    // A Markdown or text file the app was opened with, from Explorer's "Open with" (A3-18).
+    interop::open_files::remember_launch(&launch.args.rest);
     // A moved-from path that isn't the copy this one was made from is dropped, so it also gets no "Moved" notice.
     if let Some(old) = launch.args.moved_from.take() {
         if install::delete_moved_from(&paths, old.clone()) {

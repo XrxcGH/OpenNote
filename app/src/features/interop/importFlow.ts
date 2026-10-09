@@ -23,13 +23,16 @@ export type ImportState =
   | { step: 'choose'; canceled?: boolean }
   | { step: 'checking'; job: string; path: string; progress: JobProgress | null }
   | { step: 'unsupported'; path: string; detected: DetectedSource }
-  | { step: 'review'; path: string; preview: ImportPreview; reportPage: boolean }
+  /** A shared file locked with a password: the person types it, and the check runs again with it. */
+  | { step: 'locked'; path: string; password: string; wrong: boolean }
+  | { step: 'review'; path: string; preview: ImportPreview; reportPage: boolean; password?: string }
   | {
       step: 'importing';
       job: string;
       path: string;
       title: string;
       reportPage: boolean;
+      password?: string;
       progress: JobProgress | null;
       /** True once the host finished and the tree is being made. */
       building: boolean;
@@ -47,7 +50,14 @@ export type ImportState =
       reportFile?: string;
       reportError?: boolean;
     }
-  | { step: 'failed'; error: IpcError; path: string; preview: ImportPreview | null; reportPage: boolean };
+  | {
+      step: 'failed';
+      error: IpcError;
+      path: string;
+      preview: ImportPreview | null;
+      reportPage: boolean;
+      password?: string;
+    };
 
 type Review = Extract<ImportState, { step: 'review' }>;
 
@@ -59,6 +69,12 @@ export interface ImportFlow {
   localSources(): Promise<LocalSources>;
   /** Checks a source the host already knows, such as the Sticky Notes database. */
   chooseLocal(path: string): Promise<void>;
+  /** Checks a file the person opened from Explorer, such as a shared .opennote file. */
+  openPath(path: string): Promise<void>;
+  /** A locked file: the password as typed so far. */
+  setPassword(password: string): void;
+  /** A locked file: checks it again with the password. */
+  unlock(): Promise<void>;
   setReportPage(on: boolean): void;
   /** Imports what the review showed. */
   start(): Promise<void>;
@@ -91,7 +107,8 @@ interface Run {
   job: string | null;
 }
 
-const choices = (reportPage: boolean): ImportChoices => ({ reportPage });
+const choices = (reportPage: boolean, password?: string): ImportChoices =>
+  password ? { reportPage, password } : { reportPage };
 
 function asError(error: unknown): IpcError {
   if (typeof error === 'object' && error !== null && typeof (error as IpcError).code === 'string') {
@@ -101,7 +118,7 @@ function asError(error: unknown): IpcError {
 }
 
 /** Detects the source, then runs the dry run. A newer job replaces this one, and this one then stops quietly. */
-async function check(run: Run, path: string, reportPage: boolean): Promise<void> {
+async function check(run: Run, path: string, reportPage: boolean, password?: string): Promise<void> {
   const { interop } = run.deps;
   const name = newJobName('check');
   run.job = name;
@@ -113,12 +130,20 @@ async function check(run: Run, path: string, reportPage: boolean): Promise<void>
       run.state.set({ step: 'unsupported', path, detected });
       return;
     }
-    const outcome = await interop.preview(name, path, choices(reportPage));
+    if (detected.needsPassword && !password) {
+      run.state.set({ step: 'locked', path, password: '', wrong: false });
+      return;
+    }
+    const outcome = await interop.preview(name, path, choices(reportPage, password));
     if (run.job !== name) return;
     if (outcome.status === 'canceled') run.state.set({ step: 'choose', canceled: true });
-    else run.state.set({ step: 'review', path, preview: outcome.result, reportPage });
+    else
+      run.state.set({ step: 'review', path, preview: outcome.result, reportPage, ...(password ? { password } : {}) });
   } catch (error) {
-    if (run.job === name) run.state.set({ step: 'failed', error: asError(error), path, preview: null, reportPage });
+    if (run.job !== name) return;
+    // A wrong password and a damaged file give the same answer, so the person can try the password again.
+    if (password) run.state.set({ step: 'locked', path, password: '', wrong: true });
+    else run.state.set({ step: 'failed', error: asError(error), path, preview: null, reportPage });
   } finally {
     if (run.job === name) run.job = null;
   }
@@ -147,7 +172,7 @@ async function finishImport(run: Run, result: ImportResult): Promise<void> {
 }
 
 async function importFrom(run: Run, review: Review): Promise<void> {
-  const { path, reportPage, preview } = review;
+  const { path, reportPage, preview, password } = review;
   const name = newJobName('import');
   run.job = name;
   run.state.set({
@@ -156,11 +181,12 @@ async function importFrom(run: Run, review: Review): Promise<void> {
     path,
     title: preview.notebookTitle,
     reportPage,
+    ...(password ? { password } : {}),
     progress: null,
     building: false,
   });
   try {
-    const outcome = await run.deps.interop.importFrom(name, path, choices(reportPage));
+    const outcome = await run.deps.interop.importFrom(name, path, choices(reportPage, password));
     if (outcome.status === 'canceled') {
       run.state.set({ step: 'choose', canceled: true });
       run.deps.announce(t('interop.import.canceled'));
@@ -168,7 +194,14 @@ async function importFrom(run: Run, review: Review): Promise<void> {
     }
     await finishImport(run, outcome.result);
   } catch (error) {
-    run.state.set({ step: 'failed', error: asError(error), path, preview, reportPage });
+    run.state.set({
+      step: 'failed',
+      error: asError(error),
+      path,
+      preview,
+      reportPage,
+      ...(password ? { password } : {}),
+    });
   } finally {
     if (run.job === name) run.job = null;
   }
@@ -184,7 +217,8 @@ function retry(run: Run): void {
   const current = run.state.get();
   run.job = null;
   if (current.step === 'failed' && current.preview) {
-    run.state.set({ step: 'review', path: current.path, preview: current.preview, reportPage: current.reportPage });
+    const { path, preview, reportPage, password } = current;
+    run.state.set({ step: 'review', path, preview, reportPage, ...(password ? { password } : {}) });
   } else {
     run.state.set({ step: 'choose' });
   }
@@ -229,6 +263,15 @@ export function createImportFlow(deps: ImportFlowDeps): ImportFlow {
     chooseFolder: () => pick('folder'),
     localSources: () => deps.interop.localSources(),
     chooseLocal: (path) => (state.get().step === 'choose' ? check(run, path, false) : Promise.resolve()),
+    openPath: (path) => check(run, path, false),
+    setPassword(password) {
+      const current = state.get();
+      if (current.step === 'locked') state.set({ ...current, password });
+    },
+    async unlock() {
+      const current = state.get();
+      if (current.step === 'locked' && current.password) await check(run, current.path, false, current.password);
+    },
     setReportPage(on) {
       const current = state.get();
       if (current.step === 'review') state.set({ ...current, reportPage: on });

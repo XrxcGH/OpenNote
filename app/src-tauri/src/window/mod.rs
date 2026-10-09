@@ -199,6 +199,8 @@ pub fn receive_forwarded(app: &AppHandle, args: Vec<String>) {
         }
         return;
     }
+    // A file opened from Explorer while the app runs: the person chose it, so the interface may open it.
+    crate::interop::open_files::grant_forwarded(&args);
     if let Some(window) = app.get_webview_window(MAIN) {
         let _ = window.unminimize();
         let _ = window.show();

@@ -15,6 +15,7 @@ import type {
   LossGroup,
   PickKind,
 } from '../interop';
+import { createWebInteropMore } from './interopMore';
 import { registerTestHook } from './testHooks';
 
 const STEPS = 6;
@@ -43,6 +44,14 @@ function detectPath(path: string): DetectedSource {
     zipped: false,
     advice: null,
   });
+  if (lower.endsWith('.opennote')) {
+    // A shared file whose name says "locked" stands for one locked with the password "pencil".
+    const locked = lower.includes('locked');
+    return {
+      ...found('markdown', locked ? 'Shared OpenNote file (locked)' : 'Shared OpenNote file'),
+      needsPassword: locked,
+    };
+  }
   if (lower.endsWith('.enex')) return found('evernote', 'Evernote export');
   if (lower.endsWith('.docx')) return found('word', 'Word documents');
   if (lower.endsWith('.txt')) return found('text', 'Text files');
@@ -129,6 +138,7 @@ export function createWebInterop(): InteropClient & {
   let stepMs = 15;
   let imports = 0;
   let sticky: string | null = null;
+  const extra = createWebInteropMore();
 
   registerTestHook('interopPickNext', (...answers: (string | null)[]) => void (next = answers));
   registerTestHook('interopStepMs', (ms: number) => void (stepMs = ms));
@@ -169,17 +179,28 @@ export function createWebInterop(): InteropClient & {
     setStepMs: (ms) => void (stepMs = ms),
     pick(kind) {
       log.picks.push({ kind });
-      if (next.length > 0) return Promise.resolve(next.shift() ?? null);
-      return Promise.resolve(
-        kind === 'file' ? 'C:\\Users\\Sample\\Exports\\Recipes.enex' : 'C:\\Users\\Sample\\Documents',
-      );
+      const picked =
+        next.length > 0
+          ? (next.shift() ?? null)
+          : kind === 'file'
+            ? 'C:\\Users\\Sample\\Exports\\Recipes.enex'
+            : 'C:\\Users\\Sample\\Documents';
+      if (picked && kind === 'file') extra.grant(picked);
+      return Promise.resolve(picked);
+    },
+    // Off unless a test turns it on (interopMore.ts), like a copy of OpenNote without the extra operations.
+    get more() {
+      return extra.on() ? extra.more : undefined;
     },
     detect: (path) => Promise.resolve(detectPath(path)),
     localSources: () => Promise.resolve({ stickyNotes: sticky }),
     setStickyNotes: (path) => void (sticky = path),
-    async preview(job, path) {
+    async preview(job, path, choices) {
       log.previews.push(path);
       const detected = detectPath(path);
+      if (detected.needsPassword && choices.password !== 'pencil') {
+        throw { code: 'unsupported', message: 'The password does not open this file.' };
+      }
       if (!(await run(job, `Check ${nameOf(path)}`, 'scanning', 5))) return stopped;
       return done(previewOf(path, detected));
     },
@@ -212,10 +233,13 @@ export function createWebInterop(): InteropClient & {
       log.exports.push(request);
       const count = request.sections.reduce((total, section) => total + section.pages.length, 0);
       if (!(await run(job, `Export ${request.title}`, 'writing', count))) return stopped;
+      // A PDF export writes the pages the window printed and staged, and an index.html.
+      const printed = request.format === 'pdf' ? extra.staged(job).size : 0;
+      const oneFile = ['htmlSingle', 'docx', 'share'].includes(request.format);
       const result: ExportResult = {
         reveal: `${request.folder}\\${request.title}`,
-        pages: count,
-        files: request.format === 'htmlSingle' || request.format === 'docx' ? 1 : count,
+        pages: request.format === 'pdf' ? printed : count,
+        files: oneFile ? 1 : request.format === 'pdf' ? printed + 1 : count,
         losses: [],
         lostPages: 0,
         skipped: 0,

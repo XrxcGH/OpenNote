@@ -6,7 +6,6 @@ export type InteropFlagId = Extract<FlagId, `interop.${string}`>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
-const off = { dev: false, nightly: false, beta: false, stable: false };
 
 const flag = (id: InteropFlagId, description: string, enabled: FlagDef['enabled'] = on): FlagDef => ({
   id,
@@ -18,5 +17,9 @@ const flag = (id: InteropFlagId, description: string, enabled: FlagDef['enabled'
 export const INTEROP_FLAGS: readonly FlagDef[] = [
   flag('interop.import', 'Import notes from other apps, with a check of what will and will not come over.'),
   flag('interop.export', 'Export a page, section, or notebook to Markdown, web pages, or Word.'),
-  flag('interop.exportPdf', 'The PDF choice in Export. Off until the PDF writer of Phase 6 is in.', off),
+  flag(
+    'interop.exportPdf',
+    'The PDF choice in Export: each page printed through the Phase 6 print window, in folders with an index.',
+    { dev: true, nightly: true, beta: true, stable: false },
+  ),
 ];

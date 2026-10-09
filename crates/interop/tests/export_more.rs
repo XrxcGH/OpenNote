@@ -9,8 +9,8 @@ use opennote_interop::run::EventLog;
 use opennote_interop::testing::{png_bytes, sample_notebook, TestEnv};
 use opennote_interop::{
     export_docx_with, export_files_with, export_html_single, export_pdf_bundle, import_html_folder, CancelToken,
-    Control, Event, Format, InteropError, MemorySink, NoPdfRenderer, NoteSource, PageReport, PdfRenderer, Result,
-    Scope,
+    Control, Event, Format, InteropError, MemorySink, NoPdfRenderer, NoteSource, PageReport, PdfRenderer,
+    PreparedPdfRenderer, Result, Scope,
 };
 
 /// A renderer that writes a few bytes of fake PDF for each page.
@@ -143,8 +143,53 @@ fn without_a_pdf_writer_the_export_says_so_and_makes_nothing() {
     let Err(InteropError::Unsupported { why, .. }) = outcome else {
         panic!("PDF export is not available yet");
     };
-    assert!(why.contains("Phase 6"), "{why}");
+    assert!(why.contains("can't draw pages as PDF"), "{why}");
     assert_eq!(fs::read_dir(out.path()).expect("lists").count(), 0);
+}
+
+#[test]
+fn pages_the_app_printed_become_a_bundle_and_the_rest_are_reported() {
+    let world = TestEnv::new();
+    let sample = sample_notebook(&world.env());
+    let out = tempfile::tempdir().expect("a temp folder");
+    let photo = sample.source.page(sample.photo).expect("the page");
+    let mut drawn = std::collections::HashMap::new();
+    drawn.insert(
+        photo.id,
+        b"%PDF-1.7
+1 0 obj<<>>endobj
+trailer<<>>
+%%EOF
+"
+        .to_vec(),
+    );
+    let exported = export_pdf_bundle(
+        &sample.source,
+        Scope::Notebook,
+        &PreparedPdfRenderer::new(drawn),
+        out.path(),
+        &Control::none(),
+    )
+    .expect("exports");
+    let pdfs: Vec<_> = exported
+        .files
+        .iter()
+        .filter(|p| p.extension().is_some_and(|e| e == "pdf"))
+        .collect();
+    assert_eq!(pdfs.len(), 1, "only the drawn page: {pdfs:?}");
+    assert!(fs::read(pdfs[0]).expect("reads").starts_with(b"%PDF-"));
+    let index = fs::read_to_string(exported.root.join("index.html")).expect("an index");
+    assert!(index.contains("Photosynthesis.pdf"), "{index}");
+    let report = exported.report.to_markdown();
+    assert!(report.contains("could not be printed"), "{report}");
+}
+
+#[test]
+fn bytes_that_are_not_a_whole_pdf_file_are_refused() {
+    assert!(PreparedPdfRenderer::looks_like_pdf(b"%PDF-1.4 x %%EOF"));
+    assert!(!PreparedPdfRenderer::looks_like_pdf(b"%PDF-1.4 cut off"));
+    assert!(!PreparedPdfRenderer::looks_like_pdf(b"<html>%%EOF"));
+    assert!(!PreparedPdfRenderer::looks_like_pdf(b""));
 }
 
 struct CancelOnSecondStep {

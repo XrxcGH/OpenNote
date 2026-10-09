@@ -141,3 +141,39 @@ describe('Export', () => {
     expect(platform.interop.log.canceled).toHaveLength(1);
   });
 });
+
+describe('Share as a file', () => {
+  it('shares a section with a password typed twice and page history, from the tree menu', async () => {
+    const { platform } = await renderApp();
+    const tree = screen.getByRole('tree', { name: 'Notebooks' });
+    const row = await within(tree).findByRole('treeitem', { name: 'Lectures' });
+    await userEvent.click(row, { button: 'right' });
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Share as a file…' }));
+    const dialog = await screen.findByRole('dialog', { name: /^Share "Lectures" as a file/ });
+    expect(within(dialog).queryByRole('radiogroup', { name: 'Format' })).toBeNull();
+    const secret = ['blue', 'pencil'].join(' ');
+    await userEvent.type(within(dialog).getByLabelText('Password (optional)'), secret);
+    await userEvent.type(within(dialog).getByLabelText('Type the password again'), 'blue pen');
+    await within(dialog).findByText('The two passwords are not the same.');
+    await userEvent.clear(within(dialog).getByLabelText('Type the password again'));
+    await userEvent.type(within(dialog).getByLabelText('Type the password again'), secret);
+    await userEvent.click(within(dialog).getByRole('switch', { name: 'Include page history' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a folder…' }));
+    await within(dialog).findByText('C:\\Users\\Sample\\Documents');
+    await expectNoAxeViolations(dialog);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Share' }));
+    await within(dialog).findByRole('heading', { name: 'Export finished' });
+    expect(platform.interop.log.exports[0]).toMatchObject({ format: 'share', password: secret, history: true });
+  });
+
+  it('asks for the password when a locked shared file is opened', async () => {
+    const { platform } = await renderApp({ fixture: 'empty' });
+    platform.interop.pick = () => Promise.resolve('C:/Users/Sample/Biology locked.opennote');
+    const dialog = await openImport();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a file…' }));
+    const field = await within(dialog).findByLabelText('Password');
+    await userEvent.type(field, 'pencil');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Open' }));
+    await within(dialog).findByRole('heading', { name: /will come into a new notebook/ });
+  });
+});

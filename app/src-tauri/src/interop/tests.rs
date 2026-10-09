@@ -4,7 +4,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use opennote_interop::{CancelToken, Control, Event, ImportOptions, InteropError, Phase, Unit};
+use base64::Engine as _;
+use opennote_interop::{CancelToken, Control, Event, ImportOptions, InteropError, NoPdfRenderer, Phase, Unit};
 use serde_json::{json, Value};
 
 use super::{
@@ -185,6 +186,8 @@ fn request(format: ExportFormat, scope: ExportScope, folder: &Path, pages: &[Str
         }],
         folder: folder.to_string_lossy().into_owned(),
         replace: None,
+        password: None,
+        history: false,
     }
 }
 
@@ -223,7 +226,7 @@ fn a_markdown_export_writes_the_interface_tree_with_its_pages() {
         .with(|bridge| Ok(TreeSource::build(bridge, &request)))
         .expect("the bridge")
         .expect("the source");
-    let exported = export::run(&source, &request, &Control::none()).expect("the export");
+    let exported = export::run(&source, &request, &NoPdfRenderer, &Control::none()).expect("the export");
     bridge.shutdown();
     assert_eq!(exported.files.len(), 3);
     let text: String = files_under(&exported.root)
@@ -249,8 +252,8 @@ fn a_section_export_and_a_word_export_each_write_their_files() {
             let word_source = TreeSource::build(bridge, &word).expect("the source");
             let single_source = TreeSource::build(bridge, &single).expect("the source");
             Ok((
-                export::run(&word_source, &word, &Control::none()),
-                export::run(&single_source, &single, &Control::none()),
+                export::run(&word_source, &word, &NoPdfRenderer, &Control::none()),
+                export::run(&single_source, &single, &NoPdfRenderer, &Control::none()),
             ))
         })
         .expect("the bridge");
@@ -268,22 +271,96 @@ fn a_section_export_and_a_word_export_each_write_their_files() {
 }
 
 #[test]
-fn pdf_export_says_it_is_not_here_yet_and_writes_nothing() {
+fn pdf_export_writes_the_printed_pages_and_an_index() {
     let dir = tempfile::tempdir().expect("a temp folder");
     let (bridge, imported) = imported_bridge(dir.path());
     let pages = pages_of(&imported.tree);
     let out = dir.path().join("out");
     fs::create_dir_all(&out).expect("an output folder");
     let request = request(ExportFormat::Pdf, ExportScope::Notebook, &out, &pages);
+    // The interface prints each page in the hidden window and stages the file under the job's name.
+    let pdf = b"%PDF-1.7
+1 0 obj<<>>endobj
+%%EOF
+";
+    for page in &pages {
+        let args =
+            json!({ "job": "j-pdf-test", "page": page, "data": base64::engine::general_purpose::STANDARD.encode(pdf) });
+        super::pdf_stage::stage(serde_json::from_value(args).expect("arguments")).expect("staged");
+    }
+    let renderer = super::pdf_stage::take("j-pdf-test");
     let result = bridge
         .with(|bridge| {
             let source = TreeSource::build(bridge, &request).expect("the source");
-            Ok(export::run(&source, &request, &Control::none()))
+            Ok(export::run(&source, &request, &renderer, &Control::none()))
         })
         .expect("the bridge");
     bridge.shutdown();
-    assert!(matches!(result, Err(InteropError::Unsupported { .. })));
-    assert!(files_under(&out).is_empty());
+    let exported = result.expect("the export");
+    let files = files_under(&out);
+    let pdfs = files
+        .iter()
+        .filter(|p| p.extension().is_some_and(|e| e == "pdf"))
+        .count();
+    assert_eq!(pdfs, pages.len(), "{files:?}");
+    assert!(files.iter().any(|p| p.ends_with("index.html")));
+    assert_eq!(exported.report.pages.len(), pages.len());
+}
+
+#[test]
+fn a_pdf_export_with_nothing_printed_reports_every_page() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let (bridge, imported) = imported_bridge(dir.path());
+    let pages = pages_of(&imported.tree);
+    let out = dir.path().join("out");
+    fs::create_dir_all(&out).expect("an output folder");
+    let request = request(ExportFormat::Pdf, ExportScope::Notebook, &out, &pages);
+    let renderer = super::pdf_stage::take("j-nothing-staged");
+    let result = bridge
+        .with(|bridge| {
+            let source = TreeSource::build(bridge, &request).expect("the source");
+            Ok(export::run(&source, &request, &renderer, &Control::none()))
+        })
+        .expect("the bridge");
+    bridge.shutdown();
+    let exported = result.expect("the export");
+    let (_, skipped) = exported.report.loss_counts();
+    assert_eq!(skipped, pages.len());
+}
+
+#[test]
+fn a_notebook_shares_as_one_locked_file_that_opens_with_its_password() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let (bridge, imported) = imported_bridge(dir.path());
+    let pages = pages_of(&imported.tree);
+    let out = dir.path().join("out");
+    fs::create_dir_all(&out).expect("an output folder");
+    let mut request = request(ExportFormat::Share, ExportScope::Notebook, &out, &pages);
+    let secret = ["blue", "pencil", "case"].join(" ");
+    request.password = serde_json::from_value(json!(secret)).expect("a password");
+    request.history = true;
+    assert!(!format!("{request:?}").contains("pencil"), "the password never prints");
+    let device = bridge.with(|bridge| Ok(bridge.core.device())).expect("a device");
+    let result = bridge
+        .with(|bridge| {
+            let source = TreeSource::build(bridge, &request).expect("the source");
+            Ok(export::run(&source, &request, &NoPdfRenderer, &Control::none()))
+        })
+        .expect("the bridge");
+    bridge.shutdown();
+    let exported = result.expect("the share");
+    assert_eq!(exported.files.len(), 1);
+    let file = &exported.files[0];
+    assert!(file.extension().is_some_and(|e| e == "opennote"));
+    let found = opennote_interop::detect(file).expect("known");
+    assert!(found.needs_password);
+    let choices: super::commands::ImportChoices =
+        serde_json::from_value(json!({ "reportPage": false, "password": secret })).expect("choices");
+    assert!(!format!("{choices:?}").contains("pencil"));
+    let parent = dir.path().join("opened");
+    fs::create_dir_all(&parent).expect("a folder");
+    let (report, _) = run_import(&parent, file, &choices.options(), device, Control::none()).expect("opens");
+    assert_eq!(report.pages.len(), 3);
 }
 
 #[test]

@@ -53,7 +53,7 @@ The app does all of this except "Save report", the PDF choice, and the Microsoft
 2. **The dry run.** Call `preview` on a worker thread and show `Preview`: the notebook name, the sections with their page counts, the picture and file totals, and `losses` as a list of reasons with examples and page counts. Offer "Import" or "Cancel".
 3. **The import.** Make a `DiskSink::standard(parent)` for the folder that holds notebooks, and a `Control` with a `CancelToken` and a `ProgressSink` that forwards `Event` values to the window. Call `import` on a worker thread. On success, call `Core::open_notebook` on `sink.notebook_dir()`. Remember that folder, so "Undo this import" can close the notebook and move its folder to the system trash.
 4. **The report.** `ImportOptions::report_page` adds an "Import report" page to the notebook. `Report::to_markdown` is the full copy for "Save report".
-5. **Exports.** Flush the open pages with `Core::flush_all`, open a `DiskSource` on the notebook folder, and call an `export_*_with` function with a `Control`. A canceled export deletes the folder it made. Until Phase 6 lands, pass `NoPdfRenderer` and the PDF choice says it is not available.
+5. **Exports.** Flush the open pages with `Core::flush_all`, open a `DiskSource` on the notebook folder, and call an `export_*_with` function with a `Control`. A canceled export deletes the folder it made. For PDF, the app prints each page in its hidden print window first and passes the files in a `PreparedPdfRenderer`; a host that can't draw passes `NoPdfRenderer`, and the PDF choice says so.
 6. **Events.** `Event` serializes as JSON with an `event` tag: `started`, `progress`, `finished`, `canceled`, or `failed`.
 
 ## Tests
@@ -70,7 +70,7 @@ The app does all of this except "Save report", the PDF choice, and the Microsoft
 - **Calendar, citation, and deck files.** These are iCalendar, BibTeX, Research Information Systems (RIS), and Anki files. They fill the timetable, citation, and deck features of other phases, which have no place to keep them yet.
 - **"Share as a file."** It needs the notebook folder layout in a single archive with optional encryption, and it is better built once the app owns the folder.
 - **Google and OneDrive uploads, and linked accounts.** These need the app's sign-in and network layers.
-- **PDF export itself.** Phase 6 supplies the `PdfRenderer`.
+- **Drawing PDF pages.** The app's Phase 6 print window draws them, and `PreparedPdfRenderer` serves the files.
 - **Ink.** Markdown and HTML exports show a page's handwriting as one SVG picture, which cannot be edited. Word exports and every import leave ink out, and the reports say so. PDF export keeps it.
 
 ## Known limits

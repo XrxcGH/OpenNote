@@ -1,6 +1,6 @@
 //! The extra interop operations behind one command, `interop_more`. The interface names an operation and sends its
-//! arguments as JSON. One command keeps the list of Tauri commands, the permissions, and the handler list short while
-//! the import and export area grows: saving an import report, sending a copy to a folder, sharing as a file, and
+//! arguments as JSON. One command keeps the Tauri command list, the permissions, and the handler list short. The import
+//! and export area keeps growing, so saving an import report, sending a copy to a folder, sharing as a file, and
 //! the rest each add a match arm and a function here.
 
 use std::path::{Path, PathBuf};
@@ -27,6 +27,16 @@ fn dispatch(op: &str, args: Value, data: &Path) -> IpcResult<Value> {
         "send_state" => send::state(data, parse(args)?),
         "send_favorite" => send::favorite(data, parse(args)?),
         "send_record" => send::record(data, parse(args)?),
+        "pdf_stage" => super::pdf_stage::stage(parse(args)?),
+        "open_launch" => super::open_files::take_launch(data),
+        "open_picked" => super::open_files::open_picked(parse(args)?),
+        "open_read" => super::open_files::read(parse(args)?),
+        "open_write" => super::open_files::write(parse(args)?),
+        "open_stat" => super::open_files::stat(parse(args)?),
+        "open_list" => super::open_files::list(data),
+        "open_link" => super::open_files::link(data, parse(args)?),
+        "open_default_apps" => super::open_files::default_apps(),
+        "pdf_unstage" => super::pdf_stage::unstage(parse(args)?),
         other => Err(IpcError::invalid(
             "op",
             &format!("There is no operation called {other}."),

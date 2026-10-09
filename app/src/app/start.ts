@@ -8,6 +8,7 @@ import '../features';
 import { installDiagnostics, offerSafeStart } from '../features/diagnostics';
 import { installPageZoom, installPages } from '../features/page';
 import { installSearch } from '../features/search';
+import { installOpenFiles } from '../features/interop';
 import { installSetup } from '../features/setup';
 import { installAppearance } from '../features/theme';
 import { createPlatform } from '../platform';
@@ -58,6 +59,7 @@ export function installApp(
     installPageZoom(),
     installPages(platform),
     installSearch(platform, notes),
+    installOpenFiles(platform, notes),
     installAppContextMenu(),
     installSetup(platform, notes),
     installDiagnostics(platform),

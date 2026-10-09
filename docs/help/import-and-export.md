@@ -31,8 +31,27 @@ Open Share, then Export, or press Ctrl+K and choose Export.
 
 - Pages, sections, and whole notebooks export as Markdown, Word, or a single HTML file.
 - Tables export as `.xlsx` or `.csv`. Pages export as a PowerPoint file.
-- A page's own Export and Print menu makes a PDF. The PDF format is not in the Import and export dialog yet.
+- Choose PDF files to export a section or a whole notebook as PDF. Each page is printed the same way as a page's own Export as PDF, into folders that follow your sections, with an `index.html` that links every file. A page that can't be printed is listed in the summary, and the rest still export. Cancel stops at once and keeps nothing.
+- A page's own Export and Print menu makes one PDF of that page.
 - Lasso an area to export just that part.
+
+## Open a Markdown or text file
+
+Choose Open file on the Home tab, or press Ctrl+K and choose Open file. In Explorer, right-click a `.md` or `.txt` file and choose Open with, then OpenNote.
+
+- The file opens as a page in the Opened files notebook. It stays where it is, with its name.
+- What you type is saved back into the file a moment later. If another app changes the file, the page shows the new text.
+- If both change at once, your page is kept and saved over the file, and a note offers the file's version instead.
+- To open Markdown and text files in OpenNote by double-clicking, press Ctrl+K, and choose Make OpenNote the default app. Windows shows its Default apps page, where you choose OpenNote.
+
+## Share as a file
+
+Right-click a page, a section, or a notebook and choose Share as a file. You can also find it in the page's Export and Print menu, on the Home tab, or with Ctrl+K.
+
+- OpenNote saves one `.opennote` file. Anyone with OpenNote opens it with Import notes, or by opening the file, and gets a new notebook with its sections, tags, and pictures. Opening it never changes your own notes.
+- Type a password to lock the file. You type it twice, and anyone who opens the file needs it. OpenNote cannot recover a forgotten password.
+- Turn on Include page history to bring each page's earlier versions along. They open as pages of a "Page history" section, each titled with its page and the time it was saved.
+- Handwriting comes along as a picture of each page's ink.
 
 ## Screenshots and copies
 
@@ -40,6 +59,6 @@ Take a screenshot with Win+Shift+S and OpenNote offers to add it to the open pag
 
 ## Not in beta 4
 
-Share as a file is not finished and has no screen yet. Opening OneNote files, importing a PDF with space for notes, and the web clipper are not built.
+Opening OneNote files, importing a PDF with space for notes, and the web clipper are not built.
 
 Import and export are built. Agents opened each dialog once. Nobody has tried a real import by hand.

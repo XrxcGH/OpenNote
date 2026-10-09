@@ -174,3 +174,29 @@ describe('saving the import report', () => {
     detach();
   });
 });
+
+describe('opening a shared file', () => {
+  it('asks for the password of a locked file, says when it is wrong, and opens with the right one', async () => {
+    const { flow, interop, detach } = setup();
+    await flow.openPath('C:/Users/Sample/Biology locked.opennote');
+    expect(flow.state.get()).toMatchObject({ step: 'locked', wrong: false });
+    expect(interop.log.previews).toEqual([]);
+    flow.setPassword('pen');
+    await flow.unlock();
+    expect(flow.state.get()).toMatchObject({ step: 'locked', wrong: true, password: '' });
+    flow.setPassword('pencil');
+    await flow.unlock();
+    const review = flow.state.get();
+    expect(review).toMatchObject({ step: 'review', password: 'pencil' });
+    await flow.start();
+    await until(flow, 'done');
+    detach();
+  });
+
+  it('opens a file without a password straight to the review', async () => {
+    const { flow, detach } = setup();
+    await flow.openPath('C:/Users/Sample/Biology.opennote');
+    expect(flow.state.get().step).toBe('review');
+    detach();
+  });
+});
