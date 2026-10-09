@@ -100,6 +100,17 @@ describe('creating', () => {
     expect(row(pagesTree(), 'Spindle').getAttribute('aria-level')).toBe('2');
   });
 
+  it('adds a page with Ctrl+N while the caret is in text', async () => {
+    await renderTree();
+    await openLectures();
+    const text = document.body.appendChild(document.createElement('div'));
+    text.contentEditable = 'true';
+    text.focus();
+    await pressChord('Ctrl+N');
+    await screen.findByRole('textbox', { name: 'Rename Untitled page' });
+    text.remove();
+  });
+
   it('runs the page created hooks after a new page', async () => {
     const { pageCreated } = await import('../../registries');
     const seen: string[] = [];
