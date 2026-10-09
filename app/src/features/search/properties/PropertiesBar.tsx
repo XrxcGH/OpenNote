@@ -210,6 +210,17 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
     save([...latest.current, field], true);
   };
 
+  // Escape anywhere on the page closes the open panel, unless something else (a dialog, a menu) took the key first.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('[role="dialog"]')) return;
+      toggle();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   return (
     <section
       className={styles.bar}

@@ -35,7 +35,8 @@ function start(): void {
         select: selection.selectOnPage,
         objectCommand: (command) => shownMedia.get()?.objects.command(command),
         handwriting: {
-          recognize: (strokes) => import('./inkSeams').then((seams) => seams.recognize(strokes)),
+          recognize: (strokes, ask) => import('./inkSeams').then((seams) => seams.recognize(strokes, ask)),
+          ensure: () => import('./inkSeams').then((seams) => seams.ensureHandwriting()),
           tidy: (strokes, recognition, operation) =>
             import('./inkSeams').then((seams) => seams.tidy(strokes, recognition, operation)),
         },

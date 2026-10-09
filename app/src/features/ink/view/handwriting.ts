@@ -16,6 +16,7 @@ import { strokeKind } from '../edits/filters';
 import type { InkStroke } from '../model/types';
 import { paletteByName } from '../pens/palette';
 import type { InkHost } from './host';
+import { drawState } from './state';
 import type { InkSurface } from './surface';
 
 /** Strokes in the recognizer's form: the ID, and the points with each stroke's own transform applied. */
@@ -189,6 +190,14 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
   /** Strokes this pen faded, so Show written ink can bring them back. */
   const faded = new Map<string, InkStroke>();
 
+  // Choosing the writing pen is the moment to ask, before any stroke: a dialog open over the page takes the pen's strokes.
+  let wasWriting = drawState.get().tool === 'writing';
+  const unsubscribe = drawState.subscribe(() => {
+    const writing = drawState.get().tool === 'writing';
+    if (writing && !wasWriting && handwritingAvailable(host)) void host.handwriting!.ensure?.();
+    wasWriting = writing;
+  });
+
   const run = async () => {
     timer = null;
     const surface = surfaceOf();
@@ -196,7 +205,8 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     const strokes = surface ? surface.strokes(pending) : [];
     pending = [];
     if (!surface || !queue || strokes.length === 0 || !handwritingAvailable(host)) return;
-    const recognition = await host.handwriting!.recognize(toIntel(strokes));
+    // Reading never opens the question here: it is asked when the writing pen is chosen, so no stroke meets a dialog.
+    const recognition = await host.handwriting!.recognize(toIntel(strokes), false);
     if (!recognition || recognition.lines.length === 0) return;
     const edits: Edit[] = [];
     const underlines: InkStroke[] = [];
@@ -250,6 +260,7 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     },
     destroy(): void {
       if (timer) clearTimeout(timer);
+      unsubscribe();
     },
   };
 }

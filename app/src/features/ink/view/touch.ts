@@ -25,7 +25,7 @@ function palmSettings(palm: Palm) {
 
 /** A touch this wide (CSS px, about 7 mm) while a pen is in use is a palm, not a finger. */
 const PALM_PX = 28;
-/** How long after the pen's last event a palm-sized touch on a control is held back. */
+/** How long before a palm-sized touch landed the pen may have been active for its click to be dropped. */
 const PEN_RECENT_MS = 1500;
 
 const PEN_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'pointercancel'] as const;
@@ -90,6 +90,10 @@ export class TouchTool {
     for (const type of PEN_EVENTS) window.addEventListener(type, this.onPen, { capture: true, passive: true });
     window.addEventListener('blur', this.onBlur);
     window.addEventListener('pointerdown', this.onTouchDown, { capture: true, passive: true });
+    window.addEventListener('pointerup', this.onTouchEnd, { capture: true, passive: true });
+    window.addEventListener('pointercancel', this.onTouchEnd, { capture: true, passive: true });
+    window.addEventListener('pointerup', this.onTouchEnd, { capture: true, passive: true });
+    window.addEventListener('pointercancel', this.onTouchEnd, { capture: true, passive: true });
     window.addEventListener('click', this.onClick, true);
   }
 
@@ -104,6 +108,10 @@ export class TouchTool {
     for (const type of PEN_EVENTS) window.removeEventListener(type, this.onPen, { capture: true });
     window.removeEventListener('blur', this.onBlur);
     window.removeEventListener('pointerdown', this.onTouchDown, { capture: true });
+    window.removeEventListener('pointerup', this.onTouchEnd, { capture: true });
+    window.removeEventListener('pointercancel', this.onTouchEnd, { capture: true });
+    window.removeEventListener('pointerup', this.onTouchEnd, { capture: true });
+    window.removeEventListener('pointercancel', this.onTouchEnd, { capture: true });
     window.removeEventListener('click', this.onClick, true);
     this.reset();
   }
@@ -139,18 +147,27 @@ export class TouchTool {
   };
 
   private lastPenAt = -Infinity;
-  private palmClickUntil = 0;
+  /** Palm-sized touches still down or just lifted, by pointer id: when each landed. */
+  private readonly palms = new Map<number, number>();
 
-  /** A palm-sized touch landing while a pen is in use must not press a toolbar button (the click it makes is dropped). */
+  /** Notes a palm-sized touch, whether it landed before or after the pen: its click is dropped if the pen was in use. */
   private readonly onTouchDown = (event: PointerEvent) => {
     if (event.pointerType !== 'touch' || !this.active()) return;
-    const big = Math.max(event.width, event.height) >= PALM_PX;
-    if (big && event.timeStamp - this.lastPenAt < PEN_RECENT_MS) this.palmClickUntil = event.timeStamp + 800;
+    if (Math.max(event.width, event.height) >= PALM_PX) this.palms.set(event.pointerId, event.timeStamp);
   };
 
+  private readonly onTouchEnd = (event: PointerEvent) => {
+    if (event.pointerType !== 'touch' || !this.palms.has(event.pointerId)) return;
+    // The click of this lift follows at once; forget the contact right after it.
+    setTimeout(() => this.palms.delete(event.pointerId), 50);
+  };
+
+  /** Drops the click of a palm-sized touch, however long it rested, when the pen was in use around it. A pen's own click passes. */
   private readonly onClick = (event: MouseEvent) => {
-    if (event.timeStamp > this.palmClickUntil) return;
-    this.palmClickUntil = 0;
+    const id = (event as PointerEvent).pointerId;
+    const landed = this.palms.get(id);
+    if (landed === undefined || (event as PointerEvent).pointerType === 'pen') return;
+    if (this.lastPenAt < landed - PEN_RECENT_MS) return;
     event.preventDefault();
     event.stopPropagation();
   };

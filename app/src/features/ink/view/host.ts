@@ -98,7 +98,9 @@ export interface InkHost {
   /** Reading and tidying handwriting through the on-device recognizer. Absent when the page has none to offer. */
   handwriting?: {
     /** Null when the person said not now, or reading failed. */
-    recognize(strokes: IntelStroke[]): Promise<InkRecognition | null>;
+    recognize(strokes: IntelStroke[], ask?: boolean): Promise<InkRecognition | null>;
+    /** Asks once to turn handwriting reading on when it is off. True when it is on. */
+    ensure?(): Promise<boolean>;
     tidy(strokes: IntelStroke[], recognition: InkRecognition, operation: TidyOperation): Promise<TidyPlan | null>;
   };
   /** Editing the typed text where the pen is. Absent when the page has no text editor to offer. */

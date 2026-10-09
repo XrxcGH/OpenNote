@@ -15,12 +15,17 @@ export function installDeepLinks(platform: Platform, notes: NotesService): () =>
   const open = (link: OpenNoteLink) => {
     void openAndReveal(notes, link.page, link.target)
       .then((found) => {
-        if (!found) showToast({ message: t('qolSearch.links.gone'), tone: 'danger' });
+        if (!found) {
+          console.warn(`Link to page ${link.page}: the page is not in the notebook tree.`);
+          showToast({ message: t('qolSearch.links.gone'), tone: 'danger' });
+        }
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => console.warn(`Link to page ${link.page} failed: ${String(error)}`));
   };
+  // Subscribed before anything else runs, so a second launch's arguments are never heard late.
   const stop = platform.window.onForwardedArgs((args) => {
     const link = linkInArgs(args);
+    console.debug(`Forwarded launch with ${args.length} argument(s): ${link ? 'a link' : 'no link'}.`);
     if (link) open(link);
   });
   void platform.search.extras

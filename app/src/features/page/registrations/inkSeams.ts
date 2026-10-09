@@ -9,15 +9,21 @@ import { shownMedia } from '../images/shown';
 const intel = () => import('../../intel').then((module) => module.loadApi());
 
 /** Reads the handwriting in these strokes. Null when the person said not now or reading failed (which is reported). */
-export async function recognize(strokes: InkStroke[]): Promise<InkRecognition | null> {
+export async function recognize(strokes: InkStroke[], ask = true): Promise<InkRecognition | null> {
   const api = await intel();
-  if (!(await api.askToTurnOn('handwriting'))) return null;
+  await api.loadIntel();
+  if (ask ? !(await api.askToTurnOn('handwriting')) : !api.isOn('handwriting')) return null;
   try {
     return await (await api.intelClient()).recognizeInk(strokes, { kind: 'writing' });
   } catch (error) {
     api.reportProblem(error, 'handwriting');
     return null;
   }
+}
+
+/** Asks once to turn handwriting reading on, so the question is not put while the pen is writing. */
+export async function ensureHandwriting(): Promise<boolean> {
+  return (await intel()).askToTurnOn('handwriting');
 }
 
 /** The moves that tidy handwriting that was already read. Null when it could not be planned. */
