@@ -147,9 +147,10 @@ fn run_inner(app: &AppHandle) -> IpcResult<Value> {
     }
     emit(app, "backup", json!({ "running": true }));
     let bridge = app.state::<CoreBridge>();
-    // Saving first puts every open page's latest edits in the files the copy reads.
+    // Saving first puts every open page's latest edits in the files the copy reads. It is not the exit flush:
+    // the pages stay open, with their journals, while the app runs on.
     let roots: Vec<PathBuf> = run_notes(app, &bridge, |b| {
-        let _ = b.core.flush_all(Duration::from_secs(10));
+        let _ = b.core.save_all(Duration::from_secs(10));
         Ok(b.notebooks()
             .iter()
             .filter(|nb| !nb.is_backup())
