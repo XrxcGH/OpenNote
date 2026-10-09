@@ -78,7 +78,7 @@ pub fn is_app_url(url: &tauri::Url) -> bool {
             url.host_str() == Some("tauri.localhost")
                 || (cfg!(debug_assertions) && url.host_str() == Some("localhost") && url.port() == Some(1420))
         }
-        "about" => url.as_str() == "about:blank",
+        "about" => matches!(url.as_str(), "about:blank" | "about:srcdoc"),
         // A blob address made by the app's own page, as for a download.
         "blob" => tauri::Url::parse(url.path()).is_ok_and(|inner| is_app_url(&inner)),
         _ => false,
@@ -297,6 +297,7 @@ mod navigation_tests {
         assert!(allowed("https://tauri.localhost/print.html"));
         assert!(allowed("tauri://localhost/index.html"));
         assert!(allowed("about:blank"));
+        assert!(allowed("about:srcdoc"));
         assert!(allowed(
             "blob:http://tauri.localhost/0b6a7c1e-1111-2222-3333-444455556666"
         ));
