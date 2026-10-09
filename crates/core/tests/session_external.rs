@@ -184,3 +184,26 @@ fn a_page_a_newer_version_saved_elsewhere_is_never_replaced() {
     assert!(handle.has_unsaved(), "the edit stays in memory and in the journal");
     assert_eq!(std::fs::read(&path).unwrap(), newer, "the newer file stays as it is");
 }
+
+#[test]
+fn a_page_md_edited_while_the_page_is_open_can_come_in_before_any_save() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let (_, a) = text_block(1, "Gamma");
+    handle.apply(real.request(vec![a])).unwrap();
+    handle.save_now().unwrap();
+    let path = real
+        .notebook
+        .path()
+        .join(real.section.to_string())
+        .join(real.page.to_string())
+        .join("page.md");
+    let written = written_page_md(&path);
+    // OpenNote's own copy has nothing to bring in.
+    assert!(handle.plan_readable_import().unwrap().is_none());
+    std::fs::write(&path, written.replace("Gamma", "Gamma\n\nAdded outside")).unwrap();
+    let import = handle.plan_readable_import().unwrap().expect("a plan");
+    assert!(import.base_known);
+    handle.apply(real.request(import.edits)).unwrap();
+    assert_eq!(texts(&page_json(&handle)), ["Gamma", "Added outside"]);
+}

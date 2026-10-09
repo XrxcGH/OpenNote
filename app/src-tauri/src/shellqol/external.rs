@@ -2,7 +2,8 @@
 //! change a page. After a short quiet time, a changed `page.json` of an open page is compared with the revision
 //! OpenNote holds, and a different one (or a conflict copy that a sync tool made) goes to the interface as an
 //! `external` event, which offers to reload the page. OpenNote never overwrites such a change silently: if the page
-//! also has unsaved edits, the core's next save keeps both versions as a conflict.
+//! also has unsaved edits, the core's next save keeps both versions as a conflict. An edited `page.md` goes to the
+//! interface as a `readable` change, which offers to bring its text into the page (`external.readable` plans it).
 
 use std::{
     collections::{HashMap, HashSet},
@@ -37,6 +38,7 @@ static STARTED: AtomicBool = AtomicBool::new(false);
 enum Seen {
     PageJson,
     ConflictCopy,
+    Readable,
 }
 
 /// The revision ID in the text of a `page.json`, if it has one.
@@ -53,8 +55,51 @@ pub fn start(_app: &AppHandle) {
     // The watcher starts when the interface asks, after the notebooks are loaded.
 }
 
-pub fn call(app: &AppHandle, name: &str, _args: &Value) -> IpcResult<Value> {
+pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
     match name {
+        // The edits that bring an edited `page.md` into its open page, or null when there is nothing to bring.
+        "external.readable" => {
+            let page: String = super::arg(args, "pageId")?;
+            let id =
+                opennote_core::PageId::parse(&page).map_err(|error| IpcError::invalid("pageId", &error.to_string()))?;
+            let Some(handle) = page_handle(app, id) else {
+                return Ok(Value::Null);
+            };
+            let plan = handle.plan_readable_import().map_err(crate::core_bridge::core_error)?;
+            Ok(plan.map_or(
+                Value::Null,
+                |plan| json!({ "edits": plan.edits, "baseKnown": plan.base_known }),
+            ))
+        }
+        // Brings the edited `page.md` text into the page as one undo step; true when something changed.
+        "external.importReadable" => {
+            let page: String = super::arg(args, "pageId")?;
+            let id =
+                opennote_core::PageId::parse(&page).map_err(|error| IpcError::invalid("pageId", &error.to_string()))?;
+            let Some(handle) = page_handle(app, id) else {
+                return Ok(json!(false));
+            };
+            let Some(plan) = handle.plan_readable_import().map_err(crate::core_bridge::core_error)? else {
+                return Ok(json!(false));
+            };
+            let nanos = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_or(0, |d| d.as_nanos() % 1_000_000_000_000);
+            let client = opennote_core::ClientId::parse(&format!("readable-{nanos}"))
+                .map_err(|error| IpcError::invalid("client", &error.to_string()))?;
+            let request = opennote_core::ops::resolve::TxnRequest {
+                page: id,
+                client,
+                client_seq: 1,
+                coalesce: None,
+                ui: None,
+                edits: plan.edits,
+            };
+            handle
+                .apply(request)
+                .map_err(|error| crate::core_bridge::core_error(opennote_core::CoreError::Edit(error)))?;
+            Ok(json!(true))
+        }
         "external.start" => {
             if !STARTED.swap(true, Ordering::SeqCst) {
                 let app = app.clone();
@@ -148,6 +193,7 @@ fn note(roots: &HashSet<PathBuf>, path: &Path, pending: &mut HashMap<(PathBuf, S
         let seen = match file {
             PageFile::PageJson => Seen::PageJson,
             PageFile::ConflictCopy => Seen::ConflictCopy,
+            PageFile::ReadableCopy if path.file_name().is_some_and(|name| name == "page.md") => Seen::Readable,
             PageFile::ReadableCopy | PageFile::Other => return,
         };
         pending.insert((root.clone(), page.to_string(), seen), path.to_path_buf());
@@ -165,6 +211,8 @@ fn settle(app: &AppHandle, pending: HashMap<(PathBuf, String, Seen), PathBuf>) {
         };
         let foreign = match seen {
             Seen::ConflictCopy => true,
+            // OpenNote's own copy reads as its own; only a copy someone edited has text to bring in.
+            Seen::Readable => handle.plan_readable_import().ok().flatten().is_some(),
             Seen::PageJson => {
                 // Saving first keeps OpenNote's own unsaved edits: the core keeps both versions if the file changed.
                 let own = handle.save_now().ok().map(|info| info.revision.to_string());
@@ -173,10 +221,10 @@ fn settle(app: &AppHandle, pending: HashMap<(PathBuf, String, Seen), PathBuf>) {
             }
         };
         if foreign {
-            let change = if seen == Seen::ConflictCopy {
-                "conflictCopy"
-            } else {
-                "changed"
+            let change = match seen {
+                Seen::ConflictCopy => "conflictCopy",
+                Seen::Readable => "readable",
+                Seen::PageJson => "changed",
             };
             emit(app, "external", json!({ "pageId": page, "change": change }));
         }

@@ -9,7 +9,8 @@ import { shellCall } from '../../platform/shellqol';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { Button } from '../../ui';
-import { dismissExternal, externalStore } from './externalStore';
+import { dismissExternal, externalStore, markReadable } from './externalStore';
+import { bringInReadable, hasReadableEdits } from './readableImport';
 import styles from './QolPage.module.css';
 
 export interface ConflictItem {
@@ -62,7 +63,25 @@ export function ExternalNotice() {
   const pageId = location.view === 'workspace' ? location.pageId : null;
   const changed = useStore(externalStore, (state) => (pageId ? state.changed[pageId] : undefined));
   const open = useConflicts(pageId, conflicts);
+  // A page.md edited while OpenNote was closed is found when its page opens.
+  useEffect(() => {
+    if (!pageId || !watching) return undefined;
+    let current = true;
+    const check = setTimeout(
+      () => void hasReadableEdits(pageId).then((found) => current && found && markReadable(pageId)),
+      800,
+    );
+    return () => {
+      current = false;
+      clearTimeout(check);
+    };
+  }, [pageId, watching]);
   if (!pageId) return null;
+  const bringIn = () =>
+    void bringInReadable(pageId).then(
+      (changed) => (changed ? reloadPage(pageId) : dismissExternal(pageId)),
+      () => dismissExternal(pageId),
+    );
   const compare = () =>
     void import('./ConflictDialog').then((loaded) => loaded.openConflictDialog(pageId, open[0], open.length));
   return (
@@ -72,6 +91,17 @@ export function ExternalNotice() {
           <p>{t('qol.external.changed')}</p>
           <div className={styles.actions}>
             <Button onClick={() => void reloadPage(pageId)}>{t('qol.external.reload')}</Button>
+            <Button variant="quiet" onClick={() => dismissExternal(pageId)}>
+              {t('qol.external.dismiss')}
+            </Button>
+          </div>
+        </div>
+      )}
+      {watching && changed === 'readable' && (
+        <div className={styles.notice} role="status">
+          <p>{t('qol.external.readable')}</p>
+          <div className={styles.actions}>
+            <Button onClick={bringIn}>{t('qol.external.bringIn')}</Button>
             <Button variant="quiet" onClick={() => dismissExternal(pageId)}>
               {t('qol.external.dismiss')}
             </Button>
