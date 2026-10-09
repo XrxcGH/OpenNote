@@ -152,6 +152,20 @@ class MathView implements NodeView {
     problem.textContent = drawing && !drawing.ok ? t('smart.math.problem', { message: drawing.message }) : '';
   }
 
+  /** True while this equation is still on the page of that editor. */
+  usableIn(editor: Editor): boolean {
+    return !this.gone && this.editor === editor && this.dom.isConnected;
+  }
+
+  /** Opens the field if needed and runs Simplify or Solve on it, as the buttons in the panel do. */
+  runAction(kind: 'simplify' | 'solve'): boolean {
+    this.open();
+    const actions = this.renderer?.actions;
+    if (!this.field || !actions) return false;
+    this.act(actions[kind]);
+    return true;
+  }
+
   /** Runs Simplify or Solve on what is in the field, and says what happened. */
   private act(run: (latex: string) => MathActionResult): void {
     const field = this.field;
@@ -181,6 +195,7 @@ class MathView implements NodeView {
     if (!field) return;
     this.field = null;
     const source = field.value;
+    rememberClosed(this);
     field.remove();
     this.holder?.remove();
     this.preview = this.problem = this.holder = null;
@@ -205,7 +220,9 @@ class MathView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    return this.field !== null && event.target === this.field;
+    // Keys and focus inside the field and its panel (Tab to Simplify and Solve) are not the editor's.
+    const target = event.target as Node | null;
+    return this.field !== null && (target === this.field || Boolean(this.holder?.contains(target)));
   }
 
   ignoreMutation(): boolean {
@@ -231,6 +248,30 @@ export function openMathAt(editor: Editor, pos: number): boolean {
   const view = dom instanceof Element ? views.get(dom) : undefined;
   view?.open();
   return Boolean(view);
+}
+
+/** The equation whose field closed last: opening the palette closes the field and moves the caret, so Simplify and
+ * Solve from Ctrl+K act on this one when none is selected. */
+let lastClosed: MathView | null = null;
+function rememberClosed(view: MathView): void {
+  lastClosed = view;
+}
+
+/** Simplify or Solve for the selected equation, the one just before the caret, or the one edited last. */
+export function runMathAction(editor: Editor, kind: 'simplify' | 'solve'): boolean {
+  const { selection } = editor.state;
+  let pos: number | null = null;
+  if (selection instanceof NodeSelection && selection.node.type.name.startsWith('math')) pos = selection.from;
+  else {
+    const before = selection.$from.nodeBefore;
+    if (before?.type.name.startsWith('math')) pos = selection.from - before.nodeSize;
+  }
+  if (pos !== null) {
+    const dom = editor.view.nodeDOM(pos);
+    const view = dom instanceof Element ? views.get(dom) : undefined;
+    if (view) return view.runAction(kind);
+  }
+  return lastClosed?.usableIn(editor) ? lastClosed.runAction(kind) : false;
 }
 
 export function mathBlockExtensions(host: EditorHost): Extensions {

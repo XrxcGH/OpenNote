@@ -7,7 +7,7 @@ A smart table holds typed columns, formulas, and several views of the same rows.
 ## Make a table
 
 - Open Insert, then Smart table.
-- Add columns of type number, date, or choice. Sort and filter the rows.
+- Format a column as number, currency, percent, date, or text. Sort and filter the rows, and use Board to group rows by any column of repeating text (the stand-in for a choice column).
 - Draw a grid with the pen and it becomes a table.
 - Import an Excel file and each sheet becomes a table page.
 

@@ -214,7 +214,7 @@ Quality-of-life features (pages lane):
 
 ## 7. Smart tables and charts (Phase 7)
 
-1. Insert > Smart table. Add columns of type number, date, choice; sort and filter.
+1. Insert > Smart table. Format columns as number, currency, percent, date, or text (there is no separate choice type; Board groups rows by any column of repeating text); sort and filter.
 2. Insert a chart from the table; change its type; edit a number: the chart updates.
 
 Quality-of-life features (tables lane):
@@ -257,9 +257,10 @@ Quality-of-life features (audio lane):
 
 ## 10. Math and the grapher (Phase 10)
 
-1. Type `$x^2$` (or Insert > Math): it renders. Edit it.
+1. Type `$x^2$` (or Insert > Math): it renders. Edit it. Typing `$$x^2$$` makes display math only when it is the whole
+   line (after other text the `$$` stays text); amounts such as `$5 and $10` stay text.
 2. Insert > Graph: plot `y = sin(x)`; pan and zoom.
-3. Math actions: select an equation > Solve / Simplify.
+3. Math actions: open an equation (Alt+= or double-click), then Tab to Simplify and Solve, or press Ctrl+K "Solve" / "Simplify" right after editing an equation.
 
 Quality-of-life features (math lane):
 
