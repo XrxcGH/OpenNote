@@ -2,6 +2,7 @@
 // from the block layer, so typing that the core hasn't seen yet is in the export, and the view and assets are the
 // ones this window knows.
 import type { AssetJson, BlockJson, PageJson } from '../../services/pages/types';
+import { liveText } from './blocks/textBlock';
 import { assetTable } from './images/assets';
 import type { MountedPage } from './pagesApi';
 
@@ -10,7 +11,14 @@ const assetOf = (block: BlockJson) => (typeof block.data.asset === 'string' ? bl
 /** The page's JSON as the window shows it, with `title` as given (the tree owns the title). */
 export function snapshotPage(mounted: MountedPage, title: string): PageJson {
   const table = assetTable(mounted.page);
-  const blocks = mounted.layer.blocks().filter((block) => block.data.markdown !== '' || block.type !== 'text');
+  const blocks = mounted.layer
+    .blocks()
+    .map((block) => {
+      // The layer's copy of a text block is the one the core last acknowledged, not what is typed in it now.
+      const live = block.type === 'text' ? liveText(mounted.layer.view(block.id)) : null;
+      return live ? { ...block, data: { ...block.data, markdown: live.liveMarkdown() } } : block;
+    })
+    .filter((block) => block.data.markdown !== '' || block.type !== 'text');
   const assets: Record<string, AssetJson> = {};
   for (const block of blocks) {
     const id = assetOf(block);
