@@ -79,26 +79,7 @@ pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
             let Some(handle) = page_handle(app, id) else {
                 return Ok(json!(false));
             };
-            let Some(plan) = handle.plan_readable_import().map_err(crate::core_bridge::core_error)? else {
-                return Ok(json!(false));
-            };
-            let nanos = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_or(0, |d| d.as_nanos() % 1_000_000_000_000);
-            let client = opennote_core::ClientId::parse(&format!("readable-{nanos}"))
-                .map_err(|error| IpcError::invalid("client", &error.to_string()))?;
-            let request = opennote_core::ops::resolve::TxnRequest {
-                page: id,
-                client,
-                client_seq: 1,
-                coalesce: None,
-                ui: None,
-                edits: plan.edits,
-            };
-            handle
-                .apply(request)
-                .map_err(|error| crate::core_bridge::core_error(opennote_core::CoreError::Edit(error)))?;
-            Ok(json!(true))
+            import_readable(&handle, id).map(Value::Bool)
         }
         "external.start" => {
             if !STARTED.swap(true, Ordering::SeqCst) {
@@ -115,6 +96,32 @@ pub fn call(app: &AppHandle, name: &str, args: &Value) -> IpcResult<Value> {
         }
         _ => Err(IpcError::invalid("name", "isn't an external call")),
     }
+}
+
+/// Applies the edited `page.md` text to the page as one transaction; true when something changed.
+fn import_readable(handle: &opennote_core::session::page::PageHandle, id: opennote_core::PageId) -> IpcResult<bool> {
+    let Some(plan) = handle.plan_readable_import().map_err(crate::core_bridge::core_error)? else {
+        return Ok(false);
+    };
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_nanos() % 1_000_000_000_000);
+    let client = opennote_core::ClientId::parse(&format!("readable-{nanos}"))
+        .map_err(|error| IpcError::invalid("client", &error.to_string()))?;
+    let request = opennote_core::ops::resolve::TxnRequest {
+        page: id,
+        client,
+        client_seq: 1,
+        coalesce: None,
+        ui: None,
+        edits: plan.edits,
+    };
+    handle
+        .apply(request)
+        .map_err(|error| crate::core_bridge::core_error(opennote_core::CoreError::Edit(error)))?;
+    // The save rewrites `page.md` from the page, so the same text isn't offered a second time (and applied twice).
+    handle.save_now().map_err(crate::core_bridge::core_error)?;
+    Ok(true)
 }
 
 /// The folders of the open notebooks, backups left out.
@@ -249,5 +256,95 @@ mod tests {
         assert!(relevant(&EventKind::Create(CreateKind::File)));
         assert!(relevant(&EventKind::Modify(ModifyKind::Any)));
         assert!(!relevant(&EventKind::Remove(RemoveKind::File)));
+    }
+
+    #[test]
+    fn an_edited_page_md_comes_into_the_page_once() {
+        use opennote_core::ops::resolve::{Edit, NewBlock, TxnRequest};
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let notes = dir.path().join("Notes");
+        let bridge = CoreBridge::at(dir.path().join("local"));
+        let (id, handle) = bridge
+            .notes(Some(notes.clone()), |b| {
+                let mut make = |kind: &str, parent: Option<String>| {
+                    let input = json!({ "kind": kind, "placement": { "parentId": parent, "beforeId": null } });
+                    let node = b.dispatch("notes_create", &json!({ "input": input }))?;
+                    Ok::<_, IpcError>(node["id"].as_str().unwrap_or_default().to_owned())
+                };
+                let notebook = make("notebook", None)?;
+                let section = make("section", Some(notebook))?;
+                let page = make("page", Some(section))?;
+                let handle = b.handle(&page, "main-1")?;
+                Ok((page, handle))
+            })
+            .expect("a page");
+        let block: NewBlock = serde_json::from_value(
+            json!({ "id": "01k6f00000000000000000b001", "type": "text", "data": { "markdown": "Gamma" } }),
+        )
+        .expect("a block");
+        let request = TxnRequest {
+            page: handle.id(),
+            client: handle.client().clone(),
+            client_seq: 1,
+            coalesce: None,
+            ui: None,
+            edits: vec![Edit::InsertBlock {
+                block,
+                after: None,
+                before: None,
+            }],
+        };
+        handle.apply(request).expect("applies");
+        handle.save_now().expect("saves");
+        let page_id = opennote_core::PageId::parse(&id).expect("a page ID");
+        let path = (0..200)
+            .find_map(|_| {
+                let found = find_page_md(&notes, &id)
+                    .filter(|p| std::fs::read_to_string(p).is_ok_and(|text| text.contains("Gamma")));
+                if found.is_none() {
+                    std::thread::sleep(Duration::from_millis(25));
+                }
+                found
+            })
+            .expect("a page.md is written");
+        // OpenNote's own copy has nothing to bring in.
+        assert!(!import_readable(&handle, page_id).unwrap());
+        let text = std::fs::read_to_string(&path).unwrap();
+        std::fs::write(
+            &path,
+            text.replace(
+                "Gamma",
+                "Gamma
+
+Added outside",
+            ),
+        )
+        .unwrap();
+        assert!(import_readable(&handle, page_id).unwrap());
+        let envelope = handle.envelope(None).expect("an envelope");
+        let decoded = opennote_core::wire::envelope::decode(&envelope.bytes).expect("decodes");
+        let page: Value = serde_json::from_slice(decoded.page_json).expect("page JSON");
+        assert!(page.to_string().contains("Added outside"), "the text came in");
+        assert!(
+            !import_readable(&handle, page_id).unwrap(),
+            "a second call has nothing to bring in"
+        );
+        bridge.shutdown();
+    }
+
+    fn find_page_md(dir: &Path, page: &str) -> Option<PathBuf> {
+        for entry in std::fs::read_dir(dir).ok()?.filter_map(Result::ok) {
+            let path = entry.path();
+            if path.is_dir() {
+                if path.file_name().is_some_and(|n| n == page) {
+                    let md = path.join("page.md");
+                    return md.exists().then_some(md);
+                }
+                if let Some(found) = find_page_md(&path, page) {
+                    return Some(found);
+                }
+            }
+        }
+        None
     }
 }

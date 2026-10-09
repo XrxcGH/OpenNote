@@ -16,8 +16,18 @@ export interface ExternalState {
 
 export const externalStore = createStore<ExternalState>({ changed: {}, tick: 0 }, 'qolExternal');
 
+/** Pages whose offer to bring in page.md text was turned down; the offer returns when the watcher sees a new edit. */
+const turnedDown = new Set<string>();
+
+/** Turns the offer down for now, so opening the page again doesn't repeat it. */
+export function dismissReadable(pageId: string): void {
+  turnedDown.add(pageId);
+  dismissExternal(pageId);
+}
+
 /** Marks a page whose page.md has text to bring in, as found when the page opens. */
 export function markReadable(pageId: string): void {
+  if (turnedDown.has(pageId)) return;
   externalStore.set((state) => ({ ...state, changed: { ...state.changed, [pageId]: 'readable' } }));
 }
 
@@ -35,6 +45,7 @@ export function followExternal(): () => void {
     const change: ExternalChange =
       event.change === 'conflictCopy' || event.change === 'readable' ? event.change : 'changed';
     const pageId = event.pageId;
+    if (change === 'readable') turnedDown.delete(pageId);
     externalStore.set((state) => ({ changed: { ...state.changed, [pageId]: change }, tick: state.tick + 1 }));
   });
 }

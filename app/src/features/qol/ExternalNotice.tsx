@@ -9,7 +9,7 @@ import { shellCall } from '../../platform/shellqol';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { Button } from '../../ui';
-import { dismissExternal, externalStore, markReadable } from './externalStore';
+import { dismissExternal, dismissReadable, externalStore, markReadable } from './externalStore';
 import { bringInReadable, hasReadableEdits } from './readableImport';
 import styles from './QolPage.module.css';
 
@@ -102,7 +102,7 @@ export function ExternalNotice() {
           <p>{t('qol.external.readable')}</p>
           <div className={styles.actions}>
             <Button onClick={bringIn}>{t('qol.external.bringIn')}</Button>
-            <Button variant="quiet" onClick={() => dismissExternal(pageId)}>
+            <Button variant="quiet" onClick={() => dismissReadable(pageId)}>
               {t('qol.external.dismiss')}
             </Button>
           </div>

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { INITIAL_QOL, qolStore } from '../../state/qol';
 import { setFocusMode, setLowPower, toggleFocusMode, wantsLowPower } from './modes';
