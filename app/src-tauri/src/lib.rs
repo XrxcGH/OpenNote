@@ -288,6 +288,8 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         study::study_anki_read,
         study::study_anki_write,
         study::study_zotero_items,
+        study::study_zotero_run,
+        study::study_zotero_reply,
         interop::commands::interop_pick,
         interop::commands::interop_detect,
         interop::commands::interop_local_sources,
