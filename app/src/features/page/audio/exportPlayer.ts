@@ -52,7 +52,7 @@ export function momentsFor(
   return found;
 }
 
-const baseName = (path: string) => path.split(/[\/]/).pop() ?? path;
+const baseName = (path: string) => path.split(/[/\\]/).pop() ?? path;
 
 /**
  * Makes the audio files beside the web page at `htmlPath` and describes the player. A recording that cannot be mixed
@@ -66,7 +66,7 @@ export async function preparePlayer(pageId: string, htmlPath: string): Promise<P
     type: block.type,
     data: block.data,
   }));
-  const stem = htmlPath.replace(/\.[^.\/]*$/, '');
+  const stem = htmlPath.replace(/\.[^./]*$/, '');
   const recordings = new Map<string, { src: string; seconds: number }>();
   const moments = new Map<string, number>();
   let number = 0;
