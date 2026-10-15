@@ -111,6 +111,8 @@ type ToolsQolFlagId =
   | 'math.quickMath'
   | 'math.notes'
   | 'math.diagrams'
+  | 'math.mindmapExport'
+  | 'math.mindmapPen'
   | 'math.mindMaps'
   | 'study.cards'
   | 'study.import'

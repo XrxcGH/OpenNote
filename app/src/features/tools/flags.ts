@@ -28,6 +28,8 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('math.quickMath', 'Type a sum and an equals sign in text, then Space, to add the answer.'),
   flag('math.notes', 'Variables and units on page lines, with answers after the equals sign.'),
   flag('math.diagrams', 'Diagrams drawn from Mermaid text.'),
+  flag('math.mindmapExport', 'Save a mind map as an SVG, PNG, or PDF picture.'),
+  flag('math.mindmapPen', 'Build and edit a mind map with the pen: tap to write, drag to add or move a branch.'),
   flag('math.mindMaps', 'Mind maps that turn to and from an outline.'),
   flag('study.cards', 'Flashcard decks, review, card types, inline cards, generation, and exam dates.'),
   flag('study.import', 'Deck import and export for Anki packages, CSV, and text.'),
