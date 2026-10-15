@@ -33,6 +33,8 @@ pub fn call(app: &AppHandle, bridge: &CoreBridge, name: &str, args: &Value) -> I
         }
         "storage.moveNotes" | "storage.cancelMove" => super::notes_move::call(app, bridge, name, args),
         "check.repair" | "check.undo" => super::repairs::call(app, bridge, name, args),
+        // Lock entry (A2-17): the name this PC has in OpenNote, for the stamp. The core stamps time and hash.
+        "lock.device" => run_notes(app, bridge, |b| Ok(json!({ "label": b.core.device().label }))),
         _ if name.starts_with("edits.")
             || name == "source.openExternal"
             || name == "storage.cloudOnly"

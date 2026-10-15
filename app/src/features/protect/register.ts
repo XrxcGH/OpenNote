@@ -3,13 +3,19 @@
 // folder was renamed or moved, and a folder that kept its name. After a crash, the next start points once, calmly,
 // to Check notebook for the notebook that is open (A2-2).
 
+import { isEnabled } from '../../app/flags';
 import { getLocation } from '../../app/location';
+import { defineCommand } from '../../commands/registry';
+import type { CommandDef } from '../../commands/types';
+import { commands } from '../../registries';
+import { mountedPageHooks, shownMounted } from '../page';
 import { commandContext } from '../../commands/registry';
 import { shellHost } from '../../platform/shellqol';
 import { t } from '../../strings/t';
 import { showToast } from '../../ui';
 import { loadExternalNotice } from '../qol';
 import { pointToCheck } from './crashPointer';
+import { entryLockState } from './entryLock';
 
 if (typeof window !== 'undefined') {
   shellHost().listen((event) => {
@@ -42,3 +48,46 @@ if (typeof window !== 'undefined') {
     }
   }, POINTER_DELAY_MS);
 }
+
+// Lock entry (A2-17, ADR 0041): the palette's Lock entry and Unlock entry, and the stamp banner on each page view.
+const loadEntryLock = () => import('./entryLock');
+const pageShown = () => shownMounted.get() !== null;
+commands.register(
+  defineCommand({
+    id: 'protect.lockEntry',
+    title: 'storage.lock.lockEntry',
+    keywords: 'storage.lock.lockKeywords',
+    category: 'editing',
+    flag: 'page.lockEntry',
+    when: () => pageShown() && !entryLockState.get()?.lock,
+    run: () => void loadEntryLock().then((module) => module.lockEntry()),
+  }) as CommandDef,
+);
+commands.register(
+  defineCommand({
+    id: 'protect.unlockEntry',
+    title: 'storage.lock.unlockEntry',
+    keywords: 'storage.lock.unlockKeywords',
+    category: 'editing',
+    flag: 'page.lockEntry',
+    when: () => pageShown() && Boolean(entryLockState.get()?.lock),
+    run: () => void loadEntryLock().then((module) => module.unlockEntry()),
+  }) as CommandDef,
+);
+mountedPageHooks.register({
+  id: 'entryLock',
+  attach(mounted) {
+    if (!isEnabled('page.lockEntry')) return () => undefined;
+    let stop: (() => void) | null = null;
+    let detached = false;
+    void loadEntryLock()
+      .then((module) => {
+        stop = detached ? null : module.attachEntryLock(mounted);
+      })
+      .catch(() => undefined);
+    return () => {
+      detached = true;
+      stop?.();
+    };
+  },
+});

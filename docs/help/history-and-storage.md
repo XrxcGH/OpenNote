@@ -1,6 +1,6 @@
 # History, Trash, and storage
 
-OpenNote keeps every notebook as an ordinary folder in your notes folder. This guide covers page history, Trash, where your notes live, and how to check a notebook.
+OpenNote keeps every notebook as an ordinary folder in your notes folder. This guide covers page history, Trash, where your notes live, locked entries, and how to check a notebook.
 
 ## Page history
 
@@ -44,3 +44,11 @@ Choose Check notebook in a notebook's menu, in the command palette, or in Settin
 - Open the page takes you to a page with a broken link, so you can fix the link.
 
 Each repair has Undo in the same window, until you close OpenNote. If OpenNote closed unexpectedly, the next start shows a short note with a Check notebook button.
+
+## Lock an entry
+
+For lab notebooks and records, Lock entry makes a page read-only and stamps it with the date, the time from this PC's clock, and this PC's name in OpenNote. Choose Lock entry in the command palette, or on the page itself when it uses the Lab notebook layout. OpenNote asks first.
+
+A locked page shows its stamp above the page. To change it again, choose Unlock entry and say why. The reason is kept in page history as the name of the locked version, and that version is never removed when history is thinned.
+
+The lock only stops edits in OpenNote. It isn't tamper-proof: anyone with access to the files can change them, and the PC's clock can be wrong.
