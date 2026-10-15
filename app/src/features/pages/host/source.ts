@@ -1,6 +1,7 @@
 // The shown page, ready for export: its data as `ExportPage`, the title and place for headers, and where each asset
 // loads from. Everything export, print, the gallery, and slides show about the open page comes through here.
-import { shownAssetUrl, shownMounted, snapshotShownPage } from '../../page';
+import { expandEmbedText, loadEmbed, shownAssetUrl, shownMounted, snapshotShownPage } from '../../page';
+import { isEnabled } from '../../../app/flags';
 import type { NodeId, NotesService } from '../../../services/notes';
 import { titleOf } from '../../tree';
 import { readExportPage, withBlanks, type ExportBlock, type TapeBox, type ExportPage } from '../export';
@@ -56,6 +57,21 @@ function tapeLabels() {
   };
 }
 
+/** Puts the text of each embed into the page, so a file with no live cards still has it. */
+async function withEmbeds(page: ExportPage): Promise<ExportPage> {
+  if (!isEnabled('page.embeds')) return page;
+  const blocks: ExportBlock[] = [];
+  for (const block of page.blocks) {
+    if (block.type !== 'text' || !block.markdown.includes('![[')) {
+      blocks.push(block);
+      continue;
+    }
+    const markdown = await expandEmbedText(block.markdown, (ref) => loadEmbed(ref, page.id));
+    blocks.push(markdown === block.markdown ? block : { ...block, markdown });
+  }
+  return { ...page, blocks };
+}
+
 /** Draws each diagram, so print, PDF, pictures, and web pages carry it as a vector drawing. A diagram that can't be drawn stays as text. */
 async function withDiagrams(page: ExportPage): Promise<ExportPage> {
   if (!page.blocks.some((block) => block.type === 'diagram')) return page;
@@ -81,7 +97,7 @@ export async function collectSource(notes: NotesService, language = 'en'): Promi
   const json = await snapshotShownPage(place.title);
   if (!json) return null;
   const strokes = await collectStrokes(pageId);
-  const read = await withDiagrams(readExportPage(json, strokes, language));
+  const read = await withDiagrams(await withEmbeds(readExportPage(json, strokes, language)));
   const page = tapeBlanksOn() ? withBlanks(read, shownBoxes(), tapeLabels()) : read;
   const assetUrls: Record<string, string> = {};
   for (const id of Object.keys(page.assets)) {

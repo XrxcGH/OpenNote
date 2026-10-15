@@ -12,7 +12,7 @@ A page holds text boxes, headings, lists, checklists, quotes, code, callouts, ta
 | Make a heading | Press Ctrl+Alt+1, Ctrl+Alt+2, or Ctrl+Alt+3. |
 | Make text bold | Press Ctrl+B. |
 | Link to another page | Type `[[` and pick a page. |
-| Show another page inside this one | Type `![[` and pick a page. |
+| Show another page inside this one | Type `![[` and pick a page. To show one paragraph, copy its paragraph ID and write `![[Page#^id]]`. When you export, the embedded text is included. |
 | Paste with the structure and without stray fonts | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. |
 | Paste a screenshot | Press Win+Shift+S, then Ctrl+V. |
 

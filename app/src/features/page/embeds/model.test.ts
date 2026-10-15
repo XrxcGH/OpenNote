@@ -37,3 +37,23 @@ describe('page embeds', () => {
     expect(pickBlocks(blocks, 'Missing')).toEqual([]);
   });
 });
+
+describe('paragraph embeds', () => {
+  it('reads a paragraph ID from an embed line', () => {
+    expect(parseEmbed('![[Cell biology#^01hzx3k9q7m2]]')).toEqual({
+      title: 'Cell biology',
+      heading: null,
+      element: '01hzx3k9q7m2',
+    });
+    expect(parseEmbed('![[Cell biology#^x]]')).toEqual({ title: 'Cell biology', heading: '^x' });
+  });
+
+  it('shows the one text box that holds the paragraph', () => {
+    const blocks = [
+      { id: 'a', type: 'text', markdown: 'One', ids: ['p1aaaaaa'] },
+      { id: 'c', type: 'text', markdown: 'Two', ids: ['p2bbbbbb', 'p3cccccc'] },
+    ];
+    expect(pickBlocks(blocks, null, 'p3cccccc')).toEqual(['c']);
+    expect(pickBlocks(blocks, null, 'p9zzzzzz')).toEqual([]);
+  });
+});

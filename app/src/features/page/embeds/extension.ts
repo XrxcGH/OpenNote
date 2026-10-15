@@ -17,12 +17,16 @@ function scan(doc: PMNode): DecorationSet {
     Decoration.widget(
       embed.end,
       () => {
-        const card = new EmbedCard({ title: embed.title, heading: embed.heading });
+        const card = new EmbedCard({
+          title: embed.title,
+          heading: embed.heading,
+          ...(embed.element ? { element: embed.element } : {}),
+        });
         cards.set(card.element, card);
         return card.element;
       },
       {
-        key: `embed:${embed.title}#${embed.heading ?? ''}`,
+        key: `embed:${embed.title}#${embed.heading ?? ''}^${embed.element ?? ''}`,
         side: 1,
         ignoreSelection: true,
         stopEvent: () => true,
