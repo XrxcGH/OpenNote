@@ -11,6 +11,7 @@ import type { PageSource } from '../host/source';
 import { readingAids, setReadingAids } from '../live/reading';
 import { DEFAULT_READING } from '../reading';
 import { Gallery } from './Gallery';
+import { PrintDialog } from './PrintDialog';
 import { ReadingPanel } from './ReadingPanel';
 import { SlidePlayer } from './SlidePlayer';
 
@@ -112,5 +113,62 @@ describe('ReadingPanel', () => {
     expect(localStorage.getItem('opennote.readingAids')).toContain('sepia');
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
     expect(readingAids.get().tint).toBe('none');
+  });
+});
+
+function printSource(): PageSource {
+  const page = pageOf([textBlock('# Plans\n\nA short page for the printer.')], { title: 'Plans' });
+  return { pageId: 'p1', title: 'Plans', notebook: 'Work', section: 'Notes', page, assetUrls: {} };
+}
+
+describe('PrintDialog', () => {
+  it('sends the page to the chosen printer with the copies, both sides, and shrink to fit', async () => {
+    const platform = createTestPlatform();
+    const submit = vi.spyOn(platform.exports, 'printSubmit');
+    const close = vi.fn();
+    render(<PrintDialog source={printSource()} platform={platform} mode="print" close={close} />);
+    const printer = (await screen.findByLabelText('Printer')) as HTMLSelectElement;
+    expect(printer.value).toBe('Studio Printer');
+    await userEvent.selectOptions(printer, 'Hallway Printer');
+    // The hallway printer prints on one side only, so the choice of sides goes away.
+    expect(screen.queryByRole('radiogroup', { name: 'Sides' })).toBeNull();
+    await userEvent.selectOptions(printer, 'Studio Printer');
+    await userEvent.click(screen.getByRole('radio', { name: 'Both sides, flip on the long edge' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Shrink to fit the paper' }));
+    const copies = screen.getByLabelText('Copies');
+    await userEvent.clear(copies);
+    await userEvent.type(copies, '3');
+    await screen.findByText(/sheet on /, undefined, { timeout: 10_000 });
+    await userEvent.click(screen.getByRole('button', { name: 'Print…' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledOnce(), { timeout: 10_000 });
+    expect(submit.mock.calls[0][1]).toEqual({
+      printer: 'Studio Printer',
+      copies: 3,
+      collate: true,
+      duplex: 'longEdge',
+      fit: 'shrinkToFit',
+      grayscale: false,
+      title: 'Plans',
+    });
+    await waitFor(() => expect(close).toHaveBeenCalled());
+  });
+
+  it('refuses copies that are not a number and sends nothing', async () => {
+    const platform = createTestPlatform();
+    const submit = vi.spyOn(platform.exports, 'printSubmit');
+    render(<PrintDialog source={printSource()} platform={platform} mode="print" close={vi.fn()} />);
+    const copies = await screen.findByLabelText('Copies');
+    await userEvent.clear(copies);
+    await userEvent.type(copies, '0');
+    expect(await screen.findByText('Choose a whole number from 1 to 999.')).toBeTruthy();
+    await screen.findByText(/sheet on /, undefined, { timeout: 10_000 });
+    await userEvent.click(screen.getByRole('button', { name: 'Print…' }));
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('shows no printer fields in Export as PDF', async () => {
+    render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
+    await screen.findByLabelText('Pages');
+    expect(screen.queryByLabelText('Printer')).toBeNull();
   });
 });

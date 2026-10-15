@@ -33,8 +33,8 @@ Presets include a lab notebook, a planner, and a storyboard. You can set a prese
 - Press Ctrl+K and choose Present to show pages as slides. Arrow keys move. Escape ends.
 - The gallery shows every page of a section as a card.
 - Reading aids include line focus, colors, syllable marks, and the immersive reader.
-- Press Ctrl+P to print. The preview shows what prints, with page breaks.
+- Choose File, Print, or press Ctrl+P, to print. The preview shows what prints, with page breaks. Pick the printer, the copies, one side or both, black and white, and whether to shrink the sheets to fit the paper. The Pages box prints only the sheets you list, such as 1-3, 5. If the computer has no printer, Print saves a PDF and opens it instead.
 - Export a page as PDF from its Export menu. The PDF keeps the text selectable and adds bookmarks from your headings.
 - Lasso an area to export it as PDF, PNG, SVG, or Word, or copy it as an image.
 
-Page views and paper are built. Print and PDF on lined paper have been checked by tests and by reading the code, and nobody has printed one yet.
+Page views and paper are built. Print and PDF on lined paper have been checked by tests and by reading the code, and nobody has sent one to a real printer by hand yet. The printer step is checked with a stand-in printer.

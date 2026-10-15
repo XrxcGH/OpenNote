@@ -94,6 +94,7 @@ type Phase6FlagId =
   | 'pages.layouts'
   | 'pages.sheets'
   | 'pages.accessiblePdf'
+  | 'pages.realPrint'
   | 'pages.elements'
   | 'pages.exportSelection'
   | 'pages.laser'
