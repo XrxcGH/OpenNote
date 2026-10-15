@@ -60,20 +60,42 @@ impl Write for Download<'_> {
 }
 
 /// Downloads an offer to `updates\`, verifies it, and renames it to its staged name. Every other copy in the
-/// folder is deleted first. On any failure the partial file is deleted, and the next check tries again.
+/// folder is deleted first. On any failure the partial file is deleted, and the next check tries again. With
+/// `resume` (the `updates.resume` flag), a failure to reach the server keeps the partial file, and the next
+/// download of the same version continues after the bytes it holds; a file that fails a check is still deleted.
 pub fn download<F: Fetch>(
     fetch: &F,
     config: &Config,
     offer: &Offer,
+    resume: bool,
     progress: &dyn Fn(u64, u64),
 ) -> Result<StagedRecord, UpdateError> {
     let updates = &config.dirs.updates;
     fs::create_dir_all(updates)?;
-    remove_copies(updates);
     let partial = updates.join(partial_name(&offer.version, config.platform));
-    let result = download_to(fetch, config, offer, &partial, progress);
-    if result.is_err() {
-        let _ = fs::remove_file(&partial);
+    let held = if resume {
+        fs::metadata(&partial).ok().map(|meta| meta.len())
+    } else {
+        None
+    };
+    if held.is_none() {
+        remove_copies(updates);
+    } else {
+        remove_other_copies(updates, &partial);
+    }
+    let result = download_to(
+        fetch,
+        config,
+        offer,
+        &partial,
+        held.filter(|held| *held < offer.size),
+        progress,
+    );
+    if let Err(error) = &result {
+        let reached_nothing = matches!(error, UpdateError::Fetch(_));
+        if !(resume && reached_nothing) {
+            let _ = fs::remove_file(&partial);
+        }
     }
     result?;
     let staged = updates.join(copy_name(&offer.version, config.platform));
@@ -96,30 +118,93 @@ fn download_to<F: Fetch>(
     config: &Config,
     offer: &Offer,
     partial: &Path,
+    held: Option<u64>,
     progress: &dyn Fn(u64, u64),
 ) -> Result<(), UpdateError> {
-    let mut sink = Download {
-        file: File::create(partial)?,
-        hasher: Sha256::new(),
-        received: 0,
-        total: offer.size,
-        progress,
-    };
     let limit = offer.size.min(config.limits.exe_bytes);
-    match fetch.get(&offer.url, limit, &mut sink) {
-        Err(FetchError::TooLarge { limit }) => {
-            return Err(UpdateError::Verify(format!(
-                "the download is larger than {limit} bytes"
-            )));
-        }
-        result => result?,
+    let mut sink = match held.filter(|held| *held > 0) {
+        Some(held) => match resume_sink(partial, held, offer.size, progress) {
+            Ok(mut sink) => match fetch.get_from(&offer.url, held, limit.saturating_sub(held), &mut sink) {
+                Err(FetchError::RangeIgnored) => None,
+                Err(FetchError::TooLarge { limit }) => {
+                    return Err(UpdateError::Verify(format!(
+                        "the download is larger than {limit} bytes"
+                    )));
+                }
+                result => {
+                    result?;
+                    Some(sink)
+                }
+            },
+            Err(_) => None,
+        },
+        None => None,
     };
+    if sink.is_none() {
+        let mut fresh = Download {
+            file: File::create(partial)?,
+            hasher: Sha256::new(),
+            received: 0,
+            total: offer.size,
+            progress,
+        };
+        match fetch.get(&offer.url, limit, &mut fresh) {
+            Err(FetchError::TooLarge { limit }) => {
+                return Err(UpdateError::Verify(format!(
+                    "the download is larger than {limit} bytes"
+                )));
+            }
+            result => result?,
+        };
+        sink = Some(fresh);
+    }
+    let sink = sink.expect("a sink");
     sink.file.sync_all()?;
     if verify::hex(&sink.hasher.finalize()) != offer.sha256 {
         return Err(UpdateError::Verify("the download's SHA-256 doesn't match".into()));
     }
     drop(sink.file);
     verify::verify_file(partial, &expected(offer, config.platform), &config.trusted_keys)
+}
+
+/// Opens a partial file for appending, hashing the bytes it already holds.
+fn resume_sink<'a>(partial: &Path, held: u64, total: u64, progress: &'a dyn Fn(u64, u64)) -> io::Result<Download<'a>> {
+    let mut hasher = Sha256::new();
+    let mut existing = File::open(partial)?;
+    let mut buffer = vec![0u8; 64 * 1024];
+    let mut read_total = 0u64;
+    loop {
+        let read = io::Read::read(&mut existing, &mut buffer)?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..read]);
+        read_total += read as u64;
+    }
+    if read_total != held {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "the partial file changed"));
+    }
+    let file = fs::OpenOptions::new().append(true).open(partial)?;
+    Ok(Download {
+        file,
+        hasher,
+        received: held,
+        total,
+        progress,
+    })
+}
+
+/// Deletes every staged copy and partial download except `keep`.
+fn remove_other_copies(updates: &Path, keep: &Path) {
+    let Ok(entries) = fs::read_dir(updates) else {
+        return;
+    };
+    for path in entries.filter_map(|entry| entry.ok().map(|entry| entry.path())) {
+        let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+        if path != keep && name.starts_with("OpenNote-") && (name.ends_with(".exe") || name.ends_with(".exe.partial")) {
+            let _ = fs::remove_file(&path);
+        }
+    }
 }
 
 fn expected(offer: &Offer, platform: PlatformKey) -> Expected<'_> {

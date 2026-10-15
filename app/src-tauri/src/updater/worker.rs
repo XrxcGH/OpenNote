@@ -26,6 +26,9 @@ const PROGRESS_EVERY: Duration = Duration::from_millis(250);
 /// The flag that makes automatic mode wait for an unmetered network (section 18.4).
 const METERED_FLAG: &str = "updates.meteredCheck";
 
+/// The flag that lets a download that stopped partway continue.
+const RESUME_FLAG: &str = "updates.resume";
+
 /// Who asked for a check. Scheduled checks skip quietly when offline; a person sees why a check failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Trigger {
@@ -206,7 +209,7 @@ fn available(offer: &Offer, waiting_for_unmetered: bool) -> UpdaterPhase {
 
 /// Behind `updates.meteredCheck`, automatic mode waits for a network without a data limit.
 fn must_wait_for_unmetered(settings: &Settings) -> bool {
-    settings.experimental.flags.get(METERED_FLAG).copied().unwrap_or(false) && system::WindowsNetworkCost.is_metered()
+    flag_in(settings, METERED_FLAG, true) && system::WindowsNetworkCost.is_metered()
 }
 
 /// Downloads the version the last check offered, after the person chose Download.
@@ -248,7 +251,7 @@ fn download(service: &Service, offer: Offer) {
             service.set_phase(Some(phase));
         }
     };
-    match updater.download(&offer, &progress) {
+    match updater.download_resuming(&offer, flag_on(service, RESUME_FLAG, true), &progress) {
         Ok(staged) => {
             service.shared().offer = None;
             service.set_phase(Some(UpdaterPhase::Ready {
@@ -294,4 +297,13 @@ fn settings_changed(service: &Service, scheduler: &mut Scheduler, started: bool)
         Some(offer) => download(service, offer),
         None => service.publish(),
     }
+}
+
+/// A flag from `settings.experimental.flags`, or `default` (its value in Beta builds) when settings don't set it.
+fn flag_in(settings: &Settings, id: &str, default: bool) -> bool {
+    settings.experimental.flags.get(id).copied().unwrap_or(default)
+}
+
+fn flag_on(service: &Service, id: &str, default: bool) -> bool {
+    flag_in(&service.settings(), id, default)
 }

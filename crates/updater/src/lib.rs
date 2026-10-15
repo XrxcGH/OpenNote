@@ -240,7 +240,17 @@ impl<F: Fetch, R: Replacer, C: Clock> Updater<F, R, C> {
     /// Downloads and verifies an offer, reporting progress as (received, total) bytes. The verified file replaces
     /// any earlier staged update, and `updates\state.json` records it.
     pub fn download(&self, offer: &Offer, progress: &dyn Fn(u64, u64)) -> Result<Staged, UpdateError> {
-        let record = stage::download(&self.fetch, &self.config, offer, progress)?;
+        self.download_resuming(offer, false, progress)
+    }
+
+    /// [`Updater::download`], and with `resume` a download that stopped partway continues where it stopped.
+    pub fn download_resuming(
+        &self,
+        offer: &Offer,
+        resume: bool,
+        progress: &dyn Fn(u64, u64),
+    ) -> Result<Staged, UpdateError> {
+        let record = stage::download(&self.fetch, &self.config, offer, resume, progress)?;
         let staged = Staged {
             version: offer.version.clone(),
             path: PathBuf::from(&record.path),

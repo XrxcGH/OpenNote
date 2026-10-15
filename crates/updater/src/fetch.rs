@@ -105,6 +105,8 @@ pub enum FetchError {
     ForeignHost(String),
     /// Writing to the sink failed.
     Io(std::io::Error),
+    /// The server ignored a request for the rest of a file and answered with the whole file.
+    RangeIgnored,
 }
 
 impl fmt::Display for FetchError {
@@ -117,6 +119,7 @@ impl fmt::Display for FetchError {
             Self::InsecureUrl(url) => write!(f, "refused a URL that isn't HTTPS: {url}"),
             Self::ForeignHost(url) => write!(f, "refused a URL on a server that isn't GitHub's: {url}"),
             Self::Io(error) => write!(f, "couldn't write the download: {error}"),
+            Self::RangeIgnored => f.write_str("the server doesn't resume downloads"),
         }
     }
 }
@@ -132,6 +135,19 @@ impl From<std::io::Error> for FetchError {
 /// Reads one URL into a sink, stopping as soon as more than `max_bytes` arrive.
 pub trait Fetch: Send + Sync {
     fn get(&self, url: &Url, max_bytes: u64, sink: &mut dyn Write) -> Result<FetchOutcome, FetchError>;
+
+    /// Reads a URL from byte `offset` on, for resuming a download that stopped partway. `max_bytes` limits the
+    /// bytes after the offset. A fetcher that can't resume answers [`FetchError::RangeIgnored`], and the caller
+    /// starts over with [`Fetch::get`].
+    fn get_from(
+        &self,
+        _url: &Url,
+        _offset: u64,
+        _max_bytes: u64,
+        _sink: &mut dyn Write,
+    ) -> Result<FetchOutcome, FetchError> {
+        Err(FetchError::RangeIgnored)
+    }
 }
 
 /// The most redirects one download follows. GitHub's release downloads take two.
@@ -169,11 +185,21 @@ impl Default for UreqFetch {
     }
 }
 
-impl Fetch for UreqFetch {
-    fn get(&self, url: &Url, max_bytes: u64, sink: &mut dyn Write) -> Result<FetchOutcome, FetchError> {
+impl UreqFetch {
+    fn request(
+        &self,
+        url: &Url,
+        offset: u64,
+        max_bytes: u64,
+        sink: &mut dyn Write,
+    ) -> Result<FetchOutcome, FetchError> {
         let mut current = url.clone();
         for _ in 0..=MAX_REDIRECTS {
-            let response = self.agent.get(current.as_str()).call().map_err(from_ureq)?;
+            let mut request = self.agent.get(current.as_str());
+            if offset > 0 {
+                request = request.header("Range", format!("bytes={offset}-"));
+            }
+            let response = request.call().map_err(from_ureq)?;
             let status = response.status().as_u16();
             if (300..400).contains(&status) {
                 let location = response
@@ -184,7 +210,11 @@ impl Fetch for UreqFetch {
                 current = redirect_target(&current, location)?;
                 continue;
             }
-            if status != 200 {
+            if offset > 0 && status == 200 {
+                return Err(FetchError::RangeIgnored);
+            }
+            let expected = if offset > 0 { 206 } else { 200 };
+            if status != expected {
                 return Err(FetchError::Status(status));
             }
             let length = response.body().content_length();
@@ -198,7 +228,22 @@ impl Fetch for UreqFetch {
     }
 }
 
-/// Where a redirect goes: HTTPS, on one of [`RELEASE_HOSTS`].
+impl Fetch for UreqFetch {
+    fn get(&self, url: &Url, max_bytes: u64, sink: &mut dyn Write) -> Result<FetchOutcome, FetchError> {
+        self.request(url, 0, max_bytes, sink)
+    }
+
+    fn get_from(
+        &self,
+        url: &Url,
+        offset: u64,
+        max_bytes: u64,
+        sink: &mut dyn Write,
+    ) -> Result<FetchOutcome, FetchError> {
+        self.request(url, offset, max_bytes, sink)
+    }
+}
+
 fn redirect_target(current: &Url, location: &str) -> Result<Url, FetchError> {
     let target = Url::parse(&resolve(current, location))?;
     if target.is_release_host() {

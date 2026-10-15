@@ -16,7 +16,7 @@ Flags keep unfinished features out of the build people receive. A flag that noth
 
 ## Flags that wait for their feature
 
-`WAITING` in the test holds them. Today they are the per-user Installed apps entry, resuming an update download, deck import and export, exam countdowns, the timetable, Open with OpenNote for single files, Share as a file, the local API, the dictionary tool window, and display-size image renditions.
+`WAITING` in the test holds them. Today they are deck import and export, exam countdowns, the timetable, Open with OpenNote for single files, Share as a file, the local API, the dictionary tool window, and display-size image renditions.
 
 `page.imageRenditions` waits for spike S3. The flag stays off in every channel. The ADR on paste and images says it turns on only if that spike shows images above their share of memory.
 

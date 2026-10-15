@@ -12,8 +12,6 @@ const RUST = join(SRC, '..', 'src-tauri', 'src');
 
 /** Registered flags whose feature is not built yet (docs/FEATURES.md lists each as not built). */
 const WAITING: Readonly<Record<string, string>> = {
-  'install.uninstallEntry': 'the per-user Installed apps entry waits for the installer work',
-  'updates.resume': 'resuming a partial update download is not built',
   'study.import': 'read where deck import and export show once the tools work lands',
   'tools.exams': 'read where exam countdowns show once the tools work lands',
   'tools.timetable': 'read where the timetable shows once the tools work lands',

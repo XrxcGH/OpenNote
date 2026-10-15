@@ -202,3 +202,61 @@ fn ignores_the_path_written_in_the_state_file() {
         setup.dir.path().join("updates/OpenNote-0.5.0-windows-x86_64.exe")
     );
 }
+
+#[test]
+fn resumes_a_download_that_stopped_partway() {
+    let setup = setup();
+    let offer = good_offer(&setup, "0.5.0");
+    let data = format!("MZ OpenNote {}", "0.5.0").repeat(5000).into_bytes();
+    let updates = setup.dir.path().join("updates");
+    fs::create_dir_all(&updates).expect("folder");
+    let config = setup.updater.config();
+    let partial = updates.join(crate::stage::partial_name(&offer.version, config.platform));
+    fs::write(&partial, &data[..1000]).expect("partial");
+    let seen = Mutex::new(Vec::new());
+    let staged = setup
+        .updater
+        .download_resuming(&offer, true, &|received, _| seen.lock().expect("lock").push(received))
+        .expect("resumes");
+    assert_eq!(fs::read(&staged.path).expect("staged"), data);
+    assert!(seen.lock().expect("lock").first().is_some_and(|first| *first > 1000));
+}
+
+#[test]
+fn starts_over_when_the_server_ignores_the_range() {
+    let setup = setup();
+    let offer = good_offer(&setup, "0.5.0");
+    let data = format!("MZ OpenNote {}", "0.5.0").repeat(5000).into_bytes();
+    setup
+        .updater
+        .fetch
+        .ignore_ranges
+        .store(true, std::sync::atomic::Ordering::SeqCst);
+    let updates = setup.dir.path().join("updates");
+    fs::create_dir_all(&updates).expect("folder");
+    let partial = updates.join(crate::stage::partial_name(
+        &offer.version,
+        setup.updater.config().platform,
+    ));
+    fs::write(&partial, &data[..1000]).expect("partial");
+    let staged = setup
+        .updater
+        .download_resuming(&offer, true, &|_, _| {})
+        .expect("restarts");
+    assert_eq!(fs::read(&staged.path).expect("staged"), data);
+}
+
+#[test]
+fn ignores_a_partial_file_without_the_flag() {
+    let setup = setup();
+    let offer = good_offer(&setup, "0.5.0");
+    let updates = setup.dir.path().join("updates");
+    fs::create_dir_all(&updates).expect("folder");
+    let partial = updates.join(crate::stage::partial_name(
+        &offer.version,
+        setup.updater.config().platform,
+    ));
+    fs::write(&partial, b"garbage").expect("partial");
+    setup.updater.download(&offer, &|_, _| {}).expect("downloads");
+    assert!(!partial.exists());
+}

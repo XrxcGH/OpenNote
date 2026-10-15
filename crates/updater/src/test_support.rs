@@ -66,6 +66,8 @@ pub fn comment(version: &str, file: &str) -> String {
 #[derive(Default)]
 pub struct MemoryFetch {
     files: Mutex<HashMap<String, Vec<u8>>>,
+    /// Makes `get_from` answer like a server that ignores Range requests.
+    pub ignore_ranges: std::sync::atomic::AtomicBool,
 }
 
 impl MemoryFetch {
@@ -86,6 +88,30 @@ impl Fetch for MemoryFetch {
         sink.write_all(bytes)?;
         Ok(FetchOutcome {
             bytes: bytes.len() as u64,
+        })
+    }
+
+    fn get_from(
+        &self,
+        url: &Url,
+        offset: u64,
+        max_bytes: u64,
+        sink: &mut dyn Write,
+    ) -> Result<FetchOutcome, FetchError> {
+        if self.ignore_ranges.load(std::sync::atomic::Ordering::SeqCst) {
+            return Err(FetchError::RangeIgnored);
+        }
+        let files = self.files.lock().expect("lock");
+        let bytes = files
+            .get(url.as_str())
+            .ok_or_else(|| FetchError::Unreachable(format!("no file at {url}")))?;
+        let rest = bytes.get(offset as usize..).unwrap_or_default();
+        if rest.len() as u64 > max_bytes {
+            return Err(FetchError::TooLarge { limit: max_bytes });
+        }
+        sink.write_all(rest)?;
+        Ok(FetchOutcome {
+            bytes: rest.len() as u64,
         })
     }
 }

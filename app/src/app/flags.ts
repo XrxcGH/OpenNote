@@ -25,7 +25,6 @@ export type FlagId =
   | 'window.snapLayouts'
   /** The undecorated window with the HTML title bar and caption buttons (ARCHITECTURE.md section 10). */
   | 'shell.customFrame'
-  | 'install.uninstallEntry'
   | 'updates.meteredCheck'
   | 'updates.resume'
   | 'updates.betaChannel'
@@ -235,7 +234,6 @@ export function defineFlag(def: FlagDef): FlagDef {
 }
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
-const off = { dev: false, nightly: false, beta: false, stable: false };
 const on = { dev: true, nightly: true, beta: true, stable: true };
 const testBuilds = { dev: true, nightly: true, beta: false, stable: false };
 
@@ -249,9 +247,8 @@ export const FLAGS: readonly FlagDef[] = [
     'The custom title bar with its own caption buttons, instead of the native frame.',
     on,
   ),
-  flag('install.uninstallEntry', 'A per-user entry in Installed apps.', off),
-  flag('updates.meteredCheck', 'Wait for an unmetered network before downloading an update.', off),
-  flag('updates.resume', 'Resume a download that stopped partway.', off),
+  flag('updates.meteredCheck', 'Wait for an unmetered network before downloading an update.', on),
+  flag('updates.resume', 'Resume a download that stopped partway.', on),
   flag('updates.betaChannel', 'The Stable or Beta choice in Settings.', on),
   flag('notes.sectionGroups', 'Section groups in notebooks.', on),
   flag('trash.view', 'The Trash view with Restore.', on),

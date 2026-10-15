@@ -13,7 +13,6 @@ describe('flags', () => {
     initFlags('stable');
     expect(isEnabled('trash.view')).toBe(true);
     expect(isEnabled('notes.sectionGroups')).toBe(true);
-    expect(isEnabled('install.uninstallEntry')).toBe(false);
     expect(isEnabled('notes.memorySnapshot')).toBe(false);
   });
 
@@ -36,8 +35,8 @@ describe('flags', () => {
     initFlags('nightly', { 'storage.core': true }, { 'storage.core': false, 'trash.view': false });
     expect(isEnabled('storage.core')).toBe(false);
     expect(isEnabled('trash.view')).toBe(false);
-    initFlags('beta', { 'install.uninstallEntry': true, 'storage.core': false });
-    expect(isEnabled('install.uninstallEntry')).toBe(false);
+    initFlags('beta', { 'notes.memorySnapshot': true, 'storage.core': false });
+    expect(isEnabled('notes.memorySnapshot')).toBe(false);
     expect(isEnabled('storage.core')).toBe(true);
   });
 
@@ -45,7 +44,7 @@ describe('flags', () => {
     initFlags('stable');
     const items = [
       { id: 'a' },
-      { id: 'b', flag: 'install.uninstallEntry' as const },
+      { id: 'b', flag: 'notes.memorySnapshot' as const },
       { id: 'c', flag: 'notes.sectionGroups' as const },
     ];
     expect(withEnabledFlags(items).map((item) => item.id)).toEqual(['a', 'c']);
