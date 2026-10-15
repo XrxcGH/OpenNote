@@ -32,6 +32,11 @@ export function createTauriPages(images: ImagesClient): PagesClient {
     return createTauriPageService(createCoreClient({ invoke: coreInvoke, listen: coreListen }), images);
   };
   return {
+    // Delete history (A2-3, A4-12). The shell finds the notebook when the interface doesn't know it.
+    admin: {
+      deleteHistory: async (notebook, scope, keepNamed) =>
+        void (await coreInvoke('history_delete', { notebook, scope, keepNamed })),
+    },
     open(pageId, options) {
       service ??= load();
       return service.then((pages) => pages.open(pageId, options));

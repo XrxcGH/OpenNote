@@ -195,6 +195,8 @@ export interface OpenPage {
 
 export interface PageService {
   open(pageId: PageId, options: { viewport: PageRect | null }): Promise<OpenPage>;
+  /** Delete history for a page, section, or notebook (history_delete), where the service can. */
+  readonly admin?: HistoryAdmin;
 }
 
 export type PageErrorCode =

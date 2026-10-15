@@ -8,8 +8,9 @@ import { diffPages } from '../../../editor/diff/pageDiff';
 import type { PageDiff } from '../../../editor/diff/pageDiff';
 import type { OpenPage, VersionInfo } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { announce, Button, confirm, IconButton, Switch, TextField } from '../../../ui';
+import { announce, Button, IconButton, Switch, TextField } from '../../../ui';
 import { historyAdmin } from './admin';
+import { deleteHistoryFor } from './deleteHistory';
 import { CompareView } from './CompareView';
 import type { CompareActions } from './CompareView';
 import styles from './history.module.css';
@@ -98,28 +99,6 @@ function NameForm({ page, version, onDone }: { page: OpenPage; version: VersionI
       </div>
     </form>
   );
-}
-
-async function deleteHistory(page: OpenPage, title: string): Promise<boolean> {
-  const admin = historyAdmin();
-  const notebook = admin?.notebookOf(page.id);
-  if (!admin || !notebook) return false;
-  const yes = await confirm({
-    title: t('history.delete.title', { name: title }),
-    body: t('history.delete.page'),
-    confirmLabel: t('history.delete.confirm'),
-    cancelLabel: t('history.delete.cancel'),
-    danger: true,
-  });
-  if (!yes) return false;
-  try {
-    await admin.deleteHistory(notebook, { kind: 'page', id: page.id }, true);
-    announce(t('history.delete.done'));
-    return true;
-  } catch {
-    announce(t('history.delete.failed'), 'assertive');
-    return false;
-  }
 }
 
 function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string; onBack(): void; onChanged(): void }) {
@@ -250,7 +229,9 @@ export function HistoryPanel({ page, title, onClose }: HistoryPanelProps) {
             {historyAdmin() && (
               <Button
                 variant="danger"
-                onClick={() => void deleteHistory(page, title).then((ok) => (ok ? reload() : undefined))}
+                onClick={() =>
+                  void deleteHistoryFor({ kind: 'page', id: page.id }, title).then((ok) => (ok ? reload() : undefined))
+                }
               >
                 {t('history.delete.action')}
               </Button>
