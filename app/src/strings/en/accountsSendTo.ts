@@ -1,0 +1,51 @@
+// Send to Google Drive and OneDrive, and Update the copy.
+
+export const accountsSendTo = {
+  commands: {
+    drive: 'Send to Google Drive',
+    onedrive: 'Send to OneDrive',
+    update: 'Update the Drive or OneDrive copy',
+    keywords: 'send drive google onedrive microsoft upload copy export docs word pdf update',
+  },
+  nothing: 'Open a page first.',
+  untitled: 'Untitled',
+  empty: 'There was nothing to send.',
+  noCopy: 'This page, its section, and its notebook have not been sent to Google Drive or OneDrive.',
+  working: 'Sending to {service}…',
+  updating: 'Updating {name}…',
+  done: 'Sent “{name}” to {service}, in {folder}.',
+  updated: 'Updated “{name}” on {service}.',
+  offer: 'This page has changed since you sent it to {service}.',
+  offerAction: 'Update the {service} copy',
+  scope: {
+    title: 'Send to {service}',
+    description: 'Choose what to send. Nothing is sent until you choose the folder and press Send.',
+    confirm: 'Next',
+    selection: 'What I selected',
+    page: 'This page',
+    section: 'This section',
+    notebook: 'This notebook',
+  },
+  format: {
+    title: 'Send it as',
+    confirm: 'Next',
+    pdf: 'A PDF',
+    docx: 'A Word file',
+    gdoc: 'A Google Doc',
+    png: 'A picture',
+  },
+  folder: {
+    title: 'Choose a folder',
+    description: 'You are in {name}.',
+    confirm: 'Send',
+    top: 'the top folder',
+    use: 'Send to {name}',
+    open: 'Open this folder',
+    up: 'Go back up',
+  },
+  update: {
+    title: 'Which copy?',
+    confirm: 'Update',
+    detail: '{service}, in {folder}',
+  },
+} as const;

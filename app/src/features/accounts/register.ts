@@ -1,10 +1,12 @@
 // Registers the commands of the account features. This file loads at start-up, so it holds definitions only: each
 // command's work, and the dialogs it opens, load on first use. A command is hidden while its flag is off, and it is
 // always there when the flag is on: with the account not connected it says so and offers Settings.
+import { isEnabled } from '../../app/flags';
 import type { FlagId } from '../../app/flags';
-import { defineCommand } from '../../commands/registry';
+import { commandContext, defineCommand } from '../../commands/registry';
 import type { CommandCategory, CommandDef } from '../../commands/types';
 import { commands } from '../../registries';
+import type { NodeId } from '../../services/notes/types';
 import type { MessageKey } from '../../strings/t';
 import { shownMounted } from '../page';
 
@@ -61,6 +63,30 @@ const SPECS: readonly Spec[] = [
     run: () => import('./lms/commands').then((module) => module.submitPage()),
   },
   {
+    id: 'sendto.drive',
+    title: 'accounts.sendTo.commands.drive',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.sendTo',
+    needsPage: true,
+    run: () => import('./sendto/commands').then((module) => module.sendTo('drive')),
+  },
+  {
+    id: 'sendto.onedrive',
+    title: 'accounts.sendTo.commands.onedrive',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.sendTo',
+    needsPage: true,
+    run: () => import('./sendto/commands').then((module) => module.sendTo('onedrive')),
+  },
+  {
+    id: 'sendto.update',
+    title: 'accounts.sendTo.commands.update',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.sendTo',
+    needsPage: true,
+    run: () => import('./sendto/commands').then((module) => module.updateHere()),
+  },
+  {
     id: 'readwise.sync',
     title: 'accounts.readwise.commands.sync',
     keywords: 'accounts.readwise.commands.keywords',
@@ -82,3 +108,15 @@ for (const spec of SPECS) {
   };
   commands.register(defineCommand(def));
 }
+
+// A page that was sent and has changed since offers to update its copy when it is opened. The check reads one small
+// file and costs nothing until a page is shown.
+shownMounted.subscribe(() => {
+  const mounted = shownMounted.get();
+  if (!mounted || !isEnabled('accounts.sendTo')) return;
+  const page = mounted.page.id;
+  void import('./sendto/commands').then(async (module) => {
+    const node = await commandContext('palette').notes.get(page as NodeId);
+    if (node) await module.offerUpdate(page, node.modified);
+  });
+});

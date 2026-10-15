@@ -36,7 +36,7 @@ use crate::{
 const MAX_TRANSFER: usize = 256 * 1024 * 1024;
 
 /// The folder of this module inside the device's folder.
-const FOLDER: &str = "accounts";
+pub(crate) const FOLDER: &str = "accounts";
 
 fn invalid(field: &str, message: &str) -> IpcError {
     IpcError::invalid(field, message)

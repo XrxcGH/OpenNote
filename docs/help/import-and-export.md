@@ -35,6 +35,12 @@ Open Share, then Export, or press Ctrl+K and choose Export.
 
 Take a screenshot with Win+Shift+S and OpenNote offers to add it to the open page. You can send copies of pages to favorite folders, then choose Update the copy after you edit.
 
+## Send to Google Drive or OneDrive
+
+Connect Google or Microsoft in Settings, then Connectors. Press Ctrl+K and choose Send to Google Drive or Send to OneDrive. Choose what to send: what you selected with the lasso, this page, this section, or this notebook. Choose a file type (a PDF, a Word file, or on Google Drive a Google Doc), then walk to a folder and choose Send. Nothing is sent before that last button.
+
+OpenNote remembers which file a page, section, or notebook was sent as. After you change the page, choose Update the Drive or OneDrive copy in Ctrl+K, and OpenNote replaces the file. When you open a page that has changed since you sent it, OpenNote offers once to update the copy. It never updates by itself. A selection can be sent but not updated, because the selection is gone later.
+
 ## Not in beta 4
 
 Share as a file is not finished and has no screen yet. Opening OneNote files, importing a PDF with space for notes, and the web clipper are not built.

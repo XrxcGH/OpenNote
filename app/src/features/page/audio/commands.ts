@@ -1,5 +1,6 @@
 // What the audio commands do (Phase 9), in a module that loads when one runs. registrations/audio.ts declares the
 // commands at start-up; this is their work.
+import type { RecordingEntry } from '../../../core/audio';
 import type { BlockJson } from '../../../services/pages/types';
 import { announce } from '../../../ui';
 import { t } from '../../../strings/t';
@@ -115,6 +116,31 @@ export async function exportAs(format: 'wav' | 'opus'): Promise<void> {
   if (!open) return void announce(t('accounts.audio.noRecording'));
   const { exportRecording } = await import('./exportAudio');
   await exportRecording(open.page, open.entry, format);
+}
+
+/** Saves the recording as a narrated video (Export as video in the palette). */
+export async function exportAsVideo(): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  const { exportVideo } = await import('./exportVideo');
+  await exportVideo(open.page, open.entry);
+}
+
+/** Makes the narrated video and uploads it to YouTube as private or unlisted (Upload to YouTube in the palette). */
+export async function uploadToYoutube(): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  await uploadEntryToYoutube(open.page, open.entry);
+}
+
+/** The upload of one recording, for the palette and the More menu. */
+export async function uploadEntryToYoutube(pageId: string, entry: RecordingEntry): Promise<void> {
+  const { videoForUpload } = await import('./exportVideo');
+  const { uploadRecordingToYoutube } = await import('../../accounts');
+  await uploadRecordingToYoutube({
+    title: t('audioMore.export.name', { date: entry.started.slice(0, 10) }),
+    makeVideo: (name) => videoForUpload(pageId, entry, name),
+  });
 }
 
 /**

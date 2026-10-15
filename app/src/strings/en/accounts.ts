@@ -6,7 +6,9 @@ import { accountsLms } from './accountsLms';
 import { accountsMedia } from './accountsMedia';
 import { accountsMeetings } from './accountsMeetings';
 import { accountsReadwise } from './accountsReadwise';
+import { accountsSendTo } from './accountsSendTo';
 import { accountsShare } from './accountsShare';
+import { accountsYoutube } from './accountsYoutube';
 
 export const accounts = {
   readwise: accountsReadwise,
@@ -14,6 +16,8 @@ export const accounts = {
   share: accountsShare,
   lms: accountsLms,
   media: accountsMedia,
+  youtube: accountsYoutube,
+  sendTo: accountsSendTo,
   common: {
     notConnected: '{service} isn’t connected. Connect it in Settings, then Connectors.',
     needsAccess: 'The {service} connection doesn’t allow this yet. Connect it again in Settings, then Connectors.',

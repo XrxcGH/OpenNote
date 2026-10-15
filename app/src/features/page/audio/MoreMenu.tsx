@@ -101,12 +101,30 @@ function transcriptItems({ block, entry, pageId }: Props): MenuItemSpec[] {
   ];
 }
 
-function exportItems({ entry, pageId }: Props): MenuItemSpec[] {
+function exportItems({ entry, pageId }: Props, video: boolean, upload: boolean): MenuItemSpec[] {
   const save = (format: 'wav' | 'opus') => () =>
     void import('./exportAudio').then((module) => module.exportRecording(pageId, entry, format));
   return [
     { id: 'wav', label: t('audioMore.menu.exportWav'), separatorBefore: true, onSelect: save('wav') },
     { id: 'opus', label: t('audioMore.menu.exportOpus'), onSelect: save('opus') },
+    ...(upload
+      ? [
+          {
+            id: 'youtube',
+            label: t('accounts.youtube.menu.upload'),
+            onSelect: () => void import('./commands').then((module) => module.uploadEntryToYoutube(pageId, entry)),
+          },
+        ]
+      : []),
+    ...(video
+      ? [
+          {
+            id: 'video',
+            label: t('audioMore.menu.exportVideo'),
+            onSelect: () => void import('./exportVideo').then((module) => module.exportVideo(pageId, entry)),
+          },
+        ]
+      : []),
   ];
 }
 
@@ -115,13 +133,15 @@ export function MoreMenu(props: Props) {
   const trim = useFlag('audio.trim');
   const enhance = useFlag('audio.enhance');
   const exporting = useFlag('audio.export');
+  const exportVideo = useFlag('audio.exportVideo');
+  const uploadVideo = useFlag('accounts.youtubeUpload');
   const transcripts = useFlag('transcripts.block');
   const anchor = useRef<HTMLSpanElement>(null);
   const items = [
     ...(trim ? editItems(props) : []),
     ...(enhance ? [enhanceItem(props)] : []),
     ...(transcripts ? transcriptItems(props) : []),
-    ...(exporting ? exportItems(props) : []),
+    ...(exporting ? exportItems(props, exportVideo, uploadVideo && exportVideo) : []),
   ];
   if (items.length === 0 || audioIsRemoved(entry)) return null;
   const open = () => {

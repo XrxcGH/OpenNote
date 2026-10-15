@@ -26,9 +26,18 @@ Tap a stamped word or stroke and the recording plays from that moment. You can c
 | Remove a part you marked off the record | Remove it. The audio, the transcript, and the search index all lose it. |
 | Make a quiet voice clearer | Turn on Voice enhancement. |
 | Share the audio | Export the recording as an audio file. |
+| Share the lesson as a video | Choose Export as video in the More menu, or press Ctrl+K and choose Export the recording as a narrated video. |
 | Free up disk space | Open the recording storage list. Compress a recording, or remove its audio and keep the transcript. |
 
 Settings has a Recording section for the defaults.
+
+### Export as video
+
+A narrated video shows the page and draws your ink again at the moments you drew it, with the recording's sound underneath. Pauses are left out. Choose where to save it, and OpenNote makes an MP4 file with the video and sound encoders that come with Windows. Making it takes about as long as the recording. If Windows has no encoder (some "N" editions), OpenNote says so and nothing is saved.
+
+### Upload to YouTube
+
+Connect Google in Settings, then Connectors. In the recording's More menu, or from Ctrl+K, choose Upload to YouTube. Pick Private or Unlisted, name the video, and choose Upload. OpenNote makes the video, sends it in pieces, and puts the link on your clipboard. It never makes a video public. You can do that in YouTube Studio. A video you upload with an app that Google has not yet reviewed may stay private whatever you choose.
 
 ## Transcripts and recaps
 

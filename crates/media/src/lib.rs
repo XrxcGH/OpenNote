@@ -13,3 +13,4 @@ pub mod service;
 pub mod stamps;
 pub mod storage;
 pub mod transcribe;
+pub mod video;

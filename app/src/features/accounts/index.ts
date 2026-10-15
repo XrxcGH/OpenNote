@@ -6,4 +6,8 @@ export type { FakeAccountsHost, FakeHostOptions } from './fakeHost';
 export { accountsHost, base64Of, bytesPart } from './host';
 export type { AccountsHost, Downloaded, UploadPart } from './host';
 export { askText, pickOne } from './ui/prompts';
+export type { UploadRequest } from './youtube/commands';
+/** Uploads a recording's video to YouTube. The code loads when it is first called. */
+export const uploadRecordingToYoutube = (...args: Parameters<typeof import('./youtube/commands').uploadRecording>) =>
+  import('./youtube/commands').then((module) => module.uploadRecording(...args));
 export { failureText, isConnected, tellNotConnected } from './run';

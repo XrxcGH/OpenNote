@@ -18,3 +18,7 @@ export type { RenderedPage, RenderKind } from './host/shareRender';
 /** Renders the shown page as a PDF or PNG for another feature to send. The code loads when it is first called. */
 export const renderShownPage = (...args: Parameters<typeof import('./host/shareRender').renderShownPage>) =>
   import('./host/shareRender').then((module) => module.renderShownPage(...args));
+export type { PageRaster, RasterStroke } from './host/videoRaster';
+/** The shown page as pixels without its ink, for a narrated video. The code loads when it is first called. */
+export const rasterShownPage = (...args: Parameters<typeof import('./host/videoRaster').rasterShownPage>) =>
+  import('./host/videoRaster').then((module) => module.rasterShownPage(...args));

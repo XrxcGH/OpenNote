@@ -67,3 +67,40 @@ export function addVimeoCaptions(server: MockServer, videos: Record<string, Mock
     return track ? { text: track.vtt, contentType: 'text/vtt' } : undefined;
   });
 }
+
+export interface MockUploads {
+  /** The privacy and title each started upload asked for. */
+  started: { title: string; privacy: string; length: string }[];
+  /** The ranges received, in order, and the bytes of the whole file so far. */
+  ranges: string[];
+  received: number;
+  /** Set to make the next piece fail with this status once. */
+  failOnce?: number;
+}
+
+/** YouTube's resumable upload: a start request that answers with an address, then pieces with a range each. */
+export function addYoutubeUpload(server: MockServer, id = 'vid12345678'): MockUploads {
+  const state: MockUploads = { started: [], ranges: [], received: 0 };
+  let total = 0;
+  server.route('POST www.googleapis.com/upload/youtube/v3/videos', (request) => {
+    const body = request.json<{ snippet?: { title?: string }; status?: { privacyStatus?: string } }>();
+    state.started.push({
+      title: body?.snippet?.title ?? '',
+      privacy: body?.status?.privacyStatus ?? '',
+      length: request.headers['x-upload-content-length'] ?? '',
+    });
+    total = Number(request.headers['x-upload-content-length'] ?? 0);
+    return { json: {}, location: 'https://www.googleapis.com/upload/youtube/v3/videos?upload_id=u1' };
+  });
+  server.route('PUT www.googleapis.com/upload/youtube/v3/videos', (request) => {
+    if (state.failOnce) {
+      const status = state.failOnce;
+      state.failOnce = undefined;
+      return { status, json: { error: { message: 'Try again.' } } };
+    }
+    state.ranges.push(request.headers['content-range'] ?? '');
+    state.received += request.body.length;
+    return state.received >= total ? { json: { id } } : { status: 308, text: '' };
+  });
+  return state;
+}

@@ -52,6 +52,7 @@
     "allow-audio-storage-scan",
     "allow-audio-purge-history",
     "allow-audio-export",
+    "allow-audio-export-video",
     "allow-audio-import-file",
     "allow-audio-meeting-poll",
     "allow-audio-snap",

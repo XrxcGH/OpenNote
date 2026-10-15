@@ -74,6 +74,20 @@ const SPECS: readonly Spec[] = [
     run: () => edits().then((module) => module.exportAs('opus')),
   },
   {
+    id: 'audio.exportVideo',
+    title: 'audioMore.commands.exportVideo',
+    flag: 'audio.exportVideo',
+    when: pageShown,
+    run: () => edits().then((module) => module.exportAsVideo()),
+  },
+  {
+    id: 'audio.uploadYoutube',
+    title: 'accounts.youtube.commands.upload',
+    flag: 'accounts.youtubeUpload',
+    when: pageShown,
+    run: () => edits().then((module) => module.uploadToYoutube()),
+  },
+  {
     id: 'audio.removePart',
     title: 'audio.block.removePart',
     flag: 'audio.trim',

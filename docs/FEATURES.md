@@ -49,9 +49,9 @@ Import and export (Phase 11):
 Linked accounts (Phase 11):
 
 - People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle. Sign-in uses the provider's own secure page (OAuth) in the default browser, and tokens are stored in Windows Credential Manager. The [setup guide](CONNECTORS.md) says how the owner of a build registers each service. Status: Built, untested by hand. Sign-in works. Six services say Needs setup until the owner adds client IDs, which a card takes, the connectors file holds, or a build with `connectors.config.json` carries. Features now use connections one by one, and each has its own line in this list.
-- The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder. It all happens inside OpenNote. Status: Needs the owner. Sending a copy to a folder is built, untested by hand.
+- The "Send to" menu converts a page, section, or selection to PDF, Word, or Google Docs, then uploads it to a chosen Google Drive or OneDrive folder. It all happens inside OpenNote. Status: Built, untested by hand. Send to Google Drive and Send to OneDrive choose the page, section, notebook, or lasso selection, a file type, and a folder, then upload. Sending a copy to a folder on this PC is built too. Both services need the owner's client IDs.
 - Favorite destinations are saved, so "Send to Drive: Biology/Lab reports" becomes one click. Status: Built, untested by hand. For folders.
-- A page can stay linked to its exported copy and offer "Update the Drive copy" after edits. Status: Built, untested by hand. For folders. Drive needs the owner.
+- A page can stay linked to its exported copy and offer "Update the Drive copy" after edits. Status: Built, untested by hand. A page, section, or notebook stays linked to its Drive or OneDrive file, and Update the Drive or OneDrive copy replaces it. A page that changed since it was sent offers the update once when opened.
 - Linking is optional. Nothing is uploaded without an explicit action. Status: Built, untested by hand.
 
 ## Video and audio platforms
@@ -60,7 +60,7 @@ Linked accounts (Phase 11):
 
 - Paste a YouTube, Vimeo, or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings. Status: Built, untested by hand. YouTube and Vimeo report the playhead, so notes are stamped; Apple Podcasts and Spotify show the player only. The frame loads only after Play, and the title and picture are saved for offline.
 - Transcripts come from the platform's captions when available, or from on-device transcription of audio the person has the right to use. Status: Needs the owner. Add captions as a transcript is built, untested by hand: YouTube (the owner's own videos) and Vimeo captions are read through the linked account and need the owner's client IDs. The on-device speech engine is not built.
-- Recordings can be exported as audio or as a narrated video of the page, and uploaded to a linked YouTube account as private or unlisted. Status: Built, untested by hand. Export as audio is built. A narrated video is not built yet. YouTube upload needs the owner.
+- Recordings can be exported as audio or as a narrated video of the page, and uploaded to a linked YouTube account as private or unlisted. Status: Built, untested by hand. Export as audio is built. Export as video is built: the page, the ink drawn again at the moments it was drawn, and the recording's sound, as an MP4 file (H.264 and AAC from Windows). Upload to YouTube is built: a private or unlisted choice, then a resumable upload of the narrated video. It needs the owner's Google client ID.
 
 ## More integrations
 

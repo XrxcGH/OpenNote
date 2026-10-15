@@ -10,6 +10,7 @@ const EXPECTED = [
   { id: 'audio.enhance', title: 'Enhance the voice of the recording', flag: 'audio.enhance' },
   { id: 'audio.exportWav', title: 'Save the recording as a WAV file', flag: 'audio.export' },
   { id: 'audio.exportOpus', title: 'Save the recording as an Opus file', flag: 'audio.export' },
+  { id: 'audio.exportVideo', title: 'Export the recording as a narrated video', flag: 'audio.exportVideo' },
   { id: 'audio.removePart', title: 'Remove a part', flag: 'audio.trim' },
 ] as const;
 

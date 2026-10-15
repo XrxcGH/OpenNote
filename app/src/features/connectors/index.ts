@@ -3,6 +3,7 @@
 // request with the account's token added by the shell, so no token ever reaches the interface.
 
 export { createFakeConnectors } from './fake';
+export { connectors } from './runtime';
 export type { FakeConnectors, FakeOptions } from './fake';
 export type { ConnectorsClient } from './client';
 export { ConnectorNetworkUse } from './NetworkUse';
