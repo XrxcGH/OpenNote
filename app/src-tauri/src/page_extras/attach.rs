@@ -72,7 +72,7 @@ const BLOCKED: &[&str] = &[
     // Scripts.
     "bat", "cmd", "ps1", "ps1xml", "ps2", "ps2xml", "psc1", "psc2", "psd1", "psm1", "msh", "msh1", "msh2",
     "mshxml", "msh1xml", "msh2xml", "vb", "vbs", "vbe", "js", "jse", "ws", "wsf", "wsh", "wsc", "sct", "hta", "py",
-    "pyw", "pyc", "pyo", "pyz", "pl", "rb", "shs", "shb",
+    "pyw", "pyc", "pyo", "pyz", "pl", "rb", "shs", "shb", "scriptlet",
     // Shortcuts and shell files that run or fetch what they point at.
     "lnk", "url", "website", "scf", "library-ms", "search-ms", "searchconnector-ms", "settingcontent-ms", "inf",
     "reg", "job", "rdp", "ica",

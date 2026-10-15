@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { getLocation } from '../../app/location';
 import { expectFocus, expectNoAxeViolations, pressChord, renderApp } from '../../test';
 import { sessionStore } from '../../state/session';
+import { qolStore } from '../../state/qol';
 
 const notebooksTree = () => screen.getByRole('tree', { name: 'Notebooks' });
 const pagesTree = () => screen.getByRole('tree', { name: 'Pages' });
@@ -162,6 +163,27 @@ describe('pages', () => {
     const membranes = row(pagesTree(), 'Membranes');
     expect(membranes.getAttribute('aria-level')).toBe('2');
     expect(row(pagesTree(), 'Cell structure').getAttribute('aria-expanded')).toBe('true');
+  });
+});
+
+describe('the middle button', () => {
+  it('opens a page in a new tab, and stops autoscroll on the press, but leaves a section alone', async () => {
+    await renderTree();
+    await focusRow(notebooksTree, 'Lectures');
+    await pressChord('Space');
+    await findRow(pagesTree, 'Membranes');
+    const press = (el: HTMLElement, type: 'mousedown' | 'auxclick') =>
+      el.dispatchEvent(new MouseEvent(type, { button: 1, bubbles: true, cancelable: true }));
+    const tabs = () => qolStore.get().tabs.length;
+    const before = tabs();
+    const section = row(notebooksTree(), 'Labs');
+    expect(press(section, 'mousedown')).toBe(true);
+    press(section, 'auxclick');
+    expect(tabs()).toBe(before);
+    const page = row(pagesTree(), 'Membranes');
+    expect(press(page, 'mousedown')).toBe(false);
+    press(page, 'auxclick');
+    await expect.poll(tabs).toBeGreaterThan(before);
   });
 });
 

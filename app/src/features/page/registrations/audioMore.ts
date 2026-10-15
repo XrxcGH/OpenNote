@@ -15,6 +15,7 @@ import { installMomentLinks } from '../audio/momentLinks';
 import { isRunning, recordingChoices, recordingUi } from '../audio/state';
 import { TRANSCRIPT_TYPE } from '../audio/transcripts/moment';
 import { blockRenderers } from '../registries';
+import { isMainWindow } from '../../../app/windowKind';
 import { shownQueue } from '../sync/shown';
 import { lazyBlockView } from '../tables/lazyView';
 
@@ -147,6 +148,7 @@ shownOpenPage.subscribe(() => {
 // The meeting prompt's watch starts only when the person has turned it on, so a PC that never does loads nothing.
 let watching = false;
 function syncMeetingWatch(): void {
+  if (!isMainWindow()) return;
   const wanted = isEnabled('audio.meetingPrompt') && recordingChoices.get().meetingPrompt;
   if (!wanted && !watching) return;
   void import('../audio/meeting').then((module) => {

@@ -8,7 +8,7 @@ import { Button, TextField, announce } from '../../../ui';
 import { createTimers, restoreTimerSet, systemClock } from '../timers';
 import type { TimerConfig, TimerKind, TimerView, Timers } from '../timers';
 import { showNotice } from './notify';
-import { loadStored, saveStored } from './storage';
+import { loadStored, saveStored, watchStored } from './storage';
 import styles from './tools.module.css';
 
 const STORE = 'timers';
@@ -20,6 +20,11 @@ function timersForWindow(): Timers {
     shared = createTimers(systemClock(), restoreTimerSet(loadStored(STORE, null)));
     const timers = shared;
     timers.subscribe(() => saveStored(STORE, timers.snapshot()));
+    // A pop-out or the main window saved its timers: take them, so the next change here builds on them.
+    watchStored(STORE, () => {
+      const incoming = restoreTimerSet(loadStored(STORE, null));
+      if (JSON.stringify(incoming) !== JSON.stringify(timers.snapshot())) timers.replace(incoming);
+    });
   }
   return shared;
 }

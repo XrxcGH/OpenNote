@@ -89,3 +89,39 @@ describe('the paginated view', () => {
     expect(shownPagesView.get()?.state().mode).toBe('infinite');
   });
 });
+
+describe('adding a sheet with the pen', () => {
+  const fire = (target: Element, type: string, x: number, y: number, id = 7) =>
+    target.dispatchEvent(
+      new PointerEvent(type, { pointerType: 'pen', pointerId: id, clientX: x, clientY: y, bubbles: true }),
+    );
+
+  it('adds a sheet for a stroke that ends at the bottom, not for a tap or a cancelled pen', async () => {
+    const { harness } = await paginated();
+    shownPagesView.get()?.setLayout('freeform');
+    await new Promise((done) => setTimeout(done, 300));
+    const { viewport, world } = harness.mounted.viewport;
+    const count = () => shownPagesView.get()?.state().sheets ?? 0;
+    const before = count();
+    const rect = world.getBoundingClientRect();
+    const zoom = harness.mounted.viewport.camera().zoom;
+    const sheetHeight = pageLayout(readView(harness.mounted.layout.view()).view).sheet.height;
+    const x = rect.left + 80 * zoom;
+    const bottom = rect.top + (before * sheetHeight - 4) * zoom;
+    const target = viewport;
+    // A tap in the bottom strip writes nothing.
+    fire(target, 'pointerdown', x, bottom);
+    fire(target, 'pointerup', x, bottom);
+    expect(count()).toBe(before);
+    // A cancelled pen forgets where it began, so its later up is not a stroke.
+    fire(target, 'pointerdown', x, bottom - 40);
+    fire(target, 'pointercancel', x, bottom - 40);
+    fire(target, 'pointerup', x, bottom);
+    expect(count()).toBe(before);
+    // A stroke that travelled and ends in the bottom strip adds one.
+    fire(target, 'pointerdown', x, bottom - 40);
+    fire(target, 'pointerup', x, bottom);
+    await new Promise((done) => setTimeout(done, 300));
+    expect(count()).toBe(before + 1);
+  });
+});

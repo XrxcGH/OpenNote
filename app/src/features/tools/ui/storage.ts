@@ -14,10 +14,25 @@ export function loadStored<T>(name: string, fallback: T): T {
 
 export function saveStored(name: string, value: unknown): void {
   try {
-    localStorage.setItem(PREFIX + name, JSON.stringify(value));
+    const text = JSON.stringify(value);
+    // Writing what is already there changes nothing, so other windows hear nothing and two windows cannot echo.
+    if (localStorage.getItem(PREFIX + name) !== text) localStorage.setItem(PREFIX + name, text);
   } catch {
     // Nothing to do: the tool keeps working, it just will not remember.
   }
+}
+
+/**
+ * Calls `changed` when another window of the app writes `name`. The tool windows and the main window share this
+ * storage, so each re-reads what the other saved rather than writing its older copy over it.
+ */
+export function watchStored(name: string, changed: () => void): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+  const listen = (event: StorageEvent) => {
+    if (event.key === PREFIX + name || event.key === null) changed();
+  };
+  window.addEventListener('storage', listen);
+  return () => window.removeEventListener('storage', listen);
 }
 
 export function forgetStored(name: string): void {

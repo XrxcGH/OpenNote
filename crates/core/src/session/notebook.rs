@@ -173,6 +173,7 @@ impl NotebookHandle {
             None => None,
         };
         let id = self.change(false, |t| t.store.create_page(section, parent, before, title))?;
+        self.inner.queue_readable(id);
         self.record(TreeAction::Created(vec![NodeRef::Page(id)]));
         Ok(id)
     }
@@ -270,6 +271,7 @@ impl NotebookHandle {
     pub fn duplicate(&self, page: PageId) -> Result<PageId, CoreError> {
         self.save_open(&[page])?;
         let id = self.change(false, |t| t.store.duplicate(page))?;
+        self.inner.queue_readable(id);
         self.record(TreeAction::Created(vec![NodeRef::Page(id)]));
         Ok(id)
     }
