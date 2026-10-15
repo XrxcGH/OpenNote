@@ -16,7 +16,7 @@ Open Insert, then Flashcards. A page can hold several decks.
 
 Open a deck and press Quiz, or insert a quiz block, to be asked a random set of the deck's cards. Type each answer and check it. If the check missed a good answer, press "I had it right". The end tells you how many were right and lists the cards to look at again. A quiz does not change when cards come back for review, and it keeps no score history.
 
-Study tape covers part of a page. Press it to show what is under it.
+Study tape covers part of a page. Press it to show what is under it. When you print or export a page with tape, you can choose to turn what it covers into blanks, with an answer key page at the end.
 
 ## Make cards from a section or a transcript
 
