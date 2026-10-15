@@ -9,6 +9,7 @@ import type { TagNode, TagPlan } from '../../../services/search/types';
 import type { OverlayProps } from '../../../shell/commandbar/overlays';
 import { t } from '../../../strings/t';
 import { Button, Dialog, TextField, announce, showToast } from '../../../ui';
+import { recordChange, undoPageChanges } from '../changeSet';
 import { maybeSearchClient } from '../client';
 import styles from '../search.module.css';
 import { addTagToPage, applyTagPlan, normalTag } from './rewrite';
@@ -63,8 +64,11 @@ function Editor({ editing, onDone }: { editing: NonNullable<Editing>; onDone(cha
     setBusy(true);
     try {
       const done = await applyTagPlan(commandContext('palette').platform.pages, plan);
-      showToast({ message: t('search.tags.done', { count: done.pages }) });
-      announce(t('search.tags.done', { count: done.pages }));
+      const pages = commandContext('palette').platform.pages;
+      recordChange(
+        { label: t('search.tags.done', { count: done.pages }), undo: () => undoPageChanges(pages, done.changes) },
+        t('search.tags.done', { count: done.pages }),
+      );
       onDone(true);
     } catch {
       showToast({ message: t('search.tags.failed'), tone: 'danger' });

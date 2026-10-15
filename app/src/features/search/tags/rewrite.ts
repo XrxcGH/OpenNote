@@ -2,6 +2,7 @@
 // tags, which pages); this reads each page and rewrites its text blocks, one batch per page, one undo.
 import type { PagesClient } from '../../../platform/types';
 import type { Edit } from '../../../services/pages/types';
+import type { PageChange } from '../changeSet';
 import { fold } from '../../../services/search/text';
 import type { TagPlan } from '../../../services/search/types';
 
@@ -37,6 +38,8 @@ export function rewriteTags(markdown: string, plan: Pick<TagPlan, 'changes'>): s
 export interface Rewritten {
   pages: number;
   tags: number;
+  /** What each page was and became, for Undo. */
+  changes: PageChange[];
 }
 
 /** A page's own tags after the plan: renamed, merged (a tag listed once), or removed. */
@@ -74,23 +77,31 @@ export async function addTagToPage(pages: PagesClient, pageId: string, tag: stri
  */
 export async function applyTagPlan(pages: PagesClient, plan: TagPlan): Promise<Rewritten> {
   const affected = [...new Set(plan.changes.flatMap((change) => change.pages))];
-  const done: Rewritten = { pages: 0, tags: 0 };
+  const done: Rewritten = { pages: 0, tags: 0, changes: [] };
   for (const pageId of affected) {
     try {
       const open = await pages.open(pageId, { viewport: null });
       try {
         const edits: Edit[] = [];
         const tags = rewritePageTags(open.initial.tags, plan);
-        if (tags.join('\n') !== open.initial.tags.join('\n')) edits.push({ edit: 'setPage', tags });
+        const change: PageChange = { page: pageId, texts: [] };
+        if (tags.join('\n') !== open.initial.tags.join('\n')) {
+          edits.push({ edit: 'setPage', tags });
+          change.tags = { before: [...open.initial.tags], after: tags };
+        }
         for (const block of open.initial.blocks) {
           if (block.type !== 'text' || typeof block.data.markdown !== 'string') continue;
           const after = rewriteTags(block.data.markdown, plan);
-          if (after !== block.data.markdown) edits.push({ edit: 'setText', block: block.id, markdown: after });
+          if (after !== block.data.markdown) {
+            edits.push({ edit: 'setText', block: block.id, markdown: after });
+            change.texts.push({ block: block.id, before: block.data.markdown, after });
+          }
         }
         if (edits.length) {
           await open.send({ edits });
           done.pages += 1;
           done.tags += edits.length;
+          done.changes.push(change);
         }
       } finally {
         await open.close();

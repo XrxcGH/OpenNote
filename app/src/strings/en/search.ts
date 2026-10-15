@@ -135,6 +135,10 @@ export const search = {
     done: 'Changed tags on {count, plural, one {# page} other {# pages}}.',
     failed: "Couldn't change the tags. Try again.",
   },
+  changeSet: {
+    undo: 'Undo',
+    undone: 'Put back {count, plural, one {# change} other {# changes}}.',
+  },
   index: {
     rebuilding: 'Rebuilding the search index. Search works as it fills.',
     rebuilt: 'The search index is up to date.',

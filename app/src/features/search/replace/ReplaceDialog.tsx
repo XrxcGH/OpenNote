@@ -8,7 +8,8 @@ import { commandContext } from '../../../commands/registry';
 import type { TextHit } from '../../../services/search/types';
 import type { OverlayProps } from '../../../shell/commandbar/overlays';
 import { t } from '../../../strings/t';
-import { Dialog, Switch, TextField, announce, showToast } from '../../../ui';
+import { Dialog, Switch, TextField } from '../../../ui';
+import { recordChange } from '../changeSet';
 import { maybeSearchClient } from '../client';
 import styles from '../search.module.css';
 import { applyReplace, undoReplace } from './apply';
@@ -123,17 +124,7 @@ export default function ReplaceDialog({ onClose, query = '' }: OverlayProps & { 
     const done = await applyReplace(platform.pages, chosen, replacement);
     onClose();
     const message = t('qolSearch.replace.done', { count: done.matches, pages: done.pages });
-    announce(message);
-    showToast({
-      message,
-      action: {
-        label: t('qolSearch.replace.undo'),
-        run: async () => {
-          const restored = await undoReplace(platform.pages, done.written);
-          showToast({ message: t('qolSearch.replace.undone', { count: restored }) });
-        },
-      },
-    });
+    recordChange({ label: message, undo: () => undoReplace(platform.pages, done.written) }, message);
   };
 
   return (

@@ -188,7 +188,7 @@ More quality-of-life features:
 | Daily note | One tap opens today's page, created from a template | Built, untested by hand |
 | Focus mode | Hides panes and toolbars; the page stays centered | Built, untested by hand |
 | Reading mode | Locks the page against accidental edits and ink | Built, untested by hand |
-| Find and replace | Works on one page or a whole notebook, including handwriting that has been recognized | Built, untested by hand |
+| Find and replace | Works on one page or a whole notebook, including handwriting that has been recognized One Undo, on the message or with Ctrl+Z, puts back a notebook-wide replace or a tag rename, merge, or delete. | Built, untested by hand |
 | Word count and reading time | Shown for the page or a selection | Built, untested by hand |
 | Table of contents | Built from headings, pinned to the side of long pages | Built, untested by hand |
 | Recently closed | Reopen closed pages and tabs with Ctrl+Shift+T | Built, untested by hand |

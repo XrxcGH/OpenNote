@@ -37,6 +37,7 @@ Type `#todo` and the tag is listed in the Tags pane and found by search. Tag a s
 ## Replace everywhere
 
 Press Ctrl+K and choose Replace in all notebooks. You see a preview before anything changes.
+Renaming, merging, or deleting a tag and Replace in all notebooks each end with an Undo on the message. Press Ctrl+Z right after, before you type in a page, and it puts back every page the change touched, except pages you have edited since.
 
 Search and links are built and have been checked by automated tests only.
 

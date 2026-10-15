@@ -131,6 +131,7 @@ type QolSearchFlagId =
   | 'search.paragraphLinks'
   | 'search.properties'
   | 'search.replace'
+  | 'search.changeSets'
   | 'search.indexMedia'
   | 'daily.notes'
   | 'collections.views'

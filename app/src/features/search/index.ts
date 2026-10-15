@@ -9,3 +9,4 @@ export type { Field, FieldType } from './properties/model';
 export { locationOfPage, openPage } from './locate';
 export { openAndReveal } from './deeplink/jump';
 export { maybeSearchClient } from './client';
+export { armedChange, recordChange, undoArmedChange } from './changeSet';

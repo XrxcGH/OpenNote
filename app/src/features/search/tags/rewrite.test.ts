@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createMemoryPageService } from '../../../services/pages/memory';
 import type { PageJson } from '../../../services/pages/types';
 import type { TagPlan } from '../../../services/search/types';
+import { undoPageChanges } from '../changeSet';
 import { addTagToPage, applyTagPlan, normalTag, rewritePageTags, rewriteTags } from './rewrite';
 
 const plan: TagPlan = {
@@ -57,12 +58,28 @@ describe('tag rewriting', () => {
       { page: make('b', '#old and #school/bio', ['school/bio']) },
     ]);
     const done = await applyTagPlan(service, plan);
-    expect(done).toEqual({ pages: 2, tags: 4 });
+    expect(done).toMatchObject({ pages: 2, tags: 4 });
     expect(service.held('a')?.blocks[0].data.markdown).toBe('About #uni today');
     expect(service.held('a')?.tags).toEqual(['uni', 'keep']);
     expect(service.held('b')?.blocks[0].data.markdown).toBe('old and #uni/bio');
     expect(service.held('b')?.tags).toEqual(['uni/bio']);
     expect(service.sent('a')).toHaveLength(1);
+  });
+
+  it('puts every page back with one undo, but not a page edited since', async () => {
+    const service = createMemoryPageService([
+      { page: make('a', 'About #school today', ['School', 'keep']) },
+      { page: make('b', '#old and #school/bio', ['school/bio']) },
+    ]);
+    const done = await applyTagPlan(service, plan);
+    const open = await service.open('b', { viewport: null });
+    await open.send({ edits: [{ edit: 'setText', block: 'b1', markdown: 'changed since' }] });
+    await open.close();
+    expect(await undoPageChanges(service, done.changes)).toBe(2);
+    expect(service.held('a')?.blocks[0].data.markdown).toBe('About #school today');
+    expect(service.held('a')?.tags).toEqual(['School', 'keep']);
+    expect(service.held('b')?.blocks[0].data.markdown).toBe('changed since');
+    expect(service.held('b')?.tags).toEqual(['school/bio']);
   });
 
   it('adds a tag to a page once', async () => {

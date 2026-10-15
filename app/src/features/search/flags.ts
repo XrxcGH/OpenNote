@@ -24,6 +24,7 @@ export const SEARCH_FLAGS: readonly FlagDef[] = [
   flag('search.paragraphLinks', 'Copy link for a page, heading, or paragraph, and opennote:// links.', on),
   flag('search.properties', 'Page properties: typed fields in a foldable header on the page.', on),
   flag('search.replace', 'Replace across a notebook, with a preview of each change.', on),
+  flag('search.changeSets', 'One Undo, on the toast and with Ctrl+Z, for a tag change or a replace across pages.', on),
   flag('search.indexMedia', 'Text read from images, handwriting, and transcripts joins the search index.', on),
   flag('daily.notes', 'The daily note and the daily notes calendar.', on),
   flag('collections.views', 'Collections: saved views of pages as a table, list, board, calendar, or gallery.', on),
