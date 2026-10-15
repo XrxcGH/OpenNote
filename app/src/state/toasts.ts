@@ -48,6 +48,18 @@ export function dismissToast(key: number): void {
   });
 }
 
+/**
+ * Closes the toasts that offer an action, such as Undo. What they offer is only true for a moment: after the page
+ * changes or the person undoes by keyboard, "Undo" would undo the wrong thing or nothing.
+ */
+export function dismissActionToasts(): void {
+  toastStore.set((state) => {
+    const queue = state.queue.filter((item) => !item.action);
+    if (state.current?.action) return { current: queue[0] ?? null, queue: queue.slice(1) };
+    return { current: state.current, queue };
+  });
+}
+
 /** Clears the showing toast and the queue, for tests and for leaving a notebook. */
 export function clearToasts(): void {
   toastStore.set({ current: null, queue: [] });

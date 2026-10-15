@@ -5,6 +5,7 @@
 import { chord, defineCommand } from '../../commands/registry';
 import type { CommandContext, CommandDef } from '../../commands/types';
 import type { ChipColor, NodeId } from '../../services/notes';
+import { dismissActionToasts } from '../../state/toasts';
 import { t } from '../../strings/t';
 import { announce } from '../../ui';
 import { colorNode } from './actions';
@@ -175,6 +176,7 @@ const editCommands = [
     keys: [chord('Ctrl+Z')],
     scope: 'workspace',
     run: async (ctx) => {
+      dismissActionToasts();
       if (!(await undo(ctx.notes))) announce(t('tree.undo.nothing'));
     },
   }),

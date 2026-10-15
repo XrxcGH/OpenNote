@@ -20,7 +20,7 @@ vi.mock('../../../ui', () => ({ announce: () => undefined, showToast: () => unde
 
 const { recoverEntries } = await import('./recover');
 const page = { id: 'p' } as never;
-const cut = { id: 'r1', state: 'recording', clock: 5 } as never;
+const cut = { id: 'r1', state: 'recording', clock: 5 };
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -33,7 +33,7 @@ afterEach(() => vi.useRealTimers());
 describe('recovering a cut-off recording', () => {
   it('keeps the entry and tries again after a passing error, then recovers', async () => {
     recover.mockRejectedValueOnce({ code: 'io' }).mockResolvedValueOnce({ entry: { state: 'recovered' } });
-    await recoverEntries(page, [cut]);
+    await recoverEntries(page, [cut as never]);
     expect(writeEntry).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(5100);
     expect(recover).toHaveBeenCalledTimes(2);
@@ -43,7 +43,7 @@ describe('recovering a cut-off recording', () => {
   it('gives up after a few tries, still recording', async () => {
     recover.mockRejectedValue({ code: 'audioDevice' });
     ids.current = 'r2';
-    await recoverEntries(page, [{ ...cut, id: 'r2' }]);
+    await recoverEntries(page, [{ ...cut, id: 'r2' } as never]);
     await vi.advanceTimersByTimeAsync(5000 + 15000 + 45000 + 200000);
     expect(recover).toHaveBeenCalledTimes(4);
     expect(writeEntry).not.toHaveBeenCalled();
@@ -52,7 +52,7 @@ describe('recovering a cut-off recording', () => {
   it('marks it recovered at once for an error that will not pass', async () => {
     recover.mockRejectedValue({ code: 'audioCorrupt' });
     ids.current = 'r3';
-    await recoverEntries(page, [{ ...cut, id: 'r3' }]);
+    await recoverEntries(page, [{ ...cut, id: 'r3' } as never]);
     expect(writeEntry).toHaveBeenCalledTimes(1);
   });
 });

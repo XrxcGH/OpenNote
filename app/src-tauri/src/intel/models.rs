@@ -99,6 +99,8 @@ pub enum DownloadError {
     Network(String),
     Disk(String),
     Checksum,
+    /// A download is still winding down, so the model can't be removed yet.
+    Stopping,
 }
 
 impl DownloadError {
@@ -110,6 +112,7 @@ impl DownloadError {
             DownloadError::Network(_) => "network",
             DownloadError::Disk(_) => "disk",
             DownloadError::Checksum => "checksum",
+            DownloadError::Stopping => "stopping",
         }
     }
 }
@@ -407,21 +410,23 @@ impl Models {
 
     /// Deletes the model and any part of it, after stopping a running download.
     pub fn remove(&self, id: &str) -> Result<(), DownloadError> {
+        self.remove_waiting(id, REMOVE_WAIT_STEPS)
+    }
+
+    fn remove_waiting(&self, id: &str, wait_steps: u32) -> Result<(), DownloadError> {
         let spec = spec_of(id).ok_or_else(|| DownloadError::Disk("That model isn't in the catalog.".to_owned()))?;
         self.cancel(id);
         // Wait for the thread to let go of the file. It sees the flag between reads, and a read can last as long as
         // the connection's timeout, so the wait is longer than that. If it still runs, nothing is deleted, and the
         // job stays, so the list tells the truth and a second Start can't begin another thread on the same file.
-        for _ in 0..REMOVE_WAIT_STEPS {
+        for _ in 0..wait_steps {
             if !self.jobs().get(id).is_some_and(|job| job.running) {
                 break;
             }
             thread::sleep(Duration::from_millis(20));
         }
         if self.jobs().get(id).is_some_and(|job| job.running) {
-            return Err(DownloadError::Disk(
-                "The download is still stopping. Try again in a moment.".to_owned(),
-            ));
+            return Err(DownloadError::Stopping);
         }
         for path in [self.0.dir.join(spec.file), part_path(&self.0.dir, spec)] {
             match fs::remove_file(&path) {
@@ -595,5 +600,26 @@ mod tests {
         assert_eq!((listed.models[0].state, listed.models[0].bytes), ("partial", 3));
         models.remove(spec.id).unwrap();
         assert_eq!(models.list().models[0].state, "notInstalled");
+    }
+
+    #[test]
+    fn a_model_whose_download_will_not_stop_is_kept_and_says_so() {
+        let dir = tempfile::tempdir().unwrap();
+        let models = Models::with_source(dir.path().to_path_buf(), Arc::new(memory(DATA, false)));
+        let spec = &CATALOG[0];
+        models.jobs().insert(
+            spec.id,
+            Job {
+                cancel: Arc::new(AtomicBool::new(false)),
+                bytes: Arc::new(AtomicU64::new(0)),
+                running: true,
+                error: None,
+            },
+        );
+        fs::write(dir.path().join(format!("{}.part", spec.file)), b"abc").unwrap();
+        assert_eq!(models.remove_waiting(spec.id, 2), Err(DownloadError::Stopping));
+        assert!(dir.path().join(format!("{}.part", spec.file)).exists());
+        assert!(models.jobs().contains_key(spec.id));
+        assert_eq!(DownloadError::Stopping.code(), "stopping");
     }
 }

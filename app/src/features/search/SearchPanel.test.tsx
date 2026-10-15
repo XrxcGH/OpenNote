@@ -45,7 +45,9 @@ describe('the search panel', () => {
     await renderApp();
     await openPanel();
     await userEvent.keyboard('zzqxyw');
-    expect(await screen.findByText('No pages match.')).toBeTruthy();
+    const none = await screen.findByText('No pages match.');
+    // The drawing sits with the words, as in the other empty lists.
+    expect(none.parentElement?.querySelector('svg')).toBeTruthy();
     const filters = screen.getByRole('group', { name: 'Filters' });
     for (const name of ['Regular expression', 'Titles only']) {
       expect(within(filters).getByRole('switch', { name })).toBeTruthy();

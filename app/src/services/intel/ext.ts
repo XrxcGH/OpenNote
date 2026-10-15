@@ -7,7 +7,7 @@ import type { IntelTransport } from './transport';
 export type ModelState = 'notInstalled' | 'partial' | 'downloading' | 'installed' | 'failed';
 
 /** Why a download or call failed, in a word the interface turns into a sentence. */
-export type ExtErrorCode = 'offline' | 'safeMode' | 'network' | 'checksum' | 'io' | 'invalid' | 'unknown';
+export type ExtErrorCode = 'offline' | 'safeMode' | 'network' | 'checksum' | 'stopping' | 'io' | 'invalid' | 'unknown';
 
 export interface ModelInfo {
   id: string;
