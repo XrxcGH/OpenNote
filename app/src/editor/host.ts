@@ -63,7 +63,24 @@ export type MathDrawing = { ok: true; html: string } | { ok: false; message: str
 export type MathActionResult =
   { ok: true; latex: string } | { ok: false; reason: 'unsupported' | 'unchanged' | 'none' | 'letters' };
 
+/** A visual equation field: the page's math editor with its own keyboard, which reads and writes LaTeX. */
+export interface VisualMathField {
+  /** The element to put in the page. It takes focus, key events, and blur like any field. */
+  element: HTMLElement;
+  /** The LaTeX of what is in the field. */
+  value: string;
+  /** The equation as words, for a screen reader. */
+  spoken(): string;
+  focus(): void;
+}
+
+export interface VisualMath {
+  create(options: { value: string; label: string; display: boolean }): Promise<VisualMathField>;
+}
+
 export interface MathRenderer {
+  /** The visual editor, when the page offers it. */
+  visual?: VisualMath;
   render(source: string, display: boolean): MathDrawing;
   /** Simplify and Solve for the source field, when the page offers them. */
   actions?: {

@@ -13,6 +13,19 @@
     outline-offset: 2px;
   }
 
+  .toggle {
+    min-block-size: var(--size-target-min);
+    margin-block-start: var(--space-1);
+    margin-inline-end: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: transparent;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
   .holderBlock {
     margin-block-start: var(--space-2);
   }

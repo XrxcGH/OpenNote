@@ -5,10 +5,14 @@ import { isEnabled } from '../../app/flags';
 import type { MathRenderer } from '../../editor/host';
 import { simplifyLatex, solveLatex } from './actions/actions';
 import { renderLatex } from './latex/render';
+import { visualMath } from './visual/field';
 
 export const mathRenderer: MathRenderer = {
   get actions() {
     return isEnabled('math.actions') ? { simplify: simplifyLatex, solve: solveLatex } : undefined;
+  },
+  get visual() {
+    return isEnabled('math.visualEditor') ? visualMath : undefined;
   },
   render(source, display) {
     const drawn = renderLatex(source, { displayMode: display });

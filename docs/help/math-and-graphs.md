@@ -7,6 +7,7 @@ Write equations, work out sums in your text, and plot functions on a page.
 ## Equations
 
 - Type `$x^2$` in text, or open Insert, then Equation. Type the equation as LaTeX and press Enter. It renders, and you can edit it.
+- When you open an equation, it opens in a visual editor with its own math keyboard, which also works with touch and pen. Choose Edit as LaTeX to type the source instead. OpenNote remembers your choice. A screen reader speaks the equation when you finish. Pages keep the same LaTeX either way.
 - Select an equation and choose Solve or Simplify. Solve needs an equation with exactly one letter in it.
 - If an action cannot read your LaTeX, it says so and leaves the equation alone.
 

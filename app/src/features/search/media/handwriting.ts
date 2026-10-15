@@ -1,4 +1,4 @@
-// Handwriting and transcripts for search (Phase 12, A1-30 and A4-6). The page's ink is read on this device, in the
+// Handwriting and transcripts for search (Phase 12, A1-30, and A4-6). The page's ink is read on this device, in the
 // background, and the words go to the index under one block that stands for the page's ink; a transcript block's
 // lines go in under the block itself, with the speakers' names. The words and their boxes stay in memory, so a hit
 // can be marked on the ink. Nothing here asks the person anything, and a page in a locked section keeps no words,

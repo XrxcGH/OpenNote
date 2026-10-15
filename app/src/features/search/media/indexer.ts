@@ -48,7 +48,7 @@ async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | nu
   }
 }
 
-/** Reads the page's pictures, handwriting and transcripts that the index has no current words for. */
+/** Reads the page's pictures, handwriting, and transcripts that the index has no current words for. */
 async function scan(mounted: MountedPage, current: () => boolean): Promise<void> {
   const extras = maybeSearchClient()?.extras;
   if (!extras) return;

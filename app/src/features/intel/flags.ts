@@ -2,7 +2,7 @@
 // feature also stays off in IntelSettings until the person chooses it. app/flags.ts joins these to the other lists.
 import type { FlagDef, FlagId } from '../../app/flags';
 
-export type IntelFlagId = Extract<FlagId, `intel.${string}`>;
+export type IntelFlagId = Extract<FlagId, `intel.${string}` | 'math.visualEditor'>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const everywhere = { dev: true, nightly: true, beta: true, stable: true };
@@ -32,5 +32,11 @@ export const INTEL_FLAGS: readonly FlagDef[] = [
   flag('intel.writing', 'Writing tools: proofread, rewrite, shorten, make a list, tidy structure.', building),
   flag('intel.transcription', 'Transcription on this device with a downloaded Whisper model.', building),
   flag('intel.autoTranscripts', 'A transcript and summary of every recording, made in the background.', building),
+  flag('math.visualEditor', 'Edit equations visually, with a math keyboard, instead of typing LaTeX.', building),
+  flag('intel.speakers', 'Tell the speakers in a recording apart in its transcript.', building),
+  flag('intel.dictation', 'Dictate with the microphone and have the words typed at the cursor.', building),
+  flag('intel.liveCaptions', 'Captions while a recording runs.', building),
+  flag('intel.mathInk', 'Turn handwritten math into an equation.', building),
+  flag('intel.translate', 'Translate a selection, a page, or a transcript on this device.', building),
   flag('intel.cloudKeys', 'Run transcription or summaries with your own cloud key instead of this device.', building),
 ];
