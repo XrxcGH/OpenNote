@@ -93,6 +93,8 @@ export interface OtherBlock extends BlockBase {
   readonly type: 'other';
   readonly kind: string;
   readonly fallback?: string;
+  /** For a recording block: the recording it stands for. */
+  readonly recording?: string;
 }
 
 export type ExportBlock = TextBlock | InkBlock | ImageBlock | FileBlock | TableBlock | DiagramBlock | OtherBlock;
@@ -142,6 +144,9 @@ export interface ExportPage {
   /** The language of the page text as a BCP 47 tag, for the document and for tagged PDF. */
   readonly language: string;
 }
+
+/** The type of a block that holds a recording. */
+export const RECORDING_TYPE = 'ext:org.opennote/recording';
 
 const str = (v: Json | undefined, fallback = ''): string => (typeof v === 'string' ? v : fallback);
 const flag = (v: Json | undefined): boolean => v === true;
@@ -212,7 +217,13 @@ function readData(type: string, data: JsonObject, fallback: Json | undefined): B
   }
   if (type === 'table' && Array.isArray(data.columns) && Array.isArray(data.rows)) return readTable(data);
   const text = isObject(fallback) && typeof fallback.markdown === 'string' ? fallback.markdown.trim() : '';
-  return { type: 'other', kind: type, ...(text === '' ? {} : { fallback: text }) };
+  const recording = type === RECORDING_TYPE && typeof data.recording === 'string' ? data.recording : undefined;
+  return {
+    type: 'other',
+    kind: type,
+    ...(text === '' ? {} : { fallback: text }),
+    ...(recording ? { recording } : {}),
+  };
 }
 
 function readBlocks(raw: Json | undefined): ExportBlock[] {

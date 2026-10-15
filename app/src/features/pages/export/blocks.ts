@@ -3,6 +3,8 @@
 // document share it, so the page reads the same everywhere. Browsers tag this markup when they print it to PDF.
 
 import { own } from '../layout/json';
+import { ENGLISH_PLAYER_LABELS, momentHtml, playerHtml } from './recording';
+import type { PlayerPlan } from './recording';
 import { inkShapes, inkExtent, inkSvg } from './ink';
 import {
   escapeAttr,
@@ -41,6 +43,8 @@ export const ENGLISH_LABELS: ExportLabels = {
 };
 
 export interface BlockContext {
+  /** The recordings a web page can play and the notes written while they ran. Null when the page has none. */
+  readonly player?: PlayerPlan;
   readonly page: ExportPage;
   /** Where an asset can be loaded from: a relative path or a data URI. Null leaves the image out. */
   readonly assetUrl: (asset: ExportAsset) => string | null;
@@ -161,11 +165,21 @@ function diagram(block: ExportBlock & { type: 'diagram' }, cx: BlockContext): st
   return `<figure class="diagram" role="img" aria-label="${escapeAttr(label)}">${block.svg}</figure>`;
 }
 
+/** A block of a type this version doesn't know: its stand-in text, or a note that it needs a newer version. */
+function otherHtml(block: ExportBlock & { type: 'other' }, cx: BlockContext): string {
+  return block.fallback === undefined
+    ? `<p class="newer">${escapeHtml(cx.labels.newerVersion)}</p>`
+    : renderHtml(parseMarkdown(block.fallback), htmlOptions(cx));
+}
+
 /** One block as HTML. Blocks that show nothing give an empty string. */
 export function renderBlock(block: ExportBlock, cx: BlockContext): string {
   switch (block.type) {
-    case 'text':
-      return renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+    case 'text': {
+      const html = renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+      const moment = cx.player?.moments.get(block.id);
+      return moment === undefined ? html : momentHtml(html, moment, ENGLISH_PLAYER_LABELS);
+    }
     case 'image':
       return image(block, cx);
     case 'file':
@@ -176,9 +190,12 @@ export function renderBlock(block: ExportBlock, cx: BlockContext): string {
       return ink(block, cx);
     case 'diagram':
       return diagram(block, cx);
-    case 'other':
-      return block.fallback === undefined
-        ? `<p class="newer">${escapeHtml(cx.labels.newerVersion)}</p>`
-        : renderHtml(parseMarkdown(block.fallback), htmlOptions(cx));
+    case 'other': {
+      const recording = block.recording === undefined ? undefined : cx.player?.recordings.get(block.recording);
+      if (block.recording !== undefined && recording) {
+        return playerHtml(block.recording, recording, ENGLISH_PLAYER_LABELS);
+      }
+      return otherHtml(block, cx);
+    }
   }
 }

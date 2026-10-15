@@ -35,3 +35,6 @@ export { dataUri, exportHtml } from './toHtml';
 export type { HtmlExport, HtmlExportOptions } from './toHtml';
 export { HANDWRITING_LINE, NEWER_VERSION_LINE, bodyParts, exportMarkdown, hasInk, tableCell } from './toMarkdown';
 export type { BodyPart, MarkdownExport, MarkdownOptions } from './toMarkdown';
+export { ENGLISH_PLAYER_LABELS, PLAYER_SCRIPT, sha256Base64 } from './recording';
+export type { PlayerPlan, PlayerRecording } from './recording';
+export { RECORDING_TYPE } from './source';
