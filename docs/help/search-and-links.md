@@ -46,3 +46,7 @@ Search and links are built and have been checked by automated tests only.
 Right-click a section and choose Pin section to keep it at the top of its notebook. Right-click a page and choose Color to mark it with a colored dot. Both stay with the notebook.
 
 A link or a search result that points inside a folded heading or list item opens the fold first, so you land on the words and not on a closed section.
+
+## Linking mentions
+
+In the linked pages pane, Link all shows every place the title appears without a link. Uncheck any that should stay plain text, then choose Link. One Undo puts them all back.

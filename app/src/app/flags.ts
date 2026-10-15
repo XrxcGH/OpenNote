@@ -132,6 +132,7 @@ type QolSearchFlagId =
   | 'search.properties'
   | 'search.replace'
   | 'search.changeSets'
+  | 'search.linkAll'
   | 'search.indexMedia'
   | 'daily.notes'
   | 'collections.views'

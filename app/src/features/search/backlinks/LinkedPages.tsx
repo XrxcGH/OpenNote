@@ -3,7 +3,7 @@
 // the links that still use the earlier title. The pane sits beside the page, follows the page that is open, and
 // refreshes when the index changes.
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useLocation } from '../../../app/location';
 import { commandContext } from '../../../commands/registry';
@@ -11,12 +11,16 @@ import type { Backlink, UnlinkedMention } from '../../../services/search/types';
 import { t } from '../../../strings/t';
 import { Button, announce, showToast } from '../../../ui';
 import { titleOf, useTreeNode } from '../../tree';
+import { isEnabled } from '../../../app/flags';
+import { showOverlay } from '../../../shell/commandbar/overlays';
 import { maybeSearchClient } from '../client';
 import { Highlighted } from '../Highlighted';
 import { applyLinkEdits } from '../links/applyEdits';
 import { linkMentionsOnPage } from '../links/mentions';
 import { openPage } from '../locate';
 import styles from '../search.module.css';
+
+const LazyLinkAll = lazy(() => import('./LinkAllDialog'));
 
 interface Loaded {
   page: string;
@@ -84,9 +88,10 @@ interface MentionsProps {
   mentions: UnlinkedMention[];
   busy: boolean;
   onLink(mention: UnlinkedMention): void;
+  onLinkAll(): void;
 }
 
-function Mentions({ mentions, busy, onLink }: MentionsProps) {
+function Mentions({ mentions, busy, onLink, onLinkAll }: MentionsProps) {
   return (
     <div className={styles.paneSection}>
       <h3 className={styles.paneSectionHeading}>{t('search.backlinks.mentionsHeading', { count: mentions.length })}</h3>
@@ -111,6 +116,11 @@ function Mentions({ mentions, busy, onLink }: MentionsProps) {
             </li>
           ))}
         </ul>
+      )}
+      {mentions.length > 0 && isEnabled('search.linkAll') && (
+        <Button variant="secondary" disabled={busy} onClick={onLinkAll}>
+          {t('search.backlinks.linkAll')}
+        </Button>
       )}
     </div>
   );
@@ -159,6 +169,13 @@ export function LinkedPages({ onClose }: { onClose(): void }) {
       const count = await linkMentionsOnPage(platform.pages, search, mention, target);
       return t('search.backlinks.linked', { count, title: mention.sourceTitle });
     });
+  const linkAll = () => {
+    if (!page || !loaded) return;
+    showOverlay('link-all', LazyLinkAll, {
+      target: { page, title: node ? titleOf(node) : '' },
+      mentions: loaded.mentions,
+    });
+  };
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key !== 'Escape') return;
     event.stopPropagation();
@@ -177,7 +194,7 @@ export function LinkedPages({ onClose }: { onClose(): void }) {
       {!page && <p className={styles.note}>{t('search.backlinks.noPage')}</p>}
       {page && !loaded && <p className={styles.note}>{t('search.backlinks.loading')}</p>}
       {loaded && <Backlinks links={loaded.links} busy={busy} onUpdate={() => void update()} />}
-      {loaded && <Mentions mentions={loaded.mentions} busy={busy} onLink={(mention) => void link(mention)} />}
+      {loaded && <Mentions mentions={loaded.mentions} busy={busy} onLink={(mention) => void link(mention)} onLinkAll={linkAll} />}
     </section>
   );
 }
