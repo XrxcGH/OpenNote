@@ -26,6 +26,7 @@ A release goes through these steps, in this order:
 9. `checksums.ts` writes `SHA256SUMS.txt`.
 10. `verify.ts` checks the finished folder the way a running copy of the app will.
 11. `winget.ts` writes the winget files for a stable release.
+12. `update-test.ts` lets the last beta's updater install the release, in the workflow's `update-test` job.
 
 The workflow publishes only after step 10 passes. A dry run does steps 1 to 11 with a throwaway signing key and publishes nothing.
 
@@ -44,6 +45,8 @@ The workflow publishes only after step 10 passes. A dry run does steps 1 to 11 w
 | `check-downloads.ts` | Checks the files the package job downloaded against the hashes the build and sbom jobs reported, and refuses any other file |
 | `checksums.ts` | Writes `SHA256SUMS.txt` |
 | `checklist.ts` | Answers each item of the release checklist. Its helpers are `checklist-doc.ts` and `checklist-signoff.ts` |
+| `signoff.ts` | Records one person's sign-off of a checklist item in `docs/releases/<version>.signoff.json`, refusing an entry the checklist would not count |
+| `update-test.ts` | The update-from-earlier-beta test: the updater's test app, built from the last beta tag, updates itself to the release from a local server |
 | `test-support.ts` | Test helpers: a throwaway signing key and a sample release folder |
 
 The scripts have no dependencies of their own. They use Node 22.18 or newer, which runs TypeScript files directly, and the tools that `npm ci` installs.

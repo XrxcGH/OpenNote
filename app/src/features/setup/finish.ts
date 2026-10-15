@@ -4,6 +4,7 @@
 // failure before the record leaves the app where it was, with the draft kept, so the person can try again.
 
 import { navigate } from '../../app/location';
+import { executeCommand } from '../../commands/registry';
 import type { Location } from '../../app/location';
 import type { SetupDraft, SetupStepDef } from '../../registries';
 import { updateSettings } from '../../state/settings';
@@ -29,8 +30,13 @@ export async function finishSetup(steps: readonly SetupStepDef[], draft: SetupDr
   saveDone(withCompleted(record.completedSteps, completedBy(steps, 'device')));
   await platform.state.flush();
   navigate(openAfter(work), { replace: true });
-  if (work.storage?.moveApp)
-    await platform.install
-      .moveToUserPrograms()
-      .catch(() => showToast({ message: t('setup.errors.move'), tone: 'danger' }));
+  if (work.storage?.moveApp) {
+    // The opennote command's folder goes on PATH first: the move copies the command there, then the app restarts.
+    const cliOnPath = work.storage.cliOnPath === true;
+    if (cliOnPath) await executeCommand('api.cliPathOnMove', { on: true }, 'menu').catch(() => false);
+    await platform.install.moveToUserPrograms().catch(() => {
+      if (cliOnPath) void executeCommand('api.cliPathOnMove', { on: false }, 'menu').catch(() => false);
+      showToast({ message: t('setup.errors.move'), tone: 'danger' });
+    });
+  }
 }

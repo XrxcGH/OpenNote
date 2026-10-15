@@ -8,4 +8,5 @@ export { FIELD_TYPES, compareValues, displayValue, fieldNamed, readFields, viewP
 export type { Field, FieldType } from './properties/model';
 export { locationOfPage, openPage } from './locate';
 export { openAndReveal } from './deeplink/jump';
+export { otherLinkReaders } from './deeplink/install';
 export { maybeSearchClient } from './client';

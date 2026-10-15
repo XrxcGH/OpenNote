@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  "Save to OpenNote" for Outlook (docs/help/web-clipper.md). A task pane for a message being read: it sends the
+  message's text and attachments to OpenNote on this PC through the local API, with a link back to the message.
+  ADDIN_BASE is where the task pane is hosted over https; extensions/build.mjs fills it in (OPENNOTE_ADDIN_BASE,
+  https://localhost:3000/ for sideloading). Registering the add-in with Microsoft is the owner's step.
+-->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+           xsi:type="MailApp">
+  <Id>3714810a-3e0b-455f-936e-228fc2c659b9</Id>
+  <Version>0.1.0.0</Version>
+  <ProviderName>OpenNote</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Save to OpenNote"/>
+  <Description DefaultValue="Save an email and its attachments as a page in OpenNote on this PC."/>
+  <IconUrl DefaultValue="ADDIN_BASE/icons/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="ADDIN_BASE/icons/icon-128.png"/>
+  <SupportUrl DefaultValue="https://github.com/XrxcGH/OpenNote/blob/main/docs/help/web-clipper.md"/>
+  <AppDomains>
+    <AppDomain>ADDIN_BASE</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.8"/>
+    </Sets>
+  </Requirements>
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="ADDIN_BASE/taskpane.html"/>
+        <RequestedHeight>360</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+  <Permissions>ReadItem</Permissions>
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+  <DisableEntityHighlighting>true</DisableEntityHighlighting>
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.8">
+        <bt:Set Name="Mailbox"/>
+      </bt:Sets>
+    </Requirements>
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="opennoteGroup">
+                <Label resid="groupLabel"/>
+                <Control xsi:type="Button" id="opennoteSave">
+                  <Label resid="buttonLabel"/>
+                  <Supertip>
+                    <Title resid="buttonLabel"/>
+                    <Description resid="buttonTip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="icon16"/>
+                    <bt:Image size="32" resid="icon32"/>
+                    <bt:Image size="80" resid="icon80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="paneUrl"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="icon16" DefaultValue="ADDIN_BASE/icons/icon-32.png"/>
+        <bt:Image id="icon32" DefaultValue="ADDIN_BASE/icons/icon-32.png"/>
+        <bt:Image id="icon80" DefaultValue="ADDIN_BASE/icons/icon-128.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="paneUrl" DefaultValue="ADDIN_BASE/taskpane.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="groupLabel" DefaultValue="OpenNote"/>
+        <bt:String id="buttonLabel" DefaultValue="Save to OpenNote"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="buttonTip" DefaultValue="Save this email and its attachments as a page in OpenNote on this PC."/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

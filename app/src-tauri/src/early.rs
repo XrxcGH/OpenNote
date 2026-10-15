@@ -100,6 +100,10 @@ pub fn run() -> EarlyOutcome {
     if let Some(marker) = updater::TEST_ENDPOINTS_MARKER {
         log::warn!("{marker}: this build accepts test update endpoints and a test key.");
     }
+    // `--uninstall` from Installed apps, and the copy that finishes it, never start the app.
+    if let Some(code) = crate::install::uninstall::run_from_args() {
+        return EarlyOutcome::Exit(code);
+    }
     run_with(&System)
 }
 
@@ -116,6 +120,9 @@ pub fn run_with(steps: &impl Steps) -> EarlyOutcome {
             return EarlyOutcome::Exit(EXIT_FAILURE);
         }
     };
+    // A "Share to OpenNote" launch saves what was shared first, because a second launch exits at the lock below.
+    // Any other launch returns at once.
+    crate::share::receive_launch(&paths);
     let instance = match steps.acquire_instance(&paths, &args) {
         InstanceOutcome::Owner(guard) => guard,
         InstanceOutcome::Forwarded => return EarlyOutcome::Exit(0),

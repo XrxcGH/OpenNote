@@ -124,6 +124,9 @@ mod tests {
     fn accepts_page_and_paragraph_links() {
         assert!(is_link("opennote://page/01hzx3k9q7m2v5c8d4e6f0abcd"));
         assert!(is_link("OpenNote://page/abc/def?x=1#y"));
+        assert!(is_link(
+            "opennote://clip?url=https%3A%2F%2Fexample.org%2Fa&title=A%20page"
+        ));
     }
 
     #[test]

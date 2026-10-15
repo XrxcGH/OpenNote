@@ -1,6 +1,8 @@
 [workspace]
 members = [
   "app/src-tauri",
+  "crates/api",
+  "crates/cli",
   "crates/core",
   "crates/crashreport",
   "crates/diagnostics",

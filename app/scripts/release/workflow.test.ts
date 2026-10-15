@@ -51,7 +51,7 @@ describe('release.yml triggers', () => {
   });
 
   it('has these jobs', () => {
-    expect(names).toEqual(['version', 'checklist', 'ci', 'build', 'sbom', 'package', 'publish']);
+    expect(names).toEqual(['version', 'checklist', 'ci', 'build', 'sbom', 'package', 'update-test', 'publish']);
   });
 
   it('only waits for jobs that exist, and a job never waits for itself', () => {
@@ -71,7 +71,8 @@ describe('release.yml triggers', () => {
   it('builds the exes only after the checklist and CI, and packages only after the build', () => {
     expect(jobs.build).toMatch(/needs: \[ci, checklist\]/);
     expect(jobs.package).toMatch(/needs: \[version, checklist, build, sbom\]/);
-    expect(jobs.publish).toMatch(/needs: \[version, package\]/);
+    expect(jobs.publish).toMatch(/needs: \[version, package, update-test\]/);
+    expect(jobs['update-test']).toMatch(/needs: \[version, package\]/);
   });
 });
 
@@ -117,7 +118,7 @@ describe('actions', () => {
 
   it('check out without leaving a token on disk', () => {
     const checkouts = [...WORKFLOW.matchAll(/uses: actions\/checkout@[^\n]*\n((?: {8,}[^\n]*\n)+)/g)];
-    expect(checkouts).toHaveLength(5);
+    expect(checkouts).toHaveLength(6);
     for (const [, options] of checkouts) expect(options).toContain('persist-credentials: false');
   });
 });
@@ -163,6 +164,26 @@ describe('a pushed tag', () => {
 });
 
 describe('the dry run', () => {
+  it('is the only kind of run by hand, with its dry_run input on', () => {
+    expect(WORKFLOW).toMatch(/workflow_dispatch:\n {4}inputs:\n {6}dry_run:\n(?: {8}.+\n)+/);
+    expect(WORKFLOW).toContain('        default: true\n');
+    const step = stepNamed('version', 'Refuse a run by hand that is not a dry run');
+    expect(step).toContain('DRY_RUN: ${{ inputs.dry_run }}');
+    expect(step).toContain("if ($env:DRY_RUN -ne 'true')");
+  });
+
+  it('tests an update from the last beta with the throwaway key, and a tag with the committed key', () => {
+    expect(stepNamed('update-test', 'Update from the last beta (dry run)')).toContain('--pubkey dry-run/update.pub');
+    const tagged = stepNamed('update-test', 'Update from the last beta (tag)');
+    expect(tagged).toContain("if: github.event_name == 'push'");
+    expect(tagged).not.toContain('--pubkey');
+    expect(jobs['update-test']).not.toMatch(/\$\{\{\s*secrets\./);
+  });
+
+  it('may build without a committed update key, and a release may not', () => {
+    expect(jobs.build).toContain("OPENNOTE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}");
+  });
+
   it('signs with a throwaway key and never with the secrets', () => {
     const step = stepNamed('package', 'Sign with a throwaway key (dry run)');
     expect(step).toContain("if: github.event_name == 'workflow_dispatch'");

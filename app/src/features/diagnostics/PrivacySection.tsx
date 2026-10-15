@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import { useFlag } from '../../app/flags';
+import { navigate } from '../../app/location';
 import { useUpdaterStatus } from '../../state/updater';
 import { usePageExtrasPrefs } from '../page';
 import { useModelDownloadsLastRan } from '../intel';
@@ -244,9 +245,26 @@ function Tools() {
   );
 }
 
+/** App permissions (flag api.local) has its own page in Settings; Privacy points to it, where people look first. */
+function AppPermissionsLink() {
+  const headingId = useId();
+  return (
+    <section className={styles.block} aria-labelledby={headingId}>
+      <h2 id={headingId}>{t('platformApi.section')}</h2>
+      <p className={styles.measure}>{t('platformApi.privacyLink')}</p>
+      <div className={styles.startActions}>
+        <Button onClick={() => navigate({ view: 'settings', section: 'appPermissions' })}>
+          {t('platformApi.privacyOpen')}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 export default function PrivacySection() {
   const workOffline = useFlag('privacy.workOffline');
   const crashReports = useFlag('diagnostics.crashReports');
+  const appPermissions = useFlag('api.local');
   useEffect(() => {
     void refreshPrivacy();
   }, []);
@@ -256,6 +274,7 @@ export default function PrivacySection() {
       {workOffline && <WorkOffline />}
       <NetworkUse />
       {crashReports && <CrashReports />}
+      {appPermissions && <AppPermissionsLink />}
       <Tools />
     </>
   );

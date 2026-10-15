@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+  The exe's Windows application manifest. Tauri's default asks for Common Controls 6; the msix element names the
+  sparse package (packaging/msix) that gives the unpackaged exe an identity, which "Share to OpenNote" needs.
+  build.rs fills in PUBLISHER from OPENNOTE_MSIX_PUBLISHER, the subject of the certificate that signs the package.
+  Without a registered package of that publisher the element does nothing.
+-->
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <dependency>
+    <dependentAssembly>
+      <assemblyIdentity
+        type="win32"
+        name="Microsoft.Windows.Common-Controls"
+        version="6.0.0.0"
+        processorArchitecture="*"
+        publicKeyToken="6595b64144ccf1df"
+        language="*"
+      />
+    </dependentAssembly>
+  </dependency>
+  <msix xmlns="urn:schemas-microsoft-com:msix.v1" publisher="PUBLISHER" packageName="OpenNote.ShareTarget" applicationId="OpenNote" />
+</assembly>

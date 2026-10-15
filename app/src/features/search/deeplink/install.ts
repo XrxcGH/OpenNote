@@ -10,6 +10,14 @@ import { openAndReveal } from './jump';
 import { linkInArgs, parseLink } from './url';
 import type { OpenNoteLink } from './url';
 
+/** Readers of the other opennote:// links, such as opennote://clip (features/integrations/clip). One returns true
+ * when it took the link. */
+export const otherLinkReaders = new Set<(url: string) => boolean>();
+
+function readOther(url: string): void {
+  for (const read of otherLinkReaders) if (read(url)) return;
+}
+
 export function installDeepLinks(platform: Platform, notes: NotesService): () => void {
   if (!isEnabled('search.paragraphLinks')) return () => undefined;
   const open = (link: OpenNoteLink) => {
@@ -38,6 +46,7 @@ export function installDeepLinks(platform: Platform, notes: NotesService): () =>
       .then((url) => {
         const link = url ? parseLink(url) : null;
         if (link) openOnce(link);
+        else if (url) readOther(url);
       })
       .catch(() => undefined);
   // Subscribed before anything else runs, so a second launch's arguments are never heard late.
@@ -45,6 +54,7 @@ export function installDeepLinks(platform: Platform, notes: NotesService): () =>
     const link = linkInArgs(args);
     console.debug(`Forwarded launch with ${args.length} argument(s): ${link ? 'a link' : 'no link'}.`);
     if (link) openOnce(link);
+    else args.forEach(readOther);
     takePending();
   });
   const onFocus = () => takePending();

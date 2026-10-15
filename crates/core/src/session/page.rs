@@ -234,6 +234,11 @@ impl PageHandle {
         self.session.state().dirty.is_some()
     }
 
+    /// The page's strokes as polylines in page coordinates, as `ink.svg` lays them out.
+    pub fn ink_lines(&self) -> Vec<crate::format::readable::InkLine> {
+        crate::format::readable::ink_lines(&self.session.state().page)
+    }
+
     /// The page's saved versions, newest first.
     pub fn history(&self) -> Result<Vec<VersionEntry>, CoreError> {
         self.session.history()

@@ -52,5 +52,5 @@ pub use registry::{find, Method, CONNECTORS};
 pub use secret::Secret;
 pub use service::{Connectors, Opener, Parts};
 pub use session::DEFAULT_MAX_BYTES;
-pub use store::{MemoryStore, SecretStore};
+pub use store::{platform_store, MemoryStore, SecretStore};
 pub use view::{ConnectInput, ConnectorView, Disconnected, RevokeOutcome, StateView};
