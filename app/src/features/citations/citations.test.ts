@@ -1,6 +1,6 @@
 // Sources: BibTeX and RIS in and out, Zotero items, the five styles, and merging without repeats.
 import { describe, expect, it } from 'vitest';
-import { parseBibtex, parseRis, toBibtex, toRis } from './bibtex';
+import { cleanLatex, parseBibtex, parseRis, toBibtex, toRis } from './bibtex';
 import { blankSource, mergeSources, parsePeople } from './model';
 import type { Source } from './model';
 import { STYLES, bibliography } from './styles';
@@ -59,11 +59,37 @@ describe('BibTeX', () => {
     const back = parseBibtex(toBibtex([article()]));
     expect(back.sources[0]).toMatchObject({ title: 'Sleep and Memory in Students', year: '2020', pages: '45–67' });
   });
+  it('writes a backslash and the characters BibTeX reserves, and reads them back', () => {
+    const title = String.raw`Paths like C:\Notes & 50% of #1 \& more_`;
+    const back = parseBibtex(toBibtex([{ ...article(), title }]));
+    expect(back.sources[0].title).toBe(title);
+  });
+  it('escapes every special character once, so hostile text reads back whole and stays inside its field', () => {
+    for (const title of [
+      String.raw`\\ \{ \} \textbackslash{} {braces} }{ ~tilde^caret $math$ 100% #1 a_b & c`,
+      'trailing backslash \\',
+      '} , title = {Injected}, note = {',
+      '}\n}\n@misc{evil, title = {Second entry',
+    ]) {
+      const written = toBibtex([{ ...article(), title }]);
+      const { sources, skipped } = parseBibtex(written);
+      expect(skipped, title).toBe(0);
+      expect(sources, title).toHaveLength(1);
+      expect(sources[0].title.replace(/\s+/g, ' '), title).toBe(title.replace(/\s+/g, ' ').trim());
+    }
+  });
+  it('reads the escapes other programs write', () => {
+    expect(cleanLatex(String.raw`A \& B, 50\%, \{x\}, \textbackslash path, {\"a}`)).toBe(
+      String.raw`A & B, 50%, {x}, \path, ä`,
+    );
+  });
 });
 
 describe('RIS', () => {
   const RIS =
-    'TY  - JOUR\nAU  - Smith, Jane Q.\nAU  - Lee, Wei\nTI  - Sleep and Memory\nJO  - Journal of Learning\nPY  - 2020///\nVL  - 12\nSP  - 45\nEP  - 67\nER  - \n\nTY  - SOUND\nTI  - Lecture One\nPY  - 2021\nER  - \n\nTY  - JOUR\nER  - ';
+    'TY  - JOUR\nAU  - Smith, Jane Q.\nAU  - Lee, Wei\nTI  - Sleep and Memory\nJO  - Journal of Learning\n' +
+    'PY  - 2020///\nVL  - 12\nSP  - 45\nEP  - 67\nER  - \n\n' +
+    'TY  - SOUND\nTI  - Lecture One\nPY  - 2021\nER  - \n\nTY  - JOUR\nER  - ';
   it('reads records and counts the ones with no title', () => {
     const { sources, skipped } = parseRis(RIS);
     expect(sources.map((s) => [s.type, s.title, s.year])).toEqual([

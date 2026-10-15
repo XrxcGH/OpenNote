@@ -28,7 +28,7 @@ function dataOf(texts: readonly (readonly string[])[]): TableData {
     columns: COLUMNS.map((id) => ({ id, width: 160 })),
     rows: texts.map((row, r) => ({
       id: `row${r}`,
-      cells: Object.fromEntries(COLUMNS.map((id, c) => [id, { markdown: row[c].replace(/\*/g, '\\*') }])),
+      cells: Object.fromEntries(COLUMNS.map((id, c) => [id, { markdown: row[c].replace(/[\\*]/g, '\\$&') }])),
     })),
   };
 }

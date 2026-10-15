@@ -22,6 +22,13 @@ resolver = "2"
 [profile.dev.package.libsqlite3-sys]
 opt-level = 3
 
+# Argon2id fills 64 MiB for each password lock, which takes many seconds unoptimized.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+
 # Versions the app and the updater crate share, so both always build against the same ones.
 [workspace.dependencies]
 log = "0.4"

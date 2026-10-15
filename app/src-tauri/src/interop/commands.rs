@@ -453,8 +453,8 @@ mod tests {
                 "status": "done",
                 "result": {
                     "detected": {
-                        "kind": "googleKeep", "label": "Google Keep export", "supported": true,
-                        "zipped": false, "advice": null, "needsPassword": false
+                        "kind": "googleKeep", "label": "Google Keep export", "supported": true, "zipped": false,
+                        "advice": null, "needsPassword": false
                     },
                     "notebookTitle": "Keep",
                     "sections": [{ "title": "Notes", "pages": 4 }],

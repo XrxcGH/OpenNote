@@ -216,7 +216,7 @@ function build(): Record<string, () => PageFixture> {
       ),
     ruled: () => page('Ruled', [text(0, RULED_TEXT), ruledTable(1), text(2, 'Hxn after the table.')]),
     // The ruled lines ten times over, enough to fill five sheets of any paper (and the narrowest rules on the largest
-    // paper), on a custom size of paper whose height is not a whole number of page units, so a test can check the
+    // paper). The paper is a custom size whose height is not a whole number of page units, so a test can check the
     // rules and the lines on sheets after a break. The View tab's paper sizes replace the custom one.
     ruledSheets: () =>
       page(
