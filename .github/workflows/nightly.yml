@@ -278,7 +278,10 @@ jobs:
       - name: Every E2E spec
         env:
           OPENNOTE_E2E_EXE: target/ci/opennote.exe
-        run: node --test "tests/e2e/**/*.spec.ts"
+        # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
+        # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record and stop, search, back up
+        # now, quick capture, and the tool windows.
+        run: node --test --test-concurrency=1 "tests/e2e/**/*.spec.ts"
       - name: Start-up baseline for main
         run: node tests/perf/startup.ts --runs 20 --exe target/ci/opennote.exe --record
       - name: Keep the E2E logs
