@@ -29,15 +29,6 @@ const ICONS: Record<FieldType, ComponentType<IconProps>> = {
   choice: CaretCircleDownIcon,
   page: LinkSimpleIcon,
 };
-const FOLD_KEY = 'opennote.properties.open';
-
-function readFold(): boolean {
-  try {
-    return localStorage.getItem(FOLD_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
 
 function PageLink({ field, onChange }: { field: Field; onChange(patch: Partial<Field>): void }) {
   const [text, setText] = useState(field.label ?? '');
@@ -148,7 +139,7 @@ function Value({ field, onChange }: { field: Field; onChange(patch: Partial<Fiel
 
 export function PropertiesBar({ page }: { page: OpenPage }) {
   const [fields, setFields] = useState<Field[]>(() => readFields(page.initial.view));
-  const [open, setOpen] = useState(readFold);
+  const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState<FieldType>('text');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(fields);
@@ -189,14 +180,8 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
   );
 
   const toggle = () => {
-    setOpen((was) => {
-      try {
-        localStorage.setItem(FOLD_KEY, String(!was));
-      } catch {
-        // The fold lasts for this page view only.
-      }
-      return !was;
-    });
+    // The panel opens closed on every page and is never remembered, so it cannot cover the next page's title.
+    setOpen((was) => !was);
   };
   const change = (id: string, patch: Partial<Field>, now = false) =>
     save(
@@ -215,6 +200,9 @@ export function PropertiesBar({ page }: { page: OpenPage }) {
     if (!open) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('[role="dialog"]')) return;
+      // Escape while typing in the page (or another field) belongs to that field, not to this panel.
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
       toggle();
     };
     window.addEventListener('keydown', onKey);
