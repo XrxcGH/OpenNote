@@ -47,6 +47,14 @@ Connect Google in Settings, then Connectors. To bring a file in, press Ctrl+K an
 
 To send a page the other way, choose Export to Google Docs, Export tables to Google Sheets, or Export to Google Slides. These are Send to Google Drive with the type already chosen. Google converts the file as it arrives, so it opens as a Google Doc, Sheet, or Slides file.
 
+## OneNote through your Microsoft account
+
+Connect Microsoft in Settings, then Connectors. Press Ctrl+K and choose Import OneNote notebooks from Microsoft. Choose one notebook or all of them. Each notebook becomes a notebook here, each section a section (sections inside section groups come over with the group's name in front), and each page a page, with subpages kept. Text, headings, lists, to-do boxes, tables, links, and pictures come over.
+
+Some things do not. Ink and handwriting are not given out by Microsoft. Attached files stay in OneNote, and their names are marked in the text. Tables come over as text tables. A page named Import report in the new notebook lists all of it, page by page.
+
+Run the import again at any time. It adds pages that are new and leaves the pages already here alone, because they may hold your own writing. Pages that changed in OneNote since are listed in the report. If you switch to another Microsoft account, its notebooks are kept apart from the first account's.
+
 ## Not in beta 4
 
 Share as a file is not finished and has no screen yet. Opening OneNote files, importing a PDF with space for notes, and the web clipper are not built.
