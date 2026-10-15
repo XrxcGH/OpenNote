@@ -70,3 +70,48 @@ describe('a palm-sized touch on a control while the pen is in use', () => {
     expect(pressed).toBe(2);
   });
 });
+
+// T2-13: a two-finger double tap with the pen tool active undoes, and a three-finger one redoes, even though every
+// finger is up when the result is due: the tick that delivers it must keep running.
+describe('multi-finger double taps', () => {
+  const ctx = { capture: () => undefined } as never;
+  const fingers = (ids: number[], type: 'down' | 'up'): void => {
+    for (const [i, pointerId] of ids.entries()) {
+      const event = new PointerEvent(`pointer${type}`, {
+        pointerType: 'touch',
+        pointerId,
+        clientX: 100 + i * 150,
+        clientY: 300,
+        width: 8,
+        height: 8,
+      });
+      if (type === 'down') tool.tool.down?.(event, ctx);
+      else tool.tool.up?.(event, ctx);
+    }
+  };
+  const doubleTap = async (ids: number[]) => {
+    for (let round = 0; round < 2; round++) {
+      fingers(ids, 'down');
+      await wait(40);
+      fingers(ids, 'up');
+      await wait(80);
+    }
+  };
+
+  it('delivers undo for two fingers and redo for three', async () => {
+    const heard: string[] = [];
+    const stub = new Proxy({ readOnly: false, layerFor: () => 'layer' } as Record<string, unknown>, {
+      get: (target, key: string) => target[key] ?? (() => undefined),
+    });
+    tool = new TouchTool({ viewport: { get: () => null } } as unknown as InkHost, () => stub as unknown as InkSurface);
+    tool.onGesture = (kind) => heard.push(kind);
+    await import('./palm');
+    await wait(100);
+    await doubleTap([21, 22]);
+    await wait(400);
+    expect(heard).toEqual(['undo']);
+    await doubleTap([31, 32, 33]);
+    await wait(400);
+    expect(heard).toEqual(['undo', 'redo']);
+  });
+});

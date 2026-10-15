@@ -43,6 +43,8 @@ export interface MultiTapDetector {
   up(id: number, time: number, canceled: boolean): void;
   /** Delivers a gesture whose confirm window has passed, and voids a group whose fingers stayed down too long. */
   poll(time: number): MultiTapResult;
+  /** Whether a gesture is waiting out its confirm window, so the caller must keep polling. */
+  waiting(): boolean;
   /** A palm verdict for a contact: a gesture it belongs to is void. */
   voidContact(id: number): void;
   /** Forgets everything, for when a pen comes near or a gesture takes the fingers. */
@@ -128,6 +130,10 @@ class Detector implements MultiTapDetector {
     if (!pending || time < pending.at) return null;
     this.pending = null;
     return pending.result;
+  }
+
+  waiting(): boolean {
+    return this.pending !== null;
   }
 
   voidContact(id: number): void {

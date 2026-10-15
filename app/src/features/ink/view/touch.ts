@@ -92,8 +92,6 @@ export class TouchTool {
     window.addEventListener('pointerdown', this.onTouchDown, { capture: true, passive: true });
     window.addEventListener('pointerup', this.onTouchEnd, { capture: true, passive: true });
     window.addEventListener('pointercancel', this.onTouchEnd, { capture: true, passive: true });
-    window.addEventListener('pointerup', this.onTouchEnd, { capture: true, passive: true });
-    window.addEventListener('pointercancel', this.onTouchEnd, { capture: true, passive: true });
     window.addEventListener('click', this.onClick, true);
   }
 
@@ -108,8 +106,6 @@ export class TouchTool {
     for (const type of PEN_EVENTS) window.removeEventListener(type, this.onPen, { capture: true });
     window.removeEventListener('blur', this.onBlur);
     window.removeEventListener('pointerdown', this.onTouchDown, { capture: true });
-    window.removeEventListener('pointerup', this.onTouchEnd, { capture: true });
-    window.removeEventListener('pointercancel', this.onTouchEnd, { capture: true });
     window.removeEventListener('pointerup', this.onTouchEnd, { capture: true });
     window.removeEventListener('pointercancel', this.onTouchEnd, { capture: true });
     window.removeEventListener('click', this.onClick, true);
