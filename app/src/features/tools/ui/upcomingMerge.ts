@@ -41,6 +41,21 @@ export function setSourceItems(
   return { added, removed, changed };
 }
 
+/**
+ * Changes the list's items in place: the function gets the items and answers the new ones. For a feature that keeps
+ * the person's own tasks in step with an account (two-way sync), which `setSourceItems` is not for. An open Upcoming
+ * window re-reads when this runs.
+ */
+export function updateUpcomingItems(change: (items: UpcomingItem[]) => UpcomingItem[]): void {
+  const saved = readUpcoming();
+  saveStored(UPCOMING_STORE, { ...saved, items: change(saved.items) });
+  try {
+    window.dispatchEvent(new Event(UPCOMING_CHANGED));
+  } catch {
+    // No window (a test without a DOM): nothing is open to refresh.
+  }
+}
+
 /** The items that one source put in the list. */
 export const sourceItems = (source: string): UpcomingItem[] =>
   readUpcoming().items.filter((item) => item.source === source);
