@@ -47,6 +47,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [The local API and app permissions](local-api.md): which programs on your PC may read or add notes, and the access log.
 - [The opennote command](command-line.md): add to and search your notes from a terminal or script.
 - [The web clipper and mail add-ins](web-clipper.md): save web pages and emails into your notes.
+- [Photos from your phone](phone-scan.md): scan a code to send photos onto the open page.
 
 ## Install, update, and remove
 

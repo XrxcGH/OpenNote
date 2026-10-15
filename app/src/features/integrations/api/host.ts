@@ -96,7 +96,7 @@ export function createFakeApi(initial: Partial<FakeApiState> = {}): FakeApi {
       }
       case 'pairCode':
         if (!state.status.running) throw Object.assign(new Error('notRunning'), { code: 'notRunning' });
-        state.code = { code: 'K7Q2-M9XD', port: state.status.port ?? 0, expiresAt: Date.now() + 10 * 60_000 };
+        state.code = { code: 'K7Q2-M9XD', port: state.status.port ?? 0, expiresAt: Date.now() + 5 * 60_000 };
         return { ...state.code };
       case 'cancelCode':
         state.code = null;
@@ -132,6 +132,20 @@ export function createFakeApi(initial: Partial<FakeApiState> = {}): FakeApi {
         return true;
       case 'testWebhook':
         return { status: 200 };
+      // Insert > From phone: a code that leads nowhere, for the web build and the tests.
+      case 'phoneStart':
+        return {
+          url: 'https://192.168.0.2:50000/s/fake',
+          qr: Array.from({ length: 21 }, (_, y) =>
+            Array.from({ length: 21 }, (_, x) => ((x * y + x + y) % 3 === 0 ? '1' : '0')).join(''),
+          ),
+          fingerprint: Array.from({ length: 32 }, () => 'AB').join(':'),
+          expiresAt: Date.now() + 10 * 60_000,
+        };
+      case 'phoneState':
+        return { state: 'open' };
+      case 'phoneTake':
+        return [];
       default:
         return null;
     }

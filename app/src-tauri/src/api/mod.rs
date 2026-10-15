@@ -15,6 +15,7 @@
 pub mod approver;
 pub mod backend;
 pub mod markdown;
+pub mod phone;
 pub mod webhooks;
 
 use std::{
@@ -84,6 +85,8 @@ pub struct ApiState {
     pipe: String,
     /// The webhook sender and the watcher of saves, made at start-up when the flag is on.
     hooks: OnceLock<(Arc<Dispatcher>, Mutex<std::sync::mpsc::Sender<webhooks::Watch>>)>,
+    /// Insert > From phone (flag integrations.phoneScan).
+    pub phone: phone::PhoneState,
 }
 
 impl ApiState {
@@ -102,6 +105,7 @@ impl ApiState {
             discovery: paths.local.join(DISCOVERY_FILE),
             pipe: format!("OpenNote-api-{}", paths.profile_key()),
             hooks: OnceLock::new(),
+            phone: phone::PhoneState::default(),
         }
     }
 
@@ -411,6 +415,19 @@ pub fn call(app: &AppHandle, state: &ApiState, method: &str, args: &Value) -> Ip
         }
         "setCliPath" => {
             let on: bool = arg(args, "on")?;
+            let after_move: Option<bool> = arg(args, "afterMove")?;
+            if after_move == Some(true) {
+                // Setup's choice, made just before the app moves to the Programs folder and copies the command
+                // there (install::prepare_move). The folder isn't there yet, so this doesn't look for the tool.
+                let paths = app.state::<Paths>();
+                let folder = crate::install::programs_dir(&paths).join(crate::install::path_entry::CLI_DIR);
+                let done = if on {
+                    crate::install::path_entry::add(&folder)
+                } else {
+                    crate::install::path_entry::remove(&folder)
+                };
+                return Ok(json!({ "onPath": on && done }));
+            }
             let tool = tool_path();
             let folder = tool.parent().map(PathBuf::from).unwrap_or_default();
             if on && !tool.is_file() {
@@ -426,6 +443,14 @@ pub fn call(app: &AppHandle, state: &ApiState, method: &str, args: &Value) -> Ip
             }
             call(app, state, "cliStatus", &Value::Null)
         }
+        "quickNote" => quick_note(app, args),
+        "phoneStart" => state.phone.start(app),
+        "phoneStop" => {
+            state.phone.stop();
+            Ok(Value::Null)
+        }
+        "phoneState" => Ok(json!({ "state": state.phone.state() })),
+        "phoneTake" => Ok(state.phone.take()),
         "mcpConfig" => Ok(json!({ "config": mcp_config(&tool_path()), "toolInstalled": tool_path().is_file() })),
         _ => Err(IpcError::invalid("method", "isn't a local API method")),
     }
@@ -471,6 +496,51 @@ fn save_webhook(state: &ApiState, hook: Webhook, secret: Option<String>) -> IpcR
         })
         .map_err(io)?;
     Ok(json!({ "hook": hook, "newSecret": made }))
+}
+
+/// A page in Quick notes for a share or a clip link that no open page took. Only the app's own window calls this,
+/// with what the person shared or agreed to add; the title and text are bounded here all the same.
+fn quick_note(app: &AppHandle, args: &Value) -> IpcResult<Value> {
+    let from: String = arg(args, "from")?;
+    let author = match from.as_str() {
+        "share" => "Share to OpenNote",
+        "clip" => "a clip link",
+        _ => return Err(IpcError::invalid("from", "must be share or clip")),
+    };
+    let title: String = arg(args, "title")?;
+    let markdown: String = arg(args, "markdown")?;
+    let source_url: Option<String> = arg(args, "sourceUrl")?;
+    let title: String = title.chars().filter(|c| !c.is_control()).take(200).collect();
+    if markdown.len() > 2 * 1024 * 1024 {
+        return Err(IpcError::invalid("markdown", "is too long"));
+    }
+    let source_url = source_url.filter(|url| {
+        url.len() <= 2048
+            && (url.starts_with("https://") || url.starts_with("http://"))
+            && !url.chars().any(char::is_whitespace)
+    });
+    let page = opennote_api::backend::NewPage {
+        title: if title.trim().is_empty() {
+            "Shared".to_owned()
+        } else {
+            title.trim().to_owned()
+        },
+        markdown,
+        source_url,
+        attachments: Vec::new(),
+    };
+    CoreBackend::new(Notes::App(app.clone()))
+        .quick_note(page, author)
+        .map(|info| json!(info))
+        .map_err(|error| match error {
+            opennote_api::BackendError::Locked => IpcError::new("locked", "Quick notes is locked."),
+            opennote_api::BackendError::NotFound => IpcError::new("notFound", "There are no notebooks yet."),
+            opennote_api::BackendError::Failed(why) => {
+                ::log::warn!("Couldn't make a quick note: {why}");
+                IpcError::new("failed", "The page couldn't be made.")
+            }
+            _ => IpcError::new("refused", "The page couldn't be made."),
+        })
 }
 
 /// Every method of App permissions, in one command.

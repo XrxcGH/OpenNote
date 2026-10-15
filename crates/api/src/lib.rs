@@ -29,6 +29,7 @@ pub mod guard;
 pub mod hmac;
 pub mod http;
 pub mod pairing;
+pub mod phone;
 pub mod routes;
 pub mod server;
 pub mod testing;

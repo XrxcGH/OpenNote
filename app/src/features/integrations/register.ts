@@ -2,11 +2,14 @@
 // and menu items. Each screen loads when it is used, so start-up carries only this file.
 
 import { isEnabled } from '../../app/flags';
-import { commandContext, executeCommand } from '../../commands/registry';
-import { settingsSections, setupSteps } from '../../registries';
+import { commandContext, defineCommand, executeCommand } from '../../commands/registry';
+import type { CommandDef } from '../../commands/types';
+import { commandBar, commands, settingsSections, setupSteps } from '../../registries';
 import { t } from '../../strings/t';
 import { showToast } from '../../ui';
 import { shownMounted } from '../page';
+import { openPage, otherLinkReaders } from '../search';
+import { offerClip } from './clip/link';
 import { createSnipWatcher } from './snip/watch';
 import type { SnipWatcher } from './snip/watch';
 
@@ -72,6 +75,47 @@ async function addScreenshotToPage(): Promise<void> {
   target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
 }
 
+// Insert > From phone (flag integrations.phoneScan): a QR code a phone scans to send photos onto the open page.
+commands.register({
+  id: 'insert.fromPhone',
+  title: 'platformApi.phone.command',
+  keywords: 'platformApi.phone.keywords',
+  category: 'insert',
+  icon: 'DeviceMobileCamera',
+  flag: 'integrations.phoneScan',
+  when: () => {
+    const mounted = shownMounted.get();
+    return mounted !== null && !mounted.page.readOnly;
+  },
+  run: () => void import('./phone/open').then(({ openPhoneDialog }) => openPhoneDialog()),
+});
+commandBar.register({
+  id: 'integrations.fromPhone',
+  tab: 'insert',
+  group: 'media',
+  command: 'insert.fromPhone',
+  priority: 20,
+  flag: 'integrations.phoneScan',
+});
+
+// Setup's "Add the opennote command to PATH" (flag api.local): the folder the move puts the command in goes on the
+// user's PATH, or comes off again when the move fails. Not in the palette; Settings has its own switch.
+commands.register(
+  defineCommand<{ on: boolean }>({
+    id: 'api.cliPathOnMove',
+    title: 'platformApi.setupCliPath',
+    category: 'general',
+    palette: false,
+    flag: 'api.local',
+    run: (_ctx, args) =>
+      import('./api/host').then(({ apiHost }) =>
+        apiHost()
+          .call('setCliPath', { on: args.on, afterMove: true })
+          .then(() => undefined),
+      ),
+  }) as unknown as CommandDef,
+);
+
 // Settings, then App permissions (flag api.local), beside Privacy, and the questions the local API asks the person
 // before an app connects or changes notes. The questions show wherever the person is, so they listen from the start.
 settingsSections.register({
@@ -86,7 +130,25 @@ settingsSections.register({
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   // After start-up has read the flags (app/start.ts), which runs once every feature file has loaded.
   setTimeout(() => {
+    if (isEnabled('integrations.shareTarget')) {
+      void import('./share/start').then(({ startShareReceiver }) => {
+        try {
+          startShareReceiver(commandContext('menu'));
+        } catch {
+          // Commands aren't configured, as in a component test.
+        }
+      });
+    }
     if (!isEnabled('api.local')) return;
     void import('./api/approvals').then(({ startApprovals }) => startApprovals());
   }, 0);
+
+  // The web clipper's fallback link (opennote://clip): an offer to add the page to Quick notes, never a page alone.
+  otherLinkReaders.add((url) =>
+    offerClip(url, {
+      quickNote: (title, source) =>
+        import('./share/start').then(({ quickNote }) => quickNote('clip', title, '', source)),
+      open: (page) => void openPage(commandContext('menu').notes, page),
+    }),
+  );
 }

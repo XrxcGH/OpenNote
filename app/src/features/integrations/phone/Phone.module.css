@@ -1,0 +1,48 @@
+/* Insert > From phone. Tokens only (BRAND.md section 11). The code sits on the light theme's paper in every theme,
+   so phones read it the same way. */
+@layer components {
+  .body {
+    display: grid;
+    gap: var(--space-4);
+    justify-items: center;
+  }
+
+  .body p {
+    margin: 0;
+  }
+
+  .code {
+    inline-size: min(16rem, 70vw);
+    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-page);
+  }
+
+  .code svg {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .light {
+    fill: var(--color-surface-page);
+  }
+
+  .dark {
+    fill: var(--color-text-primary);
+  }
+
+  .note {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    text-align: center;
+  }
+
+  .fingerprint {
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+}

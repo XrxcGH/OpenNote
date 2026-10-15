@@ -153,7 +153,7 @@ function WebhookDialog(props: {
   notebooks: readonly NotebookChoice[];
   onClose(): void;
   onSaved(newSecret: string | null): void;
-// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
+  // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 }) {
   const { notebooks, onClose, onSaved } = props;
   const [hook, setHook] = useState<Webhook>(props.hook);

@@ -71,18 +71,18 @@ Linked accounts (Phase 11):
 | Outlook and Google Calendar | Opens a meeting note from any event, filled in with the title, time, attendees, and agenda | Needs the owner. Needs a Microsoft or Google sign-in. |
 | Teams, Zoom, and Google Meet | Records meeting audio without a bot (Phase 9) and links the note back to the calendar event | Built, untested by hand. The recording and the prompt are built. Linking to the calendar event needs the owner. |
 | Microsoft To Do and Google Tasks | Two-way sync of checkboxes, due dates, and reminders | Needs the owner |
-| Outlook and Gmail | "Save to OpenNote" from an email keeps the text and attachments with a link back | Needs the owner. A .eml file import is built, untested by hand. |
-| Web clipper for Edge, Chrome, and Firefox | Clips a full page, a region, or a clean article into any section | Not built yet |
+| Outlook and Gmail | "Save to OpenNote" from an email keeps the text and attachments with a link back | Built, untested by hand. The Outlook add-in (`extensions/outlook-addin`) and the Gmail action in the clipper are built. Store registration needs the owner. A .eml file import is built too. |
+| Web clipper for Edge, Chrome, and Firefox | Clips a full page, a region, or a clean article into any section | Built, untested by hand. The extension is in `extensions/clipper` and pairs through the local API (`api.local`, on in Beta). Store publishing needs the owner. |
 | Windows share target and Snipping Tool | "Share to OpenNote" from any app, and screenshots go straight to the current page | Built, untested by hand. The Snipping Tool offer is built. The share target needs the owner (package identity and signing). |
-| Phone camera | Scan a QR code shown in OpenNote to send photos and document scans from a phone | Not built yet |
+| Phone camera | Scan a QR code shown in OpenNote to send photos and document scans from a phone | Built and covered by cargo tests; not yet tried with a real phone. Insert, then From phone, behind `integrations.phoneScan` (on in Beta). Scan cleanup runs on the photos once it is built. |
 | Zotero and BibTeX | Cite sources while writing and export a bibliography in any common style | Built, untested by hand |
 | Canvas, Moodle, and Google Classroom | Import assignments into a section and submit a page as PDF | Needs the owner. Canvas and Moodle sign-in with a token is built. No import or submit uses it yet. |
 | Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline | Not built yet. The embed block is not built. |
 | Kindle and Readwise | Import book highlights into a notebook | Built, untested by hand. Kindle clippings and a Readwise CSV file. Readwise API sync needs the owner. |
 | Slack and Teams chat | Share a page as a link, PDF, or image | Needs the owner |
 | Dropbox, OneDrive, iCloud Drive, Box, and WebDAV | Sync folders and "Send to" destinations | Built, untested by hand. Synced folders and Send to a folder are built. API sync needs the owner. |
-| Webhooks and a local API | Connect Zapier, Power Automate, or scripts to create pages and export files | Not built yet |
-| AI assistants (Model Context Protocol, MCP) | Lets an assistant the person chooses read or write notes, only with permission | Not built yet |
+| Webhooks and a local API | Connect Zapier, Power Automate, or scripts to create pages and export files | Built and covered by cargo tests; not yet tried by hand. Settings, then App permissions, behind `api.local` (on in Beta). |
+| AI assistants (Model Context Protocol, MCP) | Lets an assistant the person chooses read or write notes, only with permission | Built and covered by cargo tests; not yet tried by hand. `opennote mcp`, with Copy MCP config in App permissions (`api.local`, on in Beta). |
 
 ## Handwriting to text
 
@@ -316,7 +316,7 @@ These features answer requests from people switching from OneNote, Goodnotes, Ob
 | Import reports and undo | Each import lands in its own notebook, with a report for each page: what came over, what was simplified, and what was skipped and why. Original created and modified dates are kept. "Undo this import" removes the whole import in one step. Exports get a short report too. | Built, untested by hand |
 | Note space around slides and PDFs | "Add note space" widens imported slides or PDF pages with a ruled or blank margin on the right, the bottom, or both. It can also lay out 2 or 3 slides per page with lines beside them, like PowerPoint handouts. It works on one page, a range, or the whole deck. | Not built yet. PDF import is not built. |
 | App permissions and access log | Each app connected through the local API or an AI assistant (MCP) gets its own access: read-only or read and write, all notebooks or chosen ones, and never locked sections. New connections start read-only on one notebook. Writes can require approval, and each one lands in page history. An access log shows what each app read or changed, and access can be removed in one click. | Built and covered by cargo and UI tests; not yet tried by hand. Settings, then App permissions, behind `api.local` (on in Beta). |
-| Command-line tool | An `opennote` command creates pages, appends text to the daily note, searches, exports, and runs a backup from a terminal or a script. It uses the same permissions and access log as the local API, so access starts read-only. | Not built yet |
+| Command-line tool | An `opennote` command creates pages, appends text to the daily note, searches, exports, and runs a backup from a terminal or a script. It uses the same permissions and access log as the local API, so access starts read-only. | Built and covered by cargo tests; not yet tried by hand. Installed beside the app; App permissions can add it to PATH (`api.local`, on in Beta). |
 | Copy meeting recap | For a page with a recording, "Copy recap" puts the summary, decisions, and action items on the clipboard as formatted text or Markdown, ready to paste into email or chat. A preview lets the person choose which parts to copy. Without on-device intelligence, it copies the page's own headings and checkboxes. Nothing is sent. | Built, untested by hand |
 | Dim PDFs in dark mode | Imported PDFs and slides can be dimmed or color-inverted in the Evening theme, with images kept in their own colors. A switch on each page shows the original white page. The choice follows the Page color setting by default, and it never changes the file or its export. | Not built yet |
 

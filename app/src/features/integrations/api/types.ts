@@ -80,4 +80,5 @@ export interface Webhook {
 export type ApiEvent =
   | { kind: 'question'; request: ApprovalRequest }
   | { kind: 'answered'; id: string }
-  | { kind: 'changed'; what: 'grants' | 'log' | 'status' | 'webhooks' };
+  | { kind: 'changed'; what: 'grants' | 'log' | 'status' | 'webhooks' }
+  | { kind: 'phone'; what: 'photo' };

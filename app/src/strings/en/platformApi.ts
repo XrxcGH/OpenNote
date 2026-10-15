@@ -4,6 +4,11 @@
 
 export const platformApi = {
   section: 'App permissions',
+  privacyLink: 'See which apps on this PC can read or add notes, what each one did, and remove their access.',
+  privacyOpen: 'Open App permissions',
+  setupCliPath: 'Add the opennote command to PATH',
+  setupCliPathNote:
+    'Then a terminal or a script can run opennote from any folder. You can change this later in App permissions.',
   intro:
     'Programs on this PC, such as the opennote command, an AI assistant, or the web clipper, ' +
     'can read or add notes only as far as you allow here.',
@@ -48,7 +53,7 @@ export const platformApi = {
   },
   pair: {
     heading: 'Pair the web clipper or a mail add-in',
-    help: 'Make a code, then type it into the extension or add-in. A code works once, for 10 minutes.',
+    help: 'Make a code, then type it into the extension or add-in. A code works once, for 5 minutes.',
     make: 'Make a pairing code',
     code: 'Pairing code: {code}',
     port: 'Port: {port}',
@@ -147,5 +152,43 @@ export const platformApi = {
     noEvents: 'Pick at least one thing to send.',
     saved: 'The webhook is saved.',
     dialogTitle: 'Webhook',
+  },
+  share: {
+    addedToPage: 'What you shared is on this page.',
+    addedToQuickNotes: 'What you shared is in Quick notes.',
+    open: 'Open',
+    nowhere: 'There’s no notebook to put what you shared in yet.',
+    failed: 'What you shared couldn’t be added.',
+  },
+  clipLink: {
+    offer: 'Add “{title}” to Quick notes?',
+    add: 'Add',
+    added: 'The page is in Quick notes.',
+    failed: 'The page couldn’t be added.',
+  },
+  phone: {
+    command: 'From phone',
+    keywords: 'phone camera photo scan QR code picture mobile',
+    title: 'Add photos from your phone',
+    intro:
+      'Scan this code with your phone’s camera, then take or choose photos. They go onto this page. ' +
+      'Your phone needs to be on the same Wi-Fi network as this PC.',
+    starting: 'Getting a code ready…',
+    qrLabel: 'QR code that opens a page on your phone for sending photos',
+    closesIn: 'This code works once, and stops in {minutes} min or when you close this window.',
+    fingerprintLabel: 'If your phone asks about the connection, its certificate fingerprint should be:',
+    close: 'Done',
+    again: 'Show a new code',
+    added: 'Added {count, plural, one {# photo} other {# photos}} to the page.',
+    noPage: 'A photo arrived, but no page here can take it. Open a page and try again.',
+    noNetwork: 'This PC isn’t on a home or work network that a phone can reach. Connect to Wi-Fi and try again.',
+    failed: 'OpenNote couldn’t get a code ready. Try again in a moment.',
+    closed: {
+      stopped: 'OpenNote stopped taking photos.',
+      expired: 'The code ran out. Show a new code to send more photos.',
+      tooManyTries: 'Someone tried too many wrong codes, so OpenNote stopped listening. Show a new code to go on.',
+      full: 'That’s as many photos as one code takes. Show a new code to send more.',
+      none: 'OpenNote stopped taking photos.',
+    },
   },
 } as const;
