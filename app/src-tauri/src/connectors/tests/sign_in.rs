@@ -39,14 +39,14 @@ fn signs_in_through_the_browser_and_keeps_only_metadata_on_disk() {
         Ok(Some(Secret::new("refresh-one")))
     );
     let on_disk = rig.files_text();
-    for secret in [
+    for leak in [
         "refresh-one",
         "access-one",
         "the-auth-code",
         verifier.as_str(),
         "example-client-secret",
     ] {
-        assert!(!on_disk.contains(secret), "{secret} is on disk");
+        assert!(!on_disk.contains(leak), "{leak} is on disk");
     }
     let saved: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(rig.dir.path().join(CONNECTIONS_FILE)).expect("reads")).expect("json");

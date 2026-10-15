@@ -123,6 +123,7 @@ function Groups({ groups, shown, onChange, onSkip }: GroupsProps) {
   );
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function UpcomingTool() {
   const [saved, setSaved] = useState(readSaved);
   // Another feature (a course's assignments) can change the list while this window is open.

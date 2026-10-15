@@ -114,6 +114,7 @@ function SourceForm({
   );
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function CitationsPanel() {
   const location = useLocation();
   const notebook = location.view === 'workspace' && location.notebookId ? String(location.notebookId) : SHARED;
