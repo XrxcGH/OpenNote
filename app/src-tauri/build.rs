@@ -36,7 +36,7 @@ fn main() {
     embed_cli(&out_dir);
 
     let manifest = tauri_build::AppManifest::new().commands(APP_COMMANDS);
-    let windows = tauri_build::WindowsAttributes::new().app_manifest(windows_manifest());
+    let windows = embed_windows_manifest(&out_dir);
     tauri_build::try_build(
         tauri_build::Attributes::new()
             .app_manifest(manifest)
@@ -62,6 +62,23 @@ fn embed_cli(out_dir: &Path) {
     if fs::read(&target).ok().as_deref() != Some(bytes.as_slice()) {
         fs::write(&target, bytes).expect("OUT_DIR is writable");
     }
+}
+
+/// Links the Windows manifest into every executable this crate makes, the unit-test runner included, rather than
+/// only into the app as Tauri's resource would. The test runner reaches window code that needs Common Controls 6,
+/// and without the manifest it doesn't start (STATUS_ENTRYPOINT_NOT_FOUND).
+fn embed_windows_manifest(out_dir: &Path) -> tauri_build::WindowsAttributes {
+    let windows = tauri_build::WindowsAttributes::new_without_app_manifest();
+    let msvc = env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "windows")
+        && env::var("CARGO_CFG_TARGET_ENV").is_ok_and(|target| target == "msvc");
+    if !msvc {
+        return windows.app_manifest(windows_manifest());
+    }
+    let path = out_dir.join("windows-app.manifest");
+    write_if_changed(&path, &windows_manifest());
+    println!("cargo:rustc-link-arg=/MANIFEST:EMBED");
+    println!("cargo:rustc-link-arg=/MANIFESTINPUT:{}", path.display());
+    windows
 }
 
 /// The exe's Windows manifest, with the sparse package's publisher for "Share to OpenNote" (packaging/msix): the
