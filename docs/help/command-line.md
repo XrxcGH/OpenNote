@@ -5,7 +5,7 @@
 ## Set it up
 
 1. In OpenNote, open **Settings, then App permissions** and turn on **Let apps on this PC connect**.
-2. Install the command. OpenNote puts `opennote.exe` in the folder it was installed to. In App permissions, choose **Add the opennote command to PATH** if you want to type `opennote` from any folder.
+2. Install the command. OpenNote puts `opennote.exe` in the folder it was installed to. First-time setup asks whether to add it to PATH when it adds OpenNote to the Start menu. You can change that later in App permissions with **Add the opennote command to PATH**, so you can type `opennote` from any folder.
 3. Run any command. The first one asks for access in the OpenNote window. The tool starts read-only on the notebooks you pick there. To let it add or change notes, choose **Read and add to notes** for it in App permissions.
 
 OpenNote must be open while you use the command.

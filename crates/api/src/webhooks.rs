@@ -119,6 +119,17 @@ pub fn check_url(url: &str) -> Result<(), &'static str> {
     if !host_ok {
         return Err("The address needs a full host name, such as hooks.zapier.com.");
     }
+    // A hook goes to a service on the internet. A typed IP address, or a name only this network knows, could point
+    // the app at a router or another PC here instead.
+    let lower = host.to_ascii_lowercase();
+    if host.parse::<std::net::Ipv4Addr>().is_ok()
+        || host.split('.').all(|label| label.bytes().all(|b| b.is_ascii_digit()))
+        || [".local", ".localhost", ".internal", ".lan", ".home.arpa"]
+            .iter()
+            .any(|suffix| lower.ends_with(suffix))
+    {
+        return Err("Use the service's host name, such as hooks.zapier.com, not an address on this network.");
+    }
     Ok(())
 }
 
@@ -609,6 +620,11 @@ mod tests {
             "https://",
             "https://.example.org/",
             "ftp://example.org/",
+            "https://10.0.0.5/hook",
+            "https://192.168.1.1:8443/x",
+            "https://127.0.0.1/",
+            "https://printer.local/x",
+            "https://nas.home.arpa/x",
         ] {
             assert!(check_url(bad).is_err(), "{bad}");
         }

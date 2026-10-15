@@ -3,11 +3,12 @@
 // What the step chose stays in the draft, so Back and closing the app never lose it.
 
 import { useEffect, useId, useState } from 'react';
+import { isEnabled } from '../../../app/flags';
 import type { FolderCheck, InstallStatus } from '../../../platform/types';
 import type { SetupStepProps } from '../../../registries';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
-import { Button, RadioCard, RadioGroup, TextField, announce } from '../../../ui';
+import { Button, RadioCard, RadioGroup, Switch, TextField, announce } from '../../../ui';
 import { CloudNotice, useCloud } from '../../qol';
 import { getHost } from '../runtime';
 import styles from '../SetupView.module.css';
@@ -108,6 +109,7 @@ function NotesFolder({ props, message }: { props: SetupStepProps; message: strin
 
 function AppChoice({ props, install }: { props: SetupStepProps; install: InstallStatus | null }) {
   const { draft, setDraft } = props;
+  const cliNoteId = useId();
   const storage = draft.storage;
   if (!storage || !install) return null;
   const label = t('setup.storage.app.label');
@@ -136,6 +138,19 @@ function AppChoice({ props, install }: { props: SetupStepProps; install: Install
           description={t(keepDetail, { path: install.exePath })}
         />
       </RadioGroup>
+      {storage.moveApp && isEnabled('api.local') && (
+        <>
+          <Switch
+            label={t('platformApi.setupCliPath')}
+            checked={storage.cliOnPath ?? false}
+            describedBy={cliNoteId}
+            onChange={(next) => setDraft({ storage: { ...storage, cliOnPath: next } })}
+          />
+          <p id={cliNoteId} className={styles.note}>
+            {t('platformApi.setupCliPathNote')}
+          </p>
+        </>
+      )}
     </section>
   );
 }

@@ -94,7 +94,14 @@ export interface SetupContext {
 
 export interface SetupDraft {
   look?: { theme: ThemePreference };
-  storage?: { notesFolder: string; moveApp: boolean; notebookName: string; notebookColor: ChipColor };
+  storage?: {
+    notesFolder: string;
+    moveApp: boolean;
+    notebookName: string;
+    notebookColor: ChipColor;
+    /** Add the opennote command's folder to the user's PATH when the app moves (flag api.local). */
+    cliOnPath?: boolean;
+  };
   [stepId: string]: unknown;
 }
 
