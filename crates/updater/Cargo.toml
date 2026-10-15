@@ -21,7 +21,7 @@ semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-ureq = { version = "3.4.2", default-features = false, features = ["native-tls-no-default", "win-system-proxy"] }
+ureq = { version = "3.4.2", default-features = false, features = ["native-tls", "win-system-proxy"] }
 
 [dev-dependencies]
 minisign = "0.10.0"
@@ -29,4 +29,7 @@ minisign = "0.10.0"
 # here turns the feature on for its own tests and examples only. The app's builds don't get it from here.
 opennote-updater = { path = ".", features = ["test-endpoints"] }
 proptest.workspace = true
+# A local HTTPS server for the TLS tests (T1-1): a certificate made per run, so no key is ever committed.
+rcgen = "0.13.2"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 tempfile.workspace = true

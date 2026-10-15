@@ -12,6 +12,7 @@ use std::path::Path;
 use opennote_core::Timestamp;
 
 use super::files::{import_files, Converted, ConvertedPage, FileConverter};
+use super::sheet::MAX_TABLE_COLUMNS;
 use crate::csv;
 use crate::dates::parse_long_date;
 use crate::doc::{Block, Inline, Marks};
@@ -104,8 +105,9 @@ pub(crate) fn is_kindle(text: &str) -> bool {
 }
 
 fn readwise(text: &str) -> Vec<Entry> {
-    let table = csv::parse(text);
-    let Some(header) = table.rows.first() else {
+    // One row at a time, each cut to the table column limit: a file of commas never becomes a grid in memory.
+    let mut rows = csv::rows(text, MAX_TABLE_COLUMNS);
+    let Some(header) = rows.next() else {
         return Vec::new();
     };
     let column = |name: &str| header.iter().position(|h| h.trim().eq_ignore_ascii_case(name));
@@ -120,38 +122,35 @@ fn readwise(text: &str) -> Vec<Entry> {
             .map(|c| c.trim().to_owned())
             .unwrap_or_default()
     };
-    table
-        .rows
-        .iter()
-        .skip(1)
-        .filter_map(|row| {
-            let text = cell(row, Some(highlight));
-            let note = cell(row, note);
-            if text.is_empty() && note.is_empty() {
-                return None;
-            }
-            let location_type = cell(row, kind);
-            let place = cell(row, location);
-            let place = if place.is_empty() {
-                String::new()
-            } else if location_type.is_empty() {
-                format!("location {place}")
-            } else {
-                format!("{} {place}", location_type.to_lowercase())
-            };
-            Some(Entry {
-                book: cell(row, Some(title)),
-                author: Some(cell(row, author)).filter(|a| !a.is_empty()),
-                kind: Kind::Highlight,
-                start: place.rsplit(' ').next().and_then(leading_number),
-                text,
-                place,
-                added: parse_long_date(&cell(row, at)),
-                note,
-                tags: cell(row, tags),
-            })
+    rows.filter_map(|row| {
+        let row = &row;
+        let text = cell(row, Some(highlight));
+        let note = cell(row, note);
+        if text.is_empty() && note.is_empty() {
+            return None;
+        }
+        let location_type = cell(row, kind);
+        let place = cell(row, location);
+        let place = if place.is_empty() {
+            String::new()
+        } else if location_type.is_empty() {
+            format!("location {place}")
+        } else {
+            format!("{} {place}", location_type.to_lowercase())
+        };
+        Some(Entry {
+            book: cell(row, Some(title)),
+            author: Some(cell(row, author)).filter(|a| !a.is_empty()),
+            kind: Kind::Highlight,
+            start: place.rsplit(' ').next().and_then(leading_number),
+            text,
+            place,
+            added: parse_long_date(&cell(row, at)),
+            note,
+            tags: cell(row, tags),
         })
-        .collect()
+    })
+    .collect()
 }
 
 fn kindle(text: &str) -> Vec<Entry> {

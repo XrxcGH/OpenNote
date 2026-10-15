@@ -11,6 +11,7 @@ use std::path::Path;
 
 use super::files::{Converted, ConvertedPage};
 use super::pictures;
+use super::sheet::MAX_TABLE_CELLS;
 use super::xmltree::{Element, Node};
 use super::zipxml::{first_text, ElementExt, Parts};
 use crate::dates::parse_date;
@@ -491,18 +492,21 @@ impl Walker<'_> {
         }
         let mut header_rows = 0;
         let mut rows: Vec<Vec<Vec<Inline>>> = Vec::new();
+        // Repeats multiply: 64 columns of 64 rows of every cell. They stop adding cells at the table's cell budget,
+        // so a small file never becomes billions of cells.
+        let mut budget = MAX_TABLE_CELLS;
         for group in table.kids() {
             match group.name.as_str() {
                 "table:table-header-rows" => {
                     for row in group.elements("table:table-row") {
-                        self.row(row, &mut rows);
+                        self.row(row, &mut rows, &mut budget);
                     }
                     header_rows = rows.len();
                 }
-                "table:table-row" => self.row(group, &mut rows),
+                "table:table-row" => self.row(group, &mut rows, &mut budget),
                 "table:table-rows" => {
                     for row in group.elements("table:table-row") {
-                        self.row(row, &mut rows);
+                        self.row(row, &mut rows, &mut budget);
                     }
                 }
                 _ => {}
@@ -518,7 +522,9 @@ impl Walker<'_> {
         }
     }
 
-    fn row(&mut self, row: &Element, rows: &mut Vec<Vec<Vec<Inline>>>) {
+    /// Reads a row into `rows`. A cell or a row written once is always kept; its repeats come out of `budget`, the
+    /// cells the table may still add.
+    fn row(&mut self, row: &Element, rows: &mut Vec<Vec<Vec<Inline>>>, budget: &mut usize) {
         let mut cells: Vec<Vec<Inline>> = Vec::new();
         for cell in row.kids() {
             let content = match cell.name.as_str() {
@@ -532,6 +538,8 @@ impl Walker<'_> {
                 .unwrap_or(1)
                 .clamp(1, MAX_REPEAT);
             let repeat = if content.is_empty() { 1 } else { repeat };
+            let repeat = repeat.min(*budget).max(1);
+            *budget = budget.saturating_sub(repeat);
             for _ in 0..repeat {
                 cells.push(content.clone());
             }
@@ -542,9 +550,12 @@ impl Walker<'_> {
             .unwrap_or(1)
             .clamp(1, MAX_REPEAT);
         let again = if cells.iter().all(Vec::is_empty) { 1 } else { again };
-        for _ in 0..again {
+        let extra = (again - 1).min(*budget / cells.len().max(1));
+        *budget = budget.saturating_sub(extra * cells.len());
+        for _ in 0..extra {
             rows.push(cells.clone());
         }
+        rows.push(cells);
     }
 
     fn cell(&mut self, cell: &Element) -> Vec<Inline> {
@@ -680,5 +691,29 @@ mod tests {
             .map(|_| ())
             .expect_err("refused");
         assert!(error.to_string().contains("content.xml"), "{error}");
+    }
+
+    #[test]
+    fn repeated_cells_and_rows_stop_at_the_table_cell_budget() {
+        // 600 cells repeated 64 times each, in a row repeated 64 times, make 2.5 million cells from a file of
+        // 60 KB. A larger file multiplies that into billions.
+        let cell = r#"<table:table-cell table:number-columns-repeated="64"><text:p>x</text:p></table:table-cell>"#;
+        let xml = format!(
+            r#"<table:table><table:table-row table:number-rows-repeated="64">{}</table:table-row></table:table>"#,
+            cell.repeat(600)
+        );
+        let root = super::super::xmltree::parse(&xml);
+        let styles = Styles::default();
+        let mut walker = Walker {
+            styles: &styles,
+            stats: Stats::default(),
+            first_title: None,
+        };
+        let Block::Table { rows, .. } = walker.table(&root, false) else {
+            panic!("a table");
+        };
+        let cells: usize = rows.iter().map(Vec::len).sum();
+        assert!(cells <= MAX_TABLE_CELLS, "{cells} cells");
+        assert_eq!(rows[0].len(), 600 * 64);
     }
 }

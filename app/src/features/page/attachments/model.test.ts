@@ -57,4 +57,18 @@ describe('attachments', () => {
   it('ignores a save for a file nothing points at', () => {
     expect(savedBackEdits([block('b1', 'file', 'other')], saved)).toBeNull();
   });
+
+  it('points a block an undo took back to an earlier version at the latest save', () => {
+    // F3-2: saved back as v2, undone to v1, then saved again as v3. The block shows v1, not the v2 the copy last
+    // was, and must still get v3.
+    const again = { ...saved, previous: 'v2', replaces: ['v1', 'v2'], asset: { ...saved.asset, id: 'v3' } };
+    expect(savedBackEdits([block('b1', 'file', 'v1')], again)).toEqual([
+      { edit: 'addAsset', asset: 'v3' },
+      { edit: 'patchBlock', block: 'b1', data: { asset: 'v3' } },
+      { edit: 'removeAsset', asset: 'v1' },
+    ]);
+    // A save whose bytes match the version the block shows already changes nothing.
+    const same = { ...again, asset: { ...saved.asset, id: 'v1' } };
+    expect(savedBackEdits([block('b1', 'file', 'v1')], same)).toBeNull();
+  });
 });

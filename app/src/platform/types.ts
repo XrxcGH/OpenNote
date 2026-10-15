@@ -275,7 +275,10 @@ export interface CaretMetrics {
 /** An attached file whose changes its own app saved back: the page's attachment now points at `asset`. */
 export interface AttachmentSaved {
   page: string;
+  /** The asset the copy was last saved back as. */
   previous: string;
+  /** Every asset the copy has been, oldest first: after an undo, a block may show an earlier one. */
+  replaces?: string[];
   asset: ImportedAsset;
 }
 
@@ -285,11 +288,17 @@ export interface PageExtrasClient {
   /** The page title of a web address, or null. Never runs while Work offline is on. */
   linkTitle(url: string): Promise<string | null>;
   attachBytes(page: string, bytes: ArrayBuffer, name: string, mime: string): Promise<ImportedAsset>;
-  /** Opens the attachment in its own app and saves each change back (see onAttachmentSaved). */
-  openAttachment(page: string, asset: string, name: string): Promise<void>;
-  /** Stops watching a page's attachments, when the page closes. */
-  stopAttachments(page: string): Promise<void>;
+  /**
+   * Opens the attachment in its own app, or shows it selected in its folder when it isn't a document, picture, audio,
+   * or video file, and saves each change back (see onAttachmentSaved). Answers where it was shown.
+   */
+  openAttachment(page: string, asset: string, name: string): Promise<'app' | 'folder'>;
   onAttachmentSaved(listener: (saved: AttachmentSaved) => void): Unsubscribe;
+  /**
+   * Says the page now points its attachment at a change saved back. Until a window says so, the shell makes the
+   * change itself after a few seconds, so a page that closed first still gets it.
+   */
+  attachmentApplied(page: string, asset: string): Promise<void>;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */

@@ -107,11 +107,26 @@ impl Resolver for GuardedResolver {
     }
 }
 
+/// The certificate a test's local HTTPS server uses, which downloads in tests trust instead of the Windows store.
+#[cfg(test)]
+static TEST_ROOT: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+
+fn roots() -> ureq::tls::RootCerts {
+    #[cfg(test)]
+    if let Some(der) = TEST_ROOT.get() {
+        let cert = ureq::tls::Certificate::from_der(der).to_owned();
+        return ureq::tls::RootCerts::Specific(std::sync::Arc::new(vec![cert]));
+    }
+    ureq::tls::RootCerts::PlatformVerifier
+}
+
 fn agent(policy: Policy) -> Agent {
-    use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
+    use ureq::tls::{TlsConfig, TlsProvider};
+    // The provider's own feature must be on: ureq panics on an https address otherwise, and a release build aborts on
+    // a panic (T1-1). The https tests below fail the same way if it is ever turned off.
     let tls = TlsConfig::builder()
         .provider(TlsProvider::NativeTls)
-        .root_certs(RootCerts::PlatformVerifier)
+        .root_certs(roots())
         .build();
     let config = Agent::config_builder()
         .tls_config(tls)
@@ -403,6 +418,86 @@ mod tests {
 
     fn png() -> Vec<u8> {
         std::fs::read(format!("{FIXTURES}/png.png")).unwrap()
+    }
+
+    /// A local HTTPS server that answers each request path with a canned response, like [`serve`]. Its certificate,
+    /// for 127.0.0.1, is made once per run, and the downloads trust it.
+    fn serve_tls(routes: Vec<(&'static str, Vec<u8>)>) -> String {
+        static KEY: std::sync::OnceLock<(Vec<u8>, Vec<u8>)> = std::sync::OnceLock::new();
+        let (cert, key) = KEY.get_or_init(|| {
+            let made = rcgen::generate_simple_self_signed(vec!["127.0.0.1".to_owned()]).expect("a certificate");
+            (made.cert.der().to_vec(), made.key_pair.serialize_der())
+        });
+        TEST_ROOT.get_or_init(|| cert.clone());
+        let config = rustls::ServerConfig::builder()
+            .with_no_client_auth()
+            .with_single_cert(
+                vec![rustls::pki_types::CertificateDer::from(cert.clone())],
+                rustls::pki_types::PrivatePkcs8KeyDer::from(key.clone()).into(),
+            )
+            .expect("a server configuration");
+        let config = Arc::new(config);
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let base = format!("https://{}", listener.local_addr().unwrap());
+        thread::spawn(move || {
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else { break };
+                let Ok(connection) = rustls::ServerConnection::new(config.clone()) else {
+                    break;
+                };
+                let mut tls = rustls::StreamOwned::new(connection, stream);
+                let mut reader = BufReader::new(&mut tls);
+                let mut head = String::new();
+                loop {
+                    let mut line = String::new();
+                    if reader.read_line(&mut line).unwrap_or(0) == 0 || line == "\r\n" {
+                        break;
+                    }
+                    head.push_str(&line);
+                }
+                let path = head.split_whitespace().nth(1).unwrap_or("/").to_owned();
+                let response = routes
+                    .iter()
+                    .find(|(route, _)| *route == path)
+                    .map(|(_, response)| response.clone())
+                    .unwrap_or_else(|| b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n".to_vec());
+                let _ = tls.write_all(&response);
+                tls.conn.send_close_notify();
+                let _ = tls.flush();
+            }
+        });
+        base
+    }
+
+    #[test]
+    fn an_image_downloads_over_https() {
+        // T1-1: the TLS stack the app ships, end to end. ureq panicked on every https address before.
+        let base = serve_tls(vec![
+            ("/pic.png", response("image/png", &png())),
+            (
+                "/page",
+                response("text/html", b"<html><head><title>T</title></head></html>"),
+            ),
+        ]);
+        let downloaded = download(&format!("{base}/pic.png"), TEST).expect("downloads");
+        assert_eq!(downloaded.bytes, png());
+        let head = fetch_html_head(&format!("{base}/page"), true).expect("fetches");
+        assert!(String::from_utf8_lossy(&head).contains("<title>T</title>"));
+    }
+
+    #[test]
+    fn an_https_address_fails_cleanly_rather_than_panicking() {
+        // The pasted picture of T1-1: ureq panicked on every https address because its TLS provider's feature
+        // wasn't on, and a release build aborts on a panic. A server that doesn't speak TLS must give an error.
+        let server = serve(vec![("/pic.png", response("image/png", &png()))]);
+        let https = server.base.replacen("http://", "https://", 1);
+        let error = match download(&format!("{https}/pic.png"), TEST) {
+            Ok(_) => panic!("a TLS handshake with a plain server can't succeed"),
+            Err(error) => error,
+        };
+        assert_eq!(error.code, errors::DOWNLOAD_FAILED, "{}", error.message);
+        let error = fetch_html_head(&format!("{https}/page"), true).expect_err("refused");
+        assert_eq!(error.code, errors::DOWNLOAD_FAILED, "{}", error.message);
     }
 
     #[test]
