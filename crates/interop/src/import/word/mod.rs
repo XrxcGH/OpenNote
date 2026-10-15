@@ -56,13 +56,21 @@ impl FileConverter for WordConverter {
     }
 
     fn extensions(&self) -> &'static [&'static str] {
-        &["docx", "docm", "odt", "ott"]
+        &["docx", "docm", "odt", "ott", "doc", "dot", "rtf"]
     }
 
     fn convert(&self, path: &Path, env: &ImportEnv<'_>) -> Result<Converted> {
         let ext = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase());
         if matches!(ext.as_deref(), Some("odt" | "ott")) {
             return super::odt::convert(path, env);
+        }
+        // An older document, unless it is really a .docx file under an older name.
+        if ext
+            .as_deref()
+            .is_some_and(|e| super::legacy::DOCUMENT_EXTENSIONS.contains(&e))
+            && !starts_like_zip(path)
+        {
+            return super::legacy::convert_document(path, env);
         }
         let file = File::open(path).map_err(|e| InteropError::io(path, e))?;
         let archive = ZipArchive::new(BufReader::new(file), package::limits()).map_err(|e| relabel(e, path))?;
@@ -71,6 +79,11 @@ impl FileConverter for WordConverter {
             .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
         convert_archive(archive, &stem, self.pages, env)
     }
+}
+
+fn starts_like_zip(path: &Path) -> bool {
+    let mut head = [0u8; 4];
+    File::open(path).and_then(|mut f| f.read_exact(&mut head)).is_ok() && super::legacy::is_zip(&head)
 }
 
 fn relabel(error: InteropError, path: &Path) -> InteropError {

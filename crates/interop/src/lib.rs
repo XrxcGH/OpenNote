@@ -35,6 +35,10 @@ pub mod tree;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
 
+/// Entry points for the fuzz targets of the older binary formats (`crates/interop/fuzz`).
+#[cfg(feature = "fuzzing")]
+pub use import::legacy_fuzzing as fuzzing;
+
 pub use detect::{detect, Detected, SourceKind};
 pub use disk::{DiskSink, DiskSource};
 pub use error::{InteropError, Result};

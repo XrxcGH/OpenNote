@@ -9,6 +9,7 @@
     "app/src/theme/tokens.css",
     "app/src/theme/tokens.ts",
     "crates/interop/tests/corpus/*/**",
+    "crates/interop/tests/data/legacy/**",
     "target/**"
   ],
   "rules": {

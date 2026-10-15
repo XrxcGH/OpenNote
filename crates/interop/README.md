@@ -18,6 +18,8 @@ The crate has no storage of its own. Imports write pages to an `ImportSink`, and
 | Google Keep | A Takeout folder or ZIP archive | Labels, checklists, pictures, audio, and the Archive and Trash |
 | Bear | TextBundle folders | Pages titled by heading or bundle name |
 | CSV | `.csv` and `.tsv` files | Each file becomes a table page |
+| Older Word and RTF | `.doc` (Word 97-2003) and `.rtf` | One page for each file: headings, paragraphs, bold, italic, underline, strikethrough, links, lists, and tables. Pictures, notes, and comments are counted in the report. Password-locked and Word 95 files are refused with advice |
+| Older and binary spreadsheets | `.xls` (Excel 97-2003), `.xlsb`, and `.ods` | Table pages, as for `.xlsx`: cell values, formula results, dates, and percentages. Hidden sheets stay out |
 | Windows Sticky Notes | `plum.sqlite`, or the folder that holds it | One section. Each note becomes a page titled by its first line, with its dates, and its color as the page's color chip. Notes in the app's trash are reported. Pictures are not read yet |
 
 | Export | Writes |
@@ -72,6 +74,19 @@ The app does all of this except "Save report", the PDF choice, and the Microsoft
 - **Google and OneDrive uploads, and linked accounts.** These need the app's sign-in and network layers.
 - **PDF export itself.** Phase 6 supplies the `PdfRenderer`.
 - **Ink.** Markdown and HTML exports show a page's handwriting as one SVG picture, which cannot be edited. Word exports and every import leave ink out, and the reports say so. PDF export keeps it.
+
+## Older binary formats
+
+The readers in `src/import/legacy` parse untrusted binary files, so each size and count from a file is checked before anything is allocated, and every read is bounds-checked. The module denies `unwrap`, `expect`, `panic!`, and slice indexing outside tests. The limits:
+
+- A file is at most 128 MiB, and a stream or part inside it at most 64 MiB.
+- Compound files: at most 65,536 directory entries. A sector chain stops at the stream's size, so a chain that loops cannot hang the reader.
+- Word: at most 16 Mi characters of main text, 1 Mi pieces, 4,096 styles and lists, and fields nested 32 deep.
+- RTF: groups nested 512 deep. Deeper groups share the deepest state.
+- Spreadsheets: at most 4 million shared strings and 64 MiB of their text, 1,024 sheets, 2 million cells, and 1,000 columns. Repeated rows and cells cost nothing unless they hold text.
+- All text: at most 48 MiB for each document page. A page holds less.
+
+`src/import/legacy/tests.rs` runs a short mutation fuzz of every reader in the ordinary tests, and `fuzz/` holds the cargo-fuzz targets that the nightly workflow runs.
 
 ## Known limits
 

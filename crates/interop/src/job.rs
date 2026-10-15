@@ -97,6 +97,7 @@ fn fallback(kind: SourceKind) -> Detected {
         zipped: false,
         advice: None,
         needs_password: false,
+        legacy: false,
     }
 }
 
