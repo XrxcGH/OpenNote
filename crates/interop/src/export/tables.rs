@@ -1,3 +1,4 @@
+// checks-disable-file modifiability, length: OOXML part templates, one element to a line as the spec writes them
 //! Exporting the tables of pages to Excel (`.xlsx`) and CSV.
 //!
 //! An Excel export is one workbook with a sheet for each table, named for its page. A CSV export is one file for a

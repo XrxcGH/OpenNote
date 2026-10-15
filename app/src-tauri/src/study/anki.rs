@@ -139,7 +139,10 @@ const CLOZE: i64 = 1_700_000_000_002;
 const DECK: i64 = 1_700_000_000_003;
 const CSS: &str =
     ".card { font-family: arial; font-size: 20px; text-align: center; color: black; background-color: white; }";
-const LATEX_PRE: &str = "\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n";
+const LATEX_PRE: &str = concat!(
+    "\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage{amssymb,amsmath}\n",
+    "\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n"
+);
 
 fn field(name: &str, ord: usize) -> Value {
     json!({"name": name, "ord": ord, "sticky": false, "rtl": false, "font": "Arial", "size": 20, "media": []})

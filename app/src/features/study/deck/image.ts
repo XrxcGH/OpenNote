@@ -24,6 +24,7 @@ export const dataUri = {
     const context = canvas.getContext('2d')!;
     context.drawImage(loaded, 0, 0);
     const original = canvas.toDataURL('image/png');
+    // checks-disable-next-line brand-consistency: the mask is baked into the card's picture, not themed interface
     context.fillStyle = '#222222';
     for (const box of image.boxes) {
       context.fillRect(

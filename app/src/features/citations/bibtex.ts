@@ -30,18 +30,51 @@ const ACCENTS: Record<string, string> = {
   '\\ss': 'ß',
 };
 
-/** Plain text for a BibTeX value: protective braces and common LaTeX marks removed. */
+/** The text commands this writer uses for characters BibTeX or TeX would otherwise read as syntax. */
+const TEXT_COMMANDS: Record<string, string> = {
+  textbackslash: '\\',
+  textbraceleft: '{',
+  textbraceright: '}',
+  textasciitilde: '~',
+  textasciicircum: '^',
+};
+/** Characters TeX reserves that a backslash makes literal. */
+const ESCAPED = new Set(['&', '%', '$', '#', '_', '{', '}']);
+
+/**
+ * Plain text for a BibTeX value: protective braces and common LaTeX marks removed. One pass over the characters, so
+ * an escaped character is read once and never mistaken for syntax: `\{` is a brace, `{` alone only groups.
+ */
 export function cleanLatex(value: string): string {
   let text = value;
   for (const [mark, letter] of Object.entries(ACCENTS))
     text = text.split(`{${mark}}`).join(letter).split(mark).join(letter);
-  return text
-    .replace(/\\([&%$#_{}])/g, '$1')
-    .replace(/---/g, '—')
-    .replace(/--/g, '–')
-    .replace(/[{}]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  let out = '';
+  for (let at = 0; at < text.length; at += 1) {
+    const char = text[at];
+    if (char === '{' || char === '}') continue;
+    if (char !== '\\') {
+      out += char;
+      continue;
+    }
+    const next = text[at + 1] ?? '';
+    if (ESCAPED.has(next)) {
+      out += next;
+      at += 1;
+      continue;
+    }
+    const word = /^[A-Za-z]+/.exec(text.slice(at + 1))?.[0] ?? '';
+    if (Object.hasOwn(TEXT_COMMANDS, word)) {
+      out += TEXT_COMMANDS[word];
+      at += word.length;
+      // TeX ends a command at "{}" or at the white space after it, and neither is text.
+      if (text.startsWith('{}', at + 1)) at += 2;
+      else while (/\s/.test(text[at + 1] ?? '')) at += 1;
+      continue;
+    }
+    out += char;
+  }
+  return out.replace(/---/g, '—').replace(/--/g, '–').replace(/\s+/g, ' ').trim();
 }
 
 interface Entry {
@@ -174,7 +207,21 @@ export function parseBibtex(text: string): Imported {
   return { sources, skipped: all.length - sources.length };
 }
 
-const escapeBibtex = (text: string): string => text.replace(/([&%$#_])/g, '\\$1');
+const BIBTEX_ESCAPES: Record<string, string> = {
+  '\\': '\\textbackslash{}',
+  '{': '\\textbraceleft{}',
+  '}': '\\textbraceright{}',
+  '~': '\\textasciitilde{}',
+  '^': '\\textasciicircum{}',
+};
+
+/**
+ * A value as BibTeX text that reads back as the same characters. Every special character is replaced in the same
+ * pass, so the backslashes this adds are never escaped again. Braces become text commands rather than `\{`, because
+ * BibTeX counts every brace (escaped or not) when it finds where a value ends.
+ */
+const escapeBibtex = (text: string): string =>
+  text.replace(/[\\{}~^&%$#_]/g, (char) => BIBTEX_ESCAPES[char] ?? `\\${char}`);
 
 /** The sources as BibTeX entries. */
 export function toBibtex(sources: readonly Source[]): string {

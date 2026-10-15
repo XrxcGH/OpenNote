@@ -264,6 +264,7 @@ export const smart = {
       role: 'chart',
       keys: 'Arrow keys step through the data points and read each value.',
       about:
+        // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
         '{kind}: {title}. {axis} runs along the bottom, and the values are {values}. There {count, plural, one {is # point} other {are # points}}.',
       range: 'The values run from {min} to {max}.',
       trend: {

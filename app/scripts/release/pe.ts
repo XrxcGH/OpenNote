@@ -37,9 +37,12 @@ export function windowsSignatureStatus(path: string): string | undefined {
   if (process.platform !== 'win32') return undefined;
   // The path goes in an environment variable, so no file name can change what the command does.
   const script = '(Get-AuthenticodeSignature -LiteralPath $env:OPENNOTE_EXE).Status';
+  // PSModulePath is left out so Windows PowerShell builds its own. Started from PowerShell 7 (as on CI runners), the
+  // inherited one lists PowerShell 7's modules first, and Windows PowerShell then fails to load the Security module.
+  const env = Object.fromEntries(Object.entries(process.env).filter(([name]) => name.toLowerCase() !== 'psmodulepath'));
   const output = execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
     encoding: 'utf8',
-    env: { ...process.env, OPENNOTE_EXE: path },
+    env: { ...env, OPENNOTE_EXE: path },
   });
   return output.trim();
 }
