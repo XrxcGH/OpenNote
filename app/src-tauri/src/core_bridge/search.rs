@@ -82,6 +82,14 @@ pub(super) struct Hub {
 }
 
 impl Hub {
+    /// Forgets the words read from the media of pages deleted for good: their pictures, handwriting, and
+    /// transcripts. The index drops the pages themselves when their notebooks are read again.
+    pub(super) fn forget_pages(&self, pages: &[PageId]) {
+        for page in pages {
+            self.media.forget_page(*page);
+        }
+    }
+
     /// Opens the index file and starts the indexer, before the core starts, because the core's save hook and
     /// events need its handle. A file that can't be opened leaves an index in memory, which the next start builds
     /// again, so search still works.

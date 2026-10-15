@@ -75,7 +75,9 @@ async function memoryService(platform: Platform): Promise<NotesService> {
 }
 
 export async function createNotesService(platform: Platform): Promise<NotesService> {
-  const service = platform.notesCore ? createCoreNotesService(platform.notesCore) : await memoryService(platform);
+  const service = platform.notesCore
+    ? createCoreNotesService(platform.notesCore, { renameFolders: () => isEnabled('notes.renameFolders') })
+    : await memoryService(platform);
   const early = service.loadInitial(pathOf(getLocation()));
   initialLoads.set(service, early);
   early.catch(() => initialLoads.delete(service));

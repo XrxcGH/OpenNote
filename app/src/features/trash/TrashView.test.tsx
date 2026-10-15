@@ -9,8 +9,11 @@ import { expectFocus, pressChord, renderApp } from '../../test';
 async function deletePage(title: string) {
   const tree = () => screen.getByRole('tree', { name: 'Notebooks' });
   await expect.poll(() => within(tree()).queryByRole('treeitem', { name: 'Lectures' })).toBeTruthy();
-  within(tree()).getByRole('treeitem', { name: 'Lectures' }).focus();
-  await pressChord('Space');
+  const section = within(tree()).getByRole('treeitem', { name: 'Lectures' });
+  if (section.getAttribute('aria-expanded') !== 'true') {
+    section.focus();
+    await pressChord('Space');
+  }
   const page = await screen.findByRole('treeitem', { name: title });
   page.focus();
   await pressChord('Delete');
@@ -48,5 +51,44 @@ describe('the Trash view', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: /^Restore/ }));
     await screen.findByText('Trash is empty.');
     expect((await notes.get('p-meiosis' as NodeId))?.parentId).toBe('s-lectures');
+  });
+
+  it('deletes one item forever after asking, and leaves the rest', async () => {
+    const { notes } = await renderApp();
+    await deletePage('Mitosis');
+    await deletePage('Meiosis');
+    await userEvent.click(screen.getByRole('button', { name: 'Trash' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete Mitosis forever' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Delete "Mitosis" forever?' });
+    expect(dialog.textContent).toContain("can't be undone");
+    await expectFocus(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete forever' }));
+    await expect.poll(() => screen.queryByRole('button', { name: 'Restore Mitosis' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Restore Meiosis' })).toBeTruthy();
+    expect(await notes.get('p-mitosis' as NodeId)).toBeNull();
+  });
+
+  it('keeps everything when the question is cancelled', async () => {
+    await renderApp();
+    await deletePage('Mitosis');
+    await userEvent.click(screen.getByRole('button', { name: 'Trash' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Empty Trash' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Empty Trash?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByRole('button', { name: 'Restore Mitosis' })).toBeTruthy();
+  });
+
+  it('empties Trash after asking', async () => {
+    const { notes } = await renderApp();
+    await deletePage('Mitosis');
+    await deletePage('Meiosis');
+    await userEvent.click(screen.getByRole('button', { name: 'Trash' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Empty Trash' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Empty Trash?' });
+    expect(dialog.textContent).toContain('2 items are deleted for good');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Empty Trash' }));
+    await screen.findByText('Trash is empty.');
+    expect(screen.queryByRole('button', { name: 'Empty Trash' })).toBeNull();
+    expect(await notes.listTrash()).toEqual([]);
   });
 });

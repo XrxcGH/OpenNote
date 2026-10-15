@@ -694,3 +694,40 @@ fn a_restored_notebook_goes_back_before_its_old_neighbor_or_to_the_end() {
     lib.ok("notes_restore", json!({ "receiptId": receipt["id"] }));
     assert_eq!(lib.titles(None), ["Gamma", "Alpha"]);
 }
+
+#[test]
+fn renaming_a_notebook_folder_follows_its_title_and_reopens_its_pages() {
+    let lib = Lib::new();
+    let notebook = lib.add(None, "notebook", "Biology");
+    let section = lib.add(Some(&notebook), "section", "Lectures");
+    let page = lib.add_page(&section, "Cell", 0);
+    let _open = lib.page(&page);
+    lib.ok("notes_rename", json!({ "id": notebook, "title": "Biology 101" }));
+    let reopen = lib
+        .bridge
+        .notes(Some(lib.notes.clone()), |bridge| {
+            bridge.rename_notebook_folder(&notebook)
+        })
+        .expect("renames the folder");
+    assert_eq!(
+        reopen.iter().map(ToString::to_string).collect::<Vec<_>>(),
+        std::slice::from_ref(&page)
+    );
+    assert!(lib.notes.join("Biology 101").join("notebook.json").is_file());
+    assert!(!lib.notes.join("Biology").exists());
+    // The page opens again from the new folder, and the tree still lists everything.
+    let handle = lib.page(&page);
+    assert_eq!(page_json(&handle)["title"], "Cell");
+    assert_eq!(lib.titles(None), ["Biology 101"]);
+    // A section or page ID renames nothing.
+    let none = lib
+        .bridge
+        .notes(Some(lib.notes.clone()), |bridge| {
+            bridge.rename_notebook_folder(&section)
+        })
+        .expect("a section");
+    assert!(none.is_empty());
+    assert!(super::folders::wanted(&serde_json::Map::new()));
+    let off = serde_json::json!({ "renameNotebookFolders": false });
+    assert!(!super::folders::wanted(off.as_object().expect("an object")));
+}

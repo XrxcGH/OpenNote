@@ -570,14 +570,20 @@ impl Bridge {
         }
     }
 
-    /// Deletes Trash items for good. A notebook in Trash keeps its folder: OpenNote never deletes a notebook
-    /// folder, so it stays in Trash until File Explorer deletes it.
-    pub(crate) fn purge(&mut self, ids: &[String]) -> IpcResult<()> {
+    /// Deletes Trash items for good, with their page history, which is in their folders. Returns the pages that
+    /// went, so the caller can forget their search entries and transcripts. A notebook in Trash keeps its folder:
+    /// OpenNote never deletes a notebook folder outright, so it stays in Trash until File Explorer deletes it, or
+    /// Delete folder moves it to the Recycle Bin ([`Bridge::delete_notebook_folder`]).
+    pub(crate) fn purge(&mut self, ids: &[String]) -> IpcResult<Vec<PageId>> {
+        let mut pages = Vec::new();
         for entry in self.entries_for(ids)? {
             match entry {
                 Entry::Item(notebook, item) => {
                     self.notes.pending.remove(&item_key(notebook.path(), item));
+                    let dir = opennote_core::store::layout::NotebookLayout::new(notebook.path()).trash_item_dir(item);
+                    let inside = super::purged::pages_under(&dir);
                     notebook.purge(item).map_err(from_core)?;
+                    pages.extend(inside);
                 }
                 Entry::Notebook(removed) => {
                     if !removed.entry.path.exists() {
@@ -586,6 +592,23 @@ impl Bridge {
                 }
             }
         }
-        Ok(())
+        Ok(pages)
+    }
+
+    /// Delete folder for a notebook in Trash: its folder moves to the Recycle Bin, never deleted outright, and the
+    /// notebook leaves Trash. Returns the pages that were in it. Only a notebook that is in Trash qualifies.
+    pub(crate) fn delete_notebook_folder(&mut self, id: &str) -> IpcResult<Vec<PageId>> {
+        let removed = self.core.library().removed;
+        let Some(removed) = removed.into_iter().find(|r| r.entry.notebook.to_string() == id) else {
+            return Err(not_found(id));
+        };
+        let path = removed.entry.path;
+        let pages = super::purged::pages_under(&path);
+        if path.exists() {
+            super::purged::recycle(&path)?;
+        }
+        self.notes.pending.remove(&notebook_key(&path));
+        self.core.forget_notebook(&path).map_err(from_core)?;
+        Ok(pages)
     }
 }

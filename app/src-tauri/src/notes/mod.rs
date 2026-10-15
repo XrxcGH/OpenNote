@@ -8,7 +8,9 @@
 
 pub mod change;
 pub mod events;
+pub mod folders;
 pub mod migrate;
+pub mod purged;
 pub mod trash;
 pub mod tree;
 
@@ -300,7 +302,7 @@ impl Bridge {
             "notes_restore" => out(self.restore(&arg::<String>(args, "receiptId")?)?),
             "notes_list_trash" => out(self.list_trash()?),
             "notes_restore_from_trash" => out(self.restore_from_trash(&arg::<Vec<String>>(args, "ids")?)?),
-            "notes_purge" => out(self.purge(&arg::<Vec<String>>(args, "ids")?)?),
+            "notes_purge" => out(self.purge(&arg::<Vec<String>>(args, "ids")?).map(|_| ())?),
             "notes_status" => out(self.notes_status()),
             "notes_flush" => out(self.notes_flush()?),
             _ => Err(IpcError::invalid("command", "isn't a notes command")),
@@ -349,8 +351,26 @@ pub async fn notes_rename(
     bridge: State<'_, CoreBridge>,
     id: String,
     title: String,
+    rename_folder: Option<bool>,
 ) -> IpcResult<NodeSummary> {
-    run_notes(&app, &bridge, |bridge| bridge.rename(&id, &title))
+    let summary = run_notes(&app, &bridge, |bridge| bridge.rename(&id, &title))?;
+    // A4-4: the notebook's folder follows its title when the interface's flag and the person's choice allow it.
+    // A folder that can't be renamed, as when another app holds a file in it, keeps its name; the title changed.
+    if summary.kind == "notebook" && rename_folder == Some(true) && folders::wanted(&crate::shellqol::prefs::read(&app))
+    {
+        match run_notes(&app, &bridge, |bridge| bridge.rename_notebook_folder(&id)) {
+            Ok(pages) if !pages.is_empty() => {
+                let pages: Vec<String> = pages.iter().map(ToString::to_string).collect();
+                crate::shellqol::emit(&app, "reopenPages", serde_json::json!({ "pages": pages }));
+            }
+            Ok(_) => {}
+            Err(error) => {
+                ::log::warn!("The notebook folder kept its name: {}", error.code);
+                crate::shellqol::emit(&app, "folderRenameFailed", serde_json::json!({ "id": id }));
+            }
+        }
+    }
+    Ok(summary)
 }
 
 #[tauri::command]
@@ -414,7 +434,10 @@ pub async fn notes_restore_from_trash(
 /// Deletes Trash items for good. A notebook in Trash keeps its folder, which File Explorer can delete.
 #[tauri::command]
 pub async fn notes_purge(app: AppHandle, bridge: State<'_, CoreBridge>, ids: Vec<String>) -> IpcResult<()> {
-    run_notes(&app, &bridge, |bridge| bridge.purge(&ids))
+    let pages = run_notes(&app, &bridge, |bridge| bridge.purge(&ids))?;
+    // The pages' history went with their folders; their search entries and transcripts go now.
+    bridge.forget_pages(&pages);
+    Ok(())
 }
 
 #[tauri::command]

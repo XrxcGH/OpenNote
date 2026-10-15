@@ -46,7 +46,10 @@ export const tree = {
     redo: 'Redo',
     openTrash: 'Open Trash',
     restore: 'Restore',
+    emptyTrash: 'Empty Trash',
+    deleteForever: 'Delete forever',
     keywords: {
+      emptyTrash: 'Delete forever purge clear Trash',
       trash: 'Move to Trash remove',
       newPage: 'Add page create',
       indent: 'Indent subpage level',
@@ -122,6 +125,27 @@ export const tree = {
       'It moves to Trash with {count, plural, one {its # page} other {its # pages}}. You can restore it for 30 days.',
     confirmBodyEmpty: 'It moves to Trash, and you can restore it for 30 days.',
     confirm: 'Delete notebook',
+    emptyTrash: 'Empty Trash',
+    emptyTitle: 'Empty Trash?',
+    emptyBody:
+      "{count, plural, one {# item is} other {# items are}} deleted for good, with page history, search entries, and transcripts. This can't be undone.",
+    emptyBodyNotebooks:
+      "{count, plural, one {# item is} other {# items are}} deleted for good, with page history, search entries, and transcripts. This can't be undone. Notebooks stay in Trash until you choose Delete folder.",
+    emptied: 'Trash is emptied.',
+    deleteForever: 'Delete forever',
+    deleteForeverLabel: 'Delete {title} forever',
+    deleteForeverTitle: 'Delete "{title}" forever?',
+    deleteForeverBody:
+      "It's deleted for good, with its page history, search entries, and transcripts. This can't be undone.",
+    deletedForever: 'Deleted "{title}" for good.',
+    purgeFailed: "Couldn't delete that. Try again.",
+    deleteFolder: 'Delete folder',
+    deleteFolderLabel: 'Delete the folder of {title}',
+    deleteFolderTitle: 'Delete the folder of "{title}"?',
+    deleteFolderBody:
+      'The notebook folder moves to the Recycle Bin with everything in it. You can get it back from there until the Recycle Bin is emptied.',
+    folderDeleted: 'Moved the folder of "{title}" to the Recycle Bin.',
+    folderFailed: "Couldn't delete that folder. Try again, or delete it in File Explorer.",
   },
   undo: {
     nothing: 'Nothing to undo.',
