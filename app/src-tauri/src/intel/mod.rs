@@ -28,12 +28,12 @@ use crate::{
     settings::file::write_json,
 };
 
+pub(crate) mod caption_style;
 mod cloud;
 mod ext;
 mod models;
-mod transcribe;
-
-pub use transcribe::{intel_transcribe, intel_transcribe_cancel};
+pub(crate) mod stream;
+pub(crate) mod transcribe;
 
 #[cfg(test)]
 mod tests;

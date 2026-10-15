@@ -58,6 +58,7 @@ windows-core = "0.62.2"
 version = "0.62.2"
 features = [
   "Foundation",
+  "Media_ClosedCaptioning",
   "Networking_Connectivity",
   "UI_ViewManagement",
   "Win32_Foundation",

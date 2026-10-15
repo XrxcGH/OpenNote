@@ -1,0 +1,58 @@
+/* The listening indicator. It stays on screen for as long as the microphone is open (BRAND.md section 14). */
+@layer components {
+  .bar {
+    position: fixed;
+    inset-block-start: var(--space-4);
+    inset-inline: var(--space-4);
+    z-index: var(--layer-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    max-inline-size: min(40rem, 100%);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    pointer-events: auto;
+  }
+
+  .dot {
+    flex: none;
+    inline-size: var(--space-3);
+    block-size: var(--space-3);
+    background: var(--color-accent-primary);
+    border-radius: var(--radius-pill);
+  }
+
+  .speaking .dot {
+    background: var(--color-accent-clay);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .speaking .dot {
+      animation: pulse var(--motion-duration-deliberate) var(--motion-easing-standard) infinite alternate;
+    }
+  }
+
+  @keyframes pulse {
+    to {
+      opacity: 0.45;
+    }
+  }
+
+  .words {
+    min-inline-size: 0;
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

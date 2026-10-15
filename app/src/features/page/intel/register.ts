@@ -2,8 +2,8 @@
 // once start-up is done (registrations/intel.ts), so they cost nothing at start-up. The work loads on first use
 // (one module for each). The person's choices load here too, because read aloud picks its engine when reading starts.
 import { isEnabled } from '../../../app/flags';
-import { defineCommand } from '../../../commands/registry';
-import { commands } from '../../../registries';
+import { chord, defineCommand } from '../../../commands/registry';
+import { commandBar, commands } from '../../../registries';
 import { oneImageSelected } from '../images/shown';
 import { pageSelection } from '../seams/selectionStore';
 import { shownQueue } from '../sync/shown';
@@ -53,3 +53,26 @@ if (isEnabled('intel.transcription') && isEnabled('transcripts.block')) {
     import('../audio/transcripts/engine'),
   ]).then(([api, seam]) => seam.registerTranscriptEngine(api.onDeviceTranscriptEngine));
 }
+
+// Dictation (A2-24): press the button or Ctrl+Alt+V, talk, and the words are typed at the cursor.
+commands.register(
+  defineCommand({
+    id: 'intel.dictate',
+    title: 'intelMore.dictation.command',
+    keywords: 'intelMore.dictation.commandKeywords',
+    category: 'insert',
+    flag: 'intel.dictation',
+    keys: [chord('Ctrl+Alt+V')],
+    scope: 'editor',
+    allowInTextInput: true,
+    run: () => import('./dictation').then((module) => module.toggleDictate()),
+  }),
+);
+commandBar.register({
+  id: 'intel.dictate',
+  tab: 'home',
+  group: 'recording',
+  command: 'intel.dictate',
+  flag: 'intel.dictation',
+  priority: 60,
+});

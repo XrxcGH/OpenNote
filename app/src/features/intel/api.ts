@@ -31,3 +31,5 @@ export { cloudSummary, showPageSummary, summarizeBlocks } from './summary';
 export { onDeviceTranscriptEngine, transcribeOnDevice, TranscribeStopped } from './transcribe/engine';
 export type { OnDeviceTranscribeRequest, OnDeviceTranscribeResult } from './transcribe/engine';
 export type { PageSummary, PageText } from './summary';
+export { listen } from './stream/listen';
+export type { Listening, ListenOptions } from './stream/listen';
