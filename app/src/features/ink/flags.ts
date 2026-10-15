@@ -39,6 +39,7 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.gridTable', 'Draw a grid to make a table.', on),
   flag('ink.penEditing', 'Edit typed text with the pen.', on),
   flag('ink.groups', 'Group ink, text boxes and images into one object (ADR 0036).', beta),
+  flag('ink.penLibrary', 'Fountain, brush, calligraphy, dashed and dotted pens, and saved pen sets.', beta),
   flag('dev.penRecorder', 'The Palm lab: record labeled pen and touch sessions for the palm corpus.', {
     dev: true,
     nightly: true,

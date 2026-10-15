@@ -173,6 +173,7 @@ type Phase5FlagId =
   | 'ink.gridTable'
   | 'ink.penEditing'
   | 'ink.groups'
+  | 'ink.penLibrary'
   | 'ink.delegatedTrail'
   | 'ink.nativeTrail'
   | 'ink.openSnapshot'

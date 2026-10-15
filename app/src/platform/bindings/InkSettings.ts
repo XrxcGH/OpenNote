@@ -4,6 +4,7 @@ import type { FingerDraw } from "./FingerDraw";
 import type { Handedness } from "./Handedness";
 import type { LassoPick } from "./LassoPick";
 import type { LowLatency } from "./LowLatency";
+import type { PenSet } from "./PenSet";
 import type { PenSlot } from "./PenSlot";
 
 export type InkSettings = { pens: Array<PenSlot>, penSelectsAndTypes: boolean, handedness: Handedness, touch: { 
@@ -34,4 +35,8 @@ holdMs: number, inkToShape: boolean, }, gestures: { scribbleErase: boolean, circ
 /**
  * 2, 3, or 4 times.
  */
-magnification: number, autoAdvance: boolean, }, contrastInk: ContrastInk, lowLatency: LowLatency, };
+magnification: number, autoAdvance: boolean, }, contrastInk: ContrastInk, lowLatency: LowLatency, 
+/**
+ * Named pen palettes the person saved (flag `ink.penLibrary`). Absent until the first one is saved.
+ */
+penSets?: Array<PenSet>, };

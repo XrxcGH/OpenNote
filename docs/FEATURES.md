@@ -140,6 +140,7 @@ Presets, set per page, or as a notebook default:
 
 - Lasso any area, then choose "Export selection" to save it as PDF, PNG, SVG or `.docx`, or copy it as an image. Both sit on the lasso bar and in the selection's right-click menu, and pointing at either shows the crop as a dashed outline. Status: Built, untested by hand.
 - Palm lab (Settings > Pen and touch, Beta and dev builds): guided steps, a probe of what your pen and screen report, a labeled recording of the pen and hand, and a saved session file for the palm test corpus. Nothing is saved until you press Save. Status: Built, untested by hand.
+- Pen library: fountain, brush, calligraphy, dashed, and dotted pens, each with its own sizes and colors (Draw tab > Pen type), and named pen sets you can save and switch between (Draw tab > Pen sets). Status: Built, untested by hand.
 - Smart select grows the lasso to include whole strokes, text boxes and images that it only partly touches, and trims empty margins. Exact keeps the lasso's own shape. The dialog's Smart and Exact choice is remembered on the device. Status: Built, untested by hand.
 - This works for annotated images: import a photo, draw on it, and export just that part. Status: Built, untested by hand.
 

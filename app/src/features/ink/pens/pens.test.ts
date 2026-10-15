@@ -105,7 +105,7 @@ describe('the tools', () => {
 
 /** The thickness of a straight stroke's outline in the middle, away from its round ends. */
 function drawnThickness(tool: InkTool, width: number, point: Partial<InkPoint>): number {
-  const points: InkPoint[] = Array.from({ length: 60 }, (_, i) => ({ x: i * 2, y: 0, time: i * 8, ...point }));
+  const points: InkPoint[] = Array.from({ length: 60 }, (_, i) => ({ x: i * 2, y: 0, ...point }));
   const middle = strokeOutline(points, { tool, width }).filter((p) => p.x > 40 && p.x < 80);
   const ys = middle.map((p) => p.y);
   return Math.max(...ys) - Math.min(...ys);
@@ -113,7 +113,8 @@ function drawnThickness(tool: InkTool, width: number, point: Partial<InkPoint>):
 
 describe('width from pressure and tilt', () => {
   it('matches the width the outline draws, for every tool', () => {
-    for (const tool of TOOLS) {
+    // The calligraphy nib's width depends on direction, and speed (without times here) is tested in library.test.ts.
+    for (const tool of TOOLS.filter((t) => t !== 'calligraphy')) {
       for (const pressure of [0.1, 0.5, 0.9]) {
         const drawn = drawnThickness(tool, 6, { pressure, tiltX: 0, tiltY: 0 });
         expect(drawn).toBeCloseTo(widthAt(tool, 6, { x: 0, y: 0, pressure }), 0);

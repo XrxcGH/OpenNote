@@ -109,3 +109,27 @@ fn a_custom_curve_never_goes_down() {
     }
     assert_eq!(failed_field(|c| device.check(c)).as_deref(), Some("ink.pens"));
 }
+
+#[test]
+fn pen_sets_are_optional_and_checked() {
+    let mut ink = InkSettings::default();
+    assert!(serde_json::to_value(&ink).expect("serializes").get("penSets").is_none());
+    let set = PenSet {
+        id: "s1".into(),
+        name: "Drawing".into(),
+        pens: vec![
+            PenSlot { id: "f1".into(), tool: PenTool::Fountain, color: "ink".into(), width: 0.7, pressure: Some(true) },
+            PenSlot { id: "c1".into(), tool: PenTool::Calligraphy, color: "indigo".into(), width: 2.0, pressure: None },
+        ],
+    };
+    ink.pen_sets = Some(vec![set.clone()]);
+    assert_eq!(failed_field(|c| ink.check(c)), None);
+    let json = serde_json::to_value(&ink).expect("serializes");
+    assert_eq!(json["penSets"][0]["pens"][1]["tool"], "calligraphy");
+    let back: InkSettings = serde_json::from_value(json).expect("reads back");
+    assert_eq!(back, ink);
+    ink.pen_sets = Some(vec![set.clone(), set]);
+    assert_eq!(failed_field(|c| ink.check(c)).as_deref(), Some("ink.penSets"));
+    ink.pen_sets = Some(vec![PenSet { id: "s2".into(), name: String::new(), pens: vec![] }]);
+    assert_eq!(failed_field(|c| ink.check(c)).as_deref(), Some("ink.penSets"));
+}

@@ -2,7 +2,7 @@
 // as long as the stroke object lives; strokes never change, so a new object means new ink. Highlighters go below the
 // other strokes, as the format says, and carry their 40 percent alpha in their color.
 import { applyToPoint, widthScale } from '../geometry/matrix';
-import { pencilOpacity, strokeOutline } from '../geometry/outline';
+import { pencilOpacity, strokeShapes } from '../geometry/outline';
 import type { InkPoint, InkTool } from '../geometry/types';
 import type { InkStroke } from '../model/types';
 import { paletteByName, resolveColor, toCss } from '../pens/palette';
@@ -23,12 +23,13 @@ export function pagePointsOf(stroke: InkStroke): readonly InkPoint[] {
  * between its points look as smooth as the curves of `outlinePath` at any zoom the page has.
  */
 export function outlineOf(points: readonly InkPoint[], tool: InkTool, width: number, complete = true): Path2D {
-  const outline = strokeOutline(points, { tool, width, complete });
   const path = new Path2D();
-  if (outline.length < 2) return path;
-  path.moveTo(outline[0].x, outline[0].y);
-  for (let i = 1; i < outline.length; i++) path.lineTo(outline[i].x, outline[i].y);
-  path.closePath();
+  for (const outline of strokeShapes(points, { tool, width, complete })) {
+    if (outline.length < 2) continue;
+    path.moveTo(outline[0].x, outline[0].y);
+    for (let i = 1; i < outline.length; i++) path.lineTo(outline[i].x, outline[i].y);
+    path.closePath();
+  }
   return path;
 }
 
