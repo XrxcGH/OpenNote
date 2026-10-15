@@ -123,7 +123,11 @@ pub fn export(
                 break;
             }
             samples.clear();
-            samples.extend(block[..got].iter().map(|s| (s.clamp(-1.0, 1.0) * 32767.0).round() as i16));
+            samples.extend(
+                block[..got]
+                    .iter()
+                    .map(|s| (s.clamp(-1.0, 1.0) * 32767.0).round() as i16),
+            );
             sink.audio(&samples, audio_at * 1_000_000_000 / AUDIO_RATE)?;
             audio_at += got as u64;
             want -= got as u64;

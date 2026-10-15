@@ -47,6 +47,18 @@ Open a page, press Ctrl+K, and choose Share page to Slack or Share page to Teams
 
 The post is made as you, and nothing is sent until you press Post. A link opens the page in OpenNote, so it works only for people who have OpenNote and the same notebook. In Teams a picture shows in the message, and a PDF is put in the channel's Files folder with a link to it in the message.
 
+### Pen settings on all your devices
+
+Connect Google or Microsoft, then press Ctrl+K and choose Sync pen settings across my devices. Your pens (their tools, colors, and widths), the order of the pens, and the drawing bar's choices (the ruler, the grid, the zoom box, the hand you write with, and the formatting bar) are kept in a small file in a hidden folder of your account that only OpenNote can see. On a second device, choose the same command with the same account, and the pens come over.
+
+After that, OpenNote keeps the devices in step quietly, about every half hour while it is open. Each pen is its own item, so a pen you add on one device and a different pen you add on another both stay. If you change the same pen on two devices, the newer change is kept. A device that has never synced takes the account's settings the first time, so a new tablet doesn't undo your set. The settings of each physical pen (its buttons and pressure curve) stay on the device they belong to. To stop, choose Stop syncing pen settings on this device.
+
+### Tasks with Microsoft To Do and Google Tasks
+
+Connect Microsoft or Google, then press Ctrl+K and choose Sync tasks with Microsoft To Do or Sync tasks with Google Tasks. The tasks you keep in Upcoming (the ones you add and tick off yourself) and the tasks in the service's main list are matched. The tick box, the title, and the due date are copied both ways. With To Do, the time of day on a task is its reminder: set a time in Upcoming and To Do reminds you then, and a reminder set in To Do shows in Upcoming as the time. Google Tasks keeps dates only.
+
+After you have synced once, OpenNote keeps the lists in step while it is open, quietly, about every quarter of an hour. If the same task was changed in both places between two syncs, the newer change is kept and the other is written to the sync log (Ctrl+K, then Show task sync changes made in both places). A task you delete in one place is deleted in the other only if it has not changed there. Otherwise it comes back. Tasks that come from a page, a course, or a calendar file are not synced.
+
 ### Courses and assignments
 
 Connect Canvas or Moodle with your personal token, or Google for Classroom. Then press Ctrl+K and choose Bring in course assignments. Pick a course, or all of them. Each course becomes a section in the notebook you have open, with a page for each assignment. The top of the page holds the due date, a link to the assignment, and its instructions. Assignments with a due date also appear in Upcoming, and the ones you have already handed in are ticked.

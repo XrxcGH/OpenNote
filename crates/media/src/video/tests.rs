@@ -14,9 +14,21 @@ fn line() -> SceneStroke {
         color: [20, 40, 200, 255],
         width: 4.0,
         points: vec![
-            ScenePoint { x: 8.0, y: 8.0, t_ns: 200_000_000 },
-            ScenePoint { x: 56.0, y: 8.0, t_ns: 400_000_000 },
-            ScenePoint { x: 56.0, y: 40.0, t_ns: 600_000_000 },
+            ScenePoint {
+                x: 8.0,
+                y: 8.0,
+                t_ns: 200_000_000,
+            },
+            ScenePoint {
+                x: 56.0,
+                y: 8.0,
+                t_ns: 400_000_000,
+            },
+            ScenePoint {
+                x: 56.0,
+                y: 40.0,
+                t_ns: 600_000_000,
+            },
         ],
     }
 }
@@ -88,7 +100,10 @@ fn export_writes_every_frame_and_all_the_sound() {
     let mut pcm = MemoryPcm::new(vec![0.25; 48_000]);
     let mut sink = Collect::default();
     let mut shares = Vec::new();
-    export(&scene, &mut pcm, 1_000_000_000, 10, &mut sink, &mut |share| shares.push(share)).expect("exported");
+    export(&scene, &mut pcm, 1_000_000_000, 10, &mut sink, &mut |share| {
+        shares.push(share)
+    })
+    .expect("exported");
     assert_eq!(sink.frames.len(), 10);
     assert_eq!(sink.frames[0].0, 0);
     assert_eq!(sink.frames[9].0, 900_000_000);

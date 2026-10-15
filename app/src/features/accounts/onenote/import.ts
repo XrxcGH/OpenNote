@@ -179,7 +179,7 @@ export async function importNotebooks(deps: ImportDeps, chosen: readonly GraphNo
       sections.map(async (section) => ({ section, pages: await listPages(deps.client, section.id) })),
     );
     total += listed.reduce((sum, one) => sum + one.pages.length, 0);
-    let known = state.notebooks[notebook.id];
+    let known: NotebookState | undefined = state.notebooks[notebook.id];
     if (known && !(await deps.notes.get(known.node as NodeId))) known = undefined;
     if (!known) {
       const taken = (await deps.notes.listNotebooks()).some((one) => one.title === cleanTitle(notebook.name, ''));
@@ -205,7 +205,7 @@ export async function importNotebooks(deps: ImportDeps, chosen: readonly GraphNo
       failedPages: [],
     };
     for (const { section, pages } of listed) {
-      let sectionState = known.sections[section.id];
+      let sectionState: NotebookState['sections'][string] | undefined = known.sections[section.id];
       if (sectionState && !(await deps.notes.get(sectionState.node as NodeId))) sectionState = undefined;
       if (!sectionState) {
         const made = await deps.notes.create({

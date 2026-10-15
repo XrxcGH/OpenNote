@@ -34,10 +34,11 @@ mod mf {
         Win32::Media::MediaFoundation::{
             IMFMediaType, IMFSample, IMFSinkWriter, MFAudioFormat_AAC, MFAudioFormat_PCM, MFCreateMediaType,
             MFCreateMemoryBuffer, MFCreateSample, MFCreateSinkWriterFromURL, MFMediaType_Audio, MFMediaType_Video,
-            MFVideoFormat_H264, MFVideoFormat_RGB32, MFVideoInterlace_Progressive, MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION,
-            MF_MT_AUDIO_AVG_BYTES_PER_SECOND, MF_MT_AUDIO_BITS_PER_SAMPLE, MF_MT_AUDIO_BLOCK_ALIGNMENT,
-            MF_MT_AUDIO_NUM_CHANNELS, MF_MT_AUDIO_SAMPLES_PER_SECOND, MF_MT_AVG_BITRATE, MF_MT_FRAME_RATE,
-            MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE, MF_MT_MAJOR_TYPE, MF_MT_PIXEL_ASPECT_RATIO, MF_MT_SUBTYPE,
+            MFVideoFormat_H264, MFVideoFormat_RGB32, MFVideoInterlace_Progressive,
+            MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, MF_MT_AUDIO_AVG_BYTES_PER_SECOND, MF_MT_AUDIO_BITS_PER_SAMPLE,
+            MF_MT_AUDIO_BLOCK_ALIGNMENT, MF_MT_AUDIO_NUM_CHANNELS, MF_MT_AUDIO_SAMPLES_PER_SECOND, MF_MT_AVG_BITRATE,
+            MF_MT_FRAME_RATE, MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE, MF_MT_MAJOR_TYPE, MF_MT_PIXEL_ASPECT_RATIO,
+            MF_MT_SUBTYPE,
         },
     };
 
@@ -60,7 +61,13 @@ mod mf {
         (u64::from(high) << 32) | u64::from(low)
     }
 
-    fn video_type(subtype: &GUID, width: u32, height: u32, fps: u32, bitrate: Option<u32>) -> windows::core::Result<IMFMediaType> {
+    fn video_type(
+        subtype: &GUID,
+        width: u32,
+        height: u32,
+        fps: u32,
+        bitrate: Option<u32>,
+    ) -> windows::core::Result<IMFMediaType> {
         // SAFETY: plain calls on a media type this function made.
         unsafe {
             let media = MFCreateMediaType()?;
@@ -104,13 +111,19 @@ mod mf {
                 let video_out = video_type(&MFVideoFormat_H264, width, height, fps, Some(bitrate)).map_err(failed)?;
                 let video_stream = writer.AddStream(&video_out).map_err(failed)?;
                 let video_in = video_type(&MFVideoFormat_RGB32, width, height, fps, None).map_err(failed)?;
-                writer.SetInputMediaType(video_stream, &video_in, None).map_err(failed)?;
+                writer
+                    .SetInputMediaType(video_stream, &video_in, None)
+                    .map_err(failed)?;
                 let audio_out = audio_type(&MFAudioFormat_AAC, 12_000, 16, 1).map_err(failed)?;
                 // AAC-LC at level 2.
-                audio_out.SetUINT32(&MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, 0x29).map_err(failed)?;
+                audio_out
+                    .SetUINT32(&MF_MT_AAC_AUDIO_PROFILE_LEVEL_INDICATION, 0x29)
+                    .map_err(failed)?;
                 let audio_stream = writer.AddStream(&audio_out).map_err(failed)?;
                 let audio_in = audio_type(&MFAudioFormat_PCM, 96_000, 16, 2).map_err(failed)?;
-                writer.SetInputMediaType(audio_stream, &audio_in, None).map_err(failed)?;
+                writer
+                    .SetInputMediaType(audio_stream, &audio_in, None)
+                    .map_err(failed)?;
                 writer.BeginWriting().map_err(failed)?;
                 Ok(Mp4Sink {
                     writer,
@@ -242,7 +255,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("out.mp4");
         let mut last = 0.0;
-        write_mp4(&path, &scene, &mut MemoryPcm::new(tone), 2_000_000_000, &mut |share| last = share).unwrap();
+        write_mp4(&path, &scene, &mut MemoryPcm::new(tone), 2_000_000_000, &mut |share| {
+            last = share
+        })
+        .unwrap();
         let bytes = std::fs::read(&path).unwrap();
         assert!(bytes.len() > 2_000, "only {} bytes", bytes.len());
         assert_eq!(&bytes[4..8], b"ftyp", "an MP4 file starts with its type box");

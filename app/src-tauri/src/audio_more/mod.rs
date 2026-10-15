@@ -10,8 +10,8 @@
 
 mod decode;
 pub mod meeting;
-mod video;
 pub mod snap;
+mod video;
 
 use std::{
     fs,
@@ -324,7 +324,9 @@ pub async fn audio_export_video(
             let plain = !name.is_empty()
                 && name.len() <= 80
                 && !name.starts_with('.')
-                && name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'));
+                && name
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'));
             if !plain {
                 return Err(IpcError::invalid("transfer", "That isn't a file name."));
             }
@@ -346,18 +348,22 @@ pub async fn audio_export_video(
     let (strokes, rgba) = body.split_at(header.strokes_len);
     let strokes: Vec<opennote_media::video::SceneStroke> = serde_json::from_slice(strokes)
         .map_err(|_| IpcError::invalid("strokes", "The page's strokes aren't valid."))?;
-    let mut scene = opennote_media::video::Scene::from_rgba(header.width, header.height, rgba, strokes)
-        .map_err(audio_error)?;
+    let mut scene =
+        opennote_media::video::Scene::from_rgba(header.width, header.height, rgba, strokes).map_err(audio_error)?;
     let size = blocking(&state, move |state| {
         let services = state.services();
         let summary = header.entry.summary().map_err(audio_error)?;
         let map = PositionMap::from_summary(&summary);
         let duration = map.duration_ns();
         if duration > MAX_VIDEO_NS {
-            return Err(IpcError::invalid("entry", "That recording is too long to make into a video."));
+            return Err(IpcError::invalid(
+                "entry",
+                "That recording is too long to make into a video.",
+            ));
         }
         scene.place(&map);
-        let player = opennote_media::playback::open_recording(&dir, &summary, &services.decoder).map_err(audio_error)?;
+        let player =
+            opennote_media::playback::open_recording(&dir, &summary, &services.decoder).map_err(audio_error)?;
         let mut pcm = opennote_media::transcribe::MixedPcm::new(player);
         let temp = dest.with_extension("opennote-part.mp4");
         let _ = fs::remove_file(&temp);

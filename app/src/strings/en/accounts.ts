@@ -6,9 +6,12 @@ import { accountsGoogleOffice } from './accountsGoogleOffice';
 import { accountsLms } from './accountsLms';
 import { accountsMedia } from './accountsMedia';
 import { accountsMeetings } from './accountsMeetings';
+import { accountsOnenote } from './accountsOnenote';
+import { accountsPenSync } from './accountsPenSync';
 import { accountsReadwise } from './accountsReadwise';
 import { accountsSendTo } from './accountsSendTo';
 import { accountsShare } from './accountsShare';
+import { accountsTasks } from './accountsTasks';
 import { accountsYoutube } from './accountsYoutube';
 
 export const accounts = {
@@ -20,6 +23,9 @@ export const accounts = {
   youtube: accountsYoutube,
   sendTo: accountsSendTo,
   googleOffice: accountsGoogleOffice,
+  onenote: accountsOnenote,
+  tasks: accountsTasks,
+  penSync: accountsPenSync,
   common: {
     notConnected: '{service} isn’t connected. Connect it in Settings, then Connectors.',
     needsAccess: 'The {service} connection doesn’t allow this yet. Connect it again in Settings, then Connectors.',

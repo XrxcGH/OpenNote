@@ -53,8 +53,8 @@ impl Method {
             Self::Propfind,
             Self::Mkcol,
         ]
-            .into_iter()
-            .find(|method| method.as_str().eq_ignore_ascii_case(text))
+        .into_iter()
+        .find(|method| method.as_str().eq_ignore_ascii_case(text))
     }
 }
 

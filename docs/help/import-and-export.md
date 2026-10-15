@@ -41,6 +41,14 @@ Connect Google or Microsoft in Settings, then Connectors. Press Ctrl+K and choos
 
 OpenNote remembers which file a page, section, or notebook was sent as. After you change the page, choose Update the Drive or OneDrive copy in Ctrl+K, and OpenNote replaces the file. When you open a page that has changed since you sent it, OpenNote offers once to update the copy. It never updates by itself. A selection can be sent but not updated, because the selection is gone later.
 
+## Send to Dropbox, Box, or a WebDAV server
+
+Connect Dropbox or Box in Settings, then Connectors. For a WebDAV server (Nextcloud, ownCloud, a NAS), choose Connect on the WebDAV card and type the server's address, your user name, and a password (an app password is best). Then press Ctrl+K and choose Send to Dropbox, Send to Box, or Send to a WebDAV server. The steps are the same as for Google Drive: choose what to send, the file type, and the folder.
+
+A name that is already taken is never overwritten. The new file gets a number after its name. Update the copy replaces a file OpenNote sent earlier, and only that one.
+
+iCloud has no sign-in that an app can use. Send a copy to the `iCloud Drive` folder on this PC instead, and iCloud for Windows uploads it.
+
 ## Google Docs, Sheets, and Slides
 
 Connect Google in Settings, then Connectors. To bring a file in, press Ctrl+K and choose Import from Google Docs, Sheets, or Slides. Pick the kind of file and then the file. Google turns it into a Word, Excel, or PowerPoint file, and Import notes opens on it so you can see what comes over before anything is added. A Google Sheet becomes pages with tables, and Google Slides becomes a page for each slide that you can write on.

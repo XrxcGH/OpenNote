@@ -79,6 +79,30 @@ const SPECS: readonly Spec[] = [
     run: () => import('./sendto/commands').then((module) => module.sendTo('onedrive')),
   },
   {
+    id: 'sendto.dropbox',
+    title: 'accounts.sendTo.commands.dropbox',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.cloudSync',
+    needsPage: true,
+    run: () => import('./sendto/commands').then((module) => module.sendTo('dropbox')),
+  },
+  {
+    id: 'sendto.box',
+    title: 'accounts.sendTo.commands.box',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.cloudSync',
+    needsPage: true,
+    run: () => import('./sendto/commands').then((module) => module.sendTo('box')),
+  },
+  {
+    id: 'sendto.webdav',
+    title: 'accounts.sendTo.commands.webdav',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.cloudSync',
+    needsPage: true,
+    run: () => import('./sendto/commands').then((module) => module.sendTo('webdav')),
+  },
+  {
     id: 'sendto.update',
     title: 'accounts.sendTo.commands.update',
     keywords: 'accounts.sendTo.commands.keywords',
@@ -119,6 +143,54 @@ const SPECS: readonly Spec[] = [
     run: () => import('./googleOffice/commands').then((module) => module.exportToGoogle('gslides')),
   },
   {
+    id: 'onenote.import',
+    title: 'accounts.onenote.commands.import',
+    keywords: 'accounts.onenote.commands.keywords',
+    flag: 'accounts.onenoteGraph',
+    category: 'notebooks',
+    run: () => import('./onenote/commands').then((module) => module.importOneNote()),
+  },
+  {
+    id: 'tasks.microsoft',
+    title: 'accounts.tasks.commands.microsoft',
+    keywords: 'accounts.tasks.commands.keywords',
+    flag: 'accounts.tasksSync',
+    category: 'general',
+    run: () => import('./tasks/commands').then((module) => module.syncNow('microsoft')),
+  },
+  {
+    id: 'tasks.google',
+    title: 'accounts.tasks.commands.google',
+    keywords: 'accounts.tasks.commands.keywords',
+    flag: 'accounts.tasksSync',
+    category: 'general',
+    run: () => import('./tasks/commands').then((module) => module.syncNow('google')),
+  },
+  {
+    id: 'tasks.log',
+    title: 'accounts.tasks.commands.log',
+    keywords: 'accounts.tasks.commands.keywords',
+    flag: 'accounts.tasksSync',
+    category: 'general',
+    run: () => import('./tasks/commands').then((module) => module.showConflicts()),
+  },
+  {
+    id: 'penSync.sync',
+    title: 'accounts.penSync.commands.sync',
+    keywords: 'accounts.penSync.commands.keywords',
+    flag: 'accounts.penSync',
+    category: 'general',
+    run: () => import('./penSync/commands').then((module) => module.syncNow()),
+  },
+  {
+    id: 'penSync.off',
+    title: 'accounts.penSync.commands.off',
+    keywords: 'accounts.penSync.commands.keywords',
+    flag: 'accounts.penSync',
+    category: 'general',
+    run: () => import('./penSync/commands').then((module) => module.turnOff()),
+  },
+  {
     id: 'readwise.sync',
     title: 'accounts.readwise.commands.sync',
     keywords: 'accounts.readwise.commands.keywords',
@@ -152,3 +224,12 @@ shownMounted.subscribe(() => {
     if (node) await module.offerUpdate(page, node.modified);
   });
 });
+
+// After a task list has been synced by hand, it is kept in step quietly while the app is open. The timer starts a minute
+// after start-up and only when the flag is on.
+if (typeof window !== 'undefined' && isEnabled('accounts.tasksSync')) {
+  void import('./tasks/auto').then((module) => module.startAutoSync());
+}
+if (typeof window !== 'undefined' && isEnabled('accounts.penSync')) {
+  void import('./penSync/auto').then((module) => module.startAutoSync());
+}

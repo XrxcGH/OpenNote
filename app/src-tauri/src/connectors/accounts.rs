@@ -47,7 +47,8 @@ fn io_error(error: &std::io::Error) -> IpcError {
 }
 
 fn arg<T: serde::de::DeserializeOwned>(args: &Value, name: &str) -> IpcResult<T> {
-    serde_json::from_value(args.get(name).cloned().unwrap_or(Value::Null)).map_err(|error| invalid(name, &error.to_string()))
+    serde_json::from_value(args.get(name).cloned().unwrap_or(Value::Null))
+        .map_err(|error| invalid(name, &error.to_string()))
 }
 
 /// A name that is one file name: letters, digits, dot, dash, underscore, and space, and not starting with a dot.
@@ -121,11 +122,15 @@ enum Part {
 fn read_part(root: &Path, part: &Part) -> IpcResult<Vec<u8>> {
     match part {
         Part::Text { text } => Ok(text.clone().into_bytes()),
-        Part::Base64 { base64 } => STANDARD.decode(base64).map_err(|_| invalid("parts", "The bytes aren't base64.")),
+        Part::Base64 { base64 } => STANDARD
+            .decode(base64)
+            .map_err(|_| invalid("parts", "The bytes aren't base64.")),
         Part::File { file, offset, length } => {
             let path = resolve_temp(root, file)?;
             let bytes = fs::read(&path).map_err(|error| io_error(&error))?;
-            let start = usize::try_from(offset.unwrap_or(0)).unwrap_or(usize::MAX).min(bytes.len());
+            let start = usize::try_from(offset.unwrap_or(0))
+                .unwrap_or(usize::MAX)
+                .min(bytes.len());
             let end = length
                 .map_or(bytes.len(), |count| {
                     start.saturating_add(usize::try_from(count).unwrap_or(usize::MAX))
@@ -212,7 +217,11 @@ pub(super) fn call(connectors: &Connectors, root: &Path, name: &str, args: &Valu
         }
         "temp.remove" => {
             let path = resolve_temp(root, &arg::<String>(args, "file")?)?;
-            let _ = if path.is_dir() { fs::remove_dir_all(path) } else { fs::remove_file(path) };
+            let _ = if path.is_dir() {
+                fs::remove_dir_all(path)
+            } else {
+                fs::remove_file(path)
+            };
             Ok(json!({ "ok": true }))
         }
         "temp.clear" => {
@@ -285,7 +294,8 @@ pub(super) fn public_upload_host(text: &str) -> Option<String> {
         url::Host::Domain(name) => name.to_ascii_lowercase(),
         _ => return None,
     };
-    let local = host == "localhost" || host.ends_with(".localhost") || host.ends_with(".local") || host.ends_with(".internal");
+    let local =
+        host == "localhost" || host.ends_with(".localhost") || host.ends_with(".local") || host.ends_with(".internal");
     (host.contains('.') && !local).then_some(host)
 }
 
@@ -430,7 +440,17 @@ mod tests {
     #[test]
     fn names_are_checked_before_they_reach_the_disk() {
         let root = tempfile::tempdir().expect("a folder");
-        for bad in ["", "..", "a/../b", "/etc/passwd", "a\\b", ".hidden", "a/.b", "x:y", &"a".repeat(200)] {
+        for bad in [
+            "",
+            "..",
+            "a/../b",
+            "/etc/passwd",
+            "a\\b",
+            ".hidden",
+            "a/.b",
+            "x:y",
+            &"a".repeat(200),
+        ] {
             assert!(resolve_temp(root.path(), bad).is_err(), "{bad}");
         }
         let ok = resolve_temp(root.path(), "export/Page (1).docx").expect("a name");

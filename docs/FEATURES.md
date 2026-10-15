@@ -41,10 +41,10 @@ Import and export (Phase 11):
 
 | App | Import | Export | Status |
 |---|---|---|---|
-| Word / Google Docs | `.docx`, `.odt`, Google Docs | `.docx`, Google Docs, PDF | .docx and .odt: Built, untested by hand. Google Docs: Needs the owner. |
+| Word / Google Docs | `.docx`, `.odt`, Google Docs | `.docx`, Google Docs, PDF | .docx and .odt: Built, untested by hand. Google Docs: Built, untested by hand. Import from Google Docs, Sheets, or Slides and Export to Google Docs need the owner's Google client ID. |
 | Excel / Google Sheets | `.xlsx`, `.csv`, Google Sheets into smart tables | `.xlsx`, `.csv`, Google Sheets | .xlsx and .csv: Built, untested by hand. Google Sheets: Built, untested by hand. Import from Google Docs, Sheets, or Slides has Drive export an Excel file for the importer, and Export tables to Google Sheets sends an Excel file that Drive converts. Both need the owner's Google client ID. |
 | PowerPoint / Google Slides | `.pptx`, Google Slides as annotatable pages | `.pptx` (one page per slide), PDF | .pptx both ways and PDF: Built, untested by hand. Google Slides: Built, untested by hand. Import brings each slide in as a page to write on, and Export to Google Slides converts a PowerPoint file. Both need the owner's Google client ID. |
-| OneNote / Evernote | Graph API, `.enex` | PDF, Markdown | .enex and Markdown: Built, untested by hand. The Graph API import needs the owner. |
+| OneNote / Evernote | Graph API, `.enex` | PDF, Markdown | .enex and Markdown: Built, untested by hand. The Graph API import is built, untested by hand: Import OneNote notebooks from Microsoft brings notebooks, sections (and section groups), pages with subpage levels, text, lists, tables, and pictures, with an Import report page. Ink is not given out by Graph. It needs the owner's Microsoft client ID. |
 
 Linked accounts (Phase 11):
 
@@ -70,7 +70,7 @@ Linked accounts (Phase 11):
 |---|---|---|
 | Outlook and Google Calendar | Opens a meeting note from any event, filled in with the title, time, attendees, and agenda | Built, untested by hand. New meeting note reads Outlook, Google Calendar, or an .ics file. Outlook and Google need the owner's client IDs; the .ics file does not. |
 | Teams, Zoom, and Google Meet | Records meeting audio without a bot (Phase 9) and links the note back to the calendar event | Built, untested by hand. The recording and the prompt are built. A meeting note and the recordings made on it name the same calendar event. |
-| Microsoft To Do and Google Tasks | Two-way sync of checkboxes, due dates, and reminders | Needs the owner |
+| Microsoft To Do and Google Tasks | Two-way sync of checkboxes, due dates, and reminders | Built, untested by hand. Sync tasks with Microsoft To Do or Google Tasks copies the tick box, title, and due date both ways, and the time of day is the To Do reminder. The newer change wins and the other is logged. It then runs quietly while the app is open. It needs the owner's client IDs. |
 | Outlook and Gmail | "Save to OpenNote" from an email keeps the text and attachments with a link back | Needs the owner. A .eml file import is built, untested by hand. |
 | Web clipper for Edge, Chrome, and Firefox | Clips a full page, a region, or a clean article into any section | Not built yet |
 | Windows share target and Snipping Tool | "Share to OpenNote" from any app, and screenshots go straight to the current page | Built, untested by hand. The Snipping Tool offer is built. The share target needs the owner (package identity and signing). |
@@ -80,7 +80,7 @@ Linked accounts (Phase 11):
 | Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline | Built, untested by hand. Only these sites are recognized and shown in a sandboxed frame after the person chooses Show the live view; the saved picture shows offline. |
 | Kindle and Readwise | Import book highlights into a notebook | Built, untested by hand. Kindle clippings and a Readwise CSV file are built. Sync Readwise reads the Readwise API into a notebook, a page for each book, and syncs again from where it left off. |
 | Slack and Teams chat | Share a page as a link, PDF, or image | Built, untested by hand. Share page to Slack and Share page to Teams post as you to a channel you choose. Both need the owner's client IDs. |
-| Dropbox, OneDrive, iCloud Drive, Box, and WebDAV | Sync folders and "Send to" destinations | Built, untested by hand. Synced folders and Send to a folder are built. API sync needs the owner. |
+| Dropbox, OneDrive, iCloud Drive, Box, and WebDAV | Sync folders and "Send to" destinations | Built, untested by hand. Synced folders and Send to a folder are built. Send to Dropbox, Box, and a WebDAV server are built, with Update the copy, and need the owner's client IDs (WebDAV needs none). iCloud stays folder-based, as [ADR 0036](adr/0036-icloud-is-folder-based.md) explains. |
 | Webhooks and a local API | Connect Zapier, Power Automate, or scripts to create pages and export files | Not built yet |
 | AI assistants (Model Context Protocol, MCP) | Lets an assistant the person chooses read or write notes, only with permission | Not built yet |
 
@@ -186,7 +186,7 @@ More quality-of-life features:
 | Presentation mode | Full-screen pages with a laser pointer and ink that fades | Built, untested by hand |
 | Print preview | Shows exactly what prints, with page breaks | Built, untested by hand. Checked by tests and by reading the code, not by printing. |
 | Spell check | Several languages at once, and a personal dictionary | Built |
-| Pen settings sync | Pens, colors, and toolbars follow the person to every device | Needs the owner. Needs a sync service or account. |
+| Pen settings sync | Pens, colors, and toolbars follow the person to every device | Built, untested by hand. Sync pen settings across my devices keeps the pens, their order, and the drawing bar's choices in a hidden app folder of the linked Google or Microsoft account, merged one item at a time with the newer change winning, and then syncs quietly. The settings of each physical pen stay on the device. It needs the owner's client IDs. |
 | Low-power mode | Reduces animations and background work on battery | Built, untested by hand |
 | Shortcut cheat sheet | Ctrl+/ shows every shortcut, and each one can be changed | Built |
 | Password-protected sections | Encrypted on disk, unlocked with Windows Hello | Needs the owner. Needs a format decision and Windows Hello. |

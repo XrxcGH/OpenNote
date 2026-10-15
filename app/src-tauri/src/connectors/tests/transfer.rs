@@ -62,8 +62,12 @@ fn a_failed_download_writes_nothing_and_says_what_the_service_said() {
 fn an_upload_sends_the_parts_in_order_and_returns_the_location() {
     let server = MockServer::start();
     let rig = signed_in(&server);
-    call(&rig, "temp.write", json!({ "file": "up.bin", "part": { "kind": "text", "text": "0123456789" } }))
-        .expect("writes");
+    call(
+        &rig,
+        "temp.write",
+        json!({ "file": "up.bin", "part": { "kind": "text", "text": "0123456789" } }),
+    )
+    .expect("writes");
     server.route(
         "/upload",
         vec![Reply {
@@ -101,14 +105,25 @@ fn the_folder_calls_refuse_names_outside_it_and_state_round_trips() {
         let refused = call(&rig, "temp.read", json!({ "file": file }));
         assert!(refused.is_err(), "{file}");
     }
-    assert_eq!(call(&rig, "state.get", json!({ "name": "readwise" })).expect("reads"), serde_json::Value::Null);
-    call(&rig, "state.set", json!({ "name": "readwise", "value": { "cursor": "c1" } })).expect("writes");
+    assert_eq!(
+        call(&rig, "state.get", json!({ "name": "readwise" })).expect("reads"),
+        serde_json::Value::Null
+    );
+    call(
+        &rig,
+        "state.set",
+        json!({ "name": "readwise", "value": { "cursor": "c1" } }),
+    )
+    .expect("writes");
     assert_eq!(
         call(&rig, "state.get", json!({ "name": "readwise" })).expect("reads"),
         json!({ "cursor": "c1" })
     );
     call(&rig, "state.delete", json!({ "name": "readwise" })).expect("deletes");
-    assert_eq!(call(&rig, "state.get", json!({ "name": "readwise" })).expect("reads"), serde_json::Value::Null);
+    assert_eq!(
+        call(&rig, "state.get", json!({ "name": "readwise" })).expect("reads"),
+        serde_json::Value::Null
+    );
 }
 
 #[test]
@@ -117,9 +132,18 @@ fn a_client_typed_on_a_card_is_saved_and_clears_needs_setup() {
     let def = connector("example", Auth::OAuth(oauth(&server)));
     let rig = Rig::new(registry(vec![def]), Arc::new(UreqHttp::default()), None);
     assert_eq!(rig.state("example"), StateView::NeedsSetup);
-    let view = call(&rig, "client.set", json!({ "connector": "example", "clientId": "typed-client-id" })).expect("saves");
+    let view = call(
+        &rig,
+        "client.set",
+        json!({ "connector": "example", "clientId": "typed-client-id" }),
+    )
+    .expect("saves");
     assert_eq!(view["state"]["kind"], "notConnected");
     assert_eq!(rig.state("example"), StateView::NotConnected);
-    let refused = call(&rig, "client.set", json!({ "connector": "example", "clientId": "has space" }));
+    let refused = call(
+        &rig,
+        "client.set",
+        json!({ "connector": "example", "clientId": "has space" }),
+    );
     assert!(refused.is_err());
 }
