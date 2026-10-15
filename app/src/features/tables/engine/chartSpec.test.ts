@@ -45,6 +45,12 @@ describe('bar marks', () => {
     expect(spec.plot?.y).toMatchObject({ label: 'Seeds', grid: true });
   });
 
+  it('rounds the value axis out to a tick, so no bar rises above the top grid line', () => {
+    expect(build({ kind: 'bar' }).plot?.y).toMatchObject({ nice: true });
+    expect(build({ kind: 'line' }).plot?.y).toMatchObject({ nice: true });
+    expect(build({ kind: 'bar', horizontal: true }).plot?.x).toMatchObject({ nice: true });
+  });
+
   it('groups several series with a facet and a color scale in palette order', () => {
     const spec = build({ kind: 'bar', series: [1, 2, 3] });
     const mark = spec.plot?.marks[0];

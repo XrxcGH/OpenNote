@@ -84,6 +84,41 @@ const gridPath = (scene: GraphScene, major: boolean) =>
     ...scene.grid.y.filter((tick) => tick.major === major).map((tick) => `M0 ${tick.position}H${SIZE.width}`),
   ].join('');
 
+/** The tick numbers' font size (graph.module.css), and about how wide one character of them is drawn. */
+const LABEL = { size: 11, char: 0.62 * 11, ascent: 8 } as const;
+
+export interface TickLabel {
+  key: string;
+  text: string;
+  /** Where the number starts, and its baseline. */
+  x: number;
+  y: number;
+}
+
+/**
+ * The axes' numbers, each just right of its tick (x) or just above it (y), beside the axis line and inside the
+ * plot. A number that would run past the plot's edge is left out rather than drawn cut off.
+ */
+export function tickLabels(scene: GraphScene): TickLabel[] {
+  const { grid } = scene;
+  const width = (text: string) => text.length * LABEL.char;
+  const xBaseline = Math.min(SIZE.height - 4, Math.max(12, grid.xAxis.pixel + 13));
+  const xs = grid.x
+    .filter((tick) => tick.major && tick.label !== '0')
+    .map((tick) => ({ key: `x${tick.value}`, text: tick.label, x: tick.position + 3, y: xBaseline }))
+    .filter((label) => label.x >= 0 && label.x + width(label.text) <= SIZE.width);
+  const ys = grid.y
+    .filter((tick) => tick.major && tick.label !== '0')
+    .map((tick) => ({
+      key: `y${tick.value}`,
+      text: tick.label,
+      x: Math.min(SIZE.width - 4 - width(tick.label), Math.max(4, grid.yAxis.pixel + 4)),
+      y: tick.position - 3,
+    }))
+    .filter((label) => label.y - LABEL.ascent >= 0 && label.y <= SIZE.height);
+  return [...xs, ...ys];
+}
+
 /** The grid, the axes, their numbers, the curves, and the traced point. */
 export function PlotLayers({ scene, trace }: { scene: GraphScene; trace: Trace | null }) {
   const { view } = scene;
@@ -101,30 +136,11 @@ export function PlotLayers({ scene, trace }: { scene: GraphScene; trace: Trace |
       <path className={styles.gridMinor} d={gridPath(scene, false)} />
       <path className={styles.gridMajor} d={gridPath(scene, true)} />
       <path className={styles.axis} d={`M0 ${grid.xAxis.pixel}H${SIZE.width}M${grid.yAxis.pixel} 0V${SIZE.height}`} />
-      {grid.x
-        .filter((tick) => tick.major && tick.label !== '0')
-        .map((tick) => (
-          <text
-            key={`x${tick.value}`}
-            className={styles.label}
-            x={tick.position + 3}
-            y={Math.min(SIZE.height - 4, Math.max(12, grid.xAxis.pixel + 13))}
-          >
-            {tick.label}
-          </text>
-        ))}
-      {grid.y
-        .filter((tick) => tick.major && tick.label !== '0')
-        .map((tick) => (
-          <text
-            key={`y${tick.value}`}
-            className={styles.label}
-            y={tick.position - 3}
-            x={Math.min(SIZE.width - 24, Math.max(4, grid.yAxis.pixel + 4))}
-          >
-            {tick.label}
-          </text>
-        ))}
+      {tickLabels(scene).map((label) => (
+        <text key={label.key} className={styles.label} x={label.x} y={label.y}>
+          {label.text}
+        </text>
+      ))}
       {scene.curves.map((curve, index) => (
         <path
           key={index}

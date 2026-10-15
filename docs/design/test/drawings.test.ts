@@ -122,7 +122,7 @@ describe('where the vine and its leaves meet', () => {
   });
 
   it("keeps the leaves clear of both of the window's bars and the sill", () => {
-    // Both bars (upright, crosspiece) with the points along their straight lines.
+    // The upright bar with the crosspiece, each with the points along their straight lines.
     const bars = densify(outlineOf(only(window, 'window-bars')), 0.25);
     const sill = densify(outlineOf(only(window, 'sill')), 0.25);
     for (const leaf of leaves) {
@@ -302,11 +302,14 @@ describe('the social preview', () => {
 });
 
 describe('inside their pictures', () => {
-  it('keeps every line, circle and box of every wireframe inside the picture, never cut off by its edge', () => {
+  it('keeps every line, circle, box and label of every wireframe inside the picture, never cut off by its edge', () => {
     for (const { name, root } of pictures) {
       const svg = root.children[0];
       const [width, height] = [Number(svg.attrs.width), Number(svg.attrs.height)];
-      const clipped = [...walk(svg)].filter((e) => !e.attrs['clip-path'] && ['path', 'circle'].includes(e.tag));
+      // A shape cut off on purpose, by a clip on it or around it, is left out; so is a clip's own outline.
+      const cut = (e: El): boolean =>
+        Boolean(e.attrs['clip-path']) || e.tag === 'clipPath' || (e.parent !== undefined && cut(e.parent));
+      const clipped = [...walk(svg)].filter((e) => !cut(e) && ['path', 'circle', 'rect'].includes(e.tag));
       for (const el of clipped) {
         for (const p of outlineOf(el).flatMap((r) => r.pts)) {
           // A line is as wide as its stroke; half of it reaches past the path, so a shape may sit on the edge.
@@ -317,6 +320,235 @@ describe('inside their pictures', () => {
         }
       }
     }
+  });
+});
+
+const lines = (root: El) =>
+  [...walk(root)].filter((e) => e.tag === 'text').map((e) => ({ e, box: textBox(e), y: Number(e.attrs.y) }));
+
+describe('lines of text', () => {
+  it('sets the pieces of a line one after another in one text, never as pieces that crowd or overlap', () => {
+    for (const { name, root } of pictures) {
+      const all = lines(root).filter((t) => (t.e.attrs['text-anchor'] ?? 'start') === 'start');
+      for (const a of all) {
+        for (const b of all) {
+          if (a === b || Math.abs(a.y - b.y) > 0.5 || b.box.x0 <= a.box.x0) continue;
+          // Pieces of one line share its size and font; a menu over a chip does not.
+          const same = (k: string) => a.e.attrs[k] === b.e.attrs[k];
+          if (!same('font-size') || !same('font-family')) continue;
+          const gap = b.box.x0 - a.box.x1;
+          // Two texts on one line either stand apart or are one line of runs, which the browser spaces itself.
+          assert.ok(gap >= 6 || gap < -3, `${name}: "${a.e.text}" and "${b.e.text}" are ${gap.toFixed(1)} px apart`);
+        }
+      }
+    }
+  });
+
+  it('fits each highlight to the words it marks, as far past one end as the other', () => {
+    const p = palette('light');
+    const highlighters = new Set(['Honey', 'Mint'].map((name) => p.highlighter(name)));
+    let checked = 0;
+    for (const { name, root } of pictures) {
+      const texts = lines(root);
+      for (const band of [...walk(root)].filter((e) => e.tag === 'rect' && highlighters.has(e.attrs.fill ?? ''))) {
+        const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((k) => Number(band.attrs[k]));
+        // The words it marks start just inside it and sit on a baseline within it.
+        const words = texts.find((t) => t.box.x0 >= x && t.box.x0 <= x + 8 && t.y > y && t.y <= y + h);
+        if (!words) continue;
+        const [before, after] = [words.box.x0 - x, x + w - words.box.x1];
+        assert.ok(
+          Math.abs(before - after) <= 1.5,
+          `${name}: "${words.e.text}" has ${before} and ${after.toFixed(1)} px`,
+        );
+        checked++;
+      }
+    }
+    assert.ok(checked >= 3, `${checked} highlights over words`);
+  });
+});
+
+describe('words and controls on cards', () => {
+  it('keeps the words on a card or dialog inside it', () => {
+    for (const { name, root } of pictures) {
+      const order = [...walk(root)];
+      const cards = order.filter((e) => e.tag === 'rect' && e.attrs.filter === 'url(#shadow)');
+      for (const t of lines(root)) {
+        const at = order.indexOf(t.e);
+        const x = Number(t.e.attrs.x);
+        // The card it is written on is the last one drawn before it under the point where it starts.
+        const card = cards
+          .filter((c) => order.indexOf(c) < at)
+          .map((c) => ({
+            x0: +c.attrs.x,
+            y0: +c.attrs.y,
+            x1: +c.attrs.x + +c.attrs.width,
+            y1: +c.attrs.y + +c.attrs.height,
+          }))
+          .filter((c) => x > c.x0 && x < c.x1 && t.y > c.y0 && t.y < c.y1)
+          .at(-1);
+        if (!card) continue;
+        assert.ok(t.box.x0 >= card.x0 && t.box.x1 <= card.x1, `${name}: "${t.e.text}" runs past its card's edge`);
+      }
+    }
+  });
+
+  it('keeps every button and field clear of the others', () => {
+    for (const { name, root } of pictures) {
+      const controls = [...walk(root)]
+        .filter((e) => e.tag === 'rect' && e.attrs.height === '34')
+        .map((e) => ({ x0: +e.attrs.x, y0: +e.attrs.y, x1: +e.attrs.x + +e.attrs.width, y1: +e.attrs.y + 34 }));
+      for (let i = 0; i < controls.length; i++) {
+        for (let j = i + 1; j < controls.length; j++) {
+          const [a, b] = [controls[i], controls[j]];
+          const apart = a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0;
+          assert.ok(apart, `${name}: controls at ${a.x0},${a.y0} and ${b.x0},${b.y0} overlap`);
+        }
+      }
+    }
+  });
+});
+
+describe('keep-out zones', () => {
+  it('draws no keep-out zone of the window over a card or dialog in front of it', () => {
+    const over: string[] = [];
+    for (const { name, root } of pictures) {
+      const order = [...walk(root)];
+      const box = (e: El) => ({
+        x0: +e.attrs.x,
+        y0: +e.attrs.y,
+        x1: +e.attrs.x + +e.attrs.width,
+        y1: +e.attrs.y + +e.attrs.height,
+      });
+      // A raised card, dialog, or menu has rounded corners; a sheet of paper, whose margins may be marked, has none.
+      const cards = order.filter(
+        (e) => e.tag === 'rect' && e.attrs.filter === 'url(#shadow)' && Number(e.attrs.rx) > 0,
+      );
+      for (const zone of order.filter((e) => e.tag === 'rect' && e.attrs.fill === 'url(#hatch)')) {
+        const z = box(zone);
+        for (const card of cards.filter((c) => order.indexOf(c) < order.indexOf(zone)).map(box)) {
+          const apart = z.x1 <= card.x0 || card.x1 <= z.x0 || z.y1 <= card.y0 || card.y1 <= z.y0;
+          if (!apart)
+            over.push(`${name}: a keep-out zone at ${z.x0},${z.y0} is drawn over a card at ${card.x0},${card.y0}`);
+        }
+      }
+    }
+    assert.deepEqual(over, []);
+  });
+});
+
+describe('ink marks', () => {
+  it('circles something with every circled mark, never an empty patch of page', () => {
+    let checked = 0;
+    for (const { name, root } of pictures) {
+      for (const ring of named(root, 'circled')) {
+        const pts = outlineOf(ring).flatMap((run) => run.pts);
+        const [x0, x1] = [Math.min(...pts.map((q) => q.x)), Math.max(...pts.map((q) => q.x))];
+        const [y0, y1] = [Math.min(...pts.map((q) => q.y)), Math.max(...pts.map((q) => q.y))];
+        // Some words lie inside the ring's box: the ring is round them.
+        const inside = lines(root).some(
+          (t) => t.box.x1 > x0 && t.box.x0 < x1 && (t.box.y0 + t.box.y1) / 2 > y0 && (t.box.y0 + t.box.y1) / 2 < y1,
+        );
+        assert.ok(inside, `${name}: the circled mark at ${x0.toFixed(0)},${y0.toFixed(0)} circles nothing`);
+        checked++;
+      }
+    }
+    assert.ok(checked >= 2);
+  });
+
+  it('keeps every handwritten label clear of the ink around it', () => {
+    for (const { name, root } of pictures) {
+      const strokes = [...walk(root)].filter(
+        (e) => e.tag === 'path' && e.attrs['stroke-linecap'] === 'round' && e.attrs.fill === 'none' && e.attrs.d,
+      );
+      for (const label of lines(root).filter((t) => t.e.attrs['font-style'] === 'italic')) {
+        for (const stroke of strokes) {
+          const half = Number(stroke.attrs['stroke-width'] ?? 1.5) / 2;
+          const { x0, x1, y0, y1 } = label.box;
+          // The distance from the label's box to the nearest point of the stroke's line.
+          const gap = Math.min(
+            ...densify(outlineOf(stroke), 1).map((q) =>
+              Math.hypot(Math.max(x0 - q.x, 0, q.x - x1), Math.max(y0 - q.y, 0, q.y - y1)),
+            ),
+          );
+          assert.ok(gap - half >= 2, `${name}: "${label.e.text}" is ${(gap - half).toFixed(1)} px from a stroke`);
+        }
+      }
+    }
+  });
+});
+
+describe('the social preview', () => {
+  it('charts "Sales, Cost by Month" as a Sales bar and a Cost bar for each month', () => {
+    const p = palette('light');
+    const [sales, cost] = [p.pen('Indigo'), p.pen('Amber')];
+    const bars = [...walk(picture(SOCIAL))]
+      // The bars, not the small colored squares of the notebooks in the tree.
+      .filter((e) => e.tag === 'rect' && [sales, cost].includes(e.attrs.fill ?? '') && Number(e.attrs.height) > 12)
+      .sort((a, b) => Number(a.attrs.x) - Number(b.attrs.x));
+    assert.ok(bars.length >= 4 && bars.length % 2 === 0, `${bars.length} bars`);
+    bars.forEach((bar, i) => assert.equal(bar.attrs.fill, i % 2 === 0 ? sales : cost));
+  });
+});
+
+describe('lined paper', () => {
+  it('sets every typed line 3 px above a rule, and runs no rule through the letters', () => {
+    const root = picture('19-view-tab.svg');
+    const rules = [...walk(root)]
+      // The rules run across the page, 36 px short of its right edge.
+      .filter(
+        (e) => e.tag === 'line' && e.attrs.y1 === e.attrs.y2 && Number(e.attrs.x2) - Number(e.attrs.x1) === 832 - 36,
+      )
+      .map((e) => Number(e.attrs.y1));
+    assert.ok(rules.length > 20);
+    const typed = [...walk(root)].filter(
+      (e) => e.tag === 'text' && (e.attrs['font-family'] ?? '').includes('Literata') && Number(e.attrs.y) > rules[0],
+    );
+    assert.ok(typed.length >= 7);
+    for (const line of typed) {
+      const baseline = Number(line.attrs.y);
+      const below = Math.min(...rules.filter((r) => r >= baseline).map((r) => r - baseline));
+      assert.ok(Math.abs(below - 3) <= 0.5, `"${line.text}" is ${below} px above the rule beneath it`);
+      // The letters rise about 0.7 of their size above the baseline; no rule crosses them.
+      const size = Number(line.attrs['font-size']);
+      const through = rules.filter((r) => r < baseline && r > baseline - size * 0.7);
+      assert.deepEqual(through, [], `a rule runs through "${line.text}"`);
+    }
+  });
+});
+
+describe('the phone', () => {
+  it("keeps every keep-out zone on the phone inside its screen's rounded corners", () => {
+    const root = picture('10-phone.svg');
+    const screens = [...walk(root)].filter(
+      (e) => e.tag === 'rect' && e.attrs.rx === '42' && !e.parent?.attrs['clip-path'],
+    );
+    const clips = new Map([...walk(root)].filter((e) => e.tag === 'clipPath').map((c) => [c.attrs.id, c.children[0]]));
+    /** Whether a point is on a rounded rectangle's glass. */
+    const onGlass = (s: El, q: Pt) => {
+      const [x, y, w, h, r] = ['x', 'y', 'width', 'height', 'rx'].map((k) => Number(s.attrs[k]));
+      const cx = Math.min(Math.max(q.x, x + r), x + w - r);
+      const cy = Math.min(Math.max(q.y, y + r), y + h - r);
+      return q.x >= x - 0.01 && q.x <= x + w + 0.01 && Math.hypot(q.x - cx, q.y - cy) <= r + 0.01;
+    };
+    const zones = [...walk(root)].filter((e) => e.tag === 'rect' && e.attrs.fill === 'url(#hatch)');
+    let checked = 0;
+    for (const zone of zones) {
+      const corners = outlineOf(zone)[0].pts;
+      const middle = { x: (corners[0].x + corners[2].x) / 2, y: (corners[0].y + corners[2].y) / 2 };
+      const on = screens.find((s) => onGlass(s, middle));
+      if (!on) continue;
+      // Either every corner is on the glass, or the zone is cut by a clip that is the screen's own outline.
+      let clip: El | undefined;
+      for (let e: El | undefined = zone; e && !clip; e = e.parent) {
+        const id = /url\(#([^)]+)\)/.exec(e.attrs['clip-path'] ?? '')?.[1];
+        if (id) clip = clips.get(id);
+      }
+      const inside =
+        corners.every((q) => onGlass(clip ?? on, q)) || (clip !== undefined && clip.attrs.rx === on.attrs.rx);
+      assert.ok(inside, `a keep-out zone at ${corners[0].x},${corners[0].y} reaches past the screen's corner`);
+      checked++;
+    }
+    assert.ok(checked >= 4);
   });
 });
 

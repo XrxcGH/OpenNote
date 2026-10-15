@@ -127,12 +127,22 @@ export function sizeClasses(): Screen {
   });
 }
 
-const PHONE = { w: 390, h: 844, status: 47, home: 34, bar: 64 };
+const PHONE = { w: 390, h: 844, status: 47, home: 34, bar: 64, radius: 42 };
+
+/**
+ * A keep-out zone on a phone's screen, cut to the screen's rounded corners: the status bar and the home indicator
+ * reach into the corners, but not past the glass. Its label, if any, stays outside the phone.
+ */
+function screenKeepOut(id: string, x: number, y: number, zone: Box, label = '', at?: [number, number]): string {
+  const clip = `<clipPath id="${id}"><rect x="${x}" y="${y}" width="${PHONE.w}" height="${PHONE.h}" rx="${PHONE.radius}"/></clipPath>`;
+  const area = `<g clip-path="url(#${id})">${keepOut(zone, '')}</g>`;
+  return clip + area + (label && at ? tag(at[0], at[1], label, NOTE.keepOut) : '');
+}
 
 function phoneFrame(p: Palette, x: number, y: number): string[] {
   return [
     rect({ x: x - 10, y: y - 10, w: PHONE.w + 20, h: PHONE.h + 20 }, { fill: '#1A1714', r: 52 }),
-    rect({ x, y, w: PHONE.w, h: PHONE.h }, { fill: p.c('surface.app'), r: 42 }),
+    rect({ x, y, w: PHONE.w, h: PHONE.h }, { fill: p.c('surface.app'), r: PHONE.radius }),
     text(x + 36, y + 32, '9:41', { size: 15, weight: 600, fill: p.c('text.primary') }),
     rect({ x: x + PHONE.w / 2 - 67, y: y + PHONE.h - 14, w: 134, h: 5 }, { fill: p.c('text.primary'), r: 2.5 }),
   ];
@@ -252,13 +262,20 @@ export function phone(): Screen {
   const body = [
     ...notebookList(light, ax, y),
     ...readingView(dark, bx, y),
-    keepOut({ x: ax, y, w: PHONE.w, h: PHONE.status }, 'Status bar 47', [ax - 130, y + 30]),
-    keepOut({ x: ax, y: y + PHONE.h - PHONE.home, w: PHONE.w, h: PHONE.home }, 'Home indicator 34', [
-      ax - 150,
-      y + PHONE.h - 12,
+    screenKeepOut('screen-a-top', ax, y, { x: ax, y, w: PHONE.w, h: PHONE.status }, 'Status bar 47', [
+      ax - 130,
+      y + 30,
     ]),
+    screenKeepOut(
+      'screen-a-bottom',
+      ax,
+      y,
+      { x: ax, y: y + PHONE.h - PHONE.home, w: PHONE.w, h: PHONE.home },
+      'Home indicator 34',
+      [ax - 150, y + PHONE.h - 12],
+    ),
     keepOut({ x: bx, y: y + 100, w: 20, h: 600 }, 'Back-gesture edge 20', [bx + 24, y + 720]),
-    keepOut({ x: bx, y: y + PHONE.h - PHONE.home, w: PHONE.w, h: PHONE.home }, ''),
+    screenKeepOut('screen-b-bottom', bx, y, { x: bx, y: y + PHONE.h - PHONE.home, w: PHONE.w, h: PHONE.home }),
     region({ x: ax + 2, y: y + PHONE.h - PHONE.home - PHONE.bar, w: PHONE.w - 4, h: PHONE.bar }, ''),
     tag(ax - 205, y + PHONE.h - PHONE.home - 30, 'Bottom bar 64, targets 44+', NOTE.region),
     region({ x: bx + 22, y: y + 210, w: PHONE.w - 40, h: 370 }, ''),

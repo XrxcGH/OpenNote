@@ -14,6 +14,7 @@ import {
   rect,
   region,
   tag,
+  textRuns,
   text,
   textLines,
 } from '../lib/svg.ts';
@@ -34,6 +35,7 @@ import {
 } from '../lib/chrome.ts';
 import type { Tool } from '../lib/chrome.ts';
 import { button, card, chip, field, scrim } from '../lib/parts.ts';
+import { textWidth } from '../lib/metrics.ts';
 import { type Screen, makeScreen } from './screen.ts';
 import { PAGES, tree } from './workspace.ts';
 
@@ -54,8 +56,19 @@ function finish(file: string, title: string, p: Palette, body: string[]): Screen
   return makeScreen({ file, title, background: p.c('surface.app'), body });
 }
 
-/** Typed notes as the page shows them: a heading, a sentence, a list, and a page link. */
-function notes(p: Palette, x: number, y: number): string {
+const HEADING = 'Phases of mitosis';
+const QUESTION = 'Question for Thursday: how does this differ from ';
+const LINK = '[[Meiosis]]';
+/** How far the page link starts along the question's line, and how wide it is, in 15 px reading text. */
+const LINK_AT = textWidth(QUESTION, 15, 400, 'reading');
+const LINK_WIDTH = textWidth(LINK, 15, 400, 'reading');
+
+/**
+ * Typed notes as the page shows them: a heading, a sentence, a list, and a page link. On ruled paper every line
+ * takes the next rule, 28 px apart, its baseline 3 px above the rule as in the app (blocks.module.css), and the
+ * heading needs no line of its own under it.
+ */
+function notes(p: Palette, x: number, y: number, ruled = false): string {
   const body = { size: 15, fill: p.c('text.primary'), font: 'reading' as const };
   const bullets = [
     'Prophase: the chromosomes coil up and the nuclear envelope breaks down',
@@ -64,18 +77,16 @@ function notes(p: Palette, x: number, y: number): string {
     'Telophase: two new nuclei form',
   ];
   return [
-    text(x, y, 'Phases of mitosis', { size: 22, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
-    line([x, y + 10], [x + 660, y + 10], p.c('border.subtle')),
-    text(x, y + 44, 'A cell divides in four steps, and each one has a job.', body),
+    text(x, y, HEADING, { size: 22, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
+    ruled ? '' : line([x, y + 10], [x + 660, y + 10], p.c('border.subtle')),
+    text(x, y + (ruled ? 28 : 44), 'A cell divides in four steps, and each one has a job.', body),
     ...bullets
-      .map((item, i) => [
-        circle(x + 8, y + 76 + i * 28, 3, p.c('accent.clay')),
-        text(x + 24, y + 81 + i * 28, item, body),
-      ])
+      .map((item, i) => {
+        const baseline = y + (ruled ? 56 : 81) + i * 28;
+        return [circle(x + 8, baseline - 5, 3, p.c('accent.clay')), text(x + 24, baseline, item, body)];
+      })
       .flat(),
-    text(x, y + 212, 'Question for Thursday: how does this differ from', body),
-    text(x + 356, y + 212, '[[Meiosis]]', { ...body, fill: p.c('text.link') }),
-    text(x + 434, y + 212, '?', body),
+    textRuns(x, y + (ruled ? 196 : 212), [QUESTION, { text: LINK, fill: p.c('text.link') }, '?'], body),
   ].join('');
 }
 
@@ -138,14 +149,19 @@ export function pageEditor(): Screen {
 
 /** Ink on the page: a highlighter band, a circled link, an arrow, and a pencil sketch. */
 function inkMarks(p: Palette, x: number, y: number): string {
+  // The highlighter band runs 6 px past each end of the heading. The ring is drawn round the page link, centered on
+  // it and as far past each end, the way a pen circles a word in a line: over the space on either side.
+  const band = Math.round(textWidth(HEADING, 22, 700, 'reading') + 12);
+  const cx = Math.round(x + LINK_AT + LINK_WIDTH / 2);
+  const rx = Math.round(LINK_WIDTH / 2 + 7);
   return [
-    rect({ x: x - 6, y: y - 22, w: 214, h: 30 }, { fill: p.highlighter('Honey'), r: 4, opacity: 0.55 }),
-    ink(`M${x + 308} ${y + 203}a56 16 0 1 0 112 0a56 16 0 1 0-112 0`, p.pen('Indigo'), 3, 'circled'),
+    rect({ x: x - 6, y: y - 22, w: band, h: 30 }, { fill: p.highlighter('Honey'), r: 4, opacity: 0.55 }),
+    ink(`M${cx - rx} ${y + 203}a${rx} 16 0 1 0 ${2 * rx} 0a${rx} 16 0 1 0-${2 * rx} 0`, p.pen('Indigo'), 3, 'circled'),
     arrow(
-      onEllipse(x + 364, y + 203, 56, 16, 115),
-      [x + 300, y + 240],
-      [x + 260, y + 256],
-      [x + 224, y + 270],
+      onEllipse(cx, y + 203, rx, 16, 115),
+      [cx - 64, y + 240],
+      [cx - 104, y + 256],
+      [cx - 140, y + 270],
       p.pen('Fern'),
       3,
     ),
@@ -206,7 +222,6 @@ export function drawTab(): Screen {
 
 export function viewTab(): Screen {
   const p = palette('light');
-  const y = BODY_TOP + 200;
   const rules: string[] = [];
   for (let ly = BODY_TOP + 120; ly < WIDE.height - 40; ly += 28)
     rules.push(line([EDITOR_X, ly], [EDITOR_X + 832 - 36, ly], p.c('border.subtle')));
@@ -224,10 +239,16 @@ export function viewTab(): Screen {
     ...win(p, 'View', VIEW_TOOLS),
     ...pageFrame(p),
     ...rules,
-    notes(p, X, y - 36),
+    // The heading's baseline is 3 px above the third rule.
+    notes(p, X, BODY_TOP + 120 + 2 * 28 - 3, true),
     menu(p, 1170, BODY_TOP + 2, 234, items, 2, 2),
     ...windowAnnotations(),
-    tag(X, BODY_TOP + 560, 'Lined, grid, and dot paper: typed text sits on the rules like handwriting', NOTE.region),
+    tag(
+      X,
+      BODY_TOP + 560,
+      'Lined, grid, and dot paper: typed text sits just above the rules, like handwriting',
+      NOTE.region,
+    ),
     tag(X, BODY_TOP + 620, 'Pane buttons show and hide the notebooks and pages panes', NOTE.region),
     tag(X, BODY_TOP + 590, 'Infinite canvas or pages with breaks; Paper picks Letter, A4, A5, or Legal', NOTE.region),
   ];
@@ -343,8 +364,7 @@ export function mathGrapher(): Screen {
     editorBackground(p),
     propertiesChip(p, WIDE.width - 52, BODY_TOP + 8),
     pageHeader(p, X, BODY_TOP + 64, 'Membranes', 'Changed Sep 28, 2026'),
-    text(X, y, 'The area under the parabola from 0 to 1 is', reading),
-    text(X + 330, y, '∫₀¹ x² dx = ⅓', { ...reading, italic: true }),
+    textRuns(X, y, ['The area under the parabola from 0 to 1 is ', { text: '∫₀¹ x² dx = ⅓', italic: true }], reading),
     text(X, y + 52, 'Display equation', { size: 12, fill: p.c('text.muted') }),
     text(X + 300, y + 76, '∫₀¹ x² dx = ⅓', {
       size: 24,
@@ -405,15 +425,18 @@ export function searchPanel(): Screen {
       { fill: p.c('surface.selected'), stroke: p.c('accent.primary'), r: 8, width: 2 },
     ),
     text(x + 40, y + 272, 'Mitosis', { size: 14, weight: 600, fill: p.c('text.primary') }),
-    text(x + 40, y + 296, 'Prophase: the', { size: 12, fill: p.c('text.secondary') }),
-    text(x + 40 + 78, y + 296, 'chromosomes', { size: 12, weight: 700, fill: p.c('text.primary') }),
-    text(x + 40 + 156, y + 296, 'coil up and', { size: 12, fill: p.c('text.secondary') }),
+    textRuns(
+      x + 40,
+      y + 296,
+      ['Prophase: the ', { text: 'chromosomes', weight: 700, fill: p.c('text.primary') }, ' coil up and'],
+      { size: 12, fill: p.c('text.secondary') },
+    ),
     text(x + 40, y + 316, 'the nuclear envelope breaks down', { size: 12, fill: p.c('text.secondary') }),
     rect({ x: x + 372, y: y + 244, w: 304, h: 290 }, { fill: p.c('surface.page'), stroke: p.c('border.subtle'), r: 8 }),
     text(x + 388, y + 276, 'Mitosis', { size: 16, weight: 700, fill: p.c('text.primary') }),
     text(x + 388, y + 296, 'Changed Sep 30, 2026', { size: 11, fill: p.c('text.muted') }),
     textLines(x + 388, y + 322, [250, 230, 220, 180], p.c('border.control'), 20),
-    rect({ x: x + 388, y: y + 396, w: 96, h: 18 }, { fill: p.highlighter('Honey'), r: 3, opacity: 0.6 }),
+    rect({ x: x + 386, y: y + 396, w: 94, h: 18 }, { fill: p.highlighter('Honey'), r: 3, opacity: 0.6 }),
     textLines(x + 388, y + 402, [90, 200, 150], p.c('border.control'), 20),
     text(x + 24, y + 392, '1 result', { size: 12, fill: p.c('text.muted') }),
     region({ x: x - 6, y: y - 6, w: 712, h: 572 }, ''),

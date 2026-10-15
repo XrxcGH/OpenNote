@@ -1,4 +1,4 @@
-// An open notebook, 64 x 40, with warm paper pages in a moss cover that shows at the edges. On the right-hand page
+// An open notebook, 64 x 41, with warm paper pages in a moss cover that shows at the edges. On the right-hand page
 // is the logo's ink: a moss stroke ending in a clay dot. Lying open, it rests on its spine, the lowest point of the
 // cover, and its outer edges lift a little.
 

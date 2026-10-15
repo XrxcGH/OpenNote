@@ -30,6 +30,7 @@ import {
   titleBar,
   windowAnnotations,
 } from '../lib/chrome.ts';
+import { textWidth } from '../lib/metrics.ts';
 import { type Screen, makeScreen } from './screen.ts';
 
 const SCALE = 0.62;
@@ -137,7 +138,9 @@ export function paginated(): Screen {
     rect({ x: RAIL, y: BODY_TOP, w: WIDE.width - RAIL, h: WIDE.height - BODY_TOP }, { fill: p.c('surface.sunken') }),
     sheet(p, PAGE_Y, 1),
     pageOneContent(p),
-    sheet(p, page2, 2),
+    // The second sheet scrolls on below the window, so it is cut off where the canvas ends.
+    `<clipPath id="canvas"><rect x="${RAIL}" y="${BODY_TOP}" width="${WIDE.width - RAIL}" height="${WIDE.height - BODY_TOP}"/></clipPath>`,
+    `<g clip-path="url(#canvas)">${sheet(p, page2, 2)}</g>`,
     text(x, page2 + PAGE.margin + 22, 'Discussion', { size: 22, weight: 600, fill: p.c('text.primary') }),
     text(PAGE_X + PAGE.w / 2, page2 - 10, 'Page 2 of 3', { size: 12, fill: p.c('text.muted'), anchor: 'middle' }),
     keepOut({ x: PAGE_X, y: PAGE_Y, w: PAGE.w, h: PAGE.margin }, 'Print margin 1 in: content stays inside', [
@@ -193,6 +196,9 @@ function pillButton(p: Palette, x: number, y: number, w: number, label: string):
   ].join('');
 }
 
+/** The highlighted question under the recording; the band reaches 2 px past each end of it. */
+const QUESTION = 'Question for Thursday: how does this differ from diffusion?';
+
 function recordingNotes(p: Palette, x: number, y: number): string {
   const body = { size: 15, fill: p.c('text.primary'), font: 'reading' as const };
   return [
@@ -200,9 +206,17 @@ function recordingNotes(p: Palette, x: number, y: number): string {
     text(x, y + 28, 'The cell swells when the water outside is purer than the water inside', body),
     ink(`M${x} ${y + 150}l0-80M${x} ${y + 150}l200 0`, p.pen('Ink'), 2),
     ink(`M${x + 10} ${y + 140}c50-10 70-60 100-64s50 14 80 18`, p.pen('Indigo')),
-    text(x + 130, y + 80, 'Vmax', { size: 16, fill: p.pen('Indigo'), italic: true, font: 'reading' }),
-    rect({ x: x - 2, y: y + 176, w: 300, h: 22 }, { fill: p.highlighter('Mint'), r: 3, opacity: 0.6 }),
-    text(x, y + 192, 'Question for Thursday: how does this differ from diffusion?', body),
+    // The label sits over the curve's peak, (x + 110, y + 76), clear of the line.
+    text(x + 110, y + 66, 'Vmax', { size: 16, fill: p.pen('Indigo'), italic: true, font: 'reading', anchor: 'middle' }),
+    rect(
+      { x: x - 2, y: y + 176, w: Math.round(textWidth(QUESTION, 15, 400, 'reading') + 4), h: 22 },
+      {
+        fill: p.highlighter('Mint'),
+        r: 3,
+        opacity: 0.6,
+      },
+    ),
+    text(x, y + 192, QUESTION, body),
   ].join('');
 }
 

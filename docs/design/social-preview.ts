@@ -3,6 +3,7 @@
 
 import { type Palette, arrow, circle, ink, line, onEllipse, palette, rect, text } from './lib/svg.ts';
 import { ambientCanvas, logo } from './lib/chrome.ts';
+import { textWidth } from './lib/metrics.ts';
 import { deskScene, plantPot } from './lib/drawings.ts';
 
 const WIN = { x: 600, y: 72, w: 640, h: 496 };
@@ -41,8 +42,10 @@ function titleAndTabs(p: Palette): string {
     text(x + w - 16, y + 22, '☁ Saved', { size: 11, fill: p.c('text.secondary'), anchor: 'end' }),
     line([x, y + BAR * 2], [x + w, y + BAR * 2], p.c('border.subtle')),
   ];
+  // Each tab is as wide as its name in the active weight, 20 px apart, and the tools are 22 px apart.
+  let tx = x + 16;
   tabs.forEach((tab, i) => {
-    const tx = x + 16 + i * 52;
+    const width = Math.round(textWidth(tab, 12, 600) * 10) / 10;
     parts.push(
       text(tx, y + BAR + 22, tab, {
         size: 12,
@@ -50,12 +53,13 @@ function titleAndTabs(p: Palette): string {
         fill: p.c(i === 0 ? 'text.primary' : 'text.secondary'),
       }),
     );
-    if (i === 0) parts.push(rect({ x: tx, y: y + BAR + 28, w: 30, h: 2.5 }, { fill: p.c('accent.primary'), r: 1 }));
+    if (i === 0) parts.push(rect({ x: tx, y: y + BAR + 28, w: width, h: 2.5 }, { fill: p.c('accent.primary'), r: 1 }));
+    tx += width + 20;
   });
-  let tx = x + 232;
+  tx = x + 232;
   for (const tool of tools) {
     parts.push(text(tx, y + BAR + 22, tool, { size: 11, fill: p.c('text.primary') }));
-    tx += tool.length * 6.4 + 22;
+    tx = Math.round((tx + textWidth(tool, 11) + 22) * 10) / 10;
   }
   return parts.join('');
 }
@@ -107,19 +111,35 @@ function page(p: Palette): string {
     'Metaphase: they line up in the middle',
     'Anaphase: the sister chromatids pull apart',
   ];
-  const bars = [72, 56, 40];
+  const months = [
+    [120, 80],
+    [150, 90],
+    [90, 70],
+  ];
   return [
     rect({ x: left, y: top, w, h }, { fill: p.c('surface.page') }),
     text(x, top + 44, 'Mitosis', { size: 26, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
     rect({ x, y: top + 54, w: 36, h: 2 }, { fill: p.c('accent.clay') }),
     text(x, top + 72, 'Changed Sep 23, 2026', { size: 11, fill: p.c('text.muted') }),
-    rect({ x: x - 4, y: top + 90, w: 150, h: 22 }, { fill: p.highlighter('Honey'), r: 3, opacity: 0.6 }),
+    // The highlight reaches 4 px past each end of the heading.
+    rect(
+      { x: x - 4, y: top + 90, w: Math.round(textWidth('Phases of mitosis', 15, 700, 'reading') + 8), h: 22 },
+      { fill: p.highlighter('Honey'), r: 3, opacity: 0.6 },
+    ),
     text(x, top + 106, 'Phases of mitosis', { size: 15, weight: 700, fill: p.c('text.primary'), font: 'reading' }),
     ...bullets.flatMap((item, i) => [
       circle(x + 4, top + 134 + i * 22, 2.5, p.c('accent.clay')),
       text(x + 16, top + 138 + i * 22, item, body),
     ]),
+    // A note written in the margin and circled, with an arrow to the line it is about.
     ink(`M${x + 246} ${top + 150}a46 14 0 1 0 92 0a46 14 0 1 0-92 0`, p.pen('Indigo'), 2.2, 'circled'),
+    text(x + 292, top + 155, 'key step', {
+      size: 14,
+      fill: p.pen('Indigo'),
+      italic: true,
+      font: 'reading',
+      anchor: 'middle',
+    }),
     arrow(
       onEllipse(x + 292, top + 150, 46, 14, 100),
       [x + 284, top + 200],
@@ -127,11 +147,15 @@ function page(p: Palette): string {
       [x + 196, top + 198],
       p.pen('Fern'),
     ),
-    ...bars.map((bh, i) =>
-      rect(
-        { x: x + 12 + i * 34, y: top + 330 - bh, w: 24, h: bh },
-        { fill: p.pen(i === 1 ? 'Amber' : 'Indigo'), r: 2 },
-      ),
+    // Three months, each with its Sales bar beside its Cost bar, from the table in the tables wireframe.
+    ...months.flatMap(([sales, cost], i) =>
+      [sales, cost].map((value, j) => {
+        const bh = Math.round(value * 0.45);
+        return rect(
+          { x: x + 8 + i * 38 + j * 16, y: top + 330 - bh, w: 14, h: bh },
+          { fill: p.pen(j === 0 ? 'Indigo' : 'Amber'), r: 2 },
+        );
+      }),
     ),
     line([x, top + 330], [x + 120, top + 330], p.c('border.control')),
     text(x, top + 224, 'Sales, Cost by Month', { size: 11, weight: 600, fill: p.c('text.primary') }),
