@@ -51,6 +51,11 @@ export interface PageViewport extends PageViewportApi {
 
 export { shownViewport, usePageViewport } from './shown';
 
+/** The sizer's width: a world under a pixel wider than the viewport's inside is rounding, not content, so it fits. */
+export function sizerWidth(wide: number, inner: number): number {
+  return wide > inner && wide - inner < 1 ? inner : wide;
+}
+
 /** A zoom gesture settles this long after its last input. */
 export const SETTLE_MS = 150;
 /** Ctrl+wheel and touchpad pinches zoom by e^(-deltaY x this). One mouse notch is about 22%. */
@@ -292,8 +297,7 @@ class Viewport implements PageViewport {
     this.world.style.inlineSize = `${size.w}px`;
     this.world.style.blockSize = `${size.h}px`;
     // Under a pixel past the viewport is rounding, not content: it would show a bar to scroll a fraction into.
-    const wide = size.w * zoom;
-    this.sizer.style.inlineSize = `${wide > inner.w && wide - inner.w < 1 ? inner.w : wide}px`;
+    this.sizer.style.inlineSize = `${sizerWidth(size.w * zoom, inner.w)}px`;
     this.sizer.style.blockSize = `${size.h * zoom}px`;
   }
 

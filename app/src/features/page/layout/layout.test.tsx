@@ -83,6 +83,22 @@ describe('page layout', () => {
     expect(mounted.flow.element.getBoundingClientRect().width).toBeLessThanOrEqual(288 + 1);
   });
 
+  it('takes the room to the right back when the window narrows and no block leaves the column', async () => {
+    const markdown = 'Photosynthesis turns light into sugar in the leaves of green plants. '.repeat(20);
+    const { mounted } = await open(textPageFixture(markdown), 1240);
+    const { viewport } = mounted.viewport;
+    await expect.poll(() => viewport.clientWidth).toBeGreaterThan(0);
+    shown[0]!.container.style.width = '700px';
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await expect.poll(() => viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
+  });
+
+  it('keeps room to the right for a block past the column', async () => {
+    const { mounted } = await open(floatingPage([{ markdown: 'far', x: 2000, y: 40, w: 200 }]), 800);
+    const { viewport } = mounted.viewport;
+    await expect.poll(() => viewport.scrollWidth).toBeGreaterThan(viewport.clientWidth + 100);
+  });
+
   it('keeps a page of text with an ink layer from scrolling sideways', async () => {
     const fixture = textPageFixture('Chromosomes line up at the equator of the cell.');
     const layer: BlockJson = {
