@@ -526,8 +526,8 @@ export const study = {
       heading: 'Look up a source',
       label: 'DOI or ISBN',
       help:
-        'Pressing Look up sends that DOI or ISBN, and nothing else, to {hosts}. Nothing is sent ' +
-        'until you press it, and never while Work offline is on.',
+        // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+        'Pressing Look up sends that DOI or ISBN, and nothing else, to {hosts}. Nothing is sent until you press it, and never while Work offline is on.',
       button: 'Look up',
       result: 'Source found',
       found: 'Found {title}. Add it to the list if it is right.',

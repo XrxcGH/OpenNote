@@ -1,6 +1,6 @@
 // Two-way task sync against mocks of Microsoft To Do and Google Tasks: a first sync both ways, each field changed on one
-// side, a change in both places (the newer one wins and the other is logged), deletes, reminders on To Do, and the
-// Upcoming list as the local side.
+// side, a change in both places (the newer one wins and the other is logged), deletes, and reminders on To Do.
+// The Upcoming list is the local side.
 import { describe, expect, it } from 'vitest';
 import { MockServer } from '../../../../../tests/mock-servers/server';
 import { addGoogleTasks, addTodo } from '../../../../../tests/mock-servers/tasks';

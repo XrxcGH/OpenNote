@@ -3,7 +3,7 @@
 // entry from them (crates/media/src/service/README.md). The block is saved before any file exists, so an entry with
 // no files means the app stopped between the two steps, and it goes with its block.
 //
-// "The recording that runs now" is the host's answer, not this window's: a page open in a second window while the
+// "The recording that runs now" is the host's answer, not this window's. A page open in a second window while the
 // first records it sees the live entry too, and the host refuses it with `audioRunning`, as it does once that window
 // stopped it and is writing the final entry. That entry is left alone, and its block says another window has it.
 // Only a recording none of whose files are there (`audioMissing`) is given up on. A file that is there but damaged

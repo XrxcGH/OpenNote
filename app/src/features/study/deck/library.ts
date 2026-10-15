@@ -1,5 +1,5 @@
 // The decks on this device and their review history. They are the person's work, so they live in this device's
-// store (deckFiles.ts), not in the browser's storage: each deck, each reviewed card's state, and each picture is an
+// store (deckFiles.ts), not in the browser's storage. Each deck, each reviewed card's state, and each picture is an
 // item of its own, a failed save is reported, and decks kept in the browser's storage by earlier versions move over
 // once.
 // The main window and a popped-out Flashcards window each keep the decks in memory. Each writes only the decks it

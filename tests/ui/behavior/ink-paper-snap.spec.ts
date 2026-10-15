@@ -1,5 +1,5 @@
 // Lines, arrows, rectangles, and ellipses snap to the lines of ruled, grid, and dot paper. The test draws each with pen
-// input sent through the DevTools Protocol, a little off the paper's lines, with Ink to shape on, then reads the stored
+// input sent through the DevTools Protocol, a little off the paper's lines, with Ink to shape on. It then reads the stored
 // stroke from the web platform's page service and checks that every point that snapped lies on a line (or a dot) the
 // paper draws, within 0.01 page units. The paper's lines are read from the paper the page shows (its SVG path data),
 // never from the page's own numbers. A pixel check at 4x then finds the drawn line's ink and the paper's line in a

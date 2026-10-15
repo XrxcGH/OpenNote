@@ -43,13 +43,13 @@ The note remembers which meeting it came from. A recording you start on that pag
 
 ### Share a page to Slack or Teams
 
-Open a page, press Ctrl+K, and choose Share page to Slack or Share page to Teams. Pick the channel (in Teams, the team and then the channel), then pick what to post: a PDF of the page, a picture of the page or of the lasso selection, or a link.
+Open a page, press Ctrl+K, and choose Share page to Teams or Share page to Slack. Pick the channel (in Teams, the team and then the channel), then pick what to post: a PDF of the page, a picture of the page or of the lasso selection, or a link.
 
 The post is made as you, and nothing is sent until you press Post. A link opens the page in OpenNote, so it works only for people who have OpenNote and the same notebook. In Teams a picture shows in the message, and a PDF is put in the channel's Files folder with a link to it in the message.
 
 ### Pen settings on all your devices
 
-Connect Google or Microsoft, then press Ctrl+K and choose Sync pen settings across my devices. Your pens (their tools, colors, and widths), the order of the pens, and the drawing bar's choices (the ruler, the grid, the zoom box, the hand you write with, and the formatting bar) are kept in a small file in a hidden folder of your account that only OpenNote can see. On a second device, choose the same command with the same account, and the pens come over.
+Connect Google or Microsoft, then press Ctrl+K and choose Sync pen settings across my devices. Your pens (their tools, colors, and widths), the order of the pens, and the drawing bar's choices (the ruler, the grid, the zoom box, the hand you write with, and the formatting bar) are kept in a small file. It sits in a hidden folder of your account that only OpenNote can see. On a second device, choose the same command with the same account, and the pens come over.
 
 After that, OpenNote keeps the devices in step quietly, about every half hour while it is open. Each pen is its own item, so a pen you add on one device and a different pen you add on another both stay. If you change the same pen on two devices, the newer change is kept. A device that has never synced takes the account's settings the first time, so a new tablet doesn't undo your set. The settings of each physical pen (its buttons and pressure curve) stay on the device they belong to. To stop, choose Stop syncing pen settings on this device.
 

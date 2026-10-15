@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 // Looking up a source by DOI or ISBN, with a mock client in place of the sites: what counts as an identifier, what is
 // sent (nothing for text that is not one, nothing while Work offline is on), and what comes back as a source.
 import { beforeEach, describe, expect, it, vi } from 'vitest';

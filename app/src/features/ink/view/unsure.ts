@@ -1,5 +1,5 @@
 // The words the recognizer was unsure of. The writing pen and the lasso's Convert to text draw a thin amber line
-// under each one, and each line gets a small button in the ink chrome over it: a tap, a click, or Enter opens the other
+// under each one, and each line gets a small button in the ink chrome over it. A tap, a click, or Enter opens the other
 // readings (features/intel's alternativesFor), and choosing one replaces the word in the text box, with the line
 // gone, as one undo step. The readings live in memory for this page view, so after the page is opened again the
 // amber line stays as plain ink.

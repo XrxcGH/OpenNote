@@ -200,7 +200,7 @@ export function nearestRow(lattice: PaperLattice, p: LatticePoint, reach: number
 }
 
 /**
- * How far to move `v` so it lands on the next line in `direction`: on a line, the one a step on; between two, the
+ * How far to move `v` so it lands on the next line in `direction`. On a line that is the one a step on, and between two lines it is the
  * one it is moving toward. `axis` says which lines: 'x' for vertical lines and 'y' for horizontal ones, which start
  * again on each sheet. Ruled paper has no vertical lines but its margin, so along x it moves one whole step.
  */

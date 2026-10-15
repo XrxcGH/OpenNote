@@ -1,5 +1,5 @@
 // Where the playing video is, for notes typed while it plays. A player block that can report its position (YouTube and
-// Vimeo) says it here, and a note typed meanwhile is stamped with it exactly as a note typed during a recording is
+// Vimeo) says it here. A note typed meanwhile is stamped with it exactly as a note typed during a recording is
 // (features/page/audio/stamps.ts): the stamp names the player block as the "recording" and holds the position in
 // nanoseconds. Alt+click or a tap on such a note then seeks that player.
 import { createStore } from '../../../state/store';

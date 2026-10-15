@@ -1,6 +1,6 @@
 // The meeting note: its title, its blocks, and where it goes. The note keeps the meeting's calendar ID in the page's
-// view (`meetingEvent`), so asking for the same meeting again opens the note that is there instead of making a second,
-// and a recording made on the page is stamped with the same ID (page/audio/controller.ts).
+// view (`meetingEvent`), so asking for the same meeting again opens the note that is there instead of making a second.
+// A recording made on the page is stamped with the same ID (page/audio/controller.ts).
 
 import type { PagesClient } from '../../../platform/types';
 import type { NodeId, NodeSummary, NotesService } from '../../../services/notes/types';

@@ -114,7 +114,7 @@ export interface EdgeSurface extends PrintSurface {
 
 /**
  * Opens a surface in a new page of the browser. `dispose` closes only the page. `served` answers requests for those
- * URLs with those files, as the app's asset scheme answers the print window, so pictures load from the URLs the app
+ * URLs with those files, as the app's asset scheme answers the print window. Pictures load from the URLs the app
  * gives them, under the print document's own Content Security Policy.
  */
 export async function edgeSurface(

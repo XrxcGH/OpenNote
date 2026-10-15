@@ -5,6 +5,7 @@
 //! - `OPENNOTE_TEST_CONNECTOR_BASE=http://127.0.0.1:<port>` sends every connector request to that mock instead, as
 //!   `<base>/<original host>/<original path and query>`. The pinned-host check still runs on the real address first,
 //!   so the test also proves a token would only have gone to the service's own host.
+//!
 //! - `OPENNOTE_TEST_CONNECTED=microsoft:alice@example.com,google:bob@example.com` starts with those connectors
 //!   already connected, with every access they can be granted and a fixed test token in memory. Nothing is written
 //!   to the Credential Manager.

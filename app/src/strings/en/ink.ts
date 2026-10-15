@@ -138,9 +138,8 @@ export const ink = {
     convert: 'Convert to table',
     converted: 'Table made, {rows} rows by {columns} columns',
     convertedText:
-      '{cells, plural, one {Table made, {rows} rows by {columns} columns, with the writing in # cell ' +
-      'as text} other {Table made, {rows} rows by {columns} columns, with the writing in # cells as ' +
-      'text}}',
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+      '{cells, plural, one {Table made, {rows} rows by {columns} columns, with the writing in # cell as text} other {Table made, {rows} rows by {columns} columns, with the writing in # cells as text}}',
     noGrid: 'No grid found in the selection. Draw at least three lines each way.',
     keywords: 'table grid cells rows columns lines convert handwriting',
   },

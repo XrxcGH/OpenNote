@@ -1,5 +1,5 @@
 // How decks are kept in this device's store (the shell's device folder): one item for each deck, one for each
-// reviewed card's state, and one for each picture, so a deck full of pictures never pushes the other decks out and
+// reviewed card's state, and one for each picture. A deck full of pictures never pushes the other decks out, and
 // each window writes only what it changed. Pictures are kept once by their content and named in the deck.
 import type { Card, CardState, Deck, States } from './types';
 

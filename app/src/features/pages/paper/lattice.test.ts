@@ -1,6 +1,6 @@
 // The lattice the drawing tools snap to is the paper the page draws: every point that snaps lands on a line (or a dot)
-// in the SVG path data the renderer makes, on each sheet of a paginated page, below the header, and on the infinite
-// canvas, at every zoom.
+// in the SVG path data the renderer makes. That holds on each sheet of a paginated page, below the header, and on the
+// infinite canvas, at every zoom.
 import { describe, expect, it } from 'vitest';
 import { linesArea, snapReach, snapToLattice } from '../../../core/paperLattice';
 import type { PaperLattice } from '../../../core/paperLattice';

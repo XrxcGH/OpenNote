@@ -190,8 +190,8 @@ function snapCircle(snap: PaperSnap, shape: Extract<Shape, { kind: 'circle' }>):
 }
 
 /**
- * A shape snapped to the paper. Lines and arrows snap their ends; rectangles, ellipses, and circles square to the
- * page snap their boxes, so their sides lie on lines and their sizes are whole spacings; triangles snap each corner;
+ * A shape snapped to the paper. Lines and arrows snap their ends. Rectangles, ellipses, and circles square to the
+ * page snap their boxes, so their sides lie on lines and their sizes are whole spacings. Triangles snap each corner;
  * polygons and stars snap their middles and a corner; arcs and anything turned move onto the paper by one point.
  */
 export function snapShape(snap: PaperSnap, shape: Shape): SnappedShape {

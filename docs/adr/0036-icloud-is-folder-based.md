@@ -7,7 +7,7 @@
 
 OpenNote sends copies of pages to Google Drive, OneDrive, Dropbox, Box, and a WebDAV server through each service's own API, after the person signs in with that service (see [ADR 0030](0030-connectors-and-sign-in.md)). People also ask for iCloud.
 
-Apple has no public web API for iCloud Drive that a desktop app can call, and it offers no OAuth sign-in for files outside Apple's own platforms. The only supported way to read or write iCloud Drive from Windows is through Apple's iCloud for Windows app, which keeps an `iCloud Drive` folder on the PC and syncs it. A private web API exists, and it needs an Apple ID password and a two-factor code typed into the app. That would break the rule that OpenNote never sees an account password (ADR 0030), and Apple could change it without notice.
+Apple has no public web API for iCloud Drive that a desktop app can call, and it offers no OAuth sign-in for files outside Apple's own devices. The only supported way to read or write iCloud Drive from Windows is through Apple's iCloud for Windows app, which keeps an `iCloud Drive` folder on the PC and syncs it. A private web API exists, and it needs an Apple ID password and a two-factor code typed into the app. That would break the rule that OpenNote never sees an account password (ADR 0030), and Apple could change it without notice.
 
 ## Decision
 

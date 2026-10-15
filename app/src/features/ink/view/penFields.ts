@@ -1,6 +1,6 @@
 // Writing in text fields with the pen (flag ink.penFields): where a pen touches the search box, a rename field, or a table
 // cell, the system's handwriting panel opens, so the pen writes where a keyboard would type. The panel is the operating
-// system's own (WebView2 hands the field to Windows' text input service), and the page only has to ask for it: it takes
+// system's own (WebView2 hands the field to Windows' text input service), and the page only has to ask for it. It takes
 // the keyboard policy of the field into its own hands and calls the virtual keyboard's show() once the pen's tap has
 // focused the field. Fingers and the mouse are left alone. The setting is kept in this device's ink prefs, because it
 // depends on this device's digitizer. Whether the panel appears is the system's to say; the owner checks it on a pen.

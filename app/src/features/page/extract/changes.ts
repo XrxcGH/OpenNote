@@ -1,5 +1,5 @@
 // What Extract, Merge, and Split leave behind: one Undo for the whole change (the pages they made go to the trash, and
-// the page they took content from gets it back), and a named entry in the page's history so the earlier version can be
+// the page they took content from gets it back). They also leave a named entry in the page's history so the earlier version can be
 // opened later. The Undo is the library's change set, so Ctrl+Z right after the change does the same.
 import type { NodeId, NotesService } from '../../../services/notes/types';
 import type { PageId } from '../../../services/pages/types';

@@ -2,8 +2,8 @@
 //! the recording's audio underneath.
 //!
 //! The interface sends a [`Scene`]: the page without its ink as a picture, and each stroke with the capture time of each
-//! point. [`Scene::place`] turns capture times into positions in the playable audio, so the video has no gaps where the
-//! recording was paused. [`export`] draws a frame for each tick, reads the matching audio, and hands both to a
+//! point. The method [`Scene::place`] turns capture times into positions in the playable audio, so the video has no gaps where the
+//! recording was paused. The function [`export`] draws a frame for each tick, reads the matching audio, and hands both to a
 //! [`VideoSink`]. The sink is the platform's encoder (Media Foundation on Windows: H.264 video and AAC audio in an MP4
 //! file), so this module needs no codec and its tests need no encoder.
 //!

@@ -159,8 +159,8 @@ export const pageExtras = {
     filesStay: 'Pictures and attachments stay on this page, because their files belong to it.',
     untitledObjects: 'Extracted notes',
     doneObjectsStayed:
-      'Moved the notes to “{title}” and left a link. {stayed, plural, one {# picture or attachment ' +
-      'stayed} other {# pictures and attachments stayed}} on this page.',
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+      'Moved the notes to “{title}” and left a link. {stayed, plural, one {# picture or attachment stayed} other {# pictures and attachments stayed}} on this page.',
     untitled: 'Extracted text',
     done: 'Moved the text to “{title}” and left a link.',
   },
@@ -212,8 +212,8 @@ export const pageExtras = {
     missing: 'Attachment, file missing',
     opened: 'Opened {name}. Changes you save there come back into this page.',
     shownInFolder:
-      'Showed {name} in its folder. A note opens only documents, pictures, audio, video, and ZIP ' +
-      'files itself. Changes you save to this copy come back into this page.',
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+      'Showed {name} in its folder. A note opens only documents, pictures, audio, video, and ZIP files itself. Changes you save to this copy come back into this page.',
     saved: 'Saved the changes from the other app.',
     added: '{count, plural, one {Attached # file.} other {Attached # files.}}',
     linkAdded: 'Added a link.',

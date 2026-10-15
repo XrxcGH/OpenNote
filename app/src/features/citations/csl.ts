@@ -5,10 +5,14 @@
 //
 //   {name}     a field of the source: authors, who, title, container, year, month, monthname, day, volume, issue,
 //              pages, publisher, place, edition, url, doi, doiurl, accessed, n (the entry's number)
+//
 //   {name|mod} the same, changed: hyphen (a plain hyphen in a page range), minus (a minus sign in one), sup
 //              (small raised digits, for a number)
+//
 //   [ ... ]    shown only when every field inside it has a value, so a missing issue leaves no empty brackets
+//
 //   *italic*   and **bold**, written in Markdown
+//
 //   \[ \] \{   a bracket or brace that is meant as itself
 import type { Person, Source, SourceType } from './model';
 import { initials, inTextNames, monthName, shortMonth } from './styles';

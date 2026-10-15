@@ -13,7 +13,7 @@ word to its parts of speech, and each part of speech to its senses, the most com
 ```
 
 A sense is `[definition, synonyms, example?]`. The chunk for a letter loads when a word starts with it (`data.ts`), so
-the app does not read the whole dictionary to look up one word. `morphy.ts` finds the base form of an inflected word
+the app does not read the whole dictionary to look up one word. The file `morphy.ts` finds the base form of an inflected word
 ("running" finds "run") the way WordNet's morphy does, and `lookup.ts` puts the answer together.
 
 ## What is bundled now

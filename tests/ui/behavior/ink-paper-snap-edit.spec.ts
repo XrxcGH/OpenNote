@@ -1,6 +1,6 @@
 // Snapping to paper lines beyond the first stroke: zoom 50 and 200 percent, the second sheet, the first sheet's header,
 // ruled paper's reach and its margin line, freehand ink, a triangle, library shapes, keyboard nudges, move, and handle
-// drags, Alt, the rings, and the Draw tab's switch (in More at the default window size) kept across a reload. Every
+// drags. It also covers Alt, the rings, and the Draw tab's switch (in More at the default window size) kept across a reload. Every
 // check reads the stored stroke from the page service and the paper's lines from the SVG the page draws.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

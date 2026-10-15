@@ -9,8 +9,8 @@ import { createStore } from '../../../state/store';
 export const recordingEntries = createStore<ReadonlyMap<string, RecordingEntry>>(new Map(), 'audio recording entries');
 
 /**
- * Why an entry that says `recording` stays so in this window: another window records it, or stopped it and saves
- * its entry (`elsewhere`), its recovery failed for now and is tried again when the page next opens (`failed`), or its
+ * Why an entry that says `recording` stays so in this window. Another window records it, or stopped it and saves
+ * its entry (`elsewhere`). Its recovery failed for now and is tried again when the page next opens (`failed`). Or its
  * files are there but damaged (`damaged`), so they stay on disk rather than the recording being called missing.
  */
 export type RecoveryHold = 'elsewhere' | 'failed' | 'damaged';

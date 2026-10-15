@@ -1,10 +1,14 @@
 // checks-disable-file modifiability: one module whose parts share its state; split it when it grows again
 
-//! Attached files that save back. A file attached to a page is an asset of that page. Opening it writes a copy to a
+//! Attached files that save back. A file attached to a page is an asset of that page.
+//!
+//! Opening it writes a copy to a
 //! temporary folder, hands the copy to Windows to open in its own app, and watches the copy. Each time the app
-//! has saved a change (the file stops changing for one check), the core imports the new bytes as a new asset and
-//! the attachment is pointed at it: by the window in one undo step when it shows the page and says it made the
-//! change, or else by the shell, so a change saved after the person moved on still reaches the note. Each copy has
+//! has saved a change (the file stops changing for one check), the core imports the new bytes as a new asset.
+//! The attachment is then pointed at it: by the window in one undo step when it shows the page and says it made the
+//! change, or else by the shell, so a change saved after the person moved on still reaches the note.
+//!
+//! Each copy has
 //! a record of the bytes it last shared with the note, so a copy is never overwritten while it holds changes the
 //! note lacks, and is removed once it holds none. The WebView names a page and an asset, never a path.
 

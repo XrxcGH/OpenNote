@@ -1,5 +1,5 @@
 // The recordings of the shown page as a player in a web page export (Phase 9, Recording player in web page export).
-// Each complete recording is mixed into an Opus file beside the web page, and every text block that was written while
+// Each complete recording is mixed into an Opus file beside the web page. Every text block that was written while
 // it ran gets the moment it was written, in seconds into the audio, so the exported page can highlight the note that
 // matches what is playing and play from a note. The mixing is the host's; the moments are worked out here.
 import type { RecordingEntry, TextMarksData } from '../../../core/audio';

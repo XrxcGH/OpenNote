@@ -1,5 +1,5 @@
 // Helpers for the paper-snap UI tests: open a page on a paper, read the lines the paper draws (from its SVG path
-// data, never from the page's own numbers), read the strokes the page service stores, and draw with pen input sent
+// data, never from the page's own numbers). They also read the strokes the page service stores and draw with pen input sent
 // through the DevTools Protocol.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -141,7 +141,7 @@ pub(super) fn typed_table_content(
 }
 
 /// How many rows, the header among them, become the table: at most [`MAX_TABLE_ROWS`] after the header, and only
-/// as many as fit in [`MAX_TABLE_BYTES`]. `row_text` gives the bytes of text in each row, and every row has
+/// as many as fit in [`MAX_TABLE_BYTES`]. The argument `row_text` gives the bytes of text in each row, and every row has
 /// `width` cells, so a caller can count a grid before it builds one.
 pub(super) fn rows_that_fit(row_text: impl IntoIterator<Item = usize>, width: usize) -> usize {
     let row_cost = CELL_COST.saturating_mul(width.saturating_add(1));

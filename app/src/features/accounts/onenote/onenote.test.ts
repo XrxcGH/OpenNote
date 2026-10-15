@@ -1,7 +1,7 @@
 // checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
 
 // OneNote through a mock Microsoft Graph: OneNote's HTML as blocks, notebooks with section groups, and pages across result
-// pages, pictures fetched onto pages, the Import report, a second import that adds only what is new, and switching from
+// pages. It also covers pictures fetched onto pages, the Import report, a second import that adds only what is new, and switching from
 // one Microsoft account to another without mixing their notebooks.
 import { describe, expect, it } from 'vitest';
 import { addOneNote } from '../../../../../tests/mock-servers/onenote';

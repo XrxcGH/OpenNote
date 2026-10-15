@@ -11,9 +11,8 @@ export const accountsTasks = {
   upToDate: 'Your tasks and {service} already match.',
   done: 'Synced with {service}. {pulled} came here, {pushed} went there, {removed} removed.',
   conflicts:
-    '{count, plural, one {# task was changed in both places. The newer change was kept, and the other ' +
-    'is in the sync log.} other {# tasks were changed in both places. The newer change was kept, and ' +
-    'the others are in the sync log.}}',
+    // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+    '{count, plural, one {# task was changed in both places. The newer change was kept, and the other is in the sync log.} other {# tasks were changed in both places. The newer change was kept, and the others are in the sync log.}}',
   log: {
     title: 'Task sync log',
     description:

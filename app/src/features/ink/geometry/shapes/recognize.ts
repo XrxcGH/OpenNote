@@ -108,7 +108,7 @@ function closedCandidates(outline: readonly Vec[]): { candidates: Candidate[]; r
 
 /**
  * Drops the many-cornered shapes (regular polygons and irregular ones) that do not fit clearly better than a simpler
- * shape already found: more corners always fit a little better, and a wobbly circle fits a hexagon about as well,
+ * shape already found. More corners always fit a little better, and a wobbly circle fits a hexagon about as well,
  * but a triangle, a rectangle, or a circle is what was meant.
  */
 function withoutLookalikes(extras: readonly Candidate[], found: readonly Candidate[], roundRatio: number): Candidate[] {

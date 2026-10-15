@@ -1,7 +1,7 @@
 // The random-editing soak (A4-35): a scripted person edits one 20-page note at random for OPENNOTE_SOAK_MINUTES
 // (two hours by default) in the web build. It types, deletes, undoes, redoes, formats, moves, scrolls, makes
 // lists and headings, and switches to another page and back. Once a minute it forces a garbage collection and
-// reads the heap, the nodes, and the listeners, then times a fixed burst of keys. plan.ts holds the verdict:
+// reads the heap, the nodes, and the listeners, then times a fixed burst of keys. The file plan.ts holds the verdict:
 // memory, nodes, and typing time must stay flat from the first quarter to the last, and nothing may crash.
 //
 // Environment:
