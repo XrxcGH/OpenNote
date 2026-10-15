@@ -402,7 +402,7 @@ register(
     enabled: (ctx) => one(ctx) !== undefined,
     run: async (ctx) => {
       const node = one(ctx);
-      if (node) await (await import('./shortcuts')).createShortcutFor(ctx.notes, node);
+      if (node) await (await import('./shortcuts')).createShortcutFor(ctx.notes, node, ctx.platform);
     },
   }),
   defineCommand({

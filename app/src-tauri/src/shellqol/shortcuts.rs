@@ -1,5 +1,7 @@
 //! Page shortcuts and the taskbar jump list. A shortcut is a `.lnk` file that starts OpenNote with an
-//! `opennote://page/<id>` link, the same link that Outlook, Word, and Teams use, so it survives renames and moves. The jump
+//! `opennote://page/<id>` link, the same link that Outlook, Word, and Teams use, so it survives renames and moves. A
+//! section or notebook shortcut uses `opennote://section/<id>` or `opennote://notebook/<id>` and opens that section or
+//! notebook itself. The shortcut goes on the desktop, in the Start menu, or in a folder the person chose. The jump
 //! list shows "New quick note" and the recent pages. A `--quick-note` argument (the jump list's task) opens the
 //! quick capture window.
 
@@ -58,6 +60,54 @@ pub fn is_page_link(link: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '-' | '_' | '.' | '%'))
 }
 
+/// A link is safe to put in a shortcut when it names a page, a section, or a notebook by plain characters.
+pub fn is_shortcut_link(link: &str) -> bool {
+    link.len() <= 200
+        && ["page", "section", "notebook"]
+            .iter()
+            .any(|kind| link.strip_prefix(&format!("opennote://{kind}/")).is_some_and(|id| !id.is_empty()))
+        && link["opennote://".len()..]
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '-' | '_' | '.' | '%'))
+}
+
+/// Where a shortcut goes, as the interface names it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Place {
+    Desktop,
+    StartMenu,
+    Folder(PathBuf),
+}
+
+impl Place {
+    /// Reads the place from the call's `place` and `folder` arguments. No place means the desktop.
+    pub fn parse(place: Option<&str>, folder: Option<&str>) -> Result<Self, &'static str> {
+        match place.unwrap_or("desktop") {
+            "desktop" => Ok(Self::Desktop),
+            "startMenu" => Ok(Self::StartMenu),
+            "folder" => match folder {
+                Some(path) if !path.trim().is_empty() => Ok(Self::Folder(PathBuf::from(path))),
+                _ => Err("Choose a folder for the shortcut."),
+            },
+            _ => Err("That isn't a place for a shortcut."),
+        }
+    }
+
+    /// The folder to write the shortcut in, given the desktop and Start menu folders Windows reports.
+    pub fn directory(&self, desktop: Option<PathBuf>, start_menu: Option<PathBuf>) -> Result<PathBuf, &'static str> {
+        let dir = match self {
+            Self::Desktop => desktop.ok_or("There is no desktop folder for the shortcut.")?,
+            Self::StartMenu => start_menu.ok_or("There is no Start menu folder for the shortcut.")?,
+            Self::Folder(path) => path.clone(),
+        };
+        if dir.is_dir() || !matches!(self, Self::Folder(_)) {
+            Ok(dir)
+        } else {
+            Err("That folder isn't there any more.")
+        }
+    }
+}
+
 /// The first path free of a file of that name: `Name.lnk`, then `Name (2).lnk`, and so on.
 pub fn free_path(dir: &Path, stem: &str) -> PathBuf {
     let first = dir.join(format!("{stem}.lnk"));
@@ -82,19 +132,33 @@ fn desktop() -> Option<PathBuf> {
     None
 }
 
+#[cfg(windows)]
+fn start_menu() -> Option<PathBuf> {
+    use windows::Win32::UI::Shell::FOLDERID_Programs;
+
+    crate::paths::known_folder(&FOLDERID_Programs).ok()
+}
+
+#[cfg(not(windows))]
+fn start_menu() -> Option<PathBuf> {
+    None
+}
+
 pub fn call(_app: &AppHandle, _bridge: &CoreBridge, name: &str, args: &Value) -> IpcResult<Value> {
     match name {
         "shortcut.create" => {
             let link: String = arg(args, "url")?;
             let title: String = arg(args, "title")?;
             let folder: Option<String> = opt(args, "folder")?;
-            if !is_page_link(&link) {
-                return Err(IpcError::invalid("url", "That isn't an OpenNote page link."));
+            let place: Option<String> = opt(args, "place")?;
+            if !is_shortcut_link(&link) {
+                return Err(IpcError::invalid("url", "That isn't an OpenNote link."));
             }
-            let dir = folder
-                .map(PathBuf::from)
-                .or_else(desktop)
-                .ok_or_else(|| IpcError::new("io", "There is no folder for the shortcut."))?;
+            let place = Place::parse(place.as_deref(), folder.as_deref())
+                .map_err(|message| IpcError::invalid("place", message))?;
+            let dir = place
+                .directory(desktop(), start_menu())
+                .map_err(|message| IpcError::new("io", message))?;
             let path = free_path(&dir, &file_name_for(&title));
             let exe = std::env::current_exe()?;
             crate::install::create_link(&path, &exe, Some(&link), &title)
@@ -135,6 +199,43 @@ mod tests {
         assert!(!is_page_link("https://example.com/page/abc"));
         assert!(!is_page_link("opennote://page/abc\" & calc"));
         assert!(!is_page_link("opennote://settings/abcdefgh"));
+    }
+
+    #[test]
+    fn sections_and_notebooks_get_shortcuts_that_open_themselves() {
+        assert!(is_shortcut_link("opennote://page/01hzx3k9q7m2v5c8d4e6f0abcd"));
+        assert!(is_shortcut_link("opennote://section/01hzx3k9q7m2v5c8d4e6f0abcd"));
+        assert!(is_shortcut_link("opennote://notebook/01hzx3k9q7m2v5c8d4e6f0abcd"));
+        assert!(!is_shortcut_link("opennote://notebook/"));
+        assert!(!is_shortcut_link("opennote://settings/abcdefgh"));
+        assert!(!is_shortcut_link("opennote://section/abc\" & calc"));
+        assert!(!is_page_link("opennote://section/01hzx3k9q7m2v5c8d4e6f0abcd"));
+    }
+
+    #[test]
+    fn a_shortcut_goes_where_the_person_chose() {
+        let desktop = Some(PathBuf::from("C:/Users/x/Desktop"));
+        let start = Some(PathBuf::from("C:/Users/x/Start/Programs"));
+        let place = |p, f| Place::parse(p, f);
+        assert_eq!(place(None, None), Ok(Place::Desktop));
+        assert_eq!(place(Some("startMenu"), None), Ok(Place::StartMenu));
+        assert!(place(Some("folder"), None).is_err());
+        assert!(place(Some("folder"), Some("  ")).is_err());
+        assert!(place(Some("elsewhere"), None).is_err());
+        assert_eq!(
+            Place::Desktop.directory(desktop.clone(), start.clone()),
+            Ok(PathBuf::from("C:/Users/x/Desktop"))
+        );
+        assert_eq!(
+            Place::StartMenu.directory(desktop.clone(), start),
+            Ok(PathBuf::from("C:/Users/x/Start/Programs"))
+        );
+        assert!(Place::Desktop.directory(None, None).is_err());
+        let dir = tempfile::tempdir().expect("a temp folder");
+        let chosen = Place::Folder(dir.path().to_path_buf());
+        assert_eq!(chosen.directory(desktop.clone(), None), Ok(dir.path().to_path_buf()));
+        let gone = Place::Folder(dir.path().join("missing"));
+        assert!(gone.directory(desktop, None).is_err());
     }
 
     #[test]

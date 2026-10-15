@@ -33,7 +33,7 @@ export async function saveAttachmentCopy(mounted: MountedPage, block: string): P
     const response = await fetch(mounted.page.assetUrl(id));
     if (!response.ok) throw new Error(String(response.status));
     await exports.write(path, [{ path: '', bytes: new Uint8Array(await response.arrayBuffer()) }]);
-    const name = path.split(/[\/]/).pop() ?? asset.name;
+    const name = path.split(/[\\/]/).pop() ?? asset.name;
     announce(t('pageExtras.attach.copySaved', { name }));
     showToast({
       message: t('pageExtras.attach.copySaved', { name }),
