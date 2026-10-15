@@ -144,7 +144,7 @@ fn object_groups_live_in_the_view_and_undo_exactly_without_touching_the_reading_
     };
     let mut ungrouped = grouped.clone();
     apply_ops(&mut ungrouped, &resolve_edit(&c2, &ungroup).unwrap(), c2.at).unwrap();
-    assert!(ungrouped.view.extra.get("groups").map_or(true, |g| g.as_object().is_some_and(|o| o.is_empty())));
+    assert!(ungrouped.view.extra.get("groups").is_none_or(|g| g.as_object().is_some_and(|o| o.is_empty())));
 }
 
 #[test]
@@ -195,5 +195,5 @@ fn ink_layers_and_links_live_in_the_view_and_undo_exactly() {
     let mut moved = changed.clone();
     apply_ops(&mut moved, &resolve_edit(&c2, &back).unwrap(), c2.at).unwrap();
     let assign = moved.view.extra.get("inkLayers").and_then(|l| l.get("assign"));
-    assert!(assign.map_or(true, |a| a.as_object().is_some_and(|o| o.is_empty())));
+    assert!(assign.is_none_or(|a| a.as_object().is_some_and(|o| o.is_empty())));
 }

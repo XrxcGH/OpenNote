@@ -17,6 +17,14 @@
       "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. With no contact size either, a palm that re-plants on the unknown side and slides scrolls until the pen comes down."
     },
     {
+      "scenario": "palmDoubleSettleAway",
+      "profiles": [
+        "oem-mpp-notilt",
+        "wacom-aes-notilt"
+      ],
+      "why": "The pen reports no tilt, so the side of the writing hand, and its height for a hooked or overwriting grip, is known only once palms have rested while it wrote: until then the mirror image of the hand region counts as the hand. With no contact size either, a palm that settles twice above the line, 20 s after the pen, is a two-finger double tap by every signal."
+    },
+    {
       "scenario": "palmBounceNewLine",
       "profiles": [
         "usi-fire-max",

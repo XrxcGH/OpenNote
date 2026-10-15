@@ -24,7 +24,7 @@ const heightOf = (shape: readonly Vec[]) => {
 describe('the pen library: golden outlines', () => {
   for (const tool of ['fountain', 'brush', 'calligraphy', 'dashed', 'dotted'] as const) {
     it(`draws the ${tool} pen the same way`, async () => {
-      await expect(JSON.stringify(shapesOf(tool))).toMatchFileSnapshot(`./golden/${tool}.json`);
+      await expect(JSON.stringify(shapesOf(tool))).toMatchFileSnapshot(`./golden/${tool}.txt`);
     });
   }
 });
