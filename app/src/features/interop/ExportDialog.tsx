@@ -10,6 +10,7 @@ import { t } from '../../strings/t';
 import { Button, Dialog, RadioCard, RadioGroup, announce } from '../../ui';
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
+import { CheckFirstSwitch } from '../a11yCheck';
 import { SendExtras } from './SendExtras';
 import type { ExportFlow, ExportState } from './exportFlow';
 import type { ExportTarget } from './exportTarget';
@@ -121,6 +122,7 @@ function Options({
         </Button>
       </div>
       <SendExtras flow={flow} folder={state.folder} />
+      <CheckFirstSwitch />
       {state.error && (
         <p role="alert" className={styles.error}>
           {exportErrorText(state.error)}

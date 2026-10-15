@@ -312,6 +312,12 @@ export const qol = {
     altApply: 'Add description',
     decorative: 'Mark as decorative',
     fixFailed: 'The fix could not be applied.',
+    checkFirst: 'Check accessibility first',
+    gateTitle: 'Accessibility problems found',
+    gateSummary:
+      '{count, plural, one {Found # problem in what you are about to write.} other {Found # problems in what you are about to write.}}',
+    gateReview: 'Review and fix',
+    gateContinue: 'Continue anyway',
     issues: {
       imageAlt: 'An image has no description for screen readers.',
       headingSkip: 'A heading jumps from level {from} to level {to}.',

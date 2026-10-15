@@ -226,7 +226,8 @@ type QolFlagId =
   | 'qol.shortcuts'
   | 'qol.onenoteKeys'
   | 'qol.conflicts'
-  | 'qol.a11yCheck';
+  | 'qol.a11yCheck'
+  | 'qol.a11yGate';
 
 export interface FlagDef {
   id: FlagId;

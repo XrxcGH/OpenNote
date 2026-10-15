@@ -55,3 +55,7 @@ A misspelled word is marked. Right-click it for fixes. Select text, press Ctrl+K
 
 Typed notes are built and, in beta 4, not yet tried by hand. The [feature list](../FEATURES.md) says where each one stands.
 - In the Elements library, choose Move to put an element in another folder. Folders have Rename and Move too.
+
+## Checking accessibility before you export
+
+Turn on Check accessibility first in the Export, Print or PDF, or Send dialog. OpenNote then looks for problems such as images with no description before it writes the file. You can continue anyway, review and fix, or cancel. The choice is remembered.

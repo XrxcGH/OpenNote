@@ -1,6 +1,7 @@
 // The export flow: choose what to export, the format, and the folder; export with progress and Cancel; show the
 // summary. The host makes a new folder or file in the chosen folder, so nothing is overwritten.
 
+import { checkBeforeOutput, reviewPages } from '../a11yCheck';
 import type {
   ExportFormat,
   ExportResult,
@@ -117,6 +118,11 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
   const name = newJobName('export');
   try {
     const collected = await collectRequest(notes, target, scope);
+    const ids = collected.sections.flatMap((section) => section.pages.map((page) => page.ui));
+    if (pageCount(collected) > 0 && !(await checkBeforeOutput(ids, () => reviewPages(ids)))) {
+      run.state.set({ step: 'options', scope, format, folder, error: null });
+      return;
+    }
     if (pageCount(collected) === 0) {
       run.state.set({ step: 'empty', scope });
       return;
