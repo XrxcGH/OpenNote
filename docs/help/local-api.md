@@ -37,7 +37,9 @@ A browser extension or a mail add-in pairs with a code instead of a question. In
 
 ## Connect an AI assistant (MCP)
 
-`opennote mcp` runs a Model Context Protocol server on standard input and output, with the tools `list_notebooks`, `search`, `read_page`, `create_page`, and `append_to_page`. In App permissions, choose **Copy MCP config** and paste it into the assistant's settings. Each assistant gets its own access, read-only to start. Adding or changing a page asks in OpenNote first, and every call is in the access log. Locked sections are never offered to an assistant.
+`opennote mcp` runs a Model Context Protocol server on standard input and output. Its tools are `list_commands`, `list_notebooks`, `list_pages`, `read_page`, `search`, `create_page`, `append_to_page`, and `append_to_daily_note`, plus two that let the assistant check its own work: `inspect_page` (a page's parts, headings, word count, and latest history) and `render_page` (the page's handwriting and drawings as a picture; text isn't drawn). In App permissions, choose **Copy MCP config** and paste it into the assistant's settings. Each assistant gets its own access, read-only to start. Adding or changing a page asks in OpenNote first, and every call is in the access log. Locked sections are never offered to an assistant.
+
+Add `--author "Claude (copyedit)"` to the command in the config to say who makes the changes. Page history then shows, for example, "Changed via Claude Desktop (Claude (copyedit))". The first name is the one you approved; the part in brackets is what the assistant says about itself.
 
 ## Outgoing webhooks
 
@@ -48,7 +50,8 @@ A webhook tells another service, such as Zapier or Power Automate, when a page i
 - OpenNote listens only on `127.0.0.1` (this PC) and on a named pipe that only your own Windows account can open.
 - A web page can't use the API. A request from a web page, or one addressed to any name but this PC, is refused.
 - Each app has its own key. OpenNote keeps only a fingerprint of it, in Windows Credential Manager, so the key can't be read back from OpenNote.
-- Before the `opennote` command sends its key, it checks that the program answering is really OpenNote.
+- Before the `opennote` command sends its key, it checks that the program answering is really OpenNote. That check uses a new 256-bit key each time the API starts, kept in Credential Manager and in `api-instance.key` in OpenNote's local data folder, which only your account can read. The file is removed when the API stops.
+- A request must arrive within 30 seconds and be at most 25 MB, and at most 16 run at once, so a stuck or hostile program can't tie OpenNote up.
 
 ## For script writers
 
@@ -67,5 +70,10 @@ OpenNote writes where it listens to `api-endpoint.json` in its local data folder
 | `POST /v1/pages/{id}/append` with `{"markdown": "..."}` | Adds to the end of a page | Read and add |
 | `POST /v1/daily` with `{"markdown": "..."}` | Adds to today's daily note | Read and add |
 | `POST /v1/backup` | Runs a backup now | Read and add, every notebook |
+| `GET /v1/commands` | Every command, its parameters, and whether this app's access lets it run | Any access |
+| `GET /v1/pages/{id}/inspect` | A page's parts, headings, word count, and latest page history | Read |
+| `GET /v1/pages/{id}/render` | The page's strokes as a PNG, in base64 | Read |
+
+The add and change requests also take `"author": "..."` (one line, up to 60 characters), which page history shows after the app's name.
 
 A refused request gets a short reason, such as `locked`, `notInGrant`, or `declined`.
