@@ -43,7 +43,7 @@ Import and export (Phase 11):
 |---|---|---|---|
 | Word / Google Docs | `.docx`, `.odt`, Google Docs | `.docx`, Google Docs, PDF | .docx and .odt: Built, untested by hand. Google Docs: Needs the owner. |
 | Excel / Google Sheets | `.xlsx`, `.csv`, Google Sheets into smart tables | `.xlsx`, `.csv`, Google Sheets | .xlsx and .csv: Built, untested by hand. Google Sheets: Needs the owner. |
-| PowerPoint / Google Slides | `.pptx`, Google Slides as annotatable pages | `.pptx` (one page per slide), PDF | .pptx both ways and PDF: Built, untested by hand. Google Slides: Needs the owner. |
+| PowerPoint / Google Slides | `.pptx`, Google Slides as annotatable pages | `.pptx` (one page per slide), PDF | .pptx both ways and PDF: Built, untested by hand. Each imported slide is drawn as a locked picture to write on, and the import report lists what was not drawn. Google Slides: Needs the owner. |
 | OneNote / Evernote | Graph API, `.enex` | PDF, Markdown | .enex and Markdown: Built, untested by hand. The Graph API import needs the owner. |
 
 PDF export of a section or a notebook: the Export dialog's PDF choice prints each page through the Phase 6 print window and writes a folder of PDF files with an `index.html`. Status: Built, untested by hand. On in Beta.

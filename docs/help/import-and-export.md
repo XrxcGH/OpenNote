@@ -13,11 +13,13 @@ Press Ctrl+K and choose Import. First-time setup has the same step. Pick a sourc
 | An Obsidian vault or a folder of Markdown | A notebook with its pages |
 | Word (`.docx`) and OpenDocument (`.odt`) | A page for each file |
 | Excel (`.xlsx`) | Table pages |
-| PowerPoint (`.pptx`) | One page for each slide |
+| PowerPoint (`.pptx`) | One page for each slide, with the slide as a picture you can write on |
 | Email (`.eml`) | A page with its attachments |
 | Kindle clippings and a Readwise CSV file | Your highlights |
 | Windows Sticky Notes | Your notes and their pictures |
 | A Notion export | Its pages, with each database as a smart table |
+
+Each slide is drawn from the file as a locked picture at the top of its page, so your ink stays where you wrote it. Charts, diagrams, videos, and some picture formats are not drawn, and the review lists them.
 
 A Notion database keeps its column types. Numbers, money, dates, checkboxes, and short lists of choices are read from the cells, and the review names each typed column. A column with one value that does not fit stays as text.
 
