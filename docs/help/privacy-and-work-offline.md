@@ -21,6 +21,14 @@ The Privacy page lists each use, why it runs, and when it last ran.
 | Saving a web image | Only when you paste the address of an image. |
 | Link titles on paste | Off by default. It asks the linked site for a title. |
 | Signing in to an account | Only when you connect one in Settings, then Connectors. |
+| Downloading a model | Only after you press Download on a speech, language, or translation model and have seen its size. |
+| Your own cloud key | Only for a feature you chose to run with your key. See Cloud services with your own key. |
+
+## Cloud services with your own key
+
+Every smart feature runs on this device. Transcription and Summaries can instead use your own key for a cloud service. Open Settings, then On-device intelligence, choose With my own key for the feature, paste the key, and read what will be sent and where. The key is saved only after you confirm. It is kept in Windows Credential Manager and OpenNote never shows it again. Choose Forget the key to remove it, and the feature runs on this device again.
+
+While Work offline is on, nothing is sent: the feature runs on this device or waits. The Privacy page lists each feature that uses a key, or says every smart feature runs on this device.
 
 ## Crash reports
 

@@ -20,10 +20,13 @@ import type {
   Voice,
 } from './types';
 import { createFakeExt } from './extFake';
+import type { ExtPersistence } from './extFake';
 import type { FakeExt } from './extFake';
 import type { IntelCommands, IntelTransport } from './transport';
 
 export interface FakeIntelOptions {
+  /** Keeps the device store (auto transcripts, caption choices, and the rest) across reloads of the web preview. */
+  persistence?: ExtPersistence;
   /** What the person has turned on. Everything starts off, as on a fresh install. */
   settings?: Partial<IntelSettings>;
   /** Features with no engine here. Left out means available. */
@@ -322,7 +325,7 @@ function speechHandlers(state: FakeState): Pick<Handlers, SpeechCommands> {
 export function createFakeIntelTransport(options: FakeIntelOptions = {}): FakeIntelTransport {
   const calls: string[] = [];
   const state = createState(options);
-  const ext = createFakeExt();
+  const ext = createFakeExt(options.persistence);
   const handlers: Handlers = {
     ...statusHandlers(state, options),
     ...recognitionHandlers(state, options),

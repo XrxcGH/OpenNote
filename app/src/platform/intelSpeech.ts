@@ -22,7 +22,7 @@ export interface SpeechLine {
 }
 
 export type SpeechJobUpdate =
-  | { kind: 'started'; device: 'cpu' | 'npu' }
+  | { kind: 'started'; device: 'cpu' | 'gpu' | 'npu' }
   | { kind: 'progress'; fraction: number }
   | { kind: 'line'; line: SpeechLine }
   | { kind: 'done'; language: string | null; lines: SpeechLine[] }

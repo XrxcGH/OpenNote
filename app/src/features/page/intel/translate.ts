@@ -8,6 +8,7 @@ import { showToast } from '../../../ui';
 import { dataOf, fallbackOf, transcriptBlocks } from '../audio/transcripts/store';
 import { targetEditor } from '../formattingBar/target';
 import { shownMedia } from '../images/shown';
+import { shownLayer } from '../mount';
 
 const MAX_CHARS = 200_000;
 
@@ -27,7 +28,7 @@ export function gather(): Gathered[] {
     if (text) found.push({ scope: 'selection', markdown: text.slice(0, MAX_CHARS), from: null });
   }
   const mounted = shownMedia.get();
-  const page = (mounted?.layer.blocks() ?? [])
+  const page = (shownLayer.get()?.blocks() ?? mounted?.layer.blocks() ?? [])
     .flatMap((block) => (block.type === 'text' && typeof block.data.markdown === 'string' ? [block.data.markdown] : []))
     .join('\n\n')
     .trim();

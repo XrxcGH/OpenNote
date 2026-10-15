@@ -67,14 +67,16 @@ function correct(vocabulary: string, text: string): VocabularyCorrection {
 const UNHANDLED = Symbol('unhandled');
 type Params = Record<string, string>;
 
-function storeCall(files: Map<string, string>, method: string, p: Params): unknown {
+function storeCall(files: Map<string, string>, method: string, p: Params, persistence?: ExtPersistence): unknown {
   if (method === 'store.get') return files.get(p.name ?? '') ?? null;
   if (method === 'store.put') {
     files.set(p.name ?? '', p.text ?? '');
+    persistence?.save(files);
     return null;
   }
   if (method === 'store.remove') {
     files.delete(p.name ?? '');
+    persistence?.save(files);
     return null;
   }
   return UNHANDLED;
@@ -157,8 +159,14 @@ function cloudCall(fake: FakeExt, used: Map<CloudFeature, number>, method: strin
   return UNHANDLED;
 }
 
-export function createFakeExt(): FakeExt {
-  const files = new Map<string, string>();
+/** Where a browser keeps the device store between reloads: the web platform passes it, and tests leave it out. */
+export interface ExtPersistence {
+  load(): Record<string, string>;
+  save(files: ReadonlyMap<string, string>): void;
+}
+
+export function createFakeExt(persistence?: ExtPersistence): FakeExt {
+  const files = new Map<string, string>(Object.entries(persistence?.load() ?? {}));
   const calls: string[] = [];
   const models = new Map<string, ModelInfo>(
     CATALOG.map((one) => [one.id, { ...one, state: 'notInstalled', bytes: 0, error: null }]),
@@ -183,7 +191,7 @@ export function createFakeExt(): FakeExt {
       const p = (params ?? {}) as Params;
       if (method === 'vocabulary.correct') return correct(p.vocabulary ?? '', p.text ?? '');
       const found = [
-        storeCall(files, method, p),
+        storeCall(files, method, p, persistence),
         ...(method.startsWith('models.') ? [modelCall(fake, models, lastRan, method, p)] : []),
         ...(method.startsWith('cloud.') ? [cloudCall(fake, cloudUsed, method, p)] : []),
       ].find((one) => one !== UNHANDLED);

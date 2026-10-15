@@ -1,0 +1,32 @@
+[package]
+name = "opennote-intel-engines"
+version = "0.1.0"
+description = "The native engines behind OpenNote's on-device intelligence: whisper.cpp for speech and ONNX Runtime for translation and meaning"
+edition = "2021"
+rust-version = "1.89"
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "opennote_intel_engines"
+
+[features]
+default = []
+# whisper.cpp through whisper-rs: transcription, dictation, and live captions, much faster than the Rust reader.
+whisper-cpp = ["dep:whisper-rs"]
+# Lets whisper.cpp use the graphics card through Vulkan.
+whisper-vulkan = ["whisper-cpp", "whisper-rs/vulkan"]
+# ONNX Runtime: on-device translation and embeddings.
+onnx = ["dep:ort", "dep:tokenizers", "dep:ndarray"]
+
+[dependencies]
+opennote-intel = { path = "../intel", default-features = false }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+whisper-rs = { version = "0.16.0", optional = true }
+ort = { version = "=2.0.0-rc.12", optional = true }
+tokenizers = { version = "0.22", optional = true, default-features = false, features = ["fancy-regex"] }
+ndarray = { version = "0.16", optional = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

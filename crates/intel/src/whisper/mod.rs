@@ -15,6 +15,7 @@ use crate::transcribe::{
     SAMPLES_PER_SECOND,
 };
 
+mod backend;
 mod decode;
 mod forward;
 mod math;
@@ -22,6 +23,7 @@ mod mel;
 mod model;
 mod tokens;
 
+pub use backend::{backend, install_backend, SpeechBackend};
 pub(crate) use decode::{DecodeOptions, Line, Session};
 pub(crate) use model::Model;
 pub(crate) use tokens::{Special, Tokenizer};
@@ -50,6 +52,9 @@ pub(crate) fn load(path: &Path) -> Result<Arc<Model>, IntelError> {
 
 /// Forgets the model kept in memory, as when the person removes it or turns transcription off.
 pub fn unload() {
+    if let Some(backend) = backend() {
+        backend.unload();
+    }
     *LOADED.lock().unwrap_or_else(PoisonError::into_inner) = None;
 }
 
@@ -78,6 +83,12 @@ impl WhisperEngine {
         language: Option<&Language>,
         prompt: &str,
     ) -> Result<Vec<Segment>, IntelError> {
+        if let Some(backend) = backend() {
+            match backend.transcribe_samples(&self.path, samples, language, prompt) {
+                Err(IntelError::Unsupported { .. }) => {}
+                other => return other,
+            }
+        }
         let model = load(&self.path)?;
         let options = options_for(&model, language, prompt);
         Ok(decode::transcribe(&model, samples, &options)
@@ -135,7 +146,9 @@ impl TranscriptionEngine for WhisperEngine {
     }
 
     fn devices(&self) -> Vec<Device> {
-        vec![Device::Cpu]
+        let mut devices = backend().map_or_else(Vec::new, |backend| backend.devices());
+        devices.push(Device::Cpu);
+        devices
     }
 
     fn model_file(&self) -> Option<PathBuf> {
@@ -149,6 +162,12 @@ impl TranscriptionEngine for WhisperEngine {
         control: &JobControl,
     ) -> Result<Transcript, IntelError> {
         enter_background_mode();
+        if let Some(backend) = backend() {
+            match backend.transcribe(&self.path, audio, settings, control) {
+                Err(IntelError::Unsupported { .. }) => {}
+                other => return other,
+            }
+        }
         let model = load(&self.path)?;
         control.check_canceled()?;
         let mut session = Session::new(options_for(&model, settings.language.as_ref(), &settings.prompt));

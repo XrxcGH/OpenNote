@@ -29,9 +29,28 @@ function remember(settings: IntelSettings): void {
   }
 }
 
+const STORE_KEY = 'opennote.intel.store';
+
+const storePersistence = {
+  load(): Record<string, string> {
+    try {
+      return JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}') as Record<string, string>;
+    } catch {
+      return {};
+    }
+  },
+  save(files: ReadonlyMap<string, string>): void {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(Object.fromEntries(files)));
+    } catch {
+      // A browser that won't store them just forgets them at the next reload.
+    }
+  },
+};
+
 async function webHost(): Promise<IntelHost> {
   const { createFakeIntelTransport } = await import('../services/intel/fake');
-  const transport = createFakeIntelTransport({ settings: remembered() });
+  const transport = createFakeIntelTransport({ settings: remembered(), persistence: storePersistence });
   const current = async () => {
     const status = await transport.invoke('intel_status', {});
     return Object.fromEntries(status.map((one) => [one.feature, one.enabled])) as unknown as IntelSettings;

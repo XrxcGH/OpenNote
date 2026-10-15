@@ -5,6 +5,7 @@ members = [
   "crates/crashreport",
   "crates/diagnostics",
   "crates/intel",
+  "crates/intel-engines",
   "crates/interop",
   "crates/media",
   "crates/search",

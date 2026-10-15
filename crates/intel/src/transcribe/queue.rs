@@ -273,7 +273,7 @@ fn run_with_fallback(
         *lock(&entry.state) = EntryState::Running { progress: 0.0, device };
         shared.emit(entry.id, JobEventKind::Started { device });
         let outcome = run_engine(shared, entry, request, device);
-        let can_retry = device == Device::Npu
+        let can_retry = device != Device::Cpu
             && request.options.device == DevicePreference::Auto
             && available.contains(&Device::Cpu)
             && !entry.cancel.load(Ordering::Relaxed);

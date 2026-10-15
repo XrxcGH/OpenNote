@@ -5,7 +5,8 @@ let installed = false;
 
 /** Watches the recording and opens or closes the captions with it. Safe to call twice. */
 export async function installLiveCaptions(): Promise<void> {
-  if (installed) return;
+  // A host without a document (a unit test, a worker) has nowhere to draw the strip.
+  if (installed || typeof document === 'undefined') return;
   installed = true;
   const captions = await import('../../dictation');
   await captions.loadCaptionChoices();

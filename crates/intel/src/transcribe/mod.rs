@@ -5,8 +5,8 @@
 //! [`TranscriptionQueue`] runs jobs on a low-priority thread and reports progress. It picks the
 //! NPU when the engine has one and the processor otherwise, and it cancels on request.
 //!
-//! [`StubEngine`] stands in until the whisper.cpp engine lands. No model is downloaded here. The
-//! interface asks first, and a missing model is [`IntelError::ModelMissing`].
+//! [`StubEngine`] stands in for tests. No model is downloaded here. The interface asks first, and a missing
+//! model is [`IntelError::ModelMissing`].
 
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +33,8 @@ pub use stub::StubEngine;
 pub enum Device {
     /// A neural processing unit, which is fast and easy on the battery.
     Npu,
+    /// The graphics card, when the engine was built for it and the person allows it.
+    Gpu,
     /// The processor, which every computer has.
     Cpu,
 }
@@ -41,6 +43,7 @@ impl std::fmt::Display for Device {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Device::Npu => "NPU",
+            Device::Gpu => "graphics card",
             Device::Cpu => "processor",
         })
     }
@@ -49,11 +52,14 @@ impl std::fmt::Display for Device {
 /// Which device the person or the app prefers.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DevicePreference {
-    /// The NPU when there is one, and the processor otherwise. If the NPU fails, try the processor.
+    /// The NPU when there is one, then the graphics card, and the processor otherwise. If one of them fails, try the
+    /// processor.
     #[default]
     Auto,
     /// Only the NPU.
     Npu,
+    /// Only the graphics card.
+    Gpu,
     /// Only the processor.
     Cpu,
 }
@@ -64,9 +70,12 @@ pub fn resolve_device(preference: DevicePreference, available: &[Device]) -> Res
     match preference {
         DevicePreference::Npu if has(Device::Npu) => Ok(Device::Npu),
         DevicePreference::Npu => Err(IntelError::DeviceUnavailable(Device::Npu)),
+        DevicePreference::Gpu if has(Device::Gpu) => Ok(Device::Gpu),
+        DevicePreference::Gpu => Err(IntelError::DeviceUnavailable(Device::Gpu)),
         DevicePreference::Cpu if has(Device::Cpu) => Ok(Device::Cpu),
         DevicePreference::Cpu => Err(IntelError::DeviceUnavailable(Device::Cpu)),
         DevicePreference::Auto if has(Device::Npu) => Ok(Device::Npu),
+        DevicePreference::Auto if has(Device::Gpu) => Ok(Device::Gpu),
         DevicePreference::Auto if has(Device::Cpu) => Ok(Device::Cpu),
         DevicePreference::Auto => Err(IntelError::Engine("the engine offers no device to run on".to_owned())),
     }
@@ -167,6 +176,19 @@ mod tests {
         assert_eq!(resolve_device(DevicePreference::Auto, &both), Ok(Device::Npu));
         assert_eq!(resolve_device(DevicePreference::Auto, &[Device::Cpu]), Ok(Device::Cpu));
         assert_eq!(resolve_device(DevicePreference::Cpu, &both), Ok(Device::Cpu));
+    }
+
+    #[test]
+    fn auto_prefers_the_graphics_card_over_the_processor() {
+        assert_eq!(
+            resolve_device(DevicePreference::Auto, &[Device::Cpu, Device::Gpu]),
+            Ok(Device::Gpu)
+        );
+        assert_eq!(resolve_device(DevicePreference::Cpu, &[Device::Cpu, Device::Gpu]), Ok(Device::Cpu));
+        assert_eq!(
+            resolve_device(DevicePreference::Gpu, &[Device::Cpu]),
+            Err(IntelError::DeviceUnavailable(Device::Gpu))
+        );
     }
 
     #[test]
