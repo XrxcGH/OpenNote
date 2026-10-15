@@ -49,7 +49,21 @@ pub(crate) fn runtime<E: fmt::Display>(error: E) -> OnnxError {
     OnnxError::Runtime(error.to_string())
 }
 
-/// A session over the model file at `path`, on the processor, with a thread for each core but one.
+static ACCELERATE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
+/// Lets sessions opened from now on try DirectML first (the default in a build with `onnx-directml`) or keeps them on the
+/// processor. Without the feature this changes nothing.
+pub fn set_acceleration(on: bool) {
+    ACCELERATE.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Whether this build carries DirectML.
+pub fn has_directml() -> bool {
+    cfg!(feature = "onnx-directml")
+}
+
+/// A session over the model file at `path`: DirectML when the build has it and it is on, the processor otherwise (a
+/// DirectML that cannot start leaves the session on the processor), with a thread for each core but one.
 pub(crate) fn open(path: &Path) -> Result<Session, OnnxError> {
     if !path.is_file() {
         return Err(OnnxError::Model(format!("{} is not there", path.display())));
@@ -63,6 +77,17 @@ pub(crate) fn open(path: &Path) -> Result<Session, OnnxError> {
     builder = builder
         .with_intra_threads(threads.saturating_sub(1).clamp(1, 4))
         .map_err(|error| model(&error))?;
+    #[cfg(feature = "onnx-directml")]
+    if ACCELERATE.load(std::sync::atomic::Ordering::Relaxed) {
+        // DirectML needs sequential execution and no memory pattern. If it will not start, the processor runs the model.
+        builder = builder
+            .with_memory_pattern(false)
+            .map_err(|error| model(&error))?
+            .with_parallel_execution(false)
+            .map_err(|error| model(&error))?
+            .with_execution_providers([ort::ep::DirectML::default().build()])
+            .map_err(|error| model(&error))?;
+    }
     builder.commit_from_file(path).map_err(|error| model(&error))
 }
 

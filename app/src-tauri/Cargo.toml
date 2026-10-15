@@ -18,6 +18,8 @@ test-endpoints = ["opennote-updater/test-endpoints"]
 # It needs CMake, a C++ compiler, and libclang. Without it the pure Rust speech reader runs, and translation and
 # meaning vectors report that this build does not carry them.
 native-engines = ["opennote-intel-engines/whisper-cpp", "opennote-intel-engines/onnx"]
+# The native engines plus DirectML for translation and meaning vectors (graphics card or NPU, processor if it cannot start).
+native-directml = ["native-engines", "opennote-intel-engines/onnx-directml"]
 # Puts the language model program (crates/llm-host, built with its llama feature) inside the exe. The release build sets
 # OPENNOTE_LLM_HOST_BIN to the path of the built program. A release is one exe, so the program cannot travel beside it.
 embed-llm-host = []

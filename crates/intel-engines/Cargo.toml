@@ -18,6 +18,10 @@ whisper-cpp = ["dep:whisper-rs"]
 whisper-vulkan = ["whisper-cpp", "whisper-rs/vulkan"]
 # ONNX Runtime: on-device translation and embeddings.
 onnx = ["dep:ort", "dep:tokenizers", "dep:ndarray"]
+# DirectML for ONNX Runtime: translation and meaning vectors can run on the graphics card or an NPU that DirectML
+# exposes, and fall back to the processor if it cannot start. Speech does not use it: whisper.cpp has no DirectML or NPU
+# backend, so NPU chips are not used for speech.
+onnx-directml = ["onnx", "ort/directml"]
 
 [dependencies]
 opennote-intel = { path = "../intel", default-features = false }
