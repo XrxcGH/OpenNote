@@ -123,13 +123,17 @@ commandBar.register({
   priority: 12,
   flag: 'interop.pdfImport',
 });
-commandBar.register({
-  id: 'home.pdfImport',
-  tab: 'home',
-  group: 'share',
-  command: 'pdf.import',
-  priority: 38,
-  flag: 'interop.pdfImport',
+// The Home tab's share group follows the tree's New, Edit and Move groups, which register in their own module
+// body, so this one waits a microtask as the interop feature's buttons do. Last in the group, after Share.
+queueMicrotask(() => {
+  commandBar.register({
+    id: 'home.pdfImport',
+    tab: 'home',
+    group: 'share',
+    command: 'pdf.import',
+    priority: 37,
+    flag: 'interop.pdfImport',
+  });
 });
 
 // The layers over the shown page's pictures: words to select, highlights, and the Evening theme's dimming. The page
