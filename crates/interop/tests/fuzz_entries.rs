@@ -54,9 +54,24 @@ fn seeds(name: &str) -> Vec<Vec<u8>> {
         "zip" => vec![zip_bytes(&[("a.txt", b"hello"), ("b/c.md", b"# Title")])],
         "enex" => vec![corpus("data/sample.enex")],
         "docx" => vec![para.to_vec()],
-        "odt" => vec![b"<office:document-content><office:body><office:text><text:p>Hi</text:p></office:text></office:body></office:document-content>".to_vec()],
-        "xlsx" => vec![b"<worksheet><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>1</t></is></c></row></sheetData></worksheet>".to_vec()],
-        "pptx" => vec![b"<p:sld xmlns:p=\"p\" xmlns:a=\"a\"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>Slide</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>".to_vec()],
+        "odt" => vec![concat!(
+            "<office:document-content><office:body><office:text>",
+            "<text:p>Hi</text:p></office:text></office:body></office:document-content>"
+        )
+        .as_bytes()
+        .to_vec()],
+        "xlsx" => vec![concat!(
+            "<worksheet><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\">",
+            "<is><t>1</t></is></c></row></sheetData></worksheet>"
+        )
+        .as_bytes()
+        .to_vec()],
+        "pptx" => vec![concat!(
+            "<p:sld xmlns:p=\"p\" xmlns:a=\"a\"><p:cSld><p:spTree><p:sp><p:txBody>",
+            "<a:p><a:r><a:t>Slide</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>"
+        )
+        .as_bytes()
+        .to_vec()],
         "html" => vec![corpus("corpus/html/site/about.html")],
         "mht" => vec![corpus("corpus/onenote-mht/Lecture 3.mht")],
         "markdown" => vec![corpus("corpus/obsidian/Vault/Welcome.md")],

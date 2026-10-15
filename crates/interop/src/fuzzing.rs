@@ -103,7 +103,11 @@ pub fn xlsx(data: &[u8]) {
 
 /// A PowerPoint file. Plain bytes become the first slide, which is also drawn as a picture.
 pub fn pptx(data: &[u8]) {
-    let deck: &[u8] = br#"<p:presentation xmlns:p="p" xmlns:r="r"><p:sldIdLst><p:sldId id="256" r:id="rId1"/></p:sldIdLst></p:presentation>"#;
+    let deck: &[u8] = concat!(
+        r#"<p:presentation xmlns:p="p" xmlns:r="r">"#,
+        r#"<p:sldIdLst><p:sldId id="256" r:id="rId1"/></p:sldIdLst></p:presentation>"#
+    )
+    .as_bytes();
     let rels: &[u8] = br#"<Relationships><Relationship Id="rId1" Target="slides/slide1.xml"/></Relationships>"#;
     let extra = [
         ("ppt/presentation.xml", deck),
