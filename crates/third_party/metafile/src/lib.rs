@@ -78,7 +78,7 @@ pub enum Item {
     Path {
         segs: Vec<Seg>,
         fill: Option<[u8; 4]>,
-        /// Colour and width in picture units.
+        /// Color and width in picture units.
         stroke: Option<([u8; 4], f32)>,
         even_odd: bool,
         /// Clip region in picture units, each rectangle `[x0, y0, x1, y1]`. None is the default clip.
@@ -184,7 +184,7 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
     let sy = if rect[3] > 0.0 { size.1 / rect[3] } else { 1.0 };
     let tf = move |p: P| ((p.0 - rect[0]) * sx, (p.1 - rect[1]) * sy);
     let stroke_scale = (sx + sy) / 2.0;
-    // No stroke is wider than the picture's diagonal: anything wider is a mapping artefact.
+    // No stroke is wider than the picture's diagonal: anything wider is a mapping artifact.
     let diag = size.0.hypot(size.1);
     // Tiles shared by several fills stay shared.
     let mut tiles: HashMap<*const canvas::RawTile, (Arc<canvas::RawTile>, Arc<Tile>)> = HashMap::new();

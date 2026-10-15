@@ -24,7 +24,7 @@ pub fn png_bytes() -> Vec<u8> {
     STANDARD.decode(PNG_BASE64).expect("the PNG constant is valid base64")
 }
 
-/// A small EMF file: a 40 by 20 millimetre frame with one black rectangle in it.
+/// A small EMF file: a 40 by 20 millimeter frame with one black rectangle in it.
 pub fn emf_bytes() -> Vec<u8> {
     fn record(kind: u32, payload: &[u8]) -> Vec<u8> {
         let mut out = kind.to_le_bytes().to_vec();

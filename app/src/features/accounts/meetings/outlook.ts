@@ -1,5 +1,5 @@
 // Meetings from the Outlook calendar, through Microsoft Graph (calendarView). Times are asked for in UTC, so a
-// meeting means the same moment wherever the PC is. Cancelled meetings are left out.
+// meeting means the same moment wherever the PC is. Canceled meetings are left out.
 
 import { requestConnector } from '../../connectors';
 import type { ConnectorReply, ConnectorsClient } from '../../connectors';

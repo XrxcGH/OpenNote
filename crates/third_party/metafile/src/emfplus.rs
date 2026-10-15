@@ -85,7 +85,7 @@ enum Fill {
 }
 
 impl Fill {
-    /// One colour standing for the brush (pens and text draw solid).
+    /// One color standing for the brush (pens and text draw solid).
     fn color(&self) -> [u8; 4] {
         match self {
             Fill::Solid(c) | Fill::Hatch { fg: c, .. } => *c,
@@ -98,7 +98,7 @@ impl Fill {
         }
     }
 
-    /// The colour at a brush-space point.
+    /// The color at a brush-space point.
     fn sample(&self, p: P) -> [u8; 4] {
         match self {
             Fill::Solid(c) | Fill::Hatch { fg: c, .. } => *c,
@@ -157,7 +157,7 @@ fn wrap_t(t: f64, wrap: u32) -> f64 {
     }
 }
 
-/// The colour at `t` along sorted stops.
+/// The color at `t` along sorted stops.
 fn ramp(stops: &[(f64, [u8; 4])], t: f64) -> [u8; 4] {
     let (Some(first), Some(last)) = (stops.first(), stops.last()) else {
         return [0, 0, 0, 0];
@@ -412,7 +412,7 @@ impl Plus {
                     .stroke(cv, &curve_ops(&pts, tension, false, offset, segments), pen);
                 Some(())
             }
-            // Clear: the whole picture in one colour, whatever the clip (a transparent clear
+            // Clear: the whole picture in one color, whatever the clip (a transparent clear
             // leaves nothing to draw).
             0x4009 => {
                 let c = argb(r.u32(0)?);
@@ -874,7 +874,7 @@ impl Painter {
                         cell: cv.pattern_px,
                     }),
                 ),
-                // GDI+ has many more hatch styles than GDI: those fill with the blend of both colours.
+                // GDI+ has many more hatch styles than GDI: those fill with the blend of both colors.
                 None => {
                     cv.set_brush(Brush::new(BS_SOLID, lerp(*fg, *bg, 0.5)));
                     cv.shape(ops, true, false);
@@ -1100,7 +1100,7 @@ fn linear_gradient(d: Bytes) -> Option<Fill> {
     }
     let mut stops = vec![(0.0, c0), (1.0, c1)];
     if bflags & 0x4 != 0 {
-        // Preset colours: positions, then one colour each.
+        // Preset colors: positions, then one color each.
         let n = (d.u32(off)? as usize).min(MAX_STOPS);
         let pos: Vec<f64> = (0..n)
             .map(|i| d.f32(off + 4 + i * 4).map(f64::from))
@@ -1110,7 +1110,7 @@ fn linear_gradient(d: Bytes) -> Option<Fill> {
             .collect::<Option<_>>()?;
         stops = pos.into_iter().zip(cols).collect();
     } else if bflags & 0x8 != 0 {
-        // Blend factors: positions, then how far from the start colour to the end colour.
+        // Blend factors: positions, then how far from the start color to the end color.
         let n = (d.u32(off)? as usize).min(MAX_STOPS);
         let pos: Vec<f64> = (0..n)
             .map(|i| d.f32(off + 4 + i * 4).map(f64::from))
@@ -1129,7 +1129,7 @@ fn linear_gradient(d: Bytes) -> Option<Fill> {
     (!stops.is_empty()).then_some(Fill::Linear { rect, stops, wrap, xf })
 }
 
-/// A path gradient: from the centre colour to the (first) surrounding colour at the boundary,
+/// A path gradient: from the center color to the (first) surrounding color at the boundary,
 /// taken as the ellipse in the boundary's bounding rectangle.
 fn path_gradient(d: Bytes) -> Option<Fill> {
     let bflags = d.u32(0)?;
@@ -1330,11 +1330,11 @@ fn map_area(a: Area, m: Xform) -> Area {
 }
 
 /// An elliptical arc in `rect` from `start` sweeping `sweep` degrees (clockwise on screen), as
-/// cubics; a pie adds the lines to and from the centre.
+/// cubics; a pie adds the lines to and from the center.
 fn arc_ops([l, t, r, b]: [f64; 4], start: f64, sweep: f64, pie: bool) -> Vec<Op> {
     let (cx, cy, rx, ry) = ((l + r) / 2.0, (t + b) / 2.0, (r - l) / 2.0, (b - t) / 2.0);
     let sweep = sweep.clamp(-360.0, 360.0);
-    // GDI+ angles are along rays from the centre; turn them into the ellipse's parameter.
+    // GDI+ angles are along rays from the center; turn them into the ellipse's parameter.
     let param = |deg: f64| {
         let a = deg.to_radians();
         (rx * a.sin()).atan2(ry * a.cos())
@@ -1563,7 +1563,7 @@ fn finite(v: f32) -> Option<f64> {
 }
 
 /// A GDI+ cardinal spline through `pts` as cubic Béziers: each segment's control points lie a
-/// third of `tension` (GDI+'s default 0.5) along the neighbouring chords. `closed` joins the
+/// third of `tension` (GDI+'s default 0.5) along the neighboring chords. `closed` joins the
 /// last point back to the first; an open curve draws `segments` segments from point `offset`.
 fn curve_ops(pts: &[P], tension: f64, closed: bool, offset: usize, segments: usize) -> Vec<Op> {
     let n = pts.len();

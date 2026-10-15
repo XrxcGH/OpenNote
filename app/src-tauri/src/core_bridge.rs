@@ -169,7 +169,7 @@ impl Windows {
         self.0.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
-    /// The window labelled `label` as it is open now.
+    /// The window labeled `label` as it is open now.
     pub fn current(&self, label: &str) -> WindowOwner {
         let generation = self.map().get(label).copied().unwrap_or(0);
         WindowOwner {
@@ -183,7 +183,7 @@ impl Windows {
         self.map().get(&owner.label).copied().unwrap_or(0) == owner.generation
     }
 
-    /// The window labelled `label` went: returns the opening that went, and the label's next window is a new one.
+    /// The window labeled `label` went: returns the opening that went, and the label's next window is a new one.
     pub fn retire(&self, label: &str) -> WindowOwner {
         let mut map = self.map();
         let generation = map.entry(label.to_owned()).or_insert(0);

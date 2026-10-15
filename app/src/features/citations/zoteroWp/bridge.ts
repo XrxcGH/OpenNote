@@ -61,7 +61,7 @@ export class ZoteroBridge {
     return listFields(this.host.state().doc).filter((one) => one.code.startsWith(TEMP_CODE));
   }
 
-  /** Removes fields Zotero never gave a code (a conversation that was cancelled half-way). */
+  /** Removes fields Zotero never gave a code (a conversation that was canceled half-way). */
   sweep(): void {
     const left = this.leftovers().reverse();
     if (left.length === 0) return;

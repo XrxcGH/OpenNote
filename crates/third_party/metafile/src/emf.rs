@@ -16,7 +16,7 @@ const ETO_NO_RECT: u32 = 0x0100;
 const ETO_SMALL_CHARS: u32 = 0x0200;
 
 const EMF_SIGNATURE: u32 = 0x464D_4520;
-/// Hundredths of a millimetre to points.
+/// Hundredths of a millimeter to points.
 const HMM_TO_PT: f64 = 72.0 / 2540.0;
 /// SRCCOPY, the plain copy of a bitmap.
 const SRCCOPY: u32 = 0x00CC_0020;
@@ -83,7 +83,7 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
     Ok((cv, frame))
 }
 
-/// Device pixels per millimetre on each axis, from `szlDevice` (72) and `szlMillimeters` (80).
+/// Device pixels per millimeter on each axis, from `szlDevice` (72) and `szlMillimeters` (80).
 fn device_px_per_mm(input: Bytes) -> Option<(f64, f64)> {
     let (dw, dh) = (input.i32(72)?, input.i32(76)?);
     let (mw, mh) = (input.i32(80)?, input.i32(84)?);
@@ -96,7 +96,7 @@ fn frame_from_header(input: Bytes) -> Option<Frame> {
     if fr <= fl || fb <= ft {
         return None;
     }
-    // Device units per hundredth of a millimetre.
+    // Device units per hundredth of a millimeter.
     let (px_mm_x, px_mm_y) = device_px_per_mm(input)?;
     let (sx, sy) = (px_mm_x / 100.0, px_mm_y / 100.0);
     let rect = [fl * sx, ft * sy, (fr - fl) * sx, (fb - ft) * sy];
@@ -304,7 +304,7 @@ fn poly_groups(r: Bytes, wide: bool) -> Option<(Vec<usize>, Vec<P>)> {
     Some((counts, pts))
 }
 
-/// EMR_CREATEPEN: handle, LogPen (style, width x/y, colour).
+/// EMR_CREATEPEN: handle, LogPen (style, width x/y, color).
 fn create_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let slot = r.u32(8)? as usize;
     let style = r.u32(12)?;
@@ -321,7 +321,7 @@ fn create_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     Some(())
 }
 
-/// EMR_EXTCREATEPEN: handle, bitmap offsets (unused), LogPenEx (style, width, brush style, colour).
+/// EMR_EXTCREATEPEN: handle, bitmap offsets (unused), LogPenEx (style, width, brush style, color).
 /// A cosmetic pen's width is in device pixels (always 1), so it is a hairline; a BS_NULL brush draws
 /// no line at all.
 fn create_ext_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
@@ -348,7 +348,7 @@ fn create_ext_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     Some(())
 }
 
-/// EMR_CREATEBRUSHINDIRECT: handle, LogBrush32 (style, colour, hatch).
+/// EMR_CREATEBRUSHINDIRECT: handle, LogBrush32 (style, color, hatch).
 fn create_brush(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let slot = r.u32(8)? as usize;
     let style = r.u32(12)?;
@@ -361,9 +361,9 @@ fn create_brush(cv: &mut Canvas, r: Bytes) -> Option<()> {
     Some(())
 }
 
-/// EMR_CREATEDIBPATTERNBRUSHPT (94) and EMR_CREATEMONOBRUSH (93): handle, colour usage, then the
+/// EMR_CREATEDIBPATTERNBRUSHPT (94) and EMR_CREATEMONOBRUSH (93): handle, color usage, then the
 /// bitmap info and bits as offset/size pairs. A mono brush (or one whose palette holds indices,
-/// DIB_PAL_COLORS) takes the text and background colours. An undecodable bitmap leaves the slot
+/// DIB_PAL_COLORS) takes the text and background colors. An undecodable bitmap leaves the slot
 /// empty.
 fn create_dib_brush(cv: &mut Canvas, r: Bytes, mono: bool) -> Option<()> {
     let slot = r.u32(8)? as usize;

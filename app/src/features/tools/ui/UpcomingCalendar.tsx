@@ -90,7 +90,7 @@ function Cell({
     >
       <span aria-hidden="true">{day.date.day}</span>
       <span aria-hidden="true" className={grid.count} data-open={open > 0}>
-        {count > 0 ? count : ' '}
+        {count > 0 ? count : ' '}
       </span>
     </button>
   );

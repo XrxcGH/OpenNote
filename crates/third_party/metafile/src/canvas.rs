@@ -28,18 +28,18 @@ const BS_DIBPATTERN: u32 = 5;
 const BS_DIBPATTERNPT: u32 = 6;
 const WINDING: u32 = 2;
 /// SETROP2 mix modes. R2_NOP leaves the destination alone: outlines and fills draw nothing.
-/// R2_XORPEN and R2_MASKPEN draw the classic see-through shadow (XOR a colour, AND a pattern, XOR
-/// the colour again); the others draw as R2_COPYPEN.
+/// R2_XORPEN and R2_MASKPEN draw the classic see-through shadow (XOR a color, AND a pattern, XOR
+/// the color again); the others draw as R2_COPYPEN.
 const R2_XORPEN: u32 = 7;
 const R2_MASKPEN: u32 = 9;
 const R2_NOP: u32 = 11;
 const R2_COPYPEN: u32 = 13;
-/// SETBKMODE OPAQUE: text cells and hatch gaps are filled with the background colour.
+/// SETBKMODE OPAQUE: text cells and hatch gaps are filled with the background color.
 const OPAQUE: u32 = 2;
 const PATCOPY: u32 = 0x00F0_0021;
 const BLACKNESS: u32 = 0x0000_0042;
 const WHITENESS: u32 = 0x00FF_0062;
-/// Device pixels per millimetre assumed for WMF (96 dpi), and for EMF files without a device size.
+/// Device pixels per millimeter assumed for WMF (96 dpi), and for EMF files without a device size.
 const DEFAULT_PX_PER_MM: f64 = 96.0 / 25.4;
 
 /// Affine transform `[m11, m12, m21, m22, dx, dy]` in EMF XFORM order: `x' = x·m11 + y·m21 + dx`.
@@ -87,7 +87,7 @@ impl Brush {
     }
 
     /// A pattern brush painting `img`. A monochrome brush paints its dark pixels in the text
-    /// colour and its light ones in the background colour. None for an empty or oversized tile.
+    /// color and its light ones in the background color. None for an empty or oversized tile.
     pub fn pattern(img: Rgba, mono: bool) -> Option<Self> {
         if img.w == 0
             || img.h == 0
@@ -164,7 +164,7 @@ pub(crate) fn colorref(c: u32) -> [u8; 4] {
     [(c & 0xFF) as u8, ((c >> 8) & 0xFF) as u8, ((c >> 16) & 0xFF) as u8, 255]
 }
 
-/// Millimetres per logical unit of the metric map modes (LOMETRIC, HIMETRIC, LOENGLISH, HIENGLISH, TWIPS).
+/// Millimeters per logical unit of the metric map modes (LOMETRIC, HIMETRIC, LOENGLISH, HIENGLISH, TWIPS).
 fn metric_mm(mode: u32) -> Option<f64> {
     match mode {
         2 => Some(0.1),
@@ -184,7 +184,7 @@ pub(crate) struct Mapping {
     ve: P,
     mode: u32,
     world: Xform,
-    /// Device pixels per millimetre on each axis (EMF: from szlDevice and szlMillimeters).
+    /// Device pixels per millimeter on each axis (EMF: from szlDevice and szlMillimeters).
     px_mm: P,
 }
 
@@ -261,7 +261,7 @@ fn ratio(num: f64, den: f64) -> f64 {
     if den == 0.0 { 1.0 } else { num / den }
 }
 
-/// Output of drawing, in device units. Path points are already mapped; `lib.rs` normalises them.
+/// Output of drawing, in device units. Path points are already mapped; `lib.rs` normalizes them.
 pub(crate) enum Raw {
     Path {
         ops: Vec<Op>,
@@ -303,7 +303,7 @@ impl Raw {
     }
 }
 
-/// Text drawing state: colours, background mode, alignment and the selected font.
+/// Text drawing state: colors, background mode, alignment and the selected font.
 #[derive(Clone)]
 struct TextState {
     color: [u8; 4],
@@ -340,7 +340,7 @@ pub(crate) struct Canvas {
     even_odd: bool,
     /// SETROP2 mix mode.
     rop2: u32,
-    /// The colour of the last fill drawn with R2_XORPEN, for the see-through shadow idiom.
+    /// The color of the last fill drawn with R2_XORPEN, for the see-through shadow idiom.
     xor_color: Option<[u8; 4]>,
     text: TextState,
     /// Device units per pattern-brush pixel: brushes are laid out in 96-dpi pixels.
@@ -477,7 +477,7 @@ impl Canvas {
         self.map.mode = mode;
     }
 
-    /// Device pixels per millimetre (x, y) for the metric map modes. Ignored unless both are positive.
+    /// Device pixels per millimeter (x, y) for the metric map modes. Ignored unless both are positive.
     pub fn set_device_mm(&mut self, px_mm: P) {
         if px_mm.0.is_finite() && px_mm.1.is_finite() && px_mm.0 > 0.0 && px_mm.1 > 0.0 {
             self.map.px_mm = px_mm;
@@ -554,7 +554,7 @@ impl Canvas {
         [x.0 - o.0, x.1 - o.1, y.0 - o.0, y.1 - o.1, o.0, o.1]
     }
 
-    /// Text colour, font and alignment set directly (EMF+ strings name their own font and brush);
+    /// Text color, font and alignment set directly (EMF+ strings name their own font and brush);
     /// the background is transparent.
     pub fn set_text_style(&mut self, color: [u8; 4], font: LogFont, align: u32) {
         self.text.color = color;
@@ -582,7 +582,7 @@ impl Canvas {
         }
     }
 
-    /// Fills logical `ops` with a colour computed per device point (gradients, textures): a tile
+    /// Fills logical `ops` with a color computed per device point (gradients, textures): a tile
     /// of at most [`SHADE_RES`] cells on the longer side, laid out so that its one repeat covers
     /// the shape.
     pub fn shade_shape(&mut self, ops: &[Op], shade: &dyn Fn(P) -> [u8; 4]) {
@@ -806,10 +806,10 @@ impl Canvas {
         }
     }
 
-    /// The current brush's paint. Hatch and monochrome brushes take the background colour (when
-    /// the background mode is opaque) and the text colour. Under R2_MASKPEN (destination AND
-    /// brush) a tile's white pixels keep what is below, and its black ones take the colour of the
-    /// XOR fill before it: XOR, AND, XOR again leaves that colour where the tile is black.
+    /// The current brush's paint. Hatch and monochrome brushes take the background color (when
+    /// the background mode is opaque) and the text color. Under R2_MASKPEN (destination AND
+    /// brush) a tile's white pixels keep what is below, and its black ones take the color of the
+    /// XOR fill before it: XOR, AND, XOR again leaves that color where the tile is black.
     fn fill_paint(&self) -> Option<Paint> {
         let b = &self.brush;
         match b.style {
@@ -917,8 +917,8 @@ impl Canvas {
     }
 
     /// Whether the mix mode suppresses drawing: R2_NOP draws nothing, and R2_XORPEN shapes only
-    /// remember their fill colour (an XOR pair cancels; the see-through shadow idiom draws its
-    /// pattern in that colour).
+    /// remember their fill color (an XOR pair cancels; the see-through shadow idiom draws its
+    /// pattern in that color).
     fn mix_skips(&mut self, fill: bool) -> bool {
         match self.rop2 {
             R2_NOP => true,
@@ -1065,7 +1065,7 @@ impl Canvas {
         self.push_shape(dev, fill, None);
     }
 
-    /// Fills a logical rectangle `[l, t, r, b]` with a solid colour (ROP fills such as BLACKNESS).
+    /// Fills a logical rectangle `[l, t, r, b]` with a solid color (ROP fills such as BLACKNESS).
     pub fn fill_rect_with(&mut self, [l, t, r, b]: [f64; 4], color: [u8; 4]) {
         let dev: Vec<Op> = crate::geom::rect(l, t, r, b).iter().map(|o| self.map_op(*o)).collect();
         self.push(Raw::Path {
@@ -1094,10 +1094,10 @@ impl Canvas {
         }
     }
 
-    /// Draws `text` (one `dx` advance per character, or none) with the current font, colours and
+    /// Draws `text` (one `dx` advance per character, or none) with the current font, colors and
     /// alignment. The reference point is `at`, or the current position under TA_UPDATECP (which
     /// then moves past the string). `rect` (logical `[l, t, r, b]`) is filled with the background
-    /// colour under ETO_OPAQUE and clips the text under ETO_CLIPPED. Text ignores the mix mode, as
+    /// color under ETO_OPAQUE and clips the text under ETO_CLIPPED. Text ignores the mix mode, as
     /// GDI's does.
     pub fn text(&mut self, at: P, text: String, dx: Vec<f32>, options: u32, rect: Option<[f64; 4]>) {
         if let (true, Some(r)) = (options & ETO_OPAQUE != 0, rect) {

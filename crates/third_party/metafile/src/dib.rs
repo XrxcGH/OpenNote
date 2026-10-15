@@ -5,7 +5,7 @@ use crate::{MAX_PIXELS, bytes::Bytes};
 
 const BI_RGB: u32 = 0;
 const BI_BITFIELDS: u32 = 3;
-/// Most palette entries a DIB can carry (the colour table never exceeds 2^8).
+/// Most palette entries a DIB can carry (the color table never exceeds 2^8).
 const MAX_PALETTE: usize = 256;
 const ROP_SRCAND: u32 = 0x0088_00C6;
 const ROP_SRCPAINT: u32 = 0x00EE_0086;
@@ -25,7 +25,7 @@ pub(crate) enum Blend {
     /// A raster operation (BITBLT, STRETCHDIB and friends).
     Rop(u32),
     /// EMR_ALPHABLEND: a constant alpha (0..=255), times the per-pixel alpha when `per_pixel` is set
-    /// (AC_SRC_ALPHA: the source colours are premultiplied by it).
+    /// (AC_SRC_ALPHA: the source colors are premultiplied by it).
     Alpha { constant: u8, per_pixel: bool },
 }
 
@@ -240,7 +240,7 @@ pub(crate) fn prepare(img: &mut Rgba, blend: Blend) {
     }
 }
 
-/// Makes the pixels of colour `rgb` transparent: where a raster operation keeps the destination.
+/// Makes the pixels of color `rgb` transparent: where a raster operation keeps the destination.
 fn clear_where(img: &mut Rgba, rgb: [u8; 3]) {
     for p in img.px.as_chunks_mut::<4>().0 {
         if p[..3] == rgb {
@@ -249,8 +249,8 @@ fn clear_where(img: &mut Rgba, rgb: [u8; 3]) {
     }
 }
 
-/// AC_SRC_ALPHA sources are premultiplied; the model holds straight RGBA, so divide the colour by the
-/// alpha (rounded, capped at 255). A transparent pixel keeps its colour bytes.
+/// AC_SRC_ALPHA sources are premultiplied; the model holds straight RGBA, so divide the color by the
+/// alpha (rounded, capped at 255). A transparent pixel keeps its color bytes.
 fn unpremultiply(p: &mut [u8; 4]) {
     let a = u32::from(p[3]);
     if a == 0 || a == 255 {

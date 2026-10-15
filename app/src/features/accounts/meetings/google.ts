@@ -1,5 +1,5 @@
 // Meetings from Google Calendar (events.list on the primary calendar). Repeating events come out one meeting at a time
-// (`singleEvents`), and cancelled ones are left out.
+// (`singleEvents`), and canceled ones are left out.
 
 import { requestConnector } from '../../connectors';
 import type { ConnectorReply, ConnectorsClient } from '../../connectors';

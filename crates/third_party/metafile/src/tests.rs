@@ -89,7 +89,7 @@ fn emf(records: &[Vec<u8>], bounds: [i32; 4], frame: [i32; 4]) -> Vec<u8> {
     h[48..52].copy_from_slice(&(total as u32).to_le_bytes());
     h[52..56].copy_from_slice(&((records.len() + 1) as u32).to_le_bytes());
     h[56..58].copy_from_slice(&1u16.to_le_bytes());
-    // 1000 x 500 device pixels for 250 x 125 mm: 0.04 device units per hundredth of a millimetre.
+    // 1000 x 500 device pixels for 250 x 125 mm: 0.04 device units per hundredth of a millimeter.
     h[72..76].copy_from_slice(&1000i32.to_le_bytes());
     h[76..80].copy_from_slice(&500i32.to_le_bytes());
     h[80..84].copy_from_slice(&250i32.to_le_bytes());
@@ -1454,7 +1454,7 @@ fn plain_anisotropic_wmf_without_a_viewport_fills_its_window() {
 
 #[test]
 fn placeable_wmf_window_records_replace_the_bounds() {
-    // The placeable bounds say 1440 square (72 points); the file then draws in a window centred on the
+    // The placeable bounds say 1440 square (72 points); the file then draws in a window centered on the
     // origin, as a coat of arms saved by a drawing program does. The window maps onto the 72-point
     // target, so the drawing fills it instead of being blown up around the bounds.
     let recs = [
@@ -1988,7 +1988,7 @@ fn hatch_brushes_draw_lines_over_the_background_mode() {
 
 #[test]
 fn xor_mask_xor_draws_the_pattern_in_the_xor_colour() {
-    // The see-through shadow: XOR a grey polygon, AND a checker pattern, XOR the polygon again.
+    // The see-through shadow: XOR a gray polygon, AND a checker pattern, XOR the polygon again.
     let square = wrec(
         0x0324,
         &cat(vec![
@@ -2083,7 +2083,7 @@ fn emf_dib_pattern_and_mono_brushes() {
         (tile_px(t, 0, 0), tile_px(t, 7, 0)),
         ([0, 0, 0, 255], [255, 255, 255, 255])
     );
-    // A mono brush paints in the text colour (red) and the background colour (green).
+    // A mono brush paints in the text color (red) and the background color (green).
     let recs = [
         erec(24, &h32(0xFF)),
         erec(25, &h32(0xFF00)),
@@ -2661,7 +2661,7 @@ fn font_obj(family: &str, em: f32, unit: u32, style: u32) -> Vec<u8> {
 #[test]
 fn emfplus_draw_string_with_font_and_centred_format() {
     let font = prec(0x4008, 0x0600 | 3, &font_obj("Calibri", 12.0, 2, 1));
-    // String format: centre alignment, no clip.
+    // String format: center alignment, no clip.
     let fmt = prec(
         0x4008,
         0x0700 | 4,
@@ -2895,7 +2895,7 @@ fn emfplus_region_clip_intersects_rectangles() {
 
 #[test]
 fn emfplus_pie_and_arc() {
-    // A quarter pie from 0 to 90 degrees in a 0..100 circle: centre, then (100, 50) round to (50, 100).
+    // A quarter pie from 0 to 90 degrees in a 0..100 circle: center, then (100, 50) round to (50, 100).
     let pie = prec(
         0x4010,
         0x8000,
@@ -3165,7 +3165,7 @@ fn emfplus_clear_paints_the_whole_frame_and_transparent_clears_nothing() {
         &cat(vec![h32(0xFF00_0000), h32(1), f32s(&[40.0, 40.0, 10.0, 10.0])]),
     );
     let clear = |argb: u32| prec(0x4009, 0, &h32(argb));
-    // 100 × 50 device units (0..2500 × 0..1250 hundredths of a millimetre at 0.04 units each).
+    // 100 × 50 device units (0..2500 × 0..1250 hundredths of a millimeter at 0.04 units each).
     let file = |recs: Vec<Vec<u8>>| {
         let mut all = vec![plus_header(false)];
         all.extend(recs);

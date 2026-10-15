@@ -57,7 +57,7 @@ pub struct Text {
     pub dx: Vec<f32>,
     pub font: Font,
     pub color: [u8; 4],
-    /// Colour filled behind the character cells (OPAQUE background mode); None when transparent.
+    /// Color filled behind the character cells (OPAQUE background mode); None when transparent.
     pub background: Option<[u8; 4]>,
     pub h_align: HAlign,
     pub v_align: VAlign,
@@ -70,7 +70,7 @@ pub struct Text {
 
 /// TA_UPDATECP: the string starts at the current position, which moves past it.
 pub(crate) const TA_UPDATECP: u32 = 0x0001;
-/// ETO_OPAQUE fills the rectangle with the background colour; ETO_CLIPPED clips the text to it.
+/// ETO_OPAQUE fills the rectangle with the background color; ETO_CLIPPED clips the text to it.
 pub(crate) const ETO_OPAQUE: u32 = 0x0002;
 pub(crate) const ETO_CLIPPED: u32 = 0x0004;
 /// The string holds glyph indices, not characters (drawn only when the font matches).

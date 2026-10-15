@@ -213,7 +213,7 @@ fn i16s(r: Bytes, off: usize) -> f64 {
     r.i16(off).map_or(0.0, f64::from)
 }
 
-/// CREATEPENINDIRECT: style, width (x, y), colour. Only the width's x component is used.
+/// CREATEPENINDIRECT: style, width (x, y), color. Only the width's x component is used.
 fn create_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let style = r.u16(6)?;
     let width = r.i16(8)?;
@@ -229,7 +229,7 @@ fn create_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     Some(())
 }
 
-/// CREATEBRUSHINDIRECT: style, colour, hatch.
+/// CREATEBRUSHINDIRECT: style, color, hatch.
 fn create_brush(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let style = u32::from(r.u16(6)?);
     let color = r.u32(8)?;
@@ -241,9 +241,9 @@ fn create_brush(cv: &mut Canvas, r: Bytes) -> Option<()> {
     Some(())
 }
 
-/// DIBCREATEPATTERNBRUSH: style, colour usage, then a DIB (MS-WMF 2.3.4.8). The DIB's own palette
-/// gives the colours; with DIB_PAL_COLORS (indices into a palette the reader does not keep) a
-/// monochrome DIB takes the text and background colours.
+/// DIBCREATEPATTERNBRUSH: style, color usage, then a DIB (MS-WMF 2.3.4.8). The DIB's own palette
+/// gives the colors; with DIB_PAL_COLORS (indices into a palette the reader does not keep) a
+/// monochrome DIB takes the text and background colors.
 fn dib_pattern_brush(r: Bytes) -> Option<Brush> {
     let usage = r.u16(8)?;
     let dib = r.tail(10)?;

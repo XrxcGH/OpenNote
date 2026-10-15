@@ -99,7 +99,7 @@ impl AudioState {
         self.0.stopped.lock().unwrap_or_else(PoisonError::into_inner)
     }
 
-    /// Stops the running recording for the window labelled `window`, which then writes its final entry.
+    /// Stops the running recording for the window labeled `window`, which then writes its final entry.
     fn stop_for(&self, window: &str) -> IpcResult<Finished> {
         let mut service = self.lock();
         let finished = service.stop().map_err(audio_error)?;
@@ -342,7 +342,7 @@ pub async fn audio_recover(
     blocking(&state, move |state| recover_unless_running(state, &label, &dir, &entry)).await
 }
 
-/// Recovers a recording a crash cut off for the window labelled `window`, or refuses with `audioRunning` when
+/// Recovers a recording a crash cut off for the window labeled `window`, or refuses with `audioRunning` when
 /// another window owns its entry: it is the recording running now, or one that window stopped and is writing the
 /// final entry of. Every window shares this process's recorder but keeps its own idea of what records, so a page
 /// opened in a second window while the first records it must learn that from here and leave the entry alone. The

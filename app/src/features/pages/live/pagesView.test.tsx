@@ -113,12 +113,12 @@ describe('adding a sheet with the pen', () => {
     fire(target, 'pointerdown', x, bottom);
     fire(target, 'pointerup', x, bottom);
     expect(count()).toBe(before);
-    // A cancelled pen forgets where it began, so its later up is not a stroke.
+    // A canceled pen forgets where it began, so its later up is not a stroke.
     fire(target, 'pointerdown', x, bottom - 40);
     fire(target, 'pointercancel', x, bottom - 40);
     fire(target, 'pointerup', x, bottom);
     expect(count()).toBe(before);
-    // A stroke that travelled and ends in the bottom strip adds one.
+    // A stroke that traveled and ends in the bottom strip adds one.
     fire(target, 'pointerdown', x, bottom - 40);
     fire(target, 'pointerup', x, bottom);
     await new Promise((done) => setTimeout(done, 300));

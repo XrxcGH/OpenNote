@@ -1,11 +1,11 @@
 //! Placing a picture on a target (a page or a device): the fitted transform, paths as kurbo paths in
-//! target units and bitmaps as target rectangles. The rasteriser and the PDF writer only paint the result.
+//! target units and bitmaps as target rectangles. The rasterizer and the PDF writer only paint the result.
 
 use kurbo::{Affine, BezPath, Rect, Shape};
 
 use crate::{Item, Picture, Seg};
 
-/// Largest bitmap side the renderers draw: within the PDF image limit and the rasteriser's 16-bit sides.
+/// Largest bitmap side the renderers draw: within the PDF image limit and the rasterizer's 16-bit sides.
 pub const MAX_BITMAP_SIDE: u32 = 30_000;
 /// Placed coordinates past this (target units) are far off any page; such items are left out.
 const MAX_COORD: f64 = 1e6;
