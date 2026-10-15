@@ -90,7 +90,7 @@ Top-level `ignore` patterns skip files entirely. Change a limit only with a reas
 
 ## Asset attribution
 
-Every picture, font, sound, model, and other non-code file needs a row in [ATTRIBUTION.md](ATTRIBUTION.md) with its author, source, and license. So does every crate copied into `crates/third_party/`, which must also keep its license files. `npm run checks:assets` lists the gaps, and `npm test` runs the same check. A row that matches no file fails too, so the table cannot go stale.
+Every picture, font, sound, model, and other non-code file needs a row in [ATTRIBUTION.md](ATTRIBUTION.md) with its author, source, and license. So does every crate copied into `crates/third_party/`, which must also keep its license files. Fonts reach the app through npm, so each `@fontsource` package in `package.json` needs an `npm:` row too, and its copyright line must appear in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md), which the app shows under Settings, then About. `npm run checks:assets` lists the gaps, and `npm test` runs the same check. A row that matches no file fails too, so the table cannot go stale.
 
 ## Clippy ratchet
 
@@ -110,6 +110,8 @@ Another program reading OpenNote's files catches mistakes that our own tests sha
 | PDF | `pdfcraft-cli` | The 32-rule accessibility check, and PDF/A-2b preflight as notes |
 
 `npm run crosscheck:formulas` also runs about 200 table formulas through OpenNote's engine and through `gridcraft-cli eval`, and fails on a result that differs and is not listed in `KNOWN` of `app/src/features/tables/engine/gridcraftDiff.test.ts` with its reason. Dates there are compared after the gap between the 1900 and 1970 epochs.
+
+Three formula differences are decided and stay in `KNOWN`: `2^3^2` and `-2^2` follow mathematics, `ROUND(7)` accepts one argument, and `COUNTA` of an empty text does not count it, because an empty table cell holds empty text. `POWER(0,0)` was changed to `#NUM!` to match Excel.
 
 These tools are alpha software, so a difference means "look", not "bug". The `crosscheck` workflow (`.github/workflows/crosscheck.yml`) runs weekly and on pull requests that touch exports, and it never blocks a merge. Use `npm run crosscheck:install` once to build the tools locally. It needs Rust and several minutes. Nothing from them ships with OpenNote.
 

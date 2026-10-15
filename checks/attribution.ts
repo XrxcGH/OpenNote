@@ -66,6 +66,21 @@ export interface Gaps {
   incomplete: string[];
   /** Vendored crates (crates/third_party/NAME) with no license file or no row. */
   vendored: string[];
+  /** Bundled npm packages (fonts) with no `npm:` row, or whose copyright line is missing from THIRD_PARTY_NOTICES.md. */
+  packages: string[];
+}
+
+/** npm packages that ship font or picture files into the app. A package with this prefix needs an `npm:` row. */
+const ASSET_PACKAGES = /^@fontsource(-variable)?\//;
+
+/** What the notices file and the installed packages say, so the check can compare them. Empty when not given. */
+export interface PackageFacts {
+  /** Names in package.json dependencies and devDependencies. */
+  dependencies: string[];
+  /** The text of THIRD_PARTY_NOTICES.md. */
+  notices: string;
+  /** The first copyright line of each installed package's LICENSE file, by package. Missing when not installed. */
+  copyrights: Record<string, string | undefined>;
 }
 
 /** The table rows of the attribution file: a backticked path, an author, a source, and a license. */
@@ -91,8 +106,9 @@ function extension(path: string): string {
 }
 
 /** Compares the tracked files with the table. `files` use forward slashes, relative to the repository root. */
-export function findGaps(files: string[], markdown: string): Gaps {
-  const rows = parseRows(markdown);
+export function findGaps(files: string[], markdown: string, facts?: PackageFacts): Gaps {
+  const allRows = parseRows(markdown);
+  const rows = allRows.filter((row) => !row.glob.startsWith('npm:'));
   const assets = files.filter((file) => ASSET_EXTENSIONS.has(extension(file)));
   const uncovered = assets.filter((file) => !rows.some((row) => globToRegExp(row.glob).test(file)));
   const stale = rows.filter((row) => !files.some((file) => globToRegExp(row.glob).test(file))).map((row) => row.glob);
@@ -112,7 +128,23 @@ export function findGaps(files: string[], markdown: string): Gaps {
     if (!hasLicense) vendored.push(`${prefix} has no LICENSE file`);
     if (!hasRow) vendored.push(`${prefix} has no row in docs/ATTRIBUTION.md`);
   }
-  return { uncovered, stale, incomplete, vendored };
+  const incompleteNpm = allRows.filter((r) => r.glob.startsWith('npm:') && (!r.author || !r.source || !r.license));
+  incomplete.push(...incompleteNpm.map((r) => r.glob));
+  const packages: string[] = [];
+  if (facts !== undefined) {
+    const named = new Set(allRows.filter((r) => r.glob.startsWith('npm:')).map((r) => r.glob.slice(4)));
+    const bundled = facts.dependencies.filter((name) => ASSET_PACKAGES.test(name));
+    for (const name of bundled) {
+      if (!named.has(name)) packages.push(`no row \`npm:${name}\` in docs/ATTRIBUTION.md`);
+      const line = facts.copyrights[name];
+      if (line !== undefined && !facts.notices.includes(line))
+        packages.push(`THIRD_PARTY_NOTICES.md lacks the copyright line of ${name}: ${line}`);
+    }
+    for (const name of named)
+      if (!facts.dependencies.includes(name))
+        packages.push(`the row \`npm:${name}\` names a package that is not a dependency`);
+  }
+  return { uncovered, stale, incomplete, vendored, packages };
 }
 
 export function repoRoot(): string {
@@ -128,8 +160,28 @@ export function trackedFiles(root: string): string[] {
   return listing.split('\0').filter((path) => path !== '');
 }
 
+/** The package facts of a checkout. The copyright line is the first line of the package's LICENSE, up to the first file name. */
+export function packageFacts(root = repoRoot()): PackageFacts {
+  const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+  const dependencies = [...Object.keys(manifest.dependencies ?? {}), ...Object.keys(manifest.devDependencies ?? {})];
+  const copyrights: PackageFacts['copyrights'] = {};
+  for (const name of dependencies.filter((n) => ASSET_PACKAGES.test(n))) {
+    try {
+      const text = readFileSync(join(root, 'node_modules', name, 'LICENSE'), 'utf8');
+      const first = text.split(/\r?\n/)[0];
+      copyrights[name] = first.split(/ \S+\.(?:ttf|otf|woff2?)\b/)[0].trim();
+    } catch {
+      copyrights[name] = undefined;
+    }
+  }
+  return { dependencies, notices: readFileSync(join(root, 'THIRD_PARTY_NOTICES.md'), 'utf8'), copyrights };
+}
+
 export function attributionGaps(root = repoRoot()): Gaps {
-  return findGaps(trackedFiles(root), readFileSync(join(root, 'docs', 'ATTRIBUTION.md'), 'utf8'));
+  return findGaps(trackedFiles(root), readFileSync(join(root, 'docs', 'ATTRIBUTION.md'), 'utf8'), packageFacts(root));
 }
 
 export function describeGaps(gaps: Gaps): string[] {
@@ -138,6 +190,7 @@ export function describeGaps(gaps: Gaps): string[] {
     ...gaps.stale.map((glob) => `the row for ${glob} matches no tracked file`),
     ...gaps.incomplete.map((glob) => `the row for ${glob} needs an author, source, and license`),
     ...gaps.vendored,
+    ...gaps.packages,
   ];
 }
 

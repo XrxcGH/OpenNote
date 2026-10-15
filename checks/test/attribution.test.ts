@@ -43,3 +43,25 @@ test('a vendored crate needs its license text and a row', () => {
 test('rows are read from backticked paths only', () => {
   assert.equal(parseRows(TABLE).length, 2);
 });
+
+const FONT = '@fontsource/demo-font';
+const FACTS = {
+  dependencies: [FONT, 'react'],
+  notices: 'Copyright 2020 The Demo Authors',
+  copyrights: { [FONT]: 'Copyright 2020 The Demo Authors' },
+};
+const FONT_ROW = `| \`npm:${FONT}\` | The Demo Authors | https://example.test | OFL-1.1 |`;
+
+test('a bundled font package needs an npm row', () => {
+  assert.equal(findGaps([], '', FACTS).packages.length, 1);
+  assert.deepEqual(findGaps([], FONT_ROW, FACTS).packages, []);
+});
+
+test('a bundled font package needs its copyright line in the notices', () => {
+  const facts = { ...FACTS, notices: 'nothing here' };
+  assert.equal(findGaps([], FONT_ROW, facts).packages.length, 1);
+});
+
+test('an npm row for a package that is not a dependency is stale', () => {
+  assert.equal(findGaps([], FONT_ROW, { ...FACTS, dependencies: [] }).packages.length, 1);
+});
