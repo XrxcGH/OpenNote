@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: convert_parts reads the sheets in order; split it when it grows again
 //! Importing Excel workbooks (`.xlsx`, `.xlsm`) as tables: one page for each sheet.
 //!
 //! A workbook is a ZIP archive of XML parts. This reader takes each visible sheet's cells in a grid, with the first

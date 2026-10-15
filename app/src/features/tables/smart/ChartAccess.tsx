@@ -44,6 +44,7 @@ export interface ChartAccessProps {
 
 const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ChartAccess(props: ChartAccessProps) {
   const { id, kind, spec, summary, custom, automatic, setSummary, children } = props;
   const [at, setAt] = useState<{ series: number; index: number } | null>(null);

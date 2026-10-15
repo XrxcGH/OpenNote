@@ -9,13 +9,9 @@ import IntelSection from './SettingsSection';
 import { installTestHost } from './testing';
 import type { TestHost } from './testing';
 
-// Only the first three features are under test here; the later ones are switched off for the run.
-const LATER = Object.fromEntries(
-  ["handwriting","searchText","models","vocabulary","background","backgroundOcr","handwritingExtras","meaning","ask","writing"].map((n) => [`intel.${n}`, false]),
-);
 let host: TestHost;
 beforeEach(() => {
-  initFlags('dev', LATER);
+  initFlags('stable');
   host = installTestHost();
 });
 
@@ -39,7 +35,7 @@ describe('the On-device intelligence section', () => {
   });
 
   it('shows Handwriting once its flag is on', async () => {
-    initFlags('dev', { ...LATER, 'intel.handwriting': true });
+    initFlags('dev', { 'intel.handwriting': true });
     renderUi(<IntelSection />);
     expect((await switchNamed('Handwriting')).getAttribute('aria-checked')).toBe('false');
   });

@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: convert_parts reads the slides in order; split it when it grows again
 //! Importing PowerPoint files (`.pptx`, `.pptm`): one page for each slide.
 //!
 //! A presentation is a ZIP archive of XML parts. A slide page holds the slide's title as the page title, then its

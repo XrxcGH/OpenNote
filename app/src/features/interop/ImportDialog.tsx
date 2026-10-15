@@ -170,6 +170,7 @@ function body(flow: ImportFlow, state: ImportState, refocus: boolean) {
   }
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export default function ImportDialog({ interop, notes, onClose }: ImportDialogProps & OverlayProps) {
   const [flow] = useState(() => createImportFlow({ interop, notes, announce }));
   useEffect(() => flow.attach(), [flow]);

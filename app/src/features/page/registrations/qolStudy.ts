@@ -157,7 +157,7 @@ addCommand({
 });
 
 // Watching the text of the shown page. The study and productivity features read lines of the page, so one watcher
-// serves them: it runs `run` when a block changes (a moment later, and every few seconds as a fallback), but only
+// serves them. It runs `run` when a block changes (a moment later, and every few seconds as a fallback). It only
 // loads anything when some block has a line that `test` matches, or had one a moment ago.
 function watchText(
   mounted: MountedPage,

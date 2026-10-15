@@ -114,6 +114,7 @@ export function Overview() {
 }
 
 /** Forms to add an exam or a class, and the lists to remove them from. */
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function Planner() {
   const exams = useStore(examsStore, (value) => value);
   const slots = useStore(timetableStore, (value) => value);
