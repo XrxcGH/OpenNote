@@ -24,6 +24,14 @@ describe('density', () => {
     expect(density()).toBe('mouse');
   });
 
+  it('ignores a palm-sized touch lifting, so it cannot resize the ribbon mid-stroke', async () => {
+    await renderApp();
+    fireEvent.pointerUp(window, { pointerType: 'touch', width: 40, height: 60 });
+    expect(density()).toBe('mouse');
+    fireEvent.pointerUp(window, { pointerType: 'touch', width: 10, height: 10 });
+    expect(density()).toBe('touch');
+  });
+
   it('stays as chosen when set by hand', async () => {
     await renderApp({ settings: { appearance: { density: 'touch' } } });
     expect(density()).toBe('touch');

@@ -8,6 +8,9 @@ import { setDensity } from '../../state/layout';
 import type { Density } from '../../state/layout';
 import { getSettings, settingsStore } from '../../state/settings';
 
+/** A touch this wide (CSS px) is a palm; ink/view/touch.ts uses the same width. */
+const PALM_PX = 28;
+
 /** Touch uses touch sizes. A pen is precise and leaves the sizes as they are. */
 function densityOf(pointerType: string): Density | null {
   if (pointerType === 'touch') return 'touch';
@@ -53,6 +56,8 @@ export function installDensity(view: Window = window): () => void {
     keepFocusInPlace(view.document, () => setDensity(next));
   };
   const onPointerUp = (event: PointerEvent) => {
+    // A palm lifting while the pen writes is not a finger: it must not resize the ribbon mid-stroke.
+    if (event.pointerType === 'touch' && Math.max(event.width, event.height) >= PALM_PX) return;
     const seen = densityOf(event.pointerType);
     if (!seen || seen === automatic) return;
     automatic = seen;
