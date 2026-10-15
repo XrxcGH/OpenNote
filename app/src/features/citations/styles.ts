@@ -34,6 +34,8 @@ const initials = (given: string, dots = true): string =>
     .map((word) => `${word[0].toUpperCase()}${dots ? '.' : ''}`)
     .join(dots ? ' ' : '');
 
+/** `show(value)`, or nothing when the value is empty. */
+const part = (value: string, show: (value: string) => string): string => (value ? show(value) : '');
 const full = (person: Person): string => (person.given ? `${person.given} ${person.family}` : person.family);
 const andList = (names: readonly string[], word = 'and', comma = true): string =>
   names.length <= 2
@@ -60,9 +62,7 @@ function apaNames(source: Source): string {
     person.given ? `${person.family}, ${initials(person.given)}` : person.family,
   );
   if (names.length > 20) return `${names.slice(0, 19).join(', ')}, ... ${names.at(-1)}`;
-  return names.length <= 2
-    ? names.join(', & ').replace(', & ', ', & ')
-    : `${names.slice(0, -1).join(', ')}, & ${names.at(-1)}`;
+  return names.length <= 2 ? names.join(', & ') : `${names.slice(0, -1).join(', ')}, & ${names.at(-1)}`;
 }
 
 const apa = {
@@ -85,7 +85,10 @@ const apa = {
           `${date}.`,
           end(source.title),
           source.container
-            ? `${italic(source.container)}${source.volume ? `, ${italic(source.volume)}` : ''}${source.issue ? `(${source.issue})` : ''}${source.pages ? `, ${pages(source.pages)}` : ''}.`
+            ? italic(source.container) +
+                part(source.volume, (v) => `, ${italic(v)}`) +
+                part(source.issue, (v) => `(${v})`) +
+                `${part(source.pages, (v) => `, ${pages(v)}`)}.`
             : '',
           link,
         );
@@ -219,7 +222,10 @@ const chicago = {
           `${year}.`,
           `"${source.title.replace(/\.$/, '')}."`,
           source.container
-            ? `${italic(source.container)}${source.volume ? ` ${source.volume}` : ''}${source.issue ? ` (${source.issue})` : ''}${source.pages ? `: ${pages(source.pages)}` : ''}.`
+            ? italic(source.container) +
+                part(source.volume, (v) => ` ${v}`) +
+                part(source.issue, (v) => ` (${v})`) +
+                `${part(source.pages, (v) => `: ${pages(v)}`)}.`
             : '',
           end(link),
         );
@@ -269,7 +275,10 @@ const harvard = {
           year,
           `'${source.title}',`,
           source.container
-            ? `${italic(source.container)}${source.volume ? `, ${source.volume}` : ''}${source.issue ? `(${source.issue})` : ''}${source.pages ? `, pp. ${pages(source.pages)}` : ''}.`
+            ? italic(source.container) +
+                part(source.volume, (v) => `, ${v}`) +
+                part(source.issue, (v) => `(${v})`) +
+                `${part(source.pages, (v) => `, pp. ${pages(v)}`)}.`
             : '',
           link ? `Available at: ${link}` : '',
         );
@@ -329,7 +338,9 @@ const ieee = {
               source.accessed ? `Accessed: ${source.accessed}.` : '',
             ]
           : [
-              `${italic(source.title)}${source.type === 'recording' ? ' [Recording]' : ''}${source.edition ? `, ${source.edition} ed.` : ''}`,
+              italic(source.title) +
+                (source.type === 'recording' ? ' [Recording]' : '') +
+                part(source.edition, (v) => `, ${v} ed.`),
               `${source.place ? `${source.place}: ` : ''}${source.publisher}${date ? `, ${date}` : ''}.`.replace(
                 /^[:,\s]+/,
                 '',

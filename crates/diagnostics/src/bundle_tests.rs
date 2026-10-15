@@ -153,7 +153,7 @@ fn nothing_private_gets_through_from_any_part() {
         ..BundleOptions::default()
     };
     let text = build(&world, &options, true).render();
-    for secret in [
+    for leak in [
         "jdoe",
         "Diary",
         "Taxes",
@@ -165,7 +165,7 @@ fn nothing_private_gets_through_from_any_part() {
         r"C:\",
         "Documents",
     ] {
-        assert!(!text.contains(secret), "{secret:?} in the bundle:\n{text}");
+        assert!(!text.contains(leak), "{leak:?} in the bundle:\n{text}");
     }
     assert!(text.contains("<path>") && text.contains("<id>") && text.contains("<url>"));
 }

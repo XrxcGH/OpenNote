@@ -16,8 +16,10 @@ pub enum PickKind {
 
 /// The file types the picker lists first, as one filter. The interop crate decides what each file really is.
 #[cfg(windows)]
-const SOURCE_TYPES: &str =
-    "*.enex;*.docx;*.odt;*.xlsx;*.xlsm;*.pptx;*.eml;*.opennote;*.md;*.markdown;*.txt;*.html;*.htm;*.mht;*.mhtml;*.csv;*.tsv;*.zip;*.sqlite;*.one;*.onepkg";
+const SOURCE_TYPES: &str = concat!(
+    "*.enex;*.docx;*.odt;*.xlsx;*.xlsm;*.pptx;*.eml;*.opennote;*.md;*.markdown;*.txt;",
+    "*.html;*.htm;*.mht;*.mhtml;*.csv;*.tsv;*.zip;*.sqlite;*.one;*.onepkg"
+);
 
 /// Shows the picker and returns the chosen path, or `None` when the person cancels.
 #[cfg(windows)]

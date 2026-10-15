@@ -27,6 +27,7 @@ describe('the Settings page', () => {
       'General',
       'Appearance',
       'Editing',
+      'Recording',
       'On-device intelligence',
       'Storage and backups',
       'Updates',

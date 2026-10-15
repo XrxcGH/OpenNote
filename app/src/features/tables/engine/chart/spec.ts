@@ -75,7 +75,8 @@ function styleFor(name: string, slot: number, patterns: boolean, prefix: string)
 
 /** Axis labels: compact numbers, and percent or currency when the series column says so. */
 function valueFormat(column: Column | undefined, locale: Locale): (value: number) => string {
-  const compact: Intl.NumberFormatOptions = { notation: 'compact', maximumFractionDigits: 2 };
+  // The minimum is set because engines differ: older ones give a currency its two decimals even when compact ($1.50K).
+  const compact: Intl.NumberFormatOptions = { notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: 2 };
   const options: Intl.NumberFormatOptions =
     column?.type === 'percent'
       ? { style: 'percent', maximumFractionDigits: 1 }

@@ -23,7 +23,7 @@ export function regionOfBrowser(): NotesRegion {
   const parts = new Intl.NumberFormat(tag).formatToParts(1234567.5);
   const decimal = parts.find((part) => part.type === 'decimal')?.value === ',' ? ',' : '.';
   const group = parts.find((part) => part.type === 'group')?.value ?? ',';
-  return { decimal, group: group === ' ' || group === ' ' ? ' ' : group };
+  return { decimal, group: group === '\u00a0' || group === '\u202f' ? ' ' : group };
 }
 
 interface Line {

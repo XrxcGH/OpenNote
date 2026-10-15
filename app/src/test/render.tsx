@@ -39,6 +39,10 @@ export interface RenderedApp extends RenderResult {
   notes: NotesService;
 }
 
+// Beta turns the custom title bar and Snap Layouts on in every non-Stable build. The shell tests start on the native
+// frame, and the ones for the custom frame say so with their own flagOverrides.
+const NATIVE_FRAME = { 'shell.customFrame': false, 'window.snapLayouts': false };
+
 const disposers: (() => void)[] = [];
 
 /**
@@ -58,7 +62,10 @@ export async function renderApp(options: RenderAppOptions = {}): Promise<Rendere
     ...options.settings,
     appearance: { ...options.settings?.appearance, ...(options.theme && { theme: options.theme }) },
   };
-  const boot = mergeBoot(defaultBootData(), { ...options.boot, settings } as BootOverrides);
+  const boot = mergeBoot(mergeBoot(defaultBootData(), { flagOverrides: NATIVE_FRAME }), {
+    ...options.boot,
+    settings,
+  } as BootOverrides);
   const platform = createTestPlatform({ boot, fixture: options.fixture });
   initFlagsFrom(boot);
   initStores(boot, platform);
