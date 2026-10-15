@@ -72,7 +72,12 @@ impl<'a> Server<'a> {
             },
             session: None,
             author: author
-                .map(|text| text.chars().filter(|c| !c.is_control()).take(commands::MAX_AUTHOR).collect::<String>())
+                .map(|text| {
+                    text.chars()
+                        .filter(|c| !c.is_control())
+                        .take(commands::MAX_AUTHOR)
+                        .collect::<String>()
+                })
                 .map(|text| text.trim().to_owned())
                 .filter(|text| !text.is_empty()),
             log,
@@ -177,7 +182,10 @@ impl<'a> Server<'a> {
             return Ok(vec![text_content(&shown(&Value::Array(out)))]);
         }
         let (path, query, body) = commands::to_http(command, &args);
-        let query: Vec<(&str, &str)> = query.iter().map(|(key, value)| (key.as_str(), value.as_str())).collect();
+        let query: Vec<(&str, &str)> = query
+            .iter()
+            .map(|(key, value)| (key.as_str(), value.as_str()))
+            .collect();
         let answer = if command.method == "GET" {
             session.get(&path, &query)
         } else {
@@ -193,7 +201,8 @@ impl<'a> Server<'a> {
             "page.render" => vec![
                 json!({ "type": "image", "data": answer["png"], "mimeType": "image/png" }),
                 text_content(&format!(
-                    "The page's handwriting and drawings: {} strokes, {} by {} pixels. Text isn't drawn; read_page and inspect_page give it.",
+                    "The page's handwriting and drawings: {} strokes, {} by {} pixels. \
+                     Text isn't drawn; read_page and inspect_page give it.",
                     answer["strokes"], answer["width"], answer["height"]
                 )),
             ],

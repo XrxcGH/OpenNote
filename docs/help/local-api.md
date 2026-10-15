@@ -50,7 +50,7 @@ A webhook tells another service, such as Zapier or Power Automate, when a page i
 - OpenNote listens only on `127.0.0.1` (this PC) and on a named pipe that only your own Windows account can open.
 - A web page can't use the API. A request from a web page, or one addressed to any name but this PC, is refused.
 - Each app has its own key. OpenNote keeps only a fingerprint of it, in Windows Credential Manager, so the key can't be read back from OpenNote.
-- Before the `opennote` command sends its key, it checks that the program answering is really OpenNote. That check uses a new 256-bit key each time the API starts, kept in Credential Manager and in `api-instance.key` in OpenNote's local data folder, which only your account can read. The file is removed when the API stops.
+- Before the `opennote` command sends its key, it checks that the program answering is really OpenNote. That check uses a new 256-bit key each time the API starts, kept in Credential Manager, and in `api-instance.key` in OpenNote's local data folder, which only your account can read. The file is removed when the API stops.
 - A request must arrive within 30 seconds and be at most 25 MB, and at most 16 run at once, so a stuck or hostile program can't tie OpenNote up.
 
 ## For script writers

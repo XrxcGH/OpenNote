@@ -41,7 +41,10 @@ struct Deadline<'s, S> {
 impl<S: Read> Read for Deadline<'_, S> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         if Instant::now() > self.until {
-            return Err(io::Error::new(io::ErrorKind::TimedOut, "the request took too long to arrive"));
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "the request took too long to arrive",
+            ));
         }
         self.inner.read(buf)
     }

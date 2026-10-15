@@ -90,7 +90,9 @@ pub fn parse(raw: &[String]) -> Result<Args, CliError> {
             "--author" => {
                 let author = value(&mut iter, "--author")?;
                 if author.chars().count() > registry::MAX_AUTHOR || author.chars().any(char::is_control) {
-                    return Err(CliError::Usage("--author takes one line of at most 60 characters.".into()));
+                    return Err(CliError::Usage(
+                        "--author takes one line of at most 60 characters.".into(),
+                    ));
                 }
                 args.author = Some(author);
             }
@@ -120,8 +122,16 @@ pub fn parse(raw: &[String]) -> Result<Args, CliError> {
 /// The folders this run may read from and write to.
 fn sandbox(args: &Args) -> Result<Sandbox, CliError> {
     let here = || vec![PathBuf::from(".")];
-    let read = if args.read_roots.is_empty() { here() } else { args.read_roots.clone() };
-    let write = if args.write_roots.is_empty() { here() } else { args.write_roots.clone() };
+    let read = if args.read_roots.is_empty() {
+        here()
+    } else {
+        args.read_roots.clone()
+    };
+    let write = if args.write_roots.is_empty() {
+        here()
+    } else {
+        args.write_roots.clone()
+    };
     Sandbox::new(&read, &write).map_err(|error| CliError::Usage(error.to_string()))
 }
 
@@ -607,8 +617,16 @@ mod tests {
                 assert!(HELP.contains(&format!("  {word}")), "{word} isn't in the help");
             }
         }
-        let args = parse(&strings(&["--author", "Claude (copyedit)", "--write-root", "a", "--write-root", "b", "daily"]))
-            .expect("parses");
+        let args = parse(&strings(&[
+            "--author",
+            "Claude (copyedit)",
+            "--write-root",
+            "a",
+            "--write-root",
+            "b",
+            "daily",
+        ]))
+        .expect("parses");
         assert_eq!(args.author.as_deref(), Some("Claude (copyedit)"));
         assert_eq!(args.write_roots.len(), 2);
         assert!(parse(&strings(&["--author", &"x".repeat(61)])).is_err());

@@ -185,7 +185,13 @@ pub const COMMANDS: &[Command] = &[
         doc: "Lists a notebook's sections. Locked sections are marked and can't be read.",
         method: "GET",
         path: &["notebooks", "{}", "sections"],
-        params: &[param("notebook_id", "notebook_id", Kind::Id, Place::Path, "The notebook's ID.")],
+        params: &[param(
+            "notebook_id",
+            "notebook_id",
+            Kind::Id,
+            Place::Path,
+            "The notebook's ID.",
+        )],
         need: Need::Token,
         changes: false,
         cli: None,
@@ -211,7 +217,13 @@ pub const COMMANDS: &[Command] = &[
         path: &["pages", "{}"],
         params: &[
             PAGE_ID,
-            optional("format", "format", Kind::OneOf(&["md", "json"]), Place::Query, "md for Markdown only."),
+            optional(
+                "format",
+                "format",
+                Kind::OneOf(&["md", "json"]),
+                Place::Query,
+                "md for Markdown only.",
+            ),
         ],
         need: Need::Read,
         changes: false,
@@ -252,7 +264,13 @@ pub const COMMANDS: &[Command] = &[
         path: &["search"],
         params: &[
             param("query", "q", Kind::Line(500), Place::Query, "The words to look for."),
-            optional("limit", "limit", Kind::Int(1, 50), Place::Query, "At most this many results."),
+            optional(
+                "limit",
+                "limit",
+                Kind::Int(1, 50),
+                Place::Query,
+                "At most this many results.",
+            ),
         ],
         need: Need::Read,
         changes: false,
@@ -280,7 +298,13 @@ pub const COMMANDS: &[Command] = &[
         params: &[
             SECTION_ID,
             param("title", "title", Kind::Line(200), Place::Body, "The page's title."),
-            optional("markdown", "markdown", Kind::Markdown, Place::Body, "The page's text as Markdown."),
+            optional(
+                "markdown",
+                "markdown",
+                Kind::Markdown,
+                Place::Body,
+                "The page's text as Markdown.",
+            ),
             optional(
                 "source_url",
                 "sourceUrl",
@@ -303,7 +327,13 @@ pub const COMMANDS: &[Command] = &[
         path: &["pages", "{}", "append"],
         params: &[
             PAGE_ID,
-            param("markdown", "markdown", Kind::Markdown, Place::Body, "The text to add, as Markdown."),
+            param(
+                "markdown",
+                "markdown",
+                Kind::Markdown,
+                Place::Body,
+                "The text to add, as Markdown.",
+            ),
             AUTHOR,
         ],
         need: Need::Change,
@@ -318,7 +348,13 @@ pub const COMMANDS: &[Command] = &[
         method: "POST",
         path: &["daily"],
         params: &[
-            param("markdown", "markdown", Kind::Markdown, Place::Body, "The text to add, as Markdown."),
+            param(
+                "markdown",
+                "markdown",
+                Kind::Markdown,
+                Place::Body,
+                "The text to add, as Markdown.",
+            ),
             AUTHOR,
         ],
         need: Need::Change,
@@ -531,9 +567,7 @@ pub fn to_http(command: &Command, args: &Value) -> (String, Vec<(String, String)
             Place::Path => {}
             Place::Query => query.push((
                 param.wire.to_owned(),
-                value
-                    .as_str()
-                    .map_or_else(|| value.to_string(), str::to_owned),
+                value.as_str().map_or_else(|| value.to_string(), str::to_owned),
             )),
             Place::Body => {
                 body.insert(param.wire.to_owned(), value.clone());
@@ -634,11 +668,7 @@ mod tests {
                 );
             }
             let holes = command.path.iter().filter(|part| **part == "{}").count();
-            let path_params = command
-                .params
-                .iter()
-                .filter(|param| param.place == Place::Path)
-                .count();
+            let path_params = command.params.iter().filter(|param| param.place == Place::Path).count();
             assert_eq!(holes, path_params, "{}", command.id);
             assert_eq!(command.changes, command.method == "POST", "{}", command.id);
         }
@@ -646,8 +676,12 @@ mod tests {
 
     #[test]
     fn routes_by_shape_and_method() {
-        assert!(matches!(route("GET", &["pages", "p1"]), Routed::Found(command, ids) if command.id == "page.read" && ids == ["p1"]));
-        assert!(matches!(route("GET", &["pages", "p1", "inspect"]), Routed::Found(command, _) if command.id == "page.inspect"));
+        assert!(
+            matches!(route("GET", &["pages", "p1"]), Routed::Found(command, ids) if command.id == "page.read" && ids == ["p1"])
+        );
+        assert!(
+            matches!(route("GET", &["pages", "p1", "inspect"]), Routed::Found(command, _) if command.id == "page.inspect")
+        );
         assert_eq!(route("DELETE", &["pages", "p1"]), Routed::WrongMethod);
         assert_eq!(route("GET", &["pages", "p1", "nope"]), Routed::NotFound);
     }
@@ -667,8 +701,17 @@ mod tests {
         assert!(check_args(search, &json!({ "query": "x", "limit": "5" })).is_err());
         let (path, query, _) = to_http(search, &json!({ "query": "cell wall", "limit": 5 }));
         assert_eq!(path, "/v1/search");
-        assert_eq!(query, [("q".to_owned(), "cell wall".to_owned()), ("limit".to_owned(), "5".to_owned())]);
-        let (path, _, body) = to_http(create, &json!({ "section_id": "s1", "title": "T", "source_url": "https://x.org" }));
+        assert_eq!(
+            query,
+            [
+                ("q".to_owned(), "cell wall".to_owned()),
+                ("limit".to_owned(), "5".to_owned())
+            ]
+        );
+        let (path, _, body) = to_http(
+            create,
+            &json!({ "section_id": "s1", "title": "T", "source_url": "https://x.org" }),
+        );
         assert_eq!(path, "/v1/sections/s1/pages");
         assert_eq!(body, json!({ "title": "T", "sourceUrl": "https://x.org" }));
     }

@@ -86,7 +86,7 @@ pub struct InkLine {
     pub width: f64,
 }
 
-/// Every stroke of the page as [`InkLine`]s, laid out and ordered as `ink.svg` lays them out.
+/// Every stroke of the page as [`InkLine`]s, laid out, and ordered as `ink.svg` lays them out.
 pub fn ink_lines(page: &Page) -> Vec<InkLine> {
     layout(page)
         .into_iter()

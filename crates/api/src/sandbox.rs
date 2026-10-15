@@ -35,7 +35,7 @@ fn refused(path: &Path, message: impl Into<String>) -> SandboxError {
     }
 }
 
-/// A path as the person typed or would recognise it, without the `\\?\` prefix canonical paths have on Windows.
+/// A path as the person typed or would recognize it, without the `\\?\` prefix canonical paths have on Windows.
 fn shown(path: &Path) -> String {
     let text = path.display().to_string();
     text.strip_prefix(r"\\?\")
@@ -161,7 +161,9 @@ fn inside(path: &Path, root: &Path) -> bool {
         }
     };
     let mut path = path.components().map(fold);
-    root.components().map(fold).all(|part| path.next().as_ref() == Some(&part))
+    root.components()
+        .map(fold)
+        .all(|part| path.next().as_ref() == Some(&part))
 }
 
 /// The roots one run of the tool may use.
@@ -236,11 +238,29 @@ mod tests {
     #[test]
     fn knows_the_names_windows_keeps_for_devices() {
         for name in [
-            "CON", "con", "nul.txt", "Nul.tar.gz", "COM1", "lpt9", "AUX ", "PRN.", "COM\u{b9}", "CONIN$", "conout$.log",
+            "CON",
+            "con",
+            "nul.txt",
+            "Nul.tar.gz",
+            "COM1",
+            "lpt9",
+            "AUX ",
+            "PRN.",
+            "COM\u{b9}",
+            "CONIN$",
+            "conout$.log",
         ] {
             assert!(device_name(name), "{name}");
         }
-        for name in ["CONSOLE", "COM10", "COM", "nullable.md", "my CON.md", "LPTA", "aux_notes"] {
+        for name in [
+            "CONSOLE",
+            "COM10",
+            "COM",
+            "nullable.md",
+            "my CON.md",
+            "LPTA",
+            "aux_notes",
+        ] {
             assert!(!device_name(name), "{name}");
         }
     }
@@ -264,10 +284,10 @@ mod tests {
         // Whole folder names: work2 is not inside work.
         assert!(sandbox.check_write(&work2.join("out.md")).is_err());
         // .. is resolved before the check.
-        assert!(sandbox.check_write(&work.join("..").join("work2").join("x.md")).is_err());
-        let error = sandbox
-            .check_write(&work.join("con.md"))
-            .expect_err("a device name");
+        assert!(sandbox
+            .check_write(&work.join("..").join("work2").join("x.md"))
+            .is_err());
+        let error = sandbox.check_write(&work.join("con.md")).expect_err("a device name");
         assert!(error.message.contains("device"), "{error}");
         assert!(sandbox.check_write(&work.join("a.md:hidden")).is_err());
         assert!(sandbox.check_read(Path::new(r"\\server\share\x.md")).is_err());

@@ -39,7 +39,10 @@ fn client(test: &TestApi, token: &str) -> Client {
 #[test]
 fn lists_every_command_with_what_this_app_may_run() {
     let test = TestApi::start();
-    let token = pair(&test, allow(Access::Read, Scope::Notebooks(vec!["nb-bio".into()]), false));
+    let token = pair(
+        &test,
+        allow(Access::Read, Scope::Notebooks(vec!["nb-bio".into()]), false),
+    );
     let listed = client(&test, &token)
         .get("/v1/commands", &[])
         .expect("an answer")
@@ -91,10 +94,7 @@ fn inspect_and_render_let_an_agent_check_its_work_but_never_in_locked_sections()
         assert_eq!(me.get(path, &[]).expect("an answer").status, 423, "{path}");
     }
     let too_long = me
-        .post(
-            "/v1/daily",
-            &json!({ "markdown": "x", "author": "a".repeat(61) }),
-        )
+        .post("/v1/daily", &json!({ "markdown": "x", "author": "a".repeat(61) }))
         .expect("an answer");
     assert_eq!(too_long.status, 400);
 }
@@ -248,9 +248,15 @@ fn hostile_params_never_panic() {
     }
     assert!(sent > 1_000, "only {sent} requests");
     // Nothing junk reached a locked page, and the notes still answer.
-    assert_eq!(test.backend.markdown("p-secret").as_deref(), Some("A secret about mitochondria."));
     assert_eq!(
-        client(&test, &token).get("/v1/notebooks", &[]).expect("an answer").status,
+        test.backend.markdown("p-secret").as_deref(),
+        Some("A secret about mitochondria.")
+    );
+    assert_eq!(
+        client(&test, &token)
+            .get("/v1/notebooks", &[])
+            .expect("an answer")
+            .status,
         200
     );
 }

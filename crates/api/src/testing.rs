@@ -12,8 +12,8 @@ use crate::{
         block_summary, headings_of, word_count, ApprovalRequest, Approver, Backend, BackendError, Decision,
         HistoryEntry, Location, NewPage, NotebookInfo, PageInfo, PageInspection, PageText, SearchHit, SectionInfo,
     },
-    render::Polyline,
     grants::{lock, random_bytes, ConfigFile, Grants, MemorySecrets},
+    render::Polyline,
     routes::Api,
     server::Server,
 };

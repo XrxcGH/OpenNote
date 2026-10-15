@@ -376,7 +376,11 @@ fn read_back_tools_and_authors_let_an_agent_check_its_own_work() {
     test.approver.answer(allow(Access::ReadWrite, Scope::All));
     test.approver.answer(YES_ONCE);
     let input: String = [
-        call(1, "append_to_page", json!({ "page_id": "p-mito", "markdown": "## Cristae" })),
+        call(
+            1,
+            "append_to_page",
+            json!({ "page_id": "p-mito", "markdown": "## Cristae" }),
+        ),
         call(2, "inspect_page", json!({ "page_id": "p-mito" })),
         call(3, "render_page", json!({ "page_id": "p-mito" })),
         call(4, "list_commands", json!({})),
@@ -391,19 +395,32 @@ fn read_back_tools_and_authors_let_an_agent_check_its_own_work() {
         &input,
     );
     assert_eq!(result.code, 0, "{}", result.err);
-    let answers: Vec<Value> = result.out.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
+    let answers: Vec<Value> = result
+        .out
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("json"))
+        .collect();
     assert_eq!(answers[0]["result"]["isError"], false, "{}", answers[0]);
     assert_eq!(
         test.backend.history("p-mito"),
         ["Changed via Claude Desktop (Claude (copyedit))"]
     );
     let inspected = answers[1]["result"]["content"][0]["text"].as_str().expect("text");
-    assert!(inspected.contains("## Cristae") && inspected.contains("Claude (copyedit)"), "{inspected}");
+    assert!(
+        inspected.contains("## Cristae") && inspected.contains("Claude (copyedit)"),
+        "{inspected}"
+    );
     assert_eq!(answers[2]["result"]["content"][0]["type"], "image");
     assert_eq!(answers[2]["result"]["content"][0]["mimeType"], "image/png");
-    assert!(answers[3]["result"]["content"][0]["text"].as_str().expect("text").contains("page.inspect"));
+    assert!(answers[3]["result"]["content"][0]["text"]
+        .as_str()
+        .expect("text")
+        .contains("page.inspect"));
     assert_eq!(answers[4]["result"]["isError"], true);
-    assert!(answers[4]["result"]["content"][0]["text"].as_str().expect("text").starts_with("unknown:"));
+    assert!(answers[4]["result"]["content"][0]["text"]
+        .as_str()
+        .expect("text")
+        .starts_with("unknown:"));
 
     // The same from the command line, which asks for its own access.
     test.approver.answer(allow(Access::Read, Scope::All));
@@ -411,7 +428,11 @@ fn read_back_tools_and_authors_let_an_agent_check_its_own_work() {
     let picture = folder.path().join("mito.png");
     let picture_arg = picture.display().to_string();
     let root = folder.path().display().to_string();
-    let rendered = run(&env, &["render", "p-mito", "--out", &picture_arg, "--write-root", &root], "");
+    let rendered = run(
+        &env,
+        &["render", "p-mito", "--out", &picture_arg, "--write-root", &root],
+        "",
+    );
     assert_eq!(rendered.code, 0, "{}", rendered.err);
     assert!(std::fs::read(&picture).expect("saved").starts_with(b"\x89PNG"));
     let inspected = run(&env, &["inspect", "p-mito"], "");
@@ -447,7 +468,11 @@ fn hostile_params_never_panic_in_the_mcp_server() {
     let tools = opennote_cli::mcp::tools();
     for tool in tools.as_array().expect("tools") {
         let name = tool["name"].as_str().expect("a name");
-        for property in tool["inputSchema"]["properties"].as_object().expect("properties").keys() {
+        for property in tool["inputSchema"]["properties"]
+            .as_object()
+            .expect("properties")
+            .keys()
+        {
             for value in &junk {
                 id += 1;
                 lines.push(call(id, name, json!({ property: value })));
@@ -473,5 +498,8 @@ fn hostile_params_never_panic_in_the_mcp_server() {
     let answers = result.out.lines().count();
     assert_eq!(answers, lines.len(), "every request got exactly one answer");
     assert!(result.out.len() < 2_000_000, "no answer echoes junk back at length");
-    assert_eq!(test.backend.markdown("p-secret").as_deref(), Some("A secret about mitochondria."));
+    assert_eq!(
+        test.backend.markdown("p-secret").as_deref(),
+        Some("A secret about mitochondria.")
+    );
 }
