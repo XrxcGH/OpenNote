@@ -158,6 +158,65 @@
     text-align: start;
   }
 
+  /* The photo with its page corners, placed by hand. */
+  .cornersHelp {
+    margin-block: 0 var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .corners {
+    position: relative;
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    margin-block-end: var(--space-3);
+    touch-action: none;
+  }
+
+  .cornersPhoto {
+    display: block;
+    max-inline-size: 100%;
+    max-block-size: 40vh;
+    border-radius: var(--radius-sm);
+    user-select: none;
+  }
+
+  .cornersOutline {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    pointer-events: none;
+  }
+
+  .cornersOutline polygon {
+    fill: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+    stroke: var(--color-accent-primary);
+    stroke-width: 2px;
+  }
+
+  .corner {
+    position: absolute;
+    inline-size: 28px;
+    block-size: 28px;
+    margin: -14px 0 0 -14px;
+    padding: 0;
+    border: 2px solid var(--color-accent-primary);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-surface-raised) 70%, transparent);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .corner:active {
+    cursor: grabbing;
+  }
+
+  .corner:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
   .preview {
     display: block;
     max-inline-size: 100%;

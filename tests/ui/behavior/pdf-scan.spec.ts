@@ -56,7 +56,9 @@ test('Scan pages from photos adds each photo as a cleaned page', async ({ page }
   const bytes = await photo(page);
   const chooser = page.waitForEvent('filechooser');
   await runCommand(page, 'Scan pages from photos');
-  await (await chooser).setFiles([
+  await (
+    await chooser
+  ).setFiles([
     { name: 'one.png', mimeType: 'image/png', buffer: bytes },
     { name: 'two.png', mimeType: 'image/png', buffer: bytes },
   ]);
@@ -65,4 +67,55 @@ test('Scan pages from photos adds each photo as a cleaned page', async ({ page }
   await dialog.getByRole('button', { name: 'Clean up' }).click();
   await expect(page.getByRole('group', { name: 'Image: Scan, page 1' })).toBeVisible();
   await expect(page.getByRole('group', { name: 'Image: Scan, page 2' })).toBeVisible();
+});
+
+test('the page corners can be placed by hand, with a pointer or the arrow keys', async ({ page }) => {
+  await openMembranes(page);
+  const bytes = await photo(page);
+  const chooser = page.waitForEvent('filechooser');
+  await runCommand(page, 'Image…');
+  await (await chooser).setFiles({ name: 'desk.png', mimeType: 'image/png', buffer: bytes });
+  const image = page.getByRole('group', { name: 'Image, no description' });
+  await expect(image).toBeVisible();
+  const before = await image.locator('img').getAttribute('src');
+
+  await runCommand(page, 'Clean up scan');
+  const dialog = page.getByRole('dialog', { name: 'Clean up scan' });
+  await dialog.getByRole('button', { name: 'Adjust the corners' }).click();
+  const corners = dialog.getByRole('group', { name: 'Page corners' });
+  const topLeft = corners.getByRole('button', { name: /^Top left corner/ });
+  await expect(topLeft).toBeVisible();
+  const label = await topLeft.getAttribute('aria-label');
+
+  // Keyboard: Shift+Right moves the corner 5% across.
+  await topLeft.focus();
+  await page.keyboard.press('Shift+ArrowRight');
+  await expect(topLeft).not.toHaveAttribute('aria-label', label ?? '');
+
+  // Pointer: drag the bottom right corner to the photo's bottom right, once the preview has redrawn and the dialog
+  // stopped moving.
+  const bottomRight = corners.getByRole('button', { name: /^Bottom right corner/ });
+  let last = '';
+  await expect
+    .poll(
+      async () => {
+        const now = JSON.stringify(await bottomRight.boundingBox());
+        const still = now === last;
+        last = now;
+        return still;
+      },
+      { intervals: [250] },
+    )
+    .toBe(true);
+  const box = (await corners.locator('img').boundingBox())!;
+  const handle = (await bottomRight.boundingBox())!;
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width - 1, box.y + box.height - 1, { steps: 4 });
+  await page.mouse.up();
+  await expect(bottomRight).toHaveAttribute('aria-label', /99% across, 99% down|100% across, 100% down/);
+
+  await dialog.getByRole('button', { name: 'Clean up' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect.poll(() => image.locator('img').getAttribute('src')).not.toBe(before);
 });

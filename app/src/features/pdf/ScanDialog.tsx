@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { BlockJson } from '../../services/pages/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
 import { t } from '../../strings/t';
-import { Dialog, RadioCard, RadioGroup, showToast } from '../../ui';
+import { Button, Dialog, RadioCard, RadioGroup, showToast } from '../../ui';
+import type { Frame } from './scan/apply';
 import type { ScanMode } from './scan/clean';
+import { CornerEditor } from './scan/CornerEditor';
 import type { EditTarget } from './target';
 import styles from './pdf.module.css';
 
@@ -31,28 +33,51 @@ export default function ScanDialog(props: ScanDialogProps & OverlayProps) {
   const [mode, setMode] = useState<ScanMode>('color');
   const [found, setFound] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [source, setSource] = useState<Blob | null>(null);
+  // The corners on screen, and the corners the preview and cleanup use (set when a corner is let go).
+  const [frame, setFrame] = useState<Frame | null>(null);
+  const [placed, setPlaced] = useState<Frame | null>(null);
+  const [adjusting, setAdjusting] = useState(false);
   const canvas = useRef<HTMLCanvasElement>(null);
+  // Corners can be placed by hand when there is one photo to look at.
+  const single = block !== null || photos.length === 1;
 
   useEffect(() => {
     let live = true;
     void (async () => {
-      const [source, { cleanBlob }] = await Promise.all([previewSource(props), import('./scan/apply')]);
-      if (!source || !live) return;
-      const result = await cleanBlob(source, mode).catch(() => null);
+      const [blob, { detectFrame }] = await Promise.all([previewSource(props), import('./scan/apply')]);
+      if (!blob || !live) return;
+      setSource(blob);
+      const detected = await detectFrame(blob).catch(() => null);
+      if (!detected || !live) return;
+      setFrame(detected.frame);
+      setPlaced(detected.frame);
+      setFound(detected.found);
+    })();
+    return () => {
+      live = false;
+    };
+    // The source stays the same while the dialog is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!source || !placed) return;
+    let live = true;
+    void (async () => {
+      const { cleanBlob } = await import('./scan/apply');
+      const result = await cleanBlob(source, mode, placed).catch(() => null);
       const element = canvas.current;
       if (!result || !live || !element) return;
       element.width = result.width;
       element.height = result.height;
       const image = new ImageData(new Uint8ClampedArray(result.data), result.width, result.height);
       element.getContext('2d')?.putImageData(image, 0, 0);
-      setFound(result.found);
     })();
     return () => {
       live = false;
     };
-    // The preview follows the mode; the source stays the same while the dialog is open.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [source, mode, placed]);
 
   const run = async () => {
     if (busy) return;
@@ -60,10 +85,11 @@ export default function ScanDialog(props: ScanDialogProps & OverlayProps) {
     try {
       const work = await import('./scan/apply');
       if (block) {
-        await work.cleanPicture(target, block, mode);
+        await work.cleanPicture(target, block, mode, single && adjusting ? (placed ?? undefined) : undefined);
         showToast({ message: t('pdf.scan.cleaned') });
       } else {
-        const made = await work.addScans(target, photos, mode, top);
+        const frameUsed = single && adjusting ? (placed ?? undefined) : undefined;
+        const made = await work.addScans(target, photos, mode, top, undefined, frameUsed);
         showToast({ message: t('pdf.scan.added', { count: made }) });
       }
       onClose();
@@ -83,8 +109,25 @@ export default function ScanDialog(props: ScanDialogProps & OverlayProps) {
         { id: 'run', label: t('pdf.scan.run'), variant: 'primary', onPress: run },
       ]}
     >
+      {found === false && !adjusting ? <p role="status">{t('pdf.scan.noEdges')}</p> : null}
+      {single && source && frame ? (
+        adjusting ? (
+          <CornerEditor
+            photo={source}
+            frame={frame}
+            onMove={setFrame}
+            onCommit={(next) => {
+              setFrame(next);
+              setPlaced(next);
+            }}
+          />
+        ) : (
+          <Button variant="secondary" onClick={() => setAdjusting(true)}>
+            {t('pdf.scan.corners.adjust')}
+          </Button>
+        )
+      ) : null}
       <canvas ref={canvas} className={styles.preview} role="img" aria-label={t('pdf.scan.preview')} />
-      {found === false ? <p role="status">{t('pdf.scan.noEdges')}</p> : null}
       <RadioGroup<ScanMode> label={t('pdf.scan.mode')} value={mode} onChange={setMode}>
         <RadioCard<ScanMode> value="color" label={t('pdf.scan.modes.color')} />
         <RadioCard<ScanMode> value="grayscale" label={t('pdf.scan.modes.grayscale')} />

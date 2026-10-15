@@ -7,7 +7,8 @@ import type { BlockJson, Edit, ImportedAsset } from '../../../services/pages/typ
 import { t } from '../../../strings/t';
 import type { EditTarget } from '../target';
 import { cleanScan } from './clean';
-import type { CleanResult, Pixels, ScanMode } from './clean';
+import { findPage } from './clean';
+import type { CleanResult, Pixels, Quad, ScanMode } from './clean';
 
 /** The longest side read from a photo. A bigger photo is shrunk first, which keeps cleanup quick. */
 export const MAX_INPUT_SIDE = 3000;
@@ -47,9 +48,31 @@ export async function encode(pixels: Pixels, mode: ScanMode): Promise<{ blob: Bl
   return { blob, mime };
 }
 
-/** Cleans a photo file. */
-export async function cleanBlob(blob: Blob, mode: ScanMode): Promise<CleanResult> {
-  return cleanScan(await pixelsOf(blob), { mode });
+/** Corners as fractions of the photo's width and height, so they hold at any size the photo is read at. */
+export type Frame = Quad;
+
+const clamp01 = (value: number) => (Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0);
+
+/** Turns a frame into corners in a photo's pixels, clamped inside the photo. */
+export function cornersOf(frame: Frame, width: number, height: number): Quad {
+  const at = ([x, y]: readonly [number, number]) => [clamp01(x) * (width - 1), clamp01(y) * (height - 1)] as const;
+  return [at(frame[0]), at(frame[1]), at(frame[2]), at(frame[3])];
+}
+
+/** Finds the page in a photo, as a frame, and whether its edges were clear. */
+export async function detectFrame(blob: Blob): Promise<{ frame: Frame; found: boolean }> {
+  const pixels = await pixelsOf(blob);
+  const { corners, found } = findPage(pixels);
+  const w = Math.max(1, pixels.width - 1);
+  const h = Math.max(1, pixels.height - 1);
+  const to = ([x, y]: readonly [number, number]) => [clamp01(x / w), clamp01(y / h)] as const;
+  return { frame: [to(corners[0]), to(corners[1]), to(corners[2]), to(corners[3])], found };
+}
+
+/** Cleans a photo file, inside the corners the person placed when there is a frame. */
+export async function cleanBlob(blob: Blob, mode: ScanMode, frame?: Frame): Promise<CleanResult> {
+  const pixels = await pixelsOf(blob);
+  return cleanScan(pixels, { mode, corners: frame ? cornersOf(frame, pixels.width, pixels.height) : undefined });
 }
 
 async function store(target: EditTarget, result: CleanResult, mode: ScanMode, name: string): Promise<ImportedAsset> {
@@ -64,13 +87,18 @@ const scanData = (mode: ScanMode, result: CleanResult) => ({
 });
 
 /** Puts the cleaned page in place of a picture's photo. The photo is kept as the block's `original`. */
-export async function cleanPicture(target: EditTarget, block: BlockJson, mode: ScanMode): Promise<boolean> {
+export async function cleanPicture(
+  target: EditTarget,
+  block: BlockJson,
+  mode: ScanMode,
+  placed?: Frame,
+): Promise<boolean> {
   const asset = typeof block.data.asset === 'string' ? block.data.asset : null;
   if (!asset) return false;
   const original = typeof block.data.original === 'string' ? block.data.original : asset;
   const response = await fetch(target.page.assetUrl(original));
   if (!response.ok) return false;
-  const result = await cleanBlob(await response.blob(), mode);
+  const result = await cleanBlob(await response.blob(), mode, placed);
   const cleaned = await store(target, result, mode, 'scan');
   const edits: Edit[] = [
     { edit: 'addAsset', asset: cleaned.id },
@@ -107,13 +135,15 @@ export async function addScans(
   mode: ScanMode,
   top: number,
   onPage?: (done: number) => void,
+  frame?: Frame,
 ): Promise<number> {
   const edits: Edit[] = [];
   let y = top;
   let made = 0;
   for (const [index, photo] of photos.entries()) {
     if (photo.size > MAX_PHOTO_BYTES) continue;
-    const result = await cleanBlob(photo, mode).catch(() => null);
+    // Placed corners belong to the one photo the person saw; with several photos each finds its own edges.
+    const result = await cleanBlob(photo, mode, photos.length === 1 ? frame : undefined).catch(() => null);
     if (!result) continue;
     const original = await target.importImage({
       kind: 'bytes',

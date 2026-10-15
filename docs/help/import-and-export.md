@@ -48,6 +48,7 @@ A PDF that is damaged or locked with a password is not opened, and nothing is ad
 Take a photo of a page, a whiteboard, or a slide, and OpenNote can tidy it.
 
 - Select the photo on a page, press Ctrl+K, and choose Clean up scan. OpenNote finds the edges of the page, straightens it, and evens out the lighting. Choose Color, Grayscale, or Black and white, and look at the preview before you choose Clean up.
+- If the edges are not quite right, choose Adjust the corners and drag each corner onto a corner of the page. You can also select a corner and move it with the arrow keys, or with Shift and the arrow keys to move farther. The preview follows.
 - To scan several pages at once, choose Scan pages from photos on the Insert tab and pick the photos. Each one becomes a cleaned page, one below the other.
 - The original photo is kept. Ctrl+Z undoes the cleanup in one step, and Restore the original photo brings it back later.
 
@@ -87,8 +88,8 @@ Right-click a page, a section, or a notebook and choose Share as a file. You can
 
 Take a screenshot with Win+Shift+S and OpenNote offers to add it to the open page. You can send copies of pages to favorite folders, then choose Update the copy after you edit.
 
-## Not in beta 4
+## Not built yet
 
-Opening OneNote files, importing a PDF with space for notes, and the web clipper are not built.
+Opening OneNote files and the web clipper are not built.
 
 Import and export are built. Agents opened each dialog once. Nobody has tried a real import by hand.

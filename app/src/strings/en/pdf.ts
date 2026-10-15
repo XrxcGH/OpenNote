@@ -102,6 +102,15 @@ export const pdf = {
     failed: 'The photo could not be cleaned up. Nothing was changed.',
     selectFirst: 'Select a picture first, then choose Clean up scan.',
     pageAlt: 'Scan, page {page}',
+    corners: {
+      adjust: 'Adjust the corners',
+      label: 'Page corners',
+      help: 'Drag a corner onto a corner of the page, or select it and use the arrow keys. Hold Shift to move farther.',
+      topLeft: 'Top left corner, {x}% across, {y}% down',
+      topRight: 'Top right corner, {x}% across, {y}% down',
+      bottomRight: 'Bottom right corner, {x}% across, {y}% down',
+      bottomLeft: 'Bottom left corner, {x}% across, {y}% down',
+    },
   },
   highlights: {
     title: 'PDF highlights',
