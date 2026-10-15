@@ -6,7 +6,7 @@ import { MockServer } from '../../../../../tests/mock-servers/server';
 import { createFakeConnectors } from '../../connectors';
 import { createFakeAccountsHost } from '../fakeHost';
 import { formatsFor, sendFile } from './commands';
-import { changedSince, copiesOf, loadCopies } from './copies';
+import { changedSince, copiesDue, copiesOf, loadCopies } from './copies';
 import { driveDestination } from './drive';
 import { onedriveDestination } from './onedrive';
 import { DOCX } from './types';
@@ -179,6 +179,20 @@ describe('the link between a page and its copy', () => {
     expect(changedSince({ sentAt: '2026-10-01T10:00:00Z' }, '2026-10-01T10:00:01Z')).toBe(true);
     expect(changedSince({ sentAt: '2026-10-01T10:00:00Z' }, '2026-10-01T09:00:00Z')).toBe(false);
     expect(changedSince({ sentAt: 'nonsense' }, '2026-10-01T09:00:00Z')).toBe(false);
+  });
+
+  it('picks the Dropbox, Box, and WebDAV copies a sync sends again', () => {
+    const base = { remote: 'r', name: 'n', link: '', folder: '', format: 'pdf', sentAt: '2026-10-01T10:00:00Z' } as const;
+    const copies = [
+      { ...base, service: 'dropbox', node: 'changed', scope: 'page' },
+      { ...base, service: 'box', node: 'quiet', scope: 'page' },
+      { ...base, service: 'webdav', node: 'sec', scope: 'section' },
+      { ...base, service: 'drive', node: 'changed', scope: 'page' },
+      { ...base, service: 'dropbox', node: 'changed', scope: 'page', format: 'png' },
+    ] as const;
+    const modified = (node: string) => (node === 'quiet' ? '2026-10-01T09:00:00Z' : '2026-10-02T09:00:00Z');
+    const due = copiesDue(copies, ['dropbox', 'box', 'webdav'], modified);
+    expect(due.map((one) => [one.service, one.node].join(':'))).toEqual(['dropbox:changed', 'webdav:sec']);
   });
 
   it('offers the types each service can take', () => {

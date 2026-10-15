@@ -8,6 +8,7 @@ export const accountsSendTo = {
     box: 'Send to Box',
     webdav: 'Send to a WebDAV server',
     update: 'Update the copy that was sent to the cloud',
+    sync: 'Sync Dropbox, Box, and WebDAV copies',
     keywords:
       'send drive google onedrive microsoft dropbox box webdav nextcloud upload copy export docs word pdf update cloud',
   },
@@ -19,6 +20,10 @@ export const accountsSendTo = {
   updating: 'Updating {name}…',
   done: 'Sent “{name}” to {service}, in {folder}.',
   updated: 'Updated “{name}” on {service}.',
+  sync: {
+    nothing: 'Every Dropbox, Box, and WebDAV copy is up to date.',
+    done: '{count, plural, one {Updated # copy.} other {Updated # copies.}}',
+  },
   offer: 'This page has changed since you sent it to {service}.',
   offerAction: 'Update the {service} copy',
   scope: {

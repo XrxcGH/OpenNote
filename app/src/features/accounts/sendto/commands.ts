@@ -14,7 +14,7 @@ import type { AccountsHost } from '../host';
 import { attempt, isConnected, tellNotConnected } from '../run';
 import { pickOne } from '../ui/prompts';
 import type { Choice } from '../ui/prompts';
-import { changedSince, copiesOf, copyOf, loadCopies, rememberCopy } from './copies';
+import { changedSince, copiesDue, copiesOf, copyOf, loadCopies, rememberCopy } from './copies';
 import { boxDestination } from './box';
 import { driveDestination } from './drive';
 import { dropboxDestination } from './dropbox';
@@ -293,3 +293,31 @@ export async function offerUpdate(page: string, modified: string): Promise<void>
 }
 
 export const resetOffers = (): void => offered.clear();
+
+const SYNCED: readonly SendService[] = ['dropbox', 'box', 'webdav'];
+
+/**
+ * Brings every Dropbox, Box, and WebDAV copy up to date in one go: a page's copy when the page changed since it was
+ * sent, a section's or notebook's copy always (their own times don't follow their pages). Each is sent over its copy,
+ * so nothing new appears in the folder. Quiet when nothing needs it.
+ */
+export async function syncCopies(): Promise<number> {
+  const notes = commandContext('palette').notes;
+  const copies = await loadCopies();
+  const times = new Map<string, string>();
+  for (const copy of copies) {
+    if (copy.scope !== 'page' || times.has(copy.node)) continue;
+    const node = await notes.get(copy.node as NodeId);
+    if (node) times.set(copy.node, node.modified);
+  }
+  const due = copiesDue(copies, SYNCED, (node) => times.get(node) ?? null);
+  if (due.length === 0) {
+    showToast({ message: t('accounts.sendTo.sync.nothing') });
+    return 0;
+  }
+  for (const copy of due) await updateCopy(copy);
+  const message = t('accounts.sendTo.sync.done', { count: due.length });
+  showToast({ message });
+  announce(message);
+  return due.length;
+}

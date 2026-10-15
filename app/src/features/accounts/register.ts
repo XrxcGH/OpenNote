@@ -111,6 +111,13 @@ const SPECS: readonly Spec[] = [
     run: () => import('./sendto/commands').then((module) => module.updateHere()),
   },
   {
+    id: 'sendto.sync',
+    title: 'accounts.sendTo.commands.sync',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.cloudSync',
+    run: () => import('./sendto/commands').then((module) => void module.syncCopies()),
+  },
+  {
     id: 'googleOffice.import',
     title: 'accounts.googleOffice.commands.import',
     keywords: 'accounts.googleOffice.commands.keywords',

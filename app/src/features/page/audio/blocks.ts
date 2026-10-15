@@ -84,7 +84,9 @@ export interface ExtSpec {
 
 function insertEdit(id: BlockId, spec: ExtSpec, anchor?: BlockId): InsertEdit {
   const layer = shownLayer.get();
-  const from = anchor ?? shownPool.get()?.active()?.block ?? null;
+  const wanted = anchor ?? shownPool.get()?.active()?.block ?? null;
+  // A block the page doesn't have (an empty page's placeholder) is no place to insert next to.
+  const from = wanted && layer?.block(wanted) ? wanted : null;
   const source = from && layer?.view(from);
   const floating = Boolean(source && source.element.style.left !== '');
   let frame: Frame | undefined;
@@ -154,8 +156,16 @@ export async function insertExtBlock(spec: ExtSpec, after?: BlockId, also: Edit[
   const queue = shownQueue.get();
   if (!queue || !shownLayer.get()) throw new Error('No page is shown.');
   const id: BlockId = newId();
-  const edit = insertEdit(id, spec, after);
-  showBlock(id, edit, await queue.send({ edits: [edit, ...also] }));
+  let edit = insertEdit(id, spec, after);
+  try {
+    showBlock(id, edit, await queue.send({ edits: [edit, ...also] }));
+  } catch (error) {
+    // The block with the caret may be a placeholder the core hasn't heard of (an empty page): put this at the end.
+    if ((error as { code?: string }).code !== 'notFound' || edit.after === undefined) throw error;
+    const { after: _unknown, ...atEnd } = edit;
+    edit = atEnd;
+    showBlock(id, edit, await queue.send({ edits: [edit, ...also] }));
+  }
   return id;
 }
 

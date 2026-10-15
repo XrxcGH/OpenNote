@@ -49,3 +49,20 @@ export function copyOf(
 ): SentCopy {
   return { ...base, remote: sent.id, name: sent.name, link: sent.link, sentAt: now.toISOString() };
 }
+
+/**
+ * The copies a sync must send again: a page's copy when the page changed after it was sent, a section's or notebook's
+ * always (their own times don't follow their pages). A picture of a selection can't be made again, so it is left out.
+ */
+export function copiesDue(
+  copies: readonly SentCopy[],
+  services: readonly SendService[],
+  modifiedOf: (node: string) => string | null,
+): SentCopy[] {
+  return copies.filter((copy) => {
+    if (!services.includes(copy.service) || copy.format === 'png') return false;
+    if (copy.scope !== 'page') return true;
+    const modified = modifiedOf(copy.node);
+    return modified !== null && changedSince(copy, modified);
+  });
+}
