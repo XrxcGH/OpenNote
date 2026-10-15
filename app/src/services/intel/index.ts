@@ -9,7 +9,9 @@ export { createIntelExt, ExtError, toExtError } from './ext';
 export type {
   CloudFeature,
   CloudStatus,
+  EngineInfo,
   ExtErrorCode,
+  GenerateOptions,
   IntelExt,
   ModelInfo,
   ModelList,

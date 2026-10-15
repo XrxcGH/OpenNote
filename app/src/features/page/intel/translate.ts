@@ -50,6 +50,13 @@ export function gather(): Gathered[] {
   return found;
 }
 
+/** Puts the shell's language-pack engine in place when the build can translate and nothing else is installed. */
+async function ensureEngine(dialog: typeof import('../../translate')): Promise<void> {
+  if (dialog.translationEngine()) return;
+  const { intelExt } = await import('../../intel').then((module) => module.loadApi());
+  if (await dialog.canTranslate(intelExt)) dialog.useTranslationEngine(dialog.createLocalTranslationEngine(intelExt));
+}
+
 /** Opens the Translate dialog for what is on the page, and adds the translation below the original. */
 export async function translateHere(): Promise<void> {
   const sources = gather();
@@ -58,6 +65,7 @@ export async function translateHere(): Promise<void> {
     return;
   }
   const dialog = await import('../../translate');
+  await ensureEngine(dialog);
   dialog.openTranslate(sources, (result) => {
     if (!result) return;
     void place(result.markdown, result.language, result.kept);

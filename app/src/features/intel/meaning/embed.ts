@@ -13,6 +13,16 @@ export interface Embedder {
   embed(text: string): Float32Array;
 }
 
+/**
+ * An embedder that can't answer at once, such as a model that runs in another program. It gives vectors of length one,
+ * all zeros for a text with no words. The index is built from these, a batch at a time.
+ */
+export interface BatchEmbedder {
+  readonly name: string;
+  readonly dim: number;
+  embedMany(texts: readonly string[]): Promise<Float32Array[]>;
+}
+
 const STOP = new Set(
   (
     'a about above after again all also am an and any are as at be because been before being below between both but by ' +
@@ -158,3 +168,10 @@ export function similarity(a: Float32Array, b: Float32Array): number {
 }
 
 export const builtInEmbedder: Embedder = { name: 'words and word parts', dim: DIM, embed };
+
+/** The built-in embedder as a batch embedder. */
+export const builtInBatch: BatchEmbedder = {
+  name: builtInEmbedder.name,
+  dim: DIM,
+  embedMany: (texts) => Promise.resolve(texts.map(embed)),
+};

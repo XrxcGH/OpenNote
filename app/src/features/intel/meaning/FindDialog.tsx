@@ -8,6 +8,7 @@ import { openModal } from '../modal';
 import { openPageById } from '../openPage';
 import styles from '../plus.module.css';
 import { findByMeaning, loadSavedIndex, meaningState, startIndexing } from './engine';
+import type { PageHit } from './vectorIndex';
 
 function Find({ onClose }: { onClose(): void }) {
   const [query, setQuery] = useState('');
@@ -21,8 +22,15 @@ function Find({ onClose }: { onClose(): void }) {
     const timer = setTimeout(() => setText(query), 150);
     return () => clearTimeout(timer);
   }, [query]);
-  // The index fills while the dialog is open, and this component follows its progress, so each render looks again.
-  const hits = findByMeaning(text);
+  const [hits, setHits] = useState<PageHit[]>([]);
+  // The index fills while the dialog is open, and this component follows its progress, so each change looks again.
+  useEffect(() => {
+    let current = true;
+    void findByMeaning(text).then((found) => current && setHits(found));
+    return () => {
+      current = false;
+    };
+  }, [text, state.done, state.running]);
   const open = (pageId: string) => {
     onClose();
     void openPageById(pageId);

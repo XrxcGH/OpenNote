@@ -11,7 +11,13 @@ publish = false
 name = "opennote-llm"
 path = "src/main.rs"
 
+[features]
+default = []
+# llama.cpp itself. It needs CMake, a C++ compiler, and libclang, so a plain workspace build leaves it out. Release
+# builds turn it on.
+llama = ["dep:llama-cpp-2"]
+
 [dependencies]
-llama-cpp-2 = { version = "0.1.159", default-features = false }
+llama-cpp-2 = { version = "0.1.159", default-features = false, optional = true }
 opennote-intel-engines = { path = "../intel-engines" }
 serde_json = "1.0.151"

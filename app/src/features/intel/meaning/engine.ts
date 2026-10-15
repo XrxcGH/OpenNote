@@ -2,6 +2,7 @@
 // through the background queue, and the questions the screens ask of it. It runs only while the person has turned
 // search by meaning on, and it adds nothing to a page that is protected.
 import { commandContext } from '../../../commands/registry';
+import type { ModelList } from '../../../services/intel';
 import type { NodeSummary, NotesService } from '../../../services/notes/types';
 import type { PageJson, PageService } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
@@ -9,11 +10,13 @@ import { t } from '../../../strings/t';
 import { background, enqueueBackground } from '../background';
 import { isExtraOn } from '../extras';
 import { intelExt } from '../runtime';
-import { builtInEmbedder, embed } from './embed';
+import { builtInBatch, builtInEmbedder } from './embed';
+import type { BatchEmbedder } from './embed';
+import { createModelEmbedder, MODEL_ID } from './modelEmbedder';
 import { chunksOfPage } from './pageText';
 import { deserialize, FILE, serialize } from './persist';
-import { createVectorIndex } from './vectorIndex';
-import type { PageHit } from './vectorIndex';
+import { createVectorIndex, MAX_CHUNK_CHARS } from './vectorIndex';
+import type { PageHit, PageInput } from './vectorIndex';
 
 export interface PageRef {
   id: string;
@@ -42,6 +45,8 @@ export const meaningState = createStore<MeaningState>(
 );
 
 const index = createVectorIndex(builtInEmbedder);
+/** What makes the vectors: the built-in embedder, or the meaning model once the person downloaded it. */
+let embedder: BatchEmbedder = builtInBatch;
 let loading: Promise<void> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let pass = 0;
@@ -50,12 +55,50 @@ export function meaningIndex() {
   return index;
 }
 
+/** The name of what makes the vectors now, such as for the settings screen. */
+export function embedderName(): string {
+  return embedder.name;
+}
+
+/**
+ * Follows the downloaded models: the meaning model replaces the built-in embedder once it is downloaded and the shell
+ * can run it, and the built-in one comes back when it is removed. A change empties the index, which fills again with
+ * vectors of the new kind. Returns whether the embedder changed.
+ */
+export async function syncEmbedderFrom(
+  list: ModelList | null,
+  runnable: () => Promise<boolean>,
+  reload = true,
+): Promise<boolean> {
+  const downloaded = list?.models.some((one) => one.id === MODEL_ID && one.state === 'installed') ?? false;
+  let wanted: BatchEmbedder = builtInBatch;
+  if (downloaded && (await runnable().catch(() => false))) wanted = createModelEmbedder(await intelExt());
+  if (wanted.name === embedder.name) return false;
+  embedder = wanted;
+  index.clear();
+  if (!reload) return true;
+  loading = null;
+  meaningState.set((state) => ({ ...state, loaded: false }));
+  if (isExtraOn('meaning')) {
+    await loadSavedIndex();
+    void startIndexing();
+  }
+  return true;
+}
+
 /** Reads the saved index once. */
 export function loadSavedIndex(): Promise<void> {
   loading ??= (async () => {
     try {
+      // The saved index only fits the embedder that made it.
+      const ext = await intelExt();
+      await syncEmbedderFrom(await ext.models.list(), async () => (await ext.engines.info()).onnx, false);
+    } catch {
+      // The built-in embedder stays.
+    }
+    try {
       const text = await (await intelExt()).get(FILE);
-      if (text) for (const page of deserialize(text, builtInEmbedder.name)) index.restore(page);
+      if (text) for (const page of deserialize(text, embedder.name, embedder.dim)) index.restore(page);
     } catch {
       // The pages are indexed again.
     }
@@ -66,7 +109,7 @@ export function loadSavedIndex(): Promise<void> {
 
 async function saveNow(): Promise<void> {
   try {
-    await (await intelExt()).put(FILE, serialize(index.all(), builtInEmbedder.name));
+    await (await intelExt()).put(FILE, serialize(index.all(), embedder.name, embedder.dim));
   } catch {
     // The index stays for this session.
   }
@@ -80,10 +123,24 @@ function saveSoon(): void {
   }, 3000);
 }
 
+/** Puts a page in the index with vectors from the embedder in use. False when the page is protected or the embedder changed. */
+async function setPage(input: PageInput): Promise<boolean> {
+  const chunks = input.chunks
+    .filter((chunk) => chunk.text.trim() !== '')
+    .map((chunk) => ({ block: chunk.block, text: chunk.text.slice(0, MAX_CHUNK_CHARS) }));
+  const using = embedder;
+  const vectors = await using.embedMany([input.title, ...chunks.map((chunk) => chunk.text)]);
+  // A change of embedder while this waited makes these vectors the wrong kind for the index.
+  if (using !== embedder) return false;
+  const [title, ...rest] = vectors;
+  if (!title) return false;
+  return index.set({ ...input, chunks, vectors: { title, chunks: rest } });
+}
+
 /** Adds a page the app already has in hand, such as the one that was just opened. Skipped when it hasn't changed. */
-export function indexPage(page: Pick<PageJson, 'id' | 'title' | 'modified' | 'blocks'>): boolean {
+export async function indexPage(page: Pick<PageJson, 'id' | 'title' | 'modified' | 'blocks'>): Promise<boolean> {
   if (!isExtraOn('meaning') || index.modifiedOf(page.id) === page.modified) return false;
-  const added = index.set({ id: page.id, title: page.title, modified: page.modified, chunks: chunksOfPage(page) });
+  const added = await setPage({ id: page.id, title: page.title, modified: page.modified, chunks: chunksOfPage(page) });
   if (added) saveSoon();
   return added;
 }
@@ -113,7 +170,7 @@ export async function runIndexPass(source: PageSource, signal: AbortSignal): Pro
       const began = Date.now();
       try {
         const body = await source.read(page.id);
-        if (body && index.set({ ...page, chunks: chunksOfPage(body) })) indexed += 1;
+        if (body && (await setPage({ ...page, chunks: chunksOfPage(body) }))) indexed += 1;
       } catch {
         // A page that can't be read is tried again in the next pass.
       }
@@ -184,8 +241,11 @@ export async function startIndexing(source?: PageSource): Promise<boolean> {
 }
 
 /** The pages best matching a question or phrase. Empty for text with no words. */
-export function findByMeaning(query: string, limit = 12): PageHit[] {
-  const vector = embed(query);
+export async function findByMeaning(query: string, limit = 12): Promise<PageHit[]> {
+  if (query.trim() === '') return [];
+  const using = embedder;
+  const [vector] = await using.embedMany([query]).catch(() => []);
+  if (!vector || using !== embedder) return [];
   return vector.some((v) => v !== 0) ? index.search(vector, { limit }) : [];
 }
 
@@ -210,6 +270,7 @@ export async function forgetIndex(): Promise<void> {
 /** Tests start over with an empty index. */
 export function resetMeaningForTests(): void {
   index.clear();
+  embedder = builtInBatch;
   loading = null;
   pass = 0;
   if (saveTimer) clearTimeout(saveTimer);

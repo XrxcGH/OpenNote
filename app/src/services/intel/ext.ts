@@ -7,7 +7,17 @@ import type { IntelTransport } from './transport';
 export type ModelState = 'notInstalled' | 'partial' | 'downloading' | 'installed' | 'failed';
 
 /** Why a download or call failed, in a word the interface turns into a sentence. */
-export type ExtErrorCode = 'offline' | 'safeMode' | 'network' | 'checksum' | 'io' | 'invalid' | 'unknown';
+export type ExtErrorCode =
+  | 'offline'
+  | 'safeMode'
+  | 'network'
+  | 'checksum'
+  | 'io'
+  | 'invalid'
+  | 'model'
+  | 'unavailable'
+  | 'engine'
+  | 'unknown';
 
 export interface ModelInfo {
   id: string;
@@ -56,6 +66,29 @@ export interface CloudStatus {
   lastUsedUnix: number | null;
 }
 
+/** What this build and install can run, for the screens that offer engines. */
+export interface EngineInfo {
+  /** whisper.cpp is built in, and runs speech much faster than the Rust reader. */
+  whisperCpp: boolean;
+  /** whisper.cpp can use the graphics card. */
+  whisperGpu: boolean;
+  /** ONNX Runtime is built in, for translation and the meaning model. */
+  onnx: boolean;
+  /** The language model program is in this install. */
+  llmHost: boolean;
+  /** A language model is downloaded. */
+  languageModel: boolean;
+}
+
+export interface GenerateOptions {
+  system: string;
+  prompt: string;
+  /** The most words of answer, as tokens. */
+  maxTokens?: number;
+  /** 0 keeps close to the text, and 1 allows more variety. */
+  temperature?: number;
+}
+
 export interface IntelExt {
   /** The text kept under a name on this device, or null. */
   get(name: string): Promise<string | null>;
@@ -72,6 +105,23 @@ export interface IntelExt {
     /** Deletes the model and any part of it. */
     remove(id: string): Promise<void>;
   };
+  engines: {
+    info(): Promise<EngineInfo>;
+  };
+  /** The language model, for Ask and the writing tools. Rejects with `model` until one is downloaded. */
+  llm: {
+    generate(options: GenerateOptions): Promise<string>;
+    /** Ends the program so its memory goes back to the computer. */
+    stop(): Promise<void>;
+  };
+  /** Translation with a downloaded pack, such as `en-es`. Rejects with `model` until it is downloaded. */
+  translate: {
+    run(pack: string, lines: readonly string[]): Promise<string[]>;
+  };
+  /** Meaning vectors from the downloaded meaning model. */
+  embed: {
+    run(texts: readonly string[]): Promise<number[][]>;
+  };
   cloud: {
     status(): Promise<CloudStatus[]>;
     /** Saves the key in Windows Credential Manager. Rejects with `invalid` for text that can't be a key. */
@@ -82,7 +132,17 @@ export interface IntelExt {
   };
 }
 
-const CODES: readonly ExtErrorCode[] = ['offline', 'safeMode', 'network', 'checksum', 'io', 'invalid'];
+const CODES: readonly ExtErrorCode[] = [
+  'offline',
+  'safeMode',
+  'network',
+  'checksum',
+  'io',
+  'invalid',
+  'model',
+  'unavailable',
+  'engine',
+];
 
 export class ExtError extends Error {
   readonly code: ExtErrorCode;
@@ -122,6 +182,17 @@ export function createIntelExt(transport: IntelTransport): IntelExt {
       start: async (id) => void (await call('models.start', { id })),
       cancel: async (id) => void (await call('models.cancel', { id })),
       remove: async (id) => void (await call('models.remove', { id })),
+    },
+    engines: { info: () => call<EngineInfo>('engines.info') },
+    llm: {
+      generate: async (options) => (await call<{ text: string }>('llm.generate', options)).text,
+      stop: async () => void (await call('llm.stop')),
+    },
+    translate: {
+      run: async (pack, lines) => (await call<{ lines: string[] }>('translate.run', { pack, lines })).lines,
+    },
+    embed: {
+      run: async (texts) => (await call<{ vectors: number[][] }>('embed.run', { texts })).vectors,
     },
     cloud: {
       status: () => call<CloudStatus[]>('cloud.status'),

@@ -51,7 +51,7 @@ export const intelMore = {
     download: 'Download {name}, {size}',
     downloading: 'Downloading {name}',
     ready: 'The {name} pack is on this device.',
-    noEngine: 'Translating on this device needs an engine that this version does not have yet. Nothing is sent anywhere.',
+    noEngine: 'This version of OpenNote can’t translate on this device. Nothing is sent anywhere.',
     noPack: 'There is no language pack for that pair yet.',
     go: 'Translate',
     cancel: 'Cancel',

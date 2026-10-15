@@ -4,3 +4,4 @@ export type { Scope, Source, Translation } from './TranslateDialog';
 export { packFor, sizeLabel, translateMarkdown, translationEngine, useTranslationEngine } from './engine';
 export type { LanguagePack, TranslationEngine, Translated } from './engine';
 export { LANGUAGES } from './languages';
+export { canTranslate, createLocalTranslationEngine } from './localEngine';

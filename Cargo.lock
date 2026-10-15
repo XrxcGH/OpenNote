@@ -3281,6 +3281,7 @@ dependencies = [
  "opennote-crashreport",
  "opennote-diagnostics",
  "opennote-intel",
+ "opennote-intel-engines",
  "opennote-interop",
  "opennote-media",
  "opennote-search",

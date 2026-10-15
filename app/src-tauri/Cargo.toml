@@ -14,6 +14,13 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 # For CI's end-to-end builds only: test update endpoints on 127.0.0.1 and a test key compiled in from
 # OPENNOTE_TEST_UPDATE_PUBKEY. The release build job fails for an exe built with it.
 test-endpoints = ["opennote-updater/test-endpoints"]
+# The native engines: whisper.cpp for speech and ONNX Runtime for translation and meaning. Release builds turn it on.
+# It needs CMake, a C++ compiler, and libclang. Without it the pure Rust speech reader runs, and translation and
+# meaning vectors report that this build does not carry them.
+native-engines = ["opennote-intel-engines/whisper-cpp", "opennote-intel-engines/onnx"]
+# Puts the language model program (crates/llm-host, built with its llama feature) inside the exe. The release build sets
+# OPENNOTE_LLM_HOST_BIN to the path of the built program. A release is one exe, so the program cannot travel beside it.
+embed-llm-host = []
 
 [build-dependencies]
 base64 = "0.22.1"
@@ -31,6 +38,7 @@ opennote-core = { path = "../../crates/core" }
 opennote-crashreport = { path = "../../crates/crashreport" }
 opennote-diagnostics = { path = "../../crates/diagnostics" }
 opennote-intel = { path = "../../crates/intel" }
+opennote-intel-engines = { path = "../../crates/intel-engines" }
 opennote-interop = { path = "../../crates/interop" }
 # Phase 9: recording to Opus needs libopus, which builds with CMake (preinstalled on the Windows runners).
 opennote-media = { path = "../../crates/media", features = ["opus"] }

@@ -32,7 +32,9 @@ pub(crate) mod caption_style;
 mod catalog;
 mod cloud;
 mod ext;
+mod llm;
 mod models;
+mod native;
 pub(crate) mod stream;
 pub(crate) mod transcribe;
 
@@ -127,6 +129,9 @@ impl IntelState {
     }
 
     fn at(file: PathBuf) -> IntelState {
+        // Whisper.cpp, when this build carries it, takes over speech from the pure Rust reader. It is gated like
+        // every other engine: nothing runs until the person turns transcription on.
+        opennote_intel_engines::install();
         let settings = load(&file);
         let device = file.parent().unwrap_or_else(|| Path::new(".")).to_path_buf();
         let ext = ext::Ext::new(&device);

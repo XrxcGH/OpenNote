@@ -687,6 +687,28 @@ mod tests {
     }
 
     #[test]
+    fn the_web_previews_pack_list_matches_the_catalog() {
+        // Each row of the preview's list reads `['en', 'es', 119006287],`.
+        let listed = include_str!("../../../src/services/intel/packs.ts");
+        let mut in_preview: Vec<(String, u64)> = listed
+            .lines()
+            .filter_map(|line| {
+                let row = line.trim().strip_prefix('[')?.strip_suffix("],")?;
+                let mut cells = row.split(',').map(|cell| cell.trim().trim_matches('\''));
+                let (from, to, size) = (cells.next()?, cells.next()?, cells.next()?);
+                Some((format!("translate-{from}-{to}"), size.parse().ok()?))
+            })
+            .collect();
+        let mut in_catalog: Vec<(String, u64)> = catalog()
+            .filter(|spec| spec.kind == "translate")
+            .map(|spec| (spec.id.to_owned(), spec.size()))
+            .collect();
+        in_preview.sort();
+        in_catalog.sort();
+        assert_eq!(in_preview, in_catalog);
+    }
+
+    #[test]
     fn a_download_is_kept_after_its_checksum_matches() {
         let dir = tempfile::tempdir().unwrap();
         let progress = AtomicU64::new(0);
