@@ -165,3 +165,22 @@ fn retention_drops_old_versions_but_never_the_newest() {
     let report = thin(&files(&only_newest), now, 0, Retention::Days30, &[]).unwrap();
     assert!(report.dropped.is_empty() && report.kept == 1, "{newest}");
 }
+
+#[test]
+fn a_shorter_retention_setting_thins_versions_a_longer_one_keeps() {
+    let now = at("2026-11-10T12:00:00.000Z");
+    let two_months_ago = at("2026-09-08T12:00:00.000Z");
+    let mut dropped = Vec::new();
+    for keep in [Retention::Forever, Retention::Year1, Retention::Days30] {
+        let h = Harness::new();
+        let old = version(&h, 1, two_months_ago, None);
+        version(&h, 2, now, None);
+        let report = thin(&files(&h), now, 0, keep, &[]).unwrap();
+        dropped.push(report.dropped.contains(&old));
+    }
+    assert_eq!(
+        dropped,
+        [false, false, true],
+        "only 30 days drops a version from two months ago"
+    );
+}

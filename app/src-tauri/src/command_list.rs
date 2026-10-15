@@ -33,7 +33,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "notes_set_color", "notes_move", "notes_set_page_level", "notes_trash", "notes_restore", "notes_list_trash",
     "notes_restore_from_trash", "notes_purge", "notes_status", "notes_flush",
     "page_open", "page_apply", "page_undo", "page_redo", "page_save_now", "page_close",
-    "history_list", "history_open", "history_restore", "history_restore_blocks", "history_name",
+    "history_list", "history_open", "history_restore", "history_restore_blocks", "history_name", "history_delete",
     "page_add_strokes", "page_read_strokes",
     "clipboard_facts", "clipboard_read", "image_import", "image_import_url", "image_import_clip",
     "spell_languages", "spell_check", "spell_suggest", "spell_add_word", "spell_remove_word", "speech_voices", "speech_synthesize",

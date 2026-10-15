@@ -112,6 +112,7 @@
     "allow-history-restore",
     "allow-history-restore-blocks",
     "allow-history-name",
+    "allow-history-delete",
     "allow-page-add-strokes",
     "allow-page-read-strokes",
     "allow-search-call",

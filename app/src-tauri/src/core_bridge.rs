@@ -43,6 +43,8 @@ use crate::{
 
 // Phase 8: search and linking over this core. One command carries every method.
 pub mod search;
+// Beta 5: history retention, Delete history, and the other storage commands over this core.
+pub mod admin;
 
 /// How long the exit flush may take before the journals keep the rest for the next start (core plan 9.3).
 const EXIT_FLUSH: Duration = Duration::from_secs(5);
@@ -117,6 +119,8 @@ pub struct CoreBridge {
     state: Arc<Mutex<Option<Bridge>>>,
     relay: Arc<Relay>,
     search: Arc<search::Hub>,
+    /// How long page versions are kept, from `settings.editing.history.keep`. It reaches the core when it starts.
+    retention: Arc<Mutex<opennote_core::store::history::Retention>>,
 }
 
 /// The started core with what the commands keep beside it.
@@ -233,6 +237,25 @@ impl Bridge {
             .collect()
     }
 
+    /// Forgets the open pages of a notebook that closed and opened again, as after its folder was renamed, and
+    /// returns them so the interface opens them again.
+    pub(crate) fn forget_notebook_pages(&mut self, notebook: NotebookId) -> Vec<PageId> {
+        let gone: Vec<(PageId, ClientId)> = self
+            .homes
+            .iter()
+            .filter(|(_, home)| **home == notebook)
+            .map(|(key, _)| key.clone())
+            .collect();
+        for key in &gone {
+            self.open.remove(key);
+            self.homes.remove(key);
+        }
+        let mut pages: Vec<PageId> = gone.into_iter().map(|(page, _)| page).collect();
+        pages.sort_unstable_by_key(ToString::to_string);
+        pages.dedup();
+        pages
+    }
+
     /// Forgets the sessions of pages that left their notebook, such as pages moved to Trash or to another notebook.
     /// The interface opens a page again when it needs it.
     pub(crate) fn drop_stale_handles(&mut self) {
@@ -270,6 +293,7 @@ impl CoreBridge {
             state: Arc::new(Mutex::new(None)),
             relay: Arc::default(),
             search: Arc::default(),
+            retention: Arc::default(),
         }
     }
 
@@ -298,6 +322,9 @@ impl CoreBridge {
         if state.is_none() {
             match Bridge::start(&self.root, self.relay.clone(), &self.search) {
                 Ok(bridge) => {
+                    bridge
+                        .core
+                        .set_retention(*self.retention.lock().unwrap_or_else(PoisonError::into_inner));
                     *state = Some(bridge);
                     self.watch_trees();
                 }

@@ -96,6 +96,7 @@ pub fn run(context: EarlyContext) {
     };
     let hooks = lifecycle::Hooks(updater::hooks(&paths));
     let pages = core_bridge::CoreBridge::new(&paths);
+    pages.set_retention(settings.editing.history.keep);
     let audio = audio::AudioState::new(&paths);
     let intel = intel::IntelState::new(&paths);
     let connectors = connectors::Connectors::new(&paths);
@@ -261,6 +262,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         core_bridge::history_restore,
         core_bridge::history_restore_blocks,
         core_bridge::history_name,
+        core_bridge::admin::history_delete,
         ink_bridge::page_add_strokes,
         ink_bridge::page_read_strokes,
         core_bridge::search::search_call,
