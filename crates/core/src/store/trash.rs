@@ -56,10 +56,14 @@ impl NotebookStore {
                 NodeRef::Page(p) => {
                     let (section, block) = self.subtree(p)?;
                     self.check_section_writable(section)?;
+                    // A protected page's folder can't go to Trash, which is plain: see delete_sealed_pages.
+                    if self.section(section)?.encrypted() {
+                        return Err(CoreError::ReadOnly(crate::model::ReadOnlyReason::Encrypted));
+                    }
                     covered.extend(block.iter().skip(1).map(|f| f.id.0));
                 }
                 NodeRef::Section(s) => {
-                    self.check_section_writable(s)?;
+                    self.check_trashable_section(s)?;
                     covered.extend(self.section(s)?.file.pages.iter().map(|e| e.id.0));
                 }
                 NodeRef::Group(g) => {
@@ -68,7 +72,7 @@ impl NotebookStore {
                         covered.insert(group.id.0);
                     }
                     for s in self.sections_in(g) {
-                        self.check_section_writable(s)?;
+                        self.check_trashable_section(s)?;
                         covered.insert(s.0);
                         covered.extend(self.section(s)?.file.pages.iter().map(|e| e.id.0));
                     }
@@ -81,6 +85,53 @@ impl NotebookStore {
             .copied()
             .filter(|n| !covered.contains(&node_id(*n)) && seen.insert(node_id(*n)))
             .collect())
+    }
+
+    /// A section may go to Trash when it may change, and a protected section only while locked, so its Trash item
+    /// lists no page titles and its folder goes as sealed files (ADR 0042).
+    fn check_trashable_section(&self, s: SectionId) -> Result<(), CoreError> {
+        let section = self.section(s)?;
+        if section.encrypted() {
+            self.check_writable()?;
+            return if section.locked() {
+                Ok(())
+            } else {
+                Err(CoreError::ReadOnly(crate::model::ReadOnlyReason::Encrypted))
+            };
+        }
+        self.check_section_writable(s)
+    }
+
+    /// Deletes pages of an unlocked protected section for good, with their subpages, as Trash can't hold them
+    /// (ADR 0042). The caller closes the pages first. Returns the pages deleted.
+    pub fn delete_sealed_pages(&mut self, pages: &[PageId]) -> Result<Vec<PageId>, CoreError> {
+        let mut gone = Vec::new();
+        for &page in pages {
+            if gone.contains(&page) {
+                continue;
+            }
+            let (section, block) = self.subtree(page)?;
+            self.check_section_writable(section)?;
+            if !self.section(section)?.encrypted() {
+                return Err(CoreError::Conflict("the page isn't in a protected section".into()));
+            }
+            let ids: Vec<PageId> = block.iter().map(|f| f.id).collect();
+            for id in &ids {
+                if let Some(dir) = self.page_dir(*id) {
+                    match self.env.fs.remove_dir_all(&dir) {
+                        Err(e) if e.kind != FsErrorKind::NotFound => return Err(e.into()),
+                        _ => {}
+                    }
+                }
+            }
+            if let Some(state) = self.sections.get_mut(&section) {
+                state.file.pages.retain(|e| !ids.contains(&e.id));
+            }
+            self.write_section(section)?;
+            gone.extend(ids);
+        }
+        self.mark_pending();
+        Ok(gone)
     }
 
     /// The shown sections inside a group and the groups in it.

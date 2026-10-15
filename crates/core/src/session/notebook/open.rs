@@ -215,8 +215,8 @@ impl NotebookShared {
             return Ok(PageHandle { session, client });
         }
         let _pause = self.ctx.maintenance.pause();
-        let (dir, read_only, encrypted) = self.page_place(page)?;
-        if encrypted {
+        let (dir, read_only, encrypted, locked) = self.page_place(page)?;
+        if locked {
             return Err(CoreError::ReadOnly(ReadOnlyReason::Encrypted));
         }
         let loaded = self.load_page(page, &dir)?;
@@ -244,7 +244,7 @@ impl NotebookShared {
     }
 
     /// Where a shown page's folder is, and whether it opens read-only or is encrypted.
-    fn page_place(&self, page: PageId) -> Result<(std::path::PathBuf, Option<ReadOnlyReason>, bool), CoreError> {
+    fn page_place(&self, page: PageId) -> Result<(std::path::PathBuf, Option<ReadOnlyReason>, bool, bool), CoreError> {
         let tree = self.tree();
         let store = &tree.store;
         let section = store
@@ -259,7 +259,7 @@ impl NotebookShared {
         if self.deferred().contains_key(&page) {
             read_only.get_or_insert(ReadOnlyReason::PendingJournal);
         }
-        Ok((dir, read_only, state.encrypted()))
+        Ok((dir, read_only, state.encrypted(), state.locked()))
     }
 
     fn load_page(&self, page: PageId, dir: &Path) -> Result<LoadedPage, CoreError> {
@@ -317,6 +317,10 @@ impl NotebookShared {
         }
         self.closed.store(true, Ordering::SeqCst);
         let _ = self.tree().store.cache.save(self.ctx.fs.as_ref());
+        // A closing notebook locks its protected sections: their keys and journals leave memory (ADR 0042).
+        if let Some(sealed) = self.ctx.fs.sealed() {
+            sealed.lock_under(&self.root);
+        }
         self.ctx.closed_pages().forget_notebook(&self.key());
         *self.lock.lock().unwrap_or_else(PoisonError::into_inner) = None;
         self.ctx.forget_notebook(&self.root);

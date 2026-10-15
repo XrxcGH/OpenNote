@@ -38,10 +38,13 @@ impl PageSession {
     /// another program is kept aside in `.conflicts/`, and a fresh one is written. Returns the edited copies kept,
     /// so the interface can offer to bring their text in. A page of an encrypted section has no readable copies.
     pub(crate) fn collect_edited_copies(&self) -> Result<Vec<EditedCopy>, CoreError> {
-        let (dir, page) = {
+        let (dir, page, encrypted) = {
             let st = self.state();
-            (st.dir.clone(), st.page.clone())
+            (st.dir.clone(), st.page.clone(), st.encrypted)
         };
+        if encrypted {
+            return Ok(Vec::new());
+        }
         if page.encryption.is_none() {
             let notebook = self
                 .notebook
@@ -56,7 +59,7 @@ impl PageSession {
     /// The page's `page.md`, unless the page is encrypted.
     pub(crate) fn page_md_path(&self) -> Option<PathBuf> {
         let st = self.state();
-        st.page.encryption.is_none().then(|| st.dir.join(PAGE_MD))
+        (st.page.encryption.is_none() && !st.encrypted).then(|| st.dir.join(PAGE_MD))
     }
 
     /// Plans how the text of an edited `page.md` comes into the page.

@@ -116,6 +116,8 @@ pub fn backup_notebook(
     utc_offset_minutes: i32,
     policy: &BackupPolicy,
 ) -> Result<BackupReport, CoreError> {
+    // Backups copy what is on disk, so a protected section is copied sealed even while it is unlocked.
+    let fs = crate::store::sealed::at_rest(fs);
     let day = local_day(now, utc_offset_minutes);
     ensure_all(fs, dest)?;
     let set = day_set(fs, root, dest, &day)?;

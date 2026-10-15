@@ -309,6 +309,17 @@ impl NotebookHandle {
         Ok(items)
     }
 
+    /// Deletes pages of an unlocked protected section for good, with their subpages, after closing them. Trash is
+    /// plain, so it can't hold them (ADR 0042). Returns the pages deleted.
+    pub fn delete_sealed_pages(&self, pages: &[PageId]) -> Result<Vec<PageId>, CoreError> {
+        let nodes: Vec<NodeRef> = pages.iter().map(|p| NodeRef::Page(*p)).collect();
+        self.close_pages(&self.pages_under(&nodes));
+        self.change(true, |t| {
+            t.undo.clear();
+            t.store.delete_sealed_pages(pages)
+        })
+    }
+
     /// The Trash items, newest first.
     pub fn trash(&self) -> Result<Vec<TrashItemFile>, CoreError> {
         self.inner.check_open()?;

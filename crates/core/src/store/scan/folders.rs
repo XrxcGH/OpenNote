@@ -69,7 +69,9 @@ impl NotebookStore {
         let sections: Vec<(SectionId, PathBuf)> = self
             .sections
             .values()
-            .filter(|s| !self.hidden.contains(&s.file.id.0))
+            // A locked protected section's folder holds only sealed files; anything else there is a leftover of
+            // protecting it, which is never read (ADR 0042).
+            .filter(|s| !self.hidden.contains(&s.file.id.0) && !s.locked())
             .map(|s| (s.file.id, s.dir.clone()))
             .collect();
         for (section, dir) in sections {

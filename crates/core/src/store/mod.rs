@@ -28,6 +28,7 @@ pub mod page_store;
 pub mod recovery;
 pub mod repair;
 pub mod scan;
+pub mod sealed;
 pub mod std_fs;
 mod sys;
 pub mod trash;

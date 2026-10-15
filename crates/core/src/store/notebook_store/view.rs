@@ -66,7 +66,7 @@ impl NotebookStore {
             .into_iter()
             .filter_map(|(i, level)| shown.get(i).map(|e| self.page_node(e, level)))
             .collect();
-        let access = if state.encrypted() {
+        let access = if state.locked() {
             Access::ReadOnly(ReadOnlyReason::Encrypted)
         } else {
             match (&self.read_only, &file.format.access) {

@@ -109,6 +109,10 @@ impl Verifier<'_> {
         });
         if let Some(file) = &file {
             self.section_identity(dir, file);
+            // A protected section keeps no readable copies, and while locked its pages are sealed (ADR 0042).
+            if file.encryption.is_some() {
+                return;
+            }
         }
         let mut found = Vec::new();
         for entry in self.list(dir).into_iter().filter(|e| e.is_dir) {
