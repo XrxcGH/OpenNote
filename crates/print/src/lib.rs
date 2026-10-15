@@ -5,8 +5,8 @@
 //! program started. On macOS and Linux it pipes the PDF to CUPS (`lp`). [`MockBackend`] stands in for both in tests,
 //! so no test ever reaches a printer.
 //!
-//! Page ranges, odd or even sheets, headers and footers are chosen before the PDF is made, so the PDF handed here
-//! holds exactly the sheets to print. What is left for the printer is copies, collation, duplex, colour, and whether
+//! The page range, the sheets, the headers, and the footers are chosen before the PDF is made. So the PDF handed here
+//! holds exactly the sheets to print. What is left for the printer is copies, collation, duplex, color, and whether
 //! the sheets are shrunk to fit the printer's paper.
 
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic)]

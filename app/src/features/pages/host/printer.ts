@@ -1,6 +1,6 @@
 // Printing to a printer (File > Print): the same PDF the export makes, sent to the system's spooler instead of to a
-// file. The page range, odd or even sheets, headers and paper pattern are already in the PDF, so the printer's part is
-// the copies, the sides of the paper, colour, and whether the sheets are shrunk to fit. Nothing here knows a printer.
+// file. The page range, the sheets, the headers, and the paper pattern are already in the PDF. So the printer's part
+// is the copies, the sides of the paper, color, and whether the sheets are shrunk to fit. Nothing here knows a printer.
 import type { ExportsClient, PrinterInfo, PrintJobRequest, PrintReceipt } from '../../../platform/types';
 import { t } from '../../../strings/t';
 import { exportPdf } from '../pdf';

@@ -1,7 +1,7 @@
 // The print and Export as PDF dialog. It asks for the range, odd or even sheets, a header and footer, and whether the
 // paper lines print; it shows the sheets as the PDF will have them; and it runs the export with progress and a Stop
 // button. Both commands open it: Export as PDF saves the file, and Print sends it to the printer chosen here, with
-// copies, both sides, colour, and shrink to fit. Where no printer is listed, or the flag is off, Print saves the PDF
+// copies, both sides, color, and shrink to fit. Where no printer is listed, or the flag is off, Print saves the PDF
 // and opens it in the viewer instead.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Platform, PrinterInfo } from '../../../platform/types';
@@ -329,7 +329,7 @@ interface PrinterFieldsProps {
   set<K extends keyof PrinterForm>(key: K, value: PrinterForm[K]): void;
 }
 
-/** Where to print and how: the printer, copies, both sides, colour, and shrink to fit. */
+/** Where to print and how: the printer, copies, both sides, color, and shrink to fit. */
 function PrinterFields({ form, printers, set }: PrinterFieldsProps) {
   const printer = chosenPrinter(printers, form.printer);
   const copies = parseCopies(form.copies);
