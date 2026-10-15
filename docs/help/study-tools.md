@@ -26,7 +26,7 @@ Open the menu on a section in the notebook tree, or press Ctrl+K and choose "Mak
 
 The Upcoming window lists exams, classes, and tasks, from every notebook you have open. Locked sections are left out. It has Day, Week, and Month views you can move around with the arrow keys. Check an item off and a checkbox line on the page is checked too. Press an item to go to it.
 
-- Import a calendar () file to fill in your classes.
+- Import a calendar (.ics) file to fill in your classes.
 - Put a due date on a checkbox, and repeat it if you need to. Type phrases such as "every weekday", "every 2 weeks", or "monthly on the 1st". When you check a repeating line on a page, the next one appears.
 - Set a reminder on any item, page lines included, and Windows shows a notification.
 - An exam can belong to a notebook or a section.
@@ -50,6 +50,6 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 
 ## Math across a page
 
-Define a variable such as  in one text box and use it in another on the same page. Text that handwriting recognition adds to the page works the same way.
+Define a variable such as rent = 1,200 in one text box and use it in another on the same page. Text that handwriting recognition adds to the page works the same way.
 
 Study tools are built. Agents opened the tool windows once. Nobody has tried the rest by hand.
