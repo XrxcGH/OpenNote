@@ -209,7 +209,7 @@ impl<'p, 'a> Walker<'p, 'a> {
             self.chars = self.props.characters(self.char_run);
         }
         match unit {
-            0x0D | 0x0C | 0x0E => self.paragraph_mark(fc, false),
+            0x0C..=0x0E => self.paragraph_mark(fc, false),
             0x07 => self.paragraph_mark(fc, true),
             0x13 => self.field_begin(),
             0x14 => self.field_separator(),

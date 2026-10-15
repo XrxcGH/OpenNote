@@ -136,13 +136,12 @@ pub(super) fn convert_document(path: &Path, env: &ImportEnv<'_>) -> Result<Conve
     flow::text_page(env, &name, flow)
 }
 
+/// Reads a workbook that turned out to be an `.xlsx` file, from its opened parts and its name.
+pub(super) type XlsxReader<'a> = &'a dyn Fn(&mut Parts<Cursor<Vec<u8>>>, &str) -> Result<Converted>;
+
 /// Reads an `.xls`, `.xlsb`, or `.ods` file, a table page for each sheet. The file's first bytes and parts, not
 /// its name, pick the reader. `xlsx` reads a workbook that is really an `.xlsx` file.
-pub(super) fn convert_sheet(
-    path: &Path,
-    env: &ImportEnv<'_>,
-    xlsx: &dyn Fn(&mut Parts<Cursor<Vec<u8>>>, &str) -> Result<Converted>,
-) -> Result<Converted> {
+pub(super) fn convert_sheet(path: &Path, env: &ImportEnv<'_>, xlsx: XlsxReader<'_>) -> Result<Converted> {
     let name = stem(path);
     let data = read_file(path)?;
     let book = if cfb::is_compound(&data) {

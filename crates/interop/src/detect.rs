@@ -602,11 +602,20 @@ mod tests {
         touch(dir.path(), "notes.one");
         let one = detect(&dir.path().join("notes.one")).expect("known");
         assert!(!one.supported && one.advice.as_deref().is_some_and(|a| a.contains(".docx")));
-        touch(dir.path(), "x.rtf");
+        touch(dir.path(), "x.pages");
         assert!(matches!(
-            detect(&dir.path().join("x.rtf")),
+            detect(&dir.path().join("x.pages")),
             Err(InteropError::Unsupported { .. })
         ));
+        for (name, kind) in [
+            ("x.rtf", SourceKind::Word),
+            ("x.doc", SourceKind::Word),
+            ("x.ods", SourceKind::Spreadsheet),
+        ] {
+            touch(dir.path(), name);
+            let found = detect(&dir.path().join(name)).expect("known");
+            assert!(found.legacy && found.supported && found.kind == kind, "{name}");
+        }
     }
 
     #[test]

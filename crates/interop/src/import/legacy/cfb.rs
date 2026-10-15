@@ -79,7 +79,9 @@ impl Compound {
         let first_dir = u32_at(&file.data, 0x30).ok_or(DAMAGED)?;
         let dir = file.read_chain(first_dir, MAX_ENTRIES * ENTRY_BYTES, false)?;
         file.entries = dir
-            .chunks_exact(ENTRY_BYTES)
+            .as_chunks::<ENTRY_BYTES>()
+            .0
+            .iter()
             .map(|raw| parse_entry(raw, major))
             .collect();
         let root = file.entries.first().cloned().ok_or(DAMAGED)?;
@@ -88,10 +90,7 @@ impl Compound {
         if mini_sectors > 0 && first_mini_fat <= MAX_SECTOR {
             let bytes = mini_sectors.saturating_mul(file.sector_size()).min(MAX_STREAM_BYTES);
             let raw = file.read_chain(first_mini_fat, bytes, false)?;
-            file.mini_fat = raw
-                .chunks_exact(4)
-                .map(|c| <[u8; 4]>::try_from(c).map_or(END_OF_CHAIN, u32::from_le_bytes))
-                .collect();
+            file.mini_fat = raw.as_chunks::<4>().0.iter().map(|c| u32::from_le_bytes(*c)).collect();
             let size = usize::try_from(root.size).unwrap_or(usize::MAX);
             file.mini_stream = file.read_chain(root.start, size, false)?;
         }

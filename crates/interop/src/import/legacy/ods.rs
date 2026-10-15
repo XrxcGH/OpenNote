@@ -190,18 +190,22 @@ mod tests {
             r#"<table:table-cell office:value-type="string"><text:p>a<text:s text:c="2"/>b</text:p></table:table-cell>"#,
             r#"<table:table-cell table:number-columns-repeated="16384"/>"#,
             r#"<table:table-cell office:value="3"><text:p>3.0</text:p></table:table-cell></table:table-row>"#,
-            r#"<table:table-row table:number-rows-repeated="1048000">"#,
-            r#"<table:table-cell table:number-columns-repeated="1024"/></table:table-row>"#,
             r#"<table:table-row table:number-rows-repeated="99999">"#,
             r#"<table:table-cell table:number-columns-repeated="5000"><text:p>x</text:p></table:table-cell>"#,
-            r#"</table:table-row></table:table>"#,
+            r#"</table:table-row><table:table-row table:number-rows-repeated="1048000">"#,
+            r#"<table:table-cell table:number-columns-repeated="1024"/></table:table-row></table:table>"#,
         );
         let table = parse(xml);
         let mut grid = GridBuilder::default();
         let mut row = 0;
         rows(&table, &mut grid, &mut row, 0);
         let grid = grid.finish();
-        assert_eq!(grid.rows[0][0], "a  b");
+        assert_eq!(
+            grid.rows.first().map(|r| r[0].as_str()),
+            Some("a  b"),
+            "{:?}",
+            table.name
+        );
         assert_eq!(grid.width, MAX_COLUMNS);
         assert!(grid.cut_rows > 0 && grid.cut_columns > 0);
     }

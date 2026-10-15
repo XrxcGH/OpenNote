@@ -36,9 +36,7 @@ pub(super) fn index(value: u32) -> usize {
 
 /// UTF-16LE text, with unpaired surrogates replaced. A trailing odd byte is dropped.
 pub(super) fn utf16(data: &[u8]) -> String {
-    let units = data
-        .chunks_exact(2)
-        .map(|p| <[u8; 2]>::try_from(p).map_or(0, u16::from_le_bytes));
+    let units = data.as_chunks::<2>().0.iter().map(|p| u16::from_le_bytes(*p));
     char::decode_utf16(units)
         .map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER))
         .collect()
