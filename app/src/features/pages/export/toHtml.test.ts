@@ -274,3 +274,18 @@ describe('export of diagrams', () => {
     expect(markdown).toContain('*A leads to B*\n\n```mermaid\nflowchart TD\n  A --> B\n```');
   });
 });
+
+describe('HTML export for a thumbnail', () => {
+  it('lets pictures load from the asset origin it is given, and from no other', () => {
+    const assets = { A1: { file: 'a.png', mime: 'image/png', name: 'a.png', width: 100, height: 80 } };
+    const read = page({ assets, blocks: [block('i', 'a0', 'image', { asset: 'A1', alt: 'Leaf' })] });
+    const { html } = exportHtml(read, {
+      assetUrl: (asset) => `http://opennote-asset.localhost/p/${asset.id}`,
+      imageOrigins: ['http://opennote-asset.localhost', 'javascript:alert(1)', 'https://evil.example/ x'],
+    });
+    expect(html).toContain('<img src="http://opennote-asset.localhost/p/A1"');
+    expect(html).toContain("img-src data: file: 'self' http://opennote-asset.localhost;");
+    expect(html).not.toContain('evil.example');
+    expect(exportHtml(read).html).toContain("img-src data: file: 'self';");
+  });
+});

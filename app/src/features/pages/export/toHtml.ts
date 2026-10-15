@@ -20,6 +20,8 @@ export interface HtmlExportOptions {
   readonly header?: boolean;
   /** The widest the text gets, in CSS pixels. Default 760. */
   readonly maxWidth?: number;
+  /** Extra origins that pictures may load from, such as the app's asset origin. Only origins are used. */
+  readonly imageOrigins?: readonly string[];
 }
 
 export interface HtmlExport {
@@ -29,6 +31,7 @@ export interface HtmlExport {
 }
 
 const LANGUAGE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
+const ORIGIN = /^https?:\/\/[A-Za-z0-9.:-]+$/;
 
 /** A file name in `assets/`, with each segment safe for a URL. */
 function defaultAssetUrl(asset: ExportAsset): string {
@@ -55,7 +58,9 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
   const css = documentCss(theme, options.styles);
   const max = Math.max(320, Math.min(2000, Math.round(options.maxWidth ?? 760)));
   const lang = LANGUAGE.test(page.language) ? page.language : 'en';
-  const csp = "default-src 'none'; img-src data: file: 'self'; style-src 'unsafe-inline'; font-src data: file: 'self'";
+  const origins = (options.imageOrigins ?? []).filter((origin) => ORIGIN.test(origin));
+  const images = ['data:', 'file:', "'self'", ...origins].join(' ');
+  const csp = `default-src 'none'; img-src ${images}; style-src 'unsafe-inline'; font-src data: file: 'self'`;
   const html = [
     '<!doctype html>',
     `<html lang="${escapeAttr(lang)}">`,
