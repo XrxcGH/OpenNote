@@ -62,13 +62,6 @@ pub struct Point {
 /// The color the window was created with, for the perf log's `windowShown` mark.
 struct Background(Rgb);
 
-/// Builds the main window from its config, with its placement, colors, boot script, zoom, and WebView2 settings,
-/// and shows it (section 8.5).
-///
-/// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Those are behind the
-/// `shell.customFrame` flag, so the window keeps the native frame unless the flag is on; the page's caption layout
-/// report switches the frame either way ([`custom_frame`]). A window created without the native frame gets it back
-/// when the page reports no caption buttons in time or its process fails.
 /// Whether a webview may load `url`. Every OpenNote window stays on the app's own pages: a dropped file, a
 /// link, or a script that would load anything else is refused, so nothing else runs with the boot data.
 pub fn is_app_url(url: &tauri::Url) -> bool {
@@ -85,6 +78,13 @@ pub fn is_app_url(url: &tauri::Url) -> bool {
     }
 }
 
+/// Builds the main window from its config, with its placement, colors, boot script, zoom, and WebView2 settings,
+/// and shows it (section 8.5).
+///
+/// The config says `decorations: false`, for the HTML title bar with its own caption buttons. Those are behind the
+/// `shell.customFrame` flag, so the window keeps the native frame unless the flag is on; the page's caption layout
+/// report switches the frame either way ([`custom_frame`]). A window created without the native frame gets it back
+/// when the page reports no caption buttons in time or its process fails.
 pub fn create(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let windows = &app.config().app.windows;
     let config = windows
