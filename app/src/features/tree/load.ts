@@ -156,9 +156,7 @@ export async function loadExpanded(): Promise<void> {
   const tried = new Set<string>();
   for (;;) {
     const state = treeStore.get();
-    const ready = sessionStore
-      .get()
-      .expanded.filter((id) => !tried.has(id) && state.nodes[id as NodeId] !== undefined);
+    const ready = sessionStore.get().expanded.filter((id) => !tried.has(id) && state.nodes[id as NodeId] !== undefined);
     if (ready.length === 0) return;
     for (const id of ready) tried.add(id);
     await Promise.all(ready.map((id) => ensureChildren(id as NodeId)));
