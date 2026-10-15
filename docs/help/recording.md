@@ -36,4 +36,10 @@ A transcript block lists each line with its time, and a click jumps to that mome
 
 In beta 4 OpenNote cannot turn speech into text by itself yet. The transcript block, speakers, and recaps are built, and the speech engine is not. See [on-device intelligence](on-device-intelligence.md).
 
+## Videos, podcasts, and live embeds
+
+Paste a YouTube or Vimeo link, a podcast episode, or a Desmos, GeoGebra, Figma, Miro, or Lucidchart link into an empty text box, or press Ctrl+K and choose Insert video, podcast, or embed from link. The page keeps a card with the title and a saved picture. Nothing loads from the site until you press Play or Show the live view, so a page opens fast and works offline.
+
+With a YouTube or Vimeo video playing, the notes you type are time-stamped to the playhead, the same way they are during a recording. Hold Alt and click a note to jump back to its moment. Only these sites can be shown on a page. Any other link stays a normal link.
+
 Recording is built. Agents started a recording once and it worked. Nobody has tried the rest by hand.

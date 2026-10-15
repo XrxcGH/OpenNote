@@ -54,6 +54,11 @@ export interface AccountsHost {
     parts: readonly UploadPart[],
     contentType: string,
   ): Promise<ConnectorResponse>;
+  /**
+   * Reads a link's title or picture from a short list of public hosts (the players' and embeds' own), with no token.
+   * Work offline refuses it.
+   */
+  fetchPreview(url: string): Promise<{ status: number; contentType: string | null; bytes: Uint8Array }>;
 }
 
 /** The host's account calls. */

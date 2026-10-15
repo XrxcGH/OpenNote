@@ -58,7 +58,7 @@ Linked accounts (Phase 11):
 
 (Phase 9)
 
-- Paste a YouTube, Vimeo, or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings. Status: Not built yet.
+- Paste a YouTube, Vimeo, or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings. Status: Built, untested by hand. YouTube and Vimeo report the playhead, so notes are stamped; Apple Podcasts and Spotify show the player only. The frame loads only after Play, and the title and picture are saved for offline.
 - Transcripts come from the platform's captions when available, or from on-device transcription of audio the person has the right to use. Status: Needs the owner. Captions need platform keys or sign-in, and the on-device speech engine is not built.
 - Recordings can be exported as audio or as a narrated video of the page, and uploaded to a linked YouTube account as private or unlisted. Status: Built, untested by hand. Export as audio is built. A narrated video is not built yet. YouTube upload needs the owner.
 
@@ -77,7 +77,7 @@ Linked accounts (Phase 11):
 | Phone camera | Scan a QR code shown in OpenNote to send photos and document scans from a phone | Not built yet |
 | Zotero and BibTeX | Cite sources while writing and export a bibliography in any common style | Built, untested by hand |
 | Canvas, Moodle, and Google Classroom | Import assignments into a section and submit a page as PDF | Built, untested by hand. Bring in course assignments makes a section and pages and fills Upcoming. Submit page as PDF hands in to Canvas and Moodle, and saves to Drive for Classroom, which takes no file from other apps. Classroom needs the owner's Google client ID. |
-| Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline | Not built yet. The embed block is not built. |
+| Desmos, GeoGebra, Figma, Miro, and Lucidchart | Live embeds that fall back to a static image offline | Built, untested by hand. Only these sites are recognized and shown in a sandboxed frame after the person chooses Show the live view; the saved picture shows offline. |
 | Kindle and Readwise | Import book highlights into a notebook | Built, untested by hand. Kindle clippings and a Readwise CSV file are built. Sync Readwise reads the Readwise API into a notebook, a page for each book, and syncs again from where it left off. |
 | Slack and Teams chat | Share a page as a link, PDF, or image | Built, untested by hand. Share page to Slack and Share page to Teams post as you to a channel you choose. Both need the owner's client IDs. |
 | Dropbox, OneDrive, iCloud Drive, Box, and WebDAV | Sync folders and "Send to" destinations | Built, untested by hand. Synced folders and Send to a folder are built. API sync needs the owner. |

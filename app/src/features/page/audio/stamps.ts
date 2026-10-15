@@ -19,6 +19,7 @@ import { shownPool } from '../pool/shown';
 import { shownStrokes } from '../seams/inkStrokes';
 import { pageSelection } from '../seams/selectionStore';
 import { appendToNextBatch } from '../sync/shown';
+import { isPlayerStamp, seekPlayerStamp } from '../media/playhead';
 import { dataOf, recordingBlocks } from './blocks';
 import { recordingEntries } from './entries';
 import { stampNow } from './controller';
@@ -185,6 +186,12 @@ export async function playFromText(block: string, offset?: number): Promise<bool
   }
   const at = offset === undefined || !marks.markAt(offset) ? first.from : offset;
   const time = marks.timeAt(at);
+  // A note typed while a video played seeks that video.
+  if (time && isPlayerStamp(time.recording)) {
+    const seeked = seekPlayerStamp(time.recording, time.captureNs);
+    if (seeked) announce(t('audio.announce.playingFrom', { time: clockNs(time.captureNs) }));
+    return seeked;
+  }
   const holder = time && recordingBlocks().find((candidate) => dataOf(candidate)?.entry.id === time.recording);
   const page = shownOpenPage.get()?.id;
   if (!time || !holder || !page || !(await openFor(holder, page))) return false;

@@ -3,6 +3,7 @@
 // feature has its own group below.
 
 import { accountsLms } from './accountsLms';
+import { accountsMedia } from './accountsMedia';
 import { accountsMeetings } from './accountsMeetings';
 import { accountsReadwise } from './accountsReadwise';
 import { accountsShare } from './accountsShare';
@@ -12,6 +13,7 @@ export const accounts = {
   meetings: accountsMeetings,
   share: accountsShare,
   lms: accountsLms,
+  media: accountsMedia,
   common: {
     notConnected: '{service} isn’t connected. Connect it in Settings, then Connectors.',
     needsAccess: 'The {service} connection doesn’t allow this yet. Connect it again in Settings, then Connectors.',

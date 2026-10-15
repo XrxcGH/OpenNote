@@ -21,7 +21,15 @@ export interface FakeAccountsHost extends AccountsHost {
 
 const FOLDER = '/fake-accounts/tmp';
 
-export function createFakeAccountsHost(connectors: () => ConnectorsClient): FakeAccountsHost {
+export interface FakeHostOptions {
+  /** The answer to a preview address (a title or a picture). Default: not found. */
+  preview?(url: string): { status: number; contentType: string | null; bytes: Uint8Array };
+}
+
+export function createFakeAccountsHost(
+  connectors: () => ConnectorsClient,
+  options: FakeHostOptions = {},
+): FakeAccountsHost {
   const state = new Map<string, unknown>();
   const files = new Map<string, Uint8Array>();
   const uploads: FakeAccountsHost['uploads'] = [];
@@ -83,6 +91,8 @@ export function createFakeAccountsHost(connectors: () => ConnectorsClient): Fake
       uploads.push({ connector, url: request.url, contentType, body });
       return connectors().request(connector, access, { ...request, body, contentType });
     },
+    fetchPreview: (url) =>
+      Promise.resolve(options.preview?.(url) ?? { status: 404, contentType: null, bytes: new Uint8Array() }),
     async uploadPublic(connector, url, parts, contentType) {
       const joined = parts.map(partBytes);
       const all = new Uint8Array(joined.reduce((sum, one) => sum + one.length, 0));

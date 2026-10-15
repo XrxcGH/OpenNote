@@ -222,6 +222,7 @@ pub(super) fn call(connectors: &Connectors, root: &Path, name: &str, args: &Valu
         "transfer.download" => transfer_down(connectors, root, args),
         "transfer.upload" => transfer_up(connectors, root, args),
         "transfer.public" => transfer_public(connectors, root, args),
+        "fetch.preview" => fetch_preview(connectors, args),
         _ => Err(invalid("name", &format!("{name} isn't an accounts call."))),
     }
 }
@@ -286,6 +287,49 @@ pub(super) fn public_upload_host(text: &str) -> Option<String> {
     };
     let local = host == "localhost" || host.ends_with(".localhost") || host.ends_with(".local") || host.ends_with(".internal");
     (host.contains('.') && !local).then_some(host)
+}
+
+/// The only hosts a link preview is read from: the oEmbed address and the picture of each player and live embed.
+const PREVIEW_HOSTS: &[&str] = &[
+    "www.youtube.com",
+    "i.ytimg.com",
+    "vimeo.com",
+    "i.vimeocdn.com",
+    "open.spotify.com",
+    "i.scdn.co",
+    "mosaic.scdn.co",
+    "saved-work.desmos.com",
+];
+
+/// The most a preview may be: a picture, or a few lines of oEmbed.
+const MAX_PREVIEW: usize = 3 * 1024 * 1024;
+
+/// Whether the address may be fetched as a preview: https, no port or sign-in details, on one of the listed hosts.
+pub(super) fn preview_host(text: &str) -> Option<String> {
+    let host = public_upload_host(text)?;
+    PREVIEW_HOSTS.contains(&host.as_str()).then_some(host)
+}
+
+/// A GET with no token for the title and picture of a link on the page. Nothing is sent but the address, and the
+/// answer is returned as base64 (a picture) with its type. Work offline blocks it.
+fn fetch_preview(connectors: &Connectors, args: &Value) -> IpcResult<Value> {
+    let address: String = arg(args, "url")?;
+    if connectors.offline() {
+        return Err(invalid("url", "OpenNote is working offline."));
+    }
+    let host = preview_host(&address).ok_or_else(|| invalid("url", "That address can't be read."))?;
+    let http = HttpRequest::new(super::registry::Method::Get, address);
+    let policy = super::http::HostPolicy::new([host]);
+    let response = connectors
+        .0
+        .http
+        .send(&policy, &http, MAX_PREVIEW)
+        .map_err(|_| invalid("url", "The preview didn't load."))?;
+    Ok(json!({
+        "status": response.status,
+        "contentType": response.content_type,
+        "base64": STANDARD.encode(&response.body),
+    }))
 }
 
 /// A POST with no token to the upload address a service gave in an answer. The connector must be connected, so only
@@ -359,6 +403,27 @@ mod tests {
             "not a url",
         ] {
             assert_eq!(public_upload_host(bad), None, "{bad}");
+        }
+    }
+
+    #[test]
+    fn a_preview_is_read_only_from_the_listed_hosts() {
+        for good in [
+            "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc",
+            "https://i.ytimg.com/vi/abc/hqdefault.jpg",
+            "https://saved-work.desmos.com/calc_thumbs/production/abc.png",
+        ] {
+            assert!(preview_host(good).is_some(), "{good}");
+        }
+        for bad in [
+            "https://example.com/x.png",
+            "https://www.youtube.com.evil.example/x",
+            "https://evil.example/www.youtube.com",
+            "http://i.ytimg.com/x",
+            "https://i.ytimg.com:444/x",
+            "https://user@i.ytimg.com/x",
+        ] {
+            assert!(preview_host(bad).is_none(), "{bad}");
         }
     }
 

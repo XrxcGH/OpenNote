@@ -39,6 +39,10 @@ export function createTauriAccounts(): AccountsHost {
         parts: [...parts],
         contentType,
       }),
+    fetchPreview: async (url) => {
+      const answer = await call<{ status: number; contentType: string | null; base64: string }>('fetch.preview', { url });
+      return { status: answer.status, contentType: answer.contentType, bytes: decode(answer.base64) };
+    },
     uploadPublic: (connector, url, parts, contentType) =>
       call<ConnectorResponse>('transfer.public', { connector, url, parts: [...parts], contentType }),
   };

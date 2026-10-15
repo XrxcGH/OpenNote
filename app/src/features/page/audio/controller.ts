@@ -12,6 +12,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { shownPage as shownOpenPage } from '../history/shown';
+import { playerStamp } from '../media/playhead';
 import { shownLayer } from '../mount';
 import { activeNs, insertRecordingBlock, removeBlock, writeEntry } from './blocks';
 import { clock } from './format';
@@ -67,11 +68,16 @@ export const runningRecording = () => run?.entry.id ?? null;
 export const recordingSession = () => (run && !run.stopping ? run.session : null);
 
 /** Whether the person is recording and not paused: only then does typing get a time stamp. */
-export function stampNow(): { recording: string; captureNs: number } | null {
+function recordingStamp(): { recording: string; captureNs: number } | null {
   if (!run || run.stopping || recordingUi.get().phase !== 'recording') return null;
   // Text on another page isn't part of this page's recording.
   if (shownOpenPage.get()?.id !== run.page) return null;
   return run.session.stamp();
+}
+
+/** The stamp for text typed now: the recording that runs, else the video that plays in a player block. */
+export function stampNow(): { recording: string; captureNs: number } | null {
+  return recordingStamp() ?? playerStamp(shownOpenPage.get()?.id ?? null);
 }
 
 function update(patch: Partial<typeof IDLE>): void {
@@ -278,7 +284,7 @@ export async function flagNow(): Promise<void> {
 
 /** Whether the recording that runs is the shown page's, so a snap can be stamped to it. */
 export function snapStamp(): { captureNs: number } | null {
-  const stamp = stampNow();
+  const stamp = recordingStamp();
   return stamp ? { captureNs: stamp.captureNs } : null;
 }
 
