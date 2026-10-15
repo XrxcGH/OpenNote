@@ -238,31 +238,30 @@ const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const off = { dev: false, nightly: false, beta: false, stable: false };
 const on = { dev: true, nightly: true, beta: true, stable: true };
 const testBuilds = { dev: true, nightly: true, beta: false, stable: false };
-const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
 
 const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>) =>
   defineFlag({ id, description, issue: `${ISSUES}${encodeURIComponent(id)}`, enabled });
 
 export const FLAGS: readonly FlagDef[] = [
-  flag('window.snapLayouts', 'The Snap Layouts flyout on the Maximize button, if the spike passes.', betaBuilds),
+  flag('window.snapLayouts', 'The Snap Layouts flyout on the Maximize button, if the spike passes.', on),
   flag(
     'shell.customFrame',
     'The custom title bar with its own caption buttons, instead of the native frame.',
-    betaBuilds,
+    on,
   ),
   flag('install.uninstallEntry', 'A per-user entry in Installed apps.', off),
   flag('updates.meteredCheck', 'Wait for an unmetered network before downloading an update.', off),
   flag('updates.resume', 'Resume a download that stopped partway.', off),
-  flag('updates.betaChannel', 'The Stable or Beta choice in Settings.', betaBuilds),
+  flag('updates.betaChannel', 'The Stable or Beta choice in Settings.', on),
   flag('notes.sectionGroups', 'Section groups in notebooks.', on),
-  flag('trash.view', 'The Trash view with Restore.', betaBuilds),
+  flag('trash.view', 'The Trash view with Restore.', on),
   flag('notes.memorySnapshot', 'Keep the Phase 2 notes in a temporary snapshot file.', testBuilds),
-  flag('commandBar.insert', 'The Insert tab of the command bar.', betaBuilds),
+  flag('commandBar.insert', 'The Insert tab of the command bar.', on),
   flag('commandBar.draw', 'The Draw tab of the command bar.', on),
-  flag('setup.smartFeatures', 'The smart features step of setup.', betaBuilds),
+  flag('setup.smartFeatures', 'The smart features step of setup.', on),
   flag('setup.import', 'The step of setup that brings in notes from other apps.', on),
   flag('settings.recording', 'The Recording section of Settings.', on),
-  flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', betaBuilds),
+  flag('bottomBar.recent', 'Recent pages in the compact bottom bar.', on),
   flag('storage.core', 'Keep notes on disk: notebook folders in the notes folder, through the core.', on),
   ...PAGE_FLAGS,
   ...INK_FLAGS,

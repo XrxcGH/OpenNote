@@ -11,9 +11,10 @@ describe('flags', () => {
     initFlags('beta');
     expect(isEnabled('trash.view')).toBe(true);
     initFlags('stable');
-    expect(isEnabled('trash.view')).toBe(false);
+    expect(isEnabled('trash.view')).toBe(true);
     expect(isEnabled('notes.sectionGroups')).toBe(true);
-    expect(isEnabled('updates.betaChannel')).toBe(false);
+    expect(isEnabled('install.uninstallEntry')).toBe(false);
+    expect(isEnabled('notes.memorySnapshot')).toBe(false);
   });
 
   it('keep notes on disk on every channel', () => {
@@ -23,11 +24,12 @@ describe('flags', () => {
     }
   });
 
-  it('give Beta testers the typed-notes editor, and keep it out of Stable', () => {
+  it('ship the typed-notes editor in every channel', () => {
     initFlags('beta');
     expect(isEnabled('page.editor')).toBe(true);
     initFlags('stable');
-    expect(isEnabled('page.editor')).toBe(false);
+    expect(isEnabled('page.editor')).toBe(true);
+    expect(isEnabled('page.imageRenditions')).toBe(false);
   });
 
   it('take overrides in development and nightly builds only, the later ones winning', () => {
@@ -43,7 +45,7 @@ describe('flags', () => {
     initFlags('stable');
     const items = [
       { id: 'a' },
-      { id: 'b', flag: 'trash.view' as const },
+      { id: 'b', flag: 'install.uninstallEntry' as const },
       { id: 'c', flag: 'notes.sectionGroups' as const },
     ];
     expect(withEnabledFlags(items).map((item) => item.id)).toEqual(['a', 'c']);
