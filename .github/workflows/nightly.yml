@@ -58,9 +58,14 @@ jobs:
       - name: List the fuzz targets
         id: targets
         run: |
-          targets=$(ls crates/core/fuzz/fuzz_targets/*.rs | xargs -n1 basename -s .rs | jq -R . | jq -sc .)
+          # Each entry names the crate and the target: the core formats, and the importers and search indexer.
+          targets=$(for crate in crates/core crates/interop; do
+            for file in "$crate"/fuzz/fuzz_targets/*.rs; do
+              jq -nc --arg crate "$crate" --arg name "$(basename -s .rs "$file")" '{crate: $crate, name: $name}'
+            done
+          done | jq -sc .)
           if [ "$targets" = "[]" ]; then
-            echo "::error::No fuzz targets found in crates/core/fuzz/fuzz_targets."
+            echo "::error::No fuzz targets found in crates/core/fuzz or crates/interop/fuzz."
             exit 1
           fi
           echo "targets=$targets" >> "$GITHUB_OUTPUT"
@@ -78,9 +83,10 @@ jobs:
       matrix:
         target: ${{ fromJSON(needs.plan.outputs.targets) }}
     env:
-      FUZZ_TARGET: ${{ matrix.target }}
+      FUZZ_TARGET: ${{ matrix.target.name }}
       FUZZ_MINUTES: ${{ inputs.fuzz_minutes || '30' }}
-      FUZZ_DIR: ${{ github.workspace }}/crates/core/fuzz
+      FUZZ_CRATE: ${{ matrix.target.crate }}
+      FUZZ_DIR: ${{ github.workspace }}/${{ matrix.target.crate }}/fuzz
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -90,7 +96,7 @@ jobs:
           toolchain: nightly
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          workspaces: crates/core/fuzz
+          workspaces: ${{ matrix.target.crate }}/fuzz
           shared-key: nightly-fuzz
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz --locked --version 0.13.2
@@ -98,17 +104,17 @@ jobs:
         id: corpus
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: crates/core/fuzz/corpus/${{ matrix.target }}
-          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: fuzz-corpus-${{ matrix.target }}-
-      - name: Fuzz ${{ matrix.target }}
+          path: ${{ matrix.target.crate }}/fuzz/corpus/${{ matrix.target.name }}
+          key: fuzz-corpus-${{ matrix.target.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: fuzz-corpus-${{ matrix.target.name }}-
+      - name: Fuzz ${{ matrix.target.crate }} ${{ matrix.target.name }}
         run: |
           if ! [[ "$FUZZ_MINUTES" =~ ^[0-9]+$ ]]; then
             echo "::error::fuzz_minutes must be a whole number."
             exit 1
           fi
           mkdir -p "$FUZZ_DIR/corpus/$FUZZ_TARGET" "$FUZZ_DIR/regressions/$FUZZ_TARGET"
-          cd crates/core
+          cd "$FUZZ_CRATE"
           # The first folder collects new inputs. The second holds the crashes fixed in the past, as seeds.
           cargo fuzz run "$FUZZ_TARGET" \
             "$FUZZ_DIR/corpus/$FUZZ_TARGET" "$FUZZ_DIR/regressions/$FUZZ_TARGET" \
@@ -117,14 +123,14 @@ jobs:
         if: ${{ always() && steps.corpus.outcome == 'success' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: crates/core/fuzz/corpus/${{ matrix.target }}
-          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ matrix.target.crate }}/fuzz/corpus/${{ matrix.target.name }}
+          key: fuzz-corpus-${{ matrix.target.name }}-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Keep the crashing input
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: fuzz-crash-${{ matrix.target }}
-          path: crates/core/fuzz/artifacts/${{ matrix.target }}
+          name: fuzz-crash-${{ matrix.target.name }}
+          path: ${{ matrix.target.crate }}/fuzz/artifacts/${{ matrix.target.name }}
           if-no-files-found: ignore
           retention-days: 30
 

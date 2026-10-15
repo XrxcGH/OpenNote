@@ -15,7 +15,7 @@ members = [
   "tests/perf/frame-probe",
 ]
 # The fuzz crate needs a nightly toolchain, so it stays out of the workspace.
-exclude = ["crates/core/fuzz"]
+exclude = ["crates/core/fuzz", "crates/interop/fuzz"]
 resolver = "2"
 
 # SQLite is C code, so building it without optimization makes the search tests several times slower.

@@ -2924,6 +2924,7 @@ dependencies = [
  "md-5",
  "opennote-core",
  "opennote-interop",
+ "opennote-search",
  "proptest",
  "pulldown-cmark",
  "quick-xml",

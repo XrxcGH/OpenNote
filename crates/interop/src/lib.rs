@@ -35,6 +35,9 @@ pub mod tree;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
 
+#[cfg(feature = "fuzzing")]
+pub mod fuzzing;
+
 pub use detect::{detect, Detected, SourceKind};
 pub use disk::{DiskSink, DiskSource};
 pub use error::{InteropError, Result};

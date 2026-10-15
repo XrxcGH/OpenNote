@@ -22,7 +22,7 @@ The [nightly workflow](../.github/workflows/nightly.yml) runs every night on the
 
 | Job | What it runs | Default size |
 |---|---|---|
-| `fuzz` | One cargo-fuzz job for each file in `crates/core/fuzz/fuzz_targets` | 30 minutes each |
+| `fuzz` | One cargo-fuzz job for each file in `crates/core/fuzz/fuzz_targets` and `crates/interop/fuzz/fuzz_targets` | 30 minutes each |
 | `kill` | The kill harness in `tests/crash`, which stops a writer during saves and checks every page | 1,000 kills |
 | `proptest` | All tests of `opennote-core`, with more random cases | 10,000 cases |
 | `perf` | The benchmarks in `tests/perf/core`, with their budget check | A 1,000-page notebook |
@@ -38,6 +38,9 @@ Run these from the repository root. Fuzzing needs a nightly Rust toolchain and `
 ```sh
 # One fuzz target for ten minutes, from the core crate
 cd crates/core && cargo +nightly fuzz run segment -- -max_total_time=600
+
+# An importer or the search indexer: zip, enex, docx, odt, xlsx, pptx, html, mht, markdown, csv, sqlite, search_index
+cd crates/interop && cargo +nightly fuzz run pptx -- -max_total_time=600
 
 # The kill harness with the seed from a failed run
 cargo run -p opennote-crashtest -- run --notebook ./kill-notebook --iterations 1000 --seed 123456

@@ -1,0 +1,110 @@
+# Fuzz targets for opennote-interop (A4-36). Run one with `cargo +nightly fuzz run <target>` from
+# crates/interop. Each importer target calls an entry function in `opennote_interop::fuzzing`, and the search
+# target calls entries/search.rs. tests/fuzz_entries.rs runs the same functions with stable Rust.
+
+[package]
+name = "opennote-interop-fuzz"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4.13"
+opennote-core = { path = "../../core" }
+opennote-interop = { path = "..", features = ["fuzzing"] }
+opennote-search = { path = "../../search" }
+
+# Fuzzing needs a nightly toolchain, so this crate is its own workspace.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "zip"
+path = "fuzz_targets/zip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "enex"
+path = "fuzz_targets/enex.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "docx"
+path = "fuzz_targets/docx.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "odt"
+path = "fuzz_targets/odt.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "xlsx"
+path = "fuzz_targets/xlsx.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "pptx"
+path = "fuzz_targets/pptx.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "html"
+path = "fuzz_targets/html.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "mht"
+path = "fuzz_targets/mht.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "markdown"
+path = "fuzz_targets/markdown.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "csv"
+path = "fuzz_targets/csv.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sqlite"
+path = "fuzz_targets/sqlite.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "search_index"
+path = "fuzz_targets/search_index.rs"
+test = false
+doc = false
+bench = false
