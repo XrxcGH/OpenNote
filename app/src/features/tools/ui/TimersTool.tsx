@@ -21,7 +21,10 @@ function timersForWindow(): Timers {
     const timers = shared;
     timers.subscribe(() => saveStored(STORE, timers.snapshot()));
     // A pop-out or the main window saved its timers: take them, so the next change here builds on them.
-    watchStored(STORE, () => timers.replace(restoreTimerSet(loadStored(STORE, null))));
+    watchStored(STORE, () => {
+      const incoming = restoreTimerSet(loadStored(STORE, null));
+      if (JSON.stringify(incoming) !== JSON.stringify(timers.snapshot())) timers.replace(incoming);
+    });
   }
   return shared;
 }

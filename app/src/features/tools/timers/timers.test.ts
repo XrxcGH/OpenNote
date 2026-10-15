@@ -210,3 +210,22 @@ describe('the live wrapper', () => {
     expect(listener).toHaveBeenCalledTimes(5);
   });
 });
+
+describe('timers shared between two windows', () => {
+  it('takes the set the other window saved, and both settle on the same saved form', () => {
+    const clock = fakeClock();
+    const a = createTimers(clock);
+    const b = createTimers(clock);
+    const id = a.add({ kind: 'countdown', durationMs: MINUTE }, 'tea');
+    a.act(id, 'start');
+    b.replace(a.snapshot());
+    expect(b.views().map((view) => view.label)).toEqual(['tea']);
+    clock.advance(2 * MINUTE);
+    // The finished timer is marked done when saved; handing that back changes nothing more.
+    const saved = JSON.stringify(a.snapshot());
+    b.replace(a.snapshot());
+    expect(JSON.stringify(b.snapshot())).toBe(saved);
+    a.replace(b.snapshot());
+    expect(JSON.stringify(a.snapshot())).toBe(saved);
+  });
+});

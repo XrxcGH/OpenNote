@@ -14,7 +14,9 @@ export function loadStored<T>(name: string, fallback: T): T {
 
 export function saveStored(name: string, value: unknown): void {
   try {
-    localStorage.setItem(PREFIX + name, JSON.stringify(value));
+    const text = JSON.stringify(value);
+    // Writing what is already there changes nothing, so other windows hear nothing and two windows cannot echo.
+    if (localStorage.getItem(PREFIX + name) !== text) localStorage.setItem(PREFIX + name, text);
   } catch {
     // Nothing to do: the tool keeps working, it just will not remember.
   }
