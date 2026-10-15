@@ -14,6 +14,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { RadioCard, RadioGroup, Switch } from '../../../ui';
 import { CurvePreview } from './CurvePreview';
+import PalmLab from './PalmLab';
 import { inkPrefs, penDevice, setPrefs, updatePen } from './prefs';
 
 const BARRELS: readonly [BarrelAction, MessageKey][] = [
@@ -236,7 +237,10 @@ export default function PenSettings() {
   const hover = useFlag('ink.hover');
   const zoomBox = useFlag('ink.zoomBox');
   const anchoring = useFlag('ink.anchoring');
+  const lab = useFlag('dev.penRecorder');
+  const penFields = useFlag('ink.penFields');
   const hovering = useStore(inkPrefs, (state) => state.hover);
+  const fields = useStore(inkPrefs, (state) => state.penFields);
   return (
     <section aria-labelledby="ink-settings">
       <h2 id="ink-settings">{t('ink.settings.title')}</h2>
@@ -267,11 +271,18 @@ export default function PenSettings() {
           onChange={(anchorToText) => void updateSettings({ ink: { anchorToText } })}
         />
       )}
+      {penFields && (
+        <>
+          <Switch label={t('ink.settings.penFields')} checked={fields} onChange={(on) => setPrefs({ penFields: on })} />
+          <p>{t('ink.settings.penFieldsHint')}</p>
+        </>
+      )}
       {hover && (
         <Switch label={t('ink.settings.hover')} checked={hovering} onChange={(on) => setPrefs({ hover: on })} />
       )}
       <PenChoices />
       {zoomBox && <ZoomBoxSettings />}
+      {lab && <PalmLab />}
     </section>
   );
 }

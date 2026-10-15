@@ -149,6 +149,8 @@ export function selectArea(page: ExportPage, lasso: Lasso, options: SelectOption
 export interface Chosen {
   readonly blocks: readonly string[];
   readonly strokes: readonly string[];
+  /** The lasso's path when a lasso made the choice, for an exact selection. */
+  readonly lasso?: Lasso;
 }
 
 /**
@@ -182,4 +184,22 @@ export function selectChosen(page: ExportPage, chosen: Chosen, options: SelectOp
   const bounds = roundBox(content);
   const crop = cropOf(bounds, options.padding ?? DEFAULT_PADDING, options.minSize ?? MIN_CROP);
   return { mode: 'smart', blocks, strokes, bounds, crop, clip: null };
+}
+
+/**
+ * The lasso's choice in either mode. Smart trims to the box around the chosen items. Exact keeps the same items but
+ * crops to the lasso's own box and clips the picture to its path; without a path it falls back to smart.
+ */
+export function selectLassoed(
+  page: ExportPage,
+  chosen: Chosen,
+  mode: SelectMode,
+  options: SelectOptions = {},
+): Selection | null {
+  const smart = selectChosen(page, chosen, options);
+  const lasso = chosen.lasso;
+  if (!smart || mode === 'smart' || !lasso || lasso.length < 3) return smart;
+  const bounds = roundBox(boxOfPoints(lasso)!);
+  const crop = cropOf(bounds, options.padding ?? DEFAULT_PADDING, options.minSize ?? MIN_CROP);
+  return { ...smart, mode: 'exact', bounds, crop, clip: lasso };
 }

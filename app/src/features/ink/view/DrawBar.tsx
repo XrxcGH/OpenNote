@@ -8,9 +8,22 @@ import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, openMenu } from '../../../ui';
+import type { MenuItemSpec } from '../../../ui';
+import { ask } from './ask';
 import { paletteByName, slotsForTool, toCss } from '../pens/palette';
 import { WIDTH_PRESETS_MM } from '../pens/tools';
-import { activeSlot, chooseTool, drawState, styleOf, updateSlot } from './state';
+import {
+  activeSlot,
+  applyPenSet,
+  chooseTool,
+  deletePenSet,
+  drawState,
+  LIBRARY_PENS,
+  savePenSet,
+  setSlotTool,
+  styleOf,
+  updateSlot,
+} from './state';
 import type { DrawTool } from './state';
 import styles from './view.module.css';
 
@@ -33,13 +46,12 @@ export function DrawTools({ toolProps }: CommandBarComponentProps) {
   const erasers = useFlag('ink.erasers');
   const lasso = useFlag('ink.lasso');
   const space = useFlag('ink.insertSpace');
-  const writing = useFlag('ink.handwriting');
+  // The Writing pen is a bar item of its own (more.ts), so the pens fit beside these on a laptop screen.
   const shown: Exclude<DrawTool, 'pen'>[] = [
     'select',
     ...(erasers ? (['eraser', 'partialEraser'] as const) : []),
     ...(lasso ? (['lasso'] as const) : []),
     ...(space ? (['insertSpace'] as const) : []),
-    ...(writing ? (['writing'] as const) : []),
   ];
   return (
     <div className={styles.group} role="group" aria-label={t('ink.tools.group')}>
@@ -63,8 +75,16 @@ export function DrawTools({ toolProps }: CommandBarComponentProps) {
   );
 }
 
-const toolName = (tool: string): string =>
-  t(tool === 'pencil' ? 'ink.tools.pencil' : tool === 'highlighter' ? 'ink.tools.highlighter' : 'ink.tools.pen');
+const PEN_NAMES: Record<string, MessageKey> = {
+  pencil: 'ink.tools.pencil',
+  highlighter: 'ink.tools.highlighter',
+  fountain: 'ink.penLibrary.fountain',
+  brush: 'ink.penLibrary.brush',
+  calligraphy: 'ink.penLibrary.calligraphy',
+  dashed: 'ink.penLibrary.dashed',
+  dotted: 'ink.penLibrary.dotted',
+};
+const toolName = (tool: string): string => t(PEN_NAMES[tool] ?? 'ink.tools.pen');
 const colorName = (color: string): string => {
   const entry = paletteByName(color);
   return entry ? t(`ink.colors.${entry.name}` as MessageKey) : t('ink.colors.custom');
@@ -76,6 +96,57 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
   const slots = useSettings((settings) => settings.ink.pens);
   const active = activeSlot(state);
   const onPen = state.tool === 'pen' || state.tool === 'writing';
+  const library = useFlag('ink.penLibrary');
+  const sets = useSettings((settings) => settings.ink.penSets);
+
+  /** The library's entries, for the end of the width menu: the pen types of the active pen, then the saved pen sets. */
+  const libraryItems = (): MenuItemSpec[] => {
+    const items: MenuItemSpec[] = [];
+    if (active && active.tool !== 'highlighter') {
+      LIBRARY_PENS.forEach((tool, i) =>
+        items.push({
+          id: `type:${tool}`,
+          label: toolName(tool),
+          kind: 'radio',
+          checked: active.tool === tool,
+          separatorBefore: i === 0,
+        }),
+      );
+    }
+    items.push({ id: 'save', label: t('ink.penLibrary.saveSet'), separatorBefore: true });
+    for (const set of sets ?? []) items.push({ id: `apply:${set.id}`, label: set.name });
+    for (const set of sets ?? []) {
+      items.push({ id: `delete:${set.id}`, label: t('ink.penLibrary.deleteSet', { name: set.name }) });
+    }
+    return items;
+  };
+
+  /** Does what a library entry chose. */
+  const chooseLibrary = async (chosen: string) => {
+    if (chosen.startsWith('type:') && active) {
+      const tool = LIBRARY_PENS.find((id) => id === chosen.slice(5));
+      if (tool) {
+        await setSlotTool(active.id, tool);
+        announce(t('ink.penLibrary.changed', { pen: toolName(tool) }));
+      }
+    } else if (chosen === 'save') {
+      const answer = await ask({
+        title: t('ink.penLibrary.saveSet'),
+        field: { label: t('ink.penLibrary.setName'), value: '' },
+        confirm: t('ink.penLibrary.save'),
+        validate: (text) => (text.trim() ? null : t('ink.penLibrary.setNameMissing')),
+      });
+      if (answer) {
+        await savePenSet(answer.text);
+        announce(t('ink.penLibrary.saved', { name: answer.text.trim() }));
+      }
+    } else if (chosen.startsWith('apply:')) {
+      await applyPenSet(chosen.slice(6));
+      announce(t('ink.penLibrary.applied'));
+    } else if (chosen.startsWith('delete:')) {
+      await deletePenSet(chosen.slice(7));
+    }
+  };
 
   const chooseColor = async (anchor: HTMLElement) => {
     if (!active) return;
@@ -97,17 +168,22 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
   const chooseWidth = async (anchor: HTMLElement) => {
     if (!active) return;
     const chosen = await openMenu({
-      label: t('ink.pens.widthMenu'),
+      label: t(library ? 'ink.penLibrary.widthAndType' : 'ink.pens.widthMenu'),
       anchor,
       returnFocus: anchor,
-      items: WIDTH_PRESETS_MM[active.tool].map((mm) => ({
-        id: String(mm),
-        label: t('ink.pens.widthValue', { width: mm }),
-        kind: 'radio',
-        checked: active.width === mm,
-      })),
+      items: [
+        ...WIDTH_PRESETS_MM[active.tool].map((mm): MenuItemSpec => ({
+          id: String(mm),
+          label: t('ink.pens.widthValue', { width: mm }),
+          kind: 'radio',
+          checked: active.width === mm,
+        })),
+        ...(library ? libraryItems() : []),
+      ],
     });
-    if (chosen) await updateSlot(active.id, { width: Number(chosen) });
+    if (!chosen) return;
+    if (/^[0-9]/.test(chosen)) await updateSlot(active.id, { width: Number(chosen) });
+    else await chooseLibrary(chosen);
   };
 
   return (

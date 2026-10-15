@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pageOf, textBlock } from '../testing/build';
 import { waveStroke } from '../testing/samples';
 import { cropPage } from './crop';
-import { selectArea, selectChosen } from './select';
+import { selectArea, selectChosen, selectLassoed } from './select';
 import { selectionText } from './text';
 
 const page = pageOf(
@@ -63,6 +63,37 @@ describe('a selection of items already chosen', () => {
   it('answers null when nothing chosen can be placed', () => {
     expect(selectChosen(page, { blocks: [], strokes: [] })).toBeNull();
     expect(selectChosen(page, { blocks: ['nope'], strokes: ['nope'] })).toBeNull();
+  });
+});
+
+describe('smart and exact for a lasso choice', () => {
+  const lasso = [
+    { x: 60, y: 60 },
+    { x: 600, y: 60 },
+    { x: 600, y: 560 },
+    { x: 60, y: 560 },
+  ];
+  const chosen = { blocks: ['picked'], strokes: [], lasso };
+
+  it('smart trims to the chosen items, whatever the lasso drew', () => {
+    const sel = selectLassoed(page, chosen, 'smart', { boxes })!;
+    expect(sel.mode).toBe('smart');
+    expect(sel.bounds).toEqual({ x: 100, y: 100, w: 200, h: 30 });
+    expect(sel.clip).toBeNull();
+  });
+
+  it('exact keeps the same items but crops to the lasso and clips to its path', () => {
+    const sel = selectLassoed(page, chosen, 'exact', { boxes })!;
+    expect(sel.mode).toBe('exact');
+    expect(sel.blocks).toEqual(['picked']);
+    expect(sel.bounds).toEqual({ x: 60, y: 60, w: 540, h: 500 });
+    expect(sel.crop.w).toBeGreaterThan(540);
+    expect(sel.clip).toEqual(lasso);
+  });
+
+  it('falls back to smart when there is no lasso path, and to null when nothing is chosen', () => {
+    expect(selectLassoed(page, { blocks: ['picked'], strokes: [] }, 'exact', { boxes })!.mode).toBe('smart');
+    expect(selectLassoed(page, { blocks: [], strokes: [], lasso }, 'exact', { boxes })).toBeNull();
   });
 });
 

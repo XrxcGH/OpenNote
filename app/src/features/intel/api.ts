@@ -4,6 +4,7 @@ export { intelState, isOn } from './choices';
 export { readTextInImage, textOfResult } from './imageText';
 export { hasInkStrokeSource, readHandwriting, readHandwritingWords, registerInkStrokeSource } from './ink';
 export { reviewHandwriting } from './handwriting/review';
+export { alternativesFor, isUnsure as isUnsureWord, tidyRecognizedText } from './handwriting/extras';
 export type { InkStrokeSource } from './ink';
 export {
   askToTurnOn,

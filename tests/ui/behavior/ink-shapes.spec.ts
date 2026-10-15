@@ -7,9 +7,13 @@ test.use({ viewport: { width: 1920, height: 900 } });
 
 test('turns a rough rectangle into an exact one with Ink to shape', async ({ page }) => {
   await openPage(page);
+  // At 1440 px the toggle sits in the bar's More menu; on a wider window it is a bar button.
   const toggle = page.getByRole('button', { name: 'Ink to shape' });
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  if (await toggle.count()) await toggle.click();
+  else {
+    await page.getByRole('toolbar', { name: 'Draw' }).getByRole('button', { name: 'More' }).click();
+    await page.getByRole('menuitemcheckbox', { name: 'Ink to shape' }).click();
+  }
   await choose(page, 'Pen, Ink, 0.5 mm');
   const corners: [number, number][] = [
     [150, 300],

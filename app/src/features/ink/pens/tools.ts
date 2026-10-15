@@ -11,9 +11,23 @@ export const TOOL_CODES: Readonly<Record<InkTool, number>> = {
   highlighter: 2,
   marker: 3,
   brush: 4,
+  fountain: 5,
+  calligraphy: 6,
+  dashed: 7,
+  dotted: 8,
 };
 
-const TOOLS_BY_CODE: readonly InkTool[] = ['pen', 'pencil', 'highlighter', 'marker', 'brush'];
+const TOOLS_BY_CODE: readonly InkTool[] = [
+  'pen',
+  'pencil',
+  'highlighter',
+  'marker',
+  'brush',
+  'fountain',
+  'calligraphy',
+  'dashed',
+  'dotted',
+];
 
 /** The tool for a record's byte. Readers draw unknown values as a pen (spec 9.3). */
 export function toolFromCode(code: number): InkTool {
@@ -29,13 +43,17 @@ export function codeOfTool(tool: InkTool): number {
   return TOOL_CODES[tool];
 }
 
-/** Width presets in millimeters for each tool. The marker and the brush share the pen's until the pen library lands. */
+/** Width presets in millimeters for each tool. Each library pen has its own list. */
 export const WIDTH_PRESETS_MM: Readonly<Record<InkTool, readonly number[]>> = {
   pen: [0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0, 3.5],
   pencil: [0.5, 0.7, 1.0, 2.0],
   highlighter: [2, 4, 6, 8],
   marker: [0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0, 3.5],
-  brush: [0.25, 0.35, 0.5, 0.7, 1.0, 1.4, 2.0, 3.5],
+  brush: [0.5, 0.7, 1.0, 1.4, 2.0, 3.5],
+  fountain: [0.25, 0.35, 0.5, 0.7, 1.0, 1.4],
+  calligraphy: [0.7, 1.0, 1.4, 2.0, 3.5, 5],
+  dashed: [0.35, 0.5, 0.7, 1.0, 1.4, 2.0],
+  dotted: [0.35, 0.5, 0.7, 1.0, 1.4, 2.0],
 };
 
 /** The width a new pen starts with: the third pen preset, 0.5 mm, and the middle of each other list. */
@@ -44,7 +62,11 @@ export const DEFAULT_WIDTH_MM: Readonly<Record<InkTool, number>> = {
   pencil: 0.7,
   highlighter: 6,
   marker: 0.5,
-  brush: 0.5,
+  brush: 1.0,
+  fountain: 0.5,
+  calligraphy: 2.0,
+  dashed: 0.7,
+  dotted: 0.7,
 };
 
 /** The widest and narrowest nominal width a person can set, in millimeters, so a scaled stroke stays drawable. */

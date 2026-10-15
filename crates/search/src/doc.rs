@@ -141,6 +141,7 @@ impl PageDoc {
             }
         }
         doc.add_properties(page);
+        doc.add_ink_links(page);
         doc
     }
 
@@ -161,6 +162,49 @@ impl PageDoc {
         }
     }
 
+    /// Adds the page links made on handwriting (`view.inkLinks`) as text blocks, one for each link to a page, so
+    /// the page they point at counts them as backlinks. Each reads as an ID link and takes the ID of the ink block
+    /// that holds the writing, so a result jumps there. Links to a web address or a recording are not page links.
+    fn add_ink_links(&mut self, page: &Page) {
+        let Some(links) = page.view.extra.get("inkLinks").and_then(serde_json::Value::as_object) else {
+            return;
+        };
+        let mut keys: Vec<&String> = links.keys().collect();
+        keys.sort();
+        for key in keys.into_iter().take(MAX_INK_LINKS) {
+            let link = &links[key];
+            let target = link.get("target");
+            if target.and_then(|t| t.get("kind")).and_then(serde_json::Value::as_str) != Some("page") {
+                continue;
+            }
+            let (Some(destination), Some(block)) = (
+                target.and_then(|t| t.get("page")).and_then(serde_json::Value::as_str),
+                link.get("block").and_then(serde_json::Value::as_str),
+            ) else {
+                continue;
+            };
+            let (Ok(destination), Ok(block)) = (PageId::parse(destination), BlockId::parse(block)) else {
+                continue;
+            };
+            if page.blocks.get(block).is_none() {
+                continue;
+            }
+            let label: String = link
+                .get("label")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .chars()
+                .filter(|c| !matches!(c, '[' | ']' | '\n' | '\r'))
+                .collect();
+            let label = if label.trim().is_empty() { "Link" } else { label.trim() };
+            self.blocks.push(BlockText {
+                id: block,
+                kind: BlockKind::Text,
+                text: format!("[{label}](opennote:page/{destination})"),
+            });
+        }
+    }
+
     fn add_block(&mut self, block: &Block) {
         if let BlockData::Text(data) = &block.data {
             self.tags.extend(data.tags.values().flatten().cloned());
@@ -175,6 +219,9 @@ impl PageDoc {
         }
     }
 }
+
+/// The most links on handwriting one page contributes to the index.
+const MAX_INK_LINKS: usize = 500;
 
 /// The most field lines the search text of a page's properties holds.
 const MAX_PROPERTY_LINES: usize = 64;

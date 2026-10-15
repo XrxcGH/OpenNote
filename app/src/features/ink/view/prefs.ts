@@ -25,8 +25,10 @@ export interface InkPrefs {
   readonly paperSnap: boolean;
   /** Whether the zoom writing box is open. */
   readonly zoomBox: boolean;
+  /** The pen opens the system's handwriting panel in the search box, rename fields and table cells. */
+  readonly penFields: boolean;
   /** Which pen edits of typed text are on. */
-  readonly penEdit: Readonly<Record<'strike' | 'space' | 'split' | 'circle', boolean>>;
+  readonly penEdit: Readonly<Record<'strike' | 'space' | 'split' | 'circle' | 'write', boolean>>;
   /** Pens by `persistentDeviceId`, or `default`. */
   readonly pens: Readonly<Record<string, PenDevice>>;
   /** The key of the pen seen last, which the settings page edits. */
@@ -55,7 +57,8 @@ const DEFAULTS: InkPrefs = {
   gridMm: 5,
   paperSnap: true,
   zoomBox: false,
-  penEdit: { strike: true, space: true, split: true, circle: true },
+  penFields: false,
+  penEdit: { strike: true, space: true, split: true, circle: true, write: true },
   pens: {},
   lastPen: 'default',
   seenPens: ['default'],
@@ -111,11 +114,13 @@ function load(): InkPrefs {
       gridMm: num(raw.gridMm, DEFAULTS.gridMm, 1, 50),
       paperSnap: raw.paperSnap !== false,
       zoomBox: raw.zoomBox === true,
+      penFields: raw.penFields === true,
       penEdit: {
         strike: raw.penEdit?.strike !== false,
         space: raw.penEdit?.space !== false,
         split: raw.penEdit?.split !== false,
         circle: raw.penEdit?.circle !== false,
+        write: raw.penEdit?.write !== false,
       },
       pens,
       lastPen: typeof raw.lastPen === 'string' ? raw.lastPen : 'default',

@@ -18,7 +18,8 @@ export interface InkPoint extends Vec {
 /** An affine transform `a b c d e f`, mapping (x, y) to (a·x + c·y + e, b·x + d·y + f), as in SVG and canvas. */
 export type Matrix = readonly [number, number, number, number, number, number];
 
-export type InkTool = 'pen' | 'pencil' | 'highlighter' | 'marker' | 'brush';
+export type InkTool =
+  'pen' | 'pencil' | 'highlighter' | 'marker' | 'brush' | 'fountain' | 'calligraphy' | 'dashed' | 'dotted';
 
 /**
  * A finished stroke. The raw points never change; moving, scaling, or rotating sets `transform`. Start time is in

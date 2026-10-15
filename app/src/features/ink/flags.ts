@@ -39,8 +39,18 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.handwriting', 'Writing pen, convert with the lasso, and tidy handwriting.', on),
   flag('ink.gridTable', 'Draw a grid to make a table.', on),
   flag('ink.penEditing', 'Edit typed text with the pen.', on),
-  // ink.delegatedTrail, ink.nativeTrail, ink.openSnapshot, and dev.penRecorder aren't built yet, so they have no
-  // entry and stay off.
+  flag('ink.groups', 'Group ink, text boxes and images into one object (ADR 0036).', beta),
+  flag('ink.penLibrary', 'Fountain, brush, calligraphy, dashed and dotted pens, and saved pen sets.', beta),
+  flag('ink.links', 'Make handwriting a link to a page, a heading, a web address or a recording moment.', beta),
+  flag('ink.layers', 'Named ink layers that can be hidden, locked, renamed and reordered (ADR 0037).', beta),
+  flag('ink.delegatedTrail', 'A trail the browser draws behind the pen ahead of the page (ADR 0004).', beta),
+  flag('ink.penFields', 'The pen opens the handwriting panel in the search box, rename fields and table cells.', beta),
+  flag('dev.penRecorder', 'The Palm lab: record labeled pen and touch sessions for the palm corpus.', {
+    dev: true,
+    nightly: true,
+    beta: true,
+    stable: false,
+  }),
 ];
 
 /** The ink view: the pointer tools, the Draw tab, and the ink over the shown page. It loads with the first page. */

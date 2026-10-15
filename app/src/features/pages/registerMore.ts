@@ -216,6 +216,8 @@ command({
   run: (ctx) => import('./ui/imageCommands').then((m) => m.copyImage(ctx)),
 });
 menuItems('pages.export', 'pages.exportSelection', 'selection', ['pages.exportSelection', 'pages.copyImage']);
+// The object menu of selected text boxes and images offers the same two (features/page/chrome/menu.ts).
+menuItems('page.object', 'pages.exportSelection', 'export', ['pages.exportSelection', 'pages.copyImage']);
 
 // ---- Present the whole page with a laser pointer and ink that fades -------------------------------------------------------
 command({

@@ -22,7 +22,8 @@ import type { StrokeBuilder } from '../input/strokeBuilder';
 import type { RawSample } from '../input/samples';
 import type { InkStroke } from '../model/types';
 import { mmToPage } from '../pens/tools';
-import { brandColor } from './paint';
+import { trailFor } from './delegatedTrail';
+import { brandColor, fillOf } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
 import { shapePoints } from '../geometry/shapes';
@@ -188,6 +189,13 @@ export function createPenTool(
       samples.push(snapped(g, surface, sampleOf(event, ctx)));
     }
     if (samples.length === 0) return;
+    const area = target();
+    const newest = events.at(-1);
+    if (g.builder && area && newest && isEnabled('ink.delegatedTrail')) {
+      const color = fillOf(g.style, surface.scheme());
+      const diameter = g.style.width * surface.cameraNow().zoom;
+      void trailFor(area).then((trail) => trail.update(newest, color, diameter));
+    }
     const predicted = events.at(-1)?.getPredictedEvents?.() ?? [];
     step(
       g,
@@ -539,7 +547,10 @@ async function finish(
     surface.hide(tx.removed);
     surface.show(tx.added);
     const batch = {
-      edits: tx.removed.length > 0 ? [{ edit: 'removeStrokes' as const, strokes: tx.removed }] : [],
+      edits: [
+        ...(tx.removed.length > 0 ? [{ edit: 'removeStrokes' as const, strokes: tx.removed }] : []),
+        ...surface.placementEdits(tx.added),
+      ],
       strokes: tx.added.length > 0 ? surface.records(tx.added) : undefined,
       coalesce: { kind: 'erase' as const, target: 'ink' },
     };

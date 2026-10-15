@@ -5,13 +5,35 @@ import { shownMounted } from '../../page';
 import { dataUri, documentCss, lightTheme } from '../export';
 import type { ExportAsset } from '../export';
 import type { Rect } from '../pagination';
-import { selectArea, selectChosen, selectionSvg } from '../selection';
-import type { Chosen, Selection } from '../selection';
+import { selectArea, selectLassoed, selectionSvg } from '../selection';
+import type { Chosen, SelectMode, Selection } from '../selection';
 import { inlineFontFaces } from './fonts';
 import { exportLabels } from './exporter';
 import type { PageSource } from './source';
 
 export type PictureScope = 'selection' | 'page';
+
+const MODE_KEY = 'opennote.pages.selectMode';
+
+/**
+ * Smart or exact, as the person chose it last in the picture dialog. It belongs to this device, in its browser
+ * storage, so every read has a default and a write may fail.
+ */
+export function rememberedSelectMode(): SelectMode {
+  try {
+    return globalThis.localStorage?.getItem(MODE_KEY) === 'exact' ? 'exact' : 'smart';
+  } catch {
+    return 'smart';
+  }
+}
+
+export function rememberSelectMode(mode: SelectMode): void {
+  try {
+    globalThis.localStorage?.setItem(MODE_KEY, mode);
+  } catch {
+    // The choice is only lost for next time.
+  }
+}
 
 /** The box of every block as the page view laid it out, in page units. */
 export function blockBoxes(): Map<string, Rect> {
@@ -35,9 +57,14 @@ export function blockBoxes(): Map<string, Rect> {
  * The selection a scope stands for: exactly what the lasso picked (smart select, trimmed to those items), or
  * everything on the page.
  */
-export function selectionFor(source: PageSource, scope: PictureScope, chosen: Chosen): Selection | null {
+export function selectionFor(
+  source: PageSource,
+  scope: PictureScope,
+  chosen: Chosen,
+  mode: SelectMode = 'smart',
+): Selection | null {
   const boxes = blockBoxes();
-  if (scope === 'selection') return selectChosen(source.page, chosen, { boxes });
+  if (scope === 'selection') return selectLassoed(source.page, chosen, mode, { boxes });
   const ids = [...boxes.keys()];
   let around: Rect | null = null;
   for (const id of ids) {

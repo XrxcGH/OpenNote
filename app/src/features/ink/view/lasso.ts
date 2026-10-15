@@ -91,5 +91,5 @@ export function finishLasso(gesture: LassoGesture, surface: InkSurface, host: In
     mode: getSettings().ink.lasso.inside,
     pixel: 1 / zoom,
   });
-  host.select({ blocks: items.blocks, strokes: items.strokes }, { announce: true });
+  host.select({ blocks: items.blocks, strokes: items.strokes, lasso: path }, { announce: true });
 }

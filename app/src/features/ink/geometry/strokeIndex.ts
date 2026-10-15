@@ -14,8 +14,15 @@ export interface StrokeIndex {
   put(stroke: Stroke): void;
   remove(id: string): boolean;
   all(): IterableIterator<Stroke>;
-  /** The strokes whose boxes meet the query box. Their ink may still miss it. */
+  /**
+   * The strokes whose boxes meet the query box. Their ink may still miss it. Strokes the exclusion refuses are left
+   * out, so hit tests, erasers and the lasso never reach a hidden or locked layer.
+   */
   query(bounds: Bounds): Stroke[];
+  /** The same query without the exclusion, for painting strokes that are shown but locked. */
+  queryAll(bounds: Bounds): Stroke[];
+  /** Sets the strokes `query` and `find` skip, or clears it with null. */
+  exclude(skip: ((stroke: Stroke) => boolean) | null): void;
   /** The same strokes, each with its page-space box, which saves callers from working the box out again. */
   find(bounds: Bounds): SpatialEntry<Stroke>[];
 }
@@ -42,6 +49,7 @@ export function halfWidth(stroke: Stroke): number {
 export function createStrokeIndex(strokes: Iterable<Stroke> = [], cellSize?: number): StrokeIndex {
   const table = new Map<string, Stroke>();
   const spatial = createSpatialIndex<Stroke>(cellSize);
+  let skip: ((stroke: Stroke) => boolean) | null = null;
   const index: StrokeIndex = {
     get size() {
       return table.size;
@@ -57,8 +65,20 @@ export function createStrokeIndex(strokes: Iterable<Stroke> = [], cellSize?: num
       return table.delete(id);
     },
     all: () => table.values(),
-    query: (bounds) => spatial.search(bounds).map((entry) => entry.value),
-    find: (bounds) => spatial.search(bounds),
+    query: (bounds) => {
+      const found = spatial.search(bounds).map((entry) => entry.value);
+      const refuse = skip;
+      return refuse ? found.filter((stroke) => !refuse(stroke)) : found;
+    },
+    queryAll: (bounds) => spatial.search(bounds).map((entry) => entry.value),
+    find: (bounds) => {
+      const found = spatial.search(bounds);
+      const refuse = skip;
+      return refuse ? found.filter((entry) => !refuse(entry.value)) : found;
+    },
+    exclude(next) {
+      skip = next;
+    },
   };
   for (const stroke of strokes) index.put(stroke);
   return index;

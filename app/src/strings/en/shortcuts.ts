@@ -43,6 +43,12 @@ export const shortcuts = {
   resetAllDone: 'All shortcuts are back to the {set} set.',
   movedTo: 'Moved from {keys}, which {command} uses in the OneNote set.',
   movedAway: 'Moved from {keys} in the default set.',
+  movedNow: 'In this set it is {keys}.',
+  selectTitle: {
+    title: 'Select the page title',
+    keywords: 'title heading rename page name select',
+    none: 'No page is open, so there is no title to select.',
+  },
   categories: {
     general: 'General',
     navigation: 'Navigation',
@@ -85,6 +91,21 @@ export const shortcuts = {
     objectResize: 'With boxes selected: resize them.',
     objectToggle: 'With boxes selected: add or remove the focused box.',
     objectEdit: 'With a box selected: edit its text.',
+  },
+  gestures: {
+    title: 'Pen and touch gestures',
+    description:
+      'Gestures you can make with the pen or your fingers on a page. Turn each one on or off in Pen and touch settings.',
+    gestureColumn: 'Gesture',
+    howColumn: 'How',
+    stateColumn: 'State',
+    scribbleHow: 'Scribble back and forth over ink with the pen.',
+    circleHow: 'Draw a circle around ink or text, then tap inside it.',
+    twoFingerHow: 'Tap twice with two fingers.',
+    threeFingerHow: 'Tap twice with three fingers.',
+    on: 'On',
+    off: 'Off',
+    openSettings: 'Open Pen and touch settings',
   },
   set: {
     label: 'Shortcut set',

@@ -50,6 +50,7 @@ export function RenameField({ tree, renaming, title }: RenameFieldProps) {
     <span className={styles.rename}>
       <input
         ref={input}
+        data-pen-field="rename"
         className={styles.renameInput}
         aria-label={t('tree.rename.label', { title: title || titleOf({ title: '', kind: 'page' }) })}
         aria-invalid={renaming.error ? true : undefined}

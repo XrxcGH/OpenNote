@@ -61,6 +61,12 @@
     border-radius: var(--radius-sm);
   }
 
+  /* Export selection's crop, shown while its buttons are pointed at or focused. */
+  [data-ink-crop] {
+    border: 1px dashed var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
   :global(.ink-selection-frame) [data-ink-move] {
     position: absolute;
     inset: 0;
@@ -119,6 +125,14 @@
     border-radius: var(--radius-md);
     background: var(--color-surface-app);
     white-space: nowrap;
+    /* As wide as its buttons, not the frame, up to the view's width (fitBar), so it wraps into rows, not a column. */
+    inline-size: max-content;
+  }
+
+  /* With no room above the selection, the bar goes below it. */
+  :global(.ink-selection-frame) [data-ink-selection-bar][data-below] {
+    inset-block-end: auto;
+    inset-block-start: calc(100% + var(--space-3));
   }
 
   /* The handle on the right side of the lasso's frame: drag it to rewrap handwriting to a new width. */

@@ -153,6 +153,11 @@
     border-radius: var(--radius-sm);
     background: var(--color-surface-page);
   }
+
+  /* The crop of a selection, drawn dashed so it reads as the export's edge. */
+  .cropEdge {
+    border: 1px dashed var(--color-accent-primary);
+  }
 }
 
 @layer components {

@@ -12,7 +12,7 @@ This checklist checks palm rejection by hand on each device in the [device matri
   - a caret, menu, keyboard, undo, or redo that you did not ask for
   - a stroke, or part of a stroke, that did not appear
   - a finger that did nothing when it should have scrolled, panned, tapped, or drawn
-- When the Palm lab is built, record each step as a session and export it to `tests/fixtures/palm/`. Write only the prompted text.
+- Record each step as a session in Settings > Pen and touch > Palm lab (flag `dev.penRecorder`, on in dev, nightly, and Beta). Pick the step, hand, and grip, agree to the recording, press Start, do the step on the pad, press Stop, check the device probe, and Save session file into `tests/fixtures/palm/`. Steps are labeled from the prompted task. Write only the prompted text.
 
 ## Steps
 

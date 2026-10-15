@@ -1,12 +1,20 @@
 // The registrations of the ink lane's later features: commands, Draw tab items, and the installers of the pieces that
 // sit beside the pen tool. install.ts calls it once, so the rest of the view stays as it was. Each feature adds its
 // own block here, behind its own flag.
+import { isEnabled } from '../../../app/flags';
 import type { Chord, CommandDef } from '../../../commands/types';
 import type { MessageKey } from '../../../strings/t';
-import { commandBar, commands } from '../../../registries';
+import { commandBar, commands, contextMenus } from '../../../registries';
 import { toggleCanvasLock, installCanvasLock } from './canvasLock';
 import { anchorSelection, detachSelection, installAnchoring } from './anchoring';
 import { describeDrawing } from './describe';
+import { groupSelection, installGroups, selectionGrouped, ungroupSelection } from './groups';
+import { installLayers } from './layers';
+import { installPenFields, systemKeyboard } from './penFields';
+import { showLayers } from './LayersDialog';
+import { installInkLinks, selectionLinked, unlinkSelection } from './inkLinks';
+import { makeLinkFromSelection, showLinkList } from './linkDialogs';
+import { convertSelectionToTable } from './gridTable';
 import { convertSelection, tidySelection } from './handwriting';
 import { EDIT_GESTURES } from './penEditing';
 import type { EditGesture } from './penEditing';
@@ -58,6 +66,7 @@ const EDIT_TITLES: Record<EditGesture, MessageKey> = {
   space: 'ink.penEdit.addSpace',
   split: 'ink.penEdit.splitParagraph',
   circle: 'ink.penEdit.circleSelect',
+  write: 'ink.penEdit.writeInGap',
 };
 
 /** Each pen edit of typed text has its own switch in the command list. */
@@ -98,6 +107,13 @@ export function installMore(context: MoreContext): () => void {
     installReplay(host, surfaces),
     installZoomBox(host, surfaces),
     installAnchoring(host, surfaces),
+    installGroups(host, surface),
+    installInkLinks(host),
+    installLayers(host, surfaces),
+    installPenFields(document, {
+      enabled: () => isEnabled('ink.penFields') && inkPrefs.get().penFields,
+      keyboard: systemKeyboard,
+    }),
   ];
   const defs: CommandDef[] = [
     {
@@ -145,6 +161,18 @@ export function installMore(context: MoreContext): () => void {
     snapCommand('protractor', 'ink.snap.protractor'),
     snapCommand('gridSnap', 'ink.snap.grid'),
     snapCommand('paperSnap', 'ink.snap.paper'),
+    {
+      id: 'ink.convertToTable',
+      title: 'ink.gridTable.convert',
+      keywords: 'ink.gridTable.keywords',
+      category: 'insert',
+      flag: 'ink.gridTable',
+      enabled: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void convertSelectionToTable(host, current);
+      },
+    },
     {
       id: 'ink.addShapeText',
       title: 'ink.library.addTextTitle',
@@ -264,12 +292,100 @@ export function installMore(context: MoreContext): () => void {
       checked: () => getSettings().ink.anchorToText,
       run: () => void updateSettings({ ink: { anchorToText: !getSettings().ink.anchorToText } }),
     },
+    {
+      id: 'ink.group',
+      title: 'ink.groups.group',
+      keywords: 'ink.groups.keywords',
+      category: 'editing',
+      keys: [chord('Ctrl+G')],
+      flag: 'ink.groups',
+      enabled: () => host.selection.get().blocks.length + host.selection.get().strokes.length >= 2,
+      run: () => {
+        const current = surface();
+        if (current) void groupSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.ungroup',
+      title: 'ink.groups.ungroup',
+      keywords: 'ink.groups.keywords',
+      category: 'editing',
+      keys: [chord('Ctrl+Shift+G')],
+      flag: 'ink.groups',
+      enabled: () => selectionGrouped(host),
+      run: () => {
+        const current = surface();
+        if (current) void ungroupSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.makeLink',
+      title: 'ink.links.make',
+      keywords: 'ink.links.keywords',
+      category: 'editing',
+      flag: 'ink.links',
+      enabled: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void makeLinkFromSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.removeLink',
+      title: 'ink.links.remove',
+      keywords: 'ink.links.keywords',
+      category: 'editing',
+      flag: 'ink.links',
+      enabled: () => selectionLinked(host),
+      run: () => {
+        const current = surface();
+        if (current) void unlinkSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.links',
+      title: 'ink.links.list',
+      keywords: 'ink.links.keywords',
+      category: 'editing',
+      flag: 'ink.links',
+      run: () => {
+        const current = surface();
+        if (current) void showLinkList(host, current);
+      },
+    },
+    {
+      id: 'ink.layers',
+      title: 'ink.layers.title',
+      keywords: 'ink.layers.keywords',
+      category: 'editing',
+      flag: 'ink.layers',
+      run: () => {
+        const current = surface();
+        if (current) void showLayers(current);
+      },
+    },
     gestureCommand('scribbleErase'),
     gestureCommand('circleSelect'),
     gestureCommand('twoFingerUndo'),
     gestureCommand('threeFingerRedo'),
   ];
   for (const def of defs) stops.push(commands.register(def));
+  // Selected text boxes and images offer Group and Ungroup in their own menu (features/page/chrome/menu.ts).
+  for (const [order, command] of [
+    [900, 'ink.group'],
+    [901, 'ink.ungroup'],
+  ] as const) {
+    stops.push(
+      contextMenus.register({
+        id: `page.object.${command}`,
+        menu: 'page.object',
+        command,
+        group: 'group',
+        order,
+        flag: 'ink.groups',
+      }),
+    );
+  }
   stops.push(
     commandBar.register({
       id: 'ink.options',
@@ -329,6 +445,15 @@ export function installMore(context: MoreContext): () => void {
       priority: 40,
       presentation: 'toggle',
       flag: 'ink.canvasLock',
+    }),
+    commandBar.register({
+      id: 'ink.writing',
+      tab: 'draw',
+      group: 'tools',
+      command: 'ink.writing',
+      priority: 60,
+      presentation: 'toggle',
+      flag: 'ink.handwriting',
     }),
     commandBar.register({
       id: 'ink.insertSpace',

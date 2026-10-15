@@ -4,6 +4,7 @@
 // lets go of the selection.
 import type { BlockJson, Edit } from '../../../services/pages/types';
 import { isEnabled } from '../../../app/flags';
+import { executeCommand } from '../../../commands/registry';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, buttonClass, openMenu } from '../../../ui';
@@ -16,7 +17,19 @@ import { selectionFrame } from '../selection/lassoItems';
 import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
 import { anchorOffsetEdits, anchorSelection, detachSelection } from './anchoring';
+import { convertSelectionToTable, gridInSelection } from './gridTable';
+import {
+  forgetGroups,
+  groupSelection,
+  objectGroups,
+  groupsDeleteEdit,
+  selectionGrouped,
+  ungroupSelection,
+} from './groups';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
+import { inkLinks, selectionLinked, unlinkSelection } from './inkLinks';
+import { inkLayers, layerName, moveSelectionToLayer } from './layers';
+import { makeLinkFromSelection } from './linkDialogs';
 import { startReplay } from './replay';
 import { strokeKind } from '../edits/filters';
 import { pagePoints } from '../geometry/strokeIndex';
@@ -34,6 +47,11 @@ const KEY_STEP = 1;
 const MIN_SIZE = 4;
 /** The bar keeps this many CSS px from the sides of the page view. */
 const BAR_MARGIN = 8;
+/** Export selection's crop around the content, in page units: its padding and least size (features/pages/selection). */
+const CROP_PADDING = 12;
+/** A selection of more strokes than this is not checked for a grid, so the bar stays quick. */
+const GRID_MOST = 300;
+const CROP_MIN = 96;
 const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowLeft: [-1, 0],
   ArrowRight: [1, 0],
@@ -114,6 +132,9 @@ class FrameView implements SelectionFrame {
   private readonly mover: HTMLButtonElement;
   private readonly bar: HTMLDivElement;
   private side: HTMLButtonElement | null = null;
+  /** The dashed area Export selection will crop to, shown while its buttons are pointed at or focused. */
+  private readonly crop: HTMLDivElement;
+  private cropShown = false;
   private readonly stops: (() => void)[];
   private drag: Drag | null = null;
   private had = 0;
@@ -151,8 +172,54 @@ class FrameView implements SelectionFrame {
       ...(isEnabled('ink.replay')
         ? ([['ink.replay.title', 'replay', () => startReplay(host, surface)]] as [MessageKey, string, () => void][])
         : []),
+      ...(isEnabled('ink.gridTable')
+        ? ([['ink.gridTable.convert', 'table', () => void convertSelectionToTable(host, surface)]] as [
+            MessageKey,
+            string,
+            () => void,
+          ][])
+        : []),
+      ...(isEnabled('ink.groups')
+        ? ([
+            ['ink.groups.group', 'group', () => void groupSelection(host, surface)],
+            ['ink.groups.ungroup', 'ungroup', () => void ungroupSelection(host, surface)],
+          ] as [MessageKey, string, () => void][])
+        : []),
+      ...(isEnabled('ink.links')
+        ? ([
+            ['ink.links.make', 'link', () => void makeLinkFromSelection(host, surface)],
+            ['ink.links.remove', 'unlink', () => void unlinkSelection(host, surface)],
+          ] as [MessageKey, string, () => void][])
+        : []),
+      ...(isEnabled('ink.layers')
+        ? ([['ink.layers.moveTo', 'layer', () => void this.layerMenu()]] as [MessageKey, string, () => void][])
+        : []),
+      ...(isEnabled('pages.exportSelection')
+        ? ([
+            [
+              'ink.selection.exportSelection',
+              'export',
+              () => void executeCommand('pages.exportSelection', undefined, 'menu'),
+            ],
+            ['ink.selection.copyImage', 'copyImage', () => void executeCommand('pages.copyImage', undefined, 'menu')],
+          ] as [MessageKey, string, () => void][])
+        : []),
     ]);
     ({ frame: this.frame, mover: this.mover, bar: this.bar } = parts);
+    this.crop = surface.chrome.ownerDocument.createElement('div');
+    this.crop.dataset.inkCrop = '';
+    this.crop.setAttribute('aria-hidden', 'true');
+    Object.assign(this.crop.style, { position: 'absolute', display: 'none', pointerEvents: 'none' });
+    for (const id of ['export', 'copyImage']) {
+      const action = this.bar.querySelector<HTMLElement>(`[data-ink-action="${id}"]`);
+      if (!action) continue;
+      const show = () => this.showCrop(true);
+      const hide = () => this.showCrop(false);
+      action.addEventListener('pointerenter', show);
+      action.addEventListener('focus', show);
+      action.addEventListener('pointerleave', hide);
+      action.addEventListener('blur', hide);
+    }
     this.frame.addEventListener('keydown', this.onKey);
     this.frame.addEventListener('contextmenu', this.onContext);
     if (handwritingAvailable(host)) {
@@ -160,8 +227,16 @@ class FrameView implements SelectionFrame {
       this.side.dataset.inkSide = '';
       this.frame.append(this.side);
     }
-    surface.chrome.append(this.frame);
-    this.stops = [host.selection.subscribe(() => this.selectionChanged()), surface.onChange(() => this.place())];
+    surface.chrome.append(this.crop, this.frame);
+    this.offerTable();
+    this.offerGroups();
+    this.offerLinks();
+    this.stops = [
+      host.selection.subscribe(() => this.selectionChanged()),
+      surface.onChange(() => this.place()),
+      objectGroups.subscribe(() => this.offerGroups()),
+      inkLinks.subscribe(() => this.offerLinks()),
+    ];
     this.place();
   }
 
@@ -240,6 +315,7 @@ class FrameView implements SelectionFrame {
   stop(): void {
     this.stops.forEach((stop) => stop());
     this.frame.remove();
+    this.crop.remove();
   }
 
   private selection() {
@@ -290,6 +366,9 @@ class FrameView implements SelectionFrame {
   }
 
   private selectionChanged(): void {
+    this.offerTable();
+    this.offerGroups();
+    this.offerLinks();
     this.place();
     const now = this.selection().strokes.length;
     if (now > 0 && this.had === 0) this.mover.focus({ preventScroll: true });
@@ -300,6 +379,7 @@ class FrameView implements SelectionFrame {
     const box = this.box();
     if (!box) {
       this.frame.style.display = 'none';
+      this.crop.style.display = 'none';
       return;
     }
     const shown = this.drag ? transformBox(box, this.drag.matrix) : box;
@@ -313,6 +393,60 @@ class FrameView implements SelectionFrame {
       height: `${Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8}px`,
     });
     this.fitBar(left);
+    const top = shown.minY * zoom - scrollY - 4;
+    this.bar.toggleAttribute('data-below', top < this.bar.offsetHeight + BAR_MARGIN);
+    this.placeCrop(shown);
+  }
+
+  /** Make link shows for writing that is selected; Remove link for writing that is a link. */
+  private offerLinks(): void {
+    const make = this.bar.querySelector<HTMLElement>('[data-ink-action="link"]');
+    const remove = this.bar.querySelector<HTMLElement>('[data-ink-action="unlink"]');
+    if (!make || !remove) return;
+    make.style.display = this.selection().strokes.length > 0 ? '' : 'none';
+    remove.style.display = selectionLinked(this.host) ? '' : 'none';
+  }
+
+  /** Group shows for two or more things that are not one group already; Ungroup for a selection with a group in it. */
+  private offerGroups(): void {
+    const group = this.bar.querySelector<HTMLElement>('[data-ink-action="group"]');
+    const ungroup = this.bar.querySelector<HTMLElement>('[data-ink-action="ungroup"]');
+    if (!group || !ungroup) return;
+    const sel = this.selection();
+    const grouped = selectionGrouped(this.host);
+    ungroup.style.display = grouped ? '' : 'none';
+    group.style.display = sel.blocks.length + sel.strokes.length >= 2 ? '' : 'none';
+  }
+
+  /** Convert to table shows only when the selected strokes draw a grid. */
+  private offerTable(): void {
+    const action = this.bar.querySelector<HTMLElement>('[data-ink-action="table"]');
+    if (!action) return;
+    const strokes = this.selection().strokes;
+    const grid = strokes.length >= 6 && strokes.length <= GRID_MOST && gridInSelection(this.selected()) !== null;
+    action.style.display = grid ? '' : 'none';
+  }
+
+  private showCrop(on: boolean): void {
+    this.cropShown = on;
+    this.place();
+  }
+
+  /** The crop as Export selection makes it: the box with a margin, at least an inch each way, around its center. */
+  private placeCrop(box: Bounds): void {
+    if (!this.cropShown || this.drag) {
+      this.crop.style.display = 'none';
+      return;
+    }
+    const crop = cropBounds(box);
+    const { zoom, scrollX, scrollY } = this.surface.cameraNow();
+    Object.assign(this.crop.style, {
+      display: '',
+      left: `${crop.minX * zoom - scrollX}px`,
+      top: `${crop.minY * zoom - scrollY}px`,
+      width: `${(crop.maxX - crop.minX) * zoom}px`,
+      height: `${(crop.maxY - crop.minY) * zoom}px`,
+    });
   }
 
   /**
@@ -398,12 +532,27 @@ class FrameView implements SelectionFrame {
     this.place();
   }
 
+  /** Deletes the strokes, the blocks, and any groups they make up as one undo step. */
   private async remove(): Promise<void> {
     const sel = this.selection();
-    this.host.select({ blocks: sel.blocks, strokes: [] });
-    if (sel.blocks.length > 0) this.host.objectCommand('delete');
-    await this.surface.remove(sel.strokes);
     this.host.select({ blocks: [], strokes: [] });
+    const layer = this.host.layer.get();
+    const blocks = sel.blocks.map((id) => layer?.block(id)).filter((block): block is BlockJson => !!block);
+    const edits: Edit[] = [];
+    if (sel.strokes.length > 0) edits.push({ edit: 'removeStrokes', strokes: [...sel.strokes] });
+    if (blocks.length > 0) edits.push({ edit: 'deleteBlocks', blocks: blocks.map((block) => block.id) });
+    const groups = groupsDeleteEdit(sel);
+    if (groups) edits.push(groups);
+    if (edits.length === 0) return;
+    const gone = this.surface.hide(sel.strokes);
+    for (const block of blocks) layer?.remove?.(block.id);
+    const ok = await this.surface.send({ edits }, () => {
+      this.surface.show(gone);
+      for (const block of blocks) layer?.upsert(block);
+    });
+    if (ok) forgetGroups(sel);
+    // The frame is gone, so focus goes back to the page, where Ctrl+Z undoes the delete.
+    this.surface.parts.viewport.viewport.focus({ preventScroll: true });
     announce(t('ink.announce.deleted'));
   }
 
@@ -432,10 +581,20 @@ class FrameView implements SelectionFrame {
     );
   }
 
+  /** Move to layer: a menu of the page's layers, top first. */
+  private async layerMenu(): Promise<void> {
+    const layers = inkLayers.get();
+    const items = [...layers.order].reverse().map((id) => ({ id, label: layerName(layers, id) }));
+    const chosen = await openMenu({ label: t('ink.layers.moveTo'), anchor: this.bar, items });
+    if (chosen) await moveSelectionToLayer(this.host, this.surface, chosen);
+  }
+
   /** The same actions as the bar, at the pointer, for a right click or a long press on the selection. */
   private readonly onContext = (event: MouseEvent) => {
     event.preventDefault();
-    const actions = [...this.bar.querySelectorAll<HTMLButtonElement>('button')];
+    const actions = [...this.bar.querySelectorAll<HTMLButtonElement>('button')].filter(
+      (b) => b.style.display !== 'none',
+    );
     void openMenu({
       label: t('ink.selection.frame'),
       anchor: { x: event.clientX, y: event.clientY },
@@ -487,6 +646,15 @@ export function createFrameTool(frameOf: () => SelectionFrame | null): InkPointe
     up: (event) => frameOf()?.up(event),
     cancel: (_ctx, event) => frameOf()?.cancel(event?.pointerId),
   };
+}
+
+/** Export selection's smart crop around a box: CROP_PADDING all round, and at least CROP_MIN each way. */
+export function cropBounds(b: Bounds): Bounds {
+  const w = Math.max(b.maxX - b.minX + 2 * CROP_PADDING, CROP_MIN);
+  const h = Math.max(b.maxY - b.minY + 2 * CROP_PADDING, CROP_MIN);
+  const cx = (b.minX + b.maxX) / 2;
+  const cy = (b.minY + b.maxY) / 2;
+  return { minX: cx - w / 2, minY: cy - h / 2, maxX: cx + w / 2, maxY: cy + h / 2 };
 }
 
 function transformBox(b: Bounds, m: Matrix): Bounds {

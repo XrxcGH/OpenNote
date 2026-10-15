@@ -33,6 +33,7 @@ export {
   pencilWidthFactor,
   PENCIL_MAX_TILT_WIDTH,
   strokeOutline,
+  strokeShapes,
   tiltFraction,
   toolThinning,
 } from './outline';

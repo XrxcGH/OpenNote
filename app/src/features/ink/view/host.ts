@@ -57,12 +57,16 @@ export interface InkBlockLayer {
   blocks(): readonly BlockJson[];
   block(id: string): BlockJson | null;
   upsert(block: BlockJson): void;
+  /** Takes a block out of the page view at once, as a delete does before the core answers. */
+  remove?(id: string): void;
   view(id: string): { readonly element: HTMLElement; measure(): { x: number; y: number; w: number; h: number } } | null;
 }
 
 export interface InkSelection {
   readonly blocks: readonly string[];
   readonly strokes: readonly string[];
+  /** The lasso's own path, in page units, when the lasso made the selection. */
+  readonly lasso?: readonly { readonly x: number; readonly y: number }[];
 }
 
 /** A store the ink view reads and follows, but never sets. */
@@ -83,6 +87,8 @@ export interface TextEditing {
   select(block: string, from: number, to: number): Promise<boolean>;
   /** Undoes the last text edit of a block. */
   undo(block: string): Promise<void>;
+  /** The paragraph at a position: where its text starts, its text, and the caret's offset in it when the caret is there. */
+  paragraph?(block: string, pos: number): Promise<{ start: number; text: string; caret: number | null } | null>;
 }
 
 /** The page view's seams, as features/page/registrations/ink.ts passes them. */

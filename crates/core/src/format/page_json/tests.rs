@@ -333,3 +333,47 @@ fn descriptions_and_decorative_flags_round_trip_on_pictures_drawings_and_files()
     let text = String::from_utf8(write_page(&plain)).unwrap();
     assert!(!text.contains("decorative"));
 }
+
+#[test]
+fn object_groups_in_the_view_round_trip() {
+    // ADR 0036: groups are a map in the page view from a group ID to its blocks and strokes.
+    let mut value = minimal();
+    value["view"]["groups"] = json!({
+        "01m3sa14y9zszek1wdk3sngrp1": {
+            "blocks": ["01m3sa14y9zszek1wdk3snddsn"],
+            "strokes": ["01m3sa14y9zszek1wdk3snstr1", "01m3sa14y9zszek1wdk3snstr2"]
+        }
+    });
+    let page = read(&value).unwrap().page;
+    let bytes = write_page(&page);
+    let back: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(back["view"]["groups"], value["view"]["groups"]);
+    let again = read_page(&bytes, &limits()).unwrap().page;
+    assert_eq!(write_page(&again), bytes);
+}
+
+#[test]
+fn links_on_handwriting_and_ink_layers_in_the_view_round_trip() {
+    // ADR 0036 and 0037: ink links and ink layers are unknown view keys that a reader keeps as they are.
+    let mut value = minimal();
+    value["view"]["inkLinks"] = json!({
+        "01m3sa14y9zszek1wdk3snlnk1": {
+            "block": "01m3sa14y9zszek1wdk3snddsn",
+            "strokes": ["01m3sa14y9zszek1wdk3snstr1"],
+            "target": { "kind": "page", "page": "01m3sa14y9zszek1wdk3snpag1", "heading": "Intro" },
+            "label": "Intro"
+        }
+    });
+    value["view"]["inkLayers"] = json!({
+        "order": ["base", "01m3sa14y9zszek1wdk3snlyr1"],
+        "layers": { "01m3sa14y9zszek1wdk3snlyr1": { "name": "Tracing", "hidden": false, "locked": true, "imported": false } },
+        "assign": { "01m3sa14y9zszek1wdk3snstr1": "01m3sa14y9zszek1wdk3snlyr1" }
+    });
+    let page = read(&value).unwrap().page;
+    let bytes = write_page(&page);
+    let back: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(back["view"]["inkLinks"], value["view"]["inkLinks"]);
+    assert_eq!(back["view"]["inkLayers"], value["view"]["inkLayers"]);
+    let again = read_page(&bytes, &limits()).unwrap().page;
+    assert_eq!(write_page(&again), bytes);
+}
