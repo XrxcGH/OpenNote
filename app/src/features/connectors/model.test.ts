@@ -21,10 +21,10 @@ const all = (): ConnectorInfo[] => createFakeConnectors({ configured: 'all' }).i
 const named = (id: string): ConnectorInfo => all().find((item) => item.id === id) as ConnectorInfo;
 
 describe('the connector list', () => {
-  it('has the nine services, in the five groups, each with a sentence for what it does', () => {
+  it('has the ten services, in the five groups, each with a sentence for what it does', () => {
     const items = all();
     expect(items.map((item) => item.id).sort()).toEqual(
-      ['box', 'canvas', 'dropbox', 'google', 'microsoft', 'moodle', 'readwise', 'slack', 'vimeo'].sort(),
+      ['box', 'canvas', 'dropbox', 'google', 'microsoft', 'moodle', 'readwise', 'slack', 'vimeo', 'webdav'].sort(),
     );
     expect(groupConnectors(items).map((entry) => entry.group)).toEqual([
       'microsoft',
@@ -66,7 +66,7 @@ describe('search', () => {
   it('matches the name, the group, what it does, and the features that use it', () => {
     const items = all();
     const ids = (query: string) => filterConnectors(items, query).map((item) => item.id);
-    expect(ids('')).toHaveLength(9);
+    expect(ids('')).toHaveLength(10);
     expect(ids('canvas')).toEqual(['canvas']);
     expect(ids('LEARNING')).toEqual(['canvas', 'moodle']);
     expect(ids('tasks')).toEqual(['google']);

@@ -38,7 +38,7 @@ describe('the list', () => {
     for (const group of ['Microsoft', 'Google', 'Storage', 'Learning platforms', 'Other']) {
       expect(screen.getByRole('heading', { level: 2, name: group })).toBeTruthy();
     }
-    expect(within(container).getAllByRole('article')).toHaveLength(9);
+    expect(within(container).getAllByRole('article')).toHaveLength(10);
     expect(within(card('Google')).getByText('Not connected')).toBeTruthy();
     expect(within(card('Microsoft')).getByText('Needs setup')).toBeTruthy();
     expect(within(card('Readwise')).getByText('Not connected')).toBeTruthy();
