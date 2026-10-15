@@ -140,8 +140,11 @@ function ink(block: ExportBlock & { type: 'ink' }, cx: BlockContext): string {
 /** One block as HTML. Blocks that show nothing give an empty string. */
 export function renderBlock(block: ExportBlock, cx: BlockContext): string {
   switch (block.type) {
-    case 'text':
-      return renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+    case 'text': {
+      const html = renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+      // The study tape answer key starts a new sheet when the page prints.
+      return block.id === 'tape-answer-key' ? `<section class="answer-key">${html}</section>` : html;
+    }
     case 'image':
       return image(block, cx);
     case 'file':

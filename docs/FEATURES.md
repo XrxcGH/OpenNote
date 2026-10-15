@@ -117,7 +117,7 @@ Linked accounts (Phase 11):
 (Phase 10)
 
 - Flashcard and quiz blocks can be embedded in any page. Status: Built, untested by hand.
-- Make them by hand, or generate them from a page, a section or a recording's transcript. Status: Built, untested by hand. By hand. Making cards from a page, section, or transcript is not built yet.
+- Make them by hand, or generate them from a page, a section or a recording's transcript. Status: Built, untested by hand.
 - Card types: question and answer, fill-in-the-blank, multiple choice, and image occlusion (hide part of a diagram). Status: Built, untested by hand.
 - A spaced-repetition schedule shows which cards are due. Decks export to Anki and CSV. Status: Built, untested by hand.
 
@@ -304,7 +304,7 @@ These features answer requests from people switching from OneNote, Goodnotes, Ob
 
 | Feature | What it does | Status |
 |---|---|---|
-| Study tape | Draw tape over any ink, text, or part of an image to hide it, then tap to show or hide it again. "Show all tape" and "Hide all tape" work on the whole page. Print and export can turn tape into blanks, with an answer key page at the end. Tape hides content on screen only. It isn't a lock. | Built, untested by hand |
+| Study tape | Draw tape over any ink, text, or part of an image to hide it, then tap to show or hide it again. "Show all tape" and "Hide all tape" work on the whole page. Print and export ask whether to turn tape into blanks; if you say yes, whatever the tape covers prints as blanks and an answer key page follows at the end (Markdown, web page and PDF). Tape hides content on screen only. It isn't a lock. | Built, untested by hand |
 | Math that screen readers speak | Equations carry MathML behind the rendered math, so screen readers can speak them, show them in braille, and move through them term by term. Equations can also be copied as MathML or LaTeX. | Built, untested by hand |
 | Exam dates for decks | Set an exam date on a deck, and the schedule spreads new and due cards so all are seen before that day. The deck shows a plain daily target, such as "18 new cards a day". Changing the date updates the plan at once. There are no streaks, scores, or reminders. | Built, untested by hand |
 | Inline flashcards | Type a question and an answer on one line, separated by `::`, and the line becomes a card in the page's deck. Wrap words in double braces to hide them as a fill-in-the-blank. Cards stay in the text, so editing the line edits the card, and "Make card" converts selected lines. | Built, untested by hand |

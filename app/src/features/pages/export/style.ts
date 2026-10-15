@@ -212,6 +212,7 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     ...Object.entries(theme.pens).map(([n, v]) => `.pen-${n}{color:${v}}`),
     ...Object.entries(theme.highlighters).map(([n, v]) => `.hl-${n}{background:${v};color:inherit}`),
     `*{box-sizing:border-box}`,
+    `.answer-key{break-before:page}`,
     `body{margin:0;${type(normal)}}`,
     rule('p,ul,ol,figure,table,.callout,details', normal),
     rule('.page-title', title, 'font-weight:700;'),

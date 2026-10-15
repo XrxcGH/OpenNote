@@ -14,3 +14,4 @@ export * from './reading';
 export * from './selection';
 export * from './slides';
 export * from './zoom';
+export type { ExportBlock, ExportPage, TextBlock } from './export';

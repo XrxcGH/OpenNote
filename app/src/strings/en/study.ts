@@ -287,6 +287,17 @@ export const study = {
     allShown: 'All study tape is uncovered.',
     allHidden: 'All study tape is covering the page.',
     none: 'There is no study tape on this page.',
+    exportTitle: 'Turn study tape into blanks?',
+    exportBody:
+      'This page has study tape. The words under it can print as blanks, with an answer key on a page at the end. Choose Keep the page as it is to print or export everything.',
+    exportConfirm: 'Blanks and answer key',
+    exportKeep: 'Keep the page as it is',
+    answerKey: 'Answer key',
+    keyPicture: 'Picture',
+    keyHandwriting: 'Handwriting',
+    keyTable: 'Table',
+    keyAttachment: 'Attachment',
+    covered: '(covered by study tape)',
   },
   quickMath: {
     title: 'Quick math',
@@ -465,7 +476,8 @@ export const study = {
     noPage: 'Open a page to put {word} in it.',
     language: 'Language',
     english: 'English',
-    about: 'English meanings come with the app and work offline. Other languages are dictionary files you add; they stay on this device.',
+    about:
+      'English meanings come with the app and work offline. Other languages are dictionary files you add; they stay on this device.',
     packs: {
       summary: 'Other languages',
       help: 'Choose a dictionary file (JSON) to add a language. It is read here, kept on this device, and never sent anywhere.',
