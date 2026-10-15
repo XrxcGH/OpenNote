@@ -6,3 +6,4 @@ export type { FakeAccountsHost, FakeHostOptions } from './fakeHost';
 export { accountsHost, base64Of, bytesPart } from './host';
 export type { AccountsHost, Downloaded, UploadPart } from './host';
 export { askText, pickOne } from './ui/prompts';
+export { failureText, isConnected, tellNotConnected } from './run';

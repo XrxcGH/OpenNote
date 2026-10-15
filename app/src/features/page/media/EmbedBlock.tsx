@@ -72,7 +72,6 @@ export function EmbedBlockView(props: { block: BlockJson; page: OpenPage; open?(
     };
   }, [loaded, playheadOn, provider, block.id, page.id]);
 
-
   if (!data || (data.kind === 'live' && !liveOn)) {
     return (
       <div className={styles.card}>

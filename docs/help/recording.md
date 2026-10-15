@@ -42,4 +42,8 @@ Paste a YouTube or Vimeo link, a podcast episode, or a Desmos, GeoGebra, Figma, 
 
 With a YouTube or Vimeo video playing, the notes you type are time-stamped to the playhead, the same way they are during a recording. Hold Alt and click a note to jump back to its moment. Only these sites can be shown on a page. Any other link stays a normal link.
 
+### Captions as a transcript
+
+Connect Google (for YouTube) or Vimeo in Settings, then Connectors. Open the page with the video, press Ctrl+K, and choose Add captions as a transcript. The captions are kept on the video's card, and a line in the transcript jumps the player to its time. YouTube lets only the owner of a video read its captions, so for other people's videos OpenNote says so and nothing is added.
+
 Recording is built. Agents started a recording once and it worked. Nobody has tried the rest by hand.

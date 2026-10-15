@@ -23,6 +23,18 @@ commands.register(
   } as CommandDef),
 );
 
+commands.register(
+  defineCommand({
+    id: 'media.captions' as CommandDef['id'],
+    title: 'accounts.media.commands.captions',
+    category: 'insert',
+    keywords: 'accounts.media.commands.captionsKeywords',
+    flag: 'accounts.captions',
+    when: () => shownQueue.get() !== null,
+    run: () => import('../media/captionsCommand').then((module) => module.addCaptions()),
+  } as CommandDef),
+);
+
 slashItems.register({
   id: 'mediaEmbed',
   title: 'accounts.media.commands.slash',
