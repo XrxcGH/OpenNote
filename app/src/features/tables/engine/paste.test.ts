@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { daysToIso } from './dates';
 import { DE_DE, EN_US, FR_FR, type Locale } from './locale';
@@ -241,6 +242,21 @@ describe('ordinary web tables and the clipboard choice', () => {
     expect(tableFromClipboard({ html: '<p>hello</p>', text: tsv }, EN_US)?.source).toBe('delimited');
     expect(tableFromClipboard({ html: one + one, text: tsv }, EN_US)?.source).toBe('delimited');
     expect(tableFromClipboard({ html: `<p>Intro</p>${one}`, text: tsv }, EN_US)?.source).toBe('delimited');
+  });
+
+  it('reads hostile cells as text and finds words hidden around the table', () => {
+    const cells =
+      '<table><tr><td><scr<script>ipt>alert(1)</script></td><td>a<!-- <b>no</b> -->b</td>' +
+      '<td>C:\\Notes\\x</td></tr></table>';
+    expect(values(tableFromClipboard({ html: cells }, EN_US) as PasteResult)).toEqual([
+      ['ipt>alert(1)', 'ab', 'C:\\Notes\\x'],
+    ]);
+    // Comments, scripts, and head content around a table are not words; a tag split to slip past a pattern is.
+    const head = '<html><head><title>t</title><style>td{}</style></head>';
+    const quiet = `${head}<body><!--StartFragment-->${one}<!-- <p>x</p> --><script>y</script></body></html>`;
+    expect(tableFromClipboard({ html: quiet }, EN_US)?.source).toBe('html');
+    for (const around of ['<scr<script>ipt>words</script>', '<!<!-- -->-- words -->', '<<p>p>words'])
+      expect(tableFromClipboard({ html: around + one, text: tsv }, EN_US)?.source, around).toBe('delimited');
   });
 
   it('returns nothing when neither form is a table', () => {

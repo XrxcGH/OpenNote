@@ -32,7 +32,7 @@ describe('the Draw tab', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Stroke eraser' }));
     expect(drawState.get().tool).toBe('eraser');
     await userEvent.click(screen.getByRole('button', { name: 'Highlighter, Honey, 4 mm' }));
-    expect(drawState.get()).toEqual({ tool: 'pen', slot: 'h1' });
+    expect(drawState.get()).toEqual({ tool: 'pen', previous: 'eraser', slot: 'h1' });
     expect(screen.getByRole('button', { name: 'Highlighter, Honey, 4 mm' }).getAttribute('aria-pressed')).toBe('true');
     expect(select.getAttribute('aria-pressed')).toBe('false');
     await expectNoAxeViolations(document.body);

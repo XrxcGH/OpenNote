@@ -12,6 +12,56 @@ import { reporter } from './helpers.ts';
 
 const AUDIT = readFileSync(join(import.meta.dirname, '..', 'layout', 'audit.js'), 'utf8');
 
+/**
+ * The brand's bundled fonts, under the family names the drawings ask for (docs/BRAND.md). Without them a drawing is
+ * measured in whatever the machine falls back to: Segoe UI on Windows, a wider sans on Linux. The same file then
+ * fits on one runner and overflows on another. Embedded as data URLs, because a file:// page may not load font files.
+ */
+const FONTS: [family: string, file: string, weight: string, style: string][] = [
+  [
+    'Atkinson Hyperlegible Next',
+    '@fontsource-variable/atkinson-hyperlegible-next/files/atkinson-hyperlegible-next-latin-wght-normal.woff2',
+    '200 800',
+    'normal',
+  ],
+  [
+    'Atkinson Hyperlegible Next',
+    '@fontsource-variable/atkinson-hyperlegible-next/files/atkinson-hyperlegible-next-latin-wght-italic.woff2',
+    '200 800',
+    'italic',
+  ],
+  ['Literata', '@fontsource-variable/literata/files/literata-latin-wght-normal.woff2', '200 900', 'normal'],
+  ['Literata', '@fontsource-variable/literata/files/literata-latin-wght-italic.woff2', '200 900', 'italic'],
+  [
+    'Atkinson Hyperlegible Mono',
+    '@fontsource/atkinson-hyperlegible-mono/files/atkinson-hyperlegible-mono-latin-400-normal.woff2',
+    '400',
+    'normal',
+  ],
+  [
+    'Atkinson Hyperlegible Mono',
+    '@fontsource/atkinson-hyperlegible-mono/files/atkinson-hyperlegible-mono-latin-600-normal.woff2',
+    '600',
+    'normal',
+  ],
+];
+
+let fontFaces: string | null = null;
+
+/** The @font-face rules for the bundled fonts, or nothing when they are not installed. */
+export function brandFontFaces(): string {
+  if (fontFaces !== null) return fontFaces;
+  const modules = join(import.meta.dirname, '..', '..', 'node_modules');
+  fontFaces = FONTS.filter(([, file]) => existsSync(join(modules, file)))
+    .map(([family, file, weight, style]) => {
+      const data = readFileSync(join(modules, file)).toString('base64');
+      const src = `url(data:font/woff2;base64,${data}) format('woff2')`;
+      return `@font-face{font-family:'${family}';src:${src};font-weight:${weight};font-style:${style}}`;
+    })
+    .join('');
+  return fontFaces;
+}
+
 const BROWSER_CANDIDATES = [
   '/usr/bin/google-chrome',
   '/usr/bin/chromium',
@@ -58,9 +108,12 @@ function render(svg: string, exe: string): AuditResult[] {
   try {
     const page = join(dir, 'page.html');
     const html = [
-      '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0">',
+      `<!doctype html><html><head><meta charset="utf-8"><style>${brandFontFaces()}</style></head>`,
+      '<body style="margin:0">',
       svg,
-      `<pre id="out"></pre><script>${AUDIT}</script></body></html>`,
+      // The audit measures text, so it waits until the bundled fonts have loaded.
+      `<pre id="out"></pre><script>Promise.all([...document.fonts].map((f) => f.load())).then(() => {${AUDIT}})</script>`,
+      '</body></html>',
     ].join('');
     writeFileSync(page, html);
     const dom = execFileSync(exe, [...browserArgs(dir), `file://${page}`], {
