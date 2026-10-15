@@ -7,7 +7,7 @@ import { collectRequest, pageCount, resolveTarget } from '../../interop';
 import { renderShownPage } from '../../pages';
 import type { AccountsHost } from '../host';
 import { bytesPart } from '../host';
-import { DOCX } from './types';
+import { DOCX, OFFICE, officeOf } from './types';
 import type { LocalFile, SendFormat, SendScope } from './types';
 
 /** A file name made from a title. */
@@ -45,6 +45,7 @@ export async function prepare(
   title: string,
 ): Promise<LocalFile | null> {
   const context = commandContext('palette');
+  const office = officeOf(format);
   if (scope === 'selection') {
     const picture = await renderShownPage(context, 'png', true);
     if (!picture) return null;
@@ -60,14 +61,18 @@ export async function prepare(
     const pdf = await renderShownPage(context, 'pdf');
     return pdf ? stage(host, pdf.name, pdf.bytes, pdf.mime) : null;
   }
-  if (!node) return null;
+  if (!node || !office) return null;
   const target = await resolveTarget(context.notes, node);
   if (!target) return null;
   const request = await collectRequest(context.notes, target, scope);
   if (pageCount(request) === 0) return null;
   const folder = await host.tempDir();
-  const outcome = await context.platform.interop.exportTo(`send-${Date.now()}`, { ...request, format: 'docx', folder });
+  const outcome = await context.platform.interop.exportTo(`send-${Date.now()}`, {
+    ...request,
+    format: office.type,
+    folder,
+  });
   if (outcome.status !== 'done') return null;
   const path = outcome.result.reveal;
-  return { file: path, name: fileNameOf(title, 'docx'), mime: DOCX };
+  return { file: path, name: fileNameOf(title, office.type), mime: OFFICE[office.type].mime };
 }

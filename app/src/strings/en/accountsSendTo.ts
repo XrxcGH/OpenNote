@@ -31,7 +31,11 @@ export const accountsSendTo = {
     confirm: 'Next',
     pdf: 'A PDF',
     docx: 'A Word file',
+    xlsx: 'An Excel file (the tables)',
+    pptx: 'A PowerPoint file (a slide for each page)',
     gdoc: 'A Google Doc',
+    gsheet: 'A Google Sheet (the tables)',
+    gslides: 'Google Slides (a slide for each page)',
     png: 'A picture',
   },
   folder: {

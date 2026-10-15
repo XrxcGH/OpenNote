@@ -42,8 +42,8 @@ Import and export (Phase 11):
 | App | Import | Export | Status |
 |---|---|---|---|
 | Word / Google Docs | `.docx`, `.odt`, Google Docs | `.docx`, Google Docs, PDF | .docx and .odt: Built, untested by hand. Google Docs: Needs the owner. |
-| Excel / Google Sheets | `.xlsx`, `.csv`, Google Sheets into smart tables | `.xlsx`, `.csv`, Google Sheets | .xlsx and .csv: Built, untested by hand. Google Sheets: Needs the owner. |
-| PowerPoint / Google Slides | `.pptx`, Google Slides as annotatable pages | `.pptx` (one page per slide), PDF | .pptx both ways and PDF: Built, untested by hand. Google Slides: Needs the owner. |
+| Excel / Google Sheets | `.xlsx`, `.csv`, Google Sheets into smart tables | `.xlsx`, `.csv`, Google Sheets | .xlsx and .csv: Built, untested by hand. Google Sheets: Built, untested by hand. Import from Google Docs, Sheets, or Slides has Drive export an Excel file for the importer, and Export tables to Google Sheets sends an Excel file that Drive converts. Both need the owner's Google client ID. |
+| PowerPoint / Google Slides | `.pptx`, Google Slides as annotatable pages | `.pptx` (one page per slide), PDF | .pptx both ways and PDF: Built, untested by hand. Google Slides: Built, untested by hand. Import brings each slide in as a page to write on, and Export to Google Slides converts a PowerPoint file. Both need the owner's Google client ID. |
 | OneNote / Evernote | Graph API, `.enex` | PDF, Markdown | .enex and Markdown: Built, untested by hand. The Graph API import needs the owner. |
 
 Linked accounts (Phase 11):

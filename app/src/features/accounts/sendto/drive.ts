@@ -9,7 +9,6 @@ import type { Destination, LocalFile, RemoteFolder, Sent } from './types';
 const FILES = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 const FOLDER = 'application/vnd.google-apps.folder';
-const GOOGLE_DOC = 'application/vnd.google-apps.document';
 const MAX_PAGES = 20;
 
 interface FileList {
@@ -85,14 +84,14 @@ export function driveDestination(deps: { client: ConnectorsClient; host: Account
       }
       return found;
     },
-    send(local, folder, convert) {
+    send(local, folder, convertTo) {
       return multipart(
         'POST',
         `${UPLOAD}?uploadType=multipart&fields=id,name,webViewLink`,
         {
-          name: convert ? local.name.replace(/\.docx$/i, '') : local.name,
+          name: convertTo ? local.name.replace(/\.(docx|xlsx|pptx)$/i, '') : local.name,
           ...(folder ? { parents: [folder] } : {}),
-          ...(convert ? { mimeType: GOOGLE_DOC } : {}),
+          ...(convertTo ? { mimeType: convertTo } : {}),
         },
         local,
       );

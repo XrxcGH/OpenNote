@@ -18,6 +18,8 @@ import { fileName, importErrorText, sizeText } from './text';
 export interface ImportDialogProps {
   interop: InteropClient;
   notes: NotesService;
+  /** A file to check at once, such as one an account feature fetched. */
+  initialPath?: string;
 }
 
 function Choose({ flow, canceled, refocus }: { flow: ImportFlow; canceled: boolean; refocus: boolean }) {
@@ -170,9 +172,12 @@ function body(flow: ImportFlow, state: ImportState, refocus: boolean) {
   }
 }
 
-export default function ImportDialog({ interop, notes, onClose }: ImportDialogProps & OverlayProps) {
+export default function ImportDialog({ interop, notes, initialPath, onClose }: ImportDialogProps & OverlayProps) {
   const [flow] = useState(() => createImportFlow({ interop, notes, announce }));
   useEffect(() => flow.attach(), [flow]);
+  useEffect(() => {
+    if (initialPath) void flow.chooseLocal(initialPath);
+  }, [flow, initialPath]);
   const state = useSyncExternalStore(flow.state.subscribe, flow.state.get);
   // The first screen keeps the focus the dialog gave its first button. Coming back to it, the heading takes focus.
   const [left, setLeft] = useState(false);

@@ -2,6 +2,7 @@
 // embeds, and the narrated video. One owner (the accounts and media lane), so parallel work never edits it. Each
 // feature has its own group below.
 
+import { accountsGoogleOffice } from './accountsGoogleOffice';
 import { accountsLms } from './accountsLms';
 import { accountsMedia } from './accountsMedia';
 import { accountsMeetings } from './accountsMeetings';
@@ -18,6 +19,7 @@ export const accounts = {
   media: accountsMedia,
   youtube: accountsYoutube,
   sendTo: accountsSendTo,
+  googleOffice: accountsGoogleOffice,
   common: {
     notConnected: '{service} isn’t connected. Connect it in Settings, then Connectors.',
     needsAccess: 'The {service} connection doesn’t allow this yet. Connect it again in Settings, then Connectors.',

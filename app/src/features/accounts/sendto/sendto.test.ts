@@ -182,9 +182,9 @@ describe('the link between a page and its copy', () => {
   });
 
   it('offers the types each service can take', () => {
-    expect(formatsFor('drive', 'page')).toEqual(['pdf', 'docx', 'gdoc']);
-    expect(formatsFor('onedrive', 'page')).toEqual(['pdf', 'docx']);
-    expect(formatsFor('onedrive', 'notebook')).toEqual(['docx']);
+    expect(formatsFor('drive', 'page')).toEqual(['pdf', 'docx', 'xlsx', 'pptx', 'gdoc', 'gsheet', 'gslides']);
+    expect(formatsFor('onedrive', 'page')).toEqual(['pdf', 'docx', 'xlsx', 'pptx']);
+    expect(formatsFor('onedrive', 'notebook')).toEqual(['docx', 'xlsx', 'pptx']);
     expect(formatsFor('drive', 'selection')).toEqual(['png', 'docx', 'gdoc']);
   });
 });

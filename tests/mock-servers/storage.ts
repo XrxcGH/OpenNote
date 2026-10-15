@@ -20,14 +20,30 @@ export interface StoredFile {
   versions: number;
 }
 
-export function addDrive(server: MockServer, folders: DriveFolder[], pageSize = 100) {
+/** A Google Doc, Sheet, or Slides file in the Drive mock, with the Office file Drive exports it as. */
+export interface DriveDoc {
+  id: string;
+  name: string;
+  mimeType: string;
+  modified: string;
+  exported: string;
+}
+
+export function addDrive(server: MockServer, folders: DriveFolder[], pageSize = 100, documents: DriveDoc[] = []) {
   const files = new Map<string, StoredFile>();
   let next = 1;
 
   server.route('GET www.googleapis.com/drive/v3/files', (request) => {
     const query = request.query.q ?? '';
     const parent = /^'([^']*)' in parents/.exec(query)?.[1] ?? 'root';
-    if (!query.includes("mimeType='application/vnd.google-apps.folder'")) return { json: { files: [] } };
+    if (!query.includes("mimeType='application/vnd.google-apps.folder'")) {
+      const kind = /mimeType='([^']*)'/.exec(query)?.[1];
+      const found = documents
+        .filter((doc) => doc.mimeType === kind)
+        .sort((a, b) => b.modified.localeCompare(a.modified))
+        .slice(0, Number(request.query.pageSize ?? 100));
+      return { json: { files: found.map((doc) => ({ id: doc.id, name: doc.name, modifiedTime: doc.modified })) } };
+    }
     const mine = folders.filter((folder) => folder.parent === parent).sort((a, b) => a.name.localeCompare(b.name));
     const start = Number(request.query.pageToken ?? 0) || 0;
     const slice = mine.slice(start, start + pageSize);
@@ -38,6 +54,16 @@ export function addDrive(server: MockServer, folders: DriveFolder[], pageSize = 
         ...(more ? { nextPageToken: String(start + pageSize) } : {}),
       },
     };
+  });
+
+  server.route('GET www.googleapis.com/drive/v3/files/:id/export', (request, params) => {
+    const doc = documents.find((one) => one.id === params.id);
+    if (!doc) return undefined;
+    // Drive refuses an export to a type it can't make.
+    if (!request.query.mimeType?.startsWith('application/vnd.openxmlformats-officedocument.')) {
+      return { status: 400, json: { error: { message: 'Export format is not supported.' } } };
+    }
+    return { text: doc.exported, contentType: request.query.mimeType };
   });
 
   function readMultipart(body: string, contentType: string): { metadata: Record<string, unknown>; content: string } {

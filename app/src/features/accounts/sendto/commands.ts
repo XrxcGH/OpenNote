@@ -18,6 +18,7 @@ import { changedSince, copiesOf, copyOf, loadCopies, rememberCopy } from './copi
 import { driveDestination } from './drive';
 import { onedriveDestination } from './onedrive';
 import { prepare } from './render';
+import { OFFICE, officeOf } from './types';
 import type { Destination, LocalFile, RemoteFolder, SendFormat, SendScope, SentCopy } from './types';
 
 const NAMES = { drive: 'Google Drive', onedrive: 'OneDrive' } as const;
@@ -30,10 +31,11 @@ export function destinationFor(service: 'drive' | 'onedrive', host: AccountsHost
 
 /** The types of file a scope can be sent as, for a service. */
 export function formatsFor(service: 'drive' | 'onedrive', scope: SendScope): SendFormat[] {
-  const word: SendFormat[] = service === 'drive' ? ['docx', 'gdoc'] : ['docx'];
-  if (scope === 'selection') return ['png', ...word];
-  if (scope === 'page') return ['pdf', ...word];
-  return word;
+  const converted: SendFormat[] = service === 'drive' ? ['gdoc', 'gsheet', 'gslides'] : [];
+  // A selection is a picture, so it can stay a picture or go in a Word file; the rest can be any Office file.
+  if (scope === 'selection') return ['png', 'docx', ...converted.slice(0, 1)];
+  const office: SendFormat[] = ['docx', 'xlsx', 'pptx', ...converted];
+  return scope === 'page' ? ['pdf', ...office] : office;
 }
 
 /** Sends a prepared file, new or over an earlier copy, and links the node to it. Resolves the record. */
@@ -51,10 +53,11 @@ export async function sendFile(
     now?: Date;
   },
 ): Promise<SentCopy> {
-  const convert = options.format === 'gdoc';
+  const office = officeOf(options.format);
+  const convertTo = office?.convert ? OFFICE[office.type].convertTo : null;
   const sent = options.replace
     ? await destination.replace(local, options.replace)
-    : await destination.send(local, options.folder, convert);
+    : await destination.send(local, options.folder, convertTo);
   const copy = copyOf(
     {
       service: destination.service,
@@ -125,7 +128,7 @@ function chosenOnPage(): boolean {
   return blocks.length + strokes.length > 0;
 }
 
-export async function sendTo(service: 'drive' | 'onedrive'): Promise<void> {
+export async function sendTo(service: 'drive' | 'onedrive', preset?: { format: SendFormat }): Promise<void> {
   const name = NAMES[service];
   if (!shownMounted.get()) return void showToast({ message: t('accounts.sendTo.nothing') });
   if (!(await isConnected(CONNECTOR[service]))) return tellNotConnected(name);
@@ -148,14 +151,22 @@ export async function sendTo(service: 'drive' | 'onedrive'): Promise<void> {
   const labels: Record<SendFormat, string> = {
     pdf: t('accounts.sendTo.format.pdf'),
     docx: t('accounts.sendTo.format.docx'),
+    xlsx: t('accounts.sendTo.format.xlsx'),
+    pptx: t('accounts.sendTo.format.pptx'),
     gdoc: t('accounts.sendTo.format.gdoc'),
+    gsheet: t('accounts.sendTo.format.gsheet'),
+    gslides: t('accounts.sendTo.format.gslides'),
     png: t('accounts.sendTo.format.png'),
   };
-  const format = await pickOne<SendFormat>({
-    title: t('accounts.sendTo.format.title'),
-    confirmLabel: t('accounts.sendTo.format.confirm'),
-    choices: formatsFor(service, scope).map((one) => ({ id: one, label: labels[one], value: one })),
-  });
+  const offered = formatsFor(service, scope);
+  const format =
+    preset && offered.includes(preset.format)
+      ? preset.format
+      : await pickOne<SendFormat>({
+          title: t('accounts.sendTo.format.title'),
+          confirmLabel: t('accounts.sendTo.format.confirm'),
+          choices: offered.map((one) => ({ id: one, label: labels[one], value: one })),
+        });
   if (!format) return;
   await attempt(name, async () => {
     const destination = destinationFor(service);

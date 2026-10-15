@@ -62,7 +62,7 @@ impl Scene {
             ));
         }
         let mut base = rgba.to_vec();
-        for pixel in base.chunks_exact_mut(4) {
+        for pixel in base.as_chunks_mut::<4>().0 {
             pixel.swap(0, 2);
         }
         Ok(Scene {
