@@ -70,11 +70,11 @@ describe('checking a source', () => {
 
   it('stops at a source it cannot import and shows what to do instead', async () => {
     const { flow, interop, detach } = setup();
-    interop.pick = () => Promise.resolve('C:\\Notes\\Old.doc');
+    interop.pick = () => Promise.resolve('C:\\Notes\\Notebook.onetoc2');
     await flow.chooseFile();
     const state = flow.state.get();
     expect(state.step).toBe('unsupported');
-    if (state.step === 'unsupported') expect(state.detected.advice).toContain('.docx');
+    if (state.step === 'unsupported') expect(state.detected.advice).toContain('.onepkg');
     expect(interop.log.previews).toEqual([]);
     detach();
   });
