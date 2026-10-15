@@ -50,3 +50,7 @@ A link or a search result that points inside a folded heading or list item opens
 ## Linking mentions
 
 In the linked pages pane, Link all shows every place the title appears without a link. Uncheck any that should stay plain text, then choose Link. One Undo puts them all back.
+
+## Collections inside a page
+
+Type / and choose Insert a live collection, or use the Insert tab. Pick the pages of this section or a collection you saved. The block shows them as a list, table, board, calendar, or gallery and updates as your notes change.

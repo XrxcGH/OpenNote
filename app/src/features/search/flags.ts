@@ -28,6 +28,7 @@ export const SEARCH_FLAGS: readonly FlagDef[] = [
   flag('search.changeSets', 'One Undo, on the toast and with Ctrl+Z, for a tag change or a replace across pages.', on),
   flag('search.indexMedia', 'Text read from images, handwriting, and transcripts joins the search index.', on),
   flag('daily.notes', 'The daily note and the daily notes calendar.', on),
+  flag('collections.block', 'A live collection block inside a page, updated as notes change.', on),
   flag('collections.views', 'Collections: saved views of pages as a table, list, board, calendar, or gallery.', on),
   flag('graph.view', 'The graph view and the Connections list.', on),
   flag('canvas.cards', 'Canvas of cards joined by labeled arrows.', on),

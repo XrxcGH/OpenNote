@@ -13,7 +13,7 @@ import styles from './collections.module.css';
 import { OPERATORS, VIEW_KINDS, groupRows, matches, propertyNames, sortRows, toRow } from './engine';
 import type { CollectionDef, Condition, Row } from './engine';
 import { loadCollections, newCollection, saveCollections, setProperty } from './store';
-import { BoardView, CalendarView, GalleryView, ListView, TableView } from './views';
+import { VIEWS } from './views';
 import type { ViewProps } from './views';
 
 function Pick({
@@ -84,7 +84,6 @@ function useChoices(): { tags: TagNode[]; sections: { id: string; title: string 
   return { tags, sections };
 }
 
-const VIEWS = { table: TableView, list: ListView, board: BoardView, calendar: CalendarView, gallery: GalleryView };
 
 export default function CollectionsDialog({ onClose }: OverlayProps) {
   const [list, setList] = useState<CollectionDef[]>(loadCollections);

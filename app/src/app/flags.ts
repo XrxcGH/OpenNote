@@ -140,6 +140,7 @@ type QolSearchFlagId =
   | 'search.indexMedia'
   | 'daily.notes'
   | 'collections.views'
+  | 'collections.block'
   | 'graph.view'
   | 'canvas.cards';
 /** Phase 12's flags, which features/intel/flags.ts defines. */
