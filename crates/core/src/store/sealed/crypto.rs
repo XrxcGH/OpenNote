@@ -236,14 +236,20 @@ pub fn new_header(section: &str, content: &Key, password: &str) -> Result<Value,
 /// The header with the slots of `kind` replaced by `slot`.
 pub fn with_slot(header: &Value, slot: Value) -> Value {
     let kind = slot.get("kind").cloned();
-    let mut keys: Vec<Value> = slots(header).filter(|s| s.get("kind") != kind.as_ref()).cloned().collect();
+    let mut keys: Vec<Value> = slots(header)
+        .filter(|s| s.get("kind") != kind.as_ref())
+        .cloned()
+        .collect();
     keys.push(slot);
     with_keys(header, keys)
 }
 
 /// The header without the slots of `kind`.
 pub fn without_slot(header: &Value, kind: &str) -> Value {
-    let keys = slots(header).filter(|s| s.get("kind").and_then(Value::as_str) != Some(kind)).cloned().collect();
+    let keys = slots(header)
+        .filter(|s| s.get("kind").and_then(Value::as_str) != Some(kind))
+        .cloned()
+        .collect();
     with_keys(header, keys)
 }
 

@@ -193,9 +193,25 @@ fn open_in_editor(file: &Path) -> IpcResult<()> {
     ))
 }
 
+/// Opens the page's own page.md with the system's app for text: `open -t` on macOS, `xdg-open` elsewhere. The path
+/// is passed as one argument, never through a shell.
 #[cfg(not(windows))]
-fn open_in_editor(_file: &Path) -> IpcResult<()> {
-    Err(IpcError::not_implemented("source.openExternal"))
+fn open_in_editor(file: &Path) -> IpcResult<()> {
+    let mut command = if cfg!(target_os = "macos") {
+        let mut c = std::process::Command::new("open");
+        c.arg("-t");
+        c
+    } else {
+        std::process::Command::new("xdg-open")
+    };
+    command
+        .arg(file)
+        .spawn()
+        .map(|mut child| {
+            // The opener exits at once; waiting on a thread keeps it from lingering as a zombie.
+            std::thread::spawn(move || child.wait());
+        })
+        .map_err(|_| IpcError::new("noEditor", "No app opens Markdown files on this computer."))
 }
 
 #[cfg(test)]
