@@ -32,6 +32,14 @@
     margin: 0;
   }
 
+  .planList {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    max-block-size: 18rem;
+    overflow: auto;
+    overflow-wrap: anywhere;
+  }
+
   .actions {
     display: flex;
     flex-wrap: wrap;

@@ -36,6 +36,11 @@ export interface SyncQueue {
   addFollowerMoves(block: BlockId, moves: readonly Edit[]): void;
   /** Whether a change hasn't reached the core yet, such as one it refused: the next flush sends it again. */
   hasUnsent(): boolean;
+  /**
+   * Sends edits made outside the editors, such as text brought in from another app (A2-1), as one request, and
+   * shows the result: the core's redo frame of the request is applied, so one undo takes it all back.
+   */
+  sendAndShow(batch: EditBatch): Promise<TxnAck>;
 }
 
 export interface SyncHost {
@@ -197,6 +202,21 @@ class Queue implements SyncQueue, QueueInternals {
     await this.flushAll('command');
     const ack = await this.enqueue(() => batch, null);
     if (!ack) throw new PageServiceError('invalid', 'The batch was empty.', false);
+    return ack;
+  }
+
+  async sendAndShow(batch: EditBatch): Promise<TxnAck> {
+    const ack = await this.send(batch);
+    await this.drain();
+    // Undo and redo again in the core: the redo frame holds every changed block in full, which the editors apply.
+    // The editors still show the page from before, so the undo frame needs no applying.
+    const undone = await this.host.page.undo();
+    const redone = undone ? await this.host.page.redo() : null;
+    if (redone) {
+      await applyFrame(redone, this.host.frames, this.host.cache, 'remote');
+      this.mirror.applied(redone);
+      this.setState(redone);
+    }
     return ack;
   }
 

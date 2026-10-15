@@ -8,13 +8,16 @@ pub mod backup;
 pub mod cloud;
 pub mod conflicts;
 pub mod dock;
+pub mod edits;
 pub mod external;
 pub mod library;
+pub mod notes_move;
 pub mod notes_ops;
 pub mod power;
 pub mod prefs;
 pub mod quick;
 pub mod shortcuts;
+pub mod storage;
 pub mod windows_ops;
 
 pub use shortcuts::QUICK_NOTE_ARG;
@@ -104,6 +107,9 @@ pub async fn shellqol_call(
         "shortcut" => shortcuts::call(&app, &bridge, &name, &args),
         "external" => external::call(&app, &name, &args),
         "prefs" => prefs::call(&app, &name, &args),
+        "trash" | "history" | "edits" | "source" | "storage" | "check" | "lock" | "protect" => {
+            storage::call(&app, &bridge, &name, &args)
+        }
         _ => Err(IpcError::invalid("name", &format!("{name} isn't a shell call"))),
     }
 }
