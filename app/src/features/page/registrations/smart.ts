@@ -63,6 +63,30 @@ async function insertEquation(display: boolean): Promise<void> {
   if (insertMath(editor, display)) announce(t('smart.math.announceInserted'));
 }
 
+async function mathAction(kind: 'simplify' | 'solve'): Promise<void> {
+  const editor = targetEditor();
+  if (!editor) return;
+  const { runMathAction } = await import('../../../editor/extensions/math');
+  if (!runMathAction(editor, kind)) announce(t('smart.math.noEquation'));
+}
+
+add({
+  id: 'math.simplify',
+  title: 'smart.math.simplify',
+  keywords: 'smart.math.keywords',
+  icon: 'MathOperations',
+  flag: 'math.latex',
+  run: () => mathAction('simplify'),
+});
+add({
+  id: 'math.solve',
+  title: 'smart.math.solve',
+  keywords: 'smart.math.keywords',
+  icon: 'MathOperations',
+  flag: 'math.latex',
+  run: () => mathAction('solve'),
+});
+
 add({
   id: 'insert.graph',
   title: 'smart.grapher.insert',

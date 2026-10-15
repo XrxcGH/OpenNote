@@ -11,7 +11,7 @@ export async function calculatedColumn(inst: SmartInstance, column: number): Pro
     description: t('smart.calculated.description'),
     label: t('smart.calculated.label', { column: name }),
     confirmLabel: t('smart.calculated.confirm'),
-    check: (typed) => calculatedProblem(typed, inst.locale),
+    check: (typed) => calculatedProblem(typed, inst.locale, inst.model().names),
   });
   return text === null ? false : setCalculated(inst, column, text);
 }

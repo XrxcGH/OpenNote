@@ -11,6 +11,7 @@ export const smart = {
     actions: 'Equation actions',
     simplify: 'Simplify',
     solve: 'Solve',
+    noEquation: 'Edit an equation first, then use this.',
     done: 'The equation was changed. Press Enter to keep it, or Escape to put the old one back.',
     unsupported: 'This uses LaTeX the action cannot read yet.',
     unchanged: 'It is already as simple as this action can make it.',

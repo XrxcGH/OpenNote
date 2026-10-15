@@ -3,7 +3,7 @@
 // drawn equation, with MathML behind it for screen readers. Enter or a double-click opens a source field with a
 // live preview and the LaTeX problem, if any. Enter or leaving the field saves it as one undo step, Shift+Enter
 // starts a new line of display math, and Escape puts the old source back.
-import type { Editor, Extensions } from '@tiptap/core';
+import { InputRule, type Editor, type Extensions } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import type { NodeView } from '@tiptap/pm/view';
@@ -89,7 +89,10 @@ class MathView implements NodeView {
     field.setAttribute('aria-label', t('editor.math.field'));
     field.addEventListener('keydown', (event) => this.onKey(event as KeyboardEvent));
     field.addEventListener('input', () => this.showPreview());
-    field.addEventListener('blur', () => this.close(true));
+    // Tab moves on to Simplify and Solve in the panel under the field; leaving the equation entirely saves it.
+    field.addEventListener('blur', (event) => {
+      if (!this.holder?.contains((event as FocusEvent).relatedTarget as Node | null)) this.close(true);
+    });
     this.field = field;
     this.shown.hidden = true;
     this.dom.append(field);
@@ -103,6 +106,12 @@ class MathView implements NodeView {
     // under it for an inline equation, so nothing in them is covered by the others.
     const holder = document.createElement('div');
     holder.className = this.display ? drawn.holderBlock : drawn.holderInline;
+    // The paragraph's paint containment would clip the floating panel; blocks.module.css lifts it while this is open.
+    holder.setAttribute('data-math-holder', '');
+    holder.addEventListener('focusout', (event) => {
+      const to = event.relatedTarget as Node | null;
+      if (!holder.contains(to) && to !== this.field) this.close(true);
+    });
     const preview = document.createElement('div');
     preview.className = drawn.preview;
     const problem = document.createElement('div');
@@ -143,6 +152,20 @@ class MathView implements NodeView {
     problem.textContent = drawing && !drawing.ok ? t('smart.math.problem', { message: drawing.message }) : '';
   }
 
+  /** True while this equation is still on the page of that editor. */
+  usableIn(editor: Editor): boolean {
+    return !this.gone && this.editor === editor && this.dom.isConnected;
+  }
+
+  /** Opens the field if needed and runs Simplify or Solve on it, as the buttons in the panel do. */
+  runAction(kind: 'simplify' | 'solve'): boolean {
+    this.open();
+    const actions = this.renderer?.actions;
+    if (!this.field || !actions) return false;
+    this.act(actions[kind]);
+    return true;
+  }
+
   /** Runs Simplify or Solve on what is in the field, and says what happened. */
   private act(run: (latex: string) => MathActionResult): void {
     const field = this.field;
@@ -172,6 +195,7 @@ class MathView implements NodeView {
     if (!field) return;
     this.field = null;
     const source = field.value;
+    rememberClosed(this);
     field.remove();
     this.holder?.remove();
     this.preview = this.problem = this.holder = null;
@@ -196,7 +220,9 @@ class MathView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    return this.field !== null && event.target === this.field;
+    // Keys and focus inside the field and its panel (Tab to Simplify and Solve) are not the editor's.
+    const target = event.target as Node | null;
+    return this.field !== null && (target === this.field || Boolean(this.holder?.contains(target)));
   }
 
   ignoreMutation(): boolean {
@@ -224,6 +250,30 @@ export function openMathAt(editor: Editor, pos: number): boolean {
   return Boolean(view);
 }
 
+/** The equation whose field closed last: opening the palette closes the field and moves the caret, so Simplify and
+ * Solve from Ctrl+K act on this one when none is selected. */
+let lastClosed: MathView | null = null;
+function rememberClosed(view: MathView): void {
+  lastClosed = view;
+}
+
+/** Simplify or Solve for the selected equation, the one just before the caret, or the one edited last. */
+export function runMathAction(editor: Editor, kind: 'simplify' | 'solve'): boolean {
+  const { selection } = editor.state;
+  let pos: number | null = null;
+  if (selection instanceof NodeSelection && selection.node.type.name.startsWith('math')) pos = selection.from;
+  else {
+    const before = selection.$from.nodeBefore;
+    if (before?.type.name.startsWith('math')) pos = selection.from - before.nodeSize;
+  }
+  if (pos !== null) {
+    const dom = editor.view.nodeDOM(pos);
+    const view = dom instanceof Element ? views.get(dom) : undefined;
+    if (view) return view.runAction(kind);
+  }
+  return lastClosed?.usableIn(editor) ? lastClosed.runAction(kind) : false;
+}
+
 export function mathBlockExtensions(host: EditorHost): Extensions {
   return [
     MathBlock.extend({
@@ -233,6 +283,20 @@ export function mathBlockExtensions(host: EditorHost): Extensions {
           new MathView(node, editor, getPos, true, host),
       addKeyboardShortcuts() {
         return { Enter: () => openSelected(this.editor) };
+      },
+      // Typing $$x^2$$ alone on a line makes display math.
+      addInputRules() {
+        const type = this.type;
+        return [
+          new InputRule({
+            find: /^\$\$([^$]+)\$\$$/,
+            handler: ({ state, range, match }) => {
+              const $from = state.doc.resolve(range.from);
+              if ($from.parent.type.name !== 'paragraph' || match[1].trim() === '') return null;
+              state.tr.replaceWith($from.before(), $from.after(), type.create({ source: match[1].trim() }));
+            },
+          }),
+        ];
       },
     }),
   ];
@@ -247,6 +311,18 @@ export function mathInlineExtensions(host: EditorHost): Extensions {
           new MathView(node, editor, getPos, false, host),
       addKeyboardShortcuts() {
         return { Enter: () => openSelected(this.editor) };
+      },
+      // Typing $x^2$ makes an equation; "$5 and $" stays text because the source can't end in a space.
+      addInputRules() {
+        const type = this.type;
+        return [
+          new InputRule({
+            find: /(?<![$\w\\])\$([^$\s](?:[^$]*[^$\s])?)\$$/,
+            handler: ({ state, range, match }) => {
+              state.tr.replaceWith(range.from, range.to, type.create({ source: match[1] }));
+            },
+          }),
+        ];
       },
     }),
   ];

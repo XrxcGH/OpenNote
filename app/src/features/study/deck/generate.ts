@@ -1,10 +1,10 @@
 // Cards from a page, a section, or a transcript (Study tools). The reading is extractive and plain: a heading with
 // the paragraph under it, a "Term: meaning" line, and a sentence with a bold word, where the bold word becomes a
 // blank. Nothing is added until the person has looked at the candidates and kept the ones they want.
-import { stripMarker } from './inline';
+import { cardOfLine, stripMarker } from './inline';
 import type { Card } from './types';
 
-export type Reason = 'heading' | 'definition' | 'bold';
+export type Reason = 'heading' | 'definition' | 'bold' | 'inline';
 
 export interface Candidate {
   reason: Reason;
@@ -50,7 +50,13 @@ function fromLines(lines: readonly string[]): Candidate[] {
   const found: Candidate[] = [];
   for (const raw of lines) {
     const line = stripMarker(raw);
-    if (!line || HEADING.test(raw.trim()) || line.includes(' :: ')) continue;
+    if (!line || HEADING.test(raw.trim())) continue;
+    // "Question :: Answer" and "{{blank}}" lines are cards already; listing them here lets them be added to any deck.
+    const written = cardOfLine(raw);
+    if (written) {
+      found.push({ reason: 'inline', card: written });
+      continue;
+    }
     const definition = DEFINITION.exec(plain(line));
     if (definition && words(definition[1]) <= 4 && !/^https?$/i.test(definition[1].trim())) {
       found.push({

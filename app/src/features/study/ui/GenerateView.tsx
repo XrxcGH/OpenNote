@@ -20,6 +20,8 @@ export function GenerateView({ request, onDone }: { request: CardRequest; onDone
     const cards = request.candidates
       .filter((_one, index) => kept[index])
       .map((one) => ({ id: newId('c'), origin: 'generated', ...one.card }));
+    // Nothing kept: no deck is made for it.
+    if (cards.length === 0) return;
     const existing = target === NEW ? undefined : deckById(target);
     const deck = existing ?? createDeck(request.source || t('study.deck.untitled', { number: decks.length + 1 }));
     putDeck({ ...deck, cards: [...deck.cards, ...cards] });

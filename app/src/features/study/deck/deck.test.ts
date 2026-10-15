@@ -107,6 +107,12 @@ describe('generated cards', () => {
     expect(found.map((one) => one.reason)).toEqual(['heading', 'definition', 'bold']);
     expect(found[2].card.front).toContain('{{stroma}}');
   });
+
+  it('finds cards written in the page as "Q :: A" and "{{blank}}"', () => {
+    const found = generateCards(['The {{sun}} is a star', 'Capital of France :: Paris'].join('\n'));
+    expect(found.map((one) => one.card.kind)).toEqual(['cloze', 'basic']);
+    expect(found.every((one) => one.reason === 'inline')).toBe(true);
+  });
 });
 
 describe('text import and export', () => {
@@ -149,5 +155,11 @@ describe('text import and export', () => {
     expect(skipped).toBe(1);
     expect(csv).toContain('"Why, so?",Because');
     expect(csv).toContain('"y\nOptions: x | y"');
+  });
+});
+
+describe('finding no cards', () => {
+  it('finds nothing in plain prose, so no deck has anything to be made from', () => {
+    expect(generateCards('Just a sentence with no cards in it.\nAnd another one here.')).toEqual([]);
   });
 });
