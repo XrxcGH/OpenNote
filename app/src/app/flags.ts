@@ -137,6 +137,7 @@ type QolSearchFlagId =
   | 'search.replace'
   | 'search.changeSets'
   | 'search.linkAll'
+  | 'search.advanced'
   | 'search.indexMedia'
   | 'daily.notes'
   | 'collections.views'

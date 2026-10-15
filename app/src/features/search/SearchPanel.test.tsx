@@ -13,6 +13,20 @@ async function openPanel() {
 }
 
 describe('the search panel', () => {
+  it('offers archived pages and the transcript and image description scopes', async () => {
+    await renderApp();
+    await openPanel();
+    const filters = screen.getByRole('group', { name: 'Filters' });
+    const archived = within(filters).getByRole('switch', { name: 'Include archived' });
+    expect(archived.getAttribute('aria-checked')).toBe('false');
+    await userEvent.click(archived);
+    await waitFor(() => expect(archived.getAttribute('aria-checked')).toBe('true'));
+    const scope = within(filters).getByRole('combobox', { name: 'Look in' });
+    for (const name of ['Recording transcripts', 'Image descriptions']) {
+      expect(within(scope).getByRole('option', { name })).toBeTruthy();
+    }
+  });
+
   it('opens with Ctrl+Shift+F as a combobox with a listbox of results, and closes again', async () => {
     await renderApp();
     const box = await openPanel();
