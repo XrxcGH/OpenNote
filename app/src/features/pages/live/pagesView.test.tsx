@@ -98,7 +98,7 @@ describe('adding a sheet with the pen', () => {
 
   it('adds a sheet for a stroke that ends at the bottom, not for a tap or a cancelled pen', async () => {
     const { harness } = await paginated();
-    shownPagesView.get()?.setLayout('sheets');
+    shownPagesView.get()?.setLayout('freeform');
     await new Promise((done) => setTimeout(done, 300));
     const { viewport, world } = harness.mounted.viewport;
     const count = () => shownPagesView.get()?.state().sheets ?? 0;
