@@ -2,6 +2,7 @@
 // import, and the review step for generated cards. The tool window shows it with the whole list; the flashcard
 // block on a page shows it for one deck.
 import { useState } from 'react';
+import { useFlag } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { Button, announce, confirm } from '../../../ui';
 import { useStore } from '../../../state/store';
@@ -24,10 +25,11 @@ import type { Card, Deck } from '../deck/types';
 import { CardEditor } from './CardEditor';
 import { GenerateView } from './GenerateView';
 import { ImportView } from './ImportView';
+import { Quiz } from './Quiz';
 import { Review } from './Review';
 import styles from './study.module.css';
 
-type View = 'deck' | 'review' | 'edit' | 'import' | 'generate';
+type View = 'deck' | 'review' | 'edit' | 'import' | 'generate' | 'quiz';
 
 const summary = (card: Card): string =>
   (card.kind === 'occlusion' ? card.front || card.image?.alt || '' : card.front).slice(0, 120);
@@ -129,6 +131,7 @@ function DeckView({
   useStore(statesStore, (current) => current[deck.id]);
   const shown = counts(deck, statesOf(deck.id), dayKey());
   const [name, setName] = useState<string | null>(null);
+  const canExport = useFlag('study.import');
   const remove = async () => {
     const yes = await confirm({
       title: t('study.deck.deleteTitle'),
@@ -176,16 +179,23 @@ function DeckView({
         <Button variant="primary" onClick={() => setView('review')} disabled={deck.cards.length === 0}>
           {t('study.deck.review')}
         </Button>
+        <Button onClick={() => setView('quiz')} disabled={deck.cards.length === 0}>
+          {t('study.quiz.open')}
+        </Button>
         <Button onClick={() => setView('edit')}>{t('study.deck.edit')}</Button>
         <Button variant="quiet" onClick={() => setName(deck.name)}>
           {t('study.deck.rename')}
         </Button>
-        <Button variant="quiet" onClick={() => void exportDeck(deck, 'csv')}>
-          {t('study.io.exportCsv')}
-        </Button>
-        <Button variant="quiet" onClick={() => void exportDeck(deck, 'apkg')}>
-          {t('study.io.exportAnki')}
-        </Button>
+        {canExport ? (
+          <>
+            <Button variant="quiet" onClick={() => void exportDeck(deck, 'csv')}>
+              {t('study.io.exportCsv')}
+            </Button>
+            <Button variant="quiet" onClick={() => void exportDeck(deck, 'apkg')}>
+              {t('study.io.exportAnki')}
+            </Button>
+          </>
+        ) : null}
         <Button variant="danger" onClick={() => void remove()}>
           {t('study.deck.delete')}
         </Button>
@@ -193,6 +203,7 @@ function DeckView({
       {deck.id.startsWith('page:') ? <p className={styles.note}>{t('study.deck.pageDeck')}</p> : null}
       <ExamLine deck={deck} />
       {view === 'review' ? <Review key="review" deck={deck} /> : null}
+      {view === 'quiz' ? <Quiz key="quiz" deck={deck} /> : null}
       {view === 'edit' ? <CardsView deck={deck} /> : null}
     </div>
   );
@@ -203,6 +214,7 @@ function DeckList({ onOpen, onImport }: { onOpen(id: string): void; onImport(): 
   const loaded = useStore(decksLoadedStore, (current) => current);
   useStore(statesStore, (current) => current);
   const [name, setName] = useState('');
+  const canImport = useFlag('study.import');
   const today = dayKey();
   const create = () => {
     const deck = createDeck(name.trim() || t('study.deck.untitled', { number: decks.length + 1 }));
@@ -226,9 +238,11 @@ function DeckList({ onOpen, onImport }: { onOpen(id: string): void; onImport(): 
           <Button type="submit" variant="primary">
             {t('study.deck.create')}
           </Button>
-          <Button variant="quiet" onClick={onImport}>
-            {t('study.io.import')}
-          </Button>
+          {canImport ? (
+            <Button variant="quiet" onClick={onImport}>
+              {t('study.io.import')}
+            </Button>
+          ) : null}
         </div>
       </form>
       {decks.length === 0 ? (
@@ -265,6 +279,7 @@ export function DeckPanel({ deckId }: PanelProps) {
   // Until the decks are read, a deck that isn't here yet is still coming, not missing.
   const loaded = useStore(decksLoadedStore, (current) => current);
   const request = useStore(cardRequest, (current) => current);
+  const canImport = useFlag('study.import');
   const deck = decks.find((one) => one.id === open) ?? null;
   const back = deckId
     ? null
@@ -285,7 +300,7 @@ export function DeckPanel({ deckId }: PanelProps) {
       </div>
     );
   }
-  if (view === 'import' && !deckId) {
+  if (view === 'import' && !deckId && canImport) {
     return (
       <div className={styles.root}>
         <ImportView

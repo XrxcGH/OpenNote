@@ -28,3 +28,4 @@ export type { PageRaster, RasterStroke } from './host/videoRaster';
 export const rasterShownPage = (...args: Parameters<typeof import('./host/videoRaster').rasterShownPage>) =>
   import('./host/videoRaster').then((module) => module.rasterShownPage(...args));
 export { exportPictureAsPdf } from './host/pictureToPdf';
+export type { ExportBlock, ExportPage, TextBlock } from './export';

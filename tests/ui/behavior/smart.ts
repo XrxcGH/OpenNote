@@ -44,7 +44,13 @@ export async function newLine(page: Page): Promise<void> {
 
 /** Runs a command from the palette by its name. */
 export async function runCommand(page: Page, name: string): Promise<void> {
-  await page.keyboard.press('Control+k');
+  // The palette is a lazy chunk and the key handler is installed late on a slow machine: press Ctrl+K until the
+  // input has focus, then type, so the text is never lost.
+  const input = page.getByRole('combobox').first();
+  await expect(async () => {
+    if (!(await input.isVisible())) await page.keyboard.press('Control+k');
+    await expect(input).toBeFocused({ timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   await page.keyboard.type(name);
   await page.getByRole('option', { name }).first().click();
 }

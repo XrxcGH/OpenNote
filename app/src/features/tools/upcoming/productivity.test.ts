@@ -17,7 +17,7 @@ import {
   updateFromFile,
 } from './productivity';
 import type { ClassSlot, Exam } from './productivity';
-import { dueReminders } from './reminders';
+import { dueReminders, pageReminderKey } from './reminders';
 
 const day = (key: string): CivilDate => parseDateKey(key)!;
 const ZONE = 'UTC';
@@ -179,6 +179,32 @@ describe('reminders', () => {
     expect(dueReminders(items, NOW + 60_000, ZONE, new Set()).map((one) => one.title)).toEqual(['now']);
     const first = dueReminders(items, NOW + 60_000, ZONE, new Set());
     expect(dueReminders(items, NOW + 60_000, ZONE, new Set(first.map((one) => one.key)))).toEqual([]);
+  });
+  it('come only for the items asked for when the choice is tracked, page lines included', () => {
+    const own = { ...timed('own', 12), remind: true };
+    const plain = timed('plain', 12);
+    const page: UpcomingItem = {
+      ...timed('page:p1:b1:3', 12),
+      title: 'Read chapter 4',
+      page: { id: 'p1', title: 'Notes', block: 'b1', line: 3 },
+    };
+    const items = [own, plain, page];
+    const now = NOW + 60_000;
+    expect(dueReminders(items, now, ZONE, new Set(), new Set()).map((one) => one.title)).toEqual(['own']);
+    const keys = new Set([pageReminderKey(page)]);
+    expect(dueReminders(items, now, ZONE, new Set(), keys).map((one) => one.title)).toEqual(['own', 'Read chapter 4']);
+    // The old rule, with no choice tracked: every item of the list, and no page lines.
+    expect(dueReminders(items, now, ZONE, new Set()).map((one) => one.title)).toEqual(['own', 'plain']);
+  });
+  it('keep a page line under its page and words, so editing the line number does not lose it', () => {
+    const at = (line: number): UpcomingItem => ({
+      id: `page:p1:b1:${line}`,
+      title: 'Read Chapter 4 ',
+      due: null,
+      done: false,
+      page: { id: 'p1', title: 'Notes', block: 'b1', line },
+    });
+    expect(pageReminderKey(at(3))).toBe(pageReminderKey(at(9)));
   });
   it('wait until the morning for an item with only a day', () => {
     const allDay: UpcomingItem = { id: 'a', title: 'a', due: { date: day('2026-10-07'), time: null }, done: false };

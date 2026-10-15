@@ -4,8 +4,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../app/location';
-import { executeCommand } from '../../commands/registry';
-import { commands } from '../../registries';
 import { useNotes } from '../../services/notes';
 import { sessionStore } from '../../state/session';
 import { useStore } from '../../state/store';
@@ -17,6 +15,7 @@ import { readPrefs, writePrefs } from '../qol';
 import { openSearchPanel } from '../search';
 import type { HomeChoice, HomeSectionId } from './layout';
 import { arrange, moved } from './layout';
+import { UpcomingSection } from './UpcomingSection';
 import styles from './Home.module.css';
 
 const RECENT_SHOWN = 8;
@@ -145,19 +144,12 @@ export default function HomeView() {
     .filter((entry): entry is NodeEntry => entry !== undefined && entry.node.kind === 'page')
     .slice(0, RECENT_SHOWN);
   const pinned = visible.filter((entry) => entry.node.kind === 'page' && entry.node.pinned);
-  const hasUpcoming = commands.get('smart.tools.openUpcoming') !== undefined;
   const body: Record<HomeSectionId, React.ReactNode> = {
     recent: <PageLinks entries={recent} empty={t('qol.home.recentNone')} />,
     pinned: <PageLinks entries={pinned} empty={t('qol.home.pinnedNone')} />,
     today: <Today entries={visible} onStart={() => void startToday(visible)} />,
     saved: <Saved />,
-    upcoming: hasUpcoming ? (
-      <Button onClick={() => void executeCommand('smart.tools.openUpcoming', undefined, 'commandBar')}>
-        {t('qol.home.upcomingOpen')}
-      </Button>
-    ) : (
-      <p className={styles.empty}>{t('qol.home.upcomingNone')}</p>
-    ),
+    upcoming: <UpcomingSection />,
   };
   return (
     <div className={styles.home}>

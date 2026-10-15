@@ -27,7 +27,9 @@ export const ENGLISH_TAPE_LABELS: TapeLabels = {
   table: 'table',
 };
 
-const isTape = (block: ExportBlock) => block.type === 'other' && block.kind === 'tape';
+// Study tape is stored as OpenNote's extension type; pages from before that fix name it "tape".
+const isTape = (block: ExportBlock) =>
+  block.type === 'other' && (block.kind === 'ext:org.opennote/tape' || block.kind === 'tape');
 
 /** The box of a block: its frame when it floats, otherwise the box the page view laid it out in. */
 function boxOf(block: ExportBlock, boxes: ReadonlyMap<string, TapeBox>): TapeBox | null {

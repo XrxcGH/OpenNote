@@ -96,8 +96,8 @@ describe('finding units', () => {
     expect(findUnit('constructor')).toBeNull();
   });
 
-  it('covers ten categories with no repeated symbols', () => {
-    expect(UNIT_CATEGORIES).toHaveLength(10);
+  it('covers twelve categories with no repeated symbols', () => {
+    expect(UNIT_CATEGORIES).toHaveLength(12);
     const all = UNIT_CATEGORIES.flatMap((c) => unitsIn(c));
     expect(new Set(all).size).toBe(all.length);
     expect(unitsIn('temperature')).toEqual(['C', 'F', 'K', 'R']);
@@ -111,6 +111,36 @@ describe('finding units', () => {
         expect(converted(3.5, id, id)).toBeCloseTo(3.5, 12);
       }
     }
+  });
+});
+
+describe('power and angle conversion', () => {
+  it('converts power, including both horsepowers', () => {
+    expect(converted(1, 'kW', 'W')).toBe(1000);
+    expect(converted(2500, 'mW', 'W')).toBe(2.5);
+    expect(converted(1, 'hp', 'W')).toBeCloseTo(745.69987158, 6);
+    expect(converted(1, 'PS', 'W')).toBeCloseTo(735.49875, 6);
+    expect(converted(1, 'hp', 'kW')).toBeCloseTo(0.745699872, 8);
+    expect(converted(1, 'BTU/h', 'W')).toBeCloseTo(0.29307107, 8);
+    expect(converted(1, 'GW', 'MW')).toBe(1000);
+  });
+
+  it('converts angles between degrees, radians, gradians, turns, and arcs', () => {
+    expect(converted(180, 'deg', 'rad')).toBeCloseTo(Math.PI, 12);
+    expect(converted(90, 'deg', 'grad')).toBeCloseTo(100, 12);
+    expect(converted(1, 'turn', 'deg')).toBeCloseTo(360, 12);
+    expect(converted(1, 'deg', 'arcmin')).toBeCloseTo(60, 10);
+    expect(converted(1, 'arcmin', 'arcsec')).toBeCloseTo(60, 10);
+    expect(converted(0.5, 'turn', 'rad')).toBeCloseTo(Math.PI, 12);
+  });
+
+  it('finds them by name and refuses to mix them with other kinds', () => {
+    expect(findUnit('degrees')?.category).toBe('angle');
+    expect(findUnit('°')?.id).toBe('deg');
+    expect(findUnit('Horsepower')?.id).toBe('hp');
+    expect(findUnit('kilowatts')?.id).toBe('kW');
+    expect(convertText('1 hp to deg')).toEqual({ ok: false, reason: 'different-kinds' });
+    expect(convertText('3.14159 rad to deg')).toMatchObject({ ok: true });
   });
 });
 

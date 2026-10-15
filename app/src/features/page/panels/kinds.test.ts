@@ -16,8 +16,10 @@ describe('panel block types', () => {
     .filter((def) => def.id.startsWith('panel.'))
     .flatMap((def) => def.types);
 
-  it('registers the four panel blocks', () => {
-    expect(types).toHaveLength(4);
+  it('registers each panel block under an OpenNote extension type', () => {
+    // Mind map, flashcards, study tape, diagram, quiz, citation, and bibliography.
+    expect(types).toHaveLength(7);
+    for (const type of types) expect(type).toMatch(/^ext:org\.opennote\//);
   });
 
   it.each(types)('%s can be inserted and edited', async (type) => {

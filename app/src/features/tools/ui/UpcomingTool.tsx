@@ -7,11 +7,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
-import { dateKey, findDue, followingItem, groupUpcoming } from '../upcoming';
-import type { Due, GroupContext, Repeat, UpcomingGroupId, UpcomingItem } from '../upcoming';
+import { findDue, firstDue, followingItem, groupUpcoming, parseRepeat } from '../upcoming';
+import type { GroupContext, Repeat, UpcomingGroupId, UpcomingItem } from '../upcoming';
 import { dateIn } from '../upcoming/zone';
+import { openPage } from '../../search';
+import { commandContext } from '../../../commands/registry';
+import { UpcomingCalendar } from './UpcomingCalendar';
+import type { CalendarMode } from './UpcomingCalendar';
 import { followStored, loadStored, saveStored } from './storage';
-import { CalendarFile, Overview, Planner, RemindersSwitch } from './UpcomingExtras';
+import { CalendarFile } from './CalendarFile';
+import { Groups } from './UpcomingList';
+import { setPageItemDone } from './pageCheckOff';
+import { RemindersSwitch } from './RemindersSwitch';
+import { Overview } from './UpcomingOverview';
+import { Planner } from './UpcomingPlanner';
 import { pageItemsStore } from './upcomingStores';
 import { UPCOMING_CHANGED } from './upcomingMerge';
 import styles from './tools.module.css';
@@ -33,94 +42,24 @@ function readSaved(): Saved {
   return { items, next: typeof saved.next === 'number' ? saved.next : items.length + 1 };
 }
 
-function whenText(due: Due): string {
-  const day = new Date(due.date.year, due.date.month - 1, due.date.day);
-  const date = day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-  if (!due.time) return date;
-  const time = new Date(2000, 0, 1, due.time.hour, due.time.minute).toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-  return `${date}, ${time}`;
-}
-
 function context(): GroupContext {
   return { now: Date.now(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
 }
 
-type RepeatChoice = 'none' | 'daily' | 'weekly' | 'afterDays';
+type View = 'list' | CalendarMode;
+const VIEWS: readonly View[] = ['list', 'week', 'month'];
+
+type RepeatChoice = 'none' | 'daily' | 'weekday' | 'weekly' | 'monthly' | 'afterDays';
+const REPEAT_CHOICES: readonly RepeatChoice[] = ['none', 'daily', 'weekday', 'weekly', 'monthly', 'afterDays'];
 
 function repeatOf(choice: RepeatChoice, days: number): Repeat | undefined {
   if (choice === 'daily') return { every: 1, unit: 'day', mode: 'schedule' };
   if (choice === 'weekly') return { every: 1, unit: 'week', mode: 'schedule' };
+  if (choice === 'weekday') return { every: 1, unit: 'weekday', mode: 'schedule' };
+  if (choice === 'monthly') return { every: 1, unit: 'month', mode: 'schedule' };
   if (choice === 'afterDays')
     return { every: Math.min(365, Math.max(1, Math.round(days) || 1)), unit: 'day', mode: 'afterFinish' };
   return undefined;
-}
-
-interface GroupsProps {
-  groups: ReturnType<typeof groupUpcoming>;
-  shown: readonly (UpcomingGroupId | 'undated')[];
-  onChange(id: string, patch: Partial<UpcomingItem> | null): void;
-  onSkip(id: string): void;
-}
-
-/** The groups that have something in them, each with its items. */
-function Groups({ groups, shown, onChange, onSkip }: GroupsProps) {
-  return (
-    <>
-      {shown.map((id) => (
-        <section key={id} aria-labelledby={`upcoming-${id}`} className={styles.group}>
-          <h3 id={`upcoming-${id}`} className={styles.groupTitle}>
-            {t(`smart.tools.upcoming.groups.${id}`)}
-          </h3>
-          <ul className={styles.items}>
-            {groups[id].map((item) => (
-              <li key={item.id} className={styles.item}>
-                <input
-                  type="checkbox"
-                  checked={item.done}
-                  disabled={Boolean(item.page)}
-                  aria-label={t('smart.tools.upcoming.done', { title: item.title })}
-                  onChange={(event) => onChange(item.id, { done: event.target.checked })}
-                />
-                <span className={styles.itemTitle}>
-                  {item.title}
-                  {item.page ? (
-                    <span className={styles.note}> {t('study.dueDates.fromPage', { page: item.page.title })}</span>
-                  ) : null}
-                  {item.repeat ? <span className={styles.note}> {t('study.repeat.badge')}</span> : null}
-                </span>
-                {item.due ? (
-                  <span className={styles.itemDue} title={dateKey(item.due.date)}>
-                    {whenText(item.due)}
-                  </span>
-                ) : null}
-                {item.repeat ? (
-                  <Button
-                    variant="quiet"
-                    aria-label={t('study.repeat.skipNamed', { title: item.title })}
-                    onClick={() => onSkip(item.id)}
-                  >
-                    {t('study.repeat.skip')}
-                  </Button>
-                ) : null}
-                {item.page ? null : (
-                  <Button
-                    variant="quiet"
-                    aria-label={t('smart.tools.upcoming.remove', { title: item.title })}
-                    onClick={() => onChange(item.id, null)}
-                  >
-                    ×
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-    </>
-  );
 }
 
 // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
@@ -138,6 +77,8 @@ export function UpcomingTool() {
   const [note, setNote] = useState('');
   const [repeatChoice, setRepeatChoice] = useState<RepeatChoice>('none');
   const [repeatDays, setRepeatDays] = useState('3');
+  const [view, setView] = useState<View>('list');
+  const [chosen, setChosen] = useState(() => dateIn(Date.now(), context().timeZone));
   const pages = useStore(pageItemsStore, (current) => current);
   const pageItems = useMemo(() => Object.values(pages).flatMap((entry) => entry.items), [pages]);
   const everything = useMemo(() => [...saved.items, ...pageItems], [saved.items, pageItems]);
@@ -150,18 +91,22 @@ export function UpcomingTool() {
   const add = () => {
     const title = text.trim();
     if (!title) return;
-    const found = findDue(title, context());
-    const repeat = found ? repeatOf(repeatChoice, Number(repeatDays)) : undefined;
+    // Words such as "every weekday" or "monthly on the 1st" set the repeat and are taken out of the title.
+    const typed = parseRepeat(title);
+    const words = typed ? typed.rest : title;
+    const found = words ? findDue(words, context()) : null;
+    const due = found?.due ?? (typed ? firstDue(typed.repeat, today()) : null);
+    const repeat = typed ? typed.repeat : found ? repeatOf(repeatChoice, Number(repeatDays)) : undefined;
     const item: UpcomingItem = {
       id: `u${saved.next}`,
-      title: found?.title.trim() || title,
-      due: found?.due ?? null,
+      title: (found?.title.trim() || words).trim() || title,
+      due,
       done: false,
       ...(repeat ? { repeat } : {}),
     };
     update({ items: [...saved.items, item], next: saved.next + 1 });
     setText('');
-    setNote(found ? '' : repeatChoice === 'none' ? t('smart.tools.upcoming.undated') : t('study.repeat.needsDate'));
+    setNote(due ? '' : repeatChoice === 'none' ? t('smart.tools.upcoming.undated') : t('study.repeat.needsDate'));
     announce(t('smart.tools.upcoming.added'));
   };
 
@@ -191,6 +136,28 @@ export function UpcomingTool() {
         : saved.items.filter((item) => item.id !== id),
     });
   };
+  /** Left and Right move between the views, as in any tab strip. */
+  const moveTab = (event: React.KeyboardEvent) => {
+    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    if (step === 0) return;
+    event.preventDefault();
+    const next = VIEWS[(VIEWS.indexOf(view) + step + VIEWS.length) % VIEWS.length];
+    setView(next);
+    document.getElementById(`upcoming-tab-${next}`)?.focus();
+  };
+  /** Checks a line on a page. The check goes into the page; a page that changed since is left alone. */
+  const checkPage = (item: UpcomingItem, done: boolean) => {
+    void setPageItemDone(item, done).then((result) => {
+      const text =
+        result === 'done'
+          ? t(done ? 'study.dueDates.checkedOff' : 'study.dueDates.reopened', { title: item.title })
+          : t(result === 'moved' ? 'study.dueDates.moved' : 'study.dueDates.checkFailed', { title: item.title });
+      setNote(result === 'done' ? '' : text);
+      announce(text);
+    });
+  };
+  const checkAny = (item: UpcomingItem, done: boolean) =>
+    item.page ? checkPage(item, done) : change(item.id, { done });
   const groupsShown = [...GROUPS, 'undated' as const].filter((id) => groups[id].length > 0);
 
   return (
@@ -217,7 +184,7 @@ export function UpcomingTool() {
               value={repeatChoice}
               onChange={(event) => setRepeatChoice(event.target.value as RepeatChoice)}
             >
-              {(['none', 'daily', 'weekly', 'afterDays'] as const).map((one) => (
+              {REPEAT_CHOICES.map((one) => (
                 <option key={one} value={one}>
                   {t(`study.repeat.choices.${one}`)}
                 </option>
@@ -250,8 +217,49 @@ export function UpcomingTool() {
           {note}
         </p>
       ) : null}
-      {groupsShown.length === 0 ? <p className={styles.empty}>{t('smart.tools.upcoming.empty')}</p> : null}
-      <Groups groups={groups} shown={groupsShown} onChange={change} onSkip={(id) => advance(id, false)} />
+      <div className={styles.tabs} role="tablist" aria-label={t('study.views.views')} onKeyDown={moveTab}>
+        {VIEWS.map((one) => (
+          <button
+            key={one}
+            type="button"
+            role="tab"
+            id={`upcoming-tab-${one}`}
+            aria-selected={view === one}
+            aria-controls="upcoming-panel"
+            tabIndex={view === one ? 0 : -1}
+            className={styles.tab}
+            onClick={() => setView(one)}
+          >
+            {t(`study.views.tabs.${one}`)}
+          </button>
+        ))}
+      </div>
+      <div id="upcoming-panel" role="tabpanel" aria-labelledby={`upcoming-tab-${view}`} className={styles.tool}>
+        {view === 'list' ? (
+          <>
+            {groupsShown.length === 0 ? <p className={styles.empty}>{t('smart.tools.upcoming.empty')}</p> : null}
+            <Groups
+              groups={groups}
+              shown={groupsShown}
+              onChange={change}
+              onSkip={(id) => advance(id, false)}
+              onCheckPage={checkPage}
+              onNote={setNote}
+            />
+          </>
+        ) : (
+          <UpcomingCalendar
+            mode={view}
+            items={everything}
+            selected={chosen}
+            onSelect={setChosen}
+            onCheck={checkAny}
+            onOpenPage={(item) => {
+              if (item.page) void openPage(commandContext('palette').notes, item.page.id);
+            }}
+          />
+        )}
+      </div>
       <Planner />
       <RemindersSwitch />
     </div>

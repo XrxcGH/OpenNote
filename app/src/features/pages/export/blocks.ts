@@ -178,7 +178,9 @@ export function renderBlock(block: ExportBlock, cx: BlockContext): string {
     case 'text': {
       const html = renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
       const moment = cx.player?.moments.get(block.id);
-      return moment === undefined ? html : momentHtml(html, moment, ENGLISH_PLAYER_LABELS);
+      const shown = moment === undefined ? html : momentHtml(html, moment, ENGLISH_PLAYER_LABELS);
+      // The study tape answer key starts a new sheet when the page prints.
+      return block.id === 'tape-answer-key' ? `<section class="answer-key">${shown}</section>` : shown;
     }
     case 'image':
       return image(block, cx);

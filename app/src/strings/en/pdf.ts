@@ -117,7 +117,7 @@ export const pdf = {
     titleFor: 'Highlights in {file}',
     fileName: 'Highlights in {file}',
     loading: 'Finding the highlights in this section…',
-    empty: 'No highlights yet. Select words on a PDF page and press Ctrl+Alt+H.',
+    empty: 'No highlights yet. Select words on a PDF page and press Ctrl+Shift+H.',
     item: 'Page {page}: {text}',
     mark: 'Highlight: {text}',
     menu: 'Highlight',

@@ -16,6 +16,9 @@ export const PANEL_TYPES = {
   mindmap: 'ext:org.opennote/mindmap',
   diagram: 'ext:org.opennote/diagram',
   collection: 'ext:org.opennote/collection',
+  quiz: 'ext:org.opennote/quiz',
+  citation: 'ext:org.opennote/citation',
+  bibliography: 'ext:org.opennote/bibliography',
 } as const;
 
 export type PanelType = (typeof PANEL_TYPES)[keyof typeof PANEL_TYPES];

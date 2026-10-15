@@ -40,6 +40,8 @@ export interface TimerState {
   finishedAt: number | null;
   /** Stopwatch only: the elapsed time at each lap. */
   laps: number[];
+  /** The person asked for a Windows notification when this timer ends. Off when missing. */
+  notify?: boolean;
 }
 
 export interface TimerSet {
@@ -78,4 +80,6 @@ export interface TimerView {
   nextChangeAt: number | null;
   focus: FocusView | null;
   laps: number[];
+  /** Whether the person asked for a notification when this timer ends. */
+  notify: boolean;
 }

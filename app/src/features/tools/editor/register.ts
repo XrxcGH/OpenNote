@@ -3,6 +3,7 @@
 import { editorExtensions } from '../../../editor/extensions/kit';
 import { dueChipsExtension } from './dueChipsExt';
 import { notesExtension } from './notesExt';
+import { repeatLinesExtension } from './repeatLinesExt';
 
 let done = false;
 
@@ -22,5 +23,12 @@ export function registerToolsEditor(): void {
     flag: 'tools.dueDates',
     kinds: ['text'],
     create: () => dueChipsExtension(),
+  });
+  editorExtensions.register({
+    id: 'tools.repeatLines',
+    order: 82,
+    flag: 'tools.dueDates',
+    kinds: ['text'],
+    create: () => repeatLinesExtension(),
   });
 }

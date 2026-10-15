@@ -15,5 +15,10 @@ export {
 export { inlineCards } from './deck/inline';
 export { DeckPanel } from './ui/DeckPanel';
 export type { Card, Deck } from './deck/types';
-export { mountDeck, mountTape } from './ui/mount';
+export { mountDeck, mountQuiz, mountTape } from './ui/mount';
+export { pickQuestions, score as quizScore } from './deck/quiz';
+export { sectionText } from './deck/sectionText';
 export { saveBytes } from './io/save';
+export { ANSWER_KEY_ID, blankTape, blankText, tapeIds } from './tape/blanks';
+export type { TapeLabels } from './tape/blanks';
+export { measureTape, shareInside } from './tape/coverage';

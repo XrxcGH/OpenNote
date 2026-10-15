@@ -42,7 +42,7 @@ Bring a PDF in to write on it. Each PDF page becomes a picture locked in place, 
 
 Drag across the words of a PDF page to select them, and press Ctrl+C to copy them. To copy all the text of the PDF pages on a page, press Ctrl+K and choose Copy the text of PDF pages.
 
-To highlight, select words on a PDF page and press Ctrl+Alt+H (Ctrl+Shift+H with the OneNote shortcuts). Click a highlight to change its color, remove it, or choose Send to notes, which adds the words as a quote beside the page with a link back to the spot. Press Ctrl+K and choose PDF highlights to see every highlight of the PDF in this section by color and page, and to copy or save them as Markdown.
+To highlight, select words on a PDF page and press Ctrl+Shift+H (Ctrl+Alt+H with the OneNote shortcuts). Click a highlight to change its color, remove it, or choose Send to notes, which adds the words as a quote beside the page with a link back to the spot. Press Ctrl+K and choose PDF highlights to see every highlight of the PDF in this section by color and page, and to copy or save them as Markdown.
 
 In the dark theme, PDF pages and slides are dimmed so they are easier on the eyes, and the pictures in them keep their own colors. The Original switch at the top right of the page shows it as it is. Press Ctrl+K and choose Invert PDF pages in the dark theme to turn white pages dark instead. If you chose Always paper white for the page color in Settings, PDF pages stay as they are. Printing and export always use the PDF as it is.
 

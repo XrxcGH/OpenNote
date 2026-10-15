@@ -36,6 +36,15 @@ describe('math in a note', () => {
     ]);
   });
 
+  it('converts power and angle in a note line, as the converter does', () => {
+    expect(answers(['2 kW in W =', '1 turn in deg =', '90 deg in grad =', '1 kW + 500 W ='])).toEqual([
+      '2000 W',
+      '360 deg',
+      '100 grad',
+      '1.5 kW',
+    ]);
+  });
+
   it('converts temperature as a reading', () => {
     expect(answers(['100 °C in °F =', '32 F in C =', '0 C in K =', '72 °F in °C ='])).toEqual([
       '212 °F',

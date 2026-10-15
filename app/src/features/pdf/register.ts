@@ -176,8 +176,9 @@ commands.register(
     keywords: 'pdf.commands.highlightKeywords',
     category: 'editing',
     icon: 'Highlighter',
-    keys: [chord('Ctrl+Alt+H')],
-    presetKeys: { onenote: [chord('Ctrl+Shift+H')] },
+    // The same keys as the text highlight it refines; Ctrl+Alt+H is Replace across the notebooks.
+    keys: [chord('Ctrl+Shift+H')],
+    presetKeys: { onenote: [chord('Ctrl+Alt+H')] },
     refines: 'format.highlight',
     flag: 'pdf.highlights',
     when: wordsSelected,

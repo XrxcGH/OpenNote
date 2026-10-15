@@ -11,6 +11,8 @@ import { t } from '../../../strings/t';
 import { evaluateNotes } from '../calculator';
 import type { NotesRegion } from '../calculator';
 import { INSERT_EVENT } from '../flags';
+import { joinScope, linesBefore, refreshOthers, scopeOf } from './pageScope';
+import type { Box } from './pageScope';
 import styles from './editor.module.css';
 
 const LEAF = '\u0000';
@@ -70,13 +72,14 @@ function graphWidget(equation: string): HTMLElement {
   return button;
 }
 
-export function notesDecorations(doc: PMNode, region: NotesRegion): DecorationSet {
+/** The answers for a box. `before` is the lines of the page's earlier boxes, which lend their variables. */
+export function notesDecorations(doc: PMNode, region: NotesRegion, before: readonly string[] = []): DecorationSet {
   if (doc.textContent.length > MAX_CHARS || !doc.textContent.includes('=')) return DecorationSet.empty;
   const lines = linesOf(doc);
   const results = evaluateNotes(
-    lines.map((line) => line.text),
+    [...before, ...lines.map((line) => line.text)],
     { region },
-  );
+  ).slice(before.length);
   const found: Decoration[] = [];
   results.forEach((result, index) => {
     const line = lines[index];
@@ -94,20 +97,61 @@ export function notesDecorations(doc: PMNode, region: NotesRegion): DecorationSe
 }
 
 const key = new PluginKey<DecorationSet>('opennoteNotes');
+const REFRESH = 'opennoteNotesRefresh';
 
 export function notesExtension(): Extension {
   const region = regionOfBrowser();
   return Extension.create({
     name: 'opennoteNotes',
-    addProseMirrorPlugins: () => [
-      new Plugin<DecorationSet>({
-        key,
-        state: {
-          init: (_config, state) => notesDecorations(state.doc, region),
-          apply: (tr, old) => (tr.docChanged ? notesDecorations(tr.doc, region) : old),
-        },
-        props: { decorations: (state) => key.getState(state) },
-      }),
-    ],
+    addProseMirrorPlugins: () => {
+      // What this box knows of its page: set when the editor is on screen, empty until then.
+      let root: Element | null = null;
+      let box: Box | null = null;
+      const before = () => (root !== null && box !== null ? linesBefore(root, box) : []);
+      return [
+        new Plugin<DecorationSet>({
+          key,
+          state: {
+            init: (_config, state) => notesDecorations(state.doc, region),
+            apply: (tr, old, _before, state) =>
+              tr.docChanged || tr.getMeta(REFRESH) ? notesDecorations(state.doc, region, before()) : old,
+          },
+          props: { decorations: (state) => key.getState(state) },
+          view: (view) => {
+            const self: Box = {
+              element: view.dom,
+              lines: () => linesOf(view.state.doc).map((line) => line.text),
+              refresh: () => {
+                if (!view.isDestroyed) view.dispatch(view.state.tr.setMeta(REFRESH, true));
+              },
+            };
+            box = self;
+            let leave: (() => void) | null = null;
+            const join = () => {
+              const next = scopeOf(view.dom);
+              if (next === root) return;
+              leave?.();
+              root = next;
+              leave = next === null ? null : joinScope(next, self);
+              if (next !== null) self.refresh();
+            };
+            // The editor is placed in its block after it is made, so look for the page a moment later.
+            const timer = setTimeout(join, 0);
+            return {
+              update: (updated, prev) => {
+                if (updated.state.doc === prev.doc) return;
+                if (root !== null) queueMicrotask(() => root !== null && refreshOthers(root, self));
+              },
+              destroy: () => {
+                clearTimeout(timer);
+                leave?.();
+                root = null;
+                box = null;
+              },
+            };
+          },
+        }),
+      ];
+    },
   });
 }
