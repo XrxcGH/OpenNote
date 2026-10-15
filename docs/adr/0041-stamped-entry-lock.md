@@ -9,7 +9,15 @@ Lab notebooks and records need "Lock entry" (A2-17, docs/FEATURES.md "Lock entry
 
 ## Decision
 
-The lock is a member of the page view in `page.json`, `view.entryLock`, an object with `lockedAt` (RFC 3339, from the core's clock), `by` (a name of up to 200 characters, which the interface sends: the device's name in OpenNote), and `hash` (`sha256:` and the hex SHA-256 of the page's title, the Markdown of each text block in page order, the hash of each file, and the IDs of the live strokes, each part labelled and length-prefixed). The interface sets the lock with the ordinary `SetPage` edit and a merge patch on the view, and the core replaces `lockedAt` and `hash` with its own, so the stamp can't name another moment or another content. While `view.entryLock` is an object, the core's resolver refuses every edit and every stroke with the read-only reason `lockedEntry`, except one `SetPage` whose view patch is exactly `{"entryLock": null}`. Unlocking asks for a reason; the interface first names the current version in page history "Locked entry" with the lock's date, then names the version after the unlock "Unlocked: <reason>", and named versions are never pruned. A locked page shows a calm stamp banner and opens read-only. The layout "Lab notebook" offers Lock entry in its page menu as well as the palette.
+The lock is a member of the page view in `page.json`, `view.entryLock`. It is an object with three members:
+
+- `lockedAt`: RFC 3339, from the core's clock.
+- `by`: a name of up to 200 characters, which the interface sends. It is the device's name in OpenNote.
+- `hash`: `sha256:` and the hex SHA-256 of the page's content, each part labeled, and length-prefixed. The parts are the title, the Markdown of each text block in page order, the hash of each file, and the IDs of the live strokes.
+
+The interface sets the lock with the ordinary `SetPage` edit and a merge patch on the view. The core replaces `lockedAt` and `hash` with its own, so the stamp can't name another moment or another content. While `view.entryLock` is an object, the core's resolver refuses every edit and every stroke with the read-only reason `lockedEntry`. The one exception is a `SetPage` whose view patch is exactly `{"entryLock": null}`.
+
+Unlocking asks for a reason. The interface first names the current version in page history "Locked entry" with the lock's date. Then it names the version after the unlock "Unlocked: <reason>". Named versions are never pruned. A locked page shows a calm stamp banner and opens read-only. The layout "Lab notebook" offers Lock entry in its page menu as well as the palette.
 
 Unknown view members already round-trip through `PageView.extra`, so older builds keep the record and the format version stays.
 

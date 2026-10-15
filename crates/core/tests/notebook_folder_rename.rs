@@ -69,6 +69,8 @@ fn a_notebook_that_isnt_open_or_is_trashed_has_no_folder_to_rename() {
 
 /// Starts a core again on the same data folder, as the next run of the app does, and checks the notebook is in
 /// exactly one folder that the library names, with its page.
+// Only the crash tests, built with failpoints, call it.
+#[cfg_attr(not(feature = "failpoints"), allow(dead_code))]
 fn check_after_crash(data: &Path, notes: &Path) -> PathBuf {
     let core = start(data.to_path_buf(), Arc::new(test_clock()));
     let paths = library_paths(&core);

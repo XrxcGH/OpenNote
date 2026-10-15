@@ -128,8 +128,10 @@ export const tree = {
     emptyTrash: 'Empty Trash',
     emptyTitle: 'Empty Trash?',
     emptyBody:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       "{count, plural, one {# item is} other {# items are}} deleted for good, with page history, search entries, and transcripts. This can't be undone.",
     emptyBodyNotebooks:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       "{count, plural, one {# item is} other {# items are}} deleted for good, with page history, search entries, and transcripts. This can't be undone. Notebooks stay in Trash until you choose Delete folder.",
     emptied: 'Trash is emptied.',
     deleteForever: 'Delete forever',
@@ -143,6 +145,7 @@ export const tree = {
     deleteFolderLabel: 'Delete the folder of {title}',
     deleteFolderTitle: 'Delete the folder of "{title}"?',
     deleteFolderBody:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       'The notebook folder moves to the Recycle Bin with everything in it. You can get it back from there until the Recycle Bin is emptied.',
     folderDeleted: 'Moved the folder of "{title}" to the Recycle Bin.',
     folderFailed: "Couldn't delete that folder. Try again, or delete it in File Explorer.",
