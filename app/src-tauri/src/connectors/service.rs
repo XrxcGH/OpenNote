@@ -107,6 +107,10 @@ pub struct Connectors(pub(super) Arc<Inner>);
 
 impl Connectors {
     pub fn new(paths: &Paths) -> Connectors {
+        #[cfg(feature = "test-endpoints")]
+        if let Some(connectors) = super::test_hook::connectors(paths) {
+            return connectors;
+        }
         Connectors::with(Parts::real(paths))
     }
 

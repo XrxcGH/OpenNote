@@ -47,7 +47,7 @@ Connect Dropbox or Box in Settings, then Connectors. For a WebDAV server (Nextcl
 
 A name that is already taken is never overwritten. The new file gets a number after its name. Update the copy replaces a file OpenNote sent earlier, and only that one.
 
-To keep every copy current, press Ctrl+K and choose Sync Dropbox, Box, and WebDAV copies. OpenNote sends again each page you changed since it was sent, and each section or notebook copy, over the file that is already there. It runs when you choose it and never on its own.
+To keep every copy current, press Ctrl+K and choose Sync Dropbox, Box, and WebDAV copies. OpenNote sends again each page you changed since it was sent, and each section or notebook copy, over the file that is already there. It runs when you choose it. To have it done for you, choose Keep Dropbox, Box, and WebDAV copies up to date automatically. While OpenNote is open, a few minutes after start and then every 15 minutes, any copy whose page changed is sent again, quietly. Choose Stop keeping Dropbox, Box, and WebDAV copies up to date automatically to turn it off.
 
 iCloud has no sign-in that an app can use. Send a copy to the `iCloud Drive` folder on this PC instead, and iCloud for Windows uploads it.
 

@@ -32,9 +32,12 @@ export const accountsOnenote = {
     changed:
       'These pages changed in OneNote after they were brought in. They were left as they are here, because they may hold your own writing:',
     tables: 'Tables came over as text tables on these pages:',
-    attached: '{count, plural, one {# attached file came over} other {# attached files came over}} as files on their pages.',
-    inked: '{count, plural, one {# stroke of ink came over} other {# strokes of ink came over}}, drawn as ink on their pages.',
-    attachments: 'These attached files could not be brought over and stay in OneNote. Their names are marked in the text:',
+    attached:
+      '{count, plural, one {# attached file came over} other {# attached files came over}} as files on their pages.',
+    inked:
+      '{count, plural, one {# stroke of ink came over} other {# strokes of ink came over}}, drawn as ink on their pages.',
+    attachments:
+      'These attached files could not be brought over and stay in OneNote. Their names are marked in the text:',
     pictures: '{count, plural, one {# picture} other {# pictures}} could not be fetched. They are missing from:',
     pictureWhy: 'The picture could not be fetched.',
     pageWhy: 'OneNote did not give the page.',

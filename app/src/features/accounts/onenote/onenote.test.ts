@@ -222,7 +222,7 @@ describe('importing notebooks', () => {
     const types = open.initial.blocks.map((block) => block.type);
     expect(types).toContain('file');
     expect(types).toContain('ink');
-    expect((await open.ink.readAll()).length).toBeGreaterThan(0);
+    expect((await open.ink?.readAll())?.length ?? 0).toBeGreaterThan(0);
     await open.close();
   });
 

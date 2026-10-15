@@ -9,6 +9,8 @@ export const accountsSendTo = {
     webdav: 'Send to a WebDAV server',
     update: 'Update the copy that was sent to the cloud',
     sync: 'Sync Dropbox, Box, and WebDAV copies',
+    autoOn: 'Keep Dropbox, Box, and WebDAV copies up to date automatically',
+    autoOff: 'Stop keeping Dropbox, Box, and WebDAV copies up to date automatically',
     keywords:
       'send drive google onedrive microsoft dropbox box webdav nextcloud upload copy export docs word pdf update cloud',
   },
@@ -23,6 +25,10 @@ export const accountsSendTo = {
   sync: {
     nothing: 'Every Dropbox, Box, and WebDAV copy is up to date.',
     done: '{count, plural, one {Updated # copy.} other {Updated # copies.}}',
+  },
+  auto: {
+    on: 'Dropbox, Box, and WebDAV copies will be kept up to date while OpenNote is open.',
+    off: 'Copies are no longer sent again on their own. Sync Dropbox, Box, and WebDAV copies still works.',
   },
   offer: 'This page has changed since you sent it to {service}.',
   offerAction: 'Update the {service} copy',

@@ -223,15 +223,15 @@ async function copiesHere(): Promise<SentCopy[]> {
 }
 
 /** Sends the node again over its copy. */
-export async function updateCopy(copy: SentCopy): Promise<void> {
+export async function updateCopy(copy: SentCopy, quiet = false): Promise<void> {
   const name = NAMES[copy.service];
-  if (!(await isConnected(CONNECTOR[copy.service]))) return tellNotConnected(name);
-  await attempt(name, async () => {
+  if (!(await isConnected(CONNECTOR[copy.service]))) return quiet ? undefined : tellNotConnected(name);
+  const work = async () => {
     const host = accountsHost();
     const title = await titleOf(copy.node as NodeId, copy.name);
-    announce(t('accounts.sendTo.updating', { name: copy.name }));
+    if (!quiet) announce(t('accounts.sendTo.updating', { name: copy.name }));
     const local = await prepare(host, copy.scope, copy.format, copy.node as NodeId, title);
-    if (!local) return void showToast({ message: t('accounts.sendTo.empty'), tone: 'danger' });
+    if (!local) return void (quiet || showToast({ message: t('accounts.sendTo.empty'), tone: 'danger' }));
     try {
       const updated = await sendFile(destinationFor(copy.service, host), local, {
         node: copy.node,
@@ -241,13 +241,17 @@ export async function updateCopy(copy: SentCopy): Promise<void> {
         folderName: copy.folder,
         replace: copy.remote,
       });
-      const message = t('accounts.sendTo.updated', { name: updated.name, service: name });
-      showToast({ message });
-      announce(message);
+      if (!quiet) {
+        const message = t('accounts.sendTo.updated', { name: updated.name, service: name });
+        showToast({ message });
+        announce(message);
+      }
     } finally {
       await host.tempRemove(local.file).catch(() => undefined);
     }
-  });
+  };
+  if (quiet) await work();
+  else await attempt(name, work);
 }
 
 /** Update the copy: the page's copy, or a choice when it, its section, and its notebook have several. */

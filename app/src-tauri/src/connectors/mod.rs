@@ -40,6 +40,8 @@ mod secret;
 mod service;
 mod session;
 mod store;
+#[cfg(feature = "test-endpoints")]
+mod test_hook;
 #[cfg(test)]
 mod tests;
 mod view;

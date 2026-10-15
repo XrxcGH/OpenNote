@@ -28,7 +28,7 @@ impl HostPolicy {
     }
 
     /// Whether `text` is an HTTPS address on one of the hosts. Unit tests also accept `http://127.0.0.1:<port>`
-    /// when `127.0.0.1` is listed, so they can serve answers from a local mock. That branch is not in any build.
+    /// when `127.0.0.1` is listed, so they can serve answers from a local mock. That branch is only in tests and in builds with the `test-endpoints` feature (see `test_hook.rs`), never in a release.
     pub fn allows(&self, text: &str) -> bool {
         if text.contains('\\') {
             return false;
@@ -40,7 +40,8 @@ impl HostPolicy {
         let Some(host) = url.host_str().map(str::to_ascii_lowercase) else {
             return false;
         };
-        let local_test = cfg!(test) && url.scheme() == "http" && host == "127.0.0.1";
+        let local_test =
+            (cfg!(test) || cfg!(feature = "test-endpoints")) && url.scheme() == "http" && host == "127.0.0.1";
         if !local_test && (url.scheme() != "https" || url.port().is_some()) {
             return false;
         }
@@ -48,6 +49,7 @@ impl HostPolicy {
     }
 }
 
+#[derive(Clone)]
 pub enum Body {
     /// Sent as `application/x-www-form-urlencoded`.
     Form(Vec<(String, String)>),
@@ -135,7 +137,7 @@ impl Default for UreqHttp {
             .build();
         let config = ureq::Agent::config_builder()
             .tls_config(tls)
-            .https_only(!cfg!(test))
+            .https_only(!(cfg!(test) || cfg!(feature = "test-endpoints")))
             .max_redirects(0)
             .max_redirects_will_error(false)
             .http_status_as_error(false)

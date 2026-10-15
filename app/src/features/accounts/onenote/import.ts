@@ -6,8 +6,8 @@
 
 import { newId } from '../../../editor/ids';
 import { encodeRecords } from '../../../core/ink/codec';
-import { recordFromStroke } from '../../ink/model/convert';
-import type { InkStroke } from '../../ink/model/types';
+import { recordFromStroke } from '../../ink';
+import type { InkStroke } from '../../ink';
 import type { PageExtrasClient, PagesClient } from '../../../platform/types';
 import type { Edit } from '../../../services/pages/types';
 import type { NodeId, NotesService } from '../../../services/notes/types';
@@ -144,7 +144,12 @@ async function writeAttachment(
   };
   if (!deps.extras) return lost();
   try {
-    const file = await fetchPicture(deps.host, block.src, `onenote-${newId()}.bin`, block.mime || 'application/octet-stream');
+    const file = await fetchPicture(
+      deps.host,
+      block.src,
+      `onenote-${newId()}.bin`,
+      block.mime || 'application/octet-stream',
+    );
     if (file.bytes.length > MAX_ATTACHMENT) return lost();
     const asset = await deps.extras.attachBytes(
       pageId,

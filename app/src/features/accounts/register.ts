@@ -118,6 +118,20 @@ const SPECS: readonly Spec[] = [
     run: () => import('./sendto/commands').then((module) => void module.syncCopies()),
   },
   {
+    id: 'sendto.autoOn',
+    title: 'accounts.sendTo.commands.autoOn',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.cloudSync',
+    run: () => import('./sendto/auto').then((module) => module.setAutoSync(true)),
+  },
+  {
+    id: 'sendto.autoOff',
+    title: 'accounts.sendTo.commands.autoOff',
+    keywords: 'accounts.sendTo.commands.keywords',
+    flag: 'accounts.cloudSync',
+    run: () => import('./sendto/auto').then((module) => module.setAutoSync(false)),
+  },
+  {
     id: 'googleOffice.import',
     title: 'accounts.googleOffice.commands.import',
     keywords: 'accounts.googleOffice.commands.keywords',
@@ -236,6 +250,9 @@ shownMounted.subscribe(() => {
 // after start-up and only when the flag is on.
 if (typeof window !== 'undefined' && isEnabled('accounts.tasksSync')) {
   void import('./tasks/auto').then((module) => module.startAutoSync());
+}
+if (typeof window !== 'undefined' && isEnabled('accounts.cloudSync')) {
+  void import('./sendto/auto').then((module) => module.startCopySync());
 }
 if (typeof window !== 'undefined' && isEnabled('accounts.penSync')) {
   void import('./penSync/auto').then((module) => module.startAutoSync());

@@ -98,7 +98,10 @@ export async function pageHtml(client: ConnectorsClient, page: string): Promise<
   const reply = await requestConnector(
     'microsoft',
     [...ACCESS],
-    { url: `${GRAPH}/me/onenote/pages/${encodeURIComponent(page)}/content`, query: { includeIDs: 'false', includeinkML: 'true' } },
+    {
+      url: `${GRAPH}/me/onenote/pages/${encodeURIComponent(page)}/content`,
+      query: { includeIDs: 'false', includeinkML: 'true' },
+    },
     client,
   );
   return reply.text;
