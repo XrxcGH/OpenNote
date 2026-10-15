@@ -57,7 +57,7 @@ pub struct Now {
 
 /// The saved place for a window that is at `now` on `monitor`. `None` when the numbers are not usable.
 pub fn capture(now: &Now, monitor: &Monitor) -> Option<Saved> {
-    if now.size.0 < MIN_SIDE || now.size.1 < MIN_SIDE || !(monitor.scale > 0.0) {
+    if now.size.0 < MIN_SIDE || now.size.1 < MIN_SIDE || monitor.scale.is_nan() || monitor.scale <= 0.0 {
         return None;
     }
     Some(Saved {
