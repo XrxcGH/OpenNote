@@ -200,7 +200,7 @@ describe('the bottom bar', () => {
     await expectNoAxeViolations(document.body);
   });
 
-  it('lists the recent pages in More when bottomBar.recent is on', async () => {
+  it('lists the recent pages in More', async () => {
     const open = async (channel: 'beta' | 'stable') => {
       const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel } });
       const pages = await notes.listChildren('s-lectures' as NodeId);
@@ -222,13 +222,13 @@ describe('the bottom bar', () => {
     expect(screen.queryByRole('dialog', { name: 'More commands' })).toBeNull();
   });
 
-  it('leaves the recent pages out of More in Stable', async () => {
+  it('lists the recent pages in More in Stable too', async () => {
     const { notes } = await renderApp({ sizeClass: 'compact', boot: { channel: 'stable' } });
     const pages = await notes.listChildren('s-lectures' as NodeId);
     recordRecentPage(pages[0].id);
     const bar = screen.getByRole('navigation', { name: 'Quick actions' });
     await userEvent.click(within(bar).getByRole('button', { name: 'More commands' }));
     const panel = await screen.findByRole('dialog', { name: 'More commands' });
-    expect(within(panel).queryByRole('list', { name: 'Recent pages' })).toBeNull();
+    expect(within(panel).getByRole('list', { name: 'Recent pages' })).toBeTruthy();
   });
 });

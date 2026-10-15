@@ -308,6 +308,7 @@ describe('context menu contents', () => {
       'Archive',
       'Delete notebook history',
       'Export…',
+      'Share as a file…',
       'Delete',
     ]);
     await pressChord('Escape');
@@ -343,6 +344,7 @@ describe('context menu contents', () => {
       'Protect with password…',
       'Make flashcards from this section',
       'Export…',
+      'Share as a file…',
       'Delete',
     ]);
     await pressChord('Escape');
@@ -368,6 +370,7 @@ describe('context menu contents', () => {
       'Open in another editor',
       'Copy link to this page',
       'Export…',
+      'Share as a file…',
       'Delete',
     ]);
   });
