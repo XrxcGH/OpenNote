@@ -21,16 +21,17 @@ fn a_return_with_the_right_state_and_a_code_ends_the_wait() {
 }
 
 #[test]
-fn the_wrong_state_ends_the_attempt_and_no_code_is_kept() {
+fn the_wrong_state_is_refused_and_the_wait_goes_on() {
     let verdict = judge_target("/callback?code=abc&state=somebody-elses-state-value-123456");
-    assert_eq!(verdict.end, Some(Err(Ended::Mismatch)));
+    assert_eq!(verdict.end, None);
+    assert_eq!(verdict.status, 400);
     assert_eq!(verdict.page, Page::Failed);
 }
 
 #[test]
-fn a_missing_state_is_a_mismatch_too() {
-    assert_eq!(judge_target("/callback?code=abc").end, Some(Err(Ended::Mismatch)));
-    assert_eq!(judge_target("/callback").end, Some(Err(Ended::Mismatch)));
+fn a_missing_state_is_refused_and_ignored_too() {
+    assert_eq!(judge_target("/callback?code=abc").end, None);
+    assert_eq!(judge_target("/callback").end, None);
 }
 
 #[test]
@@ -124,8 +125,8 @@ fn the_page_never_repeats_anything_from_the_address() {
     let port = listener.port();
     let client =
         thread::spawn(move || request(port, "/callback?error=%3Cscript%3Ealert(1)&state=wrong&code=top-secret"));
-    let outcome = listener.wait(STATE, Duration::from_secs(10), &never_canceled());
-    assert_eq!(outcome, Err(Ended::Mismatch));
+    let outcome = listener.wait(STATE, Duration::from_millis(500), &never_canceled());
+    assert_eq!(outcome, Err(Ended::TimedOut));
     let page = client.join().expect("finished").expect("answered");
     for echoed in ["script", "alert", "top-secret", "wrong"] {
         assert!(!page.contains(echoed), "the page repeated {echoed}");
@@ -135,16 +136,21 @@ fn the_page_never_repeats_anything_from_the_address() {
 }
 
 #[test]
-fn a_wrong_state_closes_the_port_so_a_later_good_return_finds_nothing() {
+fn a_wrong_state_from_another_page_does_not_end_the_real_sign_in() {
     let listener = Listener::bind(0).expect("binds");
     let port = listener.port();
-    let client = thread::spawn(move || request(port, &format!("/callback?code=c&state=wrong-{STATE}")));
+    let client = thread::spawn(move || {
+        let probe = request(port, &format!("/callback?code=c&state=wrong-{STATE}")).expect("answered");
+        let page = request(port, &format!("/callback?code=real&state={STATE}")).expect("answered");
+        (probe, page)
+    });
     assert_eq!(
         listener.wait(STATE, Duration::from_secs(10), &never_canceled()),
-        Err(Ended::Mismatch)
+        Ok(Callback::Code(Secret::new("real")))
     );
-    client.join().expect("finished").expect("answered");
-    assert!(request(port, &format!("/callback?code=c&state={STATE}")).is_err());
+    let (probe, page) = client.join().expect("finished");
+    assert!(probe.starts_with("HTTP/1.1 400"), "{probe}");
+    assert!(page.starts_with("HTTP/1.1 200"), "{page}");
 }
 
 #[test]

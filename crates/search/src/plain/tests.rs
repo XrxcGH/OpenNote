@@ -91,3 +91,10 @@ fn links_nest_up_to_the_limit() {
     let markdown = format!("{}deep{}", "[".repeat(3), "](x)".repeat(3));
     assert_eq!(plain(&markdown), "deep");
 }
+
+#[test]
+fn hard_breaks_escapes_and_callout_markers_never_reach_the_text() {
+    assert_eq!(plain("Hello Bob,\\\nthe wombatphrase"), "Hello Bob,\nthe wombatphrase");
+    assert_eq!(plain(r"Due today and \#urgent."), "Due today and #urgent.");
+    assert_eq!(plain("> [!note] Callout\n> Hello"), "Callout\nHello");
+}

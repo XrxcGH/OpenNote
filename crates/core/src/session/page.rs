@@ -267,6 +267,12 @@ impl PageHandle {
         self.session.plan_edited_import(copy)
     }
 
+    /// Plans how the text of the page's `page.md` comes into the page, when another program edited it since
+    /// OpenNote wrote it. Nothing changes until the interface sends the plan's edits as a request.
+    pub fn plan_readable_import(&self) -> Result<Option<EditedImport>, CoreError> {
+        self.session.plan_readable_import()
+    }
+
     /// Deletes an edited copy, once its text is brought in or the person turns it down.
     pub fn discard_edited_copy(&self, copy: &Path) -> Result<(), CoreError> {
         self.session.discard_edited_copy(copy)

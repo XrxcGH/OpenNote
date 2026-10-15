@@ -185,7 +185,12 @@ mod windows_store {
 
     impl SecretStore for WindowsStore {
         fn put(&self, target: &str, secret: &Secret) -> Result<(), StoreError> {
-            let old = stored_parts(target).ok().flatten().map_or(0, |(count, _)| count);
+            // When the old first part can't be read, its count is unknown, so every possible part goes.
+            let old = match stored_parts(target) {
+                Ok(Some((count, _))) => count,
+                Ok(None) => 0,
+                Err(_) => MAX_PARTS,
+            };
             let parts = split(secret.expose());
             if parts.len() > MAX_PARTS {
                 return Err(StoreError);
@@ -211,7 +216,11 @@ mod windows_store {
         }
 
         fn delete(&self, target: &str) -> Result<(), StoreError> {
-            let count = stored_parts(target).ok().flatten().map_or(1, |(count, _)| count);
+            let count = match stored_parts(target) {
+                Ok(Some((count, _))) => count,
+                Ok(None) => 1,
+                Err(_) => MAX_PARTS,
+            };
             for index in (0..count).rev() {
                 delete_one(&part_target(target, index))?;
             }

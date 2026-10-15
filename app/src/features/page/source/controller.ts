@@ -85,7 +85,9 @@ async function apply(mounted: MountedPage, edits: readonly SourceEdit[]): Promis
   showInserted(mounted, sent, ack.orderKeys);
   for (const edit of edits) {
     if (edit.kind !== 'setText') continue;
-    mounted.pool.demote(edit.block);
+    // The text box may be the one the caret was in: its editor goes, so the new text shows and later typing
+    // goes on from it.
+    mounted.pool.reload(edit.block);
     const current = mounted.layer.block(edit.block);
     if (current) mounted.layer.upsert({ ...current, data: { ...current.data, markdown: edit.markdown } });
   }

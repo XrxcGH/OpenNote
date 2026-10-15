@@ -409,6 +409,25 @@ impl Core {
         Ok(report)
     }
 
+    /// Saves every dirty page within `timeout`, for a backup while the app keeps running: unlike `flush_all`,
+    /// it leaves the journals open, writes no exit versions, and doesn't mark the device as stopped.
+    pub fn save_all(&self, timeout: Duration) -> FlushReport {
+        let deadline = Instant::now().checked_add(timeout);
+        let mut report = FlushReport::default();
+        for session in self.inner.ctx.live_sessions() {
+            if deadline.is_some_and(|d| Instant::now() >= d) {
+                report.timed_out = true;
+                break;
+            }
+            match session.save(Why::Now) {
+                Ok(Some(_)) => report.saved = report.saved.saturating_add(1),
+                Ok(None) => {}
+                Err(e) => report.failed.push((session.id, error_kind(&e))),
+            }
+        }
+        report
+    }
+
     /// Stops the saver and maintenance threads and the journal, after `flush_all`.
     pub fn shutdown(&self, timeout: Duration) {
         if self.inner.stopped.swap(true, Ordering::SeqCst) {

@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use super::Core;
 use crate::error::CoreError;
+use crate::format::names::{fold_name, safe_folder_name};
 use crate::id::NotebookId;
 use crate::session::library::RemovedEntry;
 use crate::session::notebook::NotebookHandle;
@@ -89,11 +90,48 @@ impl Core {
         self.library_mut().remove(fs.as_ref(), path, now)
     }
 
+    /// Names the folder of a notebook that has no sections yet after its title, as when the person names a new
+    /// notebook right after making it. A notebook with content keeps its folder name (spec 3.4), as do one
+    /// whose folder can't be renamed and one already named so. Returns the notebook, opened again from its new
+    /// folder when it moved.
+    pub fn name_new_notebook_folder(&self, notebook: &NotebookHandle) -> Result<NotebookHandle, CoreError> {
+        let tree = notebook.tree();
+        let path = notebook.path().to_path_buf();
+        let (Some(parent), Some(current)) = (path.parent(), path.file_name().and_then(|n| n.to_str())) else {
+            return Ok(notebook.clone());
+        };
+        if !tree.sections.is_empty() || !tree.groups.is_empty() {
+            return Ok(notebook.clone());
+        }
+        let fs = self.ctx().fs.clone();
+        let taken: Vec<String> = fs
+            .read_dir(parent)?
+            .into_iter()
+            .map(|e| fold_name(&e.name))
+            .filter(|name| *name != fold_name(current))
+            .collect();
+        let name = safe_folder_name(&tree.title, &|n| taken.contains(&fold_name(n)));
+        if name == current {
+            return Ok(notebook.clone());
+        }
+        let target = parent.join(&name);
+        notebook.clone().close()?;
+        let moved = fs.rename_dir(&path, &target).is_ok();
+        let now = if moved { &target } else { &path };
+        if moved {
+            self.library_mut().repath(fs.as_ref(), &path, &target)?;
+        }
+        self.open_notebook(now)
+    }
+
     /// Puts a removed notebook back where it was in the library, and opens it.
     pub fn restore_notebook(&self, path: &Path) -> Result<NotebookHandle, CoreError> {
         let fs = self.ctx().fs.clone();
-        self.library_mut().restore(fs.as_ref(), path)?;
-        self.open_notebook(path)
+        let removed = self.library_mut().restore(fs.as_ref(), path)?;
+        self.open_notebook(path).inspect_err(|_| {
+            // A notebook whose folder is gone or damaged stays in Trash rather than haunting the library.
+            let _ = self.library_mut().unrestore(fs.as_ref(), removed);
+        })
     }
 
     /// Forgets a removed notebook, after the app moved its folder to the operating system's recycle bin

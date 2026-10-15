@@ -25,6 +25,22 @@ fn granted_scopes_match_in_the_spellings_services_use() {
 }
 
 #[test]
+fn sign_in_scopes_count_as_granted_however_the_service_answers() {
+    // Microsoft's token answer lists only the resource scopes; Google's spells email as a URL.
+    let microsoft = connection(&["User.Read", "Calendars.Read"]);
+    let google = connection(&[
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/calendar.readonly",
+    ]);
+    for scope in ["openid", "email", "profile", "offline_access"] {
+        assert!(granted(&microsoft, scope), "{scope}");
+        assert!(granted(&google, scope), "{scope}");
+    }
+    assert!(!granted(&microsoft, "Notes.Read"));
+}
+
+#[test]
 fn a_capability_stands_for_its_scopes_and_other_names_are_scopes() {
     let google = registry::find("google").expect("google");
     assert_eq!(

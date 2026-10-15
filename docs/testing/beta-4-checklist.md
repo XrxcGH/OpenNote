@@ -39,7 +39,7 @@ Your real notes stay safe if you do this every time you test beta 4:
 
 - The log: `%LOCALAPPDATA%\OpenNote\logs\opennote.log` for a normal run; for the test profile it is
   `%TEMP%\OpenNote-beta4-test\local\logs\opennote.log`. Attach it.
-- In the app: **Help > Send feedback** (or Ctrl+K, type "feedback"). It builds a file with the log and a self-check,
+- In the app: Ctrl+K, type "feedback", choose **Send feedback** (also in **Settings > Help**). It builds a file with the log and a self-check,
   with note titles removed; save it and attach it.
 - Say which step number failed, what you did, what you expected, and what happened. A screenshot helps.
 
@@ -72,7 +72,7 @@ Your real notes stay safe if you do this every time you test beta 4:
 
 ### 1c. Export (Phases 6 and 11)
 
-1. On a page with text, a picture, and ink, open **Share > Export...** (or Ctrl+K, "export").
+1. On a page with text, a picture, and ink, press Ctrl+K and type "export", then choose **Export...**.
 2. Export as PDF (from the page's Export / Print): the PDF opens, has the text (you can select it), the ink, and the
    picture, at the right page size.
 3. Export the page as Markdown, as Word (.docx) and as single-file HTML. Open each file; text, headings, and pictures
@@ -106,16 +106,19 @@ Quality-of-life features in this build (shell lane):
 3. Tabs and windows: middle-click (or right-click > Open in new tab) a page. Ctrl+Tab switches tabs. Close one with
    Ctrl+W and reopen it with Ctrl+Shift+T.
 4. Focus mode (Ctrl+K, "Focus mode"): the panes hide; Escape brings them back.
-5. Window modes: Ctrl+K, "Mini window" (stays on top) and "Dock" (to a screen edge).
-6. Quick capture: Ctrl+K, "Quick capture": a small window; type a note and save it; it lands in the notebook.
+5. Window modes: Ctrl+K, "Keep on top" (stays above other windows) and "Dock to the left edge" or "Dock to the right
+   edge".
+6. Quick note: Ctrl+K, "Quick note": a small window; type a note and press Ctrl+Enter; it lands in Quick notes. Its
+   global shortcut is in Settings > Windows and power.
 7. Home page: Ctrl+K, "Home": recent and pinned pages.
 8. Scheduled backups: Settings > Backups (or Ctrl+K "backup"): set a schedule, run one now, find the backup file.
 9. Edits from other apps: edit a page's `page.md` in Notepad and save; the page in OpenNote updates (or offers a
    side-by-side conflict if you edited the same page in both).
-10. Open a notebook from any folder: Ctrl+K, "Open notebook folder", pick a folder elsewhere.
+10. Open a notebook from any folder: Ctrl+K, "Open a notebook from a folder", pick a folder elsewhere.
 11. Check notebook: Ctrl+K, "Check notebook": it reports no problems on a healthy notebook.
-12. Low-power mode, page shortcuts, and jump list, OneNote shortcut set, accessibility checker: each is in Ctrl+K by
-    name; open each once.
+12. Low-power mode (Settings > Windows and power), the OneNote shortcut set (Settings > Keyboard shortcuts > Shortcut
+    set; in it Ctrl+E is "Go to a page", not search), page shortcuts, and the accessibility checker: open each once.
+    This build has no jump list command.
 13. Portable mode: put an empty file named `portable` next to the exe and start it (without `OPENNOTE_PROFILE_DIR`):
     settings and caches go beside the program. (Delete that file afterwards.)
 14. The tree **Sort** menu was stopped mid-feature: check it does not break the tree.
@@ -317,9 +320,10 @@ Quality-of-life features (intel lane):
 
 ## 13. Hardening and privacy (Phase 13)
 
-1. Settings > Privacy: Work offline: on, then Help > Check for updates says it is offline.
-2. Help > Check OpenNote (self-check): all checks pass.
-3. Help > Send feedback: save the file; open it; no note titles or text in it.
+1. Settings > Privacy: Work offline: on, then Settings > Updates says it is offline. A build without an update key
+   has no "Check for updates" button; skip this step there.
+2. Settings > Help > Check OpenNote (self-check, or Ctrl+K "Check OpenNote"): all checks pass.
+3. Settings > Help > Send feedback: save the file; open it; no note titles or text in it.
 4. Crash reports: Settings > Privacy > Crash reports: the consent screen; "Show an example".
 5. Safe start: the offer appears only after two crashes in a row (hard to test by hand; skip unless it happens).
 
@@ -342,7 +346,7 @@ personal token and work without setup.
    `OpenNote/readwise/...` holds the token; no file in the test folder contains it.
 4. Settings > Privacy: **Work offline** on, then try Connect on a card: it is refused while offline. Turn it off.
 5. **Disconnect**: the card shows not connected and the Credential Manager entry is gone.
-6. Help > Send feedback: save the file and search it for your token: it is not there.
+6. Settings > Help > Send feedback: save the file and search it for your token: it is not there.
 7. Add a `connectors.json` with a Microsoft or Google client ID: the card changes to **Connect** without a restart.
    Connect opens the sign-in page in your default browser, never inside the app. After sign-in, the browser tab says it
    can be closed, and the card shows your account.
