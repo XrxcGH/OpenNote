@@ -76,6 +76,8 @@ function roundWith(mode: 'half' | 'up' | 'down'): FnSpec {
 
 function power(x: number, y: number): Value {
   if (x === 0 && y < 0) return err('DIV0');
+  // Excel calls zero to the power of zero undefined, so it is a number error here too.
+  if (x === 0 && y === 0) return err('NUM');
   return finish(x ** y);
 }
 
