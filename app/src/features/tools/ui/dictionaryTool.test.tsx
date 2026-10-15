@@ -92,6 +92,7 @@ describe('the dictionary window', () => {
     expect(await store.list()).toHaveLength(1);
     await userEvent.fill(screen.getByLabelText('Word'), 'casa');
     await waitFor(() => expect(screen.getByText(/Edificio para vivir/)).toBeTruthy());
+    (container.querySelector('details') as HTMLDetailsElement).open = true;
     await userEvent.click(screen.getByRole('button', { name: 'Remove the Español dictionary' }));
     await waitFor(() => expect(screen.queryByLabelText('Language')).toBeNull());
     expect(await store.list()).toEqual([]);

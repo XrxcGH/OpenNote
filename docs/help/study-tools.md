@@ -18,13 +18,19 @@ Open a deck and press Quiz, or insert a quiz block, to be asked a random set of 
 
 Study tape covers part of a page. Press it to show what is under it.
 
+## Make cards from a section or a transcript
+
+Open the menu on a section in the notebook tree, or press Ctrl+K and choose "Make flashcards from this section", to turn its pages into cards. On a transcript, press Make cards. You see the cards before they are added.
+
 ## Upcoming
 
-The Upcoming window lists exams, classes, and tasks.
+The Upcoming window lists exams, classes, and tasks, from every notebook you have open. Locked sections are left out. It has Day, Week, and Month views you can move around with the arrow keys. Check an item off and a checkbox line on the page is checked too. Press an item to go to it.
 
-- Import a calendar (`.ics`) file to fill in your classes.
-- Put a due date on a checkbox, and repeat it if you need to.
-- Set a reminder and Windows shows a notification.
+- Import a calendar () file to fill in your classes.
+- Put a due date on a checkbox, and repeat it if you need to. Type phrases such as "every weekday", "every 2 weeks", or "monthly on the 1st". When you check a repeating line on a page, the next one appears.
+- Set a reminder on any item, page lines included, and Windows shows a notification.
+- An exam can belong to a notebook or a section.
+- A class can be linked to a section. "Open class" makes a dated page from the class template. Record sits beside it, and recording never starts by itself.
 
 ## Small tools
 
@@ -32,17 +38,18 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 
 | Tool | What it does |
 |---|---|
-| Timers | Countdowns that keep running while you write. |
+| Timers | Countdowns that keep running while you write. A running timer shows in the title bar, and you can ask each timer to notify you when it finishes, even with the window closed. |
 | Calculator | Works out sums and unit conversions, and keeps a history. |
 | Unit converter | Converts length, mass, time, temperature, area, volume, speed, pressure, energy, power, angle, and data size. |
 | Reference tables | Looks up the periodic table (with group, period, and electron configuration for each element), constants, metric prefixes, and Greek letters. |
 | Exam countdown | Counts the days to each exam. |
-| Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations. |
+| Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations that follow your chosen style (APA, MLA, Chicago, Vancouver, ACS, AMA, Turabian, and more), so changing the style updates them. A DOI or ISBN look-up happens only when you ask, and is listed in the Privacy panel. |
+| Dictionary and thesaurus | Meanings, synonyms, and examples, offline. Select a word and press the shortcut, or type in the window. Insert synonym replaces the selected word. Other languages are optional downloads. |
 
 ![The timers window with a countdown running](../screens/tool-timer-light.png)
 
-## Not built yet
+## Math across a page
 
-Making cards from a page, a section, or a transcript is not built. Neither is a dictionary and thesaurus tool.
+Define a variable such as  in one text box and use it in another on the same page. Text that handwriting recognition adds to the page works the same way.
 
 Study tools are built. Agents opened the tool windows once. Nobody has tried the rest by hand.
