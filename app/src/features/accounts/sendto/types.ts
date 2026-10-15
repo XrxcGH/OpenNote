@@ -1,6 +1,6 @@
 // Send to Google Drive and OneDrive: the words the parts share.
 
-export type SendService = 'drive' | 'onedrive';
+export type SendService = 'drive' | 'onedrive' | 'dropbox' | 'box' | 'webdav';
 export type SendScope = 'selection' | 'page' | 'section' | 'notebook';
 /** `gdoc`, `gsheet`, and `gslides` are Office files that Drive turns into Google's own as it takes them. */
 export type SendFormat = 'pdf' | 'docx' | 'xlsx' | 'pptx' | 'gdoc' | 'gsheet' | 'gslides' | 'png';

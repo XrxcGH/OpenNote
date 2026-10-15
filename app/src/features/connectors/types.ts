@@ -55,7 +55,7 @@ export interface Disconnected {
 
 /** A request for a feature to run against a service. The host adds the token, so there is no Authorization header. */
 export interface ConnectorRequest {
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'PROPFIND' | 'MKCOL';
   url: string;
   headers?: Record<string, string>;
   /** A text body, such as JSON. */

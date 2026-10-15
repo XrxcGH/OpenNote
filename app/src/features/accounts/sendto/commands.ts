@@ -15,22 +15,42 @@ import { attempt, isConnected, tellNotConnected } from '../run';
 import { pickOne } from '../ui/prompts';
 import type { Choice } from '../ui/prompts';
 import { changedSince, copiesOf, copyOf, loadCopies, rememberCopy } from './copies';
+import { boxDestination } from './box';
 import { driveDestination } from './drive';
+import { dropboxDestination } from './dropbox';
 import { onedriveDestination } from './onedrive';
+import { webdavDestination } from './webdav';
 import { prepare } from './render';
 import { OFFICE, officeOf } from './types';
-import type { Destination, LocalFile, RemoteFolder, SendFormat, SendScope, SentCopy } from './types';
+import type { Destination, LocalFile, RemoteFolder, SendFormat, SendScope, SendService, SentCopy } from './types';
 
-const NAMES = { drive: 'Google Drive', onedrive: 'OneDrive' } as const;
-const CONNECTOR = { drive: 'google', onedrive: 'microsoft' } as const;
+const NAMES = {
+  drive: 'Google Drive',
+  onedrive: 'OneDrive',
+  dropbox: 'Dropbox',
+  box: 'Box',
+  webdav: 'WebDAV',
+} as const;
+const CONNECTOR = { drive: 'google', onedrive: 'microsoft', dropbox: 'dropbox', box: 'box', webdav: 'webdav' } as const;
 
-export function destinationFor(service: 'drive' | 'onedrive', host: AccountsHost = accountsHost()): Destination {
+export function destinationFor(service: SendService, host: AccountsHost = accountsHost()): Destination {
   const deps = { client: connectors(), host };
-  return service === 'drive' ? driveDestination(deps) : onedriveDestination(deps);
+  switch (service) {
+    case 'drive':
+      return driveDestination(deps);
+    case 'onedrive':
+      return onedriveDestination(deps);
+    case 'dropbox':
+      return dropboxDestination(deps);
+    case 'box':
+      return boxDestination(deps);
+    case 'webdav':
+      return webdavDestination(deps);
+  }
 }
 
 /** The types of file a scope can be sent as, for a service. */
-export function formatsFor(service: 'drive' | 'onedrive', scope: SendScope): SendFormat[] {
+export function formatsFor(service: SendService, scope: SendScope): SendFormat[] {
   const converted: SendFormat[] = service === 'drive' ? ['gdoc', 'gsheet', 'gslides'] : [];
   // A selection is a picture, so it can stay a picture or go in a Word file; the rest can be any Office file.
   if (scope === 'selection') return ['png', 'docx', ...converted.slice(0, 1)];
@@ -128,7 +148,7 @@ function chosenOnPage(): boolean {
   return blocks.length + strokes.length > 0;
 }
 
-export async function sendTo(service: 'drive' | 'onedrive', preset?: { format: SendFormat }): Promise<void> {
+export async function sendTo(service: SendService, preset?: { format: SendFormat }): Promise<void> {
   const name = NAMES[service];
   if (!shownMounted.get()) return void showToast({ message: t('accounts.sendTo.nothing') });
   if (!(await isConnected(CONNECTOR[service]))) return tellNotConnected(name);

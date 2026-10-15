@@ -69,6 +69,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0026](0026-text-box-layout.md) | Size text boxes to their content, move boxes below an edited one to keep clear of it, and fix a page's reading order | Proposed, pending the Phase 3 owner's agreement to P3-1 and P3-11 | 2026-10-02 |
 | [0027](0027-palm-rejection.md) | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices | Accepted | 2026-10-03 |
 | [0030](0030-connectors-and-sign-in.md) | Sign in to connected accounts through the system browser with a loopback redirect, and keep every token in Windows Credential Manager | Proposed, pending a sign-in with real client IDs | 2026-10-03 |
+| [0036](0036-icloud-is-folder-based.md) | iCloud stays folder-based, with no iCloud sign-in | Accepted | 2026-10-07 |
 | [0035](0035-share-as-a-file.md) | Share as a file is a ZIP of Markdown with a manifest, optionally locked with a password | Accepted. The back end is written, and no screen uses it yet | 2026-10-03 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
