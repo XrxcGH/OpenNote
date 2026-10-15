@@ -83,3 +83,12 @@ export function setStyle(style: StyleId): void {
   styleStore.set(style);
   write('style', style);
 }
+
+/** Zotero's document preferences (its citation style and language), kept for each notebook on this device. */
+export function zoteroPrefs(notebook: string): string {
+  return read<string>(`zotero.${notebook}`, '');
+}
+
+export function setZoteroPrefs(notebook: string, data: string): void {
+  write(`zotero.${notebook}`, data);
+}

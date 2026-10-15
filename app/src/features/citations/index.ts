@@ -4,3 +4,4 @@ export { parseBibtex, parseRis, toBibtex, toRis } from './bibtex';
 export { STYLES, STYLE_IDS, bibliography } from './styles';
 export type { StyleId } from './styles';
 export type { Source, SourceType } from './model';
+export { zoteroCommand } from './zoteroWp/command';

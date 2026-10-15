@@ -415,5 +415,28 @@ export const study = {
       'In Zotero, open Settings, then Advanced, and turn on communication with other applications.',
     zoteroMissing: 'Zotero is not running on this computer. Open it, then try again.',
     zoteroFailed: 'The Zotero library could not be read.',
+    zotero: {
+      heading: 'Zotero in the page',
+      explain:
+        'Zotero shows its own windows to pick sources and styles, and OpenNote puts the result in the text block you are in. ' +
+        'Zotero must be running.',
+      add: 'Add or edit citation',
+      bibliography: 'Add or edit bibliography',
+      refresh: 'Refresh citations',
+      unlink: 'Unlink citations',
+      prefs: 'Document settings',
+      keywords: 'zotero citation cite bibliography references style csl refresh',
+      addCommand: 'Add or edit citation with Zotero',
+      bibliographyCommand: 'Add or edit bibliography with Zotero',
+      refreshCommand: 'Refresh Zotero citations',
+      unlinkCommand: 'Unlink Zotero citations',
+      prefsCommand: 'Zotero document settings',
+      done: 'Zotero is finished.',
+      cancelled: 'Zotero was closed without making a change.',
+      missing: 'Zotero is not running on this computer. Open it, then try again.',
+      failed: 'OpenNote could not work with Zotero. Check that Zotero is up to date, then try again.',
+      someFailed: 'Zotero is finished, but {count, plural, one {# request} other {# requests}} could not be done.',
+      noPage: 'Click in the text of a page first.',
+    },
   },
 } as const;

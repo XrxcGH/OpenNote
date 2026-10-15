@@ -35,7 +35,7 @@ Press Ctrl+K and choose one by name. Each opens in its own window.
 | Unit converter | Converts between units. |
 | Reference tables | Looks up common tables. |
 | Exam countdown | Counts the days to each exam. |
-| Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations. |
+| Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations. With Zotero running, it also adds, edits, and refreshes Zotero citations and bibliographies in the page. |
 
 ![The timers window with a countdown running](../screens/tool-timer-light.png)
 
@@ -44,3 +44,9 @@ Press Ctrl+K and choose one by name. Each opens in its own window.
 Making cards from a page, a section, or a transcript is not built. Neither is a dictionary and thesaurus tool.
 
 Study tools are built. Agents opened the tool windows once. Nobody has tried the rest by hand.
+
+## Citing with Zotero
+
+Open Zotero first. In Citations, under Zotero in the page, choose Add or edit citation. Zotero shows its own window to pick the source and the style, and OpenNote puts the citation where the caret is. To change a citation, click inside it and choose the same button. Add or edit bibliography puts the list of sources in the page, and Refresh brings every citation and the bibliography up to date after you change a source or the style. Unlink keeps the text and removes the link to Zotero. The same commands are in the command palette.
+
+Zotero works with one text block at a time: the citations and the bibliography it updates must be in the block that has the caret. If Zotero is not running, OpenNote says so and changes nothing.

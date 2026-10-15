@@ -7,7 +7,8 @@ import { useLocation } from '../../../app/location';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
-import { INSERT_EVENT } from '../../tools/flags';
+import { isEnabled } from '../../../app/flags';
+import { INSERT_EVENT, ZOTERO_EVENT } from '../../tools/flags';
 import { parseBibtex, parseRis, toBibtex, toRis } from '../bibtex';
 import { SOURCE_TYPES, blankSource, parsePeople, personText } from '../model';
 import type { Source, SourceType } from '../model';
@@ -22,6 +23,23 @@ function insertIntoPage(text: string): boolean {
   const detail = { text, handled: false };
   window.dispatchEvent(new CustomEvent(INSERT_EVENT, { detail }));
   return detail.handled;
+}
+
+const ZOTERO_BUTTONS = [
+  ['addEditCitation', 'add', 'primary'],
+  ['addEditBibliography', 'bibliography', 'secondary'],
+  ['refresh', 'refresh', 'secondary'],
+  ['removeCodes', 'unlink', 'quiet'],
+  ['setDocPrefs', 'prefs', 'quiet'],
+] as const;
+
+/** Asks the page that is open to run a Zotero command. False when no page can take it. */
+async function zoteroInPage(command: (typeof ZOTERO_BUTTONS)[number][0]): Promise<boolean> {
+  const detail: { command: string; result?: Promise<void> } = { command };
+  window.dispatchEvent(new CustomEvent(ZOTERO_EVENT, { detail }));
+  if (!detail.result) return false;
+  await detail.result;
+  return true;
 }
 
 const FIELDS: readonly (keyof Source)[] = [
@@ -279,6 +297,25 @@ export function CitationsPanel() {
             >
               {t('study.citations.exportRis')}
             </Button>
+          </div>
+        </>
+      ) : null}
+      {isEnabled('tools.zotero') ? (
+        <>
+          <h3 className={styles.heading}>{t('study.citations.zotero.heading')}</h3>
+          <p className={styles.muted}>{t('study.citations.zotero.explain')}</p>
+          <div className={styles.buttons}>
+            {ZOTERO_BUTTONS.map(([command, label, variant]) => (
+              <Button
+                key={command}
+                variant={variant}
+                onClick={() =>
+                  void zoteroInPage(command).then((ok) => ok || announce(t('study.citations.zotero.noPage')))
+                }
+              >
+                {t(`study.citations.zotero.${label}`)}
+              </Button>
+            ))}
           </div>
         </>
       ) : null}
