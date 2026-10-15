@@ -166,6 +166,28 @@ describe('protected sections lock again', () => {
     await expect.poll(() => sessionStore.get().recentPages.includes(PAGE)).toBe(false);
   });
 
+  it("takes a protected page's flashcards and Upcoming items out of browser storage", async () => {
+    const { inlineCards, syncInlineDeck, deckById, pageDeckId } = await import('../study');
+    const { setPageItems } = await import('../tools');
+    const blocks = [
+      { id: 'b1', markdown: 'Secret word :: hidden answer' },
+      { id: 'b2', markdown: '- [ ] Pay rent 2026-10-20' },
+    ];
+    syncInlineDeck(PAGE, 'Plans', inlineCards(blocks));
+    setPageItems({ id: PAGE, title: 'Plans' }, blocks, { now: Date.parse('2026-10-15'), timeZone: 'UTC' });
+    expect(deckById(pageDeckId(PAGE))).toBeDefined();
+    const kept = () => Object.keys(localStorage).map((key) => localStorage.getItem(key) ?? '');
+    expect(kept().some((value) => value.includes('Pay rent'))).toBe(true);
+    await renderApp();
+    startSectionLocks();
+    seed('unlocked');
+    sessionStore.set((state) => ({ ...state, recentPages: [] }));
+    await expect.poll(() => deckById(pageDeckId(PAGE))).toBeUndefined();
+    await expect
+      .poll(() => kept().some((value) => value.includes('hidden answer') || value.includes('Pay rent')))
+      .toBe(false);
+  });
+
   it('keeps the lock settings', async () => {
     const calls = shell((name) => (name === 'prefs.get' ? {} : ok(name)));
     await renderApp();

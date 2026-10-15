@@ -57,13 +57,15 @@ The lock only stops edits in OpenNote. It isn't tamper-proof: anyone with access
 
 A protected section is encrypted in your notes folder. Its pages open only after you unlock it, with its password or with Windows Hello. To protect one, right-click the section and choose Protect with password. Pick a password of at least 8 characters. If you forget it, nobody can open the section, not even OpenNote.
 
-A locked section shows a closed lock and its title, but none of its pages. Choose it and select Unlock section. You can also turn on Unlock with Windows Hello for a section while it is unlocked. Pages of a protected section stay out of search, recent pages, readable copies (`page.md`), and page history.
+A locked section shows a closed lock and its title, but none of its pages. Choose it and select Unlock section. You can also turn on Unlock with Windows Hello for a section while it is unlocked. Pages of a protected section stay out of search, recent pages, readable copies (`page.md`), and page history. Their lines don't become flashcards or Upcoming items either.
 
 Protected sections lock again on their own:
 
 - When Windows locks or the PC sleeps, and when OpenNote closes.
 - After a time without use, which you set in Settings, then Storage, under Protected sections.
 - When you leave the section, unless you turn that off there.
+
+While a section is unlocked, OpenNote keeps its newest changes in memory and seals them when the page saves. If OpenNote or the PC crashes first, those changes are lost, and OpenNote can't warn you, so lock the section when you finish.
 
 Pages can't move into or out of a protected section, and they skip the Trash. Deleting one deletes it for good, after a warning. Recordings aren't available in protected sections yet. Remove protection writes the pages back as plain files.
 

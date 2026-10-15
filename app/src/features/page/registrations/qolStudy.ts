@@ -13,6 +13,7 @@ import type { IconName } from '../../../ui/icons';
 import { targetEditor } from '../formattingBar/target';
 import type { MountedPage } from '../mount';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
+import { isProtectedNode, treeStore } from '../../tree';
 import { panelRenderer } from '../panels/kinds';
 import { blockRenderers, editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
@@ -200,8 +201,12 @@ mountedPageHooks.register({
   attach: (mounted) =>
     isEnabled('study.cards')
       ? watchText(mounted, / :: |\{\{[^{}]+?\}\}/, (blocks) => {
-          void import('../../study').then(({ inlineCards, syncInlineDeck }) =>
-            syncInlineDeck(mounted.page.id, mounted.page.initial.title, inlineCards(blocks)),
+          // A protected page's cards would sit in plain text in browser storage, so they are never kept (ADR 0042).
+          const locked = isProtectedNode(treeStore.get(), mounted.page.id);
+          void import('../../study').then(({ forgetInlineDeck, inlineCards, syncInlineDeck }) =>
+            locked
+              ? forgetInlineDeck(mounted.page.id)
+              : syncInlineDeck(mounted.page.id, mounted.page.initial.title, inlineCards(blocks)),
           );
         })
       : () => undefined,
@@ -214,6 +219,11 @@ mountedPageHooks.register({
     isEnabled('tools.dueDates')
       ? watchText(mounted, /\[[ xX]\]|#(?:todo|task|due|deadline)\b/i, (blocks) => {
           const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          // Due lines of a protected page stay out of Upcoming's browser storage (ADR 0042).
+          if (isProtectedNode(treeStore.get(), mounted.page.id)) {
+            void import('../../tools').then(({ forgetPageItems }) => forgetPageItems([mounted.page.id]));
+            return;
+          }
           void import('../../tools').then(({ setPageItems }) =>
             setPageItems({ id: mounted.page.id, title: mounted.page.initial.title }, blocks, {
               now: Date.now(),

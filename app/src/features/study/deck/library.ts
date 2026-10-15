@@ -146,6 +146,15 @@ export function syncInlineDeck(pageId: string, title: string, inline: readonly C
   if (!same) putDeck({ ...(deck ?? { id }), id, name: title, cards });
 }
 
+/**
+ * Takes a protected page's line-made cards out of browser storage (ADR 0042). Cards typed by hand into the deck stay;
+ * a deck left empty goes.
+ */
+export function forgetInlineDeck(pageId: string): void {
+  const deck = deckById(pageDeckId(pageId));
+  if (deck) syncInlineDeck(pageId, deck.name, []);
+}
+
 /** Sets or clears a deck's exam day. */
 export function setDeckExam(deckId: string, day: string | null): void {
   changeDeck(deckId, (deck) => {

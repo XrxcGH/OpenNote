@@ -69,7 +69,8 @@ function sameNode(a: NodeSummary, b: NodeSummary): boolean {
     a.modified === b.modified &&
     a.readOnly === b.readOnly &&
     a.pinned === b.pinned &&
-    a.archived === b.archived
+    a.archived === b.archived &&
+    a.protected === b.protected
   );
 }
 
@@ -136,6 +137,14 @@ export function ancestors(state: TreeState, id: string): NodeSummary[] {
     found.push(node);
   }
   return found;
+}
+
+/**
+ * Whether a node is in a password-protected section (ADR 0042), or is one: its own mark or any ancestor's. Nothing
+ * of such a page may be copied into browser storage (decks, Upcoming, recent pages).
+ */
+export function isProtectedNode(state: TreeState, id: string): boolean {
+  return Boolean(state.nodes[id]?.protected) || ancestors(state, id).some((node) => Boolean(node.protected));
 }
 
 export function notebookOf(state: TreeState, id: string): NodeId | null {

@@ -14,7 +14,7 @@ import { sessionStore } from '../../state/session';
 import { t } from '../../strings/t';
 import { announce, Button, confirm, Dialog, showToast, Switch, TextField } from '../../ui';
 import { settingsStyles } from '../settings';
-import { ancestors, currentNode, getNode, relist, titleOf, treeStore } from '../tree';
+import { ancestors, currentNode, getNode, isProtectedNode, relist, titleOf, treeStore } from '../tree';
 import styles from './sections.module.css';
 
 export const IDLE_PREF = 'protectIdleMinutes';
@@ -41,8 +41,26 @@ export function sectionOf(ctx: CommandContext): NodeSummary | undefined {
 
 /** Whether a page sits in a protected section. Nothing of such a page goes into recent pages. */
 export function isProtectedPage(id: string): boolean {
-  const node = getNode(id);
-  return Boolean(node?.protected);
+  return isProtectedNode(treeStore.get(), id);
+}
+
+/** The pages the tree knows under a node, at any depth. */
+function pagesUnder(id: NodeId): string[] {
+  const state = treeStore.get();
+  return Object.values(state.nodes)
+    .filter((node) => node.kind === 'page' && ancestors(state, node.id).some((above) => above.id === id))
+    .map((node) => node.id);
+}
+
+/**
+ * Takes what these pages left in browser storage out of it: their line-made flashcards and their Upcoming items
+ * (ADR 0042). That storage is a plain file in the WebView2 profile, so a protected page keeps nothing there.
+ */
+export async function forgetPageCopies(ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const [study, tools] = await Promise.all([import('../study'), import('../tools')]);
+  ids.forEach((id) => study.forgetInlineDeck(id));
+  tools.forgetPageItems(ids);
 }
 
 function codeOf(error: unknown): string {
@@ -236,7 +254,9 @@ export async function protectSection(section: NodeSummary): Promise<boolean> {
         ? t('storage.sections.tooShort')
         : t('storage.sections.protectFailed', { title });
     }
+    const pages = pagesUnder(section.id);
     await refresh(section);
+    await forgetPageCopies([...pages, ...pagesUnder(section.id)]);
     announce(t('storage.sections.protected', { title }));
     return null;
   });
@@ -256,6 +276,8 @@ export async function unlockSection(section: NodeSummary): Promise<boolean> {
         ? t('storage.sections.wrongPassword')
         : t('storage.sections.unlockFailed', { title });
     }
+    // The locks start now if start-up hasn't started them yet: an open section always has them.
+    startSectionLocks();
     await refresh(section);
     touch();
     announce(t('storage.sections.unlocked', { title }));
@@ -373,8 +395,16 @@ export async function lockLeft(previous: NodeId | null, next: NodeId | null): Pr
   return lockSection(section);
 }
 
-/** Keeps every page of a protected section out of recent pages. */
+/** Keeps every page of a protected section out of recent pages, flashcard decks and Upcoming. */
 function pruneRecents(): void {
+  const state = treeStore.get();
+  const shielded = Object.values(state.nodes)
+    .filter((node) => node.kind === 'page' && isProtectedNode(state, node.id))
+    .map((node) => node.id);
+  if (shielded.join() !== lastShielded) {
+    lastShielded = shielded.join();
+    void forgetPageCopies(shielded);
+  }
   const recent = sessionStore.get().recentPages;
   if (recent.some((id) => isProtectedPage(id))) {
     sessionStore.set((state) => ({ ...state, recentPages: state.recentPages.filter((id) => !isProtectedPage(id)) }));
@@ -382,6 +412,7 @@ function pruneRecents(): void {
 }
 
 let started = false;
+let lastShielded = '';
 
 /** Starts the watchers, once, in every window. */
 export function startSectionLocks(): void {
