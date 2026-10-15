@@ -76,6 +76,9 @@ export const platformApi = {
     help:
       'An assistant that speaks MCP, such as Claude Desktop, can use OpenNote through the ' +
       'opennote command. Paste this into the assistant’s MCP settings.',
+    author: 'Name in page history (optional)',
+    authorHelp:
+      'Shown in brackets after the app’s name on each change, such as “Claude (copyedit)”. Up to 60 characters.',
     copy: 'Copy MCP config',
     copied: 'The MCP config is on the clipboard.',
     missing: 'The opennote command isn’t installed yet. Setup installs it next to OpenNote.',

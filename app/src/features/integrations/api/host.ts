@@ -104,7 +104,14 @@ export function createFakeApi(initial: Partial<FakeApiState> = {}): FakeApi {
       case 'mcpConfig':
         return {
           config: JSON.stringify(
-            { mcpServers: { opennote: { command: 'C:\\OpenNote\\bin\\opennote.exe', args: ['mcp'] } } },
+            {
+              mcpServers: {
+                opennote: {
+                  command: 'C:\\OpenNote\\bin\\opennote.exe',
+                  args: args.author ? ['mcp', '--author', String(args.author)] : ['mcp'],
+                },
+              },
+            },
             null,
             2,
           ),

@@ -87,6 +87,10 @@ describe('App permissions', () => {
     expect(await screen.findByText('Pairing code: K7Q2-M9XD')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Copy MCP config' }));
     await waitFor(() => expect(copied).toContain('"mcp"'));
+    expect(copied).not.toContain('--author');
+    fireEvent.change(screen.getByLabelText('Name in page history (optional)'), { target: { value: 'Claude' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Copy MCP config' }));
+    await waitFor(() => expect(copied).toContain('"--author"'));
   });
 
   it('has no accessibility violations', async () => {

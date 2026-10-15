@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import { formatDate, formatTime } from '../../../strings/format';
 import { t } from '../../../strings/t';
-import { announce, Button, confirm, Switch } from '../../../ui';
+import { announce, Button, confirm, Switch, TextField } from '../../../ui';
 import styles from './AppPermissions.module.css';
 import { errorCode, apiHost } from './host';
 import { ScopePicker, useNotebookChoices } from './ScopePicker';
@@ -272,8 +272,11 @@ function CliPanel() {
 function McpPanel() {
   const headingId = useId();
   const [missing, setMissing] = useState(false);
+  const [author, setAuthor] = useState('');
   const copy = async () => {
-    const { config, toolInstalled } = await apiHost().call<{ config: string; toolInstalled: boolean }>('mcpConfig');
+    const { config, toolInstalled } = await apiHost().call<{ config: string; toolInstalled: boolean }>('mcpConfig', {
+      author: author.trim(),
+    });
     setMissing(!toolInstalled);
     try {
       await navigator.clipboard.writeText(config);
@@ -286,6 +289,12 @@ function McpPanel() {
     <section className={styles.group} aria-labelledby={headingId}>
       <h2 id={headingId}>{t('platformApi.mcp.heading')}</h2>
       <p className={styles.help}>{t('platformApi.mcp.help')}</p>
+      <TextField
+        label={t('platformApi.mcp.author')}
+        help={t('platformApi.mcp.authorHelp')}
+        value={author}
+        onChange={(value) => setAuthor(value.slice(0, 60))}
+      />
       <div className={styles.actions}>
         <Button variant="secondary" onClick={() => void copy()}>
           {t('platformApi.mcp.copy')}

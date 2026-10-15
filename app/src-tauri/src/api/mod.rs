@@ -269,13 +269,26 @@ fn tool_path() -> PathBuf {
         .join(crate::install::path_entry::CLI_EXE)
 }
 
-/// The MCP configuration an assistant such as Claude Desktop reads, with the tool's full path.
-pub fn mcp_config(tool: &std::path::Path) -> String {
+/// The MCP configuration an assistant such as Claude Desktop reads, with the tool's full path. An author, when
+/// given, is passed as `--author` so page history says which assistant made each change. It is one line of at
+/// most 60 characters; `opennote mcp` and the local API clean it again before it reaches a page.
+pub fn mcp_config(tool: &std::path::Path, author: Option<&str>) -> String {
+    let mut args = vec!["mcp".to_owned()];
+    let author: String = author
+        .unwrap_or_default()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(60)
+        .collect();
+    if !author.trim().is_empty() {
+        args.push("--author".to_owned());
+        args.push(author.trim().to_owned());
+    }
     let config = json!({
         "mcpServers": {
             "opennote": {
                 "command": tool.display().to_string(),
-                "args": ["mcp"]
+                "args": args
             }
         }
     });
@@ -458,7 +471,10 @@ pub fn call(app: &AppHandle, state: &ApiState, method: &str, args: &Value) -> Ip
         }
         "phoneState" => Ok(json!({ "state": state.phone.state() })),
         "phoneTake" => Ok(state.phone.take()),
-        "mcpConfig" => Ok(json!({ "config": mcp_config(&tool_path()), "toolInstalled": tool_path().is_file() })),
+        "mcpConfig" => {
+            let author = args.get("author").and_then(Value::as_str);
+            Ok(json!({ "config": mcp_config(&tool_path(), author), "toolInstalled": tool_path().is_file() }))
+        }
         _ => Err(IpcError::invalid("method", "isn't a local API method")),
     }
 }
@@ -569,14 +585,25 @@ mod tests {
 
     #[test]
     fn the_mcp_config_names_the_tool_and_its_mcp_command() {
-        let config = mcp_config(std::path::Path::new(
-            r"C:\Users\Ada\AppData\Local\Programs\OpenNote\bin\opennote.exe",
-        ));
+        let config = mcp_config(
+            std::path::Path::new(r"C:\Users\Ada\AppData\Local\Programs\OpenNote\bin\opennote.exe"),
+            None,
+        );
         let json: Value = serde_json::from_str(&config).expect("json");
         assert_eq!(json["mcpServers"]["opennote"]["args"], json!(["mcp"]));
         assert!(json["mcpServers"]["opennote"]["command"]
             .as_str()
             .expect("a path")
             .ends_with(r"bin\opennote.exe"));
+
+        let named = mcp_config(std::path::Path::new("opennote"), Some(" Claude (copyedit)\n "));
+        let json: Value = serde_json::from_str(&named).expect("json");
+        assert_eq!(
+            json["mcpServers"]["opennote"]["args"],
+            json!(["mcp", "--author", "Claude (copyedit)"])
+        );
+        let blank = mcp_config(std::path::Path::new("opennote"), Some("  "));
+        let json: Value = serde_json::from_str(&blank).expect("json");
+        assert_eq!(json["mcpServers"]["opennote"]["args"], json!(["mcp"]));
     }
 }
