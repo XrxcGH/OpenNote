@@ -55,6 +55,20 @@ describe('a palm-sized touch on a control while the pen is in use', () => {
     expect(pressed).toBe(0);
   });
 
+  it('does not hand a control the pointerdown or pointerup of a palm that rests on it', () => {
+    const heard: string[] = [];
+    for (const type of ['pointerdown', 'pointerup']) button.addEventListener(type, () => heard.push(type));
+    const onButton = (type: string, init: PointerEventInit) =>
+      button.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, ...init }));
+    pointer('pointermove', { pointerType: 'pen', pointerId: 2 });
+    onButton('pointerdown', palm);
+    onButton('pointerup', palm);
+    expect(heard).toEqual([]);
+    const finger = { pointerType: 'touch', pointerId: 9, width: 10, height: 10 };
+    onButton('pointerdown', finger);
+    expect(heard).toEqual(['pointerdown']);
+  });
+
   it('lets the pen tap right after the palm landed, and a finger tap', async () => {
     pointer('pointerdown', palm);
     pointer('pointerdown', { pointerType: 'pen', pointerId: 2 });

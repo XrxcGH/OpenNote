@@ -28,6 +28,10 @@ const PALM_PX = 28;
 /** How long before a palm-sized touch landed the pen may have been active for its click to be dropped. */
 const PEN_RECENT_MS = 1500;
 
+/** What a palm must not press while the pen is in use. */
+const PRESSABLE =
+  'button, a[href], [role=button], [role=menuitem], [role=tab], [role=option], [role=switch], [role=checkbox], [role=menuitemradio]';
+
 const PEN_EVENTS = ['pointermove', 'pointerdown', 'pointerup', 'pointercancel'] as const;
 
 /** Copies a pointer event into the pipeline's reused record. */
@@ -92,6 +96,8 @@ export class TouchTool {
     window.addEventListener('pointerdown', this.onTouchDown, { capture: true, passive: true });
     window.addEventListener('pointerup', this.onTouchEnd, { capture: true, passive: true });
     window.addEventListener('pointercancel', this.onTouchEnd, { capture: true, passive: true });
+    window.addEventListener('pointerdown', this.onPalmPress, true);
+    window.addEventListener('pointerup', this.onPalmPress, true);
     window.addEventListener('click', this.onClick, true);
   }
 
@@ -108,6 +114,8 @@ export class TouchTool {
     window.removeEventListener('pointerdown', this.onTouchDown, { capture: true });
     window.removeEventListener('pointerup', this.onTouchEnd, { capture: true });
     window.removeEventListener('pointercancel', this.onTouchEnd, { capture: true });
+    window.removeEventListener('pointerdown', this.onPalmPress, true);
+    window.removeEventListener('pointerup', this.onPalmPress, true);
     window.removeEventListener('click', this.onClick, true);
     this.reset();
   }
@@ -166,6 +174,14 @@ export class TouchTool {
     if (this.lastPenAt < landed - PEN_RECENT_MS) return;
     event.preventDefault();
     event.stopPropagation();
+  };
+
+  /** Controls that press on pointerdown or pointerup (menus, pickers, toolbars) never hear a palm while the pen is in use. */
+  private readonly onPalmPress = (event: PointerEvent) => {
+    if (event.pointerType !== 'touch' || Math.max(event.width, event.height) < PALM_PX || !this.active()) return;
+    if (this.lastPenAt < (this.palms.get(event.pointerId) ?? event.timeStamp) - PEN_RECENT_MS) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(PRESSABLE)) event.stopImmediatePropagation();
   };
 
   private readonly onBlur = () => this.pipeline?.system('blur', performance.now());
