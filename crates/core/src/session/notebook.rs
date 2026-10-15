@@ -127,6 +127,11 @@ impl NotebookHandle {
         self.inner.is_backup()
     }
 
+    /// Fails when the notebook may not change, as a read-only notebook may not.
+    pub fn check_writable(&self) -> Result<(), CoreError> {
+        self.inner.tree().store.check_writable()
+    }
+
     /// A section's pages in display order, with their levels, as the notes contract lists them.
     pub fn flat_pages(&self, section: SectionId) -> Result<Vec<FlatPage>, CoreError> {
         self.inner.tree().store.flat_pages(section)
