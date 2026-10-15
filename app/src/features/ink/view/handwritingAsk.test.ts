@@ -22,4 +22,20 @@ describe('the writing pen and the turn-on question', () => {
     chooseTool('writing');
     expect(ensure).toHaveBeenCalledTimes(2);
   });
+
+  it('asks at once when the writing pen is already active, and shares one answer with the first stroke', async () => {
+    let answer: (ok: boolean) => void = () => undefined;
+    const ensure = vi.fn(() => new Promise<boolean>((resolve) => (answer = resolve)));
+    const host = { handwriting: { recognize: vi.fn(), tidy: vi.fn(), ensure } } as unknown as InkHost;
+    chooseTool('writing');
+    const pen = createWritingPen(host, () => null);
+    expect(ensure).toHaveBeenCalledTimes(1);
+    pen.note([{ id: 's1' }] as never);
+    expect(ensure).toHaveBeenCalledTimes(1);
+    answer(false);
+    await Promise.resolve();
+    pen.note([{ id: 's2' }] as never);
+    expect(ensure).toHaveBeenCalledTimes(1);
+    pen.destroy();
+  });
 });
