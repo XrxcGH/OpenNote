@@ -137,8 +137,6 @@
     "allow-export-selection-docx",
     "allow-print-printers",
     "allow-print-submit",
-    "allow-print-printers",
-    "allow-print-submit",
     "allow-tool-window-open",
     "allow-study-anki-read",
     "allow-study-anki-write",
