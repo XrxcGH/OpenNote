@@ -67,12 +67,14 @@ export function createStrokeIndex(strokes: Iterable<Stroke> = [], cellSize?: num
     all: () => table.values(),
     query: (bounds) => {
       const found = spatial.search(bounds).map((entry) => entry.value);
-      return skip ? found.filter((stroke) => !skip(stroke)) : found;
+      const refuse = skip;
+      return refuse ? found.filter((stroke) => !refuse(stroke)) : found;
     },
     queryAll: (bounds) => spatial.search(bounds).map((entry) => entry.value),
     find: (bounds) => {
       const found = spatial.search(bounds);
-      return skip ? found.filter((entry) => !skip(entry.value)) : found;
+      const refuse = skip;
+      return refuse ? found.filter((entry) => !refuse(entry.value)) : found;
     },
     exclude(next) {
       skip = next;

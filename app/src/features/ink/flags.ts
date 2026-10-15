@@ -42,6 +42,8 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.penLibrary', 'Fountain, brush, calligraphy, dashed and dotted pens, and saved pen sets.', beta),
   flag('ink.links', 'Make handwriting a link to a page, a heading, a web address or a recording moment.', beta),
   flag('ink.layers', 'Named ink layers that can be hidden, locked, renamed and reordered (ADR 0037).', beta),
+  flag('ink.delegatedTrail', 'A trail the browser draws behind the pen ahead of the page (ADR 0004).', beta),
+  flag('ink.penFields', 'The pen opens the handwriting panel in the search box, rename fields and table cells.', beta),
   flag('dev.penRecorder', 'The Palm lab: record labeled pen and touch sessions for the palm corpus.', {
     dev: true,
     nightly: true,

@@ -238,7 +238,9 @@ export default function PenSettings() {
   const zoomBox = useFlag('ink.zoomBox');
   const anchoring = useFlag('ink.anchoring');
   const lab = useFlag('dev.penRecorder');
+  const penFields = useFlag('ink.penFields');
   const hovering = useStore(inkPrefs, (state) => state.hover);
+  const fields = useStore(inkPrefs, (state) => state.penFields);
   return (
     <section aria-labelledby="ink-settings">
       <h2 id="ink-settings">{t('ink.settings.title')}</h2>
@@ -268,6 +270,12 @@ export default function PenSettings() {
           checked={ink.anchorToText}
           onChange={(anchorToText) => void updateSettings({ ink: { anchorToText } })}
         />
+      )}
+      {penFields && (
+        <>
+          <Switch label={t('ink.settings.penFields')} checked={fields} onChange={(on) => setPrefs({ penFields: on })} />
+          <p>{t('ink.settings.penFieldsHint')}</p>
+        </>
       )}
       {hover && (
         <Switch label={t('ink.settings.hover')} checked={hovering} onChange={(on) => setPrefs({ hover: on })} />

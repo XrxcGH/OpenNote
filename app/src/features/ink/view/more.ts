@@ -1,6 +1,7 @@
 // The registrations of the ink lane's later features: commands, Draw tab items, and the installers of the pieces that
 // sit beside the pen tool. install.ts calls it once, so the rest of the view stays as it was. Each feature adds its
 // own block here, behind its own flag.
+import { isEnabled } from '../../../app/flags';
 import type { Chord, CommandDef } from '../../../commands/types';
 import type { MessageKey } from '../../../strings/t';
 import { commandBar, commands, contextMenus } from '../../../registries';
@@ -9,6 +10,7 @@ import { anchorSelection, detachSelection, installAnchoring } from './anchoring'
 import { describeDrawing } from './describe';
 import { groupSelection, installGroups, selectionGrouped, ungroupSelection } from './groups';
 import { installLayers } from './layers';
+import { installPenFields, systemKeyboard } from './penFields';
 import { showLayers } from './LayersDialog';
 import { installInkLinks, selectionLinked, unlinkSelection } from './inkLinks';
 import { makeLinkFromSelection, showLinkList } from './linkDialogs';
@@ -103,6 +105,10 @@ export function installMore(context: MoreContext): () => void {
     installGroups(host, surface),
     installInkLinks(host),
     installLayers(host, surfaces),
+    installPenFields(document, {
+      enabled: () => isEnabled('ink.penFields') && inkPrefs.get().penFields,
+      keyboard: systemKeyboard,
+    }),
   ];
   const defs: CommandDef[] = [
     {

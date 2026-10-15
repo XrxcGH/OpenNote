@@ -4,6 +4,7 @@
 import { newId } from '../../../editor/ids';
 import { generatePage } from '../geometry/fixtures';
 import type { InkStroke } from '../model/types';
+import { trailStats } from './delegatedTrail';
 import type { InkSurface } from './surface';
 
 export function installInkTestHooks(surfaceOf: () => InkSurface | null): void {
@@ -22,6 +23,7 @@ export function installInkTestHooks(surfaceOf: () => InkSurface | null): void {
     }));
     return (await surface.add(strokes)) ? strokes.length : 0;
   };
+  hooks.inkTrail = () => trailStats();
   hooks.inkStats = () => {
     const surface = surfaceOf();
     return surface ? { strokes: surface.index.size, warming: surface.warmingLeft, ...surface.tiles.stats() } : null;

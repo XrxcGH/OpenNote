@@ -176,9 +176,8 @@ type Phase5FlagId =
   | 'ink.penLibrary'
   | 'ink.links'
   | 'ink.layers'
+  | 'ink.penFields'
   | 'ink.delegatedTrail'
-  | 'ink.nativeTrail'
-  | 'ink.openSnapshot'
   | 'dev.penRecorder';
 
 /** Phase 9's flags; features/audio/flags.ts defines them. */

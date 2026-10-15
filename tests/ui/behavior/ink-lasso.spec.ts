@@ -115,6 +115,8 @@ test('groups two drawings, selects both from either, and deletes and restores th
   await choose(page, 'Pen, Ink, 0.5 mm');
   await draw(page, line([150, 350], [260, 360]));
   await draw(page, line([420, 350], [530, 360]));
+  // The lasso needs both strokes in the page's index, which the core confirms a moment after each is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(2);
   await choose(page, 'Lasso select');
   await draw(page, ellipse(340, 355, 240, 70));
   const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
@@ -125,6 +127,7 @@ test('groups two drawings, selects both from either, and deletes and restores th
   await expect(frame).toBeHidden();
 
   // Lassoing one of them takes the whole group.
+  await expect(page.getByRole('button', { name: 'Lasso select' })).toHaveAttribute('aria-pressed', 'true');
   await draw(page, ellipse(205, 355, 75, 40));
   await expect(frame).toBeVisible();
   await expect.poll(async () => (await frame.boundingBox())!.width).toBeGreaterThan(300);

@@ -22,7 +22,8 @@ import type { StrokeBuilder } from '../input/strokeBuilder';
 import type { RawSample } from '../input/samples';
 import type { InkStroke } from '../model/types';
 import { mmToPage } from '../pens/tools';
-import { brandColor } from './paint';
+import { trailFor } from './delegatedTrail';
+import { brandColor, fillOf } from './paint';
 import type { InkHost, InkPointerTool, InkRouterContext } from './host';
 import { finishLasso, startLasso } from './lasso';
 import { shapePoints } from '../geometry/shapes';
@@ -184,6 +185,13 @@ export function createPenTool(
       samples.push(snapped(g, surface, sampleOf(event, ctx)));
     }
     if (samples.length === 0) return;
+    const area = target();
+    const newest = events.at(-1);
+    if (g.builder && area && newest && isEnabled('ink.delegatedTrail')) {
+      const color = fillOf(g.style, surface.scheme());
+      const diameter = g.style.width * surface.cameraNow().zoom;
+      void trailFor(area).then((trail) => trail.update(newest, color, diameter));
+    }
     const predicted = events.at(-1)?.getPredictedEvents?.() ?? [];
     step(
       g,

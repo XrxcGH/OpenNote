@@ -37,3 +37,7 @@ The first measurement scrolled the dense page at 43 fps with 44 long frames. Thr
 
 - The same test in WebView2 at 120 Hz with a real pen, through the Tauri app, and the delegated ink trail spike (`ink.delegatedTrail`, off) if the camera check of ADR 0004 asks for it.
 - Pen-to-screen on a Surface Pro, the second device the phase's definition of done names.
+
+## Delegated ink trail (flag `ink.delegatedTrail`)
+
+Built; see the update in [ADR 0004](../adr/0004-ink-latency.md). In a test build, `window.__OPENNOTE_TEST__.inkTrail()` returns `{ supported, updates, skipped, totalMs, maxMs }` for the most recent trail. A run is: draw 20 strokes with a real pen, read the hook, and record `totalMs / updates` (the cost of one update) and `maxMs`. Nothing has been measured yet. The camera numbers with the flag on and off are the owner's to add to ADR 0004.

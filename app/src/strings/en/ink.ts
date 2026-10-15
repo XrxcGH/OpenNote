@@ -455,6 +455,9 @@ export const ink = {
     steadyMedium: 'Medium',
     steadyStrong: 'Strong',
     steadyStrength: 'Steady pen strength',
+    penFields: 'Write in text fields with the pen',
+    penFieldsHint:
+      'Touching the search box, a rename field or a table cell with the pen opens the handwriting panel of Windows. It needs a pen and the panel turned on in Windows settings.',
     zoomBox: 'Zoom writing box',
     magnification: 'Magnification',
     magnificationValue: '{times} times',

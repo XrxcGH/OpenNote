@@ -143,6 +143,8 @@ Presets, set per page, or as a notebook default:
 - Pen library: fountain, brush, calligraphy, dashed, and dotted pens, each with its own sizes and colors (Draw tab > Pen type), and named pen sets you can save and switch between (Draw tab > Pen sets). Status: Built, untested by hand.
 - Links on handwriting: lasso writing and choose Make link to open a page, a heading, a web address, or the recording at that moment. The link moves with the writing, a list of links works by keyboard and screen reader, and a link to a page counts in its backlinks. Status: Built, untested by hand.
 - Ink layers: named layers you can hide, lock, rename, reorder and make active for new ink, with the lasso's Move to layer, export of one layer, and hidden layers left out of print and export. Status: Built, untested by hand. Imported PDFs and slides get their locked bottom layer when the importer calls it.
+- Pen writing in text fields: with the setting on, the pen opens the Windows handwriting panel in the search box, rename fields, and table cells. Status: Built, untested by hand. It needs a pen device to check.
+- Delegated ink trail: the browser's compositor draws a short trail behind the pen ahead of the page, where the system supports it. Status: Built, untested by hand. It needs the camera check in ADR 0004.
 - Smart select grows the lasso to include whole strokes, text boxes and images that it only partly touches, and trims empty margins. Exact keeps the lasso's own shape. The dialog's Smart and Exact choice is remembered on the device. Status: Built, untested by hand.
 - This works for annotated images: import a photo, draw on it, and export just that part. Status: Built, untested by hand.
 
