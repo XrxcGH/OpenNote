@@ -31,7 +31,7 @@ const RECYCLE_BIN: &str = "OneNote_RecycleBin";
 pub fn import_onenote(path: &Path, env: &ImportEnv<'_>, sink: &mut dyn ImportSink) -> Result<Report> {
     env.control.begin(Phase::Scanning, Unit::Items, None);
     let package = is_package(path);
-    let unpacked = if package { Some(unpack(path)?) } else { None };
+    let unpacked = if package { Some(unpack(path, env)?) } else { None };
     let root = unpacked.as_ref().map_or(path, |dir| dir.path());
     let mut report = Report::new(
         ReportKind::Import,
@@ -176,7 +176,7 @@ fn is_package(path: &Path) -> bool {
 }
 
 /// Unpacks the sections of a package, and the pictures and files beside them, into a temporary folder.
-fn unpack(path: &Path) -> Result<tempfile::TempDir> {
+fn unpack(path: &Path, env: &ImportEnv<'_>) -> Result<tempfile::TempDir> {
     let bytes = read_capped(path, limits::CAB_BYTES as u64).map_err(|why| InteropError::format(display(path), why))?;
     let damaged = |damage: crate::onenote::Damage| InteropError::format(display(path), damage.0);
     let cabinet = Cabinet::open(&bytes).map_err(damaged)?;
@@ -188,8 +188,9 @@ fn unpack(path: &Path) -> Result<tempfile::TempDir> {
         .tempdir()
         .map_err(|e| InteropError::io(std::env::temp_dir(), e))?;
     let mut failed = None;
+    let stop = || env.control.checkpoint().is_err();
     cabinet
-        .extract(|file, data| {
+        .extract(&stop, |file, data| {
             let name = file.name.replace('\\', "/");
             let lower = name.to_ascii_lowercase();
             if !(lower.ends_with(".one") || lower.ends_with(".onebin")) {
@@ -208,7 +209,12 @@ fn unpack(path: &Path) -> Result<tempfile::TempDir> {
             }
             Ok(())
         })
-        .map_err(|damage| failed.take().unwrap_or_else(|| damaged(damage)))?;
+        .map_err(|damage| {
+            if damage.0 == crate::onenote::CAB_STOPPED {
+                return InteropError::Canceled;
+            }
+            failed.take().unwrap_or_else(|| damaged(damage))
+        })?;
     Ok(dir)
 }
 

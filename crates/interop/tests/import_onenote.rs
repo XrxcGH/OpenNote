@@ -307,3 +307,16 @@ fn real_files_from_a_corpus_folder() {
         }
     }
 }
+
+#[test]
+fn canceling_stops_a_package_while_it_unpacks() {
+    let file = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/onenote/Trip.onepkg");
+    let world = TestEnv::new();
+    let token = opennote_interop::CancelToken::new();
+    token.cancel();
+    let env = world.env().with_control(opennote_interop::Control::with_cancel(token));
+    let mut sink = MemorySink::default();
+    let outcome = import_onenote(&file, &env, &mut sink);
+    assert!(matches!(outcome, Err(InteropError::Canceled)), "{outcome:?}");
+    assert!(sink.sections.is_empty());
+}

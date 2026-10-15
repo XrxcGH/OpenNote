@@ -23,7 +23,7 @@ mod store;
 pub mod write;
 
 pub(crate) use bytes::Damage;
-pub(crate) use cab::{is_cabinet, Cabinet};
+pub(crate) use cab::{is_cabinet, Cabinet, STOPPED as CAB_STOPPED};
 pub(crate) use model::{read_section, Attached, Blob, Item, ListKind, Page, Paragraph, Run};
 pub(crate) use store::{file_kind, FileKind};
 
@@ -53,8 +53,9 @@ pub(crate) mod limits {
     pub(crate) const ITEMS: usize = 100_000;
     /// Files in one notebook package.
     pub(crate) const CAB_FILES: usize = 20_000;
-    /// Bytes one notebook package unpacks to.
-    pub(crate) const CAB_BYTES: usize = 1 << 30;
+    /// Bytes of one notebook package, and bytes it unpacks to. A package is read whole and each folder is
+    /// unpacked whole, so a hostile one holds at most twice this in memory.
+    pub(crate) const CAB_BYTES: usize = 256 << 20;
 }
 
 /// The name a picture or file in the onefiles folder must have: a UUID and `.onebin` ([MS-ONESTORE] 2.5.27).
@@ -69,7 +70,7 @@ pub fn unpack_for_tests(data: &[u8]) -> Result<Vec<(String, Vec<u8>)>, String> {
     let cabinet = Cabinet::open(data).map_err(|d| d.0)?;
     let mut files = Vec::new();
     cabinet
-        .extract(|file, bytes| {
+        .extract(&|| false, |file, bytes| {
             files.push((file.name.clone(), bytes.to_vec()));
             Ok(())
         })

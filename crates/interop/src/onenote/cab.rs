@@ -14,6 +14,9 @@ use flate2::{Decompress, FlushDecompress};
 use super::bytes::{Damage, Read, Reader};
 use super::limits;
 
+/// The reason [`Cabinet::extract`] gives when its `stop` ended it.
+pub(crate) const STOPPED: &str = "unpacking was stopped";
+
 /// How a cabinet folder is compressed, from the low 4 bits of `typeCompress`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Method {
@@ -135,8 +138,12 @@ impl<'a> Cabinet<'a> {
     }
 
     /// Unpacks every file, folder by folder, and hands each to `each` with its bytes. Stops at the first error,
-    /// and at [`limits::CAB_BYTES`] bytes in all.
-    pub(crate) fn extract(&self, mut each: impl FnMut(&CabFile, &[u8]) -> Read<()>) -> Read<()> {
+    /// at [`limits::CAB_BYTES`] bytes in all, and between blocks once `stop` says so.
+    pub(crate) fn extract(
+        &self,
+        stop: &dyn Fn() -> bool,
+        mut each: impl FnMut(&CabFile, &[u8]) -> Read<()>,
+    ) -> Read<()> {
         let mut total = 0usize;
         for (index, folder) in self.folders.iter().enumerate() {
             let files: Vec<&CabFile> = self.files.iter().filter(|f| usize::from(f.folder) == index).collect();
@@ -151,7 +158,7 @@ impl<'a> Cabinet<'a> {
             if total > limits::CAB_BYTES {
                 return Err(Damage::new("the package unpacks to more than OpenNote reads"));
             }
-            let bytes = self.folder_bytes(folder, needed)?;
+            let bytes = self.folder_bytes(folder, needed, stop)?;
             for file in files {
                 let start = file.offset as usize;
                 let end = start.saturating_add(file.size as usize);
@@ -165,7 +172,7 @@ impl<'a> Cabinet<'a> {
     }
 
     /// The uncompressed bytes of a folder, up to `needed`.
-    fn folder_bytes(&self, folder: &Folder, needed: usize) -> Read<Vec<u8>> {
+    fn folder_bytes(&self, folder: &Folder, needed: usize, stop: &dyn Fn() -> bool) -> Read<Vec<u8>> {
         let mut r = Reader::new(
             self.data
                 .get(folder.start as usize..)
@@ -175,6 +182,9 @@ impl<'a> Cabinet<'a> {
         for _ in 0..folder.blocks {
             if out.len() >= needed {
                 break;
+            }
+            if stop() {
+                return Err(Damage::new(STOPPED));
             }
             r.u32()?;
             let packed = usize::from(r.u16()?);
