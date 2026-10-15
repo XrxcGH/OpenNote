@@ -35,6 +35,28 @@ const EVERNOTE_LOSSES: LossGroup[] = [
   },
 ];
 
+// What the real OneNote reader reports for a notebook with handwriting and a locked section, in its words.
+const ONENOTE_LOSSES: LossGroup[] = [
+  {
+    outcome: 'skipped',
+    why: 'It is password-protected. Unlock it in OneNote, then import it again.',
+    examples: ['Private'],
+    pages: 0,
+  },
+  {
+    outcome: 'skipped',
+    why: "Microsoft's published description of the format does not cover it. Handwriting (ink) is one of these.",
+    examples: ['3 items of kinds OpenNote cannot read'],
+    pages: 2,
+  },
+];
+
+function lossesOf(kind: DetectedSource['kind']): { losses: LossGroup[]; lostPages: number; skipped: number } {
+  if (kind === 'evernote') return { losses: EVERNOTE_LOSSES, lostPages: 3, skipped: 2 };
+  if (kind === 'oneNoteFile') return { losses: ONENOTE_LOSSES, lostPages: 2, skipped: 1 };
+  return { losses: [], lostPages: 0, skipped: 0 };
+}
+
 function detectPath(path: string): DetectedSource {
   const lower = path.toLowerCase();
   const found = (kind: DetectedSource['kind'], label: string): DetectedSource => ({
@@ -87,9 +109,7 @@ function previewOf(path: string, detected: DetectedSource): ImportPreview {
     blocks: 24,
     assets: 4,
     assetBytes: 3_400_000,
-    losses: detected.kind === 'evernote' ? EVERNOTE_LOSSES : [],
-    lostPages: detected.kind === 'evernote' ? 3 : 0,
-    skipped: detected.kind === 'evernote' ? 2 : 0,
+    ...lossesOf(detected.kind),
   };
 }
 
@@ -211,7 +231,7 @@ export function createWebInterop(): InteropClient & {
       imports += 1;
       if (!(await run(job, `Import from ${nameOf(path)}`, 'converting', 5))) return stopped;
       const tree = treeOf(path, imports);
-      const losses = detectPath(path).kind === 'evernote' ? EVERNOTE_LOSSES : [];
+      const lost = lossesOf(detectPath(path).kind);
       if (choices.reportPage)
         tree.sections.push({
           title: 'Import report',
@@ -221,9 +241,7 @@ export function createWebInterop(): InteropClient & {
       const result: ImportResult = {
         tree,
         pages: 5,
-        losses,
-        lostPages: losses.length > 0 ? 3 : 0,
-        skipped: losses.length > 0 ? 2 : 0,
+        ...lost,
       };
       return done(result);
     },

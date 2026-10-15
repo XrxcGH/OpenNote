@@ -57,7 +57,9 @@ test('sits on the Home tab after the New buttons, and in Export on the tree menu
     button: 'right',
   });
   const items = await page.getByRole('menu').getByRole('menuitem').allInnerTexts();
-  expect(items.at(-2)).toContain('Export…');
+  // Export, then Share as a file, are the share group, which sits last before Delete.
+  expect(items.at(-3)).toContain('Export…');
+  expect(items.at(-2)).toContain('Share as a file…');
   expect(items.at(-1)).toContain('Delete');
 });
 
@@ -71,15 +73,53 @@ test('Cancel during the check adds nothing and says so', async ({ page }) => {
   await expect(dialog.getByRole('button', { name: 'Choose a file…' })).toBeVisible();
 });
 
-test('a OneNote file says what to export instead', async ({ page }) => {
+test('a OneNote package reaches the review, which names the locked section and the handwriting left out', async ({
+  page,
+}) => {
+  const dialog = await openImport(page);
+  await page.evaluate(() =>
+    (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.interopPickNext('C:\\Notes\\Field trip.onepkg'),
+  );
+  await dialog.getByRole('button', { name: 'Choose a file…' }).click();
+  await expect(
+    dialog.getByRole('heading', { name: /5 pages will come into a new notebook called "Field trip"/ }),
+  ).toBeFocused();
+  await expect(dialog.getByText('It is password-protected. Unlock it in OneNote, then import it again.')).toBeVisible();
+  await expect(dialog.getByText(/Handwriting \(ink\) is one of these/)).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: "OpenNote can't import this yet" })).toHaveCount(0);
+
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  await expect(dialog.getByRole('heading', { name: 'Import finished' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Open notebook' }).click();
+  await expect(page.getByRole('tree', { name: 'Notebooks' }).getByRole('treeitem', { name: 'Field trip' })).toHaveCount(
+    1,
+  );
+});
+
+test('a OneNote section file reaches the review too', async ({ page }) => {
   const dialog = await openImport(page);
   await page.evaluate(() =>
     (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.interopPickNext('C:\\Notes\\Work.one'),
   );
   await dialog.getByRole('button', { name: 'Choose a file…' }).click();
-  await expect(dialog.getByRole('heading', { name: "OpenNote can't import this yet" })).toBeVisible();
-  await expect(dialog.getByText(/choose File, then Export/)).toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Import', exact: true })).toHaveCount(0);
+  await expect(dialog.getByRole('heading', { name: /will come into a new notebook called "Work"/ })).toBeFocused();
+  await expect(dialog.getByRole('button', { name: 'Import', exact: true })).toBeVisible();
+});
+
+test.describe('with reading OneNote files turned off', () => {
+  test.use({ boot: { flagOverrides: { 'interop.oneNoteFiles': false } } });
+
+  test('a OneNote file says what to export instead', async ({ page }) => {
+    const dialog = await openImport(page);
+    await page.evaluate(() =>
+      (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.interopPickNext('C:\\Notes\\Work.one'),
+    );
+    await dialog.getByRole('button', { name: 'Choose a file…' }).click();
+    await expect(dialog.getByRole('heading', { name: "OpenNote can't import this yet" })).toBeVisible();
+    await expect(dialog.getByText(/Reading OneNote files is turned off in this build/)).toBeVisible();
+    await expect(dialog.getByText(/choose File, then Export/)).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Import', exact: true })).toHaveCount(0);
+  });
 });
 
 test('offers the Sticky Notes of this PC only when the app is there', async ({ page }) => {
