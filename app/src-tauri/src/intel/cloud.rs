@@ -439,6 +439,7 @@ mod tests {
                 status: self.reply.0,
                 content_type: Some("application/json".to_owned()),
                 body: self.reply.1.to_string().into_bytes(),
+                location: None,
             })
         }
     }

@@ -13,6 +13,7 @@ import { dateIn } from '../upcoming/zone';
 import { followStored, loadStored, saveStored } from './storage';
 import { CalendarFile, Overview, Planner, RemindersSwitch } from './UpcomingExtras';
 import { pageItemsStore } from './upcomingStores';
+import { UPCOMING_CHANGED } from './upcomingMerge';
 import styles from './tools.module.css';
 import extra from './extra.module.css';
 
@@ -127,6 +128,12 @@ export function UpcomingTool() {
   const [saved, setSaved] = useState(readSaved);
   // Upcoming may be open in the main window and in its own window: each takes in what the other saves.
   useEffect(() => followStored(STORE, () => setSaved(readSaved())), []);
+  // Another feature (a course's assignments) can change the list while this window is open.
+  useEffect(() => {
+    const reread = () => setSaved(readSaved());
+    window.addEventListener(UPCOMING_CHANGED, reread);
+    return () => window.removeEventListener(UPCOMING_CHANGED, reread);
+  }, []);
   const [text, setText] = useState('');
   const [note, setNote] = useState('');
   const [repeatChoice, setRepeatChoice] = useState<RepeatChoice>('none');

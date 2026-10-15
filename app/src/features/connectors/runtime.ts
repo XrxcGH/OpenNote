@@ -123,3 +123,22 @@ export async function disconnectFrom(id: string, client: ConnectorsClient = conn
     return false;
   }
 }
+
+/**
+ * Saves the client ID typed on a card that says Needs setup. The host keeps it in the connectors file on this
+ * device, and the card then offers Connect. Answers true when it was saved.
+ */
+export async function saveClient(id: string, clientId: string, clientSecret: string): Promise<boolean> {
+  const name = nameOf(id);
+  setError(id, undefined);
+  try {
+    const view = await commandContext('menu').platform.accounts.setClient(id, clientId, clientSecret || undefined);
+    replace(view);
+    announce(t('connectors.announce.clientSaved', { name }));
+    return true;
+  } catch {
+    setError(id, 'unknown');
+    announce(t('connectors.announce.clientRefused'));
+    return false;
+  }
+}

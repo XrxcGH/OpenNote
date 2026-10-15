@@ -15,6 +15,7 @@ import { PDF_FLAGS } from '../features/pdf/flags';
 import type { PdfFlagId } from '../features/pdf/flags';
 import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
+import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
 import { EXPR_FLAGS } from '../features/tools/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
@@ -63,7 +64,9 @@ export type FlagId =
   | QolFlagId
   | ProtectFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
-  | 'connectors.page';
+  | 'connectors.page'
+  /** The account and media features (features/accounts/flags.ts). */
+  | AccountsFlagId;
 
 /**
  * Flags the Phase 4 and Phase 5 designs name (AMENDMENTS.md P2-1). Each phase adds its FLAGS entries when it
@@ -306,6 +309,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...QOL_FLAGS,
   ...PROTECT_FLAGS,
   ...CONNECTORS_FLAGS,
+  ...ACCOUNTS_FLAGS,
 ];
 
 interface FlagState {
@@ -344,3 +348,21 @@ export function useFlag(id: FlagId): boolean {
 export function withEnabledFlags<T extends { readonly flag?: FlagId }>(items: readonly T[]): T[] {
   return items.filter((item) => item.flag === undefined || isEnabled(item.flag));
 }
+
+/** The flags of the account and media features; features/accounts/flags.ts defines them. */
+type AccountsFlagId =
+  | 'accounts.readwise'
+  | 'accounts.meetings'
+  | 'accounts.share'
+  | 'accounts.lms'
+  | 'accounts.sendTo'
+  | 'accounts.googleOffice'
+  | 'accounts.onenoteGraph'
+  | 'accounts.tasksSync'
+  | 'accounts.cloudSync'
+  | 'accounts.penSync'
+  | 'accounts.youtubeUpload'
+  | 'accounts.captions'
+  | 'page.mediaEmbeds'
+  | 'page.liveEmbeds'
+  | 'audio.exportVideo';

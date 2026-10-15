@@ -26,9 +26,18 @@ Tap a stamped word or stroke and the recording plays from that moment. You can c
 | Remove a part you marked off the record | Remove it. The audio, the transcript, and the search index all lose it. |
 | Make a quiet voice clearer | Turn on Voice enhancement. |
 | Share the audio | Export the recording as an audio file. |
+| Share the lesson as a video | Choose Export as video in the More menu, or press Ctrl+K and choose Export the recording as a narrated video. |
 | Free up disk space | Open the recording storage list. Compress a recording, or remove its audio and keep the transcript. |
 
 Settings has a Recording section for the defaults.
+
+### Export as video
+
+A narrated video shows the page and draws your ink again at the moments you drew it, with the recording's sound underneath. Pauses are left out. Choose where to save it, and OpenNote makes an MP4 file with the video and sound encoders that come with Windows. Making it takes about as long as the recording. If Windows has no encoder (some "N" editions), OpenNote says so and nothing is saved.
+
+### Upload to YouTube
+
+Connect Google in Settings, then Connectors. In the recording's More menu, or from Ctrl+K, choose Upload to YouTube. Pick Private or Unlisted, name the video, and choose Upload. OpenNote makes the video, sends it in pieces, and puts the link on your clipboard. It never makes a video public. You can do that in YouTube Studio. A video you upload with an app that Google has not yet reviewed may stay private whatever you choose.
 
 ## Transcripts and recaps
 
@@ -56,6 +65,16 @@ To get a transcript and summary without asking each time, open Settings, then Re
 When a recording stops, or you drop an audio file on a page, its transcript is made in the background and placed after the recording, with a short summary at the top. It shows in the activity panel, where you can pause or stop it. A recording that already has a transcript keeps it.
 
 
+
+## Videos, podcasts, and live embeds
+
+Paste a YouTube or Vimeo link, a podcast episode, or a Desmos, GeoGebra, Figma, Miro, or Lucidchart link into an empty text box, or press Ctrl+K and choose Insert video, podcast, or embed from link. The page keeps a card with the title and a saved picture. Nothing loads from the site until you press Play or Show the live view, so a page opens fast and works offline.
+
+With a YouTube or Vimeo video playing, the notes you type are time-stamped to the playhead, the same way they are during a recording. Hold Alt and click a note to jump back to its moment. Only these sites can be shown on a page. Any other link stays a normal link.
+
+### Captions as a transcript
+
+Connect Google (for YouTube) or Vimeo in Settings, then Connectors. Open the page with the video, press Ctrl+K, and choose Add captions as a transcript. The captions are kept on the video's card, and a line in the transcript jumps the player to its time. YouTube lets only the owner of a video read its captions, so for other people's videos OpenNote says so and nothing is added.
 
 Recording is built. Agents started a recording once and it worked. Nobody has tried the rest by hand.
 

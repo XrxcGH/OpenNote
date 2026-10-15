@@ -21,6 +21,7 @@ export const withoutHost: AudioMore = {
   storageScan: notImplemented,
   purgeHistory: notImplemented,
   exportAudio: notImplemented,
+  exportVideo: notImplemented,
   importFile: notImplemented,
   meetingPoll: () => Promise.resolve(null),
   snap: notImplemented,

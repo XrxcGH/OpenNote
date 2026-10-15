@@ -93,6 +93,36 @@ Right-click a page, a section, or a notebook and choose Share as a file. You can
 
 Take a screenshot with Win+Shift+S and OpenNote offers to add it to the open page. You can send copies of pages to favorite folders, then choose Update the copy after you edit.
 
+## Send to Google Drive or OneDrive
+
+Connect Google or Microsoft in Settings, then Connectors. Press Ctrl+K and choose Send to Google Drive or Send to OneDrive. Choose what to send: what you selected with the lasso, this page, this section, or this notebook. Choose a file type (a PDF, a Word file, or on Google Drive a Google Doc), then walk to a folder and choose Send. Nothing is sent before that last button.
+
+OpenNote remembers which file a page, section, or notebook was sent as. After you change the page, choose Update the Drive or OneDrive copy in Ctrl+K, and OpenNote replaces the file. When you open a page that has changed since you sent it, OpenNote offers once to update the copy. It never updates by itself. A selection can be sent but not updated, because the selection is gone later.
+
+## Send to Dropbox, Box, or a WebDAV server
+
+Connect Dropbox or Box in Settings, then Connectors. For a WebDAV server (Nextcloud, ownCloud, a NAS), choose Connect on the WebDAV card and type the server's address, your user name, and a password (an app password is best). Then press Ctrl+K and choose Send to Dropbox, Send to Box, or Send to a WebDAV server. The steps are the same as for Google Drive: choose what to send, the file type, and the folder.
+
+A name that is already taken is never overwritten. The new file gets a number after its name. Update the copy replaces a file OpenNote sent earlier, and only that one.
+
+To keep every copy current, press Ctrl+K and choose Sync Dropbox, Box, and WebDAV copies. OpenNote sends again each page you changed since it was sent, and each section or notebook copy, over the file that is already there. It runs when you choose it. To have it done for you, choose Keep Dropbox, Box, and WebDAV copies up to date automatically. While OpenNote is open, a few minutes after start and then every 15 minutes, any copy whose page changed is sent again, quietly. Choose Stop keeping Dropbox, Box, and WebDAV copies up to date automatically to turn it off.
+
+iCloud has no sign-in that an app can use. Send a copy to the `iCloud Drive` folder on this PC instead, and iCloud for Windows uploads it.
+
+## Google Docs, Sheets, and Slides
+
+Connect Google in Settings, then Connectors. To bring a file in, press Ctrl+K and choose Import from Google Docs, Sheets, or Slides. Pick the kind of file and then the file. Google turns it into a Word, Excel, or PowerPoint file, and Import notes opens on it so you can see what comes over before anything is added. A Google Sheet becomes pages with tables, and Google Slides becomes a page for each slide that you can write on.
+
+To send a page the other way, choose Export to Google Docs, Export tables to Google Sheets, or Export to Google Slides. These are Send to Google Drive with the type already chosen. Google converts the file as it arrives, so it opens as a Google Doc, Sheet, or Slides file.
+
+## OneNote through your Microsoft account
+
+Connect Microsoft in Settings, then Connectors. Press Ctrl+K and choose Import OneNote notebooks from Microsoft. Choose one notebook or all of them. Each notebook becomes a notebook here, each section a section (sections inside section groups come over with the group's name in front), and each page a page, with subpages kept. Text, headings, lists, to-do boxes, tables, links, and pictures come over.
+
+Some things do not. Ink and handwriting are not given out by Microsoft. Attached files stay in OneNote, and their names are marked in the text. Tables come over as text tables. A page named Import report in the new notebook lists all of it, page by page.
+
+Run the import again at any time. It adds pages that are new and leaves the pages already here alone, because they may hold your own writing. Pages that changed in OneNote since are listed in the report. If you switch to another Microsoft account, its notebooks are kept apart from the first account's.
+
 ## Share to OpenNote
 
 In another app, choose Share, then OpenNote. Text, a web link, a picture, or up to 10 files can come over, each file up to 15 MB.

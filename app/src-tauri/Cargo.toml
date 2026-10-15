@@ -26,6 +26,7 @@ embed-llm-host = []
 
 [build-dependencies]
 base64 = "0.22.1"
+serde_json.workspace = true
 tauri-build = { version = "2", features = [] }
 
 [dependencies]

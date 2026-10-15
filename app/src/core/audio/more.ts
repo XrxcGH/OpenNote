@@ -39,6 +39,19 @@ export interface MeetingOffer {
   app: string;
 }
 
+/** What the narrated video shows: the page without ink as RGBA rows, and the strokes with the time of each point. */
+export interface VideoScene {
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray | Uint8Array;
+  strokes: {
+    color: readonly [number, number, number, number];
+    width: number;
+    /** `tNs` is capture time in nanoseconds. */
+    points: { x: number; y: number; tNs: number }[];
+  }[];
+}
+
 export interface AudioMore {
   split(assetsDir: string, entry: RecordingEntry, atNs: number): Promise<SplitResult>;
   /** The copy's tracks are in the answer's entry. The recording itself is untouched. */
@@ -49,6 +62,16 @@ export interface AudioMore {
   purgeHistory(page: string): Promise<number>;
   /** Writes the recording to a path that `export_pick_save` chose. Answers the file's size. */
   exportAudio(assetsDir: string, entry: RecordingEntry, dest: string, format: ExportFormat): Promise<number>;
+  /**
+   * Writes the narrated video to a path that `export_pick_save` chose, or to a named file in the accounts transfer
+   * folder (to be uploaded). Answers the file's size.
+   */
+  exportVideo(
+    assetsDir: string,
+    entry: RecordingEntry,
+    target: { dest: string } | { transfer: string },
+    scene: VideoScene,
+  ): Promise<number>;
   /** Makes a recording of the sound in an audio or video file. */
   importFile(
     assetsDir: string,
@@ -77,6 +100,16 @@ export function moreOver(invoke: RawInvoke): AudioMore {
     storageScan: () => call('storage_scan'),
     purgeHistory: (page) => call('purge_history', { page }),
     exportAudio: (assetsDir, entry, dest, format) => call('export', { assetsDir, entry, dest, format }),
+    exportVideo: (assetsDir, entry, target, scene) => {
+      const strokes = new TextEncoder().encode(JSON.stringify(scene.strokes));
+      const body = new Uint8Array(strokes.length + scene.rgba.length);
+      body.set(strokes, 0);
+      body.set(scene.rgba, strokes.length);
+      const header = { assetsDir, entry, ...target, width: scene.width, height: scene.height, strokesLen: strokes.length };
+      return invoke('audio_export_video', body, {
+        headers: { 'x-opennote-video': encodeURIComponent(JSON.stringify(header)) },
+      }) as Promise<number>;
+    },
     importFile: (assetsDir, name, bytes) =>
       invoke('audio_import_file', new Uint8Array(bytes), {
         headers: { 'x-opennote-import': encodeURIComponent(JSON.stringify({ assetsDir, name })) },
@@ -98,6 +131,8 @@ export interface EntryExtras {
   audioRemoved?: boolean;
   /** Screen snaps: the image block, and the capture time it was taken at. */
   snaps?: { block: string; captureNs: number }[];
+  /** The calendar event of the meeting note it was recorded on (New meeting note), so both name the same meeting. */
+  calendarEvent?: { source: string; id: string; title: string; start: string };
 }
 
 export const extrasOf = (entry: RecordingEntry): EntryExtras => entry as unknown as EntryExtras;

@@ -126,6 +126,7 @@ impl Http for ScriptedHttp {
             status,
             content_type: None,
             body: body.to_string().into_bytes(),
+            location: None,
         })
     }
 }
@@ -256,3 +257,4 @@ fn connected(account: &str) -> StateView {
 mod pasted;
 mod session;
 mod sign_in;
+mod transfer;

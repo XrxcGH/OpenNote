@@ -102,6 +102,44 @@ pub fn load_client(config: &Path, connector: &str) -> Option<Client> {
     })
 }
 
+/// Saves the app registration of a connector in the connectors file, from the Settings card. The other entries and
+/// the keys this function doesn't know (such as `redirectPort`) stay as they were. A client ID is not a secret, but a
+/// client secret belongs to the app, so it goes in this device's file and nowhere else.
+pub fn save_client(config: &Path, connector: &str, id: &str, secret: Option<&str>) -> io::Result<()> {
+    let bad = |what: &str| io::Error::new(io::ErrorKind::InvalidInput, what.to_owned());
+    let id = clean(id).ok_or_else(|| bad("client id"))?;
+    let secret = match secret.map(str::trim).filter(|text| !text.is_empty()) {
+        Some(text) => Some(clean(text).ok_or_else(|| bad("client secret"))?),
+        None => None,
+    };
+    let mut root = fs::read_to_string(config)
+        .ok()
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .filter(serde_json::Value::is_object)
+        .unwrap_or_else(|| serde_json::json!({}));
+    let entry = object_at(object_at(&mut root, "clients"), connector);
+    let fields = entry.as_object_mut().expect("an object");
+    fields.insert("clientId".to_owned(), serde_json::Value::String(id));
+    match secret {
+        Some(text) => fields.insert("clientSecret".to_owned(), serde_json::Value::String(text)),
+        None => fields.remove("clientSecret"),
+    };
+    write_json(config, &root)
+}
+
+/// The object under `key` of an object, made when it is missing or isn't one.
+fn object_at<'a>(parent: &'a mut serde_json::Value, key: &str) -> &'a mut serde_json::Value {
+    let slot = parent
+        .as_object_mut()
+        .expect("an object")
+        .entry(key.to_owned())
+        .or_insert_with(|| serde_json::json!({}));
+    if !slot.is_object() {
+        *slot = serde_json::json!({});
+    }
+    slot
+}
+
 /// What a stored credential is: a refresh token to trade for access tokens, or an access token that doesn't expire,
 /// such as a pasted personal token.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -179,6 +217,36 @@ mod tests {
         let dropbox = load_client(&path, "dropbox").expect("has a client");
         assert_eq!((dropbox.secret, dropbox.redirect_port), (None, Some(53999)));
         assert!(load_client(&path, "slack").is_none());
+    }
+
+    #[test]
+    fn saving_a_client_keeps_the_other_entries_and_the_unknown_keys() {
+        let dir = tempfile::tempdir().expect("a temporary folder");
+        let path = write(
+            dir.path(),
+            CONFIG_FILE,
+            r#"{"clients":{"dropbox":{"clientId":"d-id","redirectPort":53999}},"note":"mine"}"#,
+        );
+        save_client(&path, "google", " g-id ", Some("g-secret")).expect("saves");
+        save_client(&path, "dropbox", "d-id-two", None).expect("saves");
+        let google = load_client(&path, "google").expect("has a client");
+        assert_eq!(google.id, "g-id");
+        assert_eq!(google.secret, Some(Secret::new("g-secret")));
+        let dropbox = load_client(&path, "dropbox").expect("has a client");
+        assert_eq!((dropbox.id.as_str(), dropbox.redirect_port), ("d-id-two", Some(53999)));
+        let text = fs::read_to_string(&path).expect("reads");
+        assert!(text.contains("\"note\""), "{text}");
+    }
+
+    #[test]
+    fn saving_refuses_ids_with_spaces_and_starts_a_missing_file() {
+        let dir = tempfile::tempdir().expect("a temporary folder");
+        let path = dir.path().join("nested").join(CONFIG_FILE);
+        assert!(save_client(&path, "google", "a b", None).is_err());
+        assert!(save_client(&path, "google", "", None).is_err());
+        assert!(!path.exists());
+        save_client(&path, "google", "g-id", None).expect("saves");
+        assert_eq!(load_client(&path, "google").expect("a client").id, "g-id");
     }
 
     #[test]

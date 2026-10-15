@@ -55,7 +55,7 @@ export interface Disconnected {
 
 /** A request for a feature to run against a service. The host adds the token, so there is no Authorization header. */
 export interface ConnectorRequest {
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'PROPFIND' | 'MKCOL';
   url: string;
   headers?: Record<string, string>;
   /** A text body, such as JSON. */
@@ -69,6 +69,8 @@ export interface ConnectorResponse {
   status: number;
   contentType: string | null;
   body: string;
+  /** The `Location` header of the answer, for the start of a resumable upload. */
+  location?: string | null;
 }
 
 /** Why the host refused. Each code has a sentence in strings/en/connectors.ts. */

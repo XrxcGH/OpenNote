@@ -12,6 +12,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { shownPage as shownOpenPage } from '../history/shown';
+import { playerStamp } from '../media/playhead';
 import { shownLayer } from '../mount';
 import { activeNs, insertRecordingBlock, removeBlock, writeEntry } from './blocks';
 import { clock } from './format';
@@ -68,11 +69,16 @@ export const runningRecording = () => run?.entry.id ?? null;
 export const recordingSession = () => (run && !run.stopping ? run.session : null);
 
 /** Whether the person is recording and not paused: only then does typing get a time stamp. */
-export function stampNow(): { recording: string; captureNs: number } | null {
+function recordingStamp(): { recording: string; captureNs: number } | null {
   if (!run || run.stopping || recordingUi.get().phase !== 'recording') return null;
   // Text on another page isn't part of this page's recording.
   if (shownOpenPage.get()?.id !== run.page) return null;
   return run.session.stamp();
+}
+
+/** The stamp for text typed now: the recording that runs, else the video that plays in a player block. */
+export function stampNow(): { recording: string; captureNs: number } | null {
+  return recordingStamp() ?? playerStamp(shownOpenPage.get()?.id ?? null);
 }
 
 function update(patch: Partial<typeof IDLE>): void {
@@ -131,6 +137,15 @@ function watch(active: Run): void {
 }
 
 /** Starts recording into a new block of the shown page. */
+/**
+ * The recording, stamped with the calendar event of the page when the page is a meeting note (New meeting note keeps
+ * the event in the page's view), so the recording and the note name the same meeting.
+ */
+function stamped<T extends RecordingEntry>(entry: T, page: { initial: { view: Record<string, unknown> } }): T {
+  const event = page.initial.view.meetingEvent;
+  return event && typeof event === 'object' ? ({ ...entry, calendarEvent: event } as T) : entry;
+}
+
 export async function startRecording(): Promise<boolean> {
   if (recordingUi.get().phase !== 'idle') {
     announce(t('audio.errors.busy'));
@@ -160,7 +175,7 @@ export async function startRecording(): Promise<boolean> {
       async (prepared) => {
         source = prepared.microphone.device.name;
         recording = prepared.entry.id;
-        block = await insertRecordingBlock(prepared.entry);
+        block = await insertRecordingBlock(stamped(prepared.entry, page));
         await page.saveNow();
       },
       async () => {
@@ -169,11 +184,12 @@ export async function startRecording(): Promise<boolean> {
       },
     );
     if (!block) throw new Error('The recording block is missing.');
+    const stampedEntry = stamped(entry, page);
     run = {
       session,
       page: page.id,
       block,
-      entry,
+      entry: stampedEntry,
       flags: new Flags(),
       pausedTotalNs: 0,
       pausedSinceNs: null,
@@ -188,7 +204,7 @@ export async function startRecording(): Promise<boolean> {
       }),
     };
     update({ phase: 'recording', block, recording: entry.id, source });
-    await writeEntry(page.id, block, entry);
+    await writeEntry(page.id, block, stampedEntry);
     watch(run);
     announce(t('audio.announce.started'));
     void import('./watch').then((module) => module.activate());
@@ -220,8 +236,9 @@ export async function stopRecording(reason?: StopReason): Promise<void> {
   try {
     const finished = await active.session.stop();
     // The snaps taken while recording are in the running entry, and the host's entry doesn't know them.
-    const snaps = extrasOf(active.entry).snaps;
-    const entry = active.flags.into(snaps ? ({ ...finished.entry, snaps } as RecordingEntry) : finished.entry);
+    const { snaps, calendarEvent } = extrasOf(active.entry);
+    const carried = { ...(snaps ? { snaps } : {}), ...(calendarEvent ? { calendarEvent } : {}) };
+    const entry = active.flags.into({ ...finished.entry, ...carried } as RecordingEntry);
     await writeEntry(active.page, active.block, entry, { track: 'finished' });
     void import('./transcripts/auto').then((auto) =>
       auto.recordingSaved({ page: active.page, block: active.block, entry }),
@@ -271,7 +288,7 @@ export async function flagNow(): Promise<void> {
 
 /** Whether the recording that runs is the shown page's, so a snap can be stamped to it. */
 export function snapStamp(): { captureNs: number } | null {
-  const stamp = stampNow();
+  const stamp = recordingStamp();
   return stamp ? { captureNs: stamp.captureNs } : null;
 }
 

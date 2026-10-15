@@ -12,3 +12,5 @@ export * from './selection';
 export * from './snap';
 export * from './space';
 export * from './zoombox';
+export { inkPrefs, setPrefs as setInkPrefs } from './view/prefs';
+export type { InkPrefs } from './view/prefs';

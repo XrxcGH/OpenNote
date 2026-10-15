@@ -53,6 +53,7 @@
     "allow-audio-storage-scan",
     "allow-audio-purge-history",
     "allow-audio-export",
+    "allow-audio-export-video",
     "allow-audio-import-file",
     "allow-audio-meeting-poll",
     "allow-audio-snap",
@@ -185,6 +186,7 @@
     "allow-connectors-disconnect",
     "allow-connectors-request",
     "allow-api-call",
-    "allow-share-take"
+    "allow-share-take",
+    "allow-accounts-call"
   ]
 }

@@ -35,7 +35,13 @@ Work offline blocks every sign-in, renewal, and request. Settings, then Privacy,
 
 ## Where the client IDs go
 
-Put the IDs in a file named `connectors.json` in OpenNote's data folder. On Windows that is `%LOCALAPPDATA%\OpenNote`. In Settings, the "Open the connectors folder" button on a card opens it. A build with `OPENNOTE_PROFILE_DIR` or portable mode uses the `local` folder inside it.
+There are three places, and the first one that has an ID wins.
+
+1. **The card.** On a card that says Needs setup, choose "Add a client ID", paste the ID, and save. OpenNote writes it to the connectors file below, and the card then offers Connect. This is the quickest way to try a build.
+2. **The connectors file.** Put the IDs in a file named `connectors.json` in OpenNote's data folder. On Windows that is `%LOCALAPPDATA%\OpenNote`. In Settings, the "Open the connectors folder" button on a card opens it. A build with `OPENNOTE_PROFILE_DIR` or portable mode uses the `local` folder inside it.
+3. **The build.** Copy `connectors.config.example.json` at the top of the repository to `connectors.config.json`, fill it in, and build. The build script hands each ID to the compiler, so it is part of the program. The file is in `.gitignore`. You can also set the variables yourself: `OPENNOTE_MICROSOFT_CLIENT_ID`, `OPENNOTE_GOOGLE_CLIENT_ID`, `OPENNOTE_GOOGLE_CLIENT_SECRET`, and the same pair for `SLACK`, `DROPBOX`, `BOX`, and `VIMEO`. A variable that is set wins over the file.
+
+The connectors file has this shape:
 
 ```json
 {
@@ -50,9 +56,8 @@ Put the IDs in a file named `connectors.json` in OpenNote's data folder. On Wind
 }
 ```
 
-OpenNote reads the file each time the page opens, so a change shows up without a restart.
+OpenNote reads the file each time the page opens, so a change shows up without a restart. A client ID from the card goes in the same file.
 
-To build the IDs into a release instead, set these variables when you run the build: `OPENNOTE_MICROSOFT_CLIENT_ID`, `OPENNOTE_GOOGLE_CLIENT_ID`, `OPENNOTE_GOOGLE_CLIENT_SECRET`, and the same pair for `SLACK`, `DROPBOX`, `BOX`, and `VIMEO`. The file wins over the build.
 
 A client ID is not a secret, but keep the IDs out of the repository anyway. A program on a person's computer cannot keep a client secret private, so the secrets here are the app's own and not the person's. Use the services' settings for public clients where they exist.
 

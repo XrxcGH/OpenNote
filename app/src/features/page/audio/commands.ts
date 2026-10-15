@@ -1,5 +1,6 @@
 // What the audio commands do (Phase 9), in a module that loads when one runs. registrations/audio.ts declares the
 // commands at start-up; this is their work.
+import type { RecordingEntry } from '../../../core/audio';
 import type { BlockJson } from '../../../services/pages/types';
 import { announce } from '../../../ui';
 import { t } from '../../../strings/t';
@@ -67,4 +68,90 @@ export async function trim(): Promise<void> {
   const data = block && dataOf(block);
   const page = pageId();
   if (block && data && page) await trimSilence(block.id, page, data.entry);
+}
+
+/** A split must leave at least this much on each side, as the More menu does. */
+const SPLIT_MARGIN_NS = 1_000_000_000;
+
+/** The recording the palette commands edit, opened for listening, with where the listening position is. */
+async function edited(): Promise<{
+  block: BlockJson;
+  entry: NonNullable<ReturnType<typeof dataOf>>['entry'];
+  page: string;
+  position: number;
+  total: number;
+} | null> {
+  const block = await opened();
+  const data = block && dataOf(block);
+  const page = pageId();
+  const status = playbackUi.get().status;
+  if (!block || !data || !page || data.entry.state === 'recording') return null;
+  return { block, entry: data.entry, page, position: status?.positionNs ?? 0, total: status?.durationNs ?? 0 };
+}
+
+/** Splits the recording at the listening position (Split recording in the palette). */
+export async function split(): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  if (open.position < SPLIT_MARGIN_NS || open.position > open.total - SPLIT_MARGIN_NS) {
+    return void announce(t('audioMore.split.tooEarly'));
+  }
+  const { splitRecording } = await import('./edits');
+  await splitRecording(open.block.id, open.page, open.entry, open.position);
+}
+
+/** Makes the enhanced copy, or removes it when there is one (Enhance voice in the palette). */
+export async function enhance(): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  const module = await import('./enhance');
+  const { enhancedTracks } = await import('../../../core/audio');
+  if (enhancedTracks(open.entry).length > 0) await module.removeEnhanced(open.block, open.page, open.entry);
+  else await module.enhanceVoice(open.block, open.page, open.entry);
+}
+
+/** Saves the recording as one WAV or Opus file (Export as WAV and Export as Opus in the palette). */
+export async function exportAs(format: 'wav' | 'opus'): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  const { exportRecording } = await import('./exportAudio');
+  await exportRecording(open.page, open.entry, format);
+}
+
+/** Saves the recording as a narrated video (Export as video in the palette). */
+export async function exportAsVideo(): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  const { exportVideo } = await import('./exportVideo');
+  await exportVideo(open.page, open.entry);
+}
+
+/** Makes the narrated video and uploads it to YouTube as private or unlisted (Upload to YouTube in the palette). */
+export async function uploadToYoutube(): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  await uploadEntryToYoutube(open.page, open.entry);
+}
+
+/** The upload of one recording, for the palette and the More menu. */
+export async function uploadEntryToYoutube(pageId: string, entry: RecordingEntry): Promise<void> {
+  const { videoForUpload } = await import('./exportVideo');
+  const { uploadRecordingToYoutube } = await import('../../accounts');
+  await uploadRecordingToYoutube({
+    title: t('audioMore.export.name', { date: entry.started.slice(0, 10) }),
+    makeVideo: (name) => videoForUpload(pageId, entry, name),
+  });
+}
+
+/**
+ * Removes a part. The first run marks where the part starts at the listening position; after moving, the second
+ * run removes up to the new position, after asking, as the More menu does.
+ */
+export async function removeSelected(): Promise<void> {
+  const open = await edited();
+  if (!open) return void announce(t('accounts.audio.noRecording'));
+  const { markPartStart, partStart, removePart } = await import('./edits');
+  const start = partStart(open.entry.id);
+  if (start === undefined || open.position <= start) return markPartStart(open.entry.id, open.position);
+  await removePart(open.block.id, open.page, open.entry, open.position);
 }

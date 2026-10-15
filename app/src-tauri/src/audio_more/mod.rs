@@ -11,6 +11,7 @@
 mod decode;
 pub mod meeting;
 pub mod snap;
+mod video;
 
 use std::{
     fs,
@@ -282,6 +283,112 @@ pub async fn audio_export(
     })
     .await?;
     grants.mark_written(size.1);
+    Ok(size.0)
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct VideoHeader {
+    assets_dir: String,
+    entry: RecordingEntry,
+    /// Where to save it, which `export_pick_save` chose. Empty when `transfer` is set.
+    #[serde(default)]
+    dest: String,
+    /// A file name in the accounts transfer folder, for a video that is uploaded and not saved by the person.
+    #[serde(default)]
+    transfer: Option<String>,
+    width: u32,
+    height: u32,
+    /// How many bytes of the body are the strokes' JSON. The picture's RGBA rows follow.
+    strokes_len: usize,
+}
+
+/// The longest recording that is made into a video: the picture is drawn for every frame.
+const MAX_VIDEO_NS: u64 = 3 * 3_600 * 1_000_000_000;
+
+/// Saves a recording as a narrated video at a path that `export_pick_save` chose: the page as a picture, the ink drawn
+/// again as it was drawn, and the recording's sound, as an MP4 file. The body is the strokes' JSON and then the page's
+/// RGBA rows; the `x-opennote-video` header (percent-encoded JSON) says where they divide and what to save. It answers
+/// with the size of the file.
+#[tauri::command]
+pub async fn audio_export_video(
+    state: State<'_, AudioState>,
+    bridge: State<'_, CoreBridge>,
+    grants: State<'_, ExportGrants>,
+    paths: State<'_, crate::paths::Paths>,
+    request: tauri::ipc::Request<'_>,
+) -> IpcResult<u64> {
+    let header = request
+        .headers()
+        .get("x-opennote-video")
+        .and_then(|value| value.to_str().ok())
+        .ok_or_else(|| IpcError::invalid("x-opennote-video", "The video header is missing."))?;
+    let header: VideoHeader = serde_json::from_str(&percent_decode(header))
+        .map_err(|_| IpcError::invalid("x-opennote-video", "The video header isn't valid JSON."))?;
+    let body = match request.body() {
+        InvokeBody::Raw(bytes) => bytes.clone(),
+        InvokeBody::Json(_) => return Err(IpcError::invalid("body", "The page must come as raw bytes.")),
+    };
+    let (dir, _) = bridge.with(|bridge| checked_dir(bridge, &header.assets_dir))?;
+    let transfer = header.transfer.is_some();
+    let dest = match &header.transfer {
+        Some(name) => {
+            let plain = !name.is_empty()
+                && name.len() <= 80
+                && !name.starts_with('.')
+                && name
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'));
+            if !plain {
+                return Err(IpcError::invalid("transfer", "That isn't a file name."));
+            }
+            let folder = paths.local.join(crate::connectors::FOLDER).join("tmp");
+            fs::create_dir_all(&folder)?;
+            folder.join(name)
+        }
+        None => {
+            let dest = PathBuf::from(&header.dest);
+            if !grants.take(&dest) {
+                return Err(IpcError::invalid("dest", "Choose where to save before exporting."));
+            }
+            dest
+        }
+    };
+    if body.len() < header.strokes_len {
+        return Err(IpcError::invalid("body", "The page's strokes are cut short."));
+    }
+    let (strokes, rgba) = body.split_at(header.strokes_len);
+    let strokes: Vec<opennote_media::video::SceneStroke> = serde_json::from_slice(strokes)
+        .map_err(|_| IpcError::invalid("strokes", "The page's strokes aren't valid."))?;
+    let mut scene =
+        opennote_media::video::Scene::from_rgba(header.width, header.height, rgba, strokes).map_err(audio_error)?;
+    let size = blocking(&state, move |state| {
+        let services = state.services();
+        let summary = header.entry.summary().map_err(audio_error)?;
+        let map = PositionMap::from_summary(&summary);
+        let duration = map.duration_ns();
+        if duration > MAX_VIDEO_NS {
+            return Err(IpcError::invalid(
+                "entry",
+                "That recording is too long to make into a video.",
+            ));
+        }
+        scene.place(&map);
+        let player =
+            opennote_media::playback::open_recording(&dir, &summary, &services.decoder).map_err(audio_error)?;
+        let mut pcm = opennote_media::transcribe::MixedPcm::new(player);
+        let temp = dest.with_extension("opennote-part.mp4");
+        let _ = fs::remove_file(&temp);
+        video::write_mp4(&temp, &scene, &mut pcm, duration, &mut |_| {})?;
+        fs::rename(&temp, &dest).inspect_err(|_| {
+            let _ = fs::remove_file(&temp);
+        })?;
+        Ok((fs::metadata(&dest)?.len(), dest))
+    })
+    .await?;
+    if !transfer {
+        grants.mark_written(size.1);
+    }
     Ok(size.0)
 }
 

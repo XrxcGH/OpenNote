@@ -6,13 +6,13 @@ This folder runs the export of a page to PDF and checks the file. It does not dr
 
 Re-exported from `features/pages`.
 
-| Name | Purpose |
-|---|---|
-| `exportPdf(surface, request)` | Prepares, renders, and checks. Returns the bytes, the file's `PdfInfo`, the plan, and a list of problems |
-| `PrintSurface` | What the host implements: `prepare`, `toPdf`, and `dispose` |
-| `checkPdf(info, plan, options)` | Finds a file that does not match its plan |
-| `inspectPdf(bytes)` | Reads a PDF: pages and sizes, the text of each page, images and vector shapes, tags, language, title, bookmarks, and fonts |
-| `exportFileName(title, extension)`, `fileStem(title)` | A name that Windows and every other file system accept |
+| Name                                                  | Purpose                                                                                                                    |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `exportPdf(surface, request)`                         | Prepares, renders, and checks. Returns the bytes, the file's `PdfInfo`, the plan, and a list of problems                   |
+| `PrintSurface`                                        | What the host implements: `prepare`, `toPdf`, and `dispose`                                                                |
+| `checkPdf(info, plan, options)`                       | Finds a file that does not match its plan                                                                                  |
+| `inspectPdf(bytes)`                                   | Reads a PDF: pages and sizes, the text of each page, images and vector shapes, tags, language, title, bookmarks, and fonts |
+| `exportFileName(title, extension)`, `fileStem(title)` | A name that Windows and every other file system accept                                                                     |
 
 ## What the checks find
 

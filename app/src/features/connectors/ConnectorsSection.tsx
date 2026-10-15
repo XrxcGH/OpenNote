@@ -10,7 +10,7 @@ import { useOffline } from '../diagnostics';
 import { ConnectorCard } from './ConnectorCard';
 import styles from './Connectors.module.css';
 import { filterConnectors, groupConnectors, groupName, SETUP_DOC } from './model';
-import { cancelSignIn, connectTo, disconnectFrom, refreshConnectors, useConnectorState } from './runtime';
+import { cancelSignIn, connectTo, disconnectFrom, refreshConnectors, saveClient, useConnectorState } from './runtime';
 import type { ConnectorInfo } from './types';
 
 const platform = () => commandContext('menu').platform;
@@ -78,6 +78,7 @@ export default function ConnectorsSection() {
                 onDisconnect={() => void disconnect(info)}
                 onSetup={() => setUp(info)}
                 onOpenFolder={openFolder}
+                onSaveClient={(clientId, secret) => saveClient(info.id, clientId, secret)}
               />
             ))}
           </ul>

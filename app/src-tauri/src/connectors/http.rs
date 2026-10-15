@@ -28,7 +28,7 @@ impl HostPolicy {
     }
 
     /// Whether `text` is an HTTPS address on one of the hosts. Unit tests also accept `http://127.0.0.1:<port>`
-    /// when `127.0.0.1` is listed, so they can serve answers from a local mock. That branch is not in any build.
+    /// when `127.0.0.1` is listed, so they can serve answers from a local mock. That branch is only in tests and in builds with the `test-endpoints` feature (see `test_hook.rs`), never in a release.
     pub fn allows(&self, text: &str) -> bool {
         if text.contains('\\') {
             return false;
@@ -40,7 +40,8 @@ impl HostPolicy {
         let Some(host) = url.host_str().map(str::to_ascii_lowercase) else {
             return false;
         };
-        let local_test = cfg!(test) && url.scheme() == "http" && host == "127.0.0.1";
+        let local_test =
+            (cfg!(test) || cfg!(feature = "test-endpoints")) && url.scheme() == "http" && host == "127.0.0.1";
         if !local_test && (url.scheme() != "https" || url.port().is_some()) {
             return false;
         }
@@ -48,6 +49,7 @@ impl HostPolicy {
     }
 }
 
+#[derive(Clone)]
 pub enum Body {
     /// Sent as `application/x-www-form-urlencoded`.
     Form(Vec<(String, String)>),
@@ -89,6 +91,8 @@ pub struct HttpResponse {
     pub status: u16,
     pub content_type: Option<String>,
     pub body: Vec<u8>,
+    /// The `Location` header of an answer that is not a redirect: where a resumable upload goes on.
+    pub location: Option<String>,
 }
 
 impl HttpResponse {
@@ -133,7 +137,7 @@ impl Default for UreqHttp {
             .build();
         let config = ureq::Agent::config_builder()
             .tls_config(tls)
-            .https_only(!cfg!(test))
+            .https_only(!(cfg!(test) || cfg!(feature = "test-endpoints")))
             .max_redirects(0)
             .max_redirects_will_error(false)
             .http_status_as_error(false)
@@ -192,7 +196,10 @@ impl Http for UreqHttp {
             }
             let response = self.once(request, &current, drop_body)?;
             let status = response.status().as_u16();
-            if matches!(status, 301 | 302 | 303 | 307 | 308) {
+            // A 308 with no Location is "Resume Incomplete" of a chunked upload (Google), an answer and not a redirect.
+            let redirect = matches!(status, 301 | 302 | 303 | 307 | 308)
+                && !(status == 308 && response.headers().get("location").is_none());
+            if redirect {
                 let location = response
                     .headers()
                     .get("location")
@@ -211,6 +218,11 @@ impl Http for UreqHttp {
                 .get("content-type")
                 .and_then(|value| value.to_str().ok())
                 .map(str::to_owned);
+            let location = response
+                .headers()
+                .get("location")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned);
             let mut body = Vec::new();
             let limit = u64::try_from(max_bytes).unwrap_or(u64::MAX).saturating_add(1);
             response
@@ -226,6 +238,7 @@ impl Http for UreqHttp {
                 status,
                 content_type,
                 body,
+                location,
             });
         }
         Err(HttpError::Network)

@@ -43,13 +43,13 @@ This folder is the screens for [audio recording](../../../../../crates/media/REA
 | `playback.ts`, `highlight.ts`                              | The one open playback, and the moving highlight.                                                                                                          |
 | `stamps.ts`, `watch.ts`                                    | Text marks, and Alt+click.                                                                                                                                |
 | `edits.ts`, `flagEdits.ts`                                 | Trimming, and flags.                                                                                                                                      |
-| `edits.ts`, `enhance.ts`, `exportAudio.ts` | Split, trim, and remove; the enhanced copy; saving as audio. |
-| `storage.ts`, `StorageDialog.tsx` | The list of what recordings take, Compress, Remove audio. |
-| `meeting.tsx`, `snap.tsx`, `RegionDialog.tsx` | The meeting prompt, and snapping the screen. |
-| `drop.ts`, `importFiles.ts`, `momentLinks.ts` | Audio files dropped on a page, and links to a moment. |
-| `SettingsSection.tsx` | The Recording section of Settings. |
-| `moreClient.ts` | The client of the later host commands (`core/audio/more.ts`, `app/src-tauri/src/audio_more`). |
-| `transcripts/` | The transcript block, speakers, quotes, action items, chapters, and the recap. |
+| `edits.ts`, `enhance.ts`, `exportAudio.ts`                 | Split, trim, and remove; the enhanced copy; saving as audio.                                                                                              |
+| `storage.ts`, `StorageDialog.tsx`                          | The list of what recordings take, Compress, Remove audio.                                                                                                 |
+| `meeting.tsx`, `snap.tsx`, `RegionDialog.tsx`              | The meeting prompt, and snapping the screen.                                                                                                              |
+| `drop.ts`, `importFiles.ts`, `momentLinks.ts`              | Audio files dropped on a page, and links to a moment.                                                                                                     |
+| `SettingsSection.tsx`                                      | The Recording section of Settings.                                                                                                                        |
+| `moreClient.ts`                                            | The client of the later host commands (`core/audio/more.ts`, `app/src-tauri/src/audio_more`).                                                             |
+| `transcripts/`                                             | The transcript block, speakers, quotes, action items, chapters, and the recap.                                                                            |
 | `recover.ts`                                               | Recovery after a crash.                                                                                                                                   |
 | `RecordControl.tsx`, `Indicator.tsx`, `RecordingBlock.tsx` | The screens.                                                                                                                                              |
 

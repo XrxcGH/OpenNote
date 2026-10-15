@@ -13,21 +13,21 @@ This folder turns a page's view settings into geometry and plans where its block
 
 All of it is re-exported from `features/pages`.
 
-| Name | Purpose |
-|---|---|
-| `readView(raw)` | Reads a `view` object. Returns the `PageViewSpec` and a list of warnings |
-| `writeView(view)` | The `view` object as stored, with defaults left out |
-| `viewPatch(from, to)` | The merge patch between two views, or `null` when nothing changed |
-| `applyPatch`, `diffPatch`, `mergeLayers` | Merge patch helpers |
-| `newPageView(region, notebook?, section?)` | The view of a new page: app defaults for the region, then the notebook's, then the section's |
-| `setPaperSize`, `setCustomPaper`, `setOrientation`, `setMargins`, `setMode`, `setLayout`, `setBackground`, `setSpacing`, `setContentWidth` | Pure view changes. Each returns a new view |
-| `describePaper(width, height)` | The size name and orientation a width and height stand for |
-| `pageLayout(view, lookup?)` | The `PageLayout`: sheet, flow sheet, column, and background |
-| `planFlow(sheet, blocks, measure)` | Paginates a flow and places every line, row, and block |
-| `planFloating(sheet, items)` | Places floating blocks and ink on sheets, and finds the ones across a break |
-| `planPage(layout, content)` | Both together, with a `SheetPlan` for each sheet |
-| `displayY(flow, y)`, `naturalY(flow, y)` | Map a position between the flow before and after its spacers |
-| `slicesBySheet(flow)` | The part of each block on each sheet |
+| Name                                                                                                                                       | Purpose                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `readView(raw)`                                                                                                                            | Reads a `view` object. Returns the `PageViewSpec` and a list of warnings                     |
+| `writeView(view)`                                                                                                                          | The `view` object as stored, with defaults left out                                          |
+| `viewPatch(from, to)`                                                                                                                      | The merge patch between two views, or `null` when nothing changed                            |
+| `applyPatch`, `diffPatch`, `mergeLayers`                                                                                                   | Merge patch helpers                                                                          |
+| `newPageView(region, notebook?, section?)`                                                                                                 | The view of a new page: app defaults for the region, then the notebook's, then the section's |
+| `setPaperSize`, `setCustomPaper`, `setOrientation`, `setMargins`, `setMode`, `setLayout`, `setBackground`, `setSpacing`, `setContentWidth` | Pure view changes. Each returns a new view                                                   |
+| `describePaper(width, height)`                                                                                                             | The size name and orientation a width and height stand for                                   |
+| `pageLayout(view, lookup?)`                                                                                                                | The `PageLayout`: sheet, flow sheet, column, and background                                  |
+| `planFlow(sheet, blocks, measure)`                                                                                                         | Paginates a flow and places every line, row, and block                                       |
+| `planFloating(sheet, items)`                                                                                                               | Places floating blocks and ink on sheets, and finds the ones across a break                  |
+| `planPage(layout, content)`                                                                                                                | Both together, with a `SheetPlan` for each sheet                                             |
+| `displayY(flow, y)`, `naturalY(flow, y)`                                                                                                   | Map a position between the flow before and after its spacers                                 |
+| `slicesBySheet(flow)`                                                                                                                      | The part of each block on each sheet                                                         |
 
 ## Rules worth knowing
 

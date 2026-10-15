@@ -42,10 +42,12 @@ pub struct ApiResponse {
     pub status: u16,
     pub content_type: Option<String>,
     pub body: String,
+    /// The `Location` header of an answer, for a resumable upload.
+    pub location: Option<String>,
 }
 
 impl ApiRequest {
-    fn into_http(self, connector: &str) -> Result<HttpRequest, ConnectorError> {
+    pub(super) fn into_http(self, connector: &str) -> Result<HttpRequest, ConnectorError> {
         let bad = || ConnectorError::new(Failure::BadInput, connector);
         let method = Method::parse(&self.method).ok_or_else(bad)?;
         let mut request = HttpRequest::new(method, self.url);
@@ -114,6 +116,7 @@ pub async fn connectors_request(
             status: response.status,
             content_type: response.content_type,
             body: String::from_utf8_lossy(&response.body).into_owned(),
+            location: response.location,
         })
     };
     joined(spawn_blocking(work).await)
@@ -159,10 +162,11 @@ mod tests {
             status: 200,
             content_type: None,
             body: "x".into(),
+            location: None,
         })
         .expect("serializes");
         let mut keys: Vec<_> = json.as_object().expect("an object").keys().cloned().collect();
         keys.sort();
-        assert_eq!(keys, ["body", "contentType", "status"]);
+        assert_eq!(keys, ["body", "contentType", "location", "status"]);
     }
 }

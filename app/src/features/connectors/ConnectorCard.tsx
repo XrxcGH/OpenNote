@@ -33,6 +33,8 @@ export interface ConnectorCardProps {
   onDisconnect(): void;
   onSetup(): void;
   onOpenFolder(): void;
+  /** Saves the client ID typed on the card. Answers true when it was saved. */
+  onSaveClient?(clientId: string, clientSecret: string): Promise<boolean>;
 }
 
 function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): Promise<boolean>; onClose(): void }) {
@@ -42,6 +44,8 @@ function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): 
   const [busy, setBusy] = useState(false);
   const form = useRef<HTMLFormElement>(null);
   const school = info.auth === 'tokenAndUrl';
+  // WebDAV takes a user name and a password, not a token, and a server address, not a school's.
+  const webdav = info.id === 'webdav';
   useEffect(() => form.current?.querySelector('input')?.focus(), []);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -62,15 +66,15 @@ function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): 
     >
       {school && (
         <TextField
-          label={t('connectors.detail.addressLabel')}
-          help={t('connectors.detail.addressHelp')}
+          label={t(webdav ? 'connectors.detail.webdavAddressLabel' : 'connectors.detail.addressLabel')}
+          help={t(webdav ? 'connectors.detail.webdavAddressHelp' : 'connectors.detail.addressHelp')}
           value={address}
           onChange={setAddress}
         />
       )}
       <TextField
-        label={t('connectors.detail.tokenLabel')}
-        help={t('connectors.detail.tokenHelp')}
+        label={t(webdav ? 'connectors.detail.webdavTokenLabel' : 'connectors.detail.tokenLabel')}
+        help={t(webdav ? 'connectors.detail.webdavTokenHelp' : 'connectors.detail.tokenHelp')}
         value={token}
         onChange={setToken}
         secret
@@ -87,6 +91,53 @@ function TokenForm(props: { info: ConnectorInfo; onSubmit(input: ConnectInput): 
   );
 }
 
+function ClientForm(props: { onSubmit(id: string, secret: string): Promise<boolean>; onClose(): void }) {
+  const { onSubmit, onClose } = props;
+  const [clientId, setClientId] = useState('');
+  const [secret, setSecret] = useState('');
+  const [busy, setBusy] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
+  useEffect(() => form.current?.querySelector('input')?.focus(), []);
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (busy || clientId.trim().length === 0) return;
+    setBusy(true);
+    const saved = await onSubmit(clientId.trim(), secret.trim());
+    setBusy(false);
+    setSecret('');
+    if (saved) onClose();
+  };
+  return (
+    <form
+      ref={form}
+      className={styles.form}
+      onSubmit={(event) => void submit(event)}
+      onKeyDown={(event) => event.key === 'Escape' && onClose()}
+    >
+      <TextField
+        label={t('connectors.detail.clientIdLabel')}
+        help={t('connectors.detail.clientIdHelp')}
+        value={clientId}
+        onChange={setClientId}
+      />
+      <TextField
+        label={t('connectors.detail.clientSecretLabel')}
+        help={t('connectors.detail.clientSecretHelp')}
+        value={secret}
+        onChange={setSecret}
+        secret
+      />
+      <div className={styles.actions}>
+        <Button type="submit" variant="primary" aria-disabled={busy || clientId.trim().length === 0 ? true : undefined}>
+          {t('connectors.actions.saveClient')}
+        </Button>
+        <Button variant="quiet" onClick={onClose}>
+          {t('connectors.actions.cancel')}
+        </Button>
+      </div>
+    </form>
+  );
+}
 function Details({ info }: { info: ConnectorInfo }) {
   const access = accessLines(info);
   const used = lastUsedLine(info);
@@ -125,10 +176,13 @@ function Details({ info }: { info: ConnectorInfo }) {
 
 export function ConnectorCard(props: ConnectorCardProps) {
   const { info, offline, offlineNoticeId, error, onConnect, onCancel, onDisconnect, onSetup, onOpenFolder } = props;
+  const { onSaveClient } = props;
   const headingId = useId();
   const formId = useId();
   const errorId = useId();
   const [formOpen, setFormOpen] = useState(false);
+  const [clientOpen, setClientOpen] = useState(false);
+  const clientFormId = useId();
   const actions = cardActions(info);
   const state = stateLine(info);
   const since = connectedOnLine(info);
@@ -188,12 +242,28 @@ export function ConnectorCard(props: ConnectorCardProps) {
               <Button variant="quiet" onClick={onOpenFolder} aria-describedby={headingId}>
                 {t('connectors.actions.openFolder')}
               </Button>
+              {onSaveClient && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setClientOpen((open) => !open)}
+                  aria-describedby={headingId}
+                  aria-expanded={clientOpen}
+                  aria-controls={clientFormId}
+                >
+                  {t('connectors.actions.addClient')}
+                </Button>
+              )}
             </>
           )}
         </div>
         {withForm && formOpen && (
           <div id={formId}>
             <TokenForm info={info} onSubmit={onConnect} onClose={() => setFormOpen(false)} />
+          </div>
+        )}
+        {actions.setup && onSaveClient && clientOpen && (
+          <div id={clientFormId}>
+            <ClientForm onSubmit={onSaveClient} onClose={() => setClientOpen(false)} />
           </div>
         )}
         <Details info={info} />

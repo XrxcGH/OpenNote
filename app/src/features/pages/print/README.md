@@ -18,17 +18,17 @@ This folder turns a page into the document that prints: one box for each sheet, 
 
 Re-exported from `features/pages`.
 
-| Name | Purpose |
-|---|---|
-| `preparePrint(doc, input)` | Everything above, in the given document. Returns the print `html`, the plan, the breaks, warnings, and timings |
-| `showDocument(doc, html)` | Replaces the document and waits for fonts and images |
-| `planPrint(sheet, total, options)` | The sheets that print, the box size, and the bands |
-| `parsePageRange(text, count, parity)` | `1-3, 5`, `6-`, odd or even sheets |
-| `fillTemplate`, `fillBand`, `bandBox` | Header and footer fields (`{page}`, `{pages}`, `{title}`, `{notebook}`, `{section}`, `{date}`) and where the band sits |
-| `printCss`, `measureCss`, `paperStyle` | The stylesheets |
-| `measureDocument`, `printDocument` | The two documents as strings |
-| `FlowMeasurer`, `settle` | Reading layout from a document, and waiting for fonts and images |
-| `rotatedBounds` | The box around a rotated block, for finding its sheets |
+| Name                                   | Purpose                                                                                                                |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `preparePrint(doc, input)`             | Everything above, in the given document. Returns the print `html`, the plan, the breaks, warnings, and timings         |
+| `showDocument(doc, html)`              | Replaces the document and waits for fonts and images                                                                   |
+| `planPrint(sheet, total, options)`     | The sheets that print, the box size, and the bands                                                                     |
+| `parsePageRange(text, count, parity)`  | `1-3, 5`, `6-`, odd or even sheets                                                                                     |
+| `fillTemplate`, `fillBand`, `bandBox`  | Header and footer fields (`{page}`, `{pages}`, `{title}`, `{notebook}`, `{section}`, `{date}`) and where the band sits |
+| `printCss`, `measureCss`, `paperStyle` | The stylesheets                                                                                                        |
+| `measureDocument`, `printDocument`     | The two documents as strings                                                                                           |
+| `FlowMeasurer`, `settle`               | Reading layout from a document, and waiting for fonts and images                                                       |
+| `rotatedBounds`                        | The box around a rotated block, for finding its sheets                                                                 |
 
 ## Rules worth knowing
 

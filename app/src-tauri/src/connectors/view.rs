@@ -205,7 +205,11 @@ mod tests {
                 "tasksWrite",
                 "classroomRead",
                 "driveFiles",
-                "youtubeRead"
+                "youtubeRead",
+                "driveRead",
+                "youtubeUpload",
+                "youtubeCaptions",
+                "driveAppData"
             ]
         );
         assert!(

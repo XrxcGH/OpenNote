@@ -222,6 +222,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         audio_more::audio_storage_scan,
         audio_more::audio_purge_history,
         audio_more::audio_export,
+        audio_more::audio_export_video,
         audio_more::audio_import_file,
         audio_more::meeting::audio_meeting_poll,
         audio_more::snap::audio_snap,
@@ -355,5 +356,6 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         connectors::connectors_request,
         api::api_call,
         share::share_take,
+        connectors::accounts_call,
     ]
 }

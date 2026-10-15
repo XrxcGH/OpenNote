@@ -27,19 +27,19 @@ The Rust side is in [`crates/crashreport`](../../../../crates/crashreport/README
 
 Everything is exported from `index.ts`.
 
-| Name | Kind | Use |
-|---|---|---|
-| `prompt(consent)`, `savingAllowed(consent)` | functions | Show the consent screen at start-up when `prompt` is not `none`. Turn crash reports on only when `savingAllowed`. |
-| `openConsent(reason)`, `reduceConsent(flow, event)` | reducer | The consent screen. `result` holds the `Consent` to store when `closed`. |
-| `reduceReview(state, event)`, `canSend`, `sendRequest` | reducer | Review a report, then send the digest of the text that was shown. |
-| `crashRows`, `crashListSummary`, `refusalMessage` | functions | The list and the messages for a refusal. |
-| `selfCheckView(check)`, `formatBytes` | functions | The self-check screen's rows. |
-| `openFeedback`, `reduceFeedback`, `canSave`, `saveRequest` | reducer | The feedback form, review, and save. |
-| `sectionRows`, `removedLine` | functions | The review's list of parts and what was removed. |
-| `openSafeStart(report)`, `reduceSafeStart`, `safeStartText`, `safeStartAnnouncement` | functions | At start-up, call `DiagnosticsClient.startup`. If `openSafeStart` returns a flow, show the offer. `result` holds `safe` or `normal` when `closed`. |
-| `safeModeNotice(safeMode)`, `sessionStatsLine(stats)` | functions | The notice while safe mode is on, and the count of recent sessions for the self-check and Privacy panel. |
-| `DiagnosticsClient`, `DiagnosticsError` | interface, class | What the host provides. Errors carry a code, never a message that could hold private text. |
-| `createFakeDiagnostics` | function | The in-memory host. It follows the same rules as the Rust side. |
+| Name                                                                                 | Kind             | Use                                                                                                                                                |
+| ------------------------------------------------------------------------------------ | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prompt(consent)`, `savingAllowed(consent)`                                          | functions        | Show the consent screen at start-up when `prompt` is not `none`. Turn crash reports on only when `savingAllowed`.                                  |
+| `openConsent(reason)`, `reduceConsent(flow, event)`                                  | reducer          | The consent screen. `result` holds the `Consent` to store when `closed`.                                                                           |
+| `reduceReview(state, event)`, `canSend`, `sendRequest`                               | reducer          | Review a report, then send the digest of the text that was shown.                                                                                  |
+| `crashRows`, `crashListSummary`, `refusalMessage`                                    | functions        | The list and the messages for a refusal.                                                                                                           |
+| `selfCheckView(check)`, `formatBytes`                                                | functions        | The self-check screen's rows.                                                                                                                      |
+| `openFeedback`, `reduceFeedback`, `canSave`, `saveRequest`                           | reducer          | The feedback form, review, and save.                                                                                                               |
+| `sectionRows`, `removedLine`                                                         | functions        | The review's list of parts and what was removed.                                                                                                   |
+| `openSafeStart(report)`, `reduceSafeStart`, `safeStartText`, `safeStartAnnouncement` | functions        | At start-up, call `DiagnosticsClient.startup`. If `openSafeStart` returns a flow, show the offer. `result` holds `safe` or `normal` when `closed`. |
+| `safeModeNotice(safeMode)`, `sessionStatsLine(stats)`                                | functions        | The notice while safe mode is on, and the count of recent sessions for the self-check and Privacy panel.                                           |
+| `DiagnosticsClient`, `DiagnosticsError`                                              | interface, class | What the host provides. Errors carry a code, never a message that could hold private text.                                                         |
+| `createFakeDiagnostics`                                                              | function         | The in-memory host. It follows the same rules as the Rust side.                                                                                    |
 
 ## The rules the models keep
 

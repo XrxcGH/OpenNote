@@ -1,0 +1,131 @@
+@layer components {
+  .card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .provider {
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-secondary);
+  }
+
+  .title {
+    margin: 0;
+    font-weight: var(--font-weight-semibold);
+    overflow-wrap: anywhere;
+  }
+
+  .stage {
+    position: relative;
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+  }
+
+  .stageTall {
+    aspect-ratio: 4 / 3;
+  }
+
+  .stagePodcast {
+    aspect-ratio: auto;
+    block-size: 11rem;
+  }
+
+  .frame,
+  .picture {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+  }
+
+  .picture {
+    object-fit: cover;
+  }
+
+  .placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .transcript {
+    display: grid;
+    gap: var(--space-1);
+    max-block-size: 14rem;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  .line {
+    display: grid;
+    grid-template-columns: 4rem 1fr;
+    gap: var(--space-2);
+    inline-size: 100%;
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .line:hover {
+    background: var(--color-surface-sunken);
+  }
+
+  .line[aria-current='true'] {
+    background: var(--color-accent-primary-subtle);
+  }
+
+  .time {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+}

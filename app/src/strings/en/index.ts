@@ -41,6 +41,7 @@ import { qolSearch } from './qolSearch';
 import { intelPlus } from './intelPlus';
 import { qol } from './qol';
 import { storage } from './storage';
+import { accounts } from './accounts';
 import { connectors } from './connectors';
 import { platformApi } from './platformApi';
 import { pdf } from './pdf';
@@ -94,4 +95,5 @@ export const en = {
   pdf,
   intelSpeech,
   intelMore,
+  accounts,
 } as const;
