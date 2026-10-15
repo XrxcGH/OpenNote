@@ -21,9 +21,13 @@ pub struct RawResource {
     pub too_big: bool,
 }
 
-/// The most text one element may hold: the base64 of a 256 MiB attachment with its line breaks. Past it the
-/// element's text is dropped and marked too big, so one huge attachment cannot exhaust memory.
-pub const MAX_ELEMENT_TEXT: usize = 360 << 20;
+/// The largest attachment an ENEX import keeps, the same ceiling the app puts on an attached file.
+pub const MAX_RESOURCE_BYTES: usize = 200 << 20;
+
+/// The most text one element may hold: the base64 of a [`MAX_RESOURCE_BYTES`] attachment, broken into 64-character
+/// lines with CRLF. Past it the element's text is dropped and marked too big, so one huge attachment cannot exhaust
+/// memory: reading and decoding the largest kept attachment peaks near 480 MiB.
+pub const MAX_ELEMENT_TEXT: usize = 280 << 20;
 
 /// One note, as the file holds it.
 #[derive(Default)]
@@ -204,5 +208,13 @@ mod tests {
         assert!(note.resources[0].too_big && note.resources[0].data.is_empty());
         assert_eq!(note.resources[0].mime, "image/png");
         assert!(!note.resources[1].too_big && note.resources[1].data == "AAAA");
+    }
+
+    #[test]
+    fn the_real_cap_holds_the_largest_attachment_and_little_more() {
+        let base64 = MAX_RESOURCE_BYTES.div_ceil(3) * 4;
+        let with_breaks = base64 + base64.div_ceil(64) * 2;
+        assert!(with_breaks <= MAX_ELEMENT_TEXT);
+        assert!(MAX_ELEMENT_TEXT - with_breaks < 8 << 20);
     }
 }

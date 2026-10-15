@@ -188,6 +188,7 @@ mod tests {
     #[test]
     fn a_saved_report_gets_a_new_name_each_time() {
         let dir = tempfile::tempdir().expect("a folder");
+        grants::grant(dir.path());
         jobs::remember_report("import-1", "# Report".to_owned());
         let args = || json!({ "job": "import-1", "folder": dir.path().to_string_lossy() });
         let first = dispatch("save_report", args(), dir.path()).expect("saves");
