@@ -123,7 +123,7 @@ commandBar.register({
   priority: 12,
   flag: 'interop.pdfImport',
 });
-// The Home tab's share group follows the tree's New, Edit and Move groups, which register in their own module
+// The Home tab's share group follows the tree's New, Edit, and Move groups, which register in their own module
 // body, so this one waits a microtask as the interop feature's buttons do. Last in the group, after Share.
 queueMicrotask(() => {
   commandBar.register({

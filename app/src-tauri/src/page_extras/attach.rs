@@ -250,7 +250,7 @@ impl Notes for AppNotes {
     }
 }
 
-/// Runs `work` on the page through the shell's own session of it, opened for the work and closed after it. The
+/// Runs `work` on the page through the shell's own session of it (opened for the work and closed after it). The
 /// bridge is held meanwhile, so two watches never share the session. `work` also learns whether a window has the
 /// page open.
 fn in_shell<N: Notes, T>(notes: &N, page: &str, work: impl FnOnce(&PageHandle, bool) -> IpcResult<T>) -> IpcResult<T> {

@@ -22,7 +22,7 @@ pub(crate) struct Rgba {
 /// How a decoded bitmap combines with the destination.
 #[derive(Clone, Copy)]
 pub(crate) enum Blend {
-    /// A raster operation (BITBLT, STRETCHDIB and friends).
+    /// A raster operation (BITBLT, STRETCHDIB, and friends).
     Rop(u32),
     /// EMR_ALPHABLEND: a constant alpha (0..=255), times the per-pixel alpha when `per_pixel` is set
     /// (AC_SRC_ALPHA: the source colors are premultiplied by it).

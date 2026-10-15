@@ -302,7 +302,7 @@ const SYNCED: readonly SendService[] = ['dropbox', 'box', 'webdav'];
 
 /**
  * Brings every Dropbox, Box, and WebDAV copy up to date in one go: a page's copy when the page changed since it was
- * sent, a section's or notebook's copy always (their own times don't follow their pages). Each is sent over its copy,
+ * sent; a section's or notebook's copy always (their own times don't follow their pages). Each is sent over its copy,
  * so nothing new appears in the folder. Quiet when nothing needs it.
  */
 export async function syncCopies(): Promise<number> {

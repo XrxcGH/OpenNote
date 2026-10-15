@@ -1,5 +1,5 @@
 // The pen and touch gestures in the shortcut list: scribble to erase, circle and tap, and the two- and three-finger
-// double taps, each with whether it is on now. They are turned on and off in Settings, Pen and touch, so the table
+// double taps, each with whether it is on now. They are turned on and off in Settings > Pen and touch, so the table
 // links there instead of offering a switch of its own.
 
 import { navigate } from '../../app/location';
@@ -26,7 +26,7 @@ export const GESTURE_ROWS: readonly GestureRow[] = [
   { id: 'threeFingerRedo', name: 'ink.gestures.threeFingerRedo', how: 'shortcuts.gestures.threeFingerHow' },
 ];
 
-/** Settings, Pen and touch, where the gestures are turned on and off. Closes the shortcut dialog first. */
+/** Settings > Pen and touch, where the gestures are turned on and off. Closes the shortcut dialog first. */
 export function openPenSettings(): void {
   closeOverlay();
   navigate({ view: 'settings', section: 'penAndTouch' });

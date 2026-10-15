@@ -207,7 +207,7 @@ export function dayOf(date: Date): string {
   return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`;
 }
 
-/** A file-name part from a label: lower case, letters and digits, single hyphens. */
+/** A file-name part from a label: lower case, letters, and digits, single hyphens. */
 export function slug(label: string): string {
   return (
     label

@@ -180,7 +180,7 @@ pub enum PenTool {
     Highlighter,
     /// Pen library (flag `ink.penLibrary`): width from pressure and speed.
     Fountain,
-    /// Pen library: a soft brush, thick when pressed or slow.
+    /// Pen library: a soft brush that is thick when pressed or slow.
     Brush,
     /// Pen library: a flat nib held at a fixed angle.
     Calligraphy,

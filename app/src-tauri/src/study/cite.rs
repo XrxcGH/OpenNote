@@ -71,7 +71,7 @@ pub fn clean_doi(text: &str) -> Option<String> {
     valid.then(|| doi.to_owned())
 }
 
-/// An ISBN-10 or ISBN-13 with a good check digit, written without hyphens or spaces.
+/// An ISBN-10 or ISBN-13 with a good check digit and no hyphens or spaces.
 pub fn clean_isbn(text: &str) -> Option<String> {
     let digits: String = text
         .trim()

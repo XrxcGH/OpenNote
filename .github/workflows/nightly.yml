@@ -285,7 +285,7 @@ jobs:
         env:
           OPENNOTE_E2E_EXE: target/ci/opennote.exe
         # One file at a time, because the specs share the machine's windows (tests/e2e/harness.ts). The specs in
-        # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record and stop, search, back up
+        # tests/e2e/later cover Phases 6 to 13: export a PDF, import a notebook, record then stop, search, back up
         # now, quick capture, and the tool windows.
         run: node --test --test-concurrency=1 "tests/e2e/**/*.spec.ts"
       - name: Start-up baseline for main
@@ -340,7 +340,7 @@ jobs:
           retention-days: 90
 
   nvda:
-    # NVDA, driven by Guidepup, walks the keyboard and screen reader checklist of tests/nvda in a headed browser and
+    # NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in tests/nvda in a headed browser and
     # records what it said (A4-42). The Guidepup packages are installed here, not in package.json, so no other job
     # needs them. A phrase NVDA did not say fails the job, and nvda.json has everything it did say.
     runs-on: windows-latest

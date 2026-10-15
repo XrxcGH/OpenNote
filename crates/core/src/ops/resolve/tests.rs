@@ -107,7 +107,7 @@ fn checked_strokes_need_new_ids_and_an_ink_block() {
 
 #[test]
 fn object_groups_live_in_the_view_and_undo_exactly_without_touching_the_reading_order() {
-    // ADR 0036: a group is a `groups` entry in the page view, set and removed by a view patch.
+    // ADR 0036: a group is a `groups` entry in the page view that a view patch sets and removes.
     let page = sample_page();
     let (clock, limits) = ctx_parts();
     let ctx = ResolveCtx {

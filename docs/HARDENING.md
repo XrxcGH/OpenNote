@@ -27,7 +27,7 @@ The [nightly workflow](../.github/workflows/nightly.yml) runs every night on the
 | `proptest` | All tests of `opennote-core`, with more random cases | 10,000 cases |
 | `perf` | The benchmarks in `tests/perf/core`, with their budget check | A 1,000-page notebook |
 | `soak` | A scripted person edits one long note at random in the web build (`tests/soak`) and the job holds memory, nodes, and typing time flat | 120 minutes |
-| `nvda` | NVDA, driven by Guidepup, walks the keyboard and screen reader checklist in `tests/nvda` on Windows and records what it said | 6 checks |
+| `nvda` | NVDA, driven by Guidepup, walks through the checklist for the keyboard and the screen reader in `tests/nvda` on Windows and records what it said | 6 checks |
 
 The fuzz corpus is kept in the Actions cache, so each night starts from the inputs found the night before. A crashing input is uploaded with the run.
 

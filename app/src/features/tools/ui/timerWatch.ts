@@ -1,4 +1,4 @@
-// Notices when a timer finishes, whether or not the Timers window is open. It says so politely to a screen reader,
+// Notices when a timer finishes, whether the Timers window is open. It says so politely to a screen reader,
 // and shows a Windows notification only for a timer the person asked one for. Each finish is told once: the key of a
 // finish is kept on this device, so a second window of the app does not tell it again, and a timer that ended before
 // the app started is not told about at all.
@@ -19,7 +19,7 @@ function told(): string[] {
   return Array.isArray(list) ? list.filter((one): one is string => typeof one === 'string') : [];
 }
 
-/** Marks a finish as told. Returns false when it already was, here or in another window. */
+/** Marks a finish as told. Returns false when it was already told, in any window. */
 function claim(key: string): boolean {
   const list = told();
   if (list.includes(key)) return false;

@@ -1,5 +1,5 @@
 // The screens of Phases 5 to 13 and the quality-of-life dialogs, for the focus walk, axe, and the screenshot matrix
-// (A4-37): search, export and import, the tool windows, the graph view, Home, daily notes, flashcards, connectors,
+// (A4-37): search, export, and import, the tool windows, the graph view, Home, daily notes, flashcards, connectors,
 // on-device intelligence, recording, the Draw tab, and the Check dialogs. Each state is reached the way a person
 // reaches it, by keys, the palette, and the tree's menu, so a screen that cannot be reached fails here first.
 // Baselines come only from the update-screenshots workflow.

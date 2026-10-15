@@ -314,7 +314,7 @@ const PREVIEW_HOSTS: &[&str] = &[
 /// The most a preview may be: a picture, or a few lines of oEmbed.
 const MAX_PREVIEW: usize = 3 * 1024 * 1024;
 
-/// Whether the address may be fetched as a preview: https, no port or sign-in details, on one of the listed hosts.
+/// Whether the address may be fetched as a preview: https only, with neither a port nor sign-in details, on one of the listed hosts.
 pub(super) fn preview_host(text: &str) -> Option<String> {
     let host = public_upload_host(text)?;
     PREVIEW_HOSTS.contains(&host.as_str()).then_some(host)

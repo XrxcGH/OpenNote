@@ -1,5 +1,5 @@
 // The list part of Upcoming: the groups that have something in them (Overdue, Today, This week, Later, and no
-// date), each with its items. An item has a checkbox, its title and date, a reminder choice, Skip for a repeat, and
+// date), each with its items. An item has a checkbox, a title with its date, a reminder choice, Skip for a repeat, and
 // a remove button. A line read from a page is owned by the page, so it can be reminded about but not removed.
 import { useState } from 'react';
 import { useFlag } from '../../../app/flags';

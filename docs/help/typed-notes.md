@@ -12,7 +12,7 @@ A page holds text boxes, headings, lists, checklists, quotes, code, callouts, ta
 | Make a heading | Press Ctrl+Alt+1, Ctrl+Alt+2, or Ctrl+Alt+3. |
 | Make text bold | Press Ctrl+B. |
 | Link to another page | Type `[[` and pick a page. |
-| Show another page inside this one | Type `![[` and pick a page. To show one paragraph, copy its paragraph ID and write `![[Page#^id]]`. When you export, the embedded text is included. |
+| Show another page inside this one | Type `![[` and pick a page. To show one paragraph, write `![[Page#^id]]` with the paragraph ID you copied. When you export, the embedded text is included. |
 | Paste with the structure and without stray fonts | Press Ctrl+V. Press Ctrl+Shift+V to paste plain text. |
 | Paste a screenshot | Press Win+Shift+S, then Ctrl+V. |
 
@@ -48,7 +48,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 - Choose Size and position on a picture to type its size and how much to crop from each side. Reset crop puts the whole picture back.
 - Drop a file, a PDF, or a link on the page to attach it. A Word file you edit and save comes back into the page.
 - Documents, pictures, audio, video, and ZIP files open in their own app. Other files are shown in their folder, and programs and scripts never open from a note.
-- A PDF or Office attachment shows its first page on the card. To keep a file outside the note, right-click the attachment and choose Save a copy of the attachment. The note keeps its own copy.
+- A PDF or Office attachment shows its first page on the card. Right-click the attachment and choose Save a copy of the attachment to keep a file outside the note. The note keeps its own copy.
 
 ## Spelling and reading aloud
 

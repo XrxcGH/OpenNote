@@ -3,7 +3,7 @@
 // stroke from the web platform's page service and checks that every point that snapped lies on a line (or a dot) the
 // paper draws, within 0.01 page units. The paper's lines are read from the paper the page shows (its SVG path data),
 // never from the page's own numbers. A pixel check at 4x then finds the drawn line's ink and the paper's line in a
-// screenshot and checks that the one is centered on the other, and 4x crops of every case are saved, light and dark.
+// screenshot and checks that the one is centered on the other, and 4x crops of every case are saved, light, and dark.
 // Holding Alt while drawing keeps a shape where it was drawn.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -281,7 +281,7 @@ export async function setZoom(
   return settledWorld(page);
 }
 
-/** Whether a Draw tab switch is on, read from the bar or from More (which this closes again). */
+/** Whether a Draw tab switch is on, read from the bar first and then from More (which this closes again). */
 export async function isOn(page: Page, name: string): Promise<boolean> {
   const control = await drawControl(page, name);
   const state = (await control.getAttribute('aria-pressed')) ?? (await control.getAttribute('aria-checked'));

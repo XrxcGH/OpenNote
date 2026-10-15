@@ -3,9 +3,9 @@
 //! Most EMF+ files are *dual*: the same picture is also drawn with plain EMF records, which
 //! [`crate::emf`] already plays, so this reader ignores their EMF+ part. An *EMF+ only* file has
 //! nothing else to draw; for those this reader plays the records:
-//! - brushes (solid, hatch, texture, linear and path gradients), pens, paths, images, fonts,
+//! - brushes (solid, hatch, texture, linear, and path gradients), pens, paths, images, fonts,
 //!   string formats and regions, including objects split across several records;
-//! - rectangles, polygons, lines, ellipses, paths and Béziers;
+//! - rectangles, polygons, lines, ellipses, paths, and Béziers;
 //! - bitmaps (raw pixel formats, and PNG/JPEG/GIF/TIFF/BMP payloads) and strings (DrawString,
 //!   DrawDriverString with character codes);
 //! - world and page transforms, save/restore and containers;
@@ -232,7 +232,7 @@ enum Obj {
     Region(Area),
 }
 
-/// An object arriving in several records: its id, type, total size and the bytes so far.
+/// An object arriving in several records: its id, type, total size, and the bytes so far.
 struct Partial {
     id: usize,
     kind: u16,
@@ -449,7 +449,7 @@ impl Plus {
                 let img = self.image(id)?;
                 let pts = points(r, 28, 3, compressed)?;
                 let (p0, p1, p2) = (*pts.first()?, *pts.get(1)?, *pts.get(2)?);
-                // The destination parallelogram's top-left, top-right and bottom-left corners; a
+                // The destination parallelogram's top-left, top-right, and bottom-left corners; a
                 // sheared or rotated one is drawn into its bounding rectangle's axes.
                 let dst = [p0.0, p0.1, p1.0 - p0.0 + (p2.0 - p0.0), p2.1 - p0.1 + (p1.1 - p0.1)];
                 self.draw_image(cv, &img, r, dst)
@@ -561,7 +561,7 @@ impl Plus {
     }
 
     /// Combines a new clip area with the current one under the record's combine mode: replace,
-    /// intersect and union (as the rectangle around both). XOR, exclude and complement leave the
+    /// intersect and union (as the rectangle around both). XOR, exclude, and complement leave the
     /// clip as it was.
     fn combine(&mut self, flags: u16, new: Area) -> Option<()> {
         self.clip = match (flags >> 8) & 0xF {
@@ -809,7 +809,7 @@ impl Plus {
     }
 }
 
-/// Page unit to device pixels: world, display and pixel are 1; point, inch, document, mm.
+/// Page unit to device pixels: world, display, and pixel are 1; point, inch, document, mm.
 fn unit_px(unit: u32, dpi: f64) -> f64 {
     match unit {
         3 => dpi / 72.0,

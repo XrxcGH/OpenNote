@@ -51,7 +51,7 @@ export function copyOf(
 }
 
 /**
- * The copies a sync must send again: a page's copy when the page changed after it was sent, a section's or notebook's
+ * The copies a sync must send again: a page's copy when the page changed after it was sent; a section's or notebook's
  * always (their own times don't follow their pages). A picture of a selection can't be made again, so it is left out.
  */
 export function copiesDue(

@@ -165,7 +165,7 @@ fn record(cv: &mut Canvas, func: u16, r: Bytes) {
             cv.add_object(None, b);
             Some(())
         }
-        // Palettes, old-style pattern brushes and regions take a handle slot too, so later
+        // Palettes, old-style pattern brushes, and regions take a handle slot too, so later
         // SELECTOBJECT handles count them; selecting one draws nothing.
         0x00F7 | 0x01F9 | 0x06FF => {
             cv.add_object(None, Obj::Other);
@@ -253,7 +253,7 @@ fn dib_pattern_brush(r: Bytes) -> Option<Brush> {
 }
 
 /// Font object (MS-WMF 2.2.1.2): height, width, escapement, orientation, weight (i16 each), italic,
-/// underline, strike-out and charset bytes, three precision/quality bytes, pitch and family, then the
+/// underline, strike-out, and charset bytes, three precision/quality bytes, pitch, and family, then the
 /// face name (up to 32 bytes, NUL-terminated, in the font's character set).
 fn font(r: Bytes) -> Option<LogFont> {
     let height = r.i16(6)?;
@@ -338,7 +338,7 @@ fn rect16(r: Bytes, off: usize) -> Option<[f64; 4]> {
     Some([f64::from(l), f64::from(t), f64::from(rr), f64::from(b)])
 }
 
-/// ARC, PIE and CHORD: end Y, end X, start Y, start X, then the bounding rectangle (bottom, right, top, left).
+/// ARC, PIE, and CHORD: end Y, end X, start Y, start X, then the bounding rectangle (bottom, right, top, left).
 fn arc16(r: Bytes) -> Option<([f64; 4], P, P)> {
     let end = xy16(r, 6)?;
     let start = xy16(r, 10)?;
@@ -373,7 +373,7 @@ fn has_bitmap(func: u16, r: Bytes) -> bool {
     r.0.len() / 2 > usize::from(func >> 8) + 3
 }
 
-/// META_DIBBITBLT: rop(4), ySrc, xSrc, then height, width, yDest, xDest and the DIB at 22. The
+/// META_DIBBITBLT: rop(4), ySrc, xSrc, then height, width, yDest, xDest, and the DIB at 22. The
 /// bitmap-less form has a reserved word before the height, so its fields sit 2 bytes later; it, or
 /// a source-less raster operation, fills the destination.
 fn dib_bitblt(cv: &mut Canvas, r: Bytes) -> Option<()> {
@@ -391,7 +391,7 @@ fn dib_bitblt(cv: &mut Canvas, r: Bytes) -> Option<()> {
     dib_blit(cv, r, 22, rop, dst, src)
 }
 
-/// META_DIBSTRETCHBLT: rop(4), srcH, srcW, ySrc, xSrc, then destH, destW, yDest, xDest and the DIB at
+/// META_DIBSTRETCHBLT: rop(4), srcH, srcW, ySrc, xSrc, then destH, destW, yDest, xDest, and the DIB at
 /// 26. The bitmap-less form has a reserved word after xSrc, so the destination sits 2 bytes later;
 /// it, or a source-less raster operation, fills the destination.
 fn dib_stretchblt(cv: &mut Canvas, r: Bytes) -> Option<()> {

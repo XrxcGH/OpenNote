@@ -1,5 +1,5 @@
 //! Drawing state shared by the WMF and EMF readers: window/viewport mapping and the EMF world
-//! transform, pen and brush selection through an object table, the DC save stack and path brackets.
+//! transform, pen, and brush selection through an object table, the DC save stack, and path brackets.
 //! Output is device-space items; `lib.rs` maps them into the picture frame.
 
 use std::sync::{Arc, OnceLock};
@@ -15,14 +15,14 @@ const MM_ISOTROPIC: u32 = 7;
 const MM_ANISOTROPIC: u32 = 8;
 const STOCK: u32 = 0x8000_0000;
 pub(crate) const PS_NULL: u32 = 5;
-/// Pen style bits; the rest of the style word holds end-cap, join and type flags.
+/// Pen style bits; the rest of the style word holds end-cap, join, and type flags.
 pub(crate) const PS_STYLE_MASK: u32 = 0x0F;
 pub(crate) const BS_SOLID: u32 = 0;
 /// Cells on the longer side of a computed (gradient or texture) fill tile.
 const SHADE_RES: usize = 128;
 pub(crate) const BS_NULL: u32 = 1;
 pub(crate) const BS_HATCHED: u32 = 2;
-/// BS_PATTERN, BS_DIBPATTERN and BS_DIBPATTERNPT: the brush paints a bitmap tile.
+/// BS_PATTERN, BS_DIBPATTERN, and BS_DIBPATTERNPT: the brush paints a bitmap tile.
 const BS_PATTERN: u32 = 3;
 const BS_DIBPATTERN: u32 = 5;
 const BS_DIBPATTERNPT: u32 = 6;
@@ -303,7 +303,7 @@ impl Raw {
     }
 }
 
-/// Text drawing state: colors, background mode, alignment and the selected font.
+/// Text drawing state: colors, background mode, alignment, and the selected font.
 #[derive(Clone)]
 struct TextState {
     color: [u8; 4],
@@ -554,7 +554,7 @@ impl Canvas {
         [x.0 - o.0, x.1 - o.1, y.0 - o.0, y.1 - o.1, o.0, o.1]
     }
 
-    /// Text color, font and alignment set directly (EMF+ strings name their own font and brush);
+    /// Text color, font, and alignment set directly (EMF+ strings name their own font and brush);
     /// the background is transparent.
     pub fn set_text_style(&mut self, color: [u8; 4], font: LogFont, align: u32) {
         self.text.color = color;
@@ -1044,7 +1044,7 @@ impl Canvas {
         }
     }
 
-    /// FILLPATH, STROKEPATH and STROKEANDFILLPATH: paints the bracketed path and empties it.
+    /// FILLPATH, STROKEPATH, and STROKEANDFILLPATH: paints the bracketed path and empties it.
     pub fn paint_path(&mut self, fill: bool, stroke: bool) {
         let ops = std::mem::take(&mut self.path);
         if self.mix_skips(fill) || ops.len() < 2 {

@@ -120,7 +120,7 @@ export class TouchTool {
     this.stopTool = drawState.subscribe(() => this.pipeline?.setInkToolActive(writesInk(drawState.get().tool)));
     for (const type of PEN_EVENTS) window.addEventListener(type, this.onPen, { capture: true, passive: true });
     window.addEventListener('blur', this.onBlur);
-    // A resize, rotation or zoom moves the edges while the pipeline lives.
+    // A resize, rotation, or zoom moves the edges while the pipeline lives.
     window.addEventListener('resize', this.onResize);
     window.addEventListener('pointerdown', this.onTouchDown, { capture: true, passive: true });
     window.addEventListener('pointerup', this.onTouchEnd, { capture: true, passive: true });

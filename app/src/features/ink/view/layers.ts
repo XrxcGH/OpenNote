@@ -1,9 +1,9 @@
-// Ink layers (ADR 0037, flag ink.layers): named layers of ink that can be hidden, locked, renamed and reordered. New ink
+// Ink layers (ADR 0037, flag ink.layers): named layers of ink that can be hidden, locked, renamed, and reordered. New ink
 // goes to the active layer, and the lasso can move writing to another. The layers live in the page's view under
 // `inkLayers`, like object groups (ADR 0036): the layers and their order, and `assign`, a map from a stroke to its layer
 // for the strokes that are not on the first layer. Every change is a `setPage` patch in the batch with the strokes it
-// concerns, so each is one undo step. Hidden layers are not drawn, printed or exported; locked layers are drawn but the
-// pen, the erasers and the lasso pass over them.
+// concerns, so each is one undo step. Hidden layers are not drawn, printed, or exported; locked layers are drawn but the
+// pen, the erasers, and the lasso pass over them.
 import { isEnabled } from '../../../app/flags';
 import { newId } from '../../../editor/ids';
 import type { Edit, OpenPage } from '../../../services/pages/types';

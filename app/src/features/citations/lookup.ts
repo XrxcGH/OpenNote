@@ -119,7 +119,7 @@ function noteRan(): void {
 
 /**
  * Looks up what was typed. Nothing is sent when it is not a DOI or ISBN, when Work offline is on, or when there is no
- * shell to send it. The time is noted when a request goes out, found or not.
+ * shell to send it. The time is noted when a request goes out (found or not).
  */
 export async function lookupSource(
   text: string,

@@ -25,7 +25,7 @@ The six sign-in services need a client ID. A client ID says which app is asking 
 
 ## What connectors do
 
-Each feature below needs its account connected first. If it is not, the command tells you and offers a way to Settings.
+Each feature below needs its account connected first. If it is not, you get a message and a way to Settings.
 
 ### Sync Readwise
 

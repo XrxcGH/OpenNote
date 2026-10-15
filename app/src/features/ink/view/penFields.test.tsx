@@ -1,4 +1,4 @@
-// Writing in text fields with the pen: a fake pointer stream of pen, touch and mouse presses on the fields.
+// Writing in text fields with the pen: a fake pointer stream of pen, touch, and mouse presses on the fields.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { editableOf, installPenFields } from './penFields';
 

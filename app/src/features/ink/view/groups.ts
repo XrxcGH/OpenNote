@@ -1,7 +1,7 @@
-// Object groups (ADR 0036): ink, text boxes and images kept together, so selecting one selects them all and the lasso
-// frame moves, resizes and deletes them as one. The groups live in the page's view under `groups`, a map from a group
+// Object groups (ADR 0036): ink, text boxes, and images kept together, so selecting one selects them all and the lasso
+// frame moves, resizes, and deletes them as one. The groups live in the page's view under `groups`, a map from a group
 // ID to the IDs of its blocks and strokes; every change to it is a `setPage` patch in the batch with the moves, so
-// grouping, ungrouping and deleting are each one undo step. Grouping never touches the blocks' reading order.
+// grouping, ungrouping, and deleting are each one undo step. Grouping never touches the blocks' reading order.
 import { newId } from '../../../editor/ids';
 import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';

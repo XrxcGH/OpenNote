@@ -34,7 +34,7 @@ fn wrec(func: u16, params: &[u8]) -> Vec<u8> {
 }
 
 /// A WMF file: optional placeable header (bbox left, top, right, bottom in logical units, 1440 per inch),
-/// the standard header, the records and an end-of-file record.
+/// the standard header, the records, and an end-of-file record.
 fn wmf(records: &[Vec<u8>], placeable: Option<[i32; 4]>) -> Vec<u8> {
     let body: Vec<u8> = records.concat();
     let eof = wrec(0, &[]);
@@ -1530,12 +1530,12 @@ fn plain_wmf_target_comes_from_a_window_that_was_read() {
     );
 }
 
-// ---- Text, pattern and hatch brushes, mix-mode idioms ----
+// ---- Text, pattern, and hatch brushes, mix-mode idioms ----
 
 use crate::{HAlign, Picture, Text, VAlign};
 
 /// META_CREATEFONTINDIRECT: height, width, escapement (and orientation), weight, the italic,
-/// underline, strike-out and charset bytes, four precision bytes, then the NUL-terminated face.
+/// underline, strike-out, and charset bytes, four precision bytes, then the NUL-terminated face.
 fn wfont(height: i32, weight: i32, flags: [u8; 3], charset: u8, esc: i32, face: &[u8]) -> Vec<u8> {
     let mut v = cat(vec![h16(height), h16(0), h16(esc), h16(esc), h16(weight)]);
     v.extend(flags);
@@ -3171,7 +3171,7 @@ fn emfplus_clear_paints_the_whole_frame_and_transparent_clears_nothing() {
         all.extend(recs);
         parse(&emf(&[plus_comment(&all)], [0, 0, 99, 49], [0, 0, 2500, 1250])).unwrap()
     };
-    // A translated, clipped world doesn't move or cut the clear.
+    // A translated, clipped world neither moves nor cuts the clear.
     let shift = prec(0x402D, 0, &f32s(&[30.0, 30.0]));
     let clip = prec(0x4032, 0, &f32s(&[0.0, 0.0, 5.0, 5.0]));
     let p = file(vec![shift, clip, clear(0xFFFF_FFFF), prec(0x4031, 0, &[]), dot.clone()]);

@@ -25,7 +25,7 @@ export interface InkPrefs {
   readonly paperSnap: boolean;
   /** Whether the zoom writing box is open. */
   readonly zoomBox: boolean;
-  /** The pen opens the system's handwriting panel in the search box, rename fields and table cells. */
+  /** The pen opens the system's handwriting panel in the search box, rename fields, and table cells. */
   readonly penFields: boolean;
   /** Which pen edits of typed text are on. */
   readonly penEdit: Readonly<Record<'strike' | 'space' | 'split' | 'circle' | 'write', boolean>>;

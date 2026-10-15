@@ -1,4 +1,4 @@
-// The live collection block: pages chosen by a collection's rules, shown inside a page and kept up to date. It
+// The live collection block: pages chosen by a collection's rules, shown inside a page, and kept up to date. It
 // registers the block, and an Insert command with a slash item and an Insert tab button.
 import { announce } from '../../../ui';
 import { PANEL_TYPES, panelRenderer } from '../panels/kinds';

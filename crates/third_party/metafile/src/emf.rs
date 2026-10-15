@@ -377,7 +377,7 @@ fn create_dib_brush(cv: &mut Canvas, r: Bytes, mono: bool) -> Option<()> {
 }
 
 /// EMR_EXTCREATEFONTINDIRECTW: handle, then a LogFont (MS-EMF 2.2.13): height, width, escapement,
-/// orientation, weight (i32 each), italic, underline, strike-out, charset and four more bytes, then
+/// orientation, weight (i32 each), italic, underline, strike-out, charset, and four more bytes, then
 /// the face name in 32 UTF-16 units (NUL-terminated).
 fn create_font(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let slot = r.u32(8)? as usize;
@@ -425,7 +425,7 @@ fn dx_array(r: Bytes, off: usize, n: usize, opts: u32) -> Vec<f32> {
     if dx.len() == n { dx } else { Vec::new() }
 }
 
-/// EMR_EXTTEXTOUTA (83) and EMR_EXTTEXTOUTW (84): bounds, graphics mode and scales, then an EmrText
+/// EMR_EXTTEXTOUTA (83) and EMR_EXTTEXTOUTW (84): bounds, graphics mode, and scales, then an EmrText
 /// at 36: reference point, character count, string offset, options, the rectangle (absent under
 /// ETO_NO_RECT) and the dx offset. Offsets count from the record start. Glyph-index strings name
 /// glyphs of a font the reader cannot match, so they are left out.

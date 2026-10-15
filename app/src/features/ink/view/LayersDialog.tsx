@@ -1,5 +1,5 @@
 // The Layers dialog (flag ink.layers): every layer from the top down, each with a name, Hide, Lock, Make active, Move
-// up and down, Export layer and Delete. Everything is a real button with a name, so a keyboard and a screen reader
+// up and down, Export layer, and Delete. Everything is a real button with a name, so a keyboard and a screen reader
 // reach it all. The dialog stays open while layers change.
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';

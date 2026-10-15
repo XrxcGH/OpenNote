@@ -34,7 +34,7 @@ pub enum HAlign {
 }
 
 /// Where the reference point sits vertically (TA_TOP, TA_BASELINE, TA_BOTTOM): the top of the
-/// character cell, the baseline or the bottom of the cell.
+/// character cell, the baseline, or the bottom of the cell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum VAlign {
     #[default]
@@ -43,7 +43,7 @@ pub enum VAlign {
     Bottom,
 }
 
-/// One string drawn by EXTTEXTOUT, TEXTOUT or SMALLTEXTOUT.
+/// One string drawn by EXTTEXTOUT, TEXTOUT, or SMALLTEXTOUT.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Text {
     /// Text space to picture space as affine coefficients `[a, b, c, d, e, f]` (`x' = a·x + c·y + e`,

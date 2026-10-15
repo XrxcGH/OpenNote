@@ -125,7 +125,7 @@ describe('Google Tasks', () => {
     ]);
     const local = memoryList([]);
     const state = (await syncTasks({ api, local, state: EMPTY_STATE })).state;
-    // A is deleted here. B is deleted here but changed there.
+    // Task A is deleted here. Task B is deleted here but changed there.
     local.tasks.delete('google:g1');
     local.tasks.delete('google:g2');
     const b = mock.tasks.get('g2');

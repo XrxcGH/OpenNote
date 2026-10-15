@@ -1,4 +1,4 @@
-// The study tools added in the tools-study lane: Upcoming repeats, its week and month views, the title bar timer
+// The study tools added in the tools-study lane: Upcoming repeats, its week-and-month views, the title bar timer
 // chip, the dictionary, and the Home Upcoming section.
 
 import { expect, test } from '../fixtures';

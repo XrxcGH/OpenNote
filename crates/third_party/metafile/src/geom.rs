@@ -1,4 +1,4 @@
-//! Path operations in `f64` and the shape builders that turn WMF/EMF rectangles, ellipses and arcs
+//! Path operations in `f64` and the shape builders that turn WMF/EMF rectangles, ellipses, and arcs
 //! into cubic Béziers (the classic 4/3·tan(Δ/4) approximation, at most 90° per piece).
 
 use std::f64::consts::{FRAC_PI_2, PI, TAU};
@@ -52,7 +52,7 @@ pub(crate) enum ArcKind {
     Pie,
 }
 
-/// ARC, CHORD and PIE: the arc runs counter-clockwise on screen from the start point to the end point.
+/// ARC, CHORD, and PIE: the arc runs counter-clockwise on screen from the start point to the end point.
 pub(crate) fn arc_shape(l: f64, t: f64, r: f64, b: f64, s: P, e: P, kind: ArcKind) -> Vec<Op> {
     let (cx, cy, rx, ry) = center(l, t, r, b);
     let ang = |p: P| ((p.1 - cy) / ry.max(f64::MIN_POSITIVE)).atan2((p.0 - cx) / rx.max(f64::MIN_POSITIVE));

@@ -94,7 +94,7 @@ Lasso some writing and choose **Make link** (on the bar above the selection, or 
 
 ## Layers
 
-Choose **Layers** in the command list to keep ink apart. Each layer has a name, and you can hide it, lock it, move it up or down, make it the one new ink goes to, export it on its own, or delete it (its ink goes to the first layer). A hidden layer isn't shown, printed or exported. A locked layer is shown, but the pen, the erasers and the lasso pass over it, so you can trace over a drawing without moving it. To move writing to another layer, lasso it and choose **Move to layer**. A layer made for an imported PDF or slide is locked and stays at the bottom.
+Choose **Layers** in the command list to keep ink apart. Each layer has a name, and you can hide it, lock it, move it up or down, make it the one new ink goes to, export it on its own, or delete it (its ink goes to the first layer). A hidden layer isn't shown, printed, or exported. A locked layer is shown, but the pen, the erasers and the lasso pass over it, so you can trace over a drawing without moving it. To move writing to another layer, lasso it and choose **Move to layer**. A layer made for an imported PDF or slide is locked and stays at the bottom.
 
 ## Writing in text fields with the pen
 

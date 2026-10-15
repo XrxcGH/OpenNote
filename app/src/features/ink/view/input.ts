@@ -457,7 +457,7 @@ function toPaper(g: InkGesture, surface: InkSurface, match: ShapeMatch, linger =
 }
 
 /**
- * The points of a held shape the pen grew or turned, read back and snapped to the paper's lines, so the preview and
+ * The points of a held shape the pen grew or turned, read back, and snapped to the paper's lines, so the preview and
  * its rings follow the lines while the pen moves, as the shape will when the pen lifts.
  */
 function snapLive(g: InkGesture, surface: InkSurface, shape: ShapeMatch, points: Vec[]): Vec[] {

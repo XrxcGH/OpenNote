@@ -1,4 +1,4 @@
-// Repeating to-dos typed in words: every weekday, every 2 weeks, every Monday and Wednesday, monthly on the 1st. The
+// Repeating to-dos typed in words: every Monday and Wednesday, every weekday, every 2 weeks, monthly on the 1st. The
 // phrase is read and cut out; the rules give the next date and never land on a day that has passed.
 import { describe, expect, it } from 'vitest';
 import type { CivilDate } from './date';

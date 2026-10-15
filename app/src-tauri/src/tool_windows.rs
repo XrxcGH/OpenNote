@@ -383,7 +383,7 @@ mod tests {
                 || caller.text.contains(&format!("{}::{}(", callee.module, callee.name)))
     }
 
-    /// The synchronous commands that build a window, directly or through functions they call.
+    /// The synchronous commands that build a window directly or through functions they call.
     fn window_building_sync_commands(functions: &[Function]) -> Vec<String> {
         let mut defined: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
         for function in functions {
