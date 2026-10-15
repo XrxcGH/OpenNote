@@ -98,6 +98,11 @@ class Exporter {
         const text = this.description(block.alt);
         return block.role === 'drawing' && !block.decorative && text !== '' ? `*${text}*` : null;
       }
+      case 'diagram': {
+        const text = this.description(block.alt);
+        const fence = ['```mermaid', block.source, '```'].join('\n');
+        return text === '' ? fence : `*${text}*\n\n${fence}`;
+      }
       case 'other':
         return block.fallback === undefined
           ? (this.o.newerVersion ?? NEWER_VERSION_LINE)

@@ -249,6 +249,7 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     `figure.wrap-left{float:left;margin:0 var(--wrap-gap,16px) 8px 0}`,
     `figure.wrap-right{float:right;margin:0 0 8px var(--wrap-gap,16px)}`,
     `figure.wrap-inline{display:inline-block;vertical-align:top;margin:0 var(--wrap-gap,16px) 8px 0}`,
+    `figure.diagram svg{display:block;max-width:100%;height:auto}.diagram-source{white-space:pre-wrap}`,
     `.ink{display:block;max-width:100%;height:auto}`,
     `img{display:block}p img{display:inline-block}`,
   ];

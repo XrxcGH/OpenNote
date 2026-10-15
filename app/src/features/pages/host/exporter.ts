@@ -28,6 +28,7 @@ export function exportLabels(): ExportLabels {
     ...ENGLISH_LABELS,
     handwriting: t('pageViews.print.handwriting'),
     untitled: t('pageViews.print.untitled'),
+    diagram: t('study.diagram.exportLabel'),
   };
 }
 

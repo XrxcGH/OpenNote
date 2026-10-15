@@ -23,6 +23,7 @@ Open Insert, then Graph. Type a function, such as `y = sin(x)`. Pan and zoom the
 ## Diagrams and mind maps
 
 - Type Mermaid text and get a diagram.
+- Give a diagram a description in its Description of the diagram box. Screen readers read it, and it is kept when you print or export. Printed, PDF, and web page exports draw the diagram as a sharp vector picture.
 - Turn an outline into a mind map, and turn the map back into an outline.
 
 ## Tool windows

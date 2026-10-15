@@ -16,7 +16,9 @@ export function mountDiagram(container: HTMLElement, props: DiagramBlockProps) {
     root.render(
       <DiagramPanel
         source={typeof next.data.source === 'string' ? next.data.source : ''}
+        alt={typeof next.data.alt === 'string' ? next.data.alt : ''}
         readOnly={next.readOnly}
+        onAlt={(alt) => next.patch({ alt: alt === '' ? null : alt })}
         onChange={(source) => next.patch({ source }, fallbackOf(source))}
       />,
     );

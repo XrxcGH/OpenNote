@@ -3,7 +3,7 @@
 import { shownAssetUrl, shownMounted, snapshotShownPage } from '../../page';
 import type { NodeId, NotesService } from '../../../services/notes';
 import { titleOf } from '../../tree';
-import { readExportPage, withBlanks, type TapeBox, type ExportPage } from '../export';
+import { readExportPage, withBlanks, type ExportBlock, type TapeBox, type ExportPage } from '../export';
 import { t } from '../../../strings/t';
 import { tapeBlanksOn } from './tapePref';
 import { collectStrokes } from './strokes';
@@ -56,6 +56,22 @@ function tapeLabels() {
   };
 }
 
+/** Draws each diagram, so print, PDF, pictures, and web pages carry it as a vector drawing. A diagram that can't be drawn stays as text. */
+async function withDiagrams(page: ExportPage): Promise<ExportPage> {
+  if (!page.blocks.some((block) => block.type === 'diagram')) return page;
+  const { drawDiagram } = await import('../../math');
+  const blocks: ExportBlock[] = [];
+  for (const block of page.blocks) {
+    if (block.type !== 'diagram') {
+      blocks.push(block);
+      continue;
+    }
+    const drawn = await drawDiagram(block.source).catch(() => null);
+    blocks.push(drawn?.ok ? { ...block, svg: drawn.svg } : block);
+  }
+  return { ...page, blocks };
+}
+
 /** The shown page as export data, or null when no page is shown. */
 export async function collectSource(notes: NotesService, language = 'en'): Promise<PageSource | null> {
   const mounted = shownMounted.get();
@@ -65,7 +81,7 @@ export async function collectSource(notes: NotesService, language = 'en'): Promi
   const json = await snapshotShownPage(place.title);
   if (!json) return null;
   const strokes = await collectStrokes(pageId);
-  const read = readExportPage(json, strokes, language);
+  const read = await withDiagrams(readExportPage(json, strokes, language));
   const page = tapeBlanksOn() ? withBlanks(read, shownBoxes(), tapeLabels()) : read;
   const assetUrls: Record<string, string> = {};
   for (const id of Object.keys(page.assets)) {

@@ -24,6 +24,8 @@ export interface ExportLabels {
   readonly open: string;
   /** The description of an image or drawing without one, so tagged PDF has some text. */
   readonly noDescription: string;
+  /** What a diagram without a description is called. */
+  readonly diagram: string;
   /** The title of a page without one. */
   readonly untitled: string;
 }
@@ -34,6 +36,7 @@ export const ENGLISH_LABELS: ExportLabels = {
   done: 'Done',
   open: 'Not done',
   noDescription: 'Image without a description',
+  diagram: 'Diagram',
   untitled: 'Untitled page',
 };
 
@@ -149,6 +152,15 @@ function ink(block: ExportBlock & { type: 'ink' }, cx: BlockContext): string {
   return `<figure class="ink-block" style="max-width:${px(width)}px">${svg}</figure>`;
 }
 
+/** A diagram as its drawing, a vector picture with its description, or as its text when it could not be drawn. */
+function diagram(block: ExportBlock & { type: 'diagram' }, cx: BlockContext): string {
+  const label = block.alt === '' ? cx.labels.diagram : block.alt;
+  if (block.svg === undefined || block.svg === '') {
+    return `<pre class="diagram-source" aria-label="${escapeAttr(label)}"><code>${escapeHtml(block.source)}</code></pre>`;
+  }
+  return `<figure class="diagram" role="img" aria-label="${escapeAttr(label)}">${block.svg}</figure>`;
+}
+
 /** One block as HTML. Blocks that show nothing give an empty string. */
 export function renderBlock(block: ExportBlock, cx: BlockContext): string {
   switch (block.type) {
@@ -162,6 +174,8 @@ export function renderBlock(block: ExportBlock, cx: BlockContext): string {
       return table(block, cx);
     case 'ink':
       return ink(block, cx);
+    case 'diagram':
+      return diagram(block, cx);
     case 'other':
       return block.fallback === undefined
         ? `<p class="newer">${escapeHtml(cx.labels.newerVersion)}</p>`

@@ -4,6 +4,7 @@ import { renderBlock, strokesByBlock, ENGLISH_LABELS } from './blocks';
 import { dataUri, exportHtml } from './toHtml';
 import { readExportPage, type ExportPage, type ExportStroke } from './source';
 import { documentCss, lightTheme, readStyles } from './style';
+import { exportMarkdown } from './toMarkdown';
 
 const block = (id: string, order: string, type: string, data: object, frame?: object) => ({
   id,
@@ -246,5 +247,30 @@ describe('HTML export of wrapped images', () => {
     expect(html).not.toContain('Floating" class=');
     expect(html).toContain('figure.wrap-left{float:left;margin:0 var(--wrap-gap,16px) 8px 0}');
     expect(html).toContain('figure.wrap-right{float:right;');
+  });
+});
+
+describe('export of diagrams', () => {
+  const diagramPage = (svg?: string) => {
+    const read = page({
+      blocks: [block('d', 'a0', 'diagram', { source: 'flowchart TD\n  A --> B', alt: 'A leads to B' })],
+    });
+    return svg === undefined
+      ? read
+      : { ...read, blocks: read.blocks.map((one) => (one.type === 'diagram' ? { ...one, svg } : one)) };
+  };
+
+  it('writes the drawn diagram as a vector picture with its description', () => {
+    const { html } = exportHtml(diagramPage('<svg viewBox="0 0 10 10"><path d="M0 0L10 10"/></svg>'));
+    expect(html).toContain(
+      '<figure class="diagram" role="img" aria-label="A leads to B"><svg viewBox="0 0 10 10"><path d="M0 0L10 10"/></svg></figure>',
+    );
+  });
+
+  it('falls back to the diagram text when it could not be drawn, and says what it is in Markdown', () => {
+    const { html } = exportHtml(diagramPage());
+    expect(html).toContain('<pre class="diagram-source" aria-label="A leads to B"><code>flowchart TD\n  A --&gt; B</code></pre>');
+    const markdown = exportMarkdown(diagramPage()).markdown;
+    expect(markdown).toContain('*A leads to B*\n\n```mermaid\nflowchart TD\n  A --> B\n```');
   });
 });
