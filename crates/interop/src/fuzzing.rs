@@ -173,3 +173,6 @@ pub fn onenote(data: &[u8]) {
         run_file(import_onenote, "notes.one", data);
     }
 }
+
+// The older binary formats (.doc, .rtf, .xls, and zipped sheets), whose readers keep their own entry points.
+pub use crate::import::legacy_fuzzing::{doc, rtf, xls, zipped_sheet};

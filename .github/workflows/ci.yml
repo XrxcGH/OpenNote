@@ -333,7 +333,9 @@ jobs:
       - name: Benchmark harness tests
         run: cargo test -p opennote-perf
       - name: Fuzz targets compile
-        run: cargo check --manifest-path crates/core/fuzz/Cargo.toml
+        run: |
+          cargo check --manifest-path crates/core/fuzz/Cargo.toml
+          cargo check --manifest-path crates/interop/fuzz/Cargo.toml
       - name: No work package stubs are left (pull requests into main)
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
         run: |

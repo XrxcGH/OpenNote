@@ -330,7 +330,17 @@ fn opennote_extension_blocks_can_be_edited_and_other_extensions_cannot() {
     let BlockData::Other(other) = &block.data else { panic!() };
     assert_eq!(other.data["root"], json!({"text": "Cells"}));
     let refreshed = patch_fallback(&changed, own_id, json!({"markdown": "Cells"}), 1);
-    assert_eq!(refreshed.blocks.get(own_id).unwrap().fallback.as_ref().unwrap().markdown, "Cells");
+    assert_eq!(
+        refreshed
+            .blocks
+            .get(own_id)
+            .unwrap()
+            .fallback
+            .as_ref()
+            .unwrap()
+            .markdown,
+        "Cells"
+    );
     // The readable copy can be replaced but not removed: a block newer than version 1 needs it (spec 6.5).
     let drop_fallback = Edit::PatchBlock {
         block: own_id,

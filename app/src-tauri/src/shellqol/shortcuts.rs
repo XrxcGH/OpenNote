@@ -63,9 +63,10 @@ pub fn is_page_link(link: &str) -> bool {
 /// A link is safe to put in a shortcut when it names a page, a section, or a notebook by plain characters.
 pub fn is_shortcut_link(link: &str) -> bool {
     link.len() <= 200
-        && ["page", "section", "notebook"]
-            .iter()
-            .any(|kind| link.strip_prefix(&format!("opennote://{kind}/")).is_some_and(|id| !id.is_empty()))
+        && ["page", "section", "notebook"].iter().any(|kind| {
+            link.strip_prefix(&format!("opennote://{kind}/"))
+                .is_some_and(|id| !id.is_empty())
+        })
         && link["opennote://".len()..]
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '-' | '_' | '.' | '%'))

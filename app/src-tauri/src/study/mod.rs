@@ -94,10 +94,7 @@ pub struct ZoteroCall {
 /// own dialogs and calls back into the page; every call arrives on `calls` and is answered with `study_zotero_reply`.
 /// Resolves when Zotero finishes or closes the connection. Fails with `zoteroMissing` when Zotero is not running.
 #[tauri::command]
-pub async fn study_zotero_run(
-    command: String,
-    calls: tauri::ipc::Channel<ZoteroCall>,
-) -> IpcResult<serde_json::Value> {
+pub async fn study_zotero_run(command: String, calls: tauri::ipc::Channel<ZoteroCall>) -> IpcResult<serde_json::Value> {
     tauri::async_runtime::spawn_blocking(move || {
         zotero_wp::run_for_page(
             &command,
@@ -127,6 +124,10 @@ pub async fn study_zotero_run(
 /// The page's answer to a Zotero call: `ok` with the value, or an error message in `value`.
 #[tauri::command]
 pub fn study_zotero_reply(txid: u32, ok: bool, value: serde_json::Value) -> IpcResult<bool> {
-    let answer = if ok { Ok(value) } else { Err(value.as_str().unwrap_or("failed").to_owned()) };
+    let answer = if ok {
+        Ok(value)
+    } else {
+        Err(value.as_str().unwrap_or("failed").to_owned())
+    };
     Ok(zotero_wp::reply(txid, answer))
 }

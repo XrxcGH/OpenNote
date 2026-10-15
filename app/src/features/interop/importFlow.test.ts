@@ -2,6 +2,7 @@
 // The import flow against the web fake and the in-memory notes service: choose, check, review, import, undo.
 
 import { describe, expect, it } from 'vitest';
+import { initFlags } from '../../app/flags';
 import { createWebInterop } from '../../platform/web/interop';
 import { createMemoryNotesService } from '../../services/notes/memory';
 import { createImportFlow } from './importFlow';
@@ -46,6 +47,25 @@ describe('checking a source', () => {
     expect(flow.state.get().step).toBe('review');
     expect(interop.log.picks).toEqual([]);
     detach();
+  });
+
+  it('checks an older Office file only while its flag is on', async () => {
+    const { flow, interop, detach } = setup();
+    interop.pick = () => Promise.resolve('C:\\Notes\\Budget.xls');
+    initFlags('stable');
+    await flow.chooseFile();
+    const state = flow.state.get();
+    expect(state.step).toBe('unsupported');
+    if (state.step === 'unsupported') expect(state.detected.advice).toContain('.xlsx');
+    expect(interop.log.previews).toEqual([]);
+    detach();
+    initFlags('beta');
+    const beta = setup();
+    beta.interop.pick = () => Promise.resolve('C:\\Notes\\Budget.xls');
+    await beta.flow.chooseFile();
+    expect(beta.flow.state.get().step).toBe('review');
+    initFlags('dev');
+    beta.detach();
   });
 
   it('stops at a source it cannot import and shows what to do instead', async () => {

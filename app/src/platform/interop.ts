@@ -35,6 +35,8 @@ export interface DetectedSource {
   advice: string | null;
   /** A shared file locked with a password, which the import needs. */
   needsPassword?: boolean;
+  /** True for older or binary office files (.doc, .rtf, .xls, .xlsb, .ods), which the interop.legacyFormats flag gates. */
+  legacy?: boolean;
 }
 
 /** What was simplified or skipped for one reason. */

@@ -76,16 +76,18 @@ function detectPath(path: string): DetectedSource {
   }
   if (lower.endsWith('.enex')) return found('evernote', 'Evernote export');
   if (lower.endsWith('.docx')) return found('word', 'Word and OpenDocument documents');
+  if (lower.endsWith('.doc')) return { ...found('word', 'Word 97-2003 document'), legacy: true };
+  if (lower.endsWith('.xls')) return { ...found('spreadsheet', 'Excel 97-2003 workbook'), legacy: true };
   if (lower.endsWith('.txt')) return found('text', 'Text files');
   if (lower.endsWith('.one')) return found('oneNoteFile', 'OneNote section');
   if (lower.endsWith('.onepkg')) return found('oneNoteFile', 'OneNote notebook package');
-  if (lower.endsWith('.onetoc2') || lower.endsWith('.doc')) {
+  if (lower.endsWith('.onetoc2')) {
     return {
       kind: 'word',
       label: 'Other file',
       supported: false,
       zipped: false,
-      advice: 'Save the document as .docx in its own app, then import that file.',
+      advice: 'OneNote keeps notebooks in its own files. Import the notebook package (.onepkg) or a section (.one).',
     };
   }
   return found('markdown', 'Markdown notes');

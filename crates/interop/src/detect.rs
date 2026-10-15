@@ -95,6 +95,9 @@ pub struct Detected {
     /// Whether the file is locked with a password, which the import needs.
     #[serde(rename = "needsPassword")]
     pub needs_password: bool,
+    /// Whether the source holds older or binary office files (`.doc`, `.rtf`, `.xls`, `.xlsb`, `.ods`), which
+    /// the app imports only while its `interop.legacyFormats` flag is on.
+    pub legacy: bool,
 }
 
 const TOC_ADVICE: &str = "This is the notebook's table of contents, which holds no pages. Import the notebook's \
@@ -118,7 +121,7 @@ pub fn detect(path: &Path) -> Result<Detected> {
         "onetoc2" => Err(InteropError::unsupported(file_name(path), TOC_ADVICE)),
         "sqlite" | "sqlite3" | "db" => detect_database(path),
         "snt" => Err(InteropError::unsupported(file_name(path), STICKY_ADVICE)),
-        "doc" | "rtf" | "pages" | "wpd" => Err(InteropError::unsupported(
+        "pages" | "wpd" => Err(InteropError::unsupported(
             file_name(path),
             "Save the document as .docx in its own app, then import that file.",
         )),
@@ -164,6 +167,7 @@ fn detect_share(path: &Path) -> Result<Detected> {
             zipped: true,
             advice: None,
             needs_password: true,
+            legacy: false,
         });
     }
     let mut found = detect_zip(path)?;
@@ -179,6 +183,7 @@ fn detected(kind: SourceKind, label: impl Into<String>) -> Detected {
         zipped: false,
         advice: None,
         needs_password: false,
+        legacy: false,
     }
 }
 
@@ -197,6 +202,16 @@ fn holds_highlights(path: &Path, ext: &str) -> bool {
 }
 
 fn by_extension(ext: &str) -> Option<Detected> {
+    if let Some(label) = legacy_label(ext) {
+        let kind = if LEGACY_DOCUMENTS.contains(&ext) {
+            SourceKind::Word
+        } else {
+            SourceKind::Spreadsheet
+        };
+        let mut found = detected(kind, label);
+        found.legacy = true;
+        return Some(found);
+    }
     let kind = match ext {
         "md" | "markdown" => SourceKind::Markdown,
         "enex" => SourceKind::Evernote,
@@ -211,6 +226,22 @@ fn by_extension(ext: &str) -> Option<Detected> {
         _ => return None,
     };
     Some(detected(kind, kind.label()))
+}
+
+/// The older and binary formats, which the `interop.legacyFormats` flag gates.
+const LEGACY_DOCUMENTS: [&str; 3] = ["doc", "dot", "rtf"];
+const LEGACY_SHEETS: [&str; 5] = ["xls", "xlt", "xlsb", "ods", "ots"];
+
+/// The name of an older or binary format, for the dialog.
+fn legacy_label(ext: &str) -> Option<&'static str> {
+    Some(match ext {
+        "doc" | "dot" => "Word 97-2003 document",
+        "rtf" => "Rich Text Format document",
+        "xls" | "xlt" => "Excel 97-2003 workbook",
+        "xlsb" => "Excel binary workbook",
+        "ods" | "ots" => "OpenDocument spreadsheet",
+        _ => return None,
+    })
 }
 
 fn extension(path: &Path) -> String {
@@ -253,17 +284,32 @@ impl Survey {
         exts.iter().map(|e| self.by_ext.get(*e).copied().unwrap_or(0)).sum()
     }
 
+    /// Whether a kind's files include older or binary formats.
+    fn has_legacy(&self, kind: SourceKind) -> bool {
+        match kind {
+            SourceKind::Word => self.count(&LEGACY_DOCUMENTS) > 0,
+            SourceKind::Spreadsheet => self.count(&LEGACY_SHEETS) > 0,
+            _ => false,
+        }
+    }
+
     /// The kind with the most files. Ties go to the kind that keeps the most structure.
     fn majority(&self) -> Option<SourceKind> {
         let candidates = [
             (SourceKind::Markdown, self.count(&["md", "markdown"])),
-            (SourceKind::Word, self.count(&["docx", "docm", "odt", "ott"])),
+            (
+                SourceKind::Word,
+                self.count(&["docx", "docm", "odt", "ott"]) + self.count(&LEGACY_DOCUMENTS),
+            ),
             (SourceKind::WebArchive, self.count(&["mht", "mhtml"])),
             (SourceKind::Html, self.count(&["html", "htm"])),
             (SourceKind::Evernote, self.count(&["enex"])),
             (SourceKind::Text, self.count(&["txt", "text"])),
             (SourceKind::Csv, self.count(&["csv", "tsv"])),
-            (SourceKind::Spreadsheet, self.count(&["xlsx", "xlsm"])),
+            (
+                SourceKind::Spreadsheet,
+                self.count(&["xlsx", "xlsm"]) + self.count(&LEGACY_SHEETS),
+            ),
             (SourceKind::Presentation, self.count(&["pptx", "pptm"])),
             (SourceKind::Email, self.count(&["eml"])),
         ];
@@ -347,7 +393,9 @@ fn detect_folder(dir: &Path) -> Result<Detected> {
         } else {
             kind.label()
         };
-        return Ok(detected(kind, label));
+        let mut found = detected(kind, label);
+        found.legacy = survey.has_legacy(kind);
+        return Ok(found);
     }
     if survey.count(&["one", "onepkg", "onetoc2"]) > 0 {
         return Ok(detected(SourceKind::OneNoteFile, "OneNote notebook"));
@@ -379,6 +427,7 @@ fn detect_zip(path: &Path) -> Result<Detected> {
             zipped: false,
             advice: None,
             needs_password: false,
+            legacy: false,
         });
     }
     let markdown_or_csv = survey.count(&["md", "markdown", "csv"]);
@@ -404,6 +453,7 @@ fn detect_zip(path: &Path) -> Result<Detected> {
             zipped: true,
             advice: None,
             needs_password: false,
+            legacy: survey.has_legacy(kind),
         }),
         None => Err(InteropError::unsupported(
             file_name(path),
@@ -546,11 +596,20 @@ mod tests {
             detect(&dir.path().join("Open Notebook.onetoc2")),
             Err(InteropError::Unsupported { .. })
         ));
-        touch(dir.path(), "x.rtf");
+        touch(dir.path(), "x.pages");
         assert!(matches!(
-            detect(&dir.path().join("x.rtf")),
+            detect(&dir.path().join("x.pages")),
             Err(InteropError::Unsupported { .. })
         ));
+        for (name, kind) in [
+            ("x.rtf", SourceKind::Word),
+            ("x.doc", SourceKind::Word),
+            ("x.ods", SourceKind::Spreadsheet),
+        ] {
+            touch(dir.path(), name);
+            let found = detect(&dir.path().join(name)).expect("known");
+            assert!(found.legacy && found.supported && found.kind == kind, "{name}");
+        }
     }
 
     #[test]

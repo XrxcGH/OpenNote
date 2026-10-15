@@ -274,13 +274,25 @@ impl<'c, R: Read + Seek> Painter<'c, '_, R> {
             return found.map(|i| self.defs.images[i].0.clone());
         }
         let ext = part.rsplit_once('.').map_or("", |(_, e)| e).to_ascii_lowercase();
-        let mime = mime_from_extension(&ext);
+        // A chart or clip art saved as EMF or WMF is drawn into an SVG picture first (the metafile reader).
+        let metafile = is_metafile_extension(&ext);
+        let mime = if metafile {
+            "image/svg+xml"
+        } else {
+            mime_from_extension(&ext)
+        };
         let shown = matches!(
             mime,
             "image/png" | "image/jpeg" | "image/gif" | "image/webp" | "image/bmp"
         );
         let budget = MAX_SVG_BYTES.saturating_sub(self.body.len() + self.defs.other.len());
-        let bytes = if shown { self.parts.bytes(part) } else { None };
+        let bytes = if shown {
+            self.parts.bytes(part)
+        } else if metafile {
+            self.parts.bytes(part).and_then(|bytes| metafile_to_svg(&bytes))
+        } else {
+            None
+        };
         let url = bytes
             .filter(|b| b.len() / 3 * 4 < budget.saturating_sub(self.defs.images.iter().map(|i| i.1.len()).sum()))
             .map(|b| format!("data:{mime};base64,{}", STANDARD.encode(b)));

@@ -49,10 +49,16 @@ pub struct Found {
 pub fn clean_doi(text: &str) -> Option<String> {
     let trimmed = text.trim();
     let lower = trimmed.to_ascii_lowercase();
-    let start = ["https://doi.org/", "http://doi.org/", "https://dx.doi.org/", "http://dx.doi.org/", "doi:"]
-        .iter()
-        .find(|prefix| lower.starts_with(**prefix))
-        .map_or(0, |prefix| prefix.len());
+    let start = [
+        "https://doi.org/",
+        "http://doi.org/",
+        "https://dx.doi.org/",
+        "http://dx.doi.org/",
+        "doi:",
+    ]
+    .iter()
+    .find(|prefix| lower.starts_with(**prefix))
+    .map_or(0, |prefix| prefix.len());
     let doi = trimmed.get(start..)?.trim();
     let (prefix, suffix) = doi.split_once('/')?;
     let registrant = prefix.strip_prefix("10.")?;
@@ -83,19 +89,44 @@ pub fn clean_isbn(text: &str) -> Option<String> {
         })
         .collect::<Option<_>>()?;
     let ok = match values.len() {
-        10 => values.iter().enumerate().map(|(at, v)| (10 - at as u32) * v).sum::<u32>() % 11 == 0,
-        13 => values.iter().enumerate().map(|(at, v)| if at % 2 == 0 { *v } else { 3 * v }).sum::<u32>() % 10 == 0,
+        10 => {
+            values
+                .iter()
+                .enumerate()
+                .map(|(at, v)| (10 - at as u32) * v)
+                .sum::<u32>()
+                % 11
+                == 0
+        }
+        13 => {
+            values
+                .iter()
+                .enumerate()
+                .map(|(at, v)| if at % 2 == 0 { *v } else { 3 * v })
+                .sum::<u32>()
+                % 10
+                == 0
+        }
         _ => false,
     };
     ok.then_some(digits)
 }
 
 fn text(value: &Value) -> String {
-    value.as_str().unwrap_or("").split_whitespace().collect::<Vec<_>>().join(" ")
+    value
+        .as_str()
+        .unwrap_or("")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 fn first(value: &Value) -> String {
-    value.as_array().and_then(|list| list.first()).map(text).unwrap_or_default()
+    value
+        .as_array()
+        .and_then(|list| list.first())
+        .map(text)
+        .unwrap_or_default()
 }
 
 fn year_in(text: &str) -> String {
@@ -110,7 +141,13 @@ fn year_in(text: &str) -> String {
 /// The first `[year, month, day]` of a Crossref date, with what is missing left empty.
 fn date_parts(value: &Value) -> (String, String, String) {
     let parts = value["date-parts"][0].as_array().cloned().unwrap_or_default();
-    let at = |index: usize| parts.get(index).and_then(Value::as_u64).map(|n| n.to_string()).unwrap_or_default();
+    let at = |index: usize| {
+        parts
+            .get(index)
+            .and_then(Value::as_u64)
+            .map(|n| n.to_string())
+            .unwrap_or_default()
+    };
     (at(0), at(1), at(2))
 }
 
@@ -157,7 +194,11 @@ pub fn from_crossref(body: &str) -> Option<Found> {
         volume: text(&work["volume"]),
         issue: text(&work["issue"]),
         pages: text(&work["page"]).replace('-', "\u{2013}"),
-        url: if doi.is_empty() { String::new() } else { format!("https://doi.org/{doi}") },
+        url: if doi.is_empty() {
+            String::new()
+        } else {
+            format!("https://doi.org/{doi}")
+        },
         doi,
         ..Found::default()
     })
@@ -181,8 +222,14 @@ pub fn from_open_library(body: &str, isbn: &str) -> Option<Found> {
                         return None;
                     }
                     Some(match name.rsplit_once(' ') {
-                        Some((given, family)) => Person { family: family.to_owned(), given: given.to_owned() },
-                        None => Person { family: name, given: String::new() },
+                        Some((given, family)) => Person {
+                            family: family.to_owned(),
+                            given: given.to_owned(),
+                        },
+                        None => Person {
+                            family: name,
+                            given: String::new(),
+                        },
                     })
                 })
                 .collect()
@@ -198,7 +245,11 @@ pub fn from_open_library(body: &str, isbn: &str) -> Option<Found> {
     let subtitle = text(&book["subtitle"]);
     Some(Found {
         kind: "book".to_owned(),
-        title: if subtitle.is_empty() { title } else { format!("{title}: {subtitle}") },
+        title: if subtitle.is_empty() {
+            title
+        } else {
+            format!("{title}: {subtitle}")
+        },
         authors,
         year: year_in(&text(&book["publish_date"])),
         publisher: named("publishers"),
@@ -274,7 +325,11 @@ pub fn lookup(kind: &str, id: &str) -> Result<Option<Found>, String> {
         .take(MAX_BYTES)
         .read_to_string(&mut body)
         .map_err(|error| error.to_string())?;
-    Ok(if kind == "doi" { from_crossref(&body) } else { from_open_library(&body, &clean) })
+    Ok(if kind == "doi" {
+        from_crossref(&body)
+    } else {
+        from_open_library(&body, &clean)
+    })
 }
 
 #[cfg(test)]
@@ -291,10 +346,22 @@ mod tests {
         let found = from_crossref(CROSSREF).expect("a work");
         assert_eq!(found.kind, "article");
         assert_eq!(found.title, "Sleep and Memory in Students");
-        assert_eq!(found.authors[0], Person { family: "Smith".into(), given: "Jane Q.".into() });
+        assert_eq!(
+            found.authors[0],
+            Person {
+                family: "Smith".into(),
+                given: "Jane Q.".into()
+            }
+        );
         assert_eq!(found.authors[1].family, "The Sleep Group");
-        assert_eq!((found.year.as_str(), found.month.as_str(), found.day.as_str()), ("2020", "5", ""));
-        assert_eq!((found.volume.as_str(), found.issue.as_str(), found.pages.as_str()), ("12", "3", "45\u{2013}67"));
+        assert_eq!(
+            (found.year.as_str(), found.month.as_str(), found.day.as_str()),
+            ("2020", "5", "")
+        );
+        assert_eq!(
+            (found.volume.as_str(), found.issue.as_str(), found.pages.as_str()),
+            ("12", "3", "45\u{2013}67")
+        );
         assert_eq!(found.url, "https://doi.org/10.1000/xyz123");
     }
 
@@ -312,8 +379,17 @@ mod tests {
         let found = from_open_library(body, "9780306406157").expect("a book");
         assert_eq!(found.kind, "book");
         assert_eq!(found.title, "Notes on Notes: A guide");
-        assert_eq!(found.authors, vec![Person { family: "Garcia".into(), given: "Maria".into() }]);
-        assert_eq!((found.year.as_str(), found.publisher.as_str(), found.place.as_str()), ("2018", "Open Press", "Austin"));
+        assert_eq!(
+            found.authors,
+            vec![Person {
+                family: "Garcia".into(),
+                given: "Maria".into()
+            }]
+        );
+        assert_eq!(
+            (found.year.as_str(), found.publisher.as_str(), found.place.as_str()),
+            ("2018", "Open Press", "Austin")
+        );
     }
 
     #[test]
@@ -323,14 +399,28 @@ mod tests {
 
     #[test]
     fn cleans_a_doi_written_as_a_web_address_or_with_a_label() {
-        assert_eq!(clean_doi("https://doi.org/10.1000/xyz123").as_deref(), Some("10.1000/xyz123"));
-        assert_eq!(clean_doi("  doi:10.1000/ABC.def-1 ").as_deref(), Some("10.1000/ABC.def-1"));
+        assert_eq!(
+            clean_doi("https://doi.org/10.1000/xyz123").as_deref(),
+            Some("10.1000/xyz123")
+        );
+        assert_eq!(
+            clean_doi("  doi:10.1000/ABC.def-1 ").as_deref(),
+            Some("10.1000/ABC.def-1")
+        );
         assert_eq!(clean_doi("10.1000/xyz123").as_deref(), Some("10.1000/xyz123"));
     }
 
     #[test]
     fn refuses_what_is_not_a_doi() {
-        for bad in ["", "hello", "10.1000", "10./x", "11.1000/x", "10.1000/has space", "https://example.org/10.1000/x"] {
+        for bad in [
+            "",
+            "hello",
+            "10.1000",
+            "10./x",
+            "11.1000/x",
+            "10.1000/has space",
+            "https://example.org/10.1000/x",
+        ] {
             assert!(clean_doi(bad).is_none(), "{bad}");
         }
     }

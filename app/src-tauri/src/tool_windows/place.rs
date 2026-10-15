@@ -100,7 +100,11 @@ pub fn opening(saved: &Saved, monitors: &[Monitor]) -> Option<Opening> {
         .and_then(|name| monitors.iter().find(|one| one.name.as_ref() == Some(name)));
     let primary = || monitors.iter().find(|one| one.primary).or_else(|| monitors.first());
     let monitor = named.or_else(primary)?;
-    let ratio = if saved.scale > 0.0 { monitor.scale / saved.scale } else { 1.0 };
+    let ratio = if saved.scale > 0.0 {
+        monitor.scale / saved.scale
+    } else {
+        1.0
+    };
     let (width, height) = (scaled(saved.width, ratio), scaled(saved.height, ratio));
     let (w, h) = (i32::try_from(width).ok()?, i32::try_from(height).ok()?);
     let rect: Edges = if named.is_some() {
@@ -112,7 +116,10 @@ pub fn opening(saved: &Saved, monitors: &[Monitor]) -> Option<Opening> {
     };
     Some(Opening {
         position: (rect[0], rect[1]),
-        size: (u32::try_from(rect[2] - rect[0]).ok()?, u32::try_from(rect[3] - rect[1]).ok()?),
+        size: (
+            u32::try_from(rect[2] - rect[0]).ok()?,
+            u32::try_from(rect[3] - rect[1]).ok()?,
+        ),
     })
 }
 
@@ -292,7 +299,15 @@ mod tests {
             scale: 1.25,
         };
         save(&path, "timers", timers.clone()).unwrap();
-        save(&path, "calculator", Saved { x: 30, ..timers.clone() }).unwrap();
+        save(
+            &path,
+            "calculator",
+            Saved {
+                x: 30,
+                ..timers.clone()
+            },
+        )
+        .unwrap();
         let places = load(&path);
         assert_eq!(places.get("timers"), Some(&timers));
         assert_eq!(places.get("calculator").map(|one| one.x), Some(30));

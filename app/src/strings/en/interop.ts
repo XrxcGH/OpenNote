@@ -63,6 +63,7 @@ export const interop = {
     unsupported: {
       title: "OpenNote can't import this yet",
       fallback: 'This version of OpenNote cannot read it.',
+      legacy: 'This build cannot open older Office files yet. Save the file as .docx or .xlsx, then import that.',
     },
     oneNoteOff:
       'Reading OneNote files is turned off in this build. ' +

@@ -118,8 +118,20 @@ fn pen_sets_are_optional_and_checked() {
         id: "s1".into(),
         name: "Drawing".into(),
         pens: vec![
-            PenSlot { id: "f1".into(), tool: PenTool::Fountain, color: "ink".into(), width: 0.7, pressure: Some(true) },
-            PenSlot { id: "c1".into(), tool: PenTool::Calligraphy, color: "indigo".into(), width: 2.0, pressure: None },
+            PenSlot {
+                id: "f1".into(),
+                tool: PenTool::Fountain,
+                color: "ink".into(),
+                width: 0.7,
+                pressure: Some(true),
+            },
+            PenSlot {
+                id: "c1".into(),
+                tool: PenTool::Calligraphy,
+                color: "indigo".into(),
+                width: 2.0,
+                pressure: None,
+            },
         ],
     };
     ink.pen_sets = Some(vec![set.clone()]);
@@ -130,6 +142,10 @@ fn pen_sets_are_optional_and_checked() {
     assert_eq!(back, ink);
     ink.pen_sets = Some(vec![set.clone(), set]);
     assert_eq!(failed_field(|c| ink.check(c)).as_deref(), Some("ink.penSets"));
-    ink.pen_sets = Some(vec![PenSet { id: "s2".into(), name: String::new(), pens: vec![] }]);
+    ink.pen_sets = Some(vec![PenSet {
+        id: "s2".into(),
+        name: String::new(),
+        pens: vec![],
+    }]);
     assert_eq!(failed_field(|c| ink.check(c)).as_deref(), Some("ink.penSets"));
 }

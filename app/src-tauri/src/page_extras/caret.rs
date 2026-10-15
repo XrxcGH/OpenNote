@@ -111,7 +111,10 @@ mod tests {
         // Windows keeps colors as 0x00BBGGRR, so red is the low byte.
         assert_eq!(hex_from_colorref(0x0000_00ff), "#ff0000");
         assert_eq!(hex_from_colorref(0x00ff_8000), "#0080ff");
-        assert_eq!(metrics_from(1, 530, Some(0x0000_ff00)).color.as_deref(), Some("#00ff00"));
+        assert_eq!(
+            metrics_from(1, 530, Some(0x0000_ff00)).color.as_deref(),
+            Some("#00ff00")
+        );
         assert_eq!(metrics_from(1, 530, None).color, None);
     }
 }

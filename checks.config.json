@@ -10,6 +10,7 @@
     "app/src/theme/tokens.ts",
     "crates/interop/tests/corpus/*/**",
     "target/**",
+    "crates/interop/tests/data/legacy/**",
     "extensions/clipper/shared/vendor/**",
     "app/src-tauri/src/intel/catalog.rs",
     "app/src/services/intel/packs.ts",

@@ -14,6 +14,7 @@ Press Ctrl+K and choose Import. First-time setup has the same step. Pick a sourc
 | Word (`.docx`) and OpenDocument (`.odt`) | A page for each file |
 | Excel (`.xlsx`) | Table pages |
 | PowerPoint (`.pptx`) | One page for each slide, with the slide as a picture you can write on |
+| Older files: Word 97-2003 (`.doc`), Rich Text (`.rtf`), Excel 97-2003 (`.xls`), Excel binary (`.xlsb`), and OpenDocument spreadsheets (`.ods`) | A page for each document, and table pages for each workbook. Text, lists, tables, and links come over. Pictures in older Word files do not, so save those as `.docx` first. Files locked with a password must be unlocked in their own app first |
 | Email (`.eml`) | A page with its attachments |
 | Kindle clippings and a Readwise CSV file | Your highlights |
 | Windows Sticky Notes | Your notes and their pictures |

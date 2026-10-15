@@ -50,6 +50,8 @@ export type FlagId =
   | 'interop.export'
   | 'interop.exportPdf'
   | 'interop.oneNoteFiles'
+  /** Import of older and binary office files: .doc, .rtf, .xls, .xlsb, and .ods. */
+  | 'interop.legacyFormats'
   | Phase4FlagId
   | QolPageFlagId
   | Phase5FlagId

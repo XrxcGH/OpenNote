@@ -583,12 +583,21 @@ mod tests {
         let world = TestEnv::new();
         let env = world.env();
         let done = convert_parts(&mut parts, "deck", &env).expect("converts");
-        let mimes = done.pages[0]
-            .page
-            .page
+        // The slide's own picture (the drawn slide, locked under the page) is left out: only the deck's pictures count.
+        let page = &done.pages[0].page.page;
+        let slide_picture = page
+            .blocks
+            .iter()
+            .find(|b| b.lock.is_some())
+            .and_then(|b| match &b.data {
+                opennote_core::model::BlockData::Image(image) => Some(image.asset),
+                _ => None,
+            });
+        let mimes = page
             .assets
-            .values()
-            .map(|a| a.mime.clone())
+            .iter()
+            .filter(|(id, _)| Some(**id) != slide_picture)
+            .map(|(_, a)| a.mime.clone())
             .collect();
         let report = done.pages[0].report.entries.iter().map(|e| e.what.clone()).collect();
         (mimes, report)

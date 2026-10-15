@@ -136,6 +136,11 @@ async function check(run: Run, path: string, reportPage: boolean, password?: str
       run.state.set({ step: 'unsupported', path, detected: off });
       return;
     }
+    if (detected.legacy && !isEnabled('interop.legacyFormats')) {
+      const advice = t('interop.import.unsupported.legacy');
+      run.state.set({ step: 'unsupported', path, detected: { ...detected, supported: false, advice } });
+      return;
+    }
     if (detected.needsPassword && !password) {
       run.state.set({ step: 'locked', path, password: '', wrong: false });
       return;

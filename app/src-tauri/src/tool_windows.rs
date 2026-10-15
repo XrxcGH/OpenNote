@@ -129,7 +129,12 @@ fn describe(monitor: &tauri::Monitor, primary: Option<&tauri::Monitor>) -> place
     let (position, size, work) = (monitor.position(), monitor.size(), monitor.work_area());
     place::Monitor {
         name: monitor.name().cloned(),
-        area: [position.x, position.y, position.x + edge(size.width), position.y + edge(size.height)],
+        area: [
+            position.x,
+            position.y,
+            position.x + edge(size.width),
+            position.y + edge(size.height),
+        ],
         work: [
             work.position.x,
             work.position.y,

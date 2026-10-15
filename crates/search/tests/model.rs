@@ -237,7 +237,12 @@ fn links_on_handwriting_count_as_page_links() {
         }),
     );
     let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
-    let texts: Vec<&str> = doc.blocks.iter().filter(|b| b.kind == BlockKind::Text).map(|b| b.text.as_str()).collect();
+    let texts: Vec<&str> = doc
+        .blocks
+        .iter()
+        .filter(|b| b.kind == BlockKind::Text)
+        .map(|b| b.text.as_str())
+        .collect();
     assert_eq!(texts, [format!("[Photosynthesis notes](opennote:page/{target})")]);
     let mut index = SearchIndex::open_in_memory().unwrap();
     index.upsert(&doc).unwrap();

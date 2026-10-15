@@ -36,7 +36,13 @@ const MAX_BODY: usize = 32 * 1024 * 1024;
 const API_VERSION: &str = "2";
 
 /// The commands Zotero's menu offers a word processor that OpenNote supports (no notes: a page has no footnotes).
-pub const COMMANDS: [&str; 5] = ["addEditCitation", "addEditBibliography", "refresh", "removeCodes", "setDocPrefs"];
+pub const COMMANDS: [&str; 5] = [
+    "addEditCitation",
+    "addEditBibliography",
+    "refresh",
+    "removeCodes",
+    "setDocPrefs",
+];
 
 /// Why a session could not run or ended badly.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -161,7 +167,9 @@ fn exchange(
 /// Reads Zotero's next request: `{"command": "Document.insertField", "arguments": [...]}`.
 fn parse_call(txid: u32, reply: &Reply) -> Result<Call, SessionError> {
     if reply.status == 503 {
-        return Err(SessionError::Io("Zotero is already busy with a command; finish its window first".into()));
+        return Err(SessionError::Io(
+            "Zotero is already busy with a command; finish its window first".into(),
+        ));
     }
     if reply.status != 200 {
         return Err(SessionError::Protocol(format!("Zotero answered {}", reply.status)));
@@ -173,7 +181,11 @@ fn parse_call(txid: u32, reply: &Reply) -> Result<Call, SessionError> {
         .and_then(Value::as_str)
         .ok_or_else(|| SessionError::Protocol("Zotero's request has no command".into()))?
         .replace('.', "_");
-    let args = value.get("arguments").and_then(Value::as_array).cloned().unwrap_or_default();
+    let args = value
+        .get("arguments")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     Ok(Call { txid, method, args })
 }
 
@@ -199,7 +211,13 @@ pub fn run_session(
     }
     let start = serde_json::to_vec(&json!({ "command": command, "docId": "opennote" }))
         .map_err(|error| SessionError::Protocol(error.to_string()))?;
-    let mut reply = exchange(addr, connect_timeout, idle_timeout, "/connector/document/execCommand", &start)?;
+    let mut reply = exchange(
+        addr,
+        connect_timeout,
+        idle_timeout,
+        "/connector/document/execCommand",
+        &start,
+    )?;
     let mut outcome = Outcome::default();
     let mut txid = 0u32;
     loop {
@@ -216,7 +234,13 @@ pub fn run_session(
         if result.is_err() {
             outcome.errors += 1;
         }
-        reply = exchange(addr, connect_timeout, idle_timeout, "/connector/document/respond", &encode_reply(&result))?;
+        reply = exchange(
+            addr,
+            connect_timeout,
+            idle_timeout,
+            "/connector/document/respond",
+            &encode_reply(&result),
+        )?;
     }
 }
 
@@ -229,26 +253,34 @@ static PENDING: Pending = Mutex::new(None);
 pub fn run_for_page(command: &str, send: &mut dyn FnMut(&Call), addr: SocketAddr) -> Result<Outcome, SessionError> {
     let (tx, rx) = mpsc::channel();
     {
-        let mut slot = PENDING.lock().map_err(|_| SessionError::Io("the session lock is broken".into()))?;
+        let mut slot = PENDING
+            .lock()
+            .map_err(|_| SessionError::Io("the session lock is broken".into()))?;
         if slot.is_some() {
             return Err(SessionError::Io("a Zotero command is already running".into()));
         }
         *slot = Some(tx);
     }
-    let result = run_session(addr, command, Duration::from_secs(3), Duration::from_secs(60 * 60), &mut |call| {
-        send(call);
-        if call.method == "Document_complete" {
-            // Zotero waits for no answer to this one; the page still hears it and tidies up.
-            return Ok(Value::Null);
-        }
-        loop {
-            match rx.recv_timeout(Duration::from_secs(60 * 30)) {
-                Ok((txid, answer)) if txid == call.txid => return answer,
-                Ok(_) => {}
-                Err(_) => return Err("the page did not answer".into()),
+    let result = run_session(
+        addr,
+        command,
+        Duration::from_secs(3),
+        Duration::from_secs(60 * 60),
+        &mut |call| {
+            send(call);
+            if call.method == "Document_complete" {
+                // Zotero waits for no answer to this one; the page still hears it and tidies up.
+                return Ok(Value::Null);
             }
-        }
-    });
+            loop {
+                match rx.recv_timeout(Duration::from_secs(60 * 30)) {
+                    Ok((txid, answer)) if txid == call.txid => return answer,
+                    Ok(_) => {}
+                    Err(_) => return Err("the page did not answer".into()),
+                }
+            }
+        },
+    );
     if let Ok(mut slot) = PENDING.lock() {
         *slot = None;
     }
@@ -289,17 +321,31 @@ mod tests {
         let path = head.split(' ').nth(1).expect("path").to_owned();
         let length: usize = head
             .lines()
-            .find_map(|line| line.to_ascii_lowercase().strip_prefix("content-length:").map(|v| v.trim().parse().expect("len")))
+            .find_map(|line| {
+                line.to_ascii_lowercase()
+                    .strip_prefix("content-length:")
+                    .map(|v| v.trim().parse().expect("len"))
+            })
             .expect("content-length");
         let mut body = vec![0u8; length];
         stream.read_exact(&mut body).expect("body");
-        (path, head.to_ascii_lowercase(), serde_json::from_slice(&body).expect("json"))
+        (
+            path,
+            head.to_ascii_lowercase(),
+            serde_json::from_slice(&body).expect("json"),
+        )
     }
 
     fn respond(stream: &mut TcpStream, status: u16, body: &Value) {
         let body = serde_json::to_vec(body).expect("json");
-        let head = format!("HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n", body.len());
-        stream.write_all(head.as_bytes()).and_then(|()| stream.write_all(&body)).expect("write");
+        let head = format!(
+            "HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
+            body.len()
+        );
+        stream
+            .write_all(head.as_bytes())
+            .and_then(|()| stream.write_all(&body))
+            .expect("write");
     }
 
     /// A pretend Zotero: after execCommand it makes `calls` one at a time (each is the answer to the previous
@@ -357,11 +403,24 @@ mod tests {
         assert!(heard[0].1.contains("x-zotero-connector-api-version: 2"));
         assert_eq!(heard[1].0, "/connector/document/respond");
         assert_eq!(heard[1].2, json!({ "documentID": "opennote" }));
-        assert_eq!(heard[2].2, json!({ "error": "Alert", "message": "no data", "stack": "" }));
+        assert_eq!(
+            heard[2].2,
+            json!({ "error": "Alert", "message": "no data", "stack": "" })
+        );
         assert_eq!(seen[0], ("Application_getActiveDocument".to_owned(), vec![]));
-        assert_eq!(seen[1], ("Document_getDocumentData".to_owned(), vec![json!("opennote")]));
+        assert_eq!(
+            seen[1],
+            ("Document_getDocumentData".to_owned(), vec![json!("opennote")])
+        );
         assert_eq!(seen[2].0, "Document_complete");
-        assert_eq!(outcome, Outcome { calls: 2, completed: true, errors: 1 });
+        assert_eq!(
+            outcome,
+            Outcome {
+                calls: 2,
+                completed: true,
+                errors: 1
+            }
+        );
     }
 
     #[test]
@@ -392,7 +451,10 @@ mod tests {
         });
         let result = quick(addr, "refresh", &mut |_| Ok(Value::Null));
         zotero.join().expect("zotero");
-        assert!(matches!(result, Err(SessionError::Io(ref m)) if m.contains("busy")), "{result:?}");
+        assert!(
+            matches!(result, Err(SessionError::Io(ref m)) if m.contains("busy")),
+            "{result:?}"
+        );
     }
 
     #[test]
@@ -402,7 +464,9 @@ mod tests {
         let zotero = std::thread::spawn(move || {
             let (mut stream, _) = listener.accept().expect("accept");
             read_request(&mut stream);
-            stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello").expect("write");
+            stream
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello")
+                .expect("write");
         });
         let result = quick(addr, "refresh", &mut |_| Ok(Value::Null));
         zotero.join().expect("zotero");

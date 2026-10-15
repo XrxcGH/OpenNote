@@ -23,7 +23,7 @@ use base64::Engine as _;
 
 use super::xmltree::Element;
 use super::zipxml::{dir_of, read_rels, rels_name, resolve, ElementExt, Parts};
-use crate::assets::mime_from_extension;
+use crate::assets::{is_metafile_extension, metafile_to_svg, mime_from_extension};
 
 type Rels = HashMap<String, (String, bool)>;
 
@@ -49,7 +49,7 @@ pub(super) struct Missed {
     pub charts: usize,
     /// Videos and sounds. A video's poster picture is drawn.
     pub media: usize,
-    /// Pictures in formats screens cannot show, such as EMF, or missing or too large.
+    /// Pictures in formats screens cannot show (and no metafile reader draws), or missing or too large.
     pub pictures: usize,
     /// Shapes whose outline is not one OpenNote draws, drawn as rectangles.
     pub geometry: usize,
@@ -574,7 +574,7 @@ pub(super) fn report(missed: Missed, drawn: usize, report: &mut crate::report::P
     report.skipped_count(
         missed.pictures,
         ("picture on a slide picture", "pictures on slide pictures"),
-        "They are missing, too large, or in a format screens can't show, such as EMF.",
+        "They are missing, too large, damaged, or in a format screens can't show.",
     );
     report.simplified_count(
         missed.geometry,

@@ -418,7 +418,10 @@ mod tests {
     #[test]
     fn the_store_lists_the_names_that_start_with_a_prefix() {
         let (_dir, ext) = ext();
-        assert_eq!(call(&ext, "store.list", json!({ "prefix": "study.deck." })).unwrap(), json!([]));
+        assert_eq!(
+            call(&ext, "store.list", json!({ "prefix": "study.deck." })).unwrap(),
+            json!([])
+        );
         for name in ["study.deck.b.json", "study.deck.a.json", "study.states.a.json"] {
             call(&ext, "store.put", json!({ "name": name, "text": "{}" })).unwrap();
         }

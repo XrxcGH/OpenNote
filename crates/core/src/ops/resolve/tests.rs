@@ -133,10 +133,9 @@ fn object_groups_live_in_the_view_and_undo_exactly_without_touching_the_reading_
     apply_ops(&mut undone, &crate::ops::apply::invert_all(&ops), c.at).unwrap();
     assert_eq!(undone.view, page.view);
     // Ungrouping is the same patch with null.
-    let ungroup: Edit = serde_json::from_value(
-        json!({"edit": "setPage", "view": {"groups": {"01m3sa14y9zszek1wdk3sngrp1": null}}}),
-    )
-    .unwrap();
+    let ungroup: Edit =
+        serde_json::from_value(json!({"edit": "setPage", "view": {"groups": {"01m3sa14y9zszek1wdk3sngrp1": null}}}))
+            .unwrap();
     let c2 = EditCtx {
         page: &grouped,
         ctx: &ctx,
@@ -144,7 +143,11 @@ fn object_groups_live_in_the_view_and_undo_exactly_without_touching_the_reading_
     };
     let mut ungrouped = grouped.clone();
     apply_ops(&mut ungrouped, &resolve_edit(&c2, &ungroup).unwrap(), c2.at).unwrap();
-    assert!(ungrouped.view.extra.get("groups").is_none_or(|g| g.as_object().is_some_and(|o| o.is_empty())));
+    assert!(ungrouped
+        .view
+        .extra
+        .get("groups")
+        .is_none_or(|g| g.as_object().is_some_and(|o| o.is_empty())));
 }
 
 #[test]
