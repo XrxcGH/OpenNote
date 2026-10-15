@@ -22,6 +22,8 @@ export type QolPageFlagId =
   | 'page.wordCount'
   | 'page.toc'
   | 'page.extractMerge'
+  | 'page.extractUndo'
+  | 'page.extractObjects'
   | 'page.embeds';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
@@ -52,6 +54,8 @@ export const QOL_PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.findReplace', 'Find and replace on a page.'),
   flag('page.wordCount', 'Word count and reading time.'),
   flag('page.toc', 'The table of contents pane.'),
+  flag('page.extractUndo', 'One Undo and a Page history entry for Extract, Merge, and Split.'),
+  flag('page.extractObjects', 'Extract a lasso of ink or selected blocks to a new page, leaving a link.'),
   flag('page.extractMerge', 'Extract to a new page, merge pages, and split at headings.'),
   flag('page.embeds', 'Page embeds, typed with ![[.'),
 ];

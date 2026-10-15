@@ -1,7 +1,7 @@
 // Advanced search: pages that are archived, the heading a match sits in, and where to look (a recording's transcript
 // or a picture's description). The index answers the search; these steps narrow and explain what it found.
 import type { HeadingRef, SearchHit, Snippet } from '../../services/search/types';
-import type { NodeId, NotesService } from '../../services/notes/types';
+import type { NodeId, NodeSummary, NotesService } from '../../services/notes/types';
 
 /** Folds case and runs of spaces, so a heading and a snippet compare by their words. */
 const fold = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
@@ -28,7 +28,7 @@ export async function isArchived(notes: NotesService, page: string, known = new 
       break;
     }
     trail.push(id);
-    const node = await notes.get(id).catch(() => null);
+    const node: NodeSummary | null = await notes.get(id).catch(() => null);
     if (!node) break;
     if (node.archived) {
       archived = true;

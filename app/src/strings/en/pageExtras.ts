@@ -147,10 +147,19 @@ export const pageExtras = {
     paneEmpty: 'No pages found for this series.',
     none: 'This page is not in a series yet. Choose New page in series to start one.',
   },
+  history: {
+    extract: 'Extracted to “{title}”',
+    merge: 'Merged from {count, plural, one {# page} other {# pages}}',
+    split: 'Split into {count, plural, one {# page} other {# pages}}',
+  },
   extract: {
     command: 'Extract selection to a new page',
     keywords: 'extract move selection new page link split out',
-    nothingSelected: 'Select some text first.',
+    nothingSelected: 'Select some text, handwriting, or blocks first.',
+    filesStay: 'Pictures and attachments stay on this page, because their files belong to it.',
+    untitledObjects: 'Extracted notes',
+    doneObjectsStayed:
+      'Moved the notes to “{title}” and left a link. {stayed, plural, one {# picture or attachment stayed} other {# pictures and attachments stayed}} on this page.',
     untitled: 'Extracted text',
     done: 'Moved the text to “{title}” and left a link.',
   },

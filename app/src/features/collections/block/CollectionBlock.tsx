@@ -27,11 +27,12 @@ function useFacts(): PageFact[] | null {
   const [facts, setFacts] = useState<PageFact[] | null>(null);
   const client = maybeSearchClient();
   useEffect(() => {
-    if (!client?.extras) return;
+    const extras = client?.extras;
+    if (!client || !extras) return;
     let current = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const run = () =>
-      void client.extras
+      void extras
         .pageFacts(null)
         .then((list) => current && setFacts(list))
         .catch(() => current && setFacts([]));

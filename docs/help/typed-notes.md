@@ -39,7 +39,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 - Choose Next in series to make the next numbered page, such as the next lecture.
 - Choose Show pages in this series to list every page of the series, oldest first, and open any of them.
 - Press Ctrl+K and choose Markdown source to edit the page as Markdown. The page updates as you type.
-- Select blocks and choose Extract to new page to move them out. Select two pages and choose Merge to join them.
+- Lasso handwriting, or select blocks, and choose Extract to new page to move them out. A link takes their place; pictures and attachments stay. Select two pages and choose Merge pages, or choose Split at headings. Each one is a single Undo, and Page history gets an entry. Press Ctrl+Z straight away to undo it.
 
 ## Pictures and files
 

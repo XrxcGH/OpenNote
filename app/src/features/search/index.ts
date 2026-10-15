@@ -10,3 +10,6 @@ export { locationOfPage, openPage } from './locate';
 export { openAndReveal } from './deeplink/jump';
 export { maybeSearchClient, setSearchClient } from './client';
 export { armedChange, recordChange, undoArmedChange } from './changeSet';
+export { undoPageChanges } from './changeSet';
+export type { PageChange } from './changeSet';
+export { disarmChange } from './changeSet';
