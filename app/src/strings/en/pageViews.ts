@@ -22,6 +22,7 @@ export const pageViews = {
     exportPdf: 'Export as PDF…',
     exportMarkdown: 'Export as Markdown…',
     exportHtml: 'Export as HTML…',
+    exportWord: 'Export as Word…',
     exportImage: 'Export selection as image…',
     gallery: 'Page gallery',
     galleryKeywords: 'gallery thumbnails grid pages reorder',

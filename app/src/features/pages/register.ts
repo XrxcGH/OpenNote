@@ -51,6 +51,13 @@ command({
   run: (ctx) => loadExport().then((m) => m.exportText(ctx, 'markdown')),
 });
 command({
+  id: 'pages.exportWord',
+  title: 'pageViews.commands.exportWord',
+  flag: 'interop.export',
+  // Word keeps the page's text, tables, links, and pictures. The export dialog opens on this page, where Word is a format.
+  run: (ctx) => commands.get('interop.export')?.run(ctx, undefined),
+});
+command({
   id: 'pages.exportHtml',
   title: 'pageViews.commands.exportHtml',
   flag: 'pages.exportText',
@@ -250,7 +257,7 @@ menuItems(
   BACKGROUNDS.map((preset) => `pages.background.${preset}`),
 );
 menuItems('pages.export', 'pages.pdf', 'file', ['pages.print', 'pages.exportPdf']);
-menuItems('pages.export', 'pages.exportText', 'text', ['pages.exportMarkdown', 'pages.exportHtml']);
+menuItems('pages.export', 'pages.exportText', 'text', ['pages.exportMarkdown', 'pages.exportHtml', 'pages.exportWord']);
 menuItems('pages.export', 'pages.exportImage', 'image', ['pages.exportImage']);
 
 const bar = (item: Omit<CommandBarItem, 'tab'>): void => {
