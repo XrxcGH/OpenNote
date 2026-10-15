@@ -37,6 +37,8 @@ export const settings = {
     webview: 'WebView2 version',
     license: 'License',
     licenseValue: 'Apache License 2.0',
+    notices: 'Open-source notices',
+    noticesLabel: 'Copyright lines and license text of the bundled fonts',
     logFolder: 'Open the log folder',
     logFolderFailed: "Couldn't open the log folder.",
     goBack: 'Go back to version {version}',

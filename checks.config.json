@@ -9,6 +9,7 @@
     "app/src/theme/tokens.css",
     "app/src/theme/tokens.ts",
     "crates/interop/tests/corpus/*/**",
+    "THIRD_PARTY_NOTICES.md",
     "target/**",
     "crates/interop/tests/data/legacy/**",
     "extensions/clipper/shared/vendor/**",

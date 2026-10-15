@@ -21,3 +21,7 @@ extensions/dist/
 /connectors.config.json
 tests/soak/results/
 tests/nvda/results/
+
+# Cross-check tools built from pinned upstream revisions (tests/crosscheck)
+tests/crosscheck/.tools/
+tests/crosscheck/.corpus/

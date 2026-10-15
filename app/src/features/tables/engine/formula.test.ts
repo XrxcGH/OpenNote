@@ -148,6 +148,7 @@ describe('error values', () => {
     ['SQRT(-1)', 'NUM'],
     ['LN(0)', 'NUM'],
     ['0^-1', 'DIV0'],
+    ['POWER(0,0)', 'NUM'],
     ['1e308*10', 'NUM'],
     ['1+1/0', 'DIV0'],
     ['SUM(1/0)', 'DIV0'],
