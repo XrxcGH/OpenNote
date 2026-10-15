@@ -60,7 +60,7 @@ fn a_zip_archive_is_unpacked_to_a_temporary_folder_and_imported() {
 }
 
 #[test]
-fn onenote_files_are_refused_with_advice_and_the_job_fails_cleanly() {
+fn a_damaged_onenote_file_fails_the_job_cleanly() {
     let world = TestEnv::new();
     let log = Arc::new(EventLog::default());
     let env = world.env().with_control(Control::new(CancelToken::new(), log.clone()));
@@ -69,12 +69,12 @@ fn onenote_files_are_refused_with_advice_and_the_job_fails_cleanly() {
     fs::write(&file, b"\xe4\x52\x5c\x7b\x8c\xd8\xa7\x4d").expect("writes");
     let mut sink = MemorySink::default();
     let outcome = import(&file, &ImportOptions::default(), &env, &mut sink);
-    let Err(InteropError::Unsupported { why, .. }) = outcome else {
-        panic!("OneNote files are not supported yet");
+    let Err(InteropError::Format { detail, .. }) = outcome else {
+        panic!("a damaged OneNote file is a format error");
     };
-    assert!(why.contains(".docx") && why.contains(".mht"), "{why}");
+    assert!(detail.contains("not a OneNote section"), "{detail}");
     assert!(matches!(log.events().last(), Some(Event::Failed { .. })));
-    assert!(sink.notebook.is_none(), "nothing was started");
+    assert!(sink.aborted && sink.pages.is_empty(), "nothing was kept");
 }
 
 #[test]

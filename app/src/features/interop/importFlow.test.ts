@@ -50,12 +50,21 @@ describe('checking a source', () => {
 
   it('stops at a source it cannot import and shows what to do instead', async () => {
     const { flow, interop, detach } = setup();
-    interop.pick = () => Promise.resolve('C:\\Notes\\Work.one');
+    interop.pick = () => Promise.resolve('C:\\Notes\\Old.doc');
     await flow.chooseFile();
     const state = flow.state.get();
     expect(state.step).toBe('unsupported');
-    if (state.step === 'unsupported') expect(state.detected.advice).toContain('Export');
+    if (state.step === 'unsupported') expect(state.detected.advice).toContain('.docx');
     expect(interop.log.previews).toEqual([]);
+    detach();
+  });
+
+  it('checks a OneNote section file like any other source', async () => {
+    const { flow, interop, detach } = setup();
+    interop.pick = () => Promise.resolve('C:\\Notes\\Work.one');
+    await flow.chooseFile();
+    await until(flow, 'review');
+    expect(interop.log.previews).toHaveLength(1);
     detach();
   });
 });

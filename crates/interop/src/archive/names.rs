@@ -14,7 +14,7 @@ const RESERVED: [&str; 32] = [
 /// Both `/` and `\` separate folders, as tools on Windows write either. Each part is cleaned by
 /// [`clean_component`], so a name made on a Mac, such as `What is a cell?.md`, still unpacks. A leading `/` is
 /// dropped, so an absolute name lands inside `dir`.
-pub(super) fn safe_target(dir: &Path, name: &str) -> Option<PathBuf> {
+pub(crate) fn safe_target(dir: &Path, name: &str) -> Option<PathBuf> {
     let mut target = dir.to_path_buf();
     for part in name.split(['/', '\\']) {
         match part {

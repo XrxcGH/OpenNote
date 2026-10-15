@@ -15,8 +15,8 @@ use std::path::Path;
 use crate::archive::{ArchiveLimits, ZipArchive};
 use crate::error::Result;
 use crate::import::{
-    import_csv, import_docx, import_enex, import_html_folder, import_markdown_folder, import_mht, import_pptx,
-    import_xlsx,
+    import_csv, import_docx, import_enex, import_html_folder, import_markdown_folder, import_mht, import_onenote,
+    import_pptx, import_xlsx,
 };
 use crate::report::Report;
 use crate::sink::{ImportEnv, ImportSink, MemorySink};
@@ -153,5 +153,17 @@ pub fn sqlite(data: &[u8]) {
             let _ = row.get("id");
             Ok(())
         });
+    }
+}
+
+/// A OneNote section file (A3-17), read by the format reader and by the importer; or a notebook package, when the
+/// input is a Cabinet file.
+pub fn onenote(data: &[u8]) {
+    let _ = crate::onenote::read_section(data);
+    if crate::onenote::is_cabinet(data) {
+        let _ = crate::onenote::unpack_for_tests(data);
+        run_file(import_onenote, "notes.onepkg", data);
+    } else {
+        run_file(import_onenote, "notes.one", data);
     }
 }

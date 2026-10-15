@@ -22,4 +22,9 @@ export const INTEROP_FLAGS: readonly FlagDef[] = [
     'The PDF choice in Export: each page printed through the Phase 6 print window, in folders with an index.',
     { dev: true, nightly: true, beta: true, stable: false },
   ),
+  flag(
+    'interop.oneNoteFiles',
+    "OneNote's own files: section files (.one), notebook packages (.onepkg), and notebook folders, with no sign-in.",
+    { dev: true, nightly: true, beta: true, stable: false },
+  ),
 ];

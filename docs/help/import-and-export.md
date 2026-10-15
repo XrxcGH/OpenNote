@@ -18,10 +18,15 @@ Press Ctrl+K and choose Import. First-time setup has the same step. Pick a sourc
 | Kindle clippings and a Readwise CSV file | Your highlights |
 | Windows Sticky Notes | Your notes and their pictures |
 | A Notion export | Its pages, with each database as a smart table |
+| OneNote files (`.one`, `.onepkg`, or a notebook folder) | Its sections and pages, with no sign-in |
 
 Each slide is drawn from the file as a locked picture at the top of its page, so your ink stays where you wrote it. Charts, diagrams, videos, and some picture formats are not drawn, and the review lists them.
 
 A Notion database keeps its column types. Numbers, money, dates, checkboxes, and short lists of choices are read from the cells, and the review names each typed column. A column with one value that does not fit stays as text.
+
+OneNote files come over without a Microsoft account. Pick a section file (`.one`), a notebook package (`.onepkg`), or the notebook's folder. Each section becomes a section, and folders of sections become section groups. Subpages stay under their page.
+
+Text, headings, lists, to-do tags, tables, pictures, and attached files come over. Other tags become page tags. Ink and other content that Microsoft does not describe in its published format are listed in the review. A password-protected section is skipped; unlock it in OneNote first. To make a package, in OneNote choose File, then Export, then OneNote Package.
 
 Before anything is added, a review lists what comes over and what does not. Choose Save report to keep that list. Undo takes an import back.
 
@@ -48,7 +53,7 @@ A PDF that is damaged or locked with a password is not opened, and nothing is ad
 Take a photo of a page, a whiteboard, or a slide, and OpenNote can tidy it.
 
 - Select the photo on a page, press Ctrl+K, and choose Clean up scan. OpenNote finds the edges of the page, straightens it, and evens out the lighting. Choose Color, Grayscale, or Black and white, and look at the preview before you choose Clean up.
-- If the edges are not quite right, choose Adjust the corners and drag each corner onto a corner of the page. You can also select a corner and move it with the arrow keys, or with Shift and the arrow keys to move farther. The preview follows.
+- If the edges are not quite right, choose Adjust the corners, and drag each corner onto a corner of the page. You can also select a corner and move it with the arrow keys, or with Shift and the arrow keys to move farther. The preview follows.
 - To scan several pages at once, choose Scan pages from photos on the Insert tab and pick the photos. Each one becomes a cleaned page, one below the other.
 - The original photo is kept. Ctrl+Z undoes the cleanup in one step, and Restore the original photo brings it back later.
 
@@ -90,6 +95,6 @@ Take a screenshot with Win+Shift+S and OpenNote offers to add it to the open pag
 
 ## Not built yet
 
-Opening OneNote files and the web clipper are not built.
+The web clipper is not built. Ink in OneNote files does not come over yet.
 
-Import and export are built. Agents opened each dialog once. Nobody has tried a real import by hand.
+Import and export are built. Agents opened each dialog once. Nobody has tried a real import by hand. OneNote files were tested with files made to match Microsoft's published description, not yet with files OneNote saved.

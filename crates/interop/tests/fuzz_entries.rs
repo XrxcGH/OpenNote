@@ -14,7 +14,7 @@ mod search_entry;
 
 type Entry = fn(&[u8]);
 
-const ENTRIES: [(&str, Entry); 12] = [
+const ENTRIES: [(&str, Entry); 13] = [
     ("zip", fuzzing::zip),
     ("enex", fuzzing::enex),
     ("docx", fuzzing::docx),
@@ -26,6 +26,7 @@ const ENTRIES: [(&str, Entry); 12] = [
     ("markdown", fuzzing::markdown),
     ("csv", fuzzing::csv),
     ("sqlite", fuzzing::sqlite),
+    ("onenote", fuzzing::onenote),
     ("search_index", search_entry::search_index),
 ];
 
@@ -77,6 +78,11 @@ fn seeds(name: &str) -> Vec<Vec<u8>> {
         "markdown" => vec![corpus("corpus/obsidian/Vault/Welcome.md")],
         "csv" => vec![corpus("corpus/csv/data/People.csv")],
         "sqlite" => vec![corpus("corpus/sticky/LocalState/plum.sqlite")],
+        "onenote" => {
+            let section = opennote_interop::onenote::write::sample_section();
+            let package = opennote_interop::onenote::write::package(&[("a.one", &section)]);
+            vec![section, package, corpus("data/onenote/Trip.onepkg")]
+        }
         _ => vec![b"title tag:one \"a phrase\" AND (b OR c) .*[x]".to_vec()],
     }
 }

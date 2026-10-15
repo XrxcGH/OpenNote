@@ -1,5 +1,5 @@
 //! Importing notes from other apps: Markdown folders (Obsidian and Joplin), HTML folders, plain text, and
-//! Evernote export files.
+//! Evernote export files, and OneNote's own section files and notebook packages.
 //!
 //! Every import writes a new notebook to an [`crate::ImportSink`], so the whole import can be undone by removing
 //! that notebook. Each import returns a [`crate::Report`] with an entry for each page.
@@ -24,6 +24,8 @@ mod mht;
 mod mime;
 mod notion;
 mod odt;
+mod onenote;
+mod onenote_page;
 mod pictures;
 mod placement;
 mod plain;
@@ -50,6 +52,7 @@ pub use logseq::import_logseq_folder;
 pub use markdown::import_markdown_folder;
 pub use mht::import_mht;
 pub use notion::import_notion_folder;
+pub use onenote::import_onenote;
 pub use plain::import_text_folder;
 pub use pptx::import_pptx;
 pub(crate) use scan::has_notion_id;

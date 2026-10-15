@@ -48,6 +48,7 @@ export type FlagId =
   | 'interop.import'
   | 'interop.export'
   | 'interop.exportPdf'
+  | 'interop.oneNoteFiles'
   | Phase4FlagId
   | QolPageFlagId
   | Phase5FlagId

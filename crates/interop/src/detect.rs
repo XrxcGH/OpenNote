@@ -51,7 +51,7 @@ pub enum SourceKind {
     Email,
     /// Kindle `My Clippings.txt` and Readwise CSV exports.
     Highlights,
-    /// OneNote's own section and notebook files (`.one`, `.onepkg`), which this version cannot read.
+    /// OneNote's own section files (`.one`), notebook packages (`.onepkg`), and notebook folders.
     OneNoteFile,
 }
 
@@ -97,9 +97,8 @@ pub struct Detected {
     pub needs_password: bool,
 }
 
-const ONENOTE_ADVICE: &str = "OneNote keeps notebooks in its own binary files, which OpenNote cannot open yet. In \
-    OneNote, choose File, then Export, and save each section as a Word document (.docx) or a Web page (.mht). \
-    Then import those files.";
+const TOC_ADVICE: &str = "This is the notebook's table of contents, which holds no pages. Import the notebook's \
+    folder, or one of its .one section files, instead.";
 
 const STICKY_ADVICE: &str = "This is the old Sticky Notes file. Open the Sticky Notes app from the Microsoft Store \
     once, so it moves the notes into its new database. Then import plum.sqlite from the app's LocalState folder.";
@@ -114,7 +113,9 @@ pub fn detect(path: &Path) -> Result<Detected> {
     match ext.as_str() {
         "zip" => detect_zip(path),
         "opennote" => detect_share(path),
-        "one" | "onepkg" | "onetoc2" => Ok(onenote_files()),
+        "one" => Ok(detected(SourceKind::OneNoteFile, "OneNote section")),
+        "onepkg" => Ok(detected(SourceKind::OneNoteFile, "OneNote notebook package")),
+        "onetoc2" => Err(InteropError::unsupported(file_name(path), TOC_ADVICE)),
         "sqlite" | "sqlite3" | "db" => detect_database(path),
         "snt" => Err(InteropError::unsupported(file_name(path), STICKY_ADVICE)),
         "doc" | "rtf" | "pages" | "wpd" => Err(InteropError::unsupported(
@@ -162,17 +163,6 @@ fn detect_share(path: &Path) -> Result<Detected> {
     let mut found = detect_zip(path)?;
     found.label = "Shared OpenNote file".to_owned();
     Ok(found)
-}
-
-fn onenote_files() -> Detected {
-    Detected {
-        kind: SourceKind::OneNoteFile,
-        label: SourceKind::OneNoteFile.label().to_owned(),
-        supported: false,
-        zipped: false,
-        advice: Some(ONENOTE_ADVICE.to_owned()),
-        needs_password: false,
-    }
 }
 
 fn detected(kind: SourceKind, label: impl Into<String>) -> Detected {
@@ -354,7 +344,7 @@ fn detect_folder(dir: &Path) -> Result<Detected> {
         return Ok(detected(kind, label));
     }
     if survey.count(&["one", "onepkg", "onetoc2"]) > 0 {
-        return Ok(onenote_files());
+        return Ok(detected(SourceKind::OneNoteFile, "OneNote notebook"));
     }
     Err(InteropError::unsupported(
         file_name(dir),
@@ -544,7 +534,12 @@ mod tests {
         }
         touch(dir.path(), "notes.one");
         let one = detect(&dir.path().join("notes.one")).expect("known");
-        assert!(!one.supported && one.advice.as_deref().is_some_and(|a| a.contains(".docx")));
+        assert!(one.supported && one.kind == SourceKind::OneNoteFile);
+        touch(dir.path(), "Open Notebook.onetoc2");
+        assert!(matches!(
+            detect(&dir.path().join("Open Notebook.onetoc2")),
+            Err(InteropError::Unsupported { .. })
+        ));
         touch(dir.path(), "x.rtf");
         assert!(matches!(
             detect(&dir.path().join("x.rtf")),

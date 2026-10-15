@@ -61,6 +61,9 @@ export const interop = {
       title: "OpenNote can't import this yet",
       fallback: 'This version of OpenNote cannot read it.',
     },
+    oneNoteOff:
+      'Reading OneNote files is turned off in this build. ' +
+      'In OneNote, choose File, then Export, and save each section as a Word document (.docx). Then import those files.',
     canceled: 'Import canceled. Nothing was added.',
     failed: {
       title: "The import didn't finish",

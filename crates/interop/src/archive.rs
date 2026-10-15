@@ -7,13 +7,14 @@
 
 mod names;
 
+pub(crate) use self::names::safe_target;
+
 use std::fs::{self, File};
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 
 use flate2::read::DeflateDecoder;
 
-use self::names::safe_target;
 use crate::error::{InteropError, Result};
 use crate::run::{Control, Phase, Unit};
 

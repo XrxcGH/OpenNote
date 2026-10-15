@@ -14,6 +14,7 @@ import type {
 } from '../../platform/interop';
 import type { IpcError } from '../../platform/types';
 import type { NodeSummary, NotesService } from '../../services/notes/types';
+import { isEnabled } from '../../app/flags';
 import { t } from '../../strings/t';
 import { addImportedNodes, findImportedNodes } from './addNodes';
 import { createFlowState, newJobName } from './flowState';
@@ -128,6 +129,11 @@ async function check(run: Run, path: string, reportPage: boolean, password?: str
     if (run.job !== name) return;
     if (!detected.supported) {
       run.state.set({ step: 'unsupported', path, detected });
+      return;
+    }
+    if (detected.kind === 'oneNoteFile' && !isEnabled('interop.oneNoteFiles')) {
+      const off = { ...detected, supported: false, advice: t('interop.import.oneNoteOff') };
+      run.state.set({ step: 'unsupported', path, detected: off });
       return;
     }
     if (detected.needsPassword && !password) {

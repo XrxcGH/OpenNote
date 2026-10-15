@@ -55,13 +55,15 @@ function detectPath(path: string): DetectedSource {
   if (lower.endsWith('.enex')) return found('evernote', 'Evernote export');
   if (lower.endsWith('.docx')) return found('word', 'Word documents');
   if (lower.endsWith('.txt')) return found('text', 'Text files');
-  if (lower.endsWith('.one') || lower.endsWith('.onepkg')) {
+  if (lower.endsWith('.one')) return found('oneNoteFile', 'OneNote section');
+  if (lower.endsWith('.onepkg')) return found('oneNoteFile', 'OneNote notebook package');
+  if (lower.endsWith('.onetoc2') || lower.endsWith('.doc')) {
     return {
-      kind: 'oneNoteFile',
-      label: 'OneNote file',
+      kind: 'word',
+      label: 'Other file',
       supported: false,
       zipped: false,
-      advice: 'OneNote keeps notebooks in its own files. In OneNote, choose File, then Export, and save as Word.',
+      advice: 'Save the document as .docx in its own app, then import that file.',
     };
   }
   return found('markdown', 'Markdown notes');

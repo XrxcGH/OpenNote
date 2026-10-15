@@ -16,8 +16,8 @@ use crate::doc::parse::{parse, SoftBreaks};
 use crate::error::{InteropError, Result};
 use crate::import::{
     import_csv, import_docx_with, import_eml, import_enex, import_highlights, import_html_folder, import_keep_folder,
-    import_markdown_folder, import_mht, import_pptx, import_sticky_notes, import_text_folder, import_textbundle_folder,
-    import_xlsx, WordPages,
+    import_markdown_folder, import_mht, import_onenote, import_pptx, import_sticky_notes, import_text_folder,
+    import_textbundle_folder, import_xlsx, WordPages,
 };
 use crate::page_builder::PageBuilder;
 use crate::report::{LossGroup, Report};
@@ -63,7 +63,7 @@ fn run(path: &Path, options: &ImportOptions, env: &ImportEnv<'_>, sink: &mut dyn
         },
         None => detect(path)?,
     };
-    if !found.supported || found.kind == SourceKind::OneNoteFile {
+    if !found.supported {
         let why = found
             .advice
             .unwrap_or_else(|| "This version cannot import it.".to_owned());
@@ -147,10 +147,7 @@ fn dispatch(
         SourceKind::GoogleKeep => import_keep_folder(root, env, sink),
         SourceKind::TextBundle => import_textbundle_folder(root, env, sink),
         SourceKind::StickyNotes => import_sticky_notes(root, env, sink),
-        SourceKind::OneNoteFile => Err(InteropError::unsupported(
-            kind.label(),
-            "This version cannot import it.",
-        )),
+        SourceKind::OneNoteFile => import_onenote(root, env, sink),
     }
 }
 

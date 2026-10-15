@@ -108,3 +108,10 @@ path = "fuzz_targets/search_index.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "onenote"
+path = "fuzz_targets/onenote.rs"
+test = false
+doc = false
+bench = false
