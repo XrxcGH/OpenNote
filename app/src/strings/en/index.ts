@@ -42,6 +42,7 @@ import { intelPlus } from './intelPlus';
 import { qol } from './qol';
 import { connectors } from './connectors';
 import { intelSpeech } from './intelSpeech';
+import { intelMore } from './intelMore';
 
 export const en = {
   common,
@@ -86,4 +87,5 @@ export const en = {
   qol,
   connectors,
   intelSpeech,
+  intelMore,
 } as const;

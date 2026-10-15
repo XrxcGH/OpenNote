@@ -11,6 +11,8 @@ import { shownMounted } from '../../page';
 import type { MountedPage } from '../../page';
 import type { MediaKind } from '../../../services/search/types';
 import { maybeSearchClient } from '../client';
+import { INK_BLOCK, TRANSCRIPT_TYPE, indexInk, inkKnown, transcriptText } from './handwriting';
+import { shownStrokes } from '../../page';
 
 /** Recorded for a picture with no words in it, so it is not read again at every visit. */
 const NO_WORDS = String.fromCharCode(0x200b);
@@ -35,6 +37,7 @@ export async function indexMediaText(entry: MediaText): Promise<boolean> {
 }
 
 const scanned = new Set<string>();
+const transcripts = new Map<string, string>();
 
 async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | null> {
   try {
@@ -45,19 +48,30 @@ async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | nu
   }
 }
 
-/** Reads the pictures of the shown page that the index has no words for. */
+/** Reads the page's pictures, handwriting and transcripts that the index has no current words for. */
 async function scan(mounted: MountedPage, current: () => boolean): Promise<void> {
   const extras = maybeSearchClient()?.extras;
   if (!extras) return;
   const page = mounted.page.id;
   const known = new Set((await extras.mediaBlocks(page)).map((entry) => entry.block));
+  let imagesReady = true;
   for (const block of mounted.layer.blocks()) {
     if (!current()) return;
-    const asset = typeof block.data.asset === 'string' ? block.data.asset : null;
     const key = `${page}/${block.id}`;
-    if (block.type !== 'image' || !asset || known.has(block.id) || scanned.has(key)) continue;
+    if (block.type === TRANSCRIPT_TYPE) {
+      const text = transcriptText(block.data);
+      if (text && transcripts.get(key) !== text) {
+        if (await indexMediaText({ page, block: block.id, kind: 'transcript', text })) transcripts.set(key, text);
+      }
+      continue;
+    }
+    const asset = typeof block.data.asset === 'string' ? block.data.asset : null;
+    if (!imagesReady || block.type !== 'image' || !asset || known.has(block.id) || scanned.has(key)) continue;
     const api = await loadApi();
-    if (!(await api.searchTextReady('image'))) return;
+    if (!(await api.searchTextReady('image'))) {
+      imagesReady = false;
+      continue;
+    }
     const blob = await imageBlob(mounted, asset);
     if (!blob || !current()) continue;
     const found = await api.searchTextInImage(blob);
@@ -65,6 +79,22 @@ async function scan(mounted: MountedPage, current: () => boolean): Promise<void>
     scanned.add(key);
     await indexMediaText({ page, block: block.id, kind: 'image', text: found.text.trim() || NO_WORDS });
   }
+  if (current()) await scanInk(page, known.has(INK_BLOCK));
+}
+
+/** Reads the shown page's handwriting for the index. Quiet when the feature is off. */
+async function scanInk(page: string, indexed: boolean): Promise<void> {
+  if (shownStrokes().length === 0 && !indexed && !inkKnown(page)) return;
+  const api = await loadApi();
+  if (!(await api.searchTextReady('handwriting'))) return;
+  await indexInk(page, {
+    strokes: () => shownStrokes().map((stroke) => ({ id: stroke.id, points: stroke.points })),
+    read: async (strokes) => {
+      const found = await api.searchTextInInk(strokes);
+      return found && { text: found.text, words: found.words };
+    },
+    index: indexMediaText,
+  });
 }
 
 /** Watches the shown page and reads its pictures. Returns a function that stops. */

@@ -17,6 +17,7 @@ Later, open Settings, then On-device intelligence. Each feature shows what it do
 | Feature | How to use it |
 |---|---|
 | Text in pictures | Right-click a picture and choose Copy text from image. Turn on Search text in pictures to find the words with search. |
+| Search in handwriting and transcripts | With Search text in pictures and handwriting on, search finds words in your ink and in recordings' transcripts. Opening a result in handwriting marks the matching words for a few seconds. Pages in locked sections are never read. |
 | Read aloud | Select text, press Ctrl+K, and choose Read aloud. |
 | Summaries | Ask for a summary of a page. |
 | Handwriting to text | Lasso your writing and choose Convert to text. Tidy handwriting straightens it and evens the spacing. |

@@ -253,7 +253,7 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
 }
 
 /** The highlighted result, the keys that move it, and opening one. */
-function useResultKeys(hits: SearchHit[], onClose: () => void) {
+function useResultKeys(hits: SearchHit[], onClose: () => void, text: string) {
   const [chosen, setChosen] = useState<string | null>(null);
   const found = hits.findIndex((hit) => hit.page === chosen);
   const index = hits.length === 0 ? -1 : Math.max(found, 0);
@@ -267,6 +267,8 @@ function useResultKeys(hits: SearchHit[], onClose: () => void) {
     // A result that points at a block jumps to it and marks it for a moment.
     if (isEnabled('search.paragraphLinks') && hit.snippet) void openAndReveal(notes, hit.page, hit.snippet.block);
     else void openPage(notes, hit.page);
+    // A result found in handwriting marks the matching words on the ink for a moment.
+    if (hit.snippet?.kind === 'ink') void import('./media/inkHits').then((module) => module.markInkHits(hit.page, text));
   };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.nativeEvent.isComposing || event.altKey) return;
@@ -330,7 +332,7 @@ export default function SearchPanel({ query: initial = '', onClose }: SearchPane
   const [filters, setFilters] = useState<PanelFilters>(NO_FILTERS);
   const { response, loading, failed } = useSearchResults(text, filters);
   const hits = useMemo(() => response?.hits ?? [], [response]);
-  const { index, setChosen, open, onKeyDown } = useResultKeys(hits, onClose);
+  const { index, setChosen, open, onKeyDown } = useResultKeys(hits, onClose, text);
   const input = useRef<HTMLInputElement>(null);
   const tags = useTags();
   const listId = `${useId().replace(/:/g, '')}-results`;

@@ -93,6 +93,7 @@ Linked accounts (Phase 11):
 - Special characters (°, ±, →, ≤, µ) and chemistry notation such as H₂O are kept. Status: Built, untested by hand.
 - Unsure words are underlined; tapping one shows alternatives. Status: Built, untested by hand.
 - Any existing ink can be converted later with the lasso. Status: Built, untested by hand.
+- Handwriting and transcripts are read in the background so search finds them, and a hit is marked on the ink. Status: Built, untested by hand. Pages in locked sections are skipped.
 
 ## Shapes and lines
 
