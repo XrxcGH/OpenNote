@@ -107,3 +107,12 @@ export function removeStyle(id: StyleId): void {
   write('style.files', addedStyles.get());
   if (styleStore.get() === id) setStyle('apa');
 }
+
+/** Zotero's document preferences (its citation style and language), kept for each notebook on this device. */
+export function zoteroPrefs(notebook: string): string {
+  return read<string>(`zotero.${notebook}`, '');
+}
+
+export function setZoteroPrefs(notebook: string, data: string): void {
+  write(`zotero.${notebook}`, data);
+}

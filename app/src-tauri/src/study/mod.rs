@@ -5,6 +5,7 @@ pub mod anki;
 pub mod cite;
 mod zip;
 mod zotero;
+mod zotero_wp;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -79,4 +80,53 @@ pub async fn study_zotero_items() -> IpcResult<String> {
             "unreachable" => IpcError::new("zoteroMissing", "Zotero is not running."),
             _ => IpcError::new(codes::IO, reason),
         })
+}
+
+/// One call from Zotero, handed to the page.
+#[derive(serde::Serialize)]
+pub struct ZoteroCall {
+    txid: u32,
+    method: String,
+    args: Vec<serde_json::Value>,
+}
+
+/// Runs one Zotero integration command (Add or Edit Citation, Add Bibliography, Refresh, and so on). Zotero shows its
+/// own dialogs and calls back into the page; every call arrives on `calls` and is answered with `study_zotero_reply`.
+/// Resolves when Zotero finishes or closes the connection. Fails with `zoteroMissing` when Zotero is not running.
+#[tauri::command]
+pub async fn study_zotero_run(
+    command: String,
+    calls: tauri::ipc::Channel<ZoteroCall>,
+) -> IpcResult<serde_json::Value> {
+    tauri::async_runtime::spawn_blocking(move || {
+        zotero_wp::run_for_page(
+            &command,
+            &mut |call| {
+                let _ = calls.send(ZoteroCall {
+                    txid: call.txid,
+                    method: call.method.clone(),
+                    args: call.args.clone(),
+                });
+            },
+            zotero_wp::default_addr(),
+        )
+    })
+    .await
+    .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))?
+    .map(|outcome| {
+        serde_json::json!({ "calls": outcome.calls, "completed": outcome.completed, "errors": outcome.errors })
+    })
+    .map_err(|error| match error {
+        zotero_wp::SessionError::NotRunning(_) => IpcError::new("zoteroMissing", "Zotero is not running."),
+        zotero_wp::SessionError::Io(reason) | zotero_wp::SessionError::Protocol(reason) => {
+            IpcError::new(codes::IO, reason)
+        }
+    })
+}
+
+/// The page's answer to a Zotero call: `ok` with the value, or an error message in `value`.
+#[tauri::command]
+pub fn study_zotero_reply(txid: u32, ok: bool, value: serde_json::Value) -> IpcResult<bool> {
+    let answer = if ok { Ok(value) } else { Err(value.as_str().unwrap_or("failed").to_owned()) };
+    Ok(zotero_wp::reply(txid, answer))
 }

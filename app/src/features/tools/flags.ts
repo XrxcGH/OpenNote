@@ -43,6 +43,7 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.dueDates', 'Due dates read from checkboxes and tagged lines on pages.'),
   flag('tools.reminders', 'Windows notifications for due items and finished timers.'),
   flag('tools.citations', 'The citation helper with BibTeX, RIS, and Zotero.'),
+  flag('tools.zotero', 'Zotero citations and bibliographies in the page, using the windows Zotero provides.'),
 ];
 
 /**
@@ -51,3 +52,9 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
  * may read it without loading the tool windows.
  */
 export const INSERT_EVENT = 'opennote:insert-into-page';
+
+/**
+ * What the Citations window asks of the page that is open: run a Zotero command on it. The page answers by setting
+ * `result` to a promise (features/page/registrations/zotero.ts), so the window need not load the editor.
+ */
+export const ZOTERO_EVENT = 'opennote:zotero-command';

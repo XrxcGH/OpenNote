@@ -11,3 +11,4 @@ export { styleChoices, addStyleFile } from './styleList';
 export { readStyleFile } from './csl';
 export type { StyleId } from './styles';
 export type { Source, SourceType } from './model';
+export { zoteroCommand } from './zoteroWp/command';

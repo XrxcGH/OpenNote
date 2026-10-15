@@ -44,7 +44,7 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 | Unit converter | Converts length, mass, time, temperature, area, volume, speed, pressure, energy, power, angle, and data size. |
 | Reference tables | Looks up the periodic table (with group, period, and electron configuration for each element), constants, metric prefixes, and Greek letters. |
 | Exam countdown | Counts the days to each exam. |
-| Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations that follow your chosen style (APA, MLA, Chicago, Vancouver, ACS, AMA, Turabian, and more), so changing the style updates them. A DOI or ISBN look-up happens only when you ask, and is listed in the Privacy panel. |
+| Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations that follow your chosen style (APA, MLA, Chicago, Vancouver, ACS, AMA, Turabian, and more), so changing the style updates them. A DOI or ISBN look-up happens only when you ask, and is listed in the Privacy panel. With Zotero running, it also adds, edits, and refreshes Zotero citations and bibliographies in the page. |
 | Dictionary and thesaurus | Meanings, synonyms, and examples, offline. Select a word and press the shortcut, or type in the window. Insert synonym replaces the selected word. Other languages are optional downloads. |
 
 ![The timers window with a countdown running](../screens/tool-timer-light.png)
@@ -54,3 +54,9 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 Define a variable such as rent = 1,200 in one text box and use it in another on the same page. Text that handwriting recognition adds to the page works the same way.
 
 Study tools are built. Agents opened the tool windows once. Nobody has tried the rest by hand.
+
+## Citing with Zotero
+
+Open Zotero 7 or later first (its setting to allow other applications to communicate with it stays on). In Citations, under Zotero in the page, choose Add or edit citation. Zotero shows its own window to pick the source and the style, and OpenNote puts the citation where the caret is. To change a citation, click inside it and choose the same button. Add or edit bibliography puts the list of sources in the page, and Refresh brings every citation and the bibliography up to date after you change a source or the style. Unlink keeps the text and removes the link to Zotero. The same commands are in the command palette.
+
+Zotero works with one text block at a time: the citations and the bibliography it updates must be in the block that has the caret. If Zotero is not running, OpenNote says so and changes nothing.
