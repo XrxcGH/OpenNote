@@ -2,7 +2,7 @@
 // go to Rust as one raw body, with their paths and lengths in a percent-encoded header (paths may hold any letter),
 // so a PDF never becomes base64 text.
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
-import type { ExportsClient } from '../types';
+import type { ExportsClient, PrintReceipt } from '../types';
 import { invoke, toIpcError } from './invoke';
 
 export function createTauriExports(): ExportsClient {
@@ -26,6 +26,16 @@ export function createTauriExports(): ExportsClient {
           headers: { 'x-opennote-docx': encodeURIComponent(JSON.stringify(facts)) },
         });
         return new Uint8Array(bytes);
+      } catch (error) {
+        throw toIpcError(error);
+      }
+    },
+    printers: () => invoke('print_printers'),
+    async printSubmit(pdf, request) {
+      try {
+        return await tauriInvoke<PrintReceipt>('print_submit', pdf, {
+          headers: { 'x-opennote-print': encodeURIComponent(JSON.stringify(request)) },
+        });
       } catch (error) {
         throw toIpcError(error);
       }

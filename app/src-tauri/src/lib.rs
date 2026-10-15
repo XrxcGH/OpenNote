@@ -34,6 +34,7 @@ pub mod page_extras;
 pub mod paths;
 pub mod perf;
 pub mod platform_flags;
+pub mod print_job;
 pub mod settings;
 pub mod share;
 pub mod shell;
@@ -306,6 +307,8 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_export::export_pick_save,
         page_export::export_write,
         page_export::export_open,
+        print_job::print_printers,
+        print_job::print_submit,
         page_docx::export_selection_docx,
         tool_windows::tool_window_open,
         tool_windows::tool_windows_reset,

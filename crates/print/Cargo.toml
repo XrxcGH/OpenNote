@@ -1,0 +1,16 @@
+[package]
+name = "opennote-print"
+version = "0.1.0"
+description = "Sends the PDF a page prints to into the system's printers, behind a trait with a mock for tests"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+# The spooler itself: the in-process Windows XPS path and CUPS (`lp`) for macOS and Linux. Apache-2.0 (elected from
+# MIT OR Apache-2.0), pinned to an immutable commit. Its notice is in THIRD_PARTY_NOTICES.md. Review before bumping.
+craft-print = { git = "https://github.com/storytold/craft-libs", rev = "8f5a2831614e632f91ad367f7af2a6e5b61b9529" }
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

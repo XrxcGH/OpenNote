@@ -34,8 +34,8 @@ Presets include a lab notebook, a planner, and a storyboard. You can set a prese
 - While presenting as slides, press L for a laser pointer, P for ink that fades, M to put the tools away, and C to clear. Marks never change your page.
 - The gallery shows every page of a section as a card.
 - Reading aids include line focus, colors, syllable marks, and the immersive reader.
-- Press Ctrl+P to print. The preview shows what prints, with page breaks.
+- Press Ctrl+P, or choose Print from the page's Export menu or the command palette. The preview shows what prints, with page breaks. Pick the printer, the copies, one side or both, black and white, and whether to shrink the sheets to fit the paper. The Pages box prints only the sheets you list, such as 1-3, 5, and leaving it empty prints every sheet. The paper is the size set in the page layout, so change it there to print on another size. Once the printer has the job, it can't be called back from OpenNote. If the computer has no printer, Print saves a PDF, and then opens it.
 - Export a page as PDF from its Export menu. The PDF keeps the text selectable and adds bookmarks from your headings.
 - Lasso an area to export it as PDF, PNG, SVG, or Word, or copy it as an image.
 
-Page views and paper are built. Print and PDF on lined paper have been checked by tests and by reading the code, and nobody has printed one yet.
+Page views and paper are built. Print and PDF on lined paper have been checked by tests and by reading the code, and nobody has sent one to a real printer by hand yet. The printer step is checked with a stand-in printer.

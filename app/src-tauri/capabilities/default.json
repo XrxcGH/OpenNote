@@ -138,6 +138,8 @@
     "allow-export-write",
     "allow-export-open",
     "allow-export-selection-docx",
+    "allow-print-printers",
+    "allow-print-submit",
     "allow-tool-window-open",
     "allow-tool-windows-reset",
     "allow-study-anki-read",

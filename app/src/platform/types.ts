@@ -317,6 +317,33 @@ export interface PageExtrasClient {
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */
+
+/** A printer the system lists. */
+export interface PrinterInfo {
+  readonly name: string;
+  readonly default: boolean;
+  /** Whether the driver says it prints on both sides. Null when the system does not say. */
+  readonly twoSided: boolean | null;
+}
+
+/** What the print dialog asks of the spooler. */
+export interface PrintJobRequest {
+  /** Null is the system's default printer. */
+  readonly printer: string | null;
+  readonly copies: number;
+  readonly collate: boolean;
+  /** Null leaves duplex as the printer has it. */
+  readonly duplex: 'off' | 'longEdge' | 'shortEdge' | null;
+  readonly fit: 'exact' | 'shrinkToFit';
+  readonly grayscale: boolean;
+  readonly title: string;
+}
+
+export interface PrintReceipt {
+  readonly message: string;
+  readonly printer: string | null;
+}
+
 /**
  * Printing a page to PDF and saving what an export makes (Phase 6, ADR 0006). The desktop app prints in a hidden
  * WebView2 window; the web platform's fake prints nothing and writes a stand-in file, so the interface runs in tests.
@@ -350,6 +377,10 @@ export interface ExportsClient {
   ): Promise<Uint8Array>;
   /** Opens a file this session exported in its default app, or shows it in File Explorer. */
   open(path: string, reveal: boolean): Promise<void>;
+  /** The printers the system lists, the default marked. Empty where the platform can't print. */
+  printers(): Promise<PrinterInfo[]>;
+  /** Sends a PDF (as `printRender` made it) to a printer. Resolves when the spooler has the job. */
+  printSubmit(pdf: Uint8Array, request: PrintJobRequest): Promise<PrintReceipt>;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */

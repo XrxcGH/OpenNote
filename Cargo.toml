@@ -11,6 +11,7 @@ members = [
   "crates/llm-host",
   "crates/interop",
   "crates/media",
+  "crates/print",
   "crates/search",
   "crates/updater",
   "spikes/harness",

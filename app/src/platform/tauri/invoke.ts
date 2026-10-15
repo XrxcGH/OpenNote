@@ -31,7 +31,7 @@ import type {
 import type { ExitResult } from '../bindings/ExitResult';
 import type { ImportedAsset, PageRect } from '../../services/pages/types';
 import type { IndexUpdate } from '../../services/search/types';
-import type { ClipboardFacts } from '../types';
+import type { ClipboardFacts, PrinterInfo } from '../types';
 import type { IntelCommands } from '../../services/intel';
 import type { IntelChoiceCommands } from './intel';
 
@@ -106,6 +106,7 @@ export interface Commands extends IntelCommands, IntelChoiceCommands {
   print_close: { args: { job: string }; result: null };
   export_pick_save: { args: { suggested: string; label: string; extension: string }; result: string | null };
   export_open: { args: { path: string; reveal: boolean }; result: null };
+  print_printers: { args: None; result: PrinterInfo[] };
 }
 
 /** A command that takes its input as a raw body with a JSON header, such as image_import. */

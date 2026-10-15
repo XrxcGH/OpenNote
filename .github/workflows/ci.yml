@@ -323,6 +323,13 @@ jobs:
           --all-targets --all-features -- -D warnings
       - name: Core tests with every feature
         run: cargo test -p opennote-core --all-features
+      - name: Print crate tests, with stand-in lp and lpstat scripts
+        run: cargo test -p opennote-print
+      - uses: taiki-e/install-action@1168f6810a3cb30a3514bf5756a3b7f0422c6df8 # v2.87.28
+        with:
+          tool: cargo-deny
+      - name: Licenses of every crate the build uses
+        run: cargo deny check licenses
       - name: Benchmark harness tests
         run: cargo test -p opennote-perf
       - name: Fuzz targets compile

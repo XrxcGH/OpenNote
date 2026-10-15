@@ -24,6 +24,7 @@ export const PAGES_FLAGS: readonly FlagDef[] = [
   flag('pages.reading', 'Reading aids: line focus, page tints, spacing, and line width.', on),
   flag('pages.layouts', 'Template layouts, custom spacing, saved layout templates, and a notebook default.', on),
   flag('pages.sheets', 'The sheet navigator: thumbnails, Go to sheet, flipping, and adding a sheet.', on),
+  flag('pages.realPrint', 'Print sends the page to a printer, with copies, both sides, and shrink to fit.', on),
   flag('pages.accessiblePdf', 'Tagged PDF with bookmarks and a language through the DevTools route.', on),
   flag('pages.elements', 'The elements library: Save as element, folders, search, insert, and files.', on),
   flag('pages.exportSelection', 'Export or copy the lasso selection as PDF, PNG, SVG, Word, or an image.', on),

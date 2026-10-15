@@ -86,6 +86,21 @@
     color: var(--color-status-danger);
     font-size: var(--type-caption-size);
   }
+
+  .select {
+    min-block-size: var(--size-chrome-hit);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .select:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
 }
 
 @layer components {

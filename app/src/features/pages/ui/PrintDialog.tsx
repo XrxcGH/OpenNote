@@ -1,15 +1,26 @@
 // The print and Export as PDF dialog. It asks for the range, odd or even sheets, a header and footer, and whether the
 // paper lines print; it shows the sheets as the PDF will have them; and it runs the export with progress and a Stop
-// button. Both commands open it: Export as PDF saves the file, and Print saves it and opens it in the PDF viewer,
-// where the printer is chosen.
-import { CheckFirstSwitch, checkBeforeOutput, reviewPages } from '../../a11yCheck';
+// button. Both commands open it: Export as PDF saves the file, and Print sends it to the printer chosen here, with
+// copies, both sides, color, and shrink to fit. Where no printer is listed, or the flag is off, Print saves the PDF
+// and opens it in the viewer instead.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Platform } from '../../../platform/types';
+import type { Platform, PrinterInfo } from '../../../platform/types';
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
+import { CheckFirstSwitch, checkBeforeOutput, reviewPages } from '../../a11yCheck';
 import { Button, Dialog, ProgressBar, RadioCard, RadioGroup, Switch, TextField, showToast } from '../../../ui';
 import { exportPdfFile, PdfCheckError, prepareInput } from '../host/exporter';
 import type { PdfOutcome } from '../host/exporter';
+import {
+  canDuplex,
+  chosenPrinter,
+  DEFAULT_PRINTER_FORM,
+  MAX_COPIES,
+  parseCopies,
+  printToPrinter,
+  toJobRequest,
+} from '../host/printer';
+import type { DuplexChoice, PrinterForm } from '../host/printer';
 import type { PageSource } from '../host/source';
 import { parsePageRange } from '../print/range';
 import type { Parity } from '../print/range';
@@ -102,6 +113,23 @@ function SheetPreview({ result, sheet }: { result: PrepareResult; sheet: number 
   );
 }
 
+/** The system's printers, or null until they are listed. A platform that cannot list them has none. */
+function usePrinters(platform: Platform, wanted: boolean): readonly PrinterInfo[] | null {
+  const [printers, setPrinters] = useState<readonly PrinterInfo[] | null>(null);
+  useEffect(() => {
+    if (!wanted) return;
+    let current = true;
+    platform.exports
+      .printers()
+      .then((list) => current && setPrinters(list))
+      .catch(() => current && setPrinters([]));
+    return () => {
+      current = false;
+    };
+  }, [platform, wanted]);
+  return wanted ? printers : [];
+}
+
 const PARITIES: readonly Parity[] = ['all', 'odd', 'even'];
 const parityKey = {
   all: 'pageViews.print.parityAll',
@@ -126,6 +154,10 @@ function reportFailure(error: unknown, platform: Platform): void {
   if (name === 'AbortError') return void showToast({ message: t('pageViews.print.stopped') });
   if (name === 'TimeoutError') return void showToast({ message: t('pageViews.print.timedOut'), tone: 'danger' });
   if (code === 'notImplemented') return void showToast({ message: t('pageViews.print.unavailable'), tone: 'danger' });
+  if (code === 'spool' || code === 'noPrinter') {
+    platform.log('error', `Printing failed: ${String((error as { message?: string }).message)}`);
+    return void showToast({ message: t('pageViews.print.printerRefused'), tone: 'danger' });
+  }
   platform.log('error', `PDF export failed: ${error instanceof PdfCheckError ? error.message : String(error)}`);
   showToast({ message: t('pageViews.print.failed'), tone: 'danger' });
 }
@@ -142,7 +174,12 @@ function reportSaved(outcome: Extract<PdfOutcome, { status: 'saved' }>, platform
 }
 
 /** Runs the export with progress, and stops it when asked. */
-function useExport(props: PrintDialogProps, options: PrintOptions, accessible: boolean) {
+function useExport(
+  props: PrintDialogProps,
+  options: PrintOptions,
+  accessible: boolean,
+  printing: { readonly form: PrinterForm; readonly printers: readonly PrinterInfo[] } | null,
+) {
   const { source, platform, mode, close } = props;
   const [working, setWorking] = useState<Working | null>(null);
   const abort = useRef<AbortController | null>(null);
@@ -156,6 +193,22 @@ function useExport(props: PrintDialogProps, options: PrintOptions, accessible: b
     }
     setWorking({ stage: 'prepare', fraction: 0 });
     try {
+      if (printing) {
+        const request = toJobRequest(printing.form, printing.printers, source.title);
+        if (!request) return setWorking(null);
+        const sent = await printToPrinter(platform.exports, source, {
+          print: options,
+          request,
+          signal: controller.signal,
+          onProgress: (progress) => {
+            const sending = progress.stage === 'verify' && progress.fraction >= 1;
+            setWorking({ stage: sending ? 'send' : progress.stage, fraction: progress.fraction });
+          },
+        });
+        close();
+        showToast({ message: t('pageViews.print.sent', { printer: sent.receipt.printer ?? request.printer ?? '' }) });
+        return;
+      }
       const outcome = await exportPdfFile(platform.exports, source, {
         print: options,
         accessible,
@@ -227,6 +280,8 @@ function Fields({ form, total, rangeError, set }: FieldsProps) {
 }
 
 const inches = (units: number) => Math.round((units / 96) * 100) / 100;
+const sheetSize = (paper: { readonly width: number; readonly height: number }) =>
+  `${inches(paper.width)} × ${inches(paper.height)} in`;
 
 /** The sheet the PDF will have, with arrows to look at the others. */
 function PreviewPane({ preview, sheet, setSheet }: { preview: Preview; sheet: number; setSheet(n: number): void }) {
@@ -239,7 +294,7 @@ function PreviewPane({ preview, sheet, setSheet }: { preview: Preview; sheet: nu
   const printed = result.plan.sheets.length;
   const shown = Math.min(sheet, Math.max(0, printed - 1));
   const { paper } = result.plan;
-  const size = `${inches(paper.width)} × ${inches(paper.height)} in`;
+  const size = sheetSize(paper);
   return (
     <>
       <SheetPreview result={result} sheet={shown} />
@@ -257,11 +312,84 @@ function PreviewPane({ preview, sheet, setSheet }: { preview: Preview; sheet: nu
   );
 }
 
-function Progress({ working }: { working: Working }) {
+function Progress({ working, printing }: { working: Working; printing: boolean }) {
   return (
     <div className={styles.progress}>
-      <ProgressBar label={t('pageViews.print.working')} value={working.fraction} />
-      <p className={styles.hint}>{t(`pageViews.print.stage.${working.stage as 'prepare' | 'render' | 'verify'}`)}</p>
+      <ProgressBar
+        label={t(printing ? 'pageViews.print.workingPrint' : 'pageViews.print.working')}
+        value={working.fraction}
+      />
+      <p className={styles.hint}>
+        {t(`pageViews.print.stage.${working.stage as 'prepare' | 'render' | 'verify' | 'send'}`)}
+      </p>
+    </div>
+  );
+}
+
+const DUPLEX: readonly DuplexChoice[] = ['default', 'off', 'longEdge', 'shortEdge'];
+const duplexKey = {
+  default: 'pageViews.print.duplexDefault',
+  off: 'pageViews.print.duplexOff',
+  longEdge: 'pageViews.print.duplexLong',
+  shortEdge: 'pageViews.print.duplexShort',
+} as const;
+
+interface PrinterFieldsProps {
+  readonly form: PrinterForm;
+  readonly printers: readonly PrinterInfo[];
+  /** The sheet size in inches, once the preview has it. */
+  readonly paper: string | null;
+  set<K extends keyof PrinterForm>(key: K, value: PrinterForm[K]): void;
+}
+
+/** Where to print and how: the printer, copies, both sides, color, and shrink to fit. */
+function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
+  const printer = chosenPrinter(printers, form.printer);
+  const copies = parseCopies(form.copies);
+  const copiesError = copies === null ? t('pageViews.print.badCopies', { max: MAX_COPIES }) : undefined;
+  return (
+    <div className={styles.form}>
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="print-printer">
+          {t('pageViews.print.printer')}
+        </label>
+        <select
+          id="print-printer"
+          className={styles.select}
+          value={printer?.name ?? ''}
+          onChange={(event) => set('printer', event.target.value)}
+        >
+          {printers.map((entry) => (
+            <option key={entry.name} value={entry.name}>
+              {entry.default ? t('pageViews.print.defaultPrinter', { name: entry.name }) : entry.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <TextField
+        label={t('pageViews.print.copies')}
+        value={form.copies}
+        onChange={(value) => set('copies', value)}
+        error={copiesError}
+      />
+      {copies !== null && copies > 1 ? (
+        <Switch label={t('pageViews.print.collate')} checked={form.collate} onChange={(v) => set('collate', v)} />
+      ) : null}
+      {canDuplex(printer) ? (
+        <RadioGroup label={t('pageViews.print.duplex')} value={form.duplex} onChange={(value) => set('duplex', value)}>
+          {DUPLEX.map((choice) => (
+            <RadioCard key={choice} value={choice} label={t(duplexKey[choice])} />
+          ))}
+        </RadioGroup>
+      ) : null}
+      <Switch
+        label={t('pageViews.print.shrinkToFit')}
+        checked={form.shrinkToFit}
+        onChange={(value) => set('shrinkToFit', value)}
+      />
+      <p className={styles.hint}>{t('pageViews.print.shrinkHint')}</p>
+      {paper ? <p className={styles.hint}>{t('pageViews.print.paperHint', { paper })}</p> : null}
+      <Switch label={t('pageViews.print.grayscale')} checked={form.grayscale} onChange={(v) => set('grayscale', v)} />
     </div>
   );
 }
@@ -279,7 +407,12 @@ export function PrintDialog(props: PrintDialogProps) {
   const [sheet, setSheet] = useState(0);
   const options = useMemo(() => toOptions(form), [form]);
   const preview = usePreview(source, options);
-  const { working, run, stop } = useExport(props, options, form.accessible);
+  const [printerForm, setPrinterForm] = useState<PrinterForm>(DEFAULT_PRINTER_FORM);
+  const wantsPrinter = mode === 'print' && isEnabled('pages.realPrint');
+  const printers = usePrinters(props.platform, wantsPrinter);
+  const printing = wantsPrinter && printers !== null && printers.length > 0 ? { form: printerForm, printers } : null;
+  const { working, run, stop } = useExport(props, options, form.accessible, printing);
+  const copiesOk = printing === null || parseCopies(printerForm.copies) !== null;
   const total = preview.status === 'ready' ? preview.result.sheets : 0;
   const rangeError = preview.status === 'ready' && parsePageRange(form.range, total, form.parity).error !== undefined;
   const set = <K extends keyof Form>(key: K, value: Form[K]) => {
@@ -290,7 +423,7 @@ export function PrintDialog(props: PrintDialogProps) {
     id: 'go',
     label: t(mode === 'print' ? 'pageViews.print.print' : 'pageViews.print.export'),
     variant: 'primary' as const,
-    onPress: () => (preview.status === 'ready' && !rangeError ? run() : undefined),
+    onPress: () => (preview.status === 'ready' && !rangeError && copiesOk && printers !== null ? run() : undefined),
   };
   const actions = working
     ? [{ id: 'stop', label: t('pageViews.print.stop'), variant: 'secondary' as const, onPress: stop }]
@@ -304,10 +437,22 @@ export function PrintDialog(props: PrintDialogProps) {
       onDismiss={() => (working ? stop() : close())}
     >
       {working ? (
-        <Progress working={working} />
+        <Progress working={working} printing={printing !== null} />
       ) : (
         <div className={styles.split}>
-          <Fields form={form} total={total} rangeError={rangeError} set={set} />
+          <div className={styles.form}>
+            {printing ? (
+              <PrinterFields
+                form={printerForm}
+                printers={printing.printers}
+                paper={preview.status === 'ready' ? sheetSize(preview.result.plan.paper) : null}
+                set={(key, value) => setPrinterForm((before) => ({ ...before, [key]: value }))}
+              />
+            ) : wantsPrinter && printers !== null ? (
+              <p className={styles.hint}>{t('pageViews.print.noPrinter')}</p>
+            ) : null}
+            <Fields form={form} total={total} rangeError={rangeError} set={set} />
+          </div>
           <div className={styles.preview} aria-live="polite">
             <PreviewPane preview={preview} sheet={sheet} setSheet={setSheet} />
           </div>

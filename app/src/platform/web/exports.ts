@@ -2,7 +2,7 @@
 // interface runs in a plain browser and in Playwright. The planning is real (a hidden frame runs the same
 // `preparePrint` the desktop's print window runs), but the PDF is a stand-in file with the planned pages and sizes, and
 // nothing is written to disk. Tests read what was "saved" through the exportsSaved hook.
-import type { ExportsClient } from '../types';
+import type { ExportsClient, PrinterInfo, PrintJobRequest } from '../types';
 import { registerTestHook } from './testHooks';
 
 interface Planned {
@@ -17,7 +17,19 @@ export interface SavedExport {
   readonly files: readonly { readonly path: string; readonly length: number; readonly text: string }[];
 }
 
+/** A job the web platform's stand-in printer took. Nothing reaches a printer. */
+export interface PrintedJob {
+  readonly request: PrintJobRequest;
+  readonly bytes: number;
+  readonly text: string;
+}
+
 const POINTS = 0.75;
+
+const STAND_IN_PRINTERS: readonly PrinterInfo[] = [
+  { name: 'Studio Printer', default: true, twoSided: true },
+  { name: 'Hallway Printer', default: false, twoSided: false },
+];
 
 /** A PDF with `count` blank pages of the given size in points. */
 export function standInPdf(count: number, width: number, height: number): Uint8Array {
@@ -35,9 +47,13 @@ export function createWebExports(): ExportsClient {
   const planned = new Map<string, Planned>();
   const saved: SavedExport[] = [];
   const opened: { path: string; reveal: boolean }[] = [];
-  const state = { cancelNext: false, failNext: false };
+  const printed: PrintedJob[] = [];
+  const state = { cancelNext: false, failNext: false, noPrinters: false, printFailNext: false };
   registerTestHook('exportsSaved', () => saved);
   registerTestHook('exportsOpened', () => opened);
+  registerTestHook('printJobs', () => printed);
+  registerTestHook('printNoPrinters', () => void (state.noPrinters = true));
+  registerTestHook('printFailNext', () => void (state.printFailNext = true));
   registerTestHook('exportsCancelNext', () => void (state.cancelNext = true));
   registerTestHook('exportsFailNext', () => void (state.failNext = true));
 
@@ -81,6 +97,17 @@ export function createWebExports(): ExportsClient {
     async selectionDocx(png) {
       // A stand-in: a zip signature and the picture's size, which is enough for the interface's own checks.
       return new Uint8Array([0x50, 0x4b, 0x03, 0x04, ...png.subarray(0, 8)]);
+    },
+    async printers() {
+      return state.noPrinters ? [] : [...STAND_IN_PRINTERS];
+    },
+    async printSubmit(pdf, request) {
+      if (state.printFailNext) {
+        state.printFailNext = false;
+        throw { code: 'spool', message: 'The printer is offline.' };
+      }
+      printed.push({ request, bytes: pdf.length, text: new TextDecoder().decode(pdf.subarray(0, 2000)) });
+      return { message: 'spooled', printer: request.printer };
     },
     async pickSave({ suggested }) {
       if (state.cancelNext) {
