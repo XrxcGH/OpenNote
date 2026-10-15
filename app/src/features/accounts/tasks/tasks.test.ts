@@ -94,7 +94,7 @@ describe('Google Tasks', () => {
   it('keeps the newer change when both sides changed, and logs the other', async () => {
     const { api, mock } = rig();
     const local = memoryList([]);
-    let state = (await syncTasks({ api, local, state: EMPTY_STATE })).state;
+    const state = (await syncTasks({ api, local, state: EMPTY_STATE })).state;
     const mine = local.tasks.get('google:g1');
     if (!mine) throw new Error('not pulled');
     const theirs = mock.tasks.get('g1');
