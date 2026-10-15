@@ -376,7 +376,7 @@ These features fill gaps found by comparing OpenNote with other note apps. Each 
 | Feature | What it does | Status |
 |---|---|---|
 | Page gallery | A gallery view of a section shows a thumbnail of every page with its title and date. Pages reorder by drag, or with Move up and Move down. Selecting several pages works as in the tree. The gallery suits handwritten notebooks and scanned pages, where titles say little. Thumbnails draw handwriting and pictures too, so scanned and inked pages are not blank. | Built, untested by hand |
-| Slides from a page | "Present as slides" splits a page at its headings or at divider lines and shows each part as a full-screen slide. Arrow keys move between slides, and the laser pointer and fading ink from presentation mode still work. Nothing on the page changes. | Built, untested by hand |
+| Slides from a page | "Present as slides" splits a page at its headings or at divider lines and shows each part as a full-screen slide. Arrow keys move between slides, and the laser pointer and fading ink from presentation mode still work. Nothing on the page changes. While presenting, L turns on a laser pointer, P fading ink, and M goes back to the keys; C clears the marks. Marks never change the page. | Built, untested by hand |
 
 ### Phase 7: Smart tables and charts
 

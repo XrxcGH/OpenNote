@@ -3,6 +3,7 @@
 // leaves.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, RefObject } from 'react';
+import { isEnabled } from '../../../app/flags';
 import { announce, Button, Switch } from '../../../ui';
 import { t } from '../../../strings/t';
 import { ENGLISH_LABELS, documentCss, lightTheme, strokesByBlock } from '../export';
@@ -12,6 +13,8 @@ import { bundledFontFaces } from '../host/fonts';
 import type { PageSource } from '../host/source';
 import { moveSlide, slideHtml, slidesOf, slideTitles } from '../slides';
 import type { Slide } from '../slides';
+import { useOverlay } from './marks';
+import type { Tool } from './marks';
 import styles from './pagesUi.module.css';
 
 export interface SlidePlayerProps {
@@ -112,7 +115,13 @@ function useFit(view: RefObject<HTMLDivElement | null>): number {
   return scale;
 }
 
-function keyHandler(show: Show, close: () => void) {
+interface Marking {
+  readonly tool: Tool;
+  choose(tool: Tool): void;
+  clear(): void;
+}
+
+function keyHandler(show: Show, close: () => void, marking: Marking | null) {
   const last = Math.max(0, show.slides.length - 1);
   const keys: Record<string, () => void> = {
     ArrowRight: () => show.go(1),
@@ -125,9 +134,17 @@ function keyHandler(show: Show, close: () => void) {
     Home: () => show.goTo(0),
     End: () => show.goTo(last),
     Escape: close,
+    ...(marking
+      ? {
+          l: () => marking.choose('laser'),
+          p: () => marking.choose('ink'),
+          m: () => marking.choose('move'),
+          c: marking.clear,
+        }
+      : {}),
   };
   return (event: KeyboardEvent) => {
-    const run = keys[event.key];
+    const run = keys[event.key.length === 1 ? event.key.toLowerCase() : event.key];
     // A focused button keeps Space and Enter for itself.
     if (!run || (event.target instanceof HTMLButtonElement && event.key === ' ')) return;
     event.preventDefault();
@@ -136,7 +153,32 @@ function keyHandler(show: Show, close: () => void) {
   };
 }
 
-function Controls({ show, close }: { show: Show; close(): void }) {
+function MarkTools({ marking }: { marking: Marking }) {
+  const tools: readonly { id: Tool; key: string }[] = [
+    { id: 'laser', key: 'L' },
+    { id: 'ink', key: 'P' },
+    { id: 'move', key: 'M' },
+  ];
+  return (
+    <span role="toolbar" aria-label={t('pagesPlus.present.tool')}>
+      {tools.map(({ id, key }) => (
+        <Button
+          key={id}
+          variant={marking.tool === id ? 'primary' : 'quiet'}
+          aria-pressed={marking.tool === id}
+          onClick={() => marking.choose(id)}
+        >
+          {t('pagesPlus.present.withKey', { name: t(`pagesPlus.present.tools.${id}`), key })}
+        </Button>
+      ))}
+      <Button variant="quiet" onClick={marking.clear}>
+        {t('pagesPlus.present.withKey', { name: t('pagesPlus.present.clear'), key: 'C' })}
+      </Button>
+    </span>
+  );
+}
+
+function Controls({ show, close, marking }: { show: Show; close(): void; marking: Marking | null }) {
   const { slides, index } = show;
   return (
     <div className={styles.stageBar}>
@@ -147,6 +189,7 @@ function Controls({ show, close }: { show: Show; close(): void }) {
       <Button variant="quiet" disabled={index >= slides.length - 1} onClick={() => show.go(1)}>
         {t('pageViews.slides.next')}
       </Button>
+      {marking ? <MarkTools marking={marking} /> : null}
       <Switch label={t('pageViews.slides.splitHeadings')} checked={show.headings} onChange={show.setHeadings} />
       <span className={styles.stageHelp}>{t('pageViews.slides.help')}</span>
       <Button variant="quiet" onClick={close}>
@@ -162,6 +205,22 @@ export function SlidePlayer({ source, startBlock, close }: SlidePlayerProps) {
   const view = useRef<HTMLDivElement>(null);
   const scale = useFit(view);
   useStage(stage);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const overlay = useOverlay(canvas);
+  const [tool, setTool] = useState<Tool>('move');
+  const marked = isEnabled('pages.slideMarks');
+  const marking: Marking | null = marked
+    ? {
+        tool,
+        choose: (next) => {
+          setTool(next);
+          announce(t(`pagesPlus.present.tools.${next}`));
+        },
+        clear: () => overlay.current?.clear(),
+      }
+    : null;
+  // A mark belongs to the slide it was made on.
+  useEffect(() => overlay.current?.clear(), [show.index, overlay]);
   const offset = `translate(${(-STAGE.width * scale) / 2}px, ${(-STAGE.height * scale) / 2}px) scale(${scale})`;
   return (
     <div
@@ -171,7 +230,7 @@ export function SlidePlayer({ source, startBlock, close }: SlidePlayerProps) {
       aria-modal="true"
       aria-label={t('pageViews.slides.title')}
       tabIndex={-1}
-      onKeyDown={keyHandler(show, close)}
+      onKeyDown={keyHandler(show, close, marking)}
     >
       <div ref={view} className={styles.stageView}>
         {show.slides.length === 0 ? (
@@ -186,8 +245,21 @@ export function SlidePlayer({ source, startBlock, close }: SlidePlayerProps) {
             style={{ transform: offset }}
           />
         )}
+        {marked ? (
+          <canvas
+            ref={canvas}
+            className={styles.presentMarks}
+            data-tool={tool}
+            aria-hidden="true"
+            onPointerDown={(event) => overlay.current?.down(event.nativeEvent, tool)}
+            onPointerMove={(event) => overlay.current?.move(event.nativeEvent, tool)}
+            onPointerUp={(event) => overlay.current?.up(event.nativeEvent)}
+            onPointerCancel={(event) => overlay.current?.up(event.nativeEvent)}
+            onPointerLeave={() => overlay.current?.leave()}
+          />
+        ) : null}
       </div>
-      <Controls show={show} close={close} />
+      <Controls show={show} close={close} marking={marking} />
     </div>
   );
 }

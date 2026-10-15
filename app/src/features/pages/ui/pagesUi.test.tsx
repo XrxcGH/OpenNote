@@ -114,3 +114,25 @@ describe('ReadingPanel', () => {
     expect(readingAids.get().tint).toBe('none');
   });
 });
+
+describe('SlidePlayer marks', () => {
+  it('turns on the laser and ink with keys, draws a mark that fades, and keeps arrow keys for the slides', async () => {
+    render(<SlidePlayer source={slideSource()} startBlock={null} close={vi.fn()} />);
+    expect(await screen.findByText('1 / 3')).toBeTruthy();
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+    expect(canvas.dataset.tool).toBe('move');
+    await userEvent.keyboard('p');
+    expect(canvas.dataset.tool).toBe('ink');
+    expect(screen.getByRole('button', { name: /Fading ink/ }).getAttribute('aria-pressed')).toBe('true');
+    const box = canvas.getBoundingClientRect();
+    canvas.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientX: box.left + 20, clientY: box.top + 20, pointerId: 1 }),
+    );
+    await userEvent.keyboard('l');
+    expect(canvas.dataset.tool).toBe('laser');
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByText('2 / 3')).toBeTruthy();
+    await userEvent.keyboard('m');
+    expect(canvas.dataset.tool).toBe('move');
+  });
+});
