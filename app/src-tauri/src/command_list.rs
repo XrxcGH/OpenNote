@@ -51,7 +51,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "intel_read_aloud_cancel", "intel_clip_audio", "intel_ext_call",
     "intel_transcribe", "intel_transcribe_cancel",
     "intel_stream_start", "intel_stream_stop", "intel_caption_style",
-    "page_extras_caret", "page_extras_link_title", "attachment_import", "attachment_open", "attachment_applied",
+    "page_extras_caret", "page_extras_link_title", "attachment_import", "attachment_open", "attachment_applied", "attachment_thumbnail",
     "connectors_list", "connectors_connect", "connectors_cancel", "connectors_disconnect", "connectors_request",
     "api_call", "share_take",
     "accounts_call",

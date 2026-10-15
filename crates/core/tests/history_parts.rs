@@ -186,7 +186,8 @@ fn deleting_a_page_from_trash_for_good_takes_its_history_with_it() {
     handle
         .name_version(saved.revision, Some("Named".into()), false)
         .unwrap();
-    assert_eq!(handle.history().unwrap().len(), 1);
+    // The first edit kept the page as it was, and the named save is the second version.
+    assert_eq!(handle.history().unwrap().len(), 2);
     handle.close(&real.client).unwrap();
 
     let notebook = &real.notebook;

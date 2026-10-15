@@ -187,15 +187,16 @@ fn a_backup_save_keeps_the_session_running() {
     let (page, _) = kit.inked_page(&notebook, section).unwrap();
     let c = client("main-1");
     let handle = notebook.open_page(page, c.clone()).unwrap();
-    let versions = handle.history().unwrap().len();
     handle
         .commit_for_tests(&retitle(kit.clock.as_ref(), &c, "Photosynthesis", "x"))
         .unwrap();
+    let versions = handle.history().unwrap().len();
     let report = kit.core.save_all(Duration::from_secs(5));
     assert_eq!((report.saved, report.failed.len(), report.timed_out), (1, 0, false));
     assert!(!kit.core.has_unsaved());
-    // No exit version, and the device is not marked as stopped: a crash now is still a crash.
-    assert_eq!(handle.history().unwrap().len(), versions);
+    // The first save keeps the page as it was, but there is no exit version, and the device is not marked as
+    // stopped: a crash now is still a crash.
+    assert_eq!(handle.history().unwrap().len(), versions + 1);
     assert!(kit.beside().core.unclean_exit());
     // The page keeps taking edits.
     handle

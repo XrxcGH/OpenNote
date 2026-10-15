@@ -4,6 +4,7 @@
 mod real_core;
 
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use opennote_core::id::{BlockId, Id};
 use opennote_core::ops::resolve::{Edit, NewBlock};
@@ -51,6 +52,8 @@ fn has(problems: &[(String, String)], code: &str) -> bool {
 fn saved(real: &mut Real) -> (PathBuf, PathBuf) {
     let handle = real.open();
     handle.apply(real.request(vec![table(5, "Kept")])).unwrap();
+    // The first edit kept the page as it was; the named version is saved later, so it is the newest.
+    real.clock.advance(Duration::from_secs(5));
     let saved = handle.save_now().unwrap();
     handle
         .name_version(saved.revision, Some("Before".into()), false)

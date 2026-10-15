@@ -179,6 +179,7 @@
     "allow-page-extras-link-title",
     "allow-attachment-import",
     "allow-attachment-open",
+    "allow-attachment-thumbnail",
     "allow-attachment-applied",
     "allow-intel-ext-call",
     "allow-intel-transcribe",

@@ -224,7 +224,12 @@ fn write_doc(tx: &Transaction<'_>, doc: &PageDoc, rows: Option<&Prepared>, repor
                 });
             }
         }
-        None => report.added.push(doc.page),
+        None => {
+            // A page that comes back (a restored notebook) may still hold an alias that its title now makes pointless.
+            tx.prepare_cached("DELETE FROM aliases WHERE page = ?1 AND title_norm = ?2")?
+                .execute(params![doc.page.to_string(), prepared.title_norm])?;
+            report.added.push(doc.page);
+        }
     }
     Ok(false)
 }

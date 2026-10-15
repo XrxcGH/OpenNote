@@ -181,7 +181,7 @@ mod tests {
                             .map_err(core_error)?;
                     }
                 }
-                // Closing the page saves the second edit as an unnamed version.
+                // The first edit keeps the page as it was, as an unnamed version. Closing the page saves the second edit as another.
                 let client = handle.client().clone();
                 handle.close(&client).map_err(core_error)?;
                 Ok((notebook, section, page))
@@ -209,7 +209,8 @@ mod tests {
         let notes = dir.path().join("Notes");
         let bridge = CoreBridge::at(dir.path().join("local"));
         let (notebook, section, page) = a_page_with_versions(&bridge, &notes);
-        assert_eq!(versions(&bridge, &page).len(), 2, "two saved versions");
+        // The first edit keeps the page as it was, then the named save, then the close.
+        assert_eq!(versions(&bridge, &page).len(), 3, "three saved versions");
 
         let scope = |kind: &str, id: &str| ScopeArg {
             kind: kind.into(),
@@ -217,7 +218,7 @@ mod tests {
         };
         // The page is found even when the interface names no notebook.
         let deleted = bridge.delete_history("", &scope("page", &page), true).expect("deletes");
-        assert_eq!((deleted.pages, deleted.versions), (1, 1));
+        assert_eq!((deleted.pages, deleted.versions), (1, 2));
         assert_eq!(
             versions(&bridge, &page),
             [Some("Named".to_owned())],

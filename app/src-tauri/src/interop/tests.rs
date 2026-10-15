@@ -340,9 +340,10 @@ fn pdf_export_writes_the_printed_pages_and_an_index() {
         .iter()
         .filter(|p| p.extension().is_some_and(|e| e == "pdf"))
         .count();
-    assert_eq!(pdfs, pages.len(), "{files:?}");
+    // The request names two pages the core knows (Cells and Plants) and one it does not, which is skipped.
+    assert_eq!(pdfs, 2, "{files:?}");
     assert!(files.iter().any(|p| p.ends_with("index.html")));
-    assert_eq!(exported.report.pages.len(), pages.len());
+    assert_eq!(exported.report.pages.len(), 2);
 }
 
 #[test]
