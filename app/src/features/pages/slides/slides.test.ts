@@ -138,3 +138,18 @@ describe('moving between slides', () => {
     expect(html).toContain('aria-label="Q &#34;quoted&#34; &#60;b&#62;"');
   });
 });
+
+describe('slides from a freeform page', () => {
+  it('makes slides from flow text, a heading, a list, a checklist, and a text box', () => {
+    const NL = String.fromCharCode(10);
+    const flow = ['Opening line.', '', '## Plan', '', '- one', '- two', '', '- [ ] task', '- [x] done'].join(NL);
+    const page = pageOf([textBlock(flow), textBlock('A text box.', { x: 40, y: 300, w: 300, h: 80 })]);
+    const slides = slidesOf(page);
+    expect(slides.length).toBeGreaterThanOrEqual(1);
+    const html = slides.map((slide) => slideHtml(slide, ctx(page))).join('');
+    expect(html).toContain('Opening line.');
+    expect(html).toContain('Plan');
+    expect(html).toContain('two');
+    expect(html).toContain('A text box.');
+  });
+});

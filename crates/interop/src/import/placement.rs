@@ -30,6 +30,10 @@ pub(super) struct Resource {
 pub(super) fn decode_resources(raw: Vec<RawResource>, report: &mut PageReport) -> Vec<Resource> {
     let mut out = Vec::new();
     for (n, resource) in raw.into_iter().enumerate() {
+        if resource.too_big {
+            report.skipped(format!("attachment {}", n + 1), "It is too big to import.");
+            continue;
+        }
         let packed: String = resource.data.chars().filter(|c| !c.is_whitespace()).collect();
         let Ok(bytes) = STANDARD.decode(packed) else {
             report.skipped(format!("attachment {}", n + 1), "Its data is damaged.");

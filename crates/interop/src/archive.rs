@@ -506,7 +506,10 @@ fn data_start<R: Read + Seek>(reader: &mut R, offset: u64, name: &str) -> Result
     }
     let name_len = u64::from(le16(&header, 26).unwrap_or(0));
     let extra_len = u64::from(le16(&header, 28).unwrap_or(0));
-    Ok(offset + 30 + name_len + extra_len)
+    // A crafted ZIP64 offset near u64::MAX must not wrap (or panic with overflow checks on).
+    offset
+        .checked_add(30 + name_len + extra_len)
+        .ok_or_else(|| InteropError::format(name, "its header is damaged"))
 }
 
 #[cfg(test)]

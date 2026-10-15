@@ -171,3 +171,10 @@ fn deeply_nested_quotes_and_lists_stay_shallow_and_keep_their_text() {
         assert_eq!(parse(&written, SoftBreaks::Hard).blocks.len(), parsed.blocks.len());
     }
 }
+
+#[test]
+fn dollar_math_comes_over_as_math_not_escaped_text() {
+    let source = "Rocket: $E=mc^2$ costs \\$5.\n\n$$\n\\int_0^1 x\\,dx\n$$";
+    let parsed = parse(source, SoftBreaks::Hard);
+    assert_eq!(to_markdown(&parsed.blocks), source);
+}

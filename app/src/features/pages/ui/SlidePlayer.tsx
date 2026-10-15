@@ -53,7 +53,8 @@ function useShow(source: PageSource, startBlock: string | null): Show {
     [source.page, headings],
   );
   const first = Math.max(0, startBlock ? slides.findIndex((slide) => slide.blocks.includes(startBlock)) : 0);
-  const index = Math.min(chosen ?? first, Math.max(0, slides.length - 1));
+  // An empty deck stays at 0: moveSlide answers -1 there, which would show "0 / 1".
+  const index = Math.max(0, Math.min(chosen ?? first, slides.length - 1));
   const titles = useMemo(() => slideTitles(slides, (n) => t('pageViews.slides.untitled', { n })), [slides]);
   const css = useMemo(() => slideStyles(), []);
   const cx: BlockContext = useMemo(

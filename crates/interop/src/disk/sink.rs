@@ -161,6 +161,7 @@ struct Staging {
     dir: PathBuf,
     layout: NotebookLayout,
     title: String,
+    notebook: NotebookFile,
 }
 
 impl DiskSink {
@@ -195,6 +196,21 @@ impl DiskSink {
     pub fn with_writers(mut self, threads: usize) -> DiskSink {
         self.threads = threads.max(1);
         self
+    }
+
+    /// A folder that needed a counter, such as `test (2)`, gives the notebook the same counter in its title, so
+    /// notebooks imported from files of one name can be told apart. Best effort: the notebook is already in place.
+    fn retitle(&self, staging: &Staging, name: &str, target: &Path) {
+        let plain = safe_folder_name(&staging.title, &|_| false);
+        let Some(counter) = name.strip_prefix(plain.as_str()).filter(|rest| !rest.is_empty()) else {
+            return;
+        };
+        let mut notebook = staging.notebook.clone();
+        notebook.title = format!("{}{counter}", staging.title);
+        let bytes = self.codec.write_notebook(&notebook);
+        let _ = self
+            .fs
+            .replace_durable(&NotebookLayout::new(target).notebook_json(), &bytes);
     }
 
     /// The notebook folder, once the import has finished.
@@ -238,7 +254,8 @@ impl ImportSink for DiskSink {
         self.staging = Some(Staging {
             dir,
             layout,
-            title: notebook.title,
+            title: notebook.title.clone(),
+            notebook,
         });
         Ok(())
     }
@@ -282,6 +299,7 @@ impl ImportSink for DiskSink {
             let target = self.parent.join(&name);
             match self.fs.rename_dir(&staging.dir, &target) {
                 Ok(_) => {
+                    self.retitle(&staging, &name, &target);
                     self.finished = Some(target);
                     return Ok(());
                 }

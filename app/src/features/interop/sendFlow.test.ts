@@ -63,6 +63,21 @@ describe('sending a copy to a folder', () => {
     expect(requests[1].folder).toBe('C:\\Users\\Sample\\OneDrive\\Notes');
   });
 
+  it('lists the earlier copy for Update and leaves it alone on a plain Export to the same folder', async () => {
+    const { flow, requests, target } = await setup();
+    const folder = 'C:/Users/Sample/OneDrive/Notes';
+    flow.useFolder(folder);
+    flow.setFormat('docx');
+    await flow.start();
+    const first = flow.extras.get().copies[0];
+    expect(first.format).toBe('docx');
+    expect(folderOf(first.path)).toBe(folder);
+    flow.state.set({ step: 'options', scope: target.initial, format: 'docx', folder, error: null });
+    await flow.start();
+    expect(requests).toHaveLength(2);
+    expect(requests[1].replace).toBeUndefined();
+  });
+
   it('finds the folder of a path with either slash', () => {
     expect(folderOf('C:\\a\\b\\c.docx')).toBe('C:\\a\\b');
     expect(folderOf('C:/a/b/c.docx')).toBe('C:/a/b');

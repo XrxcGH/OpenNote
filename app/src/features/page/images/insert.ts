@@ -108,7 +108,14 @@ export function defaultPlacement(mounted: MountedPage): Placement {
   if (below) return { kind: 'point', x: below.x, y: below.y + below.h + KEEP_BELOW };
   const box = mounted.viewport.viewport.getBoundingClientRect();
   const corner = mounted.viewport.toWorld(box.left + 48, box.top + 48);
-  return { kind: 'point', x: Math.max(0, corner.x), y: Math.max(0, corner.y) };
+  return { kind: 'point', x: Math.max(0, corner.x), y: Math.max(0, corner.y, belowTitle(mounted)) };
+}
+
+/** The first world y under the title band, so a new block never covers the page title. */
+function belowTitle(mounted: Pick<MountedPage, 'title' | 'viewport'>): number {
+  const band = mounted.title?.element.getBoundingClientRect();
+  if (!band || band.height === 0) return 0;
+  return mounted.viewport.toWorld(band.left, band.bottom).y + KEEP_BELOW;
 }
 
 export function isFlow(page: OpenPage): boolean {

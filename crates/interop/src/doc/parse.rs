@@ -46,8 +46,11 @@ pub const MAX_NESTING: usize = 64;
 
 /// Reads Markdown.
 pub fn parse(markdown: &str, soft: SoftBreaks) -> Parsed {
-    let options =
-        Options::ENABLE_STRIKETHROUGH | Options::ENABLE_TASKLISTS | Options::ENABLE_TABLES | Options::ENABLE_WIKILINKS;
+    let options = Options::ENABLE_STRIKETHROUGH
+        | Options::ENABLE_TASKLISTS
+        | Options::ENABLE_TABLES
+        | Options::ENABLE_WIKILINKS
+        | Options::ENABLE_MATH;
     let mut builder = Builder::default();
     builder.frames.push(Frame::Container(Kind::Root, Vec::new()));
     for event in Parser::new_ext(markdown, options) {
@@ -106,6 +109,7 @@ impl Builder {
             size: html.size.clone().or_else(|| md.size.clone()),
             script: html.script.or(md.script),
             code: md.code || html.code,
+            math: false,
         }
     }
 
@@ -120,6 +124,13 @@ impl Builder {
                     ..self.marks()
                 };
                 self.push_inline_text(&code, &marks);
+            }
+            Event::InlineMath(math) | Event::DisplayMath(math) => {
+                let marks = Marks {
+                    math: true,
+                    ..Marks::default()
+                };
+                self.push_inline_text(math.trim(), &marks);
             }
             Event::Html(html) if self.html_block.is_some() => {
                 self.html_block.get_or_insert_with(String::new).push_str(&html);

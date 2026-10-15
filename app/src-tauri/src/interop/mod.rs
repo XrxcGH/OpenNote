@@ -11,6 +11,7 @@
 
 pub mod commands;
 mod export;
+mod grants;
 mod jobs;
 pub mod more;
 pub mod pick;

@@ -8,6 +8,11 @@ use flate2::{read::DeflateDecoder, write::DeflateEncoder, Compression};
 /// The most one entry may expand to, so a crafted package can't fill memory.
 pub const MAX_ENTRY_BYTES: u64 = 256 * 1024 * 1024;
 
+/// The most all entries together may expand to, so many entries at the per-entry limit can't fill memory either.
+pub const MAX_TOTAL_BYTES: u64 = 512 * 1024 * 1024;
+
+const TOO_LARGE: &str = "A file in the package is too large.";
+
 pub struct Entry {
     pub name: String,
     pub data: Vec<u8>,
@@ -23,6 +28,12 @@ fn u32_at(bytes: &[u8], at: usize) -> Option<usize> {
 
 /// Every file in the archive, in the order of its central directory.
 pub fn read(bytes: &[u8]) -> Result<Vec<Entry>, String> {
+    read_within(bytes, MAX_TOTAL_BYTES)
+}
+
+/// [`read`] with the package-wide expansion budget as a parameter.
+fn read_within(bytes: &[u8], budget: u64) -> Result<Vec<Entry>, String> {
+    let mut left = budget;
     let bad = || "The package isn't a valid ZIP file.".to_owned();
     let start = bytes.len().saturating_sub(22 + 65_535);
     let eocd = (start..bytes.len().saturating_sub(21))
@@ -60,20 +71,23 @@ pub fn read(bytes: &[u8]) -> Result<Vec<Entry>, String> {
         let data_at = local + 30 + skip;
         let packed = bytes.get(data_at..data_at + compressed).ok_or_else(bad)?;
         let data = match method {
-            0 => packed.to_vec(),
+            0 if packed.len() as u64 <= left.min(MAX_ENTRY_BYTES) => packed.to_vec(),
+            0 => return Err(TOO_LARGE.to_owned()),
             8 => {
+                let limit = left.min(MAX_ENTRY_BYTES);
                 let mut out = Vec::new();
                 DeflateDecoder::new(packed)
-                    .take(MAX_ENTRY_BYTES + 1)
+                    .take(limit + 1)
                     .read_to_end(&mut out)
                     .map_err(|_| bad())?;
-                if out.len() as u64 > MAX_ENTRY_BYTES {
-                    return Err("A file in the package is too large.".to_owned());
+                if out.len() as u64 > limit {
+                    return Err(TOO_LARGE.to_owned());
                 }
                 out
             }
             _ => return Err("The package uses a compression this app can't read.".to_owned()),
         };
+        left -= data.len() as u64;
         entries.push(Entry { name, data });
     }
     Ok(entries)
@@ -150,6 +164,14 @@ mod tests {
             assert_eq!(&entry.name, name);
             assert_eq!(&entry.data, data);
         }
+    }
+
+    #[test]
+    fn refuses_a_package_whose_entries_together_expand_past_the_budget() {
+        let files: Vec<_> = (0..4).map(|n| (n.to_string(), vec![0u8; 1000])).collect();
+        let package = write(&files);
+        assert!(read_within(&package, 4000).is_ok());
+        assert_eq!(read_within(&package, 3999).err().as_deref(), Some(TOO_LARGE));
     }
 
     #[test]

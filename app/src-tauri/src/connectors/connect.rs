@@ -188,7 +188,7 @@ impl Connectors {
     }
 
     /// Sends the token to the service once and returns the account name from the answer.
-    fn check_token(
+    pub(super) fn check_token(
         &self,
         def: &ConnectorDef,
         token_def: &TokenDef,

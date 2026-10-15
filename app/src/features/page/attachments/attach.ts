@@ -8,7 +8,7 @@ import type { BlockId, Edit, ImportedAsset, NewBlock } from '../../../services/p
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { assetTable } from '../images/assets';
-import { defaultPlacement, showInserted } from '../images/insert';
+import { defaultPlacement, fileItems, imageFiles, insertImages, showInserted } from '../images/insert';
 import type { Placement } from '../images/insert';
 import type { MountedPage } from '../mount';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
@@ -88,13 +88,23 @@ export async function attachFiles(
   return blocks;
 }
 
+/** Picked pictures go in as image blocks, as Insert > Picture would add them; the other files become attachments. */
+async function attachPicked(mounted: MountedPage, files: readonly File[]): Promise<BlockId[]> {
+  const { images } = mounted.host.flag('page.images')
+    ? imageFiles(files, mounted.host.flag('page.heicImport'))
+    : { images: [] as File[] };
+  const pictures = await insertImages(mounted, fileItems(images));
+  const others = files.filter((file) => !images.includes(file));
+  return [...pictures, ...(await attachFiles(mounted, others))];
+}
+
 /** The Windows open dialog for any kind of file. */
 export function pickFiles(mounted: MountedPage): Promise<BlockId[]> {
   const input = document.createElement('input');
   input.type = 'file';
   input.multiple = true;
   return new Promise((resolve) => {
-    input.addEventListener('change', () => void attachFiles(mounted, [...(input.files ?? [])]).then(resolve), {
+    input.addEventListener('change', () => void attachPicked(mounted, [...(input.files ?? [])]).then(resolve), {
       once: true,
     });
     input.addEventListener('cancel', () => resolve([]), { once: true });

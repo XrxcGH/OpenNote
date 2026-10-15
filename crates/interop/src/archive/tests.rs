@@ -142,3 +142,30 @@ fn a_canceled_extraction_stops_before_the_next_entry() {
     assert!(matches!(outcome, Err(InteropError::Canceled)));
     assert!(!dir.path().join("a.md").exists());
 }
+
+#[test]
+fn a_local_header_offset_near_the_top_of_u64_is_damaged_not_a_panic() {
+    // A local header that claims long names, read at an offset that would overflow.
+    let mut header = vec![0u8; 30];
+    header[..4].copy_from_slice(&LOCAL_HEADER.to_le_bytes());
+    header[26..28].copy_from_slice(&0xffffu16.to_le_bytes());
+    header[28..30].copy_from_slice(&0xffffu16.to_le_bytes());
+    let mut reader = std::io::Cursor::new(header);
+    assert!(super::data_start(&mut reader, 0, "a").is_ok());
+    // Cursor seeks past the end succeed and read nothing, so build one that reads the header anywhere.
+    struct Everywhere(Vec<u8>);
+    impl std::io::Read for Everywhere {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            let n = buf.len().min(self.0.len());
+            buf[..n].copy_from_slice(&self.0[..n]);
+            Ok(n)
+        }
+    }
+    impl std::io::Seek for Everywhere {
+        fn seek(&mut self, _: std::io::SeekFrom) -> std::io::Result<u64> {
+            Ok(0)
+        }
+    }
+    let mut reader = Everywhere(reader.into_inner());
+    assert!(super::data_start(&mut reader, u64::MAX - 40, "a").is_err());
+}

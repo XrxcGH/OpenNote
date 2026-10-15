@@ -20,8 +20,9 @@ use crate::doc::{Block as DocBlock, Inline};
 use crate::error::{InteropError, Result};
 use crate::sink::{ImportEnv, ImportedPage};
 
-/// A text block holds at most this much Markdown, well under the limit of spec 16.
-const TEXT_CHUNK_BYTES: usize = 1 << 20;
+/// A text block holds at most this much Markdown, a few thousand words. That is far under the limit of spec 16,
+/// and small enough that typing in the block of a huge imported note stays quick.
+const TEXT_CHUNK_BYTES: usize = 32 << 10;
 
 /// The longest title and tag a page can hold (spec 16).
 const TITLE_CHARS: usize = 1_000;
@@ -316,12 +317,29 @@ mod tests {
     }
 
     #[test]
+    fn a_long_note_of_many_paragraphs_becomes_blocks_of_a_few_thousand_words() {
+        let world = TestEnv::new();
+        let env = world.env();
+        let now = env.clock.now();
+        let mut builder = PageBuilder::new(&env, "Huge", now, now);
+        let paragraph = "word ".repeat(200);
+        builder.push_blocks(
+            (0..4000)
+                .map(|_| DocBlock::Paragraph(vec![Inline::text(paragraph.trim())]))
+                .collect(),
+        );
+        let page = builder.finish().expect("the page fits").page;
+        assert!(page.blocks.len() > 100, "{} blocks", page.blocks.len());
+        assert!(validate_page(&page, &Limits::default()).is_valid());
+    }
+
+    #[test]
     fn a_page_over_the_size_limit_is_refused() {
         let world = TestEnv::new();
         let env = world.env();
         let now = env.clock.now();
         let mut builder = PageBuilder::new(&env, "Huge", now, now);
-        let chunk = "x".repeat(TEXT_CHUNK_BYTES);
+        let chunk = "x".repeat(1 << 20);
         builder.pieces = (0..70).map(|_| text_data(chunk.clone())).collect();
         let error = builder.finish().map(|_| ()).expect_err("too big");
         assert!(matches!(error, InteropError::TooBig(_)), "{error}");

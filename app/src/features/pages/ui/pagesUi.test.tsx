@@ -98,6 +98,15 @@ describe('SlidePlayer', () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it('stays on "1 / 1" when an empty page is moved forward', async () => {
+    const page = pageOf([], { title: 'Empty' });
+    const source = { pageId: 'p', title: 'Empty', notebook: '', section: '', page, assetUrls: {} };
+    render(<SlidePlayer source={source} startBlock={null} close={vi.fn()} />);
+    expect(await screen.findByText('1 / 1')).toBeTruthy();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByText('1 / 1')).toBeTruthy();
+  });
+
   it('names the slide in the frame for a screen reader', async () => {
     render(<SlidePlayer source={slideSource()} startBlock={null} close={vi.fn()} />);
     expect(await screen.findByTitle('Slide 1 of 3')).toBeTruthy();

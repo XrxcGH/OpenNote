@@ -42,6 +42,8 @@ pub struct Marks {
     pub script: Option<Script>,
     /// Inline code.
     pub code: bool,
+    /// TeX math, written `$...$`, or between `$$` lines when it is a paragraph on its own (spec 7.6).
+    pub math: bool,
 }
 
 impl Marks {

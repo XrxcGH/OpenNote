@@ -31,7 +31,12 @@ fn render(blocks: &[Block]) -> Vec<String> {
 
 fn render_block(block: &Block) -> Vec<String> {
     match block {
-        Block::Paragraph(content) => split_lines(&write_inlines(content, Breaks::Backslash)),
+        Block::Paragraph(content) => match content.as_slice() {
+            [Inline::Text { text, marks }] if marks.math && !text.contains("$$") => {
+                vec!["$$".to_owned(), text.trim().to_owned(), "$$".to_owned()]
+            }
+            _ => split_lines(&write_inlines(content, Breaks::Backslash)),
+        },
         Block::Heading { level, content } => {
             let text = write_inlines(content, Breaks::Space);
             let marks = "#".repeat(usize::from((*level).clamp(1, 6)));

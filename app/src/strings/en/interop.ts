@@ -121,6 +121,7 @@ export const interop = {
       title: "The export didn't finish",
       io: "OpenNote couldn't write to that folder. Choose another folder, then try again.",
       unsupported: 'This format is not in this version yet. Choose another one.',
+      noTables: 'There is no table here to export. Choose another format, or add a table first.',
       other: 'Something went wrong, and nothing was kept. {detail}',
     },
   },

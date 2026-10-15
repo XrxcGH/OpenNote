@@ -129,6 +129,12 @@ fn two_imports_with_one_title_get_two_folders() {
     let one = first.notebook_dir().expect("done").to_path_buf();
     let two = second.notebook_dir().expect("done").to_path_buf();
     assert_ne!(one, two);
+    let title = |dir: &Path| {
+        let text = std::fs::read_to_string(dir.join("notebook.json")).expect("notebook.json");
+        serde_json::from_str::<serde_json::Value>(&text).expect("json")["title"].clone()
+    };
+    assert_eq!(title(&one), "Vault");
+    assert_eq!(title(&two), "Vault (2)", "the title carries the folder's counter");
 }
 
 #[test]
