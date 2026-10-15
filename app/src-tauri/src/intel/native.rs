@@ -191,6 +191,40 @@ mod tests {
     }
 
     #[cfg(feature = "native-engines")]
+    fn fixtures(name: &str) -> std::path::PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../crates/intel-engines/tests/fixtures")
+            .join(name)
+    }
+
+    #[cfg(feature = "native-engines")]
+    #[test]
+    fn a_pack_translates_and_the_meaning_model_embeds_through_the_shell() {
+        let native = Native::default();
+        let lines = ["hello world".to_owned()];
+        assert_eq!(
+            native
+                .translate("translate-test", &fixtures("translate"), &lines)
+                .unwrap(),
+            ["hola mundo"]
+        );
+        // A second pack replaces the first, and the first can be loaded again.
+        assert_eq!(
+            native
+                .translate("translate-other", &fixtures("translate"), &lines)
+                .unwrap(),
+            ["hola mundo"]
+        );
+        let vectors = native.embed(&fixtures("embed"), &["cat".to_owned()]).unwrap();
+        assert_eq!(vectors[0].len(), 384);
+        native.unload();
+        assert_eq!(
+            native.embed(&fixtures("embed"), &["kitten".to_owned()]).unwrap().len(),
+            1
+        );
+    }
+
+    #[cfg(feature = "native-engines")]
     #[test]
     fn a_pack_that_is_not_there_is_a_model_error() {
         let native = Native::default();
