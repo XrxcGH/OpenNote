@@ -138,7 +138,7 @@ pub struct CoreBridge {
     watched: Arc<OnceLock<()>>,
     /// Which opening of each window label is the current one. Kept apart from `state`, so a window that goes can
     /// retire its opening at once even while a long command holds the bridge.
-    windows: Windows,
+    windows: Arc<Windows>,
 }
 
 /// One opening of a window: its label and which time that label was opened. A page window closed and opened again
@@ -407,7 +407,7 @@ impl CoreBridge {
             door: Arc::default(),
             relay: Arc::default(),
             search: Arc::default(),
-            windows: Windows::default(),
+            windows: Arc::default(),
             held: Arc::default(),
             warn_after: HELD_WARNING,
             command_wait: COMMAND_WAIT,
