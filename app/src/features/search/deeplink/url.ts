@@ -32,6 +32,40 @@ export function parseLink(text: string): OpenNoteLink | null {
   }
 }
 
+/** A link to a section or a notebook, which a shortcut to one of them uses. */
+export interface NodeLink {
+  kind: 'section' | 'notebook';
+  id: string;
+}
+
+const NODE_SHAPE = /^opennote:\/\/(section|notebook)\/([^/?#]+)\/?(?:[?#].*)?$/i;
+
+/** `opennote://section/<id>` or `opennote://notebook/<id>`. */
+export function formatNodeLink(kind: NodeLink['kind'], id: string): string {
+  return `${LINK_SCHEME}${kind}/${encodeURIComponent(id)}`;
+}
+
+/** The section or notebook link in the text, or null when it is anything else. */
+export function parseNodeLink(text: string): NodeLink | null {
+  const match = NODE_SHAPE.exec(text.trim());
+  if (!match) return null;
+  try {
+    const id = decodeURIComponent(match[2]);
+    return SAFE_ID.test(id) ? { kind: match[1].toLowerCase() as NodeLink['kind'], id } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The first section or notebook link among launch arguments. */
+export function nodeLinkInArgs(args: readonly string[]): NodeLink | null {
+  for (const arg of args) {
+    const link = parseNodeLink(arg);
+    if (link) return link;
+  }
+  return null;
+}
+
 /** The first OpenNote link among launch arguments. */
 export function linkInArgs(args: readonly string[]): OpenNoteLink | null {
   for (const arg of args) {

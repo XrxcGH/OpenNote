@@ -278,6 +278,8 @@ export interface ImagesClient {
 export interface CaretMetrics {
   widthPx: number;
   blinkMs: number | null;
+  /** The Windows text cursor indicator color as `#rrggbb`, or null when none is set. */
+  color: string | null;
 }
 
 /** An attached file whose changes its own app saved back: the page's attachment now points at `asset`. */
@@ -307,6 +309,11 @@ export interface PageExtrasClient {
    * change itself after a few seconds, so a page that closed first still gets it.
    */
   attachmentApplied(page: string, asset: string): Promise<void>;
+  /**
+   * A PNG of the first page of an attached PDF or Office file, drawn by Windows, or null when it can't be drawn.
+   * `size` is the longer side in device pixels.
+   */
+  attachmentThumbnail(page: string, asset: string, name: string, size: number): Promise<Uint8Array | null>;
 }
 
 /** Local voices for read aloud, only if the Web Speech fallback is built (WP7). */

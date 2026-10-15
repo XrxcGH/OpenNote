@@ -1,49 +1,29 @@
 // What Extract, Merge, and Split do. They make new pages through the notes service and fill them through the page
 // service. They leave the pages they read as they were, except that Extract replaces the extracted text with a link
 // to the new page. They load when a command first runs.
+import { isEnabled } from '../../../app/flags';
 import { commandContext } from '../../../commands/registry';
 import { fromChange, runCommand } from '../../../editor/commands/command';
 import { newId } from '../../../editor/ids';
 import { createMarkdownCache, serializeTextBlock } from '../../../editor/markdown';
-import type { NodeId, NodeSummary, NotesService, PageLevel } from '../../../services/notes/types';
 import { t } from '../../../strings/t';
-import { announce, showToast } from '../../../ui';
+import type { NodeId } from '../../../services/notes/types';
+import { announce } from '../../../ui';
 import { targetEditor } from '../formattingBar/target';
 import { shownMounted } from '../pagesApi';
 import { readBlocks, writeBlocks } from '../templates/apply';
+import { shownPool } from '../pool/shown';
+import { undoPageChanges } from '../../search';
+import { finishChange } from './changes';
+import { pagesClient } from '../runtime';
 import { pickPages } from './MergeDialog';
+import { createPage, placeAfter, shownPageNode } from './place';
 import { extractTitle, mergeBlocks, splitAtHeadings } from './sections';
-
-interface Place {
-  parentId: NodeId | null;
-  beforeId: NodeId | null;
-  level: PageLevel;
-}
-
-/** Just after a page and its subpages, one level deeper (subpages go no deeper than two levels). */
-async function placeAfter(notes: NotesService, page: NodeSummary, deeper: boolean): Promise<Place> {
-  const list = page.parentId ? await notes.listChildren(page.parentId) : [];
-  let at = list.findIndex((node) => node.id === page.id) + 1;
-  while (at > 0 && at < list.length && list[at].pageLevel > page.pageLevel) at += 1;
-  const level = Math.min(2, page.pageLevel + (deeper ? 1 : 0)) as PageLevel;
-  return { parentId: page.parentId, beforeId: list[at]?.id ?? null, level };
-}
-
-const createPage = (notes: NotesService, place: Place, title: string) =>
-  notes.create({
-    kind: 'page',
-    placement: { parentId: place.parentId, beforeId: place.beforeId },
-    title,
-    pageLevel: place.level,
-  });
-
-async function shownPageNode(notes: NotesService): Promise<NodeSummary | null> {
-  const mounted = shownMounted.get();
-  return mounted ? notes.get(mounted.page.id as NodeId) : null;
-}
 
 /** Moves the selected text into a new subpage and leaves a link to it where the text was. */
 export async function extractSelection(): Promise<void> {
+  const objects = await import('./objects');
+  if (isEnabled('page.extractObjects') && objects.hasObjectSelection()) return objects.extractObjects();
   const editor = targetEditor();
   const mounted = shownMounted.get();
   if (!editor || !mounted || mounted.page.readOnly) return;
@@ -57,6 +37,8 @@ export async function extractSelection(): Promise<void> {
   const title = extractTitle(markdown, t('pageExtras.extract.untitled'));
   const created = await createPage(notes, await placeAfter(notes, page, true), title);
   await writeBlocks(created.id, [{ id: newId(), type: 'text', data: { markdown } }]);
+  const block = shownPool.get()?.active()?.block ?? null;
+  const before = serializeTextBlock(editor.state.doc, createMarkdownCache());
   const link = editor.schema.marks.link?.create({ href: `opennote:page/${created.id}` });
   if (!link || editor.isDestroyed) return;
   runCommand(
@@ -67,7 +49,19 @@ export async function extractSelection(): Promise<void> {
       return true;
     }),
   );
-  announce(t('pageExtras.extract.done', { title }));
+  const after = editor.isDestroyed ? before : serializeTextBlock(editor.state.doc, createMarkdownCache());
+  const sourceId = mounted.page.id;
+  const message = t('pageExtras.extract.done', { title });
+  announce(message);
+  finishChange(notes, {
+    created: [created.id],
+    revert:
+      block && after !== before
+        ? async () => void (await undoPageChanges(pagesClient(), [{ page: sourceId, texts: [{ block, before, after }] }]))
+        : null,
+    message,
+    history: { pages: [sourceId], name: t('pageExtras.history.extract', { title }) },
+  });
 }
 
 /** Makes one new page from the pages the person picks from the current section, titles as headings. */
@@ -87,7 +81,12 @@ export async function mergePages(): Promise<void> {
   const title = t('pageExtras.merge.title', { first: ordered[0].title, count: ordered.length - 1 });
   const created = await createPage(notes, await placeAfter(notes, last, false), title);
   await writeBlocks(created.id, mergeBlocks(pages));
-  showToast({ message: t('pageExtras.merge.done', { count: ordered.length }) });
+  finishChange(notes, {
+    created: [created.id],
+    revert: null,
+    message: t('pageExtras.merge.done', { count: ordered.length }),
+    history: { pages: [created.id], name: t('pageExtras.history.merge', { count: ordered.length }) },
+  });
 }
 
 /** Makes one subpage for each heading of the least level on the page. */
@@ -101,17 +100,21 @@ export async function splitPage(): Promise<void> {
   const result = splitAtHeadings(await readBlocks(mounted.page.id));
   if (!result || result.sections.length === 0) return announce(t('pageExtras.split.none'));
   const place = await placeAfter(notes, page, true);
-  let count = 0;
+  const made: NodeId[] = [];
   for (const section of result.sections) {
     const title = section.title || t('pageExtras.split.untitled');
     const created = await createPage(notes, place, title);
     await writeBlocks(created.id, section.blocks);
-    count += 1;
+    made.push(created.id);
   }
-  showToast({
+  const count = made.length;
+  finishChange(notes, {
+    created: made,
+    revert: null,
     message:
       result.skipped > 0
         ? `${t('pageExtras.split.done', { count })} ${t('pageExtras.split.skipped', { skipped: result.skipped })}`
         : t('pageExtras.split.done', { count }),
+    history: { pages: [mounted.page.id], name: t('pageExtras.history.split', { count }) },
   });
 }

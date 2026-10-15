@@ -68,6 +68,28 @@ register(
     },
   }),
   defineCommand({
+    id: 'tree.pinSection',
+    title: 'qol.commands.pinSection',
+    category: 'notebooks',
+    flag: 'qol.pins',
+    when: (ctx) => one(ctx)?.kind === 'section' && !one(ctx)?.pinned,
+    run: async (ctx) => {
+      const node = one(ctx);
+      if (node) await (await loadQolActions()).setPinned(node.id, true);
+    },
+  }),
+  defineCommand({
+    id: 'tree.unpinSection',
+    title: 'qol.commands.unpinSection',
+    category: 'notebooks',
+    flag: 'qol.pins',
+    when: (ctx) => one(ctx)?.kind === 'section' && one(ctx)?.pinned === true,
+    run: async (ctx) => {
+      const node = one(ctx);
+      if (node) await (await loadQolActions()).setPinned(node.id, false);
+    },
+  }),
+  defineCommand({
     id: 'tree.duplicate',
     title: 'qol.commands.duplicate',
     category: 'notebooks',
@@ -383,7 +405,7 @@ register(
     enabled: (ctx) => one(ctx) !== undefined,
     run: async (ctx) => {
       const node = one(ctx);
-      if (node) await (await import('./shortcuts')).createShortcutFor(ctx.notes, node);
+      if (node) await (await import('./shortcuts')).createShortcutFor(ctx.notes, node, ctx.platform);
     },
   }),
   defineCommand({

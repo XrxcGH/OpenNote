@@ -271,8 +271,9 @@ fn renaming_and_recoloring_change_one_file() {
         styles: None,
     };
     store.set_props(NodeRef::Page(a), &pin).unwrap();
+    // Only pages and sections can be pinned.
     assert!(is_invalid_move(
-        &store.set_props(NodeRef::Section(section), &pin).unwrap_err()
+        &store.set_props(NodeRef::Group(group), &pin).unwrap_err()
     ));
     store.rename_notebook("Bio").unwrap();
     let tree = kit.open().unwrap().tree();
@@ -283,6 +284,37 @@ fn renaming_and_recoloring_change_one_file() {
     assert_eq!((node.title.as_str(), node.color.clone()), ("Labs", fern));
     assert!(node.pages[0].pinned);
     assert_eq!(node.pages[0].title, "Alpha");
+}
+
+#[test]
+fn a_pinned_section_and_a_colored_page_survive_a_reopen() {
+    let (kit, mut store, section, [a, b, _c]) = with_pages();
+    let pin = NodeProps {
+        color: None,
+        pinned: Some(true),
+        styles: None,
+    };
+    store.set_props(NodeRef::Section(section), &pin).unwrap();
+    let plum = Some(Color::Palette("plum".into()));
+    let color = NodeProps {
+        color: Some(plum.clone()),
+        pinned: None,
+        styles: None,
+    };
+    store.set_props(NodeRef::Page(a), &color).unwrap();
+    let tree = kit.open().unwrap().tree();
+    let node = tree.section(section).unwrap();
+    assert!(node.pinned);
+    assert_eq!(node.pages.iter().find(|page| page.id == a).unwrap().color, plum);
+    assert_eq!(node.pages.iter().find(|page| page.id == b).unwrap().color, None);
+    // Unpinning removes the key, so the file is as it was.
+    let unpin = NodeProps {
+        color: None,
+        pinned: Some(false),
+        styles: None,
+    };
+    store.set_props(NodeRef::Section(section), &unpin).unwrap();
+    assert!(!kit.open().unwrap().tree().section(section).unwrap().pinned);
 }
 
 #[test]

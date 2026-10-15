@@ -60,6 +60,10 @@ export interface ImageBlock extends BlockBase {
   readonly asset: string;
   readonly alt: string;
   readonly decorative: boolean;
+  /** Text wraps around the image (`left` or `right`), or the image sits in the line (`inline`). */
+  readonly wrap?: 'inline' | 'left' | 'right';
+  /** The gap between a wrapped image and the text, in page units. */
+  readonly wrapGap?: number;
 }
 
 export interface FileBlock extends BlockBase {
@@ -76,14 +80,24 @@ export interface TableBlock extends BlockBase {
   readonly rows: readonly TableRow[];
 }
 
+/** A diagram drawn from Mermaid text. `svg` is the drawing, added by the caller that can draw it. */
+export interface DiagramBlock extends BlockBase {
+  readonly type: 'diagram';
+  readonly source: string;
+  readonly alt: string;
+  readonly svg?: string;
+}
+
 /** A block of a type this version doesn't know, or one whose data could not be read. */
 export interface OtherBlock extends BlockBase {
   readonly type: 'other';
   readonly kind: string;
   readonly fallback?: string;
+  /** For a recording block: the recording it stands for. */
+  readonly recording?: string;
 }
 
-export type ExportBlock = TextBlock | InkBlock | ImageBlock | FileBlock | TableBlock | OtherBlock;
+export type ExportBlock = TextBlock | InkBlock | ImageBlock | FileBlock | TableBlock | DiagramBlock | OtherBlock;
 
 type Body<T extends ExportBlock> = T extends ExportBlock ? Omit<T, 'id' | 'order' | 'frame'> : never;
 
@@ -132,6 +146,9 @@ export interface ExportPage {
   /** The page's `view` as stored, for the fields other features keep there, such as page properties. */
   readonly rawView?: Readonly<Record<string, unknown>> | null;
 }
+
+/** The type of a block that holds a recording. */
+export const RECORDING_TYPE = 'ext:org.opennote/recording';
 
 const str = (v: Json | undefined, fallback = ''): string => (typeof v === 'string' ? v : fallback);
 const flag = (v: Json | undefined): boolean => v === true;
@@ -183,12 +200,32 @@ function readData(type: string, data: JsonObject, fallback: Json | undefined): B
       ...(anchor ? { anchor } : {}),
     };
   }
-  if ((type === 'image' || type === 'file') && typeof data.asset === 'string') {
+  if (type === 'image' && typeof data.asset === 'string') {
+    const wrap = data.wrap === 'inline' || data.wrap === 'left' || data.wrap === 'right' ? data.wrap : undefined;
+    const gap = typeof data.wrapGap === 'number' && Number.isFinite(data.wrapGap) ? data.wrapGap : undefined;
+    return {
+      type,
+      asset: data.asset,
+      ...alt,
+      ...(wrap ? { wrap } : {}),
+      ...(wrap && gap !== undefined ? { wrapGap: Math.min(64, Math.max(0, Math.round(gap))) } : {}),
+    };
+  }
+  if (type === 'file' && typeof data.asset === 'string') {
     return { type, asset: data.asset, ...alt };
+  }
+  if (type === 'diagram' && typeof data.source === 'string') {
+    return { type, source: data.source, alt: typeof data.alt === 'string' ? data.alt : '' };
   }
   if (type === 'table' && Array.isArray(data.columns) && Array.isArray(data.rows)) return readTable(data);
   const text = isObject(fallback) && typeof fallback.markdown === 'string' ? fallback.markdown.trim() : '';
-  return { type: 'other', kind: type, ...(text === '' ? {} : { fallback: text }) };
+  const recording = type === RECORDING_TYPE && typeof data.recording === 'string' ? data.recording : undefined;
+  return {
+    type: 'other',
+    kind: type,
+    ...(text === '' ? {} : { fallback: text }),
+    ...(recording ? { recording } : {}),
+  };
 }
 
 function readBlocks(raw: Json | undefined): ExportBlock[] {

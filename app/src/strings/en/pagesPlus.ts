@@ -52,6 +52,19 @@ export const pagesPlus = {
     title: 'Export selection',
     docxLabel: 'Word document',
   },
+  tape: {
+    blanks: 'Turn study tape into blanks',
+    blanksHelp:
+      'What the tape covers prints as blanks, and an answer key follows at the end. This applies to print, PDF, pictures, Markdown, and web pages.',
+    command: 'Turn study tape into blanks when printing and exporting',
+    commandKeywords: 'study tape blanks answer key worksheet print export',
+    on: 'Study tape will print as blanks, with an answer key.',
+    off: 'Study tape will not print as blanks.',
+    answerKey: 'Answer key',
+    picture: 'picture',
+    drawing: 'drawing',
+    table: 'table',
+  },
   pdf: {
     accessible: 'Accessible PDF',
     accessibleHelp:
@@ -91,6 +104,13 @@ export const pagesPlus = {
       renameLabel: 'Rename {name}',
       renameField: 'New name',
       renameApply: 'Rename',
+      renameFolderField: 'New folder name',
+      renameFolderLabel: 'Rename folder {name}',
+      move: 'Move',
+      moveLabel: 'Move {name} to a folder',
+      moveFolderLabel: 'Move folder {name}',
+      moveField: 'Move {name} to',
+      moveApply: 'Move here',
       export: 'Share',
       exportLabel: 'Save {name} as a file',
       delete: 'Delete',

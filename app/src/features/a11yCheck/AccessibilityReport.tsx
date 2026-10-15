@@ -2,6 +2,7 @@
 // edit to the page, so Ctrl+Z in the page undoes it. The report checks a page again after a fix.
 
 import { useCallback, useEffect, useState } from 'react';
+import { currentNotesService } from '../../services/notes';
 import type { NodeId, NodeSummary, NotesService } from '../../services/notes';
 import type { Edit, PageId } from '../../services/pages/types';
 import { t } from '../../strings/t';
@@ -149,4 +150,16 @@ export async function openAccessibilityCheck(notes: NotesService, node: NodeSumm
   const pages =
     node.kind === 'page' ? [node] : (await notes.listChildren(node.id)).filter((child) => child.kind === 'page');
   await showDialog<void>((done) => <Report nodes={pages} done={() => done()} />);
+}
+
+/** Opens the full report for pages by ID, as the check-first dialog's Review button does. */
+export async function reviewPages(ids: readonly string[]): Promise<void> {
+  const notes = currentNotesService();
+  if (!notes) return;
+  const nodes: NodeSummary[] = [];
+  for (const id of ids) {
+    const node = await notes.get(id as NodeId).catch(() => null);
+    if (node) nodes.push(node);
+  }
+  if (nodes.length > 0) await showDialog<void>((done) => <Report nodes={nodes} done={() => done()} />);
 }

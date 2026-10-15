@@ -4,6 +4,7 @@ import type { ChartKind, ColumnType, TotalKind } from '../engine';
 import { focusedSmart } from './attach';
 import { calculatedColumn } from './calculated';
 import { addChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
+import { applyView, saveViewAsking } from './savedViews';
 import type { FilterMode } from './ops';
 
 export type SmartCommand =
@@ -14,6 +15,8 @@ export type SmartCommand =
   | { run: 'decimals'; by: 1 | -1 }
   | { run: 'total'; total: TotalKind | null }
   | { run: 'chart'; kind: ChartKind }
+  | { run: 'saveView' }
+  | { run: 'showAllRows' }
   | { run: 'calculated' }
   | { run: 'clearCalculated' };
 
@@ -37,6 +40,10 @@ export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
       return setTotal(inst, column, command.total);
     case 'chart':
       return addChart(inst, command.kind);
+    case 'saveView':
+      return saveViewAsking(inst);
+    case 'showAllRows':
+      return applyView(inst, null);
     case 'calculated':
       return calculatedColumn(inst, column);
     case 'clearCalculated':

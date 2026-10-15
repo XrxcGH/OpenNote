@@ -251,6 +251,7 @@ fn tree(notebook: &NotebookFile, sections: &[SectionFile]) -> NotebookTree {
         access: Access::ReadWrite,
         encrypted: false,
         archived: false,
+        pinned: false,
     };
     NotebookTree {
         notebook: notebook.id,

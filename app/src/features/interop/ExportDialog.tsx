@@ -10,6 +10,7 @@ import { t } from '../../strings/t';
 import { Button, Dialog, RadioCard, RadioGroup, Switch, TextField, announce } from '../../ui';
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
+import { CheckFirstSwitch } from '../a11yCheck';
 import { SendExtras } from './SendExtras';
 import { NO_SHARE_CHOICES } from './exportFlow';
 import type { DrawPdf, ExportFlow, ExportState } from './exportFlow';
@@ -26,6 +27,7 @@ export interface ExportDialogProps {
   drawPdf?: DrawPdf;
   /** `share` makes this Share as a file: one .opennote file, with an optional password and page history. */
   mode?: 'export' | 'share';
+  format?: ExportFormat;
 }
 
 const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx'];
@@ -137,6 +139,7 @@ function Options({
         </Button>
       </div>
       {state.format !== 'share' && <SendExtras flow={flow} folder={state.folder} />}
+      <CheckFirstSwitch />
       {state.error && (
         <p role="alert" className={styles.error}>
           {exportErrorText(state.error)}
@@ -213,11 +216,19 @@ export default function ExportDialog({
   target,
   drawPdf,
   mode,
+  format,
   onClose,
 }: ExportDialogProps & OverlayProps) {
   const sharing = mode === 'share';
   const [flow] = useState(() =>
-    createExportFlow({ interop, notes, target, announce, drawPdf, ...(sharing ? { format: 'share' as const } : {}) }),
+    createExportFlow({
+      interop,
+      notes,
+      target,
+      announce,
+      drawPdf,
+      ...(sharing ? { format: 'share' as const } : format ? { format } : {}),
+    }),
   );
   useEffect(() => flow.attach(), [flow]);
   const state = useSyncExternalStore(flow.state.subscribe, flow.state.get);

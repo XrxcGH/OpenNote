@@ -245,6 +245,11 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
       `box-shadow:inset -1px -1px 0 var(--rule)}`,
     `th{background:var(--tint);font-weight:700;font-family:${f.ui}}`,
     `figure{margin:0 0 8px}figure img,.block img{max-width:100%;height:auto}figcaption{color:var(--muted);font-size:14px}`,
+    `figure.wrap-left,figure.wrap-right{max-width:50%;break-inside:avoid}`,
+    `figure.wrap-left{float:left;margin:0 var(--wrap-gap,16px) 8px 0}`,
+    `figure.wrap-right{float:right;margin:0 0 8px var(--wrap-gap,16px)}`,
+    `figure.wrap-inline{display:inline-block;vertical-align:top;margin:0 var(--wrap-gap,16px) 8px 0}`,
+    `figure.diagram svg{display:block;max-width:100%;height:auto}.diagram-source{white-space:pre-wrap}`,
     `.ink{display:block;max-width:100%;height:auto}`,
     `img{display:block}p img{display:inline-block}`,
   ];

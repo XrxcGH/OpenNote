@@ -13,3 +13,6 @@ export { usePrefs as usePageExtrasPrefs } from './qol/prefs';
 export { readingLock } from './qol/stores';
 export type { TableExtraDef, TableExtraHandle, TableExtraHost } from './tables/extras';
 export { assetTable } from './images/assets';
+export { expandEmbedText } from './embeds/expand';
+export { loadEmbed } from './embeds/load';
+export { preparePlayer } from './audio/exportPlayer';

@@ -14,6 +14,7 @@ export type QolPageFlagId =
   | 'page.linkTitles'
   | 'page.templates'
   | 'page.series'
+  | 'page.seriesList'
   | 'page.markdownSource'
   | 'page.altDraft'
   | 'page.readingLock'
@@ -21,6 +22,8 @@ export type QolPageFlagId =
   | 'page.wordCount'
   | 'page.toc'
   | 'page.extractMerge'
+  | 'page.extractUndo'
+  | 'page.extractObjects'
   | 'page.embeds';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
@@ -44,12 +47,15 @@ export const QOL_PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.linkTitles', 'Link titles on paste, which asks the site for its page title when you turn it on.'),
   flag('page.templates', 'Page templates and the template button.'),
   flag('page.series', 'New page in series.'),
+  flag('page.seriesList', 'A list of the pages in a series, with links.'),
   flag('page.markdownSource', 'The Markdown source view of a typed page.'),
   flag('page.altDraft', 'A first draft of alt text from the recognized text of an image.'),
   flag('page.readingLock', 'Reading mode, which locks a page against edits and ink.'),
   flag('page.findReplace', 'Find and replace on a page.'),
   flag('page.wordCount', 'Word count and reading time.'),
   flag('page.toc', 'The table of contents pane.'),
+  flag('page.extractUndo', 'One Undo and a Page history entry for Extract, Merge, and Split.'),
+  flag('page.extractObjects', 'Extract a lasso of ink or selected blocks to a new page, leaving a link.'),
   flag('page.extractMerge', 'Extract to a new page, merge pages, and split at headings.'),
   flag('page.embeds', 'Page embeds, typed with ![[.'),
 ];

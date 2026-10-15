@@ -51,12 +51,26 @@ command({
   run: (ctx) => loadExport().then((m) => m.exportText(ctx, 'markdown')),
 });
 command({
+  id: 'pages.exportWord',
+  title: 'pageViews.commands.exportWord',
+  flag: 'interop.export',
+  // Word keeps the page's text, tables, links, and pictures. The export dialog opens on this page with Word already chosen.
+  run: (ctx) => commands.get('interop.export')?.run(ctx, { format: 'docx' }),
+});
+command({
   id: 'pages.exportHtml',
   title: 'pageViews.commands.exportHtml',
   flag: 'pages.exportText',
   run: (ctx) => loadExport().then((m) => m.exportText(ctx, 'html')),
 });
 
+command({
+  id: 'pages.tapeBlanks',
+  title: 'pagesPlus.tape.command',
+  keywords: 'pagesPlus.tape.commandKeywords',
+  flag: 'study.tapeBlanks',
+  run: () => import('./host/tapePref').then((m) => m.toggleTapeBlanks()),
+});
 command({
   id: 'pages.exportImage',
   title: 'pageViews.commands.exportImage',
@@ -256,7 +270,7 @@ menuItems(
 );
 menuItems('pages.background', 'pages.view', 'options', ['pages.background.marginLine']);
 menuItems('pages.export', 'pages.pdf', 'file', ['pages.print', 'pages.exportPdf']);
-menuItems('pages.export', 'pages.exportText', 'text', ['pages.exportMarkdown', 'pages.exportHtml']);
+menuItems('pages.export', 'pages.exportText', 'text', ['pages.exportMarkdown', 'pages.exportHtml', 'pages.exportWord']);
 menuItems('pages.export', 'pages.exportImage', 'image', ['pages.exportImage']);
 
 const bar = (item: Omit<CommandBarItem, 'tab'>): void => {

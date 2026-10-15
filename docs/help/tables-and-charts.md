@@ -30,3 +30,7 @@ Every chart has a text summary and a data table, so a screen reader can read it.
 Export a table as an Excel file (`.xlsx`) or as `.csv`. Both are in the Export dialog.
 
 Smart tables and charts are built. They have been checked by automated tests only. The [feature list](../FEATURES.md) shows their status.
+
+## Saved views
+
+In the Data menu under a table, choose Saved views, then Save filters and sort as a view. Pick a view later to see the same rows in the same order. Each table keeps its own views.

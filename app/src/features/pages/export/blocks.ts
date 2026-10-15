@@ -3,6 +3,8 @@
 // document share it, so the page reads the same everywhere. Browsers tag this markup when they print it to PDF.
 
 import { own } from '../layout/json';
+import { ENGLISH_PLAYER_LABELS, momentHtml, playerHtml } from './recording';
+import type { PlayerPlan } from './recording';
 import { inkShapes, inkExtent, inkSvg } from './ink';
 import {
   escapeAttr,
@@ -24,6 +26,8 @@ export interface ExportLabels {
   readonly open: string;
   /** The description of an image or drawing without one, so tagged PDF has some text. */
   readonly noDescription: string;
+  /** What a diagram without a description is called. */
+  readonly diagram: string;
   /** The title of a page without one. */
   readonly untitled: string;
 }
@@ -34,10 +38,13 @@ export const ENGLISH_LABELS: ExportLabels = {
   done: 'Done',
   open: 'Not done',
   noDescription: 'Image without a description',
+  diagram: 'Diagram',
   untitled: 'Untitled page',
 };
 
 export interface BlockContext {
+  /** The recordings a web page can play and the notes written while they ran. Null when the page has none. */
+  readonly player?: PlayerPlan;
   readonly page: ExportPage;
   /** Where an asset can be loaded from: a relative path or a data URI. Null leaves the image out. */
   readonly assetUrl: (asset: ExportAsset) => string | null;
@@ -71,8 +78,9 @@ export function htmlOptions(cx: BlockContext): HtmlOptions {
 const px = (n: number): string => String(Math.round(n * 100) / 100);
 
 /** A size from a frame as an inline style. Only numbers are written. */
-function size(frame: ExportBlock['frame']): string {
+function size(frame: ExportBlock['frame'], extra = ''): string {
   const parts = [
+    extra,
     frame?.w === undefined ? '' : `width:${px(frame.w)}px`,
     frame?.h === undefined ? '' : `height:${px(frame.h)}px`,
   ];
@@ -89,7 +97,18 @@ function image(block: ExportBlock & { type: 'image' }, cx: BlockContext): string
   const role = block.decorative ? ' role="presentation"' : '';
   const dims = asset.width && asset.height ? ` width="${asset.width}" height="${asset.height}"` : '';
   const img = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${role}${dims}${voidEnd(cx.xml)}`;
-  return `<figure${size(block.frame)}>${img}</figure>`;
+  return `<figure${wrapClass(block)}${size(block.frame, wrapGapStyle(block))}>${img}</figure>`;
+}
+
+/** The class that lets text wrap around a figure in the PDF, print, web page, and slides. */
+function wrapClass(block: ExportBlock & { type: 'image' }): string {
+  return block.wrap && block.frame?.x === undefined ? ` class="wrap-${block.wrap}"` : '';
+}
+
+function wrapGapStyle(block: ExportBlock & { type: 'image' }): string {
+  return block.wrap && block.frame?.x === undefined && block.wrapGap !== undefined
+    ? `--wrap-gap:${px(block.wrapGap)}px`
+    : '';
 }
 
 function file(block: ExportBlock & { type: 'file' }, cx: BlockContext): string {
@@ -137,11 +156,30 @@ function ink(block: ExportBlock & { type: 'ink' }, cx: BlockContext): string {
   return `<figure class="ink-block" style="max-width:${px(width)}px">${svg}</figure>`;
 }
 
+/** A diagram as its drawing, a vector picture with its description, or as its text when it could not be drawn. */
+function diagram(block: ExportBlock & { type: 'diagram' }, cx: BlockContext): string {
+  const label = block.alt === '' ? cx.labels.diagram : block.alt;
+  if (block.svg === undefined || block.svg === '') {
+    return `<pre class="diagram-source" aria-label="${escapeAttr(label)}"><code>${escapeHtml(block.source)}</code></pre>`;
+  }
+  return `<figure class="diagram" role="img" aria-label="${escapeAttr(label)}">${block.svg}</figure>`;
+}
+
+/** A block of a type this version doesn't know: its stand-in text, or a note that it needs a newer version. */
+function otherHtml(block: ExportBlock & { type: 'other' }, cx: BlockContext): string {
+  return block.fallback === undefined
+    ? `<p class="newer">${escapeHtml(cx.labels.newerVersion)}</p>`
+    : renderHtml(parseMarkdown(block.fallback), htmlOptions(cx));
+}
+
 /** One block as HTML. Blocks that show nothing give an empty string. */
 export function renderBlock(block: ExportBlock, cx: BlockContext): string {
   switch (block.type) {
-    case 'text':
-      return renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+    case 'text': {
+      const html = renderHtml(parseMarkdown(block.markdown), htmlOptions(cx));
+      const moment = cx.player?.moments.get(block.id);
+      return moment === undefined ? html : momentHtml(html, moment, ENGLISH_PLAYER_LABELS);
+    }
     case 'image':
       return image(block, cx);
     case 'file':
@@ -150,9 +188,14 @@ export function renderBlock(block: ExportBlock, cx: BlockContext): string {
       return table(block, cx);
     case 'ink':
       return ink(block, cx);
-    case 'other':
-      return block.fallback === undefined
-        ? `<p class="newer">${escapeHtml(cx.labels.newerVersion)}</p>`
-        : renderHtml(parseMarkdown(block.fallback), htmlOptions(cx));
+    case 'diagram':
+      return diagram(block, cx);
+    case 'other': {
+      const recording = block.recording === undefined ? undefined : cx.player?.recordings.get(block.recording);
+      if (block.recording !== undefined && recording) {
+        return playerHtml(block.recording, recording, ENGLISH_PLAYER_LABELS);
+      }
+      return otherHtml(block, cx);
+    }
   }
 }

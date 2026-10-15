@@ -359,3 +359,11 @@
     font-weight: var(--font-weight-semibold);
   }
 }
+
+@layer components {
+  .optionHeading {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+  }
+}

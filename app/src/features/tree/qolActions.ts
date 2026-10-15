@@ -34,10 +34,10 @@ async function moveToTop(notes: NotesService, node: NodeSummary): Promise<void> 
   }
 }
 
-/** Pins or unpins a page. */
+/** Pins or unpins a page or a section. */
 export async function setPinned(id: NodeId, pinned: boolean, notes?: NotesService): Promise<void> {
   const node = getNode(id);
-  if (!node || node.kind !== 'page') return;
+  if (!node || (node.kind !== 'page' && node.kind !== 'section')) return;
   try {
     adopt(await shellCall<NodeSummary>('notes.setPinned', { id, pinned }));
   } catch (error) {

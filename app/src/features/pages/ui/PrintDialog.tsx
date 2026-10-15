@@ -2,6 +2,7 @@
 // paper lines print; it shows the sheets as the PDF will have them; and it runs the export with progress and a Stop
 // button. Both commands open it: Export as PDF saves the file, and Print saves it and opens it in the PDF viewer,
 // where the printer is chosen.
+import { CheckFirstSwitch, checkBeforeOutput, reviewPages } from '../../a11yCheck';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Platform } from '../../../platform/types';
 import { isEnabled } from '../../../app/flags';
@@ -16,6 +17,7 @@ import { preparePrint } from '../print/prepare';
 import type { PrepareResult } from '../print/prepare';
 import type { PrintOptions } from '../print/sheets';
 import styles from './pagesUi.module.css';
+import { TapeBlanksSwitch } from './TapeBlanksSwitch';
 
 export interface PrintDialogProps {
   readonly source: PageSource;
@@ -147,6 +149,11 @@ function useExport(props: PrintDialogProps, options: PrintOptions, accessible: b
   const run = async () => {
     const controller = new AbortController();
     abort.current = controller;
+    const go = await checkBeforeOutput([source.pageId], () => reviewPages([source.pageId]));
+    if (!go) {
+      abort.current = null;
+      return;
+    }
     setWorking({ stage: 'prepare', fraction: 0 });
     try {
       const outcome = await exportPdfFile(platform.exports, source, {
@@ -203,6 +210,8 @@ function Fields({ form, total, rangeError, set }: FieldsProps) {
         checked={form.background}
         onChange={(value) => set('background', value)}
       />
+      <TapeBlanksSwitch />
+      <CheckFirstSwitch />
       {isEnabled('pages.accessiblePdf') ? (
         <>
           <Switch

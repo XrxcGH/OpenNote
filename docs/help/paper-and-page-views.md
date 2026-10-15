@@ -31,6 +31,7 @@ Presets include a lab notebook, a planner, and a storyboard. You can set a prese
 ## Show, present, and print
 
 - Press Ctrl+K and choose Present to show pages as slides. Arrow keys move. Escape ends.
+- While presenting as slides, press L for a laser pointer, P for ink that fades, M to put the tools away, and C to clear. Marks never change your page.
 - The gallery shows every page of a section as a card.
 - Reading aids include line focus, colors, syllable marks, and the immersive reader.
 - Press Ctrl+P to print. The preview shows what prints, with page breaks.

@@ -2,6 +2,7 @@
 import type { CommandContext } from '../../../commands/types';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
+import { checkBeforeOutput, reviewPages } from '../../a11yCheck';
 import { exportHtmlFile, exportMarkdownFile } from '../host/exporter';
 import { collectSource } from '../host/source';
 import { openDialog } from './openDialog';
@@ -24,6 +25,7 @@ export async function exportText(ctx: CommandContext, kind: 'markdown' | 'html')
     showToast({ message: t('pageViews.files.nothing') });
     return;
   }
+  if (!(await checkBeforeOutput([source.pageId], () => reviewPages([source.pageId])))) return;
   try {
     const client = ctx.platform.exports;
     const outcome = await (kind === 'markdown' ? exportMarkdownFile(client, source) : exportHtmlFile(client, source));

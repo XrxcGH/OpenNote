@@ -34,6 +34,13 @@ describe('sorting', () => {
     expect(sortedIds(pages, 'modified')).toEqual(['b', 'a', 'c']);
   });
 
+  it('keeps pinned sections above the rest as well', () => {
+    const section = (value: string, title: string, extra: Partial<NodeSummary> = {}) =>
+      page(value, title, { kind: 'section', ...extra });
+    const sections = [section('s1', 'Zoology'), section('s2', 'Algebra', { pinned: true }), section('s3', 'Biology')];
+    expect(sortedIds(sections, 'title')).toEqual(['s2', 's3', 's1']);
+  });
+
   it('keeps pinned pages above the rest and ties in their order', () => {
     const pinned = [page('x', 'Zebra', { pinned: true }), ...pages, page('y', 'apple')];
     expect(sortedIds(pinned, 'title')).toEqual(['x', 'c', 'y', 'b', 'a']);

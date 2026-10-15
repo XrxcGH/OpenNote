@@ -71,6 +71,15 @@ describe('what an export covers', () => {
   });
 });
 
+describe('the format the dialog opens on', () => {
+  it('is Markdown, or the one the command asked for', async () => {
+    expect((await setup('p-mitosis')).flow.state.get()).toMatchObject({ format: 'markdown' });
+    const { interop, notes, target } = await setup('p-mitosis');
+    const flow = createExportFlow({ interop, notes, target, format: 'docx', announce: () => {} });
+    expect(flow.state.get()).toMatchObject({ format: 'docx', scope: 'page' });
+  });
+});
+
 describe('exporting', () => {
   it('asks for a folder when Export is pressed without one, then exports and shows the summary', async () => {
     const { flow, interop, detach } = await setup('s-lectures');

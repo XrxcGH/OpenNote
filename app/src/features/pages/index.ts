@@ -27,3 +27,4 @@ export type { PageRaster, RasterStroke } from './host/videoRaster';
 /** The shown page as pixels without its ink, for a narrated video. The code loads when it is first called. */
 export const rasterShownPage = (...args: Parameters<typeof import('./host/videoRaster').rasterShownPage>) =>
   import('./host/videoRaster').then((module) => module.rasterShownPage(...args));
+export { exportPictureAsPdf } from './host/pictureToPdf';

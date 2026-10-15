@@ -51,6 +51,7 @@ const MENUS: Partial<Record<MenuId, readonly Entry[]>> = {
     ['pages.indent', 'level'],
     ['pages.outdent', 'level'],
     ['tree.rename', 'edit'],
+    ['tree.color', 'edit'],
     ['tree.moveUp', 'move'],
     ['tree.moveDown', 'move'],
     ['tree.moveTo', 'move'],

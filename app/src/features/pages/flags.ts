@@ -28,5 +28,7 @@ export const PAGES_FLAGS: readonly FlagDef[] = [
   flag('pages.elements', 'The elements library: Save as element, folders, search, insert, and files.', on),
   flag('pages.exportSelection', 'Export or copy the lasso selection as PDF, PNG, SVG, Word, or an image.', on),
   flag('pages.laser', 'Present a whole page full screen with a laser pointer and ink that fades.', on),
+  flag('pages.slideMarks', 'A laser pointer and ink that fades while presenting as slides.', on),
+  flag('pages.exportPlayer', 'A web page export plays its recordings and highlights the notes written while they ran.', on),
   flag('pages.syllables', 'Syllable marks in the reading view, drawn over the text without changing it.', on),
 ];

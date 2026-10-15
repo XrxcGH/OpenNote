@@ -3,14 +3,17 @@
 // left. While a branch is being written, Tab adds a branch under it and Enter adds one beside it. Moving about uses
 // the arrow keys, and every action is also a button, for a pen or a finger.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, PointerEvent } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
+import { isEnabled } from '../../../app/flags';
 import { INSERT_EVENT } from '../../tools/flags';
+import { saveMap } from './exportActions';
 import styles from './mindmap.module.css';
 import {
   addChild,
   addSibling,
+  moveNode,
   outlineList,
   parentOf,
   readMap,
@@ -91,6 +94,32 @@ export function MindMap({ data, readOnly, onChange }: Props) {
     announce(t('study.mindmap.removed'));
   };
 
+  // The pen builds the map: tap a branch to write in it, drag from it to empty space for a new branch under it, or drag
+  // it onto another branch to move it there.
+  const pen = useRef<{ id: string; x: number; y: number } | null>(null);
+  const penDown = (event: PointerEvent<HTMLElement>, node: MapNode) => {
+    if (readOnly || event.pointerType !== 'pen' || !isEnabled('math.mindmapPen')) return;
+    pen.current = { id: node.id, x: event.clientX, y: event.clientY };
+    setFocus(node.id);
+  };
+  const penUp = (event: PointerEvent<HTMLElement>) => {
+    const start = pen.current;
+    pen.current = null;
+    if (!start || event.pointerType !== 'pen') return;
+    if (Math.hypot(event.clientX - start.x, event.clientY - start.y) < 8) return edit(start.id);
+    const over = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>('[data-node]')?.dataset.node;
+    if (over && over !== start.id) {
+      const moved = moveNode(finish(), start.id, over);
+      if (moved === root) return announce(t('study.mindmap.cantMove'));
+      commit(moved);
+      setFocus(start.id);
+      return announce(t('study.mindmap.moved'));
+    }
+    if (!over) build('child', start.id);
+  };
+
   const onInputKey = (event: KeyboardEvent<HTMLInputElement>, id: string) => {
     if (event.nativeEvent.isComposing) return;
     if (event.key === 'Enter') {
@@ -167,6 +196,8 @@ export function MindMap({ data, readOnly, onChange }: Props) {
           className={styles.chip}
           data-root={depth === 0 ? '' : undefined}
           data-folded={node.folded ? '' : undefined}
+          onPointerDown={(event) => penDown(event, node)}
+          onPointerUp={penUp}
         >
           {editing === node.id ? (
             <input
@@ -201,6 +232,15 @@ export function MindMap({ data, readOnly, onChange }: Props) {
   const selected = rows.find((row) => row.node.id === focus)?.node ?? root;
   return (
     <div className={styles.root} ref={host}>
+      {isEnabled('math.mindmapExport') ? (
+        <div className={styles.bar} role="toolbar" aria-label={t('study.mindmap.exportTools')}>
+          {(['svg', 'png', 'pdf'] as const).map((format) => (
+            <Button key={format} variant="quiet" onClick={() => void saveMap(root, format)}>
+              {t(`study.mindmap.save.${format}`)}
+            </Button>
+          ))}
+        </div>
+      ) : null}
       {readOnly ? null : (
         <div className={styles.bar} role="toolbar" aria-label={t('study.mindmap.tools')}>
           <Button onClick={() => build('child', selected.id)}>{t('study.mindmap.addChild')}</Button>

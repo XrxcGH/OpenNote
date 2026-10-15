@@ -61,7 +61,7 @@ const colorOf = (value: unknown): ChipColor | null =>
 
 /** A summary as the interface reads it: only pen names as colors, and none on pages. */
 function node(raw: NodeSummary): NodeSummary {
-  return { ...raw, color: raw.kind === 'page' ? null : colorOf(raw.color) };
+  return { ...raw, color: colorOf(raw.color) };
 }
 
 const nodes = (list: readonly NodeSummary[]) => list.map(node);

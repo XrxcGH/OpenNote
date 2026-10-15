@@ -8,6 +8,7 @@ import type { Root } from 'react-dom/client';
 import { cellAt } from '../../../editor/commands/tables';
 import { t } from '../../../strings/t';
 import { openMenu } from '../../../ui';
+import type { TableData } from '../../../editor/schema/specs';
 import type { BlockJson } from '../../../services/pages/types';
 import type { TableExtraHandle, TableExtraHost } from '../../page';
 import { buildChartSpec, columnLetter, formatValue, totalsRow, hasTotals } from '../engine';
@@ -161,9 +162,11 @@ class SmartTable implements SmartInstance, TableExtraHandle {
     return this.latest;
   }
 
-  async commit(next: SmartData): Promise<void> {
+  async commit(next: SmartData, change?: (data: TableData) => TableData | null): Promise<void> {
     this.current = next;
     this.refresh();
+    // The rows and the new data go in one step, so one Ctrl+Z puts both back.
+    if (change && (await this.host.apply(change, smartPatch(next)))) return;
     await this.host.patch(smartPatch(next));
   }
 
@@ -177,6 +180,10 @@ class SmartTable implements SmartInstance, TableExtraHandle {
       filter:
         smart.filters.length > 0 && shown.shown.length < shown.table.rows.length
           ? { shown: shown.shown.length, total: shown.table.rows.length }
+          : null,
+      savedView:
+        this.host.flag('tables.savedViews') && smart.savedActive
+          ? (smart.saved?.find((one) => one.id === smart.savedActive)?.name ?? null)
           : null,
       totals: totalItems(shown, this.locale),
       charts: this.host.flag('tables.charts') ? chartItems(shown, smart, this.locale) : [],

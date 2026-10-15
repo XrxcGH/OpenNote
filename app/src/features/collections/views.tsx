@@ -292,3 +292,5 @@ export function CalendarView({ rows, names, def, onOpen }: ViewProps) {
     </div>
   );
 }
+
+export const VIEWS = { table: TableView, list: ListView, board: BoardView, calendar: CalendarView, gallery: GalleryView };

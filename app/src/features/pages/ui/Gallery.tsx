@@ -11,6 +11,7 @@ import { t } from '../../../strings/t';
 import { announce, Button, Dialog } from '../../../ui';
 import { titleOf } from '../../tree';
 import { exportHtml, lightTheme, readExportPage } from '../export';
+import { collectStrokes } from '../host/strokes';
 import { bundledFontFaces } from '../host/fonts';
 import {
   cellRect,
@@ -66,7 +67,16 @@ async function turn<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
-/** The page as a small document: its text and tables in the page's own styles. Pictures are left out. */
+/** The origin that the asset URLs of a page load from, or null when they have none. */
+function assetOrigin(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/** The page as a small document: its text, tables, pictures, and handwriting in the page's own styles. */
 async function thumbnailHtml(platform: Platform, node: NodeSummary): Promise<string> {
   const key = `${node.id}:${node.modified}`;
   const known = drawn.get(key);
@@ -74,9 +84,17 @@ async function thumbnailHtml(platform: Platform, node: NodeSummary): Promise<str
   const html = await turn(async () => {
     const open = await platform.pages.open(node.id, { viewport: null });
     try {
-      const page = readExportPage(open.initial, [], 'en');
+      const strokes = await collectStrokes(node.id);
+      const page = readExportPage(open.initial, strokes, 'en');
       const theme = lightTheme(bundledFontFaces());
-      return exportHtml(page, { assetUrl: () => null, header: false, maxWidth: PAPER_WIDTH - 96, theme }).html;
+      const origin = assetOrigin(open.assetUrl('thumbnail'));
+      return exportHtml(page, {
+        assetUrl: (asset) => open.assetUrl(asset.id),
+        imageOrigins: origin ? [origin] : [],
+        header: false,
+        maxWidth: PAPER_WIDTH - 96,
+        theme,
+      }).html;
     } finally {
       await open.close().catch(() => undefined);
     }

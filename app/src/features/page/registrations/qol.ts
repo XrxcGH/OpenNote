@@ -217,6 +217,15 @@ register({
   when: shown,
   run: () => void templates().then((module) => module.newPageInSeries()),
 });
+register({
+  id: 'series.list',
+  title: 'pageExtras.series.listCommand',
+  keywords: 'pageExtras.series.listKeywords',
+  category: 'notebooks',
+  flag: 'page.seriesList',
+  when: shown,
+  run: () => void templates().then((module) => module.showSeries()),
+});
 // The Markdown source view.
 register({
   id: 'page.markdownSource',
@@ -266,6 +275,15 @@ register({
   when: oneFileSelected,
   run: () => void attachments().then((module) => module.toggleDisplay()),
 });
+register({
+  id: 'object.saveAttachmentCopy',
+  title: 'pageExtras.attach.copyCommand',
+  keywords: 'pageExtras.attach.keywords',
+  category: 'object',
+  flag: 'page.attachments',
+  when: oneFileSelected,
+  run: () => void attachments().then((module) => module.saveCopy()),
+});
 slashItems.register({
   id: 'attachFile',
   title: 'pageExtras.attach.command',
@@ -282,13 +300,14 @@ registerAppMenu('page.attachment', ({ host }) => {
   if (!id) return null;
   selectOnPage({ blocks: [id], strokes: [] });
   host.focus({ preventScroll: true });
-  const run = (command: 'object.openAttachment' | 'object.attachmentDisplay') => () =>
+  const run = (command: 'object.openAttachment' | 'object.attachmentDisplay' | 'object.saveAttachmentCopy') => () =>
     void executeCommand(command, undefined, 'menu');
   return {
     label: t('pageExtras.attach.menu'),
     items: [
       { id: 'open', label: t('pageExtras.attach.openCommand'), onSelect: run('object.openAttachment') },
       { id: 'display', label: t('pageExtras.attach.displayCommand'), onSelect: run('object.attachmentDisplay') },
+      { id: 'saveCopy', label: t('pageExtras.attach.copyCommand'), onSelect: run('object.saveAttachmentCopy') },
       {
         id: 'delete',
         label: t('page.object.delete'),

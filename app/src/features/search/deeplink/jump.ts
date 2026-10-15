@@ -4,12 +4,12 @@ import { shownMounted } from '../../page';
 import type { MountedPage } from '../../page';
 import type { NotesService } from '../../../services/notes/types';
 import { openPage } from '../locate';
-import styles from './deeplink.module.css';
+import { flash } from './flash';
 
 const ATTEMPTS = 40;
 const STEP_MS = 100;
-const FLASH_MS = 1800;
-const FADE_MS = 500;
+
+export { flash };
 
 /** The elements of a text block as they appear in its DOM, in document order (SPEC 6.6). */
 const ELEMENTS = 'p, h1, h2, h3, h4, h5, h6, li, pre, hr';
@@ -34,14 +34,6 @@ export function targetElement(mounted: MountedPage, target: string): Element | n
   const index = (block.data.ids as string[]).indexOf(target);
   const root = wrapper.querySelector('.ProseMirror') ?? wrapper;
   return elementNodes(root)[index] ?? wrapper;
-}
-
-/** Scrolls to the element and marks it for a moment. A person who asked for less motion gets the mark, still. */
-export function flash(element: Element): void {
-  element.scrollIntoView({ block: 'center', behavior: 'auto' });
-  element.classList.add(styles.reveal);
-  setTimeout(() => element.classList.add(styles.fade), FLASH_MS);
-  setTimeout(() => element.classList.remove(styles.reveal, styles.fade), FLASH_MS + FADE_MS);
 }
 
 /** Waits for the page to be shown, then reveals the target. Resolves false when it never appears. */

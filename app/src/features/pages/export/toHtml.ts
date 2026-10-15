@@ -2,6 +2,8 @@
 // as vector graphics. It has no scripts, and a content security policy forbids them. Images come from `assetUrl`, which
 // the caller points at files next to the document, or at data URIs for a single self-contained file.
 
+import { PLAYER_CSS, PLAYER_SCRIPT, sha256Base64 } from './recording';
+import type { PlayerPlan } from './recording';
 import { ENGLISH_LABELS, renderBlock, strokesByBlock, type ExportLabels } from './blocks';
 import { escapeAttr, escapeHtml, safeHref, type HtmlOptions } from './markdown';
 import { readingOrder } from './order';
@@ -20,6 +22,10 @@ export interface HtmlExportOptions {
   readonly header?: boolean;
   /** The widest the text gets, in CSS pixels. Default 760. */
   readonly maxWidth?: number;
+  /** Extra origins that pictures may load from, such as the app's asset origin. Only origins are used. */
+  readonly imageOrigins?: readonly string[];
+  /** Recordings the page can play, and the notes written while they ran. Adds the player script to the page. */
+  readonly player?: PlayerPlan;
 }
 
 export interface HtmlExport {
@@ -29,6 +35,7 @@ export interface HtmlExport {
 }
 
 const LANGUAGE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
+const ORIGIN = /^https?:\/\/[A-Za-z0-9.:-]+$/;
 
 /** A file name in `assets/`, with each segment safe for a URL. */
 function defaultAssetUrl(asset: ExportAsset): string {
@@ -43,7 +50,15 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
     if (url !== null) used.add(asset.id);
     return url;
   };
-  const cx = { page, assetUrl, link: options.link ?? safeHref, labels, strokes: strokesByBlock(page.strokes) };
+  const player = options.player && options.player.recordings.size > 0 ? options.player : undefined;
+  const cx = {
+    page,
+    assetUrl,
+    link: options.link ?? safeHref,
+    labels,
+    strokes: strokesByBlock(page.strokes),
+    ...(player ? { player } : {}),
+  };
   const body = readingOrder(page.blocks, page.view.readingOrder)
     .map((b) => renderBlock(b, cx))
     .filter((html) => html !== '')
@@ -55,7 +70,10 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
   const css = documentCss(theme, options.styles);
   const max = Math.max(320, Math.min(2000, Math.round(options.maxWidth ?? 760)));
   const lang = LANGUAGE.test(page.language) ? page.language : 'en';
-  const csp = "default-src 'none'; img-src data: file: 'self'; style-src 'unsafe-inline'; font-src data: file: 'self'";
+  const origins = (options.imageOrigins ?? []).filter((origin) => ORIGIN.test(origin));
+  const images = ['data:', 'file:', "'self'", ...origins].join(' ');
+  const script = player ? `; script-src 'sha256-${sha256Base64(PLAYER_SCRIPT)}'; media-src 'self' file:` : '';
+  const csp = `default-src 'none'; img-src ${images}; style-src 'unsafe-inline'; font-src data: file: 'self'${script}`;
   const html = [
     '<!doctype html>',
     `<html lang="${escapeAttr(lang)}">`,
@@ -65,10 +83,11 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
     `<meta http-equiv="Content-Security-Policy" content="${csp}">`,
     '<meta name="generator" content="OpenNote">',
     `<title>${escapeHtml(title)}</title>`,
-    `<style>\n${css}main{max-width:${max}px;margin:0 auto;padding:32px 16px}\n</style>`,
+    `<style>\n${css}main{max-width:${max}px;margin:0 auto;padding:32px 16px}\n${player ? `${PLAYER_CSS}\n` : ''}</style>`,
     '</head>',
     '<body>',
     `<main>\n${header}${body}\n</main>`,
+    ...(player ? [`<script>${PLAYER_SCRIPT}</script>`] : []),
     '</body>',
     '</html>',
     '',

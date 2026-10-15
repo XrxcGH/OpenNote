@@ -6,6 +6,15 @@ import type { ChartKind, ColumnType, TotalKind } from '../engine';
 import { isEnabled } from '../../../app/flags';
 import { addChart, changeChart, clearCalculated, fill, filterBy, setFormat, setTotal, sortColumn } from './ops';
 import { calculatedColumn } from './calculated';
+import {
+  applyView,
+  deleteView,
+  matchesView,
+  renameViewAsking,
+  saveViewAsking,
+  savedViewsOf,
+  updateView,
+} from './savedViews';
 import type { ColumnSmart } from './data';
 import type { SmartInstance } from './ops';
 
@@ -79,6 +88,54 @@ function filterItem({ inst, inBody }: Ctx): MenuItemSpec {
         disabled: inst.smart().filters.length === 0,
         onSelect: run(() => filterBy(inst, 'clear')),
       },
+    ],
+  };
+}
+
+function savedViewsItem({ inst }: Ctx): MenuItemSpec {
+  const smart = inst.smart();
+  const views = savedViewsOf(smart);
+  const active = views.find((one) => one.id === smart.savedActive);
+  return {
+    id: 'savedViews',
+    label: t('smart.saved.menu'),
+    submenu: [
+      {
+        id: 'savedAll',
+        label: t('smart.saved.showAll'),
+        kind: 'radio',
+        checked: active === undefined && smart.filters.length === 0,
+        onSelect: run(() => applyView(inst, null)),
+      },
+      ...views.map((one): MenuItemSpec => ({
+        id: `saved-${one.id}`,
+        label: one.name,
+        kind: 'radio',
+        checked: one.id === active?.id,
+        onSelect: run(() => applyView(inst, one.id)),
+      })),
+      {
+        id: 'savedSave',
+        label: t('smart.saved.save'),
+        separatorBefore: true,
+        onSelect: run(() => saveViewAsking(inst)),
+      },
+      ...(active
+        ? [
+            {
+              id: 'savedUpdate',
+              label: t('smart.saved.update', { name: active.name }),
+              disabled: matchesView(smart, active),
+              onSelect: run(() => updateView(inst, active.id)),
+            },
+            {
+              id: 'savedRename',
+              label: t('smart.saved.rename'),
+              onSelect: run(() => renameViewAsking(inst, active.id)),
+            },
+            { id: 'savedDelete', label: t('smart.saved.delete'), onSelect: run(() => deleteView(inst, active.id)) },
+          ]
+        : []),
     ],
   };
 }
@@ -159,6 +216,7 @@ export function dataMenu(inst: SmartInstance): MenuItemSpec[] {
       onSelect: run(() => sortColumn(inst, column, true)),
     },
     filterItem(ctx),
+    ...(isEnabled('tables.savedViews') ? [savedViewsItem(ctx)] : []),
     formatItem(ctx),
     totalItem(ctx),
     ...(isEnabled('tables.calculated')

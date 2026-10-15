@@ -6,8 +6,9 @@ import type { Platform } from '../../../platform/types';
 import type { NotesService } from '../../../services/notes/types';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
+import { openNode } from '../locate';
 import { openAndReveal } from './jump';
-import { linkInArgs, parseLink } from './url';
+import { linkInArgs, nodeLinkInArgs, parseLink, parseNodeLink } from './url';
 import type { OpenNoteLink } from './url';
 
 /** Readers of the other opennote:// links, such as opennote://clip (features/integrations/clip). One returns true
@@ -40,12 +41,22 @@ export function installDeepLinks(platform: Platform, notes: NotesService): () =>
     recent = { key, at: Date.now() };
     open(link);
   };
+  // A section or notebook shortcut opens the section or notebook itself.
+  const openNodeLink = (id: string) => {
+    void openNode(notes, id)
+      .then((found) => {
+        if (!found) showToast({ message: t('qolSearch.links.gone'), tone: 'danger' });
+      })
+      .catch(() => undefined);
+  };
   const takePending = () =>
     void platform.search.extras
       ?.launchLink()
       .then((url) => {
         const link = url ? parseLink(url) : null;
-        if (link) openOnce(link);
+        if (link) return openOnce(link);
+        const node = url ? parseNodeLink(url) : null;
+        if (node) openNodeLink(node.id);
         else if (url) readOther(url);
       })
       .catch(() => undefined);
@@ -53,7 +64,9 @@ export function installDeepLinks(platform: Platform, notes: NotesService): () =>
   const stopArgs = platform.window.onForwardedArgs((args) => {
     const link = linkInArgs(args);
     console.debug(`Forwarded launch with ${args.length} argument(s): ${link ? 'a link' : 'no link'}.`);
+    const node = link ? null : nodeLinkInArgs(args);
     if (link) openOnce(link);
+    else if (node) openNodeLink(node.id);
     else args.forEach(readOther);
     takePending();
   });

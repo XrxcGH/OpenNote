@@ -3,7 +3,7 @@
 // and class diagrams start from an example. The drawing can be saved as an SVG, which stays sharp at any size.
 import { useEffect, useRef, useState } from 'react';
 import { t } from '../../../strings/t';
-import { Button, showToast } from '../../../ui';
+import { Button, TextField, showToast } from '../../../ui';
 import { saveBytes } from '../../study';
 import { STARTERS, STARTER_TEXT, kindOf } from './kind';
 import type { Drawn } from './render';
@@ -11,12 +11,14 @@ import styles from './diagram.module.css';
 
 interface Props {
   source: string;
+  alt: string;
   readOnly: boolean;
   onChange(source: string): void;
+  onAlt(alt: string): void;
 }
 
 // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
-export function DiagramPanel({ source, readOnly, onChange }: Props) {
+export function DiagramPanel({ source, alt, readOnly, onChange, onAlt }: Props) {
   const [text, setText] = useState(source);
   const [drawn, setDrawn] = useState<Drawn | null>(null);
   const sent = useRef(source);
@@ -102,6 +104,13 @@ export function DiagramPanel({ source, readOnly, onChange }: Props) {
           onChange={(event) => setText(event.target.value)}
         />
       </label>
+      <TextField
+        label={t('study.diagram.altLabel')}
+        help={t('study.diagram.altHelp')}
+        value={alt}
+        readOnly={readOnly}
+        onChange={onAlt}
+      />
       {drawn && !drawn.ok && drawn.message ? (
         <p className={styles.problem} role="alert">
           {t('study.diagram.problem', { message: drawn.message })}
@@ -111,9 +120,13 @@ export function DiagramPanel({ source, readOnly, onChange }: Props) {
         <div
           className={styles.picture}
           role="img"
-          aria-label={t('study.diagram.label', {
-            kind: t(`study.diagram.kinds.${kind === 'other' ? 'flowchart' : kind}`),
-          })}
+          aria-label={
+            alt.trim() !== ''
+              ? alt
+              : t('study.diagram.label', {
+                  kind: t(`study.diagram.kinds.${kind === 'other' ? 'flowchart' : kind}`),
+                })
+          }
           dangerouslySetInnerHTML={{ __html: drawn.svg }}
         />
       ) : null}

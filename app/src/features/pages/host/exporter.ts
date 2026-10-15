@@ -2,6 +2,7 @@
 // file with the Save dialog first, so nothing is made for a save the person cancels, then makes it, then writes it.
 // All of them take the platform's `exports` client, so the web platform runs the same code with its stand-ins.
 import type { ExportsClient } from '../../../platform/types';
+import { isEnabled } from '../../../app/flags';
 import { formatDate } from '../../../strings/format';
 import { t } from '../../../strings/t';
 import {
@@ -19,6 +20,7 @@ import type { ExportLabels } from '../export';
 import { exportFileName, exportPdf } from '../pdf';
 import type { PdfExportResult, PdfProblem, PdfProgress, PrintSurface } from '../pdf';
 import type { PrepareInput, PrepareResult, PrintOptions } from '../print';
+import { preparePlayer } from '../../page';
 import { bundledFontFaces } from './fonts';
 import type { PageSource } from './source';
 
@@ -28,6 +30,7 @@ export function exportLabels(): ExportLabels {
     ...ENGLISH_LABELS,
     handwriting: t('pageViews.print.handwriting'),
     untitled: t('pageViews.print.untitled'),
+    diagram: t('study.diagram.exportLabel'),
   };
 }
 
@@ -213,8 +216,11 @@ export async function exportHtmlFile(client: ExportsClient, source: PageSource):
       if (bytes) uris.set(asset.id, dataUri(asset.mime, bytes));
     }),
   );
+  // A recording goes beside the web page as an audio file, and the page plays it and follows the notes.
+  const player = isEnabled('pages.exportPlayer') ? await preparePlayer(source.pageId, path).catch(() => null) : null;
   // A web page file carries its own pictures, and reads in the reader's fonts: the app's font files aren't beside it.
   const made = exportHtml(source.page, {
+    ...(player ? { player } : {}),
     assetUrl: (asset) => uris.get(asset.id) ?? null,
     theme: lightTheme(),
     labels: exportLabels(),

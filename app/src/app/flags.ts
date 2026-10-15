@@ -107,6 +107,8 @@ type Phase6FlagId =
   | 'pages.elements'
   | 'pages.exportSelection'
   | 'pages.laser'
+  | 'pages.slideMarks'
+  | 'pages.exportPlayer'
   | 'pages.syllables';
 /** Smart tables, charts, math, and the study tool windows (Phases 7 and 10). */
 type ExprFlagId =
@@ -115,14 +117,18 @@ type ExprFlagId =
 type ToolsQolFlagId =
   | 'tables.calculated'
   | 'tables.views'
+  | 'tables.savedViews'
   | 'tables.chartTable'
   | 'math.quickMath'
   | 'math.notes'
   | 'math.diagrams'
+  | 'math.mindmapExport'
+  | 'math.mindmapPen'
   | 'math.mindMaps'
   | 'study.cards'
   | 'study.import'
   | 'study.tape'
+  | 'study.tapeBlanks'
   | 'tools.converter'
   | 'tools.reference'
   | 'tools.dictionary'
@@ -140,9 +146,13 @@ type QolSearchFlagId =
   | 'search.paragraphLinks'
   | 'search.properties'
   | 'search.replace'
+  | 'search.changeSets'
+  | 'search.linkAll'
+  | 'search.advanced'
   | 'search.indexMedia'
   | 'daily.notes'
   | 'collections.views'
+  | 'collections.block'
   | 'graph.view'
   | 'canvas.cards';
 /** Phase 12's flags, which features/intel/flags.ts defines. */
@@ -248,7 +258,8 @@ type QolFlagId =
   | 'qol.shortcuts'
   | 'qol.onenoteKeys'
   | 'qol.conflicts'
-  | 'qol.a11yCheck';
+  | 'qol.a11yCheck'
+  | 'qol.a11yGate';
 
 export interface FlagDef {
   id: FlagId;

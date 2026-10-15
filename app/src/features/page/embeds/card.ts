@@ -26,6 +26,8 @@ import styles from '../qol/qol.module.css';
 import { pickBlocks } from './model';
 import type { EmbedRef } from './model';
 
+const idsOf = (block: BlockJson): string[] =>
+  Array.isArray(block.data.ids) ? block.data.ids.filter((id): id is string => typeof id === 'string') : [];
 const markdownOf = (block: BlockJson) => (typeof block.data.markdown === 'string' ? block.data.markdown : '');
 
 /** Opens a page in the app, from its ID. */
@@ -157,8 +159,9 @@ export class EmbedCard {
     const blocks = [...open.initial.blocks].sort(byOrder);
     const shown = new Set(
       pickBlocks(
-        blocks.map((block) => ({ id: block.id, type: block.type, markdown: markdownOf(block) })),
+        blocks.map((block) => ({ id: block.id, type: block.type, markdown: markdownOf(block), ids: idsOf(block) })),
         this.ref.heading,
+        this.ref.element,
       ),
     );
     for (const block of blocks) {

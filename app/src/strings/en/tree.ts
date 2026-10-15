@@ -16,6 +16,7 @@ export const tree = {
     kind: '{kind, select, notebook {Notebook} sectionGroup {Section group} section {Section} other {Page}}',
     colored: '{kind, select, notebook {Notebook} sectionGroup {Section group} other {Section}}, color {color}',
     page: '{level, select, 0 {Page} other {Subpage}}, {date}',
+    pageColored: '{level, select, 0 {Page} other {Subpage}}, {date}, color {color}',
   },
   colors: {
     ink: 'Ink',

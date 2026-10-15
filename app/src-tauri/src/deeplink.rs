@@ -130,6 +130,12 @@ mod tests {
     }
 
     #[test]
+    fn accepts_section_and_notebook_links() {
+        assert!(is_link("opennote://section/01hzx3k9q7m2v5c8d4e6f0abcd"));
+        assert!(is_link("opennote://notebook/01hzx3k9q7m2v5c8d4e6f0abcd"));
+    }
+
+    #[test]
     fn refuses_everything_else() {
         assert!(!is_link("https://example.com"));
         assert!(!is_link("opennote://"));

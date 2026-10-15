@@ -108,6 +108,18 @@ describe('Export', () => {
     expect(platform.interop.log.revealed).toEqual(['C:\\Users\\Sample\\Documents\\Biology 101']);
   });
 
+  it('opens on Word, ready to export the page, from the page Export as Word command', async () => {
+    await renderApp();
+    const tree = screen.getByRole('tree', { name: 'Notebooks' });
+    (await within(tree).findByRole('treeitem', { name: 'Lectures' })).focus();
+    await pressChord('Space');
+    await userEvent.click(await screen.findByRole('treeitem', { name: 'Mitosis' }));
+    await executeCommand('pages.exportWord');
+    const dialog = await screen.findByRole('dialog', { name: 'Export "Mitosis"' });
+    const word = within(dialog).getByRole('radio', { name: /Word document/ });
+    expect(word.getAttribute('aria-checked') ?? (word as HTMLInputElement).checked).toMatch(/true/);
+  });
+
   it('offers the page, its section, and its notebook when started from a page', async () => {
     await renderApp();
     const tree = screen.getByRole('tree', { name: 'Notebooks' });

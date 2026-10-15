@@ -8,7 +8,9 @@ export interface SavedSearch {
   titleOnly: boolean;
   tag: string;
   date: 'any' | 'today' | 'week' | 'month';
-  type: 'all' | 'text' | 'table' | 'image' | 'ink';
+  type: 'all' | 'text' | 'table' | 'image' | 'ink' | 'transcript' | 'alt';
+  /** Includes pages in archived notebooks, sections, and pages. */
+  archived?: boolean;
 }
 
 const KEY = 'opennote.savedSearches';

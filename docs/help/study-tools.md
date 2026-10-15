@@ -15,6 +15,7 @@ Open Insert, then Flashcards. A page can hold several decks.
 - Import and export Anki decks (`.apkg`) and CSV files.
 
 Study tape covers part of a page. Press it to show what is under it.
+To make a worksheet, turn on Turn study tape into blanks in the Print or PDF dialog, or from the command palette. What the tape covers then prints as blanks, and an answer key follows at the end. This applies to print, PDF, pictures, Markdown, and web pages. A tape is matched to the text and pictures that lie mostly under it.
 
 ## Upcoming
 

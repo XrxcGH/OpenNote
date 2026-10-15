@@ -6,6 +6,7 @@ import { commandContext } from '../../../commands/registry';
 import type { MountedPage } from '../mount';
 import { assetTable } from '../images/assets';
 import { savedBackEdits } from './model';
+import { forgetThumbnails } from './thumbnails';
 
 export function attachSaveBack(mounted: MountedPage): () => void {
   if (!mounted.host.flag('page.attachments')) return () => undefined;
@@ -33,5 +34,8 @@ export function attachSaveBack(mounted: MountedPage): () => void {
       })
       .catch(() => undefined);
   });
-  return stop;
+  return () => {
+    stop();
+    forgetThumbnails(mounted.page.id);
+  };
 }

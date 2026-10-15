@@ -4,6 +4,7 @@ import { renderBlock, strokesByBlock, ENGLISH_LABELS } from './blocks';
 import { dataUri, exportHtml } from './toHtml';
 import { readExportPage, type ExportPage, type ExportStroke } from './source';
 import { documentCss, lightTheme, readStyles } from './style';
+import { exportMarkdown } from './toMarkdown';
 
 const block = (id: string, order: string, type: string, data: object, frame?: object) => ({
   id,
@@ -221,5 +222,70 @@ describe('the stylesheet', () => {
   it('reads at most 64 styles', () => {
     const many = Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`s${i}`, { size: 10 }]));
     expect(Object.keys(readStyles(many))).toHaveLength(64);
+  });
+});
+
+describe('HTML export of wrapped images', () => {
+  const assets = { A1: { file: 'a.png', mime: 'image/png', name: 'a.png', width: 100, height: 80 } };
+  it('floats a wrapped image beside the text, with its gap, and leaves a standing-alone image as it was', () => {
+    const { html } = exportHtml(
+      page({
+        assets,
+        blocks: [
+          block('l', 'a0', 'image', { asset: 'A1', alt: 'Left', wrap: 'left', wrapGap: 24 }),
+          block('r', 'a1', 'image', { asset: 'A1', alt: 'Right', wrap: 'right' }),
+          block('i', 'a2', 'image', { asset: 'A1', alt: 'Inline', wrap: 'inline' }),
+          block('n', 'a3', 'image', { asset: 'A1', alt: 'Alone' }),
+          block('f', 'a4', 'image', { asset: 'A1', alt: 'Floating', wrap: 'left' }, { x: 5, y: 5 }),
+        ],
+      }),
+    );
+    expect(html).toContain('<figure class="wrap-left" style="--wrap-gap:24px">');
+    expect(html).toContain('<figure class="wrap-right">');
+    expect(html).toContain('<figure class="wrap-inline">');
+    expect(html).toContain('<figure><img src');
+    expect(html).not.toContain('Floating" class=');
+    expect(html).toContain('figure.wrap-left{float:left;margin:0 var(--wrap-gap,16px) 8px 0}');
+    expect(html).toContain('figure.wrap-right{float:right;');
+  });
+});
+
+describe('export of diagrams', () => {
+  const diagramPage = (svg?: string) => {
+    const read = page({
+      blocks: [block('d', 'a0', 'diagram', { source: 'flowchart TD\n  A --> B', alt: 'A leads to B' })],
+    });
+    return svg === undefined
+      ? read
+      : { ...read, blocks: read.blocks.map((one) => (one.type === 'diagram' ? { ...one, svg } : one)) };
+  };
+
+  it('writes the drawn diagram as a vector picture with its description', () => {
+    const { html } = exportHtml(diagramPage('<svg viewBox="0 0 10 10"><path d="M0 0L10 10"/></svg>'));
+    expect(html).toContain(
+      '<figure class="diagram" role="img" aria-label="A leads to B"><svg viewBox="0 0 10 10"><path d="M0 0L10 10"/></svg></figure>',
+    );
+  });
+
+  it('falls back to the diagram text when it could not be drawn, and says what it is in Markdown', () => {
+    const { html } = exportHtml(diagramPage());
+    expect(html).toContain('<pre class="diagram-source" aria-label="A leads to B"><code>flowchart TD\n  A --&gt; B</code></pre>');
+    const markdown = exportMarkdown(diagramPage()).markdown;
+    expect(markdown).toContain('*A leads to B*\n\n```mermaid\nflowchart TD\n  A --> B\n```');
+  });
+});
+
+describe('HTML export for a thumbnail', () => {
+  it('lets pictures load from the asset origin it is given, and from no other', () => {
+    const assets = { A1: { file: 'a.png', mime: 'image/png', name: 'a.png', width: 100, height: 80 } };
+    const read = page({ assets, blocks: [block('i', 'a0', 'image', { asset: 'A1', alt: 'Leaf' })] });
+    const { html } = exportHtml(read, {
+      assetUrl: (asset) => `http://opennote-asset.localhost/p/${asset.id}`,
+      imageOrigins: ['http://opennote-asset.localhost', 'javascript:alert(1)', 'https://evil.example/ x'],
+    });
+    expect(html).toContain('<img src="http://opennote-asset.localhost/p/A1"');
+    expect(html).toContain("img-src data: file: 'self' http://opennote-asset.localhost;");
+    expect(html).not.toContain('evil.example');
+    expect(exportHtml(read).html).toContain("img-src data: file: 'self';");
   });
 });

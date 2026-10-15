@@ -21,14 +21,14 @@ import { deleteSaved, loadSaved, saveSearch } from './saved';
 import type { SavedSearch } from './saved';
 import styles from './search.module.css';
 import { NO_FILTERS, useSearchResults } from './useSearchResults';
-import type { PanelFilters } from './useSearchResults';
+import type { PanelFilters, PanelHit } from './useSearchResults';
 
 export interface SearchPanelProps extends OverlayProps {
   query?: string;
 }
 
 const DATES: PanelFilters['date'][] = ['any', 'today', 'week', 'month'];
-const TYPES: PanelFilters['type'][] = ['all', 'text', 'table', 'image', 'ink'];
+const TYPES: PanelFilters['type'][] = ['all', 'text', 'table', 'image', 'ink', 'transcript', 'alt'];
 
 function useTags(): TagNode[] {
   const [tags, setTags] = useState<TagNode[]>([]);
@@ -176,6 +176,7 @@ interface FilterBarProps {
 }
 
 function FilterBar({ filters, tags, set }: FilterBarProps) {
+  const advanced = isEnabled('search.advanced');
   const tagOptions = [
     { value: '', text: t('search.panel.anyTag') },
     ...tags.map((n) => ({ value: n.tag, text: n.tag })),
@@ -195,10 +196,20 @@ function FilterBar({ filters, tags, set }: FilterBarProps) {
         options={DATES.map((value) => ({ value, text: t(`search.panel.dates.${value}`) }))}
         onChange={(date) => set({ date })}
       />
+      {isEnabled('search.advanced') && (
+        <Switch
+          label={t('search.panel.archived')}
+          checked={filters.archived}
+          onChange={(archived) => set({ archived })}
+        />
+      )}
       <Select
         label={t('search.panel.type')}
         value={filters.type}
-        options={TYPES.map((value) => ({ value, text: t(`search.panel.types.${value}`) }))}
+        options={TYPES.filter((value) => advanced || (value !== 'transcript' && value !== 'alt')).map((value) => ({
+          value,
+          text: t(`search.panel.types.${value}`),
+        }))}
         onChange={(type) => set({ type })}
       />
     </div>
@@ -207,7 +218,7 @@ function FilterBar({ filters, tags, set }: FilterBarProps) {
 
 interface ResultsProps {
   id: string;
-  hits: SearchHit[];
+  hits: PanelHit[];
   index: number;
   status: 'loading' | 'failed' | 'done';
   empty: boolean;
@@ -237,6 +248,7 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
           <span className={styles.optionTitle}>
             <Highlighted text={hit.title || t('tree.page.noneTitle')} ranges={hit.title ? hit.titleHighlights : []} />
           </span>
+          {hit.heading && <span className={styles.optionHeading}>{t('search.panel.inHeading', { heading: hit.heading })}</span>}
           {hit.snippet && (
             <span className={styles.optionSnippet}>
               <SnippetKind kind={hit.snippet.kind} />
@@ -344,7 +356,14 @@ export default function SearchPanel({ query: initial = '', onClose }: SearchPane
   const set = (patch: Partial<PanelFilters>) => setFilters((before) => ({ ...before, ...patch }));
   const fromSaved = (saved: SavedSearch) => {
     setText(saved.text);
-    setFilters({ regex: saved.regex, titleOnly: saved.titleOnly, tag: saved.tag, date: saved.date, type: saved.type });
+    setFilters({
+      regex: saved.regex,
+      titleOnly: saved.titleOnly,
+      tag: saved.tag,
+      date: saved.date,
+      type: saved.type,
+      archived: saved.archived === true,
+    });
   };
   return (
     <Dialog

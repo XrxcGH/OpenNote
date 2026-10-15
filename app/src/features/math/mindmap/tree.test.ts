@@ -5,6 +5,7 @@ import {
   addSibling,
   countNodes,
   find,
+  moveNode,
   newNode,
   outlineList,
   parseOutline,
@@ -85,5 +86,34 @@ describe('building a map', () => {
       }).children.map((c) => c.id),
     ).toEqual(['c']);
     expect(readMap({}, 'Main idea').text).toBe('Main idea');
+  });
+});
+
+describe('moving a branch', () => {
+  const tree = (): MapNode => ({
+    id: 'r',
+    text: 'Root',
+    children: [
+      { id: 'a', text: 'A', children: [{ id: 'a1', text: 'A1', children: [] }] },
+      { id: 'b', text: 'B', children: [], folded: true },
+    ],
+  });
+
+  it('moves a branch under another one with what is under it, and opens the new parent', () => {
+    const next = moveNode(tree(), 'a', 'b');
+    expect(next.children.map((child) => child.id)).toEqual(['b']);
+    const b = next.children[0];
+    expect(b.folded).toBeUndefined();
+    expect(b.children.map((child) => child.id)).toEqual(['a']);
+    expect(b.children[0].children.map((child) => child.id)).toEqual(['a1']);
+  });
+
+  it('refuses to move the main idea, a branch under itself or its own branch, or under the parent it has', () => {
+    const start = tree();
+    expect(moveNode(start, 'r', 'a')).toBe(start);
+    expect(moveNode(start, 'a', 'a')).toBe(start);
+    expect(moveNode(start, 'a', 'a1')).toBe(start);
+    expect(moveNode(start, 'a1', 'a')).toBe(start);
+    expect(moveNode(start, 'zzz', 'a')).toBe(start);
   });
 });

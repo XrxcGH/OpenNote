@@ -343,6 +343,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_extras::attach::attachment_import,
         page_extras::attach::attachment_open,
         page_extras::attach::attachment_applied,
+        page_extras::thumbnail::attachment_thumbnail,
         intel::intel_ext_call,
         intel::transcribe::intel_transcribe,
         intel::transcribe::intel_transcribe_cancel,

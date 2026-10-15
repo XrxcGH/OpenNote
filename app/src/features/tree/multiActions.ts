@@ -97,13 +97,13 @@ export async function moveSelection(notes: NotesService, nodes: readonly NodeSum
   return true;
 }
 
-/** Gives every section of the selection one color, as one undo step. */
+/** Gives every node of the selection one color, as one undo step. */
 export async function colorSelection(
   notes: NotesService,
   nodes: readonly NodeSummary[],
   color: ChipColor | null,
 ): Promise<void> {
-  const targets = nodes.filter((node) => node.kind !== 'page');
+  const targets = nodes;
   const before = targets.map((node) => [node.id, node.color] as const);
   try {
     for (const node of targets) await colorNode(notes, node.id, color, { record: false });

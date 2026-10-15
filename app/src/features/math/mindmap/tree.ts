@@ -168,3 +168,20 @@ export function visibleRows(root: MapNode): Row[] {
 
 export const countNodes = (node: MapNode): number =>
   1 + node.children.reduce((sum, child) => sum + countNodes(child), 0);
+
+/** Whether `id` is `of` or lies anywhere under it. */
+export const isWithin = (of: MapNode, id: string): boolean => find(of, id) !== null;
+
+/**
+ * Moves a branch, with what is under it, to be the last branch under another node. The main idea can't move, and a
+ * branch can't go under itself or under one of its own branches. A tree that can't change comes back as it was.
+ */
+export function moveNode(root: MapNode, id: string, under: string): MapNode {
+  const moving = find(root, id);
+  if (!moving || id === root.id || isWithin(moving, under) || parentOf(root, id)?.id === under) return root;
+  const without = edit(root, id, () => null);
+  return edit(without, under, (found) => {
+    const { folded: _was, ...rest } = found;
+    return { ...rest, children: [...found.children, moving] };
+  });
+}

@@ -4,4 +4,5 @@
 
 pub mod attach;
 pub mod caret;
+pub mod thumbnail;
 pub mod title;

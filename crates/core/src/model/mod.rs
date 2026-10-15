@@ -32,7 +32,7 @@ pub use blocks::Blocks;
 pub use history::{VersionEntry, VersionReason, VersionsFile};
 pub use ink::{Ink, InkRecord, SegmentRef, StrokeProps};
 pub use notebook::{
-    is_archived, set_archived, Group, NotebookFile, NotebookStyles, NotebookTree, PageNode, PageNodeState, SectionNode,
+    is_archived, is_pinned, set_archived, set_pinned, Group, NotebookFile, NotebookStyles, NotebookTree, PageNode, PageNodeState, SectionNode,
     StyleSpec, TreeChild, ARCHIVED_KEY, MAX_STYLES, MAX_STYLE_NAME_CHARS, STYLE_NAMES,
 };
 pub use page::{Access, DeviceRef, FormatInfo, Page, ReadOnlyReason, Rect, Revision, Warning};

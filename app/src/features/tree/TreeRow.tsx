@@ -43,16 +43,21 @@ export interface TreeRowProps {
 /** "Section, color Fern", or "Subpage, Sep 28, 2026". */
 export function describeNode(node: NodeSummary): string {
   if (node.kind === 'page') {
-    const page = t('tree.describe.page', { level: String(node.pageLevel), date: formatDate(node.modified) });
+    const level = String(node.pageLevel);
+    const date = formatDate(node.modified);
+    const page = node.color
+      ? t('tree.describe.pageColored', { level, date, color: t(`tree.colors.${node.color}`) })
+      : t('tree.describe.page', { level, date });
     return node.pinned ? `${page} ${t('qol.pin.describe')}` : page;
   }
   const kind = node.color
     ? t('tree.describe.colored', { kind: node.kind, color: t(`tree.colors.${node.color}`) })
     : t('tree.describe.kind', { kind: node.kind });
-  if (node.kind !== 'section' || !node.protected) return kind;
+  const described = node.kind === 'section' && node.pinned ? `${kind}. ${t('qol.pin.describe')}` : kind;
+  if (node.kind !== 'section' || !node.protected) return described;
   const state =
     node.protected === 'locked' ? t('storage.sections.describeLocked') : t('storage.sections.describeUnlocked');
-  return `${kind}, ${state}`;
+  return `${described}, ${state}`;
 }
 
 /** The lock of a password-protected section (ADR 0042): closed while locked, open while unlocked. */
@@ -63,8 +68,8 @@ function Protection({ node }: { node: NodeSummary }) {
 }
 
 function Chip({ node }: { node: NodeSummary }) {
-  if (node.kind === 'page') return null;
-  const shape = node.kind === 'section' ? styles.dot : styles.square;
+  if (node.kind === 'page' && !node.color) return null;
+  const shape = node.kind === 'section' || node.kind === 'page' ? styles.dot : styles.square;
   const name = node.color ? t(`tree.colors.${node.color}`) : undefined;
   return (
     <span aria-hidden="true" className={`${styles.chip} ${shape}`} data-color={node.color ?? 'none'} title={name} />

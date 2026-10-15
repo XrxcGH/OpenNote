@@ -62,6 +62,18 @@
     background: var(--color-accent-dusk-subtle);
   }
 
+  /* The first page of a PDF or Office file, in the place of the badge. */
+  .thumbnail {
+    flex: none;
+    inline-size: 3rem;
+    max-block-size: 4rem;
+    object-fit: contain;
+    object-position: top;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-sunken);
+  }
+
   .meta {
     display: grid;
     min-inline-size: 0;

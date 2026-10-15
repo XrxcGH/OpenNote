@@ -35,4 +35,5 @@ export const QOL_FLAGS: readonly FlagDef[] = [
   flag('qol.onenoteKeys', 'The OneNote shortcut set offered in setup.'),
   flag('qol.conflicts', 'A banner and a side-by-side view for copies made by sync tools.'),
   flag('qol.a11yCheck', 'Check accessibility of a page or section, with a fix for each problem.'),
+  flag('qol.a11yGate', 'An option to check accessibility before Export, Print, PDF, and Send write anything.'),
 ];

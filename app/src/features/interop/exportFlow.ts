@@ -1,6 +1,7 @@
 // The export flow: choose what to export, the format, and the folder; export with progress and Cancel; show the
 // summary. The host makes a new folder or file in the chosen folder, so nothing is overwritten.
 
+import { checkBeforeOutput, reviewPages } from '../a11yCheck';
 import type {
   ExportFormat,
   ExportResult,
@@ -112,7 +113,7 @@ export interface ExportFlowDeps {
   announce(text: string, politeness?: 'polite' | 'assertive'): void;
   /** Prints the pages of a PDF export. Without it, the host has no pages to write and reports each one. */
   drawPdf?: DrawPdf;
-  /** The format the dialog starts with, such as `share` for Share as a file. */
+  /** The format the dialog starts with, such as `share` for Share as a file; Markdown when not given. */
   format?: ExportFormat;
 }
 
@@ -161,6 +162,11 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
   const name = newJobName('export');
   try {
     const collected = await collectRequest(notes, target, scope);
+    const ids = collected.sections.flatMap((section) => section.pages.map((page) => page.ui));
+    if (pageCount(collected) > 0 && !(await checkBeforeOutput(ids, () => reviewPages(ids)))) {
+      run.state.set({ step: 'options', scope, format, folder, error: null });
+      return;
+    }
     if (pageCount(collected) === 0) {
       run.state.set({ step: 'empty', scope });
       return;

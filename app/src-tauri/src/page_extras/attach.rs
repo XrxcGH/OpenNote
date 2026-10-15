@@ -347,7 +347,7 @@ fn temp_root() -> PathBuf {
     std::env::temp_dir().join("OpenNote").join("attachments")
 }
 
-fn temp_folder(asset: &str) -> PathBuf {
+pub(super) fn temp_folder(asset: &str) -> PathBuf {
     temp_root().join(asset)
 }
 
