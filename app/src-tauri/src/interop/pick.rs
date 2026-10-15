@@ -18,7 +18,8 @@ pub enum PickKind {
 #[cfg(windows)]
 const SOURCE_TYPES: &str = concat!(
     "*.enex;*.docx;*.odt;*.xlsx;*.xlsm;*.pptx;*.eml;*.opennote;*.md;*.markdown;*.txt;",
-    "*.html;*.htm;*.mht;*.mhtml;*.csv;*.tsv;*.zip;*.sqlite;*.one;*.onepkg"
+    "*.html;*.htm;*.mht;*.mhtml;*.csv;*.tsv;*.zip;*.sqlite;*.one;*.onepkg;",
+    "*.doc;*.rtf;*.xls;*.xlsb;*.ods"
 );
 
 /// Shows the picker and returns the chosen path, or `None` when the person cancels.

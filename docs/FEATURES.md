@@ -43,6 +43,7 @@ Import and export (Phase 11):
 |---|---|---|---|
 | Word / Google Docs | `.docx`, `.odt`, Google Docs | `.docx`, Google Docs, PDF | .docx and .odt: Built, untested by hand. Google Docs: Needs the owner. |
 | Excel / Google Sheets | `.xlsx`, `.csv`, Google Sheets into smart tables | `.xlsx`, `.csv`, Google Sheets | .xlsx and .csv: Built, untested by hand. Google Sheets: Needs the owner. |
+| Older Office and OpenDocument files | `.doc`, `.rtf`, `.xls`, `.xlsb`, `.ods` | (none) | Built, untested by hand. On in Beta behind `interop.legacyFormats`. Text, lists, tables, links, and cell values come over. Pictures in `.doc` files and password-locked files do not. |
 | PowerPoint / Google Slides | `.pptx`, Google Slides as annotatable pages | `.pptx` (one page per slide), PDF | .pptx both ways and PDF: Built, untested by hand. Google Slides: Needs the owner. |
 | OneNote / Evernote | Graph API, `.enex` | PDF, Markdown | .enex and Markdown: Built, untested by hand. The Graph API import needs the owner. |
 

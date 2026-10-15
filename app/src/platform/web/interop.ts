@@ -45,6 +45,8 @@ function detectPath(path: string): DetectedSource {
   });
   if (lower.endsWith('.enex')) return found('evernote', 'Evernote export');
   if (lower.endsWith('.docx')) return found('word', 'Word documents');
+  if (lower.endsWith('.doc')) return { ...found('word', 'Word 97-2003 document'), legacy: true };
+  if (lower.endsWith('.xls')) return { ...found('spreadsheet', 'Excel 97-2003 workbook'), legacy: true };
   if (lower.endsWith('.txt')) return found('text', 'Text files');
   if (lower.endsWith('.one') || lower.endsWith('.onepkg')) {
     return {

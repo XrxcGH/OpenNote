@@ -33,6 +33,8 @@ export interface DetectedSource {
   supported: boolean;
   zipped: boolean;
   advice: string | null;
+  /** True for older or binary office files (.doc, .rtf, .xls, .xlsb, .ods), which the interop.legacyFormats flag gates. */
+  legacy?: boolean;
 }
 
 /** What was simplified or skipped for one reason. */

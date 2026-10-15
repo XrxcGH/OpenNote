@@ -14,6 +14,7 @@ import type {
 } from '../../platform/interop';
 import type { IpcError } from '../../platform/types';
 import type { NodeSummary, NotesService } from '../../services/notes/types';
+import { isEnabled } from '../../app/flags';
 import { t } from '../../strings/t';
 import { addImportedNodes, findImportedNodes } from './addNodes';
 import { createFlowState, newJobName } from './flowState';
@@ -111,6 +112,11 @@ async function check(run: Run, path: string, reportPage: boolean): Promise<void>
     if (run.job !== name) return;
     if (!detected.supported) {
       run.state.set({ step: 'unsupported', path, detected });
+      return;
+    }
+    if (detected.legacy && !isEnabled('interop.legacyFormats')) {
+      const advice = t('interop.import.unsupported.legacy');
+      run.state.set({ step: 'unsupported', path, detected: { ...detected, supported: false, advice } });
       return;
     }
     const outcome = await interop.preview(name, path, choices(reportPage));

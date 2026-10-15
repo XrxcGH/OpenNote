@@ -46,6 +46,8 @@ export type FlagId =
   | 'interop.import'
   | 'interop.export'
   | 'interop.exportPdf'
+  /** Import of older and binary office files: .doc, .rtf, .xls, .xlsb, and .ods. */
+  | 'interop.legacyFormats'
   | Phase4FlagId
   | QolPageFlagId
   | Phase5FlagId

@@ -416,6 +416,7 @@ mod tests {
                 supported: true,
                 zipped: false,
                 advice: None,
+                legacy: false,
             },
             notebook_title: "Keep".to_owned(),
             sections: vec![PreviewSection {
@@ -441,7 +442,8 @@ mod tests {
                 "result": {
                     "detected": {
                         "kind": "googleKeep", "label": "Google Keep export", "supported": true, "zipped": false,
-                        "advice": null, "needsPassword": false
+                        "advice": null, "needsPassword": false,
+                        "legacy": false
                     },
                     "notebookTitle": "Keep",
                     "sections": [{ "title": "Notes", "pages": 4 }],
