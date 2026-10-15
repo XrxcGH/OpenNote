@@ -14,6 +14,7 @@ import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { RadioCard, RadioGroup, Switch } from '../../../ui';
 import { CurvePreview } from './CurvePreview';
+import PalmLab from './PalmLab';
 import { inkPrefs, penDevice, setPrefs, updatePen } from './prefs';
 
 const BARRELS: readonly [BarrelAction, MessageKey][] = [
@@ -236,6 +237,7 @@ export default function PenSettings() {
   const hover = useFlag('ink.hover');
   const zoomBox = useFlag('ink.zoomBox');
   const anchoring = useFlag('ink.anchoring');
+  const lab = useFlag('dev.penRecorder');
   const hovering = useStore(inkPrefs, (state) => state.hover);
   return (
     <section aria-labelledby="ink-settings">
@@ -272,6 +274,7 @@ export default function PenSettings() {
       )}
       <PenChoices />
       {zoomBox && <ZoomBoxSettings />}
+      {lab && <PalmLab />}
     </section>
   );
 }

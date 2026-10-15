@@ -75,3 +75,22 @@ describe('Settings, Pen and touch', () => {
     await expectNoAxeViolations(document.body);
   });
 });
+
+describe('Settings, Pen and touch, Palm lab', () => {
+  it('shows the Palm lab, and starts only after consent', async () => {
+    renderUi(
+      <main>
+        <PenSettings />
+      </main>,
+    );
+    const lab = screen.getByRole('group', { name: 'Palm lab' });
+    const start = within(lab).getByRole('button', { name: 'Start recording' }) as HTMLButtonElement;
+    expect(start.disabled).toBe(true);
+    await userEvent.click(within(lab).getByRole('switch', { name: /agree to save a recording/ }));
+    expect(start.disabled).toBe(false);
+    await userEvent.click(start);
+    expect(within(lab).getByRole('button', { name: 'Stop recording' })).toBeTruthy();
+    await userEvent.click(within(lab).getByRole('button', { name: 'Stop recording' }));
+    expect(lab.querySelector('[data-palm-lab-result]')).toBeTruthy();
+  });
+});
