@@ -495,7 +495,7 @@ if (typeof document !== 'undefined') {
         const editor = targetEditor();
         if (!editor || !editor.view.dom.contains(target)) return;
         const { $from, empty } = editor.state.selection;
-        if (!empty || !/=\s$/.test($from.parent.textBetween(0, $from.parentOffset, undefined, ' '))) return;
+        if (!empty || !/=\s$/.test($from.parent.textBetween(0, $from.parentOffset, undefined, '\0'))) return;
         void import('../../math').then((math) => math.applyQuickMath(editor, announce));
       }, 0);
     },

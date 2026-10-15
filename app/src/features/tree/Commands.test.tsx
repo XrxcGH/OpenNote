@@ -341,6 +341,7 @@ describe('context menu contents', () => {
       'Archive',
       'Delete section history',
       'Protect with password…',
+      'Make flashcards from this section',
       'Export…',
       'Delete',
     ]);

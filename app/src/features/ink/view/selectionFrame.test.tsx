@@ -42,7 +42,12 @@ describe('the lasso frame', () => {
     for (const action of actions) expect(action.checkVisibility()).toBe(false);
     selection = { blocks: [], strokes: ['s1'] };
     listeners.forEach((fn) => fn());
-    for (const action of actions) expect(action.getBoundingClientRect().width).toBeGreaterThan(0);
+    // Some actions need more than one stroke or a made group, a link, or a table-shaped selection.
+    const needsMore = new Set(['table', 'group', 'ungroup', 'unlink']);
+    for (const action of actions) {
+      const shown = action.getBoundingClientRect().width > 0;
+      expect(shown, action.dataset.inkAction).toBe(!needsMore.has(action.dataset.inkAction ?? ''));
+    }
     expect(chrome.querySelector('[data-ink-action="delete"]')).not.toBeNull();
     frame.stop();
     chrome.remove();

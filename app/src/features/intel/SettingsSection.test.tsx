@@ -24,24 +24,25 @@ const switchNamed = (name: string) => screen.findByRole('switch', { name });
 describe('the On-device intelligence section', () => {
   it('has a switch for each feature that is built, all off', async () => {
     renderUi(<IntelSection />);
-    for (const name of ['Text in images', 'Read aloud', 'Summaries and keywords']) {
+    for (const name of ['Text in images', 'Read aloud', 'Summaries and keywords', 'Handwriting']) {
       expect((await switchNamed(name)).getAttribute('aria-checked')).toBe('false');
     }
-    expect(screen.queryByRole('switch', { name: 'Handwriting' })).toBeNull();
-    expect(screen.getAllByText('Off')).toHaveLength(3);
+    expect(screen.queryByRole('switch', { name: 'Transcription' })).toBeNull();
+    expect(screen.getAllByText('Off')).toHaveLength(4);
   });
 
   it('says on every feature that it runs on this device', async () => {
     renderUi(<IntelSection />);
     await switchNamed('Read aloud');
-    expect(screen.getAllByText(/Runs on this device\. Nothing leaves it\./)).toHaveLength(3);
+    expect(screen.getAllByText(/Runs on this device\. Nothing leaves it\./)).toHaveLength(7);
     expect(screen.getByText(/Nothing is sent anywhere\. Each one stays off until you turn it on\./)).toBeTruthy();
   });
 
-  it('shows Handwriting once its flag is on', async () => {
-    initFlags('dev', BUILDING_OFF, { 'intel.handwriting': true });
+  it('hides Handwriting while its flag is off', async () => {
+    initFlags('dev', BUILDING_OFF, { 'intel.handwriting': false });
     renderUi(<IntelSection />);
-    expect((await switchNamed('Handwriting')).getAttribute('aria-checked')).toBe('false');
+    await switchNamed('Read aloud');
+    expect(screen.queryByRole('switch', { name: 'Handwriting' })).toBeNull();
   });
 
   it('shows Transcription once its flag is on, and says when no speech model is downloaded', async () => {
@@ -102,7 +103,7 @@ describe('the On-device intelligence section', () => {
       'Off',
     ]);
     expect(within(screen.getByRole('list', { name: 'On-device intelligence' })).getAllByRole('listitem')).toHaveLength(
-      3,
+      4,
     );
     await expectNoAxeViolations(document.body);
   });

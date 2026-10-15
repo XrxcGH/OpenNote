@@ -173,7 +173,7 @@ describe('protected sections lock again', () => {
       { id: 'b1', markdown: 'Secret word :: hidden answer' },
       { id: 'b2', markdown: '- [ ] Pay rent 2026-10-20' },
     ];
-    syncInlineDeck(PAGE, 'Plans', inlineCards(blocks));
+    await syncInlineDeck(PAGE, 'Plans', inlineCards(blocks));
     setPageItems({ id: PAGE, title: 'Plans' }, blocks, { now: Date.parse('2026-10-15'), timeZone: 'UTC' });
     expect(deckById(pageDeckId(PAGE))).toBeDefined();
     const kept = () => Object.keys(localStorage).map((key) => localStorage.getItem(key) ?? '');

@@ -33,6 +33,7 @@ describe('the Settings page', () => {
       'Updates',
       'Privacy',
       'Windows and power',
+      'App permissions',
       'Connectors',
       'Help',
       'Shortcuts',

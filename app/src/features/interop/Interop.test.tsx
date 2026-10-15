@@ -64,13 +64,13 @@ describe('Import notes', () => {
     expect(await notes.listNotebooks()).toHaveLength(0);
   });
 
-  it('says what to do instead for a OneNote file', async () => {
+  it('says what to do instead for a OneNote table of contents file', async () => {
     const { platform } = await renderApp({ fixture: 'empty' });
-    platform.interop.pick = () => Promise.resolve('C:\\Users\\Sample\\Work.one');
+    platform.interop.pick = () => Promise.resolve('C:\\Users\\Sample\\Work.onetoc2');
     const dialog = await openImport();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Choose a file…' }));
     await within(dialog).findByRole('heading', { name: "OpenNote can't import this yet" });
-    expect(within(dialog).getByText(/choose File, then Export/)).toBeTruthy();
+    expect(within(dialog).getByText(/Import the notebook package/)).toBeTruthy();
     expect(within(dialog).queryByRole('button', { name: 'Import' })).toBeNull();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Choose another' }));
     await within(dialog).findByRole('button', { name: 'Choose a folder…' });
