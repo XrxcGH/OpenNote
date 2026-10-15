@@ -114,6 +114,9 @@ class MathView implements NodeView {
     if (this.field || !this.editor.isEditable) return;
     const field = this.plainField(this.source());
     this.field = field;
+    // The paragraph stops clipping its drawing while the equation is open, so the preview and actions that float under
+    // the equation are seen and can be pressed (blocks.module.css).
+    this.dom.setAttribute('data-math-editing', '');
     this.shown.hidden = true;
     this.dom.append(field);
     if (this.renderer) this.addPreview(field);
@@ -312,6 +315,7 @@ class MathView implements NodeView {
     const field = this.field;
     if (!field) return;
     this.field = null;
+    this.dom.removeAttribute('data-math-editing');
     const source = this.visual ? this.visual.value : field.value;
     if (save && this.visual && source.trim() !== '')
       this.host.announce(t('editor.math.spoken', { text: this.visual.spoken() }));

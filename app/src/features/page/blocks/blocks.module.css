@@ -50,6 +50,11 @@
     overflow-clip-margin: 4px;
   }
 
+  /* An open equation floats its preview and actions under itself, and containment would clip them. */
+  .text :global(.ProseMirror) :is(p, h1, h2, h3, h4, h5, h6):has([data-math-editing]) {
+    contain: none;
+  }
+
   /* An empty text box invites writing, in muted text that is never part of the note. */
   .text :global(.ProseMirror) > p:only-child:has(> br:only-child)::before {
     content: var(--placeholder);
