@@ -23,11 +23,11 @@ OpenNote judges each touch from its size, how fast it grows, where on the hand i
 
 Open Settings, then Pen and touch, to change this.
 
-| Setting                 | Choices                                                                |
-| ----------------------- | ---------------------------------------------------------------------- |
-| Writing hand            | Detect, Right hand, or Left hand                                       |
-| Draw with a finger      | Until a pen is used, Always, or Never                                  |
-| Pen buttons             | What the side button and the eraser end do, set for each pen           |
+| Setting | Choices |
+|---|---|
+| Writing hand | Detect, Right hand, or Left hand |
+| Draw with a finger | Until a pen is used, Always, or Never |
+| Pen buttons | What the side button and the eraser end do, set for each pen |
 | Pressure and steady pen | A pressure curve from light to firm, and smoothing for a steadier line |
 
 ## Shapes and gestures
@@ -41,12 +41,12 @@ Open Settings, then Pen and touch, to change this.
 
 Press Ctrl+K and choose one of these by name.
 
-| Name                                | What it does                                                    |
-| ----------------------------------- | --------------------------------------------------------------- |
-| Insert space                        | Drag down to push everything below further down.                |
-| Zoom writing box                    | Write large in a box. It lands small on the line.               |
-| Replay ink                          | Plays your strokes back, and plays a recording along with them. |
-| Ruler, Protractor, and Snap to grid | Help you draw neat diagrams.                                    |
+| Name | What it does |
+|---|---|
+| Insert space | Drag down to push everything below further down. |
+| Zoom writing box | Write large in a box. It lands small on the line. |
+| Replay ink | Plays your strokes back, and plays a recording along with them. |
+| Ruler, Protractor, and Snap to grid | Help you draw neat diagrams. |
 
 ## Handwriting to text
 

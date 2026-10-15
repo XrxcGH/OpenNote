@@ -193,6 +193,8 @@ interface Row {
   readonly correct: number;
   readonly wrong: number;
   readonly total: number;
+  /** What the wrong answers were, such as `freeform x3`. */
+  readonly confused?: string;
 }
 
 const round = (k: Kind) => k === 'circle' || k === 'ellipse';
@@ -202,6 +204,7 @@ function runPositives(): Row[] {
     let correct = 0;
     let wrong = 0;
     let total = 0;
+    const confusions = new Map<string, number>();
     NOISE_LEVELS.forEach((noise, level) => {
       for (let s = 0; s < SEEDS_PER_LEVEL; s++) {
         total++;
@@ -210,10 +213,14 @@ function runPositives(): Row[] {
         // A drawn circle may come back as an ellipse and the reverse: both are round, so both count.
         const kind: Kind = match.shape.kind;
         if (kind === spec.expect || (round(kind) && round(spec.expect))) correct++;
-        else wrong++;
+        else {
+          wrong++;
+          confusions.set(kind, (confusions.get(kind) ?? 0) + 1);
+        }
       }
     });
-    return { name: spec.name, correct, wrong, total };
+    const confused = [...confusions].map(([k, n]) => `${k} x${n}`).join(', ');
+    return { name: spec.name, correct, wrong, total, confused };
   });
 }
 
@@ -232,6 +239,39 @@ function runNegatives(): Row[] {
   });
 }
 
+/**
+ * The same corpus run before freeform polygons and the lookalike margins existed (commit before 2b60bde5): right answers
+ * per class out of 36. Kept so the gain stays reproducible from the repository, not only from a log.
+ */
+const BEFORE: Record<string, number> = {
+  line: 36,
+  'diagonal line': 30,
+  arrow: 29,
+  rectangle: 36,
+  square: 36,
+  'tilted rectangle': 33,
+  diamond: 32,
+  rhombus: 0,
+  triangle: 34,
+  'right triangle': 35,
+  'skewed triangle': 36,
+  circle: 29,
+  ellipse: 36,
+  arc: 24,
+  pentagon: 36,
+  hexagon: 36,
+  star: 32,
+  trapezoid: 0,
+  parallelogram: 0,
+  house: 0,
+  'arrow block': 0,
+  'L shape': 0,
+  'irregular pentagon': 0,
+  kite: 0,
+};
+/** Wrong-shape answers before (a circle named a hexagon, a pentagon named a rectangle): 19 of 864. */
+const BEFORE_WRONG = 19;
+
 const sum = (rows: Row[], key: 'correct' | 'wrong' | 'total') => rows.reduce((s, r) => s + r[key], 0);
 
 describe('shape recognition benchmark', () => {
@@ -245,7 +285,10 @@ describe('shape recognition benchmark', () => {
 
   it('reports the recognition numbers', () => {
     const lines = [
-      ...positives.map((r) => `  ${r.name.padEnd(20)} ${r.correct}/${r.total} right, ${r.wrong} wrong shape`),
+      ...positives.map(
+        (r) =>
+          `  ${r.name.padEnd(20)} before ${String(BEFORE[r.name]).padStart(2)} -> ${r.correct}/${r.total} right, ${r.wrong} wrong shape ${r.confused ?? ''}`,
+      ),
       ...negatives
         .filter((r) => r.wrong > 0)
         .map((r) => `  NOT A SHAPE: ${r.name.padEnd(14)} ${r.wrong}/${r.total} snapped`),
@@ -263,6 +306,13 @@ describe('shape recognition benchmark', () => {
   it('names irregular polygons such as trapezoids, houses, and L shapes', () => {
     // Before freeform polygons existed this was 0%.
     expect(irregularRecall).toBeGreaterThanOrEqual(0.88);
+  });
+
+  it('beats the recorded baseline overall, with fewer wrong shapes and no class losing more than one drawing', () => {
+    const before = Object.values(BEFORE).reduce((a, b) => a + b, 0);
+    expect(sum(positives, 'correct')).toBeGreaterThan(before + 200);
+    expect(sum(positives, 'wrong')).toBeLessThanOrEqual(BEFORE_WRONG);
+    positives.forEach((r) => expect(r.correct, r.name).toBeGreaterThanOrEqual(BEFORE[r.name] - 1));
   });
 
   it('leaves handwriting and scribbles alone', () => {

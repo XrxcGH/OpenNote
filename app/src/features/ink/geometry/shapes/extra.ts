@@ -93,6 +93,12 @@ const MAX_FREEFORM_CORNERS = 7;
 const MIN_CORNER_TURN = 30 * DEGREES;
 /** Its sides are each at least this share of its perimeter, so a crowded pair of corners is no polygon. */
 const MIN_SIDE_SHARE = 0.07;
+/** One more corner is taken only when it cuts the fit error below this share of the fewer-cornered fit's. */
+const EXTRA_CORNER_GAIN = 0.4;
+/** ...and only when that fit is near exact, as for points a shape generated, never for a hand-drawn wobble. */
+const EXACT_FIT = 0.1;
+/** A four-cornered outline whose corners all turn within this of a right angle is a sloppy rectangle, not a new shape. */
+const NEAR_RIGHT_ANGLE = 22 * DEGREES;
 
 /** Whether the corners make a simple polygon: no side crosses another, every corner is sharp, no side is tiny. */
 function cleanPolygon(corners: readonly Vec[]): boolean {
@@ -100,18 +106,20 @@ function cleanPolygon(corners: readonly Vec[]): boolean {
   const sides = corners.map((c, i) => distance(c, corners[(i + 1) % n]));
   const perimeter = sides.reduce((s, d) => s + d, 0);
   if (sides.some((d) => d < MIN_SIDE_SHARE * perimeter)) return false;
+  let nearRight = 0;
   for (let i = 0; i < n; i++) {
     const a = corners[(i + n - 1) % n];
     const b = corners[i];
     const c = corners[(i + 1) % n];
     const heading = Math.abs(turn(Math.atan2(b.y - a.y, b.x - a.x), Math.atan2(c.y - b.y, c.x - b.x)));
     if (heading < MIN_CORNER_TURN) return false;
+    if (Math.abs(heading - Math.PI / 2) < NEAR_RIGHT_ANGLE) nearRight++;
     for (let j = i + 2; j < n; j++) {
       if (i === 0 && j === n - 1) continue;
       if (segmentsIntersect(corners[i], corners[(i + 1) % n], corners[j], corners[(j + 1) % n])) return false;
     }
   }
-  return true;
+  return !(n === 4 && nearRight === 4);
 }
 
 /**
@@ -119,13 +127,17 @@ function cleanPolygon(corners: readonly Vec[]): boolean {
  * and an L all come out here, where the regular shapes and the rectangle do not fit.
  */
 function freeformCandidate(outline: readonly Vec[]): Candidate | null {
+  let best: { corners: readonly Vec[]; error: number } | null = null;
   for (let count = 4; count <= MAX_FREEFORM_CORNERS; count++) {
     const indices = pickCorners(outline, count);
     const fit = indices && fitPolygon(outline, indices);
     if (!fit || fit.error >= POLYGON_TOLERANCE || !cleanPolygon(fit.corners)) continue;
-    return { shape: { kind: 'freeform', corners: fit.corners }, ratio: fit.error / POLYGON_TOLERANCE };
+    // The fewest corners that fit win, unless one more corner explains the outline far better: a house read back from
+    // exact points fits a four-sided shape loosely and a five-sided one perfectly, and the roof must keep its handle.
+    if (best && (fit.error >= EXTRA_CORNER_GAIN * best.error || fit.error >= EXACT_FIT * POLYGON_TOLERANCE)) break;
+    best = { corners: fit.corners, error: fit.error };
   }
-  return null;
+  return best && { shape: { kind: 'freeform', corners: best.corners }, ratio: best.error / POLYGON_TOLERANCE };
 }
 
 /** Pentagons, hexagons, stars, and irregular polygons from a closed outline of evenly spaced points. */
