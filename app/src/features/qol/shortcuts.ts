@@ -12,7 +12,7 @@ import type { NodeSummary, NotesService } from '../../services/notes';
 import { sessionStore } from '../../state/session';
 import { t } from '../../strings/t';
 import { showToast } from '../../ui';
-import { formatNodeLink } from '../search/deeplink/url';
+import { formatNodeLink } from '../search';
 import { titleOf } from '../tree';
 import { showDialog } from './dialogHost';
 import { ShortcutDialog } from './ShortcutDialog';
@@ -42,7 +42,11 @@ export function shortcutLink(node: NodeSummary): string | null {
 }
 
 /** The names of the places, for the toast that says where the shortcut went. */
-const PLACE_WORDS = { desktop: 'qol.shortcut.onDesktop', startMenu: 'qol.shortcut.inStartMenu', folder: 'qol.shortcut.inFolder' } as const;
+const PLACE_WORDS = {
+  desktop: 'qol.shortcut.onDesktop',
+  startMenu: 'qol.shortcut.inStartMenu',
+  folder: 'qol.shortcut.inFolder',
+} as const;
 
 /** Makes the Windows shortcut in the place chosen. Resolves whether it was made. */
 export async function makeShortcut(node: NodeSummary, choice: ShortcutChoice): Promise<boolean> {

@@ -59,7 +59,7 @@ export function createLocalTranslationEngine(ext: () => Promise<IntelExt>): Tran
       try {
         return await host.translate.run(pack.id, lines);
       } catch (error) {
-        throw new Error(toExtError(error).message);
+        throw new Error(toExtError(error).message, { cause: error });
       }
     },
   };

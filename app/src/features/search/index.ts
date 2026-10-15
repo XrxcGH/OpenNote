@@ -9,7 +9,7 @@ export type { Field, FieldType } from './properties/model';
 export { locationOfPage, openPage } from './locate';
 export { openAndReveal } from './deeplink/jump';
 export { otherLinkReaders } from './deeplink/install';
-export { formatLink } from './deeplink/url';
+export { formatLink, formatNodeLink } from './deeplink/url';
 export { maybeSearchClient, setSearchClient } from './client';
 export { armedChange, recordChange, undoArmedChange } from './changeSet';
 export { undoPageChanges } from './changeSet';
