@@ -18,8 +18,24 @@ import type { ExportTarget } from './exportTarget';
 import { createFlowState, newJobName } from './flowState';
 import type { FlowState } from './flowState';
 
+/** What Share as a file asks besides the folder. The password stays in memory and goes to the host only. */
+export interface ShareChoices {
+  password: string;
+  confirm: string;
+  history: boolean;
+}
+
+export const NO_SHARE_CHOICES: ShareChoices = { password: '', confirm: '', history: false };
+
 export type ExportState =
-  | { step: 'options'; scope: ExportScope; format: ExportFormat; folder: string | null; error: IpcError | null }
+  | {
+      step: 'options';
+      scope: ExportScope;
+      format: ExportFormat;
+      folder: string | null;
+      error: IpcError | null;
+      share?: ShareChoices;
+    }
   | {
       step: 'exporting';
       job: string;
@@ -63,6 +79,8 @@ export interface ExportFlow {
   update(copy: SentCopy): Promise<void>;
   setScope(scope: ExportScope): void;
   setFormat(format: ExportFormat): void;
+  /** Share as a file: the password, its confirmation, and whether to include page history. */
+  setShare(choices: Partial<ShareChoices>): void;
   chooseFolder(): Promise<void>;
   start(): Promise<void>;
   cancel(): void;
@@ -73,11 +91,29 @@ export interface ExportFlow {
   attach(): () => void;
 }
 
+/** What a PDF export prints before the host writes the bundle: the notebook's title and the sections it exports. */
+export interface PdfPagesRequest {
+  title: string;
+  sections: { title: string; pages: { ui: string; title: string }[] }[];
+}
+
+/** Prints every page of a PDF export and hands the files to the host under the job's name (features/pdf/bundle). */
+export type DrawPdf = (
+  job: string,
+  request: PdfPagesRequest,
+  signal: AbortSignal,
+  onPage: (done: number, total: number, title: string) => void,
+) => Promise<unknown>;
+
 export interface ExportFlowDeps {
   interop: InteropClient;
   notes: NotesService;
   target: ExportTarget;
   announce(text: string, politeness?: 'polite' | 'assertive'): void;
+  /** Prints the pages of a PDF export. Without it, the host has no pages to write and reports each one. */
+  drawPdf?: DrawPdf;
+  /** The format the dialog starts with, such as `share` for Share as a file. */
+  format?: ExportFormat;
 }
 
 function asError(error: unknown): IpcError {
@@ -93,6 +129,8 @@ interface Run {
   state: FlowState<ExportState>;
   extras: FlowState<SendExtras>;
   job: string | null;
+  /** Stops the printing of a PDF export's pages. */
+  abort: AbortController | null;
 }
 
 type Options = Extract<ExportState, { step: 'options' }>;
@@ -114,6 +152,12 @@ async function chooseFolder(run: Run): Promise<void> {
 async function exportNow(run: Run, options: Options & { folder: string }, replace?: string): Promise<void> {
   const { interop, notes, target } = run.deps;
   const { scope, format, folder } = options;
+  const share = format === 'share' ? (options.share ?? NO_SHARE_CHOICES) : null;
+  if (share && share.password !== share.confirm) {
+    run.state.set({ ...options, error: { code: 'passwordMismatch', message: '' } });
+    return;
+  }
+  const extra = share ? { history: share.history, ...(share.password ? { password: share.password } : {}) } : {};
   const name = newJobName('export');
   try {
     const collected = await collectRequest(notes, target, scope);
@@ -124,18 +168,51 @@ async function exportNow(run: Run, options: Options & { folder: string }, replac
     run.job = name;
     const shown = target.choices.find((choice) => choice.scope === scope)?.node.title ?? collected.title;
     run.state.set({ step: 'exporting', job: name, scope, format, folder, name: shown, progress: null });
-    const outcome = await interop.exportTo(name, { ...collected, format, folder, ...(replace ? { replace } : {}) });
+    if (format === 'pdf' && run.deps.drawPdf && !(await printPages(run, name, collected))) {
+      run.state.set({ step: 'options', scope, format, folder, error: null });
+      run.deps.announce(t('interop.export.canceled'));
+      return;
+    }
+    const outcome = await interop.exportTo(name, {
+      ...collected,
+      format,
+      folder,
+      ...extra,
+      ...(replace ? { replace } : {}),
+    });
     if (outcome.status === 'done') {
       run.state.set({ step: 'done', result: outcome.result });
       await rememberCopy(run, scope, format, outcome.result.reveal);
       return;
     }
-    run.state.set({ step: 'options', scope, format, folder, error: null });
+    run.state.set({ step: 'options', scope, format, folder, error: null, ...(share ? { share } : {}) });
     run.deps.announce(t('interop.export.canceled'));
   } catch (error) {
-    run.state.set({ step: 'options', scope, format, folder, error: asError(error) });
+    run.state.set({ step: 'options', scope, format, folder, error: asError(error), ...(share ? { share } : {}) });
   } finally {
     if (run.job === name) run.job = null;
+  }
+}
+
+/** Prints the pages of a PDF export, showing each as it goes. False when the person canceled. */
+async function printPages(run: Run, name: string, request: PdfPagesRequest): Promise<boolean> {
+  const drawPdf = run.deps.drawPdf;
+  if (!drawPdf) return true;
+  const abort = new AbortController();
+  run.abort = abort;
+  try {
+    await drawPdf(name, request, abort.signal, (done, total, current) => {
+      const now = run.state.get();
+      if (now.step === 'exporting' && now.job === name) {
+        run.state.set({ ...now, progress: { phase: 'converting', unit: 'items', done, total, current } });
+      }
+    });
+    return !abort.signal.aborted;
+  } catch (error) {
+    if (abort.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) return false;
+    throw error;
+  } finally {
+    if (run.abort === abort) run.abort = null;
   }
 }
 
@@ -175,12 +252,13 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
   const state = createFlowState<ExportState>({
     step: 'options',
     scope: deps.target.initial,
-    format: 'markdown',
+    format: deps.format ?? 'markdown',
     folder: null,
     error: null,
+    ...(deps.format === 'share' ? { share: NO_SHARE_CHOICES } : {}),
   });
   const extras = createFlowState<SendExtras>({ favorites: [], copies: [] });
-  const run: Run = { deps, state, extras, job: null };
+  const run: Run = { deps, state, extras, job: null, abort: null };
   void loadExtras(run);
   return {
     state,
@@ -221,6 +299,11 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
       const current = optionsOf(run);
       if (current) state.set({ ...current, format });
     },
+    setShare(choices) {
+      const current = optionsOf(run);
+      if (current)
+        state.set({ ...current, share: { ...(current.share ?? NO_SHARE_CHOICES), ...choices }, error: null });
+    },
     chooseFolder: () => chooseFolder(run),
     async start() {
       // Without a folder yet, Export asks for one first and goes on once the person has chosen.
@@ -229,6 +312,7 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
       if (current?.folder) await exportNow(run, { ...current, folder: current.folder });
     },
     cancel() {
+      run.abort?.abort();
       if (run.job) deps.interop.cancel(run.job);
     },
     back() {
@@ -242,6 +326,7 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
       const stop = deps.interop.onProgress((event) => onProgress(run, event));
       return () => {
         stop();
+        run.abort?.abort();
         if (run.job) deps.interop.cancel(run.job);
         run.job = null;
       };

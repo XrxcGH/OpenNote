@@ -9,8 +9,8 @@ use opennote_core::format::page_json::write_page;
 use opennote_core::limits::Limits;
 use opennote_core::model::validate::validate_page;
 use opennote_core::model::{
-    Asset, Block, BlockData, FileData, FileDisplay, ImageData, JsonMap, Named, Page, Revision, TableCell, TableColumn,
-    TableData, TableRow, TextData,
+    Asset, Block, BlockData, FileData, FileDisplay, Frame, ImageData, JsonMap, Lock, Named, Page, Revision, TableCell,
+    TableColumn, TableData, TableRow, TextData,
 };
 use opennote_core::{AssetId, BlockId, ColumnId, OrderKey, PageId, RevisionId, RowId, Timestamp};
 
@@ -34,6 +34,8 @@ pub struct PageBuilder<'a> {
     env: &'a ImportEnv<'a>,
     page: Page,
     pieces: Vec<BlockData>,
+    /// The size of pieces that are locked in place, by their index in `pieces`.
+    locked: HashMap<usize, (f64, f64)>,
     text: Vec<DocBlock>,
     bytes: BTreeMap<AssetId, Vec<u8>>,
     by_hash: HashMap<[u8; 32], AssetId>,
@@ -66,6 +68,7 @@ impl<'a> PageBuilder<'a> {
             env,
             page,
             pieces: Vec::new(),
+            locked: HashMap::new(),
             text: Vec::new(),
             bytes: BTreeMap::new(),
             by_hash: HashMap::new(),
@@ -130,6 +133,19 @@ impl<'a> PageBuilder<'a> {
         }
     }
 
+    /// Gives the last table its column types as smart-table data (`data.smart`), so it opens as a smart table.
+    /// Text columns get no entry. A page with no table is left alone.
+    pub(crate) fn type_last_table(&mut self, kinds: &[crate::import::ColumnKind]) {
+        let Some(BlockData::Table(table)) = self.pieces.iter_mut().rev().find(|p| matches!(p, BlockData::Table(_)))
+        else {
+            return;
+        };
+        let ids: Vec<String> = table.columns.iter().map(|c| c.id.to_string()).collect();
+        if let Some(smart) = crate::import::smart_data(&ids, kinds) {
+            table.extra.insert("smart".to_owned(), smart);
+        }
+    }
+
     /// Adds an image block.
     pub fn push_image(&mut self, asset: AssetId, alt: String) {
         self.flush_text();
@@ -140,6 +156,22 @@ impl<'a> PageBuilder<'a> {
             crop: None,
             extra: JsonMap::new(),
         }));
+    }
+
+    /// Adds an image block of a set size, locked so it can't be moved or resized: a page's background picture, such
+    /// as a slide, that handwriting is written on. `w` and `h` are in page units.
+    pub fn push_locked_image(&mut self, asset: AssetId, alt: String, w: f64, h: f64) {
+        self.push_image(asset, alt);
+        self.locked.insert(self.pieces.len() - 1, (w, h));
+    }
+
+    /// Adds a locked page picture, as [`push_locked_image`](Self::push_locked_image), with more keys in its data,
+    /// such as `background` and the boxes of the pictures inside it.
+    pub fn push_page_picture(&mut self, asset: AssetId, alt: String, size: (f64, f64), extra: JsonMap) {
+        self.push_locked_image(asset, alt, size.0, size.1);
+        if let Some(BlockData::Image(image)) = self.pieces.last_mut() {
+            image.extra = extra;
+        }
     }
 
     /// Adds a file block, shown as an icon.
@@ -186,12 +218,20 @@ impl<'a> PageBuilder<'a> {
         let keys = OrderKey::spread(None, None, self.pieces.len())
             .map_err(|e| InteropError::format("block order", e.to_string()))?;
         let now = self.page.modified;
-        for (data, order) in std::mem::take(&mut self.pieces).into_iter().zip(keys) {
+        for (index, (data, order)) in std::mem::take(&mut self.pieces).into_iter().zip(keys).enumerate() {
+            let locked = self.locked.get(&index).map(|&(w, h)| Frame {
+                x: None,
+                y: None,
+                w: Some(w),
+                h: Some(h),
+                rotate: None,
+                extra: JsonMap::new(),
+            });
             let block = Block {
                 id: BlockId::generate(self.env.clock),
                 order,
-                frame: None,
-                lock: None,
+                lock: locked.is_some().then_some(Named::Known(Lock::Position)),
+                frame: locked,
                 created: self.page.created,
                 modified: now,
                 data,

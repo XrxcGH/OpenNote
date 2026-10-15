@@ -18,10 +18,10 @@ mod word;
 
 pub use convert::Resolver;
 pub use files::{export_files, export_files_with, Exported, Format};
-pub use pdf::{export_pdf_bundle, NoPdfRenderer, PdfRenderer};
+pub use pdf::{export_pdf_bundle, NoPdfRenderer, PdfRenderer, PreparedPdfRenderer};
 pub use plan::Scope;
 pub use pptx::export_pptx;
-pub use share::{export_share, EXTENSION as SHARE_EXTENSION};
+pub use share::{export_share, export_share_with, EXTENSION as SHARE_EXTENSION};
 pub use single::export_html_single;
 pub use tables::{export_tables, TableFormat};
 pub use word::{export_docx, export_docx_with};

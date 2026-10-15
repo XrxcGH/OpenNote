@@ -15,6 +15,7 @@ import type {
   LossGroup,
   PickKind,
 } from '../interop';
+import { createWebInteropMore } from './interopMore';
 import { registerTestHook } from './testHooks';
 
 const STEPS = 6;
@@ -34,6 +35,28 @@ const EVERNOTE_LOSSES: LossGroup[] = [
   },
 ];
 
+// What the real OneNote reader reports for a notebook with handwriting and a locked section, in its words.
+const ONENOTE_LOSSES: LossGroup[] = [
+  {
+    outcome: 'skipped',
+    why: 'It is password-protected. Unlock it in OneNote, then import it again.',
+    examples: ['Private'],
+    pages: 0,
+  },
+  {
+    outcome: 'skipped',
+    why: "Microsoft's published description of the format does not cover it. Handwriting (ink) is one of these.",
+    examples: ['3 items of kinds OpenNote cannot read'],
+    pages: 2,
+  },
+];
+
+function lossesOf(kind: DetectedSource['kind']): { losses: LossGroup[]; lostPages: number; skipped: number } {
+  if (kind === 'evernote') return { losses: EVERNOTE_LOSSES, lostPages: 3, skipped: 2 };
+  if (kind === 'oneNoteFile') return { losses: ONENOTE_LOSSES, lostPages: 2, skipped: 1 };
+  return { losses: [], lostPages: 0, skipped: 0 };
+}
+
 function detectPath(path: string): DetectedSource {
   const lower = path.toLowerCase();
   const found = (kind: DetectedSource['kind'], label: string): DetectedSource => ({
@@ -43,16 +66,26 @@ function detectPath(path: string): DetectedSource {
     zipped: false,
     advice: null,
   });
+  if (lower.endsWith('.opennote')) {
+    // A shared file whose name says "locked" stands for one locked with the password "pencil".
+    const locked = lower.includes('locked');
+    return {
+      ...found('markdown', locked ? 'Shared OpenNote file (locked)' : 'Shared OpenNote file'),
+      needsPassword: locked,
+    };
+  }
   if (lower.endsWith('.enex')) return found('evernote', 'Evernote export');
   if (lower.endsWith('.docx')) return found('word', 'Word and OpenDocument documents');
   if (lower.endsWith('.txt')) return found('text', 'Text files');
-  if (lower.endsWith('.one') || lower.endsWith('.onepkg')) {
+  if (lower.endsWith('.one')) return found('oneNoteFile', 'OneNote section');
+  if (lower.endsWith('.onepkg')) return found('oneNoteFile', 'OneNote notebook package');
+  if (lower.endsWith('.onetoc2') || lower.endsWith('.doc')) {
     return {
-      kind: 'oneNoteFile',
-      label: 'OneNote file',
+      kind: 'word',
+      label: 'Other file',
       supported: false,
       zipped: false,
-      advice: 'OneNote keeps notebooks in its own files. In OneNote, choose File, then Export, and save as Word.',
+      advice: 'Save the document as .docx in its own app, then import that file.',
     };
   }
   return found('markdown', 'Markdown notes');
@@ -76,9 +109,7 @@ function previewOf(path: string, detected: DetectedSource): ImportPreview {
     blocks: 24,
     assets: 4,
     assetBytes: 3_400_000,
-    losses: detected.kind === 'evernote' ? EVERNOTE_LOSSES : [],
-    lostPages: detected.kind === 'evernote' ? 3 : 0,
-    skipped: detected.kind === 'evernote' ? 2 : 0,
+    ...lossesOf(detected.kind),
   };
 }
 
@@ -129,6 +160,7 @@ export function createWebInterop(): InteropClient & {
   let stepMs = 15;
   let imports = 0;
   let sticky: string | null = null;
+  const extra = createWebInteropMore();
 
   registerTestHook('interopPickNext', (...answers: (string | null)[]) => void (next = answers));
   registerTestHook('interopStepMs', (ms: number) => void (stepMs = ms));
@@ -169,17 +201,28 @@ export function createWebInterop(): InteropClient & {
     setStepMs: (ms) => void (stepMs = ms),
     pick(kind) {
       log.picks.push({ kind });
-      if (next.length > 0) return Promise.resolve(next.shift() ?? null);
-      return Promise.resolve(
-        kind === 'file' ? 'C:\\Users\\Sample\\Exports\\Recipes.enex' : 'C:\\Users\\Sample\\Documents',
-      );
+      const picked =
+        next.length > 0
+          ? (next.shift() ?? null)
+          : kind === 'file'
+            ? 'C:\\Users\\Sample\\Exports\\Recipes.enex'
+            : 'C:\\Users\\Sample\\Documents';
+      if (picked && kind === 'file') extra.grant(picked);
+      return Promise.resolve(picked);
+    },
+    // Off unless a test turns it on (interopMore.ts), like a copy of OpenNote without the extra operations.
+    get more() {
+      return extra.on() ? extra.more : undefined;
     },
     detect: (path) => Promise.resolve(detectPath(path)),
     localSources: () => Promise.resolve({ stickyNotes: sticky }),
     setStickyNotes: (path) => void (sticky = path),
-    async preview(job, path) {
+    async preview(job, path, choices) {
       log.previews.push(path);
       const detected = detectPath(path);
+      if (detected.needsPassword && choices.password !== 'pencil') {
+        throw { code: 'unsupported', message: 'The password does not open this file.' };
+      }
       if (!(await run(job, `Check ${nameOf(path)}`, 'scanning', 5))) return stopped;
       return done(previewOf(path, detected));
     },
@@ -188,7 +231,7 @@ export function createWebInterop(): InteropClient & {
       imports += 1;
       if (!(await run(job, `Import from ${nameOf(path)}`, 'converting', 5))) return stopped;
       const tree = treeOf(path, imports);
-      const losses = detectPath(path).kind === 'evernote' ? EVERNOTE_LOSSES : [];
+      const lost = lossesOf(detectPath(path).kind);
       if (choices.reportPage)
         tree.sections.push({
           title: 'Import report',
@@ -198,9 +241,7 @@ export function createWebInterop(): InteropClient & {
       const result: ImportResult = {
         tree,
         pages: 5,
-        losses,
-        lostPages: losses.length > 0 ? 3 : 0,
-        skipped: losses.length > 0 ? 2 : 0,
+        ...lost,
       };
       return done(result);
     },
@@ -212,10 +253,13 @@ export function createWebInterop(): InteropClient & {
       log.exports.push(request);
       const count = request.sections.reduce((total, section) => total + section.pages.length, 0);
       if (!(await run(job, `Export ${request.title}`, 'writing', count))) return stopped;
+      // A PDF export writes the pages the window printed and staged, and an index.html.
+      const printed = request.format === 'pdf' ? extra.staged(job).size : 0;
+      const oneFile = ['htmlSingle', 'docx', 'share'].includes(request.format);
       const result: ExportResult = {
         reveal: `${request.folder}\\${request.title}`,
-        pages: count,
-        files: request.format === 'htmlSingle' || request.format === 'docx' ? 1 : count,
+        pages: request.format === 'pdf' ? printed : count,
+        files: oneFile ? 1 : request.format === 'pdf' ? printed + 1 : count,
         losses: [],
         lostPages: 0,
         skipped: 0,

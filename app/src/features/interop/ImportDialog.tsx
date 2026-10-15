@@ -8,7 +8,7 @@ import type { NotesService } from '../../services/notes/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
 import { sessionStore, setExpanded } from '../../state/session';
 import { t } from '../../strings/t';
-import { Button, Dialog, Switch, announce } from '../../ui';
+import { Button, Dialog, Switch, TextField, announce } from '../../ui';
 import type { DialogAction } from '../../ui';
 import { createImportFlow } from './importFlow';
 import type { ImportFlow, ImportState } from './importFlow';
@@ -19,6 +19,8 @@ import { fileName, importErrorText, sizeText } from './text';
 export interface ImportDialogProps {
   interop: InteropClient;
   notes: NotesService;
+  /** A file opened from Explorer, such as a shared .opennote file, to check at once. */
+  path?: string;
 }
 
 function Choose({ flow, canceled, refocus }: { flow: ImportFlow; canceled: boolean; refocus: boolean }) {
@@ -151,6 +153,24 @@ function body(flow: ImportFlow, state: ImportState, refocus: boolean) {
           <p>{state.detected.advice ?? t('interop.import.unsupported.fallback')}</p>
         </div>
       );
+    case 'locked':
+      return (
+        <div className={styles.body}>
+          <StepHeading>{t('interop.share.open.password')}</StepHeading>
+          <p className={styles.path} title={state.path}>
+            {fileName(state.path)}
+          </p>
+          <TextField
+            label={t('interop.share.open.passwordLabel')}
+            value={state.password}
+            secret
+            autoSelect
+            error={state.wrong ? t('interop.share.open.wrong') : undefined}
+            onChange={(password) => flow.setPassword(password)}
+            onCommit={() => void flow.unlock()}
+          />
+        </div>
+      );
     case 'review':
       return <Review flow={flow} state={state} />;
     case 'importing':
@@ -174,29 +194,63 @@ function body(flow: ImportFlow, state: ImportState, refocus: boolean) {
   }
 }
 
-// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
-export default function ImportDialog({ interop, notes, onClose }: ImportDialogProps & OverlayProps) {
-  const [flow] = useState(() => createImportFlow({ interop, notes, announce }));
-  useEffect(() => flow.attach(), [flow]);
-  const state = useSyncExternalStore(flow.state.subscribe, flow.state.get);
-  // The first screen keeps the focus the dialog gave its first button. Coming back to it, the heading takes focus.
-  const [left, setLeft] = useState(false);
-  if (state.step !== 'choose' && !left) setLeft(true);
+interface ActionContext {
+  flow: ImportFlow;
+  state: ImportState;
+  interop: ImportDialogProps['interop'];
+  close: () => void;
+  onClose: () => void;
+}
 
-  const close = () => {
-    // Once the host has finished, the tree is being made, which takes a moment and cannot be canceled.
-    if (state.step === 'importing' && state.building) return;
-    if (flow.running()) flow.cancel();
-    onClose();
-  };
+type DoneState = Extract<ImportState, { step: 'done' }>;
 
-  useEffect(() => {
-    if (state.step === 'done') announce(t('interop.import.done.title'));
-    if (state.step === 'failed') announce(importErrorText(state.error), 'assertive');
-  }, [state]);
+function doneActions(state: DoneState, { flow, interop, onClose }: ActionContext): DialogAction[] {
+  return [
+    ...(state.undone
+      ? []
+      : [
+          ...(interop.more
+            ? [
+                {
+                  id: 'saveReport',
+                  label: t('moreInterop.report.save'),
+                  variant: 'quiet' as const,
+                  onPress: () => flow.saveReport(),
+                },
+              ]
+            : []),
+          {
+            id: 'undo',
+            label: t('interop.import.done.undo'),
+            variant: 'quiet' as const,
+            onPress: () => flow.undo(),
+          },
+          {
+            id: 'open',
+            label: t('interop.import.done.open'),
+            variant: 'secondary' as const,
+            onPress: () => {
+              // The tree shows the notebook open, so its pages pane fills and New page works.
+              const open = sessionStore.get().expanded;
+              if (!open.includes(state.notebook.id)) setExpanded([...open, state.notebook.id]);
+              navigate({
+                view: 'workspace',
+                notebookId: state.notebook.id,
+                sectionId: state.firstSection?.id ?? null,
+                pageId: state.firstPage?.id ?? null,
+              });
+              onClose();
+            },
+          },
+        ]),
+    { id: 'done', label: t('interop.import.done.close'), variant: 'primary', onPress: onClose },
+  ];
+}
 
+function dialogActions(ctx: ActionContext): DialogAction[] {
+  const { flow, state, close } = ctx;
   const cancel: DialogAction = { id: 'cancel', label: t('common.cancel'), variant: 'quiet', onPress: close };
-  const actions: DialogAction[] = (() => {
+  return (() => {
     switch (state.step) {
       case 'choose':
         return [{ ...cancel, id: 'close', label: t('common.close') }];
@@ -204,6 +258,12 @@ export default function ImportDialog({ interop, notes, onClose }: ImportDialogPr
         return [{ ...cancel, onPress: () => flow.cancel() }];
       case 'importing':
         return state.building ? [] : [{ ...cancel, onPress: () => flow.cancel() }];
+      case 'locked':
+        return [
+          cancel,
+          { id: 'back', label: t('interop.import.review.back'), variant: 'secondary', onPress: () => flow.back() },
+          { id: 'unlock', label: t('interop.share.open.unlock'), variant: 'primary', onPress: () => flow.unlock() },
+        ];
       case 'unsupported':
         return [
           { ...cancel, id: 'close', label: t('common.close') },
@@ -230,48 +290,35 @@ export default function ImportDialog({ interop, notes, onClose }: ImportDialogPr
           { id: 'retry', label: t('interop.import.failed.tryAgain'), variant: 'primary', onPress: () => flow.retry() },
         ];
       case 'done':
-        return [
-          ...(state.undone
-            ? []
-            : [
-                ...(interop.more
-                  ? [
-                      {
-                        id: 'saveReport',
-                        label: t('moreInterop.report.save'),
-                        variant: 'quiet' as const,
-                        onPress: () => flow.saveReport(),
-                      },
-                    ]
-                  : []),
-                {
-                  id: 'undo',
-                  label: t('interop.import.done.undo'),
-                  variant: 'quiet' as const,
-                  onPress: () => flow.undo(),
-                },
-                {
-                  id: 'open',
-                  label: t('interop.import.done.open'),
-                  variant: 'secondary' as const,
-                  onPress: () => {
-                    // The tree shows the notebook open, so its pages pane fills and New page works.
-                    const open = sessionStore.get().expanded;
-                    if (!open.includes(state.notebook.id)) setExpanded([...open, state.notebook.id]);
-                    navigate({
-                      view: 'workspace',
-                      notebookId: state.notebook.id,
-                      sectionId: state.firstSection?.id ?? null,
-                      pageId: state.firstPage?.id ?? null,
-                    });
-                    onClose();
-                  },
-                },
-              ]),
-          { id: 'done', label: t('interop.import.done.close'), variant: 'primary', onPress: onClose },
-        ];
+        return doneActions(state, ctx);
     }
   })();
+}
+
+export default function ImportDialog({ interop, notes, path, onClose }: ImportDialogProps & OverlayProps) {
+  const [flow] = useState(() => createImportFlow({ interop, notes, announce }));
+  useEffect(() => flow.attach(), [flow]);
+  useEffect(() => {
+    if (path) void flow.openPath(path);
+  }, [flow, path]);
+  const state = useSyncExternalStore(flow.state.subscribe, flow.state.get);
+  // The first screen keeps the focus the dialog gave its first button. Coming back to it, the heading takes focus.
+  const [left, setLeft] = useState(false);
+  if (state.step !== 'choose' && !left) setLeft(true);
+
+  const close = () => {
+    // Once the host has finished, the tree is being made, which takes a moment and cannot be canceled.
+    if (state.step === 'importing' && state.building) return;
+    if (flow.running()) flow.cancel();
+    onClose();
+  };
+
+  useEffect(() => {
+    if (state.step === 'done') announce(t('interop.import.done.title'));
+    if (state.step === 'failed') announce(importErrorText(state.error), 'assertive');
+  }, [state]);
+
+  const actions = dialogActions({ flow, state, interop, close, onClose });
 
   return (
     <Dialog title={t('interop.import.title')} size="medium" actions={actions} onDismiss={close}>

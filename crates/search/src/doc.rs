@@ -219,7 +219,7 @@ fn block_text(block: &Block) -> (BlockKind, String) {
     match &block.data {
         BlockData::Text(data) => (BlockKind::Text, data.markdown.to_string()),
         BlockData::Table(data) => (BlockKind::Table, table_text(data)),
-        BlockData::Image(data) => (BlockKind::Image, described(&data.alt, data.decorative)),
+        BlockData::Image(data) => (BlockKind::Image, image_text(data)),
         BlockData::File(data) => (BlockKind::File, described(&data.alt, data.decorative)),
         BlockData::Ink(data) => (BlockKind::Ink, described(&data.alt, data.decorative)),
         BlockData::Other(_) => (
@@ -231,6 +231,25 @@ fn block_text(block: &Block) -> (BlockKind, String) {
                 .unwrap_or_default(),
         ),
     }
+}
+
+/// The most text taken from an image's `text`, which a PDF page or a read scan keeps beside its picture.
+const MAX_IMAGE_TEXT: usize = 60_000;
+
+/// An image's description, and the text of the PDF page or scan it shows, which is kept in `text`.
+fn image_text(data: &opennote_core::model::ImageData) -> String {
+    let mut text = described(&data.alt, data.decorative);
+    if let Some(serde_json::Value::String(page)) = data.extra.get("text") {
+        let mut end = page.len().min(MAX_IMAGE_TEXT);
+        while !page.is_char_boundary(end) {
+            end -= 1;
+        }
+        if !text.is_empty() {
+            text.push('\n');
+        }
+        text.push_str(&page[..end]);
+    }
+    text
 }
 
 fn described(alt: &str, decorative: bool) -> String {

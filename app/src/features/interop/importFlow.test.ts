@@ -50,12 +50,21 @@ describe('checking a source', () => {
 
   it('stops at a source it cannot import and shows what to do instead', async () => {
     const { flow, interop, detach } = setup();
-    interop.pick = () => Promise.resolve('C:\\Notes\\Work.one');
+    interop.pick = () => Promise.resolve('C:\\Notes\\Old.doc');
     await flow.chooseFile();
     const state = flow.state.get();
     expect(state.step).toBe('unsupported');
-    if (state.step === 'unsupported') expect(state.detected.advice).toContain('Export');
+    if (state.step === 'unsupported') expect(state.detected.advice).toContain('.docx');
     expect(interop.log.previews).toEqual([]);
+    detach();
+  });
+
+  it('checks a OneNote section file like any other source', async () => {
+    const { flow, interop, detach } = setup();
+    interop.pick = () => Promise.resolve('C:\\Notes\\Work.one');
+    await flow.chooseFile();
+    await until(flow, 'review');
+    expect(interop.log.previews).toHaveLength(1);
     detach();
   });
 });
@@ -171,6 +180,32 @@ describe('saving the import report', () => {
     expect(calls[0].op).toBe('save_report');
     expect(calls[0].args?.folder).toBe('C:\\Users\\Sample\\Documents');
     expect(state.step === 'done' && state.reportFile).toContain('OpenNote import report.md');
+    detach();
+  });
+});
+
+describe('opening a shared file', () => {
+  it('asks for the password of a locked file, says when it is wrong, and opens with the right one', async () => {
+    const { flow, interop, detach } = setup();
+    await flow.openPath('C:/Users/Sample/Biology locked.opennote');
+    expect(flow.state.get()).toMatchObject({ step: 'locked', wrong: false });
+    expect(interop.log.previews).toEqual([]);
+    flow.setPassword('pen');
+    await flow.unlock();
+    expect(flow.state.get()).toMatchObject({ step: 'locked', wrong: true, password: '' });
+    flow.setPassword('pencil');
+    await flow.unlock();
+    const review = flow.state.get();
+    expect(review).toMatchObject({ step: 'review', password: 'pencil' });
+    await flow.start();
+    await until(flow, 'done');
+    detach();
+  });
+
+  it('opens a file without a password straight to the review', async () => {
+    const { flow, detach } = setup();
+    await flow.openPath('C:/Users/Sample/Biology.opennote');
+    expect(flow.state.get().step).toBe('review');
     detach();
   });
 });

@@ -13,6 +13,8 @@ name = "opennote_interop"
 [features]
 # Generated notebooks and checks for tests in this crate and others.
 testing = []
+# Entry points for the cargo-fuzz targets in fuzz/ (A4-36), which tests/fuzz_entries.rs also runs.
+fuzzing = ["testing"]
 
 [dependencies]
 argon2 = { version = "0.6.0", default-features = false, features = ["alloc", "zeroize"] }
@@ -35,7 +37,9 @@ zeroize = "1.9.0"
 
 [dev-dependencies]
 # The crate's own tests use its testing module.
-opennote-interop = { path = ".", features = ["testing"] }
+opennote-interop = { path = ".", features = ["testing", "fuzzing"] }
 # The tests open imported notebooks with the real core.
 opennote-core = { path = "../core", features = ["testing"] }
 proptest = "1.11.0"
+# The search index, which the fuzz entry tests feed with imported text.
+opennote-search = { path = "../search" }

@@ -62,6 +62,7 @@ export function exportErrorText(error: IpcError): string {
   if (error.code === 'io') return t('interop.export.failed.io');
   if (error.code === 'unsupported') return t('interop.export.failed.unsupported');
   if (error.code === 'noTables') return t('interop.export.failed.noTables');
+  if (error.code === 'passwordMismatch') return t('interop.share.mismatch');
   return t('interop.export.failed.other', { detail: sentence(error.message) });
 }
 

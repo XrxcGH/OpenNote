@@ -12,6 +12,8 @@ export interface ColumnSmart {
   /** An ISO 4217 code for a currency column. */
   currency?: string;
   total?: TotalKind;
+  /** The values a choice column offers, such as the options of a Notion select an import brought in. */
+  choices?: string[];
 }
 
 export interface FilterSmart {
@@ -81,6 +83,10 @@ function readColumn(raw: unknown): ColumnSmart {
   }
   if (typeof fields.currency === 'string' && /^[A-Z]{3}$/.test(fields.currency)) out.currency = fields.currency;
   if (TOTALS.includes(fields.total as TotalKind)) out.total = fields.total as TotalKind;
+  if (Array.isArray(fields.choices)) {
+    const choices = fields.choices.filter((value): value is string => typeof value === 'string').slice(0, 50);
+    if (choices.length > 0) out.choices = choices.map((value) => value.slice(0, 200));
+  }
   return out;
 }
 

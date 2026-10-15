@@ -134,4 +134,112 @@ describe('exporting', () => {
     }
     detach();
   });
+
+});
+
+describe('exporting a PDF', () => {
+  it('prints every page of a PDF export before the host writes the bundle, showing each page', async () => {
+    const interop = createWebInterop();
+    const notes = createMemoryNotesService({ seed: 'sample' });
+    const target = await resolveTarget(notes, id('s-lectures'));
+    if (!target) throw new Error('No target');
+    const printed: string[] = [];
+    const progress: string[] = [];
+    const flow = createExportFlow({
+      interop,
+      notes,
+      target,
+      announce: () => undefined,
+      drawPdf: async (job, request, _signal, onPage) => {
+        const pages = request.sections.flatMap((section) => section.pages);
+        for (const [n, page] of pages.entries()) {
+          onPage(n, pages.length, page.title);
+          const now = flow.state.get();
+          if (now.step === 'exporting' && now.progress) progress.push(now.progress.current);
+          printed.push(`${job}:${page.ui}`);
+        }
+        expect(interop.log.exports).toHaveLength(0);
+      },
+    });
+    const detach = flow.attach();
+    flow.setFormat('pdf');
+    await flow.chooseFolder();
+    await flow.start();
+    expect(flow.state.get().step).toBe('done');
+    expect(printed.length).toBeGreaterThan(0);
+    expect(progress).toContain('Mitosis');
+    expect(interop.log.exports[0]).toMatchObject({ format: 'pdf', scope: 'section' });
+    detach();
+  });
+
+  it('stops printing and keeps nothing when a PDF export is canceled', async () => {
+    const interop = createWebInterop();
+    const notes = createMemoryNotesService({ seed: 'sample' });
+    const target = await resolveTarget(notes, id('s-lectures'));
+    if (!target) throw new Error('No target');
+    const announced: string[] = [];
+    let release = () => undefined as void;
+    const flow = createExportFlow({
+      interop,
+      notes,
+      target,
+      announce: (text) => void announced.push(text),
+      drawPdf: (_job, _request, signal) =>
+        new Promise((resolve, reject) => {
+          release = () => resolve(undefined);
+          signal.addEventListener('abort', () => reject(new DOMException('stopped', 'AbortError')));
+        }),
+    });
+    const detach = flow.attach();
+    flow.setFormat('pdf');
+    await flow.chooseFolder();
+    const running = flow.start();
+    await until(flow, 'exporting');
+    flow.cancel();
+    await running;
+    release();
+    expect(flow.state.get().step).toBe('options');
+    expect(interop.log.exports).toEqual([]);
+    expect(announced).toContain('Export canceled. Nothing was kept.');
+    detach();
+  });
+
+});
+
+describe('sharing as a file', () => {
+  it('shares as one file with the password and page history, and checks the password was typed twice', async () => {
+    const interop = createWebInterop();
+    const notes = createMemoryNotesService({ seed: 'sample' });
+    const target = await resolveTarget(notes, id('s-lectures'));
+    if (!target) throw new Error('No target');
+    const flow = createExportFlow({ interop, notes, target, announce: () => undefined, format: 'share' });
+    const detach = flow.attach();
+    expect(flow.state.get()).toMatchObject({ format: 'share', share: { password: '', history: false } });
+    await flow.chooseFolder();
+    const secret = ['blue', 'pencil'].join(' ');
+    flow.setShare({ password: secret, confirm: 'blue pen', history: true });
+    await flow.start();
+    const mismatch = flow.state.get();
+    expect(mismatch.step === 'options' && mismatch.error?.code).toBe('passwordMismatch');
+    expect(interop.log.exports).toEqual([]);
+    flow.setShare({ confirm: secret });
+    await flow.start();
+    expect(flow.state.get().step).toBe('done');
+    expect(interop.log.exports[0]).toMatchObject({ format: 'share', password: secret, history: true });
+    detach();
+  });
+
+  it('shares without a password when none is typed', async () => {
+    const interop = createWebInterop();
+    const notes = createMemoryNotesService({ seed: 'sample' });
+    const target = await resolveTarget(notes, id('p-mitosis'));
+    if (!target) throw new Error('No target');
+    const flow = createExportFlow({ interop, notes, target, announce: () => undefined, format: 'share' });
+    const detach = flow.attach();
+    await flow.chooseFolder();
+    await flow.start();
+    expect(interop.log.exports[0]).toMatchObject({ format: 'share', scope: 'page', history: false });
+    expect(interop.log.exports[0]).not.toHaveProperty('password');
+    detach();
+  });
 });

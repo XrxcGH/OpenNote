@@ -48,10 +48,12 @@ pub struct ImportChoices {
     pub report_page: bool,
     /// How to cut Word files into pages: `auto`, `single`, `byTitle`, or `byPageBreak`.
     pub word_pages: Option<String>,
+    /// The password of a locked shared file (`.opennote`). It is never logged.
+    pub password: Option<super::export::Secret>,
 }
 
 impl ImportChoices {
-    fn options(&self) -> ImportOptions {
+    pub(super) fn options(&self) -> ImportOptions {
         let word_pages = match self.word_pages.as_deref() {
             Some("single") => WordPages::Single,
             Some("byTitle") => WordPages::ByTitle,
@@ -62,8 +64,12 @@ impl ImportChoices {
             kind: None,
             word_pages,
             report_page: self.report_page,
-            // Share as a file stopped before the interface asked for a locked file's password.
-            password: None,
+            password: self
+                .password
+                .as_ref()
+                .and_then(super::export::Secret::get)
+                .filter(|p| p.chars().count() <= super::export::MAX_PASSWORD_CHARS)
+                .map(str::to_owned),
         }
     }
 }
@@ -116,6 +122,10 @@ pub async fn interop_pick(window: WebviewWindow, kind: PickKind, initial: Option
     let picked = blocking(move || pick::pick(owner, kind, initial)).await??;
     if let Some(path) = &picked {
         grants::grant(path);
+        // A file the person picks may also open as a page that saves back (A3-18).
+        if kind == PickKind::File {
+            let _ = super::open_files::grant(Path::new(path));
+        }
     }
     Ok(picked)
 }
@@ -365,6 +375,8 @@ pub async fn interop_export(
             })
         })
         .await?;
+    // The pages a PDF export prints arrived before it, under its job name.
+    let pdf = super::pdf_stage::take(&job);
     let (guard, control) = Job::start(&job, emitter(&app));
     let result = blocking(move || {
         let _guard = guard;
@@ -372,7 +384,7 @@ pub async fn interop_export(
         control.run(
             &what,
             |exported: &Exported| exported.report.pages.len() as u64,
-            |control| export::run(&source, &request, control),
+            |control| export::run(&source, &request, &pdf, control),
         )
     })
     .await?;

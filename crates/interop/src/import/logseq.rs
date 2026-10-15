@@ -78,6 +78,7 @@ impl NoteReader for LogseqReader {
             modified: None,
             notes: report.entries,
             skip: None,
+            table_kinds: Vec::new(),
         }
     }
 

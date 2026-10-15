@@ -43,6 +43,7 @@ import { qol } from './qol';
 import { storage } from './storage';
 import { connectors } from './connectors';
 import { platformApi } from './platformApi';
+import { pdf } from './pdf';
 
 export const en = {
   common,
@@ -88,4 +89,5 @@ export const en = {
   storage,
   connectors,
   platformApi,
+  pdf,
 } as const;

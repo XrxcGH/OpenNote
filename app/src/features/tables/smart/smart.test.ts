@@ -119,6 +119,11 @@ describe('smart data', () => {
     expect(readSmart({})).toBe(EMPTY_SMART);
   });
 
+  it('keeps the choices an import gave a column', () => {
+    const smart = readSmart({ smart: { columns: { s: { type: 'text', choices: ['Done', 3, 'Reading'] } } } });
+    expect(smart.columns).toEqual({ s: { type: 'text', choices: ['Done', 'Reading'] } });
+  });
+
   it('stores nothing when nothing is left, and drops columns that are gone', () => {
     expect(smartPatch(EMPTY_SMART)).toEqual({ smart: null });
     const some = withColumn(EMPTY_SMART, 'a', { type: 'number' });

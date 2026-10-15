@@ -42,6 +42,9 @@ pub(super) struct NoteContent {
     pub modified: Option<Timestamp>,
     /// What the reader dropped or simplified, to add to the page's report after the common entries.
     pub notes: Vec<Entry>,
+    /// The column types of the page's one table, when the reader read them (a Notion database). The table then
+    /// becomes a smart table with these types.
+    pub table_kinds: Vec<super::database::ColumnKind>,
     /// Set when the file is not a note after all, such as the index page of an HTML export. The reason is
     /// reported and no page is made.
     pub skip: Option<String>,
@@ -319,6 +322,9 @@ fn import_note(
         }
     }
     let stats = links.stats;
+    if !content.table_kinds.is_empty() {
+        builder.type_last_table(&content.table_kinds);
+    }
     report.came_over("text and formatting");
     report.came_over_count(tables, "table", "tables");
     report.came_over_count(tag_count, "tag", "tags");

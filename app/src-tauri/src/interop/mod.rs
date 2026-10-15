@@ -14,6 +14,8 @@ mod export;
 mod grants;
 mod jobs;
 pub mod more;
+pub mod open_files;
+mod pdf_stage;
 pub mod pick;
 mod restore;
 #[cfg(test)]

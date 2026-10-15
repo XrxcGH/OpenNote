@@ -4,14 +4,14 @@
 //! puts the folder of a page's subpages beside it under the same name. A database is a CSV file, and each row is
 //! a Markdown page whose first lines hold the row's properties. The import drops the IDs from names, makes
 //! subpages of the pages in a page's folder, reads dates and tags from properties, and turns databases into
-//! tables.
+//! smart tables whose column types come from the cells.
 
 use std::path::Path;
 
 use super::folder::{import_folder, NoteContent, NoteReader};
 use super::markdown::{describe_parse, drop_leading_title};
 use super::scan::{has_notion_id, NoteFile};
-use super::sheet::{cell, table_content};
+use super::sheet::{cell, typed_table_content};
 use crate::dates::parse_long_date;
 use crate::doc::parse::{parse, SoftBreaks};
 use crate::doc::{Block, Inline};
@@ -97,9 +97,9 @@ fn read_database(text: &str, note: &NoteFile) -> NoteContent {
     }
     let simplified = (
         "database",
-        "A Notion database became a table. Its views, filters, formulas, and relations were not kept.",
+        "A Notion database became a smart table with its column types. Its views, filters, formulas, and          relations were not kept.",
     );
-    table_content(text, strip_id(&note.stem), Some(simplified))
+    typed_table_content(text, strip_id(&note.stem), Some(simplified), true)
 }
 
 /// Whether the database's own CSV sits beside an `_all` file.

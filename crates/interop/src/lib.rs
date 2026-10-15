@@ -22,6 +22,7 @@ pub mod html;
 pub mod import;
 pub mod job;
 pub mod lock;
+pub mod onenote;
 pub mod page_builder;
 pub mod palette;
 pub mod report;
@@ -35,18 +36,22 @@ pub mod tree;
 #[cfg(any(test, feature = "testing"))]
 pub mod testing;
 
+#[cfg(feature = "fuzzing")]
+pub mod fuzzing;
+
 pub use detect::{detect, Detected, SourceKind};
 pub use disk::{DiskSink, DiskSource};
 pub use error::{InteropError, Result};
 pub use export::{
     export_docx, export_docx_with, export_files, export_files_with, export_html_single, export_pdf_bundle, export_pptx,
-    export_share, export_tables, Exported, Format, NoPdfRenderer, PdfRenderer, Scope, TableFormat,
+    export_share, export_share_with, export_tables, Exported, Format, NoPdfRenderer, PdfRenderer, PreparedPdfRenderer,
+    Scope, TableFormat,
 };
 pub use import::{
     import_csv, import_docx, import_docx_with, import_eml, import_enex, import_enex_reader, import_highlights,
     import_html_folder, import_keep_folder, import_logseq_folder, import_markdown_folder, import_mht,
-    import_notion_folder, import_pptx, import_sticky_notes, import_text_folder, import_textbundle_folder, import_xlsx,
-    sticky_notes_database, Flavor, WordPages,
+    import_notion_folder, import_onenote, import_pptx, import_sticky_notes, import_text_folder,
+    import_textbundle_folder, import_xlsx, sticky_notes_database, Flavor, WordPages,
 };
 pub use job::{import, preview, ImportOptions, Preview, PreviewSection};
 pub use report::{Entry, LossGroup, Outcome, PageReport, Report, ReportKind};

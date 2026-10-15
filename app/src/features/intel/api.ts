@@ -29,7 +29,9 @@ export {
 export { setPagesProtected } from './protectedPages';
 export { indexPage } from './meaning/engine';
 export { suggestWriting } from './writing/run';
-export { getImageText, onImageText, queueImageText, watchImagesForText } from './background/imageText';
+export { getImageText, getImageWords, onImageText, queueImageText, watchImagesForText } from './background/imageText';
+export { imageKey } from './background/imageText';
+export type { WordBox } from './imageText';
 export { editVocabularyForCurrentNotebook } from './vocabulary/open';
 export { fixWithVocabulary, offerVocabularyTerm } from './vocabulary/apply';
 export type { RecognizedText, RecognizedWord } from './search';

@@ -64,6 +64,9 @@ export const interop = {
       title: "OpenNote can't import this yet",
       fallback: 'This version of OpenNote cannot read it.',
     },
+    oneNoteOff:
+      'Reading OneNote files is turned off in this build. ' +
+      'In OneNote, choose File, then Export, and save each section as a Word document (.docx). Then import those files.',
     canceled: 'Import canceled. Nothing was added.',
     failed: {
       title: "The import didn't finish",
@@ -126,6 +129,37 @@ export const interop = {
       unsupported: 'This format is not in this version yet. Choose another one.',
       noTables: 'There is no table here to export. Choose another format, or add a table first.',
       other: 'Something went wrong, and nothing was kept. {detail}',
+    },
+  },
+  openFiles: {
+    command: 'Open file…',
+    keywords: 'open file markdown md text txt edit in place default app opennote',
+    makeDefault: 'Make OpenNote the default app for Markdown and text files…',
+    notebook: 'Opened files',
+    section: 'Files',
+    updated: '"{name}" changed in another app, so the page now shows the file as it is.',
+    conflict: '"{name}" changed in another app while you typed. Your page is kept, and it saves over the file.',
+    loadFile: "Use the file's version",
+    cantOpen: 'OpenNote couldn\'t open "{name}". Check that the file is there, then try again.',
+  },
+  share: {
+    command: 'Share as a file…',
+    keywords: 'share send file password lock opennote copy notebook section page',
+    title: 'Share "{name}" as a file',
+    intro:
+      'OpenNote saves one .opennote file that opens in OpenNote as a new notebook, with its sections, tags, and pictures.',
+    password: 'Password (optional)',
+    passwordHelp: 'Anyone who opens the file needs it. OpenNote cannot recover a forgotten password.',
+    confirm: 'Type the password again',
+    mismatch: 'The two passwords are not the same.',
+    history: 'Include page history',
+    historyHelp: 'Earlier versions of each page come along as pages of their own.',
+    start: 'Share',
+    open: {
+      password: 'This file is locked. Type its password to open it.',
+      passwordLabel: 'Password',
+      wrong: "That password doesn't open this file, or the file is damaged. Check the password and try again.",
+      unlock: 'Open',
     },
   },
 } as const;

@@ -2,13 +2,17 @@
 //!
 //! This module does everything except draw. It plans the folders and file names, asks a [`PdfRenderer`] for the
 //! bytes of each page, writes an `index.html` that links the files, reports page by page, and stops when the
-//! person cancels. Phase 6 supplies the renderer, built on the PDF writer that ADR 0006 chose. Until it does,
-//! the app passes [`NoPdfRenderer`], and the export says plainly that PDF export is not in this build.
+//! person cancels. The drawing is Phase 6's: the app prints each page in its hidden print window (ADR 0006) and
+//! hands the files over, and [`PreparedPdfRenderer`] serves them here. [`NoPdfRenderer`] is for hosts that cannot
+//! draw at all, and the export then says so before it makes anything.
+
+use std::collections::HashMap;
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use opennote_core::model::Page;
+use opennote_core::PageId;
 
 use super::files::{new_folder, write_file, Exported};
 use super::plan::{self, Scope};
@@ -44,10 +48,48 @@ impl PdfRenderer for NoPdfRenderer {
     }
 }
 
+/// The renderer for pages the app has already drawn: the PDF file of each page, by page ID. A page without one, or
+/// with bytes that are not a PDF file, is skipped and reported, and the rest still export.
+#[derive(Clone, Debug, Default)]
+pub struct PreparedPdfRenderer {
+    pages: HashMap<PageId, Vec<u8>>,
+}
+
+impl PreparedPdfRenderer {
+    /// A renderer that serves these files.
+    pub fn new(pages: HashMap<PageId, Vec<u8>>) -> PreparedPdfRenderer {
+        PreparedPdfRenderer { pages }
+    }
+
+    /// Whether the renderer holds the file of a page.
+    pub fn has_page(&self, id: PageId) -> bool {
+        self.pages.contains_key(&id)
+    }
+
+    /// Whether the file looks like a PDF file: it starts with `%PDF-` and ends with an `%%EOF` marker near its end.
+    pub fn looks_like_pdf(bytes: &[u8]) -> bool {
+        let tail = &bytes[bytes.len().saturating_sub(1024)..];
+        bytes.starts_with(b"%PDF-") && tail.windows(5).any(|w| w == b"%%EOF")
+    }
+}
+
+impl PdfRenderer for PreparedPdfRenderer {
+    fn render_page(&self, page: &Page, _source: &dyn NoteSource, _report: &mut PageReport) -> Result<Vec<u8>> {
+        let bytes = self
+            .pages
+            .get(&page.id)
+            .ok_or_else(|| InteropError::Missing("the drawn page, as it could not be printed".to_owned()))?;
+        if !Self::looks_like_pdf(bytes) {
+            return Err(InteropError::format("PDF", "the printed page is not a whole PDF file"));
+        }
+        Ok(bytes.clone())
+    }
+}
+
 fn unavailable() -> InteropError {
     InteropError::unsupported(
         "PDF export",
-        "PDF export is built in Phase 6 and is not in this version yet. Export to HTML or Markdown instead.",
+        "This copy of OpenNote can't draw pages as PDF. Export to HTML or Markdown instead.",
     )
 }
 

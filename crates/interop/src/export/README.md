@@ -21,7 +21,7 @@ The picture cannot be edited and does not sit beside the text, so the report mar
 
 ## The PDF seam
 
-`export_pdf_bundle` plans the folders and names, asks a `PdfRenderer` for the bytes of each page, and reports page by page. It does not draw. Phase 6 implements `PdfRenderer` with the PDF writer of the architecture decision record (ADR) 0006. Until then the app passes `NoPdfRenderer`, whose `available` is false, and the export fails before it creates anything with a message that says PDF export is not in this version yet.
+`export_pdf_bundle` plans the folders and names, asks a `PdfRenderer` for the bytes of each page, and reports page by page. It does not draw. The app prints each page with the Phase 6 print window (ADR 0006) and passes the files in a `PreparedPdfRenderer`, which skips and reports any page it has no whole PDF file for. A host that can't draw passes `NoPdfRenderer`, whose `available` is false, and the export fails before it creates anything.
 
 ## Files
 
