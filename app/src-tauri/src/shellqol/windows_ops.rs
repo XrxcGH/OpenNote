@@ -65,7 +65,7 @@ fn build(
         .disable_drag_drop_handler()
         .zoom_hotkeys_enabled(false)
         .build()
-        .map(|_| ())
+        .map(|window| crate::lifecycle::watch_window(&window))
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
 }
 

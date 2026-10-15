@@ -10,7 +10,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "state_update", "state_flush",
     "window_minimize", "window_toggle_maximize", "window_close", "window_set_title",
     "window_set_caption_layout", "window_show_system_menu", "window_set_frame_theme",
-    "app_first_paint", "app_ready", "app_exit_ready",
+    "app_first_paint", "app_ready", "app_exit_ready", "app_close_anyway",
     "perf_mark", "log_write",
     "audio_assets_dir", "audio_devices", "audio_clock", "audio_prepare", "audio_begin",
     "audio_recording_status", "audio_pause_recording", "audio_resume_recording",

@@ -98,8 +98,12 @@ pub fn script(boot_script: &str, tool: &Tool) -> String {
 
 /// Opens a tool in a window of its own, or brings its window forward if it is open. `pinned` keeps it above other
 /// windows.
+///
+/// It is async so it runs off the main thread. A synchronous command runs on the main thread, and WebView2 can't
+/// finish building the new webview while that thread waits in the command: the window appeared, its page stayed
+/// about:blank, and the call never answered, so the tool stayed docked too.
 #[tauri::command]
-pub fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> IpcResult<()> {
+pub async fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> IpcResult<()> {
     let spec = find(&tool).ok_or_else(|| IpcError::invalid("tool", "That tool does not exist."))?;
     let label = label(spec);
     if let Some(open) = app.get_webview_window(&label) {
@@ -125,7 +129,7 @@ pub fn tool_window_open(app: AppHandle, tool: String, pinned: bool) -> IpcResult
         .disable_drag_drop_handler()
         .zoom_hotkeys_enabled(false)
         .build()
-        .map(|_| ())
+        .map(|window| crate::lifecycle::watch_window(&window))
         .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
 }
 
@@ -159,6 +163,246 @@ mod tests {
         let text = script("window.__OPENNOTE_BOOT__ = {};", tool);
         assert!(text.starts_with("window.__OPENNOTE_BOOT__ = {};"));
         assert!(text.ends_with("window.__OPENNOTE_TOOL__ = \"calculator\";"));
+    }
+
+    /// A function in the source: its module (the file's name, or its folder's for `mod.rs`), its name, its text
+    /// from its `fn` line to its closing brace, and whether it is a synchronous command.
+    struct Function {
+        module: String,
+        name: String,
+        text: String,
+        sync_command: bool,
+    }
+
+    /// The functions in one file's text. A function ends at the first `}` line with its own indent, as rustfmt
+    /// lays them out. A command is a function with a `#[tauri::command]` attribute, in any of its forms.
+    fn functions_in(module: &str, text: &str) -> Vec<Function> {
+        let lines: Vec<&str> = text.lines().collect();
+        let mut found = Vec::new();
+        for (at, line) in lines.iter().enumerate() {
+            let trimmed = line.trim_start();
+            let indent = &line[..line.len() - trimmed.len()];
+            let mut head = trimmed;
+            let mut is_async = false;
+            for qualifier in ["pub(crate) ", "pub(super) ", "pub ", "const ", "async ", "unsafe "] {
+                if let Some(rest) = head.strip_prefix(qualifier) {
+                    is_async |= qualifier == "async ";
+                    head = rest;
+                }
+            }
+            let Some(signature) = head.strip_prefix("fn ") else {
+                continue;
+            };
+            let name: String = signature
+                .chars()
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect();
+            let closing = format!("{indent}}}");
+            let Some(end) = lines[at..].iter().position(|line| *line == closing) else {
+                continue;
+            };
+            let command = lines[..at]
+                .iter()
+                .rev()
+                .map(|line| line.trim_start())
+                .take_while(|line| line.starts_with("#[") || line.starts_with("//"))
+                .any(|line| line.starts_with("#[tauri::command"));
+            found.push(Function {
+                module: module.to_owned(),
+                name,
+                text: lines[at..=at + end].join("\n"),
+                sync_command: command && !is_async,
+            });
+        }
+        found
+    }
+
+    /// Whether `text` calls the function `name`: by its name or a module path ending in it, but not as a method
+    /// or a type's associated function (`RateLimit::new(`), whose name may be any type's.
+    fn calls(text: &str, name: &str) -> bool {
+        let call = format!("{name}(");
+        text.match_indices(&call).any(|(at, _)| {
+            let before = &text[..at];
+            if before
+                .chars()
+                .next_back()
+                .is_some_and(|c| c.is_alphanumeric() || c == '_' || c == '.')
+                || before.ends_with("fn ")
+            {
+                return false;
+            }
+            let Some(path) = before.strip_suffix("::") else {
+                return true;
+            };
+            let segment = path
+                .rsplit(|c: char| !(c.is_alphanumeric() || c == '_'))
+                .next()
+                .unwrap_or_default();
+            !segment.starts_with(|c: char| c.is_uppercase())
+        })
+    }
+
+    /// Whether `caller` calls `callee`. A name defined more than once (`run`, `build`, `create`) is followed only
+    /// from its own module or through a path naming that module (`windows_ops::build(`), so a command calling some
+    /// other `run` is not taken for one that builds a window.
+    fn reaches(caller: &Function, callee: &Function, defined: &std::collections::BTreeMap<&str, usize>) -> bool {
+        calls(&caller.text, &callee.name)
+            && (defined.get(callee.name.as_str()) == Some(&1)
+                || caller.module == callee.module
+                || caller.text.contains(&format!("{}::{}(", callee.module, callee.name)))
+    }
+
+    /// The synchronous commands that build a window, directly or through functions they call.
+    fn window_building_sync_commands(functions: &[Function]) -> Vec<String> {
+        let mut defined: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+        for function in functions {
+            *defined.entry(function.name.as_str()).or_default() += 1;
+        }
+        let mut builders: Vec<bool> = functions
+            .iter()
+            .map(|function| {
+                function.text.contains("WebviewWindowBuilder") || function.text.contains("WindowBuilder::new")
+            })
+            .collect();
+        loop {
+            let more: Vec<usize> = (0..functions.len())
+                .filter(|&at| !builders[at])
+                .filter(|&at| {
+                    (0..functions.len()).any(|of| builders[of] && reaches(&functions[at], &functions[of], &defined))
+                })
+                .collect();
+            if more.is_empty() {
+                break;
+            }
+            for at in more {
+                builders[at] = true;
+            }
+        }
+        functions
+            .iter()
+            .zip(&builders)
+            .filter(|(function, builds)| function.sync_command && **builds)
+            .map(|(function, _)| function.name.clone())
+            .collect()
+    }
+
+    /// Every function in `src`.
+    fn source_functions() -> Vec<Function> {
+        fn walk(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+            for entry in std::fs::read_dir(dir).expect("src reads").flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, out);
+                } else if path.extension().is_some_and(|extension| extension == "rs") {
+                    out.push(path);
+                }
+            }
+        }
+        let mut files = Vec::new();
+        walk(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+            &mut files,
+        );
+        files
+            .iter()
+            .flat_map(|file| {
+                let stem = file.file_stem().and_then(|stem| stem.to_str()).unwrap_or_default();
+                let module = if stem == "mod" {
+                    file.parent()
+                        .and_then(|dir| dir.file_name())
+                        .and_then(|name| name.to_str())
+                        .unwrap_or_default()
+                } else {
+                    stem
+                };
+                functions_in(module, &std::fs::read_to_string(file).expect("a source file reads"))
+            })
+            .collect()
+    }
+
+    /// The scan finds a window built through helpers of any name, under any form of the command attribute.
+    #[test]
+    fn the_scan_follows_helpers_and_every_form_of_the_command_attribute() {
+        let text = [
+            "#[tauri::command(rename_all = \"snake_case\")]",
+            "pub fn pop_out(app: AppHandle) -> IpcResult<()> {",
+            "    crate::shell::make(&app)",
+            "}",
+            "",
+            "/// A command that builds nothing.",
+            "#[tauri::command]",
+            "pub fn quiet(app: AppHandle) -> IpcResult<()> {",
+            "    app.build_menu();",
+            "    let _ = Opener::make(&app);",
+            "    Ok(())",
+            "}",
+            "",
+            "#[tauri::command]",
+            "pub async fn later(app: AppHandle) -> IpcResult<()> {",
+            "    make(&app)",
+            "}",
+            "",
+            "fn make(app: &AppHandle) -> IpcResult<()> {",
+            "    inner(app)",
+            "}",
+            "",
+            "impl Opener {",
+            "    pub(crate) fn inner(app: &AppHandle) -> IpcResult<()> {",
+            "        WebviewWindowBuilder::new(app, \"x\", url).build()?;",
+            "        Ok(())",
+            "    }",
+            "}",
+        ]
+        .join("\n");
+        let functions = functions_in("shell", &text);
+        assert_eq!(window_building_sync_commands(&functions), vec!["pop_out".to_owned()]);
+    }
+
+    /// A name two modules define is followed only from its own module or through a path naming it.
+    #[test]
+    fn the_scan_tells_apart_functions_that_share_a_name() {
+        let builds = [
+            "pub fn build(app: &AppHandle) {",
+            "    WebviewWindowBuilder::new(app, \"x\", url).build();",
+            "}",
+        ]
+        .join("\n");
+        let calls_by_name = [
+            "fn build() {}",
+            "",
+            "#[tauri::command]",
+            "pub fn tidy() {",
+            "    build();",
+            "}",
+            "",
+            "#[tauri::command]",
+            "pub fn pop(app: AppHandle) {",
+            "    windows_ops::build(&app);",
+            "}",
+        ]
+        .join("\n");
+        let mut functions = functions_in("windows_ops", &builds);
+        functions.extend(functions_in("menu", &calls_by_name));
+        assert_eq!(window_building_sync_commands(&functions), vec!["pop".to_owned()]);
+    }
+
+    /// WebView2 can't finish building a webview while the main thread waits in a synchronous command: the window
+    /// appears and its page stays about:blank. Commands that build windows, directly or through any function they
+    /// call, must be async.
+    #[test]
+    fn no_synchronous_command_builds_a_window() {
+        let functions = source_functions();
+        let found = window_building_sync_commands(&functions);
+        assert!(found.is_empty(), "synchronous commands that build windows: {found:?}");
+        let named = |name: &str| functions.iter().find(|function| function.name == name);
+        assert!(
+            named("window_minimize").is_some_and(|function| function.sync_command),
+            "the scan finds synchronous commands"
+        );
+        assert!(
+            named("tool_window_open").is_some_and(|function| !function.sync_command),
+            "the scan finds the async commands that build windows"
+        );
     }
 
     #[test]

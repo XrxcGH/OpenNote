@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CoreClient, DecodedEnvelope } from '../../core/client';
 import type { ImagesClient } from '../../platform/types';
-import { createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
+import { clientPrefix, createTauriPageService, readOnlyInfo, toVersionInfo } from './tauri';
 
 const AT = '2026-10-01T09:00:00.000Z';
 const block = (id: string, markdown: string) => ({
@@ -215,5 +215,33 @@ describe('ink through the Tauri page service', () => {
     const frame = await page.undo();
     expect(frame?.ink?.removed).toEqual(['s1']);
     expect(heard).toHaveBeenCalledWith(expect.objectContaining({ removed: ['s1'] }));
+  });
+});
+
+describe('the Tauri page service’s client names', () => {
+  const CLIENT_ID = /^[a-z0-9-]{1,32}$/;
+
+  it('gives each window clients of its own, so two windows on one page never share a core session', async () => {
+    const main = fakeCore([envelope([])]);
+    const popped = fakeCore([envelope([])]);
+    const capture = fakeCore([envelope([])]);
+    const inMain = await createTauriPageService(main.core, images, clientPrefix('main')).open('p1', { viewport: null });
+    const inWindow = await createTauriPageService(popped.core, images, clientPrefix('page-01k6f0000000')).open('p1', {
+      viewport: null,
+    });
+    const inCapture = await createTauriPageService(capture.core, images, clientPrefix('capture')).open('p1', {
+      viewport: null,
+    });
+    expect(inMain.client).toBe('main-1');
+    expect(new Set([inMain.client, inWindow.client, inCapture.client]).size).toBe(3);
+    expect(popped.calls.pageOpen).toHaveBeenCalledWith('p1', inWindow.client, null);
+    for (const name of [inMain.client, inWindow.client, inCapture.client]) expect(name).toMatch(CLIENT_ID);
+  });
+
+  it('names a window opened again differently from the last one, and within what the core accepts', () => {
+    const names = new Set(Array.from({ length: 50 }, () => clientPrefix('page-01k6f00000000000000000p001')));
+    expect(names.size).toBe(50);
+    for (const name of names) expect(`${name}-9999`).toMatch(CLIENT_ID);
+    expect(clientPrefix('capture', (bytes) => bytes.fill(35))).toBe('wzzzzzzzz');
   });
 });

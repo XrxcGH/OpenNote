@@ -70,8 +70,10 @@ pub fn recover_track(files: &TrackFiles) -> Result<RecoveredTrack> {
 }
 
 /// Restores every track of a recording, and summarizes it. The tracks are the files that the page's
-/// entry names, in `dir`. A track whose audio file is missing is skipped. The summary has no pauses,
-/// since nothing recorded them.
+/// entry names, in `dir`. A track whose audio file is missing is skipped, and a recording with none
+/// is [`AudioError::Missing`]. A file that is there but can't be read is [`AudioError::Corrupt`]: it
+/// stays on disk, so the caller mustn't treat it as gone. The summary has no pauses, since nothing
+/// recorded them.
 pub fn recover_recording(dir: &Path, id: &str, tracks: &[TrackRef]) -> Result<RecoveredRecording> {
     let mut summaries = Vec::new();
     let mut clock = None;
@@ -98,7 +100,7 @@ pub fn recover_recording(dir: &Path, id: &str, tracks: &[TrackRef]) -> Result<Re
         });
     }
     if summaries.is_empty() {
-        return Err(AudioError::Corrupt(format!(
+        return Err(AudioError::Missing(format!(
             "There are no audio files for recording {id}."
         )));
     }

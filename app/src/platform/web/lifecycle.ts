@@ -23,6 +23,8 @@ export function createWebLifecycle(): WebLifecycle {
       answer?.(result);
       answer = null;
     },
+    // A browser tab is the only window, so what it refused is the app's exit.
+    closeAnyway: () => void lifecycle.requestExit('close'),
     requestExit(reason) {
       return new Promise((resolve) => {
         answer = resolve;

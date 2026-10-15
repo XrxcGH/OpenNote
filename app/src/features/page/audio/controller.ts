@@ -41,6 +41,7 @@ export function describeError(error: unknown): string {
     audioEncoder: 'audio.errors.audioEncoder',
     audioFormat: 'audio.errors.audioFormat',
     audioCorrupt: 'audio.errors.audioCorrupt',
+    audioMissing: 'audio.errors.audioMissing',
     audioWriter: 'audio.errors.audioWriter',
     io: 'audio.errors.io',
   };

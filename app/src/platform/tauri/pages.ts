@@ -25,11 +25,15 @@ const coreListen: CoreListen = (event, handler) => {
 export function createTauriPages(images: ImagesClient): PagesClient {
   let service: Promise<PageService> | null = null;
   const load = async () => {
-    const [{ createCoreClient }, { createTauriPageService }] = await Promise.all([
-      import('../../core/client'),
-      import('../../services/pages/tauri'),
-    ]);
-    return createTauriPageService(createCoreClient({ invoke: coreInvoke, listen: coreListen }), images);
+    const [{ createCoreClient }, { clientPrefix, createTauriPageService }, { getCurrentWebviewWindow }] =
+      await Promise.all([
+        import('../../core/client'),
+        import('../../services/pages/tauri'),
+        import('@tauri-apps/api/webviewWindow'),
+      ]);
+    // Each window is a client of its own (see clientPrefix).
+    const prefix = clientPrefix(getCurrentWebviewWindow().label);
+    return createTauriPageService(createCoreClient({ invoke: coreInvoke, listen: coreListen }), images, prefix);
   };
   return {
     open(pageId, options) {

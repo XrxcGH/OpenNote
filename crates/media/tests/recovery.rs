@@ -8,7 +8,7 @@ use std::path::Path;
 use common::{read_stream, recorder, wait_until, SECOND};
 use opennote_media::audio::recovery::{find_unfinished, recover_recording, recover_track};
 use opennote_media::audio::synthetic::{test_tone_source, ManualClock};
-use opennote_media::audio::{Anchor, TrackFiles, TrackKind, TrackRef, TrackStart};
+use opennote_media::audio::{Anchor, AudioError, TrackFiles, TrackKind, TrackRef, TrackStart};
 
 const START: u64 = 9 * SECOND;
 
@@ -128,7 +128,24 @@ fn a_recording_is_summarized_after_recovery() {
         kind: TrackKind::SystemAudio,
         asset: "a".into(),
     };
-    assert!(recover_recording(copy.path(), "rec", &[missing]).is_err());
+    assert!(matches!(
+        recover_recording(copy.path(), "rec", &[missing]),
+        Err(AudioError::Missing(_))
+    ));
+}
+
+/// F5-5: a file that is there but damaged from its first page was answered like a recording with no files, so
+/// the page gave it up and called it missing while it sat on disk. Only no files at all is `Missing`.
+#[test]
+fn a_damaged_file_on_disk_is_corrupt_not_missing() {
+    let dir = tempfile::tempdir().unwrap();
+    let files = TrackFiles::new(dir.path(), "a", TrackKind::Microphone).unwrap();
+    std::fs::write(&files.audio, b"not an ogg file at all").unwrap();
+    assert!(matches!(
+        recover_recording(dir.path(), "rec", &[mic_ref()]),
+        Err(AudioError::Corrupt(_))
+    ));
+    assert!(files.audio.exists(), "recovery leaves the damaged file alone");
 }
 
 #[test]

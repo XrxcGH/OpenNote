@@ -166,7 +166,7 @@ export type ImageSource =
 
 export interface OpenPage {
   readonly id: PageId;
-  /** One client per window, such as "main-1". */
+  /** One client per open in a window, such as "main-1", or "wk3x09ab2-1" in a page window. */
   readonly client: string;
   /** Parsed from the envelope; ink goes to Phase 5. */
   readonly initial: PageJson;

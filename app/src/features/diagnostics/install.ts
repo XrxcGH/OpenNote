@@ -22,12 +22,15 @@ const CONSENT_DELAY_MS = 1200;
 
 /**
  * Offers safe mode when the last two starts crashed. Resolves when the person has chosen, or at once when there
- * is nothing to offer. Call it after the commands are configured and before the first screen renders.
+ * is nothing to offer. Call it after the commands are configured and before the first screen renders. Only the
+ * main window offers it (`offer`): a window opened beside it (a page, quick capture, a tool) starts in whichever
+ * mode the main window's choice set, and never asks again.
  */
-export async function offerSafeStart(platform: Platform): Promise<void> {
+export async function offerSafeStart(platform: Platform, { offer = true }: { offer?: boolean } = {}): Promise<void> {
   if (!isEnabled('diagnostics.safeStart')) return;
   const startup: Startup = await platform.diagnostics.startup().catch(() => NORMAL_START);
   safeModeStore.set(startup.safeMode);
+  if (!offer) return;
   const flow = openSafeStart(startup.report);
   if (!flow) return;
   // The window may still be hidden, and the offer needs it.
@@ -43,8 +46,14 @@ export async function offerSafeStart(platform: Platform): Promise<void> {
   }
 }
 
-/** Fills the stores, and asks for consent once on the beta channel when the person has not been asked. */
-export function installDiagnostics(platform: Platform): () => void {
+/**
+ * Fills the stores, and asks for consent once on the beta channel when the person has not been asked. Only the
+ * main window asks (`askConsent`), so a window opened beside it never shows the consent screen a second time.
+ */
+export function installDiagnostics(
+  platform: Platform,
+  { askConsent = true }: { askConsent?: boolean } = {},
+): () => void {
   let stopped = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let stopNavigation = () => {};
@@ -58,7 +67,7 @@ export function installDiagnostics(platform: Platform): () => void {
     stopNavigation();
   };
   void refreshPrivacy(platform.diagnostics).then(() => {
-    if (stopped || platform.boot.channel !== 'beta') return;
+    if (stopped || !askConsent || platform.boot.channel !== 'beta') return;
     // Setup may be showing; the screen waits until it is gone.
     stopNavigation = onNavigate(() => {
       clearTimeout(timer);

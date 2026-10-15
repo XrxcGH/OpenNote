@@ -185,6 +185,11 @@ export interface LifecycleClient {
   ready(timings: ReadyTimings): void;
   onBeforeExit(listener: (reason: ExitReason) => void): Unsubscribe;
   exitReady(result: ExitResult): void;
+  /**
+   * "Close anyway" after this window refused: repeats what it refused. That is the app's exit, even when another
+   * window was the one closed, or this window's own close.
+   */
+  closeAnyway(): void;
 }
 
 export interface InstallClient {

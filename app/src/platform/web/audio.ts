@@ -195,6 +195,9 @@ function createRecorder(clock: () => ClockReading): Recorder {
       return { entry, assets: [], summary: null, failures: [] };
     },
     async recover(_dir, entry): Promise<Finished> {
+      if (entry.id === running?.entry.id || entry.id === prepared?.entry.id) {
+        throw failure('audioRunning', 'This recording is still running.');
+      }
       const endedNs = entry.endedNs > entry.startedNs ? entry.endedNs : entry.startedNs + 5 * SECOND;
       return { entry: { ...entry, state: 'recovered', endedNs }, assets: [], summary: null, failures: [] };
     },
