@@ -4,6 +4,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { META_AUTO_CHANGE, META_COMMAND } from '../../../editor/meta';
 import { PageServiceError } from '../../../services/pages/types';
+import { t } from '../../../strings/t';
+import { showToast } from '../../../ui/toast';
 import { exitHook } from './queue';
 import { blockId, caretAtEnd, syncPage, syncRig } from './testSync';
 import type { SyncRig } from './testSync';
@@ -227,6 +229,32 @@ describe('a change the core refuses', () => {
     await rig.queue.flushAll('exit');
     const held = await rig.held();
     expect(held.blocks.map((block) => [block.id, block.data.markdown])).toEqual([[A, 'Onex']]);
+  });
+
+  it('keeps the text and its riders when the core is busy, says so, and sends them with the next flush', async () => {
+    // A command that gave up waiting for the core (`coreBusy`) is not a resync: nothing typed is lost, the person
+    // hears that the change wasn't kept (the title bar says the core isn't responding), and the next flush sends it.
+    const rig = await syncRig(syncPage(['One', 'Two']));
+    caretAtEnd(rig.editors.get(A)!);
+    vi.mocked(showToast).mockClear();
+    const send = rig.page.send.bind(rig.page);
+    let refused = false;
+    vi.spyOn(rig.page, 'send').mockImplementation((batch) => {
+      if (refused) return send(batch);
+      refused = true;
+      return Promise.reject(new PageServiceError('coreBusy', 'The core is busy (page_open has held it for 15 s).'));
+    });
+    rig.type(A, 'x');
+    rig.queue.appendToNextBatch(A, [{ edit: 'deleteBlocks', blocks: [B] }]);
+    await tick(150);
+    expect(rig.queue.hasUnsent()).toBe(true);
+    expect(showToast).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'page-sync-not-kept', message: t('pageSync.notKept.other'), tone: 'danger' }),
+    );
+    await rig.queue.flushAll('exit');
+    const held = await rig.held();
+    expect(held.blocks.map((block) => [block.id, block.data.markdown])).toEqual([[A, 'Onex']]);
+    expect(rig.queue.hasUnsent()).toBe(false);
   });
 
   it('keeps the window open on exit while a refused change is unsent, until Close anyway', async () => {

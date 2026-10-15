@@ -24,7 +24,7 @@ use super::{
     restore::{self, ImportedTree},
 };
 use crate::{
-    core_bridge::{notes_folder, run_notes, CoreBridge},
+    core_bridge::{notes_folder, run_notes_named, CoreBridge},
     ipc::{codes, IpcError, IpcResult},
 };
 
@@ -184,7 +184,9 @@ pub async fn interop_preview(
     path: String,
     choices: Option<ImportChoices>,
 ) -> IpcResult<Outcome<PreviewView>> {
-    let device = bridge.with(|bridge| Ok(bridge.core.device()))?;
+    let device = bridge
+        .run(|bridge| bridge.with(|bridge| Ok(bridge.core.device())))
+        .await?;
     let (guard, control) = Job::start(&job, emitter(&app));
     let options = choices.unwrap_or_default().options();
     let result = blocking(move || {
@@ -243,7 +245,9 @@ pub async fn interop_import(
     let Some(parent) = notes_folder(&app) else {
         return Err(IpcError::invalid("folder", "Choose a notes folder first."));
     };
-    let device = bridge.with(|bridge| Ok(bridge.core.device()))?;
+    let device = bridge
+        .run(|bridge| bridge.with(|bridge| Ok(bridge.core.device())))
+        .await?;
     let (guard, control) = Job::start(&job, emitter(&app));
     let options = choices.unwrap_or_default().options();
     let folder = parent.clone();
@@ -253,20 +257,29 @@ pub async fn interop_import(
         run_import(&folder, Path::new(&path), &options, device, control)
     })
     .await?;
-    outcome(result, |(report, dir)| {
-        let tree = run_notes(&app, &bridge, |bridge| {
-            let handle = bridge.core.open_notebook(&dir).map_err(internal)?;
-            Ok(restore::tree_of(&handle))
-        })?;
-        let (lost_pages, skipped) = report.loss_counts();
-        jobs::remember_report(&job, report.to_markdown());
-        Ok(ImportDone {
+    let (report, dir) = match result {
+        Ok(made) => made,
+        Err(InteropError::Canceled) => return Ok(Outcome::Canceled),
+        Err(error) => return Err(failure(error)),
+    };
+    let tree = bridge
+        .run(move |bridge| {
+            run_notes_named(&app, bridge, "interop_import", |bridge| {
+                let handle = bridge.core.open_notebook(&dir).map_err(internal)?;
+                Ok(restore::tree_of(&handle))
+            })
+        })
+        .await?;
+    let (lost_pages, skipped) = report.loss_counts();
+    jobs::remember_report(&job, report.to_markdown());
+    Ok(Outcome::Done {
+        result: ImportDone {
             tree,
             pages: report.pages.len(),
             losses: report.loss_groups(),
             lost_pages,
             skipped,
-        })
+        },
     })
 }
 
@@ -320,11 +333,16 @@ pub async fn interop_export(
     if !Path::new(&request.folder).is_dir() {
         return Err(IpcError::invalid("folder", "Choose a folder that exists."));
     }
-    let source = bridge.with(|bridge| {
-        // The export reads the page files, so the open pages are saved first.
-        bridge.core.flush_all(SAVE_OPEN_PAGES).map_err(internal)?;
-        TreeSource::build(bridge, &request).map_err(failure)
-    })?;
+    let (source, request) = bridge
+        .run(move |bridge| {
+            bridge.with(|bridge| {
+                // The export reads the page files, so the open pages are saved first.
+                bridge.core.flush_all(SAVE_OPEN_PAGES).map_err(internal)?;
+                let source = TreeSource::build(bridge, &request).map_err(failure)?;
+                Ok((source, request))
+            })
+        })
+        .await?;
     let (guard, control) = Job::start(&job, emitter(&app));
     let result = blocking(move || {
         let _guard = guard;

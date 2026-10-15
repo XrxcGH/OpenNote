@@ -82,6 +82,16 @@ impl PageStore {
         Ok(())
     }
 
+    /// Removes the segment a save wrote before it failed, so the retries of a save that can't succeed don't
+    /// leave an orphan file behind each time. `page.json` never named the segment, so nothing refers to it.
+    pub(super) fn discard_planned(&self, dir: &Path, plan: &InkPlan) {
+        if let Some(file) = &plan.file {
+            let path = NotebookLayout::segment_path(dir, file.entry.id);
+            let _ = self.config.fs.remove_file(&path);
+            self.forget(&file.entry);
+        }
+    }
+
     /// Every listed segment, decoded without damage, or `None` when any can't be read.
     ///
     /// The later segments are decoded first. The base then skips the strokes they don't touch, which stay in it

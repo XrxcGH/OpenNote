@@ -13,7 +13,7 @@ use crate::error::{FormatError, FormatErrorKind};
 use crate::limits::Limits;
 
 pub use fields::{expect_object, Fields};
-pub use write::{fixed, write_document, write_string, Json, Obj};
+pub use write::{fixed, fixed_value, geometry, write_document, write_string, Json, Obj};
 
 /// The byte order mark that readers skip (spec 2.2).
 const BOM: &[u8] = b"\xEF\xBB\xBF";

@@ -65,8 +65,15 @@ impl PageStore {
             }),
         };
         written?;
-        self.check_assets(dir, req.page)?;
-        let (page, bytes) = prepared?;
+        // A page that can't be written, or an asset that is missing, fails the same way on every retry: the
+        // segment just written goes, or every retry would leave one more orphan in `ink/`.
+        let (page, bytes) = match self.check_assets(dir, req.page).and(prepared) {
+            Ok(prepared) => prepared,
+            Err(err) => {
+                self.discard_planned(dir, &ink);
+                return Err(err);
+            }
+        };
         before_commit(page.revision.id, req.through_seq)?;
         fail_point!("save.save_begin.flushed");
         self.check_disk(dir, req.page, req.base_stamp)?;

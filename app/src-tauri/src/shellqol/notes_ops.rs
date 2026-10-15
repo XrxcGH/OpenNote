@@ -10,13 +10,13 @@ use tauri::AppHandle;
 
 use super::{arg, out};
 use crate::{
-    core_bridge::{run_notes, Bridge, CoreBridge},
+    core_bridge::{run_notes_named, Bridge, CoreBridge},
     ipc::{IpcError, IpcResult},
     notes::{from_core, invalid_move, not_found, tree::Found, CreateInput, NodeSummary, Placement},
 };
 
 pub fn call(app: &AppHandle, bridge: &CoreBridge, name: &str, args: &Value) -> IpcResult<Value> {
-    run_notes(app, bridge, |b| match name {
+    run_notes_named(app, bridge, name.to_owned(), |b| match name {
         "notes.setPinned" => out(b.set_pinned(&arg::<String>(args, "id")?, arg(args, "pinned")?)?),
         "notes.setArchived" => out(b.set_archived(&arg::<String>(args, "id")?, arg(args, "archived")?)?),
         "notes.duplicate" => out(b.duplicate_node(&arg::<String>(args, "id")?)?),

@@ -150,8 +150,8 @@ fn anchor_from_json(map: &JsonMap) -> Result<InkAnchor, String> {
         para: a.id("para")?,
         at: a.count("at")?,
         quote,
-        dx: a.number("dx")?.unwrap_or(0.0),
-        dy: a.number("dy")?.unwrap_or(0.0),
+        dx: a.geometry("dx")?.unwrap_or(0.0),
+        dy: a.geometry("dy")?.unwrap_or(0.0),
         extra: a.extra(),
     })
 }
@@ -179,11 +179,13 @@ pub fn image_from_json(map: &JsonMap) -> Result<ImageData, String> {
         None => None,
         Some(crop) => {
             let c = Fields::new(crop, "crop", &["x", "y", "w", "h"]);
+            // Crops are written with 6 decimals.
+            let part = |key| c.required_number(key).map(|v| crate::format::json::fixed_value(v, 6));
             Some(Crop {
-                x: c.required_number("x")?,
-                y: c.required_number("y")?,
-                w: c.required_number("w")?,
-                h: c.required_number("h")?,
+                x: part("x")?,
+                y: part("y")?,
+                w: part("w")?,
+                h: part("h")?,
                 extra: c.extra(),
             })
         }
@@ -258,7 +260,7 @@ pub fn table_from_json(map: &JsonMap) -> Result<TableData, String> {
             let c = Fields::new(item_object(value, "columns")?, "column", &["id", "width"]);
             Ok(TableColumn {
                 id: c.required_id("id")?,
-                width: c.number("width")?,
+                width: c.geometry("width")?,
                 extra: c.extra(),
             })
         })
