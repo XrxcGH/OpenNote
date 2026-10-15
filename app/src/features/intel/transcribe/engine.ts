@@ -48,7 +48,7 @@ const notebookNow = (): string | null => {
 };
 
 /** The model to use, or null after telling the person how to get one. */
-async function modelToUse(): Promise<string | null> {
+export async function modelToUse(): Promise<string | null> {
   const model = pickSpeechModel(await refreshModels(), await selectedSpeechModel());
   if (model) return model;
   showToast({
@@ -101,7 +101,11 @@ function runJob(
         assetsDir: request.assetsDir,
         entry: request.entry,
         model,
-        choices: { language: request.language ?? null, vocabulary },
+        choices: {
+          language: request.language ?? null,
+          vocabulary,
+          speakers: isEnabled('transcripts.speakers') && isEnabled('intel.speakers'),
+        },
         ...(cloud ? { engine: 'cloud' as const } : {}),
       })
       .then(

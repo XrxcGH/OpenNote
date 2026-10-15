@@ -14,6 +14,7 @@ use crate::engines::Engines;
 use crate::error::{ErrorInfo, IntelError};
 use crate::geometry::Language;
 use crate::settings::Feature;
+use crate::speakers::{Listening, Tee};
 use crate::transcribe::{
     AudioSource, Device, JobEventKind, JobHandle, JobRequest, Segment, TranscribeOptions, Transcript,
     TranscriptionEngine, TranscriptionQueue,
@@ -22,9 +23,9 @@ use crate::vocabulary::Vocabulary;
 use crate::whisper::{WhisperEngine, MAX_PROMPT_CHARS};
 
 /// Taps of the low-pass filter applied before keeping every third sample.
-const TAPS: usize = 63;
+pub(crate) const TAPS: usize = 63;
 
-fn low_pass() -> Vec<f32> {
+pub(crate) fn low_pass() -> Vec<f32> {
     // A windowed sinc with its cutoff at 7.6 kHz of 48 kHz, under the 8 kHz the 16 kHz output can hold.
     let cutoff = 7_600.0 / 48_000.0;
     let middle = (TAPS - 1) as f32 / 2.0;
@@ -222,6 +223,8 @@ pub struct TranscribeChoices {
     pub language: Option<String>,
     /// The notebook's vocabulary list, as plain text.
     pub vocabulary: String,
+    /// Tell the voices apart and number the speakers.
+    pub speakers: bool,
 }
 
 /// News of a job, for the interface.
@@ -342,8 +345,13 @@ impl TranscribeHub {
             });
         }
         let queue = held.as_ref().expect("the queue was just made");
+        let listening = choices.speakers.then(Listening::new);
+        let audio: Box<dyn AudioSource> = match &listening {
+            Some(listening) => Box::new(Tee::new(audio, listening.clone())),
+            None => Box::new(audio),
+        };
         let handle = queue.queue.submit(JobRequest {
-            audio: Box::new(audio),
+            audio,
             options: TranscribeOptions {
                 language,
                 prompt: vocabulary_prompt(&choices.vocabulary),
@@ -373,6 +381,12 @@ impl TranscribeHub {
                                 speaker: None,
                             })
                             .collect();
+                        if let Some(listening) = listening {
+                            let ranges: Vec<(u64, u64)> = lines.iter().map(|l| (l.start_ms, l.end_ms)).collect();
+                            for (line, speaker) in lines.iter_mut().zip(listening.label(&ranges)) {
+                                line.speaker = speaker;
+                            }
+                        }
                         if let Some(finish) = finish {
                             finish(&mut lines);
                         }
@@ -526,6 +540,7 @@ mod tests {
             vocabulary: "Stub section | stub segment
 "
             .to_owned(),
+            speakers: false,
         };
         let finish: Finisher = Box::new(|lines| lines.iter_mut().for_each(|l| l.speaker = Some(1)));
         let audio = Pcm48k::from_samples(vec![0.1; 48_000 * 3]);

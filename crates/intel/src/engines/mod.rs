@@ -141,6 +141,39 @@ impl Engines {
         crate::whisper::WhisperEngine::new(path).transcribe_samples(samples, language, prompt)
     }
 
+    /// A live speech stream for dictation or live captions: 48 kHz samples go in and words come out. Needs
+    /// `transcription` and a speech model. The stream stops with [`IntelError::Disabled`] when the person turns
+    /// transcription off.
+    pub fn live_stream(
+        &self,
+        language: Option<&str>,
+        prompt: String,
+        options: crate::stream::StreamOptions,
+    ) -> Result<crate::stream::LiveStream, IntelError> {
+        self.require(Feature::Transcription)?;
+        let language = language
+            .filter(|tag| !tag.is_empty())
+            .map(crate::geometry::Language::new)
+            .transpose()?;
+        let unsupported = || IntelError::Unsupported {
+            feature: Feature::Transcription.label(),
+        };
+        let path = self
+            .transcription
+            .as_ref()
+            .and_then(|engine| engine_path(engine.as_ref()))
+            .ok_or_else(unsupported)?;
+        let (engine, switches) = (crate::whisper::WhisperEngine::new(path), Arc::clone(&self.switches));
+        let mut inner = engine.recognizer(language, prompt);
+        let recognizer = move |samples: &[f32]| {
+            if !switches.is_on(Feature::Transcription) {
+                return Err(IntelError::Disabled(Feature::Transcription));
+            }
+            crate::stream::Recognizer::recognize(&mut inner, samples)
+        };
+        Ok(crate::stream::LiveStream::new(Box::new(recognizer), options))
+    }
+
     /// Installs the transcription engine, such as whisper.cpp once it lands.
     pub fn with_transcription_engine(mut self, engine: Arc<dyn TranscriptionEngine>) -> Engines {
         self.transcription = Some(engine);

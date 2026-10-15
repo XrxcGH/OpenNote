@@ -33,6 +33,8 @@ pub use self::transcribe::{
     check_language, corrected_lines, vocabulary_prompt, Finisher, Pcm48k, TranscribeChoices, TranscribeHub,
     TranscribeUpdate, TranscriptLine,
 };
+pub(crate) use self::transcribe::{low_pass, TAPS};
+pub use crate::stream::{LiveStream, StreamEvent, StreamOptions};
 
 // The result types, so the command layer names everything it passes through from this module.
 pub use crate::engines::FeatureStatus;

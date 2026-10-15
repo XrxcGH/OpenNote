@@ -9,7 +9,7 @@ export interface SpeechJobRequest {
   entry: RecordingEntry;
   /** The catalog ID of a downloaded speech model. */
   model: string;
-  choices: { language: string | null; vocabulary: string };
+  choices: { language: string | null; vocabulary: string; speakers?: boolean };
   /** `cloud` sends the audio to the service the person saved a key for (A1-33), instead of this device. */
   engine?: 'cloud';
 }

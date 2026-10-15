@@ -87,6 +87,22 @@ impl WhisperEngine {
     }
 }
 
+impl WhisperEngine {
+    /// A recognizer for [`crate::stream::Streamer`] that reads each stretch of speech with this model.
+    pub fn recognizer(&self, language: Option<Language>, prompt: String) -> impl crate::stream::Recognizer {
+        let engine = self.clone();
+        move |samples: &[f32]| {
+            let segments = engine.transcribe_samples(samples, language.as_ref(), &prompt)?;
+            let words: Vec<&str> = segments
+                .iter()
+                .map(|s| s.text.trim())
+                .filter(|t| !t.is_empty())
+                .collect();
+            Ok(words.join(" "))
+        }
+    }
+}
+
 fn options_for(model: &Model, language: Option<&Language>, prompt: &str) -> DecodeOptions {
     let special = Special::of(&model.hparams);
     let tokenizer = Tokenizer::new(&model.vocab, special);
