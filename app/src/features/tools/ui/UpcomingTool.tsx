@@ -48,11 +48,14 @@ function context(): GroupContext {
 type View = 'list' | CalendarMode;
 const VIEWS: readonly View[] = ['list', 'week', 'month'];
 
-type RepeatChoice = 'none' | 'daily' | 'weekly' | 'afterDays';
+type RepeatChoice = 'none' | 'daily' | 'weekday' | 'weekly' | 'monthly' | 'afterDays';
+const REPEAT_CHOICES: readonly RepeatChoice[] = ['none', 'daily', 'weekday', 'weekly', 'monthly', 'afterDays'];
 
 function repeatOf(choice: RepeatChoice, days: number): Repeat | undefined {
   if (choice === 'daily') return { every: 1, unit: 'day', mode: 'schedule' };
   if (choice === 'weekly') return { every: 1, unit: 'week', mode: 'schedule' };
+  if (choice === 'weekday') return { every: 1, unit: 'weekday', mode: 'schedule' };
+  if (choice === 'monthly') return { every: 1, unit: 'month', mode: 'schedule' };
   if (choice === 'afterDays')
     return { every: Math.min(365, Math.max(1, Math.round(days) || 1)), unit: 'day', mode: 'afterFinish' };
   return undefined;
@@ -171,7 +174,7 @@ export function UpcomingTool() {
               value={repeatChoice}
               onChange={(event) => setRepeatChoice(event.target.value as RepeatChoice)}
             >
-              {(['none', 'daily', 'weekly', 'afterDays'] as const).map((one) => (
+              {REPEAT_CHOICES.map((one) => (
                 <option key={one} value={one}>
                   {t(`study.repeat.choices.${one}`)}
                 </option>

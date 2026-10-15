@@ -16,9 +16,12 @@ titleBarItems.register({
 // Due dates from every notebook: a few seconds after start-up the index is asked for the open checkboxes and tagged
 // lines, and Upcoming lists the ones with dates. Tool windows of their own leave this to the main window.
 if (typeof window !== 'undefined' && !(window as { __OPENNOTE_TOOL__?: string }).__OPENNOTE_TOOL__) {
-  void Promise.all([import('./ui/pageScan'), import('../search'), import('../page')]).then(([scan, search, page]) => {
-    scan.startPageScan(search.maybeSearchClient, () => page.shownMounted.get()?.page.id ?? null);
-  });
+  // The modules are fetched a few seconds in, not at load, so the first screen and the palette are not slowed by them.
+  setTimeout(() => {
+    void Promise.all([import('./ui/pageScan'), import('../search'), import('../page')]).then(([scan, search, page]) => {
+      scan.startPageScan(search.maybeSearchClient, () => page.shownMounted.get()?.page.id ?? null);
+    });
+  }, 3_000);
 }
 
 function hasRunningTimer(): boolean {

@@ -322,7 +322,9 @@ export const study = {
     choices: {
       none: 'Does not repeat',
       daily: 'Every day',
+      weekday: 'Every weekday',
       weekly: 'Every week',
+      monthly: 'Every month',
       afterDays: 'Some days after I finish it',
     },
     days: 'Days after I finish',

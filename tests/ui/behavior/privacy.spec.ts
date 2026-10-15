@@ -31,7 +31,7 @@ test('Work offline blocks every network use, says so in the title bar, and can b
   await expect(uses.getByText('Update checks')).toBeVisible();
   await expect(uses.getByText('Blocked while you work offline.')).toHaveCount(0);
   await page.getByRole('switch', { name: 'Work offline' }).click();
-  await expect(uses.getByText('Blocked while you work offline.')).toHaveCount(3);
+  await expect(uses.getByText('Blocked while you work offline.')).toHaveCount(6);
   const chip = page.getByRole('button', { name: 'Working offline' });
   await expect(chip).toBeVisible();
   await page.keyboard.press('Escape');
