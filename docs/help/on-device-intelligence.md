@@ -26,6 +26,8 @@ Later, open Settings, then On-device intelligence. Each feature shows what it do
 | Writing tools | Select text, then proofread, rewrite, shorten, make a list, or tidy it. |
 | Transcription | Download a speech model, then choose Make a transcript on a recording. See [recording](recording.md). |
 | Custom vocabulary | Add names and course terms for each notebook. |
+| Dictation | Click in a text block, then press Ctrl+Alt+V or the Dictate button. Your words are typed at the cursor. Say "period", "comma", "new line", "new paragraph", or "undo that". A bar stays on screen while the microphone is on; Escape or Stop turns it off. The sound is read on this device and never kept. |
+| Live captions | In Settings, then Recording, turn on Show live captions while recording. Words appear on a strip as people speak and go away when the recording ends. They use your Windows caption size, font, and colors. |
 
 Work that runs in the background shows in an activity panel. You can stop it there.
 
@@ -37,6 +39,6 @@ Work that runs in the background shows in an activity panel. You can stop it the
 
 ## Not built yet
 
-Dictation, live captions, telling speakers apart, turning handwritten math into an equation, and translating on your device are not built. See the [feature list](../FEATURES.md).
+Turning handwritten math into an equation, and translating on your device are not built. See the [feature list](../FEATURES.md).
 
 On-device intelligence is built. Agents checked it with tests and by opening its settings. Nobody has tried it by hand.

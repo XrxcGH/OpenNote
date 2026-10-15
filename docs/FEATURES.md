@@ -89,7 +89,7 @@ Linked accounts (Phase 11):
 (Phase 5 and Phase 12)
 
 - A "Writing pen" converts handwriting to typed text as the person writes, with the original ink kept one tap away. Status: Built, untested by hand. Needs on-device intelligence turned on.
-- Math is recognized as math: subscripts, superscripts, fractions, roots, integrals, matrices, and Greek letters become editable equations. Status: Not built yet.
+- Math is recognized as math: subscripts, superscripts, fractions, roots, integrals, matrices, and Greek letters become editable equations. Status: Built, untested by hand. Lasso the writing and choose Convert handwriting to math, or write in the equation editor. The structure (bars, roots, integral signs, brackets, raised and lowered symbols) is read from the shape and position of the strokes, and the letters and digits are read by the Windows handwriting recognizer. It is not a trained math model, so crowded or unusual layouts can come out wrong.
 - Special characters (°, ±, →, ≤, µ) and chemistry notation such as H₂O are kept. Status: Built, untested by hand.
 - Unsure words are underlined; tapping one shows alternatives. Status: Built, untested by hand.
 - Any existing ink can be converted later with the lasso. Status: Built, untested by hand.
@@ -110,7 +110,7 @@ Linked accounts (Phase 11):
 
 - Every recording gets a transcript automatically, with a one-paragraph summary at the top. Status: Built, untested by hand. It is off until the person turns it on in Settings, then Recording. Recordings and dropped audio files are transcribed in the background queue, on this device.
 - Each line starts with a timestamp. Clicking a line or its time jumps playback to that moment. Status: Built, untested by hand.
-- Different voices are labeled Speaker 1, Speaker 2, and so on. Renaming a speaker once ("Dr. Patel") updates the whole transcript, and saved names are suggested in later recordings. Status: Built, untested by hand. Labels and renaming are built. The engine that tells voices apart is not built yet.
+- Different voices are labeled Speaker 1, Speaker 2, and so on. Renaming a speaker once ("Dr. Patel") updates the whole transcript, and saved names are suggested in later recordings. Status: Built, untested by hand. The engine that tells voices apart listens to pitch and voice shape on the device; it is not a neural model.
 - Transcripts are searchable and can be edited to fix mistakes. Status: Built, untested by hand.
 
 ## Study tools
@@ -326,8 +326,8 @@ These features answer requests from people switching from OneNote, Goodnotes, Ob
 
 | Feature | What it does | Status |
 |---|---|---|
-| Dictation | A Dictate button and shortcut type spoken words at the cursor, with spoken punctuation. Commands such as "new paragraph" and "undo that" work too. Speech is processed on the device by the same model as transcription, and the audio is discarded unless the person also records. An indicator shows the whole time it's listening. | Not built yet |
-| Live captions | While a recording runs, a caption strip shows the speech as text within seconds. Caption size, position, and colors follow the Windows caption settings. The full transcript replaces the captions when processing finishes. On slower PCs, captions show as delayed instead of slowing ink or typing. | Not built yet |
+| Dictation | A Dictate button and shortcut type spoken words at the cursor, with spoken punctuation. Commands such as "new paragraph" and "undo that" work too. Speech is processed on the device by the same model as transcription, and the audio is discarded unless the person also records. An indicator shows the whole time it's listening. | Built, untested by hand. Needs a downloaded speech model. The microphone has never been opened in tests. |
+| Live captions | While a recording runs, a caption strip shows the speech as text within seconds. Caption size, position, and colors follow the Windows caption settings. The full transcript replaces the captions when processing finishes. On slower PCs, captions show as delayed instead of slowing ink or typing. | Built, untested by hand. Windows has no caption position setting, so the strip sits at the bottom or the top by choice. |
 | Background work controls | An activity panel lists queued work in plain words, such as reading text in images, recognizing handwriting, transcribing, and indexing. People can pause it, run it only when the PC is idle or plugged in, or cap how much of the processor it uses. Each feature can also run only on request. | Built, untested by hand |
 | Custom transcript vocabulary | A word list of names, course terms, acronyms, and spellings that the transcriber prefers. Fixing a word in a transcript offers to add it to the list. Lists can be kept for each notebook, are plain text, and can be shared. The list is used on the device only. | Built, untested by hand |
 | Transcript lines to notes | Select lines in a transcript and press one key to copy them into the page's notes as a quote with its timestamp. The timestamp links to that moment in the audio. The speaker's name can be included or left out. | Built, untested by hand |

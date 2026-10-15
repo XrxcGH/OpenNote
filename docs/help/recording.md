@@ -55,4 +55,10 @@ To get a transcript and summary without asking each time, open Settings, then Re
 
 When a recording stops, or you drop an audio file on a page, its transcript is made in the background and placed after the recording, with a short summary at the top. It shows in the activity panel, where you can pause or stop it. A recording that already has a transcript keeps it.
 
+
+
 Recording is built. Agents started a recording once and it worked. Nobody has tried the rest by hand.
+
+### Live captions
+
+To see the words while a recording runs, open Settings, then Recording, and turn on Show live captions while recording. A strip shows the last few phrases, and the one being said appears a little rough until the speaker pauses. The strip uses your Windows caption size, font, and colors, and sits at the bottom or the top of the window, as you choose. If this computer cannot keep up, the strip says it is running behind. The captions disappear when the recording stops, and the transcript is made as usual.
