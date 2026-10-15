@@ -31,6 +31,9 @@ pub const API_CLIENT: &str = "api";
 /// The section daily notes live in, as the interface names it (`qolSearch.daily.sectionTitle`).
 pub const DAILY_SECTION: &str = "Daily notes";
 
+/// The section a share or a clip link lands in when no page is open to take it.
+pub const QUICK_SECTION: &str = "Quick notes";
+
 /// Where the core is: the app's, or a test's.
 #[derive(Clone)]
 pub enum Notes {
@@ -243,6 +246,38 @@ fn content_edits(handle: &PageHandle, page: &NewPage, after: Option<String>) -> 
         .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))
 }
 
+/// The ID of the section with this title in the first notebook, made when it isn't there. Refused when it is locked.
+fn section_named(bridge: &mut Bridge, trees: &[NotebookTree], title: &str) -> IpcResult<String> {
+    let tree = trees
+        .first()
+        .ok_or_else(|| IpcError::new("notFound", "There are no notebooks yet."))?;
+    match tree.sections.iter().find(|section| section.title == title) {
+        Some(section) if section.encrypted => Err(IpcError::new("locked", format!("{title} is locked."))),
+        Some(section) => Ok(section.id.to_string()),
+        None => {
+            let input = json!({
+                "kind": "section",
+                "placement": { "parentId": tree.notebook.to_string(), "beforeId": null },
+                "title": title,
+            });
+            let node = bridge.dispatch("notes_create", &json!({ "input": input }))?;
+            Ok(node["id"].as_str().unwrap_or_default().to_owned())
+        }
+    }
+}
+
+impl CoreBackend {
+    /// Makes a page in Quick notes, in the first notebook: where a share or a clip link goes when no page can
+    /// take it. The page history names `author`.
+    pub fn quick_note(&self, page: NewPage, author: &str) -> Result<PageInfo, BackendError> {
+        let section = self.run(|bridge| {
+            let trees = Self::trees(bridge);
+            section_named(bridge, &trees, QUICK_SECTION)
+        })?;
+        self.create_page(&section, page, author)
+    }
+}
+
 /// Today in local time, as the daily note's title `YYYY-MM-DD`.
 pub fn local_today() -> String {
     #[cfg(windows)]
@@ -422,20 +457,7 @@ impl Backend for CoreBackend {
         let title = local_today();
         let page = self.run(|bridge| {
             let trees = Self::trees(bridge);
-            let tree = trees.first().ok_or_else(|| IpcError::new("notFound", "There are no notebooks yet."))?;
-            let section = match tree.sections.iter().find(|section| section.title == DAILY_SECTION) {
-                Some(section) if section.encrypted => return Err(IpcError::new("locked", "The daily notes are locked.")),
-                Some(section) => section.id.to_string(),
-                None => {
-                    let input = json!({
-                        "kind": "section",
-                        "placement": { "parentId": tree.notebook.to_string(), "beforeId": null },
-                        "title": DAILY_SECTION,
-                    });
-                    let node = bridge.dispatch("notes_create", &json!({ "input": input }))?;
-                    node["id"].as_str().unwrap_or_default().to_owned()
-                }
-            };
+            let section = section_named(bridge, &trees, DAILY_SECTION)?;
             let existing = trees
                 .iter()
                 .flat_map(|tree| tree.sections.iter())

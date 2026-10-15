@@ -100,7 +100,12 @@ describe('where a share goes', () => {
     target.addEventListener('paste', pasted);
     const used = deps({ openForPaste: vi.fn(async () => target) });
     const result = await addShare(
-      share({ title: 'Trip', text: 'Trip\nBoots', markdown: 'Trip\nBoots', files: [{ name: 'a.png', mime: 'image/png', data: 'AA==' }] }),
+      share({
+        title: 'Trip',
+        text: 'Trip\nBoots',
+        markdown: 'Trip\nBoots',
+        files: [{ name: 'a.png', mime: 'image/png', data: 'AA==' }],
+      }),
       used,
     );
     expect(result).toBe('quickNote');
