@@ -15,3 +15,7 @@ tests/e2e/logs/
 tests/ui/report/
 tests/ui/results/
 tests/perf/typing/results/
+
+# Cross-check tools built from pinned upstream revisions (tests/crosscheck)
+tests/crosscheck/.tools/
+tests/crosscheck/.corpus/

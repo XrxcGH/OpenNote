@@ -1,0 +1,21 @@
+{
+  "note": "The upstream revisions the cross-check tools are built from. Move a pin on purpose, read the diff, and run `npm run crosscheck:install` again. The upstream projects are alpha software, so a failing check means 'look', never 'bug'.",
+  "tools": {
+    "wordcraft-cli": {
+      "repo": "https://github.com/storytold/wordcraft",
+      "rev": "fd0bb2fb1ec081e3eddc4d01917637fef0cafdfe"
+    },
+    "gridcraft-cli": {
+      "repo": "https://github.com/storytold/gridcraft",
+      "rev": "e6b6b349708ab4978cb3f061f6bd6ecbc25667cb"
+    },
+    "deckcraft-cli": {
+      "repo": "https://github.com/storytold/deckcraft",
+      "rev": "9859da39255c0262cd592bb57101d7f2fa961f72"
+    },
+    "pdfcraft-cli": {
+      "repo": "https://github.com/storytold/pdfcraft",
+      "rev": "d3a91c5c5f7b33dd39bc2ed8b5d3916960736d24"
+    }
+  }
+}
