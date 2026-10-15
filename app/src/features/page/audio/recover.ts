@@ -15,9 +15,10 @@ import { clock } from './format';
 
 /** The recordings being recovered now, so an undo that comes while one is recovered doesn't start it twice. */
 const inFlight = new Set<string>();
-/** The recordings already given a second try in this session. */
-const retried = new Set<string>();
+/** How many more tries each cut-off recording has in this session, waiting longer each time (5, 15, 45 s). */
+const retries = new Map<string, number>();
 const RETRY_MS = 5000;
+const MAX_RETRIES = 3;
 
 /** Errors that may pass: a file in use or unreadable for now, a device that failed, a writer that stopped. */
 function isTransient(error: unknown): boolean {
@@ -56,10 +57,11 @@ export async function recoverEntries(page: OpenPage, entries: readonly Recording
     } catch (error) {
       if (isTransient(error)) {
         // A file another program holds for a moment, or a device error, says nothing about the recording: it stays
-        // `recording`, so this is tried once more soon and again whenever the page opens.
-        if (!retried.has(entry.id)) {
-          retried.add(entry.id);
-          setTimeout(() => void recoverEntries(page, [entry]), RETRY_MS);
+        // `recording`, so this is tried again soon (a few times) and again whenever the page opens.
+        const done = retries.get(entry.id) ?? 0;
+        if (done < MAX_RETRIES) {
+          retries.set(entry.id, done + 1);
+          setTimeout(() => void recoverEntries(page, [entry]), RETRY_MS * 3 ** done);
         }
       } else if (entry.clock === undefined) {
         await removeBlock(block, entry.id).catch(() => undefined);
