@@ -2,6 +2,9 @@
 import { expect, test } from '../fixtures';
 import { choose, draw, heldStrokes, openPage } from '../ink';
 
+// The Draw tab keeps Ink to shape on the bar only when the window is wide; narrower, it sits under More.
+test.use({ viewport: { width: 1920, height: 900 } });
+
 test('turns a rough rectangle into an exact one with Ink to shape', async ({ page }) => {
   await openPage(page);
   const toggle = page.getByRole('button', { name: 'Ink to shape' });
