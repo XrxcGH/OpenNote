@@ -12,6 +12,7 @@ members = [
   "crates/interop",
   "crates/media",
   "crates/print",
+  "crates/third_party/metafile",
   "crates/search",
   "crates/updater",
   "spikes/harness",

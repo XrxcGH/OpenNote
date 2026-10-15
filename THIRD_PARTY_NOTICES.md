@@ -1,14 +1,15 @@
 # Third-party notices
 
-OpenNote is Apache-2.0 (see [LICENSE](LICENSE)). The release also lists every npm package and Rust crate that is built into the exes in its software bill of materials, `OpenNote.sbom.cdx.json`. This file names the code that OpenNote depends on by a pinned source revision rather than a registry release, and keeps the notices that code asks to be kept.
+OpenNote is Apache-2.0 (see [LICENSE](LICENSE)). The release also lists every npm package and Rust crate that is built into the exes in its software bill of materials, `OpenNote.sbom.cdx.json`. This file names the code that OpenNote depends on by a pinned source revision rather than a registry release, and code copied into this repository, and keeps the notices that code asks to be kept. Copied code also keeps its original notices beside it.
 
 | Component | Used for | Source and revision | License |
 |---|---|---|---|
 | `craft-print` | Sending a PDF to the system's printers: the in-process Windows XPS path and CUPS. Used by the `opennote-print` crate. | `https://github.com/storytold/craft-libs`, commit `8f5a2831614e632f91ad367f7af2a6e5b61b9529` | MIT OR Apache-2.0. OpenNote elects Apache-2.0. |
 | `craft-winprint-gdi` (a dependency of `craft-print`) | Windows driver settings and printable geometry | `https://github.com/storytold/winprint.rs`, commit `417ac3c4d14d3da5485a99c7d5ce8f05664ec312` | MIT OR Apache-2.0. OpenNote elects Apache-2.0. |
 | `winprint` (a dependency of `craft-print`) | Listing Windows printers and drawing a PDF into a print job | `https://github.com/storytold/winprint.rs`, commit `5f80b9baf6b58937c401656634e42d33f00ddf49`, a fork of `ArcticLampyrid/winprint.rs` | BSD-3-Clause. The notice is below. |
+| Metafile reader (WMF, EMF, EMF+) | Drawing the WMF and EMF pictures in imported Office files. Vendored in `crates/third_party/metafile`, with its license text (`LICENSE-APACHE`, `NOTICE.upstream`); changes are listed in `UPSTREAM.md`, and `src/svg.rs` is new. | `crates/metafile` of `https://github.com/storytold/deckcraft`, commit `9859da39`. Copyright (c) 2026 ArtCraft Team and the DeckCraft contributors. | MIT OR Apache-2.0. OpenNote elects Apache-2.0. |
 
-No code from these projects is copied into this repository. Cargo fetches each one at the commit above, and a change to a commit is a reviewed change to this file.
+No code from the printing projects is copied into this repository: Cargo fetches each one at the commit above, and a change to a commit is a reviewed change to this file. The metafile reader is the one copied component.
 
 ## craft-libs
 

@@ -30,6 +30,18 @@ pub fn is_image(mime: &str) -> bool {
     mime.starts_with("image/")
 }
 
+/// Whether the extension names a Windows metafile (EMF or WMF), which OpenNote draws into an SVG picture.
+pub fn is_metafile_extension(extension: &str) -> bool {
+    extension.eq_ignore_ascii_case("emf") || extension.eq_ignore_ascii_case("wmf")
+}
+
+/// A Windows metafile (WMF, EMF, or EMF+) drawn as an SVG document, or `None` when the bytes are not a metafile
+/// this reader understands or draw nothing. The reader caps what it reads, so hostile input stays bounded.
+pub fn metafile_to_svg(bytes: &[u8]) -> Option<Vec<u8>> {
+    let picture = opennote_metafile::parse(bytes).ok()?;
+    opennote_metafile::to_svg(&picture).map(String::into_bytes)
+}
+
 /// The width and height of a PNG, JPEG, or GIF, read from its header.
 pub fn image_size(bytes: &[u8]) -> Option<(u32, u32)> {
     if bytes.starts_with(b"\x89PNG\r\n\x1a\n") && bytes.len() >= 24 {
@@ -138,5 +150,20 @@ mod tests {
         assert_eq!(image_size(&png), Some((256, 200)));
         assert_eq!(image_size(b"GIF89a\x10\0\x20\0"), Some((16, 32)));
         assert_eq!(image_size(b"not an image"), None);
+    }
+
+    #[test]
+    fn a_metafile_is_drawn_as_svg_and_damage_is_refused() {
+        let emf = crate::testing::emf_bytes();
+        let svg = String::from_utf8(metafile_to_svg(&emf).expect("an EMF")).expect("text");
+        assert!(svg.starts_with("<svg ") && svg.contains("<path"), "{svg}");
+        assert!(is_metafile_extension("EMF") && is_metafile_extension("wmf") && !is_metafile_extension("png"));
+        assert!(metafile_to_svg(&emf[..60]).is_none());
+        assert!(metafile_to_svg(b"").is_none());
+        assert!(metafile_to_svg(b"\x89PNG\r\n\x1a\n").is_none());
+        let mut bent = emf.clone();
+        bent[88..92].copy_from_slice(&u32::MAX.to_le_bytes());
+        // A record claiming a huge size reads as a shorter picture or nothing, never a panic.
+        let _ = metafile_to_svg(&bent);
     }
 }

@@ -45,6 +45,7 @@ opennote-intel = { path = "../../crates/intel" }
 opennote-intel-engines = { path = "../../crates/intel-engines" }
 opennote-interop = { path = "../../crates/interop" }
 # Phase 9: recording to Opus needs libopus, which builds with CMake (preinstalled on the Windows runners).
+opennote-metafile = { path = "../../crates/third_party/metafile" }
 opennote-media = { path = "../../crates/media", features = ["opus"] }
 opennote-print = { path = "../../crates/print" }
 opennote-search = { path = "../../crates/search" }

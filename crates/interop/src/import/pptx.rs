@@ -207,7 +207,7 @@ fn slide_page<R: Read + Seek>(
     report.skipped_count(
         lost,
         ("picture that could not be read", "pictures that could not be read"),
-        "Its data is missing, damaged, past the size limit, or in a format that screens cannot show, such as EMF.",
+        "Its data is missing, damaged, past the size limit, or in a format that screens cannot show.",
     );
     slide_draw::report(drawn.missed, 1, &mut report);
     Ok(ConvertedPage {
@@ -501,7 +501,7 @@ mod tests {
     use std::io::Cursor;
 
     use super::*;
-    use crate::testing::{png_bytes, zip_bytes, TestEnv};
+    use crate::testing::{emf_bytes, png_bytes, zip_bytes, TestEnv};
 
     const PRESENTATION: &str =
         r#"<p:presentation xmlns:r="r"><p:sldIdLst><p:sldId id="256" r:id="rId2"/></p:sldIdLst></p:presentation>"#;
@@ -565,6 +565,51 @@ mod tests {
             .entries
             .iter()
             .any(|e| e.what.contains("picture of a slide")));
+    }
+
+    /// Converts a one-slide deck whose picture is `media` and returns the asset types on the page and the report lines.
+    fn deck_with_picture(media: &[u8]) -> (Vec<String>, Vec<String>) {
+        let slide = r#"<p:sld><p:cSld><p:spTree><p:pic><p:nvPicPr><p:cNvPr id="3" name="P" descr="Chart"/></p:nvPicPr>
+          <p:blipFill><a:blip r:embed="rId5"/></p:blipFill></p:pic></p:spTree></p:cSld></p:sld>"#;
+        let rels = r#"<Relationships><Relationship Id="rId5" Target="../media/chart.emf"/></Relationships>"#;
+        let bytes = zip_bytes(&[
+            ("ppt/presentation.xml", PRESENTATION.as_bytes()),
+            ("ppt/_rels/presentation.xml.rels", RELS.as_bytes()),
+            ("ppt/slides/slide1.xml", slide.as_bytes()),
+            ("ppt/slides/_rels/slide1.xml.rels", rels.as_bytes()),
+            ("ppt/media/chart.emf", media),
+        ]);
+        let mut parts = Parts::from_reader(Cursor::new(bytes)).expect("opens");
+        let world = TestEnv::new();
+        let env = world.env();
+        let done = convert_parts(&mut parts, "deck", &env).expect("converts");
+        let mimes = done.pages[0]
+            .page
+            .page
+            .assets
+            .values()
+            .map(|a| a.mime.clone())
+            .collect();
+        let report = done.pages[0].report.entries.iter().map(|e| e.what.clone()).collect();
+        (mimes, report)
+    }
+
+    #[test]
+    fn an_emf_picture_is_kept_as_an_svg_picture() {
+        let (mimes, report) = deck_with_picture(&emf_bytes());
+        assert_eq!(mimes, ["image/svg+xml"]);
+        assert!(report.iter().any(|w| w.contains("1 picture")), "{report:?}");
+        assert!(!report.iter().any(|w| w.contains("could not be read")), "{report:?}");
+    }
+
+    #[test]
+    fn a_damaged_emf_picture_is_reported_not_dropped_silently() {
+        let emf = emf_bytes();
+        let (mimes, report) = deck_with_picture(&emf[..50]);
+        assert!(mimes.is_empty());
+        assert!(report.iter().any(|w| w.contains("could not be read")), "{report:?}");
+        let (mimes, _) = deck_with_picture(b"not a metafile at all");
+        assert!(mimes.is_empty());
     }
 
     #[test]

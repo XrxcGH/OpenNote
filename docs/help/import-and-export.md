@@ -28,6 +28,8 @@ OneNote files come over without a Microsoft account. Pick a section file (`.one`
 
 Text, headings, lists, to-do tags, tables, pictures, and attached files come over. Other tags become page tags. Ink and other content that Microsoft does not describe in its published format are listed in the review. A password-protected section is skipped; unlock it in OneNote first. To make a package, in OneNote choose File, then Export, then OneNote Package.
 
+Charts and clip art that Word and PowerPoint save as EMF or WMF pictures come over as sharp SVG pictures. If one is damaged, it becomes its description in brackets and the review counts it.
+
 Before anything is added, a review lists what comes over and what does not. Choose Save report to keep that list. Undo takes an import back.
 
 ## PDF files

@@ -21,8 +21,8 @@ use self::package::Package;
 use self::pages::Cut;
 pub use self::pages::WordPages;
 use super::files::{import_files, Converted, ConvertedPage, FileConverter};
+use super::pictures;
 use crate::archive::ZipArchive;
-use crate::assets::{is_image, mime_from_extension};
 use crate::doc::{visit_inlines_mut, Block, Inline, Marks};
 use crate::error::{InteropError, Result};
 use crate::page_builder::PageBuilder;
@@ -154,7 +154,7 @@ pub(super) fn convert_archive<R: Read + Seek>(
         report.skipped_count(
             lost - too_big,
             ("image that could not be read", "images that could not be read"),
-            "Its data is missing, damaged, or in a format that screens cannot show, such as EMF.",
+            "Its data is missing, damaged, or in a format that screens cannot show.",
         );
         if raw.created.is_some() {
             report.came_over("date and time under the title");
@@ -229,13 +229,7 @@ fn place_images<R: Read + Seek>(
 }
 
 fn picture<R: Read + Seek>(package: &mut Package<R>, builder: &mut PageBuilder<'_>, target: &str) -> Option<String> {
-    let name = target.rsplit('/').next().unwrap_or(target);
-    let mime = mime_from_extension(name.rsplit_once('.').map_or("", |(_, ext)| ext));
-    if !is_image(mime) {
-        return None;
-    }
-    let bytes = package.media(target)?;
-    Some(builder.add_asset(name, Some(mime), bytes).to_string())
+    pictures::picture(builder, target, &mut |path| package.media(path))
 }
 
 /// What the whole document lost or simplified.
