@@ -6,7 +6,7 @@ import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { getDensity } from '../../../state/layout';
 import { t } from '../../../strings/t';
 import type { PageBlockLayer } from '../blocks/blockLayer';
-import { isFloating } from '../blocks/textBlock';
+import { isFloating, liveBlock } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
 import { pageSelection } from '../seams/selectionStore';
 import type { PageViewport } from '../viewport/viewport';
@@ -161,7 +161,9 @@ class ChromeLayer implements Chrome {
     const element = this.mark(used, `${kind}:${block.id}`, kind === 'grip' ? styles.grip! : styles.width!, area);
     element.dataset.handle = kind;
     element.dataset.block = block.id;
-    element.title = t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', { name: name(block) });
+    element.title = t(kind === 'grip' ? 'page.object.grip' : 'page.object.widthHandle', {
+      name: name(liveBlock(this.parts.layer, block)),
+    });
   }
 
   private mark(used: Set<string>, key: string, className: string, box: DOMRect): HTMLElement {

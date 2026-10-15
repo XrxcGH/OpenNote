@@ -36,8 +36,14 @@ const px = (n: number): string => String(Math.round(n * 100) / 100);
 /** Stacking inside a sheet: highlighters, the flow, floating blocks from `float` up by order, ink, and the bands. */
 const LAYER = { under: 0, flow: 1, float: 2, over: 1000, band: 2000 } as const;
 const LANGUAGE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
-const CSP =
-  "default-src 'none'; img-src data: file: blob: 'self'; style-src 'unsafe-inline'; font-src data: file: blob: 'self'";
+/**
+ * The print documents' Content Security Policy. Pictures load from the URL the page service gives each asset
+ * (`http://opennote-asset.localhost/<page>/<asset>`, the form WebView2 routes to the app's asset scheme), so `img-src`
+ * allows that one origin and nothing else on the network. Without it every picture printed as its alt text.
+ */
+export const PRINT_CSP =
+  "default-src 'none'; img-src data: file: blob: 'self' http://opennote-asset.localhost; " +
+  "style-src 'unsafe-inline'; font-src data: file: blob: 'self'";
 
 /** The ruled paper the page prints on, if it has rules: text is laid out on them, as it is on the screen. */
 function ruledOf(setup: DocumentSetup): Ruled | null {
@@ -53,7 +59,7 @@ function documentHead(setup: DocumentSetup, css: string): string {
     `<html lang="${escapeAttr(lang)}">`,
     '<head>',
     '<meta charset="utf-8">',
-    `<meta http-equiv="Content-Security-Policy" content="${CSP}">`,
+    `<meta http-equiv="Content-Security-Policy" content="${PRINT_CSP}">`,
     '<meta name="generator" content="OpenNote">',
     `<title>${escapeHtml(title)}</title>`,
     `<style>\n${documentCss(setup.theme, setup.styles, ruledOf(setup))}${css}\n</style>`,
