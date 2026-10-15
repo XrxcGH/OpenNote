@@ -1,8 +1,11 @@
 name: crosscheck
 
-# A second opinion on OpenNote's exports and table formulas, from independent readers built from pinned revisions of
-# open-source projects (tests/crosscheck/pins.json): wordcraft-cli for DOCX, gridcraft-cli for XLSX and for formula
-# results, deckcraft-cli for PPTX, and pdfcraft-cli for PDF (accessibility check and PDF/A preflight).
+# A second opinion on OpenNote's exports and table formulas, from independent readers. They are built from pinned
+# revisions of open-source projects (tests/crosscheck/pins.json).
+#   - wordcraft-cli reads DOCX.
+#   - gridcraft-cli reads XLSX and evaluates formulas.
+#   - deckcraft-cli reads PPTX.
+#   - pdfcraft-cli reads PDF, with its accessibility check and PDF/A preflight.
 #
 # This job never blocks a merge. Those projects are alpha software and not ground truth, so a difference means
 # "look" and shows up as a warning. Nothing from them ships with OpenNote. See docs/CHECKS.md, "Cross-checks".
