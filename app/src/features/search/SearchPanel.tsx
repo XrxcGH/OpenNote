@@ -11,7 +11,7 @@ import type { SearchHit, SearchResponse, Snippet, TagNode } from '../../services
 import type { OverlayProps } from '../../shell/commandbar/overlays';
 import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
-import { Button, Dialog, Switch, TextField, announce } from '../../ui';
+import { Button, Dialog, EmptyArt, Switch, TextField, announce } from '../../ui';
 import { maybeSearchClient } from './client';
 import { openAndReveal } from './deeplink/jump';
 import { Highlighted } from './Highlighted';
@@ -246,7 +246,10 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
         </div>
       ))}
       {empty && status !== 'loading' && (
-        <p className={styles.none}>{status === 'failed' ? t('search.panel.failed') : t('search.panel.none')}</p>
+        <div className={styles.noneBox}>
+          <EmptyArt kind="page" />
+          <p className={styles.none}>{status === 'failed' ? t('search.panel.failed') : t('search.panel.none')}</p>
+        </div>
       )}
     </div>
   );

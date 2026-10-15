@@ -29,6 +29,14 @@
     outline-offset: var(--size-focus-ring-offset);
   }
 
+  .noneBox {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-4);
+    text-align: center;
+  }
+
   .help,
   .note,
   .problem,

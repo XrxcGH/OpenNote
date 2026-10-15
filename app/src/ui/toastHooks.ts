@@ -8,18 +8,18 @@ import type { ToastItem } from '../state/toasts';
 import { tokens } from '../theme/tokens';
 import { tabbables } from './tabbable';
 
-/** A toast with an action stays this many times as long, so Undo is reachable, but it does not stay all session. */
-const ACTION_FACTOR = 5;
+/** A toast with an action (Undo) gets longer to be reached, but still closes. */
+const ACTION_TOAST_MS = 12_000;
 
 /**
- * Closes a toast after 6 seconds, or 30 with an action. The time runs only while `paused` is false, so a toast the
+ * Closes a toast after 6 seconds, or 12 when it has an action. The time runs only while `paused` is false, so a toast the
  * pointer or focus is on stays, and a replacement starts the full time again.
  */
 export function useAutoDismiss(item: ToastItem, paused: boolean): void {
-  const budget = useRef({ item, ms: tokens.interaction.toastMs * (item.action ? ACTION_FACTOR : 1) });
+  const budget = useRef({ item, ms: item.action ? ACTION_TOAST_MS : tokens.interaction.toastMs });
   useEffect(() => {
     if (budget.current.item !== item)
-      budget.current = { item, ms: tokens.interaction.toastMs * (item.action ? ACTION_FACTOR : 1) };
+      budget.current = { item, ms: item.action ? ACTION_TOAST_MS : tokens.interaction.toastMs };
     if (paused) return;
     const started = performance.now();
     const timer = setTimeout(() => dismissToast(item.key), budget.current.ms);

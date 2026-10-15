@@ -385,7 +385,7 @@ export async function runPaste(
   const extras = flagged('page.pasteExtras');
   if (imageRequests.length > 0 && flagged('page.images')) {
     const imagePlace: Placement = place.kind === 'point' ? { ...place, y: place.y + textAndTables.length * 48 } : place;
-    await addImages(mounted, imageRequests, facts, !extras || settings.saveWebImages, imagePlace);
+    await addImages(mounted, imageRequests, facts, extras && settings.saveWebImages, imagePlace);
   }
 
   if (!extras || request.plain) return;

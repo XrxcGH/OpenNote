@@ -110,11 +110,15 @@ fn deleting_history_can_keep_the_named_versions() {
         handle.name_version(revision, name.map(str::to_owned), false).unwrap();
         saved.push(revision);
     }
-    assert_eq!(handle.history().unwrap().len(), 3);
+    assert_eq!(
+        handle.history().unwrap().len(),
+        4,
+        "the first edit also keeps the page as it was"
+    );
 
     let notebook = &real.notebook;
     let done = notebook.delete_history(HistoryScope::Page(real.page), true).unwrap();
-    assert_eq!((done.pages, done.versions), (1, 2));
+    assert_eq!((done.pages, done.versions), (1, 3));
     assert_eq!(names(&handle), [Some("Keep me".to_owned())]);
     let current = page_json(&handle);
     assert_eq!(block_ids(&current).len(), 3, "the page itself is untouched");
@@ -156,4 +160,18 @@ fn patch_cell(block: BlockId, text: &str) -> Edit {
         data: rows.as_object().cloned(),
         fallback: None,
     }
+}
+
+#[test]
+fn a_short_edit_session_leaves_a_version_to_restore() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let before = handle.history().unwrap().len();
+    let (_, block) = new_table(900, "x");
+    handle.apply(real.request(vec![insert(block)])).unwrap();
+    handle.save_now().unwrap();
+    assert!(
+        handle.history().unwrap().len() > before,
+        "the first edit keeps the page as it was"
+    );
 }

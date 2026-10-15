@@ -40,7 +40,7 @@
     },
     "paste": {
       "sourceLink": "ask",
-      "saveWebImages": true,
+      "saveWebImages": false,
       "joinPdfLines": true
     },
     "spelling": {

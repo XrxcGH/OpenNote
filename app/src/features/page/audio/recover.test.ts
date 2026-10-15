@@ -65,8 +65,9 @@ describe('recovering a recording when its page opens', () => {
     expect(holdHint(hold())).toBe('audio.block.elsewhere');
   });
 
-  it('keeps an entry whose recovery failed for now in `recording`, so the next open tries again', async () => {
-    host.recover.mockRejectedValue({ code: 'io', message: 'The file is in use.' });
+  it('keeps an entry whose recovery failed in `recording`, so the next open tries again', async () => {
+    // A failure that may pass (a file in use) is retried on a timer first: recover.retry.test.ts.
+    host.recover.mockRejectedValue({ code: 'internal', message: 'Something went wrong.' });
     await recoverEntries(page, [live(true)]);
     expect(writeEntry).not.toHaveBeenCalled();
     expect(removeBlock).not.toHaveBeenCalled();

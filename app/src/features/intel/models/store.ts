@@ -5,7 +5,7 @@ import { toExtError } from '../../../services/intel';
 import type { ExtErrorCode, ModelInfo, ModelList } from '../../../services/intel';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
-import { confirm, showToast } from '../../../ui';
+import { announce, confirm, showToast } from '../../../ui';
 import { intelExt } from '../runtime';
 
 export interface ModelsState {
@@ -100,6 +100,8 @@ export async function removeModel(model: ModelInfo): Promise<boolean> {
     danger: true,
   });
   if (!yes) return false;
+  // A running download takes a moment to stop first, so say that something is happening.
+  if (model.state === 'downloading') announce(t('intelPlus.models.removing'));
   try {
     await (await intelExt()).models.remove(model.id);
   } catch (error) {

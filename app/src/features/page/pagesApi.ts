@@ -4,6 +4,7 @@
 import type { Registry } from '../../registries';
 import { createRegistry } from '../../registries';
 import { createStore } from '../../state/store';
+import { dismissActionToasts } from '../../state/toasts';
 import type { MountedPage } from './mount';
 
 export type { MountedPage } from './mount';
@@ -19,6 +20,8 @@ export const mountedPageHooks: Registry<MountedPageHook> = createRegistry<Mounte
 
 /** The page view that is shown, or null. Set beside the other shown stores. */
 export const shownMounted = createStore<MountedPage | null>(null, 'shown mounted page');
+// An Undo toast belongs to the page it came from.
+shownMounted.subscribe(() => dismissActionToasts());
 
 /** Runs every hook for a freshly mounted page view. Returns a function that detaches them all. */
 export function attachMountedPageHooks(mounted: MountedPage): () => void {

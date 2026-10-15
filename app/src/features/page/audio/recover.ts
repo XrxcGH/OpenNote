@@ -32,6 +32,16 @@ const DAMAGED = 'audioCorrupt';
 
 /** The recordings being recovered now, so an undo that comes while one is recovered doesn't start it twice. */
 const inFlight = new Set<string>();
+/** How many more tries each cut-off recording has in this session, waiting longer each time (5, 15, 45 s). */
+const retries = new Map<string, number>();
+const RETRY_MS = 5000;
+const MAX_RETRIES = 3;
+
+/** Errors that may pass: a file in use or unreadable for now, a device that failed, a writer that stopped. */
+function isTransient(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code;
+  return code === 'io' || code === 'audioDevice' || code === 'audioWriter';
+}
 
 async function blockFor(recording: string): Promise<string | null> {
   for (let tries = 0; tries < 20; tries += 1) {
@@ -67,6 +77,16 @@ export async function recoverEntries(page: OpenPage, entries: readonly Recording
       if (code === RUNNING) {
         holdRecovery(entry.id, 'elsewhere');
         continue;
+      }
+      if (isTransient(error)) {
+        // A file another program holds for a moment, or a device error, says nothing about the recording: it stays
+        // `recording`, so this is tried again soon (a few times) and again whenever the page opens.
+        const done = retries.get(entry.id) ?? 0;
+        if (done < MAX_RETRIES) {
+          retries.set(entry.id, done + 1);
+          setTimeout(() => void recoverEntries(page, [entry]), RETRY_MS * 3 ** done);
+          continue;
+        }
       }
       if (code === DAMAGED && entry.clock !== undefined) {
         commandContext('commandBar').platform.log('warn', `Recording ${entry.id} is damaged: ${String(error)}`);

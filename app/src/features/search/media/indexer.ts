@@ -35,6 +35,15 @@ export async function indexMediaText(entry: MediaText): Promise<boolean> {
 }
 
 const scanned = new Set<string>();
+/** Failed reads per picture: the page is looked at again every few seconds, so a picture that fails is given up on. */
+const failures = new Map<string, number>();
+export const MAX_FAILURES = 3;
+
+/** For tests: forgets what was read and what failed. */
+export function resetIndexer(): void {
+  scanned.clear();
+  failures.clear();
+}
 
 async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | null> {
   try {
@@ -46,41 +55,70 @@ async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | nu
 }
 
 /** Reads the pictures of the shown page that the index has no words for. */
-async function scan(mounted: MountedPage, current: () => boolean): Promise<void> {
+export async function scan(mounted: MountedPage, current: () => boolean): Promise<void> {
   const extras = maybeSearchClient()?.extras;
   if (!extras) return;
   const page = mounted.page.id;
-  const known = new Set((await extras.mediaBlocks(page)).map((entry) => entry.block));
-  for (const block of mounted.layer.blocks()) {
-    if (!current()) return;
-    const asset = typeof block.data.asset === 'string' ? block.data.asset : null;
+  // Most passes find nothing to read: ask the index only when a picture here is still waiting.
+  const waiting = mounted.layer.blocks().filter((block) => {
     const key = `${page}/${block.id}`;
-    if (block.type !== 'image' || !asset || known.has(block.id) || scanned.has(key)) continue;
+    return block.type === 'image' && typeof block.data.asset === 'string' && !scanned.has(key) && (failures.get(key) ?? 0) < MAX_FAILURES;
+  });
+  if (waiting.length === 0) return;
+  const known = new Set((await extras.mediaBlocks(page)).map((entry) => entry.block));
+  for (const block of waiting) {
+    if (!current()) return;
+    const asset = block.data.asset as string;
+    const key = `${page}/${block.id}`;
+    if (known.has(block.id)) continue;
     const api = await loadApi();
     if (!(await api.searchTextReady('image'))) return;
     const blob = await imageBlob(mounted, asset);
-    if (!blob || !current()) continue;
+    if (!current()) return;
+    if (!blob) {
+      failures.set(key, (failures.get(key) ?? 0) + 1);
+      continue;
+    }
     const found = await api.searchTextInImage(blob);
-    if (!found) continue;
+    if (!found) {
+      failures.set(key, (failures.get(key) ?? 0) + 1);
+      continue;
+    }
     scanned.add(key);
     await indexMediaText({ page, block: block.id, kind: 'image', text: found.text.trim() || NO_WORDS });
   }
 }
 
+/** How often the shown page is looked at again, so a picture pasted into it is read within a minute. */
+const RESCAN_MS = 10_000;
+
 /** Watches the shown page and reads its pictures. Returns a function that stops. */
 export function startMediaIndexer(): () => void {
   if (!isEnabled('search.indexMedia') || !isEnabled('intel.searchText')) return () => undefined;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let again: ReturnType<typeof setInterval> | null = null;
+  let scanning = false;
+  const run = (mounted: MountedPage) => {
+    if (scanning) return;
+    scanning = true;
+    void scan(mounted, () => shownMounted.get() === mounted)
+      .catch(() => undefined)
+      .finally(() => {
+        scanning = false;
+      });
+  };
   const stop = shownMounted.subscribe(() => {
     if (timer) clearTimeout(timer);
+    if (again) clearInterval(again);
+    again = null;
     const mounted = shownMounted.get();
     if (!mounted) return;
-    timer = setTimeout(() => {
-      void scan(mounted, () => shownMounted.get() === mounted).catch(() => undefined);
-    }, START_DELAY_MS);
+    timer = setTimeout(() => run(mounted), START_DELAY_MS);
+    again = setInterval(() => run(mounted), RESCAN_MS);
   });
   return () => {
     stop();
     if (timer) clearTimeout(timer);
+    if (again) clearInterval(again);
   };
 }

@@ -108,6 +108,11 @@
     z-index: var(--layer-page-chrome);
   }
 
+  /* display:flex above would otherwise beat the hidden attribute and leave an empty opaque rail over the page. */
+  .strip[hidden] {
+    display: none;
+  }
+
   .stripList {
     display: grid;
     gap: var(--space-2);

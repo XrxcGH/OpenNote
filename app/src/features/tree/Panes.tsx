@@ -79,7 +79,12 @@ function PagesEmpty() {
   const text = keys.length
     ? t('tree.empty.pages', { shortcut: formatChord(keys[0]) })
     : t('tree.empty.pagesNoShortcut');
-  return <p>{text}</p>;
+  return (
+    <>
+      <EmptyArt kind="page" className={styles.emptyArt} />
+      <p>{text}</p>
+    </>
+  );
 }
 
 export function PagesPane() {

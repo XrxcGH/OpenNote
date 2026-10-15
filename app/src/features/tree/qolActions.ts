@@ -22,8 +22,20 @@ function adopt(node: NodeSummary): void {
   });
 }
 
+/** Moves a top-level page, with its subpages, above the others in its section. */
+async function moveToTop(notes: NotesService, node: NodeSummary): Promise<void> {
+  const heads = topLevel(childrenOf(treeStore.get(), node.parentId));
+  const first = heads[0];
+  if (!first || first.id === node.id || node.pageLevel !== 0) return;
+  try {
+    await moveNodes(notes, [node.id], { parentId: node.parentId, beforeId: first.id });
+  } catch (error) {
+    toastError(error, titleOf(node));
+  }
+}
+
 /** Pins or unpins a page. */
-export async function setPinned(id: NodeId, pinned: boolean): Promise<void> {
+export async function setPinned(id: NodeId, pinned: boolean, notes?: NotesService): Promise<void> {
   const node = getNode(id);
   if (!node || node.kind !== 'page') return;
   try {
@@ -32,6 +44,8 @@ export async function setPinned(id: NodeId, pinned: boolean): Promise<void> {
     toastError(error, titleOf(node));
     return;
   }
+  // A pinned page goes to the top of its list, which is where a pin says it is.
+  if (pinned && notes) await moveToTop(notes, node);
   announce(t(pinned ? 'qol.pin.pinned' : 'qol.pin.unpinned', { title: titleOf(node) }));
 }
 
