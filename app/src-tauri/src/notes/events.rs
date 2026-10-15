@@ -118,6 +118,7 @@ mod tests {
             read_only: false,
             pinned: false,
             archived: false,
+            encrypted: false,
         }
     }
 
