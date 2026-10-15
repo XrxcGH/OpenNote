@@ -27,6 +27,9 @@ import {
   ungroupSelection,
 } from './groups';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
+import { inkLinks, selectionLinked, unlinkSelection } from './inkLinks';
+import { inkLayers, layerName, moveSelectionToLayer } from './layers';
+import { makeLinkFromSelection } from './linkDialogs';
 import { startReplay } from './replay';
 import { followersForMatrix } from './shapeEdit';
 import { labelsIn } from './shapeLibrary';
@@ -171,6 +174,15 @@ class FrameView implements SelectionFrame {
             ['ink.groups.ungroup', 'ungroup', () => void ungroupSelection(host, surface)],
           ] as [MessageKey, string, () => void][])
         : []),
+      ...(isEnabled('ink.links')
+        ? ([
+            ['ink.links.make', 'link', () => void makeLinkFromSelection(host, surface)],
+            ['ink.links.remove', 'unlink', () => void unlinkSelection(host, surface)],
+          ] as [MessageKey, string, () => void][])
+        : []),
+      ...(isEnabled('ink.layers')
+        ? ([['ink.layers.moveTo', 'layer', () => void this.layerMenu()]] as [MessageKey, string, () => void][])
+        : []),
       ...(isEnabled('pages.exportSelection')
         ? ([
             [
@@ -207,10 +219,12 @@ class FrameView implements SelectionFrame {
     surface.chrome.append(this.crop, this.frame);
     this.offerTable();
     this.offerGroups();
+    this.offerLinks();
     this.stops = [
       host.selection.subscribe(() => this.selectionChanged()),
       surface.onChange(() => this.place()),
       objectGroups.subscribe(() => this.offerGroups()),
+      inkLinks.subscribe(() => this.offerLinks()),
     ];
     this.place();
   }
@@ -283,6 +297,7 @@ class FrameView implements SelectionFrame {
   private selectionChanged(): void {
     this.offerTable();
     this.offerGroups();
+    this.offerLinks();
     this.place();
     const now = this.selection().strokes.length;
     if (now > 0 && this.had === 0) this.mover.focus({ preventScroll: true });
@@ -310,6 +325,15 @@ class FrameView implements SelectionFrame {
     const top = shown.minY * zoom - scrollY - 4;
     this.bar.toggleAttribute('data-below', top < this.bar.offsetHeight + BAR_MARGIN);
     this.placeCrop(shown);
+  }
+
+  /** Make link shows for writing that is selected; Remove link for writing that is a link. */
+  private offerLinks(): void {
+    const make = this.bar.querySelector<HTMLElement>('[data-ink-action="link"]');
+    const remove = this.bar.querySelector<HTMLElement>('[data-ink-action="unlink"]');
+    if (!make || !remove) return;
+    make.style.display = this.selection().strokes.length > 0 ? '' : 'none';
+    remove.style.display = selectionLinked(this.host) ? '' : 'none';
   }
 
   /** Group shows for two or more things that are not one group already; Ungroup for a selection with a group in it. */
@@ -484,6 +508,14 @@ class FrameView implements SelectionFrame {
       next,
       { palette: entry.slot, color: [...entry.light] },
     );
+  }
+
+  /** Move to layer: a menu of the page's layers, top first. */
+  private async layerMenu(): Promise<void> {
+    const layers = inkLayers.get();
+    const items = [...layers.order].reverse().map((id) => ({ id, label: layerName(layers, id) }));
+    const chosen = await openMenu({ label: t('ink.layers.moveTo'), anchor: this.bar, items });
+    if (chosen) await moveSelectionToLayer(this.host, this.surface, chosen);
   }
 
   /** The same actions as the bar, at the pointer, for a right click or a long press on the selection. */

@@ -40,6 +40,8 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.penEditing', 'Edit typed text with the pen.', on),
   flag('ink.groups', 'Group ink, text boxes and images into one object (ADR 0036).', beta),
   flag('ink.penLibrary', 'Fountain, brush, calligraphy, dashed and dotted pens, and saved pen sets.', beta),
+  flag('ink.links', 'Make handwriting a link to a page, a heading, a web address or a recording moment.', beta),
+  flag('ink.layers', 'Named ink layers that can be hidden, locked, renamed and reordered (ADR 0037).', beta),
   flag('dev.penRecorder', 'The Palm lab: record labeled pen and touch sessions for the palm corpus.', {
     dev: true,
     nightly: true,

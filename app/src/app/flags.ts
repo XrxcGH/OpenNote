@@ -174,6 +174,8 @@ type Phase5FlagId =
   | 'ink.penEditing'
   | 'ink.groups'
   | 'ink.penLibrary'
+  | 'ink.links'
+  | 'ink.layers'
   | 'ink.delegatedTrail'
   | 'ink.nativeTrail'
   | 'ink.openSnapshot'

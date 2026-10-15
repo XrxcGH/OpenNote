@@ -496,7 +496,10 @@ async function finish(
     surface.hide(tx.removed);
     surface.show(tx.added);
     const batch = {
-      edits: tx.removed.length > 0 ? [{ edit: 'removeStrokes' as const, strokes: tx.removed }] : [],
+      edits: [
+        ...(tx.removed.length > 0 ? [{ edit: 'removeStrokes' as const, strokes: tx.removed }] : []),
+        ...surface.placementEdits(tx.added),
+      ],
       strokes: tx.added.length > 0 ? surface.records(tx.added) : undefined,
       coalesce: { kind: 'erase' as const, target: 'ink' },
     };

@@ -196,3 +196,33 @@ fn properties_become_searchable_lines() {
     assert_eq!(last.text, "Status: Open\nRating: 4\nReviewed\nCourse: Bio 201");
     assert_eq!(doc.blocks.len(), 2);
 }
+
+#[test]
+fn links_on_handwriting_count_as_page_links() {
+    let mut page = page();
+    add(&mut page, 1, BlockData::Ink(InkBlockData::default()), None);
+    let target = page_id(2);
+    page.view.extra.insert(
+        "inkLinks".into(),
+        serde_json::json!({
+            "a": { "block": block_id(1, 1).to_string(), "strokes": ["s1"], "label": "Photosynthesis [notes]",
+                   "target": { "kind": "page", "page": target.to_string() } },
+            "b": { "block": block_id(1, 1).to_string(), "strokes": ["s2"], "label": "Site",
+                   "target": { "kind": "url", "url": "https://example.com" } },
+            "c": { "block": block_id(1, 9).to_string(), "strokes": ["s3"], "label": "Gone",
+                   "target": { "kind": "page", "page": target.to_string() } },
+        }),
+    );
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    let texts: Vec<&str> = doc.blocks.iter().filter(|b| b.kind == BlockKind::Text).map(|b| b.text.as_str()).collect();
+    assert_eq!(texts, [format!("[Photosynthesis notes](opennote:page/{target})")]);
+    let mut index = SearchIndex::open_in_memory().unwrap();
+    index.upsert(&doc).unwrap();
+    let mut target_doc = PageDoc::from_page(&self::page(), notebook_id(1), section_id(1), false);
+    target_doc.page = target;
+    target_doc.title = "Photosynthesis".into();
+    index.upsert(&target_doc).unwrap();
+    let links = index.backlinks(target).unwrap();
+    assert_eq!(links.len(), 1);
+    assert_eq!(links[0].source, page_id(1));
+}

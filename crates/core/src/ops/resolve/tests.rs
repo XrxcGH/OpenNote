@@ -146,3 +146,54 @@ fn object_groups_live_in_the_view_and_undo_exactly_without_touching_the_reading_
     apply_ops(&mut ungrouped, &resolve_edit(&c2, &ungroup).unwrap(), c2.at).unwrap();
     assert!(ungrouped.view.extra.get("groups").map_or(true, |g| g.as_object().is_some_and(|o| o.is_empty())));
 }
+
+#[test]
+fn ink_layers_and_links_live_in_the_view_and_undo_exactly() {
+    // ADR 0037: layers are an `inkLayers` entry in the page view. A layer change and a link change are view patches.
+    let page = sample_page();
+    let (clock, limits) = ctx_parts();
+    let ctx = ResolveCtx {
+        clock: &clock,
+        limits: &limits,
+        imported: &|_| None,
+    };
+    let c = EditCtx {
+        page: &page,
+        ctx: &ctx,
+        at: clock.now(),
+    };
+    let view = json!({
+        "inkLayers": {
+            "order": ["base", "01m3sa14y9zszek1wdk3snlyr1"],
+            "layers": { "01m3sa14y9zszek1wdk3snlyr1": { "name": "Notes", "hidden": true, "locked": false, "imported": false } },
+            "assign": { "01m3sa14y9zszek1wdk3snstr1": "01m3sa14y9zszek1wdk3snlyr1" }
+        },
+        "inkLinks": { "01m3sa14y9zszek1wdk3snlnk1": {
+            "block": "01m3sa14y9zszek1wdk3snddsn", "strokes": ["01m3sa14y9zszek1wdk3snstr1"],
+            "target": { "kind": "recording" }, "label": "Rec" } }
+    });
+    let edit: Edit = serde_json::from_value(json!({"edit": "setPage", "view": view})).unwrap();
+    let ops = resolve_edit(&c, &edit).unwrap();
+    let mut changed = page.clone();
+    apply_ops(&mut changed, &ops, c.at).unwrap();
+    assert_eq!(changed.view.extra.get("inkLayers"), view.get("inkLayers"));
+    assert_eq!(changed.view.extra.get("inkLinks"), view.get("inkLinks"));
+    assert_eq!(changed.blocks, page.blocks);
+    let mut undone = changed.clone();
+    apply_ops(&mut undone, &crate::ops::apply::invert_all(&ops), c.at).unwrap();
+    assert_eq!(undone.view, page.view);
+    // Moving one stroke back to the base layer is a null in the assign map.
+    let back: Edit = serde_json::from_value(
+        json!({"edit": "setPage", "view": {"inkLayers": {"assign": {"01m3sa14y9zszek1wdk3snstr1": null}}}}),
+    )
+    .unwrap();
+    let c2 = EditCtx {
+        page: &changed,
+        ctx: &ctx,
+        at: clock.now(),
+    };
+    let mut moved = changed.clone();
+    apply_ops(&mut moved, &resolve_edit(&c2, &back).unwrap(), c2.at).unwrap();
+    let assign = moved.view.extra.get("inkLayers").and_then(|l| l.get("assign"));
+    assert!(assign.map_or(true, |a| a.as_object().is_some_and(|o| o.is_empty())));
+}

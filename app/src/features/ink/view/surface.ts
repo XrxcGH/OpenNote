@@ -63,6 +63,10 @@ export class InkSurface {
   /** A gesture's view of the ink before the core has it: strokes it hides, and strokes it shows outside the index. */
   private readonly hidden = new Set<string>();
   private readonly extra = new Map<string, InkStroke>();
+  /** Ink layers (flag ink.layers): strokes of a hidden layer are not drawn, and strokes of a locked one cannot be reached. */
+  private layerHides: ((stroke: InkStroke) => boolean) | null = null;
+  /** The edits that put new strokes on the active layer, which go in the same batch as the strokes. */
+  private placement: ((strokes: readonly InkStroke[]) => Edit[]) | null = null;
 
   constructor(readonly parts: SurfaceParts) {
     const { viewport } = parts;
@@ -164,9 +168,29 @@ export class InkSurface {
 
   /** The strokes that meet a box, as the picture shows them now. */
   query(box: Bounds): InkStroke[] {
-    const found = (this.index.query(box) as InkStroke[]).filter((stroke) => !this.hidden.has(stroke.id));
+    const found = (this.index.queryAll(box) as InkStroke[]).filter(
+      (stroke) => !this.hidden.has(stroke.id) && !this.layerHides?.(stroke),
+    );
     for (const stroke of this.extra.values()) if (intersects(strokeBounds(stroke), box)) found.push(stroke);
     return found;
+  }
+
+  /** Sets what ink layers hide and lock, and redraws the page. */
+  setLayerRules(
+    rules: { hides(stroke: InkStroke): boolean; blocks(stroke: InkStroke): boolean } | null,
+    placement: ((strokes: readonly InkStroke[]) => Edit[]) | null = null,
+  ): void {
+    this.layerHides = rules ? (stroke) => rules.hides(stroke) : null;
+    this.index.exclude(
+      rules ? (stroke) => rules.hides(stroke as InkStroke) || rules.blocks(stroke as InkStroke) : null,
+    );
+    this.placement = placement;
+    this.changed(this.extent ?? { minX: 0, minY: 0, maxX: 1, maxY: 1 });
+  }
+
+  /** The edits that place new strokes on the active layer. Empty when layers are off or the layer is the first. */
+  placementEdits(strokes: readonly InkStroke[]): Edit[] {
+    return this.placement?.(strokes) ?? [];
   }
 
   /** A gesture's picture: strokes to hide and strokes to show, without touching the index. */
@@ -282,7 +306,7 @@ export class InkSurface {
     const made = this.pendingLayer !== null;
     const before = this.takeLayerEdit();
     this.show(strokes);
-    const batch: EditBatch = { edits: [...before, ...edits], coalesce };
+    const batch: EditBatch = { edits: [...before, ...edits, ...this.placementEdits(strokes)], coalesce };
     if (strokes.length > 0) batch.strokes = this.records(strokes);
     return this.send(batch, () => {
       this.hide(strokes.map((stroke) => stroke.id));

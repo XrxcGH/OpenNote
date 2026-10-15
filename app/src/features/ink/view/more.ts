@@ -8,6 +8,10 @@ import { toggleCanvasLock, installCanvasLock } from './canvasLock';
 import { anchorSelection, detachSelection, installAnchoring } from './anchoring';
 import { describeDrawing } from './describe';
 import { groupSelection, installGroups, selectionGrouped, ungroupSelection } from './groups';
+import { installLayers } from './layers';
+import { showLayers } from './LayersDialog';
+import { installInkLinks, selectionLinked, unlinkSelection } from './inkLinks';
+import { makeLinkFromSelection, showLinkList } from './linkDialogs';
 import { convertSelectionToTable } from './gridTable';
 import { convertSelection, tidySelection } from './handwriting';
 import { EDIT_GESTURES } from './penEditing';
@@ -97,6 +101,8 @@ export function installMore(context: MoreContext): () => void {
     installZoomBox(host, surfaces),
     installAnchoring(host, surfaces),
     installGroups(host, surface),
+    installInkLinks(host),
+    installLayers(host, surfaces),
   ];
   const defs: CommandDef[] = [
     {
@@ -298,6 +304,52 @@ export function installMore(context: MoreContext): () => void {
       run: () => {
         const current = surface();
         if (current) void ungroupSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.makeLink',
+      title: 'ink.links.make',
+      keywords: 'ink.links.keywords',
+      category: 'editing',
+      flag: 'ink.links',
+      enabled: () => host.selection.get().strokes.length > 0,
+      run: () => {
+        const current = surface();
+        if (current) void makeLinkFromSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.removeLink',
+      title: 'ink.links.remove',
+      keywords: 'ink.links.keywords',
+      category: 'editing',
+      flag: 'ink.links',
+      enabled: () => selectionLinked(host),
+      run: () => {
+        const current = surface();
+        if (current) void unlinkSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.links',
+      title: 'ink.links.list',
+      keywords: 'ink.links.keywords',
+      category: 'editing',
+      flag: 'ink.links',
+      run: () => {
+        const current = surface();
+        if (current) void showLinkList(host, current);
+      },
+    },
+    {
+      id: 'ink.layers',
+      title: 'ink.layers.title',
+      keywords: 'ink.layers.keywords',
+      category: 'editing',
+      flag: 'ink.layers',
+      run: () => {
+        const current = surface();
+        if (current) void showLayers(current);
       },
     },
     gestureCommand('scribbleErase'),

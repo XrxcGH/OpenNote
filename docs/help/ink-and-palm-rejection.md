@@ -77,3 +77,13 @@ Select two or more things with the lasso (ink, text boxes, pictures) and choose 
 On the Draw tab, pick a pen and choose **Pen type** to change it to a fountain pen, brush, calligraphy pen, dashed pen, or dotted pen. The fountain pen and brush draw wider when you press harder or move slowly, and thinner when you move fast. The calligraphy pen has a flat nib held at a fixed angle, so strokes across the nib are broad and strokes along it are fine. The dashed and dotted pens draw a broken line. Each keeps its own sizes and colors, and screen readers hear its name.
 
 **Pen sets** saves the pens on your palette under a name, so you can switch between a writing set and a drawing set. Choose a set to bring its pens back, or choose Delete to remove it. You can keep 12 sets.
+
+## Links on handwriting
+
+Lasso some writing and choose **Make link** (on the bar above the selection, or in the command list). The link can go to a page, to a heading on a page, to a web address, or to the recording at the moment you wrote it. The writing keeps its link when you move or resize it. Choose **Remove link** to take it off.
+
+**Links on this page** in the command list opens a list of every link. For each one you can **Select** its writing, which draws the selection outline around it, or **Open** it. The list works with the keyboard and screen readers. A link to a page counts in that page's backlinks.
+
+## Layers
+
+Choose **Layers** in the command list to keep ink apart. Each layer has a name, and you can hide it, lock it, move it up or down, make it the one new ink goes to, export it on its own, or delete it (its ink goes to the first layer). A hidden layer isn't shown, printed or exported. A locked layer is shown, but the pen, the erasers and the lasso pass over it, so you can trace over a drawing without moving it. To move writing to another layer, lasso it and choose **Move to layer**. A layer made for an imported PDF or slide is locked and stays at the bottom.
