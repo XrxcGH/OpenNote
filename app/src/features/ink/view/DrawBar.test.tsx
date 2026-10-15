@@ -65,14 +65,14 @@ describe('the Draw tab', () => {
       </main>,
     );
     await userEvent.click(screen.getByRole('button', { name: /^Pen, Indigo/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'Pen type' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Width' }));
     await userEvent.click(await screen.findByRole('menuitemradio', { name: 'Calligraphy pen' }));
     await expect.poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.tool).toBe('calligraphy');
     expect(screen.getByRole('button', { name: /^Calligraphy pen, Indigo/ })).toBeTruthy();
     await savePenSet('Drawing');
     expect(getSettings().ink.penSets?.map((set) => set.name)).toEqual(['Drawing']);
     await updateSlot('p2', { width: 5 });
-    await userEvent.click(screen.getByRole('button', { name: 'Pen sets' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Width' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Drawing' }));
     await expect.poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.width).toBe(2);
     await deletePenSet(getSettings().ink.penSets?.[0].id ?? '');

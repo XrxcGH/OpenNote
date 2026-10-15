@@ -8,6 +8,7 @@ import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import { announce, openMenu } from '../../../ui';
+import type { MenuItemSpec } from '../../../ui';
 import { ask } from './ask';
 import { paletteByName, slotsForTool, toCss } from '../pens/palette';
 import { WIDTH_PRESETS_MM } from '../pens/tools';
@@ -18,7 +19,6 @@ import {
   deletePenSet,
   drawState,
   LIBRARY_PENS,
-  penSets,
   savePenSet,
   setSlotTool,
   styleOf,
@@ -99,49 +99,44 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
   const library = useFlag('ink.penLibrary');
   const sets = useSettings((settings) => settings.ink.penSets);
 
-  const chooseType = async (anchor: HTMLElement) => {
-    if (!active || active.tool === 'highlighter') return;
-    const chosen = await openMenu({
-      label: t('ink.penLibrary.menu'),
-      anchor,
-      returnFocus: anchor,
-      items: LIBRARY_PENS.map((tool) => ({
-        id: tool,
-        label: toolName(tool),
-        kind: 'radio',
-        checked: active.tool === tool,
-      })),
-    });
-    const tool = LIBRARY_PENS.find((id) => id === chosen);
-    if (tool) {
-      await setSlotTool(active.id, tool);
-      announce(t('ink.penLibrary.changed', { pen: toolName(tool) }));
+  /** The library's entries, for the end of the width menu: the pen types of the active pen, then the saved pen sets. */
+  const libraryItems = (): MenuItemSpec[] => {
+    const items: MenuItemSpec[] = [];
+    if (active && active.tool !== 'highlighter') {
+      LIBRARY_PENS.forEach((tool, i) =>
+        items.push({
+          id: `type:${tool}`,
+          label: toolName(tool),
+          kind: 'radio',
+          checked: active.tool === tool,
+          separatorBefore: i === 0,
+        }),
+      );
     }
+    items.push({ id: 'save', label: t('ink.penLibrary.saveSet'), separatorBefore: true });
+    for (const set of sets ?? []) items.push({ id: `apply:${set.id}`, label: set.name });
+    for (const set of sets ?? []) {
+      items.push({ id: `delete:${set.id}`, label: t('ink.penLibrary.deleteSet', { name: set.name }) });
+    }
+    return items;
   };
 
-  const chooseSet = async (anchor: HTMLElement) => {
-    const chosen = await openMenu({
-      label: t('ink.penLibrary.sets'),
-      anchor,
-      returnFocus: anchor,
-      items: [
-        ...(sets ?? []).map((set) => ({ id: `apply:${set.id}`, label: set.name })),
-        { id: 'save', label: t('ink.penLibrary.saveSet') },
-        ...(sets ?? []).map((set) => ({
-          id: `delete:${set.id}`,
-          label: t('ink.penLibrary.deleteSet', { name: set.name }),
-        })),
-      ],
-    });
-    if (!chosen) return;
-    if (chosen === 'save') {
+  /** Does what a library entry chose. */
+  const chooseLibrary = async (chosen: string) => {
+    if (chosen.startsWith('type:') && active) {
+      const tool = LIBRARY_PENS.find((id) => id === chosen.slice(5));
+      if (tool) {
+        await setSlotTool(active.id, tool);
+        announce(t('ink.penLibrary.changed', { pen: toolName(tool) }));
+      }
+    } else if (chosen === 'save') {
       const answer = await ask({
         title: t('ink.penLibrary.saveSet'),
         field: { label: t('ink.penLibrary.setName'), value: '' },
         confirm: t('ink.penLibrary.save'),
         validate: (text) => (text.trim() ? null : t('ink.penLibrary.setNameMissing')),
       });
-      if (answer && penSets().length < 100) {
+      if (answer) {
         await savePenSet(answer.text);
         announce(t('ink.penLibrary.saved', { name: answer.text.trim() }));
       }
@@ -173,17 +168,22 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
   const chooseWidth = async (anchor: HTMLElement) => {
     if (!active) return;
     const chosen = await openMenu({
-      label: t('ink.pens.widthMenu'),
+      label: t(library ? 'ink.penLibrary.widthAndType' : 'ink.pens.widthMenu'),
       anchor,
       returnFocus: anchor,
-      items: WIDTH_PRESETS_MM[active.tool].map((mm) => ({
-        id: String(mm),
-        label: t('ink.pens.widthValue', { width: mm }),
-        kind: 'radio',
-        checked: active.width === mm,
-      })),
+      items: [
+        ...WIDTH_PRESETS_MM[active.tool].map((mm): MenuItemSpec => ({
+          id: String(mm),
+          label: t('ink.pens.widthValue', { width: mm }),
+          kind: 'radio',
+          checked: active.width === mm,
+        })),
+        ...(library ? libraryItems() : []),
+      ],
     });
-    if (chosen) await updateSlot(active.id, { width: Number(chosen) });
+    if (!chosen) return;
+    if (/^[0-9]/.test(chosen)) await updateSlot(active.id, { width: Number(chosen) });
+    else await chooseLibrary(chosen);
   };
 
   return (
@@ -214,30 +214,6 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
           </button>
         );
       })}
-      {library && (
-        <>
-          <button
-            type="button"
-            {...toolProps}
-            className={styles.tool}
-            aria-haspopup="menu"
-            data-ink-type=""
-            onClick={(event) => void chooseType(event.currentTarget)}
-          >
-            {t('ink.penLibrary.type')}
-          </button>
-          <button
-            type="button"
-            {...toolProps}
-            className={styles.tool}
-            aria-haspopup="menu"
-            data-ink-sets=""
-            onClick={(event) => void chooseSet(event.currentTarget)}
-          >
-            {t('ink.penLibrary.sets')}
-          </button>
-        </>
-      )}
       <button
         type="button"
         {...toolProps}

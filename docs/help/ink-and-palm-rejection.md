@@ -74,9 +74,9 @@ Select two or more things with the lasso (ink, text boxes, pictures) and choose 
 
 ## More pens
 
-On the Draw tab, pick a pen and choose **Pen type** to change it to a fountain pen, brush, calligraphy pen, dashed pen, or dotted pen. The fountain pen and brush draw wider when you press harder or move slowly, and thinner when you move fast. The calligraphy pen has a flat nib held at a fixed angle, so strokes across the nib are broad and strokes along it are fine. The dashed and dotted pens draw a broken line. Each keeps its own sizes and colors, and screen readers hear its name.
+On the Draw tab, pick a pen, open **Width**, and choose a pen type to change it to a fountain pen, brush, calligraphy pen, dashed pen, or dotted pen. The fountain pen and brush draw wider when you press harder or move slowly, and thinner when you move fast. The calligraphy pen has a flat nib held at a fixed angle, so strokes across the nib are broad and strokes along it are fine. The dashed and dotted pens draw a broken line. Each keeps its own sizes and colors, and screen readers hear its name.
 
-**Pen sets** saves the pens on your palette under a name, so you can switch between a writing set and a drawing set. Choose a set to bring its pens back, or choose Delete to remove it. You can keep 12 sets.
+The same menu has **Save these pens as a set**, which saves the pens on your palette under a name, so you can switch between a writing set and a drawing set. Choose a set to bring its pens back, or its Delete entry to remove it. You can keep 12 sets.
 
 ## Links on handwriting
 

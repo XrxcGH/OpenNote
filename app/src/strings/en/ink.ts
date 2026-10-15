@@ -365,6 +365,7 @@ export const ink = {
   penLibrary: {
     type: 'Pen type',
     menu: 'Pen type',
+    widthAndType: 'Width and pen type',
     fountain: 'Fountain pen',
     brush: 'Brush',
     calligraphy: 'Calligraphy pen',
