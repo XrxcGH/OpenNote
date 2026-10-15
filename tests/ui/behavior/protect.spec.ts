@@ -1,6 +1,6 @@
-// Password-protected sections (A1-39, A2-16, A4-47; ADR 0042) in the production interface, with the web build's
-// fake of the shell's protect calls: protect a section, see it locked, unlock it with the right password only,
-// and see it lock again when the person leaves it or chooses Lock section.
+// Password-protected sections (A1-39, A2-16, A4-47; ADR 0042) in the production interface. The web build fakes
+// the shell's protect calls. The test protects a section and opens it with the right password only. Then it sees
+// the section lock again when the person leaves it or chooses Lock section.
 
 import { expect, test } from '../fixtures';
 
