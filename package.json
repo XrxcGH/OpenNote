@@ -88,6 +88,7 @@
     "lowlight": "3.3.0",
     "markdown-it": "15.0.2",
     "mermaid": "^12.1.0",
+    "pdfjs-dist": "6.3.289",
     "perfect-freehand": "^1.2.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

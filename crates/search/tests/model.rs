@@ -196,3 +196,26 @@ fn properties_become_searchable_lines() {
     assert_eq!(last.text, "Status: Open\nRating: 4\nReviewed\nCourse: Bio 201");
     assert_eq!(doc.blocks.len(), 2);
 }
+
+#[test]
+fn a_pdf_page_picture_is_found_by_the_words_on_it() {
+    let mut page = page();
+    let mut extra = JsonMap::new();
+    extra.insert("text".into(), "Photosynthesis needs light\nand water".into());
+    let data = BlockData::Image(ImageData {
+        asset: AssetId::from(Id::from_parts(7, 8)),
+        alt: "Page 1 of 3 from biology.pdf".into(),
+        decorative: false,
+        crop: None,
+        extra,
+    });
+    add(&mut page, 1, data, None);
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    assert_eq!(
+        doc.blocks[0].text,
+        "Page 1 of 3 from biology.pdf\nPhotosynthesis needs light\nand water"
+    );
+    let mut index = SearchIndex::open_in_memory().unwrap();
+    index.upsert(&doc).unwrap();
+    assert_eq!(index.search(&Query::text("photosynthesis")).unwrap().len(), 1);
+}

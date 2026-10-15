@@ -11,6 +11,8 @@ import { AUDIO_FLAGS } from '../features/audio/flags';
 import { INTEROP_FLAGS } from '../features/interop/flags';
 import { INTEGRATIONS_FLAGS } from '../features/integrations/flags';
 import type { IntegrationsFlagId } from '../features/integrations/flags';
+import { PDF_FLAGS } from '../features/pdf/flags';
+import type { PdfFlagId } from '../features/pdf/flags';
 import { INTEL_FLAGS } from '../features/intel/flags';
 import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
@@ -80,7 +82,8 @@ type Phase4FlagId =
   | 'page.heicImport'
   | 'editor.spelling'
   | 'editor.readAloud'
-  | IntegrationsFlagId;
+  | IntegrationsFlagId
+  | PdfFlagId;
 
 /** Phase 6: page views and export (features/pages/flags.ts). */
 type Phase6FlagId =
@@ -280,6 +283,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...AUDIO_FLAGS,
   ...INTEROP_FLAGS,
   ...INTEGRATIONS_FLAGS,
+  ...PDF_FLAGS,
   ...INTEL_FLAGS,
   ...DIAGNOSTICS_FLAGS,
   ...QOL_FLAGS,

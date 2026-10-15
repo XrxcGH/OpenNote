@@ -25,6 +25,18 @@ A Notion database keeps its column types. Numbers, money, dates, checkboxes, and
 
 Before anything is added, a review lists what comes over and what does not. Choose Save report to keep that list. Undo takes an import back.
 
+## PDF files
+
+Bring a PDF in to write on it. Each PDF page becomes a picture locked in place, so your ink and typed notes stay where you put them.
+
+- Choose Import PDF as pages on the Home tab, or press Ctrl+K and choose it, to add a page to the open section for each PDF page.
+- Choose Insert PDF on the Insert tab to put every PDF page into the open page, one below the other. Ctrl+Z takes them all back.
+- The words of each PDF page come with it, so search finds them.
+- Choose Add note space to put ruled or blank paper on the right of a PDF page or slide, below it, or both. It works on this page, a range of pages, or every page in the section.
+- Choose Make handouts to lay out PDF pages or slides 2 or 3 to a page, with lines beside each one. The handouts are new pages at the end of the section.
+
+A PDF that is damaged or locked with a password is not opened, and nothing is added. OpenNote reads the PDF on this PC and sends it nowhere.
+
 ## Export
 
 Open Share, then Export, or press Ctrl+K and choose Export.
