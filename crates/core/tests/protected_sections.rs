@@ -1,6 +1,6 @@
-//! Protected sections through a real core on a real disk (ADR 0042): protecting seals the section, a locked
-//! section shows no pages and opens none, an unlocked one edits as usual, and no plain text of it reaches the disk,
-//! the cache, the journals, or the search index.
+//! Protected sections through a real core on a real disk (ADR 0042). Protecting seals the section. A locked
+//! section shows no pages and opens none. An unlocked one edits as usual. No plain text of it reaches the disk, the
+//! cache, the journals, or the search index.
 
 mod real_core;
 
@@ -71,8 +71,19 @@ fn holding(root: &Path, needle: &str) -> Vec<String> {
     found
 }
 
-#[test]
-fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_password() {
+/// A core on a sealing file system over a temporary folder, with a notebook of two sections and one page.
+struct Fixture {
+    dir: tempfile::TempDir,
+    core: Core,
+    index: Arc<CollectingIndex>,
+    root: std::path::PathBuf,
+    section: opennote_core::id::SectionId,
+    plain: opennote_core::id::SectionId,
+    page: PageId,
+    client: ClientId,
+}
+
+fn start() -> (tempfile::TempDir, Core, Arc<CollectingIndex>) {
     let dir = tempfile::tempdir().unwrap();
     let data = dir.path().join("data");
     let timings = Timings::for_crash_tests();
@@ -94,89 +105,123 @@ fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_pass
         caps: MemoryCaps::default(),
     };
     let core = Core::start(config, Arc::new(NullSink), Some(index.clone())).unwrap();
+    (dir, core, index)
+}
+
+/// A notebook "Personal" with a section "Diary" holding a page with the secret, and a section "Shopping".
+fn fixture() -> Fixture {
+    let (dir, core, index) = start();
     let notes = dir.path().join("notes");
     std::fs::create_dir_all(&notes).unwrap();
     let notebook = core.create_notebook(&notes, "Personal").unwrap();
     let root = notebook.path().to_path_buf();
-    let top = |before| NodePlacement {
+    let top = NodePlacement {
         parent: ParentRef::Notebook,
-        before,
-    };
-    let section = notebook.create_section("Diary", top(None)).unwrap();
-    let plain = notebook.create_section("Shopping", top(None)).unwrap();
-    let in_section = NodePlacement {
-        parent: ParentRef::Section(section),
         before: None,
     };
-    let page = notebook.create_page_titled(section, in_section, "Plans 3381").unwrap();
+    let section = notebook.create_section("Diary", top).unwrap();
+    let plain = notebook.create_section("Shopping", top).unwrap();
+    let page = notebook
+        .create_page_titled(section, inside(section), "Plans 3381")
+        .unwrap();
     let client = ClientId::parse("main-1").unwrap();
     let handle = notebook.open_page(page, client.clone()).unwrap();
     handle.apply(request(page, 1, vec![text(1, SECRET)])).unwrap();
     handle.save_now().unwrap();
     handle.close(&client).unwrap();
-    drop(notebook);
+    Fixture {
+        dir,
+        core,
+        index,
+        root,
+        section,
+        plain,
+        page,
+        client,
+    }
+}
 
-    core.protect_section(&root, section, "correct horse").unwrap();
-    let notebook = core.find_open(&root).unwrap();
-    assert_eq!(core.section_protection(&root, section).unwrap(), Protection::Unlocked);
-    let hints_before = index.hints().len();
+fn inside(section: opennote_core::id::SectionId) -> NodePlacement {
+    NodePlacement {
+        parent: ParentRef::Section(section),
+        before: None,
+    }
+}
 
-    // Unlocked, it edits as usual; nothing of it is in plain text on disk.
-    let handle = notebook.open_page(page, client.clone()).unwrap();
-    handle.apply(request(page, 1, vec![text(2, LATER)])).unwrap();
+/// Unlocked, the section edits as usual, while nothing of it is in plain text and pages can't leave it.
+fn edit_while_unlocked(f: &Fixture) {
+    let notebook = f.core.find_open(&f.root).unwrap();
+    let hints_before = f.index.hints().len();
+    let handle = notebook.open_page(f.page, f.client.clone()).unwrap();
+    handle.apply(request(f.page, 1, vec![text(2, LATER)])).unwrap();
     handle.save_now().unwrap();
     for needle in [SECRET, LATER, "Plans 3381"] {
-        assert_eq!(holding(dir.path(), needle), Vec::<String>::new(), "{needle} is in plain text");
+        assert_eq!(
+            holding(f.dir.path(), needle),
+            Vec::<String>::new(),
+            "{needle} is in plain text"
+        );
     }
-    assert_eq!(index.hints().len(), hints_before, "the search index hears nothing of it");
+    assert_eq!(
+        f.index.hints().len(),
+        hints_before,
+        "the search index hears nothing of it"
+    );
     assert!(handle.page_md_path().is_none(), "no page.md to open in another editor");
-
-    // Pages can't carry their files out of it, or into Trash.
-    let moved = notebook.move_pages(&[page], plain, 0, 0);
-    assert!(matches!(moved, Err(CoreError::ReadOnly(ReadOnlyReason::Encrypted))), "{moved:?}");
-    let trashed = notebook.delete(&[opennote_core::session::notebook::NodeRef::Page(page)]);
+    let moved = notebook.move_pages(&[f.page], f.plain, 0, 0);
+    assert!(
+        matches!(moved, Err(CoreError::ReadOnly(ReadOnlyReason::Encrypted))),
+        "{moved:?}"
+    );
+    let trashed = notebook.delete(&[opennote_core::session::notebook::NodeRef::Page(f.page)]);
     assert!(trashed.is_err());
-    handle.close(&client).unwrap();
-    drop(notebook);
+    handle.close(&f.client).unwrap();
+}
 
-    // Locked: no pages, nothing opens, and the password is checked before anything changes.
-    assert!(core.lock_section(&root, section).unwrap());
-    let notebook = core.find_open(&root).unwrap();
+/// Locked, the section shows its title and no pages, and opens nothing.
+fn check_locked(f: &Fixture) {
+    let notebook = f.core.find_open(&f.root).unwrap();
     let tree = notebook.tree();
     let shown = children_of(&tree, notebook.id().0).unwrap();
-    let diary = shown.iter().find(|n| n.id == section.to_string()).unwrap();
+    let diary = shown.iter().find(|n| n.id == f.section.to_string()).unwrap();
     assert_eq!(diary.protection, Protection::Locked);
     assert_eq!(diary.title, "Diary", "the title stays readable");
-    assert_eq!(children_of(&tree, section.0).unwrap().len(), 0);
+    assert_eq!(children_of(&tree, f.section.0).unwrap().len(), 0);
     assert!(matches!(
-        notebook.open_page(page, client.clone()),
+        notebook.open_page(f.page, f.client.clone()),
         Err(CoreError::ReadOnly(ReadOnlyReason::Encrypted)) | Err(CoreError::NotFound(_))
     ));
-    drop(notebook);
-    assert!(matches!(
-        core.unlock_section(&root, section, Secret::Password("battery staple")),
-        Err(ProtectError::Wrong)
-    ));
-    core.unlock_section(&root, section, Secret::Password("correct horse")).unwrap();
-    let notebook = core.find_open(&root).unwrap();
-    let handle = notebook.open_page(page, client.clone()).unwrap();
+}
+
+#[test]
+fn a_protected_section_keeps_no_plain_text_anywhere_and_opens_only_with_its_password() {
+    let f = fixture();
+    f.core.protect_section(&f.root, f.section, "correct horse").unwrap();
+    assert_eq!(
+        f.core.section_protection(&f.root, f.section).unwrap(),
+        Protection::Unlocked
+    );
+    edit_while_unlocked(&f);
+    assert!(f.core.lock_section(&f.root, f.section).unwrap());
+    check_locked(&f);
+    let wrong = f
+        .core
+        .unlock_section(&f.root, f.section, Secret::Password("battery staple"));
+    assert!(matches!(wrong, Err(ProtectError::Wrong)));
+    f.core
+        .unlock_section(&f.root, f.section, Secret::Password("correct horse"))
+        .unwrap();
+    let notebook = f.core.find_open(&f.root).unwrap();
+    let handle = notebook.open_page(f.page, f.client.clone()).unwrap();
     let json = real_core::page_json(&handle).to_string();
     assert!(json.contains(SECRET) && json.contains(LATER), "{json}");
-    handle.close(&client).unwrap();
+    handle.close(&f.client).unwrap();
 
     // Delete forever works inside it, and removing protection brings plain files back.
-    let second = notebook
-        .create_page(
-            section,
-            NodePlacement {
-                parent: ParentRef::Section(section),
-                before: None,
-            },
-        )
-        .unwrap();
+    let second = notebook.create_page(f.section, inside(f.section)).unwrap();
     assert_eq!(notebook.delete_sealed_pages(&[second]).unwrap(), vec![second]);
     drop(notebook);
-    core.unprotect_section(&root, section).unwrap();
-    assert_eq!(core.section_protection(&root, section).unwrap(), Protection::None);
-    assert!(!holding(&root, SECRET).is_empty(), "plain again");
+    f.core.unprotect_section(&f.root, f.section).unwrap();
+    assert_eq!(f.core.section_protection(&f.root, f.section).unwrap(), Protection::None);
+    assert!(!holding(&f.root, SECRET).is_empty(), "plain again");
 }

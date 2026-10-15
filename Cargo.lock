@@ -2898,6 +2898,7 @@ dependencies = [
  "webview2-com",
  "windows",
  "windows-core",
+ "zeroize",
 ]
 
 [[package]]

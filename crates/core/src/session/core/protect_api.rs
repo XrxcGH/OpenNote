@@ -166,7 +166,12 @@ impl Core {
     }
 
     /// Changes an unlocked section's password.
-    pub fn change_section_password(&self, notebook: &Path, section: SectionId, password: &str) -> Result<(), ProtectError> {
+    pub fn change_section_password(
+        &self,
+        notebook: &Path,
+        section: SectionId,
+        password: &str,
+    ) -> Result<(), ProtectError> {
         let fs = self.sealed_fs()?;
         let dir = self.section_dir(notebook, section)?;
         let sealed = fs.sealed().ok_or(ProtectError::NotProtected)?;

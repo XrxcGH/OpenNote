@@ -17,6 +17,7 @@ pub mod power;
 pub mod prefs;
 pub mod quick;
 pub mod repairs;
+pub mod sections;
 pub mod shortcuts;
 pub mod storage;
 pub mod windows_ops;
@@ -80,6 +81,7 @@ pub fn start(app: &AppHandle) {
     external::start(app);
     quick::start(app);
     power::start(app);
+    sections::start(app);
 }
 
 /// Runs one named call.
@@ -95,6 +97,12 @@ pub async fn shellqol_call(
         return crate::core_bridge::search::search_call(app, bridge, "rebuild".to_owned(), json!({})).await;
     }
     let (group, _) = name.split_once('.').unwrap_or((name.as_str(), ""));
+    // Protected sections derive keys with Argon2id and may wait for Windows Hello, so they run off the runtime.
+    if group == "protect" {
+        return tauri::async_runtime::spawn_blocking(move || sections::call(&app, &name, &args))
+            .await
+            .map_err(|error| IpcError::new("io", error.to_string()))?;
+    }
     match group {
         "notes" => notes_ops::call(&app, &bridge, &name, &args),
         "window" => windows_ops::call(&app, &name, &args),
@@ -108,7 +116,7 @@ pub async fn shellqol_call(
         "shortcut" => shortcuts::call(&app, &bridge, &name, &args),
         "external" => external::call(&app, &name, &args),
         "prefs" => prefs::call(&app, &name, &args),
-        "trash" | "history" | "edits" | "source" | "storage" | "check" | "lock" | "protect" => {
+        "trash" | "history" | "edits" | "source" | "storage" | "check" | "lock" => {
             storage::call(&app, &bridge, &name, &args)
         }
         _ => Err(IpcError::invalid("name", &format!("{name} isn't a shell call"))),

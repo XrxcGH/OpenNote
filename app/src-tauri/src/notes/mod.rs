@@ -61,6 +61,9 @@ pub struct NodeSummary {
     pub pinned: bool,
     /// Hidden from the tree until "Show archived".
     pub archived: bool,
+    /// A protected section, or a page of one: "locked" or "unlocked" (ADR 0042). Left out for the rest.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub protected: Option<&'static str>,
 }
 
 /// The contract's `LibraryInfo`.

@@ -1,9 +1,11 @@
-//! The cryptography of protected sections (ADR 0042), built only from audited RustCrypto crates: Argon2id
-//! (`argon2`) turns a password, or the signature Windows Hello makes over a fixed challenge, into a key that wraps
-//! the section's random content key, and XChaCha20-Poly1305 (`chacha20poly1305`) seals every file of the section
-//! under that content key with a fresh random 192 bit nonce from the operating system. Each sealed file's
-//! associated data names the section and the file, so files can't be swapped between sections or names. Keys
-//! live in [`Zeroizing`] buffers, which are wiped when dropped.
+//! The cryptography of protected sections (ADR 0042). Only audited RustCrypto crates do it.
+//!
+//! Argon2id (`argon2`) turns a password into a key. It does the same for the signature Windows Hello makes over a
+//! fixed challenge. That key wraps the section's random content key.
+//!
+//! XChaCha20-Poly1305 (`chacha20poly1305`) seals every file of the section under the content key. Each file gets a
+//! fresh random 192 bit nonce from the operating system. Its associated data names the section and the file, so
+//! files can't be swapped. Keys live in [`Zeroizing`] buffers, which are wiped when dropped.
 
 use chacha20poly1305::aead::{Aead, KeyInit, Payload};
 use chacha20poly1305::{XChaCha20Poly1305, XNonce};
@@ -142,7 +144,7 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
 }
 
 pub(crate) fn unhex(text: &str) -> Option<Vec<u8>> {
-    if text.len() % 2 != 0 {
+    if !text.len().is_multiple_of(2) {
         return None;
     }
     (0..text.len())
@@ -152,7 +154,12 @@ pub(crate) fn unhex(text: &str) -> Option<Vec<u8>> {
 }
 
 /// A key slot: the content key wrapped under a key made from a password or a Hello signature.
-pub fn make_slot(section: &str, content: &Key, secret: Secret<'_>, salt: Option<[u8; SALT]>) -> Result<Value, SealError> {
+pub fn make_slot(
+    section: &str,
+    content: &Key,
+    secret: Secret<'_>,
+    salt: Option<[u8; SALT]>,
+) -> Result<Value, SealError> {
     let cost = match secret {
         Secret::Password(_) => PASSWORD_COST,
         Secret::Hello(_) => HELLO_COST,
@@ -228,18 +235,23 @@ pub fn new_header(section: &str, content: &Key, password: &str) -> Result<Value,
 
 /// The header with the slots of `kind` replaced by `slot`.
 pub fn with_slot(header: &Value, slot: Value) -> Value {
-    let mut out = header.clone();
-    let kind = slot["kind"].clone();
-    let mut keys: Vec<Value> = slots(header).filter(|s| s["kind"] != kind).cloned().collect();
+    let kind = slot.get("kind").cloned();
+    let mut keys: Vec<Value> = slots(header).filter(|s| s.get("kind") != kind.as_ref()).cloned().collect();
     keys.push(slot);
-    out["keys"] = Value::Array(keys);
-    out
+    with_keys(header, keys)
 }
 
 /// The header without the slots of `kind`.
 pub fn without_slot(header: &Value, kind: &str) -> Value {
+    let keys = slots(header).filter(|s| s.get("kind").and_then(Value::as_str) != Some(kind)).cloned().collect();
+    with_keys(header, keys)
+}
+
+fn with_keys(header: &Value, keys: Vec<Value>) -> Value {
     let mut out = header.clone();
-    out["keys"] = Value::Array(slots(header).filter(|s| s["kind"] != kind).cloned().collect());
+    if let Some(map) = out.as_object_mut() {
+        map.insert("keys".into(), Value::Array(keys));
+    }
     out
 }
 

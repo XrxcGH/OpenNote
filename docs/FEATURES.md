@@ -189,7 +189,7 @@ More quality-of-life features:
 | Pen settings sync | Pens, colors, and toolbars follow the person to every device | Needs the owner. Needs a sync service or account. |
 | Low-power mode | Reduces animations and background work on battery | Built, untested by hand |
 | Shortcut cheat sheet | Ctrl+/ shows every shortcut, and each one can be changed | Built |
-| Password-protected sections | Encrypted on disk, unlocked with Windows Hello | Needs the owner. Needs a format decision and Windows Hello. |
+| Password-protected sections | Encrypted on disk, unlocked with Windows Hello | Built, untested by hand. ADR 0042 (Proposed) seals each file with XChaCha20-Poly1305 under an Argon2id key. Windows Hello unlock needs the owner on real hardware. |
 
 ## More quality-of-life features by phase
 
@@ -278,7 +278,7 @@ These features answer requests from people switching from OneNote, Goodnotes, Ob
 |---|---|---|
 | Line tags and tag summary | Ctrl+1 to Ctrl+9 tag any paragraph or list item as To do, Important, Question, Idea, or a custom tag. A Tags pane collects tagged lines and open checkboxes from a page, section, notebook, or all notebooks, grouped by tag, page, or date. Items can be checked off in place, and "Create summary page" saves a copy. Each tag shows an icon and a name, not just a color. | Built, untested by hand |
 | Links to paragraphs | "Copy link" works on any page, heading, or paragraph, and `[[Page#Heading]]` autocompletes headings. Opening a link jumps to the target and briefly highlights it. The same links open OpenNote from Outlook, Word, Teams, or a browser, and they survive moves and renames. | Built, untested by hand |
-| Protected sections lock again | Password-protected sections lock again after a chosen idle time, when the person leaves them, and when Windows locks or sleeps. Their text never appears in plain text in `page.md`, the search index, thumbnails, recent pages, or crash reports. Search skips them while they are locked. | Needs the owner. Needs a format decision. |
+| Protected sections lock again | Password-protected sections lock again after a chosen idle time, when the person leaves them, and when Windows locks or sleeps. Their text never appears in plain text in `page.md`, the search index, thumbnails, recent pages, or crash reports. Search skips them while they are locked. | Built, untested by hand. ADR 0042 (Proposed). The shell locks them when Windows locks or sleeps, and Settings, then Storage sets the idle time. |
 | Link previews | Hovering over or focusing an internal link shows a small card with the target's first lines, heading, or paragraph. Keyboard and screen reader users open the card with a shortcut, and Escape closes it. The card stays open while the pointer is over it. Previews never show text from locked sections. | Built, untested by hand |
 | Unlinked mentions | The backlinks pane has a second list of pages that mention this page's title without linking to it. "Link" turns one mention into a link, and "Link all" turns every mention into one, after a preview of each change. One undo reverses it. Locked sections are skipped. | Built, untested by hand |
 | Tag renaming | Rename, merge, or delete a tag everywhere, including nested tags such as `school/biology`. A preview shows how many pages and lines will change before anything does, and one undo reverses the whole change. Custom tags keep their icons. | Built, untested by hand |

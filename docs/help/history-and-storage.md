@@ -49,6 +49,22 @@ Each repair has Undo in the same window, until you close OpenNote. If OpenNote c
 
 For lab notebooks and records, Lock entry makes a page read-only and stamps it with the date, the time from this PC's clock, and this PC's name in OpenNote. Choose Lock entry in the command palette, or on the page itself when it uses the Lab notebook layout. OpenNote asks first.
 
-A locked page shows its stamp above the page. To change it again, choose Unlock entry and say why. The reason is kept in page history as the name of the locked version, and that version is never removed when history is thinned.
+A locked page shows its stamp above the page. To change it again, choose Unlock entry, and say why. The reason is kept in page history as the name of the locked version, and that version is never removed when history is thinned.
 
 The lock only stops edits in OpenNote. It isn't tamper-proof: anyone with access to the files can change them, and the PC's clock can be wrong.
+
+## Protect a section with a password
+
+A protected section is encrypted in your notes folder. Its pages open only after you unlock it, with its password or with Windows Hello. To protect one, right-click the section and choose Protect with password. Pick a password of at least 8 characters. If you forget it, nobody can open the section, not even OpenNote.
+
+A locked section shows a closed lock and its title, but none of its pages. Choose it and select Unlock section. You can also turn on Unlock with Windows Hello for a section while it is unlocked. Pages of a protected section stay out of search, recent pages, readable copies (`page.md`), and page history.
+
+Protected sections lock again on their own:
+
+- When Windows locks or the PC sleeps, and when OpenNote closes.
+- After a time without use, which you set in Settings, then Storage, under Protected sections.
+- When you leave the section, unless you turn that off there.
+
+Pages can't move into or out of a protected section, and they skip the Trash. Deleting one deletes it for good, after a warning. Recordings aren't available in protected sections yet. Remove protection writes the pages back as plain files.
+
+Backups made after you protect a section hold it encrypted. Backups made before still hold its pages in plain text. The drive may also keep old copies of the removed plain files for a while.

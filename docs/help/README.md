@@ -41,7 +41,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 
 ## Storage and history
 
-- [History, Trash, and storage](history-and-storage.md): page history, Trash, the notes folder, edits from other apps, and Check notebook.
+- [History, Trash, and storage](history-and-storage.md): page history, Trash, the notes folder, edits from other apps, Check notebook, Lock entry, and password-protected sections.
 
 ## Smart features, privacy, and accounts
 

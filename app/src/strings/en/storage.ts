@@ -18,8 +18,10 @@ export const storage = {
     more: '{count, plural, one {And # more change.} other {And # more changes.}}',
     nothing: 'The edited file has no text changes to bring in.',
     conflicts:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       '{count, plural, one {# paragraph changed here and in the other app. It keeps the text it has here.} other {# paragraphs changed here and in the other app. They keep the text they have here.}}',
     skipped:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       '{count, plural, one {# change to a picture, table, or drawing stays as it is here.} other {# changes to pictures, tables, or drawings stay as they are here.}}',
     tooDifferent: 'The file is too different from the page to compare paragraph by paragraph.',
     baseUnknown: 'OpenNote compared the file with the page as it is now, so recent edits here may be undone.',
@@ -37,6 +39,7 @@ export const storage = {
     progress: '{done} of {total} downloaded',
     done: 'The files of this page are on this device.',
     failed:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       "{count, plural, one {# file of this page is only in the cloud and didn't download.} other {# files of this page are only in the cloud and didn't download.}} Connect to the internet, then open the page again.",
     dismiss: 'Close',
   },
@@ -67,6 +70,7 @@ export const storage = {
     askTitle: 'Use {path} for your notes?',
     askEmpty: 'Move your notebooks there, or keep them where they are and put new notebooks there.',
     askHas:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       '{count, plural, one {It already has # notebook.} other {It already has # notebooks.}} Move your notebooks there too, or use the notebooks that are there.',
     move: 'Move my notebooks',
     use: 'Use the notebooks there',
@@ -76,10 +80,12 @@ export const storage = {
     progress: '{done} of {total} files copied and checked',
     stop: 'Stop moving',
     moved:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       '{count, plural, one {Moved # notebook to {path}. Its old folder is in the Recycle Bin.} other {Moved # notebooks to {path}. Their old folders are in the Recycle Bin.}}',
     stopped:
       'Stopped. Notebooks already moved are in the new folder, and the rest stay where they were. The notes folder is unchanged.',
     failed:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       "{count, plural, one {# notebook couldn't move and stays where it was.} other {# notebooks couldn't move and stay where they were.}} The notes folder is unchanged.",
     switched: 'New notebooks now go to {path}.',
     busy: 'The notebooks are already moving.',
@@ -91,6 +97,7 @@ export const storage = {
     unlockKeywords: 'unlock entry stamp reason edit lab notebook record',
     confirmTitle: 'Lock this entry?',
     confirmBody:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
       "The page becomes read-only and is stamped with the date, the time from this PC's clock, and this PC's name. Unlocking it later asks for a reason, which goes into page history. The lock only stops edits in OpenNote; it isn't tamper-proof.",
     lock: 'Lock entry',
     locked: 'The entry is locked.',
@@ -125,5 +132,70 @@ export const storage = {
     undoFailed: "Couldn't undo the repair of {path}.",
     afterCrash: 'OpenNote closed unexpectedly last time. Check notebook can look for damaged files.',
     afterCrashAction: 'Check notebook',
+  },
+  sections: {
+    protect: 'Protect with password…',
+    unlock: 'Unlock section…',
+    lock: 'Lock section',
+    lockAll: 'Lock all protected sections',
+    unprotect: 'Remove protection…',
+    changePassword: 'Change section password…',
+    helloOn: 'Unlock with Windows Hello',
+    helloOff: 'Stop unlocking with Windows Hello',
+    keywords: 'protect password encrypt lock unlock private secret section windows hello',
+    protectTitle: 'Protect “{title}” with a password?',
+    protectBody:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
+      'The section is encrypted on this PC and in your notes folder. Its pages open only after you unlock it, and they stay out of search, recent pages, and backups in plain text. If you forget the password, nobody can open the section, not even OpenNote.',
+    password: 'Password',
+    confirm: 'Type the password again',
+    tooShort: 'Use at least 8 characters.',
+    mismatch: 'The passwords are different.',
+    protectAction: 'Protect',
+    protecting: 'Protecting the section…',
+    protected: '“{title}” is protected.',
+    protectFailed: "Couldn't protect “{title}”. It hasn't changed.",
+    unlockTitle: 'Unlock “{title}”',
+    unlockBody: 'Type the password of this section.',
+    unlockAction: 'Unlock',
+    unlockHello: 'Use Windows Hello',
+    unlocking: 'Unlocking…',
+    wrongPassword: "The password isn't right.",
+    unlocked: '“{title}” is unlocked.',
+    unlockFailed: "Couldn't unlock “{title}”.",
+    helloFailed: "Windows Hello didn't unlock the section. Type the password instead.",
+    locked: '“{title}” is locked.',
+    lockedAll: 'Protected sections are locked.',
+    lockedWindows: 'Protected sections locked when Windows locked.',
+    lockedSlept: 'Protected sections locked while the PC slept.',
+    lockedIdle: '“{title}” locked after a while without use.',
+    lockedPane: 'This section is locked.',
+    lockedPaneHelp: 'Unlock it to see its pages.',
+    unprotectTitle: 'Remove protection from “{title}”?',
+    unprotectBody:
+      // checks-disable-next-line length: one sentence kept whole, because t() reads its parameters from the literal
+      'Its pages are written to your notes folder in plain text again, and come back into search. Anyone who can open the folder can read them.',
+    unprotectAction: 'Remove protection',
+    unprotected: "“{title}” isn't protected anymore.",
+    changeTitle: 'Change the password of “{title}”',
+    changeAction: 'Change password',
+    changed: 'The password of “{title}” is changed.',
+    helloSet: 'Windows Hello can unlock “{title}”.',
+    helloRemoved: 'Windows Hello no longer unlocks “{title}”.',
+    helloUnavailable: "Windows Hello isn't set up on this PC.",
+    describeLocked: 'protected, locked',
+    describeUnlocked: 'protected, unlocked',
+    deleteTitle: 'Delete “{title}” for good?',
+    deleteBody: "Pages in a protected section skip the Trash, so this page and its subpages can't be restored.",
+    deleteAction: 'Delete for good',
+    deleted: '“{title}” is deleted.',
+    cantMove: "Pages can't move into or out of a protected section. Remove its protection first.",
+    recording: "Recordings aren't available in protected sections yet.",
+    settingsTitle: 'Protected sections',
+    idle: 'Lock after',
+    idleNever: 'Only when I lock it',
+    idleMinutes: '{count, plural, one {# minute without use} other {# minutes without use}}',
+    lockOnLeave: 'Lock a protected section when I leave it',
+    settingsHelp: 'Protected sections always lock when Windows locks or the PC sleeps, and when OpenNote closes.',
   },
 } as const;

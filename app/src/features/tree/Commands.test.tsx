@@ -328,6 +328,7 @@ describe('context menu contents', () => {
       'Check accessibility',
       'Archive',
       'Delete section history',
+      'Protect with password…',
       'Export…',
       'Delete',
     ]);

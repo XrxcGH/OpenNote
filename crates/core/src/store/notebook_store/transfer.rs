@@ -248,7 +248,10 @@ impl NotebookStore {
             return Err(CoreError::Conflict("the section is already in that notebook".into()));
         }
         // An unlocked protected section would copy as plain files; a locked one copies sealed (ADR 0042).
-        if sections.iter().any(|s| self.section(*s).is_ok_and(|st| st.encrypted() && !st.locked())) {
+        if sections
+            .iter()
+            .any(|s| self.section(*s).is_ok_and(|st| st.encrypted() && !st.locked()))
+        {
             return Err(CoreError::ReadOnly(crate::model::ReadOnlyReason::Encrypted));
         }
         let (order, rekeys) = target.child_key(parent, None, to.before.map(super::edit::node_id))?;

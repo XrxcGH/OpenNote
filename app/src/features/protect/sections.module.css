@@ -1,0 +1,34 @@
+@layer components {
+  .fields {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .label {
+    display: block;
+    margin-block: var(--space-2) var(--space-1);
+  }
+
+  .select {
+    min-block-size: 2rem;
+    margin-block-end: var(--space-3);
+    font: inherit;
+  }
+
+  .pane {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .lockedTitle {
+    margin: 0;
+    font-weight: 600;
+  }
+}

@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use super::*;
 use crate::testing::mem_fs::MemFs;
+use serde_json::json;
 
 const SECRET_TEXT: &[u8] = b"The combination is 42-17-8";
 const PAGE: &str = "01J0000000000000000000PAGE";
@@ -30,7 +31,10 @@ fn plain_section(mem: &MemFs, page: &str) -> PathBuf {
     mem.put(&dir.join(page).join("page.json"), SECRET_TEXT);
     mem.put(&dir.join(page).join("page.md"), SECRET_TEXT);
     mem.put(&dir.join(page).join(".history").join("v1.json"), SECRET_TEXT);
-    mem.put(&dir.join(page).join("assets").join("photo.png"), b"PNGDATA-secret-photo");
+    mem.put(
+        &dir.join(page).join("assets").join("photo.png"),
+        b"PNGDATA-secret-photo",
+    );
     dir
 }
 
@@ -72,9 +76,13 @@ fn protecting_seals_every_file_and_drops_readable_copies_and_history() {
 
     // Unlocked, the section reads as it was, without page.md and history.
     assert_eq!(fs.protection(&dir), Protection::Unlocked);
-    assert_eq!(fs.read(&dir.join(&page).join("page.json"), 1 << 20).unwrap(), SECRET_TEXT);
     assert_eq!(
-        fs.read(&dir.join(&page).join("assets").join("photo.png"), 1 << 20).unwrap(),
+        fs.read(&dir.join(&page).join("page.json"), 1 << 20).unwrap(),
+        SECRET_TEXT
+    );
+    assert_eq!(
+        fs.read(&dir.join(&page).join("assets").join("photo.png"), 1 << 20)
+            .unwrap(),
         b"PNGDATA-secret-photo"
     );
     assert!(fs.metadata(&dir.join(&page).join("page.md")).is_err());
@@ -103,13 +111,19 @@ fn a_locked_section_shows_only_its_public_file_and_opens_only_with_its_password(
         fs.unlock(&dir, "S1", Secret::Password("battery staple")),
         Err(ProtectError::Wrong)
     ));
-    assert!(matches!(fs.unlock(&dir, "S2", Secret::Password("correct horse")), Err(_)), "bound to the section");
+    assert!(
+        fs.unlock(&dir, "S2", Secret::Password("correct horse")).is_err(),
+        "bound to the section"
+    );
     assert!(matches!(
         fs.unlock(&dir, "S1", Secret::Hello(b"sig")),
         Err(ProtectError::NoSlot)
     ));
     fs.unlock(&dir, "S1", Secret::Password("correct horse")).unwrap();
-    assert_eq!(fs.read(&dir.join(&page).join("page.json"), 1 << 20).unwrap(), SECRET_TEXT);
+    assert_eq!(
+        fs.read(&dir.join(&page).join("page.json"), 1 << 20).unwrap(),
+        SECRET_TEXT
+    );
 }
 
 #[test]
@@ -122,12 +136,20 @@ fn changes_while_unlocked_are_sealed_and_survive_a_lock() {
 
     let new_page = page_id();
     fs.create_dir_durable(&dir.join(format!("~moving-{new_page}"))).unwrap();
-    fs.create_durable(&dir.join(format!("~moving-{new_page}")).join("page.json"), b"brand new secret")
+    fs.create_durable(
+        &dir.join(format!("~moving-{new_page}")).join("page.json"),
+        b"brand new secret",
+    )
+    .unwrap();
+    fs.rename_dir(&dir.join(format!("~moving-{new_page}")), &dir.join(&new_page))
         .unwrap();
-    fs.rename_dir(&dir.join(format!("~moving-{new_page}")), &dir.join(&new_page)).unwrap();
-    fs.replace_durable(&dir.join(&page).join("page.json"), b"edited secret").unwrap();
+    fs.replace_durable(&dir.join(&page).join("page.json"), b"edited secret")
+        .unwrap();
     fs.remove_dir_all(&dir.join(&page).join("assets")).unwrap();
-    assert!(fs.create_durable(&dir.join("missing").join("x"), b"x").is_err(), "a parent must exist");
+    assert!(
+        fs.create_durable(&dir.join("missing").join("x"), b"x").is_err(),
+        "a parent must exist"
+    );
     let listed: Vec<String> = fs.read_dir(&dir).unwrap().into_iter().map(|e| e.name).collect();
     assert!(listed.contains(&new_page) && listed.contains(&page));
     assert!(!listed.contains(&SEALED_DIR.to_owned()));
@@ -135,8 +157,14 @@ fn changes_while_unlocked_are_sealed_and_survive_a_lock() {
 
     fs.lock(&dir);
     fs.unlock(&dir, "S1", Secret::Password("pw")).unwrap();
-    assert_eq!(fs.read(&dir.join(&new_page).join("page.json"), 1 << 20).unwrap(), b"brand new secret");
-    assert_eq!(fs.read(&dir.join(&page).join("page.json"), 1 << 20).unwrap(), b"edited secret");
+    assert_eq!(
+        fs.read(&dir.join(&new_page).join("page.json"), 1 << 20).unwrap(),
+        b"brand new secret"
+    );
+    assert_eq!(
+        fs.read(&dir.join(&page).join("page.json"), 1 << 20).unwrap(),
+        b"edited secret"
+    );
     assert!(fs.metadata(&dir.join(&page).join("assets")).is_err());
     // Replaced and removed files leave no blobs behind.
     let blobs = mem.read_dir(&dir.join(SEALED_DIR)).unwrap().len();
@@ -168,7 +196,10 @@ fn a_damaged_or_swapped_blob_never_reads_as_content() {
     bytes[30] ^= 1;
     mem.put(&manifest, &bytes);
     fs.lock(&dir);
-    assert!(matches!(fs.unlock(&dir, "S1", Secret::Password("pw")), Err(ProtectError::Damaged)));
+    assert!(matches!(
+        fs.unlock(&dir, "S1", Secret::Password("pw")),
+        Err(ProtectError::Damaged)
+    ));
 }
 
 #[test]
@@ -224,15 +255,22 @@ fn windows_hello_unlocks_with_the_signature_over_its_challenge() {
     fs.set_slot(&dir, Secret::Hello(&signature), Some(challenge)).unwrap();
     assert_eq!(fs.hello_challenge(&dir).unwrap(), challenge.to_vec());
     fs.lock(&dir);
-    assert_eq!(fs.hello_challenge(&dir).unwrap(), challenge.to_vec(), "readable while locked");
+    assert_eq!(
+        fs.hello_challenge(&dir).unwrap(),
+        challenge.to_vec(),
+        "readable while locked"
+    );
     assert!(matches!(
         fs.unlock(&dir, "S1", Secret::Hello(&[8u8; 256])),
         Err(ProtectError::Wrong)
     ));
     fs.unlock(&dir, "S1", Secret::Hello(&signature)).unwrap();
     // The password still works, and the core's section.json writes keep the new slot.
-    fs.replace_durable(&dir.join("section.json"), &fs.read(&dir.join("section.json"), 1 << 20).unwrap())
-        .unwrap();
+    fs.replace_durable(
+        &dir.join("section.json"),
+        &fs.read(&dir.join("section.json"), 1 << 20).unwrap(),
+    )
+    .unwrap();
     fs.lock(&dir);
     fs.unlock(&dir, "S1", Secret::Password("pw")).unwrap();
     assert!(fs.hello_challenge(&dir).is_some());
@@ -252,7 +290,10 @@ fn leftovers_of_a_crash_while_protecting_are_removed_at_unlock() {
     // As if the plain files' removal had not run.
     mem.mkdir_all(&dir.join(PAGE));
     mem.put(&dir.join(PAGE).join("page.json"), SECRET_TEXT);
-    mem.put(&dir.join(SEALED_DIR).join("0123456789abcdef0123456789abcdef"), b"orphan");
+    mem.put(
+        &dir.join(SEALED_DIR).join("0123456789abcdef0123456789abcdef"),
+        b"orphan",
+    );
     fs.unlock(&dir, "S1", Secret::Password("pw")).unwrap();
     assert!(!mem.exists(&dir.join(PAGE).join("page.json")));
     assert!(!mem.exists(&dir.join(SEALED_DIR).join("0123456789abcdef0123456789abcdef")));

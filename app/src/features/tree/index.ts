@@ -14,4 +14,4 @@ export const loadMultiActions = () => import('./multiActions');
 export const loadQolActions = () => import('./qolActions');
 export { locationFor } from './selection';
 export { ancestors, getNode, notebookOf, treeStore } from './store';
-export { startTree, stopTree } from './load';
+export { relist, startTree, stopTree } from './load';

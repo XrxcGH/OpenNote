@@ -6,6 +6,8 @@
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { LockSimpleIcon } from '@phosphor-icons/react/dist/csr/LockSimple';
+import { LockSimpleOpenIcon } from '@phosphor-icons/react/dist/csr/LockSimpleOpen';
 import { PushPinIcon } from '@phosphor-icons/react/dist/csr/PushPin';
 import { memo, useId, useRef } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
@@ -42,8 +44,20 @@ export function describeNode(node: NodeSummary): string {
     const page = t('tree.describe.page', { level: String(node.pageLevel), date: formatDate(node.modified) });
     return node.pinned ? `${page} ${t('qol.pin.describe')}` : page;
   }
-  if (!node.color) return t('tree.describe.kind', { kind: node.kind });
-  return t('tree.describe.colored', { kind: node.kind, color: t(`tree.colors.${node.color}`) });
+  const kind = node.color
+    ? t('tree.describe.colored', { kind: node.kind, color: t(`tree.colors.${node.color}`) })
+    : t('tree.describe.kind', { kind: node.kind });
+  if (node.kind !== 'section' || !node.protected) return kind;
+  const state =
+    node.protected === 'locked' ? t('storage.sections.describeLocked') : t('storage.sections.describeUnlocked');
+  return `${kind}, ${state}`;
+}
+
+/** The lock of a password-protected section (ADR 0042): closed while locked, open while unlocked. */
+function Protection({ node }: { node: NodeSummary }) {
+  if (node.kind !== 'section' || !node.protected) return null;
+  const Icon = node.protected === 'locked' ? LockSimpleIcon : LockSimpleOpenIcon;
+  return <Icon aria-hidden className={styles.pin} data-protected={node.protected} />;
 }
 
 function Chip({ node }: { node: NodeSummary }) {
@@ -126,6 +140,7 @@ function TreeRowView(props: TreeRowProps) {
         {describeNode(node)}
       </span>
       {node.pinned && !renaming && <PushPinIcon aria-hidden className={styles.pin} weight="fill" />}
+      {!renaming && <Protection node={node} />}
       <span className={styles.more}>
         <IconButton
           label={t('tree.menu.more', { title })}

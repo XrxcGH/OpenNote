@@ -29,6 +29,12 @@ const MENU_ENTRIES: readonly MenuEntry[] = [
   ['tree.section', 'tree.archive', 'tree.archive', 31],
   ['tree.section', 'tree.unarchive', 'tree.unarchive', 32],
   ['tree.section', 'tree.deleteHistory', 'history.deleteSectionHistory', 33],
+  // Password-protected sections (features/protect); each shows only in the state it applies to.
+  ['tree.section', 'protect.protect', 'protect.protectSection', 34],
+  ['tree.section', 'protect.unlock', 'protect.unlockSection', 35],
+  ['tree.section', 'protect.lock', 'protect.lockSection', 36],
+  ['tree.section', 'protect.changePassword', 'protect.changePassword', 37],
+  ['tree.section', 'protect.unprotect', 'protect.unprotectSection', 38],
   ['tree.sectionGroup', 'tree.archive', 'tree.archive', 31],
   ['tree.sectionGroup', 'tree.unarchive', 'tree.unarchive', 32],
   ['tree.notebook', 'tree.createShortcut', 'notes.createShortcut', 29],
