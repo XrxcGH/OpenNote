@@ -27,6 +27,8 @@ export type {
   TextBlock,
   Transform,
 } from './source';
+export { blankText, coveredBlocks, ENGLISH_TAPE_LABELS, withBlanks } from './tape';
+export type { TapeBox, TapeLabels } from './tape';
 export { documentCss, lightTheme, readStyles } from './style';
 export type { DocTheme, NotebookStyles, StyleSpec } from './style';
 export { dataUri, exportHtml } from './toHtml';

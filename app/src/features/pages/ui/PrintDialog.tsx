@@ -17,6 +17,7 @@ import { preparePrint } from '../print/prepare';
 import type { PrepareResult } from '../print/prepare';
 import type { PrintOptions } from '../print/sheets';
 import styles from './pagesUi.module.css';
+import { TapeBlanksSwitch } from './TapeBlanksSwitch';
 
 export interface PrintDialogProps {
   readonly source: PageSource;
@@ -209,6 +210,7 @@ function Fields({ form, total, rangeError, set }: FieldsProps) {
         checked={form.background}
         onChange={(value) => set('background', value)}
       />
+      <TapeBlanksSwitch />
       <CheckFirstSwitch />
       {isEnabled('pages.accessiblePdf') ? (
         <>

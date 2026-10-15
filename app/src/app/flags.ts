@@ -114,6 +114,7 @@ type ToolsQolFlagId =
   | 'study.cards'
   | 'study.import'
   | 'study.tape'
+  | 'study.tapeBlanks'
   | 'tools.converter'
   | 'tools.reference'
   | 'tools.dictionary'

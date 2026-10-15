@@ -3,7 +3,9 @@
 import { shownAssetUrl, shownMounted, snapshotShownPage } from '../../page';
 import type { NodeId, NotesService } from '../../../services/notes';
 import { titleOf } from '../../tree';
-import { readExportPage, type ExportPage } from '../export';
+import { readExportPage, withBlanks, type TapeBox, type ExportPage } from '../export';
+import { t } from '../../../strings/t';
+import { tapeBlanksOn } from './tapePref';
 import { collectStrokes } from './strokes';
 
 export interface PageSource {
@@ -33,6 +35,27 @@ async function placeOf(
   return { title: node ? titleOf(node) : '', notebook, section };
 }
 
+/** The box of every block as the page view laid it out, in page units. */
+function shownBoxes(): Map<string, TapeBox> {
+  const mounted = shownMounted.get();
+  const boxes = new Map<string, TapeBox>();
+  if (!mounted) return boxes;
+  for (const block of mounted.layer.blocks()) {
+    const element = mounted.layer.view(block.id)?.element;
+    if (element) boxes.set(block.id, { x: element.offsetLeft, y: element.offsetTop, w: element.offsetWidth, h: element.offsetHeight });
+  }
+  return boxes;
+}
+
+function tapeLabels() {
+  return {
+    answerKey: t('pagesPlus.tape.answerKey'),
+    picture: t('pagesPlus.tape.picture'),
+    drawing: t('pagesPlus.tape.drawing'),
+    table: t('pagesPlus.tape.table'),
+  };
+}
+
 /** The shown page as export data, or null when no page is shown. */
 export async function collectSource(notes: NotesService, language = 'en'): Promise<PageSource | null> {
   const mounted = shownMounted.get();
@@ -42,7 +65,8 @@ export async function collectSource(notes: NotesService, language = 'en'): Promi
   const json = await snapshotShownPage(place.title);
   if (!json) return null;
   const strokes = await collectStrokes(pageId);
-  const page = readExportPage(json, strokes, language);
+  const read = readExportPage(json, strokes, language);
+  const page = tapeBlanksOn() ? withBlanks(read, shownBoxes(), tapeLabels()) : read;
   const assetUrls: Record<string, string> = {};
   for (const id of Object.keys(page.assets)) {
     const url = shownAssetUrl(id);

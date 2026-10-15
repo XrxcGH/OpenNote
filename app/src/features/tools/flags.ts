@@ -32,6 +32,7 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('study.cards', 'Flashcard decks, review, card types, inline cards, generation, and exam dates.'),
   flag('study.import', 'Deck import and export for Anki packages, CSV, and text.'),
   flag('study.tape', 'Study tape that hides parts of a page until tapped.'),
+  flag('study.tapeBlanks', 'Print and export can turn study tape into blanks, with an answer key at the end.'),
   flag('tools.converter', 'The unit converter tool.'),
   flag('tools.reference', 'The reference tables tool.'),
   flag('tools.dictionary', 'The dictionary and thesaurus tool.'),

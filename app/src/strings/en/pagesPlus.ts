@@ -52,6 +52,19 @@ export const pagesPlus = {
     title: 'Export selection',
     docxLabel: 'Word document',
   },
+  tape: {
+    blanks: 'Turn study tape into blanks',
+    blanksHelp:
+      'What the tape covers prints as blanks, and an answer key follows at the end. This applies to print, PDF, pictures, Markdown, and web pages.',
+    command: 'Turn study tape into blanks when printing and exporting',
+    commandKeywords: 'study tape blanks answer key worksheet print export',
+    on: 'Study tape will print as blanks, with an answer key.',
+    off: 'Study tape will not print as blanks.',
+    answerKey: 'Answer key',
+    picture: 'picture',
+    drawing: 'drawing',
+    table: 'table',
+  },
   pdf: {
     accessible: 'Accessible PDF',
     accessibleHelp:

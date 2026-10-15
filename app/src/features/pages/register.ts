@@ -58,6 +58,13 @@ command({
 });
 
 command({
+  id: 'pages.tapeBlanks',
+  title: 'pagesPlus.tape.command',
+  keywords: 'pagesPlus.tape.commandKeywords',
+  flag: 'study.tapeBlanks',
+  run: () => import('./host/tapePref').then((m) => m.toggleTapeBlanks()),
+});
+command({
   id: 'pages.exportImage',
   title: 'pageViews.commands.exportImage',
   flag: 'pages.exportImage',
