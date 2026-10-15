@@ -46,7 +46,7 @@ The transcript is made in the background, one recording at a time, and a note sh
 
 - The notebook's custom vocabulary is given to the model first, and its spellings are fixed in the result. See [on-device intelligence](on-device-intelligence.md).
 - If you used Enhance voice, you can choose to make the transcript from the original or the enhanced voice, in the recording's More menu.
-- The model runs on the processor. Graphics and NPU chips are not used yet.
+- The 64-bit download reads speech with whisper.cpp, which is several times faster than the built-in reader the other downloads use. Both read the same model files and run on the processor. A build made with Vulkan support can use the graphics card for whole recordings, and falls back to the processor if it cannot. NPU chips are not used.
 - The audio is read from the page's own files. No copy is made.
 
 ### A transcript of every recording

@@ -1,10 +1,16 @@
 // What turning search by meaning, ask your notes, or writing tools on and off does, and the commands that open them.
 // A command that finds its feature off asks first. Ask your notes reads pages through the index that search by
 // meaning builds, so it turns that on too, and turning search by meaning off turns ask off and deletes the index.
-import { askToTurnOnExtra, isExtraOn, loadExtras, setExtra } from './extras';
+import { askToTurnOnExtra, isExtraOn, loadExtras, onExtraChange, setExtra } from './extras';
+import { refreshModels } from './models/store';
 import type { ExtraFeature } from './extras';
 
 const meaning = () => import('./meaning/engine');
+
+// Turning a feature on is when a language model or meaning model downloaded earlier should take over.
+onExtraChange((_feature, on) => {
+  if (on) void refreshModels().catch(() => undefined);
+});
 
 /** Turns a feature on or off from Settings, with what follows from it. Rejects when the choice can't be saved. */
 export async function changeExtra(feature: ExtraFeature, on: boolean): Promise<void> {
@@ -21,6 +27,8 @@ export async function changeExtra(feature: ExtraFeature, on: boolean): Promise<v
 /** At start-up: reads the switches and, when search by meaning is on, brings its index up to date in the background. */
 export async function resumeExtras(): Promise<void> {
   await loadExtras();
+  // A language model or meaning model downloaded earlier takes over from the rules and the built-in embedder.
+  if (isExtraOn('ask') || isExtraOn('writing') || isExtraOn('meaning')) await refreshModels();
   if (!isExtraOn('meaning')) return;
   const engine = await meaning();
   await engine.loadSavedIndex();

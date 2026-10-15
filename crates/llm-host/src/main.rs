@@ -225,7 +225,14 @@ mod tests {
                 text: "echo: one".to_owned()
             }
         );
-        assert!(matches!(&answers[2], Response::Failed { id: 2, code: FailureCode::Model, .. }));
+        assert!(matches!(
+            &answers[2],
+            Response::Failed {
+                id: 2,
+                code: FailureCode::Model,
+                ..
+            }
+        ));
     }
 
     #[test]
@@ -238,9 +245,30 @@ mod tests {
             generate(7, "m.gguf", "fine"),
         );
         let answers = run(&input);
-        assert!(matches!(&answers[1], Response::Failed { id: 0, code: FailureCode::Invalid, .. }));
-        assert!(matches!(&answers[2], Response::Failed { id: 5, code: FailureCode::Invalid, .. }));
-        assert!(matches!(&answers[3], Response::Failed { id: 6, code: FailureCode::Invalid, .. }));
+        assert!(matches!(
+            &answers[1],
+            Response::Failed {
+                id: 0,
+                code: FailureCode::Invalid,
+                ..
+            }
+        ));
+        assert!(matches!(
+            &answers[2],
+            Response::Failed {
+                id: 5,
+                code: FailureCode::Invalid,
+                ..
+            }
+        ));
+        assert!(matches!(
+            &answers[3],
+            Response::Failed {
+                id: 6,
+                code: FailureCode::Invalid,
+                ..
+            }
+        ));
         assert!(matches!(&answers[4], Response::Done { id: 7, .. }));
     }
 
@@ -249,8 +277,14 @@ mod tests {
         let huge = "y".repeat(MAX_LINE_BYTES + 10);
         let input = format!("{huge}\n{}\n", generate(8, "m.gguf", "ok"));
         let answers = run(&input);
-        assert!(matches!(&answers[1], Response::Failed { id: 0, code: FailureCode::Invalid, .. }));
+        assert!(matches!(
+            &answers[1],
+            Response::Failed {
+                id: 0,
+                code: FailureCode::Invalid,
+                ..
+            }
+        ));
         assert!(matches!(&answers[2], Response::Done { id: 8, .. }));
     }
-
 }

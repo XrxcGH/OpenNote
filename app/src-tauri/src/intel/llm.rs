@@ -91,7 +91,11 @@ struct Inner {
 pub struct Llm(Arc<Inner>);
 
 /// The program's file name.
-const HOST_NAME: &str = if cfg!(windows) { "opennote-llm.exe" } else { "opennote-llm" };
+const HOST_NAME: &str = if cfg!(windows) {
+    "opennote-llm.exe"
+} else {
+    "opennote-llm"
+};
 
 /// The program, inside the app's own file. A release is one signed exe and nothing else, so the program travels in
 /// it and is written to this device's folder the first time it is needed.
@@ -104,9 +108,17 @@ static EMBEDDED_HOST: &[u8] = &[];
 /// its own and a file that is there is never run unless it is exactly these bytes.
 pub fn extract_host(bytes: &[u8], dir: &Path) -> std::io::Result<PathBuf> {
     use sha2::{Digest, Sha256};
-    let hash: String = Sha256::digest(bytes).iter().take(8).map(|b| format!("{b:02x}")).collect();
+    let hash: String = Sha256::digest(bytes)
+        .iter()
+        .take(8)
+        .map(|b| format!("{b:02x}"))
+        .collect();
     let stem = HOST_NAME.trim_end_matches(".exe");
-    let name = if cfg!(windows) { format!("{stem}-{hash}.exe") } else { format!("{stem}-{hash}") };
+    let name = if cfg!(windows) {
+        format!("{stem}-{hash}.exe")
+    } else {
+        format!("{stem}-{hash}")
+    };
     let target = dir.join(name);
     if std::fs::read(&target).is_ok_and(|have| have == bytes) {
         return Ok(target);
@@ -302,18 +314,20 @@ impl Llm {
     /// Ends the program once it has been quiet for [`IDLE_LIMIT`].
     fn reap_later(&self) {
         let this = self.clone();
-        let _ = thread::Builder::new().name("llm-reaper".to_owned()).spawn(move || loop {
-            thread::sleep(IDLE_LIMIT / 4);
-            let mut slot = this.running();
-            match slot.as_ref() {
-                None => return,
-                Some(running) if running.last_used.elapsed() >= IDLE_LIMIT => {
-                    *slot = None;
-                    return;
+        let _ = thread::Builder::new()
+            .name("llm-reaper".to_owned())
+            .spawn(move || loop {
+                thread::sleep(IDLE_LIMIT / 4);
+                let mut slot = this.running();
+                match slot.as_ref() {
+                    None => return,
+                    Some(running) if running.last_used.elapsed() >= IDLE_LIMIT => {
+                        *slot = None;
+                        return;
+                    }
+                    Some(_) => {}
                 }
-                Some(_) => {}
-            }
-        });
+            });
     }
 }
 
@@ -413,7 +427,10 @@ mod tests {
         let llm = stand_in();
         let error = llm.generate(Path::new("missing.gguf"), "s", "x", 10, 0.0).unwrap_err();
         assert_eq!(error.code(), "model");
-        assert_eq!(llm.generate(Path::new("m.gguf"), "s", "after", 10, 0.0).as_deref(), Ok("echo: after"));
+        assert_eq!(
+            llm.generate(Path::new("m.gguf"), "s", "after", 10, 0.0).as_deref(),
+            Ok("echo: after")
+        );
         llm.stop();
     }
 
@@ -423,7 +440,11 @@ mod tests {
         let error = llm.generate(Path::new("m.bin"), "s", "x", 10, 0.0).unwrap_err();
         assert_eq!(error.code(), "invalid");
         let error = llm.generate(Path::new("m.gguf"), "s", "x", 10, 0.0).unwrap_err();
-        assert_eq!(error.code(), "engine", "a program that will not start is an engine failure");
+        assert_eq!(
+            error.code(),
+            "engine",
+            "a program that will not start is an engine failure"
+        );
     }
 
     #[test]

@@ -2,13 +2,16 @@
 // translation is a new block below what was translated, so the original is never changed, and Undo takes it away.
 // Loads on first use.
 import { newId } from '../../../editor/ids';
-import { escapeParagraphText } from '../../../editor/markdown';
+import type { Edit } from '../../../services/pages/types';
+import { createMarkdownCache, escapeParagraphText, serializeTextBlock } from '../../../editor/markdown';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
 import { dataOf, fallbackOf, transcriptBlocks } from '../audio/transcripts/store';
-import { targetEditor } from '../formattingBar/target';
+import { showInserted } from '../images/insert';
 import { shownMedia } from '../images/shown';
 import { shownLayer } from '../mount';
+import { shownPool } from '../pool/shown';
+import { selection } from './selection';
 
 const MAX_CHARS = 200_000;
 
@@ -21,15 +24,23 @@ interface Gathered {
 /** What can be translated here: the selected text, the page's text, and its transcripts. */
 export function gather(): Gathered[] {
   const found: Gathered[] = [];
-  const editor = targetEditor();
-  if (editor && !editor.state.selection.empty) {
-    const { from, to } = editor.state.selection;
+  const selected = selection();
+  if (selected) {
+    const { editor, from, to } = selected;
     const text = editor.state.doc.textBetween(from, to, '\n', ' ').trim();
     if (text) found.push({ scope: 'selection', markdown: text.slice(0, MAX_CHARS), from: null });
   }
   const mounted = shownMedia.get();
+  const pool = shownPool.get();
+  const cache = createMarkdownCache();
+  // A block being edited holds words the core has not been given yet, so its editor is read before its saved text.
   const page = (shownLayer.get()?.blocks() ?? mounted?.layer.blocks() ?? [])
-    .flatMap((block) => (block.type === 'text' && typeof block.data.markdown === 'string' ? [block.data.markdown] : []))
+    .flatMap((block) => {
+      if (block.type !== 'text') return [];
+      const live = pool?.editor(block.id);
+      if (live && !live.isDestroyed) return [serializeTextBlock(live.state.doc, cache)];
+      return typeof block.data.markdown === 'string' ? [block.data.markdown] : [];
+    })
     .join('\n\n')
     .trim();
   if (page) found.push({ scope: 'page', markdown: page.slice(0, MAX_CHARS), from: null });
@@ -80,7 +91,10 @@ async function place(markdown: string, language: string, kept: number): Promise<
   const after = blocks.filter((one) => !one.parentElement?.closest('[data-block-id]')).at(-1)?.dataset.blockId;
   const heading = escapeParagraphText(t('intelMore.translate.heading', { language: dialog.nameOf(language) }));
   const block = { id: newId(), type: 'text', data: { markdown: `*${heading}*\n\n${markdown}` } };
-  await mounted.sync.send({ edits: [{ edit: 'insertBlock', block, ...(after ? { after } : {}) }] });
+  const edits: Edit[] = [{ edit: 'insertBlock', block, ...(after ? { after } : {}) }];
+  const ack = await mounted.sync.send({ edits });
+  // The page shows what this window inserted at the order the service gave it.
+  showInserted(mounted, edits, ack.orderKeys);
   showToast({
     message: kept > 0 ? t('intelMore.translate.kept', { count: kept }) : t('intelMore.translate.done'),
     action: { label: t('intelMore.translate.undo'), run: () => mounted.sync.undo() },

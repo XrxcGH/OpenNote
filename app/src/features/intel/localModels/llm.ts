@@ -8,9 +8,9 @@
 // that cites nothing is refused, and the stand-in takes over.
 import type { IntelExt, ModelList } from '../../../services/intel';
 import { t } from '../../../strings/t';
-import { answerEngine, useAnswerEngine } from '../ask/answer';
+import { answerEngine, useAnswerEngine as putAnswerEngine } from '../ask/answer';
 import type { AnswerEngine, Passage } from '../ask/answer';
-import { useWritingEngine, writingEngine } from '../writing/ops';
+import { useWritingEngine as putWritingEngine, writingEngine } from '../writing/ops';
 import type { WritingEngine, WritingResult, WritingTool } from '../writing/ops';
 import { withAnswerFallback, withWritingFallback } from './fallback';
 
@@ -94,7 +94,10 @@ export function renumber(text: string, passages: readonly Passage[]): { text: st
   });
   if (order.length === 0) return null;
   return {
-    text: marked.replace(/\s{2,}/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim(),
+    text: marked
+      .replace(/\s{2,}/g, ' ')
+      .replace(/\s+([.,;:!?])/g, '$1')
+      .trim(),
     sources: order.map((at) => passages[at] as Passage),
   };
 }
@@ -132,8 +135,8 @@ export function installLanguageEngines(llm: Generator): void {
   if (release) return;
   const writing = withWritingFallback(createLanguageWritingEngine(llm), writingEngine());
   const answering = withAnswerFallback(createLanguageAnswerEngine(llm), answerEngine());
-  const undoWriting = useWritingEngine(writing);
-  const undoAnswering = useAnswerEngine(answering);
+  const undoWriting = putWritingEngine(writing);
+  const undoAnswering = putAnswerEngine(answering);
   release = () => {
     undoWriting();
     undoAnswering();

@@ -413,10 +413,13 @@ mod tests {
     use super::*;
     use crate::connectors::{HttpResponse, MemoryStore};
 
+    /// One request as the stand-in saw it: the address, the headers, and the size of the body.
+    type Seen = (String, Vec<(String, String)>, usize);
+
     /// Answers every request with one reply, and keeps what was sent.
     struct Fake {
         reply: (u16, Value),
-        sent: Mutex<Vec<(String, Vec<(String, String)>, usize)>>,
+        sent: Mutex<Vec<Seen>>,
     }
 
     impl Http for Fake {

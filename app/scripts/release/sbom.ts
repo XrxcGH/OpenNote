@@ -14,6 +14,12 @@ import { shippedPackages, type Lockfile, type NpmPackage } from './sbom-npm.ts';
 
 const ROOT = join(import.meta.dirname, '..', '..', '..');
 const APP_CRATE = 'opennote';
+/** The language model program that travels inside the exe of the target that carries the native engines. */
+const LLM_CRATE = 'opennote-llm';
+/** The one target whose exe carries whisper.cpp, ONNX Runtime, and the language model program. */
+export const NATIVE_TARGET = 'x86_64-pc-windows-msvc';
+/** The features that target is built with (see .github/workflows/release.yml). */
+export const NATIVE_FEATURES = 'opennote/native-engines,opennote/embed-llm-host,opennote-llm/llama';
 
 export interface Component {
   type: 'application' | 'library';
@@ -158,12 +164,28 @@ export function readInput(version: string, serial: string, timestamp: string): S
   const npm = shippedPackages(lock, importedPackages(join(ROOT, 'app', 'src', 'main.tsx')));
   const results = RELEASE_FILES.map(({ target }) => {
     const args = ['metadata', '--format-version', '1', '--locked', '--filter-platform', target];
+    if (target === NATIVE_TARGET) args.push('--features', NATIVE_FEATURES);
     return JSON.parse(
       execFileSync('cargo', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }),
     ) as CargoMetadata;
   });
   const checksums = lockChecksums(readFileSync(join(ROOT, 'Cargo.lock'), 'utf8'));
-  return { version, npm, crates: shippedCrates(results, APP_CRATE, checksums), serial, timestamp };
+  const app = shippedCrates(results, APP_CRATE, checksums);
+  // The language model program is inside the exe of the native target only, so only that target's list is read.
+  const nativeAt = RELEASE_FILES.findIndex(({ target }) => target === NATIVE_TARGET);
+  const program = nativeAt === -1 ? [] : shippedCrates([results[nativeAt] as CargoMetadata], LLM_CRATE, checksums);
+  return { version, npm, crates: mergeCrates(app, program), serial, timestamp };
+}
+
+/** The crates of both lists, once each, with the crates each one needs joined. */
+export function mergeCrates(first: readonly Crate[], second: readonly Crate[]): Crate[] {
+  const merged = new Map<string, Crate>();
+  for (const crate of [...first, ...second]) {
+    const key = `${crate.name}@${crate.version}`;
+    const have = merged.get(key);
+    merged.set(key, have ? { ...have, needs: [...new Set([...have.needs, ...crate.needs])] } : crate);
+  }
+  return [...merged.values()];
 }
 
 function option(args: string[], name: string): string | undefined {

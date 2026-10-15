@@ -37,7 +37,7 @@ afterEach(() => {
 describe('the Translate dialog', () => {
   it('says plainly that this build has no engine', async () => {
     openTranslate(SOURCES, () => undefined);
-    expect(await screen.findByText(/needs an engine/)).toBeTruthy();
+    expect(await screen.findByText(/can’t translate on this device/)).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
   });
 
@@ -46,10 +46,10 @@ describe('the Translate dialog', () => {
     remove = useTranslationEngine(fakeEngine(new Set(), installs));
     let result: Translation | null | undefined;
     openTranslate(SOURCES, (done) => (result = done));
-    expect(await screen.findByRole('button', { name: /Download English to Spanish, 62 MB/ })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /Download English to Spanish, 65 MB/ })).toBeTruthy();
     expect(installs).toEqual([]);
     expect((screen.getByRole('button', { name: 'Translate' }) as HTMLButtonElement).disabled).toBe(true);
-    await userEvent.click(screen.getByRole('button', { name: /Download English to Spanish, 62 MB/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Download English to Spanish, 65 MB/ }));
     await waitFor(() => expect(installs).toEqual(['en-es']));
     await waitFor(() => expect(screen.getByText(/pack is on this device/)).toBeTruthy());
     expect(result).toBeUndefined();
@@ -70,7 +70,7 @@ describe('the Translate dialog', () => {
   it('says when no pack reaches the language', async () => {
     remove = useTranslationEngine(fakeEngine(new Set(), []));
     openTranslate(SOURCES, () => undefined);
-    await screen.findByRole('button', { name: /Download English to Spanish, 62 MB/ });
+    await screen.findByRole('button', { name: /Download English to Spanish, 65 MB/ });
     await userEvent.selectOptions(screen.getByLabelText(/Translate to/), 'fr');
     expect(await screen.findByText('There is no language pack for that pair yet.')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));

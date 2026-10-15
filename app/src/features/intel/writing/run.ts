@@ -21,5 +21,5 @@ export async function suggestWriting(tool: WritingTool, text: string): Promise<W
     return null;
   }
   const { showSuggestion } = await import('./SuggestionDialog');
-  return (await showSuggestion(tool, text, result)) ? result : null;
+  return (await showSuggestion(tool, text, result, writingEngine().name)) ? result : null;
 }

@@ -19,7 +19,7 @@ pub const MAX_TEXTS: usize = 64;
 
 /// Why a call to an engine failed.
 #[derive(Debug, PartialEq, Eq)]
-#[cfg_attr(not(feature = "native-engines"), allow(dead_code))]
+#[allow(dead_code)]
 pub enum NativeError {
     /// This build does not carry the engine.
     Unavailable,
@@ -65,10 +65,14 @@ impl From<OnnxError> for NativeError {
 /// Checks the size of a translation request.
 pub fn check_lines(lines: &[String]) -> Result<(), NativeError> {
     if lines.len() > MAX_LINES {
-        return Err(NativeError::Invalid("There are too many lines to translate at once.".to_owned()));
+        return Err(NativeError::Invalid(
+            "There are too many lines to translate at once.".to_owned(),
+        ));
     }
     if lines.iter().map(String::len).sum::<usize>() > MAX_CHARS {
-        return Err(NativeError::Invalid("The text is too long to translate at once.".to_owned()));
+        return Err(NativeError::Invalid(
+            "The text is too long to translate at once.".to_owned(),
+        ));
     }
     Ok(())
 }
@@ -179,7 +183,9 @@ mod tests {
     #[test]
     fn a_build_without_the_engines_says_so() {
         let native = Native::default();
-        let error = native.translate("x", Path::new("nowhere"), &["hi".to_owned()]).unwrap_err();
+        let error = native
+            .translate("x", Path::new("nowhere"), &["hi".to_owned()])
+            .unwrap_err();
         assert_eq!(error, NativeError::Unavailable);
         assert_eq!(capabilities()["onnx"], false);
     }
@@ -188,7 +194,9 @@ mod tests {
     #[test]
     fn a_pack_that_is_not_there_is_a_model_error() {
         let native = Native::default();
-        let error = native.translate("x", Path::new("nowhere"), &["hi".to_owned()]).unwrap_err();
+        let error = native
+            .translate("x", Path::new("nowhere"), &["hi".to_owned()])
+            .unwrap_err();
         assert_eq!(error.code(), "model");
     }
 }

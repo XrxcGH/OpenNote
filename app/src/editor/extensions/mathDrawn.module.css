@@ -41,6 +41,14 @@
     border-radius: var(--radius-sm);
   }
 
+  /* With the writing area open, the holder takes its place in the text, so the block grows to hold the area and
+     nothing clips it or lies over it. */
+  .holderPadOpen {
+    position: static;
+    display: block;
+    inline-size: min(100%, 42rem);
+  }
+
   .preview {
     padding: var(--space-2) var(--space-3);
     color: var(--color-text-primary);

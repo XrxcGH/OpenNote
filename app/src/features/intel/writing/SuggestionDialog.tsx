@@ -6,6 +6,7 @@ import { VisuallyHidden } from '../../../ui/VisuallyHidden';
 import { openModal } from '../modal';
 import styles from '../plus.module.css';
 import { changeCount, diffWords } from './diff';
+import { ruleBasedEngine } from './ops';
 import type { WritingResult, WritingTool } from './ops';
 
 function Marked({ before, result }: { before: string; result: WritingResult }) {
@@ -34,7 +35,12 @@ function Marked({ before, result }: { before: string; result: WritingResult }) {
 }
 
 /** Shows the suggestion. Resolves true when the person accepts it. */
-export function showSuggestion(tool: WritingTool, before: string, result: WritingResult): Promise<boolean> {
+export function showSuggestion(
+  tool: WritingTool,
+  before: string,
+  result: WritingResult,
+  engine: string,
+): Promise<boolean> {
   const count = changeCount(diffWords(before, result.text));
   return new Promise((resolve) => {
     openModal((close) => {
@@ -66,6 +72,11 @@ export function showSuggestion(tool: WritingTool, before: string, result: Writin
           <div className={styles.stack}>
             <Marked before={before} result={result} />
             <p className={styles.help}>{t('intelPlus.writing.legend')}</p>
+            <p className={styles.help}>
+              {t('intelPlus.writing.by', {
+                engine: engine === ruleBasedEngine.name ? t('intelPlus.engines.rules') : engine,
+              })}
+            </p>
           </div>
         </Dialog>
       );

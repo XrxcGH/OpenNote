@@ -69,11 +69,7 @@ describe('transcriptText', () => {
     const text = transcriptText({
       summary: 'A short talk.',
       speakers: { '1': 'Ana' },
-      lines: [
-        { text: 'Hello', speaker: 1 },
-        { text: 'Hi', speaker: 2 },
-        { text: '  ' },
-      ],
+      lines: [{ text: 'Hello', speaker: 1 }, { text: 'Hi', speaker: 2 }, { text: '  ' }],
     });
     expect(text).toBe('A short talk.\nAna: Hello\nHi');
   });

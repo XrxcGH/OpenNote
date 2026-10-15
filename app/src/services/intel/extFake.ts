@@ -86,15 +86,13 @@ const CATALOG: readonly Entry[] = [
     detail: 'A small model that reads what your pages mean, so a search can find them by idea and not only by word.',
     sizeBytes: 23_684_031,
   },
-  ...PACKS.map(
-    ([from, to, sizeBytes]): Entry => ({
-      id: `translate-${from}-${to}`,
-      kind: 'translate',
-      name: `${LANGUAGE_NAMES[from] ?? from} to ${LANGUAGE_NAMES[to] ?? to}`,
-      detail: 'Translates on this computer. Nothing is sent anywhere.',
-      sizeBytes,
-    }),
-  ),
+  ...PACKS.map(([from, to, sizeBytes]): Entry => ({
+    id: `translate-${from}-${to}`,
+    kind: 'translate',
+    name: `${LANGUAGE_NAMES[from] ?? from} to ${LANGUAGE_NAMES[to] ?? to}`,
+    detail: 'Translates on this computer. Nothing is sent anywhere.',
+    sizeBytes,
+  })),
 ];
 
 /** The first mishearing each line lists, replaced by its term. The real correction is the Rust crate's. */
@@ -271,6 +269,9 @@ function cloudCall(fake: FakeExt, used: Map<CloudFeature, number>, method: strin
 export interface ExtPersistence {
   load(): Record<string, string>;
   save(files: ReadonlyMap<string, string>): void;
+  /** The ids of the models "downloaded" earlier, and a way to remember them again. */
+  loadInstalled(): string[];
+  saveInstalled(ids: readonly string[]): void;
 }
 
 export function createFakeExt(persistence?: ExtPersistence): FakeExt {
@@ -279,6 +280,12 @@ export function createFakeExt(persistence?: ExtPersistence): FakeExt {
   const models = new Map<string, ModelInfo>(
     CATALOG.map((one) => [one.id, { ...one, state: 'notInstalled', bytes: 0, error: null }]),
   );
+  for (const id of persistence?.loadInstalled() ?? []) {
+    const known = models.get(id);
+    if (known) Object.assign(known, { state: 'installed', bytes: known.sizeBytes });
+  }
+  const rememberInstalled = () =>
+    persistence?.saveInstalled([...models.values()].filter((one) => one.state === 'installed').map((one) => one.id));
   const lastRan: { at: number | null } = { at: null };
   const cloudUsed = new Map<CloudFeature, number>();
   const fake: FakeExt = {
@@ -291,7 +298,10 @@ export function createFakeExt(persistence?: ExtPersistence): FakeExt {
       for (const model of models.values()) {
         if (model.state !== 'downloading') continue;
         model.bytes = Math.min(model.sizeBytes, model.bytes + bytes);
-        if (model.bytes === model.sizeBytes) model.state = 'installed';
+        if (model.bytes === model.sizeBytes) {
+          model.state = 'installed';
+          rememberInstalled();
+        }
       }
     },
     handle({ method, params }) {
@@ -301,6 +311,7 @@ export function createFakeExt(persistence?: ExtPersistence): FakeExt {
       const found = [
         storeCall(files, method, p, persistence),
         ...(method.startsWith('models.') ? [modelCall(fake, models, lastRan, method, p)] : []),
+        ...(method === 'models.remove' ? [rememberInstalled()] : []),
         ...(method.startsWith('cloud.') ? [cloudCall(fake, cloudUsed, method, p)] : []),
         ...(/^(engines|llm|translate|embed)./.test(method) ? [engineCall(models, method, params as EngineParams)] : []),
       ].find((one) => one !== UNHANDLED);

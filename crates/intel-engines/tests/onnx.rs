@@ -20,7 +20,12 @@ fn the_translator_runs_encoder_decoder_and_tokenizer_end_to_end() {
     let translator = Translator::open(&fixtures("translate")).unwrap();
     // The stand-in decoder always says the same two words, whatever the source is.
     assert_eq!(translator.translate_line("hello world").unwrap(), "hola mundo");
-    let lines = vec!["hello".to_owned(), "   ".to_owned(), String::new(), "world hello".to_owned()];
+    let lines = vec![
+        "hello".to_owned(),
+        "   ".to_owned(),
+        String::new(),
+        "world hello".to_owned(),
+    ];
     let done = translator.translate(&lines).unwrap();
     assert_eq!(done, vec!["hola mundo", "   ", "", "hola mundo"]);
 }
@@ -41,7 +46,12 @@ fn a_pack_with_a_missing_file_does_not_open() {
 fn the_embedder_gives_unit_vectors_and_puts_near_meanings_near() {
     let embedder = Embedder::open(&fixtures("embed")).unwrap();
     let vectors = embedder
-        .embed(&["cat".to_owned(), "kitten".to_owned(), "milk".to_owned(), "Cat".to_owned()])
+        .embed(&[
+            "cat".to_owned(),
+            "kitten".to_owned(),
+            "milk".to_owned(),
+            "Cat".to_owned(),
+        ])
         .unwrap();
     for vector in &vectors {
         assert_eq!(vector.len(), EMBED_DIM);
@@ -49,14 +59,20 @@ fn the_embedder_gives_unit_vectors_and_puts_near_meanings_near() {
     }
     assert!(dot(&vectors[0], &vectors[1]) > 0.9, "a cat and a kitten are near");
     assert!(dot(&vectors[0], &vectors[2]).abs() < 0.4, "a cat and milk are not");
-    assert!((dot(&vectors[0], &vectors[3]) - 1.0).abs() < 1e-4, "letter case does not matter");
+    assert!(
+        (dot(&vectors[0], &vectors[3]) - 1.0).abs() < 1e-4,
+        "letter case does not matter"
+    );
 }
 
 #[test]
 fn text_with_no_words_gives_zeros_and_the_same_text_gives_the_same_vector() {
     let embedder = Embedder::open(&fixtures("embed")).unwrap();
     assert!(embedder.embed_one("   ").unwrap().iter().all(|v| *v == 0.0));
-    assert_eq!(embedder.embed_one("car engine").unwrap(), embedder.embed_one("car engine").unwrap());
+    assert_eq!(
+        embedder.embed_one("car engine").unwrap(),
+        embedder.embed_one("car engine").unwrap()
+    );
 }
 
 /// Runs only when `OPENNOTE_TRANSLATE_PACK` names a downloaded pack folder (such as `translate-en-es` in the
@@ -67,7 +83,9 @@ fn a_real_pack_translates() {
         return;
     };
     let translator = Translator::open(Path::new(&dir)).unwrap();
-    let done = translator.translate_line("Good morning. Where is the library?").unwrap();
+    let done = translator
+        .translate_line("Good morning. Where is the library?")
+        .unwrap();
     assert!(!done.is_empty());
     println!("{done}");
 }

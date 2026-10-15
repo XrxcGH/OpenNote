@@ -80,7 +80,10 @@ impl Embedder {
             .map_err(|error| OnnxError::Input(error.to_string()))?;
         let take = encoding.get_ids().len().min(MAX_TOKENS);
         let ids: Vec<i64> = encoding.get_ids()[..take].iter().map(|&v| i64::from(v)).collect();
-        let mask: Vec<i64> = encoding.get_attention_mask()[..take].iter().map(|&v| i64::from(v)).collect();
+        let mask: Vec<i64> = encoding.get_attention_mask()[..take]
+            .iter()
+            .map(|&v| i64::from(v))
+            .collect();
         let shape = vec![1_i64, take as i64];
         let make = |data: Vec<i64>| Tensor::from_array((shape.clone(), data)).map_err(runtime);
         let mut session = self.session.lock().unwrap_or_else(PoisonError::into_inner);
@@ -101,7 +104,9 @@ impl Embedder {
         let dim = usize::try_from(*shape.last().ok_or_else(|| OnnxError::Runtime("no output".to_owned()))?)
             .map_err(runtime)?;
         if dim != EMBED_DIM {
-            return Err(OnnxError::Model(format!("the model gives vectors of {dim}, not {EMBED_DIM}")));
+            return Err(OnnxError::Model(format!(
+                "the model gives vectors of {dim}, not {EMBED_DIM}"
+            )));
         }
         Ok(pool(hidden, &mask, dim))
     }

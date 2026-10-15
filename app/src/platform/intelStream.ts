@@ -40,6 +40,23 @@ export function sendFakeStreamUpdate(session: string, update: StreamUpdate): voi
   [...handlers].forEach((handler) => handler(session, update));
 }
 
+declare global {
+  interface Window {
+    /** The web build's way to speak for the shell, so a browser test can play a dictation. */
+    __opennoteFakeStream?: {
+      send(update: StreamUpdate): void;
+      requests(): readonly StreamRequest[];
+    };
+  }
+}
+
+if (import.meta.env.VITE_PLATFORM === 'web' && typeof window !== 'undefined') {
+  window.__opennoteFakeStream = {
+    send: (update) => [...fakeStreamOpen].forEach((session) => sendFakeStreamUpdate(session, update)),
+    requests: () => fakeStreamRequests,
+  };
+}
+
 export function resetFakeStream(): void {
   fakeStreamRequests.length = 0;
   fakeStreamOpen.clear();

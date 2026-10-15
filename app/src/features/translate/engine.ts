@@ -83,8 +83,8 @@ export function packFor(packs: readonly LanguagePack[], from: string | null, to:
   return packs.find((pack) => pack.to === target && (source === null || pack.from === source)) ?? null;
 }
 
-/** A size such as 62 MB, for the consent line. */
+/** A size such as 62 MB, for the consent line. It counts as the models list does: a megabyte is a million bytes. */
 export function sizeLabel(bytes: number): string {
-  if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
-  return `${Math.max(1, Math.round(bytes / 1024 ** 2))} MB`;
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  return `${Math.max(1, Math.round(bytes / 1e6))} MB`;
 }

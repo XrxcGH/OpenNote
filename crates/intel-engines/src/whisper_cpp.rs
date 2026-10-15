@@ -43,9 +43,7 @@ pub fn install() {
 }
 
 fn unsupported() -> IntelError {
-    IntelError::Unsupported {
-        feature: "whisper.cpp",
-    }
+    IntelError::Unsupported { feature: "whisper.cpp" }
 }
 
 fn threads() -> i32 {

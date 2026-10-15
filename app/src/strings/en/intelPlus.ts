@@ -66,7 +66,8 @@ export const intelPlus = {
     folder: 'Saved on this device only. A portable install keeps them beside its other files.',
   },
   engines: {
-    language: 'on-device language model',
+    language: 'the language model on this device',
+    rules: 'the built-in rules',
   },
   vocabulary: {
     title: 'Custom vocabulary',
@@ -178,7 +179,8 @@ export const intelPlus = {
   },
   extras: {
     heading: 'Search and writing',
-    intro: 'These read your pages on this device with no model to download. Each one stays off until you turn it on.',
+    intro:
+      'These read your pages on this device. A model you download in Models, above, makes Ask and the writing tools better. Each one stays off until you turn it on.',
     offerTitle: 'Turn on {feature}?',
     meaning: {
       name: 'search by meaning',
@@ -244,6 +246,7 @@ export const intelPlus = {
     openSource: 'Open page {number}, {title}',
   },
   writing: {
+    by: 'Suggested by {engine}.',
     tools: {
       proofread: 'Proofread',
       rewrite: 'Rewrite in plain words',

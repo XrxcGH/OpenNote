@@ -16,7 +16,13 @@ pub trait Step {
 ///
 /// # Errors
 /// Whatever the model reports.
-pub fn greedy(step: &mut impl Step, start: i64, eos: i64, pad: i64, max_new: usize) -> Result<Vec<i64>, super::OnnxError> {
+pub fn greedy(
+    step: &mut impl Step,
+    start: i64,
+    eos: i64,
+    pad: i64,
+    max_new: usize,
+) -> Result<Vec<i64>, super::OnnxError> {
     let mut decoded = vec![start];
     for _ in 0..max_new {
         let scores = step.next_scores(&decoded)?;

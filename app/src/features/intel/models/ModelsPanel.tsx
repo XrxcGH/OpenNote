@@ -98,7 +98,9 @@ function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id:
             {t('intelPlus.models.use')}
           </Button>
         )}
-        {model.state === 'installed' && onSelect && selected && <span className={styles.label}>{t('intelPlus.models.inUse')}</span>}
+        {model.state === 'installed' && onSelect && selected && (
+          <span className={styles.label}>{t('intelPlus.models.inUse')}</span>
+        )}
         {(model.state === 'installed' || model.state === 'partial' || model.state === 'failed') && (
           <Button
             variant="quiet"
@@ -161,7 +163,9 @@ export default function ModelsPanel() {
   const languageInUse =
     language && languageModels.some((one) => one.id === language && one.state === 'installed')
       ? language
-      : (['language-balanced', 'language-small'].find((id) => languageModels.some((one) => one.id === id && one.state === 'installed')) ?? null);
+      : (['language-balanced', 'language-small'].find((id) =>
+          languageModels.some((one) => one.id === id && one.state === 'installed'),
+        ) ?? null);
   return (
     <section className={styles.block} aria-labelledby={headingId}>
       <h2 id={headingId} className={styles.heading}>

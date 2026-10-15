@@ -47,6 +47,8 @@ class MathView implements NodeView {
   private penButton: HTMLButtonElement | null = null;
   private pad: PenPad | null = null;
   private swapping = false;
+  /** Handwriting is being read, so the field keeps its place while a dialog may take focus. */
+  private recognizing = false;
   private preview: HTMLElement | null = null;
   private problem: HTMLElement | null = null;
   private holder: HTMLElement | null = null;
@@ -132,7 +134,7 @@ class MathView implements NodeView {
     field.addEventListener('keydown', (event) => this.onKey(event as KeyboardEvent));
     field.addEventListener('input', () => this.showPreview());
     field.addEventListener('blur', () => {
-      if (!this.swapping) this.close(true);
+      if (!this.swapping && !this.recognizing) this.close(true);
     });
   }
 
@@ -180,21 +182,30 @@ class MathView implements NodeView {
       const strokes = pad.strokes();
       const visual = this.visual;
       if (strokes.length === 0 || !visual) return;
-      void recognize(strokes).then((latex) => {
-        if (!latex || !this.visual) {
-          this.host.announce(t('intelMore.math.penNone'));
-          return;
-        }
-        visual.insert(latex);
-        pad.clear();
-        this.showPreview();
-      });
+      // Reading handwriting may ask the person to turn it on first, and that dialog takes focus from the field. The
+      // field stays open meanwhile, or the equation would close and save before the answer came back.
+      this.recognizing = true;
+      void recognize(strokes)
+        .finally(() => {
+          this.recognizing = false;
+        })
+        .then((latex) => {
+          if (!latex || !this.visual) {
+            this.host.announce(t('intelMore.math.penNone'));
+            return;
+          }
+          visual.insert(latex);
+          pad.clear();
+          this.showPreview();
+        });
     });
     this.pad = pad;
+    holder.classList.add(drawn.holderPadOpen);
     holder.append(pad.element);
   }
 
   private closePad(): void {
+    this.pad?.element.parentElement?.classList.remove(drawn.holderPadOpen);
     this.pad?.element.remove();
     this.pad = null;
   }
@@ -332,7 +343,10 @@ class MathView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    return this.field !== null && event.target === this.field;
+    if (this.field === null) return false;
+    // Writing in the pen pad is not the editor's to handle: it would take focus and close the equation.
+    const inPad = event.target instanceof Node && this.pad?.element.contains(event.target) === true;
+    return event.target === this.field || inPad;
   }
 
   ignoreMutation(): boolean {

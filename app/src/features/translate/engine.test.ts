@@ -105,8 +105,8 @@ describe('language packs', () => {
   });
 
   it('shows sizes plainly', () => {
-    expect(sizeLabel(65_000_000)).toBe('62 MB');
-    expect(sizeLabel(1_610_612_736)).toBe('1.5 GB');
+    expect(sizeLabel(65_000_000)).toBe('65 MB');
+    expect(sizeLabel(1_610_612_736)).toBe('1.6 GB');
     expect(sizeLabel(10)).toBe('1 MB');
   });
 });

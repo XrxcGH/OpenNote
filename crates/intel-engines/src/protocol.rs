@@ -46,7 +46,11 @@ pub enum Response {
     /// The finished answer to request `id`.
     Done { id: u64, text: String },
     /// Request `id` failed. The message is for the log, and the interface picks its own words.
-    Failed { id: u64, code: FailureCode, message: String },
+    Failed {
+        id: u64,
+        code: FailureCode,
+        message: String,
+    },
 }
 
 /// Why a request failed.

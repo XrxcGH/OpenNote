@@ -30,6 +30,9 @@ function remember(settings: IntelSettings): void {
 }
 
 const STORE_KEY = 'opennote.intel.store';
+const MODELS_KEY = 'opennote.intel.models';
+const PREVIEW_TICK_MS = 150;
+const PREVIEW_BYTES_PER_TICK = 60_000_000;
 
 const storePersistence = {
   load(): Record<string, string> {
@@ -37,6 +40,21 @@ const storePersistence = {
       return JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}') as Record<string, string>;
     } catch {
       return {};
+    }
+  },
+  loadInstalled(): string[] {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(MODELS_KEY) ?? '[]');
+      return Array.isArray(saved) ? saved.filter((one): one is string => typeof one === 'string') : [];
+    } catch {
+      return [];
+    }
+  },
+  saveInstalled(ids: readonly string[]): void {
+    try {
+      localStorage.setItem(MODELS_KEY, JSON.stringify(ids));
+    } catch {
+      // A browser that won't store them just forgets them at the next reload.
     }
   },
   save(files: ReadonlyMap<string, string>): void {
@@ -51,6 +69,8 @@ const storePersistence = {
 async function webHost(): Promise<IntelHost> {
   const { createFakeIntelTransport } = await import('../services/intel/fake');
   const transport = createFakeIntelTransport({ settings: remembered(), persistence: storePersistence });
+  // A model "downloads" here in a few seconds without touching a network, so the screens can be tried in a browser.
+  setInterval(() => transport.ext.tick(PREVIEW_BYTES_PER_TICK), PREVIEW_TICK_MS);
   const current = async () => {
     const status = await transport.invoke('intel_status', {});
     return Object.fromEntries(status.map((one) => [one.feature, one.enabled])) as unknown as IntelSettings;

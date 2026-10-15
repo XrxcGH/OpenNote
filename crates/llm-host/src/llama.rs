@@ -79,7 +79,9 @@ impl Runner for Llama {
         let text = llama.apply_chat_template(&template, &messages, true).map_err(engine)?;
         let vocab = llama.vocab();
         let tokens = vocab.tokenize(text.as_bytes(), false, true);
-        let wanted = u32::try_from(tokens.len()).unwrap_or(u32::MAX).saturating_add(max_tokens);
+        let wanted = u32::try_from(tokens.len())
+            .unwrap_or(u32::MAX)
+            .saturating_add(max_tokens);
         if wanted > MAX_CONTEXT.min(llama.n_ctx_train()) {
             return Err((FailureCode::Invalid, "The text is too long for this model.".to_owned()));
         }
@@ -129,7 +131,6 @@ impl Runner for Llama {
         Ok(String::from_utf8_lossy(&bytes).trim().to_owned())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -268,7 +268,8 @@ function useResultKeys(hits: SearchHit[], onClose: () => void, text: string) {
     if (isEnabled('search.paragraphLinks') && hit.snippet) void openAndReveal(notes, hit.page, hit.snippet.block);
     else void openPage(notes, hit.page);
     // A result found in handwriting marks the matching words on the ink for a moment.
-    if (hit.snippet?.kind === 'ink') void import('./media/inkHits').then((module) => module.markInkHits(hit.page, text));
+    if (hit.snippet?.kind === 'ink')
+      void import('./media/inkHits').then((module) => module.markInkHits(hit.page, text));
   };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.nativeEvent.isComposing || event.altKey) return;

@@ -99,10 +99,7 @@ export async function passagesFor(question: string, limit = 6): Promise<Passage[
 }
 
 /** Answers the question from the pages, or returns null when the notes hold nothing for it. */
-export async function askNotes(
-  question: string,
-  given?: readonly Passage[],
-): Promise<Answer | null> {
+export async function askNotes(question: string, given?: readonly Passage[]): Promise<Answer | null> {
   if (!question.trim() || embed(question).every((v) => v === 0)) return null;
   const passages = given ?? (await passagesFor(question));
   if (passages.length === 0) return null;

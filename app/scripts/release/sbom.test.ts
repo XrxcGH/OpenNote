@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { lockChecksums, shippedCrates, type CargoMetadata } from './sbom-cargo.ts';
 import { importedPackages } from './sbom-imports.ts';
 import { resolveDependency, shippedPackages, type Lockfile } from './sbom-npm.ts';
-import { buildSbom, licenseOf, npmPurl, cargoPurl } from './sbom.ts';
+import { buildSbom, cargoPurl, licenseOf, mergeCrates, NATIVE_FEATURES, NATIVE_TARGET, npmPurl } from './sbom.ts';
 
 const ROOT = join(import.meta.dirname, '..', '..', '..');
 const HEX = Buffer.from('hash').toString('hex');
@@ -212,5 +212,20 @@ describe('buildSbom', () => {
 
   it('is the same every time for the same input', () => {
     expect(JSON.stringify(sbom)).toBe(JSON.stringify(structuredClone(sbom)));
+  });
+});
+
+describe('mergeCrates', () => {
+  const crate = (name: string, needs: string[]) => ({ name, version: '1.0.0', local: false, needs });
+
+  it('lists a crate once and joins what each list says it needs', () => {
+    const merged = mergeCrates([crate('a', ['b@1.0.0']), crate('b', [])], [crate('a', ['c@1.0.0']), crate('c', [])]);
+    expect(merged.map((one) => one.name)).toEqual(['a', 'b', 'c']);
+    expect(merged[0]?.needs).toEqual(['b@1.0.0', 'c@1.0.0']);
+  });
+
+  it('builds the 64-bit exe with the native features and no other', () => {
+    expect(NATIVE_TARGET).toBe('x86_64-pc-windows-msvc');
+    expect(NATIVE_FEATURES).toBe('opennote/native-engines,opennote/embed-llm-host,opennote-llm/llama');
   });
 });

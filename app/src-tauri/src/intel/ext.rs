@@ -409,7 +409,10 @@ mod tests {
         assert_eq!(call(&ext, "llm.generate", write.clone()).unwrap_err().code, "model");
         assert_eq!(safe(&ext, "llm.generate", write).unwrap_err().code, "safeMode");
         let translate = json!({ "pack": "en-es", "lines": ["hello"] });
-        assert_eq!(call(&ext, "translate.run", translate.clone()).unwrap_err().code, "model");
+        assert_eq!(
+            call(&ext, "translate.run", translate.clone()).unwrap_err().code,
+            "model"
+        );
         assert_eq!(safe(&ext, "translate.run", translate).unwrap_err().code, "safeMode");
         let unknown = json!({ "pack": "xx-yy", "lines": [] });
         assert_eq!(call(&ext, "translate.run", unknown).unwrap_err().code, codes::INVALID);
@@ -417,7 +420,9 @@ mod tests {
         assert_eq!(call(&ext, "embed.run", embed.clone()).unwrap_err().code, "model");
         assert_eq!(safe(&ext, "embed.run", embed).unwrap_err().code, "safeMode");
         assert_eq!(
-            call(&ext, "translate.run", json!({ "pack": "en-es", "lines": [1] })).unwrap_err().code,
+            call(&ext, "translate.run", json!({ "pack": "en-es", "lines": [1] }))
+                .unwrap_err()
+                .code,
             codes::INVALID
         );
     }

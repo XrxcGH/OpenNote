@@ -127,15 +127,22 @@ jobs:
       matrix:
         # The same targets and file names as app/release-files.json. The write-manifest.ts tests check this.
         include:
+          # Only the 64-bit exe carries the native engines (whisper.cpp, ONNX Runtime, and the language model
+          # program), because ONNX Runtime has no build for the 32-bit target. The others use the pure Rust speech
+          # reader and the rule-based writing tools, and say so where a model would be offered.
           - target: x86_64-pc-windows-msvc
             file: OpenNote_Windows64.exe
+            features: native-engines,embed-llm-host
           - target: i686-pc-windows-msvc
             file: OpenNote_Windows32.exe
+            features: ''
           - target: aarch64-pc-windows-msvc
             file: OpenNote_WindowsARM64.exe
+            features: ''
     env:
       RELEASE_TARGET: ${{ matrix.target }}
       RELEASE_FILE: ${{ matrix.file }}
+      RELEASE_FEATURES: ${{ matrix.features }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -152,8 +159,21 @@ jobs:
           targets: ${{ matrix.target }}
       - name: Install tools
         run: npm ci
+      - name: Build the language model program
+        # llama.cpp lives in a program of its own, which the exe carries inside it, because whisper.cpp and llama.cpp
+        # each bundle ggml and cannot be linked into one program. Windows runners have CMake and LLVM.
+        if: matrix.features != ''
+        env:
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+        run: cargo build --release --locked -p opennote-llm --features llama --target $env:RELEASE_TARGET
       - name: Build ${{ matrix.file }}
-        run: npx tauri build --no-bundle --target $env:RELEASE_TARGET
+        env:
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+          OPENNOTE_LLM_HOST_BIN: ${{ github.workspace }}\target\${{ matrix.target }}\release\opennote-llm.exe
+        run: |
+          $build = @('tauri', 'build', '--no-bundle', '--target', $env:RELEASE_TARGET)
+          if ($env:RELEASE_FEATURES) { $build += @('--features', $env:RELEASE_FEATURES) }
+          npx @build
       - name: Collect the exe
         run: |
           New-Item -ItemType Directory -Force dist-release | Out-Null

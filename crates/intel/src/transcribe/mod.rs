@@ -184,7 +184,10 @@ mod tests {
             resolve_device(DevicePreference::Auto, &[Device::Cpu, Device::Gpu]),
             Ok(Device::Gpu)
         );
-        assert_eq!(resolve_device(DevicePreference::Cpu, &[Device::Cpu, Device::Gpu]), Ok(Device::Cpu));
+        assert_eq!(
+            resolve_device(DevicePreference::Cpu, &[Device::Cpu, Device::Gpu]),
+            Ok(Device::Cpu)
+        );
         assert_eq!(
             resolve_device(DevicePreference::Gpu, &[Device::Cpu]),
             Err(IntelError::DeviceUnavailable(Device::Gpu))

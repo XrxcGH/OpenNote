@@ -51,6 +51,8 @@ export function createPenPad(onDone: () => void): PenPad {
       context.stroke();
     }
   };
+  // Writing must not take focus from the equation field, or the field would close and save with the first stroke.
+  canvas.addEventListener('mousedown', (event) => event.preventDefault());
   canvas.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'pen') sawPen = true;
     // A palm resting beside a pen is not writing.
@@ -62,7 +64,6 @@ export function createPenPad(onDone: () => void): PenPad {
     }
     current = [point(event)];
     strokes.push(current);
-    event.preventDefault();
   });
   canvas.addEventListener('pointermove', (event) => {
     if (!current || current.length >= MAX_POINTS) return;

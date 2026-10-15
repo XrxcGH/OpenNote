@@ -8,16 +8,7 @@ export type ModelState = 'notInstalled' | 'partial' | 'downloading' | 'installed
 
 /** Why a download or call failed, in a word the interface turns into a sentence. */
 export type ExtErrorCode =
-  | 'offline'
-  | 'safeMode'
-  | 'network'
-  | 'checksum'
-  | 'io'
-  | 'invalid'
-  | 'model'
-  | 'unavailable'
-  | 'engine'
-  | 'unknown';
+  'offline' | 'safeMode' | 'network' | 'checksum' | 'io' | 'invalid' | 'model' | 'unavailable' | 'engine' | 'unknown';
 
 export interface ModelInfo {
   id: string;

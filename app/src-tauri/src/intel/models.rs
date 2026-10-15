@@ -5,6 +5,7 @@
 //! beside its profile. The crate behind the other commands holds no network code, so this is the one place a model
 //! can come from, and only from the pinned addresses in the catalog.
 
+use std::collections::HashMap;
 use std::{
     fs::{self, File, OpenOptions},
     io::{self, Read, Write},
@@ -16,7 +17,6 @@ use std::{
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use std::collections::HashMap;
 
 use serde::Serialize;
 use sha1::Sha1;
@@ -77,6 +77,7 @@ impl ModelSpec {
 }
 
 /// The largest model the catalog may hold, as a guard against a typo in a size.
+#[cfg(test)]
 pub const MAX_MODEL_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 
 #[cfg(test)]
@@ -566,7 +567,10 @@ impl Models {
             }
         }
         // A pack lives in a folder of its own. Take it away once it is empty.
-        if let Some(folder) = Path::new(spec.main().file).parent().filter(|p| !p.as_os_str().is_empty()) {
+        if let Some(folder) = Path::new(spec.main().file)
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+        {
             let _ = fs::remove_dir(self.0.dir.join(folder));
         }
         self.jobs().remove(id);
@@ -654,16 +658,28 @@ mod tests {
                     Digest::GitBlob(_) => 40,
                 };
                 assert_eq!(part.digest.hex().len(), expected, "{}", part.file);
-                assert!(part.digest.hex().bytes().all(|b| b.is_ascii_hexdigit()), "{}", part.file);
+                assert!(
+                    part.digest.hex().bytes().all(|b| b.is_ascii_hexdigit()),
+                    "{}",
+                    part.file
+                );
                 assert!(part.url.starts_with("https://huggingface.co/"), "{}", part.file);
                 assert!(part.url.ends_with(part.file.rsplit('/').next().unwrap()) || spec.kind != "speech");
                 assert!(part.size > 0 && part.size <= MAX_MODEL_BYTES, "{}", part.file);
-                assert!(!part.file.contains("..") && !part.file.starts_with('/'), "{}", part.file);
+                assert!(
+                    !part.file.contains("..") && !part.file.starts_with('/'),
+                    "{}",
+                    part.file
+                );
                 if spec.kind == "speech" {
                     assert!(part.url.starts_with(SPEECH_HOST), "{}", spec.id);
                 } else {
                     // Everything else is pinned to a commit, not to a branch that can change under the checksum.
-                    let revision = part.url.split("/resolve/").nth(1).and_then(|rest| rest.split('/').next());
+                    let revision = part
+                        .url
+                        .split("/resolve/")
+                        .nth(1)
+                        .and_then(|rest| rest.split('/').next());
                     let revision = revision.expect("a resolve address");
                     assert_eq!(revision.len(), 40, "{}", part.url);
                     assert!(revision.bytes().all(|b| b.is_ascii_hexdigit()), "{}", part.url);
@@ -679,7 +695,9 @@ mod tests {
             assert!(catalog().any(|spec| spec.kind == kind), "{kind}");
         }
         // No two models write the same file.
-        let mut files: Vec<_> = catalog().flat_map(|spec| spec.parts.iter().map(|part| part.file)).collect();
+        let mut files: Vec<_> = catalog()
+            .flat_map(|spec| spec.parts.iter().map(|part| part.file))
+            .collect();
         files.sort_unstable();
         let total = files.len();
         files.dedup();
@@ -729,7 +747,14 @@ mod tests {
     fn a_pack_downloads_every_file_and_checks_each_kind_of_checksum() {
         let dir = tempfile::tempdir().unwrap();
         let progress = AtomicU64::new(0);
-        download(&memory(DATA, false), &PACK, dir.path(), &AtomicBool::new(false), &progress).unwrap();
+        download(
+            &memory(DATA, false),
+            &PACK,
+            dir.path(),
+            &AtomicBool::new(false),
+            &progress,
+        )
+        .unwrap();
         assert_eq!(fs::read(dir.path().join("pack/one.bin")).unwrap(), DATA);
         assert_eq!(fs::read(dir.path().join("pack/two.json")).unwrap(), DATA);
         assert_eq!(progress.load(Ordering::Relaxed), PACK.size());
