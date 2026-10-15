@@ -125,7 +125,11 @@ function reads({ lib, call }: Runner): Reads {
     loadInitial: (path) => call(() => loadInitial(lib, path)),
     listNotebooks: () => call(() => lib.summaries(lib.kidsOf(null))),
     listChildren: (parentId) =>
-      call(() => (lib.live(parentId).kind === 'page' ? [] : lib.summaries(lib.kidsOf(parentId)))),
+      call(() =>
+        lib.live(parentId).kind === 'page' || lib.protection(parentId).protected === 'locked'
+          ? []
+          : lib.summaries(lib.kidsOf(parentId)),
+      ),
     get: (id) => call(() => (lib.isLive(id) ? lib.summary(lib.any(id)) : null)),
     listTrash: () => call(() => listTrash(lib)),
   };

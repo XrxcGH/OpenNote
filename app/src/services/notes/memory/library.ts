@@ -7,6 +7,7 @@ import type { InvalidNameReason, NotesErrorCode } from '../errors';
 import type { FixtureData, FixtureNode } from '../fixtures';
 import { CHIP_COLORS, NOTES_LIMITS } from '../types';
 import type { ChipColor, NodeId, NodeKind, NodeSummary, PageLevel } from '../types';
+import { fakeProtection } from './protection';
 
 export interface MemNode {
   readonly id: string;
@@ -147,7 +148,17 @@ export class Library {
       created: node.created,
       modified: node.modified,
       readOnly: node.readOnly,
+      ...this.protection(node.id),
     };
+  }
+
+  /** The web fake's protection of a section, or of the section a page is in (ADR 0042). */
+  protection(id: string): Pick<NodeSummary, 'protected'> {
+    for (let at: string | null = id; at !== null; at = this.nodes.get(at)?.parentId ?? null) {
+      const found = fakeProtection.get(at);
+      if (found) return { protected: found.state };
+    }
+    return {};
   }
 
   summaries(ids: readonly string[]): NodeSummary[] {

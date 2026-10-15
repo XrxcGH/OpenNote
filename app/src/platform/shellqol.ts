@@ -2,6 +2,8 @@
 // answers every call, and the web build answers from a small in-memory fake, so the interface runs in a browser
 // and in tests. A call the fake doesn't know resolves to null.
 
+import { answerProtect, fakeProtection } from '../services/notes/memory/protection';
+
 export type ShellEvent = { kind: string } & Record<string, unknown>;
 
 export interface ShellQolHost {
@@ -23,13 +25,14 @@ const memoryAnswer: Fake = (name, args) => {
     }
     return { ...memory };
   }
-  return null;
+  return answerProtect(name, args) ?? null;
 };
 let fake: Fake = memoryAnswer;
 
 /** Puts the web host back as it started, for tests. */
 export function resetFakeShell(): void {
   for (const key of Object.keys(memory)) delete memory[key];
+  fakeProtection.clear();
   fake = memoryAnswer;
 }
 const listeners = new Set<(event: ShellEvent) => void>();
@@ -44,7 +47,8 @@ export function emitFakeShellEvent(event: ShellEvent): void {
 }
 
 const webHost: ShellQolHost = {
-  call: <T>(name: string, args: Record<string, unknown> = {}) => Promise.resolve(fake(name, args) as T),
+  call: <T>(name: string, args: Record<string, unknown> = {}) =>
+    new Promise<T>((resolve) => resolve(fake(name, args) as T)),
   listen(handler) {
     listeners.add(handler);
     return () => void listeners.delete(handler);
