@@ -665,7 +665,7 @@ impl Caller<'_> {
 
     /// The name page history shows for a change: the app's name, and the author it gave, if any.
     fn author(&self, author: Option<&str>) -> Result<String, Refusal> {
-        match author.map(|text| clean_text(text).replace(['\n', '\t'], " ").trim().to_owned()) {
+        match author.map(author_label) {
             None => Ok(self.grant.name.clone()),
             Some(text) if text.is_empty() => Ok(self.grant.name.clone()),
             Some(text) if text.chars().count() > commands::MAX_AUTHOR => Err(refuse(
@@ -863,6 +863,36 @@ fn markdown_of(body: MarkdownBody) -> Result<String, Refusal> {
 }
 
 /// Text without NUL and other control characters but tabs and line breaks.
+/// An agent's author label, made safe to show inside "Changed via <app> (<author>)": control characters go,
+/// the word "via" goes, and brackets stay only when they pair up in order, so an author such as
+/// `x) via Outlook (` can't read as another app's change.
+fn author_label(text: &str) -> String {
+    let flat = clean_text(text).replace(['\n', '\t'], " ");
+    let mut depth = 0i32;
+    let mut nested = true;
+    for c in flat.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => depth -= 1,
+            _ => {}
+        }
+        nested &= depth >= 0;
+    }
+    nested &= depth == 0;
+    let kept: String = flat
+        .chars()
+        .filter(|c| !matches!(c, '[' | ']' | '{' | '}' | '"') && (nested || !matches!(c, '(' | ')')))
+        .collect();
+    kept.split_whitespace()
+        .filter(|word| {
+            !word
+                .trim_matches(|c: char| !c.is_alphanumeric())
+                .eq_ignore_ascii_case("via")
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn clean_text(text: &str) -> String {
     text.chars()
         .filter(|c| !c.is_control() || matches!(c, '\n' | '\t'))

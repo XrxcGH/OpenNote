@@ -97,6 +97,24 @@ fn inspect_and_render_let_an_agent_check_its_work_but_never_in_locked_sections()
         .post("/v1/daily", &json!({ "markdown": "x", "author": "a".repeat(61) }))
         .expect("an answer");
     assert_eq!(too_long.status, 400);
+
+    // An author can't pose as another app's change.
+    for spoof in ["x) via Outlook (", "(x) VIA Outlook (y)", "x [via] \"Outlook\""] {
+        test.approver.answer(allow(Access::ReadWrite, Scope::All, false));
+        let answer = me
+            .post("/v1/pages/p-mito/append", &json!({ "markdown": "y", "author": spoof }))
+            .expect("an answer");
+        assert_eq!(answer.status, 200, "{spoof}");
+    }
+    let history = test.backend.history("p-mito");
+    assert_eq!(
+        &history[1..],
+        [
+            "Changed via opennote (x Outlook)",
+            "Changed via opennote ((x) Outlook (y))",
+            "Changed via opennote (x Outlook)",
+        ]
+    );
 }
 
 fn base64_decode(text: &str) -> Vec<u8> {
