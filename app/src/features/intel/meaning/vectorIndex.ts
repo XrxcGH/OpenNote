@@ -86,9 +86,11 @@ export function createVectorIndex(embedder: Embedder = { name: 'built in', dim: 
       pages.set(input.id, build(input));
       return true;
     },
-    /** Puts back a page that was saved, with its vectors as they were. */
-    restore(page: IndexedPage): void {
-      if (!isProtected(page.id)) pages.set(page.id, page);
+    /** Puts back a page that was saved, with its vectors as they were. A protected page is refused: false. */
+    restore(page: IndexedPage): boolean {
+      if (isProtected(page.id)) return false;
+      pages.set(page.id, page);
+      return true;
     },
     remove: (id: string): boolean => pages.delete(id),
     has: (id: string): boolean => pages.has(id),

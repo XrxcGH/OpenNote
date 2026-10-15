@@ -12,13 +12,14 @@ import { settingsStyles as styles } from '../settings';
 import { refreshLowPower } from './modes';
 import { readPrefs, writePrefs } from './prefs';
 import type { QolPrefs } from './prefs';
-import { DEFAULT_QUICK, quickStatus, setQuick } from './quickCaptureControls';
+import { commands } from '../../registries';
+import { DEFAULT_QUICK, quickKeyClashes, quickKeyProblem, quickStatus, setQuick } from './quickCaptureControls';
 import type { QuickStatus } from './quickCaptureControls';
 
 function QuickCaptureSettings() {
   const [status, setStatus] = useState<QuickStatus>(DEFAULT_QUICK);
   const [key, setKey] = useState(DEFAULT_QUICK.choice.key);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<'invalid' | 'altgr' | null>(null);
   useEffect(() => {
     let current = true;
     void quickStatus().then((loaded) => {
@@ -31,32 +32,54 @@ function QuickCaptureSettings() {
     };
   }, []);
   if (!isEnabled('qol.quickCapture')) return null;
-  const apply = async (enabled: boolean, next: string) => {
+  const save = async (enabled: boolean, next: string) => {
     try {
-      setStatus(await setQuick(enabled, next));
-      setError(false);
+      const saved = await setQuick(enabled, next);
+      setStatus(saved);
+      setKey(saved.choice.key);
+      setError(null);
     } catch {
-      setError(true);
+      setError('invalid');
     }
   };
+  // Only a shortcut that is on needs usable keys. Turning it off always works, so a Ctrl+Alt+Q an earlier beta saved
+  // can be switched off without typing new keys first; the shell puts the default in place of a refused key.
+  const toggle = (enabled: boolean) => {
+    const problem = enabled ? quickKeyProblem(key) : null;
+    if (problem) setError(problem);
+    else void save(enabled, key);
+  };
+  const commit = () => {
+    const problem = quickKeyProblem(key);
+    if (problem) setError(problem);
+    else void save(status.choice.enabled, key);
+  };
+  // The keys in the field, so the warning comes while the person picks them rather than after they are saved.
+  const clashes = quickKeyClashes(key).map((id) => {
+    const def = commands.get(id);
+    return def ? t(def.title) : id;
+  });
   return (
     <section className={styles.block} aria-labelledby="qol-quick">
       <h2 id="qol-quick">{t('qol.capture.settingsTitle')}</h2>
       <p>{t('qol.capture.settingsBody')}</p>
-      <Switch
-        label={t('qol.capture.enable')}
-        checked={status.choice.enabled}
-        onChange={(enabled) => void apply(enabled, status.choice.key)}
-      />
+      <Switch label={t('qol.capture.enable')} checked={status.choice.enabled} onChange={toggle} />
       <TextField
         label={t('qol.capture.keys')}
         value={key}
         onChange={setKey}
-        error={error ? t('qol.capture.keysInvalid') : undefined}
+        error={error ? t(error === 'altgr' ? 'qol.capture.keysAltGr' : 'qol.capture.keysInvalid') : undefined}
         help={t('qol.capture.keysHelp')}
-        onCommit={() => void apply(status.choice.enabled, key)}
+        onCommit={commit}
       />
-      {status.choice.enabled && !status.registered && <p className={styles.help}>{t('qol.capture.taken')}</p>}
+      {status.choice.enabled && !status.registered && (
+        <p className={styles.help}>
+          {t(quickKeyProblem(status.choice.key) === 'altgr' ? 'qol.capture.keysAltGr' : 'qol.capture.taken')}
+        </p>
+      )}
+      {clashes.length > 0 && (
+        <p className={styles.help}>{t('qol.capture.keysClash', { commands: clashes.join(', ') })}</p>
+      )}
     </section>
   );
 }

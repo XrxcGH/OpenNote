@@ -1,13 +1,15 @@
 // Search by meaning, from the app's side (Phase 12): the one vector index, the job that fills it from the person's pages
 // through the background queue, and the questions the screens ask of it. It runs only while the person has turned
-// search by meaning on, and it adds nothing to a page that is protected.
+// search by meaning on, and it adds nothing to a page that is protected (protectedPages.ts): it never reads one, and
+// drops and re-saves at once what it held of a page that becomes protected.
 import { commandContext } from '../../../commands/registry';
-import type { NodeSummary, NotesService } from '../../../services/notes/types';
+import type { NotesService } from '../../../services/notes/types';
 import type { PageJson, PageService } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { background, enqueueBackground } from '../background';
 import { isExtraOn } from '../extras';
+import { isProtectedPage, listTreePages, onPagesProtected, setPagesProtected } from '../protectedPages';
 import { intelExt } from '../runtime';
 import { builtInEmbedder, embed } from './embed';
 import { chunksOfPage } from './pageText';
@@ -19,6 +21,8 @@ export interface PageRef {
   id: string;
   title: string;
   modified: string;
+  /** In an encrypted section: never read, and dropped from the index. */
+  encrypted?: boolean;
 }
 
 /** Where the engine gets the pages. The app's source reads the notes tree and opens each page. */
@@ -46,6 +50,13 @@ let loading: Promise<void> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let pass = 0;
 
+index.setProtectedCheck(isProtectedPage);
+// A page found protected leaves the index, and the file on disk is rewritten without it now, not in a few seconds.
+onPagesProtected(async (ids) => {
+  await loadSavedIndex();
+  if (ids.map((id) => index.remove(id)).some(Boolean)) await saveIndexNow();
+});
+
 export function meaningIndex() {
   return index;
 }
@@ -55,7 +66,9 @@ export function loadSavedIndex(): Promise<void> {
   loading ??= (async () => {
     try {
       const text = await (await intelExt()).get(FILE);
-      if (text) for (const page of deserialize(text, builtInEmbedder.name)) index.restore(page);
+      const saved = text ? deserialize(text, builtInEmbedder.name) : [];
+      // A saved page that is protected now is refused, and the file is written again without it.
+      if (!saved.map((page) => index.restore(page)).every(Boolean)) await saveIndexNow();
     } catch {
       // The pages are indexed again.
     }
@@ -64,7 +77,10 @@ export function loadSavedIndex(): Promise<void> {
   return loading;
 }
 
-async function saveNow(): Promise<void> {
+/** Writes the index to this device now. */
+export async function saveIndexNow(): Promise<void> {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = null;
   try {
     await (await intelExt()).put(FILE, serialize(index.all(), builtInEmbedder.name));
   } catch {
@@ -76,7 +92,7 @@ function saveSoon(): void {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    void saveNow();
+    void saveIndexNow();
   }, 3000);
 }
 
@@ -103,7 +119,12 @@ async function pace(workMs: number, signal: AbortSignal): Promise<void> {
  */
 export async function runIndexPass(source: PageSource, signal: AbortSignal): Promise<number> {
   await loadSavedIndex();
-  const pages = await source.list();
+  const listed = await source.list();
+  await setPagesProtected(
+    listed.filter((page) => page.encrypted).map((page) => page.id),
+    listed.filter((page) => !page.encrypted).map((page) => page.id),
+  );
+  const pages = listed.filter((page) => !page.encrypted && !isProtectedPage(page.id));
   const stale = pages.filter((page) => index.modifiedOf(page.id) !== page.modified);
   meaningState.set((state) => ({ ...state, total: stale.length, done: 0, running: true }));
   let indexed = 0;
@@ -129,22 +150,10 @@ export async function runIndexPass(source: PageSource, signal: AbortSignal): Pro
   return indexed;
 }
 
-async function listAllPages(notes: NotesService): Promise<PageRef[]> {
-  const out: PageRef[] = [];
-  const walk = async (nodes: readonly NodeSummary[]): Promise<void> => {
-    for (const node of nodes) {
-      if (node.kind === 'page') out.push({ id: node.id, title: node.title, modified: node.modified });
-      else if (node.childCount > 0) await walk(await notes.listChildren(node.id));
-    }
-  };
-  await walk(await notes.listNotebooks());
-  return out;
-}
-
 /** The app's pages: the notes tree for the list, and the page service for each page's blocks. */
 export function appPageSource(notes: NotesService, pages: PageService): PageSource {
   return {
-    list: () => listAllPages(notes),
+    list: () => listTreePages(notes),
     async read(id) {
       const open = await pages.open(id, { viewport: null });
       try {

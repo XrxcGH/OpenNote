@@ -59,6 +59,8 @@ pub struct NodeSummary {
     pub pinned: bool,
     /// Hidden from the tree until "Show archived".
     pub archived: bool,
+    /// An encrypted section, or a page in one. The smart features index and cache nothing of it.
+    pub encrypted: bool,
 }
 
 /// The contract's `LibraryInfo`.

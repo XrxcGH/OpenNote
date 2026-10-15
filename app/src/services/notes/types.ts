@@ -61,6 +61,11 @@ export interface NodeSummary {
   readonly pinned?: boolean;
   /** Hidden from the tree until Show archived. Storage that keeps no archive leaves it out. */
   readonly archived?: boolean;
+  /**
+   * An encrypted section, or a page in one (spec 5.7). Nothing of it may be indexed or cached on this device
+   * (features/intel/protectedPages.ts). Storage without encryption leaves it out.
+   */
+  readonly encrypted?: boolean;
 }
 
 /** Where nodes go. `beforeId: null` means at the end of the parent's children. */

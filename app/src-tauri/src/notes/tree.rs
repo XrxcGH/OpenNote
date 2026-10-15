@@ -87,6 +87,7 @@ pub(crate) fn summary(info: NodeInfo) -> NodeSummary {
         read_only: info.read_only,
         pinned: info.pinned,
         archived: info.archived,
+        encrypted: info.encrypted,
     }
 }
 

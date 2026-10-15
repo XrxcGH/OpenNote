@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Quick capture no longer takes Ctrl+Alt+Q, which AltGr+Q also presses and which types @ on many keyboards. It is off until it is turned on in Settings, where the shortcut can be chosen and a clash with OpenNote's own keys is shown. A beta 4 profile that kept Ctrl+Alt+Q gets no shortcut until new keys are chosen, and its switch can still be turned off.
+- Search by meaning and text in images keep nothing of a page in a protected section, and drop what they kept of a page whose section becomes protected.
+
 ### Foundation
 
 - Set up the project structure for Windows development with Tauri 2

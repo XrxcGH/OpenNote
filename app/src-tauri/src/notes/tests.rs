@@ -440,6 +440,69 @@ fn trash_restore_and_purge_keep_trash_in_the_notebook() {
     assert_eq!(lib.titles(None), ["Biology"]);
 }
 
+/// Marks every `section.json` of the given sections under `dir` encrypted, as the section-protect feature leaves it.
+fn mark_encrypted(dir: &Path, sections: &[&str]) -> usize {
+    let mut marked = 0;
+    for entry in fs::read_dir(dir).expect("a folder").filter_map(Result::ok) {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let file = path.join("section.json");
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if sections.contains(&name.as_str()) && file.is_file() {
+            let mut json: Value = serde_json::from_str(&fs::read_to_string(&file).expect("reads")).expect("JSON");
+            json["encryption"] = json!({ "scheme": "test" });
+            fs::write(&file, serde_json::to_string(&json).expect("JSON")).expect("writes");
+            marked += 1;
+        }
+        marked += mark_encrypted(&path, sections);
+    }
+    marked
+}
+
+#[test]
+fn trash_keeps_the_encrypted_flag_of_the_section_its_pages_came_from() {
+    // Trash listed the pages and sections of an encrypted section as unencrypted, so the smart features would have
+    // taken them for unprotected pages and kept their text.
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let notes = dir.path().join("Notes");
+    let (lectures, labs) = {
+        let lib = Lib::at(&dir.path().join("first"), &notes);
+        let biology = lib.add(None, "notebook", "Biology");
+        let lectures = lib.add(Some(&biology), "section", "Lectures");
+        let cell = lib.add_page(&lectures, "Cell", 0);
+        lib.add_page(&lectures, "Mitosis", 0);
+        let labs = lib.add(Some(&biology), "section", "Labs");
+        lib.add_page(&labs, "Titration", 0);
+        let plain = lib.add(Some(&biology), "section", "Plain");
+        let open = lib.add_page(&plain, "Open", 0);
+        lib.ok("notes_trash", json!({ "ids": [cell] }));
+        lib.ok("notes_trash", json!({ "ids": [labs] }));
+        lib.ok("notes_trash", json!({ "ids": [open] }));
+        (lectures, labs)
+    };
+    assert_eq!(mark_encrypted(&notes, &[&lectures, &labs]), 2);
+    let lib = Lib::at(&dir.path().join("second"), &notes);
+    let trash = lib.ok("notes_list_trash", json!({}));
+    let flags: Vec<(String, bool)> = trash
+        .as_array()
+        .expect("a list")
+        .iter()
+        .map(|item| {
+            let node = &item["node"];
+            (
+                node["title"].as_str().unwrap_or_default().to_owned(),
+                node["encrypted"] == json!(true),
+            )
+        })
+        .collect();
+    assert_eq!(flags.len(), 3);
+    assert!(flags.contains(&("Cell".to_owned(), true)), "{flags:?}");
+    assert!(flags.contains(&("Labs".to_owned(), true)), "{flags:?}");
+    assert!(flags.contains(&("Open".to_owned(), false)), "{flags:?}");
+}
+
 #[test]
 fn a_copied_notes_folder_opens_with_its_notebooks_on_another_profile() {
     let dir = tempfile::tempdir().expect("a temp folder");
