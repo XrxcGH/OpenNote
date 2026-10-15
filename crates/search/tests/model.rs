@@ -196,3 +196,21 @@ fn properties_become_searchable_lines() {
     assert_eq!(last.text, "Status: Open\nRating: 4\nReviewed\nCourse: Bio 201");
     assert_eq!(doc.blocks.len(), 2);
 }
+
+#[test]
+fn look_in_finds_image_descriptions_and_transcripts_by_their_block_kind() {
+    let page = rich_page();
+    let doc = PageDoc::from_page(&page, notebook_id(1), section_id(1), false);
+    let mut index = SearchIndex::open_in_memory().unwrap();
+    index.upsert(&doc).unwrap();
+    let only = |kind: BlockKind, text: &str| {
+        let mut query = Query::text(text);
+        query.block_types = vec![kind];
+        index.search(&query).unwrap().len()
+    };
+    // The picture's description is on its image block; a transcript is an other block whose fallback text is the words.
+    assert_eq!(only(BlockKind::Image, "leaf"), 1);
+    assert_eq!(only(BlockKind::Other, "cards"), 1);
+    assert_eq!(only(BlockKind::Other, "leaf"), 0, "a description is not a transcript");
+    assert_eq!(only(BlockKind::Image, "cards"), 0, "a transcript is not a description");
+}

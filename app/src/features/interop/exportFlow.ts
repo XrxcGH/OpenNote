@@ -78,6 +78,8 @@ export interface ExportFlowDeps {
   interop: InteropClient;
   notes: NotesService;
   target: ExportTarget;
+  /** The format the dialog opens on; Markdown when not given. */
+  format?: ExportFormat;
   announce(text: string, politeness?: 'polite' | 'assertive'): void;
 }
 
@@ -181,7 +183,7 @@ export function createExportFlow(deps: ExportFlowDeps): ExportFlow {
   const state = createFlowState<ExportState>({
     step: 'options',
     scope: deps.target.initial,
-    format: 'markdown',
+    format: deps.format ?? 'markdown',
     folder: null,
     error: null,
   });

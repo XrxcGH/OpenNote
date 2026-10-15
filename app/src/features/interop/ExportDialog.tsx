@@ -22,6 +22,7 @@ export interface ExportDialogProps {
   interop: InteropClient;
   notes: NotesService;
   target: ExportTarget;
+  format?: ExportFormat;
 }
 
 const FORMATS: readonly ExportFormat[] = ['markdown', 'html', 'htmlSingle', 'docx'];
@@ -161,8 +162,8 @@ function body(flow: ExportFlow, state: ExportState, target: ExportTarget, refocu
   }
 }
 
-export default function ExportDialog({ interop, notes, target, onClose }: ExportDialogProps & OverlayProps) {
-  const [flow] = useState(() => createExportFlow({ interop, notes, target, announce }));
+export default function ExportDialog({ interop, notes, target, format, onClose }: ExportDialogProps & OverlayProps) {
+  const [flow] = useState(() => createExportFlow({ interop, notes, target, announce, ...(format ? { format } : {}) }));
   useEffect(() => flow.attach(), [flow]);
   const state = useSyncExternalStore(flow.state.subscribe, flow.state.get);
   // The first screen keeps the focus the dialog gave its first control. Coming back to it, the heading takes focus.

@@ -54,8 +54,8 @@ command({
   id: 'pages.exportWord',
   title: 'pageViews.commands.exportWord',
   flag: 'interop.export',
-  // Word keeps the page's text, tables, links, and pictures. The export dialog opens on this page, where Word is a format.
-  run: (ctx) => commands.get('interop.export')?.run(ctx, undefined),
+  // Word keeps the page's text, tables, links, and pictures. The export dialog opens on this page with Word already chosen.
+  run: (ctx) => commands.get('interop.export')?.run(ctx, { format: 'docx' }),
 });
 command({
   id: 'pages.exportHtml',

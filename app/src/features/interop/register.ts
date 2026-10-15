@@ -7,6 +7,7 @@ import { defineCommand } from '../../commands/registry';
 import type { CommandContext } from '../../commands/types';
 import { commandBar, commands, contextMenus } from '../../registries';
 import type { MenuId } from '../../registries/types';
+import type { ExportFormat } from '../../platform/interop';
 import type { NodeId } from '../../services/notes/types';
 import { showOverlay } from '../../shell/commandbar/overlays';
 
@@ -42,13 +43,13 @@ commands.register(
     category: 'notebooks',
     flag: 'interop.export',
     when: (ctx) => exportStart(ctx) !== null,
-    async run(ctx) {
+    async run(ctx, args?: { format?: ExportFormat }) {
       const start = exportStart(ctx);
       if (!start) return;
       const { resolveTarget } = await import('./exportTarget');
       const target = await resolveTarget(ctx.notes, start);
       if (!target) return;
-      showOverlay('interop-export', LazyExport, { interop: ctx.platform.interop, notes: ctx.notes, target });
+      showOverlay('interop-export', LazyExport, { interop: ctx.platform.interop, notes: ctx.notes, target, ...(args?.format ? { format: args.format } : {}) });
     },
   }),
 );
