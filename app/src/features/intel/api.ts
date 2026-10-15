@@ -35,3 +35,4 @@ export { MAX_STROKES as MAX_MATH_STROKES, readWith, recognizeMath } from './math
 export type { MathResult } from './math/recognize';
 export { listen } from './stream/listen';
 export type { Listening, ListenOptions } from './stream/listen';
+export { withAnswerFallback, withWritingFallback } from './localModels/fallback';
