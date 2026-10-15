@@ -10,6 +10,8 @@ vi.mock('../../../ui', () => ({ showToast: vi.fn() }));
 
 initFlags('dev', { 'search.paragraphLinks': true });
 const notes = {} as NotesService;
+const focusTarget = new EventTarget();
+(globalThis as { window?: unknown }).window = focusTarget;
 const { installDeepLinks } = await import('./install');
 const { formatLink } = await import('./url');
 
@@ -45,5 +47,37 @@ describe('opennote:// launches', () => {
     const { platform } = platformWith(formatLink('page-9'));
     installDeepLinks(platform, notes)();
     await vi.waitFor(() => expect(openAndReveal).toHaveBeenCalledWith(notes, 'page-9', null));
+  });
+});
+
+describe('a forwarded link that the event missed', () => {
+  it('is taken from the shell when the window gains focus, and not opened twice for the event and the take', async () => {
+    openAndReveal.mockClear();
+    let pending: string | null = formatLink('page-5');
+    let forwarded: ((args: string[]) => void) | null = null;
+    const platform = {
+      window: { onForwardedArgs: (l: (args: string[]) => void) => ((forwarded = l), () => undefined) },
+      search: {
+        extras: {
+          launchLink: () => {
+            const url = pending;
+            pending = null;
+            return Promise.resolve(url);
+          },
+        },
+      },
+    } as unknown as Platform;
+    const stop = installDeepLinks(platform, notes);
+    await vi.waitFor(() => expect(openAndReveal).toHaveBeenCalledTimes(1));
+    pending = formatLink('page-6');
+    focusTarget.dispatchEvent(new Event('focus'));
+    await vi.waitFor(() => expect(openAndReveal).toHaveBeenCalledWith(notes, 'page-6', null));
+    pending = formatLink('page-7');
+    forwarded!(['OpenNote.exe', formatLink('page-7')]);
+    await Promise.resolve();
+    focusTarget.dispatchEvent(new Event('focus'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect((openAndReveal.mock.calls as unknown as string[][]).filter((call) => call[1] === 'page-7')).toHaveLength(1);
+    stop();
   });
 });

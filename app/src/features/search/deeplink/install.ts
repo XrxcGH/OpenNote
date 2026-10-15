@@ -22,18 +22,37 @@ export function installDeepLinks(platform: Platform, notes: NotesService): () =>
       })
       .catch((error: unknown) => console.warn(`Link to page ${link.page} failed: ${String(error)}`));
   };
+  // The shell also keeps a second launch's link until it is taken, because an event sent before the window finished
+  // listening, or while it was busy, is lost. The link is taken on the event and again whenever the window gains focus
+  // (a second launch focuses it), and the same link is never opened twice within a few seconds.
+  let recent: { key: string; at: number } | null = null;
+  const openOnce = (link: OpenNoteLink) => {
+    const key = `${link.page}/${link.target ?? ''}`;
+    if (recent && recent.key === key && Date.now() - recent.at < 4000) return;
+    recent = { key, at: Date.now() };
+    open(link);
+  };
+  const takePending = () =>
+    void platform.search.extras
+      ?.launchLink()
+      .then((url) => {
+        const link = url ? parseLink(url) : null;
+        if (link) openOnce(link);
+      })
+      .catch(() => undefined);
   // Subscribed before anything else runs, so a second launch's arguments are never heard late.
-  const stop = platform.window.onForwardedArgs((args) => {
+  const stopArgs = platform.window.onForwardedArgs((args) => {
     const link = linkInArgs(args);
     console.debug(`Forwarded launch with ${args.length} argument(s): ${link ? 'a link' : 'no link'}.`);
-    if (link) open(link);
+    if (link) openOnce(link);
+    takePending();
   });
-  void platform.search.extras
-    ?.launchLink()
-    .then((url) => {
-      const link = url ? parseLink(url) : null;
-      if (link) open(link);
-    })
-    .catch(() => undefined);
-  return stop;
+  const onFocus = () => takePending();
+  const view = typeof window === 'undefined' ? null : window;
+  view?.addEventListener('focus', onFocus);
+  takePending();
+  return () => {
+    stopArgs();
+    view?.removeEventListener('focus', onFocus);
+  };
 }

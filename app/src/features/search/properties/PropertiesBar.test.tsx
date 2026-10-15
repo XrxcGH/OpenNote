@@ -5,7 +5,11 @@ import { renderUi } from '../../../test/render';
 import type { OpenPage } from '../../../services/pages/types';
 import { PropertiesBar } from './PropertiesBar';
 
-const stub = { initial: { view: {} }, onFrame: () => () => undefined, send: () => Promise.resolve() } as unknown as OpenPage;
+const stub = {
+  initial: { view: {} },
+  onFrame: () => () => undefined,
+  send: () => Promise.resolve(),
+} as unknown as OpenPage;
 
 const fold = () => document.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
 const expanded = () => fold().getAttribute('aria-expanded');

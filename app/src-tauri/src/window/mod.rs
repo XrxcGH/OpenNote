@@ -204,6 +204,8 @@ pub fn receive_forwarded(app: &AppHandle, args: Vec<String>) {
         let _ = window.show();
         let _ = window.set_focus();
     }
+    // The interface may not be listening yet, or may miss the event: it takes the link from here as well.
+    crate::deeplink::remember_launch(&args);
     log::info!("Passing {} argument(s) from a second launch to the window.", args.len());
     if let Err(error) = app.emit_to(MAIN, events::WINDOW_FORWARDED_ARGS, args) {
         log::warn!("Couldn't pass a second launch's arguments on: {error}");
