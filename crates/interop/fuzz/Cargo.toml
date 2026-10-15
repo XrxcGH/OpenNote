@@ -1,0 +1,53 @@
+# Fuzz targets for the older binary formats that opennote-interop imports: Word 97-2003, RTF, Excel 97-2003,
+# Excel binary, and OpenDocument spreadsheets. Run one with `cargo +nightly fuzz run <target>` from crates/interop.
+# Each target calls an entry function in `opennote_interop::fuzzing`. The ordinary tests in
+# src/import/legacy/tests.rs run a short mutation fuzz of the same readers with stable Rust.
+
+[package]
+name = "opennote-interop-fuzz"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4.13"
+opennote-interop = { path = "..", features = ["fuzzing"] }
+
+# Fuzzing needs a nightly toolchain, so this crate is its own workspace.
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "legacy_doc"
+path = "fuzz_targets/legacy_doc.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "legacy_rtf"
+path = "fuzz_targets/legacy_rtf.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "legacy_xls"
+path = "fuzz_targets/legacy_xls.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "legacy_zipped_sheet"
+path = "fuzz_targets/legacy_zipped_sheet.rs"
+test = false
+doc = false
+bench = false
