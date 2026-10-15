@@ -31,7 +31,7 @@ export interface TreeRowProps {
   /** The row's top when the tree windows its rows. */
   readonly top?: number;
   onPress(row: Row, event: MouseEvent): void;
-  /** A press with a button other than the main one: the middle button opens the row in a new tab. */
+  /** A press with a button other than the main one: the middle button opens a page row in a new tab. */
   onAux(row: Row, event: MouseEvent): void;
   onToggle(row: Row): void;
   onRename(row: Row): void;
@@ -102,6 +102,8 @@ function TreeRowView(props: TreeRowProps) {
       aria-describedby={`${id}-description`}
       tabIndex={focused ? 0 : -1}
       onClick={(event) => props.onPress(row, event)}
+      // Windows starts autoscroll on the middle button's press, so the press is the one to stop.
+      onMouseDown={(event) => event.button === 1 && node.kind === 'page' && event.preventDefault()}
       onAuxClick={(event) => props.onAux(row, event)}
     >
       <Twisty row={row} onToggle={props.onToggle} />

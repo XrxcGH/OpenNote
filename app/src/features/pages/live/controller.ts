@@ -145,6 +145,7 @@ class PagesView {
         window.removeEventListener('pointercancel', this.onPenCancel, { capture: true });
         window.removeEventListener('pointerdown', this.onPenDown, { capture: true });
         window.removeEventListener('pointerup', this.onPenUp, { capture: true });
+        this.penDown.clear();
       });
     }
     this.reading = attachReading(mounted, () => this.spec.mode === 'paginated');

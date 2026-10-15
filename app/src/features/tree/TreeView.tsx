@@ -178,7 +178,7 @@ function useRowHandlers(props: TreeViewProps) {
     [tree],
   );
   const onAux = useCallback((row: Row, event: MouseEvent) => {
-    if (event.button !== 1 || (row.node.kind !== 'page' && row.node.kind !== 'section')) return;
+    if (event.button !== 1 || row.node.kind !== 'page') return;
     event.preventDefault();
     void executeCommand('tabs.openInNewTab', undefined, 'menu', { kind: 'node', id: row.id });
   }, []);

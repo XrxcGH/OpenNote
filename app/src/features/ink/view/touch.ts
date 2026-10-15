@@ -111,6 +111,8 @@ export class TouchTool {
     this.stopTool = drawState.subscribe(() => this.pipeline?.setInkToolActive(writesInk(drawState.get().tool)));
     for (const type of PEN_EVENTS) window.addEventListener(type, this.onPen, { capture: true, passive: true });
     window.addEventListener('blur', this.onBlur);
+    // A resize, rotation or zoom moves the edges while the pipeline lives.
+    window.addEventListener('resize', this.onResize);
   }
 
   /** Settings changed: the live filter takes the new ones, so a contact in progress keeps its place. */
@@ -132,6 +134,7 @@ export class TouchTool {
     this.stopGlide();
     for (const type of PEN_EVENTS) window.removeEventListener(type, this.onPen, { capture: true });
     window.removeEventListener('blur', this.onBlur);
+    window.removeEventListener('resize', this.onResize);
     this.pipeline = null;
     if (this.tick) clearInterval(this.tick);
     this.tick = null;
@@ -185,11 +188,15 @@ export class TouchTool {
     return made;
   }
 
-  /** Tells the filter the page's size, for the edge-grip and edge-start rules. */
+  /**
+   * Tells the filter the window's size, for the edge-grip and edge-start rules: a thumb rests at the device's edge,
+   * not at the page pane's, so the pages pane being open does not move the edge.
+   */
   private syncViewport(): void {
-    const el = this.host.viewport.get()?.viewport;
-    if (el && this.pipeline) this.pipeline.filter.setViewport(el.clientWidth, el.clientHeight);
+    if (this.pipeline) this.pipeline.filter.setViewport(window.innerWidth, window.innerHeight);
   }
+
+  private readonly onResize = () => this.syncViewport();
 
   private pipelineHost(): PipelineHost {
     return {

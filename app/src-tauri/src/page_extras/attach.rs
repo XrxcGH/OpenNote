@@ -38,81 +38,15 @@ const WATCH_LIMIT: Duration = Duration::from_secs(12 * 60 * 60);
 /// The event the interface hears when a change is saved back.
 pub const SAVED_EVENT: &str = "attachment://saved";
 
-/// Types that run code when opened. They can be attached and kept, but not opened from a note.
-const BLOCKED: &[&str] = &[
-    "exe",
-    "com",
-    "scr",
-    "pif",
-    "bat",
-    "cmd",
-    "msi",
-    "msp",
-    "ps1",
-    "psm1",
-    "vbs",
-    "vbe",
-    "js",
-    "jse",
-    "wsf",
-    "wsh",
-    "hta",
-    "lnk",
-    "url",
-    "reg",
-    "dll",
-    "cpl",
-    "jar",
-    "appx",
-    "msix",
-    "gadget",
-    "inf",
-    "scf",
-    "application",
-    "chm",
-    "msc",
-    "vb",
-    "py",
-    "pyw",
-    "pyc",
-    "pyz",
-    "rb",
-    "pl",
-    "php",
-    "settingcontent-ms",
-    "search-ms",
-    "library-ms",
-    "diagcab",
-    "iso",
-    "img",
-    "vhd",
-    "vhdx",
-    "xll",
-    "xlam",
-    "ppam",
-    "wll",
-    "psc1",
-    "ps1xml",
-    "ps2",
-    "ps2xml",
-    "psd1",
-    "wsc",
-    "sct",
-    "mht",
-    "mhtml",
-    "theme",
-    "themepack",
-    "website",
-    "desklink",
-    "appref-ms",
-    "appinstaller",
-    "msixbundle",
-    "appxbundle",
-    "msu",
-    "mst",
-    "ocx",
-    "sys",
-    "drv",
+/// Document, picture, audio, video and archive types a note may open. Windows runs many other
+/// types on open, and the list of those keeps growing, so anything not named here is refused.
+/// It can still be attached and kept.
+const OPENABLE: &[&str] = &[
+    "pdf", "txt", "md", "rtf", "csv", "tsv", "json", "xml", "log", "doc", "docx", "dot", "dotx", "odt",
+    "ott", "xls", "xlsx", "ods", "ppt", "pptx", "odp", "pps", "ppsx", "epub", "png", "jpg", "jpeg", "gif",
+    "bmp", "webp", "svg", "tif", "tiff", "heic", "heif", "avif", "ico", "mp3", "wav", "m4a", "aac", "ogg",
+    "oga", "opus", "flac", "wma", "mid", "midi", "mp4", "m4v", "mov", "mkv", "webm", "avi", "wmv", "mpg",
+    "mpeg", "zip", "7z", "tar", "gz", "rar", "ics", "vcf", "eml", "tex", "bib", "srt", "vtt",
 ];
 
 #[derive(Debug, Deserialize)]
@@ -145,11 +79,24 @@ pub fn safe_name(name: &str) -> String {
     }
 }
 
-/// Whether Windows would run this file rather than show it.
+/// Whether a note refuses to open this file: anything not a known document or media type.
 pub fn is_blocked(name: &str) -> bool {
-    name.rsplit_once('.')
-        .is_some_and(|(_, extension)| BLOCKED.contains(&extension.to_ascii_lowercase().as_str()))
+    !name
+        .rsplit_once('.')
+        .is_some_and(|(_, extension)| OPENABLE.contains(&extension.to_ascii_lowercase().as_str()))
 }
+
+/// Marks the temporary copy as downloaded from the internet (Mark of the Web), so Windows
+/// applies its usual protected-view and warning prompts to it.
+#[cfg(windows)]
+fn mark_of_the_web(file: &Path) {
+    let mut stream = file.as_os_str().to_owned();
+    stream.push(":Zone.Identifier");
+    let _ = std::fs::write(stream, "[ZoneTransfer]\r\nZoneId=3\r\n");
+}
+
+#[cfg(not(windows))]
+fn mark_of_the_web(_file: &Path) {}
 
 fn io_error(error: impl std::fmt::Display) -> IpcError {
     IpcError::new(codes::IO, error.to_string())
@@ -226,6 +173,7 @@ pub async fn attachment_open(app: AppHandle, page: String, asset: String, name: 
             let bytes = handle.asset_bytes(id, None).map_err(io_error)?.bytes;
             std::fs::create_dir_all(&folder).map_err(io_error)?;
             std::fs::write(&path, bytes).map_err(io_error)?;
+            mark_of_the_web(&path);
         }
         if !watching {
             start_watch(app, page, asset, path.clone());
@@ -370,6 +318,15 @@ mod tests {
             "c.settingcontent-ms",
             "d.iso",
             "e.xll",
+            "f.jnlp",
+            "g.xbap",
+            "h.shb",
+            "i.msh1",
+            "j.ade",
+            "k.scriptlet",
+            "l.vbscript",
+            "readme",
+            "m.job",
         ] {
             assert!(is_blocked(name), "{name}");
         }
@@ -378,8 +335,8 @@ mod tests {
             "sheet.xlsx",
             "slides.pptx",
             "scan.pdf",
-            "readme",
             "archive.zip",
+            "Song.MP3",
         ] {
             assert!(!is_blocked(name), "{name}");
         }
