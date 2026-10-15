@@ -110,6 +110,11 @@ export function createWebInteropMore(): WebInteropMore {
         return answer(null);
       case 'open_default_apps':
         return answer(null);
+      case 'save_text': {
+        const path = `${String(args.folder)}\\${String(args.name)}.md`;
+        files.set(key(path), { text: String(args.text ?? ''), modified: tick() });
+        return answer({ path });
+      }
       default:
         return refuse(`There is no operation called ${op}.`);
     }

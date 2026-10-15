@@ -3,7 +3,8 @@
 // the image again. It never asks to turn text recognition on: with the switch off, nothing is read.
 import { isIntelError } from '../../../services/intel';
 import { isOn } from '../choices';
-import { readTextInImage, textOfResult } from '../imageText';
+import { pixelsFromBlob, readTextInImage, textOfResult, wordBoxes } from '../imageText';
+import type { WordBox } from '../imageText';
 import { intelExt } from '../runtime';
 import { enqueueBackground } from './index';
 
@@ -16,6 +17,8 @@ export const MAX_KEPT_IMAGES = 2000;
 interface Kept {
   text: string;
   at: number;
+  /** The words with their boxes as fractions of the image, for selecting text in it (A1-34). */
+  words?: WordBox[];
 }
 
 let kept: Map<string, Kept> | null = null;
@@ -68,6 +71,11 @@ export async function getImageText(key: string): Promise<string | null> {
   return (await table()).get(key)?.text ?? null;
 }
 
+/** The words read in an image with their boxes, or null when it hasn't been read. */
+export async function getImageWords(key: string): Promise<WordBox[] | null> {
+  return (await table()).get(key)?.words ?? null;
+}
+
 /** Calls back whenever the words of an image are read. For search, to index them. */
 export function onImageText(listener: (key: string, text: string) => void): () => void {
   listeners.add(listener);
@@ -89,9 +97,11 @@ export async function queueImageText(src: string, label: string): Promise<boolea
       try {
         const response = await fetch(src, { signal });
         if (!response.ok) throw new Error(`The image answered ${response.status}.`);
-        const text = textOfResult(await readTextInImage(await response.blob())).slice(0, MAX_KEPT_CHARS);
+        const pixels = await pixelsFromBlob(await response.blob());
+        const result = await readTextInImage(new Blob(), { decode: () => Promise.resolve(pixels) });
+        const text = textOfResult(result).slice(0, MAX_KEPT_CHARS);
         const map = await table();
-        map.set(key, { text, at: Date.now() });
+        map.set(key, { text, at: Date.now(), words: wordBoxes(result, pixels.width, pixels.height) });
         await save(map);
         listeners.forEach((listener) => listener(key, text));
       } catch (error) {

@@ -239,6 +239,13 @@ fn a_slide_of_text_and_a_table_matches_its_golden_image() {
 fn a_slide_of_pictures_matches_its_golden_image_and_lists_what_it_left_out() {
     let drawn = draw(PICTURES, PICTURE_RELS);
     golden("pictures", &drawn);
+    assert!(
+        !drawn.pictures.is_empty(),
+        "the pictures' boxes are kept for the Evening theme"
+    );
+    for [x, y, w, h] in &drawn.pictures {
+        assert!((0.0..=1.0).contains(x) && (0.0..=1.0).contains(y) && *w <= 1.0 && *h <= 1.0);
+    }
     assert_eq!(
         drawn.svg.matches("data:image/png;base64,").count(),
         1,

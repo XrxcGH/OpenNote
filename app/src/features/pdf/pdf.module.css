@@ -1,0 +1,198 @@
+@layer components {
+  /* The layers over a picture: the same box as the picture, so a word's percent box lands on the word. */
+  .overlay {
+    position: absolute;
+    container-type: size;
+    pointer-events: none;
+  }
+
+  /* Words are transparent text over the picture: a drag selects them, and the selection shows in place. */
+  .text {
+    position: absolute;
+    inset: 0;
+    color: transparent;
+    line-height: 1;
+    user-select: text;
+  }
+
+  .text span {
+    position: absolute;
+    white-space: pre;
+    overflow: clip;
+    pointer-events: auto;
+    cursor: text;
+  }
+
+  .text span::selection {
+    background: color-mix(in srgb, var(--color-accent-primary) 30%, transparent);
+    color: transparent;
+  }
+
+  /* A highlight is a marker stroke under the words, in one of the art colors. */
+  .mark {
+    position: absolute;
+    border-radius: 2px;
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .mark[data-color='candle'] {
+    background: var(--color-art-candle);
+  }
+
+  .mark[data-color='moss'] {
+    background: var(--color-art-moss);
+  }
+
+  .mark[data-color='night'] {
+    background: var(--color-art-night);
+  }
+
+  .mark[data-color='dusk'] {
+    background: var(--color-art-dusk);
+  }
+
+  .mark:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  /* The switch that shows the original page appears only where pages are dimmed: the dark theme, unless pages stay
+     paper white. It shows when the picture is hovered or the switch has focus. */
+  .original {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-end: var(--space-2);
+    display: none;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+    pointer-events: auto;
+    opacity: 0;
+  }
+
+  .original[aria-pressed='true'] {
+    background: var(--color-surface-selected);
+  }
+
+  .keep {
+    position: absolute;
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']:not([data-page-color='paper'])) {
+    .original {
+      display: block;
+    }
+
+    :global([data-pdf-look]:hover) .original,
+    .original:focus-visible,
+    .original[aria-pressed='true'] {
+      opacity: 1;
+    }
+
+    /* Dimmed: the page is darker, and its pictures are lifted back to their own brightness. */
+    :global([data-pdf-look='dim']) img {
+      filter: brightness(0.72) contrast(1.05);
+    }
+
+    :global([data-pdf-look='dim']) .keep {
+      display: block;
+      backdrop-filter: contrast(0.952) brightness(1.389);
+    }
+
+    /* Inverted: white paper turns dark and black text turns light, and the pictures are turned back. */
+    :global([data-pdf-look='invert']) img {
+      filter: invert(1) hue-rotate(180deg);
+    }
+
+    :global([data-pdf-look='invert']) .keep {
+      display: block;
+      backdrop-filter: hue-rotate(180deg) invert(1);
+    }
+
+    .mark {
+      mix-blend-mode: screen;
+    }
+  }
+
+  .swatch {
+    display: inline-block;
+    inline-size: 0.8em;
+    block-size: 0.8em;
+    margin-inline-end: var(--space-2);
+    border-radius: 2px;
+  }
+
+  .swatch[data-color='candle'] {
+    background: var(--color-art-candle);
+  }
+
+  .swatch[data-color='moss'] {
+    background: var(--color-art-moss);
+  }
+
+  .swatch[data-color='night'] {
+    background: var(--color-art-night);
+  }
+
+  .swatch[data-color='dusk'] {
+    background: var(--color-art-dusk);
+  }
+
+  .found {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .found button {
+    inline-size: 100%;
+    justify-content: start;
+    text-align: start;
+  }
+
+  .preview {
+    display: block;
+    max-inline-size: 100%;
+    max-block-size: 40vh;
+    margin-block-end: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .row {
+    display: flex;
+    gap: var(--space-2);
+    margin-block-start: var(--space-3);
+  }
+
+  @media (forced-colors: active) {
+    .mark {
+      forced-color-adjust: none;
+      background: Highlight;
+      mix-blend-mode: normal;
+    }
+  }
+
+  /* The dimming is for the screen only: printing and export keep the page as it is. */
+  @media print {
+    .original {
+      display: none !important;
+    }
+
+    :global([data-pdf-look]) img {
+      filter: none !important;
+    }
+
+    .keep {
+      display: none !important;
+    }
+  }
+}

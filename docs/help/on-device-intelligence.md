@@ -16,7 +16,7 @@ Later, open Settings, then On-device intelligence. Each feature shows what it do
 
 | Feature | How to use it |
 |---|---|
-| Text in pictures | Right-click a picture and choose Copy text from image. Turn on Search text in pictures to find the words with search. |
+| Text in pictures | Right-click a picture and choose Copy text from image. Turn on Search text in pictures to find the words with search. Once a picture or a scanned PDF page has been read, drag across its words to select just the ones you want, then press Ctrl+C. |
 | Read aloud | Select text, press Ctrl+K, and choose Read aloud. |
 | Summaries | Ask for a summary of a page. |
 | Handwriting to text | Lasso your writing and choose Convert to text. Tidy handwriting straightens it and evens the spacing. |

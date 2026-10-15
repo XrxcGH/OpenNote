@@ -52,6 +52,27 @@ export function textOfResult(result: Pick<OcrResult, 'lines'>): string {
     .join('\n');
 }
 
+/** A word and its box as fractions of the image: [x, y, w, h, text]. */
+export type WordBox = [x: number, y: number, w: number, h: number, text: string];
+
+/** The most words kept for one image. */
+export const MAX_WORD_BOXES = 5000;
+
+/** The words of a result with their boxes as fractions of an image `width` by `height` pixels. Empty boxes are left out. */
+export function wordBoxes(result: Pick<OcrResult, 'lines'>, width: number, height: number): WordBox[] {
+  if (!(width > 0 && height > 0)) return [];
+  const round = (value: number) => Math.round(Math.min(1, Math.max(0, value)) * 10_000) / 10_000;
+  const boxes: WordBox[] = [];
+  for (const line of result.lines) {
+    for (const word of line.words) {
+      const { x, y, width: w, height: h } = word.bounds;
+      if (!word.text.trim() || !(w > 0 && h > 0) || boxes.length >= MAX_WORD_BOXES) continue;
+      boxes.push([round(x / width), round(y / height), round(w / width), round(h / height), word.text]);
+    }
+  }
+  return boxes;
+}
+
 export interface ReadImageOptions {
   /** A language tag, or the languages of the person's Windows profile. */
   language?: string;

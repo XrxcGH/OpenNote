@@ -506,6 +506,12 @@ impl<'c, R: Read + Seek> Painter<'c, '_, R> {
             return;
         };
         let r = xfrm.rect;
+        let (sw, sh) = self.size;
+        if self.pictures.len() < MAX_PICTURE_BOXES && sw > 0.0 && sh > 0.0 {
+            let round = |v: f64| (v.clamp(0.0, 1.0) * 10_000.0).round() / 10_000.0;
+            self.pictures
+                .push([round(r.x / sw), round(r.y / sh), round(r.w / sw), round(r.h / sh)]);
+        }
         // A crop keeps the middle of the picture: the edges it cuts are in thousandths of a percent.
         let crop = fill.and_then(|f| f.first("a:srcrect"));
         let side = |k: &str| crop.and_then(|c| emu(c.attr(k))).unwrap_or(0.0) / 100_000.0;

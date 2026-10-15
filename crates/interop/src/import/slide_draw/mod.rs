@@ -64,7 +64,13 @@ pub(super) struct Drawn {
     pub svg: String,
     pub height: f64,
     pub missed: Missed,
+    /// The boxes of the pictures on the slide, as fractions of the slide: x, y, width, height. The Evening theme
+    /// keeps these in their own colors when it dims or inverts the slide.
+    pub pictures: Vec<[f64; 4]>,
 }
+
+/// The most picture boxes kept for one slide.
+const MAX_PICTURE_BOXES: usize = 200;
 
 /// A color with its opacity.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -436,6 +442,7 @@ impl SlideDrawer {
             missed: Missed::default(),
             shapes: 0,
             size: (self.width, self.height),
+            pictures: Vec::new(),
         };
         painter.background(slide, rels, dir);
         let show = |e: &Element| e.attr("showmastersp").is_none_or(|v| !matches!(v, "0" | "false"));
@@ -450,7 +457,13 @@ impl SlideDrawer {
         if let Some(tree) = slide.first("p:csld").and_then(|c| c.first("p:sptree")) {
             painter.tree(tree, rels, dir, true, 0);
         }
-        let Painter { body, defs, missed, .. } = painter;
+        let Painter {
+            body,
+            defs,
+            missed,
+            pictures,
+            ..
+        } = painter;
         let height = (PICTURE_WIDTH * self.height / self.width * 100.0).round() / 100.0;
         let mut svg = String::new();
         let _ = write!(
@@ -478,7 +491,12 @@ impl SlideDrawer {
         svg.push_str("</defs><g clip-path=\"url(#slide)\">");
         svg.push_str(&body);
         svg.push_str("</g></svg>");
-        Drawn { svg, height, missed }
+        Drawn {
+            svg,
+            height,
+            missed,
+            pictures,
+        }
     }
 }
 
@@ -529,6 +547,8 @@ struct Painter<'c, 'p, R: Read + Seek> {
     shapes: usize,
     /// The slide's size in points.
     size: (f64, f64),
+    /// The boxes of the pictures drawn, as fractions of the slide.
+    pictures: Vec<[f64; 4]>,
 }
 
 /// What the report says about the drawing of the slides of one file.

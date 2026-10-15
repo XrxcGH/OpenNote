@@ -35,7 +35,23 @@ Bring a PDF in to write on it. Each PDF page becomes a picture locked in place, 
 - Choose Add note space to put ruled or blank paper on the right of a PDF page or slide, below it, or both. It works on this page, a range of pages, or every page in the section.
 - Choose Make handouts to lay out PDF pages or slides 2 or 3 to a page, with lines beside each one. The handouts are new pages at the end of the section.
 
+Drag across the words of a PDF page to select them, and press Ctrl+C to copy them. To copy all the text of the PDF pages on a page, press Ctrl+K and choose Copy the text of PDF pages.
+
+To highlight, select words on a PDF page and press Ctrl+Alt+H (Ctrl+Shift+H with the OneNote shortcuts). Click a highlight to change its color, remove it, or choose Send to notes, which adds the words as a quote beside the page with a link back to the spot. Press Ctrl+K and choose PDF highlights to see every highlight of the PDF in this section by color and page, and to copy or save them as Markdown.
+
+In the dark theme, PDF pages and slides are dimmed so they are easier on the eyes, and the pictures in them keep their own colors. The Original switch at the top right of the page shows it as it is. Press Ctrl+K and choose Invert PDF pages in the dark theme to turn white pages dark instead. If you chose Always paper white for the page color in Settings, PDF pages stay as they are. Printing and export always use the PDF as it is.
+
 A PDF that is damaged or locked with a password is not opened, and nothing is added. OpenNote reads the PDF on this PC and sends it nowhere.
+
+## Clean up a scan
+
+Take a photo of a page, a whiteboard, or a slide, and OpenNote can tidy it.
+
+- Select the photo on a page, press Ctrl+K, and choose Clean up scan. OpenNote finds the edges of the page, straightens it, and evens out the lighting. Choose Color, Grayscale, or Black and white, and look at the preview before you choose Clean up.
+- To scan several pages at once, choose Scan pages from photos on the Insert tab and pick the photos. Each one becomes a cleaned page, one below the other.
+- The original photo is kept. Ctrl+Z undoes the cleanup in one step, and Restore the original photo brings it back later.
+
+The cleanup runs on this PC. If the edges of the page are not clear, the whole photo is used.
 
 ## Export
 

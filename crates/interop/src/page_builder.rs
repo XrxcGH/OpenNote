@@ -164,6 +164,15 @@ impl<'a> PageBuilder<'a> {
         self.locked.insert(self.pieces.len() - 1, (w, h));
     }
 
+    /// Adds a locked page picture, as [`push_locked_image`](Self::push_locked_image), with more keys in its data,
+    /// such as `background` and the boxes of the pictures inside it.
+    pub fn push_page_picture(&mut self, asset: AssetId, alt: String, size: (f64, f64), extra: JsonMap) {
+        self.push_locked_image(asset, alt, size.0, size.1);
+        if let Some(BlockData::Image(image)) = self.pieces.last_mut() {
+            image.extra = extra;
+        }
+    }
+
     /// Adds a file block, shown as an icon.
     pub fn push_file(&mut self, asset: AssetId) {
         self.flush_text();

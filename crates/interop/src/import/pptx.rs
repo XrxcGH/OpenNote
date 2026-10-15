@@ -185,11 +185,14 @@ fn slide_page<R: Read + Seek>(
         Some("image/svg+xml"),
         drawn.svg.into_bytes(),
     );
-    builder.push_locked_image(
+    let mut extra = opennote_core::model::JsonMap::new();
+    extra.insert("background".into(), "slide".into());
+    extra.insert("images".into(), serde_json::json!(drawn.pictures));
+    builder.push_page_picture(
         picture,
         format!("Slide {}: {title}", n + 1),
-        PICTURE_WIDTH,
-        drawn.height,
+        (PICTURE_WIDTH, drawn.height),
+        extra,
     );
     let (placed, lost) = pictures::place(&mut blocks, &mut builder, "pptx:", &mut |path| parts.bytes(path));
     let tables = blocks.iter().filter(|b| matches!(b, Block::Table { .. })).count();

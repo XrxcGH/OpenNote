@@ -24,6 +24,7 @@ pub async fn interop_more(app: AppHandle, op: String, args: Value) -> IpcResult<
 fn dispatch(op: &str, args: Value, data: &Path) -> IpcResult<Value> {
     match op {
         "save_report" => save_report(parse(args)?),
+        "save_text" => save_text(parse(args)?),
         "send_state" => send::state(data, parse(args)?),
         "send_favorite" => send::favorite(data, parse(args)?),
         "send_record" => send::record(data, parse(args)?),
@@ -77,6 +78,46 @@ fn save_report(args: SaveReport) -> IpcResult<Value> {
     let path = unique_path(folder, "OpenNote import report", "md");
     std::fs::write(&path, markdown)
         .map_err(|e| IpcError::invalid("folder", &format!("The report could not be saved: {e}")))?;
+    Ok(json!({ "path": path.to_string_lossy() }))
+}
+
+/// The biggest Markdown file `save_text` writes.
+const MAX_SAVED_TEXT: usize = 8 << 20;
+
+#[derive(Deserialize)]
+struct SaveText {
+    folder: String,
+    name: String,
+    text: String,
+}
+
+/// A file name stem made safe: letters, digits, spaces, and a few marks, at most 80 characters.
+fn safe_stem(name: &str) -> String {
+    let kept: String = name
+        .chars()
+        .filter(|c| c.is_alphanumeric() || matches!(c, ' ' | '-' | '_' | '(' | ')' | ',' | '.'))
+        .take(80)
+        .collect();
+    let trimmed = kept.trim().trim_matches('.').trim();
+    if trimmed.is_empty() {
+        "OpenNote".to_owned()
+    } else {
+        trimmed.to_owned()
+    }
+}
+
+/// Writes Markdown, such as a PDF's highlights, as a new file in a folder the person chose. It never replaces a file.
+fn save_text(args: SaveText) -> IpcResult<Value> {
+    let folder = Path::new(&args.folder);
+    if !folder.is_absolute() || !folder.is_dir() {
+        return Err(IpcError::invalid("folder", "Choose a folder that exists."));
+    }
+    if args.text.len() > MAX_SAVED_TEXT {
+        return Err(IpcError::invalid("text", "The text is too long to save."));
+    }
+    let path = unique_path(folder, &safe_stem(&args.name), "md");
+    std::fs::write(&path, args.text)
+        .map_err(|e| IpcError::invalid("folder", &format!("The file could not be saved: {e}")))?;
     Ok(json!({ "path": path.to_string_lossy() }))
 }
 
@@ -213,5 +254,32 @@ mod tests {
         )
         .is_err());
         assert!(dispatch("nothing", json!({}), dir.path()).is_err());
+    }
+
+    #[test]
+    fn saved_text_gets_a_safe_new_name_and_never_replaces_a_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let folder = dir.path().to_string_lossy().into_owned();
+        let save = |name: &str| {
+            let text = "# Highlights\n".to_owned();
+            save_text(SaveText {
+                folder: folder.clone(),
+                name: name.into(),
+                text,
+            })
+            .unwrap()
+        };
+        let first = save("..\\..\\Bio: notes?");
+        let second = save("..\\..\\Bio: notes?");
+        let first = first["path"].as_str().unwrap().to_owned();
+        assert!(first.ends_with("Bio notes.md"), "{first}");
+        assert_ne!(first, second["path"].as_str().unwrap());
+        assert_eq!(safe_stem("..."), "OpenNote");
+        let refused = save_text(SaveText {
+            folder: "relative".into(),
+            name: "x".into(),
+            text: String::new(),
+        });
+        assert!(refused.is_err());
     }
 }
