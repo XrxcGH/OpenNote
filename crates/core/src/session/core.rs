@@ -35,6 +35,7 @@ use crate::time::{Clock, SystemClock};
 pub(crate) mod ctx;
 pub(crate) mod device;
 mod library_api;
+mod repair_api;
 #[cfg(test)]
 mod tests;
 

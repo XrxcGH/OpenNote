@@ -32,6 +32,7 @@ pub fn call(app: &AppHandle, bridge: &CoreBridge, name: &str, args: &Value) -> I
             Ok(json!({ "ok": true, "pages": pages.len() }))
         }
         "storage.moveNotes" | "storage.cancelMove" => super::notes_move::call(app, bridge, name, args),
+        "check.repair" | "check.undo" => super::repairs::call(app, bridge, name, args),
         _ if name.starts_with("edits.")
             || name == "source.openExternal"
             || name == "storage.cloudOnly"

@@ -33,3 +33,14 @@ When you rename a notebook, its folder is renamed to match. Turn off Rename fold
 If you edit a page's `page.md` in another program, OpenNote shows a notice on the page. Choose Bring in the text changes to see a preview and apply them as one change you can undo, or discard the copy. A page's menu has Open in another editor.
 
 If your notes folder is in a cloud service that keeps some files online only, OpenNote tells you before opening a page whose files are not on this computer yet, and shows download progress or a warning.
+
+## Check a notebook
+
+Choose Check notebook in a notebook's menu, in the command palette, or in Settings, then Storage. It looks for damaged files, missing images and recordings, links that lead to a page or file that isn't there, and pages whose `page.md` doesn't match the page. Nothing changes until you pick a repair:
+
+- Restore from page history puts back a damaged page from the newest version in its history that reads.
+- Restore from the newest backup puts back a damaged or missing file from your newest scheduled backup.
+- Write page.md again writes the page's readable copy afresh. If someone edited it in another app, that copy is kept aside first.
+- Open the page takes you to a page with a broken link, so you can fix the link.
+
+Each repair has Undo in the same window, until you close OpenNote. If OpenNote closed unexpectedly, the next start shows a short note with a Check notebook button.

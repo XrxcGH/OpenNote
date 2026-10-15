@@ -85,7 +85,7 @@ impl Config {
     }
 }
 
-fn config(app: &AppHandle) -> Config {
+pub(crate) fn config(app: &AppHandle) -> Config {
     prefs::read(app)
         .get("backup")
         .and_then(|value| serde_json::from_value::<Config>(value.clone()).ok())

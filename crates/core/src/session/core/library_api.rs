@@ -155,7 +155,7 @@ impl Core {
     }
 
     /// The open, writable notebook at `path`.
-    fn writable_open(&self, path: &Path) -> Result<NotebookHandle, CoreError> {
+    pub(super) fn writable_open(&self, path: &Path) -> Result<NotebookHandle, CoreError> {
         let open = self
             .find_open(path)
             .ok_or_else(|| CoreError::NotFound(format!("open notebook {}", path.display())))?;

@@ -26,6 +26,7 @@ pub mod lock;
 pub mod notebook_store;
 pub mod page_store;
 pub mod recovery;
+pub mod repair;
 pub mod scan;
 pub mod std_fs;
 mod sys;

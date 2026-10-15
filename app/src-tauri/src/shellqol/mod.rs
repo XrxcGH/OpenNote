@@ -16,6 +16,7 @@ pub mod notes_ops;
 pub mod power;
 pub mod prefs;
 pub mod quick;
+pub mod repairs;
 pub mod shortcuts;
 pub mod storage;
 pub mod windows_ops;

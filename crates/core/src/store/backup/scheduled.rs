@@ -96,6 +96,16 @@ pub fn last_backup(fs: &dyn Fs, root: &Path, dest: &Path) -> Option<Timestamp> {
         .max()
 }
 
+/// The folder of the newest complete backup set of the notebook at `root` under `dest`, which Check notebook
+/// restores a damaged file from.
+pub fn newest_backup_set(fs: &dyn Fs, root: &Path, dest: &Path) -> Option<PathBuf> {
+    sets(fs, root, dest)
+        .into_iter()
+        .filter(|(_, marker)| marker.complete)
+        .max_by_key(|(name, marker)| (marker.finished, name.clone()))
+        .map(|(name, _)| dest.join(name))
+}
+
 /// Backs up the notebook at `root` into today's set under `dest`, then applies the policy.
 /// `utc_offset_minutes` places the day in local time.
 pub fn backup_notebook(

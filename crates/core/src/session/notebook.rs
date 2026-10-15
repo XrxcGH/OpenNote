@@ -14,6 +14,7 @@ use crate::error::CoreError;
 use crate::id::{ClientId, GroupId, NotebookId, PageId, SectionId, TrashItemId};
 use crate::model::{Color, NotebookStyles, NotebookTree, TrashItemFile, TrashReason};
 use crate::session::page::PageHandle;
+use crate::session::page::PageLinks;
 use crate::store::notebook_store::{invalid_move, FlatPage, Transfer};
 use crate::store::scan::ScanReport;
 use crate::store::verify::VerifyReport;
@@ -379,6 +380,11 @@ impl NotebookHandle {
     /// Saves every page, closes the journals, and releases the lock.
     pub fn close(self) -> Result<(), CoreError> {
         self.inner.close()
+    }
+
+    /// Links for writing a page's `page.md` (spec 11.1), as Check notebook's repair writes it again.
+    pub(crate) fn readable_links(&self, page_dir: &std::path::Path, page: &crate::model::Page) -> PageLinks {
+        self.inner.links(page_dir, page)
     }
 }
 

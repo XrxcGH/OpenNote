@@ -1,7 +1,8 @@
 // What a problem code from the core means in plain words: a damaged file, a missing file (an image, a recording,
-// or ink), or a problem in the notebook own tree files. The core codes are stable (store/verify).
+// or ink), a problem in the notebook own tree files, a link that leads nowhere, or a page.md that doesn't match its
+// page. The core codes are stable (store/verify).
 
-export type Category = 'damaged' | 'missing' | 'tree' | 'other';
+export type Category = 'damaged' | 'missing' | 'tree' | 'links' | 'readable' | 'other';
 
 const MISSING = new Set([
   'asset.name',
@@ -36,6 +37,8 @@ const DAMAGED = new Set([
 ]);
 
 export function categoryOf(code: string): Category {
+  if (code === 'link.broken') return 'links';
+  if (code === 'page.mdMismatch') return 'readable';
   if (MISSING.has(code)) return 'missing';
   if (TREE.has(code)) return 'tree';
   if (DAMAGED.has(code)) return 'damaged';
