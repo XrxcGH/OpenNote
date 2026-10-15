@@ -13,13 +13,13 @@ Playwright tests of the production interface in a real browser. They run against
 
 ## Layout
 
-| Folder | What it holds |
-|---|---|
-| `behavior/` | Specs for what the interface does. |
-| `a11y/` | Axe and keyboard checks. `screens.spec.ts` visits every screen state, and `gallery.spec.ts` every gallery entry. |
-| `visual/` | Screenshot specs: `matrix.spec.ts` for screens and `gallery.spec.ts` for components. |
-| `screens/` | The screen states, one file for each area. |
-| `perf/` | Timing specs. They are never retried. |
+| Folder      | What it holds                                                                                                    |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| `behavior/` | Specs for what the interface does.                                                                               |
+| `a11y/`     | Axe and keyboard checks. `screens.spec.ts` visits every screen state, and `gallery.spec.ts` every gallery entry. |
+| `visual/`   | Screenshot specs: `matrix.spec.ts` for screens and `gallery.spec.ts` for components.                             |
+| `screens/`  | The screen states, one file for each area.                                                                       |
+| `perf/`     | Timing specs. They are never retried.                                                                            |
 
 ## Screen states
 

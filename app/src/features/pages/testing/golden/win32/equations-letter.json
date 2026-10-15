@@ -1,0 +1,15 @@
+{
+  "pages": [
+    {
+      "images": 0,
+      "drawn": true,
+      "words": 55
+    }
+  ],
+  "structure": {
+    "Document": 1,
+    "NonStruct": 144,
+    "H1": 1,
+    "P": 3
+  }
+}

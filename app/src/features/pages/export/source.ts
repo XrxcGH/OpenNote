@@ -78,6 +78,8 @@ export interface TableBlock extends BlockBase {
   readonly header: boolean;
   readonly columns: readonly TableColumn[];
   readonly rows: readonly TableRow[];
+  /** The smart-table data the block keeps beside its cells (columns, filters, charts), as the file has it. */
+  readonly smart?: JsonObject;
 }
 
 /** A diagram drawn from Mermaid text. `svg` is the drawing, added by the caller that can draw it. */
@@ -95,6 +97,10 @@ export interface OtherBlock extends BlockBase {
   readonly fallback?: string;
   /** For a recording block: the recording it stands for. */
   readonly recording?: string;
+  /** A drawing the export made for the block, such as a chart, as SVG text. Set by the print job, never read from a file. */
+  readonly svg?: string;
+  /** The accessible name of `svg`. */
+  readonly alt?: string;
 }
 
 export type ExportBlock = TextBlock | InkBlock | ImageBlock | FileBlock | TableBlock | DiagramBlock | OtherBlock;
@@ -168,6 +174,7 @@ function readTable(data: JsonObject): Body<TableBlock> {
   const rows = Array.isArray(data.rows) ? data.rows : [];
   return {
     type: 'table',
+    ...(isObject(data.smart) ? { smart: data.smart } : {}),
     header: flag(data.header),
     columns: columns.filter(isObject).map((c) => ({ id: str(c.id), width: geometry(c.width) ?? 120 })),
     rows: rows.filter(isObject).map((r) => {

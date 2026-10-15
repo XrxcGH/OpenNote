@@ -19,13 +19,13 @@ A page that shows interface components in the states that matter, one address fo
 
 ## Public API
 
-| Item | File | Use |
-|---|---|---|
-| `defineGallery(entries)` | `registry.ts` | Type-checks the list a file exports. |
-| `GalleryEntry` | `registry.ts` | `id`, `title`, `group`, an optional `description`, and `render()`. `render` may call hooks. |
+| Item                                               | File          | Use                                                                                                            |
+| -------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------- |
+| `defineGallery(entries)`                           | `registry.ts` | Type-checks the list a file exports.                                                                           |
+| `GalleryEntry`                                     | `registry.ts` | `id`, `title`, `group`, an optional `description`, and `render()`. `render` may call hooks.                    |
 | `collectEntries(modules)`, `groupEntries(entries)` | `registry.ts` | Join the lists of every module, sorted. Throws on an id that repeats or is not lowercase words joined by dots. |
-| `Gallery`, `galleryHref` | `Gallery.tsx` | The page, and the address of an entry. |
-| `entries` | `entries.ts` | Every entry found in `entries/*.gallery.tsx`. |
+| `Gallery`, `galleryHref`                           | `Gallery.tsx` | The page, and the address of an entry.                                                                         |
+| `entries`                                          | `entries.ts`  | Every entry found in `entries/*.gallery.tsx`.                                                                  |
 
 The address takes three optional parameters: `entry` (an id), `theme` (`light` or `dark`), and `density` (`mouse` or `touch`).
 

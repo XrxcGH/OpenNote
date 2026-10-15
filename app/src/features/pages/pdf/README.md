@@ -31,6 +31,7 @@ An export that has errors is not saved without telling the person. A warning is 
 
 - `pdf.test.ts` tests the reader, the file names, and the job with a fake surface.
 - `golden.test.ts` prints sample pages with the installed Edge. It checks page count and size, the text layer against the sheets, tags, language, bookmarks, vector ink, and approved text per page. Approved results are in `testing/golden/<platform>`. Write them again with `OPENNOTE_BLESS=1`. A platform without a file checks the rules only.
+- `golden.test.ts` also prints a page of equations, a page with a graph block, and a page with a smart table that keeps two charts. It checks that none of them becomes a picture, that the drawings are shapes and text, that the structure tags hold figures, and the approved summaries in `testing/golden/<platform>`. The equation corpus of 200 is tested in `features/math/latex`.
 - `paper.test.ts` prints the lecture page at Letter, A4, A5, Legal, Tabloid, both landscape sizes, and a custom size. It checks that breaks fall inside the content box, that no sheet ends with a heading, that no text is lost, that a table's header repeats, and that an image is not cut.
 
 ## What the UI wiring needs

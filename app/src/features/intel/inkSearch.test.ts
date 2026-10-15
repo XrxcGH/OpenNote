@@ -81,7 +81,7 @@ describe('the seam for search', () => {
 
   it('is not ready where the flag is off', async () => {
     installTestHost({ settings: { handwriting: true } });
-    initFlags('stable');
+    initFlags('dev', { 'intel.searchText': false });
     expect(await searchTextReady('handwriting')).toBe(false);
   });
 

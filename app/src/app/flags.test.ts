@@ -11,9 +11,9 @@ describe('flags', () => {
     initFlags('beta');
     expect(isEnabled('trash.view')).toBe(true);
     initFlags('stable');
-    expect(isEnabled('trash.view')).toBe(false);
+    expect(isEnabled('trash.view')).toBe(true);
     expect(isEnabled('notes.sectionGroups')).toBe(true);
-    expect(isEnabled('updates.betaChannel')).toBe(false);
+    expect(isEnabled('notes.memorySnapshot')).toBe(false);
   });
 
   it('keep notes on disk on every channel', () => {
@@ -23,19 +23,20 @@ describe('flags', () => {
     }
   });
 
-  it('give Beta testers the typed-notes editor, and keep it out of Stable', () => {
+  it('ship the typed-notes editor in every channel', () => {
     initFlags('beta');
     expect(isEnabled('page.editor')).toBe(true);
     initFlags('stable');
-    expect(isEnabled('page.editor')).toBe(false);
+    expect(isEnabled('page.editor')).toBe(true);
+    expect(isEnabled('page.imageRenditions')).toBe(false);
   });
 
   it('take overrides in development and nightly builds only, the later ones winning', () => {
     initFlags('nightly', { 'storage.core': true }, { 'storage.core': false, 'trash.view': false });
     expect(isEnabled('storage.core')).toBe(false);
     expect(isEnabled('trash.view')).toBe(false);
-    initFlags('beta', { 'settings.penAndInk': true, 'storage.core': false });
-    expect(isEnabled('settings.penAndInk')).toBe(false);
+    initFlags('beta', { 'notes.memorySnapshot': true, 'storage.core': false });
+    expect(isEnabled('notes.memorySnapshot')).toBe(false);
     expect(isEnabled('storage.core')).toBe(true);
   });
 
@@ -43,7 +44,7 @@ describe('flags', () => {
     initFlags('stable');
     const items = [
       { id: 'a' },
-      { id: 'b', flag: 'trash.view' as const },
+      { id: 'b', flag: 'notes.memorySnapshot' as const },
       { id: 'c', flag: 'notes.sectionGroups' as const },
     ];
     expect(withEnabledFlags(items).map((item) => item.id)).toEqual(['a', 'c']);

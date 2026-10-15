@@ -14,6 +14,7 @@ export {
 } from './deck/library';
 export { inlineCards } from './deck/inline';
 export { DeckPanel } from './ui/DeckPanel';
+export { CardFace } from './ui/Review';
 export type { Card, Deck } from './deck/types';
 export { mountDeck, mountQuiz, mountTape } from './ui/mount';
 export { pickQuestions, score as quizScore } from './deck/quiz';

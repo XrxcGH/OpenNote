@@ -227,6 +227,17 @@ interface ResultsProps {
 }
 
 function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsProps) {
+  // A listbox must hold options. With none to show, the message stands alone, so no empty list is announced.
+  if (hits.length === 0 && empty && status !== 'loading') {
+    return (
+      <div id={id} className={styles.results}>
+        <div className={styles.noneBox}>
+          <EmptyArt kind="page" />
+          <p className={styles.none}>{status === 'failed' ? t('search.panel.failed') : t('search.panel.none')}</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       id={id}
@@ -257,12 +268,6 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
           )}
         </div>
       ))}
-      {empty && status !== 'loading' && (
-        <div className={styles.noneBox}>
-          <EmptyArt kind="page" />
-          <p className={styles.none}>{status === 'failed' ? t('search.panel.failed') : t('search.panel.none')}</p>
-        </div>
-      )}
     </div>
   );
 }

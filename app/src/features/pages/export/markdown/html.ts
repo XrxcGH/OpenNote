@@ -23,6 +23,10 @@ export interface HtmlOptions {
    * always have values. It reads the same in an HTML parser.
    */
   readonly xml?: boolean;
+  /** Markup for some LaTeX, or null to show its source as text. Without it, math shows as the source text. */
+  readonly math?: (latex: string, display: boolean) => string | null;
+  /** An SVG drawing for the text of a `graph` code block, or null to show it as code. */
+  readonly graph?: (source: string) => string | null;
 }
 
 const DEFAULT_LABELS = { done: 'Done', open: 'Not done' };
@@ -86,7 +90,7 @@ class Renderer {
 
   private run(run: Inline): string {
     if ('hardBreak' in run) return `<br${voidEnd(this.o.xml)}`;
-    if ('math' in run) return `<span class="math">${escapeHtml(run.math)}</span>`;
+    if ('math' in run) return `<span class="math">${this.o.math?.(run.math, false) ?? escapeHtml(run.math)}</span>`;
     if ('image' in run) {
       const src = this.o.image?.(run.image, run.alt) ?? null;
       if (src === null) return '';
@@ -113,8 +117,12 @@ class Renderer {
       case 'break':
         return `<hr${voidEnd(this.o.xml)}`;
       case 'math':
-        return `<div class="math">${escapeHtml(b.source)}</div>`;
+        return `<div class="math">${this.o.math?.(b.source, true) ?? escapeHtml(b.source)}</div>`;
       case 'code': {
+        if (b.language === 'graph') {
+          const drawing = this.o.graph?.(b.text);
+          if (drawing) return `<figure class="graph">${drawing}</figure>`;
+        }
         const cls = b.language === '' ? '' : ` class="language-${cssName(b.language)}"`;
         return `<pre><code${cls}>${escapeHtml(b.text)}</code></pre>`;
       }

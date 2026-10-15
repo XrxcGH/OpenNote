@@ -52,6 +52,7 @@ The [help index](help/README.md) lists every page. Each one is short and has a s
 - [testing/beta-4-checklist.md](testing/beta-4-checklist.md): the hand test checklist for beta 4, starting with how to run it on a throwaway profile so real notes stay safe.
 - [testing/palm-rejection.md](testing/palm-rejection.md): the palm rejection test with a real pen.
 - [testing/keyboard-and-screen-reader.md](testing/keyboard-and-screen-reader.md): the checklist a person runs at each phase exit and before each beta, with a screen reader and no mouse.
+- [testing/hardware-kit.md](testing/hardware-kit.md): one command for each exit gate that needs a device (crash on a drive, typing on four cores, pen latency, Phase 12 accuracy), and where the results go.
 - [HARDENING.md](HARDENING.md): the nightly tests, opt-in crash reports, the self-check, the feedback file, and safe start.
 
 ## Decisions

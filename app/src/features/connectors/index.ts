@@ -8,6 +8,7 @@ export type { FakeConnectors, FakeOptions } from './fake';
 export type { ConnectorsClient } from './client';
 export { ConnectorNetworkUse } from './NetworkUse';
 export { errorText } from './model';
+export { ConnectorCard } from './ConnectorCard';
 export {
   cancelSignIn,
   connectTo,

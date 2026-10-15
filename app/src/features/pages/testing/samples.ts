@@ -199,3 +199,64 @@ export function longPage(blocks: number, options: SampleOptions = {}): ExportPag
   }
   return finish(b, 'Long page', { view: view(options, 'flow') });
 }
+
+/** A page of equations: a display equation, inline math in a sentence, and a matrix. */
+export function mathPage(options: SampleOptions = {}): ExportPage {
+  counter = 0;
+  const b: Builder = { blocks: [], assets: {}, strokes: [] };
+  add(b, 'text', {
+    markdown: [
+      '# Equations',
+      'The roots of a quadratic come from one formula.',
+      '$$\nx = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}\n$$',
+      'Euler tied five constants together: $e^{i\\pi} + 1 = 0$, and the sum $\\sum_{k=1}^{n} k = \\frac{n(n+1)}{2}$ follows.',
+      '$$\n\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}\n\\begin{pmatrix} x \\\\ y \\end{pmatrix}\n$$',
+      paragraph(2),
+    ].join('\n\n'),
+  });
+  return finish(b, 'Equations', { view: view(options, 'flow') });
+}
+
+/** A page with a graph block: two functions and a view, as the grapher keeps them. */
+export function graphPage(options: SampleOptions = {}): ExportPage {
+  counter = 0;
+  const b: Builder = { blocks: [], assets: {}, strokes: [] };
+  add(b, 'text', {
+    markdown: [
+      '# Waves',
+      'Two curves on one plane.',
+      '```graph\ny = sin(x)\ny = x^2 / 8 - 2\n@view -10 10 -4 4\n```',
+      paragraph(2),
+    ].join('\n\n'),
+  });
+  return finish(b, 'Waves', { view: view(options, 'flow') });
+}
+
+/** A page with a smart table that keeps a bar chart and a line chart of its numbers. */
+export function chartPage(options: SampleOptions = {}): ExportPage {
+  counter = 0;
+  const b: Builder = { blocks: [], assets: {}, strokes: [] };
+  add(b, 'text', { markdown: `# Sales\n\n${paragraph(2)}` });
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const sold = [12, 18, 9, 24, 30, 21];
+  const cell = (markdown: string) => ({ markdown });
+  add(b, 'table', {
+    header: true,
+    columns: [
+      { id: 'c0', width: 200 },
+      { id: 'c1', width: 200 },
+    ],
+    rows: [
+      { id: 'r0', cells: { c0: cell('Month'), c1: cell('Sold') } },
+      ...months.map((m, i) => ({ id: `r${i + 1}`, cells: { c0: cell(m), c1: cell(String(sold[i])) } })),
+    ],
+    smart: {
+      charts: [
+        { id: 'chart-bars', kind: 'bar', x: 'c0', series: ['c1'], title: 'Sold by month' },
+        { id: 'chart-line', kind: 'line', x: 'c0', series: ['c1'], title: 'Trend of sales' },
+      ],
+    },
+  });
+  add(b, 'text', { markdown: `## After the charts\n\n${paragraph(2, 1)}` });
+  return finish(b, 'Sales', { view: view(options, 'flow') });
+}

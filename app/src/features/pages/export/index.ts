@@ -10,6 +10,8 @@ export { colorOf, drawingOrder, inkExtent, inkShapes, inkSvg, shapesInBand, stro
 export type { InkShape, Placements } from './ink';
 export { exportStrokes, liveStrokes, toExportStroke } from './inkSource';
 export { ROW_TOLERANCE, readingOrder } from './order';
+export { loadRenderers, withCharts } from './renderers';
+export type { ChartFigure, ExportRenderers } from './renderers';
 export { isFloating, readExportPage } from './source';
 export type {
   ExportAsset,

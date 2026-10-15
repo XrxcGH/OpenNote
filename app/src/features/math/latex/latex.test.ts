@@ -10,8 +10,9 @@ function parseXml(text: string): Document {
 }
 
 describe('rendering a library of equations', () => {
-  it('has a library of about fifty equations', () => {
-    expect(ALL_EQUATIONS.length).toBeGreaterThanOrEqual(50);
+  it('has a library of 200 equations, none twice', () => {
+    expect(ALL_EQUATIONS.length).toBe(200);
+    expect(new Set(ALL_EQUATIONS).size).toBe(200);
   });
 
   it.each(ALL_EQUATIONS.map((latex) => [latex]))('renders %s without an error', (latex) => {

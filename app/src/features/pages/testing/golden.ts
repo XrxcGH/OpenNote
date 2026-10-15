@@ -45,12 +45,32 @@ export function summarize(info: {
 }
 
 /** Compares with the approved file. Returns the file's path and whether one was found. */
-export function readGolden(name: string): { path: string; golden: Golden | null } {
+export function readGolden<T = Golden>(name: string): { path: string; golden: T | null } {
   const path = join(ROOT, process.platform, `${name}.json`);
-  return { path, golden: existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as Golden) : null };
+  return { path, golden: existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as T) : null };
 }
 
-export function writeGolden(path: string, golden: Golden): void {
+/** What a PDF page of vector content holds: pictures, and the shapes drawn. Equations, graphs, and charts must be shapes. */
+export interface VectorGolden {
+  readonly pages: readonly { readonly images: number; readonly drawn: boolean; readonly words: number }[];
+  readonly structure: Readonly<Record<string, number>>;
+}
+
+export function summarizeVector(info: {
+  pages: readonly { images: number; fills: number; strokes: number; text: string }[];
+  structure: Readonly<Record<string, number>>;
+}): VectorGolden {
+  return {
+    pages: info.pages.map((p) => ({
+      images: p.images,
+      drawn: p.fills + p.strokes > 0,
+      words: p.text.replace(/\s+/g, ' ').trim().split(' ').length,
+    })),
+    structure: info.structure,
+  };
+}
+
+export function writeGolden(path: string, golden: object): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(golden, null, 2)}\n`);
 }

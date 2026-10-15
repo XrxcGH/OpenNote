@@ -19,3 +19,5 @@ extensions/dist/
 
 # The owner of a build keeps the connectors app registrations here (docs/CONNECTORS.md).
 /connectors.config.json
+tests/soak/results/
+tests/nvda/results/

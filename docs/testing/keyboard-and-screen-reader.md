@@ -41,6 +41,10 @@ In a text box, a table cell, and the page title, enter text with each of these, 
 - [ ] In the Aquatic and Desert contrast themes, every page element is visible: rules, borders, highlights, the selection, handles, squiggles, and callouts.
 - [ ] At 200% text size and at 320 CSS pixels wide, the page reflows. Nothing is cut off.
 
+## Automated NVDA run
+
+The nightly workflow runs a short part of this list by itself: NVDA, driven by Guidepup, opens the web build, moves by landmark, heading, tree, and tab, focuses the page text box, and opens the command palette, and a script checks that NVDA said the names and roles the app sets. The checks are in `tests/nvda/checklist.ts`. The run keeps its table and the full spoken log as the `nvda-results` artifact of the night's run. It does not replace the list above: it hears nothing in the desktop app, nothing from Narrator, and nothing a person would judge by ear.
+
 ## Runs
 
 | Date | Build | Who | Result | Issues |

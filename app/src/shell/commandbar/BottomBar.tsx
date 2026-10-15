@@ -1,6 +1,6 @@
 // The compact layout's bottom bar (ARCHITECTURE.md section 11.1), a navigation landmark with 44 px targets:
 // Notebooks, Search, New page, and More. More holds Settings, Keyboard shortcuts, the title bar items placed
-// there (such as the update chip), and Trash. Buttons show only when their command exists and is available.
+// there (such as the update chip), and Trash, under the last few pages opened when bottomBar.recent is on. Buttons show only when their command exists and is available.
 
 import { BooksIcon } from '@phosphor-icons/react/dist/csr/Books';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
@@ -9,6 +9,7 @@ import { MagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/MagnifyingGl
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentType } from 'react';
 import { ariaKeyShortcuts, formatChord, useKeysFor } from '../../commands/keymap';
+import { useFlag } from '../../app/flags';
 import { executeCommand } from '../../commands/registry';
 import type { CommandId } from '../../commands/types';
 import { titleBarItems, useRegistry } from '../../registries';
@@ -19,6 +20,7 @@ import { Popover, Tooltip } from '../../ui';
 import type { IconProps } from '../../ui';
 import { useRegion } from '../regions';
 import styles from './CommandBar.module.css';
+import { RecentPages } from './RecentPages';
 import { useAvailable } from './useBarItems';
 
 interface BottomAction {
@@ -68,6 +70,7 @@ function ActionButton({ action }: { action: BottomAction }) {
 
 function MoreItems({ onDone }: { onDone(): void }) {
   const available = useAvailable();
+  const showRecent = useFlag('bottomBar.recent');
   const placed = useRegistry(titleBarItems).filter((item) => item.compact === 'bottomMore');
   const list = useRef<HTMLUListElement>(null);
   useEffect(() => list.current?.querySelector<HTMLElement>('button, [href], [tabindex="0"]')?.focus(), []);
@@ -85,6 +88,7 @@ function MoreItems({ onDone }: { onDone(): void }) {
     );
   return (
     <ul className={styles.moreList} ref={list}>
+      {showRecent && <RecentPages onDone={onDone} />}
       {MORE.map(entry)}
       {placed.map(({ id, Component }) => (
         <li key={id}>

@@ -20,12 +20,35 @@ interface PrintApi {
 const ENTRY = fileURLToPath(new URL('../print/browser.ts', import.meta.url));
 let bundle: Promise<string> | undefined;
 
+/**
+ * The print job loads the math and chart drawers through the features' index files, which pull in the editor and a
+ * worker. An iife file holds one chunk and no worker, so the test bundle reads the drawers' own modules instead.
+ */
+const DRAWERS: Readonly<Record<string, string>> = {
+  '../../math': fileURLToPath(new URL('../../math/exportRenderers.ts', import.meta.url)),
+  '../../tables': fileURLToPath(new URL('../../tables/smart/exportCharts.ts', import.meta.url)),
+};
+
 /** The print entry as one script, built once per test run. */
 export function printBundle(): Promise<string> {
   bundle ??= build({
     configFile: false,
     logLevel: 'silent',
-    build: { write: false, minify: false, lib: { entry: ENTRY, formats: ['iife'], name: 'OpenNotePrintBundle' } },
+    plugins: [
+      {
+        name: 'print-drawers',
+        enforce: 'pre',
+        resolveId(source, importer) {
+          return importer !== undefined && importer.endsWith('export/renderers.ts') ? DRAWERS[source] : undefined;
+        },
+      },
+    ],
+    build: {
+      write: false,
+      minify: false,
+      lib: { entry: ENTRY, formats: ['iife'], name: 'OpenNotePrintBundle' },
+      rolldownOptions: { output: { codeSplitting: false } },
+    },
   }).then((out) => {
     const result = Array.isArray(out) ? out[0] : out;
     if (!('output' in result)) throw new Error('The print bundle was not built.');

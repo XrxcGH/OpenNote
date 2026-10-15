@@ -3,6 +3,7 @@
 // The hidden window of a PDF export runs this, and so can any page that wants the exact sheets of a page.
 
 import { ENGLISH_LABELS, strokesByBlock, type BlockContext, type ExportLabels } from '../export/blocks';
+import { loadRenderers, withCharts } from '../export/renderers';
 import { inkExtent, inkShapes, type InkShape } from '../export/ink';
 import { readingOrder } from '../export/order';
 import type { ExportPage, InkBlock } from '../export/source';
@@ -114,7 +115,8 @@ function floatingInk(
  */
 export async function preparePrint(doc: Document, input: PrepareInput): Promise<PrepareResult> {
   const started = performance.now();
-  const { page } = input;
+  const renderers = await loadRenderers(input.page);
+  const page = renderers.charts ? await withCharts(input.page, renderers.charts) : input.page;
   const labels = input.labels ?? ENGLISH_LABELS;
   const layout = pageLayout(page.view);
   const cx: BlockContext = {
@@ -122,6 +124,7 @@ export async function preparePrint(doc: Document, input: PrepareInput): Promise<
     labels,
     assetUrl: (asset) => own(input.assetUrls, asset.id) ?? null,
     strokes: strokesByBlock(page.strokes),
+    renderers,
   };
   const units = pageUnits(readingOrder(page.blocks, page.view.readingOrder), cx);
   const setup: DocumentSetup = { page, layout, units, cx, theme: input.theme ?? lightTheme(), styles: input.styles };

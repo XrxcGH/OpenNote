@@ -59,9 +59,9 @@ describe('menuItemsFor order and labels', () => {
     add('rename', { keys: [chord('F2')] });
     add('promote', { enabled: () => false });
     add('hidden', { when: () => false });
-    add('flagged', { flag: 'install.uninstallEntry' });
+    add('flagged', { flag: 'notes.memorySnapshot' });
     for (const id of ['rename', 'promote', 'hidden', 'flagged']) item(id);
-    item('later', { flag: 'install.uninstallEntry' });
+    item('later', { flag: 'notes.memorySnapshot' });
     const specs = menuItemsFor('page.table', ctx());
     expect(specs.map(({ id, label, shortcut, disabled }) => ({ id, label, shortcut, disabled }))).toEqual([
       { id: 'rename', label: 'Toggle dark mode', shortcut: 'F2', disabled: false },
