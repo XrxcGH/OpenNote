@@ -29,6 +29,11 @@ const TITLE_CHARS: usize = 1_000;
 const TAG_CHARS: usize = 200;
 const TAGS_PER_PAGE: usize = 1_000;
 
+/// The page view key that holds the ink layers (the interface's `features/ink/view/layers.ts`).
+const INK_LAYERS: &str = "inkLayers";
+/// The ID of the ink layer for an imported page. One page has at most one, so a fixed ID is enough.
+const IMPORTED_LAYER: &str = "imported";
+
 /// Collects the blocks and assets of one page.
 pub struct PageBuilder<'a> {
     env: &'a ImportEnv<'a>,
@@ -167,11 +172,27 @@ impl<'a> PageBuilder<'a> {
 
     /// Adds a locked page picture, as [`push_locked_image`](Self::push_locked_image), with more keys in its data,
     /// such as `background` and the boxes of the pictures inside it.
+    ///
+    /// The page also gets the ink layer for imported pages (ADR 0037, the interface's `importedLayerPatch`): locked,
+    /// under the base layer, so the person's writing and the imported page stay apart in the Layers dialog.
     pub fn push_page_picture(&mut self, asset: AssetId, alt: String, size: (f64, f64), extra: JsonMap) {
         self.push_locked_image(asset, alt, size.0, size.1);
         if let Some(BlockData::Image(image)) = self.pieces.last_mut() {
             image.extra = extra;
         }
+        self.add_imported_ink_layer();
+    }
+
+    /// Puts the imported-page ink layer into the page's view, once. A view that already has layers keeps them.
+    fn add_imported_ink_layer(&mut self) {
+        if self.page.view.extra.contains_key(INK_LAYERS) {
+            return;
+        }
+        let layers = serde_json::json!({
+            "order": [IMPORTED_LAYER, "base"],
+            "layers": { IMPORTED_LAYER: { "name": "", "hidden": false, "locked": true, "imported": true } },
+        });
+        self.page.view.extra.insert(INK_LAYERS.to_owned(), layers);
     }
 
     /// Adds a file block, shown as an icon.

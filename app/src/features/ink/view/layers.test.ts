@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { initFlags } from '../../../app/flags';
 import { decodeRecords, encodeRecords } from '../../../core/ink/codec';
 import { createStrokeIndex } from '../geometry/strokeIndex';
 import { inkStroke, TEST_BLOCK } from '../model/fixtures';
@@ -11,6 +12,7 @@ import {
   deletePatch,
   drawableLayer,
   excludedFromExport,
+  importedLayerEdit,
   importedLayerPatch,
   inkLayers,
   isHiddenStroke,
@@ -143,5 +145,19 @@ describe('ink layers', () => {
       inkLayers.set(noLayers());
     }
     expect(layerRecords(bytes)).toBe(bytes);
+  });
+});
+
+describe('imported PDF pages and slides', () => {
+  it('get the locked bottom layer once, while layers are on', () => {
+    initFlags('dev');
+    const edit = importedLayerEdit('a-page-not-shown', {});
+    expect(edit).toMatchObject({ edit: 'setPage', view: { inkLayers: { order: [expect.any(String), BASE_LAYER] } } });
+    const held = {
+      inkLayers: { order: ['imported', BASE_LAYER], layers: { imported: { imported: true, locked: true } } },
+    };
+    expect(importedLayerEdit('a-page-not-shown', held)).toBeNull();
+    initFlags('stable');
+    expect(importedLayerEdit('a-page-not-shown', {})).toBeNull();
   });
 });

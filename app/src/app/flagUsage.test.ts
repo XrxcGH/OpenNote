@@ -12,13 +12,6 @@ const RUST = join(SRC, '..', 'src-tauri', 'src');
 
 /** Registered flags whose feature is not built yet (docs/FEATURES.md lists each as not built). */
 const WAITING: Readonly<Record<string, string>> = {
-  'study.import': 'read where deck import and export show once the tools work lands',
-  'tools.exams': 'read where exam countdowns show once the tools work lands',
-  'tools.timetable': 'read where the timetable shows once the tools work lands',
-  'interop.openFiles': 'Open with OpenNote for single files is not built',
-  'interop.share': 'Share as a file is not built',
-  'tools.dictionary': 'the dictionary and thesaurus tool window has no content yet',
-  'api.local': 'the local API, opennote tool, and MCP server are not built',
   'page.imageRenditions': 'display-size renditions wait for spike S3 (docs/adr/0025-paste-and-images.md)',
 };
 

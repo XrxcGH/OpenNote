@@ -11,6 +11,7 @@ import { showToast } from '../../ui';
 import { readBytes } from './pick';
 import { MAX_PDF_BYTES, openPdf, PdfError, UNITS_PER_POINT } from './render';
 import type { DrawnPage, PdfFile } from './render';
+import { importedLayerEdit } from '../ink';
 import { closedTarget } from './target';
 import type { EditTarget } from './target';
 
@@ -120,8 +121,10 @@ export async function importPdfAsPages(platform: Platform, notes: NotesService, 
         try {
           const asset = await imported(page, drawn, file.name);
           const block = pdfPageBlock(asset, drawn, { name: file.name, pages: pdf.pages }, { x: 0, y: 0 });
+          const layer = importedLayerEdit(page.id, page.initial.view);
           await closedTarget(page).send([
             { edit: 'setPage', view: { layout: 'freeform' } },
+            ...(layer ? [layer] : []),
             { edit: 'addAsset', asset: asset.id },
             { edit: 'insertBlock', block },
           ]);
@@ -175,7 +178,8 @@ export async function insertPdfIntoPage(page: EditTarget, file: File, top: numbe
     status.finish(status.stopped ? t('pdf.stopped') : failure(new PdfError('unreadable'), file.name));
     return 0;
   }
-  await page.send(edits);
+  const layer = importedLayerEdit(page.page.id, page.page.initial.view);
+  await page.send(layer ? [layer, ...edits] : edits);
   status.finish(t('pdf.inserted', { count: made, name: file.name }));
   return made;
 }

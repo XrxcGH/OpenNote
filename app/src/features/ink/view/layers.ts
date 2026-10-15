@@ -4,6 +4,7 @@
 // for the strokes that are not on the first layer. Every change is a `setPage` patch in the batch with the strokes it
 // concerns, so each is one undo step. Hidden layers are not drawn, printed or exported; locked layers are drawn but the
 // pen, the erasers and the lasso pass over them.
+import { isEnabled } from '../../../app/flags';
 import { newId } from '../../../editor/ids';
 import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
@@ -187,6 +188,17 @@ export function importedLayerPatch(layers: InkLayers, id: string = newId()): Lay
     layers: { [id]: { name: '', hidden: false, locked: true, imported: true } },
     order: [id, ...layers.order],
   };
+}
+
+/**
+ * The edit that gives a page with imported PDF pages or slides its locked bottom layer, or null when the page has one
+ * or layers are off. The shown page is read from the live layers, any other page from `view`, its view as opened.
+ */
+export function importedLayerEdit(pageId: string, view: unknown): Edit | null {
+  if (!isEnabled('ink.layers')) return null;
+  const layers = adopted?.page === pageId ? inkLayers.get() : layersOf(view);
+  const patch = importedLayerPatch(layers);
+  return patch ? layersEdit(patch) : null;
 }
 
 // ---- the shown page's layers ----

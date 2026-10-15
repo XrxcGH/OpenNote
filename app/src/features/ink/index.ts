@@ -14,3 +14,5 @@ export * from './space';
 export * from './zoombox';
 export { inkPrefs, setPrefs as setInkPrefs } from './view/prefs';
 export type { InkPrefs } from './view/prefs';
+// Imported PDF pages and slides get the locked bottom ink layer (ADR 0037).
+export { importedLayerEdit } from './view/layers';

@@ -21,12 +21,17 @@ pub(crate) mod jcid {
     pub(crate) const TABLE_CELL: u32 = 0x0006_0024;
     pub(crate) const TITLE: u32 = 0x0006_002C;
     pub(crate) const PAGE_META_DATA: u32 = 0x0002_0030;
+    #[cfg_attr(not(any(test, feature = "testing")), allow(dead_code))]
     pub(crate) const SECTION_META_DATA: u32 = 0x0002_0031;
     pub(crate) const EMBEDDED_FILE: u32 = 0x0006_0035;
+    #[cfg_attr(not(any(test, feature = "testing")), allow(dead_code))]
     pub(crate) const EMBEDDED_FILE_CONTAINER: u32 = 0x0008_0036;
     pub(crate) const PAGE_MANIFEST: u32 = 0x0006_0037;
+    #[cfg_attr(not(any(test, feature = "testing")), allow(dead_code))]
     pub(crate) const PICTURE_CONTAINER: u32 = 0x0008_0039;
+    #[cfg_attr(not(any(test, feature = "testing")), allow(dead_code))]
     pub(crate) const NOTE_TAG_DEFINITION: u32 = 0x0012_0043;
+    #[cfg_attr(not(any(test, feature = "testing")), allow(dead_code))]
     pub(crate) const PARAGRAPH_STYLE: u32 = 0x0012_004D;
 }
 
@@ -47,6 +52,7 @@ pub(crate) mod prop {
     pub(crate) const LIST_NODES: u32 = 0x2400_1C26;
     pub(crate) const PICTURE_CONTAINER: u32 = 0x2000_1C3F;
     pub(crate) const TOPOLOGY_CREATION_TIME_STAMP: u32 = 0x1800_1C65;
+    #[cfg_attr(not(any(test, feature = "testing")), allow(dead_code))]
     pub(crate) const IS_TITLE_TEXT: u32 = 0x0800_1CB4;
     pub(crate) const CACHED_TITLE_STRING: u32 = 0x1C00_1CF3;
     pub(crate) const CACHED_TITLE_STRING_FROM_PAGE: u32 = 0x1C00_1D3C;

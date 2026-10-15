@@ -559,6 +559,11 @@ mod tests {
             .any(|b| matches!(b.data, opennote_core::model::BlockData::Image(_))));
         let first = page.blocks.iter().next().expect("a first block");
         assert!(first.lock.is_some(), "the slide picture is locked");
+        // The ink layer for imported pages sits under the base layer, locked (ADR 0037).
+        let layers = &page.view.extra["inkLayers"];
+        assert_eq!(layers["order"], serde_json::json!(["imported", "base"]));
+        assert_eq!(layers["layers"]["imported"]["imported"], true);
+        assert_eq!(layers["layers"]["imported"]["locked"], true);
         assert!(matches!(first.data, opennote_core::model::BlockData::Image(_)));
         assert!(done.pages[0]
             .report
