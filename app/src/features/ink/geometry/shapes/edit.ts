@@ -69,6 +69,8 @@ export function handlesOf(shape: Shape): Handle[] {
     case 'rectangle':
     case 'triangle':
       return shape.corners.map((corner, i) => ({ id: `c${i}`, at: corner }));
+    case 'freeform':
+      return shape.corners.map((corner, i) => ({ id: `c${i}`, at: corner }));
     case 'circle':
       return [{ id: 'radius', at: { x: shape.center.x + shape.radius, y: shape.center.y } }];
     case 'ellipse': {
@@ -143,6 +145,11 @@ export function dragHandle(shape: Shape, id: string, to: Vec): Shape {
       if (!id.startsWith('c') || !(index >= 0 && index < 3)) return shape;
       const corners = shape.corners.map((corner, i) => (i === index ? to : corner)) as unknown as typeof shape.corners;
       return { ...shape, corners, variant: 'general' };
+    }
+    case 'freeform': {
+      const index = Number(id.slice(1));
+      if (!id.startsWith('c') || !(index >= 0 && index < shape.corners.length)) return shape;
+      return { ...shape, corners: shape.corners.map((corner, i) => (i === index ? to : corner)) };
     }
     case 'circle':
       return id === 'radius' ? { ...shape, radius: Math.max(1, distance(shape.center, to)) } : shape;

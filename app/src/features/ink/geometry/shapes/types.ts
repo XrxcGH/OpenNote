@@ -11,6 +11,7 @@ export type ShapeKind =
   | 'circle'
   | 'ellipse'
   | 'polygon'
+  | 'freeform'
   | 'star'
   | 'arc'
   | 'curvedArrow'
@@ -43,6 +44,8 @@ export type Shape =
       readonly radius: number;
       readonly rotation: number;
     }
+  /** A closed polygon of 4 to 7 corners that is not regular, such as a trapezoid, a house, or an L. */
+  | { readonly kind: 'freeform'; readonly corners: readonly Vec[] }
   /** A star with `points` tips; `rotation` is the direction of the first tip. */
   | {
       readonly kind: 'star';
@@ -114,5 +117,6 @@ export const SIMPLICITY: Record<ShapeKind, number> = {
   arc: 3,
   curvedArrow: 3,
   polygon: 6,
+  freeform: 8,
   star: 7,
 };

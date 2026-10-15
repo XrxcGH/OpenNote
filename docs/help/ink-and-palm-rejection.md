@@ -23,16 +23,16 @@ OpenNote judges each touch from its size, how fast it grows, where on the hand i
 
 Open Settings, then Pen and touch, to change this.
 
-| Setting | Choices |
-|---|---|
-| Writing hand | Detect, Right hand, or Left hand |
-| Draw with a finger | Until a pen is used, Always, or Never |
-| Pen buttons | What the side button and the eraser end do, set for each pen |
+| Setting                 | Choices                                                                |
+| ----------------------- | ---------------------------------------------------------------------- |
+| Writing hand            | Detect, Right hand, or Left hand                                       |
+| Draw with a finger      | Until a pen is used, Always, or Never                                  |
+| Pen buttons             | What the side button and the eraser end do, set for each pen           |
 | Pressure and steady pen | A pressure curve from light to firm, and smoothing for a steadier line |
 
 ## Shapes and gestures
 
-- Draw a rough shape and hold the pen still. It snaps to a clean circle, rectangle, triangle, star, or arrow. Keep holding to resize it before you lift.
+- Draw a rough shape and hold the pen still. It snaps to a clean circle, rectangle, triangle, star, or arrow. Keep holding to resize it before you lift. Uneven outlines with 4 to 7 corners, such as a trapezoid or a house, snap to a clean polygon you can reshape by its corner handles.
 - Scribble over words to erase them. Circle something, then tap, to select it.
 - Double tap with two fingers to undo. Double tap with three to redo.
 - Draw a grid and it becomes a table.
@@ -41,12 +41,12 @@ Open Settings, then Pen and touch, to change this.
 
 Press Ctrl+K and choose one of these by name.
 
-| Name | What it does |
-|---|---|
-| Insert space | Drag down to push everything below further down. |
-| Zoom writing box | Write large in a box. It lands small on the line. |
-| Replay ink | Plays your strokes back, and plays a recording along with them. |
-| Ruler, Protractor, and Snap to grid | Help you draw neat diagrams. |
+| Name                                | What it does                                                    |
+| ----------------------------------- | --------------------------------------------------------------- |
+| Insert space                        | Drag down to push everything below further down.                |
+| Zoom writing box                    | Write large in a box. It lands small on the line.               |
+| Replay ink                          | Plays your strokes back, and plays a recording along with them. |
+| Ruler, Protractor, and Snap to grid | Help you draw neat diagrams.                                    |
 
 ## Handwriting to text
 
