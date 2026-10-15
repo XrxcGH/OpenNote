@@ -162,7 +162,7 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
     line([0, y + WIDE.command], [WIDE.width, y + WIDE.command], p.c('border.subtle')),
   ];
   // Each tab is as wide as its name in the active tab's weight, so the tabs stay put when another is chosen, and
-  // 24 px apart.
+  // 28 px apart.
   let x = 20;
   for (const tab of ['Home', 'Insert', 'Draw', 'View']) {
     const width = textWidth(tab, 14, 600);
@@ -175,7 +175,7 @@ export function commandBar(p: Palette, active: string, tools: Tool[]): string {
       }),
     );
     if (isActive) parts.push(rect({ x, y: y + 38, w: round(width), h: 3 }, { fill: p.c('accent.primary'), r: 1.5 }));
-    x += round(width) + 24;
+    x += round(width) + 28;
   }
   for (const { tool, x, w } of layoutTools(tools)) {
     if (tool.sep) {

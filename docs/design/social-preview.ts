@@ -132,7 +132,7 @@ function page(p: Palette): string {
       text(x + 16, top + 138 + i * 22, item, body),
     ]),
     // A note written in the margin and circled, with an arrow to the line it is about.
-    ink(`M${x + 246} ${top + 150}a46 14 0 1 0 92 0a46 14 0 1 0-92 0`, p.pen('Indigo'), 2.2, 'circled'),
+    ink(`M${x + 242} ${top + 150}a50 14 0 1 0 100 0a50 14 0 1 0-100 0`, p.pen('Indigo'), 2.2, 'circled'),
     text(x + 292, top + 155, 'key step', {
       size: 14,
       fill: p.pen('Indigo'),
@@ -141,7 +141,7 @@ function page(p: Palette): string {
       anchor: 'middle',
     }),
     arrow(
-      onEllipse(x + 292, top + 150, 46, 14, 100),
+      onEllipse(x + 292, top + 150, 50, 14, 100),
       [x + 284, top + 200],
       [x + 240, top + 196],
       [x + 196, top + 198],

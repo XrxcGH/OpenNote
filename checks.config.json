@@ -15,7 +15,8 @@
     "extensions/clipper/shared/vendor/**",
     "app/src-tauri/src/intel/catalog.rs",
     "app/src/services/intel/packs.ts",
-    "crates/intel-engines/tests/fixtures/**"
+    "crates/intel-engines/tests/fixtures/**",
+    "app/src/features/ink/pens/golden/*.txt"
   ],
   "rules": {
     "spelling": {
