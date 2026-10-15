@@ -29,6 +29,7 @@ use crate::{
 };
 
 pub(crate) mod caption_style;
+mod catalog;
 mod cloud;
 mod ext;
 mod models;

@@ -128,12 +128,11 @@ const MAX_VOCABULARY_BYTES: usize = 512 * 1024;
 
 /// The file of an installed speech model by catalog ID, or why it can't be used.
 pub fn speech_model_path(device: &Path, id: &str) -> Result<PathBuf, IntelError> {
-    let spec = models::CATALOG
-        .iter()
-        .find(|spec| spec.id == id && spec.kind == "speech")
+    let spec = models::spec_of(id)
+        .filter(|spec| spec.kind == "speech")
         .ok_or_else(|| IntelError::InvalidInput("that isn't a speech model OpenNote offers".to_owned()))?;
-    let path = device.join("models").join(spec.file);
-    let complete = std::fs::metadata(&path).is_ok_and(|meta| meta.len() == spec.size);
+    let path = device.join("models").join(spec.main().file);
+    let complete = models::is_installed(&device.join("models"), spec);
     if complete {
         Ok(path)
     } else {
