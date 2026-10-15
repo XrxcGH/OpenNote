@@ -56,7 +56,7 @@ The gate is 25 ms at the 95th percentile (ADR 0004). `--software` also runs the 
 Write a paragraph by hand, in print or in cursive, on a device with a pen. Save what you meant to write as a text file. Run the recognizer in the app, and save what it wrote as another text file.
 
 ```text
-node tests/hardware/kit.ts phase12 --kind handwriting --style print --truth truth.txt --read read.txt --label surface-pen
+node tests/hardware/kit.ts phase12 --kind handwriting --style print --truth typed.txt --read ocr.txt --label surface-pen
 ```
 
 For text in a picture, photograph a printed page and use `--kind ocr`. The kit counts the characters and words that differ. It compares text after normalizing Unicode and white space, and it ignores no other difference.

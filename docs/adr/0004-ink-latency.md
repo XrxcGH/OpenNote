@@ -3,6 +3,16 @@
 - Status: Accepted, pending the owner's camera check and budget review
 - Date: 2026-09-30
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Options considered](#options-considered)
+- [Consequences](#consequences)
+- [Measurements](#measurements)
+- [Manual check with a camera](#manual-check-with-a-camera)
+- [Update, October 2026: the delegated trail is built, the native layer is not](#update-october-2026-the-delegated-trail-is-built-the-native-layer-is-not)
+
 ## Context
 
 The architecture decision record (ADR) [0001](0001-app-stack.md) chose Tauri 2 and WebView2, as long as ink passes the [Phase 1](../DEVELOPMENT.md#phase-1-spikes) latency spike. [BRAND.md](../BRAND.md#10-comfort-and-performance-budgets) sets the pen budget:

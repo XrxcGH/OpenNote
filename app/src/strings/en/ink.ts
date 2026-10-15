@@ -308,7 +308,7 @@ export const ink = {
   layers: {
     title: 'Layers',
     keywords: 'ink layers layer hide lock reorder rename active',
-    help: 'Layers are listed from the top down. New ink goes to the active layer. A hidden layer is not shown, printed or exported. A locked layer is shown but cannot be drawn on or selected.',
+    help: 'Layers are listed from the top down. New ink goes to the active layer. A hidden layer is not shown, printed, or exported. A locked layer is shown but cannot be drawn on or selected.',
     baseName: 'Layer 1',
     unnamed: 'Layer',
     newName: 'Layer {number}',
@@ -460,7 +460,7 @@ export const ink = {
     steadyStrength: 'Steady pen strength',
     penFields: 'Write in text fields with the pen',
     penFieldsHint:
-      'Touching the search box, a rename field or a table cell with the pen opens the handwriting panel of Windows. It needs a pen and the panel turned on in Windows settings.',
+      'Touching the search box, a rename field, or a table cell with the pen opens the handwriting panel of Windows. It needs a pen and the panel turned on in Windows settings.',
     zoomBox: 'Zoom writing box',
     magnification: 'Magnification',
     magnificationValue: '{times} times',

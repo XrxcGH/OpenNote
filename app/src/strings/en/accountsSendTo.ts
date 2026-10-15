@@ -20,7 +20,7 @@ export const accountsSendTo = {
   noCopy: 'This page, its section, and its notebook have not been sent to a cloud service.',
   working: 'Sending to {service}…',
   updating: 'Updating {name}…',
-  done: 'Sent “{name}” to {service}, in {folder}.',
+  done: 'Sent “{name}” to {service}, in the folder {folder}.',
   updated: 'Updated “{name}” on {service}.',
   sync: {
     nothing: 'Every Dropbox, Box, and WebDAV copy is up to date.',

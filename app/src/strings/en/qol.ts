@@ -276,11 +276,11 @@ export const qol = {
     startHelp: 'When this is off, OpenNote opens the last page you used.',
   },
   shortcut: {
-    made: 'Made a shortcut to {title} {where}.',
+    made: 'Made a shortcut to {title}, {where}.',
     failed: 'The shortcut could not be made.',
     empty: '{title} has no pages to open.',
     title: 'Create shortcut',
-    description: 'A shortcut to {title} opens it in OpenNote, even after you rename or move it.',
+    description: 'A shortcut to {title} opens it in OpenNote, even after the page is renamed or moved.',
     where: 'Where the shortcut goes',
     desktop: 'Desktop',
     startMenu: 'Start menu',

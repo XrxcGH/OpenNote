@@ -5,7 +5,7 @@
 //   node tests/hardware/kit.ts crash --dir E:\ --label usb-exfat [--expect exfat] [--kills 100]
 //   node tests/hardware/kit.ts typing --label four-core
 //   node tests/hardware/kit.ts pen-latency --label surface-pen --fps 240 --frames "5,6,5,7,6,5" [--software]
-//   node tests/hardware/kit.ts phase12 --kind handwriting --style print --truth truth.txt --read read.txt --label sls2
+//   node tests/hardware/kit.ts phase12 --kind handwriting --style print --truth typed.txt --read ocr.txt --label sls2
 //   node tests/hardware/kit.ts report
 //
 // Results go to tests/crash/results (crash) and docs/perf (the rest), and each run adds a row to

@@ -103,7 +103,7 @@ function voiceFindings(file: SourceFile, line: number, text: string): Finding[] 
 
 /** Runs the spelling, grammar, and AI marker rules on the string values, line for line. */
 async function proseFindings(file: SourceFile, ctx: RuleContext, values: string[][]): Promise<Finding[]> {
-  const text = values.map((texts) => texts.join(' ')).join('\n');
+  const text = values.map((texts) => texts.join(' / ')).join('\n');
   const strings = createSourceFile(file.path.replace(/\.ts$/, '.txt'), text);
   const results = await Promise.all(
     [spelling, grammar, aiMarkers].map((rule) =>

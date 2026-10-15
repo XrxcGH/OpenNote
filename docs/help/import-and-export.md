@@ -4,6 +4,22 @@ Bring notes in from other apps and take them out again. Your notes stay in plain
 
 ![The review after choosing a file: what comes over and what does not](../screens/import-review-light.png)
 
+## Contents
+
+- [Import](#import)
+- [PDF files](#pdf-files)
+- [Clean up a scan](#clean-up-a-scan)
+- [Export](#export)
+- [Open a Markdown or text file](#open-a-markdown-or-text-file)
+- [Share as a file](#share-as-a-file)
+- [Screenshots and copies](#screenshots-and-copies)
+- [Send to Google Drive or OneDrive](#send-to-google-drive-or-onedrive)
+- [Send to Dropbox, Box, or a WebDAV server](#send-to-dropbox-box-or-a-webdav-server)
+- [Google Docs, Sheets, and Slides](#google-docs-sheets-and-slides)
+- [OneNote through your Microsoft account](#onenote-through-your-microsoft-account)
+- [Share to OpenNote](#share-to-opennote)
+- [Not built yet](#not-built-yet)
+
 ## Import
 
 Press Ctrl+K and choose Import. First-time setup has the same step. Pick a source, then choose a file or folder.

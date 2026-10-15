@@ -103,7 +103,7 @@ export const connectors = {
     moodleAssignments: 'Moodle assignments',
     shareToTeams: 'Share to Teams',
     sendToOneDrive: 'Send to OneDrive',
-    googleOffice: 'Google Docs, Sheets, and Slides',
+    googleOffice: 'Google documents, sheets, and slides',
     youtubeUpload: 'Upload a recording video to YouTube',
     sendToWebdav: 'Send to a WebDAV server',
   },
