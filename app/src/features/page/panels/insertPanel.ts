@@ -3,13 +3,14 @@
 // the text, and search finds it.
 import { newId } from '../../../editor/ids';
 import type { BlockId, BlockJson, Edit, Frame, NewBlock } from '../../../services/pages/types';
+import type { PanelType } from './kinds';
 import { shownLayer } from '../mount';
 import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
 
 /** Adds the block and returns its ID, or null when no page is shown. */
 export async function insertPanelBlock(
-  type: string,
+  type: PanelType,
   data: Record<string, unknown>,
   fallback: string,
   frame?: Frame,
@@ -19,7 +20,7 @@ export async function insertPanelBlock(
   if (!queue || !layer) return null;
   const id = newId();
   const after = shownPool.get()?.active()?.block;
-  const block = { id, type, data, fallback: { markdown: fallback }, ...(frame ? { frame } : {}) } as NewBlock;
+  const block: NewBlock = { id, type, data, fallback: { markdown: fallback }, ...(frame ? { frame } : {}) };
   const edits: Edit[] = [{ edit: 'insertBlock', block, ...(after ? { after } : {}) }];
   const ack = await queue.send({ edits });
   const now = new Date().toISOString();

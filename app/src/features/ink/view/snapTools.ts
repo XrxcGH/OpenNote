@@ -261,6 +261,8 @@ export function installSnapTools(host: InkHost, surfaces: Store<InkSurface | nul
     down(event, ctx) {
       const widget = layer?.widgetOf(event.target);
       if (!layer || !widget) return 'watch';
+      // One widget drag at a time: a second contact, such as the heel of the hand, is held but moves nothing.
+      if (layer.drag) return 'claim';
       ctx.capture(event.pointerId);
       layer.drag = {
         which: widget.which,
@@ -274,8 +276,8 @@ export function installSnapTools(host: InkHost, surfaces: Store<InkSurface | nul
     },
     move(events, ctx) {
       const drag = layer?.drag;
-      const last = events.at(-1);
-      if (!layer || !drag || !last || last.pointerId !== drag.pointerId) return 'claim';
+      const last = events.filter((one) => one.pointerId === drag?.pointerId).at(-1);
+      if (!layer || !drag || !last) return 'claim';
       const at = ctx.toWorld(last.clientX, last.clientY);
       const part = drag.from[drag.which];
       if (drag.mode === 'move') {
@@ -290,12 +292,13 @@ export function installSnapTools(host: InkHost, surfaces: Store<InkSurface | nul
       }
       return 'claim';
     },
-    up() {
-      if (layer) layer.drag = null;
+    up(event) {
+      if (!layer?.drag || layer.drag.pointerId !== event.pointerId) return;
+      layer.drag = null;
       announce(t('ink.snap.placed'));
     },
-    cancel() {
-      if (layer) layer.drag = null;
+    cancel(_ctx, event) {
+      if (layer?.drag && (!event || event.pointerId === layer.drag.pointerId)) layer.drag = null;
     },
   };
   const stopTool = host.registerPointerTool(tool);

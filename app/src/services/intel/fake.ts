@@ -20,7 +20,7 @@ import type {
   Voice,
 } from './types';
 import { createFakeExt } from './extFake';
-import type { FakeExt } from './extFake';
+import type { ExtFiles, FakeExt } from './extFake';
 import type { IntelCommands, IntelTransport } from './transport';
 
 export interface FakeIntelOptions {
@@ -32,6 +32,8 @@ export interface FakeIntelOptions {
   ocr?: OcrResult;
   /** The answer to every set of strokes. Left out reads all the strokes as the word "sample". */
   ink?: InkRecognition;
+  /** Where the device store keeps its files. Left out keeps them in memory. */
+  files?: ExtFiles;
 }
 
 export interface FakeIntelTransport extends IntelTransport {
@@ -322,7 +324,7 @@ function speechHandlers(state: FakeState): Pick<Handlers, SpeechCommands> {
 export function createFakeIntelTransport(options: FakeIntelOptions = {}): FakeIntelTransport {
   const calls: string[] = [];
   const state = createState(options);
-  const ext = createFakeExt();
+  const ext = createFakeExt(options.files);
   const handlers: Handlers = {
     ...statusHandlers(state, options),
     ...recognitionHandlers(state, options),

@@ -18,3 +18,6 @@ export const commitSmartFeatures = (...args: Parameters<typeof import('./setup/c
 
 /** When a model download last started, for the Privacy panel. */
 export { useModelDownloadsLastRan } from './models/lastRan';
+
+/** The store for what the interface keeps on this device (the shell's device folder), loaded on first use. */
+export const deviceStore = () => import('./runtime').then((module) => module.intelExt());

@@ -7,7 +7,7 @@ use super::state::{fail, Applying, Fail};
 use crate::id::BlockId;
 use crate::limits::Limits;
 use crate::model::{Block, BlockData, InkRecord, JsonMap, Stroke};
-use crate::ops::merge_patch::view::{apply_view, block_view, VIEW_KEYS};
+use crate::ops::merge_patch::view::{apply_view, block_view, data_editable, VIEW_KEYS};
 use crate::ops::merge_patch::{apply_patch, inverse_patch};
 use crate::ops::text_diff::apply_splices;
 use crate::ops::{Placement, Splice, Stamps};
@@ -120,7 +120,7 @@ pub(super) fn patch(
     if edits_more_than_lock && lock_level(&current) == LockLevel::All {
         return Err(fail("blockLocked", id));
     }
-    if edits_more_than_lock && matches!(current.data, BlockData::Other(_)) {
+    if edits_more_than_lock && !data_editable(&current.data) {
         return Err(fail("blockUnknownType", id));
     }
     let view = block_view(&current);

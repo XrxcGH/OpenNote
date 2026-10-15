@@ -23,7 +23,7 @@ export async function insertDroppedLink(
       .insertContent({ type: 'text', text: link.title, marks: [{ type: 'link', attrs: { href: link.href } }] })
       .run();
   } else {
-    const block = { id: newId(), type: 'text', data: { markdown: linkMarkdown(link) } };
+    const block = { id: newId(), type: 'text' as const, data: { markdown: linkMarkdown(link) } };
     const edits = [after ? { edit: 'insertBlock' as const, block, after } : { edit: 'insertBlock' as const, block }];
     const ack = await mounted.sync.send({ edits });
     showInserted(mounted, edits, ack.orderKeys);

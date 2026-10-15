@@ -6,6 +6,19 @@ import type { BlockRendererDef } from '../blocks/types';
 import { lazyBlockView } from '../tables/lazyView';
 import { t } from '../../../strings/t';
 
+/**
+ * The panel blocks' types in page.json. They are newer than version 1 of the page format, so they are OpenNote
+ * extension types (format spec 6.4): the core refuses any other unknown name, and edits only its own extensions.
+ */
+export const PANEL_TYPES = {
+  deck: 'ext:org.opennote/deck',
+  tape: 'ext:org.opennote/tape',
+  mindmap: 'ext:org.opennote/mindmap',
+  diagram: 'ext:org.opennote/diagram',
+} as const;
+
+export type PanelType = (typeof PANEL_TYPES)[keyof typeof PANEL_TYPES];
+
 /** What the page gives a feature to draw a block. */
 export interface PanelProps {
   block: string;
@@ -23,7 +36,7 @@ export interface PanelHandle {
 
 export interface PanelKind {
   /** The block's type in page.json. */
-  type: string;
+  type: PanelType;
   label: MessageKey;
   flag: FlagId;
   load(): Promise<{ mount(container: HTMLElement, props: PanelProps): PanelHandle }>;

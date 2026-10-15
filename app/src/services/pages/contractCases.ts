@@ -2,7 +2,7 @@
 // same cases run in Vitest against the memory service (contract.ts) and inside the real app against Phase 3's
 // core (tests/e2e/page/page.contract.spec.ts). Each case gets a fresh service that holds CONTRACT_PAGE.
 import { PageServiceError } from './types';
-import type { AppliedFrame, BlockJson, OpenPage, PageJson, PageService } from './types';
+import type { AppliedFrame, BlockJson, NewBlock, OpenPage, PageJson, PageService } from './types';
 
 const AT = '2026-10-01T09:00:00.000Z';
 
@@ -164,8 +164,8 @@ export const CONTRACT_CASES: readonly ContractCase[] = [
     name: 'inserts blocks after, before, and at the end, and reports their order keys',
     async run(make) {
       const { service, page } = await opened(make);
-      const middle = { id: THIRD, type: 'text', data: { markdown: 'Middle' } };
-      const first = { id: FOURTH, type: 'text', data: { markdown: 'First' } };
+      const middle = { id: THIRD, type: 'text' as const, data: { markdown: 'Middle' } };
+      const first = { id: FOURTH, type: 'text' as const, data: { markdown: 'First' } };
       const ack = await page.send({
         edits: [
           { edit: 'insertBlock', block: middle, after: FIRST },
@@ -180,6 +180,34 @@ export const CONTRACT_CASES: readonly ContractCase[] = [
         'the blocks',
       );
       await rejects(page.send({ edits: [{ edit: 'insertBlock', block: middle }] }), 'invalid', 'a repeated ID');
+      await page.close();
+    },
+  },
+  {
+    name: 'refuses unknown block types, and edits OpenNote extension blocks that carry a fallback',
+    async run(make) {
+      const { service, page } = await opened(make);
+      for (const type of ['mindmap', 'chart']) {
+        // Bare names the type system refuses too: the cast checks that the service refuses them at run time.
+        const unknown = { id: THIRD, type: type as NewBlock['type'], data: {} };
+        await rejects(page.send({ edits: [{ edit: 'insertBlock', block: unknown }] }), 'invalid', `type ${type}`);
+      }
+      const bare = { id: THIRD, type: 'ext:org.opennote/mindmap' as const, data: { root: { text: 'Idea' } } };
+      await rejects(page.send({ edits: [{ edit: 'insertBlock', block: bare }] }), 'invalid', 'no fallback');
+      const map = { ...bare, fallback: { markdown: 'Idea' } };
+      await page.send({ edits: [{ edit: 'insertBlock', block: map }] });
+      await page.send({
+        edits: [
+          { edit: 'patchBlock', block: THIRD, data: { root: { text: 'Cells' } }, fallback: { markdown: 'Cells' } },
+        ],
+      });
+      await rejects(
+        page.send({ edits: [{ edit: 'patchBlock', block: THIRD, fallback: null }] }),
+        'invalid',
+        'removing the fallback',
+      );
+      const held = block(await reopen(service), THIRD);
+      equal([held?.data.root, held?.fallback], [{ text: 'Cells' }, { markdown: 'Cells' }], 'the edited block');
       await page.close();
     },
   },

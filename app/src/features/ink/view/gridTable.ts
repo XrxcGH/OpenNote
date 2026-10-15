@@ -133,7 +133,7 @@ export function createGridWatch(host: InkHost, surfaceOf: () => InkSurface | nul
         edit: 'insertBlock' as const,
         block: {
           id: newId(),
-          type: 'table',
+          type: 'table' as const,
           frame: { x: grid.x, y: grid.y, w: Math.max(80, grid.width) },
           data: { ...tableData(grid) },
         },

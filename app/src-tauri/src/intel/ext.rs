@@ -120,6 +120,25 @@ impl Ext {
                 Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Value::Null),
                 Err(error) => Err(io_error(&error)),
             },
+            "store.list" => {
+                let prefix = text(params, "prefix")?;
+                if !prefix.is_empty() {
+                    store_name(prefix)?;
+                }
+                let entries = match fs::read_dir(&self.store) {
+                    Ok(entries) => entries,
+                    Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(json!([])),
+                    Err(error) => return Err(io_error(&error)),
+                };
+                let mut names: Vec<String> = entries
+                    .filter_map(Result::ok)
+                    .filter(|entry| entry.file_type().is_ok_and(|kind| kind.is_file()))
+                    .filter_map(|entry| entry.file_name().into_string().ok())
+                    .filter(|name| name.starts_with(prefix) && store_name(name).is_ok())
+                    .collect();
+                names.sort();
+                Ok(json!(names))
+            }
             "vocabulary.correct" => {
                 let request: opennote_intel::wire::VocabularyCorrectRequest =
                     serde_json::from_value(params.clone()).map_err(|error| invalid(&error.to_string(), "params"))?;
@@ -202,6 +221,21 @@ mod tests {
             call(&ext, "store.get", json!({ "name": "words.txt" })).unwrap(),
             Value::Null
         );
+    }
+
+    #[test]
+    fn the_store_lists_the_names_that_start_with_a_prefix() {
+        let (_dir, ext) = ext();
+        assert_eq!(call(&ext, "store.list", json!({ "prefix": "study.deck." })).unwrap(), json!([]));
+        for name in ["study.deck.b.json", "study.deck.a.json", "study.states.a.json"] {
+            call(&ext, "store.put", json!({ "name": name, "text": "{}" })).unwrap();
+        }
+        assert_eq!(
+            call(&ext, "store.list", json!({ "prefix": "study.deck." })).unwrap(),
+            json!(["study.deck.a.json", "study.deck.b.json"])
+        );
+        let error = call(&ext, "store.list", json!({ "prefix": "../" })).unwrap_err();
+        assert_eq!(error.code, codes::INVALID);
     }
 
     #[test]

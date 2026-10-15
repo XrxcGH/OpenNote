@@ -10,6 +10,7 @@ import { exportDeck } from '../io/save';
 import {
   changeDeck,
   createDeck,
+  decksLoadedStore,
   decksStore,
   deleteCard,
   removeDeck,
@@ -199,6 +200,7 @@ function DeckView({
 
 function DeckList({ onOpen, onImport }: { onOpen(id: string): void; onImport(): void }) {
   const decks = useStore(decksStore, (current) => current);
+  const loaded = useStore(decksLoadedStore, (current) => current);
   useStore(statesStore, (current) => current);
   const [name, setName] = useState('');
   const today = dayKey();
@@ -229,7 +231,9 @@ function DeckList({ onOpen, onImport }: { onOpen(id: string): void; onImport(): 
           </Button>
         </div>
       </form>
-      {decks.length === 0 ? <p className={styles.muted}>{t('study.deck.none')}</p> : null}
+      {decks.length === 0 ? (
+        <p className={styles.muted}>{t(loaded ? 'study.deck.none' : 'study.deck.loading')}</p>
+      ) : null}
       <ul className={styles.list}>
         {decks.map((deck) => {
           const shown = counts(deck, statesOf(deck.id), today);
@@ -258,6 +262,8 @@ export function DeckPanel({ deckId }: PanelProps) {
   const [open, setOpen] = useState<string | null>(deckId ?? null);
   const [view, setView] = useState<View>('deck');
   const decks = useStore(decksStore, (current) => current);
+  // Until the decks are read, a deck that isn't here yet is still coming, not missing.
+  const loaded = useStore(decksLoadedStore, (current) => current);
   const request = useStore(cardRequest, (current) => current);
   const deck = decks.find((one) => one.id === open) ?? null;
   const back = deckId
@@ -296,7 +302,7 @@ export function DeckPanel({ deckId }: PanelProps) {
       {deck ? (
         <DeckView deck={deck} view={view} setView={setView} onBack={back} />
       ) : deckId ? (
-        <p className={styles.muted}>{t('study.deck.none')}</p>
+        <p className={styles.muted}>{t(loaded ? 'study.deck.none' : 'study.deck.loading')}</p>
       ) : (
         <DeckList
           onOpen={(id) => {

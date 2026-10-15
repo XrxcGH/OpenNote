@@ -13,7 +13,7 @@ import type { IconName } from '../../../ui/icons';
 import { targetEditor } from '../formattingBar/target';
 import type { MountedPage } from '../mount';
 import { mountedPageHooks, shownMounted } from '../pagesApi';
-import { panelRenderer } from '../panels/kinds';
+import { PANEL_TYPES, panelRenderer } from '../panels/kinds';
 import { blockRenderers, editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
 import { shownPool } from '../pool/shown';
@@ -78,7 +78,7 @@ function shownText(): { text: string; title: string } | null {
 // Flashcards: a deck block, the Flashcards window, and cards made from the page.
 blockRenderers.register(
   panelRenderer({
-    type: 'deck',
+    type: PANEL_TYPES.deck,
     label: 'study.deck.block',
     flag: 'study.cards',
     load: async () => {
@@ -106,7 +106,11 @@ addCommand({
       study.createDeck(
         mounted.page.initial.title || t('study.deck.untitled', { number: study.decksStore.get().length + 1 }),
       );
-    const id = await insertPanelBlock('deck', { deck: deck.id }, t('study.deck.blockFallback', { name: deck.name }));
+    const id = await insertPanelBlock(
+      PANEL_TYPES.deck,
+      { deck: deck.id },
+      t('study.deck.blockFallback', { name: deck.name }),
+    );
     if (id) announce(t('study.deck.inserted'));
   },
 });
@@ -317,7 +321,7 @@ for (const [id, title, run] of [
 // Study tape: a floating strip over part of the page that hides it until pressed.
 blockRenderers.register(
   panelRenderer({
-    type: 'tape',
+    type: PANEL_TYPES.tape,
     label: 'study.tape.block',
     flag: 'study.tape',
     load: async () => {
@@ -343,7 +347,7 @@ addCommand({
     const active = shownPool.get()?.active();
     const rect = active ? mounted.layer.view(active.block)?.measure() : undefined;
     const frame = { x: rect ? rect.x : 80, y: rect ? rect.y + rect.h + 8 : 80, w: 260, h: 56 };
-    const id = await insertPanelBlock('tape', { hidden: true }, t('study.tape.fallback'), frame);
+    const id = await insertPanelBlock(PANEL_TYPES.tape, { hidden: true }, t('study.tape.fallback'), frame);
     if (id) announce(t('study.tape.inserted'));
   },
 });
@@ -353,7 +357,7 @@ async function setAllTape(hidden: boolean): Promise<void> {
   const mounted = shownMounted.get();
   const queue = shownQueue.get();
   if (!mounted || !queue) return;
-  const tapes = mounted.layer.blocks().filter((block) => block.type === 'tape');
+  const tapes = mounted.layer.blocks().filter((block) => block.type === PANEL_TYPES.tape);
   if (tapes.length === 0) return void announce(t('study.tape.none'));
   await queue.send({
     edits: tapes.map((block) => ({ edit: 'patchBlock' as const, block: block.id, data: { hidden } })),
@@ -379,7 +383,7 @@ for (const [id, title, hidden] of [
 // Mind maps: a block that turns an outline into a map and a map into an outline.
 blockRenderers.register(
   panelRenderer({
-    type: 'mindmap',
+    type: PANEL_TYPES.mindmap,
     label: 'study.mindmap.block',
     flag: 'math.mindMaps',
     load: async () => {
@@ -405,7 +409,7 @@ addCommand({
     const { from, to } = editor?.state.selection ?? { from: 0, to: 0 };
     const selected = editor && from !== to ? editor.state.doc.textBetween(from, to, '\n') : '';
     const map = parseOutline(selected, t('study.mindmap.mainIdea')) ?? newNode(t('study.mindmap.mainIdea'));
-    const id = await insertPanelBlock('mindmap', { root: map }, toOutline(map));
+    const id = await insertPanelBlock(PANEL_TYPES.mindmap, { root: map }, toOutline(map));
     if (id) announce(t('study.mindmap.inserted'));
   },
 });
@@ -413,7 +417,7 @@ addCommand({
 // Diagrams from text: Mermaid text drawn on this device, redrawn as it is edited, and saved as an SVG.
 blockRenderers.register(
   panelRenderer({
-    type: 'diagram',
+    type: PANEL_TYPES.diagram,
     label: 'study.diagram.block',
     flag: 'math.diagrams',
     load: async () => {
@@ -435,7 +439,7 @@ addCommand({
     const { STARTER_TEXT, fallbackOf } = await import('../../math');
     const { insertPanelBlock } = await import('../panels/insertPanel');
     const source = STARTER_TEXT.flowchart;
-    const id = await insertPanelBlock('diagram', { source }, fallbackOf(source));
+    const id = await insertPanelBlock(PANEL_TYPES.diagram, { source }, fallbackOf(source));
     if (id) announce(t('study.diagram.inserted'));
   },
 });

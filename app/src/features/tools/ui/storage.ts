@@ -27,3 +27,18 @@ export function forgetStored(name: string): void {
     // Same as above.
   }
 }
+
+/**
+ * Calls `apply` with the value another window (a popped-out tool window, or the main window) saves under `name`.
+ * A window that keeps a list in memory follows the other windows' saves with this, so its next save starts from
+ * their changes instead of writing its older copy over them.
+ */
+export function followStored(name: string, apply: (value: unknown) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const listener = (event: StorageEvent) => {
+    if (event.key !== PREFIX + name && event.key !== null) return;
+    apply(loadStored<unknown>(name, null));
+  };
+  window.addEventListener('storage', listener);
+  return () => window.removeEventListener('storage', listener);
+}

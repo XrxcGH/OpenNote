@@ -36,12 +36,19 @@ export interface BlockJson {
   data: Record<string, unknown>;
   fallback?: { markdown: string; image?: AssetId };
 }
+/**
+ * A type a new block may have: a version 1 type (spec 6.3) or an extension type (spec 6.4), such as OpenNote's own
+ * `ext:org.opennote/...`. The core refuses any other name, so a bare name like "mindmap" fails to type-check here.
+ */
+export type NewBlockType = 'text' | 'ink' | 'image' | 'file' | 'table' | `ext:${string}`;
 export interface NewBlock {
   id: BlockId;
-  type: string;
+  type: NewBlockType;
   frame?: Frame;
   lock?: BlockLock;
   data: Record<string, unknown>;
+  /** Required for types newer than version 1 (spec 6.5). */
+  fallback?: { markdown: string; image?: AssetId };
 }
 export interface PageViewJson {
   layout?: 'freeform' | 'flow';

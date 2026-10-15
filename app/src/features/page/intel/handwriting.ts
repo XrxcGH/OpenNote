@@ -45,7 +45,7 @@ export async function handwritingToText(): Promise<void> {
   const blocks = [...mounted.viewport.world.querySelectorAll<HTMLElement>('[data-block-id]')];
   const after = blocks.filter((one) => !one.parentElement?.closest('[data-block-id]')).at(-1)?.dataset.blockId;
   const markdown = lines.map((line) => escapeParagraphText(line)).join('\n\n');
-  const block = { id: newId(), type: 'text', data: { markdown } };
+  const block = { id: newId(), type: 'text' as const, data: { markdown } };
   await mounted.sync.send({ edits: [{ edit: 'insertBlock', block, ...(after ? { after } : {}) }] });
   showToast({
     message: t('intel.handwriting.inserted'),
