@@ -30,6 +30,10 @@ const RETRACE_SHARE = 0.04;
 const OVERSHOOT_WINDOW = 10;
 /** A fit within this factor of the best counts as a tie, and the simpler shape wins. */
 const TIE_FACTOR = 1.1;
+/** A polygon with more corners must fit this much better than a simpler shape to win over it. */
+const MANY_CORNERS_MARGIN = 0.6;
+/** And this much better than a round shape fits, even one too loose to be accepted: a wobbly circle fits a hexagon. */
+const ROUND_MARGIN = 0.4;
 const DEFAULT_MIN_SIZE = 16;
 const DEFAULT_WIDTH = 2;
 
@@ -92,13 +96,26 @@ function closedOutline(points: readonly Vec[], size: number): Vec[] | null {
   return resample([...trimmed, trimmed[0]], SAMPLES + 1).slice(0, SAMPLES);
 }
 
-function closedCandidates(outline: readonly Vec[]): Candidate[] {
+/** The closed outline's candidates, and how badly a round shape fits it (under 1 is a candidate), or Infinity. */
+function closedCandidates(outline: readonly Vec[]): { candidates: Candidate[]; roundRatio: number } {
   const candidates = polygonCandidates(outline);
   const fit = fitEllipse(outline);
   if (fit && fit.error < ELLIPSE_TOLERANCE) {
     candidates.push({ shape: ellipseShape(fit), ratio: fit.error / ELLIPSE_TOLERANCE });
   }
-  return candidates;
+  return { candidates, roundRatio: fit ? fit.error / ELLIPSE_TOLERANCE : Infinity };
+}
+
+/**
+ * Drops the many-cornered shapes (regular polygons and irregular ones) that do not fit clearly better than a simpler
+ * shape already found: more corners always fit a little better, and a wobbly circle fits a hexagon about as well,
+ * but a triangle, a rectangle, or a circle is what was meant.
+ */
+function withoutLookalikes(extras: readonly Candidate[], found: readonly Candidate[], roundRatio: number): Candidate[] {
+  const simpler = Math.min(...found.map((c) => c.ratio));
+  const wins = (c: Candidate) =>
+    c.ratio < MANY_CORNERS_MARGIN * simpler && (c.shape.kind === 'freeform' || c.ratio < ROUND_MARGIN * roundRatio);
+  return extras.filter((c) => (c.shape.kind !== 'polygon' && c.shape.kind !== 'freeform') || wins(c));
 }
 
 function lineCandidate(points: readonly Vec[], even: readonly Vec[]): Candidate | null {
@@ -132,13 +149,15 @@ export function recognizeShape(points: readonly Vec[], options: RecognizeOptions
   if (clean.length < 3 || diagonal < minSize) return null;
   if (totalTurning(simplify(clean, TURNING_SIMPLIFY * diagonal)) > MAX_TURNING) return null;
   const outline = closedOutline(clean, diagonal);
-  const candidates = outline
-    ? closedCandidates(outline)
+  const closed = outline ? closedCandidates(outline) : null;
+  const candidates = closed
+    ? closed.candidates
     : [lineCandidate(clean, resample(clean, SAMPLES)), arrowCandidate(clean, diagonal, width)].filter(
         (c) => c !== null,
       );
   if (extra) {
-    if (outline) candidates.push(...closedExtras(outline));
+    if (outline)
+      candidates.push(...withoutLookalikes(closedExtras(outline), candidates, closed?.roundRatio ?? Infinity));
     else {
       const more = [
         doubleArrowCandidate(clean, diagonal, width),

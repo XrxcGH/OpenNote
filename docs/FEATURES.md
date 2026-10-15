@@ -104,6 +104,7 @@ Linked accounts (Phase 11):
 
 - Draw a rough shape and hold still for half a second. It snaps to a clean circle, ellipse, rectangle, triangle, polygon, star, or arrow. Status: Built, untested by hand.
 - Keep holding and move to resize or rotate it before lifting the pen. Status: Built, untested by hand.
+- Irregular shapes snap too: a trapezoid, a parallelogram, a house, an L, or any closed outline of 4 to 7 corners becomes a clean polygon with a handle on each corner. A wobbly circle stays a circle. Status: Built, untested by hand.
 - Straight lines, arcs, curved arrows, and double arrows snap the same way. Lines snap to 15° steps near horizontal and vertical. Status: Built, untested by hand.
 - Shapes keep editable handles, and connectors stay attached when shapes move. Status: Built, untested by hand.
 

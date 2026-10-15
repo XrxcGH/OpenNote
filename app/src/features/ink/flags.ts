@@ -35,7 +35,11 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.snapTools', 'Ruler, protractor, and snap to grid.', on),
   flag('ink.paperSnap', 'Lines, arrows, and shapes snap to the lines of ruled, grid, and dot paper.', beta),
   flag('ink.replay', 'Ink replay.', on),
-  flag('ink.shapeTools', 'More shapes, editable handles, connectors, and shape libraries.', on),
+  flag(
+    'ink.shapeTools',
+    'More shapes (including irregular polygons), editable handles, connectors, and shape libraries.',
+    on,
+  ),
   flag('ink.handwriting', 'Writing pen, convert with the lasso, and tidy handwriting.', on),
   flag('ink.gridTable', 'Draw a grid to make a table.', on),
   flag('ink.penEditing', 'Edit typed text with the pen.', on),

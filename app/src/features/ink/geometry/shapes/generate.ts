@@ -69,6 +69,8 @@ export function shapePoints(shape: Shape): Vec[] {
       return sampleEllipse(shape.center, shape.rx, shape.ry, shape.rotation);
     case 'polygon':
       return polygonCorners(shape.center, shape.radius, shape.sides, shape.rotation);
+    case 'freeform':
+      return [...shape.corners, shape.corners[0]];
     case 'star':
       return starCorners(shape.center, shape.outer, shape.inner, shape.points, shape.rotation);
     case 'arc':
