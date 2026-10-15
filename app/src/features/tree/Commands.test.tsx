@@ -292,6 +292,7 @@ describe('delete and Undo', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('context menu contents', () => {
   it('lists each kind in the design order, with Delete last', async () => {
     await renderTree();

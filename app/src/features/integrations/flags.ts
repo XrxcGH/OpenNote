@@ -2,6 +2,7 @@
 // from its first screen to its result. The import and export ones, Share included, are on in every channel; the
 // platform ones are on in Beta. app/flags.ts joins this list to the others, and the shell reads the platform ones in
 // platform_flags.rs.
+import type { FlagDef } from '../../app/flags';
 
 export type IntegrationsFlagId =
   | 'interop.officeFormats'
