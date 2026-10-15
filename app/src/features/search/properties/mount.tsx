@@ -25,7 +25,10 @@ export function mountProperties(mounted: MountedPage): () => void {
   return () => {
     window.removeEventListener('resize', place);
     observer?.disconnect();
-    root.unmount();
-    host.remove();
+    // A page closes from a React effect's cleanup, and a root can't unmount while React is rendering.
+    setTimeout(() => {
+      root.unmount();
+      host.remove();
+    }, 0);
   };
 }
