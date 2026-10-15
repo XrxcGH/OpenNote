@@ -24,6 +24,37 @@ pub fn png_bytes() -> Vec<u8> {
     STANDARD.decode(PNG_BASE64).expect("the PNG constant is valid base64")
 }
 
+/// A small EMF file: a 40 by 20 millimetre frame with one black rectangle in it.
+pub fn emf_bytes() -> Vec<u8> {
+    fn record(kind: u32, payload: &[u8]) -> Vec<u8> {
+        let mut out = kind.to_le_bytes().to_vec();
+        out.extend(((8 + payload.len()) as u32).to_le_bytes());
+        out.extend(payload);
+        out
+    }
+    let ints = |values: &[i32]| values.iter().flat_map(|v| v.to_le_bytes()).collect::<Vec<u8>>();
+    // SELECTOBJECT with the stock black brush, then RECTANGLE over most of the 400 by 200 device units.
+    let mut body = record(37, &0x8000_0004u32.to_le_bytes());
+    body.extend(record(43, &ints(&[40, 20, 360, 180])));
+    body.extend(record(14, &[0; 12]));
+    let mut header = vec![0u8; 88];
+    header[0..4].copy_from_slice(&1u32.to_le_bytes());
+    header[4..8].copy_from_slice(&88u32.to_le_bytes());
+    header[8..24].copy_from_slice(&ints(&[0, 0, 399, 199]));
+    header[24..40].copy_from_slice(&ints(&[0, 0, 4000, 2000]));
+    header[40..44].copy_from_slice(&0x464D_4520u32.to_le_bytes());
+    header[44..48].copy_from_slice(&0x0001_0000u32.to_le_bytes());
+    header[48..52].copy_from_slice(&((88 + body.len()) as u32).to_le_bytes());
+    header[52..56].copy_from_slice(&3u32.to_le_bytes());
+    header[56..58].copy_from_slice(&1u16.to_le_bytes());
+    header[72..76].copy_from_slice(&400i32.to_le_bytes());
+    header[76..80].copy_from_slice(&200i32.to_le_bytes());
+    header[80..84].copy_from_slice(&40i32.to_le_bytes());
+    header[84..88].copy_from_slice(&20i32.to_le_bytes());
+    header.extend(body);
+    header
+}
+
 /// A time on a fixed day, for predictable dates.
 pub fn at(text: &str) -> Timestamp {
     Timestamp::parse(text).expect("test times are valid")

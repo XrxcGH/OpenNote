@@ -46,6 +46,8 @@ Import and export (Phase 11):
 | PowerPoint / Google Slides | `.pptx`, Google Slides as annotatable pages | `.pptx` (one page per slide), PDF | .pptx both ways and PDF: Built, untested by hand. Google Slides: Needs the owner. |
 | OneNote / Evernote | Graph API, `.enex` | PDF, Markdown | .enex and Markdown: Built, untested by hand. The Graph API import needs the owner. |
 
+Windows metafile pictures (EMF, WMF and EMF+): Word and PowerPoint files keep charts and clip art saved in these formats. On import each one is drawn into an SVG picture that stays sharp at any size, with its text left as text. A picture that cannot be read is replaced by its description and counted in the import review. Pasting or dropping an `.emf` or `.wmf` image onto a page does the same. Status: Built, untested by hand. Always on, with Import (`interop.import`).
+
 Linked accounts (Phase 11):
 
 - People can link Google and Microsoft accounts in Settings, then Connectors, along with Slack, Dropbox, Box, Vimeo, Readwise, Canvas, and Moodle. Sign-in uses the provider's own secure page (OAuth) in the default browser, and tokens are stored in Windows Credential Manager. The [setup guide](CONNECTORS.md) says how the owner of a build registers each service. Status: Built, untested by hand. Sign-in works. Six services say Needs setup until the owner adds client IDs, and no feature uses a connection yet.

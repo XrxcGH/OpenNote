@@ -85,6 +85,20 @@ pub fn check(bytes: Vec<u8>, name: &str, declared: &str, convert: bool) -> Resul
     if !generic && ImageFormat::from_mime(declared) != Some(probed.format) {
         return Err(unsupported());
     }
+    if probed.format == ImageFormat::Metafile {
+        // WebView2 cannot show a metafile, so the page keeps the drawing as SVG.
+        let svg = opennote_metafile::parse(&bytes)
+            .ok()
+            .and_then(|picture| opennote_metafile::to_svg(&picture))
+            .ok_or_else(unsupported)?;
+        return Ok(Checked {
+            name: name_for(name, ImageFormat::Svg),
+            mime: ImageFormat::Svg.mime(),
+            width: probed.width,
+            height: probed.height,
+            bytes: svg.into_bytes(),
+        });
+    }
     if probed.format.displayable() {
         return Ok(Checked {
             name: name_for(name, probed.format),

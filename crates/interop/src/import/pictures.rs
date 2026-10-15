@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use crate::assets::{is_image, mime_from_extension};
+use crate::assets::{is_image, is_metafile_extension, metafile_to_svg, mime_from_extension};
 use crate::doc::{visit_inlines_mut, Block, Inline, Marks};
 use crate::page_builder::PageBuilder;
 
@@ -48,14 +48,22 @@ pub(super) fn place(
     (placed, lost)
 }
 
-/// Adds one picture to the page. Returns the asset ID, or `None` when it cannot be shown.
+/// Adds one picture to the page. Returns the asset ID, or `None` when it cannot be shown. A Windows metafile
+/// (EMF or WMF, as Office keeps charts and clip art) is drawn into an SVG picture, and `None` means it could not be
+/// read as one.
 pub(super) fn picture(
     builder: &mut PageBuilder<'_>,
     path: &str,
     load: &mut dyn FnMut(&str) -> Option<Vec<u8>>,
 ) -> Option<String> {
     let name = path.rsplit('/').next().unwrap_or(path);
-    let mime = mime_from_extension(name.rsplit_once('.').map_or("", |(_, ext)| ext));
+    let extension = name.rsplit_once('.').map_or("", |(_, ext)| ext);
+    if is_metafile_extension(extension) {
+        let svg = metafile_to_svg(&load(path)?)?;
+        let stem = name.rsplit_once('.').map_or(name, |(stem, _)| stem);
+        return Some(builder.add_asset(&format!("{stem}.svg"), Some("image/svg+xml"), svg).to_string());
+    }
+    let mime = mime_from_extension(extension);
     if !is_image(mime) {
         return None;
     }

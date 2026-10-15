@@ -18,6 +18,8 @@ Press Ctrl+K and choose Import. First-time setup has the same step. Pick a sourc
 | Kindle clippings and a Readwise CSV file | Your highlights |
 | Windows Sticky Notes | Your notes and their pictures |
 
+Charts and clip art that Word and PowerPoint save as EMF or WMF pictures come over as sharp SVG pictures. If one is damaged, it becomes its description in brackets and the review counts it.
+
 Before anything is added, a review lists what comes over and what does not. Choose Save report to keep that list. Undo takes an import back.
 
 ## Export
