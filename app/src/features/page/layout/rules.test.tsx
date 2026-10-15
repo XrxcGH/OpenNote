@@ -1,6 +1,6 @@
-// Text on ruled paper, measured in a real browser. With the paper's rules set as the page's grid, body text, a
+// Text on ruled paper, measured in a real browser, with the paper's rules set as the page's grid. Body text, a
 // heading, a list, and a text box dropped at an arbitrary height all put their first baseline the lift above a rule
-// (core/ruled.ts), and every block is a whole number of rules tall, so the text after it is back on its rule. Plain
+// (core/ruled.ts). Every block is a whole number of rules tall, so the text after it is back on its rule. Plain
 // paper changes nothing.
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanupPages, renderPage } from '../test/harness';
@@ -11,8 +11,12 @@ import { ruleLift } from '../../../core/ruled';
 import type { RuleGrid } from './rules';
 
 const GRID: RuleGrid = { step: 26.46, origin: 40, sheet: null };
-/** Fonts and layout differ by a fraction of a unit between machines. */
-const TOLERANCE = 1;
+/**
+ * Fonts and layout differ by a fraction of a unit between machines. Chrome on Linux rounds a font's ascent and
+ * descent to whole pixels, and layout works in 64ths of a pixel, so a baseline there can be a pixel and two 64ths
+ * off (1.03 for a box at 201.2 on CI's Ubuntu). On Windows the same boxes are within 0.03.
+ */
+const TOLERANCE = 1.1;
 
 afterEach(cleanupPages);
 
@@ -39,6 +43,15 @@ function baseline(harness: PageHarness, element: Element): number {
   const y = (probe.getBoundingClientRect().bottom - harness.viewport.world.getBoundingClientRect().top) / zoom;
   probe.remove();
   return y;
+}
+
+/**
+ * The top of `element` in page units from the top of the world. Not offsetTop: that counts from the offset parent,
+ * which browsers choose differently under the camera's transform, and it is rounded to a whole pixel.
+ */
+function topOf(harness: PageHarness, element: Element): number {
+  const { zoom } = harness.viewport.camera();
+  return (element.getBoundingClientRect().top - harness.viewport.world.getBoundingClientRect().top) / zoom;
 }
 
 /** How far `y` is from the nearest rule. */
@@ -99,7 +112,7 @@ describe('ruled paper', () => {
       const wrapper = harness.viewport.world.querySelector<HTMLElement>('[data-block-id]')!;
       const line = wrapper.querySelector('.ProseMirror > p')!;
       expect(offLift(baseline(harness, line)), `box at ${y}`).toBeLessThan(TOLERANCE);
-      expect(offRule((wrapper.offsetTop ?? 0) - 0)).toBeLessThan(TOLERANCE);
+      expect(offRule(topOf(harness, wrapper)), `top of the box at ${y}`).toBeLessThan(TOLERANCE);
       const height = wrapper.getBoundingClientRect().height / harness.viewport.camera().zoom / GRID.step;
       expect(Math.abs(height - Math.round(height))).toBeLessThan(TOLERANCE / GRID.step);
       await cleanupPages();

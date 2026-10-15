@@ -189,6 +189,42 @@ export function parseStamp(text: string): number | null {
 
 const fraction = (digits: string | undefined): number => (digits ? Number(digits.padEnd(3, '0')) : 0);
 
+const CUE_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: '\u00a0',
+  lrm: '\u200e',
+  rlm: '\u200f',
+};
+
+/**
+ * The words of an SRT or WebVTT cue. Cues mark words with tags such as `<i>`, `<v Ana>`, `<c.loud>`, and
+ * `<00:01.000>`. As in the WebVTT cue text tokenizer, a tag runs from `<` to the next `>` (or the end) and tags never
+ * nest, so one pass over the characters keeps exactly the text between tags. The result is plain text: entities are
+ * decoded after the tags are gone, so `&lt;b&gt;` reads as the characters `<b>`, never as a tag.
+ */
+export function cueText(cue: string): string {
+  let text = '';
+  for (let at = 0; at < cue.length;) {
+    const open = cue.indexOf('<', at);
+    if (open === -1) {
+      text += cue.slice(at);
+      break;
+    }
+    text += cue.slice(at, open);
+    const close = cue.indexOf('>', open + 1);
+    at = close === -1 ? cue.length : close + 1;
+  }
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, body: string) => {
+    if (body[0] !== '#') return CUE_ENTITIES[body.toLowerCase()] ?? whole;
+    const code = body[1].toLowerCase() === 'x' ? parseInt(body.slice(2), 16) : parseInt(body.slice(1), 10);
+    return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : whole;
+  });
+}
+
 const CUE = /^(\S+)\s+-->\s+(\S+)/;
 const LEADING_STAMP = /^\[?((?:\d+:)?\d{1,2}:\d{2}(?:[.,]\d{1,3})?)\]?\s*[-–:]?\s+(.*)$/;
 
@@ -208,7 +244,7 @@ export function parseTranscript(text: string, durationMs: number): { segments: S
     if (start === null || end === null) continue;
     const words: string[] = [];
     while (i + 1 < rows.length && rows[i + 1].trim() !== '') words.push(rows[(i += 1)].trim());
-    cues.push({ startMs: start, endMs: end, text: words.join(' ').replace(/<[^>]+>/g, '') });
+    cues.push({ startMs: start, endMs: end, text: cueText(words.join(' ')) });
   }
   if (cues.length > 0) return { segments: cues, timed: true };
   const stamped: Segment[] = [];

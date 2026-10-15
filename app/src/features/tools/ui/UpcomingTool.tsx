@@ -61,6 +61,7 @@ function repeatOf(choice: RepeatChoice, days: number): Repeat | undefined {
   return undefined;
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function UpcomingTool() {
   const [saved, setSaved] = useState(readSaved);
   const [text, setText] = useState('');

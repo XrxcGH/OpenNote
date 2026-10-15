@@ -14,6 +14,7 @@ import styles from './tools.module.css';
 type Tab = 'elements' | 'constants' | 'prefixes' | 'greek';
 const TABS: readonly Tab[] = ['elements', 'constants', 'prefixes', 'greek'];
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ReferenceTool() {
   const [tab, setTab] = useState<Tab>('elements');
   const [query, setQuery] = useState('');
