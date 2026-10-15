@@ -60,6 +60,10 @@ export interface ImageBlock extends BlockBase {
   readonly asset: string;
   readonly alt: string;
   readonly decorative: boolean;
+  /** Text wraps around the image (`left` or `right`), or the image sits in the line (`inline`). */
+  readonly wrap?: 'inline' | 'left' | 'right';
+  /** The gap between a wrapped image and the text, in page units. */
+  readonly wrapGap?: number;
 }
 
 export interface FileBlock extends BlockBase {
@@ -181,7 +185,18 @@ function readData(type: string, data: JsonObject, fallback: Json | undefined): B
       ...(anchor ? { anchor } : {}),
     };
   }
-  if ((type === 'image' || type === 'file') && typeof data.asset === 'string') {
+  if (type === 'image' && typeof data.asset === 'string') {
+    const wrap = data.wrap === 'inline' || data.wrap === 'left' || data.wrap === 'right' ? data.wrap : undefined;
+    const gap = typeof data.wrapGap === 'number' && Number.isFinite(data.wrapGap) ? data.wrapGap : undefined;
+    return {
+      type,
+      asset: data.asset,
+      ...alt,
+      ...(wrap ? { wrap } : {}),
+      ...(wrap && gap !== undefined ? { wrapGap: Math.min(64, Math.max(0, Math.round(gap))) } : {}),
+    };
+  }
+  if (type === 'file' && typeof data.asset === 'string') {
     return { type, asset: data.asset, ...alt };
   }
   if (type === 'table' && Array.isArray(data.columns) && Array.isArray(data.rows)) return readTable(data);

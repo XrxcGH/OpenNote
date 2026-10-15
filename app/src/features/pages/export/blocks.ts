@@ -71,8 +71,9 @@ export function htmlOptions(cx: BlockContext): HtmlOptions {
 const px = (n: number): string => String(Math.round(n * 100) / 100);
 
 /** A size from a frame as an inline style. Only numbers are written. */
-function size(frame: ExportBlock['frame']): string {
+function size(frame: ExportBlock['frame'], extra = ''): string {
   const parts = [
+    extra,
     frame?.w === undefined ? '' : `width:${px(frame.w)}px`,
     frame?.h === undefined ? '' : `height:${px(frame.h)}px`,
   ];
@@ -89,7 +90,18 @@ function image(block: ExportBlock & { type: 'image' }, cx: BlockContext): string
   const role = block.decorative ? ' role="presentation"' : '';
   const dims = asset.width && asset.height ? ` width="${asset.width}" height="${asset.height}"` : '';
   const img = `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}"${role}${dims}${voidEnd(cx.xml)}`;
-  return `<figure${size(block.frame)}>${img}</figure>`;
+  return `<figure${wrapClass(block)}${size(block.frame, wrapGapStyle(block))}>${img}</figure>`;
+}
+
+/** The class that lets text wrap around a figure in the PDF, print, web page, and slides. */
+function wrapClass(block: ExportBlock & { type: 'image' }): string {
+  return block.wrap && block.frame?.x === undefined ? ` class="wrap-${block.wrap}"` : '';
+}
+
+function wrapGapStyle(block: ExportBlock & { type: 'image' }): string {
+  return block.wrap && block.frame?.x === undefined && block.wrapGap !== undefined
+    ? `--wrap-gap:${px(block.wrapGap)}px`
+    : '';
 }
 
 function file(block: ExportBlock & { type: 'file' }, cx: BlockContext): string {
