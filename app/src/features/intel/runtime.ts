@@ -86,7 +86,18 @@ export async function setFeature(feature: Feature, on: boolean): Promise<void> {
  * Makes sure the feature is on, asking the person first when it is not. Resolves true when it is on, and false when
  * the person said not now. Background work never calls this: it skips a feature that is off.
  */
-export async function askToTurnOn(feature: OnDeviceFeature): Promise<boolean> {
+export function askToTurnOn(feature: OnDeviceFeature): Promise<boolean> {
+  // Several callers can ask at once, such as the writing pen reading each stroke: they share one question.
+  const open = asking.get(feature);
+  if (open) return open;
+  const run = askOnce(feature).finally(() => asking.delete(feature));
+  asking.set(feature, run);
+  return run;
+}
+
+const asking = new Map<OnDeviceFeature, Promise<boolean>>();
+
+async function askOnce(feature: OnDeviceFeature): Promise<boolean> {
   await loadIntel();
   if (isOn(feature)) return true;
   const name = t(FEATURE_NAME[feature]);

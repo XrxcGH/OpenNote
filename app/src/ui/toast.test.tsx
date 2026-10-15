@@ -48,11 +48,13 @@ describe('toasts over time', () => {
     expect(toastText()).toBe('');
   });
 
-  it('keeps a toast with an action until it is dismissed', () => {
+  it('keeps a toast with an action for 30 seconds, then closes it', () => {
     renderUi(<Page />);
     show({ message: 'Moved to Trash.', action: { label: 'Undo', run() {} } });
-    advance(60_000);
+    advance(29_999);
     expect(toastText()).toContain('Moved to Trash.');
+    advance(1);
+    expect(toastText()).toBe('');
   });
 
   it('waits while the pointer is on the toast, then runs out the rest of its time', () => {

@@ -120,6 +120,7 @@ export const ink = {
   },
   handwriting: {
     working: 'Reading handwriting',
+    off: 'Handwriting reading is off, so the writing pen left your ink as it is.',
     none: 'No words found in that ink.',
     convert: 'Convert to text',
     straighten: 'Straighten',

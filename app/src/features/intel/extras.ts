@@ -65,7 +65,17 @@ export async function setExtra(feature: ExtraFeature, on: boolean): Promise<void
 }
 
 /** Makes sure the feature is on, asking first when it is not. Resolves false when the person said not now. */
-export async function askToTurnOnExtra(feature: ExtraFeature): Promise<boolean> {
+export function askToTurnOnExtra(feature: ExtraFeature): Promise<boolean> {
+  const open = asking.get(feature);
+  if (open) return open;
+  const run = askExtraOnce(feature).finally(() => asking.delete(feature));
+  asking.set(feature, run);
+  return run;
+}
+
+const asking = new Map<ExtraFeature, Promise<boolean>>();
+
+async function askExtraOnce(feature: ExtraFeature): Promise<boolean> {
   await loadExtras();
   if (isExtraOn(feature)) return true;
   const yes = await confirm({

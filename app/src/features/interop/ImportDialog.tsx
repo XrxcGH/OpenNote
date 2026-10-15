@@ -6,6 +6,7 @@ import { navigate } from '../../app/location';
 import type { InteropClient } from '../../platform/interop';
 import type { NotesService } from '../../services/notes/types';
 import type { OverlayProps } from '../../shell/commandbar/overlays';
+import { sessionStore, setExpanded } from '../../state/session';
 import { t } from '../../strings/t';
 import { Button, Dialog, Switch, announce } from '../../ui';
 import type { DialogAction } from '../../ui';
@@ -49,6 +50,9 @@ function Choose({ flow, canceled, refocus }: { flow: ImportFlow; canceled: boole
         <li>{t('interop.import.sources.notion')}</li>
         <li>{t('interop.import.sources.word')}</li>
         <li>{t('interop.import.sources.web')}</li>
+        <li>{t('interop.import.sources.office')}</li>
+        <li>{t('interop.import.sources.mail')}</li>
+        <li>{t('interop.import.sources.highlights')}</li>
         <li>{t('interop.import.sources.other')}</li>
       </ul>
     </div>
@@ -251,6 +255,9 @@ export default function ImportDialog({ interop, notes, onClose }: ImportDialogPr
                   label: t('interop.import.done.open'),
                   variant: 'secondary' as const,
                   onPress: () => {
+                    // The tree shows the notebook open, so its pages pane fills and New page works.
+                    const open = sessionStore.get().expanded;
+                    if (!open.includes(state.notebook.id)) setExpanded([...open, state.notebook.id]);
                     navigate({
                       view: 'workspace',
                       notebookId: state.notebook.id,

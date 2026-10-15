@@ -44,7 +44,7 @@ function detectPath(path: string): DetectedSource {
     advice: null,
   });
   if (lower.endsWith('.enex')) return found('evernote', 'Evernote export');
-  if (lower.endsWith('.docx')) return found('word', 'Word documents');
+  if (lower.endsWith('.docx')) return found('word', 'Word and OpenDocument documents');
   if (lower.endsWith('.txt')) return found('text', 'Text files');
   if (lower.endsWith('.one') || lower.endsWith('.onepkg')) {
     return {

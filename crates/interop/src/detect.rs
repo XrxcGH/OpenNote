@@ -62,7 +62,7 @@ impl SourceKind {
             SourceKind::Markdown => "Markdown notes",
             SourceKind::Notion => "Notion export",
             SourceKind::Evernote => "Evernote export",
-            SourceKind::Word => "Word documents",
+            SourceKind::Word => "Word and OpenDocument documents",
             SourceKind::WebArchive => "Web page archives",
             SourceKind::Html => "HTML pages",
             SourceKind::Text => "Text files",

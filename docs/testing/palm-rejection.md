@@ -19,7 +19,7 @@ This checklist checks palm rejection by hand on each device in the [device matri
 1. Write three lines with the hand resting on the screen.
 2. Plant the hand first, then bring the pen down and write a word.
 3. Lift the pen out of range between lines and plant the hand again. Then pause for 5 seconds with the pen above the screen, and plant the hand again.
-4. With the pen hovering, pinch with the other hand to zoom, and drag two fingers to move the page. Then scroll with one finger of the other hand.
+4. With the pen hovering, pinch with the other hand to zoom, and drag two fingers to move the page. Then scroll with one finger of the other hand. Keep these fingers on the side away from the pen hand: fingers where the writing hand rests (below and beside the pen tip) are held back on purpose, and scroll again a few seconds after the pen leaves.
 5. With the pen down, rest the other hand on the page. While the pen hovers, tap a palette color with the other hand.
 6. Rest the palm on the palette or the toolbar while writing next to it.
 7. Move the hovering pen onto the toolbar and back while the hand rests on the page.

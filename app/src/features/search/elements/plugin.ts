@@ -4,7 +4,7 @@
 // name. After a change it writes the IDs, tags, and checked boxes back with `patchBlock`. A block that has no IDs,
 // tags, or links stays as it was, because the plugin writes nothing for it.
 import { Extension } from '@tiptap/core';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import type { EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { EditorView } from '@tiptap/pm/view';
@@ -275,6 +275,20 @@ class ElementLayer {
   }
 }
 
+/** Where the last right-click landed inside a selection that spans lines, and the selection it landed in. */
+const clicked = new WeakMap<EditorView, { pos: number; from: number; to: number; at: number }>();
+const CLICK_MS = 30_000;
+
+/** Narrows a multi-line selection to the clicked line, when the command comes from the menu that click opened. */
+export function actOnClickedLine(view: EditorView): void {
+  const hit = clicked.get(view);
+  clicked.delete(view);
+  if (!hit || Date.now() - hit.at > CLICK_MS) return;
+  const { from, to } = view.state.selection;
+  if (from !== hit.from || to !== hit.to) return;
+  view.dispatch(view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(hit.pos))));
+}
+
 function elementsPlugin(host: EditorHost, options: ElementOptions): Plugin<DecorationSet> {
   let current: EditorView | null = null;
   const view = () => current as EditorView;
@@ -288,10 +302,32 @@ function elementsPlugin(host: EditorHost, options: ElementOptions): Plugin<Decor
     props: {
       decorations: (state) => key.getState(state),
       handleDOMEvents: {
+        // A right-click acts on the line under the pointer, so the menu's link and tag commands do not use a stale caret.
+        contextmenu(editorView: EditorView, event: Event) {
+          const mouse = event as MouseEvent;
+          const at = editorView.posAtCoords({ left: mouse.clientX, top: mouse.clientY });
+          if (!at) return false;
+          const { from, to, $from, $to } = editorView.state.selection;
+          if (at.pos >= from && at.pos <= to) {
+            // A right-click inside a selection that spans lines keeps the selection for copy and cut, but the link and
+            // tag commands that follow act on the line that was clicked.
+            if ($from.sameParent($to)) clicked.delete(editorView);
+            else clicked.set(editorView, { pos: at.pos, from, to, at: Date.now() });
+            return false;
+          }
+          clicked.delete(editorView);
+          editorView.focus();
+          const selection = TextSelection.near(editorView.state.doc.resolve(at.pos));
+          editorView.dispatch(editorView.state.tr.setSelection(selection));
+          return false;
+        },
         [ELEMENT_EVENT](editorView: EditorView, event: Event) {
           const action = (event as CustomEvent<ElementAction>).detail;
           const allowed = action.type === 'copyLink' ? options.links : options.tags;
-          if (allowed) void layers.get(editorView)?.run(action);
+          if (allowed) {
+            actOnClickedLine(editorView);
+            void layers.get(editorView)?.run(action);
+          }
           return true;
         },
       },

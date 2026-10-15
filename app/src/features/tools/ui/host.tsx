@@ -53,6 +53,9 @@ function Windows() {
             key={id}
             tool={tool}
             index={index}
+            taken={state.open
+              .slice(0, index)
+              .reduce((sum, one) => sum + (TOOLS.find((def) => def.id === one)?.width ?? 0) + 16, 0)}
             pinned={pinned}
             onPin={() =>
               layer.set((current) => ({

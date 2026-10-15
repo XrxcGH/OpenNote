@@ -178,7 +178,8 @@ class Pipeline implements InkPipeline {
   }
 
   needsTick(): boolean {
-    return this.filter.needsTick() || this.live.size > 0;
+    // A double tap is delivered by a tick after its confirm window, when every finger is already up.
+    return this.filter.needsTick() || this.live.size > 0 || this.taps.waiting();
   }
 
   nextDue(): number {

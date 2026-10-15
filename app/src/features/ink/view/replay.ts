@@ -67,7 +67,7 @@ class ReplayBar {
     this.element.setAttribute('role', 'toolbar');
     this.element.setAttribute('aria-label', t('ink.replay.bar'));
     Object.assign(this.element.style, {
-      position: 'absolute',
+      position: 'fixed',
       left: '50%',
       bottom: '16px',
       transform: 'translateX(-50%)',
@@ -116,7 +116,8 @@ class ReplayBar {
       button(t('ink.replay.close'), t('ink.replay.close'), () => this.close()),
     );
     this.element.addEventListener('keydown', this.onKey);
-    surface.chrome.append(this.element);
+    // The chrome layer has no height of its own, so a bar anchored to its bottom would sit above the window.
+    doc.body.append(this.element);
     this.stops.push(surface.onChange(() => this.draw()));
     this.refresh();
     // The originals hide while the replay draws them again.

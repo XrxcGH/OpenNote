@@ -33,7 +33,7 @@ export const connectors = {
     reconnect: 'Reconnect',
     cancel: 'Cancel sign-in',
     save: 'Connect with this token',
-    setup: 'Show setup steps',
+    setup: 'Open setup guide in your browser',
     openFolder: 'Open the connectors folder',
     details: 'What this allows',
   },

@@ -52,7 +52,7 @@ pub(super) struct WordConverter {
 
 impl FileConverter for WordConverter {
     fn label(&self) -> &'static str {
-        "Word documents"
+        "Word and OpenDocument documents"
     }
 
     fn extensions(&self) -> &'static [&'static str] {

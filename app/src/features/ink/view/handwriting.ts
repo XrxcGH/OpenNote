@@ -16,6 +16,7 @@ import { strokeKind } from '../edits/filters';
 import type { InkStroke } from '../model/types';
 import { paletteByName } from '../pens/palette';
 import type { InkHost } from './host';
+import { drawState } from './state';
 import type { InkSurface } from './surface';
 
 /** Strokes in the recognizer's form: the ID, and the points with each stroke's own transform applied. */
@@ -189,6 +190,33 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
   /** Strokes this pen faded, so Show written ink can bring them back. */
   const faded = new Map<string, InkStroke>();
 
+  // Choosing the writing pen is the moment to ask, before any stroke. A pen that is already writing when the page opens
+  // (a restored tool) asks too, and so does the first stroke if nothing was answered, so words are never dropped
+  // silently. A "not now" is final until the pen is chosen again.
+  let ready = false;
+  let declined = false;
+  let answer: Promise<boolean> | null = null;
+  const ask = (): Promise<boolean> => {
+    if (ready) return Promise.resolve(true);
+    answer ??= (host.handwriting?.ensure?.() ?? Promise.resolve(true)).then((ok) => {
+      ready = ok;
+      declined = !ok;
+      return ok;
+    });
+    return answer;
+  };
+  let wasWriting = drawState.get().tool === 'writing';
+  if (wasWriting && handwritingAvailable(host)) void ask();
+  const unsubscribe = drawState.subscribe(() => {
+    const writing = drawState.get().tool === 'writing';
+    if (writing && !wasWriting && handwritingAvailable(host)) {
+      declined = false;
+      answer = null;
+      void ask();
+    }
+    wasWriting = writing;
+  });
+
   const run = async () => {
     timer = null;
     const surface = surfaceOf();
@@ -196,7 +224,13 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     const strokes = surface ? surface.strokes(pending) : [];
     pending = [];
     if (!surface || !queue || strokes.length === 0 || !handwritingAvailable(host)) return;
-    const recognition = await host.handwriting!.recognize(toIntel(strokes));
+    // The question was asked when the pen was chosen; strokes that came before the answer wait for it.
+    if (!ready && !declined) await ask();
+    if (!ready) {
+      announce(t('ink.handwriting.off'));
+      return;
+    }
+    const recognition = await host.handwriting!.recognize(toIntel(strokes), false);
     if (!recognition || recognition.lines.length === 0) return;
     const edits: Edit[] = [];
     const underlines: InkStroke[] = [];
@@ -230,6 +264,7 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     note(strokes: readonly InkStroke[]): void {
       if (!handwritingAvailable(host)) return;
       pending.push(...strokes.map((stroke) => stroke.id));
+      if (!ready && !declined) void ask();
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => void run(), WRITING_IDLE_MS);
     },
@@ -250,6 +285,7 @@ export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | nu
     },
     destroy(): void {
       if (timer) clearTimeout(timer);
+      unsubscribe();
     },
   };
 }
