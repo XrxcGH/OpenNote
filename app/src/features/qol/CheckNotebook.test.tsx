@@ -6,7 +6,7 @@ import { userEvent } from 'vitest/browser';
 import { resetFakeShell, setFakeShell } from '../../platform/shellqol';
 import type { NodeId, NodeSummary } from '../../services/notes';
 import { pressChord, renderApp } from '../../test';
-import { pointToCheck } from '../protect/register';
+import { pointToCheck } from '../protect';
 import { openNotebookCheck, repairsFor } from './CheckNotebook';
 import { categoryOf } from './checkCategories';
 

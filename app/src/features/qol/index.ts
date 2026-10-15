@@ -13,3 +13,6 @@ export { openInNewTab } from './tabs';
 export const loadExternalNotice = () => import('./ExternalNotice');
 /** A page in a window of its own; it loads only in that window. */
 export const PageWindow = lazy(() => import('./PageWindow'));
+
+/** Check notebook loads when first needed. */
+export const loadCheckNotebook = () => import('./CheckNotebook');
