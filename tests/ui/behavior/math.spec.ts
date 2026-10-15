@@ -4,6 +4,18 @@
 import { expect, test } from '../fixtures';
 import { newLine, openSmart } from './smart';
 
+// These tests are about the LaTeX field. The visual editor is the default, and a person's last choice is kept, so they
+// start as someone who chose LaTeX. The visual editor has its own specs (intel-math-ink.spec.ts).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('opennote.math.visual', 'latex');
+    } catch {
+      // Storage is blocked, and the visual editor stays.
+    }
+  });
+});
+
 test('writes an inline equation with Alt+= and draws it', async ({ page }) => {
   await openSmart(page);
   await newLine(page);

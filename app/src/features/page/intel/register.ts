@@ -2,8 +2,8 @@
 // once start-up is done (registrations/intel.ts), so they cost nothing at start-up. The work loads on first use
 // (one module for each). The person's choices load here too, because read aloud picks its engine when reading starts.
 import { isEnabled } from '../../../app/flags';
-import { defineCommand } from '../../../commands/registry';
-import { commands } from '../../../registries';
+import { chord, defineCommand } from '../../../commands/registry';
+import { commandBar, commands } from '../../../registries';
 import { oneImageSelected } from '../images/shown';
 import { pageSelection } from '../seams/selectionStore';
 import { shownQueue } from '../sync/shown';
@@ -45,3 +45,64 @@ commands.register(
 );
 
 void import('../../intel').then((module) => module.loadApi()).then((api) => api.loadIntel());
+
+// The on-device transcriber behind "Make transcript", so a recording can become text on this device.
+if (isEnabled('intel.transcription') && isEnabled('transcripts.block')) {
+  void Promise.all([
+    import('../../intel').then((module) => module.loadApi()),
+    import('../audio/transcripts/engine'),
+  ]).then(([api, seam]) => seam.registerTranscriptEngine(api.onDeviceTranscriptEngine));
+}
+
+// Dictation (A2-24): press the button or Ctrl+Alt+V, talk, and the words are typed at the cursor.
+commands.register(
+  defineCommand({
+    id: 'intel.dictate',
+    title: 'intelMore.dictation.command',
+    keywords: 'intelMore.dictation.commandKeywords',
+    category: 'insert',
+    flag: 'intel.dictation',
+    keys: [chord('Ctrl+Alt+V')],
+    scope: 'editor',
+    allowInTextInput: true,
+    run: () => import('./dictation').then((module) => module.toggleDictate()),
+  }),
+);
+commandBar.register({
+  id: 'intel.dictate',
+  tab: 'home',
+  group: 'recording',
+  command: 'intel.dictate',
+  flag: 'intel.dictation',
+  priority: 60,
+});
+
+// Live captions (A2-25) follow a recording once the person turned them on in Settings, then Recording.
+if (isEnabled('intel.liveCaptions') && isEnabled('intel.transcription')) {
+  void import('./captions').then((module) => module.installLiveCaptions());
+}
+
+// Handwriting to math (A1-28): lasso the writing, then Convert handwriting to math.
+commands.register(
+  defineCommand({
+    id: 'intel.convertToMath',
+    title: 'intelMore.math.command',
+    keywords: 'intelMore.math.commandKeywords',
+    category: 'object',
+    flag: 'intel.mathInk',
+    when: () => isEnabled('intel.mathInk') && pageSelection.get().strokes.length > 0,
+    run: () => import('./mathInk').then((module) => module.convertToMath()),
+  }),
+);
+
+// Translate on this device (A3-25): a selection, the page, or a transcript, added below the original.
+commands.register(
+  defineCommand({
+    id: 'intel.translate',
+    title: 'intelMore.translate.command',
+    keywords: 'intelMore.translate.commandKeywords',
+    category: 'view',
+    flag: 'intel.translate',
+    run: () => import('./translate').then((module) => module.translateHere()),
+  }),
+);

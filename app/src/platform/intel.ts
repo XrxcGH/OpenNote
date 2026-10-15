@@ -1,9 +1,7 @@
 // Where the intel client gets its transport and the person's choices (Phase 12). The build picks one, like
 // platform/index.ts: the Tauri shell asks the Rust crate, and the web platform answers with the fake, which keeps
-// the choices and the device store's files in this browser so a reload remembers them. Nothing here touches a
-// network.
+// the choices in this browser so a reload remembers them. Nothing here touches a network.
 import type { IntelSettings, IntelTransport } from '../services/intel';
-import type { ExtFiles } from '../services/intel/extFake';
 
 export interface IntelHost {
   transport: IntelTransport;
@@ -31,33 +29,48 @@ function remember(settings: IntelSettings): void {
   }
 }
 
-/** Where the web platform keeps the device store's files: one browser storage item each. */
-export const DEVICE_FILE_PREFIX = 'opennote.device.';
+const STORE_KEY = 'opennote.intel.store';
+const MODELS_KEY = 'opennote.intel.models';
+const PREVIEW_TICK_MS = 150;
+const PREVIEW_BYTES_PER_TICK = 60_000_000;
 
-/**
- * The device store's files in the browser's storage, so they outlast a reload as the shell's device folder does.
- * A write the browser refuses (it is full) throws, so the caller reports it.
- */
-export function browserFiles(storage: Storage = localStorage): ExtFiles {
-  const key = (name: string) => DEVICE_FILE_PREFIX + name;
-  return {
-    get: (name) => storage.getItem(key(name)) ?? undefined,
-    set: (name, text) => storage.setItem(key(name), text),
-    delete: (name) => storage.removeItem(key(name)),
-    keys() {
-      const found: string[] = [];
-      for (let i = 0; i < storage.length; i++) {
-        const one = storage.key(i);
-        if (one?.startsWith(DEVICE_FILE_PREFIX)) found.push(one.slice(DEVICE_FILE_PREFIX.length));
-      }
-      return found;
-    },
-  };
-}
+const storePersistence = {
+  load(): Record<string, string> {
+    try {
+      return JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}') as Record<string, string>;
+    } catch {
+      return {};
+    }
+  },
+  loadInstalled(): string[] {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(MODELS_KEY) ?? '[]');
+      return Array.isArray(saved) ? saved.filter((one): one is string => typeof one === 'string') : [];
+    } catch {
+      return [];
+    }
+  },
+  saveInstalled(ids: readonly string[]): void {
+    try {
+      localStorage.setItem(MODELS_KEY, JSON.stringify(ids));
+    } catch {
+      // A browser that won't store them just forgets them at the next reload.
+    }
+  },
+  save(files: ReadonlyMap<string, string>): void {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(Object.fromEntries(files)));
+    } catch {
+      // A browser that won't store them just forgets them at the next reload.
+    }
+  },
+};
 
 async function webHost(): Promise<IntelHost> {
   const { createFakeIntelTransport } = await import('../services/intel/fake');
-  const transport = createFakeIntelTransport({ settings: remembered(), files: browserFiles() });
+  const transport = createFakeIntelTransport({ settings: remembered(), persistence: storePersistence });
+  // A model "downloads" here in a few seconds without touching a network, so the screens can be tried in a browser.
+  setInterval(() => transport.ext.tick(PREVIEW_BYTES_PER_TICK), PREVIEW_TICK_MS);
   const current = async () => {
     const status = await transport.invoke('intel_status', {});
     return Object.fromEntries(status.map((one) => [one.feature, one.enabled])) as unknown as IntelSettings;

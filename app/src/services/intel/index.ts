@@ -7,7 +7,11 @@ export type { IntelClient, SpokenText } from './client';
 export { IntelClientError, isIntelError, toIntelError } from './errors';
 export { createIntelExt, ExtError, toExtError } from './ext';
 export type {
+  CloudFeature,
+  CloudStatus,
+  EngineInfo,
   ExtErrorCode,
+  GenerateOptions,
   IntelExt,
   ModelInfo,
   ModelList,

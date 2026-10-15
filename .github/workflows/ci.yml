@@ -161,6 +161,33 @@ jobs:
           path: tests/perf/typing/results
           retention-days: 30
 
+  native-engines:
+    # whisper.cpp, ONNX Runtime, and the language model program need CMake, a C++ compiler, and libclang, so the other
+    # jobs leave them out. This one builds and tests them on Windows, where the release builds them.
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Clippy
+        env:
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+        run: |
+          cargo clippy -p opennote-intel-engines --all-targets --features whisper-cpp,onnx -- -D warnings
+          cargo clippy -p opennote-llm --all-targets --features llama -- -D warnings
+      - name: Tests
+        env:
+          LIBCLANG_PATH: C:\Program Files\LLVM\bin
+        run: |
+          cargo test -p opennote-intel-engines --features whisper-cpp,onnx
+          cargo test -p opennote-llm --features llama
+
   windows-app:
     # Rust checks and a test build of the desktop app on Windows, the first target platform.
     runs-on: windows-latest

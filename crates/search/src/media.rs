@@ -260,6 +260,29 @@ mod tests {
     }
 
     #[test]
+    fn a_locked_page_keeps_no_handwriting_or_transcript_even_in_the_file() {
+        let dir = std::env::temp_dir().join(format!("opennote-media-locked-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("media-text.json");
+        let media = MediaText::new();
+        media.attach(&file);
+        media.set(page(), block(1), MediaKind::Handwriting, "hidden pen words");
+        media.set(page(), block(2), MediaKind::Transcript, "hidden spoken words");
+        assert!(std::fs::read_to_string(&file).unwrap().contains("hidden spoken words"));
+        let mut locked = doc(true);
+        locked.blocks.clear();
+        media.apply(&mut locked);
+        assert!(locked.blocks.is_empty());
+        let kept = std::fs::read_to_string(&file).unwrap();
+        assert!(!kept.contains("hidden pen words") && !kept.contains("hidden spoken words"));
+        // A recognition that arrives later for a page that is still locked is dropped at the next apply.
+        media.set(page(), block(3), MediaKind::Transcript, "late words");
+        media.apply(&mut locked);
+        assert!(media.blocks(page()).is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn survives_a_restart_through_its_file() {
         let dir = std::env::temp_dir().join(format!("opennote-media-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();

@@ -32,7 +32,10 @@ describe('sizes', () => {
 describe('downloads', () => {
   it('lists the models with their sizes before anything downloads', async () => {
     const list = await refreshModels();
-    expect(list?.models.map((model) => model.state)).toEqual(['notInstalled', 'notInstalled', 'notInstalled']);
+    expect(new Set(list?.models.map((model) => model.state))).toEqual(new Set(['notInstalled']));
+    expect(new Set(list?.models.map((model) => model.kind))).toEqual(
+      new Set(['speech', 'language', 'meaning', 'translate']),
+    );
     expect(modelById('speech-base-en')?.sizeBytes).toBe(147_964_211);
     expect(host.transport.ext.calls).toEqual(['models.list']);
   });

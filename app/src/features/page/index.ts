@@ -6,6 +6,7 @@ export { installPages } from './runtime';
 export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from './pagesApi';
 export type { MountedPage, MountedPageHook } from './pagesApi';
 export { shownQueue } from './sync/shown';
+export { shownStrokes } from './seams/inkStrokes';
 export { pageSelection } from './seams/selectionStore';
 export { shownPaper } from './seams/paper';
 export { usePrefs as usePageExtrasPrefs } from './qol/prefs';

@@ -44,6 +44,8 @@ import { storage } from './storage';
 import { connectors } from './connectors';
 import { platformApi } from './platformApi';
 import { pdf } from './pdf';
+import { intelSpeech } from './intelSpeech';
+import { intelMore } from './intelMore';
 
 export const en = {
   common,
@@ -90,4 +92,6 @@ export const en = {
   connectors,
   platformApi,
   pdf,
+  intelSpeech,
+  intelMore,
 } as const;

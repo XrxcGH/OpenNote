@@ -21,6 +21,33 @@ export async function startWith(page: Page, on: Feature[]): Promise<void> {
   );
 }
 
+type StreamUpdate =
+  | { kind: 'listening' }
+  | { kind: 'final'; text: string; startMs: number; endMs: number; behindMs: number }
+  | { kind: 'ended'; error: string | null };
+
+interface StreamHook {
+  send(update: StreamUpdate): void;
+  requests(): readonly { purpose: string }[];
+}
+
+/** Plays an update from the speech engine into every open dictation or caption session, as the shell would. */
+export async function sendSpeech(page: Page, update: StreamUpdate): Promise<void> {
+  await page.evaluate(
+    (one) => (window as unknown as { __opennoteFakeStream: StreamHook }).__opennoteFakeStream.send(one),
+    update,
+  );
+}
+
+/** The purposes of the speech sessions the page has opened so far. */
+export async function speechSessions(page: Page): Promise<string[]> {
+  return page.evaluate(() =>
+    (window as unknown as { __opennoteFakeStream: StreamHook }).__opennoteFakeStream
+      .requests()
+      .map((one) => one.purpose),
+  );
+}
+
 /** Opens the Membranes page of the sample library, and waits for its text box, which loads after the heading. */
 export async function openMembranes(page: Page): Promise<void> {
   await page.goto('/');

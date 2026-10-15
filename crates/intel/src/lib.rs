@@ -64,12 +64,15 @@ pub mod ink;
 pub mod mock;
 pub mod ocr;
 pub mod settings;
+pub mod speakers;
 pub mod speech;
+pub mod stream;
 pub mod summarize;
 pub mod text;
 pub mod tidy;
 pub mod transcribe;
 pub mod vocabulary;
+pub mod whisper;
 pub mod wire;
 
 pub use engines::{Engines, FeatureStatus};

@@ -4,7 +4,10 @@ const extras = { mediaBlocks: vi.fn(), setMediaText: vi.fn() };
 const api = { searchTextReady: vi.fn(), searchTextInImage: vi.fn() };
 vi.mock('../client', () => ({ maybeSearchClient: () => ({ extras }) }));
 vi.mock('../../intel', () => ({ loadApi: async () => api }));
-vi.mock('../../page', () => ({ shownMounted: { get: () => null, subscribe: () => () => undefined } }));
+vi.mock('../../page', () => ({
+  shownMounted: { get: () => null, subscribe: () => () => undefined },
+  shownStrokes: () => [],
+}));
 vi.mock('../../../app/flags', () => ({ isEnabled: () => true }));
 
 const { MAX_FAILURES, resetIndexer, scan } = await import('./indexer');

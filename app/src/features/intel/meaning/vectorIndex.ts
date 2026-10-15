@@ -35,6 +35,12 @@ export interface PageInput {
   title: string;
   modified: string;
   chunks: readonly { block: string | null; text: string }[];
+  /**
+   * Vectors worked out ahead, such as by a model that runs apart from this code: one for the title and one for each
+   * paragraph, in the order of `chunks`, which must hold no empty paragraph. Without them the index's own embedder
+   * makes them.
+   */
+  vectors?: { title: Float32Array; chunks: readonly Float32Array[] };
 }
 
 /** The least score a match needs to be listed. */
@@ -57,18 +63,19 @@ export function createVectorIndex(embedder: Embedder = { name: 'built in', dim: 
   const build = (input: PageInput): IndexedPage => {
     const chunks = input.chunks
       .filter((chunk) => chunk.text.trim() !== '')
-      .map((chunk) => {
+      .map((chunk, at) => {
         const text = chunk.text.slice(0, MAX_CHUNK_CHARS);
-        return { block: chunk.block, text, vector: embedder.embed(text) };
+        return { block: chunk.block, text, vector: input.vectors?.chunks[at] ?? embedder.embed(text) };
       });
-    const sum = new Float32Array(embedder.dim);
+    const titleVector = input.vectors?.title ?? embedder.embed(input.title);
+    const sum = new Float32Array(titleVector.length);
     for (const chunk of chunks) chunk.vector.forEach((v, i) => (sum[i] = (sum[i] ?? 0) + v));
     return {
       id: input.id,
       title: input.title,
       modified: input.modified,
       chunks,
-      titleVector: embedder.embed(input.title),
+      titleVector,
       centroid: unit(sum),
     };
   };

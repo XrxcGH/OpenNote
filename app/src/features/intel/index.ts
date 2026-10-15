@@ -21,3 +21,9 @@ export { useModelDownloadsLastRan } from './models/lastRan';
 
 /** The store for what the interface keeps on this device (the shell's device folder), loaded on first use. */
 export const deviceStore = () => import('./runtime').then((module) => module.intelExt());
+
+/** Which features use a cloud service with the person's own key, for the Privacy panel. */
+export { useCloudKeyUse } from './cloud/lastRan';
+
+/** Test helpers (a host over the fake transport), for other features' tests. Loaded only when a test asks. */
+export const loadTesting = () => import('./testing');

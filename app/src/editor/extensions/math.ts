@@ -8,18 +8,47 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import type { NodeView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
-import type { EditorHost, MathActionResult, MathRenderer } from '../host';
+import type { EditorHost, MathActionResult, MathRenderer, VisualMathField } from '../host';
 import { META_COMMAND } from '../meta';
+import { createPenPad } from './mathPen';
+import type { PenPad } from './mathPen';
 import { MathBlock, MathInline } from '../schema/nodes';
 import styles from './content.module.css';
 import drawn from './mathDrawn.module.css';
 
 const views = new WeakMap<Element, MathView>();
+const MODE_KEY = 'opennote.math.visual';
+
+/** Whether the person last edited equations visually. A choice kept in the browser, and visual until they pick LaTeX. */
+function prefersVisual(): boolean {
+  try {
+    return localStorage.getItem(MODE_KEY) !== 'latex';
+  } catch {
+    return true;
+  }
+}
+
+function rememberMode(visual: boolean): void {
+  try {
+    localStorage.setItem(MODE_KEY, visual ? 'visual' : 'latex');
+  } catch {
+    // The choice lasts until the page is closed.
+  }
+}
+
+type Field = HTMLInputElement | HTMLTextAreaElement | (HTMLElement & { value: string });
 
 class MathView implements NodeView {
   dom: HTMLElement;
   private shown: HTMLElement;
-  private field: HTMLInputElement | HTMLTextAreaElement | null = null;
+  private field: Field | null = null;
+  private visual: VisualMathField | null = null;
+  private toggle: HTMLButtonElement | null = null;
+  private penButton: HTMLButtonElement | null = null;
+  private pad: PenPad | null = null;
+  private swapping = false;
+  /** Handwriting is being read, so the field keeps its place while a dialog may take focus. */
+  private recognizing = false;
   private preview: HTMLElement | null = null;
   private problem: HTMLElement | null = null;
   private holder: HTMLElement | null = null;
@@ -83,22 +112,113 @@ class MathView implements NodeView {
   /** Opens the source field. */
   open(): void {
     if (this.field || !this.editor.isEditable) return;
-    const field = document.createElement(this.display ? 'textarea' : 'input');
-    field.className = styles.mathField;
-    field.value = this.source();
-    field.setAttribute('aria-label', t('editor.math.field'));
-    field.addEventListener('keydown', (event) => this.onKey(event as KeyboardEvent));
-    field.addEventListener('input', () => this.showPreview());
-    // Tab moves on to Simplify and Solve in the panel under the field; leaving the equation entirely saves it.
-    field.addEventListener('blur', (event) => {
-      if (!this.holder?.contains((event as FocusEvent).relatedTarget as Node | null)) this.close(true);
-    });
+    const field = this.plainField(this.source());
     this.field = field;
+    // The paragraph stops clipping its drawing while the equation is open, so the preview and actions that float under
+    // the equation are seen and can be pressed (blocks.module.css).
+    this.dom.setAttribute('data-math-editing', '');
     this.shown.hidden = true;
     this.dom.append(field);
     if (this.renderer) this.addPreview(field);
     field.focus();
     field.select();
+  }
+
+  private plainField(value: string): HTMLInputElement | HTMLTextAreaElement {
+    const field = document.createElement(this.display ? 'textarea' : 'input');
+    field.className = styles.mathField;
+    field.value = value;
+    field.setAttribute('aria-label', t('editor.math.field'));
+    this.wire(field);
+    return field;
+  }
+
+  private wire(field: Field): void {
+    field.addEventListener('keydown', (event) => this.onKey(event as KeyboardEvent));
+    field.addEventListener('input', () => this.showPreview());
+    // Tab moves on to Simplify and Solve in the panel under the field; leaving the equation entirely saves it.
+    field.addEventListener('blur', (event) => {
+      if (this.swapping || this.recognizing) return;
+      if (!this.holder?.contains((event as FocusEvent).relatedTarget as Node | null)) this.close(true);
+    });
+  }
+
+  /** Swaps the open field for the visual editor or back, keeping what was typed. */
+  private async swap(toVisual: boolean): Promise<void> {
+    const old = this.field;
+    const make = this.renderer?.visual;
+    if (!old) return;
+    const value = this.visual ? this.visual.value : old.value;
+    let next: Field;
+    let visual: VisualMathField | null = null;
+    if (toVisual) {
+      if (!make) return;
+      try {
+        visual = await make.create({ value, label: t('editor.math.visualField'), display: this.display });
+      } catch {
+        this.host.announce(t('editor.math.visualFailed'));
+        return;
+      }
+      if (this.field !== old) return;
+      next = visual.element as Field;
+      next.classList.add(styles.mathField);
+      this.wire(next);
+    } else {
+      next = this.plainField(value);
+    }
+    // The old field leaves without saving, because the new one holds the same equation.
+    this.swapping = true;
+    old.replaceWith(next);
+    this.swapping = false;
+    this.field = next;
+    this.visual = visual;
+    rememberMode(toVisual);
+    this.updateToggle();
+    this.showPreview();
+    next.focus();
+    if (next instanceof HTMLInputElement || next instanceof HTMLTextAreaElement) next.select();
+  }
+
+  /** Opens the writing area under the equation. */
+  private openPad(holder: HTMLElement): void {
+    const recognize = this.renderer?.pen?.recognize;
+    if (!recognize || this.pad || !this.visual) return;
+    const pad = createPenPad(() => {
+      const strokes = pad.strokes();
+      const visual = this.visual;
+      if (strokes.length === 0 || !visual) return;
+      // Reading handwriting may ask the person to turn it on first, and that dialog takes focus from the field. The
+      // field stays open meanwhile, or the equation would close and save before the answer came back.
+      this.recognizing = true;
+      void recognize(strokes)
+        .finally(() => {
+          this.recognizing = false;
+        })
+        .then((latex) => {
+          if (!latex || !this.visual) {
+            this.host.announce(t('intelMore.math.penNone'));
+            return;
+          }
+          visual.insert(latex);
+          pad.clear();
+          this.showPreview();
+        });
+    });
+    this.pad = pad;
+    holder.classList.add(drawn.holderPadOpen);
+    holder.append(pad.element);
+  }
+
+  private closePad(): void {
+    this.pad?.element.parentElement?.classList.remove(drawn.holderPadOpen);
+    this.pad?.element.remove();
+    this.pad = null;
+  }
+
+  private updateToggle(): void {
+    if (this.toggle) this.toggle.textContent = t(this.visual ? 'editor.math.useLatex' : 'editor.math.useVisual');
+    if (this.penButton) this.penButton.hidden = !this.visual;
+    if (!this.visual) this.closePad();
   }
 
   private addPreview(field: HTMLElement): void {
@@ -118,6 +238,27 @@ class MathView implements NodeView {
     problem.className = drawn.problem;
     problem.setAttribute('role', 'status');
     holder.append(preview, problem);
+    if (this.renderer?.visual) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = drawn.toggle;
+      // A press must not take focus from the field, or the field would close and save.
+      toggle.addEventListener('mousedown', (event) => event.preventDefault());
+      toggle.addEventListener('click', () => void this.swap(!this.visual));
+      this.toggle = toggle;
+      holder.append(toggle);
+      if (this.renderer.pen) {
+        const pen = document.createElement('button');
+        pen.type = 'button';
+        pen.className = drawn.toggle;
+        pen.textContent = t('intelMore.math.penWrite');
+        pen.addEventListener('mousedown', (event) => event.preventDefault());
+        pen.addEventListener('click', () => (this.pad ? this.closePad() : this.openPad(holder)));
+        this.penButton = pen;
+        holder.append(pen);
+      }
+      this.updateToggle();
+    }
     const actions = this.renderer?.actions;
     if (actions) {
       const bar = document.createElement('div');
@@ -140,12 +281,13 @@ class MathView implements NodeView {
     this.holder = holder;
     field.after(holder);
     this.showPreview();
+    if (this.renderer?.visual && prefersVisual() && !this.visual) void this.swap(true);
   }
 
   private showPreview(): void {
     const { field, preview, problem } = this;
     if (!field || !preview || !problem) return;
-    const drawing = this.draw(field.value);
+    const drawing = this.draw(this.visual ? this.visual.value : field.value);
     field.setAttribute('aria-invalid', String(drawing !== null && !drawing.ok));
     preview.hidden = !drawing?.ok;
     if (drawing?.ok) preview.innerHTML = drawing.html;
@@ -170,9 +312,10 @@ class MathView implements NodeView {
   private act(run: (latex: string) => MathActionResult): void {
     const field = this.field;
     if (!field) return;
-    const result = run(field.value);
+    const result = run(this.visual ? this.visual.value : field.value);
     if (result.ok) {
-      field.value = result.latex;
+      if (this.visual) this.visual.value = result.latex;
+      else field.value = result.latex;
       this.showPreview();
       this.host.announce(t('smart.math.done'));
     } else this.host.announce(t(`smart.math.${result.reason}`));
@@ -194,8 +337,15 @@ class MathView implements NodeView {
     const field = this.field;
     if (!field) return;
     this.field = null;
-    const source = field.value;
+    this.dom.removeAttribute('data-math-editing');
+    const source = this.visual ? this.visual.value : field.value;
     rememberClosed(this);
+    if (save && this.visual && source.trim() !== '')
+      this.host.announce(t('editor.math.spoken', { text: this.visual.spoken() }));
+    this.closePad();
+    this.visual = null;
+    this.toggle = null;
+    this.penButton = null;
     field.remove();
     this.holder?.remove();
     this.preview = this.problem = this.holder = null;
@@ -220,9 +370,11 @@ class MathView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    // Keys and focus inside the field and its panel (Tab to Simplify and Solve) are not the editor's.
-    const target = event.target as Node | null;
-    return this.field !== null && (target === this.field || Boolean(this.holder?.contains(target)));
+    if (this.field === null) return false;
+    // Keys and focus inside the field and its panel (Tab to Simplify and Solve, writing in the pen pad) are not the
+    // editor's: it would take focus and close the equation.
+    const target = event.target instanceof Node ? event.target : null;
+    return target === this.field || Boolean(target && this.holder?.contains(target));
   }
 
   ignoreMutation(): boolean {

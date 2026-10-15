@@ -156,7 +156,16 @@ type IntelFlagId =
   | 'intel.handwritingExtras'
   | 'intel.meaning'
   | 'intel.ask'
-  | 'intel.writing';
+  | 'intel.writing'
+  | 'intel.transcription'
+  | 'intel.autoTranscripts'
+  | 'intel.cloudKeys'
+  | 'math.visualEditor'
+  | 'intel.speakers'
+  | 'intel.dictation'
+  | 'intel.liveCaptions'
+  | 'intel.mathInk'
+  | 'intel.translate';
 
 type Phase5FlagId =
   | 'ink.core'

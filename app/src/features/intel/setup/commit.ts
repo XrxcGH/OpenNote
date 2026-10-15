@@ -5,6 +5,8 @@ import { t } from '../../../strings/t';
 import { showToast } from '../../../ui';
 import { setFeature } from '../runtime';
 import { chooseSpeechModel, startModel } from '../models/store';
+import { isEnabled } from '../../../app/flags';
+import { loadCloud, usesCloud } from '../cloud/store';
 import { CHOOSABLE, featuresOn, speechModelToDownload } from './choices';
 import type { SmartDraft } from './choices';
 
@@ -26,7 +28,9 @@ export async function commitSmartFeatures(_ctx: SetupContext, draft: SetupDraft)
       failed = true;
     }
   }
-  const model = speechModelToDownload(smart);
+  // Transcription with the person's own cloud key needs no model on this device.
+  const cloud = isEnabled('intel.cloudKeys') ? await loadCloud().catch(() => null) : null;
+  const model = cloud && usesCloud('transcription', cloud) ? null : speechModelToDownload(smart);
   if (model) {
     try {
       await chooseSpeechModel(model);

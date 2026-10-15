@@ -204,13 +204,13 @@ fn status_tells_the_settings_screen_what_is_on_and_what_exists() {
     let of = |feature| status.iter().find(|s| s.feature == feature).unwrap();
     assert!(of(Feature::Summaries).enabled && of(Feature::Summaries).available);
     assert!(!of(Feature::Ocr).enabled && of(Feature::Ocr).available);
-    // No transcription engine is installed yet, and the screen says so.
+    // No speech model is downloaded yet, and the screen says so.
     assert!(of(Feature::Transcription).enabled && !of(Feature::Transcription).available);
     assert!(of(Feature::Transcription)
         .unavailable_reason
         .as_deref()
         .unwrap()
-        .contains("transcription"));
+        .contains("speech model"));
 }
 
 #[test]

@@ -28,8 +28,15 @@ use crate::{
     settings::file::write_json,
 };
 
+pub(crate) mod caption_style;
+mod catalog;
+mod cloud;
 mod ext;
+mod llm;
 mod models;
+mod native;
+pub(crate) mod stream;
+pub(crate) mod transcribe;
 
 #[cfg(test)]
 mod tests;
@@ -101,6 +108,10 @@ struct Inner {
     engines: OnceLock<RwLock<Engines>>,
     hub: SpeechHub,
     ext: ext::Ext,
+    /// This device's folder, which holds the downloaded models.
+    device: PathBuf,
+    /// The transcription jobs, made on the first one, when the app handle for their events is known.
+    transcribe: OnceLock<opennote_intel::wire::TranscribeHub>,
 }
 
 /// The app's on-device intelligence: the person's choices, the engines behind them, and the read-aloud hub.
@@ -108,19 +119,30 @@ struct Inner {
 pub struct IntelState(Arc<Inner>);
 
 impl IntelState {
+    /// The cloud calls with the person's own keys (A1-33).
+    pub fn cloud(&self) -> &cloud::Cloud {
+        self.0.ext.cloud()
+    }
+
     pub fn new(paths: &Paths) -> IntelState {
         IntelState::at(paths.local.join(FILE_NAME))
     }
 
     fn at(file: PathBuf) -> IntelState {
+        // Whisper.cpp, when this build carries it, takes over speech from the pure Rust reader. It is gated like
+        // every other engine: nothing runs until the person turns transcription on.
+        opennote_intel_engines::install();
         let settings = load(&file);
-        let ext = ext::Ext::new(file.parent().unwrap_or_else(|| Path::new(".")));
+        let device = file.parent().unwrap_or_else(|| Path::new(".")).to_path_buf();
+        let ext = ext::Ext::new(&device);
         IntelState(Arc::new(Inner {
             file,
             settings: Mutex::new(settings),
             engines: OnceLock::new(),
             hub: SpeechHub::new(),
             ext,
+            device,
+            transcribe: OnceLock::new(),
         }))
     }
 
@@ -138,10 +160,32 @@ impl IntelState {
             None => {
                 // Made while holding the choices, so a change that lands meanwhile waits and then updates them.
                 let settings = self.0.settings.lock().unwrap_or_else(PoisonError::into_inner);
-                self.0.engines.get_or_init(|| RwLock::new(Engines::platform(*settings)))
+                self.0.engines.get_or_init(|| {
+                    let mut engines = Engines::platform(*settings);
+                    engines.set_speech_model(transcribe::installed_speech_model(&self.0.device).as_deref());
+                    RwLock::new(engines)
+                })
             }
         };
         engines.read().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// This device's folder.
+    fn device(&self) -> &Path {
+        &self.0.device
+    }
+
+    /// Makes `model` the speech model the engines use, if it isn't already.
+    fn use_speech_model(&self, model: &Path) {
+        // Make the engines first, so the change below lands on them.
+        drop(self.engines());
+        let engines = self.0.engines.get();
+        if let Some(engines) = engines {
+            let mut engines = engines.write().unwrap_or_else(PoisonError::into_inner);
+            if engines.speech_model().as_deref() != Some(model) {
+                engines.set_speech_model(Some(model));
+            }
+        }
     }
 
     /// What the person has turned on.

@@ -25,13 +25,21 @@ export const CHOOSABLE: readonly Feature[] = ['ocr', 'handwriting', 'readAloud',
 
 export const NOT_NOW: SmartDraft = { mode: 'notNow', features: {}, speechModel: null };
 
-/** The draft as it stands when the person picks a mode. */
-export function draftForMode(mode: SmartMode, current: SmartDraft): SmartDraft {
+/**
+ * What Recommended turns on here. Transcription is claimed only when this build has a speech engine to run it,
+ * so Recommended never promises a feature that would do nothing.
+ */
+export function recommendedFeatures(speechEngine = true): Feature[] {
+  return RECOMMENDED.filter((feature) => speechEngine || feature !== 'transcription');
+}
+
+/** The draft as it stands when the person picks a mode. `speechEngine` says whether transcription can run here. */
+export function draftForMode(mode: SmartMode, current: SmartDraft, speechEngine = true): SmartDraft {
   if (mode === 'recommended') {
     return {
       mode,
-      features: Object.fromEntries(RECOMMENDED.map((feature) => [feature, true])),
-      speechModel: current.speechModel ?? RECOMMENDED_SPEECH_MODEL,
+      features: Object.fromEntries(recommendedFeatures(speechEngine).map((feature) => [feature, true])),
+      speechModel: speechEngine ? (current.speechModel ?? RECOMMENDED_SPEECH_MODEL) : null,
     };
   }
   if (mode === 'custom') {
@@ -43,7 +51,7 @@ export function draftForMode(mode: SmartMode, current: SmartDraft): SmartDraft {
 /** The features this draft turns on. */
 export function featuresOn(draft: SmartDraft): Feature[] {
   if (draft.mode === 'notNow') return [];
-  if (draft.mode === 'recommended') return [...RECOMMENDED];
+  if (draft.mode === 'recommended') return RECOMMENDED.filter((feature) => draft.features[feature]);
   return CHOOSABLE.filter((feature) => draft.features[feature]);
 }
 

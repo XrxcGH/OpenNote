@@ -9,6 +9,7 @@ import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import type { MessageKey } from '../../strings/t';
 import { announce, Button, Switch } from '../../ui';
+import { CloudChoice } from './cloud/CloudChoice';
 import styles from './intel.module.css';
 import { intelState } from './choices';
 import PlusSection from './PlusSection';
@@ -20,6 +21,7 @@ const FLAG = {
   handwriting: 'intel.handwriting',
   readAloud: 'intel.readAloud',
   summaries: 'intel.summaries',
+  transcription: 'intel.transcription',
 } as const satisfies Record<OnDeviceFeature, FlagId>;
 
 const TEXT = {
@@ -43,6 +45,11 @@ const TEXT = {
     help: 'intel.settings.summaries.help',
     needs: 'intel.settings.needsGeneric',
   },
+  transcription: {
+    label: 'intel.settings.transcription.label',
+    help: 'intel.settings.transcription.help',
+    needs: 'intel.problems.speechModelMissing',
+  },
 } as const satisfies Record<OnDeviceFeature, { label: MessageKey; help: MessageKey; needs: MessageKey }>;
 
 /** The Windows page that adds what a feature is missing. */
@@ -60,6 +67,7 @@ function openWindowsSettings(page: 'speech' | 'language'): void {
 
 function FeatureRow({ feature }: { feature: OnDeviceFeature }) {
   const shown = useFlag(FLAG[feature]);
+  const cloudKeys = useFlag('intel.cloudKeys');
   const on = useStore(intelState, (state) => state.choices[feature]);
   const status = useStore(intelState, (state) => state.status?.find((one) => one.feature === feature) ?? null);
   const helpId = useId();
@@ -98,6 +106,9 @@ function FeatureRow({ feature }: { feature: OnDeviceFeature }) {
         <div className={styles.actions}>
           <Button onClick={() => openWindowsSettings(fix.page)}>{t(fix.label)}</Button>
         </div>
+      )}
+      {on && cloudKeys && (feature === 'transcription' || feature === 'summaries') && (
+        <CloudChoice feature={feature} name={t(text.label)} />
       )}
     </li>
   );

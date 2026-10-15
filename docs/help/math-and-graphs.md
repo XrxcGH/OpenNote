@@ -7,8 +7,10 @@ Write equations, work out sums in your text, and plot functions on a page.
 ## Equations
 
 - Type `$x^2$` in text, or open Insert, then Equation. Type the equation as LaTeX and press Enter. It renders, and you can edit it.
+- When you open an equation, it opens in a visual editor with its own math keyboard, which also works with touch and pen. Choose Edit as LaTeX to type the source instead. OpenNote remembers your choice. A screen reader speaks the equation when you finish. Pages keep the same LaTeX either way.
 - Select an equation and choose Solve or Simplify. Solve needs an equation with exactly one letter in it.
 - If an action cannot read your LaTeX, it says so and leaves the equation alone.
+- To turn handwriting into an equation, lasso the writing, and choose Convert handwriting to math. The equation is added below the page and the ink stays. Or open an equation, choose Write with pen, write it, and choose Use writing. It needs handwriting recognition turned on, and Windows must have a handwriting recognizer for your language.
 
 ## Quick math
 
@@ -29,4 +31,4 @@ Open Insert, then Graph. Type a function, such as `y = sin(x)`. Pan and zoom the
 
 Press Ctrl+K and choose Calculator or Unit converter. Each opens in its own small window. See [study tools](study-tools.md).
 
-Math, the grapher, and diagrams are built and have been checked by automated tests only. Turning handwritten math into an equation is not built yet.
+Math, the grapher, and diagrams are built and have been checked by automated tests only. Turning handwritten math into an equation is built, but it reads fractions, roots, exponents, integrals, and matrices from how the strokes are laid out, so write each part clearly apart from the next.

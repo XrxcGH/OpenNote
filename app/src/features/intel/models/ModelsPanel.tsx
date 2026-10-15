@@ -9,6 +9,7 @@ import styles from '../plus.module.css';
 import {
   anyDownloading,
   cancelModel,
+  chooseLanguageModel,
   chooseSpeechModel,
   describeModelError,
   downloadModel,
@@ -17,6 +18,7 @@ import {
   POLL_MS,
   refreshModels,
   removeModel,
+  selectedLanguageModel,
   selectedSpeechModel,
 } from './store';
 
@@ -37,8 +39,8 @@ function stateLine(model: ModelInfo): string {
   }
 }
 
-function ModelRow(props: { model: ModelInfo; selected: boolean; onSelect(id: string): void }) {
-  const { model, selected, onSelect } = props;
+function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id: string) => void }) {
+  const { model, selected = false, onSelect } = props;
   const nameId = useId();
   const size = formatSize(model.sizeBytes);
   const busy = model.state === 'downloading';
@@ -91,12 +93,14 @@ function ModelRow(props: { model: ModelInfo; selected: boolean; onSelect(id: str
             {t('intelPlus.models.cancel')}
           </Button>
         )}
-        {model.state === 'installed' && !selected && (
+        {model.state === 'installed' && onSelect && !selected && (
           <Button variant="secondary" onClick={() => onSelect(model.id)}>
             {t('intelPlus.models.use')}
           </Button>
         )}
-        {model.state === 'installed' && selected && <span className={styles.label}>{t('intelPlus.models.inUse')}</span>}
+        {model.state === 'installed' && onSelect && selected && (
+          <span className={styles.label}>{t('intelPlus.models.inUse')}</span>
+        )}
         {(model.state === 'installed' || model.state === 'partial' || model.state === 'failed') && (
           <Button
             variant="quiet"
@@ -111,14 +115,31 @@ function ModelRow(props: { model: ModelInfo; selected: boolean; onSelect(id: str
   );
 }
 
+/** A heading, a line of help, and a list of models. Left out when the shell lists no model of the kind. */
+function ModelGroup(props: { heading: string; help: string; children: React.ReactNode[] }) {
+  const { heading, help, children } = props;
+  if (children.length === 0) return null;
+  return (
+    <>
+      <h3 className={styles.label}>{heading}</h3>
+      <p className={styles.help}>{help}</p>
+      <ul className={styles.list} aria-label={heading}>
+        {children}
+      </ul>
+    </>
+  );
+}
+
 export default function ModelsPanel() {
   const list = useStore(modelsState, (state) => state.list);
   const [selected, setSelected] = useState<string | null>(null);
+  const [language, setLanguage] = useState<string | null>(null);
   const headingId = useId();
   const downloading = anyDownloading(list);
   useEffect(() => {
     void refreshModels();
     void selectedSpeechModel().then(setSelected);
+    void selectedLanguageModel().then(setLanguage);
   }, []);
   useEffect(() => {
     if (!downloading) return;
@@ -130,7 +151,21 @@ export default function ModelsPanel() {
     void chooseSpeechModel(id).catch(() => undefined);
     announce(t('intelPlus.models.inUse'));
   };
-  const speech = list?.models.filter((one) => one.kind === 'speech') ?? [];
+  const chooseLanguage = (id: string) => {
+    setLanguage(id);
+    void chooseLanguageModel(id).catch(() => undefined);
+    announce(t('intelPlus.models.inUse'));
+  };
+  const of = (kind: string) => list?.models.filter((one) => one.kind === kind) ?? [];
+  const speech = of('speech');
+  const languageModels = of('language');
+  // The best downloaded one is in use when the person chose none.
+  const languageInUse =
+    language && languageModels.some((one) => one.id === language && one.state === 'installed')
+      ? language
+      : (['language-balanced', 'language-small'].find((id) =>
+          languageModels.some((one) => one.id === id && one.state === 'installed'),
+        ) ?? null);
   return (
     <section className={styles.block} aria-labelledby={headingId}>
       <h2 id={headingId} className={styles.heading}>
@@ -147,6 +182,21 @@ export default function ModelsPanel() {
           <ModelRow key={model.id} model={model} selected={selected === model.id} onSelect={choose} />
         ))}
       </ul>
+      <ModelGroup heading={t('intelPlus.models.languageHeading')} help={t('intelPlus.models.languageHelp')}>
+        {languageModels.map((model) => (
+          <ModelRow key={model.id} model={model} selected={languageInUse === model.id} onSelect={chooseLanguage} />
+        ))}
+      </ModelGroup>
+      <ModelGroup heading={t('intelPlus.models.meaningHeading')} help={t('intelPlus.models.meaningHelp')}>
+        {of('meaning').map((model) => (
+          <ModelRow key={model.id} model={model} />
+        ))}
+      </ModelGroup>
+      <ModelGroup heading={t('intelPlus.models.translateHeading')} help={t('intelPlus.models.translateHelp')}>
+        {of('translate').map((model) => (
+          <ModelRow key={model.id} model={model} />
+        ))}
+      </ModelGroup>
       <p className={styles.help}>{t('intelPlus.models.folder')}</p>
     </section>
   );

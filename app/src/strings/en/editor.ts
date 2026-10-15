@@ -37,6 +37,11 @@ export const editor = {
     inline: 'Math: {source}',
     block: 'Display math: {source}',
     field: 'Math source',
+    visualField: 'Equation editor',
+    useVisual: 'Edit visually',
+    useLatex: 'Edit as LaTeX',
+    visualFailed: 'The visual editor could not load. The LaTeX field stays.',
+    spoken: 'Equation: {text}',
   },
   image: {
     chip: 'Image: {alt}',

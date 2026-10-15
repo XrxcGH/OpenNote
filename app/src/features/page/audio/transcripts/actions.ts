@@ -69,13 +69,29 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
     });
     return false;
   }
-  showToast({ id: WORKING, message: t('audioMore.transcript.engineWorking') });
+  const stop = new AbortController();
+  const working = (message: string) =>
+    showToast({
+      id: WORKING,
+      message,
+      action: { label: t('intelSpeech.transcribe.stop'), run: () => stop.abort() },
+    });
+  working(t('audioMore.transcript.engineWorking'));
+  // Progress shows in steps of ten, so a screen reader hears a few updates and not a hundred.
+  let shown = 0;
   try {
     const page = shownPage.get()?.id ?? '';
     const which = extrasOf(entry).transcribeWith === 'enhanced' ? 'enhanced' : 'original';
     const result = await engine.transcribe({
       assetsDir: await platformAudio().assetsDir(page),
       entry: playable(entry, which),
+      signal: stop.signal,
+      onProgress: (fraction) => {
+        const percent = Math.floor(fraction * 10) * 10;
+        if (percent <= shown || percent >= 100) return;
+        shown = percent;
+        working(t('intelSpeech.transcribe.progress', { percent }));
+      },
     });
     const data = fromSegments(entry.id, result.segments, 'engine', result.language);
     const summary = await quietSummary(data);
@@ -83,6 +99,15 @@ export async function makeTranscript(holder: BlockJson, entry: RecordingEntry): 
     showToast({ id: WORKING, message: t('audioMore.transcript.engineDone') });
     return true;
   } catch (error) {
+    const reason = (error as { reason?: string } | null)?.reason;
+    // Stopping, saying not now, and a missing model were each already answered, so they end quietly.
+    if (reason === 'canceled' || reason === 'off' || reason === 'noModel') {
+      showToast({
+        id: WORKING,
+        message: t(reason === 'canceled' ? 'intelSpeech.transcribe.canceled' : 'intelSpeech.transcribe.notMade'),
+      });
+      return false;
+    }
     showToast({
       id: WORKING,
       message: t('audioMore.transcript.engineFailed', { message: describeError(error) }),
@@ -129,6 +154,8 @@ export async function summarizeTranscript(data: TranscriptData): Promise<string 
   const api = await loadApi();
   if (!(await api.askToTurnOn('summaries'))) return null;
   try {
+    const fromCloud = await api.cloudSummary(plainText(data).slice(0, MAX_SUMMARY_CHARS), { quiet: true });
+    if (fromCloud) return fromCloud.join(' ');
     const client = await api.intelClient();
     const summary = await client.summarize(plainText(data).slice(0, MAX_SUMMARY_CHARS), { maxSentences: 3 });
     return summary.sentences.map((sentence) => sentence.text).join(' ');
@@ -139,11 +166,13 @@ export async function summarizeTranscript(data: TranscriptData): Promise<string 
 }
 
 /** The same without asking: nothing happens if summaries are not on. */
-async function quietSummary(data: TranscriptData): Promise<string | null> {
+export async function quietSummary(data: TranscriptData): Promise<string | null> {
   try {
     const api = await loadApi();
     await api.loadIntel();
     if (!api.isOn('summaries') || data.lines.length === 0) return null;
+    const fromCloud = await api.cloudSummary(plainText(data).slice(0, MAX_SUMMARY_CHARS), { quiet: true });
+    if (fromCloud) return fromCloud.join(' ');
     const client = await api.intelClient();
     const summary = await client.summarize(plainText(data).slice(0, MAX_SUMMARY_CHARS), { maxSentences: 3 });
     return summary.sentences.map((sentence) => sentence.text).join(' ');

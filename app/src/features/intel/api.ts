@@ -9,6 +9,7 @@ export {
   askToTurnOn,
   describeProblem,
   intelClient,
+  intelExt,
   loadIntel,
   onChoiceChange,
   refreshStatus,
@@ -17,6 +18,7 @@ export {
 } from './runtime';
 export { searchTextInImage, searchTextInInk, searchTextReady } from './search';
 export { openActivityPanel } from './background/ActivityPanel';
+export { enqueueBackground } from './background';
 export { extrasState, isExtraOn, loadExtras } from './extras';
 export {
   changeExtra,
@@ -35,5 +37,12 @@ export type { WordBox } from './imageText';
 export { editVocabularyForCurrentNotebook } from './vocabulary/open';
 export { fixWithVocabulary, offerVocabularyTerm } from './vocabulary/apply';
 export type { RecognizedText, RecognizedWord } from './search';
-export { showPageSummary, summarizeBlocks } from './summary';
+export { cloudSummary, showPageSummary, summarizeBlocks } from './summary';
+export { onDeviceTranscriptEngine, transcribeOnDevice, TranscribeStopped } from './transcribe/engine';
+export type { OnDeviceTranscribeRequest, OnDeviceTranscribeResult } from './transcribe/engine';
 export type { PageSummary, PageText } from './summary';
+export { MAX_STROKES as MAX_MATH_STROKES, readWith, recognizeMath } from './math/recognize';
+export type { MathResult } from './math/recognize';
+export { listen } from './stream/listen';
+export type { Listening, ListenOptions } from './stream/listen';
+export { withAnswerFallback, withWritingFallback } from './localModels/fallback';

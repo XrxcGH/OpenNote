@@ -32,6 +32,7 @@ import {
   transcripts,
 } from './store';
 import styles from './transcripts.module.css';
+import { offerFixedTerm } from './vocabulary';
 
 /** Saves a change. With `refresh` false, the text search sees waits until editing is done. */
 type Save = (next: TranscriptData, refresh?: boolean) => Promise<void>;
@@ -99,8 +100,10 @@ function LineRow(props: {
             defaultValue={line.text}
             rows={Math.max(1, Math.ceil(line.text.length / 70))}
             onBlur={(event) => {
-              if (event.target.value !== line.text)
-                void props.save(setLineText(data, line.id, event.target.value), false);
+              const text = event.target.value;
+              if (text === line.text) return;
+              void props.save(setLineText(data, line.id, text), false);
+              void offerFixedTerm(line.text, text);
             }}
           />
         ) : (

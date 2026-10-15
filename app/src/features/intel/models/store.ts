@@ -32,8 +32,11 @@ export function formatSize(bytes: number): string {
 /** Reads the list from the shell. A failure keeps the old list and says so. */
 export async function refreshModels(): Promise<ModelList | null> {
   try {
-    const list = await (await intelExt()).models.list();
+    const ext = await intelExt();
+    const list = await ext.models.list();
     modelsState.set({ list, failed: false });
+    // A downloaded language or meaning model changes which engines Ask, the writing tools, and search use.
+    void import('../localModels/follow').then((module) => module.followModels(ext, list)).catch(() => undefined);
     return list;
   } catch {
     modelsState.set((state) => ({ ...state, failed: true }));
@@ -125,6 +128,22 @@ export async function selectedSpeechModel(): Promise<string | null> {
 
 export async function chooseSpeechModel(id: string): Promise<void> {
   await (await intelExt()).put(SELECTED_FILE, id);
+}
+
+const LANGUAGE_FILE = 'language-model.txt';
+
+/** The language model the person chose, or null to let the shell use the best one that is downloaded. */
+export async function selectedLanguageModel(): Promise<string | null> {
+  try {
+    const id = ((await (await intelExt()).get(LANGUAGE_FILE)) ?? '').trim();
+    return id || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function chooseLanguageModel(id: string): Promise<void> {
+  await (await intelExt()).put(LANGUAGE_FILE, id);
 }
 
 /** True while any model is downloading, so a screen knows to keep polling. */

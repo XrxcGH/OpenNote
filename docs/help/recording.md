@@ -34,6 +34,31 @@ Settings has a Recording section for the defaults.
 
 A transcript block lists each line with its time, and a click jumps to that moment. You can rename a speaker once, and every line updates. You can turn lines into notes, pull out action items and chapters, and copy a meeting recap.
 
-In beta 4 OpenNote cannot turn speech into text by itself yet. The transcript block, speakers, and recaps are built, and the speech engine is not. See [on-device intelligence](on-device-intelligence.md).
+### Make a transcript on this device
+
+OpenNote turns speech into text with a Whisper speech model that runs on your computer. Nothing is sent anywhere.
+
+1. Open Settings, then On-device intelligence, and turn on Transcription.
+2. Under Models, download a speech model. Each one shows its size before it downloads. The base English model is the one most people want.
+3. On a recording, open More and choose Make a transcript.
+
+The transcript is made in the background, one recording at a time, and a note shows how far along it is. Choose Stop on that note to stop it. A long recording takes a few minutes.
+
+- The notebook's custom vocabulary is given to the model first, and its spellings are fixed in the result. See [on-device intelligence](on-device-intelligence.md).
+- If you used Enhance voice, you can choose to make the transcript from the original or the enhanced voice, in the recording's More menu.
+- The 64-bit download reads speech with whisper.cpp, which is several times faster than the built-in reader the other downloads use. Both read the same model files and run on the processor. A build made with Vulkan support can use the graphics card for whole recordings, and falls back to the processor if it cannot. NPU chips are not used.
+- The audio is read from the page's own files. No copy is made.
+
+### A transcript of every recording
+
+To get a transcript and summary without asking each time, open Settings, then Recording, and turn on Make a transcript and summary of every recording. It is off until you turn it on.
+
+When a recording stops, or you drop an audio file on a page, its transcript is made in the background and placed after the recording, with a short summary at the top. It shows in the activity panel, where you can pause or stop it. A recording that already has a transcript keeps it.
+
+
 
 Recording is built. Agents started a recording once and it worked. Nobody has tried the rest by hand.
+
+### Live captions
+
+To see the words while a recording runs, open Settings, then Recording, and turn on Show live captions while recording. A strip shows the last few phrases, and the one being said appears a little rough until the speaker pauses. The strip uses your Windows caption size, font, and colors, and sits at the bottom or the top of the window, as you choose. If this computer cannot keep up, the strip says it is running behind. The captions disappear when the recording stops, and the transcript is made as usual.

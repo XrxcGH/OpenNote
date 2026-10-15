@@ -11,6 +11,10 @@ export interface TranscribeRequest {
   entry: RecordingEntry;
   /** Reports how far along it is, from 0 to 1. */
   onProgress?(fraction: number): void;
+  /** Stops the job; the promise then rejects. */
+  signal?: AbortSignal;
+  /** False for work the person didn't ask for just now: the engine then never asks or shows anything. */
+  interactive?: boolean;
 }
 
 export interface TranscribeResult {
@@ -21,6 +25,8 @@ export interface TranscribeResult {
 
 export interface TranscriptEngine {
   id: string;
+  /** True when the engine sends the audio to a cloud service, so it waits while Work offline is on. */
+  cloud?: boolean;
   transcribe(request: TranscribeRequest): Promise<TranscribeResult>;
 }
 

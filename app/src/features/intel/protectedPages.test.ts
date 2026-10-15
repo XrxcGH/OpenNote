@@ -31,6 +31,7 @@ const SECRET = 'My bank PIN is under the blue lamp.';
 // Node has no image decoder: the reading itself answers with the secret, so the queue runs as it does in the app.
 vi.mock('./imageText', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./imageText')>()),
+  pixelsFromBlob: async () => ({ width: 1, height: 1, format: 'gray8', pixels: new Uint8Array(1) }),
   readTextInImage: async () => ({
     language: 'en-US',
     angle: null,
@@ -92,7 +93,7 @@ describe('pages of an encrypted section', () => {
     expect(meaningIndex().has('diary')).toBe(false);
     await saveIndexNow();
     expect(await savedFile(MEANING_FILE)).not.toContain('blue lamp');
-    expect(indexPage({ id: 'diary', title: 'Diary', modified: '2', blocks: [] })).toBe(false);
+    expect(await indexPage({ id: 'diary', title: 'Diary', modified: '2', blocks: [] })).toBe(false);
   });
 
   it('leave the index and its file at once when their section becomes encrypted', async () => {

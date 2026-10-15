@@ -11,6 +11,8 @@ import { shownMounted } from '../../page';
 import type { MountedPage } from '../../page';
 import type { MediaKind } from '../../../services/search/types';
 import { maybeSearchClient } from '../client';
+import { INK_BLOCK, TRANSCRIPT_TYPE, indexInk, inkKnown, transcriptText } from './handwriting';
+import { shownStrokes } from '../../page';
 
 /** Recorded for a picture with no words in it, so it is not read again at every visit. */
 const NO_WORDS = String.fromCharCode(0x200b);
@@ -35,6 +37,7 @@ export async function indexMediaText(entry: MediaText): Promise<boolean> {
 }
 
 const scanned = new Set<string>();
+const transcripts = new Map<string, string>();
 /** Failed reads per picture: the page is looked at again every few seconds, so a picture that fails is given up on. */
 const failures = new Map<string, number>();
 export const MAX_FAILURES = 3;
@@ -43,6 +46,7 @@ export const MAX_FAILURES = 3;
 export function resetIndexer(): void {
   scanned.clear();
   failures.clear();
+  transcripts.clear();
 }
 
 async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | null> {
@@ -54,25 +58,47 @@ async function imageBlob(mounted: MountedPage, asset: string): Promise<Blob | nu
   }
 }
 
-/** Reads the pictures of the shown page that the index has no words for. */
+/** Reads the page's pictures, handwriting, and transcripts that the index has no current words for. */
 export async function scan(mounted: MountedPage, current: () => boolean): Promise<void> {
   const extras = maybeSearchClient()?.extras;
   if (!extras) return;
   const page = mounted.page.id;
-  // Most passes find nothing to read: ask the index only when a picture here is still waiting.
-  const waiting = mounted.layer.blocks().filter((block) => {
+  const blocks = mounted.layer.blocks();
+  // Most passes find nothing to read: ask the index only when a picture, a transcript, or the ink here may be new.
+  const waits = (block: (typeof blocks)[number]) => {
     const key = `${page}/${block.id}`;
-    return block.type === 'image' && typeof block.data.asset === 'string' && !scanned.has(key) && (failures.get(key) ?? 0) < MAX_FAILURES;
-  });
-  if (waiting.length === 0) return;
+    if (block.type === TRANSCRIPT_TYPE) {
+      const text = transcriptText(block.data);
+      return Boolean(text) && transcripts.get(key) !== text;
+    }
+    return (
+      block.type === 'image' &&
+      typeof block.data.asset === 'string' &&
+      !scanned.has(key) &&
+      (failures.get(key) ?? 0) < MAX_FAILURES
+    );
+  };
+  if (!blocks.some(waits) && shownStrokes().length === 0 && !inkKnown(page)) return;
   const known = new Set((await extras.mediaBlocks(page)).map((entry) => entry.block));
-  for (const block of waiting) {
+  let imagesReady = true;
+  for (const block of blocks) {
     if (!current()) return;
-    const asset = block.data.asset as string;
     const key = `${page}/${block.id}`;
-    if (known.has(block.id)) continue;
+    if (block.type === TRANSCRIPT_TYPE) {
+      const text = transcriptText(block.data);
+      if (text && transcripts.get(key) !== text) {
+        if (await indexMediaText({ page, block: block.id, kind: 'transcript', text })) transcripts.set(key, text);
+      }
+      continue;
+    }
+    const asset = typeof block.data.asset === 'string' ? block.data.asset : null;
+    if (!imagesReady || block.type !== 'image' || !asset || known.has(block.id) || scanned.has(key)) continue;
+    if ((failures.get(key) ?? 0) >= MAX_FAILURES) continue;
     const api = await loadApi();
-    if (!(await api.searchTextReady('image'))) return;
+    if (!(await api.searchTextReady('image'))) {
+      imagesReady = false;
+      continue;
+    }
     const blob = await imageBlob(mounted, asset);
     if (!current()) return;
     if (!blob) {
@@ -87,6 +113,22 @@ export async function scan(mounted: MountedPage, current: () => boolean): Promis
     scanned.add(key);
     await indexMediaText({ page, block: block.id, kind: 'image', text: found.text.trim() || NO_WORDS });
   }
+  if (current()) await scanInk(page, known.has(INK_BLOCK));
+}
+
+/** Reads the shown page's handwriting for the index. Quiet when the feature is off. */
+async function scanInk(page: string, indexed: boolean): Promise<void> {
+  if (shownStrokes().length === 0 && !indexed && !inkKnown(page)) return;
+  const api = await loadApi();
+  if (!(await api.searchTextReady('handwriting'))) return;
+  await indexInk(page, {
+    strokes: () => shownStrokes().map((stroke) => ({ id: stroke.id, points: stroke.points })),
+    read: async (strokes) => {
+      const found = await api.searchTextInInk(strokes);
+      return found && { text: found.text, words: found.words };
+    },
+    index: indexMediaText,
+  });
 }
 
 /** How often the shown page is looked at again, so a picture pasted into it is read within a minute. */

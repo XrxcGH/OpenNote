@@ -90,8 +90,8 @@ export function answerEngine(): AnswerEngine {
 }
 
 /** The passages that may hold the answer: the best paragraph of each of the pages closest to the question. */
-export function passagesFor(question: string, limit = 6): Passage[] {
-  return findByMeaning(question, limit).flatMap((hit) =>
+export async function passagesFor(question: string, limit = 6): Promise<Passage[]> {
+  return (await findByMeaning(question, limit)).flatMap((hit) =>
     hit.chunk
       ? [{ pageId: hit.pageId, title: hit.title, block: hit.chunk.block, text: hit.chunk.text, score: hit.score }]
       : [],
@@ -99,11 +99,10 @@ export function passagesFor(question: string, limit = 6): Passage[] {
 }
 
 /** Answers the question from the pages, or returns null when the notes hold nothing for it. */
-export async function askNotes(
-  question: string,
-  passages: readonly Passage[] = passagesFor(question),
-): Promise<Answer | null> {
-  if (!question.trim() || embed(question).every((v) => v === 0) || passages.length === 0) return null;
+export async function askNotes(question: string, given?: readonly Passage[]): Promise<Answer | null> {
+  if (!question.trim() || embed(question).every((v) => v === 0)) return null;
+  const passages = given ?? (await passagesFor(question));
+  if (passages.length === 0) return null;
   const used = await engine.answer(question, passages);
   return used ? { ...used, engine: engine.name } : null;
 }

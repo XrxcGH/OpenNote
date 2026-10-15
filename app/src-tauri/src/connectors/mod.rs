@@ -47,7 +47,7 @@ mod view;
 pub use commands::*;
 pub use connect::normalize_base_url;
 pub use error::{ConnectorError, Failure};
-pub use http::{Body, HostPolicy, HttpRequest, HttpResponse};
+pub use http::{Body, HostPolicy, Http, HttpError, HttpRequest, HttpResponse, UreqHttp};
 pub use registry::{find, Method, CONNECTORS};
 pub use secret::Secret;
 pub use service::{Connectors, Opener, Parts};

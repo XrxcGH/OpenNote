@@ -10,6 +10,21 @@ export const intelPlus = {
     sizeOf: '{size}',
     speechHeading: 'Speech to text',
     speechHelp: 'Turns a recording into a transcript. Choose one model.',
+    languageHeading: 'Ask and the writing tools',
+    languageHelp:
+      'A language model writes the answers in Ask and the suggestions in the writing tools. ' +
+      'Without one, they use rules and quote your pages. It runs on this computer and uses memory only while you use it.',
+    languageNoHost: 'This install can’t run a language model.',
+    meaningHeading: 'Find by meaning',
+    meaningHelp: 'A model that reads what your pages mean. Without it, search by meaning uses words and word parts.',
+    translateHeading: 'Translation packs',
+    translateHelp: 'Each pack translates one language into another on this computer. Download only the ones you need.',
+    translateNone: 'This install has no translation packs.',
+    engineNote: 'Speech runs with {engine}.',
+    engineNames: {
+      whisperCpp: 'whisper.cpp',
+      rust: 'the built-in reader',
+    },
     download: 'Download',
     downloadNamed: 'Download {name}, {size}',
     cancel: 'Cancel',
@@ -35,6 +50,9 @@ export const intelPlus = {
       stopping: 'The download is still stopping. Try removing it again in a moment.',
       io: "Couldn't save the file. Check the free space on this device.",
       invalid: "Couldn't download that. Try again.",
+      model: 'That model isn’t on this computer. Download it first.',
+      unavailable: 'This install can’t run that.',
+      engine: 'The model stopped. Try again.',
       unknown: "Couldn't download that. Try again.",
     },
     confirmTitle: 'Download {name}?',
@@ -49,6 +67,10 @@ export const intelPlus = {
     privacyTitle: 'Model downloads',
     privacyDetail: 'Models for on-device features, only when you choose to download one.',
     folder: 'Saved on this device only. A portable install keeps them beside its other files.',
+  },
+  engines: {
+    language: 'the language model on this device',
+    rules: 'the built-in rules',
   },
   vocabulary: {
     title: 'Custom vocabulary',
@@ -160,7 +182,9 @@ export const intelPlus = {
   },
   extras: {
     heading: 'Search and writing',
-    intro: 'These read your pages on this device with no model to download. Each one stays off until you turn it on.',
+    intro:
+      'These read your pages on this device. A model you download in Models, above, makes Ask better, and improves the writing tools. ' +
+      'Each one stays off until you turn it on.',
     offerTitle: 'Turn on {feature}?',
     meaning: {
       name: 'search by meaning',
@@ -226,6 +250,7 @@ export const intelPlus = {
     openSource: 'Open page {number}, {title}',
   },
   writing: {
+    by: 'Suggested by {engine}.',
     tools: {
       proofread: 'Proofread',
       rewrite: 'Rewrite in plain words',

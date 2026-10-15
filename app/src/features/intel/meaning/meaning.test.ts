@@ -168,7 +168,7 @@ describe('the engine', () => {
       b: { title: 'Cells', text: 'Mitochondria make energy.' },
     };
     expect(await runIndexPass(source(pages), new AbortController().signal)).toBe(2);
-    expect(findByMeaning('buy a car')[0]?.pageId).toBe('a');
+    expect((await findByMeaning('buy a car'))[0]?.pageId).toBe('a');
     expect(relatedPages('a')).toEqual([]);
     // Nothing changed, so the next pass reads nothing, and a page that left the tree leaves the index.
     expect(await runIndexPass(source({ a: pages.a }), new AbortController().signal)).toBe(0);
@@ -177,11 +177,11 @@ describe('the engine', () => {
 
   it('indexes a page it is given only while search by meaning is on', async () => {
     const shown = { id: 'p', title: 'Trip', modified: '1', blocks: [] };
-    expect(indexPage(shown)).toBe(false);
+    expect(await indexPage(shown)).toBe(false);
     await setExtra('meaning', true);
     expect(extrasState.get().on.meaning).toBe(true);
-    expect(indexPage(shown)).toBe(true);
-    expect(indexPage(shown)).toBe(false);
+    expect(await indexPage(shown)).toBe(true);
+    expect(await indexPage(shown)).toBe(false);
   });
 
   it('keeps nothing after the index is forgotten', async () => {

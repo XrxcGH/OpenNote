@@ -300,7 +300,7 @@ export interface TidyPlan {
 
 // Transcripts
 
-export type TranscriptDevice = 'npu' | 'cpu';
+export type TranscriptDevice = 'npu' | 'gpu' | 'cpu';
 
 export interface TranscriptSegment {
   startMs: number;

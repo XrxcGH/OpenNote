@@ -10,7 +10,10 @@
     "app/src/theme/tokens.ts",
     "crates/interop/tests/corpus/*/**",
     "target/**",
-    "extensions/clipper/shared/vendor/**"
+    "extensions/clipper/shared/vendor/**",
+    "app/src-tauri/src/intel/catalog.rs",
+    "app/src/services/intel/packs.ts",
+    "crates/intel-engines/tests/fixtures/**"
   ],
   "rules": {
     "spelling": {

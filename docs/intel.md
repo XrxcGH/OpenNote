@@ -116,7 +116,7 @@ The `TranscriptionEngine` trait is the seam for whisper.cpp. An engine reads 16 
 
 `TranscriptionQueue` runs jobs one at a time on a thread in Windows background mode, which lowers its processor, disk, and memory priority. Engines that start helper threads call `enter_background_mode` on each one.
 
-- The device preference is `Auto`, `Npu`, or `Cpu`. `Auto` picks the neural processing unit (NPU) when the engine lists one, and the processor otherwise.
+- The device preference is `Auto`, `Npu`, or `Cpu`. `Auto` picks the neural processing unit (NPU) when the engine lists one, and the processor otherwise. whisper.cpp lists none, so speech never uses an NPU. Translation and meaning vectors can use the graphics card or an NPU through DirectML in a build with the `onnx-directml` feature (app feature `native-directml`), and fall back to the processor if DirectML cannot start.
 - If the NPU fails under `Auto`, the queue rewinds the audio and runs the job again on the processor. The `Started` event repeats, so the interface clears its partial text.
 - A `JobHandle` reports status, cancels, and waits. Canceling a queued job removes it at once.
 - An observer receives `JobEvent` values, which the app forwards to the interface. Progress events arrive about once per percent.

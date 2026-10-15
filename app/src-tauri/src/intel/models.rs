@@ -1,13 +1,13 @@
-//! Model downloads (Phase 12): the speech models and, later, the packs other on-device features use. A download
-//! starts only when the person chose it after seeing the size. It resumes where it stopped, checks the file against
-//! a published SHA-256 before it keeps it, and never runs while Work offline or safe mode is on. Files go in this
-//! device's folder, so a portable install keeps them beside its profile. The crate behind the other commands holds
-//! no network code, so this is the one place a model can come from.
+//! Model downloads (Phase 12): the speech models, the language models for Ask and the writing tools, the meaning
+//! model, and the translation packs. A download starts only when the person chose it after seeing the size. It
+//! resumes where it stopped, checks each file against a published checksum and size before it keeps it, and never
+//! runs while Work offline or safe mode is on. Files go in this device's folder, so a portable install keeps them
+//! beside its profile. The crate behind the other commands holds no network code, so this is the one place a model
+//! can come from, and only from the pinned addresses in the catalog.
 
+use std::collections::HashMap;
 use std::{
-    collections::HashMap,
-    fs::{self, File, OpenOptions},
-    io::{self, Read, Write},
+    fs, io,
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -18,77 +18,142 @@ use std::{
 };
 
 use serde::Serialize;
-use sha2::{Digest, Sha256};
+
+use super::catalog;
+
+/// How a downloaded file is checked.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Digest {
+    /// The SHA-256 of the file, in hex.
+    Sha256(&'static str),
+    /// The git blob hash of the file, in hex: SHA-1 over `blob <size>`, a zero byte, and the bytes. Hugging Face
+    /// publishes only this for a small file it keeps outside its large-file storage.
+    GitBlob(&'static str),
+}
+
+impl Digest {
+    fn hex(self) -> &'static str {
+        match self {
+            Digest::Sha256(hex) | Digest::GitBlob(hex) => hex,
+        }
+    }
+}
+
+/// One file of a model.
+#[derive(Debug)]
+pub struct Part {
+    /// The path under the models folder.
+    pub file: &'static str,
+    /// The exact size. A server that sends more is cut off, so this is also the cap.
+    pub size: u64,
+    pub digest: Digest,
+    pub url: &'static str,
+}
 
 /// One model the person can download.
+#[derive(Debug)]
 pub struct ModelSpec {
     pub id: &'static str,
-    /// What it is for, such as `speech`.
+    /// What it is for: `speech`, `language`, `meaning`, or `translate`.
     pub kind: &'static str,
     pub name: &'static str,
     pub detail: &'static str,
-    pub size: u64,
-    pub sha256: &'static str,
-    pub file: &'static str,
-    pub url: &'static str,
+    pub parts: &'static [Part],
 }
+
+impl ModelSpec {
+    /// All the bytes the model takes.
+    pub fn size(&self) -> u64 {
+        self.parts.iter().map(|part| part.size).sum()
+    }
+
+    /// The model's first file, the one a runtime opens.
+    pub fn main(&self) -> &'static Part {
+        &self.parts[0]
+    }
+}
+
+/// The largest model the catalog may hold, as a guard against a typo in a size.
+#[cfg(test)]
+pub const MAX_MODEL_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 
 #[cfg(test)]
 const SPEECH_HOST: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
 
-/// The models, with the sizes and checksums Hugging Face publishes for each file.
-pub const CATALOG: &[ModelSpec] = &[
-    ModelSpec {
-        id: "speech-tiny-en",
-        kind: "speech",
-        name: "Speech, smallest (English)",
-        detail: "Fastest. Good for clear voices.",
-        size: 77_704_715,
-        sha256: "921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f",
-        file: "ggml-tiny.en.bin",
-        url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin",
-    },
-    ModelSpec {
-        id: "speech-base-en",
-        kind: "speech",
-        name: "Speech, balanced (English)",
-        detail: "A good mix of speed and accuracy. Recommended.",
-        size: 147_964_211,
-        sha256: "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
-        file: "ggml-base.en.bin",
-        url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin",
-    },
-    ModelSpec {
-        id: "speech-small-en",
-        kind: "speech",
-        name: "Speech, accurate (English)",
-        detail: "Most accurate for English, and slower.",
-        size: 487_614_201,
-        sha256: "c6138d6d58ecc8322097e0f987c32f1be8bb0a18532a3f88f734d1bbf9c41e5d",
-        file: "ggml-small.en.bin",
-        url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin",
-    },
-    ModelSpec {
-        id: "speech-base",
-        kind: "speech",
-        name: "Speech, balanced (many languages)",
-        detail: "Understands many languages, and detects which one is spoken.",
-        size: 147_951_465,
-        sha256: "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
-        file: "ggml-base.bin",
-        url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin",
-    },
-    ModelSpec {
-        id: "speech-small",
-        kind: "speech",
-        name: "Speech, accurate (many languages)",
-        detail: "Most accurate across languages, and slower.",
-        size: 487_601_967,
-        sha256: "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
-        file: "ggml-small.bin",
-        url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin",
-    },
+macro_rules! speech {
+    ($id:literal, $name:literal, $detail:literal, $size:literal, $sha:literal, $file:literal) => {
+        ModelSpec {
+            id: $id,
+            kind: "speech",
+            name: $name,
+            detail: $detail,
+            parts: &[Part {
+                file: $file,
+                size: $size,
+                digest: Digest::Sha256($sha),
+                url: concat!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/", $file),
+            }],
+        }
+    };
+}
+
+/// The speech models, with the sizes and checksums Hugging Face publishes for each file.
+const SPEECH: &[ModelSpec] = &[
+    speech!(
+        "speech-tiny-en",
+        "Speech, smallest (English)",
+        "Fastest. Good for clear voices.",
+        77_704_715,
+        "921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f",
+        "ggml-tiny.en.bin"
+    ),
+    speech!(
+        "speech-base-en",
+        "Speech, balanced (English)",
+        "A good mix of speed and accuracy. Recommended.",
+        147_964_211,
+        "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
+        "ggml-base.en.bin"
+    ),
+    speech!(
+        "speech-small-en",
+        "Speech, accurate (English)",
+        "Most accurate for English, and slower.",
+        487_614_201,
+        "c6138d6d58ecc8322097e0f987c32f1be8bb0a18532a3f88f734d1bbf9c41e5d",
+        "ggml-small.en.bin"
+    ),
+    speech!(
+        "speech-base",
+        "Speech, balanced (many languages)",
+        "Understands many languages, and detects which one is spoken.",
+        147_951_465,
+        "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+        "ggml-base.bin"
+    ),
+    speech!(
+        "speech-small",
+        "Speech, accurate (many languages)",
+        "Most accurate across languages, and slower.",
+        487_601_967,
+        "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+        "ggml-small.bin"
+    ),
 ];
+
+/// Every model, speech first.
+pub fn catalog() -> impl Iterator<Item = &'static ModelSpec> {
+    SPEECH
+        .iter()
+        .chain(catalog::LANGUAGE)
+        .chain(catalog::MEANING)
+        .chain(catalog::TRANSLATE)
+}
+
+/// The model with this ID.
+pub fn spec_of(id: &str) -> Option<&'static ModelSpec> {
+    catalog().find(|spec| spec.id == id)
+}
 
 /// Why a download did not finish. The interface picks its own words from the code.
 #[derive(Debug, PartialEq, Eq)]
@@ -123,137 +188,19 @@ impl From<io::Error> for DownloadError {
     }
 }
 
-/// What a server answered to a request for a file from some byte on.
-pub struct Opened {
-    /// True when the answer starts at the byte asked for, and false when the server sent the file from the start.
-    pub resumed: bool,
-    pub reader: Box<dyn Read + Send>,
-}
+/// How many 20 ms steps `remove` waits for a download to stop: a little over the 60 s read timeout.
+const REMOVE_WAIT_STEPS: u32 = 3100;
 
-/// Where model bytes come from. The app uses [`HttpSource`], and tests use a stand-in.
-pub trait Source: Send + Sync {
-    fn open(&self, url: &str, from: u64) -> Result<Opened, String>;
-}
+mod download;
+mod source;
+#[cfg(test)]
+mod tests;
 
-/// Downloads over HTTPS with Windows' TLS stack, as the updater does. No cookies and no proxy settings are read.
-pub struct HttpSource;
-
-impl Source for HttpSource {
-    fn open(&self, url: &str, from: u64) -> Result<Opened, String> {
-        use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
-        let tls = TlsConfig::builder()
-            .provider(TlsProvider::NativeTls)
-            .root_certs(RootCerts::PlatformVerifier)
-            .build();
-        let agent: ureq::Agent = ureq::Agent::config_builder()
-            .tls_config(tls)
-            .max_redirects(5)
-            .http_status_as_error(false)
-            .timeout_connect(Some(Duration::from_secs(20)))
-            .timeout_recv_response(Some(Duration::from_secs(60)))
-            .user_agent(concat!("OpenNote/", env!("CARGO_PKG_VERSION")))
-            .build()
-            .into();
-        let mut request = agent.get(url);
-        if from > 0 {
-            request = request.header("Range", format!("bytes={from}-"));
-        }
-        let response = request.call().map_err(|error| error.to_string())?;
-        let status = response.status().as_u16();
-        let resumed = match status {
-            200 => false,
-            206 => true,
-            other => return Err(format!("The server answered with status {other}.")),
-        };
-        Ok(Opened {
-            resumed,
-            reader: Box::new(response.into_body().into_reader()),
-        })
-    }
-}
-
-fn hex_of_file(path: &Path) -> io::Result<String> {
-    let mut file = File::open(path)?;
-    let mut hasher = Sha256::new();
-    let mut buffer = vec![0u8; 1 << 16];
-    loop {
-        let read = file.read(&mut buffer)?;
-        if read == 0 {
-            break;
-        }
-        hasher.update(&buffer[..read]);
-    }
-    Ok(hasher.finalize().iter().map(|byte| format!("{byte:02x}")).collect())
-}
-
-fn part_path(dir: &Path, spec: &ModelSpec) -> PathBuf {
-    dir.join(format!("{}.part", spec.file))
-}
-
-fn size_of(path: &Path) -> Option<u64> {
-    fs::metadata(path).ok().map(|meta| meta.len())
-}
-
-/// Downloads one model into `dir`, resuming a `.part` file left by an earlier try. The file is kept only when its
-/// size and checksum match the catalog. Cancel leaves the `.part` file so the next try resumes.
-pub fn download(
-    source: &dyn Source,
-    spec: &ModelSpec,
-    dir: &Path,
-    cancel: &AtomicBool,
-    progress: &AtomicU64,
-) -> Result<(), DownloadError> {
-    fs::create_dir_all(dir)?;
-    let part = part_path(dir, spec);
-    let mut have = size_of(&part).unwrap_or(0);
-    if have > spec.size {
-        fs::remove_file(&part)?;
-        have = 0;
-    }
-    if have < spec.size {
-        let opened = source.open(spec.url, have).map_err(DownloadError::Network)?;
-        let mut file = if opened.resumed && have > 0 {
-            OpenOptions::new().append(true).open(&part)?
-        } else {
-            have = 0;
-            File::create(&part)?
-        };
-        progress.store(have, Ordering::Relaxed);
-        let mut reader = opened.reader;
-        let mut buffer = vec![0u8; 1 << 16];
-        while have < spec.size {
-            if cancel.load(Ordering::Relaxed) {
-                file.flush()?;
-                return Err(DownloadError::Canceled);
-            }
-            let read = reader
-                .read(&mut buffer)
-                .map_err(|error| DownloadError::Network(error.to_string()))?;
-            if read == 0 {
-                break;
-            }
-            file.write_all(&buffer[..read])?;
-            have += read as u64;
-            progress.store(have, Ordering::Relaxed);
-        }
-        file.flush()?;
-        drop(file);
-        if have != spec.size {
-            return if have > spec.size {
-                fs::remove_file(&part)?;
-                Err(DownloadError::Checksum)
-            } else {
-                Err(DownloadError::Network("The connection ended early.".to_owned()))
-            };
-        }
-    }
-    if hex_of_file(&part)? != spec.sha256 {
-        fs::remove_file(&part)?;
-        return Err(DownloadError::Checksum);
-    }
-    fs::rename(&part, dir.join(spec.file))?;
-    Ok(())
-}
+pub use self::download::{download, is_installed};
+use self::download::{part_path, size_of};
+#[cfg(test)]
+use self::source::Opened;
+pub use self::source::{HttpSource, Source};
 
 /// How one model looks to the interface.
 #[derive(Serialize, Debug, PartialEq)]
@@ -298,13 +245,6 @@ struct Inner {
 #[derive(Clone)]
 pub struct Models(Arc<Inner>);
 
-fn spec_of(id: &str) -> Option<&'static ModelSpec> {
-    CATALOG.iter().find(|spec| spec.id == id)
-}
-
-/// How many 20 ms steps `remove` waits for a download to stop: a little over the 60 s read timeout.
-const REMOVE_WAIT_STEPS: u32 = 3100;
-
 impl Models {
     pub fn new(dir: PathBuf) -> Models {
         Models::with_source(dir, Arc::new(HttpSource))
@@ -326,16 +266,34 @@ impl Models {
         self.0.dir.join("last-ran.txt")
     }
 
+    /// The folder the models are in.
+    pub fn dir(&self) -> &Path {
+        &self.0.dir
+    }
+
+    /// The path of the model's first file, if the whole model is on disk.
+    pub fn installed_path(&self, id: &str) -> Option<PathBuf> {
+        let spec = spec_of(id)?;
+        is_installed(&self.0.dir, spec).then(|| self.0.dir.join(spec.main().file))
+    }
+
     pub fn list(&self) -> ModelList {
         let jobs = self.jobs();
-        let models = CATALOG
-            .iter()
+        let models = catalog()
             .map(|spec| {
-                let installed = size_of(&self.0.dir.join(spec.file)) == Some(spec.size);
+                let installed = is_installed(&self.0.dir, spec);
                 let job = jobs.get(spec.id);
-                let on_disk = size_of(&part_path(&self.0.dir, spec)).unwrap_or(0);
+                let on_disk: u64 = spec
+                    .parts
+                    .iter()
+                    .map(|part| {
+                        size_of(&self.0.dir.join(part.file))
+                            .or_else(|| size_of(&part_path(&self.0.dir, part)))
+                            .unwrap_or(0)
+                    })
+                    .sum();
                 let (state, bytes, error) = match job {
-                    _ if installed => ("installed", spec.size, None),
+                    _ if installed => ("installed", spec.size(), None),
                     Some(job) if job.running => ("downloading", job.bytes.load(Ordering::Relaxed), None),
                     Some(Job { error: Some(code), .. }) if *code != "canceled" => ("failed", on_disk, Some(*code)),
                     _ if on_disk > 0 => ("partial", on_disk, None),
@@ -346,7 +304,7 @@ impl Models {
                     kind: spec.kind,
                     name: spec.name,
                     detail: spec.detail,
-                    size_bytes: spec.size,
+                    size_bytes: spec.size(),
                     state,
                     bytes,
                     error,
@@ -428,198 +386,23 @@ impl Models {
         if self.jobs().get(id).is_some_and(|job| job.running) {
             return Err(DownloadError::Stopping);
         }
-        for path in [self.0.dir.join(spec.file), part_path(&self.0.dir, spec)] {
-            match fs::remove_file(&path) {
-                Ok(()) => {}
-                Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-                Err(error) => return Err(error.into()),
+        for part in spec.parts {
+            for path in [self.0.dir.join(part.file), part_path(&self.0.dir, part)] {
+                match fs::remove_file(&path) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+                    Err(error) => return Err(error.into()),
+                }
             }
+        }
+        // A pack lives in a folder of its own. Take it away once it is empty.
+        if let Some(folder) = Path::new(spec.main().file)
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+        {
+            let _ = fs::remove_dir(self.0.dir.join(folder));
         }
         self.jobs().remove(id);
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const DATA: &[u8] = b"hello world";
-    const HELLO_SHA: &str = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-
-    const SPEC: ModelSpec = ModelSpec {
-        id: "test",
-        kind: "speech",
-        name: "Test",
-        detail: "",
-        size: DATA.len() as u64,
-        sha256: HELLO_SHA,
-        file: "test.bin",
-        url: "https://example.invalid/test.bin",
-    };
-
-    /// Serves `data`, honoring a start offset unless `ignore_range` is set, and asks `after` to run first.
-    struct Memory {
-        data: Vec<u8>,
-        ignore_range: bool,
-        asked: Mutex<Vec<u64>>,
-    }
-
-    impl Source for Memory {
-        fn open(&self, _url: &str, from: u64) -> Result<Opened, String> {
-            self.asked.lock().unwrap().push(from);
-            let start = if self.ignore_range { 0 } else { from as usize };
-            Ok(Opened {
-                resumed: !self.ignore_range && from > 0,
-                reader: Box::new(io::Cursor::new(self.data[start..].to_vec())),
-            })
-        }
-    }
-
-    fn memory(data: &[u8], ignore_range: bool) -> Memory {
-        Memory {
-            data: data.to_vec(),
-            ignore_range,
-            asked: Mutex::new(Vec::new()),
-        }
-    }
-
-    #[test]
-    fn the_catalog_lists_checksums_and_https_addresses() {
-        for spec in CATALOG {
-            assert_eq!(spec.sha256.len(), 64, "{}", spec.id);
-            assert!(spec.url.starts_with("https://"), "{}", spec.id);
-            assert!(spec.url.ends_with(spec.file), "{}", spec.id);
-            assert!(spec.url.starts_with(SPEECH_HOST), "{}", spec.id);
-        }
-        let mut ids: Vec<_> = CATALOG.iter().map(|spec| spec.id).collect();
-        ids.sort_unstable();
-        ids.dedup();
-        assert_eq!(ids.len(), CATALOG.len());
-    }
-
-    #[test]
-    fn a_download_is_kept_after_its_checksum_matches() {
-        let dir = tempfile::tempdir().unwrap();
-        let progress = AtomicU64::new(0);
-        download(
-            &memory(DATA, false),
-            &SPEC,
-            dir.path(),
-            &AtomicBool::new(false),
-            &progress,
-        )
-        .unwrap();
-        assert_eq!(fs::read(dir.path().join("test.bin")).unwrap(), DATA);
-        assert!(!dir.path().join("test.bin.part").exists());
-        assert_eq!(progress.load(Ordering::Relaxed), DATA.len() as u64);
-    }
-
-    #[test]
-    fn a_stopped_download_resumes_from_its_part() {
-        let dir = tempfile::tempdir().unwrap();
-        fs::write(dir.path().join("test.bin.part"), &DATA[..5]).unwrap();
-        let source = memory(DATA, false);
-        download(&source, &SPEC, dir.path(), &AtomicBool::new(false), &AtomicU64::new(0)).unwrap();
-        assert_eq!(*source.asked.lock().unwrap(), vec![5]);
-        assert_eq!(fs::read(dir.path().join("test.bin")).unwrap(), DATA);
-    }
-
-    #[test]
-    fn a_server_that_ignores_the_range_restarts_the_file() {
-        let dir = tempfile::tempdir().unwrap();
-        fs::write(dir.path().join("test.bin.part"), &DATA[..5]).unwrap();
-        download(
-            &memory(DATA, true),
-            &SPEC,
-            dir.path(),
-            &AtomicBool::new(false),
-            &AtomicU64::new(0),
-        )
-        .unwrap();
-        assert_eq!(fs::read(dir.path().join("test.bin")).unwrap(), DATA);
-    }
-
-    #[test]
-    fn a_wrong_checksum_deletes_the_file() {
-        let dir = tempfile::tempdir().unwrap();
-        let result = download(
-            &memory(b"HELLO WORLD", false),
-            &SPEC,
-            dir.path(),
-            &AtomicBool::new(false),
-            &AtomicU64::new(0),
-        );
-        assert_eq!(result, Err(DownloadError::Checksum));
-        assert!(!dir.path().join("test.bin").exists());
-        assert!(!dir.path().join("test.bin.part").exists());
-    }
-
-    #[test]
-    fn cancel_keeps_the_part_for_the_next_try() {
-        let dir = tempfile::tempdir().unwrap();
-        let result = download(
-            &memory(DATA, false),
-            &SPEC,
-            dir.path(),
-            &AtomicBool::new(true),
-            &AtomicU64::new(0),
-        );
-        assert_eq!(result, Err(DownloadError::Canceled));
-        assert!(dir.path().join("test.bin.part").exists());
-        assert!(!dir.path().join("test.bin").exists());
-    }
-
-    #[test]
-    fn a_short_answer_is_an_error_that_can_resume() {
-        let dir = tempfile::tempdir().unwrap();
-        let result = download(
-            &memory(&DATA[..4], false),
-            &SPEC,
-            dir.path(),
-            &AtomicBool::new(false),
-            &AtomicU64::new(0),
-        );
-        assert!(matches!(result, Err(DownloadError::Network(_))));
-        assert_eq!(size_of(&dir.path().join("test.bin.part")), Some(4));
-    }
-
-    #[test]
-    fn a_blocked_start_does_not_run_and_the_list_shows_what_is_on_disk() {
-        let dir = tempfile::tempdir().unwrap();
-        let models = Models::with_source(dir.path().to_path_buf(), Arc::new(memory(DATA, false)));
-        assert_eq!(
-            models.start("speech-base-en", Some(DownloadError::Offline)),
-            Err(DownloadError::Offline)
-        );
-        let first = &models.list().models[0];
-        assert_eq!((first.state, first.bytes), ("notInstalled", 0));
-        let spec = &CATALOG[0];
-        fs::write(dir.path().join(format!("{}.part", spec.file)), b"abc").unwrap();
-        let listed = models.list();
-        assert_eq!((listed.models[0].state, listed.models[0].bytes), ("partial", 3));
-        models.remove(spec.id).unwrap();
-        assert_eq!(models.list().models[0].state, "notInstalled");
-    }
-
-    #[test]
-    fn a_model_whose_download_will_not_stop_is_kept_and_says_so() {
-        let dir = tempfile::tempdir().unwrap();
-        let models = Models::with_source(dir.path().to_path_buf(), Arc::new(memory(DATA, false)));
-        let spec = &CATALOG[0];
-        models.jobs().insert(
-            spec.id,
-            Job {
-                cancel: Arc::new(AtomicBool::new(false)),
-                bytes: Arc::new(AtomicU64::new(0)),
-                running: true,
-                error: None,
-            },
-        );
-        fs::write(dir.path().join(format!("{}.part", spec.file)), b"abc").unwrap();
-        assert_eq!(models.remove_waiting(spec.id, 2), Err(DownloadError::Stopping));
-        assert!(dir.path().join(format!("{}.part", spec.file)).exists());
-        assert!(models.jobs().contains_key(spec.id));
-        assert_eq!(DownloadError::Stopping.code(), "stopping");
     }
 }

@@ -126,6 +126,10 @@ impl TranscriptionEngine for Gated<dyn TranscriptionEngine> {
         self.inner.name()
     }
 
+    fn model_file(&self) -> Option<std::path::PathBuf> {
+        self.inner.model_file()
+    }
+
     fn devices(&self) -> Vec<Device> {
         self.inner.devices()
     }

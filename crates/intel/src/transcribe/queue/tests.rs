@@ -9,7 +9,11 @@ const PATIENCE: Duration = Duration::from_secs(10);
 fn request(samples: usize, device: DevicePreference) -> JobRequest {
     JobRequest {
         audio: Box::new(MemoryAudio::new(vec![0.0; samples])),
-        options: TranscribeOptions { language: None, device },
+        options: TranscribeOptions {
+            language: None,
+            device,
+            prompt: String::new(),
+        },
     }
 }
 
