@@ -35,7 +35,11 @@ pub(crate) fn ops_bbox(ops: &[Op]) -> Option<[f64; 4]> {
 pub(crate) fn intersect(a: [f64; 4], b: [f64; 4]) -> [f64; 4] {
     let r = [a[0].max(b[0]), a[1].max(b[1]), a[2].min(b[2]), a[3].min(b[3])];
     // An empty intersection stays empty (zero size) so it clips everything away.
-    if r[2] < r[0] || r[3] < r[1] { [r[0], r[1], r[0], r[1]] } else { r }
+    if r[2] < r[0] || r[3] < r[1] {
+        [r[0], r[1], r[0], r[1]]
+    } else {
+        r
+    }
 }
 
 /// A rectangle `[l, t, r, b]` as a polygon.
@@ -46,7 +50,9 @@ pub(crate) fn rect_poly([l, t, r, b]: [f64; 4]) -> Vec<P> {
 /// The bounding box of a point list.
 pub(crate) fn pts_bbox(pts: &[P]) -> Option<[f64; 4]> {
     let (&f, rest) = pts.split_first()?;
-    Some(rest.iter().fold([f.0, f.1, f.0, f.1], |v, p| [v[0].min(p.0), v[1].min(p.1), v[2].max(p.0), v[3].max(p.1)]))
+    Some(rest.iter().fold([f.0, f.1, f.0, f.1], |v, p| {
+        [v[0].min(p.0), v[1].min(p.1), v[2].max(p.0), v[3].max(p.1)]
+    }))
 }
 
 fn cross(a: P, b: P, p: P) -> f64 {
@@ -61,14 +67,18 @@ pub(crate) fn convex(pts: &[P]) -> Option<Vec<P>> {
         if !(p.0.is_finite() && p.1.is_finite()) {
             return None;
         }
-        if v.last().is_none_or(|q: &P| (q.0 - p.0).abs() > 1e-9 || (q.1 - p.1).abs() > 1e-9) {
+        if v.last()
+            .is_none_or(|q: &P| (q.0 - p.0).abs() > 1e-9 || (q.1 - p.1).abs() > 1e-9)
+        {
             v.push(p);
         }
     }
     while v.len() > 1 && v.first() == v.last() {
         v.pop();
     }
-    let area: f64 = (0..v.len()).map(|i| cross((0.0, 0.0), v[i], v[(i + 1) % v.len()])).sum();
+    let area: f64 = (0..v.len())
+        .map(|i| cross((0.0, 0.0), v[i], v[(i + 1) % v.len()]))
+        .sum();
     if v.len() < 3 || area.abs() < 1e-12 {
         return None;
     }
@@ -95,7 +105,12 @@ fn inside_poly(clip: &[P], p: P) -> bool {
 
 /// Whether the clip polygon is an axis-aligned rectangle.
 fn is_rect(clip: &[P]) -> bool {
-    pts_bbox(clip).is_some_and(|b| clip.len() == 4 && clip.iter().all(|p| (p.0 == b[0] || p.0 == b[2]) && (p.1 == b[1] || p.1 == b[3])))
+    pts_bbox(clip).is_some_and(|b| {
+        clip.len() == 4
+            && clip
+                .iter()
+                .all(|p| (p.0 == b[0] || p.0 == b[2]) && (p.1 == b[1] || p.1 == b[3]))
+    })
 }
 
 /// Sutherland–Hodgman: `poly` cut by convex `clip`.
@@ -141,12 +156,26 @@ fn bbox_inside(b: [f64; 4], clip: &[P]) -> bool {
 /// Clips one drawn item to a convex device polygon; a shape that is both filled and stroked comes
 /// back as two items. An empty polygon clips everything away.
 pub(crate) fn clip_raw(raw: Raw, clip: &[P]) -> Vec<Raw> {
-    let Some(cb) = pts_bbox(clip).filter(|_| clip.len() >= 3) else { return Vec::new() };
+    let Some(cb) = pts_bbox(clip).filter(|_| clip.len() >= 3) else {
+        return Vec::new();
+    };
     match raw {
-        Raw::Path { ops, fill, stroke, even_odd, region } => {
+        Raw::Path {
+            ops,
+            fill,
+            stroke,
+            even_odd,
+            region,
+        } => {
             let Some(b) = ops_bbox(&ops) else { return Vec::new() };
             if bbox_inside(b, clip) {
-                return vec![Raw::Path { ops, fill, stroke, even_odd, region }];
+                return vec![Raw::Path {
+                    ops,
+                    fill,
+                    stroke,
+                    even_odd,
+                    region,
+                }];
             }
             if disjoint(b, cb) {
                 return Vec::new();
@@ -156,32 +185,67 @@ pub(crate) fn clip_raw(raw: Raw, clip: &[P]) -> Vec<Raw> {
             if fill.is_some() {
                 let f = clip_fill(&subs, clip);
                 if !f.is_empty() {
-                    out.push(Raw::Path { ops: f, fill, stroke: None, even_odd, region: region.clone() });
+                    out.push(Raw::Path {
+                        ops: f,
+                        fill,
+                        stroke: None,
+                        even_odd,
+                        region: region.clone(),
+                    });
                 }
             }
             if stroke.is_some() {
                 let s = clip_stroke(&subs, clip);
                 if !s.is_empty() {
-                    out.push(Raw::Path { ops: s, fill: None, stroke, even_odd, region });
+                    out.push(Raw::Path {
+                        ops: s,
+                        fill: None,
+                        stroke,
+                        even_odd,
+                        region,
+                    });
                 }
             }
             out
         }
-        Raw::Pattern { ops, even_odd, tile, region } => {
+        Raw::Pattern {
+            ops,
+            even_odd,
+            tile,
+            region,
+        } => {
             let Some(b) = ops_bbox(&ops) else { return Vec::new() };
             if bbox_inside(b, clip) {
-                return vec![Raw::Pattern { ops, even_odd, tile, region }];
+                return vec![Raw::Pattern {
+                    ops,
+                    even_odd,
+                    tile,
+                    region,
+                }];
             }
             if disjoint(b, cb) {
                 return Vec::new();
             }
             let f = clip_fill(&flatten(&ops), clip);
-            if f.is_empty() { Vec::new() } else { vec![Raw::Pattern { ops: f, even_odd, tile, region }] }
+            if f.is_empty() {
+                Vec::new()
+            } else {
+                vec![Raw::Pattern {
+                    ops: f,
+                    even_odd,
+                    tile,
+                    region,
+                }]
+            }
         }
-        Raw::Bitmap { rect, img, region } => crop(rect, img, clip).map(|(rect, img)| vec![Raw::Bitmap { rect, img, region }]).unwrap_or_default(),
+        Raw::Bitmap { rect, img, region } => crop(rect, img, clip)
+            .map(|(rect, img)| vec![Raw::Bitmap { rect, img, region }])
+            .unwrap_or_default(),
         Raw::Text { text: mut t, region } => {
             // Text clips to a rectangle: the one around the polygon.
-            let cur = t.clip.map_or(cb, |[a, b, d, e]| intersect(cb, [f64::from(a), f64::from(b), f64::from(d), f64::from(e)]));
+            let cur = t.clip.map_or(cb, |[a, b, d, e]| {
+                intersect(cb, [f64::from(a), f64::from(b), f64::from(d), f64::from(e)])
+            });
             t.clip = Some(cur.map(|v| v as f32));
             vec![Raw::Text { text: t, region }]
         }
@@ -205,7 +269,10 @@ pub(crate) fn flatten(ops: &[Op]) -> Vec<(Vec<P>, bool)> {
                     let t = i as f64 / CURVE_STEPS as f64;
                     let u = 1.0 - t;
                     let k = [u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t];
-                    s.0.push((k[0] * p0.0 + k[1] * a.0 + k[2] * b.0 + k[3] * d.0, k[0] * p0.1 + k[1] * a.1 + k[2] * b.1 + k[3] * d.1));
+                    s.0.push((
+                        k[0] * p0.0 + k[1] * a.0 + k[2] * b.0 + k[3] * d.0,
+                        k[0] * p0.1 + k[1] * a.1 + k[2] * b.1 + k[3] * d.1,
+                    ));
                 }
             }
             Op::Z => {
@@ -324,6 +391,19 @@ fn crop(rect: [f64; 4], img: Rgba, clip: &[P]) -> Option<([f64; 4], Rgba)> {
             }
         }
     }
-    let out = [x + x0 as f64 / kx, y + y0 as f64 / ky, (x1 - x0) as f64 / kx, (y1 - y0) as f64 / ky];
-    Some((out, Rgba { w: x1 - x0, h: y1 - y0, bottom_up: false, px }))
+    let out = [
+        x + x0 as f64 / kx,
+        y + y0 as f64 / ky,
+        (x1 - x0) as f64 / kx,
+        (y1 - y0) as f64 / ky,
+    ];
+    Some((
+        out,
+        Rgba {
+            w: x1 - x0,
+            h: y1 - y0,
+            bottom_up: false,
+            px,
+        },
+    ))
 }

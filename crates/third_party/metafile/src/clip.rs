@@ -83,7 +83,9 @@ fn subtract_all(subject: Vec<[f64; 4]>, cuts: &[[f64; 4]]) -> Vec<[f64; 4]> {
 
 /// Intersects the current region with one rectangle.
 pub(crate) fn intersect(current: Option<Vec<[f64; 4]>>, rect: [f64; 4]) -> Option<Vec<[f64; 4]>> {
-    let Some(rect) = normalize(rect) else { return Some(Vec::new()) };
+    let Some(rect) = normalize(rect) else {
+        return Some(Vec::new());
+    };
     Some(match current {
         None => vec![rect],
         Some(rects) => cap(rects.iter().filter_map(|r| intersection(*r, rect)).collect()),
@@ -92,7 +94,11 @@ pub(crate) fn intersect(current: Option<Vec<[f64; 4]>>, rect: [f64; 4]) -> Optio
 
 /// Removes one rectangle. `surface` is the device bounds, used when the clip is still the default
 /// (the whole surface) so the remainder can be named.
-pub(crate) fn exclude(current: Option<Vec<[f64; 4]>>, rect: [f64; 4], surface: Option<[f64; 4]>) -> Option<Vec<[f64; 4]>> {
+pub(crate) fn exclude(
+    current: Option<Vec<[f64; 4]>>,
+    rect: [f64; 4],
+    surface: Option<[f64; 4]>,
+) -> Option<Vec<[f64; 4]>> {
     let Some(rect) = normalize(rect) else { return current };
     match current {
         Some(rects) => Some(subtract_all(rects, &[rect])),
@@ -103,7 +109,12 @@ pub(crate) fn exclude(current: Option<Vec<[f64; 4]>>, rect: [f64; 4], surface: O
 /// Combines `incoming` with the current region in a region mode (`RGN_*`). An unknown mode leaves
 /// the region as it was. `RGN_COPY` replaces it. An `RGN_OR` or `RGN_XOR` against the default clip
 /// stays the default clip: the whole surface already covers the incoming rectangles.
-pub(crate) fn combine(current: Option<Vec<[f64; 4]>>, incoming: Vec<[f64; 4]>, mode: u32, surface: Option<[f64; 4]>) -> Option<Vec<[f64; 4]>> {
+pub(crate) fn combine(
+    current: Option<Vec<[f64; 4]>>,
+    incoming: Vec<[f64; 4]>,
+    mode: u32,
+    surface: Option<[f64; 4]>,
+) -> Option<Vec<[f64; 4]>> {
     let incoming: Vec<[f64; 4]> = cap(incoming.iter().copied().filter_map(normalize).collect());
     match mode {
         RGN_COPY => Some(incoming),
@@ -161,13 +172,19 @@ mod tests {
         let r = intersect(r, [40.0, 10.0, 80.0, 40.0]);
         assert_eq!(r, Some(vec![[40.0, 10.0, 80.0, 40.0]]));
         assert_eq!(intersect(r, [0.0, 0.0, 10.0, 10.0]), Some(vec![]));
-        assert_eq!(intersect(Some(vec![[0.0, 0.0, 10.0, 20.0]]), [40.0, 0.0, 80.0, 20.0]), Some(vec![]));
+        assert_eq!(
+            intersect(Some(vec![[0.0, 0.0, 10.0, 20.0]]), [40.0, 0.0, 80.0, 20.0]),
+            Some(vec![])
+        );
     }
 
     #[test]
     fn modes_copy_and_or_diff_and_xor() {
         let a = Some(vec![[0.0, 0.0, 100.0, 40.0]]);
-        assert_eq!(combine(a.clone(), vec![[10.0, 10.0, 30.0, 20.0]], RGN_COPY, None), Some(vec![[10.0, 10.0, 30.0, 20.0]]));
+        assert_eq!(
+            combine(a.clone(), vec![[10.0, 10.0, 30.0, 20.0]], RGN_COPY, None),
+            Some(vec![[10.0, 10.0, 30.0, 20.0]])
+        );
         let and = combine(a.clone(), vec![[50.0, 0.0, 150.0, 40.0]], RGN_AND, None);
         assert_eq!(and, Some(vec![[50.0, 0.0, 100.0, 40.0]]));
         let or = combine(a.clone(), vec![[200.0, 0.0, 210.0, 10.0]], RGN_OR, None).unwrap();
@@ -188,6 +205,9 @@ mod tests {
 
     #[test]
     fn a_zero_area_rectangle_clears_an_intersection() {
-        assert_eq!(intersect(Some(vec![[0.0, 0.0, 10.0, 10.0]]), [5.0, 5.0, 5.0, 8.0]), Some(vec![]));
+        assert_eq!(
+            intersect(Some(vec![[0.0, 0.0, 10.0, 10.0]]), [5.0, 5.0, 5.0, 8.0]),
+            Some(vec![])
+        );
     }
 }

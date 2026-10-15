@@ -61,7 +61,11 @@ pub(super) fn picture(
     if is_metafile_extension(extension) {
         let svg = metafile_to_svg(&load(path)?)?;
         let stem = name.rsplit_once('.').map_or(name, |(stem, _)| stem);
-        return Some(builder.add_asset(&format!("{stem}.svg"), Some("image/svg+xml"), svg).to_string());
+        return Some(
+            builder
+                .add_asset(&format!("{stem}.svg"), Some("image/svg+xml"), svg)
+                .to_string(),
+        );
     }
     let mime = mime_from_extension(extension);
     if !is_image(mime) {

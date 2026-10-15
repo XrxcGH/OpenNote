@@ -43,7 +43,13 @@ pub fn to_svg(picture: &Picture) -> Option<String> {
             return None;
         }
         match item {
-            Item::Path { segs, fill, stroke, even_odd, region } => {
+            Item::Path {
+                segs,
+                fill,
+                stroke,
+                even_odd,
+                region,
+            } => {
                 let (open, close) = open_clip(&mut defs, &mut ids, region.as_deref());
                 body.push_str(&open);
                 let _ = write!(body, "<path d=\"{}\"", path_data(segs));
@@ -68,8 +74,16 @@ pub fn to_svg(picture: &Picture) -> Option<String> {
                 body.push_str("/>");
                 body.push_str(close);
             }
-            Item::Bitmap { rect, width, height, rgba, region } => {
-                let Some(png) = png_data_uri(*width, *height, rgba) else { continue };
+            Item::Bitmap {
+                rect,
+                width,
+                height,
+                rgba,
+                region,
+            } => {
+                let Some(png) = png_data_uri(*width, *height, rgba) else {
+                    continue;
+                };
                 let (open, close) = open_clip(&mut defs, &mut ids, region.as_deref());
                 body.push_str(&open);
                 let _ = write!(
@@ -83,12 +97,19 @@ pub fn to_svg(picture: &Picture) -> Option<String> {
                 );
                 body.push_str(close);
             }
-            Item::Pattern { segs, even_odd, tile, region } => {
+            Item::Pattern {
+                segs,
+                even_odd,
+                tile,
+                region,
+            } => {
                 let key = Arc::as_ptr(tile);
                 let id = match tiles.get(&key) {
                     Some(id) => id.clone(),
                     None => {
-                        let Some(png) = png_data_uri(tile.width, tile.height, &tile.rgba) else { continue };
+                        let Some(png) = png_data_uri(tile.width, tile.height, &tile.rgba) else {
+                            continue;
+                        };
                         ids += 1;
                         let id = format!("p{ids}");
                         let (tw, th) = (tile.width as f32 * tile.cell[0], tile.height as f32 * tile.cell[1]);
@@ -132,7 +153,9 @@ pub fn to_svg(picture: &Picture) -> Option<String> {
 /// Opens a group clipped to the union of `region`'s rectangles. Returns the opening markup and the closing
 /// markup (both empty without a region).
 fn open_clip(defs: &mut String, ids: &mut usize, region: Option<&[[f32; 4]]>) -> (String, &'static str) {
-    let Some(rects) = region else { return (String::new(), "") };
+    let Some(rects) = region else {
+        return (String::new(), "");
+    };
     *ids += 1;
     let id = format!("c{ids}");
     let _ = write!(defs, "<clipPath id=\"{id}\">");
@@ -251,11 +274,7 @@ fn em_size(t: &Text) -> f32 {
     } else {
         12.0
     };
-    if em.is_finite() && em > 0.0 {
-        em
-    } else {
-        12.0
-    }
+    if em.is_finite() && em > 0.0 { em } else { 12.0 }
 }
 
 /// A `font-family` value: the name the file asks for, quoted, then a generic family.
@@ -303,7 +322,8 @@ fn path_data(segs: &[Seg]) -> String {
 fn png_data_uri(width: u32, height: u32, rgba: &[u8]) -> Option<String> {
     let img = image::RgbaImage::from_raw(width, height, rgba.to_vec())?;
     let mut png = Vec::new();
-    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .ok()?;
     let mut uri = String::from("data:image/png;base64,");
     base64(&png, &mut uri);
     Some(uri)
@@ -317,8 +337,16 @@ fn base64(bytes: &[u8], out: &mut String) {
             | u32::from(*chunk.get(2).unwrap_or(&0));
         out.push(char::from(TABLE[(n >> 18) as usize & 63]));
         out.push(char::from(TABLE[(n >> 12) as usize & 63]));
-        out.push(if chunk.len() > 1 { char::from(TABLE[(n >> 6) as usize & 63]) } else { '=' });
-        out.push(if chunk.len() > 2 { char::from(TABLE[n as usize & 63]) } else { '=' });
+        out.push(if chunk.len() > 1 {
+            char::from(TABLE[(n >> 6) as usize & 63])
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            char::from(TABLE[n as usize & 63])
+        } else {
+            '='
+        });
     }
 }
 
@@ -353,7 +381,8 @@ fn num64(v: f64) -> String {
 }
 
 fn is_xml_char(c: char) -> bool {
-    matches!(c, '\t' | '\n' | '\r') || (c >= ' ' && c != '\u{fffe}' && c != '\u{ffff}' && !('\u{7f}'..='\u{9f}').contains(&c))
+    matches!(c, '\t' | '\n' | '\r')
+        || (c >= ' ' && c != '\u{fffe}' && c != '\u{ffff}' && !('\u{7f}'..='\u{9f}').contains(&c))
 }
 
 fn escape(s: &str) -> String {
@@ -376,13 +405,22 @@ mod tests {
     use super::*;
 
     fn picture(items: Vec<Item>) -> Picture {
-        Picture { width: 100.0, height: 50.0, items }
+        Picture {
+            width: 100.0,
+            height: 50.0,
+            items,
+        }
     }
 
     #[test]
     fn a_filled_path_becomes_a_path_element() {
         let svg = to_svg(&picture(vec![Item::Path {
-            segs: vec![Seg::Move(0.0, 0.0), Seg::Line(10.0, 0.0), Seg::Line(10.0, 10.0), Seg::Close],
+            segs: vec![
+                Seg::Move(0.0, 0.0),
+                Seg::Line(10.0, 0.0),
+                Seg::Line(10.0, 10.0),
+                Seg::Close,
+            ],
             fill: Some([255, 0, 0, 255]),
             stroke: Some(([0, 0, 255, 128], 2.0)),
             even_odd: true,
@@ -430,7 +468,12 @@ mod tests {
             transform: [1.0, 0.0, 0.0, 1.0, 5.0, 20.0],
             text: "a<b & \"c\"\u{1}".to_owned(),
             dx: Vec::new(),
-            font: crate::Font { family: "Arial\"><script>".to_owned(), height: -12.0, weight: 700, ..Default::default() },
+            font: crate::Font {
+                family: "Arial\"><script>".to_owned(),
+                height: -12.0,
+                weight: 700,
+                ..Default::default()
+            },
             color: [0, 0, 0, 255],
             background: None,
             h_align: HAlign::Left,
@@ -447,7 +490,11 @@ mod tests {
     #[test]
     fn an_empty_or_unsized_picture_gives_nothing() {
         assert!(to_svg(&picture(Vec::new())).is_none());
-        let sizeless = Picture { width: 0.0, height: 10.0, items: vec![] };
+        let sizeless = Picture {
+            width: 0.0,
+            height: 10.0,
+            items: vec![],
+        };
         assert!(to_svg(&sizeless).is_none());
     }
 }

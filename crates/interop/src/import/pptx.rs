@@ -533,7 +533,13 @@ mod tests {
         let world = TestEnv::new();
         let env = world.env();
         let done = convert_parts(&mut parts, "deck", &env).expect("converts");
-        let mimes = done.pages[0].page.page.assets.values().map(|a| a.mime.clone()).collect();
+        let mimes = done.pages[0]
+            .page
+            .page
+            .assets
+            .values()
+            .map(|a| a.mime.clone())
+            .collect();
         let report = done.pages[0].report.entries.iter().map(|e| e.what.clone()).collect();
         (mimes, report)
     }

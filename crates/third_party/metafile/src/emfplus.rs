@@ -60,10 +60,28 @@ const TA_BASELINE: u32 = 24;
 #[derive(Clone)]
 enum Fill {
     Solid([u8; 4]),
-    Hatch { style: u32, fg: [u8; 4], bg: [u8; 4] },
-    Linear { rect: [f64; 4], stops: Vec<(f64, [u8; 4])>, wrap: u32, xf: Xform },
-    Radial { center: P, radius: P, stops: Vec<(f64, [u8; 4])>, xf: Xform },
-    Texture { img: Arc<Rgba>, wrap: u32, xf: Xform },
+    Hatch {
+        style: u32,
+        fg: [u8; 4],
+        bg: [u8; 4],
+    },
+    Linear {
+        rect: [f64; 4],
+        stops: Vec<(f64, [u8; 4])>,
+        wrap: u32,
+        xf: Xform,
+    },
+    Radial {
+        center: P,
+        radius: P,
+        stops: Vec<(f64, [u8; 4])>,
+        xf: Xform,
+    },
+    Texture {
+        img: Arc<Rgba>,
+        wrap: u32,
+        xf: Xform,
+    },
 }
 
 impl Fill {
@@ -72,7 +90,11 @@ impl Fill {
         match self {
             Fill::Solid(c) | Fill::Hatch { fg: c, .. } => *c,
             Fill::Linear { stops, .. } | Fill::Radial { stops, .. } => ramp(stops, 0.5),
-            Fill::Texture { img, .. } => img.px.get(..4).and_then(|c| c.try_into().ok()).unwrap_or([0, 0, 0, 255]),
+            Fill::Texture { img, .. } => img
+                .px
+                .get(..4)
+                .and_then(|c| c.try_into().ok())
+                .unwrap_or([0, 0, 0, 255]),
         }
     }
 
@@ -84,8 +106,13 @@ impl Fill {
                 let t = if rect[2] == 0.0 { 0.0 } else { (p.0 - rect[0]) / rect[2] };
                 ramp(stops, wrap_t(t, *wrap))
             }
-            Fill::Radial { center, radius, stops, .. } => {
-                let (dx, dy) = ((p.0 - center.0) / radius.0.max(1e-9), (p.1 - center.1) / radius.1.max(1e-9));
+            Fill::Radial {
+                center, radius, stops, ..
+            } => {
+                let (dx, dy) = (
+                    (p.0 - center.0) / radius.0.max(1e-9),
+                    (p.1 - center.1) / radius.1.max(1e-9),
+                );
                 ramp(stops, dx.hypot(dy).min(1.0))
             }
             Fill::Texture { img, wrap, .. } => {
@@ -99,7 +126,10 @@ impl Fill {
                 let x = (p.0.rem_euclid(w) as usize).min(img.w - 1);
                 let y = (p.1.rem_euclid(h) as usize).min(img.h - 1);
                 let i = (y * img.w + x) * 4;
-                img.px.get(i..i + 4).and_then(|c| c.try_into().ok()).unwrap_or([0, 0, 0, 0])
+                img.px
+                    .get(i..i + 4)
+                    .and_then(|c| c.try_into().ok())
+                    .unwrap_or([0, 0, 0, 0])
             }
         }
     }
@@ -129,7 +159,9 @@ fn wrap_t(t: f64, wrap: u32) -> f64 {
 
 /// The colour at `t` along sorted stops.
 fn ramp(stops: &[(f64, [u8; 4])], t: f64) -> [u8; 4] {
-    let (Some(first), Some(last)) = (stops.first(), stops.last()) else { return [0, 0, 0, 0] };
+    let (Some(first), Some(last)) = (stops.first(), stops.last()) else {
+        return [0, 0, 0, 0];
+    };
     if t <= first.0 {
         return first.1;
     }
@@ -146,7 +178,9 @@ fn ramp(stops: &[(f64, [u8; 4])], t: f64) -> [u8; 4] {
 fn lerp(a: [u8; 4], b: [u8; 4], k: f64) -> [u8; 4] {
     let mut c = [0u8; 4];
     for i in 0..4 {
-        c[i] = (f64::from(a[i]) + (f64::from(b[i]) - f64::from(a[i])) * k).round().clamp(0.0, 255.0) as u8;
+        c[i] = (f64::from(a[i]) + (f64::from(b[i]) - f64::from(a[i])) * k)
+            .round()
+            .clamp(0.0, 255.0) as u8;
     }
     c
 }
@@ -247,7 +281,9 @@ impl Plus {
     pub fn comment(&mut self, cv: &mut Canvas, data: Bytes) {
         let mut pos = 0usize;
         while !cv.full() {
-            let (Some(typ), Some(flags), Some(size), Some(dsize)) = (data.u16(pos), data.u16(pos + 2), data.u32(pos + 4), data.u32(pos + 8)) else {
+            let (Some(typ), Some(flags), Some(size), Some(dsize)) =
+                (data.u16(pos), data.u16(pos + 2), data.u32(pos + 4), data.u32(pos + 8))
+            else {
                 break;
             };
             let (size, dsize) = (size as usize, dsize as usize);
@@ -267,7 +303,10 @@ impl Plus {
     }
 
     fn painter(&self) -> Painter {
-        Painter { xf: self.xf(), clip: self.clip.clone() }
+        Painter {
+            xf: self.xf(),
+            clip: self.clip.clone(),
+        }
     }
 
     fn record(&mut self, cv: &mut Canvas, typ: u16, flags: u16, r: Bytes) -> Option<()> {
@@ -352,14 +391,16 @@ impl Plus {
                 let fill = self.brush_of(flags, r.u32(0)?)?;
                 let tension = finite(r.f32(4)?)?;
                 let pts = points(r, 12, r.u32(8)? as usize, compressed)?;
-                self.painter().fill(cv, &curve_ops(&pts, tension, true, 0, usize::MAX), &fill);
+                self.painter()
+                    .fill(cv, &curve_ops(&pts, tension, true, 0, usize::MAX), &fill);
                 Some(())
             }
             0x4017 => {
                 let pen = self.pen(id)?;
                 let tension = finite(r.f32(0)?)?;
                 let pts = points(r, 8, r.u32(4)? as usize, compressed)?;
-                self.painter().stroke(cv, &curve_ops(&pts, tension, true, 0, usize::MAX), pen);
+                self.painter()
+                    .stroke(cv, &curve_ops(&pts, tension, true, 0, usize::MAX), pen);
                 Some(())
             }
             0x4018 => {
@@ -367,7 +408,8 @@ impl Plus {
                 let tension = finite(r.f32(0)?)?;
                 let (offset, segments) = (r.u32(4)? as usize, r.u32(8)? as usize);
                 let pts = points(r, 16, r.u32(12)? as usize, compressed)?;
-                self.painter().stroke(cv, &curve_ops(&pts, tension, false, offset, segments), pen);
+                self.painter()
+                    .stroke(cv, &curve_ops(&pts, tension, false, offset, segments), pen);
                 Some(())
             }
             // Clear: the whole picture in one colour, whatever the clip (a transparent clear
@@ -379,14 +421,19 @@ impl Plus {
                     return Some(());
                 }
                 let to_device = invert(mul(cv.world(), cv.device_affine()))?;
-                let p = Painter { xf: to_device, clip: None };
+                let p = Painter {
+                    xf: to_device,
+                    clip: None,
+                };
                 p.fill(cv, &rect_ops([x, y, x + w, y + h]), &Fill::Solid(c));
                 Some(())
             }
             // FillRegion: the region's area (as the clip reads it).
             0x4013 => {
                 let fill = self.brush_of(flags, r.u32(0)?)?;
-                let Some(Some(Obj::Region(Some(area)))) = self.objects.get(id).cloned() else { return None };
+                let Some(Some(Obj::Region(Some(area)))) = self.objects.get(id).cloned() else {
+                    return None;
+                };
                 if area.len() < 3 {
                     return None;
                 }
@@ -437,7 +484,10 @@ impl Plus {
             }
             0x4032 => {
                 let [x, y, w, h] = floats::<4>(r, 0)?;
-                let area = map_area(Some(rect_poly([x, y, x + w, y + h])), mul(self.xf(), cv.device_affine()));
+                let area = map_area(
+                    Some(rect_poly([x, y, x + w, y + h])),
+                    mul(self.xf(), cv.device_affine()),
+                );
                 self.combine(flags, area)
             }
             0x4033 => {
@@ -445,7 +495,9 @@ impl Plus {
                 self.combine(flags, area)
             }
             0x4034 => {
-                let Some(Some(Obj::Region(reg))) = self.objects.get(id).cloned() else { return None };
+                let Some(Some(Obj::Region(reg))) = self.objects.get(id).cloned() else {
+                    return None;
+                };
                 let area = map_area(reg, mul(self.xf(), cv.device_affine()));
                 self.combine(flags, area)
             }
@@ -471,7 +523,8 @@ impl Plus {
                 let pen = self.pen(id)?;
                 let [start, sweep] = floats::<2>(r, 0)?;
                 let rect = *rects(r, 8, 1, compressed)?.first()?;
-                self.painter().stroke(cv, &arc_ops(rect, start, sweep, typ == 0x4011), pen);
+                self.painter()
+                    .stroke(cv, &arc_ops(rect, start, sweep, typ == 0x4011), pen);
                 Some(())
             }
             _ => None,
@@ -480,13 +533,22 @@ impl Plus {
 
     /// Without the `A` flag a transform is applied before the world transform (prepended).
     fn apply(&mut self, m: Xform, flags: u16) -> Option<()> {
-        self.world = if flags & 0x2000 != 0 { mul(self.world, m) } else { mul(m, self.world) };
+        self.world = if flags & 0x2000 != 0 {
+            mul(self.world, m)
+        } else {
+            mul(m, self.world)
+        };
         Some(())
     }
 
     fn push(&mut self, id: u32) {
         if self.stack.len() < MAX_STACK {
-            self.stack.push(Saved { id, world: self.world, page: self.page, clip: self.clip.clone() });
+            self.stack.push(Saved {
+                id,
+                world: self.world,
+                page: self.page,
+                clip: self.clip.clone(),
+            });
         }
     }
 
@@ -520,7 +582,12 @@ impl Plus {
             let chunk = r.tail(4)?.0;
             let p = match self.partial.take() {
                 Some(p) if p.id == id && p.kind == kind && p.total == total => p,
-                _ => Partial { id, kind, total, data: Vec::new() },
+                _ => Partial {
+                    id,
+                    kind,
+                    total,
+                    data: Vec::new(),
+                },
             };
             let mut p = p;
             let room = p.total.saturating_sub(p.data.len());
@@ -598,7 +665,11 @@ impl Plus {
             }
         };
         let [sx, sy, sw, sh] = floats::<4>(r, 8)?;
-        let src = if r.u32(4)? == 2 { [sx, sy, sw, sh].map(|v| v.round().clamp(-1.0e9, 1.0e9) as i64) } else { [0; 4] };
+        let src = if r.u32(4)? == 2 {
+            [sx, sy, sw, sh].map(|v| v.round().clamp(-1.0e9, 1.0e9) as i64)
+        } else {
+            [0; 4]
+        };
         let (part, dst) = crate::dib::clip_blit(img, src, dst)?;
         self.painter().image(cv, dst, part);
         Some(())
@@ -613,7 +684,11 @@ impl Plus {
 
     /// The font as a LOGFONT whose height is in world units.
     fn log_font(&self, f: &FontObj) -> LogFont {
-        let em = if f.unit == 0 { f.em } else { f.em * unit_px(f.unit, self.dpi) / self.page };
+        let em = if f.unit == 0 {
+            f.em
+        } else {
+            f.em * unit_px(f.unit, self.dpi) / self.page
+        };
         let font = Font {
             family: f.family.clone(),
             height: -(em.clamp(0.0, 1.0e6) as f32),
@@ -667,8 +742,24 @@ impl Plus {
             }
             let (text, dx) = crate::text::decode_utf16(line, &[]);
             let at = (ax, top + line_h * i as f64);
-            let (at, ta) = if fmt.line_align == 2 && lines.len() == 1 { ((ax, y + h), ta_h | TA_BOTTOM) } else { (at, ta_h) };
-            p.text(cv, at, text, dx, TextStyle { color, font: lf.clone(), align: ta, clip }, IDENTITY);
+            let (at, ta) = if fmt.line_align == 2 && lines.len() == 1 {
+                ((ax, y + h), ta_h | TA_BOTTOM)
+            } else {
+                (at, ta_h)
+            };
+            p.text(
+                cv,
+                at,
+                text,
+                dx,
+                TextStyle {
+                    color,
+                    font: lf.clone(),
+                    align: ta,
+                    clip,
+                },
+                IDENTITY,
+            );
         }
         Some(())
     }
@@ -686,7 +777,11 @@ impl Plus {
             units = glyphs_to_chars(&font.family, &units)?;
         }
         let pos = points(r, 16 + n * 2, n, false)?;
-        let m = if r.u32(8)? != 0 { matrix(r, 16 + n * 10)? } else { IDENTITY };
+        let m = if r.u32(8)? != 0 {
+            matrix(r, 16 + n * 10)?
+        } else {
+            IDENTITY
+        };
         let lf = self.log_font(&font);
         let first = *pos.first()?;
         let dx: Vec<f32> = if opts & 4 != 0 {
@@ -697,7 +792,19 @@ impl Plus {
             d
         };
         let (text, dx) = crate::text::decode_utf16(&units, &dx);
-        self.painter().text(cv, first, text, dx, TextStyle { color, font: lf, align: TA_BASELINE, clip: None }, m);
+        self.painter().text(
+            cv,
+            first,
+            text,
+            dx,
+            TextStyle {
+                color,
+                font: lf,
+                align: TA_BASELINE,
+                clip: None,
+            },
+            m,
+        );
         Some(())
     }
 }
@@ -742,7 +849,11 @@ impl Painter {
     }
 
     fn no_pen(cv: &mut Canvas) {
-        cv.set_pen(Pen { style: PS_NULL, width: 0.0, color: [0, 0, 0, 0] });
+        cv.set_pen(Pen {
+            style: PS_NULL,
+            width: 0.0,
+            color: [0, 0, 0, 0],
+        });
     }
 
     fn fill(&self, cv: &mut Canvas, ops: &[Op], fill: &Fill) {
@@ -754,7 +865,15 @@ impl Painter {
                 cv.shape(ops, true, false);
             }
             Fill::Hatch { style, fg, bg } => match hatch_tile(*style, *fg, Some(*bg)) {
-                Some(px) => cv.tile_shape(ops, Arc::new(RawTile { w: 8, h: 8, px, cell: cv.pattern_px })),
+                Some(px) => cv.tile_shape(
+                    ops,
+                    Arc::new(RawTile {
+                        w: 8,
+                        h: 8,
+                        px,
+                        cell: cv.pattern_px,
+                    }),
+                ),
                 // GDI+ has many more hatch styles than GDI: those fill with the blend of both colours.
                 None => {
                     cv.set_brush(Brush::new(BS_SOLID, lerp(*fg, *bg, 0.5)));
@@ -809,14 +928,22 @@ impl Painter {
                 break;
             }
             let raw = match item {
-                Item::Path { segs, fill, stroke, even_odd, .. } => Raw::Path {
+                Item::Path {
+                    segs,
+                    fill,
+                    stroke,
+                    even_odd,
+                    ..
+                } => Raw::Path {
                     ops: ops(segs),
                     fill: *fill,
                     stroke: stroke.map(|(c, w)| (c, f64::from(w) * scale)),
                     even_odd: *even_odd,
                     region: None,
                 },
-                Item::Pattern { segs, even_odd, tile, .. } => Raw::Pattern {
+                Item::Pattern {
+                    segs, even_odd, tile, ..
+                } => Raw::Pattern {
                     ops: ops(segs),
                     even_odd: *even_odd,
                     tile: Arc::new(RawTile {
@@ -827,18 +954,38 @@ impl Painter {
                     }),
                     region: None,
                 },
-                Item::Bitmap { rect, width, height, rgba, .. } => {
+                Item::Bitmap {
+                    rect,
+                    width,
+                    height,
+                    rgba,
+                    ..
+                } => {
                     let (a, b) = (pt(rect[0], rect[1]), pt(rect[0] + rect[2], rect[1] + rect[3]));
-                    let mut img = Rgba { w: *width as usize, h: *height as usize, bottom_up: false, px: rgba.clone() };
+                    let mut img = Rgba {
+                        w: *width as usize,
+                        h: *height as usize,
+                        bottom_up: false,
+                        px: rgba.clone(),
+                    };
                     crate::dib::flip(&mut img, a.0 > b.0, a.1 > b.1);
-                    Raw::Bitmap { rect: [a.0.min(b.0), a.1.min(b.1), (b.0 - a.0).abs(), (b.1 - a.1).abs()], img, region: None }
+                    Raw::Bitmap {
+                        rect: [a.0.min(b.0), a.1.min(b.1), (b.0 - a.0).abs(), (b.1 - a.1).abs()],
+                        img,
+                        region: None,
+                    }
                 }
                 Item::Text(t) => {
                     let mut t = t.clone();
                     t.transform = mul(t.transform, m);
                     if let Some([x0, y0, x1, y1]) = t.clip {
                         let (p, q) = (pt(x0, y0), pt(x1, y1));
-                        t.clip = Some([p.0.min(q.0) as f32, p.1.min(q.1) as f32, p.0.max(q.0) as f32, p.1.max(q.1) as f32]);
+                        t.clip = Some([
+                            p.0.min(q.0) as f32,
+                            p.1.min(q.1) as f32,
+                            p.0.max(q.0) as f32,
+                            p.1.max(q.1) as f32,
+                        ]);
                     }
                     Raw::Text { text: t, region: None }
                 }
@@ -898,7 +1045,11 @@ fn parse_object(kind: u16, r: Bytes) -> Option<Obj> {
         4 => region(r),
         5 => image(r).map(|i| Obj::Image(Arc::new(i))),
         6 => font(r),
-        7 => Some(Obj::Format(Format { flags: r.u32(4)?, align: r.u32(12)?, line_align: r.u32(16)? })),
+        7 => Some(Obj::Format(Format {
+            flags: r.u32(4)?,
+            align: r.u32(12)?,
+            line_align: r.u32(16)?,
+        })),
         _ => None,
     }
 }
@@ -908,13 +1059,27 @@ fn brush(r: Bytes, off: usize) -> Option<Fill> {
     let d = r.tail(off + 8)?;
     match r.u32(off + 4)? {
         0 => Some(Fill::Solid(argb(d.u32(0)?))),
-        1 => Some(Fill::Hatch { style: d.u32(0)?, fg: argb(d.u32(4)?), bg: argb(d.u32(8)?) }),
+        1 => Some(Fill::Hatch {
+            style: d.u32(0)?,
+            fg: argb(d.u32(4)?),
+            bg: argb(d.u32(8)?),
+        }),
         2 => {
             let bflags = d.u32(0)?;
             let wrap = d.u32(4)?;
-            let (xf, off) = if bflags & 0x2 != 0 { (matrix(d, 8)?, 32) } else { (IDENTITY, 8) };
-            let ImageData::Bitmap(img) = image(d.tail(off)?)? else { return None };
-            Some(Fill::Texture { img: Arc::new(img), wrap, xf })
+            let (xf, off) = if bflags & 0x2 != 0 {
+                (matrix(d, 8)?, 32)
+            } else {
+                (IDENTITY, 8)
+            };
+            let ImageData::Bitmap(img) = image(d.tail(off)?)? else {
+                return None;
+            };
+            Some(Fill::Texture {
+                img: Arc::new(img),
+                wrap,
+                xf,
+            })
         }
         3 => path_gradient(d),
         4 => linear_gradient(d),
@@ -937,15 +1102,27 @@ fn linear_gradient(d: Bytes) -> Option<Fill> {
     if bflags & 0x4 != 0 {
         // Preset colours: positions, then one colour each.
         let n = (d.u32(off)? as usize).min(MAX_STOPS);
-        let pos: Vec<f64> = (0..n).map(|i| d.f32(off + 4 + i * 4).map(f64::from)).collect::<Option<_>>()?;
-        let cols: Vec<[u8; 4]> = (0..n).map(|i| d.u32(off + 4 + n * 4 + i * 4).map(argb)).collect::<Option<_>>()?;
+        let pos: Vec<f64> = (0..n)
+            .map(|i| d.f32(off + 4 + i * 4).map(f64::from))
+            .collect::<Option<_>>()?;
+        let cols: Vec<[u8; 4]> = (0..n)
+            .map(|i| d.u32(off + 4 + n * 4 + i * 4).map(argb))
+            .collect::<Option<_>>()?;
         stops = pos.into_iter().zip(cols).collect();
     } else if bflags & 0x8 != 0 {
         // Blend factors: positions, then how far from the start colour to the end colour.
         let n = (d.u32(off)? as usize).min(MAX_STOPS);
-        let pos: Vec<f64> = (0..n).map(|i| d.f32(off + 4 + i * 4).map(f64::from)).collect::<Option<_>>()?;
-        let fac: Vec<f64> = (0..n).map(|i| d.f32(off + 4 + n * 4 + i * 4).map(f64::from)).collect::<Option<_>>()?;
-        stops = pos.into_iter().zip(fac).map(|(p, k)| (p, lerp(c0, c1, k.clamp(0.0, 1.0)))).collect();
+        let pos: Vec<f64> = (0..n)
+            .map(|i| d.f32(off + 4 + i * 4).map(f64::from))
+            .collect::<Option<_>>()?;
+        let fac: Vec<f64> = (0..n)
+            .map(|i| d.f32(off + 4 + n * 4 + i * 4).map(f64::from))
+            .collect::<Option<_>>()?;
+        stops = pos
+            .into_iter()
+            .zip(fac)
+            .map(|(p, k)| (p, lerp(c0, c1, k.clamp(0.0, 1.0))))
+            .collect();
     }
     stops.retain(|s| s.0.is_finite());
     stops.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -974,7 +1151,12 @@ fn path_gradient(d: Bytes) -> Option<Fill> {
     };
     let xf = if bflags & 0x2 != 0 { matrix(d, off)? } else { IDENTITY };
     let radius = ((bbox[2] - bbox[0]) / 2.0, (bbox[3] - bbox[1]) / 2.0);
-    Some(Fill::Radial { center: (cx, cy), radius, stops: vec![(0.0, center_c), (1.0, surround)], xf })
+    Some(Fill::Radial {
+        center: (cx, cy),
+        radius,
+        stops: vec![(0.0, center_c), (1.0, surround)],
+        xf,
+    })
 }
 
 /// A pen object: version, type, then pen data (flags, unit, width, optional fields), then a brush.
@@ -982,14 +1164,27 @@ fn pen(r: Bytes) -> Option<Obj> {
     let pflags = r.u32(8)?;
     let width = f64::from(r.f32(16)?);
     let mut off = 20usize;
-    for (bit, len) in [(0x1, 24), (0x2, 4), (0x4, 4), (0x8, 4), (0x10, 4), (0x20, 4), (0x40, 4), (0x80, 4)] {
+    for (bit, len) in [
+        (0x1, 24),
+        (0x2, 4),
+        (0x4, 4),
+        (0x8, 4),
+        (0x10, 4),
+        (0x20, 4),
+        (0x40, 4),
+        (0x80, 4),
+    ] {
         if pflags & bit != 0 {
             off += len;
         }
     }
     for bit in [0x100, 0x200, 0x400] {
         if pflags & bit != 0 {
-            off += if bit == 0x200 { 4 } else { 4 + 4 * (r.u32(off)? as usize).min(MAX_POINTS) };
+            off += if bit == 0x200 {
+                4
+            } else {
+                4 + 4 * (r.u32(off)? as usize).min(MAX_POINTS)
+            };
         }
     }
     for bit in [0x800, 0x1000] {
@@ -998,7 +1193,14 @@ fn pen(r: Bytes) -> Option<Obj> {
         }
     }
     let color = brush(r, off)?.color();
-    Some(Obj::Pen { color, width: if width.is_finite() { width.clamp(0.0, 1.0e5) } else { 0.0 } })
+    Some(Obj::Pen {
+        color,
+        width: if width.is_finite() {
+            width.clamp(0.0, 1.0e5)
+        } else {
+            0.0
+        },
+    })
 }
 
 /// A path object: points, then one type byte per point (start, line, Bézier; 0x80 closes).
@@ -1051,7 +1253,10 @@ fn region_node(r: Bytes, off: usize, depth: usize) -> Option<(Area, usize)> {
     match r.u32(off)? {
         0x1000_0000 => {
             let [x, y, w, h] = floats::<4>(r, off + 4)?;
-            Some((Some(rect_poly([x.min(x + w), y.min(y + h), x.max(x + w), y.max(y + h)])), 20))
+            Some((
+                Some(rect_poly([x.min(x + w), y.min(y + h), x.max(x + w), y.max(y + h)])),
+                20,
+            ))
         }
         0x1000_0001 => {
             let size = r.u32(off + 4)? as usize;
@@ -1116,7 +1321,11 @@ fn area_union(a: Area, b: Area) -> Area {
 fn map_area(a: Area, m: Xform) -> Area {
     a.map(|pts| {
         let mapped: Vec<P> = pts.iter().map(|p| apply(m, *p)).collect();
-        if mapped.len() < 3 { Vec::new() } else { convex(&mapped).unwrap_or_default() }
+        if mapped.len() < 3 {
+            Vec::new()
+        } else {
+            convex(&mapped).unwrap_or_default()
+        }
     })
 }
 
@@ -1131,7 +1340,11 @@ fn arc_ops([l, t, r, b]: [f64; 4], start: f64, sweep: f64, pie: bool) -> Vec<Op>
         (rx * a.sin()).atan2(ry * a.cos())
     };
     let t0 = param(start);
-    let mut dt = if sweep.abs() >= 360.0 { sweep.signum() * std::f64::consts::TAU } else { param(start + sweep) - t0 };
+    let mut dt = if sweep.abs() >= 360.0 {
+        sweep.signum() * std::f64::consts::TAU
+    } else {
+        param(start + sweep) - t0
+    };
     if sweep.abs() < 360.0 {
         while sweep > 0.0 && dt < 0.0 {
             dt += std::f64::consts::TAU;
@@ -1170,7 +1383,12 @@ fn font(r: Bytes) -> Option<Obj> {
     let n = (r.u32(20)? as usize).min(64);
     let units: Vec<u16> = (0..n).map(|i| r.u16(24 + i * 2)).collect::<Option<_>>()?;
     let family = String::from_utf16_lossy(&units).trim_end_matches('\0').to_string();
-    em.is_finite().then_some(Obj::Font(FontObj { em, unit: r.u32(8)?, style: r.u32(12)?, family }))
+    em.is_finite().then_some(Obj::Font(FontObj {
+        em,
+        unit: r.u32(8)?,
+        style: r.u32(12)?,
+        family,
+    }))
 }
 
 /// An image object: a bitmap of raw pixels or a compressed (PNG, JPEG, GIF…) file, or a nested
@@ -1241,7 +1459,11 @@ fn bitmap(r: Bytes) -> Option<Rgba> {
                 (0x000E_200B, 32) => {
                     let p = line.get(x * 4..x * 4 + 4)?;
                     let a = u32::from(p[3]);
-                    let un = |v: u8| (u32::from(v) * 255 + a / 2).checked_div(a).map_or(v, |c| c.min(255) as u8);
+                    let un = |v: u8| {
+                        (u32::from(v) * 255 + a / 2)
+                            .checked_div(a)
+                            .map_or(v, |c| c.min(255) as u8)
+                    };
                     [un(p[2]), un(p[1]), un(p[0]), p[3]]
                 }
                 (_, 32) => {
@@ -1264,7 +1486,12 @@ fn bitmap(r: Bytes) -> Option<Rgba> {
         }
     }
     // A negative stride stores the rows bottom-up.
-    Some(top_down(Rgba { w, h, bottom_up: stride < 0, px }))
+    Some(top_down(Rgba {
+        w,
+        h,
+        bottom_up: stride < 0,
+        px,
+    }))
 }
 
 fn top_down(mut img: Rgba) -> Rgba {
@@ -1276,7 +1503,9 @@ fn top_down(mut img: Rgba) -> Rgba {
 }
 
 fn decode_compressed(bytes: &[u8]) -> Option<Rgba> {
-    let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format().ok()?;
+    let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()?;
     let mut limits = image::Limits::default();
     limits.max_image_width = Some(1 << 15);
     limits.max_image_height = Some(1 << 15);
@@ -1287,7 +1516,12 @@ fn decode_compressed(bytes: &[u8]) -> Option<Rgba> {
     if w.checked_mul(h)? > crate::MAX_PIXELS {
         return None;
     }
-    Some(Rgba { w, h, bottom_up: false, px: img.into_raw() })
+    Some(Rgba {
+        w,
+        h,
+        bottom_up: false,
+        px: img.into_raw(),
+    })
 }
 
 /// `n` points at `off`: 16-bit integers when compressed, else 32-bit floats.
@@ -1311,7 +1545,13 @@ fn points(r: Bytes, off: usize, n: usize, compressed: bool) -> Option<Vec<P>> {
 /// `n` rectangles (x, y, w, h) at `off`, as `[l, t, r, b]`.
 fn rects(r: Bytes, off: usize, n: usize, compressed: bool) -> Option<Vec<[f64; 4]>> {
     let pts = points(r, off, n.min(MAX_POINTS / 2).checked_mul(2)?, compressed)?;
-    Some(pts.as_chunks::<2>().0.iter().map(|c| [c[0].0, c[0].1, c[0].0 + c[1].0, c[0].1 + c[1].1]).collect())
+    Some(
+        pts.as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| [c[0].0, c[0].1, c[0].0 + c[1].0, c[0].1 + c[1].1])
+            .collect(),
+    )
 }
 
 fn rect_ops([l, t, r, b]: [f64; 4]) -> Vec<Op> {
@@ -1332,10 +1572,18 @@ fn curve_ops(pts: &[P], tension: f64, closed: bool, offset: usize, segments: usi
     }
     let k = tension.clamp(0.0, 10.0) / 3.0;
     let at = |i: isize| -> P {
-        let i = if closed { i.rem_euclid(n as isize) as usize } else { i.clamp(0, n as isize - 1) as usize };
+        let i = if closed {
+            i.rem_euclid(n as isize) as usize
+        } else {
+            i.clamp(0, n as isize - 1) as usize
+        };
         pts.get(i).copied().unwrap_or((0.0, 0.0))
     };
-    let (first, count) = if closed { (0, n) } else { (offset.min(n - 1), segments.min(n - 1 - offset.min(n - 1))) };
+    let (first, count) = if closed {
+        (0, n)
+    } else {
+        (offset.min(n - 1), segments.min(n - 1 - offset.min(n - 1)))
+    };
     let mut ops = vec![Op::M(at(first as isize))];
     for s in first..first + count {
         let i = s as isize;
@@ -1351,7 +1599,11 @@ fn curve_ops(pts: &[P], tension: f64, closed: bool, offset: usize, segments: usi
 }
 
 fn poly_ops(pts: &[P], close: bool) -> Vec<Op> {
-    let mut ops: Vec<Op> = pts.iter().enumerate().map(|(i, p)| if i == 0 { Op::M(*p) } else { Op::L(*p) }).collect();
+    let mut ops: Vec<Op> = pts
+        .iter()
+        .enumerate()
+        .map(|(i, p)| if i == 0 { Op::M(*p) } else { Op::L(*p) })
+        .collect();
     if close {
         ops.push(Op::Z);
     }
@@ -1375,8 +1627,18 @@ fn ellipse_ops([l, t, r, b]: [f64; 4]) -> Vec<Op> {
 
 /// Core fonts whose first glyphs follow the standard Macintosh order (glyph 3 is the space,
 /// glyphs 3..=97 are U+0020..=U+007E).
-const MAC_ORDER_FONTS: &[&str] =
-    &["arial", "arial black", "times new roman", "courier new", "verdana", "georgia", "tahoma", "trebuchet ms", "comic sans ms", "impact"];
+const MAC_ORDER_FONTS: &[&str] = &[
+    "arial",
+    "arial black",
+    "times new roman",
+    "courier new",
+    "verdana",
+    "georgia",
+    "tahoma",
+    "trebuchet ms",
+    "comic sans ms",
+    "impact",
+];
 
 /// Glyph indices of a known font back to ASCII; None when the font is unknown or a glyph is
 /// outside the ASCII range.

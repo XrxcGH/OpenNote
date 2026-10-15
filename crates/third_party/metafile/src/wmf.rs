@@ -29,7 +29,9 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
     // Placeable bounds: logical corners (left, top, right, bottom) and their size in points.
     let (hdr, bounds) = if placeable {
         let [l, t, r, b] = [6, 8, 10, 12].map(|o| input.i16(o).map(f64::from));
-        let (Some(l), Some(t), Some(r), Some(b)) = (l, t, r, b) else { return Err(Error::BadHeader) };
+        let (Some(l), Some(t), Some(r), Some(b)) = (l, t, r, b) else {
+            return Err(Error::BadHeader);
+        };
         let inch = input.u16(14).filter(|v| *v > 0).map_or(DEFAULT_INCH, f64::from);
         let (w, h) = (r - l, b - t);
         let bounds = (w > 0.0 && h > 0.0).then_some(([l, t, r, b], (w * 72.0 / inch, h * 72.0 / inch)));
@@ -41,7 +43,9 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
     if hsize < 9 {
         return Err(Error::BadHeader);
     }
-    let mut pos = hdr.checked_add(hsize.checked_mul(2).ok_or(Error::BadHeader)?).ok_or(Error::BadHeader)?;
+    let mut pos = hdr
+        .checked_add(hsize.checked_mul(2).ok_or(Error::BadHeader)?)
+        .ok_or(Error::BadHeader)?;
     // Played into a target like Word does: the placeable bounds are the first window, the target (the
     // picture size) the viewport. A plain WMF's target is its first window.
     let mut cv = Canvas::new();
@@ -53,8 +57,12 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
     let mut player_viewport = bounds.is_some();
     let mut parsed = 0usize;
     while !cv.full() {
-        let (Some(words), Some(func)) = (input.u32(pos), pos.checked_add(4).and_then(|o| input.u16(o))) else { break };
-        let Some(len) = (words as usize).checked_mul(2).filter(|l| *l >= 6) else { break };
+        let (Some(words), Some(func)) = (input.u32(pos), pos.checked_add(4).and_then(|o| input.u16(o))) else {
+            break;
+        };
+        let Some(len) = (words as usize).checked_mul(2).filter(|l| *l >= 6) else {
+            break;
+        };
         let Some(rec) = input.slice(pos, len) else { break };
         if func == 0 {
             break;
@@ -74,7 +82,10 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
     }
     let frame = match bounds {
         // Played into its target: the frame is the target.
-        Some((_, size)) if !cv.viewport_set && cv.map.uses_extents() => Some(Frame { rect: [0.0, 0.0, size.0, size.1], size: Some(size) }),
+        Some((_, size)) if !cv.viewport_set && cv.map.uses_extents() => Some(Frame {
+            rect: [0.0, 0.0, size.0, size.1],
+            size: Some(size),
+        }),
         // The file set its own viewport, so the drawing is in its device units and the logical bounds
         // go through the final mapping.
         Some((c, size)) => {
@@ -84,9 +95,15 @@ pub(crate) fn parse(input: Bytes) -> Result<(Canvas, Option<Frame>), Error> {
         }
         None if player_viewport && !cv.viewport_set && cv.map.uses_extents() => {
             let ve = cv.map.viewport_ext();
-            Some(Frame { rect: [0.0, 0.0, ve.0, ve.1], size: None })
+            Some(Frame {
+                rect: [0.0, 0.0, ve.0, ve.1],
+                size: None,
+            })
         }
-        None if cv.window_set => Some(Frame { rect: cv.map.window_rect(), size: None }),
+        None if cv.window_set => Some(Frame {
+            rect: cv.map.window_rect(),
+            size: None,
+        }),
         None => None,
     };
     Ok((cv, frame))
@@ -161,13 +178,22 @@ fn record(cv: &mut Canvas, func: u16, r: Bytes) {
         0x0A32 => ext_text_out(cv, r),
         0x0521 => text_out(cv, r),
         // PATBLT: rop(4), height, width, y, x.
-        0x061D => r.u32(6).map(|rop| cv.fill_rop([i16s(r, 16), i16s(r, 14), i16s(r, 12), i16s(r, 10)], rop)),
+        0x061D => r
+            .u32(6)
+            .map(|rop| cv.fill_rop([i16s(r, 16), i16s(r, 14), i16s(r, 12), i16s(r, 10)], rop)),
         0x012D => r.u16(6).map(|h| cv.select(wmf_handle(h))),
         0x01F0 => r.u16(6).map(|h| cv.delete_object(u32::from(h))),
         // STRETCHDIB: rop(4) usage(2) srcH srcW ySrc xSrc destH destW yDest xDest, then the DIB.
         0x0F43 => {
             let rop = r.u32(6).unwrap_or(0);
-            dib_blit(cv, r, 28, rop, [i16s(r, 26), i16s(r, 24), i16s(r, 22), i16s(r, 20)], [i16s(r, 18), i16s(r, 16), i16s(r, 14), i16s(r, 12)])
+            dib_blit(
+                cv,
+                r,
+                28,
+                rop,
+                [i16s(r, 26), i16s(r, 24), i16s(r, 22), i16s(r, 20)],
+                [i16s(r, 18), i16s(r, 16), i16s(r, 14), i16s(r, 12)],
+            )
         }
         0x0B41 => dib_stretchblt(cv, r),
         0x0940 => dib_bitblt(cv, r),
@@ -192,7 +218,14 @@ fn create_pen(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let style = r.u16(6)?;
     let width = r.i16(8)?;
     let color = r.u32(12)?;
-    cv.add_object(None, Obj::Pen(Pen { style: u32::from(style), width: f64::from(width), color: colorref(color) }));
+    cv.add_object(
+        None,
+        Obj::Pen(Pen {
+            style: u32::from(style),
+            width: f64::from(width),
+            color: colorref(color),
+        }),
+    );
     Some(())
 }
 
@@ -262,14 +295,22 @@ fn ext_text_out(cv: &mut Canvas, r: Bytes) -> Option<()> {
     let n = usize::from(r.u16(10)?).min(MAX_CHARS);
     let opts = u32::from(r.u16(12)?);
     let has_rect = opts & (ETO_OPAQUE | ETO_CLIPPED) != 0;
-    let rect = if has_rect { Some([i16s(r, 14), i16s(r, 16), i16s(r, 18), i16s(r, 20)]) } else { None };
+    let rect = if has_rect {
+        Some([i16s(r, 14), i16s(r, 16), i16s(r, 18), i16s(r, 20)])
+    } else {
+        None
+    };
     let at = if has_rect { 22 } else { 14 };
     // A string running past the record is cut to what the record holds.
     let avail = r.0.len().saturating_sub(at);
     let n = n.min(avail);
     let bytes = r.slice(at, n)?;
     let dx_at = at + n.next_multiple_of(2);
-    let dx: Vec<f32> = if r.0.len() >= dx_at + 2 * n { (0..n).filter_map(|i| r.i16(dx_at + 2 * i)).map(f32::from).collect() } else { Vec::new() };
+    let dx: Vec<f32> = if r.0.len() >= dx_at + 2 * n {
+        (0..n).filter_map(|i| r.i16(dx_at + 2 * i)).map(f32::from).collect()
+    } else {
+        Vec::new()
+    };
     let (text, dx) = decode_bytes(bytes, charset(cv), &dx);
     cv.text((f64::from(x), f64::from(y)), text, dx, opts, rect);
     Some(())

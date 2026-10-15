@@ -12,8 +12,16 @@
 //! Records follow MS-WMF and MS-EMF. Rectangle clip regions (`INTERSECTCLIPRECT`,
 //! `EXCLUDECLIPRECT`, `EXTSELECTCLIPRGN`) limit what later records draw. Records outside the
 //! supported set are skipped silently.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
+#![allow(clippy::type_complexity)]
 
 mod bytes;
 mod canvas;
@@ -163,7 +171,13 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
         Some(f) => (f.rect, f.size.unwrap_or((f.rect[2], f.rect[3]))),
         None => match bbox(&raw) {
             Some([x0, y0, x1, y1]) => ([x0, y0, x1 - x0, y1 - y0], (x1 - x0, y1 - y0)),
-            None => return Picture { width: 0.0, height: 0.0, items: Vec::new() },
+            None => {
+                return Picture {
+                    width: 0.0,
+                    height: 0.0,
+                    items: Vec::new(),
+                };
+            }
         },
     };
     let sx = if rect[2] > 0.0 { size.0 / rect[2] } else { 1.0 };
@@ -175,20 +189,43 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
     // Tiles shared by several fills stay shared.
     let mut tiles: HashMap<*const canvas::RawTile, (Arc<canvas::RawTile>, Arc<Tile>)> = HashMap::new();
     let items = raw.into_iter().filter_map(|r| match r {
-        Raw::Path { ops, fill, stroke, even_odd, region } => {
+        Raw::Path {
+            ops,
+            fill,
+            stroke,
+            even_odd,
+            region,
+        } => {
             let segs = ops.iter().map(|op| seg(op, tf)).collect::<Option<Vec<Seg>>>()?;
             if segs.len() < 2 {
                 return None;
             }
             let stroke = stroke.and_then(|(c, w)| Some((c, f((w * stroke_scale).min(diag))?)));
-            Some(Item::Path { segs, fill, stroke, even_odd, region: map_region(region, &tf)? })
+            Some(Item::Path {
+                segs,
+                fill,
+                stroke,
+                even_odd,
+                region: map_region(region, &tf)?,
+            })
         }
         Raw::Bitmap { rect: r, img, region } => {
             let (x, y) = tf((r[0], r[1]));
             let rect = [f(x)?, f(y)?, f(r[2] * sx)?, f(r[3] * sy)?];
-            Some(Item::Bitmap { rect, width: img.w as u32, height: img.h as u32, rgba: img.px, region: map_region(region, &tf)? })
+            Some(Item::Bitmap {
+                rect,
+                width: img.w as u32,
+                height: img.h as u32,
+                rgba: img.px,
+                region: map_region(region, &tf)?,
+            })
         }
-        Raw::Pattern { ops, even_odd, tile, region } => {
+        Raw::Pattern {
+            ops,
+            even_odd,
+            tile,
+            region,
+        } => {
             let segs = ops.iter().map(|op| seg(op, tf)).collect::<Option<Vec<Seg>>>()?;
             if segs.len() < 2 {
                 return None;
@@ -210,7 +247,12 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
                     t
                 }
             };
-            Some(Item::Pattern { segs, even_odd, tile, region: map_region(region, &tf)? })
+            Some(Item::Pattern {
+                segs,
+                even_odd,
+                tile,
+                region: map_region(region, &tf)?,
+            })
         }
         Raw::Text { mut text, region } => {
             // Device to picture: scale by (sx, sy) after moving the frame's corner to the origin.
@@ -229,7 +271,11 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
         }
     });
     let items = items.collect();
-    Picture { width: f(size.0).unwrap_or(0.0), height: f(size.1).unwrap_or(0.0), items }
+    Picture {
+        width: f(size.0).unwrap_or(0.0),
+        height: f(size.1).unwrap_or(0.0),
+        items,
+    }
 }
 
 fn map_region(region: Option<Vec<[f64; 4]>>, tf: &impl Fn(P) -> P) -> Option<Option<Vec<[f32; 4]>>> {

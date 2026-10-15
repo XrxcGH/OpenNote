@@ -78,17 +78,38 @@ pub(crate) struct Brush {
 
 impl Brush {
     pub fn new(style: u32, color: [u8; 4]) -> Self {
-        Brush { style, color, hatch: 0, pattern: None }
+        Brush {
+            style,
+            color,
+            hatch: 0,
+            pattern: None,
+        }
     }
 
     /// A pattern brush painting `img`. A monochrome brush paints its dark pixels in the text
     /// colour and its light ones in the background colour. None for an empty or oversized tile.
     pub fn pattern(img: Rgba, mono: bool) -> Option<Self> {
-        if img.w == 0 || img.h == 0 || img.w > MAX_TILE_SIDE || img.h > MAX_TILE_SIDE || img.px.len() != img.w * img.h * 4 {
+        if img.w == 0
+            || img.h == 0
+            || img.w > MAX_TILE_SIDE
+            || img.h > MAX_TILE_SIDE
+            || img.px.len() != img.w * img.h * 4
+        {
             return None;
         }
-        let pattern = Arc::new(Pattern { w: img.w, h: img.h, px: img.px, mono, plain: OnceLock::new() });
-        Some(Brush { style: BS_DIBPATTERNPT, color: [0, 0, 0, 255], hatch: 0, pattern: Some(pattern) })
+        let pattern = Arc::new(Pattern {
+            w: img.w,
+            h: img.h,
+            px: img.px,
+            mono,
+            plain: OnceLock::new(),
+        });
+        Some(Brush {
+            style: BS_DIBPATTERNPT,
+            color: [0, 0, 0, 255],
+            hatch: 0,
+            pattern: Some(pattern),
+        })
     }
 }
 
@@ -346,12 +367,22 @@ impl Canvas {
             saved: Vec::new(),
             used: 0,
             objects: Vec::new(),
-            pen: Pen { style: 0, width: 0.0, color: [0, 0, 0, 255] },
+            pen: Pen {
+                style: 0,
+                width: 0.0,
+                color: [0, 0, 0, 255],
+            },
             brush: Brush::new(BS_SOLID, [255, 255, 255, 255]),
             even_odd: true,
             rop2: R2_COPYPEN,
             xor_color: None,
-            text: TextState { color: [0, 0, 0, 255], bk_color: [255, 255, 255, 255], bk_opaque: true, align: 0, font: None },
+            text: TextState {
+                color: [0, 0, 0, 255],
+                bk_color: [255, 255, 255, 255],
+                bk_opaque: true,
+                align: 0,
+                font: None,
+            },
             pattern_px: 1.0,
             pos: (0.0, 0.0),
             in_path: false,
@@ -542,7 +573,12 @@ impl Canvas {
         let dev: Vec<Op> = ops.iter().map(|o| self.map_op(*o)).collect();
         if dev.len() >= 2 {
             let even_odd = self.even_odd;
-            self.push(Raw::Pattern { ops: dev, even_odd, tile, region: None });
+            self.push(Raw::Pattern {
+                ops: dev,
+                even_odd,
+                tile,
+                region: None,
+            });
         }
     }
 
@@ -551,7 +587,9 @@ impl Canvas {
     /// the shape.
     pub fn shade_shape(&mut self, ops: &[Op], shade: &dyn Fn(P) -> [u8; 4]) {
         let dev: Vec<Op> = ops.iter().map(|o| self.map_op(*o)).collect();
-        let Some([l, t, r, b]) = crate::cliprect::ops_bbox(&dev) else { return };
+        let Some([l, t, r, b]) = crate::cliprect::ops_bbox(&dev) else {
+            return;
+        };
         let side = (r - l).max(b - t);
         if dev.len() < 2 || !(side.is_finite() && side > 0.0) {
             return;
@@ -570,7 +608,12 @@ impl Canvas {
             }
         }
         let even_odd = self.even_odd;
-        self.push(Raw::Pattern { ops: dev, even_odd, tile: Arc::new(RawTile { w, h, px, cell }), region: None });
+        self.push(Raw::Pattern {
+            ops: dev,
+            even_odd,
+            tile: Arc::new(RawTile { w, h, px, cell }),
+            region: None,
+        });
     }
 
     /// Pushes the drawing state. Past [`MAX_STACK`] levels the parse stops, since later restores
@@ -593,7 +636,11 @@ impl Canvas {
 
     /// Negative `n` pops `-n` levels; positive `n` restores absolute level `n`.
     pub fn restore_dc(&mut self, n: i32) {
-        let idx = if n < 0 { self.saved.len().checked_sub(n.unsigned_abs() as usize) } else { (n as usize).checked_sub(1) };
+        let idx = if n < 0 {
+            self.saved.len().checked_sub(n.unsigned_abs() as usize)
+        } else {
+            (n as usize).checked_sub(1)
+        };
         let Some(idx) = idx else { return };
         let Some(s) = self.saved.get(idx).cloned() else { return };
         self.saved.truncate(idx);
@@ -723,9 +770,27 @@ impl Canvas {
             3 => self.brush = gray(64),
             4 => self.brush = Brush::new(BS_SOLID, black),
             5 => self.brush = Brush::new(BS_NULL, black),
-            6 => self.pen = Pen { style: 0, width: 0.0, color: white },
-            7 | 19 => self.pen = Pen { style: 0, width: 0.0, color: black },
-            8 => self.pen = Pen { style: PS_NULL, width: 0.0, color: black },
+            6 => {
+                self.pen = Pen {
+                    style: 0,
+                    width: 0.0,
+                    color: white,
+                }
+            }
+            7 | 19 => {
+                self.pen = Pen {
+                    style: 0,
+                    width: 0.0,
+                    color: black,
+                }
+            }
+            8 => {
+                self.pen = Pen {
+                    style: PS_NULL,
+                    width: 0.0,
+                    color: black,
+                }
+            }
             // The stock fonts (OEM_FIXED_FONT … DEFAULT_GUI_FONT): drawn in the default face.
             10..=17 => self.text.font = None,
             _ => {}
@@ -752,13 +817,29 @@ impl Canvas {
             BS_HATCHED => {
                 let bg = self.text.bk_opaque.then_some(self.text.bk_color);
                 let px = hatch_tile(b.hatch, b.color, bg)?;
-                Some(Paint::Tile(Arc::new(RawTile { w: 8, h: 8, px, cell: self.pattern_px })))
+                Some(Paint::Tile(Arc::new(RawTile {
+                    w: 8,
+                    h: 8,
+                    px,
+                    cell: self.pattern_px,
+                })))
             }
             BS_PATTERN | BS_DIBPATTERN | BS_DIBPATTERNPT => {
                 let p = b.pattern.as_ref()?;
                 if !p.mono && self.rop2 != R2_MASKPEN {
                     let cell = self.pattern_px;
-                    return Some(Paint::Tile(p.plain.get_or_init(|| Arc::new(RawTile { w: p.w, h: p.h, px: p.px.clone(), cell })).clone()));
+                    return Some(Paint::Tile(
+                        p.plain
+                            .get_or_init(|| {
+                                Arc::new(RawTile {
+                                    w: p.w,
+                                    h: p.h,
+                                    px: p.px.clone(),
+                                    cell,
+                                })
+                            })
+                            .clone(),
+                    ));
                 }
                 let mut px = p.px.clone();
                 for c in px.as_chunks_mut::<4>().0 {
@@ -777,7 +858,12 @@ impl Canvas {
                         }
                     }
                 }
-                Some(Paint::Tile(Arc::new(RawTile { w: p.w, h: p.h, px, cell: self.pattern_px })))
+                Some(Paint::Tile(Arc::new(RawTile {
+                    w: p.w,
+                    h: p.h,
+                    px,
+                    cell: self.pattern_px,
+                })))
             }
             _ => None,
         }
@@ -790,14 +876,42 @@ impl Canvas {
         match fill {
             Some(Paint::Tile(tile)) => {
                 if stroke.is_some() {
-                    self.push(Raw::Pattern { ops: ops.clone(), even_odd, tile, region: None });
-                    self.push(Raw::Path { ops, fill: None, stroke, even_odd, region: None });
+                    self.push(Raw::Pattern {
+                        ops: ops.clone(),
+                        even_odd,
+                        tile,
+                        region: None,
+                    });
+                    self.push(Raw::Path {
+                        ops,
+                        fill: None,
+                        stroke,
+                        even_odd,
+                        region: None,
+                    });
                 } else {
-                    self.push(Raw::Pattern { ops, even_odd, tile, region: None });
+                    self.push(Raw::Pattern {
+                        ops,
+                        even_odd,
+                        tile,
+                        region: None,
+                    });
                 }
             }
-            Some(Paint::Solid(c)) => self.push(Raw::Path { ops, fill: Some(c), stroke, even_odd, region: None }),
-            None if stroke.is_some() => self.push(Raw::Path { ops, fill: None, stroke, even_odd, region: None }),
+            Some(Paint::Solid(c)) => self.push(Raw::Path {
+                ops,
+                fill: Some(c),
+                stroke,
+                even_odd,
+                region: None,
+            }),
+            None if stroke.is_some() => self.push(Raw::Path {
+                ops,
+                fill: None,
+                stroke,
+                even_odd,
+                region: None,
+            }),
             None => {}
         }
     }
@@ -823,7 +937,11 @@ impl Canvas {
             return None;
         }
         // A cosmetic pen (width 0) stays 0: the renderers draw that as a hairline.
-        let w = if self.pen.width == 0.0 { 0.0 } else { self.pen.width.abs() * self.map.scale() };
+        let w = if self.pen.width == 0.0 {
+            0.0
+        } else {
+            self.pen.width.abs() * self.map.scale()
+        };
         Some((self.pen.color, w))
     }
 
@@ -866,7 +984,11 @@ impl Canvas {
     /// Lines from the current point through `pts` (POLYLINETO), or a polyline from the current point.
     pub fn line_chain(&mut self, pts: &[P], fill: bool, stroke: bool) {
         // Inside an open bracket the path already ends at the current point, so no MoveTo is needed.
-        let mut ops = if self.in_path && !self.path.is_empty() { Vec::new() } else { vec![Op::M(self.pos)] };
+        let mut ops = if self.in_path && !self.path.is_empty() {
+            Vec::new()
+        } else {
+            vec![Op::M(self.pos)]
+        };
         ops.extend(pts.iter().map(|p| Op::L(*p)));
         if let Some(last) = pts.last() {
             self.pos = *last;
@@ -885,7 +1007,11 @@ impl Canvas {
     /// points; the current point moves to the last point. Inside an open bracket the path already
     /// ends at the current point, so no MoveTo is needed.
     pub fn bezier_to(&mut self, pts: &[P]) {
-        let mut ops = if self.in_path && !self.path.is_empty() { Vec::new() } else { vec![Op::M(self.pos)] };
+        let mut ops = if self.in_path && !self.path.is_empty() {
+            Vec::new()
+        } else {
+            vec![Op::M(self.pos)]
+        };
         ops.extend(cubics(pts));
         if let Some(last) = pts.last() {
             self.pos = *last;
@@ -942,7 +1068,13 @@ impl Canvas {
     /// Fills a logical rectangle `[l, t, r, b]` with a solid colour (ROP fills such as BLACKNESS).
     pub fn fill_rect_with(&mut self, [l, t, r, b]: [f64; 4], color: [u8; 4]) {
         let dev: Vec<Op> = crate::geom::rect(l, t, r, b).iter().map(|o| self.map_op(*o)).collect();
-        self.push(Raw::Path { ops: dev, fill: Some(color), stroke: None, even_odd: true, region: None });
+        self.push(Raw::Path {
+            ops: dev,
+            fill: Some(color),
+            stroke: None,
+            even_odd: true,
+            region: None,
+        });
     }
 
     /// Whether a raster operation draws without a source bitmap (PATCOPY, BLACKNESS, WHITENESS).
@@ -1008,13 +1140,22 @@ impl Canvas {
         // transform; a mirroring mapping does not mirror glyphs), turned counter-clockwise by the
         // escapement.
         let det = ux.0 * uy.1 - ux.1 * uy.0;
-        let phi = if det > 0.0 { ux.1.atan2(ux.0) } else { ux.1.atan2(ux.0.abs()) };
+        let phi = if det > 0.0 {
+            ux.1.atan2(ux.0)
+        } else {
+            ux.1.atan2(ux.0.abs())
+        };
         let a = phi - (lf.escapement / 10.0).to_radians();
         let (c, s) = (a.cos(), a.sin());
         let clip = match (options & ETO_CLIPPED != 0, rect) {
             (true, Some([l, t, r, b])) => {
                 let (p, q) = (self.map.device((l, t)), self.map.device((r, b)));
-                Some([p.0.min(q.0) as f32, p.1.min(q.1) as f32, p.0.max(q.0) as f32, p.1.max(q.1) as f32])
+                Some([
+                    p.0.min(q.0) as f32,
+                    p.1.min(q.1) as f32,
+                    p.0.max(q.0) as f32,
+                    p.1.max(q.1) as f32,
+                ])
             }
             _ => None,
         };
@@ -1043,7 +1184,11 @@ impl Canvas {
         let b = self.map.device((x + w, y + h));
         crate::dib::flip(&mut img, a.0 > b.0, a.1 > b.1);
         let dev = [a.0.min(b.0), a.1.min(b.1), (b.0 - a.0).abs(), (b.1 - a.1).abs()];
-        self.push(Raw::Bitmap { rect: dev, img, region: None });
+        self.push(Raw::Bitmap {
+            rect: dev,
+            img,
+            region: None,
+        });
     }
 }
 

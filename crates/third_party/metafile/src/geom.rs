@@ -63,7 +63,11 @@ pub(crate) fn arc_shape(l: f64, t: f64, r: f64, b: f64, s: P, e: P, kind: ArcKin
     }
     let sweep = -d;
     let start = (cx + rx * a0.cos(), cy + ry * a0.sin());
-    let mut ops = if kind == ArcKind::Pie { vec![Op::M((cx, cy)), Op::L(start)] } else { vec![Op::M(start)] };
+    let mut ops = if kind == ArcKind::Pie {
+        vec![Op::M((cx, cy)), Op::L(start)]
+    } else {
+        vec![Op::M(start)]
+    };
     ops.extend(arc(cx, cy, rx, ry, a0, sweep));
     match kind {
         ArcKind::Arc => {}

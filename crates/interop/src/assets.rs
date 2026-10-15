@@ -160,10 +160,7 @@ mod tests {
         assert!(is_metafile_extension("EMF") && is_metafile_extension("wmf") && !is_metafile_extension("png"));
         assert!(metafile_to_svg(&emf[..60]).is_none());
         assert!(metafile_to_svg(b"").is_none());
-        assert!(metafile_to_svg(b"PNG
-
-
-").is_none());
+        assert!(metafile_to_svg(b"\x89PNG\r\n\x1a\n").is_none());
         let mut bent = emf.clone();
         bent[88..92].copy_from_slice(&u32::MAX.to_le_bytes());
         // A record claiming a huge size reads as a shorter picture or nothing, never a panic.
