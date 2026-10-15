@@ -187,6 +187,9 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Clippy ratchet (no new unwrap, expect, or panic in shipped code)
+        # Existing uses are counted per file in checks/data/clippy-ratchet.json. A count may go down, never up.
+        run: node checks/clippy-ratchet.ts
       - name: Rust tests
         run: cargo test --workspace
       - name: The notes contract suite against the app's notes bridge and the core

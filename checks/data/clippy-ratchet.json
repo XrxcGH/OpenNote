@@ -1,0 +1,65 @@
+{
+  "note": "Counts of unwrap, expect, and panic in non-test Rust code. They only go down. See checks/clippy-ratchet.ts.",
+  "files": {
+    "app/src-tauri/src/lib.rs": {
+      "expect_used": 1
+    },
+    "app/src-tauri/src/study/zip.rs": {
+      "expect_used": 2
+    },
+    "app/src-tauri/src/updater/config.rs": {
+      "expect_used": 1
+    },
+    "crates/core/src/id.rs": {
+      "expect_used": 1
+    },
+    "crates/core/src/session/kit.rs": {
+      "panic": 2
+    },
+    "crates/core/src/testing/edits/runner.rs": {
+      "expect_used": 1
+    },
+    "crates/core/src/testing/gen.rs": {
+      "expect_used": 1
+    },
+    "crates/core/src/testing/gen/page.rs": {
+      "expect_used": 1
+    },
+    "crates/core/src/testing/oracle.rs": {
+      "expect_used": 1
+    },
+    "crates/core/src/testing/sample.rs": {
+      "expect_used": 4
+    },
+    "crates/intel/src/summarize/analysis.rs": {
+      "expect_used": 1
+    },
+    "crates/intel/src/transcribe/queue.rs": {
+      "expect_used": 1
+    },
+    "crates/media/src/audio/files.rs": {
+      "expect_used": 4
+    },
+    "crates/media/src/audio/ogg.rs": {
+      "expect_used": 3
+    },
+    "crates/media/src/audio/synthetic.rs": {
+      "expect_used": 1
+    },
+    "crates/media/src/audio/worker.rs": {
+      "expect_used": 1
+    },
+    "crates/media/src/playback/player.rs": {
+      "expect_used": 1
+    },
+    "crates/media/src/playback/reader.rs": {
+      "expect_used": 5
+    },
+    "crates/media/src/transcribe/scripted.rs": {
+      "expect_used": 1
+    },
+    "crates/search/src/persist.rs": {
+      "expect_used": 1
+    }
+  }
+}

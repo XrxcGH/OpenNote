@@ -10,6 +10,9 @@ CHECKS is the quality gate for OpenNote. Every file change must pass it before i
 - [Suppressing a finding](#suppressing-a-finding)
 - [Configuration](#configuration)
 - [Where it runs](#where-it-runs)
+- [Asset attribution](#asset-attribution)
+- [Clippy ratchet](#clippy-ratchet)
+- [Cross-checks](#cross-checks)
 - [Adding or changing a rule](#adding-or-changing-a-rule)
 
 ## Quick start
@@ -84,6 +87,31 @@ Top-level `ignore` patterns skip files entirely. Change a limit only with a reas
 - **Pre-commit hook:** `.githooks/pre-commit` checks staged files. Enable it with `npm run setup-hooks`.
 - **CI:** `.github/workflows/ci.yml` type-checks, lints, and tests everything, then runs CHECKS on changed files for pull requests and on all files for pushes. It runs on Ubuntu and Windows.
 - **Releases:** the [release checklist](DEVELOPMENT.md#10-release-checklist) requires a clean `npm run checks:all`.
+
+## Asset attribution
+
+Every picture, font, sound, model, and other non-code file needs a row in [ATTRIBUTION.md](ATTRIBUTION.md) with its author, source, and license. So does every crate copied into `crates/third_party/`, which must also keep its license files. `npm run checks:assets` lists the gaps, and `npm test` runs the same check. A row that matches no file fails too, so the table cannot go stale.
+
+## Clippy ratchet
+
+New Rust code in `crates/` and `app/src-tauri` must not call `unwrap`, `expect`, or `panic!`. Old code is not rewritten. Instead, `checks/data/clippy-ratchet.json` counts the existing uses in each file, and `npm run checks:clippy` fails when a count goes up or a file with none gets one. It lints library and binary targets only, so tests, benches, and examples may still unwrap.
+
+When you remove a use, run `node checks/clippy-ratchet.ts --update` to lower the count and commit the file. CI runs the ratchet after Clippy on Windows.
+
+## Cross-checks
+
+Another program reading OpenNote's files catches mistakes that our own tests share. `npm run crosscheck` builds a small corpus of exports and runs it through four open-source tools, each built from a revision pinned in `tests/crosscheck/pins.json`:
+
+| Export | Reader | What it checks |
+|---|---|---|
+| Word (`.docx`) | `wordcraft-cli` | The file opens, has pages and text, and has a structure |
+| Excel (`.xlsx`) | `gridcraft-cli` | Package parts, content types, relationships, and recalculated values |
+| PowerPoint (`.pptx`) | `deckcraft-cli` | The deck opens |
+| PDF | `pdfcraft-cli` | The 32-rule accessibility check, and PDF/A-2b preflight as notes |
+
+`npm run crosscheck:formulas` also runs about 200 table formulas through OpenNote's engine and through `gridcraft-cli eval`, and fails on a result that differs and is not listed in `KNOWN` of `app/src/features/tables/engine/gridcraftDiff.test.ts` with its reason. Dates there are compared after the gap between the 1900 and 1970 epochs.
+
+These tools are alpha software, so a difference means "look", not "bug". The `crosscheck` workflow (`.github/workflows/crosscheck.yml`) runs weekly and on pull requests that touch exports, and it never blocks a merge. Use `npm run crosscheck:install` once to build the tools locally. It needs Rust and several minutes. Nothing from them ships with OpenNote.
 
 ## Adding or changing a rule
 
