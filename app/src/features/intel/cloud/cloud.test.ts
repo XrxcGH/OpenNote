@@ -57,9 +57,7 @@ describe('the choice of where a feature runs', () => {
     expect(() =>
       host.transport.ext.handle({ method: 'cloud.setKey', params: { feature: 'summaries', key: 'short' } }),
     ).toThrow();
-    expect(() =>
-      host.transport.ext.handle({ method: 'cloud.setKey', params: { feature: 'ocr', key: KEY } }),
-    ).toThrow();
+    expect(() => host.transport.ext.handle({ method: 'cloud.setKey', params: { feature: 'ocr', key: KEY } })).toThrow();
   });
 });
 

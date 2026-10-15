@@ -45,7 +45,10 @@ export default function SmartFeaturesStep(props: SetupStepProps) {
     update({ ...smart, features: { ...smart.features, [feature]: checked } });
   const recommended = speech.find((model) => model.id === RECOMMENDED_SPEECH_MODEL);
   const showModel =
-    speechEngine && smart.mode !== 'notNow' && on.has('transcription') && !(cloudKeys && usesCloud('transcription', cloud));
+    speechEngine &&
+    smart.mode !== 'notNow' &&
+    on.has('transcription') &&
+    !(cloudKeys && usesCloud('transcription', cloud));
   return (
     <div className={styles.setupStep}>
       <header>
@@ -63,7 +66,9 @@ export default function SmartFeaturesStep(props: SetupStepProps) {
           value="recommended"
           label={t('intelPlus.smart.recommended')}
           description={`${t(speechEngine ? 'intelPlus.smart.recommendedHelp' : 'intelSpeech.cloud.recommendedNoSpeech')}${
-            recommended && speechEngine ? ` ${t('intelPlus.smart.downloadSize', { size: formatSize(recommended.sizeBytes) })}` : ''
+            recommended && speechEngine
+              ? ` ${t('intelPlus.smart.downloadSize', { size: formatSize(recommended.sizeBytes) })}`
+              : ''
           }`}
         />
         <RadioCard

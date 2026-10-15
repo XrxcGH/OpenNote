@@ -39,7 +39,11 @@ export function CloudChoice({ feature, name }: CloudChoiceProps) {
   return (
     <div className={styles.stack}>
       <RadioGroup label={t('intelSpeech.cloud.group', { feature: name })} value={picked} onChange={choose}>
-        <RadioCard value="device" label={t('intelSpeech.cloud.device')} description={t('intelSpeech.cloud.deviceHelp')} />
+        <RadioCard
+          value="device"
+          label={t('intelSpeech.cloud.device')}
+          description={t('intelSpeech.cloud.deviceHelp')}
+        />
         <RadioCard
           value="cloud"
           label={t('intelSpeech.cloud.cloud')}
