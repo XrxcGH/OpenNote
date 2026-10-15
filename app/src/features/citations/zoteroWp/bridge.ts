@@ -11,8 +11,8 @@ import type { Field } from './fields';
 import { plainParagraphs, richParagraphs } from './html';
 import type { Paragraph } from './html';
 
-/** The newest version of Zotero's protocol that is spoken. */
-export const PROTOCOL_VERSION = 3;
+/** The document id given to Zotero: there is one document per conversation. */
+export const DOCUMENT_ID = 'opennote';
 /** The text a new citation holds until Zotero writes the real one. */
 export const PLACEHOLDER = '{Citation}';
 const BIBLIOGRAPHY_PLACEHOLDER = '{Bibliography}';
@@ -73,12 +73,20 @@ export class ZoteroBridge {
   async handle(method: string, args: readonly unknown[]): Promise<unknown> {
     switch (method) {
       case 'Application_getActiveDocument': {
-        const theirs = whole(args, 0) || PROTOCOL_VERSION;
         this.begun = this.host.state().selection.from;
         this.justInserted = null;
         this.selected = false;
         this.completed = false;
-        return [Math.min(Math.max(theirs, 1), PROTOCOL_VERSION), 1];
+        // What the page can do, as Zotero's HTTP integration asks (no notes: a page has no footnotes).
+        return {
+          documentID: DOCUMENT_ID,
+          outputFormat: 'html',
+          supportedNotes: [],
+          supportsImportExport: false,
+          supportsTextInsertion: false,
+          supportsCitationMerging: false,
+          processorName: 'OpenNote',
+        };
       }
       case 'Document_displayAlert':
         return this.host.alert(text(args, 1), whole(args, 2), whole(args, 3));
@@ -101,7 +109,7 @@ export class ZoteroBridge {
         return null;
       case 'Document_getFields': {
         const all = listFields(this.host.state().doc);
-        return [all.map((one) => this.idFor(one.href)), all.map((one) => one.code), all.map(() => 0)];
+        return all.map((one) => this.fieldJson(one));
       }
       // Footnotes and endnotes do not exist on a page: every citation stays in the text.
       case 'Document_convert':
@@ -146,6 +154,12 @@ export class ZoteroBridge {
     return this.hrefs.length;
   }
 
+  /** A field as Zotero's HTTP integration reads it. */
+  private fieldJson(one: Field): { id: number; code: string; text: string; noteIndex: number } {
+    const text = this.host.state().doc.textBetween(one.from, one.to, '\n', ' ');
+    return { id: this.idFor(one.href), code: one.code, text, noteIndex: 0 };
+  }
+
   private field(args: readonly unknown[]): Field {
     const id = whole(args, 1);
     const href = this.hrefs[id - 1];
@@ -165,7 +179,7 @@ export class ZoteroBridge {
     const hit = listFields(state.doc).find((one) =>
       empty ? from > one.from && from < one.to : from >= one.from && to <= one.to,
     );
-    return hit ? [this.idFor(hit.href), hit.code, 0] : null;
+    return hit ? this.fieldJson(hit) : null;
   }
 
   private insertField(): unknown {
@@ -178,7 +192,7 @@ export class ZoteroBridge {
     const tr = state.tr.replaceWith(from, to, schema.text(PLACEHOLDER, [schema.marks.link.create({ href })]));
     this.host.dispatch(tr);
     this.justInserted = href;
-    return [this.idFor(href), code, 0];
+    return { id: this.idFor(href), code, text: PLACEHOLDER, noteIndex: 0 };
   }
 
   private insertText(html: string): void {

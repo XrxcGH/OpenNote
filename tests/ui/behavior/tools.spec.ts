@@ -80,3 +80,31 @@ test('closes with Escape and moves from its title with the arrow keys', async ({
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
 });
+
+test('Zotero in the page says plainly that Zotero is not running', async ({ page }) => {
+  await openSmart(page);
+  await page.locator('[contenteditable=true] p').first().click();
+  await page.keyboard.press('Control+k');
+  await page.getByPlaceholder('Type a command or a page name').fill('Open citations');
+  await page.getByRole('option', { name: 'Open citations' }).first().click();
+  const dialog = page.getByRole('dialog', { name: 'Citations' });
+  await expect(dialog.getByRole('heading', { name: 'Zotero in the page' })).toBeVisible();
+  for (const name of ['Add or edit citation', 'Add or edit bibliography', 'Refresh citations', 'Unlink citations']) {
+    await expect(dialog.getByRole('button', { name })).toBeVisible();
+  }
+  await dialog.getByRole('button', { name: 'Add or edit citation' }).click();
+  await expect(
+    page.getByText('Zotero is not running on this computer. Open it, then try again.').first(),
+  ).toBeAttached();
+  // Nothing was inserted into the page.
+  await expect(page.getByText('{Citation}')).toHaveCount(0);
+});
+
+test('the Zotero commands are in the command palette', async ({ page }) => {
+  await openSmart(page);
+  await page.locator('[contenteditable=true] p').first().click();
+  await page.keyboard.press('Control+k');
+  await page.getByPlaceholder('Type a command or a page name').fill('Zotero');
+  await expect(page.getByRole('option', { name: 'Add or edit citation with Zotero' })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'Refresh Zotero citations' })).toBeVisible();
+});

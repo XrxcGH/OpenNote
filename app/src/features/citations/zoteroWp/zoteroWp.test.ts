@@ -75,7 +75,11 @@ const BIBL_CODE = 'BIBL {"uncited":[],"omitted":[],"custom":[]} CSL_BIBLIOGRAPHY
 
 /** The opening of every command, as Zotero makes it. */
 async function open(ask: Ask): Promise<void> {
-  expect((await ask('Application_getActiveDocument', [3])).value).toEqual([3, 1]);
+  expect((await ask('Application_getActiveDocument', [])).value).toMatchObject({
+    documentID: 'opennote',
+    outputFormat: 'html',
+    supportedNotes: [],
+  });
   await ask('Document_getDocumentData', [1]);
 }
 
@@ -117,9 +121,9 @@ describe('Add or edit citation', () => {
       await open(ask);
       expect((await ask('Document_canInsertField', [1, 'Field'])).value).toBe(true);
       expect((await ask('Document_cursorInField', [1, 'Field'])).value).toBeNull();
-      const inserted = (await ask('Document_insertField', [1, 'Field', 0])).value as [number, string, number];
-      await ask('Field_setCode', [1, inserted[0], CITE_CODE]);
-      await ask('Field_setText', [1, inserted[0], '(<i>Smith</i>, 2020)', true]);
+      const inserted = (await ask('Document_insertField', [1, 'Field', 0])).value as { id: number; code: string };
+      await ask('Field_setCode', [1, inserted.id, CITE_CODE]);
+      await ask('Field_setText', [1, inserted.id, '(<i>Smith</i>, 2020)', true]);
       await ask('Document_setDocumentData', [1, '<data><session id="s"/></data>']);
       await ask('Document_complete', [1]);
       return true;
@@ -140,9 +144,9 @@ describe('Add or edit citation', () => {
     const one = page(`Before [(Old, 2001)](${hrefFor(CITE_CODE)}) after.`, 12);
     const transport = pretend(async (ask) => {
       await open(ask);
-      const found = (await ask('Document_cursorInField', [1, 'Field'])).value as [number, string, number];
-      expect(found[1]).toBe(CITE_CODE);
-      await ask('Field_setText', [1, found[0], '(New, 2024)', false]);
+      const found = (await ask('Document_cursorInField', [1, 'Field'])).value as { id: number; code: string };
+      expect(found.code).toBe(CITE_CODE);
+      await ask('Field_setText', [1, found.id, '(New, 2024)', false]);
       await ask('Document_complete', [1]);
       return true;
     });
@@ -178,11 +182,11 @@ describe('Bibliography', () => {
       prefsOf(one.prefs),
       pretend(async (ask) => {
         await open(ask);
-        const inserted = (await ask('Document_insertField', [1, 'Field', 0])).value as [number, string, number];
-        await ask('Field_setCode', [1, inserted[0], BIBL_CODE]);
+        const inserted = (await ask('Document_insertField', [1, 'Field', 0])).value as { id: number; code: string };
+        await ask('Field_setCode', [1, inserted.id, BIBL_CODE]);
         await ask('Field_setText', [
           1,
-          inserted[0],
+          inserted.id,
           entries('Smith (2020). <i>Sleep</i>.', 'Lee (2019). Other.'),
           true,
         ]);
@@ -201,8 +205,9 @@ describe('Bibliography', () => {
       prefsOf(one.prefs),
       pretend(async (ask) => {
         await open(ask);
-        const [ids, codes] = (await ask('Document_getFields', [1, 'Field'])).value as [number[], string[], number[]];
-        expect(codes).toEqual([BIBL_CODE]);
+        const list = (await ask('Document_getFields', [1, 'Field'])).value as { id: number; code: string }[];
+        const ids = list.map((f) => f.id);
+        expect(list.map((f) => f.code)).toEqual([BIBL_CODE]);
         await ask('Field_setText', [
           1,
           ids[0],
@@ -228,9 +233,9 @@ describe('Bibliography', () => {
       prefsOf(one.prefs),
       pretend(async (ask) => {
         await open(ask);
-        const inserted = (await ask('Document_insertField', [1, 'Field', 0])).value as [number, string, number];
-        await ask('Field_setCode', [1, inserted[0], BIBL_CODE]);
-        await ask('Field_setText', [1, inserted[0], entries('A (1). X.', 'B (2). Y.'), true]);
+        const inserted = (await ask('Document_insertField', [1, 'Field', 0])).value as { id: number; code: string };
+        await ask('Field_setCode', [1, inserted.id, BIBL_CODE]);
+        await ask('Field_setText', [1, inserted.id, entries('A (1). X.', 'B (2). Y.'), true]);
         await ask('Document_complete', [1]);
         return true;
       }),
@@ -251,7 +256,7 @@ describe('Unlink and other commands', () => {
       prefsOf(one.prefs),
       pretend(async (ask) => {
         await open(ask);
-        const [ids] = (await ask('Document_getFields', [1, 'Field'])).value as [number[], string[], number[]];
+        const ids = ((await ask('Document_getFields', [1, 'Field'])).value as { id: number }[]).map((f) => f.id);
         await ask('Field_removeCode', [1, ids[0]]);
         await ask('Document_complete', [1]);
         return true;
