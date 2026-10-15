@@ -306,7 +306,8 @@ export const study = {
     none: 'There is no study tape on this page.',
     exportTitle: 'Turn study tape into blanks?',
     exportBody:
-      'This page has study tape. The words under it can print as blanks, with an answer key on a page at the end. Choose Keep the page as it is to print or export everything.',
+      'This page has study tape. The words under it can print as blanks, with an answer key on a page ' +
+      'at the end. Choose Keep the page as it is to print or export everything.',
     exportConfirm: 'Blanks and answer key',
     exportKeep: 'Keep the page as it is',
     answerKey: 'Answer key',
@@ -524,7 +525,9 @@ export const study = {
     lookup: {
       heading: 'Look up a source',
       label: 'DOI or ISBN',
-      help: 'Pressing Look up sends that DOI or ISBN, and nothing else, to {hosts}. Nothing is sent until you press it, and never while Work offline is on.',
+      help:
+        'Pressing Look up sends that DOI or ISBN, and nothing else, to {hosts}. Nothing is sent ' +
+        'until you press it, and never while Work offline is on.',
       button: 'Look up',
       result: 'Source found',
       found: 'Found {title}. Add it to the list if it is right.',
@@ -559,7 +562,8 @@ export const study = {
     },
     styleFiles: 'Style files',
     styleFilesHelp:
-      'Vancouver, AMA, ACS, Turabian, and Nature come with the app. To add another style, choose a style file (JSON) that lists how an entry and an in-text citation are written.',
+      'Vancouver, AMA, ACS, Turabian, and Nature come with the app. To add another style, choose a ' +
+      'style file (JSON) that lists how an entry and an in-text citation are written.',
     styleFile: 'Style file to add',
     styleAdded: 'The {name} style was added and chosen.',
     styleOwned: 'The app already has a style with the id of {name}, so it was not added.',

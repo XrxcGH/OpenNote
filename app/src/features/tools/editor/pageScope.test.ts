@@ -38,7 +38,7 @@ describe('page scope', () => {
   it('asks the others to redraw', () => {
     const { root, make } = page();
     const a = make(['a = 1']);
-    const b = make(['a ='] );
+    const b = make(['a =']);
     refreshOthers(root, a.box);
     expect(b.count()).toBe(1);
     expect(a.count()).toBe(0);

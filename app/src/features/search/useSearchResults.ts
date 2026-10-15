@@ -21,7 +21,14 @@ export interface PanelFilters {
   archived: boolean;
 }
 
-export const NO_FILTERS: PanelFilters = { regex: false, titleOnly: false, tag: '', date: 'any', type: 'all', archived: false };
+export const NO_FILTERS: PanelFilters = {
+  regex: false,
+  titleOnly: false,
+  tag: '',
+  date: 'any',
+  type: 'all',
+  archived: false,
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -63,7 +70,11 @@ export interface SearchState {
 }
 
 /** Leaves out archived pages unless asked, and names the heading each match sits in. */
-async function refine(client: SearchClient, response: SearchResponse, includeArchived: boolean): Promise<PanelResponse> {
+async function refine(
+  client: SearchClient,
+  response: SearchResponse,
+  includeArchived: boolean,
+): Promise<PanelResponse> {
   let hits: SearchHit[] = response.hits;
   if (isEnabled('search.advanced')) {
     try {

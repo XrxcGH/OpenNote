@@ -28,7 +28,8 @@ impl HostPolicy {
     }
 
     /// Whether `text` is an HTTPS address on one of the hosts. Unit tests also accept `http://127.0.0.1:<port>`
-    /// when `127.0.0.1` is listed, so they can serve answers from a local mock. That branch is only in tests and in builds with the `test-endpoints` feature (see `test_hook.rs`), never in a release.
+    /// when `127.0.0.1` is listed, so they can serve answers from a local mock. That branch is only in tests and
+    /// in builds with the `test-endpoints` feature (see `test_hook.rs`), never in a release.
     pub fn allows(&self, text: &str) -> bool {
         if text.contains('\\') {
             return false;

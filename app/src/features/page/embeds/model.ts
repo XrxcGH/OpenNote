@@ -55,7 +55,11 @@ const normal = (text: string) => text.replace(/\s+/g, ' ').trim().toLowerCase();
 /** The text boxes an embed shows: all of a page's, or the first one that holds the heading. */
 export function pickBlocks(blocks: readonly EmbedSource[], heading: string | null, element?: string): string[] {
   const texts = blocks.filter((block) => block.type === 'text');
-  if (element !== undefined) return texts.filter((block) => block.ids?.includes(element)).map((block) => block.id).slice(0, 1);
+  if (element !== undefined)
+    return texts
+      .filter((block) => block.ids?.includes(element))
+      .map((block) => block.id)
+      .slice(0, 1);
   if (heading === null) return texts.map((block) => block.id);
   const wanted = normal(heading);
   const holder = texts.find((block) =>

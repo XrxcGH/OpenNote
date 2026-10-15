@@ -13,7 +13,7 @@ async function openConnectors(page: import('@playwright/test').Page, query: stri
 
 test('a connector without a client ID says Needs setup and offers no Connect', async ({ page }) => {
   await openConnectors(page, '');
-    const google = page.getByRole('article', { name: /Google/ }).first();
+  const google = page.getByRole('article', { name: /Google/ }).first();
   await expect(google.getByText('Needs setup')).toBeVisible();
   await expect(google.getByRole('button', { name: /^Connect( |$)/ })).toHaveCount(0);
 });

@@ -411,6 +411,7 @@ jobs:
             [ "$PROPTEST_RESULT" = failure ] && echo "- Property tests: the log has the failing case"
             [ "$PERF_RESULT" = failure ] && echo "- Performance: the results are in the run's artifacts"
             [ "$E2E_RESULT" = failure ] && echo "- E2E specs: the logs are in the run's artifacts"
+            # checks-disable-next-line length: one shell line that writes one line of the run summary
             [ "$SOAK_RESULT" = failure ] && echo "- Random-editing soak: the samples are in the run's artifacts; replay with the run number as the seed"
             [ "$NVDA_RESULT" = failure ] && echo "- NVDA checklist: the spoken log is in the run's artifacts"
             echo

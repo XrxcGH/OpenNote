@@ -76,10 +76,7 @@ function graphWidget(equation: string): HTMLElement {
 export function notesDecorations(doc: PMNode, region: NotesRegion, before: readonly string[] = []): DecorationSet {
   if (doc.textContent.length > MAX_CHARS || !doc.textContent.includes('=')) return DecorationSet.empty;
   const lines = linesOf(doc);
-  const results = evaluateNotes(
-    [...before, ...lines.map((line) => line.text)],
-    { region },
-  ).slice(before.length);
+  const results = evaluateNotes([...before, ...lines.map((line) => line.text)], { region }).slice(before.length);
   const found: Decoration[] = [];
   results.forEach((result, index) => {
     const line = lines[index];

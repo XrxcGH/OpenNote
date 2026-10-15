@@ -53,6 +53,7 @@ describe('paperSnapFor', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('snapShape', () => {
   it('puts both ends of a line near crossings on the crossings', () => {
     const line: Shape = { kind: 'line', from: { x: 137, y: 153 }, to: { x: 214, y: 237 } };

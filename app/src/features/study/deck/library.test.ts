@@ -220,6 +220,7 @@ describe('on the web platform', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('two windows', () => {
   it('merge their changes instead of writing over each other', async () => {
     const main = await openWindow();

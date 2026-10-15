@@ -194,7 +194,9 @@ export function LinkedPages({ onClose }: { onClose(): void }) {
       {!page && <p className={styles.note}>{t('search.backlinks.noPage')}</p>}
       {page && !loaded && <p className={styles.note}>{t('search.backlinks.loading')}</p>}
       {loaded && <Backlinks links={loaded.links} busy={busy} onUpdate={() => void update()} />}
-      {loaded && <Mentions mentions={loaded.mentions} busy={busy} onLink={(mention) => void link(mention)} onLinkAll={linkAll} />}
+      {loaded && (
+        <Mentions mentions={loaded.mentions} busy={busy} onLink={(mention) => void link(mention)} onLinkAll={linkAll} />
+      )}
     </section>
   );
 }

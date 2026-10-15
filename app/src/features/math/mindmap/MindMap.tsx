@@ -107,9 +107,8 @@ export function MindMap({ data, readOnly, onChange }: Props) {
     pen.current = null;
     if (!start || event.pointerType !== 'pen') return;
     if (Math.hypot(event.clientX - start.x, event.clientY - start.y) < 8) return edit(start.id);
-    const over = document
-      .elementFromPoint(event.clientX, event.clientY)
-      ?.closest<HTMLElement>('[data-node]')?.dataset.node;
+    const over = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-node]')
+      ?.dataset.node;
     if (over && over !== start.id) {
       const moved = moveNode(finish(), start.id, over);
       if (moved === root) return announce(t('study.mindmap.cantMove'));

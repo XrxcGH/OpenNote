@@ -71,6 +71,7 @@ async function putFile(
     ['onedriveFiles'],
     {
       method: 'PUT',
+      // checks-disable-next-line length: one address built from its encoded parts
       url: `${BASE}/drives/${encodeURIComponent(drive)}/items/${encodeURIComponent(folder.id)}:/${encodeURIComponent(shared.name)}:/content`,
     },
     [bytesPart(shared.bytes)],

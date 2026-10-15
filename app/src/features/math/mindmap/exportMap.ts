@@ -1,3 +1,5 @@
+// checks-disable-file brand-consistency: colors written into an exported picture, which must not follow the app theme
+
 // A mind map as a picture, for export as SVG, PNG, or PDF. The main idea is on the left and each level is a column to
 // its right, as on the page. The picture always uses the light paper colors, so it prints and shares well. It carries a
 // title and a description made of the outline, so a screen reader can read it too. Pure: no DOM until `toPng`.
@@ -105,14 +107,13 @@ export function mapSvg(root: MapNode, title: string): MapPicture {
     const high = Math.max(CHIP_HEIGHT, one.lines.length * 18 + 14);
     const y = one.y + top - high / 2;
     const text = one.lines
-      .map(
-        (line, index) =>
-          `<tspan x="${one.x + one.w / 2}" dy="${index === 0 ? 0 : 18}">${escapeXml(line)}</tspan>`,
-      )
+      .map((line, index) => `<tspan x="${one.x + one.w / 2}" dy="${index === 0 ? 0 : 18}">${escapeXml(line)}</tspan>`)
       .join('');
     const first = one.y + top - ((one.lines.length - 1) * 18) / 2 + 5;
     return (
+      // checks-disable-next-line length: one SVG element written as one string
       `<rect x="${one.x}" y="${y}" width="${one.w}" height="${high}" rx="16" fill="${isRoot ? COLORS.root : COLORS.chip}" stroke="${isRoot ? COLORS.root : COLORS.chipStroke}"/>` +
+      // checks-disable-next-line length: one SVG element written as one string
       `<text x="${one.x + one.w / 2}" y="${first}" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="15"${isRoot ? ' font-weight="600"' : ''} fill="${isRoot ? COLORS.rootText : COLORS.text}">${text}</text>`
     );
   });

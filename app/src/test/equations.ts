@@ -1,3 +1,5 @@
+// checks-disable-file length: a list of LaTeX equations, one per line, as a person would type them
+
 // A library of equations for rendering tests, grouped by subject. Phase 10 grew it to 200, and a test holds it there. Each line is plain
 // LaTeX that a student or teacher would type, so a rendering change that breaks real notes fails a test.
 // A line starting with # names a subject, and blank lines are ignored. Write LaTeX as it is, with single backslashes.

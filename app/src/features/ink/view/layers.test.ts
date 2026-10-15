@@ -33,6 +33,7 @@ const three = () => {
   return layers;
 };
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('ink layers', () => {
   it('starts with the base layer, and reads a damaged view without throwing', () => {
     expect(layersOf(undefined).order).toEqual([BASE_LAYER]);

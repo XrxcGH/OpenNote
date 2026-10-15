@@ -143,7 +143,6 @@ describe('exporting', () => {
     }
     detach();
   });
-
 });
 
 describe('exporting a PDF', () => {
@@ -212,7 +211,6 @@ describe('exporting a PDF', () => {
     expect(announced).toContain('Export canceled. Nothing was kept.');
     detach();
   });
-
 });
 
 describe('sharing as a file', () => {

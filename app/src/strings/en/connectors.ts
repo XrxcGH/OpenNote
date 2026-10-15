@@ -68,11 +68,13 @@ export const connectors = {
   service: {
     microsoft: {
       unlocks:
-        'Import notebooks from OneNote, open meeting notes from Outlook events, sync Microsoft To Do, send pages to OneDrive, and share to Teams.',
+        'Import notebooks from OneNote, open meeting notes from Outlook events, sync Microsoft To Do, ' +
+        'send pages to OneDrive, and share to Teams.',
     },
     google: {
       unlocks:
-        'Meeting notes from Calendar events, Google Tasks, Classroom assignments, Drive, Docs, Sheets, and Slides, YouTube captions, and uploading a recording video to YouTube.',
+        'Meeting notes from Calendar events, Google Tasks, Classroom assignments, Drive, Docs, ' +
+        'Sheets, and Slides, YouTube captions, and uploading a recording video to YouTube.',
     },
     slack: { unlocks: 'Share a page to a Slack channel.' },
     dropbox: { unlocks: 'Sync folders with Dropbox and send pages to it.' },

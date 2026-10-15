@@ -118,6 +118,7 @@ export function canvasApi({ client, host }: LmsDeps): LmsApi {
           ...parts,
           {
             kind: 'text',
+            // checks-disable-next-line length: one multipart body, with its line breaks kept visible
             text: `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.name.replace(/"/g, '')}"\r\nContent-Type: ${file.mime}\r\n\r\n`,
           },
           bytesPart(file.bytes),

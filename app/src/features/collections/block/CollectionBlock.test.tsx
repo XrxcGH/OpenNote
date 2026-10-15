@@ -73,7 +73,10 @@ describe('CollectionBlock', () => {
 
 describe('readDef', () => {
   it('reads the rules a block carries, with every field checked', () => {
-    const def = readDef({ def: { id: 'x', name: 'N', tag: 'bio', view: 'sideways', conditions: [{ name: 1 }, null] } }, []);
+    const def = readDef(
+      { def: { id: 'x', name: 'N', tag: 'bio', view: 'sideways', conditions: [{ name: 1 }, null] } },
+      [],
+    );
     expect(def).toMatchObject({ id: 'x', name: 'N', tag: 'bio', view: 'list', conditions: [], sortDir: 'asc' });
   });
 

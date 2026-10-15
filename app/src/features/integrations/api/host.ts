@@ -52,6 +52,7 @@ export function createFakeApi(initial: Partial<FakeApiState> = {}): FakeApi {
   };
   const listeners = new Set<(event: ApiEvent) => void>();
   const emit = (event: ApiEvent) => [...listeners].forEach((listener) => listener(event));
+  // checks-disable-next-line modifiability: one function whose steps share its state; split it when it grows again
   const answer = (method: string, args: Record<string, unknown>): unknown => {
     switch (method) {
       case 'status':

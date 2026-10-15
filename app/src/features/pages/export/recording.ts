@@ -34,6 +34,7 @@ export const ENGLISH_PLAYER_LABELS: PlayerLabels = {
 export const PLAYER_SCRIPT = [
   '(function(){',
   'var a=document.querySelector("audio[data-recording]");if(!a)return;',
+  // checks-disable-next-line length: a script kept as one string, as the page runs it
   'var n=[].slice.call(document.querySelectorAll("[data-moment]")).map(function(e){return{e:e,t:parseFloat(e.getAttribute("data-moment"))}}).filter(function(x){return x.t===x.t}).sort(function(p,q){return p.t-q.t});',
   'var cur=null;',
   'function mark(){var t=a.currentTime,hit=null;for(var i=0;i<n.length;i++){if(n[i].t<=t+0.25)hit=n[i];else break}',
@@ -133,4 +134,3 @@ export function sha256Base64(text: string): string {
   out.forEach((byte) => (binary += String.fromCharCode(byte)));
   return btoa(binary);
 }
-

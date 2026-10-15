@@ -85,9 +85,9 @@ test('Open file makes a page that saves back to the file and takes outside edits
   await box.click();
   await page.keyboard.press('End');
   await page.keyboard.type(' and bread');
-  await expect.poll(() => hook<string | null>(page, 'interopFileText', path), { timeout: 15_000 }).toBe(
-    'Milk and eggs and bread',
-  );
+  await expect
+    .poll(() => hook<string | null>(page, 'interopFileText', path), { timeout: 15_000 })
+    .toBe('Milk and eggs and bread');
   // Another app changes the file; the page shows it a moment later.
   await hook(page, 'interopFile', path, 'Only apples', { granted: true });
   await expect(box).toHaveText('Only apples', { timeout: 15_000 });

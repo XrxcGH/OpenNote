@@ -1,3 +1,5 @@
+// checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
+
 // OneNote through a mock Microsoft Graph: OneNote's HTML as blocks, notebooks with section groups, and pages across result
 // pages, pictures fetched onto pages, the Import report, a second import that adds only what is new, and switching from
 // one Microsoft account to another without mixing their notebooks.
@@ -156,6 +158,7 @@ describe('Graph lists', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('importing notebooks', () => {
   it('brings in sections, pages, levels, pictures, and an Import report', async () => {
     const server = new MockServer();

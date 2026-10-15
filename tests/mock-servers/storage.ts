@@ -3,6 +3,10 @@
 // test can see what was stored. Bodies are text in these tests.
 import { MockServer } from './server';
 
+/** The WebDAV listing row for the one file every folder holds. */
+const NOTE_ROW = (folder: string): string =>
+  `<d:response><d:href>${folder}/note.txt</d:href><d:propstat><d:prop><d:resourcetype/></d:prop></d:propstat></d:response>`;
+
 export interface DriveFolder {
   id: string;
   name: string;
@@ -260,11 +264,10 @@ export function addWebdav(server: MockServer, folders: string[]) {
     const body = `<?xml version="1.0"?><d:multistatus xmlns:d="DAV:">${rows
       .map(
         (one) =>
+          // checks-disable-next-line length: one line of WebDAV XML, as the server sends it
           `<d:response><d:href>${one.split('/').map(encodeURIComponent).join('/')}/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop></d:propstat></d:response>`,
       )
-      .join(
-        '',
-      )}<d:response><d:href>${here}/note.txt</d:href><d:propstat><d:prop><d:resourcetype/></d:prop></d:propstat></d:response></d:multistatus>`;
+      .join('')}${NOTE_ROW(here)}</d:multistatus>`;
     return { status: 207, text: body, contentType: 'application/xml' };
   });
   server.route('PUT files.example.org/*', (request) => {

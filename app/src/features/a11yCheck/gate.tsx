@@ -80,7 +80,13 @@ function GateDialog(props: { problems: readonly Issue[]; done(choice: Choice): v
       description={t('qol.a11y.gateSummary', { count: problems.length })}
       onDismiss={() => done('cancel')}
       actions={[
-        { id: 'cancel', label: t('common.cancel'), variant: 'secondary', leastDestructive: true, onPress: () => done('cancel') },
+        {
+          id: 'cancel',
+          label: t('common.cancel'),
+          variant: 'secondary',
+          leastDestructive: true,
+          onPress: () => done('cancel'),
+        },
         { id: 'review', label: t('qol.a11y.gateReview'), variant: 'secondary', onPress: () => done('review') },
         { id: 'go', label: t('qol.a11y.gateContinue'), variant: 'primary', onPress: () => done('continue') },
       ]}

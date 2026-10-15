@@ -138,7 +138,9 @@ export const ink = {
     convert: 'Convert to table',
     converted: 'Table made, {rows} rows by {columns} columns',
     convertedText:
-      '{cells, plural, one {Table made, {rows} rows by {columns} columns, with the writing in # cell as text} other {Table made, {rows} rows by {columns} columns, with the writing in # cells as text}}',
+      '{cells, plural, one {Table made, {rows} rows by {columns} columns, with the writing in # cell ' +
+      'as text} other {Table made, {rows} rows by {columns} columns, with the writing in # cells as ' +
+      'text}}',
     noGrid: 'No grid found in the selection. Draw at least three lines each way.',
     keywords: 'table grid cells rows columns lines convert handwriting',
   },
@@ -308,7 +310,10 @@ export const ink = {
   layers: {
     title: 'Layers',
     keywords: 'ink layers layer hide lock reorder rename active',
-    help: 'Layers are listed from the top down. New ink goes to the active layer. A hidden layer is not shown, printed, or exported. A locked layer is shown but cannot be drawn on or selected.',
+    help:
+      'Layers are listed from the top down. New ink goes to the active layer. A hidden layer is ' +
+      'not shown, printed, or exported. A locked layer is shown but cannot be drawn on or ' +
+      'selected.',
     baseName: 'Layer 1',
     unnamed: 'Layer',
     newName: 'Layer {number}',
@@ -386,7 +391,8 @@ export const ink = {
   palmLab: {
     title: 'Palm lab',
     intro:
-      'Record how your pen and hand reach the screen, so palm rejection can be measured on your device. Nothing leaves this computer until you save the file.',
+      'Record how your pen and hand reach the screen, so palm rejection can be measured on your ' +
+      'device. Nothing leaves this computer until you save the file.',
     device: 'Device name',
     profile: 'Closest pen family',
     step: 'Step to record',
@@ -460,7 +466,8 @@ export const ink = {
     steadyStrength: 'Steady pen strength',
     penFields: 'Write in text fields with the pen',
     penFieldsHint:
-      'Touching the search box, a rename field, or a table cell with the pen opens the handwriting panel of Windows. It needs a pen and the panel turned on in Windows settings.',
+      'Touching the search box, a rename field, or a table cell with the pen opens the handwriting ' +
+      'panel of Windows. It needs a pen and the panel turned on in Windows settings.',
     zoomBox: 'Zoom writing box',
     magnification: 'Magnification',
     magnificationValue: '{times} times',

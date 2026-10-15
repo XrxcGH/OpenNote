@@ -182,6 +182,7 @@ async function writeBlocks(
   title: string,
   blocks: readonly PageBlock[],
   report: NotebookReport,
+  // checks-disable-next-line modifiability: nested callbacks that walk one structure; flatten them when this changes
 ): Promise<void> {
   const open = await deps.pages.open(pageId, { viewport: null });
   const layer: InkLayer = { id: null };

@@ -293,4 +293,10 @@ export function CalendarView({ rows, names, def, onOpen }: ViewProps) {
   );
 }
 
-export const VIEWS = { table: TableView, list: ListView, board: BoardView, calendar: CalendarView, gallery: GalleryView };
+export const VIEWS = {
+  table: TableView,
+  list: ListView,
+  board: BoardView,
+  calendar: CalendarView,
+  gallery: GalleryView,
+};

@@ -88,7 +88,13 @@ export async function undoArmedChange(): Promise<boolean> {
 }
 
 function onKey(event: KeyboardEvent): void {
-  if (!armed || event.key.toLowerCase() !== 'z' || !(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) {
+  if (
+    !armed ||
+    event.key.toLowerCase() !== 'z' ||
+    !(event.ctrlKey || event.metaKey) ||
+    event.shiftKey ||
+    event.altKey
+  ) {
     return;
   }
   event.preventDefault();

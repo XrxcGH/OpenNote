@@ -15,7 +15,13 @@ function Chooser(props: { options: readonly CollectionDef[]; done(choice: Collec
       description={t('qolSearch.collections.blockChooseDescription')}
       onDismiss={() => done(null)}
       actions={[
-        { id: 'cancel', label: t('common.cancel'), variant: 'secondary', leastDestructive: true, onPress: () => done(null) },
+        {
+          id: 'cancel',
+          label: t('common.cancel'),
+          variant: 'secondary',
+          leastDestructive: true,
+          onPress: () => done(null),
+        },
       ]}
     >
       <ul aria-label={t('qolSearch.collections.blockChooseTitle')}>

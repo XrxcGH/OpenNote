@@ -269,7 +269,9 @@ describe('export of diagrams', () => {
 
   it('falls back to the diagram text when it could not be drawn, and says what it is in Markdown', () => {
     const { html } = exportHtml(diagramPage());
-    expect(html).toContain('<pre class="diagram-source" aria-label="A leads to B"><code>flowchart TD\n  A --&gt; B</code></pre>');
+    expect(html).toContain(
+      '<pre class="diagram-source" aria-label="A leads to B"><code>flowchart TD\n  A --&gt; B</code></pre>',
+    );
     const markdown = exportMarkdown(diagramPage()).markdown;
     expect(markdown).toContain('*A leads to B*\n\n```mermaid\nflowchart TD\n  A --> B\n```');
   });

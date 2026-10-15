@@ -39,6 +39,7 @@ const task = (id: string, title: string, rest: Partial<LocalTask> = {}): LocalTa
   ...rest,
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('Google Tasks', () => {
   function rig(
     initial: GTask[] = [

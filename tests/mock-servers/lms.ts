@@ -149,6 +149,7 @@ export function addMoodle(
   return { calls, submitted };
 }
 
+// checks-disable-next-line modifiability: nested callbacks that walk one structure; flatten them when this changes
 export function addClassroom(server: MockServer, courses: LmsCourse[]) {
   const driveFiles: { name: string; type: string }[] = [];
   server.route('GET classroom.googleapis.com/v1/courses', () => ({

@@ -319,10 +319,12 @@ function centroid(contrast: number[][], axis: 'x' | 'y', band: [number, number],
 }
 
 for (const scheme of ['light', 'dark'] as const) {
+  // checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
   test.describe(`snapping to paper lines, ${scheme}`, () => {
     test.use({ colorScheme: scheme, viewport: VIEWPORT });
 
     for (const paper of PAPERS) {
+      // checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
       test(`a line, an arrow, a rectangle, and an ellipse snap to ${paper.menu}`, async ({ page, context }) => {
         // Each pen event is a round trip to the browser, so a busy machine makes this slow.
         test.setTimeout(600_000);

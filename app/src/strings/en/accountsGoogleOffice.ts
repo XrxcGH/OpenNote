@@ -11,7 +11,8 @@ export const accountsGoogleOffice = {
   kind: {
     title: 'Import from Google',
     description:
-      'Drive turns the file into a Word, Excel, or PowerPoint file, and OpenNote imports that. You see what will come over before anything is added.',
+      'Drive turns the file into a Word, Excel, or PowerPoint file, and OpenNote imports that. You ' +
+      'see what will come over before anything is added.',
     confirm: 'Next',
     docs: 'A Google Doc',
     sheets: 'A Google Sheet',

@@ -1,3 +1,5 @@
+// checks-disable-file modifiability: one module whose parts share its state; split it when it grows again
+
 //! Phase 3's core behind the app's notes and page commands (core plan 11.1; Phase 4 PLAN.md section 3.13).
 //!
 //! One core serves both. The notes commands in [`crate::notes`] keep the tree of notebooks, section groups,

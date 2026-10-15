@@ -1,3 +1,5 @@
+// checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
+
 // Pen settings sync: the per-item merge (pure), the items a device offers and takes, and a full sync of two devices
 // through mocks of Google's app data folder and OneDrive's app folder.
 import { describe, expect, it } from 'vitest';

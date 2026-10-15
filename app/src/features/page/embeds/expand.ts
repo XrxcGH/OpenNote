@@ -34,7 +34,9 @@ export function embedLines(markdown: string): { index: number; ref: EmbedRef }[]
 /** The embedded text as a quote: the page's title in bold, then its text. */
 export function embedQuote(embed: EmbedText): string {
   const body = embed.markdown.trim().split('\n');
-  return ['**' + embed.title.replace(/\*/g, '') + '**', '', ...body].map((line) => (line === '' ? '>' : `> ${line}`)).join('\n');
+  return ['**' + embed.title.replace(/\*/g, '') + '**', '', ...body]
+    .map((line) => (line === '' ? '>' : `> ${line}`))
+    .join('\n');
 }
 
 /** The text with each embed line replaced by what it embeds. A line whose page can't be read stays as it was. */

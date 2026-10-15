@@ -7,7 +7,9 @@ const LICENSE_HEADER =
 
 const DATA_NOUN =
   LICENSE_HEADER +
+  // checks-disable-next-line length: a line of WordNet data, which the parser reads as one line
   '02084071 05 n 03 dog 0 domestic_dog 0 Canis_familiaris 0 002 @ 02083346 n 0000 ~ 01317541 n 0000 | a member of the genus Canis (probably descended from the common wolf) that has been domesticated by man; "the dog barked all night"\n' +
+  // checks-disable-next-line length: a line of WordNet data, which the parser reads as one line
   '10114209 18 n 02 dog 1 frump 0 001 @ 09624168 n 0000 | a dull unattractive unpleasant girl or woman; "she got a reputation as a frump"; "she\'s a real dog"\n';
 const INDEX_NOUN = LICENSE_HEADER + 'dog n 2 2 @ ~ 2 1 02084071 10114209  \n';
 

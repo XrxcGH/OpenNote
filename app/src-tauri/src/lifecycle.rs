@@ -1,3 +1,5 @@
+// checks-disable-file modifiability: one module whose parts share its state; split it when it grows again
+
 //! The app's lifecycle after start-up (ARCHITECTURE.md sections 8.2 and 8.7): the show strategy, first paint,
 //! `app_ready`, and the exit handshake that every way of closing goes through (ADR 0015).
 

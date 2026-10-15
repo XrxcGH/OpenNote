@@ -287,6 +287,7 @@ describe('shape recognition benchmark', () => {
     const lines = [
       ...positives.map(
         (r) =>
+          // checks-disable-next-line length: one line of report text built from its parts
           `  ${r.name.padEnd(20)} before ${String(BEFORE[r.name]).padStart(2)} -> ${r.correct}/${r.total} right, ${r.wrong} wrong shape ${r.confused ?? ''}`,
       ),
       ...negatives

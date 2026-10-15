@@ -96,6 +96,7 @@ function Cell({
   );
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function UpcomingCalendar({ mode, items, selected, onSelect, onCheck, onOpenPage }: UpcomingCalendarProps) {
   const now = useMinute();
   const today = dateIn(now, zone());

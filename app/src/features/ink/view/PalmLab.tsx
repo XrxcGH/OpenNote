@@ -20,6 +20,7 @@ const GRIP_LABEL: Record<Grip, MessageKey> = {
   fist: 'ink.palmLab.gripFist',
 };
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export default function PalmLab() {
   const [setup, setSetup] = useState<LabSetup>(DEFAULT_SETUP);
   const [recording, setRecording] = useState(false);

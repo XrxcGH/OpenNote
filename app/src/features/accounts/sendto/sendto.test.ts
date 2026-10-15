@@ -182,7 +182,14 @@ describe('the link between a page and its copy', () => {
   });
 
   it('picks the Dropbox, Box, and WebDAV copies a sync sends again', () => {
-    const base = { remote: 'r', name: 'n', link: '', folder: '', format: 'pdf', sentAt: '2026-10-01T10:00:00Z' } as const;
+    const base = {
+      remote: 'r',
+      name: 'n',
+      link: '',
+      folder: '',
+      format: 'pdf',
+      sentAt: '2026-10-01T10:00:00Z',
+    } as const;
     const copies = [
       { ...base, service: 'dropbox', node: 'changed', scope: 'page' },
       { ...base, service: 'box', node: 'quiet', scope: 'page' },

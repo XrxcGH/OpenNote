@@ -23,6 +23,7 @@ export function summary(file: SoakFile, rows = 10): string {
     '|---|---|---|---|---|---|',
     ...picked.map(
       (s) =>
+        // checks-disable-next-line length: one line of report text built from its parts
         `| ${Math.floor(s.minute)} | ${s.actions} | ${Math.round(s.heap / 1048576)} | ${s.nodes} | ${s.listeners} | ${s.probeMs.toFixed(1)} |`,
     ),
     '',

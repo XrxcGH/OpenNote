@@ -1,3 +1,5 @@
+// checks-disable-file modifiability: tests that share one set of helpers; split them when they grow again
+
 //! Tests of the notes commands against a real core in a temporary folder. The contract suite also runs against
 //! these commands through the notes harness (app/src/services/notes/core/contract.test.ts).
 

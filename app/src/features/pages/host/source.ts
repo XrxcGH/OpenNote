@@ -43,7 +43,13 @@ function shownBoxes(): Map<string, TapeBox> {
   if (!mounted) return boxes;
   for (const block of mounted.layer.blocks()) {
     const element = mounted.layer.view(block.id)?.element;
-    if (element) boxes.set(block.id, { x: element.offsetLeft, y: element.offsetTop, w: element.offsetWidth, h: element.offsetHeight });
+    if (element)
+      boxes.set(block.id, {
+        x: element.offsetLeft,
+        y: element.offsetTop,
+        w: element.offsetWidth,
+        h: element.offsetHeight,
+      });
   }
   return boxes;
 }

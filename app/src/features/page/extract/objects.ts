@@ -83,7 +83,11 @@ export async function extractObjects(): Promise<void> {
     ...(layer ? [{ edit: 'insertBlock', block: { id: layer, type: 'ink', data: { role: 'layer' } } } as Edit] : []),
   ];
   const bytes = layer
-    ? encodeRecords(strokes.map((record) => (record.kind === 'stroke' ? { ...record, stroke: { ...record.stroke, block: layer } } : record)))
+    ? encodeRecords(
+        strokes.map((record) =>
+          record.kind === 'stroke' ? { ...record, stroke: { ...record.stroke, block: layer } } : record,
+        ),
+      )
     : undefined;
   await withPage(created.id, (open) => open.send({ edits: intoNew, ...(bytes ? { strokes: bytes } : {}) }));
   const linkBlock: NewBlock = {

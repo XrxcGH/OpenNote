@@ -78,7 +78,9 @@ test('a OneNote package reaches the review, which names the locked section and t
 }) => {
   const dialog = await openImport(page);
   await page.evaluate(() =>
-    (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.interopPickNext('C:\\Notes\\Field trip.onepkg'),
+    (window as unknown as { __OPENNOTE_TEST__: Hooks }).__OPENNOTE_TEST__.interopPickNext(
+      'C:\\Notes\\Field trip.onepkg',
+    ),
   );
   await dialog.getByRole('button', { name: 'Choose a file…' }).click();
   await expect(

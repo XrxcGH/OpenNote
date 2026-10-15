@@ -36,7 +36,8 @@ describe('web page export with a recording', () => {
   it('holds the audio beside the file and marks the notes with the moment they were written', () => {
     const { html } = exportHtml(page, { player: plan });
     expect(html).toContain(
-      '<figure class="recording"><audio controls preload="metadata" data-recording="r1" src="Lecture_audio.opus" aria-label="Recording"></audio></figure>',
+      '<figure class="recording"><audio controls preload="metadata" data-recording="r1" ' +
+        'src="Lecture_audio.opus" aria-label="Recording"></audio></figure>',
     );
     expect(html).toContain('<div class="moment" data-moment="12.35" tabindex="0"');
     expect(html).toContain('<div class="moment" data-moment="95" tabindex="0"');

@@ -47,6 +47,7 @@ export function addOneNote(
   notebooks: MockOneNotebook[],
   pictures: Record<string, { type: string; body: string }> = {},
   options: { pageSize?: number } = {},
+  // checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 ) {
   const size = options.pageSize ?? 2;
   const sections = new Map<string, MockOneSection>();

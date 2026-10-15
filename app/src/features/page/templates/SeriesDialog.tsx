@@ -31,7 +31,9 @@ export function SeriesDialog(props: { series: string; current: string; onClose()
     <Dialog
       title={t('pageExtras.series.paneTitle')}
       description={t('pageExtras.series.paneDescription')}
-      actions={[{ id: 'close', label: t('common.close'), variant: 'secondary', leastDestructive: true, onPress: onClose }]}
+      actions={[
+        { id: 'close', label: t('common.close'), variant: 'secondary', leastDestructive: true, onPress: onClose },
+      ]}
       onDismiss={onClose}
     >
       {rows === null ? null : rows.length === 0 ? (

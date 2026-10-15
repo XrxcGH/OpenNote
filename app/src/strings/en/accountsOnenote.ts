@@ -7,7 +7,9 @@ export const accountsOnenote = {
   },
   working: 'Reading your OneNote notebooks…',
   progress: 'Brought in {done} of {total} pages.',
-  done: '{notebooks, plural, one {# notebook} other {# notebooks}} came over, with {pages, plural, one {# new page} other {# new pages}}. The Import report page lists what did not come over.',
+  done:
+    '{notebooks, plural, one {# notebook} other {# notebooks}} came over, with {pages, plural, ' +
+    'one {# new page} other {# new pages}}. The Import report page lists what did not come over.',
   doneLeft:
     '{left, plural, one {# page could not be read} other {# pages could not be read}}. The Import report page says which.',
   untitledNotebook: 'Untitled notebook',
@@ -25,9 +27,12 @@ export const accountsOnenote = {
     section: 'Import report',
     title: 'Import report',
     intro:
-      'This page lists what came over from OneNote on {date} and what did not. Running the import again adds new pages and leaves the pages already here as they are.',
+      'This page lists what came over from OneNote on {date} and what did not. Running the import ' +
+      'again adds new pages and leaves the pages already here as they are.',
     counts:
-      '{sections, plural, one {# section} other {# sections}} read. {pages, plural, one {# new page} other {# new pages}} added. {kept, plural, one {# page was} other {# pages were}} already here and left alone.',
+      '{sections, plural, one {# section} other {# sections}} read. {pages, plural, one {# new page} ' +
+      'other {# new pages}} added. {kept, plural, one {# page was} other {# pages were}} already here ' +
+      'and left alone.',
     failedPages: 'These pages could not be read and were not brought in:',
     changed:
       'These pages changed in OneNote after they were brought in. They were left as they are here, because they may hold your own writing:',

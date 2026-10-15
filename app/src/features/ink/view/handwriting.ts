@@ -268,6 +268,7 @@ async function placeLine(
   return { edit: insertText(markdown, frame, block), block, markdown };
 }
 
+// checks-disable-next-line modifiability: one function whose steps share its state; split it when it grows again
 export function createWritingPen(host: InkHost, surfaceOf: () => InkSurface | null) {
   let pending: string[] = [];
   let timer: ReturnType<typeof setTimeout> | null = null;

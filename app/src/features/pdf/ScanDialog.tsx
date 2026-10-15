@@ -28,6 +28,7 @@ async function previewSource(props: ScanDialogProps): Promise<Blob | null> {
   return response?.ok ? response.blob() : null;
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export default function ScanDialog(props: ScanDialogProps & OverlayProps) {
   const { onClose, block, photos, target, top } = props;
   const [mode, setMode] = useState<ScanMode>('color');

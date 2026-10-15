@@ -91,6 +91,7 @@ const colorName = (color: string): string => {
 };
 
 /** The pen slots, and Color and Width for the active one. */
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function DrawPens({ toolProps }: CommandBarComponentProps) {
   const state = useStore(drawState, (s) => s);
   const slots = useSettings((settings) => settings.ink.pens);

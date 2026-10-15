@@ -12,6 +12,7 @@ import { setTimetable, timetableStore } from './upcomingStores';
 import styles from './tools.module.css';
 import extra from './extra.module.css';
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ClassForm() {
   const slots = useStore(timetableStore, (value) => value);
   const [name, setName] = useState('');

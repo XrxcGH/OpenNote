@@ -14,7 +14,8 @@ vi.mock('../../ui', () => ({ showToast: vi.fn() }));
 
 const { makeShortcut, shortcutLink } = await import('./shortcuts');
 
-const node = (kind: NodeSummary['kind'], id: string, title: string) => ({ id: id as NodeId, kind, title }) as NodeSummary;
+const node = (kind: NodeSummary['kind'], id: string, title: string) =>
+  ({ id: id as NodeId, kind, title }) as NodeSummary;
 
 beforeEach(() => {
   calls.length = 0;

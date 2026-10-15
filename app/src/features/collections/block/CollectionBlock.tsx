@@ -107,7 +107,9 @@ export function CollectionBlock({ def, readOnly, onChange, open }: Props) {
       <header className={styles.blockHeader}>
         <h3 className={styles.blockTitle}>{def.name}</h3>
         <span className={styles.muted} role="status">
-          {facts === null ? t('qolSearch.collections.loading') : t('qolSearch.collections.pages', { count: shown.length })}
+          {facts === null
+            ? t('qolSearch.collections.loading')
+            : t('qolSearch.collections.pages', { count: shown.length })}
         </span>
         {readOnly ? null : (
           <label className={styles.pick}>

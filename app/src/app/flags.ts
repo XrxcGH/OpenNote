@@ -287,11 +287,7 @@ const flag = (id: FlagId, description: string, enabled: Record<Channel, boolean>
 
 export const FLAGS: readonly FlagDef[] = [
   flag('window.snapLayouts', 'The Snap Layouts flyout on the Maximize button, if the spike passes.', on),
-  flag(
-    'shell.customFrame',
-    'The custom title bar with its own caption buttons, instead of the native frame.',
-    on,
-  ),
+  flag('shell.customFrame', 'The custom title bar with its own caption buttons, instead of the native frame.', on),
   flag('install.uninstallEntry', 'A per-user entry in Installed apps, and OpenNote.exe --uninstall.', betaBuilds),
   flag('updates.meteredCheck', 'Wait for an unmetered network before downloading an update.', betaBuilds),
   flag('updates.resume', 'Resume a download that stopped partway.', betaBuilds),

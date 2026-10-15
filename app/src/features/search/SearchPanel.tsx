@@ -259,7 +259,9 @@ function Results({ id, hits, index, status, empty, onHover, onOpen }: ResultsPro
           <span className={styles.optionTitle}>
             <Highlighted text={hit.title || t('tree.page.noneTitle')} ranges={hit.title ? hit.titleHighlights : []} />
           </span>
-          {hit.heading && <span className={styles.optionHeading}>{t('search.panel.inHeading', { heading: hit.heading })}</span>}
+          {hit.heading && (
+            <span className={styles.optionHeading}>{t('search.panel.inHeading', { heading: hit.heading })}</span>
+          )}
           {hit.snippet && (
             <span className={styles.optionSnippet}>
               <SnippetKind kind={hit.snippet.kind} />

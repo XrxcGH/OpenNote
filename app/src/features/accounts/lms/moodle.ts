@@ -43,6 +43,7 @@ interface MoodleAssignment {
   intro?: string;
 }
 
+// checks-disable-next-line modifiability: nested callbacks that walk one structure; flatten them when this changes
 export function moodleApi({ client }: LmsDeps): LmsApi {
   const userId = async (base: string): Promise<number> =>
     (await moodleCall<{ userid: number }>(client, 'moodleRead', base, 'core_webservice_get_site_info')).userid;

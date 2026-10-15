@@ -22,7 +22,8 @@ export const paste = {
     sourceLinkAlways: 'Always add',
     sourceLinkNever: 'Never add',
     saveWebImages: 'Save images from web pastes',
-    saveWebImagesHint: 'Off by default: a pasted web image is only linked. When on, each image downloads once, when you paste.',
+    saveWebImagesHint:
+      'Off by default: a pasted web image is only linked. When on, each image downloads once, when you paste.',
     joinPdfLines: 'Join lines in text pasted from PDFs',
   },
 } as const;

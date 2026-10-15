@@ -80,6 +80,7 @@ function machineName(options: Options): string {
   if (given) return given;
   const cpus = os.cpus();
   const memory = Math.round(os.totalmem() / 2 ** 30);
+  // checks-disable-next-line length: one line of report text built from its parts
   return `${os.hostname()} (${cpus[0]?.model.trim() ?? 'unknown processor'}, ${cpus.length} threads, ${memory} GB, ${os.type()} ${os.release()})`;
 }
 
@@ -117,6 +118,7 @@ function probeVolume(path: string): Volume {
   try {
     const json = powershell(
       `$v = Get-Volume -DriveLetter ${letter}; $b = ''; try { $b = (Get-Partition -DriveLetter ${letter} | Get-Disk).BusType } catch {}; ` +
+        // checks-disable-next-line length: one line of report text built from its parts
         `[pscustomobject]@{ FileSystemType = "$($v.FileSystemType)"; DriveType = "$($v.DriveType)"; FileSystemLabel = "$($v.FileSystemLabel)"; BusType = "$b" } | ConvertTo-Json`,
     );
     return classifyVolume(path, JSON.parse(json) as VolumeFacts);
@@ -223,6 +225,7 @@ function crash(options: Options): number {
   const label = need(options, 'label');
   const volume = probeVolume(target);
   console.log(
+    // checks-disable-next-line length: one line of report text built from its parts
     `Drive under test: ${volume.fileSystem}, ${volume.kind}${volume.bus ? ` (${volume.bus})` : ''}${volume.label ? `, "${volume.label}"` : ''}`,
   );
   const expected = options.values.get('expect');
@@ -297,7 +300,8 @@ function typing(options: Options): number {
   console.log(`This machine has ${threads} threads.`);
   if (threads > 8 && !options.flags.has('any-cores')) {
     console.error(
-      'The typing gate is for the 4-core machine. This one is much faster, so its numbers would say little.\nRun it on that machine, or add --any-cores to measure here anyway.',
+      'The typing gate is for the 4-core machine. This one is much faster, so its numbers would say ' +
+        'little.\nRun it on that machine, or add --any-cores to measure here anyway.',
     );
     return 2;
   }
@@ -339,6 +343,7 @@ function penLatency(options: Options): number {
   const frames = parseNumbers(need(options, 'frames'));
   const latency = cameraLatency(frames, fps);
   console.log(
+    // checks-disable-next-line length: one line of report text built from its parts
     `Camera: ${latency.samples} strokes at ${fps} frames a second. Median ${latency.p50.toFixed(1)} ms, 95th percentile ${latency.p95.toFixed(1)} ms, worst ${latency.max.toFixed(1)} ms.`,
   );
   if (options.flags.has('dry-run')) return 0;
@@ -392,6 +397,7 @@ function phase12(options: Options): number {
     kind === 'ocr' ? GATES.ocrCer : style === 'cursive' ? GATES.handwritingCursiveCer : GATES.handwritingPrintCer;
   const max = options.values.has('max') ? Number(options.values.get('max')) : gate.max;
   console.log(
+    // checks-disable-next-line length: one line of report text built from its parts
     `${characters.errors} of ${characters.length} characters wrong (${(characters.rate * 100).toFixed(1)}%), ${words.errors} of ${words.length} words wrong (${(words.rate * 100).toFixed(1)}%). Target ${(max * 100).toFixed(1)}% of characters.`,
   );
   if (options.flags.has('dry-run')) return 0;
@@ -412,6 +418,7 @@ function phase12(options: Options): number {
     date: day,
     machine: machineName(options),
     target: label,
+    // checks-disable-next-line length: one line of report text built from its parts
     result: `${(characters.rate * 100).toFixed(1)}% of characters wrong, target ${(max * 100).toFixed(1)}%${gate.source === 'proposed' && !options.values.has('max') ? ' (proposed)' : ''}`,
     verdict: pass ? 'pass' : 'fail',
     file: relative(file),

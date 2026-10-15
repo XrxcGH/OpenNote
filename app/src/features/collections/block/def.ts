@@ -12,7 +12,8 @@ export function readDef(data: Record<string, unknown>, saved: readonly Collectio
   if (!base) return emptyCollection(text(data.collection), text(data.name));
   const conditions = Array.isArray(base.conditions)
     ? base.conditions.filter(
-        (c): c is Condition => !!c && typeof c.name === 'string' && typeof c.op === 'string' && typeof c.value === 'string',
+        (c): c is Condition =>
+          !!c && typeof c.name === 'string' && typeof c.op === 'string' && typeof c.value === 'string',
       )
     : [];
   return {

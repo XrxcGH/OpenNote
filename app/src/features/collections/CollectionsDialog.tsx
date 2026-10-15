@@ -1,4 +1,5 @@
 // checks-disable-file modifiability: one dialog whose parts share its state; split it when it grows again
+
 // Collections: saved views of pages chosen by a search, a tag, a section, or property values, shown as a table, a
 // list, a board, a calendar, or a gallery. The rules fold open above the pages. Editing a property in a view changes
 // the page.
@@ -83,7 +84,6 @@ function useChoices(): { tags: TagNode[]; sections: { id: string; title: string 
   }, []);
   return { tags, sections };
 }
-
 
 export default function CollectionsDialog({ onClose }: OverlayProps) {
   const [list, setList] = useState<CollectionDef[]>(loadCollections);

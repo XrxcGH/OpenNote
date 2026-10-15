@@ -105,7 +105,14 @@ export function moreOver(invoke: RawInvoke): AudioMore {
       const body = new Uint8Array(strokes.length + scene.rgba.length);
       body.set(strokes, 0);
       body.set(scene.rgba, strokes.length);
-      const header = { assetsDir, entry, ...target, width: scene.width, height: scene.height, strokesLen: strokes.length };
+      const header = {
+        assetsDir,
+        entry,
+        ...target,
+        width: scene.width,
+        height: scene.height,
+        strokesLen: strokes.length,
+      };
       return invoke('audio_export_video', body, {
         headers: { 'x-opennote-video': encodeURIComponent(JSON.stringify(header)) },
       }) as Promise<number>;

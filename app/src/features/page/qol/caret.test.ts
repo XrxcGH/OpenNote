@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
 import { describe, expect, it } from 'vitest';
 import { caretLook } from './caret';
 import { DEFAULT_PREFS } from './prefs';

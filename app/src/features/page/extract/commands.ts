@@ -57,7 +57,8 @@ export async function extractSelection(): Promise<void> {
     created: [created.id],
     revert:
       block && after !== before
-        ? async () => void (await undoPageChanges(pagesClient(), [{ page: sourceId, texts: [{ block, before, after }] }]))
+        ? async () =>
+            void (await undoPageChanges(pagesClient(), [{ page: sourceId, texts: [{ block, before, after }] }]))
         : null,
     message,
     history: { pages: [sourceId], name: t('pageExtras.history.extract', { title }) },

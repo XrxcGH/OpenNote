@@ -28,6 +28,7 @@ function insertIntoPage(text: string): boolean {
 let shared: PackStore | null = null;
 const packs = (): PackStore => (shared ??= browserPackStore());
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
   const request = useStore(wordRequest, (current) => current);
   const [text, setText] = useState(request.word);

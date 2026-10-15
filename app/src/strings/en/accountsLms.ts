@@ -37,7 +37,9 @@ export const accountsLms = {
   },
   untitled: 'Untitled assignment',
   working: 'Reading your courses…',
-  done: '{courses, plural, one {# course} other {# courses}} brought in: {pages, plural, one {# assignment} other {# assignments}}, {dated} with a due date in Upcoming.',
+  done:
+    '{courses, plural, one {# course} other {# courses}} brought in: {pages, plural, one {# ' +
+    'assignment} other {# assignments}}, {dated} with a due date in Upcoming.',
   submitting: 'Handing in “{title}”…',
   submitted: 'Handed in “{title}” to {course}.',
   saved:

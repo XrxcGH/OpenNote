@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the test colors are inputs to the code under test, not design colors
 import { describe, expect, it, vi } from 'vitest';
 import { createTrail, requestPresenter } from './delegatedTrail';
 import type { InkPresenter } from './delegatedTrail';

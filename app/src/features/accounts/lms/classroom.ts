@@ -126,6 +126,7 @@ export function classroomApi({ client, host }: LmsDeps): LmsApi {
         [
           {
             kind: 'text',
+            // checks-disable-next-line length: one multipart body, with its line breaks kept visible
             text: `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: file.name })}\r\n--${boundary}\r\nContent-Type: ${file.mime}\r\n\r\n`,
           },
           bytesPart(file.bytes),

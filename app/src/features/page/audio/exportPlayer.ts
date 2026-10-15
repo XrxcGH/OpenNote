@@ -83,7 +83,8 @@ export async function preparePlayer(pageId: string, htmlPath: string): Promise<P
     }
     number += 1;
     recordings.set(id, { src: encodeURIComponent(baseName(dest)), seconds: activeNs(entry) / 1e9 });
-    for (const [blockId, seconds] of momentsFor(entry, textBlocks)) if (!moments.has(blockId)) moments.set(blockId, seconds);
+    for (const [blockId, seconds] of momentsFor(entry, textBlocks))
+      if (!moments.has(blockId)) moments.set(blockId, seconds);
   }
   return recordings.size === 0 ? null : { recordings, moments };
 }

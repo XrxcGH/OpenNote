@@ -40,7 +40,9 @@ export function createTauriAccounts(): AccountsHost {
         contentType,
       }),
     fetchPreview: async (url) => {
-      const answer = await call<{ status: number; contentType: string | null; base64: string }>('fetch.preview', { url });
+      const answer = await call<{ status: number; contentType: string | null; base64: string }>('fetch.preview', {
+        url,
+      });
       return { status: answer.status, contentType: answer.contentType, bytes: decode(answer.base64) };
     },
     uploadPublic: (connector, url, parts, contentType) =>

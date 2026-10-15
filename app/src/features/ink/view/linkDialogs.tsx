@@ -24,6 +24,7 @@ interface Suggestion {
   readonly title: string;
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 function MakeLinkDialog(props: { canRecord: boolean; initialLabel: string; done: (answer: MadeLink | null) => void }) {
   const { canRecord, initialLabel, done } = props;
   const [kind, setKind] = useState<Kind>('page');

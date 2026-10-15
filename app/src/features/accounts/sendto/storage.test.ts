@@ -84,7 +84,9 @@ describe('WebDAV', () => {
 
   it('reads the folders of a PROPFIND answer without the folder itself or the files', () => {
     const xml =
+      // checks-disable-next-line length: one line of WebDAV XML, as the server sends it
       '<d:multistatus xmlns:d="DAV:"><d:response><d:href>/dav/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop></d:propstat></d:response>' +
+      // checks-disable-next-line length: one line of WebDAV XML, as the server sends it
       '<d:response><d:href>/dav/My%20Notes/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop></d:propstat></d:response>' +
       '<d:response><d:href>/dav/a.txt</d:href><d:propstat><d:prop><d:resourcetype/></d:prop></d:propstat></d:response></d:multistatus>';
     expect(foldersIn(xml, '/dav/')).toEqual([{ id: '/dav/My Notes', name: 'My Notes' }]);

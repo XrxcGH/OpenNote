@@ -1,3 +1,5 @@
+// checks-disable-file modifiability: one module whose parts share its state; split it when it grows again
+
 //! Attached files that save back. A file attached to a page is an asset of that page. Opening it writes a copy to a
 //! temporary folder, hands the copy to Windows to open in its own app, and watches the copy. Each time the app
 //! has saved a change (the file stops changing for one check), the core imports the new bytes as a new asset and

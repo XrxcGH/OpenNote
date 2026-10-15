@@ -1,3 +1,5 @@
+// checks-disable-file modifiability: one module whose parts share its state; split it when it grows again
+
 //! Audio recording and playback for the interface (Phase 9; ADR 0007). The media crate does the work; this module
 //! is the Tauri side of its service: one [`AudioService`] in the app's state, one command for each of its methods
 //! (the interface's `hostOver` names them `audio_<method>`), and a few commands that edit a finished recording.

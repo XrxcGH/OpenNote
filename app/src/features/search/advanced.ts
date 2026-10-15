@@ -11,13 +11,18 @@ export function matchingHeading(headings: readonly HeadingRef[], snippet: Snippe
   if (!snippet) return null;
   const words = fold(snippet.text);
   return (
-    headings.find((heading) => heading.block === snippet.block && heading.text !== '' && words.includes(fold(heading.text))) ??
-    null
+    headings.find(
+      (heading) => heading.block === snippet.block && heading.text !== '' && words.includes(fold(heading.text)),
+    ) ?? null
   );
 }
 
 /** Whether the page, or the section or notebook that holds it, is archived. */
-export async function isArchived(notes: NotesService, page: string, known = new Map<string, boolean>()): Promise<boolean> {
+export async function isArchived(
+  notes: NotesService,
+  page: string,
+  known = new Map<string, boolean>(),
+): Promise<boolean> {
   let id: NodeId | null | undefined = page as NodeId;
   const trail: string[] = [];
   let archived = false;

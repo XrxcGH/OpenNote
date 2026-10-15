@@ -85,6 +85,7 @@ describe('recognize', () => {
 describe('captions', () => {
   it('reads WebVTT and SubRip into timed lines, dropping tags and repeats', () => {
     const vtt =
+      // checks-disable-next-line length: a WebVTT file kept as one string
       'WEBVTT\n\n00:00:01.000 --> 00:00:03.000\n<i>Hello</i> &amp; welcome\n\n00:00:03.000 --> 00:00:05.000\nHello &amp; welcome\n\n01:05.500 --> 01:07.000\nSecond';
     expect(parseCaptions(vtt)).toEqual([
       { startMs: 1000, text: 'Hello & welcome' },

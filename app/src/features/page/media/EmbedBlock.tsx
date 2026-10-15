@@ -37,6 +37,7 @@ function openLink(url: string): void {
   void commandContext('palette').platform.shell.openExternal({ kind: 'link', url });
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function EmbedBlockView(props: { block: BlockJson; page: OpenPage; open?(url: string): void }) {
   const { block, page } = props;
   const data = useMemo(() => embedDataOf(block), [block]);

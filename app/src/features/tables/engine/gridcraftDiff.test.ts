@@ -91,8 +91,10 @@ const CASES: Record<string, string[]> = {
 const KNOWN: Record<string, string> = {
   '2^3^2': 'OpenNote chains powers to the right, as in mathematics (512). Excel chains to the left (64).',
   '-2^2': 'OpenNote binds the power tighter than the minus sign (-4), as in mathematics. Excel negates first (4).',
-  'ROUND(7)': 'Decided to keep: OpenNote lets the digits argument go (ROUND(2.5) is 3), a kindness for typed formulas. Excel needs both.',
-  'COUNTA("","x")': 'Decided to keep: a table cell with empty text is an empty cell, and COUNTA over a column must not count those.',
+  'ROUND(7)':
+    'Decided to keep: OpenNote lets the digits argument go (ROUND(2.5) is 3), a kindness for typed formulas. Excel needs both.',
+  'COUNTA("","x")':
+    'Decided to keep: a table cell with empty text is an empty cell, and COUNTA over a column must not count those.',
 };
 
 /** Functions that cannot be compared with a fixed answer: their result depends on the day it runs. */
