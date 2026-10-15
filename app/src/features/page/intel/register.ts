@@ -76,3 +76,8 @@ commandBar.register({
   flag: 'intel.dictation',
   priority: 60,
 });
+
+// Live captions (A2-25) follow a recording once the person turned them on in Settings, then Recording.
+if (isEnabled('intel.liveCaptions') && isEnabled('intel.transcription')) {
+  void import('./captions').then((module) => module.installLiveCaptions());
+}

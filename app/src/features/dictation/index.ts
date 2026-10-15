@@ -50,3 +50,4 @@ export async function toggleDictation(target: DictationSink, handlers: Dictation
   else await dictate(target, handlers);
 }
 
+export { CaptionsSwitch, loadCaptionChoices, mountCaptionStrip, startCaptions, stopCaptions } from './captions';
