@@ -22,6 +22,7 @@ export default tseslint.config(
       'eslint/fixtures/**',
       'tests/ui/report/**',
       'tests/ui/results/**',
+      'extensions/clipper/shared/vendor/**',
     ],
   },
   js.configs.recommended,

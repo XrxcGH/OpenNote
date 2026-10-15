@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 import { articleClip, gmailClip, gmailDownloads, pageClip, regionClip } from '../clipper/lib/clip.js';
 import { clipLink } from '../clipper/lib/deeplink.js';
 import { cropBox } from '../clipper/lib/region.js';
-import { articleTitle } from '../clipper/shared/article.js';
+import { articleTitle, readabilityArticle } from '../clipper/shared/article.js';
 import { safeUrl, toMarkdown } from '../clipper/shared/markdown.js';
 
 const parse = (html) => new JSDOM(html).window.document;
@@ -152,4 +152,20 @@ test('a Gmail message becomes a page with its sender, link, and files', () => {
   assert.match(page.markdown, /Bring \*\*boots\*\*\./);
   assert.deepEqual(page.attachments, [{ name: 'Permission.pdf', mime: 'application/pdf', data: 'JVBE' }]);
   assert.deepEqual(skipped, []);
+});
+
+test('the bundled Readability finds the article, without scripts and without changing the page', () => {
+  const doc = parse(ARTICLE);
+  const before = doc.body.innerHTML;
+  const found = readabilityArticle(doc);
+  assert.ok(found, 'Readability found an article');
+  const text = found.holder.textContent;
+  assert.match(text, /snow melts in the hills/);
+  assert.doesNotMatch(text, /Most read one|First! This is a comment/);
+  assert.equal(found.holder.querySelector('script'), null);
+  assert.equal(doc.body.innerHTML, before);
+});
+
+test('a page Readability finds nothing in gives null, not an error', () => {
+  assert.equal(readabilityArticle(parse('<body><p>Hi</p></body>')), null);
 });

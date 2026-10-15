@@ -1,9 +1,11 @@
-// "Clean article": finds the main text of a web page and leaves out menus, ads, comments, and sidebars, in the
-// manner of Mozilla's Readability. It scores each block by the paragraphs it holds, how much text they have, and
-// how few links, then keeps the best one and the siblings that score close to it. It works on a copy, so the page
-// the person is reading never changes.
+// "Clean article": finds the main text of a web page and leaves out menus, ads, comments, and sidebars. Mozilla's
+// Readability (vendor/Readability.js, bundled with the clipper) does the finding. When it finds nothing, a smaller
+// scorer below tries: it scores each block by the paragraphs it holds, how much text they have, and how few links,
+// then keeps the best one and the siblings that score close to it. Both work on a copy, so the page the person is
+// reading never changes, and neither runs the page's scripts.
 
 import { toMarkdown } from './markdown.js';
+import Readability from './vendor/Readability.js';
 
 const UNLIKELY = new RegExp(
   [
@@ -17,6 +19,8 @@ const LIKELY = /and|article|body|column|content|main|post|story|text|entry|shado
 const POSITIVE = /article|body|content|entry|main|page|post|story|text|blog/i;
 const NEGATIVE =
   /comment|contact|footer|footnote|hidden|masthead|meta|outbrain|promo|related|scroll|share|sidebar|sponsor|shopping|tag|tool|widget/i;
+/** Fewer characters than this is not an article; the page is clipped whole instead. */
+const MIN_ARTICLE = 200;
 const DROP = 'script,style,noscript,template,iframe,form,button,input,select,textarea,nav,aside,footer,dialog,svg';
 
 function classWeight(element) {
@@ -106,9 +110,28 @@ export function findArticle(doc) {
   return holder;
 }
 
+/**
+ * The article as Readability finds it: an element of an inert document, which never runs scripts or loads
+ * pictures, holding the article's HTML. Null when Readability finds nothing or fails.
+ */
+export function readabilityArticle(doc) {
+  try {
+    const found = new Readability(doc.cloneNode(true), { charThreshold: 200, keepClasses: false }).parse();
+    if (!found?.content || (found.length ?? 0) < MIN_ARTICLE) return null;
+    const inert = doc.implementation.createHTMLDocument('');
+    const holder = inert.createElement('div');
+    holder.innerHTML = found.content;
+    for (const element of holder.querySelectorAll(DROP)) element.remove();
+    return { holder, title: (found.title ?? '').trim() };
+  } catch {
+    return null;
+  }
+}
+
 /** The article as `{ title, markdown }`, or null when the page has no article to find. */
 export function extractArticle(doc, base) {
-  const holder = findArticle(doc);
+  const read = readabilityArticle(doc);
+  const holder = read?.holder ?? findArticle(doc);
   if (!holder) return null;
   const markdown = toMarkdown(holder, base);
   if (markdown.length < 80) return null;

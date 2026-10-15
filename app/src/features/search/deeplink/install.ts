@@ -10,6 +10,14 @@ import { openAndReveal } from './jump';
 import { linkInArgs, parseLink } from './url';
 import type { OpenNoteLink } from './url';
 
+/** Readers of the other opennote:// links, such as opennote://clip (features/integrations/clip). One returns true
+ * when it took the link. */
+export const otherLinkReaders = new Set<(url: string) => boolean>();
+
+function readOther(url: string): void {
+  for (const read of otherLinkReaders) if (read(url)) return;
+}
+
 export function installDeepLinks(platform: Platform, notes: NotesService): () => void {
   if (!isEnabled('search.paragraphLinks')) return () => undefined;
   const open = (link: OpenNoteLink) => {
@@ -22,12 +30,14 @@ export function installDeepLinks(platform: Platform, notes: NotesService): () =>
   const stop = platform.window.onForwardedArgs((args) => {
     const link = linkInArgs(args);
     if (link) open(link);
+    else args.forEach(readOther);
   });
   void platform.search.extras
     ?.launchLink()
     .then((url) => {
       const link = url ? parseLink(url) : null;
       if (link) open(link);
+      else if (url) readOther(url);
     })
     .catch(() => undefined);
   return stop;

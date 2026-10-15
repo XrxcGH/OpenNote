@@ -15,10 +15,10 @@ OpenNote must be open while you clip. To stop a pairing, choose **Revoke** next 
 Open the clipper from the toolbar and pick one of three ways to clip:
 
 - **Full page** saves the page. Text you selected is quoted first.
-- **Clean article** leaves out menus, sidebars, and comments, and keeps the text and pictures.
+- **Clean article** leaves out menus, sidebars, and comments, and keeps the text and pictures. The clipper finds the article with Mozilla Readability, which comes with it, so nothing is sent anywhere to do this.
 - **Region screenshot** lets you drag over part of the page and saves it as a picture.
 
-Pick a title and the section the page goes into, then choose **Clip**. The new page keeps the source address as a link. If OpenNote isn't open, the clipper offers to open it with an `opennote://clip` link instead.
+Pick a title and the section the page goes into, then choose **Clip**. The new page keeps the source address as a link. If OpenNote isn't open, the clipper offers to open it with an `opennote://clip` link instead. OpenNote then asks whether to add a page with the title and the address to Quick notes, and adds it only when you choose **Add**.
 
 ## Save an email
 

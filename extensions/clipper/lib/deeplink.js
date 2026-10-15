@@ -1,7 +1,7 @@
 // The fallback when the local API can't be reached: an opennote://clip link that Windows hands to OpenNote, which
-// adds a page with the address and title to Quick notes. The app accepts links of up to 512 characters made only
-// of a few safe characters (app/src-tauri/src/deeplink.rs), so the title is shortened to fit and every other
-// character is percent-encoded.
+// offers to add a page with the address and title to Quick notes (app/src/features/integrations/clip/link.ts).
+// The app accepts links of up to 512 characters made only of a few safe characters (app/src-tauri/src/deeplink.rs),
+// so the title is shortened to fit and every other character is percent-encoded.
 
 export const CLIP_LINK = 'opennote://clip';
 const MAX_LINK = 512;
