@@ -109,3 +109,28 @@ test('exports the lasso selection from its bar and menu, with a crop preview and
   await page.getByRole('menuitem', { name: 'Export selection' }).click();
   await expect(page.getByRole('dialog').getByRole('radio', { name: /Exact/ })).toBeChecked();
 });
+
+test('groups two drawings, selects both from either, and deletes and restores them as one step', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [260, 360]));
+  await draw(page, line([420, 350], [530, 360]));
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(340, 355, 240, 70));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  await bar.getByRole('button', { name: 'Group', exact: true }).click();
+  await expect(bar.getByRole('button', { name: 'Ungroup' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  const frame = page.getByRole('group', { name: 'Selected ink and text' });
+  await expect(frame).toBeHidden();
+
+  // Lassoing one of them takes the whole group.
+  await draw(page, ellipse(205, 355, 75, 40));
+  await expect(frame).toBeVisible();
+  await expect.poll(async () => (await frame.boundingBox())!.width).toBeGreaterThan(300);
+
+  await page.getByRole('button', { name: 'Delete the selection' }).click();
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(0);
+  await page.keyboard.press('Control+z');
+  await expect.poll(async () => (await heldStrokes(page)).length).toBe(2);
+});

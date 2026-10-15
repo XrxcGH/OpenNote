@@ -7,6 +7,8 @@ export type InkFlagId = Extract<FlagId, `ink.${string}` | 'dev.penRecorder'>;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };
+/** On up to Beta, off in Stable until it has been tried there. */
+const beta = { dev: true, nightly: true, beta: true, stable: false };
 
 const flag = (id: InkFlagId, description: string, enabled: FlagDef['enabled']): FlagDef => ({
   id,
@@ -36,6 +38,7 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.handwriting', 'Writing pen, convert with the lasso, and tidy handwriting.', on),
   flag('ink.gridTable', 'Draw a grid to make a table.', on),
   flag('ink.penEditing', 'Edit typed text with the pen.', on),
+  flag('ink.groups', 'Group ink, text boxes and images into one object (ADR 0036).', beta),
   // ink.delegatedTrail, ink.nativeTrail, ink.openSnapshot, and dev.penRecorder aren't built yet, so they have no
   // entry and stay off.
 ];

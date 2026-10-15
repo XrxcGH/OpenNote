@@ -3,10 +3,11 @@
 // own block here, behind its own flag.
 import type { Chord, CommandDef } from '../../../commands/types';
 import type { MessageKey } from '../../../strings/t';
-import { commandBar, commands } from '../../../registries';
+import { commandBar, commands, contextMenus } from '../../../registries';
 import { toggleCanvasLock, installCanvasLock } from './canvasLock';
 import { anchorSelection, detachSelection, installAnchoring } from './anchoring';
 import { describeDrawing } from './describe';
+import { groupSelection, installGroups, selectionGrouped, ungroupSelection } from './groups';
 import { convertSelectionToTable } from './gridTable';
 import { convertSelection, tidySelection } from './handwriting';
 import { EDIT_GESTURES } from './penEditing';
@@ -95,6 +96,7 @@ export function installMore(context: MoreContext): () => void {
     installReplay(host, surfaces),
     installZoomBox(host, surfaces),
     installAnchoring(host, surfaces),
+    installGroups(host, surface),
   ];
   const defs: CommandDef[] = [
     {
@@ -272,12 +274,54 @@ export function installMore(context: MoreContext): () => void {
       checked: () => getSettings().ink.anchorToText,
       run: () => void updateSettings({ ink: { anchorToText: !getSettings().ink.anchorToText } }),
     },
+    {
+      id: 'ink.group',
+      title: 'ink.groups.group',
+      keywords: 'ink.groups.keywords',
+      category: 'editing',
+      keys: [chord('Ctrl+G')],
+      flag: 'ink.groups',
+      enabled: () => host.selection.get().blocks.length + host.selection.get().strokes.length >= 2,
+      run: () => {
+        const current = surface();
+        if (current) void groupSelection(host, current);
+      },
+    },
+    {
+      id: 'ink.ungroup',
+      title: 'ink.groups.ungroup',
+      keywords: 'ink.groups.keywords',
+      category: 'editing',
+      keys: [chord('Ctrl+Shift+G')],
+      flag: 'ink.groups',
+      enabled: () => selectionGrouped(host),
+      run: () => {
+        const current = surface();
+        if (current) void ungroupSelection(host, current);
+      },
+    },
     gestureCommand('scribbleErase'),
     gestureCommand('circleSelect'),
     gestureCommand('twoFingerUndo'),
     gestureCommand('threeFingerRedo'),
   ];
   for (const def of defs) stops.push(commands.register(def));
+  // Selected text boxes and images offer Group and Ungroup in their own menu (features/page/chrome/menu.ts).
+  for (const [order, command] of [
+    [900, 'ink.group'],
+    [901, 'ink.ungroup'],
+  ] as const) {
+    stops.push(
+      contextMenus.register({
+        id: `page.object.${command}`,
+        menu: 'page.object',
+        command,
+        group: 'group',
+        order,
+        flag: 'ink.groups',
+      }),
+    );
+  }
   stops.push(
     commandBar.register({
       id: 'ink.options',

@@ -172,6 +172,7 @@ type Phase5FlagId =
   | 'ink.handwriting'
   | 'ink.gridTable'
   | 'ink.penEditing'
+  | 'ink.groups'
   | 'ink.delegatedTrail'
   | 'ink.nativeTrail'
   | 'ink.openSnapshot'

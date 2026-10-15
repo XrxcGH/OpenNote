@@ -18,6 +18,14 @@ import type { InkHost, InkPointerTool } from './host';
 import { blockItems } from './lasso';
 import { anchorOffsetEdits, anchorSelection, detachSelection } from './anchoring';
 import { convertSelectionToTable, gridInSelection } from './gridTable';
+import {
+  forgetGroups,
+  groupSelection,
+  objectGroups,
+  groupsDeleteEdit,
+  selectionGrouped,
+  ungroupSelection,
+} from './groups';
 import { convertSelection, handwritingAvailable, tidySelection } from './handwriting';
 import { startReplay } from './replay';
 import { followersForMatrix } from './shapeEdit';
@@ -157,6 +165,12 @@ class FrameView implements SelectionFrame {
             () => void,
           ][])
         : []),
+      ...(isEnabled('ink.groups')
+        ? ([
+            ['ink.groups.group', 'group', () => void groupSelection(host, surface)],
+            ['ink.groups.ungroup', 'ungroup', () => void ungroupSelection(host, surface)],
+          ] as [MessageKey, string, () => void][])
+        : []),
       ...(isEnabled('pages.exportSelection')
         ? ([
             [
@@ -192,7 +206,12 @@ class FrameView implements SelectionFrame {
     }
     surface.chrome.append(this.crop, this.frame);
     this.offerTable();
-    this.stops = [host.selection.subscribe(() => this.selectionChanged()), surface.onChange(() => this.place())];
+    this.offerGroups();
+    this.stops = [
+      host.selection.subscribe(() => this.selectionChanged()),
+      surface.onChange(() => this.place()),
+      objectGroups.subscribe(() => this.offerGroups()),
+    ];
     this.place();
   }
 
@@ -263,6 +282,7 @@ class FrameView implements SelectionFrame {
 
   private selectionChanged(): void {
     this.offerTable();
+    this.offerGroups();
     this.place();
     const now = this.selection().strokes.length;
     if (now > 0 && this.had === 0) this.mover.focus({ preventScroll: true });
@@ -287,7 +307,20 @@ class FrameView implements SelectionFrame {
       height: `${Math.max(MIN_SIZE, (shown.maxY - shown.minY) * zoom) + 8}px`,
     });
     this.fitBar(left);
+    const top = shown.minY * zoom - scrollY - 4;
+    this.bar.toggleAttribute('data-below', top < this.bar.offsetHeight + BAR_MARGIN);
     this.placeCrop(shown);
+  }
+
+  /** Group shows for two or more things that are not one group already; Ungroup for a selection with a group in it. */
+  private offerGroups(): void {
+    const group = this.bar.querySelector<HTMLElement>('[data-ink-action="group"]');
+    const ungroup = this.bar.querySelector<HTMLElement>('[data-ink-action="ungroup"]');
+    if (!group || !ungroup) return;
+    const sel = this.selection();
+    const grouped = selectionGrouped(this.host);
+    ungroup.style.display = grouped ? '' : 'none';
+    group.style.display = sel.blocks.length + sel.strokes.length >= 2 ? '' : 'none';
   }
 
   /** Convert to table shows only when the selected strokes draw a grid. */
@@ -404,12 +437,27 @@ class FrameView implements SelectionFrame {
     this.place();
   }
 
+  /** Deletes the strokes, the blocks, and any groups they make up as one undo step. */
   private async remove(): Promise<void> {
     const sel = this.selection();
-    this.host.select({ blocks: sel.blocks, strokes: [] });
-    if (sel.blocks.length > 0) this.host.objectCommand('delete');
-    await this.surface.remove(sel.strokes);
     this.host.select({ blocks: [], strokes: [] });
+    const layer = this.host.layer.get();
+    const blocks = sel.blocks.map((id) => layer?.block(id)).filter((block): block is BlockJson => !!block);
+    const edits: Edit[] = [];
+    if (sel.strokes.length > 0) edits.push({ edit: 'removeStrokes', strokes: [...sel.strokes] });
+    if (blocks.length > 0) edits.push({ edit: 'deleteBlocks', blocks: blocks.map((block) => block.id) });
+    const groups = groupsDeleteEdit(sel);
+    if (groups) edits.push(groups);
+    if (edits.length === 0) return;
+    const gone = this.surface.hide(sel.strokes);
+    for (const block of blocks) layer?.remove?.(block.id);
+    const ok = await this.surface.send({ edits }, () => {
+      this.surface.show(gone);
+      for (const block of blocks) layer?.upsert(block);
+    });
+    if (ok) forgetGroups(sel);
+    // The frame is gone, so focus goes back to the page, where Ctrl+Z undoes the delete.
+    this.surface.parts.viewport.viewport.focus({ preventScroll: true });
     announce(t('ink.announce.deleted'));
   }
 

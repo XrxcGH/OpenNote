@@ -286,3 +286,21 @@ fn descriptions_and_decorative_flags_round_trip_on_pictures_drawings_and_files()
     let text = String::from_utf8(write_page(&plain)).unwrap();
     assert!(!text.contains("decorative"));
 }
+
+#[test]
+fn object_groups_in_the_view_round_trip() {
+    // ADR 0036: groups are a map in the page view from a group ID to its blocks and strokes.
+    let mut value = minimal();
+    value["view"]["groups"] = json!({
+        "01m3sa14y9zszek1wdk3sngrp1": {
+            "blocks": ["01m3sa14y9zszek1wdk3snddsn"],
+            "strokes": ["01m3sa14y9zszek1wdk3snstr1", "01m3sa14y9zszek1wdk3snstr2"]
+        }
+    });
+    let page = read(&value).unwrap().page;
+    let bytes = write_page(&page);
+    let back: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(back["view"]["groups"], value["view"]["groups"]);
+    let again = read_page(&bytes, &limits()).unwrap().page;
+    assert_eq!(write_page(&again), bytes);
+}

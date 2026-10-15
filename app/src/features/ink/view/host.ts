@@ -55,6 +55,8 @@ export interface InkBlockLayer {
   blocks(): readonly BlockJson[];
   block(id: string): BlockJson | null;
   upsert(block: BlockJson): void;
+  /** Takes a block out of the page view at once, as a delete does before the core answers. */
+  remove?(id: string): void;
   view(id: string): { readonly element: HTMLElement; measure(): { x: number; y: number; w: number; h: number } } | null;
 }
 

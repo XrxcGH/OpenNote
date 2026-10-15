@@ -124,6 +124,15 @@ export const ink = {
     split: 'Paragraph split',
     keywords: 'pen edit typed text strike through delete space split paragraph circle select words write insert gap',
   },
+  groups: {
+    group: 'Group',
+    ungroup: 'Ungroup',
+    keywords: 'group ungroup objects together combine join ink text image',
+    grouped: '{count, plural, one {Grouped # object} other {Grouped # objects}}',
+    ungrouped: 'Ungrouped',
+    tooFew: 'Select two or more things to group',
+    none: 'Nothing selected is in a group',
+  },
   gridTable: {
     offer: 'That looks like a grid, {rows} rows by {columns} columns.',
     convert: 'Convert to table',
