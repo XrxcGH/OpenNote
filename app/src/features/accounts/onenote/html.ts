@@ -3,13 +3,22 @@
 // browser, so it runs anywhere) and answers the page's blocks: text blocks as Markdown and pictures to fetch, and a
 // count of what could not come over, for the import report.
 
+import { isInk, parseInk } from './inkml';
+import type { InkSpec } from './inkml';
+
 export type PageBlock =
-  { kind: 'text'; markdown: string } | { kind: 'image'; src: string; alt: string; width: number | null };
+  | { kind: 'text'; markdown: string }
+  | { kind: 'image'; src: string; alt: string; width: number | null }
+  | { kind: 'attachment'; src: string; name: string; mime: string }
+  | { kind: 'ink'; strokes: InkSpec[] };
 
 /** What was simplified or left out of one page. */
 export interface PageLosses {
   tables: number;
+  /** Attachments with no address to fetch them from. */
   attachments: string[];
+  /** Ink the page had, in strokes, which the importer draws. */
+  ink: number;
   /** Pictures that could not be fetched are counted by the importer. */
   other: string[];
 }
@@ -107,15 +116,37 @@ const escapeText = (text: string): string => text.replace(/([\\`*_[\]])/g, '\\$1
 interface Context {
   losses: PageLosses;
   blocks: PageBlock[];
+  /** Blocks found inside a line of text, which go after the text block that line becomes. */
+  pending: PageBlock[];
+}
+
+/** Adds a block, then the attachments and ink that were inside it. */
+function emit(cx: Context, block: PageBlock): void {
+  cx.blocks.push(block);
+  cx.blocks.push(...cx.pending);
+  cx.pending = [];
+}
+
+function takeInk(node: El, cx: Context): void {
+  const strokes = parseInk(node);
+  if (strokes.length === 0) return;
+  cx.losses.ink += strokes.length;
+  cx.pending.push({ kind: 'ink', strokes });
 }
 
 function inline(node: El | string, cx: Context): string {
   if (typeof node === 'string') return escapeText(node.replace(/\s+/g, ' '));
   if (SKIP.has(node.tag)) return '';
   if (node.tag === 'br') return '\n';
+  if (isInk(node.tag)) {
+    takeInk(node, cx);
+    return '';
+  }
   if (node.tag === 'object' && node.attrs['data-attachment']) {
     const name = node.attrs['data-attachment'];
-    cx.losses.attachments.push(name);
+    const src = node.attrs.data ?? '';
+    if (src) cx.pending.push({ kind: 'attachment', src, name, mime: node.attrs.type ?? '' });
+    else cx.losses.attachments.push(name);
     return `[${escapeText(name)}] `;
   }
   let text = node.children.map((child) => inline(child, cx)).join('');
@@ -203,29 +234,34 @@ function pixels(value: string | undefined): number | null {
 function flow(node: El | string, cx: Context): void {
   if (typeof node === 'string') {
     const text = clean(escapeText(node.replace(/\s+/g, ' ')));
-    if (text !== '') cx.blocks.push({ kind: 'text', markdown: text });
+    if (text !== '') emit(cx, { kind: 'text', markdown: text });
     return;
   }
   if (SKIP.has(node.tag)) return;
+  if (isInk(node.tag)) {
+    takeInk(node, cx);
+    emitPending(cx);
+    return;
+  }
   if (node.tag === 'img') {
     const src = node.attrs['data-fullres-src'] || node.attrs.src;
-    if (src) cx.blocks.push({ kind: 'image', src, alt: node.attrs.alt ?? '', width: pixels(node.attrs.width) });
+    if (src) emit(cx, { kind: 'image', src, alt: node.attrs.alt ?? '', width: pixels(node.attrs.width) });
     return;
   }
   if (node.tag === 'hr') return;
   if (/^h[1-6]$/.test(node.tag)) {
     const text = clean(node.children.map((child) => inline(child, cx)).join('')).replace(/\n/g, ' ');
-    if (text !== '') cx.blocks.push({ kind: 'text', markdown: `${'#'.repeat(Number(node.tag[1]))} ${text}` });
+    if (text !== '') emit(cx, { kind: 'text', markdown: `${'#'.repeat(Number(node.tag[1]))} ${text}` });
     return;
   }
   if (node.tag === 'ul' || node.tag === 'ol') {
     const lines = listLines(node, 0, cx);
-    if (lines.length > 0) cx.blocks.push({ kind: 'text', markdown: lines.join('\n') });
+    if (lines.length > 0) emit(cx, { kind: 'text', markdown: lines.join('\n') });
     return;
   }
   if (node.tag === 'table') {
     cx.losses.tables += 1;
-    cx.blocks.push({ kind: 'text', markdown: tableMarkdown(node, cx) });
+    emit(cx, { kind: 'text', markdown: tableMarkdown(node, cx) });
     return;
   }
   const hasBlockChild = node.children.some(
@@ -236,14 +272,14 @@ function flow(node: El | string, cx: Context): void {
   const todo = todoMark(node);
   if ((!hasBlockChild && !CONTAINERS.has(node.tag)) || todo) {
     const text = clean(node.children.map((child) => inline(child, cx)).join(''));
-    if (text !== '' || todo) cx.blocks.push({ kind: 'text', markdown: `${todo ?? ''}${text}`.trimEnd() });
+    if (text !== '' || todo) emit(cx, { kind: 'text', markdown: `${todo ?? ''}${text}`.trimEnd() });
     return;
   }
   // A container: a line of text between its pictures and lists is a block of its own.
   let run: (El | string)[] = [];
   const flush = () => {
     const text = clean(run.map((child) => inline(child, cx)).join(''));
-    if (text !== '') cx.blocks.push({ kind: 'text', markdown: text });
+    if (text !== '') emit(cx, { kind: 'text', markdown: text });
     run = [];
   };
   for (const child of node.children) {
@@ -255,6 +291,11 @@ function flow(node: El | string, cx: Context): void {
     }
   }
   flush();
+}
+
+function emitPending(cx: Context): void {
+  cx.blocks.push(...cx.pending);
+  cx.pending = [];
 }
 
 function titleOf(root: El): string {
@@ -273,7 +314,8 @@ function titleOf(root: El): string {
 /** The page's blocks. The title is the page's `<title>`, which is what OneNote shows above the page. */
 export function convertPage(html: string): ConvertedPage {
   const root = parse(html);
-  const cx: Context = { losses: { tables: 0, attachments: [], other: [] }, blocks: [] };
+  const cx: Context = { losses: { tables: 0, attachments: [], ink: 0, other: [] }, blocks: [], pending: [] };
   flow(root, cx);
+  emitPending(cx);
   return { title: titleOf(root), blocks: cx.blocks, losses: cx.losses };
 }

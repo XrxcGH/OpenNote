@@ -5,7 +5,11 @@
 // each Microsoft account, so switching accounts never mixes one person's notebooks with another's.
 
 import { newId } from '../../../editor/ids';
-import type { PagesClient } from '../../../platform/types';
+import { encodeRecords } from '../../../core/ink/codec';
+import { recordFromStroke } from '../../ink/model/convert';
+import type { InkStroke } from '../../ink/model/types';
+import type { PageExtrasClient, PagesClient } from '../../../platform/types';
+import type { Edit } from '../../../services/pages/types';
 import type { NodeId, NotesService } from '../../../services/notes/types';
 import type { PageLevel } from '../../../services/notes/types';
 import { t } from '../../../strings/t';
@@ -15,6 +19,7 @@ import { cleanTitle, createPage, replaceMarkdown } from '../notebook';
 import { loadState, saveState } from '../state';
 import { convertPage } from './html';
 import type { PageBlock } from './html';
+import type { InkSpec } from './inkml';
 import { fetchPicture, listPages, listSections, pageHtml } from './graph';
 import type { GraphNotebook } from './graph';
 
@@ -38,6 +43,8 @@ export interface ImportDeps {
   host: AccountsHost;
   notes: NotesService;
   pages: PagesClient;
+  /** Attaches files to a page. Without it, attachments are listed in the report instead. */
+  extras?: Pick<PageExtrasClient, 'attachBytes'> | null;
   /** The account the notebooks are read from, which keeps the state apart. */
   account: string;
   progress?(done: number, total: number): void;
@@ -54,6 +61,10 @@ export interface NotebookReport {
   changedInOneNote: string[];
   tables: string[];
   attachments: { page: string; name: string }[];
+  /** Attached files that came over as files on their pages. */
+  attached: number;
+  /** Strokes of ink that came over. */
+  ink: number;
   pictures: { fetched: number; failed: { page: string; why: string }[] };
   failedPages: { page: string; why: string }[];
 }
@@ -70,6 +81,95 @@ export function stateName(account: string): string {
 
 const WIDEST = 640;
 
+interface InkLayer {
+  id: string | null;
+}
+type OpenPage = Awaited<ReturnType<PagesClient['open']>>;
+
+const STROKES_PER_BATCH = 400;
+const MAX_ATTACHMENT = 200 * 1024 * 1024;
+
+/** Draws strokes on the page's ink layer, made with the first. Answers the block to put the next one after. */
+async function writeInk(
+  open: OpenPage,
+  layer: InkLayer,
+  specs: readonly InkSpec[],
+  after: string | undefined,
+  report: NotebookReport,
+): Promise<string | undefined> {
+  const now = Date.now();
+  for (let from = 0; from < specs.length; from += STROKES_PER_BATCH) {
+    const edits: Edit[] = [];
+    if (!layer.id) {
+      layer.id = newId();
+      edits.push({
+        edit: 'insertBlock',
+        block: { id: layer.id, type: 'ink', frame: { x: 0, y: 0 }, data: { role: 'layer' } },
+      });
+    }
+    const block = layer.id;
+    const strokes: InkStroke[] = specs.slice(from, from + STROKES_PER_BATCH).map((spec) => ({
+      id: newId(),
+      tool: spec.highlighter ? 'highlighter' : 'pen',
+      width: spec.width,
+      startTime: now,
+      startUnknown: true,
+      points: spec.points,
+      block,
+      slot: 0,
+      color: spec.color,
+    }));
+    await open.send({
+      edits,
+      strokes: encodeRecords(strokes.map((stroke) => ({ kind: 'stroke' as const, stroke: recordFromStroke(stroke) }))),
+    });
+    report.ink += strokes.length;
+  }
+  return after;
+}
+
+/** Fetches an attached file and puts it on the page as a file block. A file that can't come over is listed. */
+async function writeAttachment(
+  deps: ImportDeps,
+  open: OpenPage,
+  pageId: string,
+  title: string,
+  block: Extract<PageBlock, { kind: 'attachment' }>,
+  after: string | undefined,
+  report: NotebookReport,
+): Promise<string | undefined> {
+  const lost = () => {
+    report.attachments.push({ page: title, name: block.name });
+    return after;
+  };
+  if (!deps.extras) return lost();
+  try {
+    const file = await fetchPicture(deps.host, block.src, `onenote-${newId()}.bin`, block.mime || 'application/octet-stream');
+    if (file.bytes.length > MAX_ATTACHMENT) return lost();
+    const asset = await deps.extras.attachBytes(
+      pageId,
+      file.bytes.slice().buffer,
+      block.name || t('accounts.onenote.untitledFile'),
+      block.mime || file.mime,
+    );
+    const id = newId();
+    await open.send({
+      edits: [
+        { edit: 'addAsset', asset: asset.id },
+        {
+          edit: 'insertBlock',
+          block: { id, type: 'file', data: { asset: asset.id } },
+          ...(after ? { after } : {}),
+        },
+      ],
+    });
+    report.attached += 1;
+    return id;
+  } catch {
+    return lost();
+  }
+}
+
 /** Writes a converted page onto a page: text blocks, then each picture fetched, in order. */
 async function writeBlocks(
   deps: ImportDeps,
@@ -79,6 +179,7 @@ async function writeBlocks(
   report: NotebookReport,
 ): Promise<void> {
   const open = await deps.pages.open(pageId, { viewport: null });
+  const layer: InkLayer = { id: null };
   try {
     let after: string | undefined;
     for (const block of blocks) {
@@ -94,6 +195,14 @@ async function writeBlocks(
           ],
         });
         after = id;
+        continue;
+      }
+      if (block.kind === 'ink') {
+        after = await writeInk(open, layer, block.strokes, after, report);
+        continue;
+      }
+      if (block.kind === 'attachment') {
+        after = await writeAttachment(deps, open, pageId, title, block, after, report);
         continue;
       }
       try {
@@ -149,6 +258,8 @@ export function reportMarkdown(reports: readonly NotebookReport[]): string[] {
     if (one.tables.length > 0) {
       out.push(t('accounts.onenote.report.tables'), one.tables.map((page) => `- ${page}`).join('\n'));
     }
+    if (one.attached > 0) out.push(t('accounts.onenote.report.attached', { count: one.attached }));
+    if (one.ink > 0) out.push(t('accounts.onenote.report.inked', { count: one.ink }));
     if (one.attachments.length > 0) {
       out.push(
         t('accounts.onenote.report.attachments'),
@@ -162,7 +273,6 @@ export function reportMarkdown(reports: readonly NotebookReport[]): string[] {
       );
     }
   }
-  out.push(t('accounts.onenote.report.ink'));
   return out;
 }
 
@@ -201,6 +311,8 @@ export async function importNotebooks(deps: ImportDeps, chosen: readonly GraphNo
       changedInOneNote: [],
       tables: [],
       attachments: [],
+      attached: 0,
+      ink: 0,
       pictures: { fetched: 0, failed: [] },
       failedPages: [],
     };

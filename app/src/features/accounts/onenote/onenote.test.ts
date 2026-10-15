@@ -25,6 +25,7 @@ const PAGE = `<html><head><title>Cell notes</title><meta name="created" content=
 <table><tr><td>Phase</td><td>Time</td></tr><tr><td>Prophase</td><td>30 | 60 min</td></tr></table>
 <img src="https://graph.microsoft.com/v1.0/me/onenote/resources/small/$value" data-fullres-src="https://graph.microsoft.com/v1.0/me/onenote/resources/big/$value" alt="A cell" width="300"/>
 <p><object data-attachment="slides.pdf" data="https://graph.microsoft.com/v1.0/me/onenote/resources/pdf/$value" type="application/pdf"></object></p>
+<inkml:ink xmlns:inkml="http://www.w3.org/2003/InkML"><inkml:definitions><inkml:brush xml:id="br0"><inkml:brushProperty name="width" value="150" units="himetric"/><inkml:brushProperty name="color" value="#FF0000"/></inkml:brush></inkml:definitions><inkml:traceFormat><inkml:channel name="X" type="integer"/><inkml:channel name="Y" type="integer"/><inkml:channel name="F" type="integer"/></inkml:traceFormat><inkml:trace brushRef="#br0">1000 2000 500, '100 '50 '10, 100 -50 0</inkml:trace><inkml:trace brushRef="#br0">0 0 0, 2646 0 0</inkml:trace></inkml:ink>
 <p><span style="text-decoration:line-through">Old idea</span> <span style="font-family:Consolas">x = 1</span></p>
 </div></body></html>`;
 
@@ -53,7 +54,28 @@ describe('OneNote HTML', () => {
       width: 300,
     });
     expect(page.losses.tables).toBe(1);
-    expect(page.losses.attachments).toEqual(['slides.pdf']);
+    expect(page.losses.attachments).toEqual([]);
+    expect(page.blocks.find((one) => one.kind === 'attachment')).toEqual({
+      kind: 'attachment',
+      src: 'https://graph.microsoft.com/v1.0/me/onenote/resources/pdf/$value',
+      name: 'slides.pdf',
+      mime: 'application/pdf',
+    });
+    expect(page.losses.ink).toBe(2);
+  });
+
+  it('reads InkML traces in whole values and differences, in pixels, with the brush', () => {
+    const ink = convertPage(PAGE).blocks.find((one) => one.kind === 'ink');
+    if (ink?.kind !== 'ink') throw new Error('no ink');
+    const [first, second] = ink.strokes;
+    expect(first?.color).toEqual([255, 0, 0, 255]);
+    expect(first?.width).toBeCloseTo(5.67, 1);
+    expect(first?.points.map((p) => [Math.round(p.x), Math.round(p.y)])).toEqual([
+      [38, 76],
+      [42, 77],
+      [45, 76],
+    ]);
+    expect(second?.points[1]?.x).toBeCloseTo(100, 0);
   });
 
   it('survives stray and unclosed tags, and takes only addresses on Graph for pictures', () => {
@@ -119,7 +141,10 @@ function rig(account: string, server: MockServer) {
   return { client: connectors.client, host: createFakeAccountsHost(() => connectors.client) };
 }
 
-const pictures = { big: { type: 'image/png', body: 'PICTURE-BYTES' } };
+const pictures = {
+  big: { type: 'image/png', body: 'PICTURE-BYTES' },
+  pdf: { type: 'application/pdf', body: 'PDF-BYTES' },
+};
 
 describe('Graph lists', () => {
   it('follows result pages and finds the sections inside section groups', async () => {
@@ -142,6 +167,7 @@ describe('importing notebooks', () => {
     ]);
     expect(report).toMatchObject({ sections: 2, pages: 4, kept: 0, tables: ['Mitosis', 'Meiosis', 'Osmosis'] });
     expect(report?.attachments).toHaveLength(3);
+    expect(report?.attached).toBe(0);
     expect(report?.pictures.fetched).toBe(3);
 
     const books = await notes.listNotebooks();
@@ -165,8 +191,39 @@ describe('importing notebooks', () => {
     const reportOpen = await pages.open(reportPage?.id as string, { viewport: null });
     const reportText = JSON.stringify(reportOpen.initial.blocks);
     expect(reportText).toContain('slides.pdf');
-    expect(reportText).toContain('Ink and handwriting');
+    expect(reportText).toContain('slides.pdf');
     await reportOpen.close();
+  });
+
+  it('brings ink over as strokes and attached files over as files', async () => {
+    const server = new MockServer();
+    addOneNote(server, notebooks(), pictures);
+    const { client, host } = rig('alice@example.com', server);
+    const { notes, pages } = storage();
+    const extras = {
+      attachBytes: async (pageId: string, bytes: ArrayBuffer, name: string, mime: string) => {
+        const open = await pages.open(pageId, { viewport: null });
+        try {
+          return await open.importImage({ kind: 'bytes', bytes, name, mime });
+        } finally {
+          await open.close();
+        }
+      },
+    };
+    const [report] = await importNotebooks({ client, host, notes, pages, extras, account: 'alice@example.com' }, [
+      { id: 'nb1', name: 'Biology' },
+    ]);
+    expect(report).toMatchObject({ attached: 3, ink: 6, attachments: [] });
+    const cells = (await notes.listChildren((await notes.listNotebooks())[0]?.id as never)).find(
+      (one) => one.title === 'Cells',
+    );
+    const first = (await notes.listChildren(cells?.id as never))[0];
+    const open = await pages.open(first?.id as string, { viewport: null });
+    const types = open.initial.blocks.map((block) => block.type);
+    expect(types).toContain('file');
+    expect(types).toContain('ink');
+    expect((await open.ink.readAll()).length).toBeGreaterThan(0);
+    await open.close();
   });
 
   it('adds only new pages the second time and leaves changed pages alone', async () => {

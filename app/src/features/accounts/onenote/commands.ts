@@ -45,6 +45,7 @@ export async function importOneNote(): Promise<void> {
         host: accountsHost(),
         notes: context.notes,
         pages: context.platform.pages,
+        extras: context.platform.pageExtras ?? null,
         account: microsoftAccount(),
         progress: (done, total) => {
           if (done === total || done % 10 === 0) announce(t('accounts.onenote.progress', { done, total }));

@@ -98,7 +98,7 @@ export async function pageHtml(client: ConnectorsClient, page: string): Promise<
   const reply = await requestConnector(
     'microsoft',
     [...ACCESS],
-    { url: `${GRAPH}/me/onenote/pages/${encodeURIComponent(page)}/content`, query: { includeIDs: 'false' } },
+    { url: `${GRAPH}/me/onenote/pages/${encodeURIComponent(page)}/content`, query: { includeIDs: 'false', includeinkML: 'true' } },
     client,
   );
   return reply.text;
@@ -114,16 +114,17 @@ export function isGraphResource(address: string): boolean {
   }
 }
 
-/** Fetches a picture into the transfer folder. Answers its bytes and type. */
+/** Fetches a picture or an attached file into the transfer folder. Answers its bytes and type. */
 export async function fetchPicture(
   host: AccountsHost,
   address: string,
   file: string,
+  fallbackMime = 'image/png',
 ): Promise<{ bytes: Uint8Array; mime: string }> {
   if (!isGraphResource(address)) throw new ConnectorHttpError(400, '');
   const got = await host.download('microsoft', [...ACCESS], { method: 'GET', url: address }, file);
   if (got.status < 200 || got.status >= 300) throw new ConnectorHttpError(got.status, got.body);
   const bytes = await host.tempRead(file);
   await host.tempRemove(file).catch(() => undefined);
-  return { bytes, mime: (got.contentType ?? 'image/png').split(';')[0]?.trim() || 'image/png' };
+  return { bytes, mime: (got.contentType ?? fallbackMime).split(';')[0]?.trim() || fallbackMime };
 }
