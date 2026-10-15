@@ -30,8 +30,8 @@ fn removes_private_text_from_the_message_and_the_module() {
         ),
         &scrubber(),
     );
-    for secret in ["jdoe", "Holiday", "page.json", "example.org"] {
-        assert!(!out.contains(secret), "{secret:?} in {out}");
+    for leak in ["jdoe", "Holiday", "page.json", "example.org"] {
+        assert!(!out.contains(leak), "{leak:?} in {out}");
     }
     let odd = clean_line(
         &line(1_790_000_000_000, "ERROR", r"C:\Users\jdoe", "failed"),

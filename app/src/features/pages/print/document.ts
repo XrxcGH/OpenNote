@@ -85,10 +85,11 @@ export function measureDocument(setup: DocumentSetup): string {
   const flow = units.flow
     .map((u) => `<div class="unit" data-unit="${escapeAttr(u.id)}" data-kind="${unitKind(u)}">${u.html}</div>`)
     .join('\n');
+  const rules = paperRules(layout.background, layout.sheet, true);
   const floating = units.floating
     .map(
       (u) =>
-        `<div class="float" data-block="${escapeAttr(u.block.id)}" style="${floatStyle(u.block, paperRules(setup.layout.background, setup.layout.sheet, true))}">${u.html}</div>`,
+        `<div class="float" data-block="${escapeAttr(u.block.id)}" style="${floatStyle(u.block, rules)}">${u.html}</div>`,
     )
     .join('\n');
   const column = `left:${px(layout.column.x)}px;width:${px(layout.column.width)}px;padding-top:${px(layout.flowSheet.margins[0])}px`;

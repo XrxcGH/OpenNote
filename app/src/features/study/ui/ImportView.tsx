@@ -17,6 +17,7 @@ interface Read {
   name: string;
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ImportView({ onDone }: { onDone(deckId: string | null): void }) {
   const decks = useStore(decksStore, (current) => current);
   const [text, setText] = useState('');

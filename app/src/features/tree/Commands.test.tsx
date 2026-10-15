@@ -335,8 +335,6 @@ describe('context menu contents', () => {
     await openLectures();
     await openMenuOn(pagesTree, 'Mitosis');
     expect(menuLabels()).toEqual([
-      'Copy link to this page',
-      'Export…',
       'New page',
       'New subpage',
       'Make subpage',
@@ -353,6 +351,8 @@ describe('context menu contents', () => {
       'Check accessibility',
       'Archive',
       'Open in another editor',
+      'Copy link to this page',
+      'Export…',
       'Delete',
     ]);
   });

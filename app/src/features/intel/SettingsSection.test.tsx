@@ -11,7 +11,7 @@ import type { TestHost } from './testing';
 
 let host: TestHost;
 beforeEach(() => {
-  initFlags('dev');
+  initFlags('stable');
   host = installTestHost();
 });
 

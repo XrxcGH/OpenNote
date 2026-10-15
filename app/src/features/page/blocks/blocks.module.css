@@ -317,19 +317,19 @@
   }
 
   /*
-   * Ruled paper (layout/rules.ts). When the paper has rules, --rule is their spacing and it is the unit of layout:
+   * Ruled paper (layout/rules.ts). When the paper has rules, --rule is their spacing. It is also the unit of layout:
    * every line of text sits on a rule the way handwriting does, its letters in the gap above the rule and its
    * descenders below it. A line takes the whole number of rules above 1.25 times its size (--rule-line), so a
    * heading takes two rules and its capitals stay inside its gap. Margins between text elements go, because a
    * paragraph on ruled paper is the next line.
    *
-   * The baseline comes from the font itself, not from a guess at its metrics: text-box-trim cuts each block of
-   * lines down to the cap height of its first line and the alphabetic baseline of its last, and a padding of one
+   * The baseline comes from the font itself, not from a guess at its metrics. Text-box-trim cuts each block of
+   * lines down to the cap height of its first line and the alphabetic baseline of its last. A padding of one
    * line less one cap height above it puts the first baseline one line below the block's top. A block that starts
    * on a rule therefore ends on the rule its last baseline sits on, and the next block starts there.
    *
    * Every baseline then rises off its rule by the lift (--rule-lift, core/ruled.ts), the same for every size of
-   * text: the top padding gives it back and the bottom padding takes it, so the block keeps its height and the next
+   * text. The top padding gives it back and the bottom padding takes it. The block keeps its height, and the next
    * block still starts on a rule. The letters clear the rule by a thin gap of paper; descenders may cross it.
    */
   :global([data-ruled]) {
@@ -338,12 +338,14 @@
     /*
      * An inline background (a highlight, inline code, a search hit, the words being read aloud) sits in the gap
      * between two rules, not over the rule under its line. A browser paints it over the font's ascent and descent,
-     * which reaches below the baseline past the lift and over the rule, so the box is cut to where it belongs, measured
-     * from the baseline: it rises --chip-rise above it (a font's height, but never up to the rule above, with a pixel
-     * of paper under that rule) and drops --chip-drop below it, which ends the box a pixel above the rule beneath
-     * (two pixels below the baseline with the usual lift of 3), so the letters sit inside the box with room under
-     * them and the rule beneath stays fully in view. The letters stay where they are, and descenders may cross the
-     * box and the rule. The sizes are whole pixels, so the box ends on a pixel.
+     * which reach below the baseline past the lift and over the rule. So the box is cut to where it belongs,
+     * measured from the baseline.
+     *
+     * It rises --chip-rise above the baseline: a font's height, but never up to the rule above, with a pixel of
+     * paper under that rule. It drops --chip-drop below it, which ends the box a pixel above the rule beneath (two
+     * pixels below the baseline with the usual lift of 3). The letters sit inside the box with room under them,
+     * and the rule beneath stays fully in view. The letters stay where they are. Descenders may cross the box
+     * and the rule. The sizes are whole pixels, so the box ends on a pixel.
      */
     --chip-rise: round(min(1.15em, calc(var(--rule) - var(--rule-lift) - 2px)), 1px);
     --chip-drop: calc(var(--rule-lift) - 1px);
@@ -352,9 +354,10 @@
   }
 
   /*
-   * A highlight and inline code keep their rounded corners and the system's colors in forced colors, and both have
-   * the side padding of a highlight (inline code has none on plain paper): text-box-trim cuts the inline box to the cap height above the alphabetic baseline, and the padding above
-   * and below puts its top and bottom where --chip-rise and --chip-drop say. The other boxes (find hits, the words
+   * A highlight and inline code keep their rounded corners and the system's colors in forced colors. Both have the
+   * side padding of a highlight (inline code has none on plain paper). Text-box-trim cuts the inline box to the cap
+   * height above the alphabetic baseline. The padding above and below puts its top and bottom where --chip-rise
+   * and --chip-drop say. The other boxes (find hits, the words
    * being read aloud) are painted by the browser as highlights, which have no padding or corners: they are a thick
    * text decoration over the same rows (qol.module.css, readAloud.module.css, audio/block.module.css).
    */
@@ -404,8 +407,8 @@
 
   /*
    * A code block and a callout have their own background, which hides the rules behind them. Their lines stay on
-   * the rules: the box starts on a rule, its first baseline is one line down, and below its last baseline it takes
-   * one more rule, part padding and part margin, so the text after it is back on a rule.
+   * the rules. The box starts on a rule, and its first baseline is one line down. Below its last baseline it takes
+   * one more rule (some of it padding, the rest margin), so the text after it is back on a rule.
    */
   :global([data-ruled]) .text :global(.ProseMirror) pre {
     padding-block: calc(1lh - 1cap - var(--rule-lift)) calc(1lh - 1cap + var(--rule-lift));

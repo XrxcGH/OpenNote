@@ -106,8 +106,8 @@ fn private_text_in_any_value_is_removed_and_counted() {
     };
     let summary = SystemSummary::build_with(&hostile, &os(), &scrubber());
     let text = summary.render();
-    for secret in ["jdoe", "Holiday", "JANES", "example.org", r"C:\"] {
-        assert!(!text.contains(secret), "{secret:?} in {text}");
+    for leak in ["jdoe", "Holiday", "JANES", "example.org", r"C:\"] {
+        assert!(!text.contains(leak), "{leak:?} in {text}");
     }
     assert_eq!(value(&summary, "OpenNote"), Some("<path>"));
     assert_eq!(value(&summary, "Feature flags on"), Some("page.editor"));
