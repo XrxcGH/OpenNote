@@ -32,6 +32,8 @@ export interface ScreenState {
   readonly sizes?: readonly SizeClass[];
   /** Default: both themes. */
   readonly themes?: readonly Theme[];
+  /** Also run in the pseudo-locale pass. Its steps then name controls with loose() from pseudoName.ts. */
+  readonly pseudo?: boolean;
   /** Brings the page into the state, for example by opening a menu. */
   prepare?(page: Page): Promise<void>;
 }

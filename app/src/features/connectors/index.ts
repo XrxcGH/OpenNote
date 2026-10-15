@@ -6,6 +6,7 @@ export { createFakeConnectors } from './fake';
 export type { FakeConnectors, FakeOptions } from './fake';
 export type { ConnectorsClient } from './client';
 export { ConnectorNetworkUse } from './NetworkUse';
+export { ConnectorCard } from './ConnectorCard';
 export {
   cancelSignIn,
   connectTo,
