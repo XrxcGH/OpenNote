@@ -3,7 +3,7 @@
 // - A press on static text mounts its editor with the caret under the pointer.
 // - Mounting keeps the node, its role, its name, and its layout.
 // - The pool keeps its cap, and its demotion and idle mounts hold back while a screen reader runs.
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { initFlags } from '../../../app/flags';
 import { tokenClass } from '../../../editor/highlight/plugin';
 import { createMemoryPageService } from '../../../services/pages/memory';
@@ -207,5 +207,19 @@ describe('the pool', () => {
     const mounted = await open(manyBlocks(30), { height: 300 });
     await expect.poll(() => mounted.pool.mountedCount(), { timeout: 10_000 }).toBeGreaterThan(2);
     expect(mounted.pool.mountedCount()).toBeLessThanOrEqual(POOL_CAP);
+  });
+
+  it('still mounts the blocks in view on a machine that is never idle', async () => {
+    // Every idle slice comes only when its wait times out, with no time left in it.
+    const busy = vi.spyOn(window, 'requestIdleCallback').mockImplementation((callback) => {
+      return window.setTimeout(() => callback({ timeRemaining: () => 0, didTimeout: true }), 5);
+    });
+    try {
+      const mounted = await open(manyBlocks(30), { height: 300 });
+      await expect.poll(() => mounted.pool.mountedCount(), { timeout: 10_000 }).toBeGreaterThan(2);
+      expect(busy).toHaveBeenCalledWith(expect.any(Function), { timeout: expect.any(Number) });
+    } finally {
+      busy.mockRestore();
+    }
   });
 });

@@ -17,6 +17,7 @@ interface Props {
   onAlt(alt: string): void;
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function DiagramPanel({ source, alt, readOnly, onChange, onAlt }: Props) {
   const [text, setText] = useState(source);
   const [drawn, setDrawn] = useState<Drawn | null>(null);

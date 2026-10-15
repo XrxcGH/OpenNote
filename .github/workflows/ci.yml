@@ -38,6 +38,11 @@ jobs:
           cache: npm
       - name: Install tools
         run: npm ci
+      # The PDF tests print Japanese words and check every character reaches the PDF's text layer. Windows has a
+      # Japanese font; Ubuntu runners have none, so Chrome draws empty boxes that carry no text.
+      - name: Install a Japanese font (Ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends fonts-noto-cjk
       - name: Design tokens are up to date
         run: npm run tokens:check
       - name: Type-check, lint, and format-check

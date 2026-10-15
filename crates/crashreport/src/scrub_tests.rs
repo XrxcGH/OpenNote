@@ -11,13 +11,13 @@ fn scrubber() -> Scrubber {
     scrubber
 }
 
-/// Asserts that none of `secrets` survives scrubbing `input`, in any letter case.
-fn assert_gone(input: &str, secrets: &[&str]) {
+/// Asserts that none of `leaks` survives scrubbing `input`, in any letter case.
+fn assert_gone(input: &str, leaks: &[&str]) {
     let output = scrubber().text(input);
-    for secret in secrets {
+    for leak in leaks {
         assert!(
-            !output.to_lowercase().contains(&secret.to_lowercase()),
-            "{secret:?} survived in {output:?} (from {input:?})"
+            !output.to_lowercase().contains(&leak.to_lowercase()),
+            "{leak:?} survived in {output:?} (from {input:?})"
         );
     }
 }
@@ -273,10 +273,10 @@ fn random_notes_never_survive_in_quotes_or_paths() {
         ];
         for shape in shapes {
             let out = scrubber().text(&shape);
-            for secret in [&title, &folder] {
+            for leak in [&title, &folder] {
                 assert!(
-                    !out.contains(secret.as_str()),
-                    "{secret:?} survived in {out:?} (from {shape:?})"
+                    !out.contains(leak.as_str()),
+                    "{leak:?} survived in {out:?} (from {shape:?})"
                 );
             }
         }
