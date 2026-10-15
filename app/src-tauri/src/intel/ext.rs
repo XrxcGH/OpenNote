@@ -181,8 +181,19 @@ impl Ext {
 
     /// Runs one method. `offline` and `safe_mode` come from the app, so tests can set them.
     pub fn call(&self, request: &ExtRequest, offline: bool, safe_mode: bool) -> Result<Value, IpcError> {
-        let params = &request.params;
-        match request.method.as_str() {
+        let (method, params) = (request.method.as_str(), &request.params);
+        match method.split('.').next().unwrap_or_default() {
+            "store" | "vocabulary" => self.call_device(method, params),
+            "models" => self.call_models(method, params, offline, safe_mode),
+            "engines" | "llm" | "translate" | "embed" => self.call_engines(method, params, safe_mode),
+            "cloud" => self.call_cloud(method, params, offline, safe_mode),
+            _ => Err(invalid(&format!("There is no method called {method}."), "method")),
+        }
+    }
+
+    /// The small store and the vocabulary.
+    fn call_device(&self, method: &str, params: &Value) -> Result<Value, IpcError> {
+        match method {
             "store.get" => match fs::read_to_string(self.file(text(params, "name")?)?) {
                 Ok(content) => Ok(json!(content)),
                 Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Value::Null),
@@ -208,6 +219,13 @@ impl Ext {
                 serde_json::to_value(request.correct())
                     .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string()))
             }
+            other => Err(invalid(&format!("There is no method called {other}."), "method")),
+        }
+    }
+
+    /// Model downloads.
+    fn call_models(&self, method: &str, params: &Value, offline: bool, safe_mode: bool) -> Result<Value, IpcError> {
+        match method {
             "models.list" => serde_json::to_value(self.models.list())
                 .map(|mut list| {
                     list["offline"] = json!(offline);
@@ -240,6 +258,13 @@ impl Ext {
                     .map(|()| Value::Null)
                     .map_err(|error| Self::download_error(&error))
             }
+            other => Err(invalid(&format!("There is no method called {other}."), "method")),
+        }
+    }
+
+    /// The language model, translation, and meaning vectors.
+    fn call_engines(&self, method: &str, params: &Value, safe_mode: bool) -> Result<Value, IpcError> {
+        match method {
             "engines.info" => {
                 let mut info = native::capabilities();
                 info["llmHost"] = json!(self.llm.has_host());
@@ -295,6 +320,13 @@ impl Ext {
                     .map(|vectors| json!({ "vectors": vectors }))
                     .map_err(|error| Self::native_error(&error))
             }
+            other => Err(invalid(&format!("There is no method called {other}."), "method")),
+        }
+    }
+
+    /// The person's own cloud key.
+    fn call_cloud(&self, method: &str, params: &Value, offline: bool, safe_mode: bool) -> Result<Value, IpcError> {
+        match method {
             "cloud.status" => serde_json::to_value(self.cloud.status())
                 .map_err(|error| IpcError::new(codes::INTERNAL, error.to_string())),
             "cloud.setKey" => {

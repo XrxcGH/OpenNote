@@ -9,7 +9,10 @@
     "app/src/theme/tokens.css",
     "app/src/theme/tokens.ts",
     "crates/interop/tests/corpus/*/**",
-    "target/**"
+    "target/**",
+    "app/src-tauri/src/intel/catalog.rs",
+    "app/src/services/intel/packs.ts",
+    "crates/intel-engines/tests/fixtures/**"
   ],
   "rules": {
     "spelling": {

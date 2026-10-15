@@ -1,11 +1,11 @@
 // The language model engines (A3-23): the writing tools and Ask, written by a language model that runs on this
-// computer (llama.cpp, in its own program). Neither engine is used before the person downloads a language model,
-// and each sits behind its rule-based stand-in (fallback.ts): if the model fails, is too slow to start, or writes
-// something that does not fit the request, the stand-in answers instead and the engine's name says so.
+// computer (llama.cpp, in its own program). Neither engine is used before the person downloads a language model.
+// Each sits behind its rule-based stand-in (fallback.ts). If the model fails, is too slow to start, or writes
+// something that does not fit the request, the stand-in answers instead, and the engine's name says so.
 //
-// A model can wander. These engines ask for only the edited text, then check the answer against the request before
-// it reaches the screen: an empty answer, an answer far longer or shorter than the tool allows, or an answer to Ask
-// that cites nothing is refused, and the stand-in takes over.
+// A model can wander. These engines ask for only the edited text, then check the answer before it reaches the screen.
+// An empty answer is refused. So is an answer far longer or shorter than the tool allows, and an answer to Ask that
+// cites nothing. The stand-in takes over each time.
 import type { IntelExt, ModelList } from '../../../services/intel';
 import { t } from '../../../strings/t';
 import { answerEngine, useAnswerEngine as putAnswerEngine } from '../ask/answer';

@@ -13,6 +13,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Configured continuous integration with automated checks and tests
 - Established the release workflow for signed, stable builds
 
+### On-device intelligence
+
+- The 64-bit build reads speech with whisper.cpp, translates with ONNX Runtime, and writes Ask answers and writing suggestions with a language model that runs on the computer
+- Language models, a meaning model, and translation packs download only after the person sees the size and agrees, from addresses pinned to one commit and checked against a published checksum
+- Without a downloaded model, Ask quotes the pages and the writing tools use rules, and the screen says which wrote the answer
+- Translate, dictation, live captions, and handwriting to math have browser tests
+
 ### Releases
 
 - Each release ships three Windows files: one for 64-bit PCs, one for 32-bit PCs, and one for Arm PCs

@@ -4,7 +4,7 @@
 import { useEffect, useId } from 'react';
 import { isEnabled } from '../../../app/flags';
 import type { SetupStepProps } from '../../../registries';
-import type { Feature } from '../../../services/intel';
+import type { Feature, ModelInfo } from '../../../services/intel';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { InkStroke, RadioCard, RadioGroup, Switch } from '../../../ui';
@@ -24,13 +24,78 @@ const NAME = {
   transcription: 'intelPlus.smart.transcription',
 } as const satisfies Record<Feature, string>;
 
+interface CustomFeaturesProps {
+  on: ReadonlySet<Feature>;
+  toggle(feature: Feature, checked: boolean): void;
+  speechEngine: boolean;
+  cloudKeys: boolean;
+}
+
+/** One switch for each feature the person may choose, with the choice of where it runs when a cloud key is possible. */
+function CustomFeatures({ on, toggle, speechEngine, cloudKeys }: CustomFeaturesProps) {
+  return (
+    <fieldset className={styles.choices}>
+      <legend className={styles.label}>{t('intelPlus.smart.features')}</legend>
+      {CHOOSABLE.filter((feature) => feature !== 'transcription' || speechEngine || cloudKeys).map((feature) => (
+        <div key={feature} className={styles.stack}>
+          <Switch
+            label={t('intelPlus.smart.featureOn', { feature: t(NAME[feature]) })}
+            checked={on.has(feature)}
+            onChange={(checked) => toggle(feature, checked)}
+          />
+          {cloudKeys && on.has(feature) && (CLOUD_FEATURES as readonly string[]).includes(feature) && (
+            <CloudChoice feature={feature as (typeof CLOUD_FEATURES)[number]} name={t(NAME[feature])} />
+          )}
+        </div>
+      ))}
+    </fieldset>
+  );
+}
+
+interface SpeechModelPickerProps {
+  speech: readonly ModelInfo[];
+  chosen: string | null;
+  onChoose(id: string | null): void;
+}
+
+/** The speech model to download with setup, and what it costs. */
+function SpeechModelPicker({ speech, chosen, onChoose }: SpeechModelPickerProps) {
+  const modelId = useId();
+  return (
+    <div className={styles.stack}>
+      <label htmlFor={modelId} className={styles.label}>
+        {t('intelPlus.smart.speechModel')}
+      </label>
+      <select
+        id={modelId}
+        className={styles.select}
+        value={chosen ?? ''}
+        onChange={(event) => onChoose(event.target.value || null)}
+      >
+        <option value="">{t('intelPlus.smart.speechModelNone')}</option>
+        {speech.map((model) => (
+          <option key={model.id} value={model.id}>
+            {t('intelPlus.smart.speechModelOption', { name: model.name, size: formatSize(model.sizeBytes) })}
+          </option>
+        ))}
+      </select>
+      <p className={styles.help}>
+        {chosen
+          ? t('intelPlus.smart.downloadSize', {
+              size: formatSize(speech.find((model) => model.id === chosen)?.sizeBytes ?? 0),
+            })
+          : t('intelPlus.smart.noDownload')}
+      </p>
+    </div>
+  );
+}
+
 export default function SmartFeaturesStep(props: SetupStepProps) {
   const { draft, setDraft, stepIndex, stepCount, titleId, progressId } = props;
   const smart: SmartDraft = smartDraftOf(draft) ?? NOT_NOW;
   const models = useStore(modelsState, (state) => state.list?.models ?? []);
   const speech = models.filter((model) => model.kind === 'speech');
   const on = new Set(featuresOn(smart));
-  const modelId = useId();
   // Transcription is offered on this device only when this build has the engine and a model to download.
   const speechEngine = isEnabled('intel.transcription') && speech.length > 0;
   const cloudKeys = isEnabled('intel.cloudKeys');
@@ -79,48 +144,14 @@ export default function SmartFeaturesStep(props: SetupStepProps) {
         <RadioCard value="notNow" label={t('intelPlus.smart.notNow')} description={t('intelPlus.smart.notNowHelp')} />
       </RadioGroup>
       {smart.mode === 'custom' && (
-        <fieldset className={styles.choices}>
-          <legend className={styles.label}>{t('intelPlus.smart.features')}</legend>
-          {CHOOSABLE.filter((feature) => feature !== 'transcription' || speechEngine || cloudKeys).map((feature) => (
-            <div key={feature} className={styles.stack}>
-              <Switch
-                label={t('intelPlus.smart.featureOn', { feature: t(NAME[feature]) })}
-                checked={on.has(feature)}
-                onChange={(checked) => toggle(feature, checked)}
-              />
-              {cloudKeys && on.has(feature) && (CLOUD_FEATURES as readonly string[]).includes(feature) && (
-                <CloudChoice feature={feature as (typeof CLOUD_FEATURES)[number]} name={t(NAME[feature])} />
-              )}
-            </div>
-          ))}
-        </fieldset>
+        <CustomFeatures on={on} toggle={toggle} speechEngine={speechEngine} cloudKeys={cloudKeys} />
       )}
       {showModel && (
-        <div className={styles.stack}>
-          <label htmlFor={modelId} className={styles.label}>
-            {t('intelPlus.smart.speechModel')}
-          </label>
-          <select
-            id={modelId}
-            className={styles.select}
-            value={smart.speechModel ?? ''}
-            onChange={(event) => update({ ...smart, speechModel: event.target.value || null })}
-          >
-            <option value="">{t('intelPlus.smart.speechModelNone')}</option>
-            {speech.map((model) => (
-              <option key={model.id} value={model.id}>
-                {t('intelPlus.smart.speechModelOption', { name: model.name, size: formatSize(model.sizeBytes) })}
-              </option>
-            ))}
-          </select>
-          <p className={styles.help}>
-            {smart.speechModel
-              ? t('intelPlus.smart.downloadSize', {
-                  size: formatSize(speech.find((model) => model.id === smart.speechModel)?.sizeBytes ?? 0),
-                })
-              : t('intelPlus.smart.noDownload')}
-          </p>
-        </div>
+        <SpeechModelPicker
+          speech={speech}
+          chosen={smart.speechModel}
+          onChoose={(id) => update({ ...smart, speechModel: id })}
+        />
       )}
       <p className={styles.help}>{t(anyCloud ? 'intelSpeech.cloud.setupPrivacy' : 'intelPlus.smart.privacy')}</p>
     </div>

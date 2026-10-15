@@ -1,12 +1,12 @@
 //! `opennote-llm`: the language model program.
 //!
 //! OpenNote starts this program when the person has turned on Ask or the writing tools and has downloaded a language
-//! model. It reads one JSON request to a line on its standard input, runs llama.cpp on the model file named in it,
-//! and writes one JSON answer to a line on its standard output (see `opennote_intel_engines::protocol`). It is a
+//! model. It reads one JSON request to a line on its standard input and runs llama.cpp on the model file named in it.
+//! It writes one JSON answer to a line on its standard output (see `opennote_intel_engines::protocol`). It is a
 //! program of its own because llama.cpp and whisper.cpp each bundle ggml, and one program cannot hold both.
 //!
-//! It opens no network connection, reads no file but the `.gguf` model it is told to, writes no file, and logs
-//! nothing: what it is asked and what it answers exist only in memory until the answer is sent.
+//! It opens no network connection. It reads no file but the `.gguf` model it is told to, writes no file, and logs
+//! nothing. What it is asked and what it answers exist only in memory until the answer is sent.
 
 use std::io::{self, BufRead, Write};
 
@@ -16,7 +16,6 @@ use opennote_intel_engines::protocol::{self, FailureCode, Request, Response, MAX
 mod llama;
 
 /// Something that can answer a request. The real one is [`llama::Llama`], and tests use a stand-in.
-#[cfg_attr(not(feature = "llama"), allow(dead_code))]
 pub(crate) trait Runner {
     fn generate(&mut self, request: &Request) -> Result<String, (FailureCode, String)>;
 }
@@ -133,16 +132,27 @@ fn serve(input: &mut impl BufRead, output: &mut impl Write, runner: &mut dyn Run
     Ok(())
 }
 
-/// Without the `llama` feature there is no engine to run, and the program says so and stops.
+/// Without the `llama` feature there is no engine, and every request fails with a message that says so.
+#[cfg(not(feature = "llama"))]
+struct NoEngine;
+
+#[cfg(not(feature = "llama"))]
+impl Runner for NoEngine {
+    fn generate(&mut self, _request: &Request) -> Result<String, (FailureCode, String)> {
+        Err((
+            FailureCode::Engine,
+            "This program was built without llama.cpp.".to_owned(),
+        ))
+    }
+}
+
 #[cfg(not(feature = "llama"))]
 fn main() {
-    let failed = Response::Failed {
-        id: 0,
-        code: FailureCode::Engine,
-        message: "This program was built without llama.cpp.".to_owned(),
-    };
-    let _ = send(&mut io::stdout(), &failed);
-    std::process::exit(2);
+    let stdin = io::stdin();
+    let result = serve(&mut stdin.lock(), &mut io::stdout().lock(), &mut NoEngine, "none");
+    if result.is_err() {
+        std::process::exit(1);
+    }
 }
 
 #[cfg(feature = "llama")]

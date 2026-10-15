@@ -306,8 +306,10 @@ mod tests {
         let bytes = std::fs::read(wav).unwrap();
         // A canonical 44-byte header, then 16-bit samples.
         let samples: Vec<f32> = bytes[44..]
-            .chunks_exact(2)
-            .map(|pair| f32::from(i16::from_le_bytes([pair[0], pair[1]])) / 32768.0)
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| f32::from(i16::from_le_bytes(*pair)) / 32768.0)
             .collect();
         let backend = CppBackend::default();
         let heard = backend

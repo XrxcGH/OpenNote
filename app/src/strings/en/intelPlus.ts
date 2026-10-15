@@ -12,7 +12,8 @@ export const intelPlus = {
     speechHelp: 'Turns a recording into a transcript. Choose one model.',
     languageHeading: 'Ask and the writing tools',
     languageHelp:
-      'A language model writes the answers in Ask and the suggestions in the writing tools. Without one, they use rules and quote your pages. It runs on this computer and uses memory only while you use it.',
+      'A language model writes the answers in Ask and the suggestions in the writing tools. ' +
+      'Without one, they use rules and quote your pages. It runs on this computer and uses memory only while you use it.',
     languageNoHost: 'This install can’t run a language model.',
     meaningHeading: 'Find by meaning',
     meaningHelp: 'A model that reads what your pages mean. Without it, search by meaning uses words and word parts.',
@@ -180,7 +181,8 @@ export const intelPlus = {
   extras: {
     heading: 'Search and writing',
     intro:
-      'These read your pages on this device. A model you download in Models, above, makes Ask and the writing tools better. Each one stays off until you turn it on.',
+      'These read your pages on this device. A model you download in Models, above, makes Ask better, and improves the writing tools. ' +
+      'Each one stays off until you turn it on.',
     offerTitle: 'Turn on {feature}?',
     meaning: {
       name: 'search by meaning',

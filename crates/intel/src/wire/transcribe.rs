@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::f32::consts::PI;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use serde::{Deserialize, Serialize};
 
@@ -265,6 +265,39 @@ struct Queue {
     queue: TranscriptionQueue,
 }
 
+/// The update for a finished transcript: the vocabulary's spellings fixed, speakers labeled when asked, and `finish` run.
+fn finished(
+    transcript: &Transcript,
+    vocabulary: &Vocabulary,
+    listening: Option<Listening>,
+    finish: Option<Finisher>,
+) -> TranscribeUpdate {
+    let fixed = vocabulary.correct_transcript(transcript);
+    let mut lines: Vec<TranscriptLine> = fixed
+        .segments
+        .into_iter()
+        .map(|segment| TranscriptLine {
+            start_ms: segment.start_ms,
+            end_ms: segment.end_ms,
+            text: segment.text,
+            speaker: None,
+        })
+        .collect();
+    if let Some(listening) = listening {
+        let ranges: Vec<(u64, u64)> = lines.iter().map(|l| (l.start_ms, l.end_ms)).collect();
+        for (line, speaker) in lines.iter_mut().zip(listening.label(&ranges)) {
+            line.speaker = speaker;
+        }
+    }
+    if let Some(finish) = finish {
+        finish(&mut lines);
+    }
+    TranscribeUpdate::Done {
+        language: fixed.language.map(|l| l.to_string()),
+        lines,
+    }
+}
+
 /// The app's transcription jobs: one queue, which runs one job at a time in the background.
 pub struct TranscribeHub {
     notify: Notify,
@@ -316,6 +349,39 @@ impl TranscribeHub {
             Some(tag) => Some(Language::new(tag)?),
             None => None,
         };
+        let held = self.queue_for(engines, model)?;
+        let queue = held.as_ref().expect("the queue was just made");
+        let listening = choices.speakers.then(Listening::new);
+        let audio: Box<dyn AudioSource> = match &listening {
+            Some(listening) => Box::new(Tee::new(audio, listening.clone())),
+            None => Box::new(audio),
+        };
+        let handle = queue.queue.submit(JobRequest {
+            audio,
+            options: TranscribeOptions {
+                language,
+                prompt: vocabulary_prompt(&choices.vocabulary),
+                ..TranscribeOptions::default()
+            },
+        });
+        let id = format!("t{}-{}", self.generation.load(Ordering::Relaxed), handle.id().0);
+        self.jobs
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .insert(id.clone(), handle.clone());
+        drop(held);
+        self.spawn_waiter(
+            handle,
+            id.clone(),
+            Vocabulary::parse(&choices.vocabulary),
+            listening,
+            finish,
+        )?;
+        Ok(id)
+    }
+
+    /// The queue for `model`, made again when the model changed. The guard is held while the job is queued.
+    fn queue_for(&self, engines: &Engines, model: &Path) -> Result<MutexGuard<'_, Option<Queue>>, IntelError> {
         let mut held = self.queue.lock().unwrap_or_else(PoisonError::into_inner);
         if held.as_ref().is_none_or(|queue| queue.model != model) {
             let generation = self.generation.fetch_add(1, Ordering::Relaxed) + 1;
@@ -344,65 +410,32 @@ impl TranscribeHub {
                 queue,
             });
         }
-        let queue = held.as_ref().expect("the queue was just made");
-        let listening = choices.speakers.then(Listening::new);
-        let audio: Box<dyn AudioSource> = match &listening {
-            Some(listening) => Box::new(Tee::new(audio, listening.clone())),
-            None => Box::new(audio),
-        };
-        let handle = queue.queue.submit(JobRequest {
-            audio,
-            options: TranscribeOptions {
-                language,
-                prompt: vocabulary_prompt(&choices.vocabulary),
-                ..TranscribeOptions::default()
-            },
-        });
-        let id = format!("t{}-{}", self.generation.load(Ordering::Relaxed), handle.id().0);
-        self.jobs
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .insert(id.clone(), handle.clone());
-        let (jobs, notify, key) = (Arc::clone(&self.jobs), Arc::clone(&self.notify), id.clone());
-        let vocabulary = Vocabulary::parse(&choices.vocabulary);
+        Ok(held)
+    }
+
+    /// Waits for the job on a thread of its own and reports how it ended, with the finished lines.
+    fn spawn_waiter(
+        &self,
+        handle: JobHandle,
+        key: String,
+        vocabulary: Vocabulary,
+        listening: Option<Listening>,
+        finish: Option<Finisher>,
+    ) -> Result<(), IntelError> {
+        let (jobs, notify) = (Arc::clone(&self.jobs), Arc::clone(&self.notify));
         std::thread::Builder::new()
             .name("opennote-transcribe-wait".to_owned())
             .spawn(move || {
                 let update = match handle.wait() {
-                    Ok(transcript) => {
-                        let fixed = vocabulary.correct_transcript(&transcript);
-                        let mut lines: Vec<TranscriptLine> = fixed
-                            .segments
-                            .into_iter()
-                            .map(|segment| TranscriptLine {
-                                start_ms: segment.start_ms,
-                                end_ms: segment.end_ms,
-                                text: segment.text,
-                                speaker: None,
-                            })
-                            .collect();
-                        if let Some(listening) = listening {
-                            let ranges: Vec<(u64, u64)> = lines.iter().map(|l| (l.start_ms, l.end_ms)).collect();
-                            for (line, speaker) in lines.iter_mut().zip(listening.label(&ranges)) {
-                                line.speaker = speaker;
-                            }
-                        }
-                        if let Some(finish) = finish {
-                            finish(&mut lines);
-                        }
-                        TranscribeUpdate::Done {
-                            language: fixed.language.map(|l| l.to_string()),
-                            lines,
-                        }
-                    }
+                    Ok(transcript) => finished(&transcript, &vocabulary, listening, finish),
                     Err(IntelError::Canceled) => TranscribeUpdate::Canceled,
                     Err(error) => TranscribeUpdate::Failed { error: error.info() },
                 };
                 jobs.lock().unwrap_or_else(PoisonError::into_inner).remove(&key);
                 notify(&key, &update);
             })
-            .map_err(|error| IntelError::Platform(error.to_string()))?;
-        Ok(id)
+            .map(|_| ())
+            .map_err(|error| IntelError::Platform(error.to_string()))
     }
 
     /// Cancels a job, queued, or running. Returns whether it was known.

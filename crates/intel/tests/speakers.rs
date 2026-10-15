@@ -89,7 +89,7 @@ fn conversation(order: &[usize]) -> (Vec<f32>, Vec<(u64, u64)>) {
     (audio, ranges)
 }
 
-/// Reads all of the audio through the tee, in the chunks an engine reads.
+/// Reads all the audio through the tee, in the chunks an engine reads.
 fn hear(audio: Vec<f32>) -> Listening {
     let listening = Listening::new();
     let mut tee = Tee::new(MemoryAudio::new(audio), listening.clone());
