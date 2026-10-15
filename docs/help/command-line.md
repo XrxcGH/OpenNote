@@ -34,7 +34,7 @@ Add `--json` to print OpenNote's answers as JSON. Section and page IDs come from
 
 ## Which folders it uses
 
-The command reads a `--file` only from the current folder, and writes `export` and `render` files only into the current folder, unless you name other folders with `--read-root FOLDER` and `--write-root FOLDER` (each can be given more than once). Links and shortcuts are followed before the check. Network folders (`\\server\share`), device paths, names Windows keeps for devices (such as `CON` or `NUL.txt`), and data streams (`file.md:hidden`) are always refused. The message says which folder to allow.
+The command reads a `--file` only from the current folder, and writes `export` and `render` files only into the current folder, unless you name other folders with `--read-root FOLDER` and `--write-root FOLDER` (each can be given more than once). Links and shortcuts are followed before the check. Network folders (`\\server\share`), device paths, names Windows keeps for devices (such as `CON` or `NUL.txt`), and data streams (`file.md:hidden`) are always refused. The message says which folder to allow. This is new in beta 5: a script that read or wrote files outside the current folder before now needs `--read-root` or `--write-root`.
 
 ## Exit codes
 

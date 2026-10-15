@@ -21,6 +21,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - A release is checked the way the app checks an update before anyone can download it
 - Windows package manager (winget) files are made for every stable release
 
+### Changed (may break scripts)
+
+- The `opennote` command reads `--file` and writes `export` and `render` files only inside the current folder. Scripts that use other folders now need `--read-root FOLDER` or `--write-root FOLDER`; network folders and Windows device names are always refused
+- An agent's `--author` label in page history drops the word "via", quotes, and unpaired brackets, so it can't read as another app's change
+
 ### Experiments
 
 - Evaluated ink drawing performance with Surface Pen and Wacom tablets
