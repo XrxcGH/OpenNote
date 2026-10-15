@@ -31,5 +31,7 @@ export { cloudSummary, showPageSummary, summarizeBlocks } from './summary';
 export { onDeviceTranscriptEngine, transcribeOnDevice, TranscribeStopped } from './transcribe/engine';
 export type { OnDeviceTranscribeRequest, OnDeviceTranscribeResult } from './transcribe/engine';
 export type { PageSummary, PageText } from './summary';
+export { MAX_STROKES as MAX_MATH_STROKES, readWith, recognizeMath } from './math/recognize';
+export type { MathResult } from './math/recognize';
 export { listen } from './stream/listen';
 export type { Listening, ListenOptions } from './stream/listen';

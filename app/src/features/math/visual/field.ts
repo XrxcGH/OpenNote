@@ -48,6 +48,7 @@ export const visualMath: VisualMath = {
         element.value = next;
       },
       spoken: () => element.getValue('spoken-text'),
+      insert: (latex: string) => void element.insert(latex, { focus: true, feedback: false }),
       focus: () => element.focus(),
     };
   },

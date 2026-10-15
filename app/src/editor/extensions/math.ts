@@ -10,6 +10,8 @@ import type { NodeView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
 import type { EditorHost, MathActionResult, MathRenderer, VisualMathField } from '../host';
 import { META_COMMAND } from '../meta';
+import { createPenPad } from './mathPen';
+import type { PenPad } from './mathPen';
 import { MathBlock, MathInline } from '../schema/nodes';
 import styles from './content.module.css';
 import drawn from './mathDrawn.module.css';
@@ -42,6 +44,8 @@ class MathView implements NodeView {
   private field: Field | null = null;
   private visual: VisualMathField | null = null;
   private toggle: HTMLButtonElement | null = null;
+  private penButton: HTMLButtonElement | null = null;
+  private pad: PenPad | null = null;
   private swapping = false;
   private preview: HTMLElement | null = null;
   private problem: HTMLElement | null = null;
@@ -168,8 +172,37 @@ class MathView implements NodeView {
     if (next instanceof HTMLInputElement || next instanceof HTMLTextAreaElement) next.select();
   }
 
+  /** Opens the writing area under the equation. */
+  private openPad(holder: HTMLElement): void {
+    const recognize = this.renderer?.pen?.recognize;
+    if (!recognize || this.pad || !this.visual) return;
+    const pad = createPenPad(() => {
+      const strokes = pad.strokes();
+      const visual = this.visual;
+      if (strokes.length === 0 || !visual) return;
+      void recognize(strokes).then((latex) => {
+        if (!latex || !this.visual) {
+          this.host.announce(t('intelMore.math.penNone'));
+          return;
+        }
+        visual.insert(latex);
+        pad.clear();
+        this.showPreview();
+      });
+    });
+    this.pad = pad;
+    holder.append(pad.element);
+  }
+
+  private closePad(): void {
+    this.pad?.element.remove();
+    this.pad = null;
+  }
+
   private updateToggle(): void {
     if (this.toggle) this.toggle.textContent = t(this.visual ? 'editor.math.useLatex' : 'editor.math.useVisual');
+    if (this.penButton) this.penButton.hidden = !this.visual;
+    if (!this.visual) this.closePad();
   }
 
   private addPreview(field: HTMLElement): void {
@@ -191,8 +224,18 @@ class MathView implements NodeView {
       toggle.addEventListener('mousedown', (event) => event.preventDefault());
       toggle.addEventListener('click', () => void this.swap(!this.visual));
       this.toggle = toggle;
-      this.updateToggle();
       holder.append(toggle);
+      if (this.renderer.pen) {
+        const pen = document.createElement('button');
+        pen.type = 'button';
+        pen.className = drawn.toggle;
+        pen.textContent = t('intelMore.math.penWrite');
+        pen.addEventListener('mousedown', (event) => event.preventDefault());
+        pen.addEventListener('click', () => (this.pad ? this.closePad() : this.openPad(holder)));
+        this.penButton = pen;
+        holder.append(pen);
+      }
+      this.updateToggle();
     }
     const actions = this.renderer?.actions;
     if (actions) {
@@ -261,8 +304,10 @@ class MathView implements NodeView {
     const source = this.visual ? this.visual.value : field.value;
     if (save && this.visual && source.trim() !== '')
       this.host.announce(t('editor.math.spoken', { text: this.visual.spoken() }));
+    this.closePad();
     this.visual = null;
     this.toggle = null;
+    this.penButton = null;
     field.remove();
     this.holder?.remove();
     this.preview = this.problem = this.holder = null;

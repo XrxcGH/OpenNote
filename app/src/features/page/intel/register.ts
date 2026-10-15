@@ -81,3 +81,16 @@ commandBar.register({
 if (isEnabled('intel.liveCaptions') && isEnabled('intel.transcription')) {
   void import('./captions').then((module) => module.installLiveCaptions());
 }
+
+// Handwriting to math (A1-28): lasso the writing, then Convert handwriting to math.
+commands.register(
+  defineCommand({
+    id: 'intel.convertToMath',
+    title: 'intelMore.math.command',
+    keywords: 'intelMore.math.commandKeywords',
+    category: 'object',
+    flag: 'intel.mathInk',
+    when: () => isEnabled('intel.mathInk') && pageSelection.get().strokes.length > 0,
+    run: () => import('./mathInk').then((module) => module.convertToMath()),
+  }),
+);

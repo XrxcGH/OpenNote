@@ -71,6 +71,8 @@ export interface VisualMathField {
   value: string;
   /** The equation as words, for a screen reader. */
   spoken(): string;
+  /** Puts LaTeX in at the caret. */
+  insert(latex: string): void;
   focus(): void;
 }
 
@@ -78,7 +80,14 @@ export interface VisualMath {
   create(options: { value: string; label: string; display: boolean }): Promise<VisualMathField>;
 }
 
+/** Reads handwritten math. Each stroke is a list of points in one shared space. */
+export interface PenMath {
+  recognize(strokes: [number, number][][]): Promise<string | null>;
+}
+
 export interface MathRenderer {
+  /** Handwriting to LaTeX, when the page offers it. */
+  pen?: PenMath;
   /** The visual editor, when the page offers it. */
   visual?: VisualMath;
   render(source: string, display: boolean): MathDrawing;
