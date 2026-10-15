@@ -6,6 +6,7 @@ import { own } from '../layout/json';
 import { escapeText, oneLine, rewriteLinks, writeDestination } from './escape';
 import { readingOrder } from './order';
 import type { ExportBlock, ExportPage, TableBlock } from './source';
+import { propertyFrontMatter } from './propertyFrontMatter';
 
 /** The line for a block of a type this version doesn't know, and for a block that couldn't be read. */
 export const NEWER_VERSION_LINE = '*This part of the page needs a newer version of OpenNote.*';
@@ -134,6 +135,7 @@ export function tableCell(markdown: string): string {
 function frontMatter(page: ExportPage): string {
   const lines = ['---', `title: ${quoted(page.title)}`];
   if (page.tags.length > 0) lines.push(`tags: [${page.tags.map(quoted).join(', ')}]`);
+  lines.push(...propertyFrontMatter(page.rawView));
   if (page.created !== '') lines.push(`created: ${quoted(page.created)}`);
   if (page.modified !== '') lines.push(`modified: ${quoted(page.modified)}`);
   return `${lines.join('\n')}\n---\n`;

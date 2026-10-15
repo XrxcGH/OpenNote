@@ -129,6 +129,8 @@ export interface ExportPage {
   readonly strokes: readonly ExportStroke[];
   /** The language of the page text as a BCP 47 tag, for the document and for tagged PDF. */
   readonly language: string;
+  /** The page's `view` as stored, for the fields other features keep there, such as page properties. */
+  readonly rawView?: Readonly<Record<string, unknown>> | null;
 }
 
 const str = (v: Json | undefined, fallback = ''): string => (typeof v === 'string' ? v : fallback);
@@ -240,6 +242,7 @@ export function readExportPage(raw: unknown, strokes: readonly ExportStroke[] = 
     assets: readAssets(page.assets),
     strokes,
     language,
+    rawView: isObject(page.view) ? page.view : null,
   };
 }
 
