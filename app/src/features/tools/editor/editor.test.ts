@@ -57,3 +57,13 @@ describe('due dates in the editor', () => {
     expect(found.map((one) => one.phrase)).toEqual(['2026-10-09', '2026-10-12']);
   });
 });
+
+describe('math shared across a page', () => {
+  const region = { decimal: '.' as const, group: ',' };
+  it('uses variables from earlier boxes', () => {
+    expect(widgets(notesDecorations(doc('rent * 12 ='), region))).toBe(0);
+    const lent = notesDecorations(doc('rent * 12 ='), region, ['rent = 1,200']);
+    const [answer] = lent.find();
+    expect(answer).toBeDefined();
+  });
+});

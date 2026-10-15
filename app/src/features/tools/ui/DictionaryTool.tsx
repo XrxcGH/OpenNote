@@ -60,14 +60,14 @@ export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
   // The look-up follows the typing, a moment after the last key.
   useEffect(() => {
     const word = text.trim();
-    if (word === '') {
-      setFound(null);
-      setSearched('');
-      return undefined;
-    }
     let current = true;
     const timer = setTimeout(() => {
       void (async () => {
+        if (word === '') {
+          setFound(null);
+          setSearched('');
+          return;
+        }
         const loader =
           language === ENGLISH
             ? englishLoader

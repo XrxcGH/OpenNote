@@ -1,6 +1,6 @@
 // The WordNet converter on a small sample written in WordNet's own file layout.
 import { describe, expect, it } from 'vitest';
-import { MAX_SENSES, buildChunks, parseData, parseIndex, wordOf } from './wordnet';
+import { MAX_SENSES, buildChunks, parseData, parseIndex, wordOf } from './wordnet.ts';
 
 const LICENSE_HEADER =
   '  1 This software and database is being provided to you, the LICENSEE, by Princeton University...\n';

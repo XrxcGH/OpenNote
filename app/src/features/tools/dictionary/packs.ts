@@ -138,7 +138,7 @@ function done<T>(request: IDBRequest<T>): Promise<T> {
 /** The browser's own storage for this device. Falls back to memory where the browser has none. */
 export function browserPackStore(): PackStore {
   if (typeof indexedDB === 'undefined') return memoryPackStore();
-  const use = async <T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> => {
+  const withStore = async <T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> => {
     const db = await open();
     try {
       return await done(run(db.transaction(STORE, mode).objectStore(STORE)));
@@ -148,17 +148,17 @@ export function browserPackStore(): PackStore {
   };
   return {
     async list() {
-      const all = await use('readonly', (store) => store.getAll() as IDBRequest<Pack[]>);
+      const all = await withStore('readonly', (store) => store.getAll() as IDBRequest<Pack[]>);
       return all.map((pack) => pack.info);
     },
     async get(id) {
-      return (await use('readonly', (store) => store.get(id) as IDBRequest<Pack | undefined>)) ?? null;
+      return (await withStore('readonly', (store) => store.get(id) as IDBRequest<Pack | undefined>)) ?? null;
     },
     async put(pack) {
-      await use('readwrite', (store) => store.put(pack));
+      await withStore('readwrite', (store) => store.put(pack));
     },
     async remove(id) {
-      await use('readwrite', (store) => store.delete(id));
+      await withStore('readwrite', (store) => store.delete(id));
     },
   };
 }
