@@ -6,8 +6,12 @@
 #[cfg(test)]
 use std::{path::PathBuf, sync::Arc};
 
-use opennote_api::backend::{
-    Backend, BackendError, Location, NewPage, NotebookInfo, PageInfo, PageText, SearchHit, SectionInfo,
+use opennote_api::{
+    backend::{
+        block_summary, headings_of, word_count, Backend, BackendError, HistoryEntry, Location, NewPage, NotebookInfo,
+        PageInfo, PageInspection, PageText, SearchHit, SectionInfo,
+    },
+    render::Polyline,
 };
 use opennote_core::{
     model::notebook::NotebookTree,
@@ -80,6 +84,18 @@ impl CoreBackend {
         }
         let json = self.run(|bridge| with_page(bridge, page, page_json))?;
         Ok((markdown::page_markdown(&place.title, &json), json))
+    }
+
+    /// Where a page is, when it is a page and isn't locked.
+    fn page_place(&self, page: &str) -> Result<Location, BackendError> {
+        let place = self.locate(page)?;
+        if place.locked {
+            return Err(BackendError::Locked);
+        }
+        if place.section_id.is_none() || place.notebook_id == place.id || place.section_id.as_deref() == Some(page) {
+            return Err(BackendError::NotFound);
+        }
+        Ok(place)
     }
 
     fn trees(bridge: &Bridge) -> Vec<NotebookTree> {
@@ -402,6 +418,67 @@ impl Backend for CoreBackend {
                 ..page_info(&place)
             },
         })
+    }
+
+    fn inspect(&self, page: &str) -> Result<PageInspection, BackendError> {
+        let place = self.page_place(page)?;
+        let (json, history) = self.run(|bridge| {
+            with_page(bridge, page, |handle| {
+                let json = page_json(handle)?;
+                let history = handle
+                    .history()
+                    .map_err(|error| IpcError::new(crate::ipc::codes::INTERNAL, error.to_string()))?;
+                Ok((json, history))
+            })
+        })?;
+        let markdown = markdown::page_markdown(&place.title, &json);
+        let blocks = json["blocks"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|block| {
+                let data = &block["data"];
+                let text = data["markdown"]
+                    .as_str()
+                    .or_else(|| data["alt"].as_str())
+                    .unwrap_or_default();
+                block_summary(
+                    block["id"].as_str().unwrap_or_default(),
+                    block["type"].as_str().unwrap_or_default(),
+                    text,
+                )
+            })
+            .collect();
+        Ok(PageInspection {
+            blocks,
+            headings: headings_of(&markdown),
+            words: word_count(&markdown),
+            history: history
+                .into_iter()
+                .take(10)
+                .map(|entry| HistoryEntry {
+                    label: entry.name.unwrap_or_default(),
+                    saved: entry.saved_at.to_rfc3339(),
+                })
+                .collect(),
+            page: PageInfo {
+                modified: json["modified"].as_str().map(str::to_owned),
+                ..page_info(&place)
+            },
+        })
+    }
+
+    fn ink(&self, page: &str) -> Result<Vec<Polyline>, BackendError> {
+        self.page_place(page)?;
+        let lines = self.run(|bridge| with_page(bridge, page, |handle| Ok(handle.ink_lines())))?;
+        Ok(lines
+            .into_iter()
+            .map(|line| Polyline {
+                points: line.points,
+                rgba: line.color,
+                width: line.width,
+            })
+            .collect())
     }
 
     fn create_page(&self, section: &str, page: NewPage, author: &str) -> Result<PageInfo, BackendError> {

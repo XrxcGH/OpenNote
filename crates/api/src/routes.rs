@@ -13,6 +13,10 @@
 //! | `GET /v1/sections/{id}/pages`, `GET /v1/pages/{id}`, `GET /v1/search?q=`, `GET /v1/sections/{id}/export` | read |
 //! | `POST /v1/sections/{id}/pages` | add pages |
 //! | `POST /v1/pages/{id}/append`, `POST /v1/daily`, `POST /v1/backup` | read and write |
+//! | `GET /v1/commands` | a token: every command, and whether this app may run it |
+//! | `GET /v1/pages/{id}/inspect`, `GET /v1/pages/{id}/render` | read |
+//!
+//! The paths come from [`crate::commands::COMMANDS`], the registry the `opennote` tool and the MCP server share.
 
 use std::{
     collections::HashMap,
@@ -27,6 +31,7 @@ use serde_json::{json, Value};
 use crate::{
     access_log::{AccessLog, Entry, Outcome},
     backend::{ApprovalRequest, Approver, Attachment, Backend, BackendError, Decision, Location, NewPage, Question},
+    commands::{self, Routed},
     grants::{random_hex, Access, AppGrant, AppKind, Grants, NewGrant, Scope},
     guard::{host_ok, origin_of, Origin, Transport},
     hmac::hmac_hex,
@@ -180,21 +185,30 @@ impl Api {
             api: self,
             grant: &grant,
         };
-        let result = match (method, &parts[1..]) {
-            ("GET", ["me"]) => Ok(Response::json(200, &me(&grant))),
-            ("GET", ["notebooks"]) => caller.notebooks(),
-            ("GET", ["notebooks", id, "sections"]) => caller.sections(id),
-            ("GET", ["sections", id, "pages"]) => caller.pages(id),
-            ("GET", ["pages", id]) => caller.read(id, request.query("format")),
-            ("GET", ["search"]) => caller.search(request),
-            ("GET", ["sections", id, "export"]) => caller.export(id),
-            ("POST", ["sections", id, "pages"]) => caller.create(id, request),
-            ("POST", ["pages", id, "append"]) => caller.append(id, request),
-            ("POST", ["daily"]) => caller.daily(request),
-            ("POST", ["backup"]) => caller.backup(),
-            (_, ["me" | "notebooks" | "sections" | "pages" | "search" | "daily" | "backup", ..]) => {
-                Err(refuse(405, "method", "This path doesn't take that method."))
-            }
+        let (command, ids) = match commands::route(method, &parts[1..]) {
+            Routed::Found(command, ids) => (command, ids),
+            Routed::WrongMethod => return Err(Response::error(405, "method", "This path doesn't take that method.")),
+            Routed::NotFound => return Err(Response::error(404, "notFound", "There's nothing at this path.")),
+        };
+        caller
+            .need(command.id, command.need.allows(grant.access, &grant.notebooks))
+            .map_err(|refusal| *refusal)?;
+        let id = ids.first().copied().unwrap_or_default();
+        let result = match command.id {
+            "me" => Ok(Response::json(200, &me(&grant))),
+            "commands.list" => Ok(Response::json(200, &commands::listing(grant.access, &grant.notebooks))),
+            "notebooks.list" => caller.notebooks(),
+            "sections.list" => caller.sections(id),
+            "pages.list" => caller.pages(id),
+            "page.read" => caller.read(id, request.query("format")),
+            "page.inspect" => caller.inspect(id),
+            "page.render" => caller.render(id),
+            "search" => caller.search(request),
+            "section.export" => caller.export(id),
+            "page.create" => caller.create(id, request),
+            "page.append" => caller.append(id, request),
+            "daily.append" => caller.daily(request),
+            "backup" => caller.backup(),
             _ => Err(refuse(404, "notFound", "There's nothing at this path.")),
         };
         result.map_err(|refusal| *refusal)
@@ -416,21 +430,14 @@ fn preflight(origin: &Origin) -> Response {
     response
 }
 
-/// A short name for the access log, from the method and the path's shape (never its IDs).
+/// A short name for the access log: the command's ID, from the method and the path's shape (never its IDs).
 fn action_name(request: &Request) -> String {
     let path: Vec<&str> = request.path.split('/').filter(|part| !part.is_empty()).collect();
-    match (request.method.as_str(), path.as_slice()) {
-        ("GET", [_, "notebooks"]) => "notebooks.list",
-        ("GET", [_, "notebooks", _, "sections"]) => "sections.list",
-        ("GET", [_, "sections", _, "pages"]) => "pages.list",
-        ("GET", [_, "pages", _]) => "page.read",
-        ("GET", [_, "search"]) => "search",
-        ("GET", [_, "sections", _, "export"]) => "section.export",
-        ("POST", [_, "sections", _, "pages"]) => "page.create",
-        ("POST", [_, "pages", _, "append"]) => "page.append",
-        ("POST", [_, "daily"]) => "daily.append",
-        ("POST", [_, "backup"]) => "backup",
-        ("GET", [_, "me"]) => "me",
+    match path.split_first() {
+        Some((&VERSION, rest)) => match commands::route(&request.method, rest) {
+            Routed::Found(command, _) => command.id,
+            _ => "other",
+        },
         _ => "other",
     }
     .to_owned()
@@ -656,9 +663,49 @@ impl Caller<'_> {
         Ok(Response::json(200, &json!({ "section": place.title, "pages": out })))
     }
 
+    /// The name page history shows for a change: the app's name, and the author it gave, if any.
+    fn author(&self, author: Option<&str>) -> Result<String, Refusal> {
+        match author.map(|text| clean_text(text).replace(['\n', '\t'], " ").trim().to_owned()) {
+            None => Ok(self.grant.name.clone()),
+            Some(text) if text.is_empty() => Ok(self.grant.name.clone()),
+            Some(text) if text.chars().count() > commands::MAX_AUTHOR => Err(refuse(
+                400,
+                "author",
+                "The author can be at most 60 characters, such as \"Claude (copyedit)\".",
+            )),
+            Some(text) => Ok(format!("{} ({text})", self.grant.name)),
+        }
+    }
+
+    fn inspect(&self, page: &str) -> Result<Response, Refusal> {
+        let place = self.place("page.inspect", page)?;
+        let inspection = self.api.backend.inspect(page).map_err(backend_refusal)?;
+        self.allowed("page.inspect", Some(&place));
+        Ok(Response::json(200, &json!(inspection)))
+    }
+
+    fn render(&self, page: &str) -> Result<Response, Refusal> {
+        let place = self.place("page.render", page)?;
+        let lines = self.api.backend.ink(page).map_err(backend_refusal)?;
+        let drawn = crate::render::rasterize(&lines);
+        self.allowed("page.render", Some(&place));
+        Ok(Response::json(
+            200,
+            &json!({
+                "mime": "image/png",
+                "width": drawn.width,
+                "height": drawn.height,
+                "strokes": drawn.strokes,
+                "png": STANDARD.encode(&drawn.png),
+            }),
+        ))
+    }
+
     fn create(&self, section: &str, request: &Request) -> Result<Response, Refusal> {
         self.need("page.create", self.grant.access.can_add_pages())?;
-        let page = new_page(json_body(request)?)?;
+        let body: PageBody = json_body(request)?;
+        let author = self.author(body.author.as_deref())?;
+        let page = new_page(body)?;
         let place = self.place("page.create", section)?;
         if place.section_id.as_deref() != Some(section) {
             return Err(refuse(
@@ -675,7 +722,7 @@ impl Caller<'_> {
         let created = self
             .api
             .backend
-            .create_page(section, page, &self.grant.name)
+            .create_page(section, page, &author)
             .map_err(|error| self.failed("page.create", &place, error))?;
         self.api.record_id(
             self.grant,
@@ -689,13 +736,15 @@ impl Caller<'_> {
 
     fn append(&self, page: &str, request: &Request) -> Result<Response, Refusal> {
         self.need("page.append", self.grant.access.can_change_pages())?;
-        let markdown = markdown_of(json_body(request)?)?;
+        let body: MarkdownBody = json_body(request)?;
+        let author = self.author(body.author.as_deref())?;
+        let markdown = markdown_of(body)?;
         let place = self.place("page.append", page)?;
         self.approve("page.append", "add to this page", &place)?;
         let changed = self
             .api
             .backend
-            .append(page, &markdown, &self.grant.name)
+            .append(page, &markdown, &author)
             .map_err(|error| self.failed("page.append", &place, error))?;
         self.allowed("page.append", Some(&place));
         Ok(Response::json(200, &json!({ "page": changed })))
@@ -703,7 +752,9 @@ impl Caller<'_> {
 
     fn daily(&self, request: &Request) -> Result<Response, Refusal> {
         self.need("daily.append", self.grant.access.can_change_pages())?;
-        let markdown = markdown_of(json_body(request)?)?;
+        let body: MarkdownBody = json_body(request)?;
+        let author = self.author(body.author.as_deref())?;
+        let markdown = markdown_of(body)?;
         let place = self.api.backend.daily_target().map_err(backend_refusal)?;
         if !self.grant.notebooks.covers(&place.notebook_id) {
             return Err(self.refused(
@@ -729,7 +780,7 @@ impl Caller<'_> {
         let page = self
             .api
             .backend
-            .append_daily(&markdown, &self.grant.name)
+            .append_daily(&markdown, &author)
             .map_err(|error| self.failed("daily.append", &place, error))?;
         self.api.record_id(
             self.grant,
@@ -785,6 +836,8 @@ struct PageBody {
     source_url: Option<String>,
     #[serde(default)]
     attachments: Vec<AttachmentBody>,
+    #[serde(default)]
+    author: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -798,6 +851,8 @@ struct AttachmentBody {
 #[derive(Deserialize)]
 struct MarkdownBody {
     markdown: String,
+    #[serde(default)]
+    author: Option<String>,
 }
 
 fn markdown_of(body: MarkdownBody) -> Result<String, Refusal> {
@@ -833,6 +888,8 @@ pub fn file_name(name: &str) -> String {
     let cleaned = cleaned.trim().trim_start_matches('.').to_owned();
     if cleaned.is_empty() {
         "attachment".to_owned()
+    } else if crate::sandbox::device_name(&cleaned) {
+        format!("_{cleaned}")
     } else {
         cleaned
     }
@@ -909,6 +966,8 @@ mod tests {
         assert_eq!(file_name("a<b>:c?.png"), "abc.png");
         assert_eq!(file_name("..."), "attachment");
         assert_eq!(file_name(".htaccess"), "htaccess");
+        assert_eq!(file_name("CON.png"), "_CON.png");
+        assert_eq!(file_name("com1"), "_com1");
     }
 
     #[test]
@@ -921,5 +980,7 @@ mod tests {
         assert_eq!(action_name(&request("GET", "/v1/pages/p1")), "page.read");
         assert_eq!(action_name(&request("POST", "/v1/sections/s1/pages")), "page.create");
         assert_eq!(action_name(&request("DELETE", "/v1/pages/p1")), "other");
+        assert_eq!(action_name(&request("GET", "/v1/pages/p1/inspect")), "page.inspect");
+        assert_eq!(action_name(&request("GET", "/v2/pages/p1")), "other");
     }
 }

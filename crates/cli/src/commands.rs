@@ -1,7 +1,9 @@
 // checks-disable-file modifiability: one match over the command words; split it when it grows again
 
 //! The commands. Each one goes through the local API under the tool's own access, so it can do only what the
-//! person allowed in OpenNote, and every call is in OpenNote's access log.
+//! person allowed in OpenNote, and every call is in OpenNote's access log. The command words come from the registry
+//! the API and the MCP server share ([`opennote_api::commands`]). Files are read only inside `--read-root` and written
+//! only inside `--write-root` (the current folder when not given), through [`opennote_api::sandbox`].
 
 use std::{
     fs,
@@ -9,6 +11,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use opennote_api::{commands as registry, sandbox::Sandbox};
 use serde_json::{json, Value};
 
 use crate::session::{id_ok, CliError, Env, Identity, Session};
@@ -29,16 +32,22 @@ Commands:
   new <section-id> <title> [TEXT]  Add a page. TEXT, --file F, or standard input gives its text.
   append <page-id> [TEXT]          Add text to the end of a page (TEXT, --file F, or standard input).
   daily [TEXT]                     Add text to today's daily note (TEXT, --file F, or standard input).
+  inspect <page-id>                Describe a page's parts, headings, and latest history, to check a change.
+  render <page-id> [--out FILE]    Save the page's handwriting and drawings as a PNG (default: <page-id>.png).
   export <section-id> [--out DIR]  Save each page of a section as a Markdown file (default: this folder).
   backup                           Back up every notebook to the backup folder set in OpenNote.
+  commands                         List every command and whether this tool's access lets it run.
   connect                          Ask OpenNote for access now.
   disconnect                       Forget this tool's key. Revoke it in App permissions to end its access.
-  mcp [--name NAME]                Run the MCP server for an AI assistant on standard input and output.
+  mcp [--name NAME] [--author A]   Run the MCP server for an AI assistant on standard input and output.
 
 Options:
-  --json        Print OpenNote's answers as JSON.
-  -h, --help    Print this help.
-  -V, --version Print the version.
+  --json             Print OpenNote's answers as JSON.
+  --author TEXT      Who is making a change, shown in page history, such as \"Claude (copyedit)\".
+  --read-root DIR    A folder --file may read from (repeatable; default: the current folder).
+  --write-root DIR   A folder --out may write to (repeatable; default: the current folder).
+  -h, --help         Print this help.
+  -V, --version      Print the version.
 
 Adding and changing pages needs \"Read and add to notes\" in App permissions, and OpenNote asks before each
 change unless you turn that off. Exit codes: 0 done, 1 failed, 2 wrong arguments, 3 OpenNote not reachable,
@@ -57,6 +66,9 @@ pub struct Args {
     pub out: Option<PathBuf>,
     pub limit: Option<usize>,
     pub name: Option<String>,
+    pub author: Option<String>,
+    pub read_roots: Vec<PathBuf>,
+    pub write_roots: Vec<PathBuf>,
 }
 
 pub fn parse(raw: &[String]) -> Result<Args, CliError> {
@@ -75,6 +87,15 @@ pub fn parse(raw: &[String]) -> Result<Args, CliError> {
             "--file" | "-f" => args.file = Some(PathBuf::from(value(&mut iter, "--file")?)),
             "--out" | "-o" => args.out = Some(PathBuf::from(value(&mut iter, "--out")?)),
             "--name" => args.name = Some(value(&mut iter, "--name")?),
+            "--author" => {
+                let author = value(&mut iter, "--author")?;
+                if author.chars().count() > registry::MAX_AUTHOR || author.chars().any(char::is_control) {
+                    return Err(CliError::Usage("--author takes one line of at most 60 characters.".into()));
+                }
+                args.author = Some(author);
+            }
+            "--read-root" => args.read_roots.push(PathBuf::from(value(&mut iter, "--read-root")?)),
+            "--write-root" => args.write_roots.push(PathBuf::from(value(&mut iter, "--write-root")?)),
             "--limit" | "-n" => {
                 let text = value(&mut iter, "--limit")?;
                 args.limit = Some(
@@ -96,9 +117,20 @@ pub fn parse(raw: &[String]) -> Result<Args, CliError> {
     Ok(args)
 }
 
+/// The folders this run may read from and write to.
+fn sandbox(args: &Args) -> Result<Sandbox, CliError> {
+    let here = || vec![PathBuf::from(".")];
+    let read = if args.read_roots.is_empty() { here() } else { args.read_roots.clone() };
+    let write = if args.write_roots.is_empty() { here() } else { args.write_roots.clone() };
+    Sandbox::new(&read, &write).map_err(|error| CliError::Usage(error.to_string()))
+}
+
 /// The text a command adds: its argument, the file, or standard input.
 fn text_of(args: &Args, from: usize, stdin: &mut dyn Read) -> Result<String, CliError> {
     let text = if let Some(file) = &args.file {
+        let file = &sandbox(args)?
+            .check_read(file)
+            .map_err(|error| CliError::Usage(error.to_string()))?;
         let size =
             fs::metadata(file).map_err(|error| CliError::Io(format!("Can't read {}: {error}", file.display())))?;
         if size.len() > MAX_TEXT as u64 {
@@ -219,10 +251,13 @@ fn run_inner(
         }
         "mcp" => {
             let name = args.name.clone().unwrap_or_else(|| "AI assistant".into());
-            return crate::mcp::serve(env, &name, stdin, out).map_err(io);
+            return crate::mcp::serve(env, &name, args.author.as_deref(), stdin, out).map_err(io);
         }
-        "notebooks" | "pages" | "read" | "search" | "new" | "append" | "daily" | "export" | "backup" | "connect" => {}
-        other => return Err(CliError::Usage(format!("`{other}` isn't a command."))),
+        word if registry::by_cli(word).is_some() => {}
+        other => {
+            let shown: String = other.chars().take(40).collect();
+            return Err(CliError::Usage(format!("`{shown}` isn't a command.")));
+        }
     }
     // Check the arguments before asking OpenNote for anything.
     let text = match args.command.as_str() {
@@ -242,7 +277,7 @@ fn run_inner(
             need_id(&args, 0, "section")?;
             None
         }
-        "read" => {
+        "read" | "inspect" | "render" => {
             need_id(&args, 0, "page")?;
             None
         }
@@ -357,7 +392,7 @@ fn run_inner(
             let title = args.positional[1].clone();
             let created = session.post(
                 &format!("/v1/sections/{section}/pages"),
-                &json!({ "title": title, "markdown": text.unwrap_or_default() }),
+                &with_author(&args, json!({ "title": title, "markdown": text.unwrap_or_default() })),
             )?;
             print(out, &args, &created, |out| {
                 writeln!(
@@ -372,7 +407,7 @@ fn run_inner(
             let page = need_id(&args, 0, "page")?;
             let changed = session.post(
                 &format!("/v1/pages/{page}/append"),
-                &json!({ "markdown": text.unwrap_or_default() }),
+                &with_author(&args, json!({ "markdown": text.unwrap_or_default() })),
             )?;
             print(out, &args, &changed, |out| {
                 writeln!(
@@ -383,7 +418,10 @@ fn run_inner(
             })
         }
         "daily" => {
-            let changed = session.post("/v1/daily", &json!({ "markdown": text.unwrap_or_default() }))?;
+            let changed = session.post(
+                "/v1/daily",
+                &with_author(&args, json!({ "markdown": text.unwrap_or_default() })),
+            )?;
             print(out, &args, &changed, |out| {
                 writeln!(
                     out,
@@ -396,6 +434,9 @@ fn run_inner(
             let section = need_id(&args, 0, "section")?;
             let exported = session.get(&format!("/v1/sections/{section}/export"), &[])?;
             let folder = args.out.clone().unwrap_or_else(|| PathBuf::from("."));
+            sandbox(&args)?
+                .check_write(&folder)
+                .map_err(|error| CliError::Usage(error.to_string()))?;
             let written = write_export(&folder, &exported)?;
             print(
                 out,
@@ -403,6 +444,92 @@ fn run_inner(
                 &json!({ "folder": folder.display().to_string(), "files": written }),
                 |out| writeln!(out, "Saved {} pages to {}.", written.len(), folder.display()),
             )
+        }
+        "commands" => {
+            let listed = session.get("/v1/commands", &[])?;
+            print(out, &args, &listed, |out| {
+                for command in listed["commands"].as_array().into_iter().flatten() {
+                    let Some(word) = command["cli"].as_str() else {
+                        continue;
+                    };
+                    let note = if command["enabled"] == true {
+                        ""
+                    } else {
+                        "  (not with this tool's access)"
+                    };
+                    writeln!(out, "{word:<10} {}{note}", command["label"].as_str().unwrap_or(""))?;
+                }
+                Ok(())
+            })
+        }
+        "inspect" => {
+            let page = need_id(&args, 0, "page")?;
+            let inspected = session.get(&format!("/v1/pages/{page}/inspect"), &[])?;
+            print(out, &args, &inspected, |out| {
+                writeln!(
+                    out,
+                    "{}  ({} words)",
+                    inspected["page"]["title"].as_str().unwrap_or(""),
+                    inspected["words"]
+                )?;
+                for heading in inspected["headings"].as_array().into_iter().flatten() {
+                    writeln!(out, "  {}", heading.as_str().unwrap_or(""))?;
+                }
+                writeln!(out, "Parts:")?;
+                for block in inspected["blocks"].as_array().into_iter().flatten() {
+                    writeln!(
+                        out,
+                        "  {:<6} {:>6} words  {}",
+                        block["kind"].as_str().unwrap_or(""),
+                        block["words"],
+                        block["firstLine"].as_str().unwrap_or("")
+                    )?;
+                }
+                let history = inspected["history"].as_array().cloned().unwrap_or_default();
+                if !history.is_empty() {
+                    writeln!(out, "History, newest first:")?;
+                }
+                for entry in history {
+                    writeln!(
+                        out,
+                        "  {}  {}",
+                        entry["saved"].as_str().unwrap_or(""),
+                        entry["label"].as_str().unwrap_or("")
+                    )?;
+                }
+                Ok(())
+            })
+        }
+        "render" => {
+            let page = need_id(&args, 0, "page")?;
+            let file = args.out.clone().unwrap_or_else(|| PathBuf::from(format!("{page}.png")));
+            let file = sandbox(&args)?
+                .check_write(&file)
+                .map_err(|error| CliError::Usage(error.to_string()))?;
+            let drawn = session.get(&format!("/v1/pages/{page}/render"), &[])?;
+            let png = {
+                use base64::Engine as _;
+                base64::engine::general_purpose::STANDARD
+                    .decode(drawn["png"].as_str().unwrap_or_default())
+                    .map_err(|_| CliError::Io("OpenNote's picture wasn't valid.".into()))?
+            };
+            let mut target = fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&file)
+                .map_err(|error| CliError::Io(format!("Can't write {}: {error}", file.display())))?;
+            target
+                .write_all(&png)
+                .map_err(|error| CliError::Io(format!("Can't write {}: {error}", file.display())))?;
+            let summary = json!({
+                "file": file.display().to_string(),
+                "strokes": drawn["strokes"],
+                "width": drawn["width"],
+                "height": drawn["height"],
+            });
+            print(out, &args, &summary, |out| {
+                writeln!(out, "Saved {} strokes to {}.", drawn["strokes"], file.display())
+            })
         }
         "backup" => {
             let done = session.post("/v1/backup", &json!({}))?;
@@ -412,6 +539,14 @@ fn run_inner(
         }
         _ => Err(CliError::Usage("Unknown command.".into())),
     }
+}
+
+/// A change's body with the `--author` label, when there is one.
+fn with_author(args: &Args, mut body: Value) -> Value {
+    if let Some(author) = &args.author {
+        body["author"] = json!(author);
+    }
+    body
 }
 
 /// Writes each exported page as a Markdown file in `folder`. Never overwrites a file that is already there.
@@ -463,6 +598,20 @@ mod tests {
                 .positional,
             ["p1", "--not-a-flag"]
         );
+    }
+
+    #[test]
+    fn every_registry_command_word_is_in_the_help() {
+        for command in registry::COMMANDS {
+            if let Some(word) = command.cli {
+                assert!(HELP.contains(&format!("  {word}")), "{word} isn't in the help");
+            }
+        }
+        let args = parse(&strings(&["--author", "Claude (copyedit)", "--write-root", "a", "--write-root", "b", "daily"]))
+            .expect("parses");
+        assert_eq!(args.author.as_deref(), Some("Claude (copyedit)"));
+        assert_eq!(args.write_roots.len(), 2);
+        assert!(parse(&strings(&["--author", &"x".repeat(61)])).is_err());
     }
 
     #[test]

@@ -76,6 +76,29 @@ pub fn render_ink_svg(page: &Page) -> Vec<u8> {
     seal(out)
 }
 
+/// One stroke as a polyline in page coordinates, for drawing a page as a picture (the local API's `render_page`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct InkLine {
+    pub points: Vec<(f64, f64)>,
+    /// Red, green, blue, and alpha.
+    pub color: [u8; 4],
+    /// The width in page units, with the stroke's transform applied.
+    pub width: f64,
+}
+
+/// Every stroke of the page as [`InkLine`]s, laid out and ordered as `ink.svg` lays them out.
+pub fn ink_lines(page: &Page) -> Vec<InkLine> {
+    layout(page)
+        .into_iter()
+        .flatten()
+        .map(|drawn| InkLine {
+            color: drawn.stroke.style.color,
+            width: f64::from(drawn.stroke.style.width) * drawn.stroke.transform.map_or(1.0, |t| t.width_scale()),
+            points: drawn.points,
+        })
+        .collect()
+}
+
 fn write_group(out: &mut String, strokes: &[DrawnStroke<'_>]) {
     if strokes.is_empty() {
         out.push_str("  <g/>\n");

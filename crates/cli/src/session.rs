@@ -9,7 +9,9 @@ use std::{
 };
 
 use opennote_api::{
-    client::{from_hex, read_discovery, Client, ClientError, Endpoint, DISCOVERY_FILE, PROOF_TARGET},
+    client::{
+        from_hex, read_discovery, read_key_file, Client, ClientError, Endpoint, DISCOVERY_FILE, KEY_FILE, PROOF_TARGET,
+    },
     http::Response,
 };
 use serde_json::{json, Value};
@@ -49,7 +51,11 @@ impl Env {
             Some(pipe) if cfg!(windows) && pipe_name_ok(&pipe) => Endpoint::Pipe(pipe),
             _ => Endpoint::Tcp(found.port),
         });
-        let proof_key = secrets.get(PROOF_TARGET).and_then(|hex| from_hex(&hex));
+        // The credential store's copy first, then the per-instance key file beside the discovery file.
+        let proof_key = secrets
+            .get(PROOF_TARGET)
+            .and_then(|hex| from_hex(&hex))
+            .or_else(|| folder.and_then(|folder| read_key_file(&folder.join(KEY_FILE))));
         Env {
             endpoint,
             proof_key,

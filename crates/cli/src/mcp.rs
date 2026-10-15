@@ -1,6 +1,11 @@
 //! `opennote mcp`: a Model Context Protocol server on standard input and output, one JSON-RPC message per line, so
-//! an AI assistant the person chooses can use their notes. It has five tools: list_notebooks, search, read_page,
-//! create_page, and append_to_page.
+//! an AI assistant the person chooses can use their notes. Its tools come from the command registry
+//! ([`opennote_api::commands`]) that the local API and the `opennote` tool share: listing, reading, searching, adding,
+//! and the read-back tools `inspect_page` and `render_page`, which let the assistant check its own work, and
+//! `list_commands`. Arguments are checked against the registry before anything reaches OpenNote.
+//!
+//! `--author` names who makes the changes, such as "Claude (copyedit)": page history then shows
+//! "Changed via <assistant> (Claude (copyedit))". An `author` argument on a call overrides it for that call.
 //!
 //! The assistant gets its own access, separate from the command-line tool's: the first tool call asks the person
 //! in OpenNote, read-only by default. Changes go through the same approval as any app, so OpenNote asks before each
@@ -10,6 +15,8 @@
 use std::io::{self, BufRead, BufReader, Read, Write};
 
 use serde_json::{json, Value};
+
+use opennote_api::commands::{self, by_mcp, check_args, COMMANDS};
 
 use crate::{
     session::{id_ok, CliError, Env, Identity, Session},
@@ -22,71 +29,9 @@ pub const PROTOCOL_VERSIONS: [&str; 3] = ["2025-06-18", "2025-03-26", "2024-11-0
 /// The longest line the server reads: a request bigger than this is refused.
 const MAX_LINE: u64 = 4 * 1024 * 1024;
 
-/// The tools, as `tools/list` describes them.
+/// The tools, as `tools/list` describes them: every registry command with an MCP name.
 pub fn tools() -> Value {
-    json!([
-        {
-            "name": "list_notebooks",
-            "description": "List the OpenNote notebooks and sections this assistant may use, with their IDs. \
-                            Locked sections are marked and can't be read.",
-            "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false },
-            "annotations": { "readOnlyHint": true }
-        },
-        {
-            "name": "search",
-            "description": "Search the person's OpenNote pages for words. Returns page IDs, titles, and a few words around each match.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "query": { "type": "string", "description": "The words to look for.", "maxLength": 500 },
-                    "limit": { "type": "integer", "minimum": 1, "maximum": 50, "default": 10 }
-                },
-                "required": ["query"],
-                "additionalProperties": false
-            },
-            "annotations": { "readOnlyHint": true }
-        },
-        {
-            "name": "read_page",
-            "description": "Read one OpenNote page as Markdown, by its ID.",
-            "inputSchema": {
-                "type": "object",
-                "properties": { "page_id": { "type": "string" } },
-                "required": ["page_id"],
-                "additionalProperties": false
-            },
-            "annotations": { "readOnlyHint": true }
-        },
-        {
-            "name": "create_page",
-            "description": "Add a new page to a section. The person may be asked to allow it in OpenNote first.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "section_id": { "type": "string" },
-                    "title": { "type": "string", "maxLength": 200 },
-                    "markdown": { "type": "string" }
-                },
-                "required": ["section_id", "title"],
-                "additionalProperties": false
-            },
-            "annotations": { "readOnlyHint": false, "destructiveHint": false }
-        },
-        {
-            "name": "append_to_page",
-            "description": "Add Markdown to the end of a page. The person may be asked to allow it in OpenNote first.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "page_id": { "type": "string" },
-                    "markdown": { "type": "string" }
-                },
-                "required": ["page_id", "markdown"],
-                "additionalProperties": false
-            },
-            "annotations": { "readOnlyHint": false, "destructiveHint": false }
-        }
-    ])
+    Value::Array(COMMANDS.iter().filter_map(commands::mcp_tool).collect())
 }
 
 /// One server: the session is opened on the first tool call, so starting the assistant never asks the person.
@@ -94,6 +39,8 @@ pub struct Server<'a> {
     env: &'a Env,
     identity: Identity,
     session: Option<Session>,
+    /// Who makes the changes, from `--author`.
+    author: Option<String>,
     log: &'a mut dyn Write,
 }
 
@@ -105,29 +52,16 @@ fn rpc_error(id: &Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
 }
 
-fn tool_text(text: &str, is_error: bool) -> Value {
-    json!({ "content": [{ "type": "text", "text": text }], "isError": is_error })
+fn text_content(text: &str) -> Value {
+    json!({ "type": "text", "text": text })
 }
 
-fn string_arg<'v>(args: &'v Value, name: &str) -> Result<&'v str, String> {
-    args.get(name)
-        .and_then(Value::as_str)
-        .ok_or_else(|| format!("The tool needs {name} as a string."))
-}
-
-fn id_arg<'v>(args: &'v Value, name: &str) -> Result<&'v str, String> {
-    let id = string_arg(args, name)?;
-    if id_ok(id) {
-        Ok(id)
-    } else {
-        Err(format!(
-            "{name} isn't an OpenNote ID. Use list_notebooks or search to find one."
-        ))
-    }
+fn tool_result(content: Vec<Value>, is_error: bool) -> Value {
+    json!({ "content": content, "isError": is_error })
 }
 
 impl<'a> Server<'a> {
-    pub fn new(env: &'a Env, name: &str, log: &'a mut dyn Write) -> Server<'a> {
+    pub fn new(env: &'a Env, name: &str, author: Option<&str>, log: &'a mut dyn Write) -> Server<'a> {
         let app_name = opennote_api::grants::clean_name(name);
         Server {
             env,
@@ -137,6 +71,10 @@ impl<'a> Server<'a> {
                 kind: "assistant",
             },
             session: None,
+            author: author
+                .map(|text| text.chars().filter(|c| !c.is_control()).take(commands::MAX_AUTHOR).collect::<String>())
+                .map(|text| text.trim().to_owned())
+                .filter(|text| !text.is_empty()),
             log,
         }
     }
@@ -190,7 +128,10 @@ impl<'a> Server<'a> {
                 }
                 match self.call(name, args) {
                     Ok(result) => reply(&id, result),
-                    Err(Unknown) => rpc_error(&id, -32602, &format!("There's no tool called {name}.")),
+                    Err(Unknown) => {
+                        let shown: String = name.chars().take(64).collect();
+                        rpc_error(&id, -32602, &format!("There's no tool called {shown}."))
+                    }
                 }
             }
             _ => rpc_error(&id, -32601, "This server doesn't have that method."),
@@ -198,94 +139,76 @@ impl<'a> Server<'a> {
     }
 
     fn call(&mut self, name: &str, args: &Value) -> Result<Value, Unknown> {
-        if !tools()
-            .as_array()
-            .is_some_and(|all| all.iter().any(|tool| tool["name"] == name))
-        {
-            return Err(Unknown);
-        }
-        Ok(match self.run_tool(name, args) {
-            Ok(text) => tool_text(&text, false),
-            Err(text) => tool_text(&text, true),
+        let command = by_mcp(name).ok_or(Unknown)?;
+        Ok(match self.run_tool(command, args) {
+            Ok(content) => tool_result(content, false),
+            Err(text) => tool_result(vec![text_content(&text)], true),
         })
     }
 
-    fn run_tool(&mut self, name: &str, args: &Value) -> Result<String, String> {
+    fn run_tool(&mut self, command: &commands::Command, args: &Value) -> Result<Vec<Value>, String> {
         // Check what the assistant sent before anything reaches OpenNote.
-        let checked: Result<(), String> = match name {
-            "search" => string_arg(args, "query").map(|_| ()),
-            "read_page" => id_arg(args, "page_id").map(|_| ()),
-            "create_page" => id_arg(args, "section_id")
-                .and_then(|_| string_arg(args, "title"))
-                .map(|_| ()),
-            "append_to_page" => id_arg(args, "page_id")
-                .and_then(|_| string_arg(args, "markdown"))
-                .map(|_| ()),
-            _ => Ok(()),
-        };
-        checked?;
-        let session = self.session().map_err(|error| error.to_string())?;
-        let shown = |value: Value| serde_json::to_string_pretty(&value).unwrap_or_default();
-        let failed = |error: CliError| error.to_string();
-        match name {
-            "list_notebooks" => {
-                let notebooks = session.get("/v1/notebooks", &[]).map_err(failed)?;
-                let mut out = Vec::new();
-                for notebook in notebooks["notebooks"].as_array().cloned().unwrap_or_default() {
-                    let id = notebook["id"].as_str().unwrap_or_default().to_owned();
-                    if !id_ok(&id) {
-                        continue;
-                    }
-                    let sections = session
-                        .get(&format!("/v1/notebooks/{id}/sections"), &[])
-                        .map_err(failed)?;
-                    out.push(json!({ "id": id, "title": notebook["title"], "sections": sections["sections"] }));
-                }
-                Ok(shown(Value::Array(out)))
+        check_args(command, args).map_err(|error| error.to_string())?;
+        let mut args = args.clone();
+        if let Some(author) = &self.author {
+            if command.params.contains(&commands::AUTHOR) && args.get("author").is_none_or(Value::is_null) {
+                args["author"] = json!(author);
             }
-            "search" => {
-                let query = string_arg(args, "query")?;
-                let limit = args["limit"].as_u64().unwrap_or(10).clamp(1, 50).to_string();
-                let hits = session
-                    .get("/v1/search", &[("q", query), ("limit", &limit)])
-                    .map_err(failed)?;
-                Ok(shown(hits["hits"].clone()))
-            }
-            "read_page" => {
-                let page = id_arg(args, "page_id")?;
-                let text = session
-                    .get(&format!("/v1/pages/{page}"), &[("format", "md")])
-                    .map_err(failed)?;
-                Ok(text.as_str().unwrap_or_default().to_owned())
-            }
-            "create_page" => {
-                let section = id_arg(args, "section_id")?;
-                let body = json!({
-                    "title": string_arg(args, "title")?,
-                    "markdown": args["markdown"].as_str().unwrap_or_default(),
-                });
-                let created = session
-                    .post(&format!("/v1/sections/{section}/pages"), &body)
-                    .map_err(failed)?;
-                Ok(format!(
-                    "Added the page \u{201c}{}\u{201d} with ID {}.",
-                    created["page"]["title"].as_str().unwrap_or_default(),
-                    created["page"]["id"].as_str().unwrap_or_default()
-                ))
-            }
-            "append_to_page" => {
-                let page = id_arg(args, "page_id")?;
-                let body = json!({ "markdown": string_arg(args, "markdown")? });
-                let changed = session
-                    .post(&format!("/v1/pages/{page}/append"), &body)
-                    .map_err(failed)?;
-                Ok(format!(
-                    "Added to \u{201c}{}\u{201d}.",
-                    changed["page"]["title"].as_str().unwrap_or_default()
-                ))
-            }
-            _ => Err("There's no such tool.".into()),
         }
+        if command.id == "page.read" && args.get("format").is_none_or(Value::is_null) {
+            args["format"] = json!("md");
+        }
+        let session = self.session().map_err(|error| error.to_string())?;
+        let shown = |value: &Value| serde_json::to_string_pretty(value).unwrap_or_default();
+        let failed = |error: CliError| error.to_string();
+        if command.id == "notebooks.list" {
+            let notebooks = session.get("/v1/notebooks", &[]).map_err(failed)?;
+            let mut out = Vec::new();
+            for notebook in notebooks["notebooks"].as_array().cloned().unwrap_or_default() {
+                let id = notebook["id"].as_str().unwrap_or_default().to_owned();
+                if !id_ok(&id) {
+                    continue;
+                }
+                let sections = session
+                    .get(&format!("/v1/notebooks/{id}/sections"), &[])
+                    .map_err(failed)?;
+                out.push(json!({ "id": id, "title": notebook["title"], "sections": sections["sections"] }));
+            }
+            return Ok(vec![text_content(&shown(&Value::Array(out)))]);
+        }
+        let (path, query, body) = commands::to_http(command, &args);
+        let query: Vec<(&str, &str)> = query.iter().map(|(key, value)| (key.as_str(), value.as_str())).collect();
+        let answer = if command.method == "GET" {
+            session.get(&path, &query)
+        } else {
+            session.post(&path, &body)
+        }
+        .map_err(failed)?;
+        let title = |value: &Value| value["page"]["title"].as_str().unwrap_or_default().to_owned();
+        Ok(match command.id {
+            "page.read" => vec![text_content(
+                &answer.as_str().map_or_else(|| shown(&answer), str::to_owned),
+            )],
+            "search" => vec![text_content(&shown(&answer["hits"]))],
+            "page.render" => vec![
+                json!({ "type": "image", "data": answer["png"], "mimeType": "image/png" }),
+                text_content(&format!(
+                    "The page's handwriting and drawings: {} strokes, {} by {} pixels. Text isn't drawn; read_page and inspect_page give it.",
+                    answer["strokes"], answer["width"], answer["height"]
+                )),
+            ],
+            "page.create" => vec![text_content(&format!(
+                "Added the page \u{201c}{}\u{201d} with ID {}.",
+                title(&answer),
+                answer["page"]["id"].as_str().unwrap_or_default()
+            ))],
+            "page.append" => vec![text_content(&format!("Added to \u{201c}{}\u{201d}.", title(&answer)))],
+            "daily.append" => vec![text_content(&format!(
+                "Added to today's daily note, \u{201c}{}\u{201d}.",
+                title(&answer)
+            ))],
+            _ => vec![text_content(&shown(&answer))],
+        })
     }
 }
 
@@ -293,9 +216,15 @@ impl<'a> Server<'a> {
 pub struct Unknown;
 
 /// Reads messages from `input` until it closes, and writes each answer as one line to `output`.
-pub fn serve(env: &Env, name: &str, input: &mut dyn Read, output: &mut dyn Write) -> io::Result<()> {
+pub fn serve(
+    env: &Env,
+    name: &str,
+    author: Option<&str>,
+    input: &mut dyn Read,
+    output: &mut dyn Write,
+) -> io::Result<()> {
     let mut log = io::stderr();
-    let mut server = Server::new(env, name, &mut log);
+    let mut server = Server::new(env, name, author, &mut log);
     let mut reader = BufReader::new(input);
     loop {
         let mut line = String::new();

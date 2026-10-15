@@ -9,9 +9,10 @@ use std::{
 use crate::{
     access_log::AccessLog,
     backend::{
-        ApprovalRequest, Approver, Backend, BackendError, Decision, Location, NewPage, NotebookInfo, PageInfo,
-        PageText, SearchHit, SectionInfo,
+        block_summary, headings_of, word_count, ApprovalRequest, Approver, Backend, BackendError, Decision,
+        HistoryEntry, Location, NewPage, NotebookInfo, PageInfo, PageInspection, PageText, SearchHit, SectionInfo,
     },
+    render::Polyline,
     grants::{lock, random_bytes, ConfigFile, Grants, MemorySecrets},
     routes::Api,
     server::Server,
@@ -194,6 +195,42 @@ impl Backend for MemoryBackend {
             page: found.info.clone(),
             markdown: format!("# {}\n\n{}", found.info.title, found.markdown),
         })
+    }
+
+    fn inspect(&self, page: &str) -> Result<PageInspection, BackendError> {
+        let text = self.read_page(page)?;
+        let history = self
+            .history(page)
+            .into_iter()
+            .rev()
+            .take(10)
+            .map(|label| HistoryEntry {
+                label,
+                saved: String::new(),
+            })
+            .collect();
+        Ok(PageInspection {
+            blocks: text
+                .markdown
+                .split("\n\n")
+                .enumerate()
+                .map(|(i, part)| block_summary(&format!("b{i}"), "text", part))
+                .collect(),
+            headings: headings_of(&text.markdown),
+            words: word_count(&text.markdown),
+            page: text.page,
+            history,
+        })
+    }
+
+    /// Every page has one red stroke, a diagonal, so `render_page` has something to draw.
+    fn ink(&self, page: &str) -> Result<Vec<Polyline>, BackendError> {
+        self.read_page(page)?;
+        Ok(vec![Polyline {
+            points: vec![(0.0, 0.0), (120.0, 80.0)],
+            rgba: [200, 30, 30, 255],
+            width: 3.0,
+        }])
     }
 
     fn create_page(&self, section: &str, page: NewPage, author: &str) -> Result<PageInfo, BackendError> {

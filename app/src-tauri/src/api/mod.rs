@@ -27,7 +27,7 @@ use std::{
 use opennote_api::{
     access_log::AccessLog,
     backend::Decision,
-    client::{write_discovery, Discovery, DISCOVERY_FILE, PROOF_TARGET},
+    client::{write_discovery, write_key_file, Discovery, DISCOVERY_FILE, KEY_FILE, PROOF_TARGET},
     grants::{random_bytes, Access, ConfigFile, Grants, Scope, SecretStore},
     hmac::hex,
     routes::{Api, Changed},
@@ -82,6 +82,8 @@ pub struct ApiState {
     api: OnceLock<Arc<Api>>,
     server: Mutex<Option<Server>>,
     discovery: PathBuf,
+    /// The per-instance key file (`api-instance.key`), for clients without the credential store's copy.
+    key_file: PathBuf,
     pipe: String,
     /// The webhook sender and the watcher of saves, made at start-up when the flag is on.
     hooks: OnceLock<(Arc<Dispatcher>, Mutex<std::sync::mpsc::Sender<webhooks::Watch>>)>,
@@ -103,6 +105,7 @@ impl ApiState {
             api: OnceLock::new(),
             server: Mutex::new(None),
             discovery: paths.local.join(DISCOVERY_FILE),
+            key_file: paths.local.join(KEY_FILE),
             pipe: format!("OpenNote-api-{}", paths.profile_key()),
             hooks: OnceLock::new(),
             phone: phone::PhoneState::default(),
@@ -158,7 +161,10 @@ impl ApiState {
             let _ = self.grants.change(|config| config.port = chosen);
         }
         if self.secrets.put(PROOF_TARGET, &hex(&key)).is_err() {
-            ::log::warn!("Couldn't store the local API's key; the opennote tool won't connect.");
+            ::log::warn!("Couldn't store the local API's key in the credential store.");
+        }
+        if let Err(error) = write_key_file(&self.key_file, &key) {
+            ::log::warn!("Couldn't write the local API's key file: {error}");
         }
         let discovery = Discovery {
             port: started.port(),
@@ -219,6 +225,7 @@ impl ApiState {
         if let Some(server) = server {
             server.stop();
             let _ = std::fs::remove_file(&self.discovery);
+            let _ = std::fs::remove_file(&self.key_file);
             let _ = self.secrets.delete(PROOF_TARGET);
             ::log::info!("The local API stopped.");
         }

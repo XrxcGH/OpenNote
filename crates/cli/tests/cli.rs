@@ -115,11 +115,14 @@ fn search_new_append_daily_and_export_go_through_the_grant() {
 
     let folder = tempfile::tempdir().expect("a folder");
     let out = folder.path().display().to_string();
-    let exported = run(&env, &["export", "s-cells", "--out", &out], "");
+    let outside = run(&env, &["export", "s-cells", "--out", &out], "");
+    assert_eq!(outside.code, 2, "a folder outside the write root is refused");
+    assert!(outside.err.contains("--write-root"), "{}", outside.err);
+    let exported = run(&env, &["export", "s-cells", "--out", &out, "--write-root", &out], "");
     assert_eq!(exported.code, 0, "{}", exported.err);
     assert!(folder.path().join("Mitochondria.md").is_file());
     assert!(folder.path().join("Ribosomes.md").is_file());
-    let twice = run(&env, &["export", "s-cells", "--out", &out], "");
+    let twice = run(&env, &["export", "s-cells", "--out", &out, "--write-root", &out], "");
     assert_eq!(twice.code, 0, "{}", twice.err);
     assert!(folder.path().join("Mitochondria (2).md").is_file(), "never overwrites");
 }
@@ -240,7 +243,18 @@ fn mcp_initializes_lists_tools_and_answers_calls() {
         .collect();
     assert_eq!(
         names,
-        ["list_notebooks", "search", "read_page", "create_page", "append_to_page"]
+        [
+            "list_commands",
+            "list_notebooks",
+            "list_pages",
+            "read_page",
+            "inspect_page",
+            "render_page",
+            "search",
+            "create_page",
+            "append_to_page",
+            "append_to_daily_note"
+        ]
     );
     assert_eq!(answers[2]["result"]["isError"], false);
     assert!(answers[2]["result"]["content"][0]["text"]
@@ -352,4 +366,112 @@ fn mcp_refuses_what_isnt_a_request() {
         test.approver.asked().is_empty(),
         "nothing asks the person before a tool call"
     );
+}
+
+#[test]
+fn read_back_tools_and_authors_let_an_agent_check_its_own_work() {
+    let test = TestApi::start();
+    let secrets = Arc::new(MemorySecrets::default());
+    let env = env(&test, &secrets);
+    test.approver.answer(allow(Access::ReadWrite, Scope::All));
+    test.approver.answer(YES_ONCE);
+    let input: String = [
+        call(1, "append_to_page", json!({ "page_id": "p-mito", "markdown": "## Cristae" })),
+        call(2, "inspect_page", json!({ "page_id": "p-mito" })),
+        call(3, "render_page", json!({ "page_id": "p-mito" })),
+        call(4, "list_commands", json!({})),
+        call(5, "inspect_page", json!({ "page_id": "p-mito", "unknown": 1 })),
+    ]
+    .iter()
+    .map(|line| format!("{line}\n"))
+    .collect();
+    let result = run(
+        &env,
+        &["mcp", "--name", "Claude Desktop", "--author", "Claude (copyedit)"],
+        &input,
+    );
+    assert_eq!(result.code, 0, "{}", result.err);
+    let answers: Vec<Value> = result.out.lines().map(|line| serde_json::from_str(line).expect("json")).collect();
+    assert_eq!(answers[0]["result"]["isError"], false, "{}", answers[0]);
+    assert_eq!(
+        test.backend.history("p-mito"),
+        ["Changed via Claude Desktop (Claude (copyedit))"]
+    );
+    let inspected = answers[1]["result"]["content"][0]["text"].as_str().expect("text");
+    assert!(inspected.contains("## Cristae") && inspected.contains("Claude (copyedit)"), "{inspected}");
+    assert_eq!(answers[2]["result"]["content"][0]["type"], "image");
+    assert_eq!(answers[2]["result"]["content"][0]["mimeType"], "image/png");
+    assert!(answers[3]["result"]["content"][0]["text"].as_str().expect("text").contains("page.inspect"));
+    assert_eq!(answers[4]["result"]["isError"], true);
+    assert!(answers[4]["result"]["content"][0]["text"].as_str().expect("text").starts_with("unknown:"));
+
+    // The same from the command line, which asks for its own access.
+    test.approver.answer(allow(Access::Read, Scope::All));
+    let folder = tempfile::tempdir().expect("a folder");
+    let picture = folder.path().join("mito.png");
+    let picture_arg = picture.display().to_string();
+    let root = folder.path().display().to_string();
+    let rendered = run(&env, &["render", "p-mito", "--out", &picture_arg, "--write-root", &root], "");
+    assert_eq!(rendered.code, 0, "{}", rendered.err);
+    assert!(std::fs::read(&picture).expect("saved").starts_with(b"\x89PNG"));
+    let inspected = run(&env, &["inspect", "p-mito"], "");
+    assert_eq!(inspected.code, 0, "{}", inspected.err);
+    assert!(inspected.out.contains("## Cristae"));
+    let listed = run(&env, &["commands"], "");
+    assert_eq!(listed.code, 0, "{}", listed.err);
+    assert!(listed.out.contains("inspect") && listed.out.contains("render"));
+    let device = run(&env, &["render", "p-mito", "--out", "NUL.png"], "");
+    assert_eq!(device.code, 2, "{}", device.err);
+}
+
+#[test]
+fn hostile_params_never_panic_in_the_mcp_server() {
+    let test = TestApi::start();
+    let secrets = Arc::new(MemorySecrets::default());
+    let env = env(&test, &secrets);
+    test.approver.answer(allow(Access::ReadWrite, Scope::All));
+    let junk = [
+        Value::Null,
+        json!(true),
+        json!(-1),
+        json!(u64::MAX),
+        json!(""),
+        json!("../../x"),
+        json!("\u{0}"),
+        json!("x".repeat(5_000)),
+        json!([]),
+        json!({ "a": [1] }),
+    ];
+    let mut lines = Vec::new();
+    let mut id = 0;
+    let tools = opennote_cli::mcp::tools();
+    for tool in tools.as_array().expect("tools") {
+        let name = tool["name"].as_str().expect("a name");
+        for property in tool["inputSchema"]["properties"].as_object().expect("properties").keys() {
+            for value in &junk {
+                id += 1;
+                lines.push(call(id, name, json!({ property: value })));
+            }
+        }
+        for arguments in [json!(null), json!([]), json!("x"), json!(7)] {
+            id += 1;
+            lines.push(json!({ "jsonrpc": "2.0", "id": id, "method": "tools/call",
+                               "params": { "name": name, "arguments": arguments } }));
+        }
+    }
+    for message in [
+        json!({ "jsonrpc": "2.0", "id": [1], "method": "tools/call" }),
+        json!({ "jsonrpc": "2.0", "id": 1, "method": 5 }),
+        json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": "x" }),
+        json!({ "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": { "name": "x".repeat(10_000) } }),
+    ] {
+        lines.push(message);
+    }
+    let input: String = lines.iter().map(|line| format!("{line}\n")).collect();
+    let result = run(&env, &["mcp"], &input);
+    assert_eq!(result.code, 0, "{}", result.err);
+    let answers = result.out.lines().count();
+    assert_eq!(answers, lines.len(), "every request got exactly one answer");
+    assert!(result.out.len() < 2_000_000, "no answer echoes junk back at length");
+    assert_eq!(test.backend.markdown("p-secret").as_deref(), Some("A secret about mitochondria."));
 }

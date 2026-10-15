@@ -1,6 +1,7 @@
 //! The listeners: TCP on `127.0.0.1` only, and on Windows a named pipe that refuses remote clients. Each
 //! connection carries one request and gets its own thread, up to [`MAX_CONNECTIONS`] at once; past that a request
-//! gets 503 at once. A request must arrive within [`READ_TIMEOUT`], so an idle connection can't hold a thread.
+//! gets 503 at once. Each read must make progress within [`READ_TIMEOUT`], and the whole request must arrive within
+//! [`REQUEST_DEADLINE`], so neither an idle connection nor one that trickles a byte at a time can hold a thread.
 //! Stopping the server closes both listeners; requests already running finish.
 
 use std::{
@@ -11,7 +12,7 @@ use std::{
         Arc,
     },
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crate::{
@@ -26,7 +27,25 @@ pub const MAX_CONNECTIONS: usize = 16;
 /// How long a client has to send its request.
 pub const READ_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// How long a client has to send its whole request, however slowly it sends.
+pub const REQUEST_DEADLINE: Duration = Duration::from_secs(30);
+
 const POLL: Duration = Duration::from_millis(50);
+
+/// A reader that fails once its deadline has passed.
+struct Deadline<'s, S> {
+    inner: &'s mut S,
+    until: Instant,
+}
+
+impl<S: Read> Read for Deadline<'_, S> {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        if Instant::now() > self.until {
+            return Err(io::Error::new(io::ErrorKind::TimedOut, "the request took too long to arrive"));
+        }
+        self.inner.read(buf)
+    }
+}
 
 /// A running server.
 pub struct Server {
@@ -154,7 +173,12 @@ fn serve<S: Read + Write + Send + 'static>(
 
 /// Reads one request and writes its answer.
 pub fn answer(api: &Api, stream: &mut (impl Read + Write), transport: Transport) {
-    let response = match read_request(stream, &Limits::default()) {
+    let mut timed = Deadline {
+        inner: stream,
+        until: Instant::now() + REQUEST_DEADLINE,
+    };
+    let read = read_request(&mut timed, &Limits::default());
+    let response = match read {
         Ok(request) => api.handle(&request, transport),
         Err(HttpError::Io(_)) => return,
         Err(HttpError::TooLarge) => Response::error(413, "tooLarge", "The request is too large."),

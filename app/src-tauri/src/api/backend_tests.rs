@@ -170,3 +170,22 @@ fn the_daily_note_is_made_once_and_added_to() {
     let target = api.daily_target().expect("target");
     assert_eq!(target.section_id.as_deref(), Some(first.section_id.as_str()));
 }
+
+#[test]
+fn inspect_and_ink_read_back_a_change_and_who_made_it() {
+    let fixture = fixture();
+    let api = backend(&fixture);
+    api.append(&fixture.page, "## Cristae\n\nFolds inside.", "opennote (Claude (copyedit))")
+        .expect("appended");
+    let inspected = api.inspect(&fixture.page).expect("inspected");
+    assert!(inspected.headings.iter().any(|heading| heading == "## Cristae"), "{:?}", inspected.headings);
+    assert!(inspected.blocks.iter().any(|block| block.kind == "text" && block.first_line == "## Cristae"));
+    assert!(inspected.words >= 3);
+    assert_eq!(
+        inspected.history.first().map(|entry| entry.label.as_str()),
+        Some("Changed via opennote (Claude (copyedit))")
+    );
+    assert!(api.ink(&fixture.page).expect("ink").is_empty(), "no strokes yet");
+    assert!(matches!(api.inspect(&fixture.section), Err(BackendError::NotFound)));
+    assert!(matches!(api.ink(&fixture.notebook), Err(BackendError::NotFound)));
+}

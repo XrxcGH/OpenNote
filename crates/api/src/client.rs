@@ -39,6 +39,54 @@ pub fn write_discovery(path: &Path, discovery: &Discovery) -> io::Result<()> {
     fs::write(path, serde_json::to_vec_pretty(discovery).map_err(io::Error::other)?)
 }
 
+/// The per-instance key file in the app's local data folder: the start's 256-bit proof key as 64 hex characters,
+/// written when the listeners start and removed when they stop. Clients use it when the credential store has no
+/// copy. The folder is the person's own (`%LOCALAPPDATA%`, which only they, administrators, and the system can
+/// read); on other systems the file is made readable by its owner only (0600).
+pub const KEY_FILE: &str = "api-instance.key";
+
+/// The proof key's length: 256 bits.
+pub const KEY_BYTES: usize = 32;
+
+/// Writes the key file: to a new file beside it first, then renamed over, so a client never reads half a key.
+pub fn write_key_file(path: &Path, key: &[u8]) -> io::Result<()> {
+    if key.len() != KEY_BYTES {
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "the key must be 256 bits"));
+    }
+    if let Some(folder) = path.parent() {
+        fs::create_dir_all(folder)?;
+    }
+    let partial = path.with_extension("key.new");
+    let _ = fs::remove_file(&partial);
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    {
+        use io::Write as _;
+        let mut file = options.open(&partial)?;
+        file.write_all(crate::hmac::hex(key).as_bytes())?;
+        file.sync_all()?;
+    }
+    fs::rename(&partial, path)
+}
+
+/// The key in a key file: exactly 64 hex characters, or nothing.
+pub fn read_key_file(path: &Path) -> Option<Vec<u8>> {
+    let meta = fs::symlink_metadata(path).ok()?;
+    if !meta.is_file() || meta.len() > 256 {
+        return None;
+    }
+    let text = fs::read_to_string(path).ok()?;
+    let text = text.trim();
+    (text.len() == KEY_BYTES * 2 && text.bytes().all(|b| b.is_ascii_hexdigit()))
+        .then(|| from_hex(text))
+        .flatten()
+}
+
 pub fn read_discovery(path: &Path) -> Option<Discovery> {
     serde_json::from_slice(&fs::read(path).ok()?).ok()
 }

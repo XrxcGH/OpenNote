@@ -45,6 +45,73 @@ pub struct PageText {
     pub markdown: String,
 }
 
+/// One part of a page, as `inspect_page` describes it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BlockSummary {
+    pub id: String,
+    /// text, ink, image, file, table, or another kind.
+    pub kind: String,
+    pub chars: usize,
+    pub words: usize,
+    /// The first line of its text, at most 80 characters.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub first_line: String,
+}
+
+/// One entry of page history.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryEntry {
+    /// Such as "Changed via opennote command (Claude, copyedit)", or empty for an unnamed save.
+    pub label: String,
+    /// When it was saved, RFC 3339, when known.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub saved: String,
+}
+
+/// A page's parts, so an agent can check that a change landed as it meant.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PageInspection {
+    pub page: PageInfo,
+    pub blocks: Vec<BlockSummary>,
+    /// The Markdown headings, in order, with their `#`s.
+    pub headings: Vec<String>,
+    pub words: usize,
+    /// The newest entries of page history first, at most 10.
+    pub history: Vec<HistoryEntry>,
+}
+
+/// The words in a text.
+pub fn word_count(text: &str) -> usize {
+    text.split_whitespace().count()
+}
+
+/// The headings of Markdown text.
+pub fn headings_of(markdown: &str) -> Vec<String> {
+    markdown
+        .lines()
+        .map(str::trim_start)
+        .filter(|line| {
+            let hashes = line.bytes().take_while(|b| *b == b'#').count();
+            (1..=6).contains(&hashes) && line[hashes..].starts_with(' ')
+        })
+        .map(|line| line.chars().take(200).collect())
+        .collect()
+}
+
+/// A block's summary from its kind and text.
+pub fn block_summary(id: &str, kind: &str, text: &str) -> BlockSummary {
+    BlockSummary {
+        id: id.to_owned(),
+        kind: kind.to_owned(),
+        chars: text.chars().count(),
+        words: word_count(text),
+        first_line: text.lines().next().unwrap_or_default().chars().take(80).collect(),
+    }
+}
+
 /// Where a notebook, section, or page is.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Location {
@@ -119,6 +186,24 @@ pub trait Backend: Send + Sync {
     fn search(&self, text: &str, limit: usize) -> Result<Vec<SearchHit>, BackendError>;
     /// Runs a backup to the folder the person chose in Settings, and says where it went.
     fn backup(&self) -> Result<String, BackendError>;
+
+    /// A page's parts and its latest history. By default, one text part from [`Backend::read_page`].
+    fn inspect(&self, page: &str) -> Result<PageInspection, BackendError> {
+        let text = self.read_page(page)?;
+        Ok(PageInspection {
+            blocks: vec![block_summary("", "text", &text.markdown)],
+            headings: headings_of(&text.markdown),
+            words: word_count(&text.markdown),
+            page: text.page,
+            history: Vec::new(),
+        })
+    }
+
+    /// The page's strokes as polylines in page units, for `render_page`.
+    fn ink(&self, page: &str) -> Result<Vec<crate::render::Polyline>, BackendError> {
+        let _ = page;
+        Err(BackendError::Invalid("This build of OpenNote can't draw pages.".into()))
+    }
 }
 
 /// What the person is asked.

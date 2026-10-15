@@ -14,7 +14,10 @@
 //! - [`routes`] checks each request against its grant, asks the person before each change, and logs every access
 //!   in [`access_log`].
 //!
-//! - [`client`] is the client the `opennote` tool and the tests use.
+//! - [`commands`] is the one list of commands that the API, the `opennote` tool, and the MCP server share.
+//!
+//! - [`client`] is the client the `opennote` tool and the tests use, and [`sandbox`] keeps the tool's files inside the
+//!   folders the person allowed.
 //!
 //! The crate knows nothing of how notes are stored: the app implements [`backend::Backend`] over its core, and
 //! [`testing`] has one in memory.
@@ -24,13 +27,16 @@
 pub mod access_log;
 pub mod backend;
 pub mod client;
+pub mod commands;
 pub mod grants;
 pub mod guard;
 pub mod hmac;
 pub mod http;
 pub mod pairing;
 pub mod phone;
+pub mod render;
 pub mod routes;
+pub mod sandbox;
 pub mod server;
 pub mod testing;
 pub mod webhooks;
