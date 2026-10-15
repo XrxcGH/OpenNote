@@ -140,6 +140,12 @@ export const pageExtras = {
     next: 'Next:',
     untitled: 'Series',
     carry: 'Carry unfinished checkboxes forward in a new page in a series',
+    listCommand: 'Show pages in this series',
+    listKeywords: 'series pages list all weekly meeting log',
+    paneTitle: 'Pages in this series',
+    paneDescription: 'Every page of the series, oldest first. Choose one to open it.',
+    paneEmpty: 'No pages found for this series.',
+    none: 'This page is not in a series yet. Choose New page in series to start one.',
   },
   extract: {
     command: 'Extract selection to a new page',

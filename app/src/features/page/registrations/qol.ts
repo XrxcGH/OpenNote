@@ -217,6 +217,15 @@ register({
   when: shown,
   run: () => void templates().then((module) => module.newPageInSeries()),
 });
+register({
+  id: 'series.list',
+  title: 'pageExtras.series.listCommand',
+  keywords: 'pageExtras.series.listKeywords',
+  category: 'notebooks',
+  flag: 'page.seriesList',
+  when: shown,
+  run: () => void templates().then((module) => module.showSeries()),
+});
 // The Markdown source view.
 register({
   id: 'page.markdownSource',

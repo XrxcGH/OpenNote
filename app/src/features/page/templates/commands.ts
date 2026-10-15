@@ -5,7 +5,9 @@ import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import { shownMounted } from '../pagesApi';
 import { pageExtrasPrefs, setPrefs } from '../qol/prefs';
-import { insertTemplate, listTemplates, newPageWith, noTemplates } from './apply';
+import { lazy } from 'react';
+import { showOverlay } from '../../../shell/commandbar/overlays';
+import { insertTemplate, listTemplates, newPageWith, noTemplates, seriesOfPage } from './apply';
 import { markTemplate, shownTags, tagsNow, TEMPLATE_TAG } from './state';
 import { pickTemplate } from './TemplatePicker';
 
@@ -88,4 +90,19 @@ export async function newPageInSeries(): Promise<void> {
   if (!mounted) return;
   await mounted.sync.flushAll('command');
   await newPageWith({ kind: 'series', source: mounted.page.id });
+}
+
+const LazySeries = lazy(() => import('./SeriesDialog'));
+
+/** Lists every page of the series the shown page belongs to. */
+export async function showSeries(): Promise<void> {
+  const mounted = shownMounted.get();
+  if (!mounted) return;
+  const series = await seriesOfPage(mounted.page.id);
+  if (!series) {
+    showToast({ message: t('pageExtras.series.none') });
+    announce(t('pageExtras.series.none'));
+    return;
+  }
+  showOverlay('series', LazySeries, { series, current: mounted.page.id });
 }

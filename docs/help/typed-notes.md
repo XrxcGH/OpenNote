@@ -37,6 +37,7 @@ Press Ctrl+Enter to check or uncheck an item. Finished items move down, and the 
 
 - Start a page from a template when you make it.
 - Choose Next in series to make the next numbered page, such as the next lecture.
+- Choose Show pages in this series to list every page of the series, oldest first, and open any of them.
 - Press Ctrl+K and choose Markdown source to edit the page as Markdown. The page updates as you type.
 - Select blocks and choose Extract to new page to move them out. Select two pages and choose Merge to join them.
 

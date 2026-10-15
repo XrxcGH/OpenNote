@@ -18,6 +18,7 @@ import { byOrder } from '../readingOrder/order';
 import { pagesClient } from '../runtime';
 import { fromTemplate, pageLink, seriesBase, seriesBlocks } from './model';
 import type { Placeholders, TemplateCursor } from './model';
+import { newSeriesId, seriesIdInView, setSeries } from './seriesList';
 import { sessionTemplates, TEMPLATE_TAG } from './state';
 
 export interface TemplateInfo {
@@ -162,6 +163,7 @@ async function continueSeries(pageId: NodeId, source: string, ctx: CommandContex
     carry: pageExtrasPrefs.get().seriesCarry,
   });
   await writeBlocks(pageId, blocks);
+  await stampSeries(source, pageId).catch(() => undefined);
   const forward: NewBlock = {
     id: newId(),
     type: 'text',
@@ -174,4 +176,22 @@ async function continueSeries(pageId: NodeId, source: string, ctx: CommandContex
 export function noTemplates(): void {
   showToast({ message: t('pageExtras.templates.none') });
   announce(t('pageExtras.templates.none'));
+}
+
+/** The series id of a page, or null when it belongs to none. */
+export async function seriesOfPage(page: string): Promise<string | null> {
+  const open = await pagesClient().open(page as PageId, { viewport: null });
+  try {
+    return seriesIdInView(open.initial.view);
+  } finally {
+    await open.close();
+  }
+}
+
+/** Puts the new page in the series of the one it continues, giving that one a series first when it has none. */
+async function stampSeries(source: string, page: string): Promise<void> {
+  const id = (await seriesOfPage(source)) ?? newSeriesId();
+  const client = pagesClient();
+  await setSeries(client, source, id);
+  await setSeries(client, page, id);
 }
