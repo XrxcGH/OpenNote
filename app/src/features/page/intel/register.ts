@@ -94,3 +94,15 @@ commands.register(
     run: () => import('./mathInk').then((module) => module.convertToMath()),
   }),
 );
+
+// Translate on this device (A3-25): a selection, the page, or a transcript, added below the original.
+commands.register(
+  defineCommand({
+    id: 'intel.translate',
+    title: 'intelMore.translate.command',
+    keywords: 'intelMore.translate.commandKeywords',
+    category: 'view',
+    flag: 'intel.translate',
+    run: () => import('./translate').then((module) => module.translateHere()),
+  }),
+);
