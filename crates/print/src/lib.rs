@@ -108,7 +108,10 @@ pub enum ErrorCode {
 
 impl PrintError {
     fn new(code: ErrorCode, message: impl Into<String>) -> Self {
-        Self { code, message: message.into() }
+        Self {
+            code,
+            message: message.into(),
+        }
     }
 }
 
@@ -145,22 +148,46 @@ pub trait PrintBackend: Send + Sync {
 /// The request as the spooler will see it: the title cleaned, and everything checked against `printers`.
 pub fn checked(pdf: &[u8], request: &PrintRequest, printers: &[PrinterInfo]) -> Result<PrintRequest, PrintError> {
     if !pdf.starts_with(b"%PDF-") || pdf.len() > MAX_PDF_BYTES {
-        return Err(PrintError::new(ErrorCode::BadDocument, "The document is not a PDF this app can print."));
+        return Err(PrintError::new(
+            ErrorCode::BadDocument,
+            "The document is not a PDF this app can print.",
+        ));
     }
     if request.copies == 0 || request.copies > MAX_COPIES {
-        return Err(PrintError::new(ErrorCode::BadCopies, format!("Copies must be from 1 to {MAX_COPIES}.")));
+        return Err(PrintError::new(
+            ErrorCode::BadCopies,
+            format!("Copies must be from 1 to {MAX_COPIES}."),
+        ));
     }
     if printers.is_empty() {
-        return Err(PrintError::new(ErrorCode::NoPrinter, "No printer is set up on this computer."));
+        return Err(PrintError::new(
+            ErrorCode::NoPrinter,
+            "No printer is set up on this computer.",
+        ));
     }
     if let Some(name) = &request.printer {
         if !printers.iter().any(|p| &p.name == name) {
-            return Err(PrintError::new(ErrorCode::UnknownPrinter, "That printer is not in the list."));
+            return Err(PrintError::new(
+                ErrorCode::UnknownPrinter,
+                "That printer is not in the list.",
+            ));
         }
     }
-    let title: String = request.title.chars().filter(|c| !c.is_control()).take(MAX_TITLE_CHARS).collect();
-    let title = if title.trim().is_empty() { "OpenNote".to_string() } else { title };
-    Ok(PrintRequest { title, ..request.clone() })
+    let title: String = request
+        .title
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_TITLE_CHARS)
+        .collect();
+    let title = if title.trim().is_empty() {
+        "OpenNote".to_string()
+    } else {
+        title
+    };
+    Ok(PrintRequest {
+        title,
+        ..request.clone()
+    })
 }
 
 /// Checks the request and sends the job. The only entry point the app uses, so every backend gets the same checks.
@@ -172,7 +199,32 @@ pub fn print(
 ) -> Result<Receipt, PrintError> {
     let request = checked(pdf, request, &backend.printers())?;
     let message = backend.submit(pdf, &request, progress)?;
-    Ok(Receipt { message, printer: request.printer })
+    Ok(Receipt {
+        message,
+        printer: request.printer,
+    })
+}
+
+/// The request as craft-print's job. Paper size is not here: craft-print takes the sheet's own size (or, shrinking to
+/// fit, the paper the driver matches, or else its default) and exposes no driver paper list to choose from.
+pub fn to_job(request: &PrintRequest) -> craft_print::Job {
+    craft_print::Job {
+        printer: request.printer.clone(),
+        copies: request.copies,
+        collate: request.collate,
+        duplex: request.duplex.map(|d| match d {
+            Duplex::Off => craft_print::Duplex::Off,
+            Duplex::LongEdge => craft_print::Duplex::LongEdge,
+            Duplex::ShortEdge => craft_print::Duplex::ShortEdge,
+        }),
+        scaling: match request.fit {
+            Fit::Exact => craft_print::Scaling::Exact,
+            Fit::ShrinkToFit => craft_print::Scaling::ShrinkToFit,
+        },
+        grayscale: request.grayscale,
+        title: request.title.clone(),
+        options: Vec::new(),
+    }
 }
 
 /// The system's own spooler: XPS on Windows, CUPS elsewhere.
@@ -190,7 +242,11 @@ impl PrintBackend for SystemBackend {
     fn printers(&self) -> Vec<PrinterInfo> {
         craft_print::printers()
             .into_iter()
-            .map(|p| PrinterInfo { name: p.name, default: p.default, two_sided: p.two_sided })
+            .map(|p| PrinterInfo {
+                name: p.name,
+                default: p.default,
+                two_sided: p.two_sided,
+            })
             .collect()
     }
 
@@ -200,23 +256,7 @@ impl PrintBackend for SystemBackend {
         request: &PrintRequest,
         progress: &mut dyn FnMut(usize, usize),
     ) -> Result<String, PrintError> {
-        let job = craft_print::Job {
-            printer: request.printer.clone(),
-            copies: request.copies,
-            collate: request.collate,
-            duplex: request.duplex.map(|d| match d {
-                Duplex::Off => craft_print::Duplex::Off,
-                Duplex::LongEdge => craft_print::Duplex::LongEdge,
-                Duplex::ShortEdge => craft_print::Duplex::ShortEdge,
-            }),
-            scaling: match request.fit {
-                Fit::Exact => craft_print::Scaling::Exact,
-                Fit::ShrinkToFit => craft_print::Scaling::ShrinkToFit,
-            },
-            grayscale: request.grayscale,
-            title: request.title.clone(),
-            options: Vec::new(),
-        };
+        let job = to_job(request);
         craft_print::submit_with_progress(pdf, &job, progress)
             .map_err(|e| PrintError::new(ErrorCode::Spool, e.to_string()))
     }
@@ -240,7 +280,10 @@ pub struct MockJob {
 
 impl MockBackend {
     pub fn new(printers: Vec<PrinterInfo>) -> Self {
-        Self { printers, ..Self::default() }
+        Self {
+            printers,
+            ..Self::default()
+        }
     }
 
     /// The next job fails with this message.
@@ -272,7 +315,10 @@ impl PrintBackend for MockBackend {
         progress(0, 1);
         progress(1, 1);
         if let Ok(mut jobs) = self.jobs.lock() {
-            jobs.push(MockJob { request: request.clone(), bytes: pdf.len() });
+            jobs.push(MockJob {
+                request: request.clone(),
+                bytes: pdf.len(),
+            });
         }
         Ok("spooled 1 sheet(s)".to_string())
     }
@@ -286,7 +332,11 @@ mod tests {
     const PDF: &[u8] = b"%PDF-1.4\n%%EOF\n";
 
     fn printer(name: &str, default: bool) -> PrinterInfo {
-        PrinterInfo { name: name.into(), default, two_sided: Some(true) }
+        PrinterInfo {
+            name: name.into(),
+            default,
+            two_sided: Some(true),
+        }
     }
 
     fn mock() -> MockBackend {
@@ -309,7 +359,13 @@ mod tests {
         let receipt = print(&backend, PDF, &request, &mut |a, b| seen.push((a, b))).unwrap();
         assert_eq!(receipt.printer.as_deref(), Some("Hall"));
         assert_eq!(seen, vec![(0, 1), (1, 1)]);
-        assert_eq!(backend.jobs(), vec![MockJob { request, bytes: PDF.len() }]);
+        assert_eq!(
+            backend.jobs(),
+            vec![MockJob {
+                request,
+                bytes: PDF.len()
+            }]
+        );
     }
 
     #[test]
@@ -324,9 +380,30 @@ mod tests {
         let backend = mock();
         let go = |pdf: &[u8], request: PrintRequest| print(&backend, pdf, &request, &mut |_, _| {}).unwrap_err().code;
         assert_eq!(go(b"hello", PrintRequest::default()), ErrorCode::BadDocument);
-        assert_eq!(go(PDF, PrintRequest { copies: 0, ..PrintRequest::default() }), ErrorCode::BadCopies);
-        assert_eq!(go(PDF, PrintRequest { copies: 1000, ..PrintRequest::default() }), ErrorCode::BadCopies);
-        let unknown = PrintRequest { printer: Some("Nowhere".into()), ..PrintRequest::default() };
+        assert_eq!(
+            go(
+                PDF,
+                PrintRequest {
+                    copies: 0,
+                    ..PrintRequest::default()
+                }
+            ),
+            ErrorCode::BadCopies
+        );
+        assert_eq!(
+            go(
+                PDF,
+                PrintRequest {
+                    copies: 1000,
+                    ..PrintRequest::default()
+                }
+            ),
+            ErrorCode::BadCopies
+        );
+        let unknown = PrintRequest {
+            printer: Some("Nowhere".into()),
+            ..PrintRequest::default()
+        };
         assert_eq!(go(PDF, unknown), ErrorCode::UnknownPrinter);
         assert!(backend.jobs().is_empty());
     }
@@ -343,7 +420,10 @@ mod tests {
         let backend = mock();
         backend.fail_next("The queue is full.");
         let error = print(&backend, PDF, &PrintRequest::default(), &mut |_, _| {}).unwrap_err();
-        assert_eq!((error.code, error.message.as_str()), (ErrorCode::Spool, "The queue is full."));
+        assert_eq!(
+            (error.code, error.message.as_str()),
+            (ErrorCode::Spool, "The queue is full.")
+        );
         assert!(print(&backend, PDF, &PrintRequest::default(), &mut |_, _| {}).is_ok());
     }
 
@@ -352,7 +432,16 @@ mod tests {
         let printers = [printer("Office", true)];
         let long = "x".repeat(500);
         let clean = |title: &str| {
-            checked(PDF, &PrintRequest { title: title.into(), ..Default::default() }, &printers).unwrap().title
+            checked(
+                PDF,
+                &PrintRequest {
+                    title: title.into(),
+                    ..Default::default()
+                },
+                &printers,
+            )
+            .unwrap()
+            .title
         };
         assert_eq!(clean("a\u{0}b\nc"), "abc");
         assert_eq!(clean(&long).chars().count(), MAX_TITLE_CHARS);
@@ -367,5 +456,41 @@ mod tests {
         assert_eq!(request.duplex, Some(Duplex::LongEdge));
         assert_eq!(request.fit, Fit::ShrinkToFit);
         assert!(request.collate);
+    }
+
+    #[test]
+    fn a_request_becomes_the_spoolers_command_without_starting_it() {
+        let request = PrintRequest {
+            printer: Some("Hall".into()),
+            copies: 3,
+            collate: false,
+            duplex: Some(Duplex::ShortEdge),
+            fit: Fit::ShrinkToFit,
+            grayscale: true,
+            title: "Notes".into(),
+        };
+        let preview = craft_print::command_preview(&to_job(&request)).unwrap();
+        if cfg!(windows) {
+            assert_eq!(preview[0], "xps-print");
+            assert!(preview.contains(&"printer=Hall".to_string()));
+            assert!(preview.contains(&"copies=3".to_string()));
+            assert!(preview.contains(&"duplex=two-sided-short-edge".to_string()));
+        } else {
+            assert_eq!(preview[0], "lp");
+            for expected in [
+                "Hall",
+                "3",
+                "Notes",
+                "collate=false",
+                "sides=two-sided-short-edge",
+                "print-color-mode=monochrome",
+                "print-scaling=auto-fit",
+            ] {
+                assert!(
+                    preview.contains(&expected.to_string()),
+                    "{expected} missing from {preview:?}"
+                );
+            }
+        }
     }
 }

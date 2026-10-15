@@ -1,0 +1,27 @@
+# The license check CI runs with `cargo deny check licenses`. Every crate OpenNote builds, including the ones that only
+# run at build time, must carry one of these licenses. A new crate with another license fails the check until someone
+# reads that license and either adds it here or drops the crate. See THIRD_PARTY_NOTICES.md.
+[graph]
+targets = [
+  "x86_64-pc-windows-msvc",
+  "x86_64-unknown-linux-gnu",
+  "aarch64-apple-darwin",
+]
+
+[licenses]
+confidence-threshold = 0.9
+allow = [
+  "Apache-2.0",
+  "MIT",
+  "ISC",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "Zlib",
+  "BSL-1.0",
+  "Unicode-3.0",
+  "CC0-1.0",
+  "MIT-0",
+  "MPL-2.0",
+  "CDLA-Permissive-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+]

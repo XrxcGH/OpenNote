@@ -271,6 +271,8 @@ function Fields({ form, total, rangeError, set }: FieldsProps) {
 }
 
 const inches = (units: number) => Math.round((units / 96) * 100) / 100;
+const sheetSize = (paper: { readonly width: number; readonly height: number }) =>
+  `${inches(paper.width)} × ${inches(paper.height)} in`;
 
 /** The sheet the PDF will have, with arrows to look at the others. */
 function PreviewPane({ preview, sheet, setSheet }: { preview: Preview; sheet: number; setSheet(n: number): void }) {
@@ -283,7 +285,7 @@ function PreviewPane({ preview, sheet, setSheet }: { preview: Preview; sheet: nu
   const printed = result.plan.sheets.length;
   const shown = Math.min(sheet, Math.max(0, printed - 1));
   const { paper } = result.plan;
-  const size = `${inches(paper.width)} × ${inches(paper.height)} in`;
+  const size = sheetSize(paper);
   return (
     <>
       <SheetPreview result={result} sheet={shown} />
@@ -326,11 +328,13 @@ const duplexKey = {
 interface PrinterFieldsProps {
   readonly form: PrinterForm;
   readonly printers: readonly PrinterInfo[];
+  /** The sheet size in inches, once the preview has it. */
+  readonly paper: string | null;
   set<K extends keyof PrinterForm>(key: K, value: PrinterForm[K]): void;
 }
 
 /** Where to print and how: the printer, copies, both sides, color, and shrink to fit. */
-function PrinterFields({ form, printers, set }: PrinterFieldsProps) {
+function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
   const printer = chosenPrinter(printers, form.printer);
   const copies = parseCopies(form.copies);
   const copiesError = copies === null ? t('pageViews.print.badCopies', { max: MAX_COPIES }) : undefined;
@@ -375,6 +379,7 @@ function PrinterFields({ form, printers, set }: PrinterFieldsProps) {
         onChange={(value) => set('shrinkToFit', value)}
       />
       <p className={styles.hint}>{t('pageViews.print.shrinkHint')}</p>
+      {paper ? <p className={styles.hint}>{t('pageViews.print.paperHint', { paper })}</p> : null}
       <Switch label={t('pageViews.print.grayscale')} checked={form.grayscale} onChange={(v) => set('grayscale', v)} />
     </div>
   );
@@ -431,6 +436,7 @@ export function PrintDialog(props: PrintDialogProps) {
               <PrinterFields
                 form={printerForm}
                 printers={printing.printers}
+                paper={preview.status === 'ready' ? sheetSize(preview.result.plan.paper) : null}
                 set={(key, value) => setPrinterForm((before) => ({ ...before, [key]: value }))}
               />
             ) : wantsPrinter && printers !== null ? (

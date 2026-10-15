@@ -83,7 +83,7 @@ export const pageViews = {
     exportTitle: 'Export as PDF',
     description: 'The PDF has the same page breaks as the view. Ink stays sharp at any size.',
     range: 'Pages',
-    rangePlaceholder: 'For example 1-3, 5',
+    rangePlaceholder: 'Leave empty to print every sheet, or type a range such as 1-3, 5.',
     parity: 'Print',
     parityAll: 'Every sheet',
     parityOdd: 'Odd sheets',
@@ -122,6 +122,8 @@ export const pageViews = {
     shrinkToFit: 'Shrink to fit the paper',
     shrinkHint:
       "Off prints the sheet at its own size. On uses the printer's matching paper and shrinks a larger sheet to fit.",
+    paperHint:
+      'The paper is {paper}, the size set in the page layout. To print on another size, change it there first.',
     grayscale: 'Print in black and white',
     noPrinter: 'No printer is set up on this computer, so Print saves a PDF and opens it. You can print it from there.',
     sent: 'Sent to {printer}. It prints when the printer is ready.',

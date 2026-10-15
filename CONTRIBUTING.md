@@ -37,6 +37,7 @@ Windows is the first platform OpenNote supports. Install these tools once, in th
 3. **Rust stable, through rustup.** Install it from [rustup.rs](https://rustup.rs/), and keep the default `stable-msvc` toolchain. If you changed it, `rustup default stable-msvc` sets it back. Run `rustup update` now and then.
 4. **Node.js 22.18 or newer.** Get the long-term support release from [nodejs.org](https://nodejs.org/).
 5. **Git**, to clone the repository.
+6. **CMake**, on your `PATH` (`winget install Kitware.CMake`). The printing crates build a download-and-verify helper that needs it, though the shipped app does not. Without CMake, building the app crate fails in `aws-lc-sys`.
 
 On macOS or Linux, install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your system in place of steps 1 and 2.
 

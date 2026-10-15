@@ -12,9 +12,40 @@ No code from these projects is copied into this repository. Cargo fetches each o
 
 ## craft-libs
 
-Copyright (c) 2026 ArtCraft Team and the craft-libs contributors. Licensed under the MIT License or the Apache License, Version 2.0, at your option. OpenNote uses it under the Apache License, Version 2.0, the text of which is in [LICENSE](LICENSE).
+The text of craft-libs' own NOTICE file, which Apache-2.0 section 4(d) asks to be carried with a redistributed work:
+
+```text
+craft-libs
+Copyright (c) 2026 ArtCraft Team and the craft-libs contributors.
+Licensed under the MIT License or the Apache License, Version 2.0, at your option
+(LICENSE-MIT, LICENSE-APACHE).
+
+The PDF spooler in crates/print is extracted from:
+- PdfCraft, crates/print/src/spool.rs, windows_print.ps1 and spooler tests,
+  revision 33c14e07cfd742a82bf03baa6b103c01008fa68c.
+  https://github.com/storytold/pdfcraft
+  Copyright (c) 2026 ArtCraft Team and the PdfCraft contributors.
+  Licensed MIT OR Apache-2.0. PDF composition and application code are not copied.
+
+The Windows printer duplex-capability query and parser additionally draw on PdfCraft,
+crates/print/src/spool.rs, revision fb97ce958dfe92b6762ce40615c7836551710139 (PR #1154), under the same licenses above.
+
+The native Windows backend (crates/print/src/windows.rs, ticket.rs and the printer-list and
+Windows spooler tests) is ported from PdfCraft's native printing work, which carries the
+approach of PdfCraft PR #599 (Win32 printer list, Windows.Data.Pdf into the XPS print API, the
+PrintTicket and its driver-paper preference):
+- PdfCraft, crates/print/src/spool/windows.rs, spool.rs and tests.rs, branch
+  claude/native-windows-print-826c99 of PR #1132, revision a435117 (jcl-bit/printcraft).
+  https://github.com/storytold/pdfcraft
+  Copyright (c) 2026 ArtCraft Team and the PdfCraft contributors.
+  Licensed MIT OR Apache-2.0.
+```
+
+That file also names craft-libs' other parts (color management, the PDF writer, the PDF reader with its vendored crates and fonts, and the icons). OpenNote depends on the `craft-print` crate only, so none of those is built into OpenNote.
 
 ## winprint
+
+The fork's `LICENSE.md` is the upstream BSD-3-Clause text unchanged, with the one copyright line below. No source file in the fork has its own copyright or license header, and its README says it retains the upstream notices, so there are no other copyright holders to name. The `pdfium` feature of `winprint` (it downloads PDFium when the crate is built) is off: `craft-print` turns default features off, and nothing in OpenNote enables it. No PDFium is downloaded or bundled.
 
 ```text
 BSD 3-Clause License
@@ -31,3 +62,10 @@ Redistribution and use in source and binary forms, with or without modification,
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
+
+## Other crates the print path adds
+
+`cargo metadata` on the new entries in `Cargo.lock` (72 crates over the previous beta lock) shows only permissive licenses: MIT, Apache-2.0, ISC, BSD-3-Clause, Zlib, BSL-1.0, and CDLA-Permissive-2.0 (the root certificate list in `webpki-root-certs`). None is copyleft. The `cargo deny` check in CI (see `deny.toml`) keeps it that way.
+
+- Built into the Windows app, on top of what was already there: `winsafe`, `roxmltree`, `xml`, `strum` and `strum_macros`, `fmt-derive` and `fmt-derive-proc`, and `windows-core` and `windows-implement`. All are MIT or MIT OR Apache-2.0.
+- Used only while `winprint` builds, never linked into OpenNote: `reqwest` and its TLS stack (`rustls`, `aws-lc-rs`, `aws-lc-sys`, `ring`, `webpki-root-certs`, `quinn`, and others), the `sigstore-*` crates and their X.509 helpers, and `tar`. They exist for the optional PDFium download, which is off. Building them needs CMake, which is why [CONTRIBUTING.md](CONTRIBUTING.md) lists it.

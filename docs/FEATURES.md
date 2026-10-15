@@ -185,7 +185,7 @@ More quality-of-life features:
 | Reminders | Due dates on checkboxes, with Windows notifications | Built, untested by hand |
 | Presentation mode | Full-screen pages with a laser pointer and ink that fades | Built, untested by hand |
 | Print preview | Shows exactly what prints, with page breaks | Built, untested by hand. Checked by tests and by reading the code, not by printing. |
-| Print to a printer | File, Print (Ctrl+P) sends the page to a printer: printer, copies, collate, both sides, black and white, page range, and shrink to fit. Windows prints inside OpenNote, and a CUPS path is ready for macOS and Linux. | Built, untested by hand. Checked with a stand-in printer, never a real one. |
+| Print to a printer | Print (Ctrl+P, the Export menu, or the palette) sends the page to a printer: printer, copies, collate, both sides, black and white, page range, and shrink to fit (the paper is the page layout's size). Windows prints inside OpenNote, and a CUPS path is ready for macOS and Linux and is checked against stand-in `lp` and `lpstat` scripts. | Built, untested by hand. Checked with a stand-in printer, never a real one. |
 | Spell check | Several languages at once, and a personal dictionary | Built |
 | Pen settings sync | Pens, colors, and toolbars follow the person to every device | Needs the owner. Needs a sync service or account. |
 | Low-power mode | Reduces animations and background work on battery | Built, untested by hand |

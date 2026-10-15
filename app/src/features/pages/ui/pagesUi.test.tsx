@@ -153,6 +153,16 @@ describe('PrintDialog', () => {
     await waitFor(() => expect(close).toHaveBeenCalled());
   });
 
+  it('says what the paper is and how to leave out sheets', async () => {
+    render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="print" close={vi.fn()} />);
+    expect(
+      await screen.findByText(/^The paper is .* × .* in, the size set in the page layout/, undefined, {
+        timeout: 10_000,
+      }),
+    ).toBeTruthy();
+    expect(screen.getByText('Leave empty to print every sheet, or type a range such as 1-3, 5.')).toBeTruthy();
+  });
+
   it('refuses copies that are not a number and sends nothing', async () => {
     const platform = createTestPlatform();
     const submit = vi.spyOn(platform.exports, 'printSubmit');
