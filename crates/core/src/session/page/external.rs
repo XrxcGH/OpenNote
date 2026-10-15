@@ -35,6 +35,34 @@ impl PageSession {
         Ok(edited_copies(self.ctx.fs.as_ref(), &dir)?)
     }
 
+    /// Looks at the page's readable copies now, as a save would: a `page.md` or `ink.svg` that a person edited in
+    /// another program is kept aside in `.conflicts/`, and a fresh one is written. Returns the edited copies kept,
+    /// so the interface can offer to bring their text in. A page of an encrypted section has no readable copies.
+    pub(crate) fn collect_edited_copies(&self) -> Result<Vec<EditedCopy>, CoreError> {
+        let (dir, page, encrypted) = {
+            let st = self.state();
+            (st.dir.clone(), st.page.clone(), st.encrypted)
+        };
+        if encrypted {
+            return Ok(Vec::new());
+        }
+        if page.encryption.is_none() {
+            let notebook = self
+                .notebook
+                .upgrade()
+                .ok_or_else(|| CoreError::NotFound("the notebook".into()))?;
+            let links = notebook.links(&dir, &page);
+            self.ctx.backend.write_readable(&dir, &page, &links)?;
+        }
+        self.edited_copies()
+    }
+
+    /// The page's `page.md`, unless the page is encrypted.
+    pub(crate) fn page_md_path(&self) -> Option<PathBuf> {
+        let st = self.state();
+        (st.page.encryption.is_none() && !st.encrypted).then(|| st.dir.join(PAGE_MD))
+    }
+
     /// Plans how the text of an edited `page.md` comes into the page.
     pub(crate) fn plan_edited_import(&self, copy: &Path) -> Result<EditedImport, CoreError> {
         let kept = self.kept_copy(copy)?;

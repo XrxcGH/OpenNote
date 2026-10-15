@@ -66,6 +66,11 @@ export interface NodeSummary {
    * (features/intel/protectedPages.ts). Storage without encryption leaves it out.
    */
   readonly encrypted?: boolean;
+  /**
+   * A password-protected section, or a page of one (ADR 0042): whether it is locked or open. Left out for the rest,
+   * and by storage that protects nothing.
+   */
+  readonly protected?: 'locked' | 'unlocked';
 }
 
 /** Where nodes go. `beforeId: null` means at the end of the parent's children. */

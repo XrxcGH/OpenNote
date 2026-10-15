@@ -12,7 +12,7 @@ import type { SnapshotData, SnapshotSaver } from '../snapshot';
 import type { InitialTree, NodeId, NodeSummary, NotesEvent, NotesService, SaveStatus } from '../types';
 import type { Library } from './library';
 import { fromSnapshot, toSnapshot } from './persist';
-import { listTrash, restore, restoreFromTrash, trash } from './trash';
+import { listTrash, purgeFromTrash, restore, restoreFromTrash, trash } from './trash';
 import { create, move, rename, setColor, setPageLevel } from './writes';
 
 export interface MemoryNotesOptions {
@@ -35,6 +35,8 @@ export interface MemoryNotesOptions {
 export interface MemoryNotesService extends NotesService {
   /** Tests: the next call fails with this code. */
   failNext(code: NotesErrorCode): void;
+  /** Deletes Trash items for good, as the core service does. */
+  purgeFromTrash(ids: readonly NodeId[]): Promise<void>;
 }
 
 const PREFIX = { notebook: 'n', sectionGroup: 'g', section: 's', page: 'p', receipt: 't' } as const;
@@ -123,7 +125,11 @@ function reads({ lib, call }: Runner): Reads {
     loadInitial: (path) => call(() => loadInitial(lib, path)),
     listNotebooks: () => call(() => lib.summaries(lib.kidsOf(null))),
     listChildren: (parentId) =>
-      call(() => (lib.live(parentId).kind === 'page' ? [] : lib.summaries(lib.kidsOf(parentId)))),
+      call(() =>
+        lib.live(parentId).kind === 'page' || lib.protection(parentId).protected === 'locked'
+          ? []
+          : lib.summaries(lib.kidsOf(parentId)),
+      ),
     get: (id) => call(() => (lib.isLive(id) ? lib.summary(lib.any(id)) : null)),
     listTrash: () => call(() => listTrash(lib)),
   };
@@ -158,7 +164,9 @@ function writes({ lib, change, newId, now }: Runner): Writes {
   };
 }
 
-type TrashCalls = Pick<NotesService, 'trash' | 'restore' | 'restoreFromTrash'>;
+type TrashCalls = Pick<NotesService, 'trash' | 'restore' | 'restoreFromTrash'> & {
+  purgeFromTrash(ids: readonly NodeId[]): Promise<void>;
+};
 
 function trashCalls({ lib, change, newId, now }: Runner): TrashCalls {
   const parentOf = (id: string) => lib.nodes.get(id)?.parentId ?? null;
@@ -185,6 +193,11 @@ function trashCalls({ lib, change, newId, now }: Runner): TrashCalls {
     },
     restore: (receiptId) => change(() => restore(lib, receiptId, maker()), restored),
     restoreFromTrash: (ids) => change(() => restoreFromTrash(lib, ids, maker()), restored),
+    purgeFromTrash: (ids) =>
+      change(
+        () => purgeFromTrash(lib, ids),
+        () => [],
+      ),
   };
 }
 

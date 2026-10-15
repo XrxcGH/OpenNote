@@ -29,12 +29,15 @@ use crate::store::layout::{DataLayout, NotebookLayout};
 use crate::store::notebook_store::{
     convert_to_notebook, create_notebook, read_notebook_file, CanonicalFormats, TreeFormats,
 };
+use crate::store::sealed::SealedFs;
 use crate::store::std_fs::StdFs;
 use crate::time::{Clock, SystemClock};
 
 pub(crate) mod ctx;
 pub(crate) mod device;
 mod library_api;
+mod protect_api;
+mod repair_api;
 #[cfg(test)]
 mod tests;
 
@@ -72,7 +75,11 @@ impl CoreConfig {
     /// `StdFs`, `CanonicalCodec`, `OpsApplier`, `SystemClock`, and the device from `device.json`.
     pub fn production(data_dir: PathBuf, app_version: String) -> Result<CoreConfig, CoreError> {
         let timings = Timings::default();
-        let fs: Arc<dyn Fs> = Arc::new(StdFs::new(&timings));
+        // Protected sections are sealed on disk and opened only in memory (ADR 0042).
+        let fs: Arc<dyn Fs> = Arc::new(SealedFs::new(
+            Arc::new(StdFs::new(&timings)),
+            DataLayout::new(&data_dir).journal_root(),
+        ));
         let clock: Arc<dyn Clock> = Arc::new(SystemClock::new());
         let device = device::load_or_create(fs.as_ref(), &DataLayout::new(&data_dir), clock.as_ref())?;
         Ok(CoreConfig {

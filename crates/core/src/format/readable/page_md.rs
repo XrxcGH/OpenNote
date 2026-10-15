@@ -86,6 +86,7 @@ fn front_matter(page: &Page) -> String {
         let tags: Vec<String> = page.tags.iter().map(|t| quoted(t)).collect();
         out.push_str(&format!("tags: [{}]\n", tags.join(", ")));
     }
+    out.push_str(&property_lines(page));
     out.push_str(&format!("created: \"{}\"\n", page.created.to_rfc3339()));
     out.push_str(&format!("modified: \"{}\"\n", page.modified.to_rfc3339()));
     out.push_str("opennote:\n");
@@ -94,6 +95,77 @@ fn front_matter(page: &Page) -> String {
     out.push_str(&format!("  format: {}\n", crate::FORMAT_VERSION));
     out.push_str("  checksum: \"crc32:00000000\"\n---\n");
     out
+}
+
+/// The most page properties `page.md` lists, as the interface keeps.
+pub const MAX_PROPERTIES: usize = 64;
+
+/// The page's properties (`view.properties.fields`, kept by the interface) as a `properties:` block of front
+/// matter, so other apps can read them. Each field is `"Name": value`: text, choices, and dates as quoted
+/// strings, numbers as numbers, checkboxes as `true` or `false`, and a link to a page as the linked page's title.
+/// An empty value is `null`. Fields without a name, and a second field with the same name, are left out.
+pub fn property_lines(page: &Page) -> String {
+    let fields = page
+        .view
+        .extra
+        .get("properties")
+        .and_then(|properties| properties.get("fields"))
+        .and_then(serde_json::Value::as_array);
+    let Some(fields) = fields else {
+        return String::new();
+    };
+    let mut names = std::collections::HashSet::new();
+    let mut lines = String::new();
+    for field in fields.iter().take(MAX_PROPERTIES) {
+        let name = field.get("name").and_then(serde_json::Value::as_str).map(one_line);
+        let Some(name) = name.filter(|name| !name.trim().is_empty()) else {
+            continue;
+        };
+        let kind = field
+            .get("type")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default();
+        let known = ["text", "number", "date", "checkbox", "choice", "page"].contains(&kind);
+        if !known || !field.get("id").is_some_and(serde_json::Value::is_string) {
+            continue;
+        }
+        if !names.insert(name.clone()) {
+            continue;
+        }
+        let value = property_value(kind, field);
+        lines.push_str(&format!("  {}: {value}\n", quoted(&name)));
+    }
+    if lines.is_empty() {
+        return String::new();
+    }
+    format!("properties:\n{lines}")
+}
+
+/// One property's value as front matter writes it.
+fn property_value(kind: &str, field: &serde_json::Value) -> String {
+    let value = field.get("value");
+    match kind {
+        "checkbox" => (value.and_then(serde_json::Value::as_bool) == Some(true)).to_string(),
+        "number" => match value.and_then(serde_json::Value::as_f64) {
+            // Whole numbers are written without a fraction, as the interface's export writes them.
+            Some(number) if number.is_finite() && number.fract() == 0.0 && number.abs() < 9.0e15 => {
+                format!("{number:.0}")
+            }
+            Some(number) if number.is_finite() => {
+                serde_json::Number::from_f64(number).map_or_else(|| "null".to_owned(), |n| n.to_string())
+            }
+            _ => "null".to_owned(),
+        },
+        "page" => match field.get("label").and_then(serde_json::Value::as_str) {
+            Some(label) if !label.is_empty() => quoted(&one_line(label)),
+            _ => "null".to_owned(),
+        },
+        "text" | "date" | "choice" => match value.and_then(serde_json::Value::as_str) {
+            Some(text) if !text.is_empty() => quoted(text),
+            _ => "null".to_owned(),
+        },
+        _ => "null".to_owned(),
+    }
 }
 
 /// Whether the page has at least one stroke: live ink, or an ink block that counts strokes when the ink

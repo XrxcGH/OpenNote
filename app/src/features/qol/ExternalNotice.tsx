@@ -1,6 +1,7 @@
 // The notices above a page when something outside OpenNote touched it: a program changed the page's files while it
 // was open (offers to reload it), or a sync tool or another device made a copy of it (offers the side-by-side view).
-// Neither notice changes the page by itself.
+// Neither notice changes the page by itself. A page.md edited in another app offers to bring its text in (BringIn.tsx),
+// and files only in the cloud download when the page opens, with progress or a warning.
 
 import { useEffect, useState } from 'react';
 import { useFlag } from '../../app/flags';
@@ -9,8 +10,8 @@ import { shellCall } from '../../platform/shellqol';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
 import { Button } from '../../ui';
-import { dismissExternal, dismissReadable, externalStore, markReadable } from './externalStore';
-import { bringInReadable, hasReadableEdits } from './readableImport';
+import { bringIn, CloudDownloadNotice, useCloudDownload, useEditedCopies } from './BringIn';
+import { dismissExternal, externalStore } from './externalStore';
 import styles from './QolPage.module.css';
 
 export interface ConflictItem {
@@ -63,25 +64,13 @@ export function ExternalNotice() {
   const pageId = location.view === 'workspace' ? location.pageId : null;
   const changed = useStore(externalStore, (state) => (pageId ? state.changed[pageId] : undefined));
   const open = useConflicts(pageId, conflicts);
-  // A page.md edited while OpenNote was closed is found when its page opens.
-  useEffect(() => {
-    if (!pageId || !watching) return undefined;
-    let current = true;
-    const check = setTimeout(
-      () => void hasReadableEdits(pageId).then((found) => current && found && markReadable(pageId)),
-      800,
-    );
-    return () => {
-      current = false;
-      clearTimeout(check);
-    };
-  }, [pageId, watching]);
+  const edited = useEditedCopies(pageId, watching);
+  const cloudFlag = useFlag('qol.cloudFolders');
+  const [cloud, dismissCloud] = useCloudDownload(pageId, cloudFlag);
+  // "Not now" hides the offer for this copy until another edit comes.
+  const [hiddenCopy, setHiddenCopy] = useState<string | null>(null);
+  const waiting = edited.find((copy) => copy.copy !== hiddenCopy);
   if (!pageId) return null;
-  const bringIn = () =>
-    void bringInReadable(pageId).then(
-      (changed) => (changed ? reloadPage(pageId) : dismissExternal(pageId)),
-      () => dismissExternal(pageId),
-    );
   const compare = () =>
     void import('./ConflictDialog').then((loaded) => loaded.openConflictDialog(pageId, open[0], open.length));
   return (
@@ -97,17 +86,24 @@ export function ExternalNotice() {
           </div>
         </div>
       )}
-      {watching && changed === 'readable' && (
+      {watching && waiting && changed !== 'changed' && (
         <div className={styles.notice} role="status">
-          <p>{t('qol.external.readable')}</p>
+          <p>{t('storage.edits.notice')}</p>
           <div className={styles.actions}>
-            <Button onClick={bringIn}>{t('qol.external.bringIn')}</Button>
-            <Button variant="quiet" onClick={() => dismissReadable(pageId)}>
-              {t('qol.external.dismiss')}
+            <Button onClick={() => void bringIn(pageId, waiting.copy)}>{t('storage.edits.bringIn')}</Button>
+            <Button
+              variant="quiet"
+              onClick={() => {
+                setHiddenCopy(waiting.copy);
+                dismissExternal(pageId);
+              }}
+            >
+              {t('storage.edits.dismiss')}
             </Button>
           </div>
         </div>
       )}
+      <CloudDownloadNotice state={cloud} onDismiss={dismissCloud} />
       {conflicts && open.length > 0 && (
         <div className={styles.notice} role="status">
           <p>{t('qol.conflict.banner', { count: open.length })}</p>

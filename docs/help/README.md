@@ -11,6 +11,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Organize and find](#organize-and-find)
 - [Record](#record)
 - [Bring notes in and out](#bring-notes-in-and-out)
+- [Storage and history](#storage-and-history)
 - [Smart features, privacy, and accounts](#smart-features-privacy-and-accounts)
 - [Install, update, and remove](#install-update-and-remove)
 
@@ -38,6 +39,10 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 ## Bring notes in and out
 
 - [Import and export](import-and-export.md): other apps' files in, and Markdown, Word, PDF, and more out.
+
+## Storage and history
+
+- [History, Trash, and storage](history-and-storage.md): page history, Trash, the notes folder, edits from other apps, Check notebook, Lock entry, and password-protected sections.
 
 ## Smart features, privacy, and accounts
 

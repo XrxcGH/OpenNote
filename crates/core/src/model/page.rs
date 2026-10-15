@@ -207,6 +207,8 @@ pub enum ReadOnlyReason {
     Encrypted,
     /// The notebook is a scheduled backup, which opens read-only so pages can be copied out of it.
     Backup,
+    /// A person locked the page as a stamped entry (ADR 0041). Only unlocking it changes it.
+    LockedEntry,
 }
 
 /// A problem a reader worked around.

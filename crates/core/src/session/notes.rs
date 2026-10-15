@@ -16,6 +16,7 @@ use crate::model::{Color, NotebookTree, PageNodeState, TreeChild};
 use crate::session::core::Core;
 use crate::session::notebook::{NodeRef, NotebookHandle};
 use crate::store::notebook_store::{invalid_name, INVALID_MOVE, INVALID_NAME};
+pub use crate::store::sealed::Protection;
 use crate::time::Timestamp;
 
 /// The longest title the notes contract accepts, in characters.
@@ -66,6 +67,22 @@ pub struct NodeInfo {
     pub archived: bool,
     /// An encrypted section, or a page in one (spec 5.7). Nothing of it may be indexed or cached.
     pub encrypted: bool,
+    /// Whether a section, or a page's section, is protected and open (ADR 0042).
+    pub protection: Protection,
+}
+
+/// A section's protection as the tree shows it.
+fn protection_of(section: &crate::model::SectionNode) -> Protection {
+    if !section.encrypted {
+        Protection::None
+    } else if matches!(
+        section.access,
+        crate::model::Access::ReadOnly(crate::model::ReadOnlyReason::Encrypted)
+    ) {
+        Protection::Locked
+    } else {
+        Protection::Unlocked
+    }
 }
 
 fn pen(color: &Option<Color>) -> Option<Color> {
@@ -92,6 +109,7 @@ pub fn notebook_node(tree: &NotebookTree) -> NodeInfo {
         pinned: false,
         archived: tree.archived,
         encrypted: false,
+        protection: Protection::None,
     }
 }
 
@@ -111,6 +129,7 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             pinned: false,
             archived: crate::model::is_archived(&group.extra),
             encrypted: false,
+            protection: Protection::None,
         },
         TreeChild::Section(section) => NodeInfo {
             id: section.id.to_string(),
@@ -126,6 +145,7 @@ fn child_node(tree: &NotebookTree, child: &TreeChild<'_>, parent: String) -> Nod
             pinned: false,
             archived: section.archived,
             encrypted: section.encrypted,
+            protection: protection_of(section),
         },
     }
 }
@@ -154,6 +174,7 @@ pub fn children_of(tree: &NotebookTree, parent: Id) -> Option<Vec<NodeInfo>> {
     }
     let section = tree.section(SectionId(parent))?;
     let read_only = section.access.is_read_only();
+    let protection = protection_of(section);
     let pages = section.pages.iter().map(|page| NodeInfo {
         id: page.id.to_string(),
         kind: NodeKind::Page,
@@ -168,6 +189,7 @@ pub fn children_of(tree: &NotebookTree, parent: Id) -> Option<Vec<NodeInfo>> {
         pinned: page.pinned,
         archived: page.archived,
         encrypted: section.encrypted,
+        protection,
     });
     Some(pages.collect())
 }

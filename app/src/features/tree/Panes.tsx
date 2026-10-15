@@ -3,7 +3,7 @@
 // sits at the bottom of the notebooks pane, behind trash.view, with a small plant opposite it when there is room.
 
 import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useFlag } from '../../app/flags';
 import { formatChord, useKeysFor } from '../../commands/keymap';
 import { executeCommand } from '../../commands/registry';
@@ -24,6 +24,9 @@ import {
 import { treeStore } from './store';
 import styles from './Tree.module.css';
 import { TreeView } from './TreeView';
+
+// A locked protected section's pages pane (ADR 0042) loads with the protection feature's dialogs.
+const LockedSectionPane = lazy(() => import('../protect').then((module) => ({ default: module.LockedSectionPane })));
 
 /** The plant keeps the footer company only when the pane has notebooks, because the empty pane has its own drawing. */
 function TrashButton({ plant }: { plant: boolean }) {
@@ -99,6 +102,8 @@ export function PagesPane() {
   const openMenu = useOpenMenu();
   const selectedId = useSelected('pages');
   const rowHeight = useRowHeight('pages');
+  const section = useStore(treeStore, (state) => (sectionId ? state.nodes[sectionId] : undefined));
+  const locked = useFlag('sections.protect') && section?.protected === 'locked';
   useEffect(() => {
     if (sectionId && known && status === 'ready') void ensureChildren(sectionId);
   }, [sectionId, known, status]);
@@ -106,6 +111,15 @@ export function PagesPane() {
     return (
       <div className={styles.pane}>
         <p className={styles.empty}>{t('tree.empty.noSection')}</p>
+      </div>
+    );
+  }
+  if (locked && section) {
+    return (
+      <div className={styles.pane}>
+        <Suspense fallback={null}>
+          <LockedSectionPane section={section} />
+        </Suspense>
       </div>
     );
   }

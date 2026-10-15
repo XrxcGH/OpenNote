@@ -131,6 +131,10 @@ pub(crate) fn page_assets_dir(bridge: &Bridge, page: PageId) -> Option<PathBuf> 
     let (notebook, _) = bridge.core.find_node(page.0)?;
     let tree = notebook.tree();
     let (section, _) = tree.find_page(page)?;
+    // Recordings write straight to disk, so a protected section has none: they would be plain (ADR 0042).
+    if section.encrypted {
+        return None;
+    }
     Some(
         NotebookLayout::new(notebook.path())
             .page_dir(section.id, page)

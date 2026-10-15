@@ -175,3 +175,50 @@ fn a_short_edit_session_leaves_a_version_to_restore() {
         "the first edit keeps the page as it was"
     );
 }
+
+#[test]
+fn deleting_a_page_from_trash_for_good_takes_its_history_with_it() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let (_, block) = new_table(79, "Kept for now");
+    handle.apply(real.request(vec![insert(block)])).unwrap();
+    let saved = handle.save_now().unwrap();
+    handle
+        .name_version(saved.revision, Some("Named".into()), false)
+        .unwrap();
+    assert_eq!(handle.history().unwrap().len(), 1);
+    handle.close(&real.client).unwrap();
+
+    let notebook = &real.notebook;
+    let page_dir = notebook
+        .path()
+        .join(real.section.to_string())
+        .join(real.page.to_string());
+    assert!(page_dir.join(".history").is_dir(), "the version is on disk");
+    let items = notebook
+        .delete(&[opennote_core::session::notebook::NodeRef::Page(real.page)])
+        .unwrap();
+    notebook.purge(items[0]).unwrap();
+
+    let leftovers: Vec<_> = walk(notebook.path())
+        .into_iter()
+        .filter(|path| path.to_string_lossy().contains(&real.page.to_string()))
+        .collect();
+    assert!(
+        leftovers.is_empty(),
+        "nothing of the page, its history included, is left: {leftovers:?}"
+    );
+    assert!(notebook.trash().unwrap().is_empty());
+}
+
+fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            out.extend(walk(&path));
+        }
+        out.push(path);
+    }
+    out
+}

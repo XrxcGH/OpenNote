@@ -215,6 +215,9 @@ impl NotebookStore {
             .filter(|(s, _)| *s != target)
             .map(|(s, b)| (s, b.iter().map(|f| f.id).collect()))
             .collect();
+        for (from, _) in &incoming {
+            self.check_sealed_crossing(*from, target)?;
+        }
         if incoming.is_empty() {
             if self.arrange(target, &flat)? {
                 self.write_section(target)?;

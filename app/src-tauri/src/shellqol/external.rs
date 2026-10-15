@@ -38,7 +38,8 @@ static STARTED: AtomicBool = AtomicBool::new(false);
 enum Seen {
     PageJson,
     ConflictCopy,
-    Readable,
+    /// `page.md`, which a person may have edited in another program (A2-1).
+    PageMd,
 }
 
 /// The revision ID in the text of a `page.json`, if it has one.
@@ -200,7 +201,7 @@ fn note(roots: &HashSet<PathBuf>, path: &Path, pending: &mut HashMap<(PathBuf, S
         let seen = match file {
             PageFile::PageJson => Seen::PageJson,
             PageFile::ConflictCopy => Seen::ConflictCopy,
-            PageFile::ReadableCopy if path.file_name().is_some_and(|name| name == "page.md") => Seen::Readable,
+            PageFile::ReadableCopy if path.file_name().is_some_and(|name| name == "page.md") => Seen::PageMd,
             PageFile::ReadableCopy | PageFile::Other => return,
         };
         pending.insert((root.clone(), page.to_string(), seen), path.to_path_buf());
@@ -218,8 +219,16 @@ fn settle(app: &AppHandle, pending: HashMap<(PathBuf, String, Seen), PathBuf>) {
         };
         let foreign = match seen {
             Seen::ConflictCopy => true,
-            // OpenNote's own copy reads as its own; only a copy someone edited has text to bring in.
-            Seen::Readable => handle.plan_readable_import().ok().flatten().is_some(),
+            Seen::PageMd => {
+                // Saving first, then looking at page.md, keeps the edited file aside as a save would. OpenNote's own
+                // page.md is left as it is, so its own writes never come back here as an edit.
+                let _ = handle.save_now();
+                let copies = handle.collect_edited_copies().unwrap_or_default();
+                if copies.iter().any(|copy| copy.file == "page.md") {
+                    emit(app, "external", json!({ "pageId": page, "change": "edited" }));
+                }
+                continue;
+            }
             Seen::PageJson => {
                 // Saving first keeps OpenNote's own unsaved edits: the core keeps both versions if the file changed.
                 let own = handle.save_now().ok().map(|info| info.revision.to_string());
@@ -230,7 +239,7 @@ fn settle(app: &AppHandle, pending: HashMap<(PathBuf, String, Seen), PathBuf>) {
         if foreign {
             let change = match seen {
                 Seen::ConflictCopy => "conflictCopy",
-                Seen::Readable => "readable",
+                Seen::PageMd => "edited",
                 Seen::PageJson => "changed",
             };
             emit(app, "external", json!({ "pageId": page, "change": change }));

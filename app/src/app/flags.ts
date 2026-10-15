@@ -17,6 +17,8 @@ import { CONNECTORS_FLAGS } from '../features/connectors/flags';
 import { EXPR_FLAGS } from '../features/tools/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
 import { QOL_FLAGS } from '../features/qol/flags';
+import { PROTECT_FLAGS } from '../features/protect/flags';
+import type { ProtectFlagId } from '../features/protect/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -56,6 +58,7 @@ export type FlagId =
   | IntelFlagId
   | Phase13FlagId
   | QolFlagId
+  | ProtectFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page';
 
@@ -284,6 +287,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INTEL_FLAGS,
   ...DIAGNOSTICS_FLAGS,
   ...QOL_FLAGS,
+  ...PROTECT_FLAGS,
   ...CONNECTORS_FLAGS,
 ];
 

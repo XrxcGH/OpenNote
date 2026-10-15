@@ -40,6 +40,7 @@ import { study } from './study';
 import { qolSearch } from './qolSearch';
 import { intelPlus } from './intelPlus';
 import { qol } from './qol';
+import { storage } from './storage';
 import { connectors } from './connectors';
 import { platformApi } from './platformApi';
 
@@ -84,6 +85,7 @@ export const en = {
   qolSearch,
   intelPlus,
   qol,
+  storage,
   connectors,
   platformApi,
 } as const;

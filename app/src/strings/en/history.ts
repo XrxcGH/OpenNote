@@ -9,6 +9,8 @@ export const history = {
     previousChange: 'Previous change',
     nameVersion: 'Name this version',
     deleteHistory: 'Delete page history',
+    deleteSectionHistory: 'Delete section history',
+    deleteNotebookHistory: 'Delete notebook history',
     keywords: 'history versions compare restore older earlier changes',
   },
   panel: 'Page history',
@@ -83,6 +85,7 @@ export const history = {
     page: "Saved versions of this page are removed. The current page isn't changed.",
     pages:
       "Saved versions of its {count, plural, one {# page} other {# pages}} are removed. Current pages aren't changed.",
+    many: "Saved versions of every page in it are removed. The current pages aren't changed.",
     keepNamed: 'Keep named versions',
     confirm: 'Delete history',
     cancel: 'Cancel',

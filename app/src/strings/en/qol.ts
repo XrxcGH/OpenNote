@@ -115,8 +115,6 @@ export const qol = {
   external: {
     changed: 'Another program changed this page. Reload it to see the change.',
     reload: 'Reload page',
-    readable: "Another program edited this page's page.md. Bring its text into the page?",
-    bringIn: 'Bring in the text',
     dismiss: 'Not now',
   },
   conflict: {

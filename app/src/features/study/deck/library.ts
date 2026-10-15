@@ -484,6 +484,15 @@ export function syncInlineDeck(pageId: string, title: string, inline: readonly C
   return loaded.then(() => syncNow(pageId, title, inline));
 }
 
+/**
+ * Takes a protected page's line-made cards out of the device's decks (ADR 0042). Cards typed by hand into the deck
+ * stay; a deck left empty goes.
+ */
+export function forgetInlineDeck(pageId: string): void {
+  const deck = deckById(pageDeckId(pageId));
+  if (deck) void syncInlineDeck(pageId, deck.name, []);
+}
+
 /** Sets or clears a deck's exam day. */
 export function setDeckExam(deckId: string, day: string | null): void {
   changeDeck(deckId, (deck) => {

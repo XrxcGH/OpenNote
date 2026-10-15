@@ -306,6 +306,7 @@ describe('context menu contents', () => {
       'Create shortcut',
       'Check notebook',
       'Archive',
+      'Delete notebook history',
       'Export…',
       'Delete',
     ]);
@@ -337,6 +338,8 @@ describe('context menu contents', () => {
       'Create shortcut',
       'Check accessibility',
       'Archive',
+      'Delete section history',
+      'Protect with password…',
       'Export…',
       'Delete',
     ]);
@@ -359,6 +362,7 @@ describe('context menu contents', () => {
       'Create shortcut',
       'Check accessibility',
       'Archive',
+      'Open in another editor',
       'Copy link to this page',
       'Export…',
       'Delete',

@@ -176,9 +176,14 @@ impl DataLayout {
         self.root.join("session.json")
     }
 
+    /// The folder of every notebook's journal folder.
+    pub fn journal_root(&self) -> PathBuf {
+        self.root.join("journal")
+    }
+
     /// The journal folder of one notebook.
     pub fn journal_dir(&self, key: &NotebookKey) -> PathBuf {
-        self.root.join("journal").join(&key.0)
+        self.journal_root().join(&key.0)
     }
 
     /// A page journal generation, or with `page` set to `None`, a tree journal generation.

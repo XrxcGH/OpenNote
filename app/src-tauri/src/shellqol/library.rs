@@ -101,7 +101,11 @@ pub fn call(app: &AppHandle, bridge: &CoreBridge, name: &str, args: &Value) -> I
         }),
         "library.check" => {
             let id: String = arg(args, "id")?;
-            run_notes(app, bridge, |b| check(b.find(&id)?.notebook().clone()))
+            run_notes(app, bridge, |b| {
+                let notebook = b.find(&id)?.notebook().clone();
+                // A link to a page of another open notebook leads somewhere, though this notebook doesn't hold it.
+                check(notebook, |page| b.find(page).is_ok())
+            })
         }
         "library.rescan" => {
             let id: String = arg(args, "id")?;
@@ -115,12 +119,21 @@ pub fn call(app: &AppHandle, bridge: &CoreBridge, name: &str, args: &Value) -> I
 }
 
 /// Verifies a notebook and lists each problem with its file and, where the file is a page's, the page.
-fn check(notebook: opennote_core::session::notebook::NotebookHandle) -> IpcResult<Value> {
+fn check(
+    notebook: opennote_core::session::notebook::NotebookHandle,
+    elsewhere: impl Fn(&str) -> bool,
+) -> IpcResult<Value> {
     let root = notebook.path().to_path_buf();
     let report = notebook.verify().map_err(from_core)?;
     let problems: Vec<Value> = report
         .problems
         .iter()
+        .filter(|(_, warning)| {
+            let linked = (warning.code == "link.broken")
+                .then(|| warning.detail.strip_prefix("page "))
+                .flatten();
+            !linked.is_some_and(&elsewhere)
+        })
         .map(|(path, warning)| {
             let page = match classify_path(&root, path) {
                 Some(NotebookChange::Page { page, .. }) => Some(page.to_string()),

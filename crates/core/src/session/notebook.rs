@@ -14,6 +14,7 @@ use crate::error::CoreError;
 use crate::id::{ClientId, GroupId, NotebookId, PageId, SectionId, TrashItemId};
 use crate::model::{Color, NotebookStyles, NotebookTree, TrashItemFile, TrashReason};
 use crate::session::page::PageHandle;
+use crate::session::page::PageLinks;
 use crate::store::notebook_store::{invalid_move, FlatPage, Transfer};
 use crate::store::scan::ScanReport;
 use crate::store::verify::VerifyReport;
@@ -125,6 +126,11 @@ impl NotebookHandle {
     /// Whether this notebook is a scheduled backup set. It opens read-only, so pages can be copied out of it.
     pub fn is_backup(&self) -> bool {
         self.inner.is_backup()
+    }
+
+    /// Fails when the notebook may not change, as a read-only notebook may not.
+    pub fn check_writable(&self) -> Result<(), CoreError> {
+        self.inner.tree().store.check_writable()
     }
 
     /// A section's pages in display order, with their levels, as the notes contract lists them.
@@ -305,6 +311,17 @@ impl NotebookHandle {
         Ok(items)
     }
 
+    /// Deletes pages of an unlocked protected section for good, with their subpages, after closing them. Trash is
+    /// plain, so it can't hold them (ADR 0042). Returns the pages deleted.
+    pub fn delete_sealed_pages(&self, pages: &[PageId]) -> Result<Vec<PageId>, CoreError> {
+        let nodes: Vec<NodeRef> = pages.iter().map(|p| NodeRef::Page(*p)).collect();
+        self.close_pages(&self.pages_under(&nodes));
+        self.change(true, |t| {
+            t.undo.clear();
+            t.store.delete_sealed_pages(pages)
+        })
+    }
+
     /// The Trash items, newest first.
     pub fn trash(&self) -> Result<Vec<TrashItemFile>, CoreError> {
         self.inner.check_open()?;
@@ -376,6 +393,11 @@ impl NotebookHandle {
     /// Saves every page, closes the journals, and releases the lock.
     pub fn close(self) -> Result<(), CoreError> {
         self.inner.close()
+    }
+
+    /// Links for writing a page's `page.md` (spec 11.1), as Check notebook's repair writes it again.
+    pub(crate) fn readable_links(&self, page_dir: &std::path::Path, page: &crate::model::Page) -> PageLinks {
+        self.inner.links(page_dir, page)
     }
 }
 

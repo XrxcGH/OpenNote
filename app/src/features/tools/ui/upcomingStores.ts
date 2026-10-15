@@ -75,6 +75,15 @@ export function setPageItems(
   saveStored(PAGE_ITEMS, next);
 }
 
+/** Forgets what these pages fed Upcoming, so nothing of a protected page stays in browser storage (ADR 0042). */
+export function forgetPageItems(pageIds: readonly string[]): void {
+  const current = pageItemsStore.get();
+  if (!pageIds.some((id) => id in current)) return;
+  const next = Object.fromEntries(Object.entries(current).filter(([id]) => !pageIds.includes(id)));
+  pageItemsStore.set(next);
+  saveStored(PAGE_ITEMS, next);
+}
+
 export interface RemindersState {
   on: boolean;
   /** Reminders already announced, so each comes once. */

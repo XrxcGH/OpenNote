@@ -11,6 +11,7 @@ import { formatDate } from '../../strings/format';
 import { t } from '../../strings/t';
 import { Button, RadioCard, RadioGroup, Switch, TextField, confirm, showToast } from '../../ui';
 import { settingsHost as host, settingsStyles as styles } from '../settings';
+import { NotesFolderSettings, ProtectedSectionsSettings } from '../protect';
 import { CloudNotice, useCloud } from './CloudNotice';
 
 interface BackupConfig {
@@ -260,6 +261,8 @@ function CheckNotebooks() {
 export default function StorageSection() {
   return (
     <>
+      <NotesFolderSettings />
+      <ProtectedSectionsSettings />
       <CloudFolder />
       <OpenFolder />
       <LostNotebooks />

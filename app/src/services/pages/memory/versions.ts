@@ -15,6 +15,8 @@ export interface Versions {
   list(): VersionInfo[];
   get(revision: string): Version;
   name(revision: string, name: string | null, keep: boolean): void;
+  /** Delete history: removes saved versions, or all but the named and kept ones. Returns how many went. */
+  drop(keepNamed: boolean): number;
 }
 
 export function createVersions(): Versions {
@@ -42,6 +44,12 @@ export function createVersions(): Versions {
     name(revision, name, keep) {
       const version = get(revision);
       version.info = { ...version.info, name, keep };
+    },
+    drop(keepNamed) {
+      const before = versions.length;
+      const kept = versions.filter((version) => keepNamed && (version.info.name !== null || version.info.keep));
+      versions.splice(0, versions.length, ...kept);
+      return before - kept.length;
     },
   };
 }

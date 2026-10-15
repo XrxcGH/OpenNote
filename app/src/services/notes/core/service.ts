@@ -176,7 +176,13 @@ type Writes = Pick<
   | 'purgeFromTrash'
 >;
 
-function writes(bridge: Bridge): Writes {
+/** Choices the service takes from the app. */
+export interface CoreNotesOptions {
+  /** Whether renaming a notebook also renames its folder (A4-4), which notes.renameFolders gates. */
+  renameFolders?: () => boolean;
+}
+
+function writes(bridge: Bridge, options: CoreNotesOptions): Writes {
   const summary = async (command: string, args: Record<string, unknown>) =>
     node(await bridge.write<NodeSummary>(command, args));
   const summaries = async (command: string, args: Record<string, unknown>) =>
@@ -184,7 +190,7 @@ function writes(bridge: Bridge): Writes {
   const done = async (command: string, args: Record<string, unknown>) => void (await bridge.write(command, args));
   return {
     create: (input) => summary('notes_create', { input }),
-    rename: (id, title) => summary('notes_rename', { id, title }),
+    rename: (id, title) => summary('notes_rename', { id, title, renameFolder: options.renameFolders?.() ?? false }),
     setColor: (id, color) => summary('notes_set_color', { id, color }),
     move: (ids, placement) => done('notes_move', { ids, placement }),
     setPageLevel: (ids, level) => done('notes_set_page_level', { ids, level }),
@@ -195,12 +201,12 @@ function writes(bridge: Bridge): Writes {
   };
 }
 
-export function createCoreNotesService(client: NotesCoreClient): CoreNotesService {
+export function createCoreNotesService(client: NotesCoreClient, options: CoreNotesOptions = {}): CoreNotesService {
   const bridge = new Bridge(client);
   return {
     contractVersion: 1,
     ...reads(bridge),
-    ...writes(bridge),
+    ...writes(bridge, options),
     saveStatus: () => bridge.status(),
     hasUnsavedChanges: () => bridge.unsaved(),
     flush: () => bridge.flush(),

@@ -29,6 +29,7 @@ use crate::store::tree_log::IntentLog;
 use crate::time::{Clock, Timestamp};
 
 mod arrange;
+mod companions;
 mod create;
 mod duplicates;
 mod edit;
@@ -111,6 +112,11 @@ impl SectionState {
     /// Whether the section is encrypted (spec 5.7). A version 1 writer never changes it.
     pub fn encrypted(&self) -> bool {
         self.file.encryption.is_some()
+    }
+
+    /// Whether the section is encrypted and not open in memory (ADR 0042), so nothing in it can be read or changed.
+    pub fn locked(&self) -> bool {
+        self.encrypted() && !crate::store::sealed::is_unlocked(self.file.encryption.as_ref())
     }
 
     /// The entry of a page.
@@ -264,13 +270,22 @@ impl NotebookStore {
     pub fn check_section_writable(&self, id: SectionId) -> Result<(), CoreError> {
         self.check_writable()?;
         let section = self.section(id)?;
-        if section.encrypted() {
+        if section.locked() {
             return Err(CoreError::ReadOnly(ReadOnlyReason::Encrypted));
         }
         match &section.file.format.access {
             Access::ReadOnly(reason) => Err(CoreError::ReadOnly(reason.clone())),
             Access::ReadWrite => Ok(()),
         }
+    }
+
+    /// Fails when pages would carry their files into or out of a protected section (ADR 0042): their plain files
+    /// would reach the disk, or a protected page would leave its seal.
+    pub fn check_sealed_crossing(&self, from: SectionId, to: SectionId) -> Result<(), CoreError> {
+        if from != to && (self.section(from)?.encrypted() || self.section(to)?.encrypted()) {
+            return Err(CoreError::ReadOnly(ReadOnlyReason::Encrypted));
+        }
+        Ok(())
     }
 
     /// Writes `notebook.json`.

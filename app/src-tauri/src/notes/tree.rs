@@ -88,6 +88,11 @@ pub(crate) fn summary(info: NodeInfo) -> NodeSummary {
         pinned: info.pinned,
         archived: info.archived,
         encrypted: info.encrypted,
+        protected: match info.protection {
+            opennote_core::session::notes::Protection::None => None,
+            opennote_core::session::notes::Protection::Locked => Some("locked"),
+            opennote_core::session::notes::Protection::Unlocked => Some("unlocked"),
+        },
     }
 }
 

@@ -13,5 +13,5 @@ export type { SortKey } from './qolActions';
 export const loadMultiActions = () => import('./multiActions');
 export const loadQolActions = () => import('./qolActions');
 export { locationFor } from './selection';
-export { getNode, notebookOf, treeStore } from './store';
-export { startTree, stopTree } from './load';
+export { ancestors, getNode, isProtectedNode, notebookOf, treeStore } from './store';
+export { relist, startTree, stopTree } from './load';

@@ -207,3 +207,44 @@ fn a_page_md_edited_while_the_page_is_open_can_come_in_before_any_save() {
     handle.apply(real.request(import.edits)).unwrap();
     assert_eq!(texts(&page_json(&handle)), ["Gamma", "Added outside"]);
 }
+
+#[test]
+fn an_edited_page_md_is_kept_aside_when_the_watcher_asks_without_a_new_save() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let (_, a) = text_block(3, "Gamma one");
+    handle.apply(real.request(vec![a])).unwrap();
+    handle.save_now().unwrap();
+    let path = real
+        .notebook
+        .path()
+        .join(real.section.to_string())
+        .join(real.page.to_string())
+        .join("page.md");
+    let written = written_page_md(&path);
+    assert!(written.contains("Gamma one"), "{written}");
+    assert_eq!(
+        handle.page_md_path().as_deref(),
+        Some(path.as_path()),
+        "the editor gets the page's own file"
+    );
+    assert!(
+        handle.cloud_only_files().is_empty(),
+        "every file of a local page is on the device"
+    );
+    // Nothing is kept while the file is OpenNote's own.
+    assert!(handle.collect_edited_copies().unwrap().is_empty());
+
+    std::fs::write(&path, written.replace("Gamma one", "Gamma two")).unwrap();
+    let copies = handle.collect_edited_copies().unwrap();
+    assert_eq!(copies.len(), 1, "{copies:?}");
+    assert_eq!(copies[0].file, "page.md");
+    assert!(
+        std::fs::read_to_string(&path).unwrap().contains("Gamma one"),
+        "a fresh page.md is written"
+    );
+    let import = handle.plan_edited_import(&copies[0].path).unwrap();
+    assert_eq!(import.plan.changes.len(), 1, "{:?}", import.plan);
+    // Asking again keeps nothing new.
+    assert_eq!(handle.collect_edited_copies().unwrap().len(), 1);
+}

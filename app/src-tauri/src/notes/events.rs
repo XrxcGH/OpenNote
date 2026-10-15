@@ -119,6 +119,7 @@ mod tests {
             pinned: false,
             archived: false,
             encrypted: false,
+            protection: opennote_core::session::notes::Protection::None,
         }
     }
 

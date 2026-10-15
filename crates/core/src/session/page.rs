@@ -266,6 +266,18 @@ impl PageHandle {
         self.session.edited_copies()
     }
 
+    /// The page's `page.md`, for "Open in another editor". `None` for a page of an encrypted section, which has
+    /// no readable copy.
+    pub fn page_md_path(&self) -> Option<PathBuf> {
+        self.session.page_md_path()
+    }
+
+    /// Keeps aside a readable copy a person edited in another program since the last save, as the next save
+    /// would, and returns the edited copies. The folder watcher calls it when `page.md` changes.
+    pub fn collect_edited_copies(&self) -> Result<Vec<crate::store::external::EditedCopy>, CoreError> {
+        self.session.collect_edited_copies()
+    }
+
     /// Plans how the text of an edited `page.md` comes into the page. Nothing changes until the interface sends
     /// the plan's edits as a request.
     pub fn plan_edited_import(&self, copy: &Path) -> Result<EditedImport, CoreError> {

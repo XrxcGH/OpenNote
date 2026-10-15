@@ -70,6 +70,8 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0027](0027-palm-rejection.md) | Classify each touch by evidence (size, growth, hand region, timing, motion), keep touch ink retractable, and manage touch on pen devices | Accepted | 2026-10-03 |
 | [0030](0030-connectors-and-sign-in.md) | Sign in to connected accounts through the system browser with a loopback redirect, and keep every token in Windows Credential Manager | Proposed, pending a sign-in with real client IDs | 2026-10-03 |
 | [0035](0035-share-as-a-file.md) | Share as a file is a ZIP of Markdown with a manifest, optionally locked with a password | Accepted. The back end is written, and no screen uses it yet | 2026-10-03 |
+| [0041](0041-stamped-entry-lock.md) | A stamped entry lock lives in the page view, and the core enforces it | Proposed | 2026-10-15 |
+| [0042](0042-protected-sections.md) | Protected sections are sealed file by file, and open only in memory | Proposed | 2026-10-15 |
 | [0046](0046-one-command-registry.md) | One command registry for the local API, the opennote command, and MCP, with read-back commands, file roots, a per-instance key, and authors in page history | Accepted | 2026-10-15 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
@@ -90,3 +92,5 @@ Most records are still Proposed, because each waits on a check by a person. Agen
 | 0025 | Real captures (spike S4) and the image memory measurement (spike S3) |
 | 0026 | The Phase 3 owner's agreement |
 | 0030 | A sign-in with real client IDs for each service, which the owner registers (see [CONNECTORS.md](../CONNECTORS.md)) |
+| 0041 | The owner's review of the stamped entry lock, which agents built behind `page.lockEntry` |
+| 0042 | The owner's review of protected sections, a Windows Hello unlock on real hardware, and the `protected` field of the notes contract |

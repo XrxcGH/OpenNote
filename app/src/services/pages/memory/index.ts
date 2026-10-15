@@ -62,6 +62,13 @@ export function createMemoryPageService(
   let clients = 0;
   const splices = options.supportsSplice ?? true;
   return {
+    // Delete history. The memory service doesn't know the tree, so a section or notebook reaches every page.
+    admin: {
+      deleteHistory(_notebook, scope, keepNamed) {
+        for (const [id, state] of pages) if (scope.kind !== 'page' || id === scope.id) state.versions.drop(keepNamed);
+        return Promise.resolve();
+      },
+    },
     open(pageId) {
       let state = pages.get(pageId);
       if (!state) {
