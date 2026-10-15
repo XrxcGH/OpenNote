@@ -6,6 +6,8 @@ test('lassos ink, moves it from the keyboard, recolors it, and deletes it', asyn
   await openPage(page);
   await choose(page, 'Pen, Ink, 0.5 mm');
   await draw(page, line([150, 350], [400, 380]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
   await choose(page, 'Lasso select');
   await draw(page, ellipse(275, 365, 220, 90));
   const frame = page.getByRole('group', { name: 'Selected ink and text' });
@@ -31,6 +33,8 @@ test('keeps the selection bar inside the page view next to its right edge', asyn
   const view = (await page.locator('[data-ink-overlay]').boundingBox())!;
   const right = view.width - 60;
   await draw(page, line([right - 120, 380], [right, 400]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
   await choose(page, 'Lasso select');
   await draw(page, ellipse(right - 60, 390, 90, 60));
   const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
@@ -58,6 +62,8 @@ test('moves a text box with the ink the lasso takes', async ({ page }) => {
   const under = before.y - view.y + before.height + 16;
   await choose(page, 'Pen, Ink, 0.5 mm');
   await draw(page, line([150, under], [330, under + 4]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
   await choose(page, 'Lasso select');
   await draw(page, ellipse(240, (before.y - view.y + under) / 2, 190, (under - (before.y - view.y)) / 2 + 40));
   const move = page.getByRole('button', { name: 'Move the selection' });
@@ -75,6 +81,8 @@ test('exports the lasso selection from its bar and menu, with a crop preview and
   await openPage(page);
   await choose(page, 'Pen, Ink, 0.5 mm');
   await draw(page, line([150, 350], [400, 380]));
+  // The lasso needs the stroke in the page's index, which the core confirms a moment after it is drawn.
+  await expect.poll(async () => (await heldStrokes(page)).length).toBeGreaterThan(0);
   await choose(page, 'Lasso select');
   await draw(page, ellipse(275, 365, 220, 90));
   const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
