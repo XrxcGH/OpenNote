@@ -39,7 +39,7 @@ test('Ctrl+Shift+F finds words typed into a page, previews it, and opens it', as
   // The matched word is bold, so a match never rests on color alone.
   await expect(result.locator('strong').first()).toHaveText('Osmosis');
   await expect(page.getByRole('region', { name: 'Preview' })).toContainText('Osmosis moves water');
-  await expect(page.locator('[aria-live="polite"]')).toHaveText(/^1 result$/);
+  await expect(page.locator('[aria-live="polite"]').filter({ hasText: /^1 result$/ })).toHaveCount(1);
   await box.fill('osmosis zebra');
   await expect(page.getByText('No pages match.')).toBeVisible();
   await box.fill('osmosis -water');
