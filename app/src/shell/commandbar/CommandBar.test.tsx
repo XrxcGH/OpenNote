@@ -134,6 +134,35 @@ describe('the command bar overflow', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Walnut' }));
     await vi.waitFor(() => expect(ran).toHaveBeenCalledWith('walnut'));
   });
+  it('lists each available switch of a component tool that moved into More', async () => {
+    const ran = vi.fn();
+    command('indigo', 'commands.colors.indigo', { run: () => ran('indigo'), checked: () => true });
+    command('brick', 'commands.colors.brick', { when: () => false });
+    command('fern', 'commands.colors.fern', { run: () => ran('fern') });
+    COLORS.slice(4).forEach((color) => {
+      command(color, `commands.colors.${color}`);
+      tool(color, { priority: 100 });
+    });
+    tool('group', {
+      command: 'test.indigo',
+      priority: 1,
+      presentation: 'component',
+      Component: () => <div style={{ width: 2000 }}>wide group</div>,
+      overflow: ['test.indigo', 'test.brick', 'test.fern'],
+    });
+    await setViewport(640, 800);
+    await renderApp({ sizeClass: 'medium' });
+    const toolbar = screen.getByRole('toolbar', { name: 'Home' });
+    const more = await within(toolbar).findByRole('button', { name: 'More commands' });
+    await vi.waitFor(() => expect(within(toolbar).queryByText('wide group')).toBeNull());
+    await userEvent.click(more);
+    const indigo = await screen.findByRole('menuitemcheckbox', { name: 'Indigo' });
+    expect(indigo.getAttribute('aria-checked')).toBe('true');
+    expect(screen.queryByRole('menuitem', { name: 'Brick' })).toBeNull();
+    expect(screen.queryByRole('menuitemcheckbox', { name: 'Brick' })).toBeNull();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Fern' }));
+    await vi.waitFor(() => expect(ran).toHaveBeenCalledWith('fern'));
+  });
 });
 
 describe('the bottom bar', () => {

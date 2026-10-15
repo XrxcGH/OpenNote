@@ -56,6 +56,11 @@ export interface CommandBarItem {
   menu?: MenuId;
   /** With presentation 'component'. */
   Component?: ComponentType<CommandBarComponentProps>;
+  /**
+   * The commands the More menu lists for this item when the bar is too narrow to show it, for a component that holds
+   * several tools: each available one is an entry, a switch when it has a checked state. Default: `command` alone.
+   */
+  overflow?: readonly CommandId[];
   flag?: FlagId;
 }
 

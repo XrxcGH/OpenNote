@@ -21,6 +21,8 @@ export interface InkPrefs {
   readonly gridSnap: boolean;
   /** The grid's spacing in millimeters. */
   readonly gridMm: number;
+  /** Lines, arrows, and shapes snap to the lines of ruled, grid, and dot paper. On unless the person turns it off. */
+  readonly paperSnap: boolean;
   /** Whether the zoom writing box is open. */
   readonly zoomBox: boolean;
   /** Which pen edits of typed text are on. */
@@ -51,6 +53,7 @@ const DEFAULTS: InkPrefs = {
   protractor: false,
   gridSnap: false,
   gridMm: 5,
+  paperSnap: true,
   zoomBox: false,
   penEdit: { strike: true, space: true, split: true, circle: true },
   pens: {},
@@ -106,6 +109,7 @@ function load(): InkPrefs {
       protractor: raw.protractor === true,
       gridSnap: raw.gridSnap === true,
       gridMm: num(raw.gridMm, DEFAULTS.gridMm, 1, 50),
+      paperSnap: raw.paperSnap !== false,
       zoomBox: raw.zoomBox === true,
       penEdit: {
         strike: raw.penEdit?.strike !== false,

@@ -25,6 +25,8 @@ import type { InkStroke } from '../model/types';
 import type { InkHost, InkPointerTool } from './host';
 import type { Follow, InkSurface } from './surface';
 import type { Store } from '../../../state/store';
+import { snapPoint } from '../snap';
+import { clearSnapMarks, paperSnapNow, showSnapMarks } from './paperSnap';
 
 /** How near a connector's end must lie to a shape's outline to count as attached, in page units. */
 export const ATTACH_REACH = 5;
@@ -148,8 +150,19 @@ class HandleLayer {
     private readonly host: InkHost,
     private readonly surface: InkSurface,
   ) {
-    this.stops = [host.selection.subscribe(() => this.refresh()), surface.onChange(() => this.place())];
+    this.stops = [host.selection.subscribe(() => this.refresh()), surface.onChange(() => this.changed())];
     this.refresh();
+  }
+
+  /**
+   * The page changed: when the selected shape was moved or nudged its stroke is a new one, so its handles are read
+   * again from where it is now. Otherwise they only follow the view.
+   */
+  private changed(): void {
+    const ids = this.host.selection.get().strokes;
+    const now = !this.drag && this.editing && ids.length === 1 ? this.surface.strokes(ids)[0] : undefined;
+    if (now && now !== this.editing?.stroke) this.refresh();
+    else this.place();
   }
 
   buttonOf(target: EventTarget | null): HTMLButtonElement | null {
@@ -202,10 +215,27 @@ class HandleLayer {
     });
   }
 
+  /**
+   * Where a dragged handle goes: onto the paper's lines when they are near and snapping is on, unless Alt is held. The
+   * handles of arcs only turn their ends, so they are left free.
+   */
+  private snapped(to: Vec, alt: boolean, linger = false): Vec {
+    const snap = paperSnapNow(this.surface.cameraNow().zoom, alt);
+    const kind = this.editing?.shape.kind;
+    if (!snap || kind === 'arc' || kind === 'curvedArrow') {
+      clearSnapMarks(this.surface);
+      return to;
+    }
+    const hit = snapPoint(snap, to);
+    showSnapMarks(this.surface, hit.x || hit.y ? [hit.point] : [], linger);
+    return hit.point;
+  }
+
   /** Drags a handle to a page point: the reshaped stroke shows, and the connectors on its outline follow it. */
-  moveTo(id: string, to: Vec): void {
+  moveTo(id: string, at: Vec, alt = false): void {
     if (!this.editing) return;
     const { stroke, shape } = this.editing;
+    const to = this.snapped(at, alt);
     const next = restroke(stroke, dragHandle(shape, id, to), `${stroke.id}`);
     const followers = this.followers(stroke, next);
     this.surface.preview([stroke.id, ...followers.remove], [next, ...followers.add]);
@@ -217,9 +247,10 @@ class HandleLayer {
     return connectorFollowers(this.surface, [old], (end) => nearestOnOutline(outline, end, Infinity) ?? end);
   }
 
-  async commit(id: string, to: Vec): Promise<void> {
+  async commit(id: string, at: Vec, alt = false): Promise<void> {
     if (!this.editing) return;
     const { stroke, shape } = this.editing;
+    const to = this.snapped(at, alt, true);
     const made = restroke(stroke, dragHandle(shape, id, to));
     const followers = this.followers(stroke, made);
     this.surface.endPreview();
@@ -232,6 +263,7 @@ class HandleLayer {
   cancel(): void {
     this.drag = null;
     this.surface.endPreview();
+    clearSnapMarks(this.surface);
     this.refresh();
   }
 
@@ -245,6 +277,8 @@ class HandleLayer {
 export function installShapeHandles(host: InkHost, surfaces: Store<InkSurface | null>): () => void {
   let layer: HandleLayer | null = null;
   let last: Vec | null = null;
+  /** Alt held during the drag keeps the handle off the paper's lines. */
+  let alt = false;
   const sync = () => {
     layer?.destroy();
     const surface = surfaces.get();
@@ -265,18 +299,23 @@ export function installShapeHandles(host: InkHost, surfaces: Store<InkSurface | 
       ctx.capture(event.pointerId);
       layer.drag = { id: button.dataset.inkShapeHandle, pointerId: event.pointerId };
       last = ctx.toWorld(event.clientX, event.clientY);
+      alt = event.altKey;
       return 'claim';
     },
     move(events, ctx) {
       const event = events.filter((one) => one.pointerId === layer?.drag?.pointerId).at(-1);
       if (layer?.drag && event) {
         last = ctx.toWorld(event.clientX, event.clientY);
-        layer.moveTo(layer.drag.id, last);
+        alt ||= event.altKey;
+        layer.moveTo(layer.drag.id, last, alt);
       }
       return 'claim';
     },
     up(event) {
-      if (layer?.drag?.pointerId === event.pointerId && last) void layer.commit(layer.drag.id, last);
+      const drag = layer?.drag;
+      if (!layer || !drag || drag.pointerId !== event.pointerId) return;
+      alt ||= event.altKey;
+      if (last) void layer.commit(drag.id, last, alt);
     },
     cancel(_ctx, event) {
       if (event && layer?.drag && event.pointerId !== layer.drag.pointerId) return;

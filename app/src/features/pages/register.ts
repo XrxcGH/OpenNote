@@ -186,6 +186,18 @@ for (const preset of BACKGROUNDS) {
   });
 }
 
+// Ruled paper can draw a margin line down its left margin; the drawing tools snap to it too.
+command({
+  id: 'pages.background.marginLine',
+  title: 'pageViews.background.marginLine',
+  keywords: 'pageViews.commands.backgroundKeywords',
+  flag: 'pages.view',
+  checked: () => api()?.view().background.marginLine === true,
+  enabled: () => api()?.view().background.pattern === 'ruled',
+  run: () =>
+    api()?.edit((view) => ({ ...view, background: { ...view.background, marginLine: !view.background.marginLine } })),
+});
+
 // ---- Menus and the command bar -------------------------------------------------------------------------------
 function menuCommand(
   id: `pages.${string}`,
@@ -242,6 +254,7 @@ menuItems(
   'preset',
   BACKGROUNDS.map((preset) => `pages.background.${preset}`),
 );
+menuItems('pages.background', 'pages.view', 'options', ['pages.background.marginLine']);
 menuItems('pages.export', 'pages.pdf', 'file', ['pages.print', 'pages.exportPdf']);
 menuItems('pages.export', 'pages.exportText', 'text', ['pages.exportMarkdown', 'pages.exportHtml']);
 menuItems('pages.export', 'pages.exportImage', 'image', ['pages.exportImage']);

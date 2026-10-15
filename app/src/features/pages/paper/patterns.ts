@@ -2,6 +2,7 @@
 // canvas. Patterns fill the content box and ruled lines span the sheet's width, so the margins stay visibly blank.
 // Infinite view draws the same patterns without breaks, in step with sheet 0, so no line jumps when the view changes.
 
+import { below, intersect, linesArea, UNBOUNDED, type PaperLattice } from '../../../core/paperLattice';
 import { own } from '../layout/json';
 import { contentBox, EPS, sheetAt, type Rect, type SheetGeometry } from '../pagination/geometry';
 import { dots, grid, isometric, ruled, staves } from './basic';
@@ -54,15 +55,42 @@ function drawSheetPattern(c: Canvas, bg: PageBackground, g: SheetGeometry): void
   else if (bg.pattern === 'template' && bg.template) drawTemplate(c, bg.template, g);
 }
 
+/** Paper whose lines run across the page at one spacing: what `paperLattice` describes and the drawing tools snap to. */
+const LATTICE_PAPER = new Set(['ruled', 'grid', 'dots']);
+
 /**
- * The box with everything above `from` cut off, or the box itself when `from` is not given. A page's title and its
- * date sit in a header the rules leave blank: the rules (and the squares and dots) of the first sheet begin at
- * `from`, which is a rule of the lattice.
+ * The lines of ruled, grid, and dot paper, or null for any other paper. It is the one description of where those lines
+ * are: `paperPaths` and `infinitePaths` draw it, and the drawing tools snap to it, so a snapped point is on a drawn
+ * line. A paginated page's sheet draws ruled lines across its whole width from one step below the top margin to the
+ * bottom margin, and squares and dots in whole cells of the content box. A page with no sheets draws them everywhere.
+ * `from` is the y of the first rule of the first sheet, below the page's header (see `below` in core/paperLattice.ts).
  */
-function below(box: Rect, from: number | undefined): Rect {
-  if (from === undefined || from <= box.y) return box;
-  const y = Math.min(from, box.y + box.h);
-  return { ...box, y, h: box.y + box.h - y };
+export function paperLattice(
+  bg: PageBackground,
+  g: SheetGeometry,
+  paginated: boolean,
+  from?: number,
+): PaperLattice | null {
+  if (!LATTICE_PAPER.has(bg.pattern)) return null;
+  const kind = bg.pattern as PaperLattice['kind'];
+  const step = drawnSpacingOf(bg);
+  const [top, , bottom, left] = g.margins;
+  const margin = kind === 'ruled' && bg.marginLine === true ? left : null;
+  const origin = { x: left, y: top };
+  const base = { kind, step, origin, margin, ...(from === undefined ? {} : { from }) };
+  if (!paginated) return { ...base, area: UNBOUNDED, sheet: null };
+  const area =
+    kind === 'ruled'
+      ? { x: 0, y: top + step, w: g.width, h: g.height - bottom - top - step }
+      : wholeCells(contentBox(g, 0), step);
+  return { ...base, area, sheet: g.height };
+}
+
+/** Draws a lattice's lines inside a box. */
+function drawLattice(c: Canvas, lattice: PaperLattice, box: Rect): void {
+  if (lattice.kind === 'ruled') ruled(c, box, lattice.origin.y, lattice.step);
+  else if (lattice.kind === 'grid') grid(c, box, lattice.origin, lattice.step);
+  else dots(c, box, lattice.origin, lattice.step);
 }
 
 /**
@@ -72,16 +100,14 @@ function below(box: Rect, from: number | undefined): Rect {
 export function paperPaths(bg: PageBackground, g: SheetGeometry, from?: number): PaperPaths {
   const c = new Canvas();
   const step = drawnSpacingOf(bg);
-  const [top, , bottom, left] = g.margins;
   const content = contentBox(g, 0);
   const origin = { x: content.x, y: content.y };
+  const lattice = paperLattice(bg, g, true, from);
   if (SHEET_PATTERNS.has(bg.pattern)) drawSheetPattern(c, bg, g);
-  else if (bg.pattern === 'ruled') {
-    ruled(c, below({ x: 0, y: top + step, w: g.width, h: g.height - bottom - top - step }, from), top, step);
-    if (bg.marginLine === true) c.line(left, 0, left, g.height, 'margin');
-  } else if (bg.pattern === 'grid') grid(c, below(wholeCells(content, step), from), origin, step);
-  else if (bg.pattern === 'dots') dots(c, below(wholeCells(content, step), from), origin, step);
-  else if (bg.pattern === 'isometric') isometric(c, content, origin, step);
+  else if (lattice) {
+    drawLattice(c, lattice, linesArea(lattice, 0));
+    if (lattice.margin !== null) c.line(lattice.margin, 0, lattice.margin, g.height, 'margin');
+  } else if (bg.pattern === 'isometric') isometric(c, content, origin, step);
   return c.paths();
 }
 
@@ -95,15 +121,12 @@ export function infinitePaths(bg: PageBackground, tile: Rect, g: SheetGeometry, 
   const c = new Canvas();
   const step = drawnSpacingOf(bg);
   const origin = { x: g.margins[3], y: g.margins[0] };
-  const rest = below(tile, from);
-  if (bg.pattern === 'ruled') {
-    ruled(c, rest, origin.y, step);
-    if (bg.marginLine === true && origin.x >= tile.x - EPS && origin.x <= tile.x + tile.w + EPS) {
-      c.line(origin.x, tile.y, origin.x, tile.y + tile.h, 'margin');
-    }
-  } else if (bg.pattern === 'grid') grid(c, rest, origin, step);
-  else if (bg.pattern === 'dots') dots(c, rest, origin, step);
-  else if (bg.pattern === 'isometric') isometric(c, tile, origin, step);
+  const lattice = paperLattice(bg, g, false, from);
+  if (lattice) {
+    drawLattice(c, lattice, below(intersect(tile, lattice.area), lattice.from));
+    const x = lattice.margin;
+    if (x !== null && x >= tile.x - EPS && x <= tile.x + tile.w + EPS) c.line(x, tile.y, x, tile.y + tile.h, 'margin');
+  } else if (bg.pattern === 'isometric') isometric(c, tile, origin, step);
   return c.paths();
 }
 

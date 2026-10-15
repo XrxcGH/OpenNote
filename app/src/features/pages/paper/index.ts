@@ -1,7 +1,7 @@
 // Paper backgrounds: pure generators that turn a page's background into vector paths in page units, and the SVG that
 // draws them. The screen and the PDF export use the same code.
 
-export { DEFAULT_SPACING, flowGeometry, infinitePaths, paperPaths, spacingOf } from './patterns';
+export { DEFAULT_SPACING, flowGeometry, infinitePaths, paperLattice, paperPaths, spacingOf } from './patterns';
 export { paperRules, type PaperRules } from './rules';
 export { CORNELL, cornellAreas, type CornellAreas } from './cornell';
 export { PRESETS, SPACINGS, withSpacing, type PresetId } from './presets';

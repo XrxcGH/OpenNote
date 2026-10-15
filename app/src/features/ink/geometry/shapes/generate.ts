@@ -40,7 +40,9 @@ const MIN_CURVE_POINTS = 16;
 export function sampleEllipse(center: Vec, rx: number, ry: number, rotation: number): Vec[] {
   const radius = Math.max(rx, ry);
   const step = 2 * Math.acos(Math.max(0, 1 - CURVE_TOLERANCE / radius));
-  const count = Math.max(MIN_CURVE_POINTS, Math.ceil((2 * Math.PI) / step));
+  // A whole number of points in each quarter, so the ends of both axes are points of the outline: an ellipse snapped
+  // to the paper's lines touches them exactly.
+  const count = 4 * Math.ceil(Math.max(MIN_CURVE_POINTS, Math.ceil((2 * Math.PI) / step)) / 4);
   const cos = Math.cos(rotation);
   const sin = Math.sin(rotation);
   return Array.from({ length: count + 1 }, (_, i) => {

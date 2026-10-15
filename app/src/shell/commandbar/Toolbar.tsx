@@ -6,7 +6,9 @@ import { useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { ariaKeyShortcuts, formatChord, shortcutHint, useKeysFor } from '../../commands/keymap';
 import { menuItemsFor } from '../../commands/menus';
+import { isEnabled } from '../../app/flags';
 import { commandContext, executeCommand } from '../../commands/registry';
+import { commands } from '../../registries';
 import type { CommandBarComponentProps } from '../../registries/types';
 import { t } from '../../strings/t';
 import { openMenu, Tooltip } from '../../ui';
@@ -85,6 +87,32 @@ function overflowItem({ item, def, disabled, checked }: BarEntry): MenuItemSpec 
   };
 }
 
+/**
+ * The More menu's entries for a tool that moved there: a component that holds several tools lists each of its
+ * commands that is available now, and anything else is one entry.
+ */
+function overflowItems(entry: BarEntry): MenuItemSpec[] {
+  const ids = entry.item.overflow;
+  if (!ids) return [overflowItem(entry)];
+  const ctx = commandContext('commandBar');
+  return ids.flatMap((id) => {
+    const def = commands.get(id);
+    if (!def || (def.flag && !isEnabled(def.flag)) || (def.when && !def.when(ctx))) return [];
+    const checked = def.checked?.(ctx);
+    return [
+      {
+        id: `${entry.item.id}:${id}`,
+        label: t(def.title),
+        shortcut: shortcutHint(def.id) ?? undefined,
+        kind: checked === undefined ? ('item' as const) : ('checkbox' as const),
+        checked,
+        disabled: def.enabled ? !def.enabled(ctx) : false,
+        onSelect: () => void executeCommand(def.id, undefined, 'commandBar'),
+      },
+    ];
+  });
+}
+
 function MoreButton({ entries, measuring }: { entries: readonly BarEntry[]; measuring: boolean }) {
   const [open, setOpen] = useState(false);
   const onClick = async (event: MouseEvent<HTMLButtonElement>) => {
@@ -92,7 +120,7 @@ function MoreButton({ entries, measuring }: { entries: readonly BarEntry[]; meas
     setOpen(true);
     await openMenu({
       label: t('commands.bar.moreLabel'),
-      items: entries.map(overflowItem),
+      items: entries.flatMap(overflowItems),
       anchor,
       returnFocus: anchor,
     });
