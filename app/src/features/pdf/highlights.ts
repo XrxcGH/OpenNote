@@ -74,10 +74,16 @@ export function addHighlight(
   color: HighlightColor,
 ): { patch: Record<string, unknown>; highlight: Highlight } | null {
   const list = highlightsOf(block);
-  if (list.length >= MAX_HIGHLIGHTS) return null;
   const from = Math.max(0, Math.min(range.from, range.to));
   const to = Math.min(words.length - 1, Math.max(range.from, range.to));
   if (to < from) return null;
+  // The same words again are not marked twice: the mark they have takes the new color.
+  const same = list.find((h) => h.from === from && h.to === to);
+  if (same) {
+    const highlight = { ...same, color };
+    return { patch: { highlights: list.map((h) => (h === same ? highlight : h)) }, highlight };
+  }
+  if (list.length >= MAX_HIGHLIGHTS) return null;
   const highlight: Highlight = { id: newId(), color, from, to, text: wordsText(words, from, to) };
   return { patch: { highlights: [...list, highlight] }, highlight };
 }
