@@ -100,16 +100,20 @@ fn the_catalog_lists_checksums_sizes_and_pinned_https_addresses() {
             );
             if spec.kind == "speech" {
                 assert!(part.url.starts_with(SPEECH_HOST), "{}", spec.id);
-            } else {
-                // Everything else is pinned to a commit, not to a branch that can change under the checksum.
-                let revision = part
-                    .url
-                    .split("/resolve/")
-                    .nth(1)
-                    .and_then(|rest| rest.split('/').next());
-                let revision = revision.expect("a resolve address");
-                assert_eq!(revision.len(), 40, "{}", part.url);
-                assert!(revision.bytes().all(|b| b.is_ascii_hexdigit()), "{}", part.url);
+            }
+            // Everything is pinned to a commit, not to a branch that can change under the checksum.
+            let revision = part
+                .url
+                .split("/resolve/")
+                .nth(1)
+                .and_then(|rest| rest.split('/').next());
+            let revision = revision.expect("a resolve address");
+            assert_eq!(revision.len(), 40, "{}", part.url);
+            assert!(revision.bytes().all(|b| b.is_ascii_hexdigit()), "{}", part.url);
+            // Hugging Face stores every file over 10 MB in its large-file storage, which publishes a sha256 for it. Only a
+            // smaller file may have just git's own hash.
+            if part.size > 10 * 1024 * 1024 {
+                assert!(matches!(part.digest, Digest::Sha256(_)), "{}", part.file);
             }
         }
     }
