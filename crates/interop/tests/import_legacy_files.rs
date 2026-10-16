@@ -23,7 +23,10 @@ fn a_locked_file_chosen_by_itself_says_how_to_unlock_it() {
         import_xlsx(&legacy("locked.xls"), &world.env(), &mut sink).expect("reported"),
     ] {
         let losses = report.loss_groups();
-        assert!(losses.iter().any(|group| group.why.contains("remove the password")), "{losses:?}");
+        assert!(
+            losses.iter().any(|group| group.why.contains("remove the password")),
+            "{losses:?}"
+        );
     }
     assert!(sink.pages.is_empty());
 }

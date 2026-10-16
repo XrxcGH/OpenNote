@@ -106,10 +106,7 @@ fn normalized(path: &Path) -> String {
 /// Whether `path` is `folder` or lies inside it.
 pub fn is_inside(path: &Path, folder: &Path) -> bool {
     let (path, folder) = (normalized(path), normalized(folder));
-    path == folder
-        || path
-            .strip_prefix(&folder)
-            .is_some_and(|rest| rest.starts_with('\\'))
+    path == folder || path.strip_prefix(&folder).is_some_and(|rest| rest.starts_with('\\'))
 }
 
 /// Whether the app can create a file in `dir`, checked by creating and deleting a probe file.

@@ -152,9 +152,21 @@ fn a_grant_reaches_only_its_notebooks() {
         "the other notebook and the locked section are left out"
     );
     // The limit counts only hits the grant may see, so the one best hit it may read comes back.
-    let one = body(&reader.get("/v1/search", &[("q", "budget"), ("limit", "1")]).expect("search"));
-    assert_eq!(one["hits"].as_array().map(Vec::len), Some(0), "the budget page is in another notebook");
-    let one = body(&reader.get("/v1/search", &[("q", "mitochondria"), ("limit", "1")]).expect("search"));
+    let one = body(
+        &reader
+            .get("/v1/search", &[("q", "budget"), ("limit", "1")])
+            .expect("search"),
+    );
+    assert_eq!(
+        one["hits"].as_array().map(Vec::len),
+        Some(0),
+        "the budget page is in another notebook"
+    );
+    let one = body(
+        &reader
+            .get("/v1/search", &[("q", "mitochondria"), ("limit", "1")])
+            .expect("search"),
+    );
     assert_eq!(one["hits"][0]["page"]["id"], "p-mito");
 }
 

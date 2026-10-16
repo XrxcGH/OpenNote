@@ -56,7 +56,10 @@ fn table_markdown(data: &Value) -> Option<String> {
                 .iter()
                 .map(|column| {
                     let text = row["cells"][column]["markdown"].as_str().unwrap_or("");
-                    text.trim().replace('|', r"\|").replace("\r\n", "\n").replace('\n', "<br>")
+                    text.trim()
+                        .replace('|', r"\|")
+                        .replace("\r\n", "\n")
+                        .replace('\n', "<br>")
                 })
                 .collect()
         })

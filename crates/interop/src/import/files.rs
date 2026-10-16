@@ -165,7 +165,8 @@ fn display(root: &Path, path: &Path) -> String {
 /// Office files that a folder import of another kind leaves for an import of their own. A folder import reads one
 /// kind of file, so these are named in the report instead of left out without a word.
 const OFFICE_EXTENSIONS: [&str; 16] = [
-    "docx", "docm", "odt", "ott", "doc", "dot", "rtf", "xlsx", "xlsm", "xls", "xlt", "xlsb", "ods", "ots", "pptx", "pptm",
+    "docx", "docm", "odt", "ott", "doc", "dot", "rtf", "xlsx", "xlsm", "xls", "xlt", "xlsb", "ods", "ots", "pptx",
+    "pptm",
 ];
 
 /// Finds the files with the extensions, in path order, each with the name of its section: the file name without

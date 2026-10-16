@@ -690,7 +690,10 @@ impl Caller<'_> {
         let hits = if notebooks.is_some_and(<[String]>::is_empty) {
             Vec::new()
         } else {
-            self.api.backend.search(text, notebooks, limit * 3).map_err(backend_refusal)?
+            self.api
+                .backend
+                .search(text, notebooks, limit * 3)
+                .map_err(backend_refusal)?
         };
         let mut locked: HashMap<String, bool> = HashMap::new();
         let mut mine = Vec::new();
