@@ -90,29 +90,26 @@ pub fn shortcut_path(paths: &Paths) -> PathBuf {
 
 /// Whether two paths name the same folder. Case and trailing separators don't matter, as on Windows.
 pub fn same_folder(a: &Path, b: &Path) -> bool {
-    let norm = |path: &Path| {
-        path.to_string_lossy()
-            .trim_start_matches(r"\\?\")
-            .trim_end_matches(['\\', '/'])
-            .to_lowercase()
-    };
-    norm(a) == norm(b)
+    normalized(a) == normalized(b)
+}
+
+/// A path as Windows compares it: no `\\?\` prefix, backslashes only (a profile folder given as `C:/x/profile`
+/// yields `C:/x/profile\Programs`), no trailing separator, any case.
+fn normalized(path: &Path) -> String {
+    path.to_string_lossy()
+        .trim_start_matches(r"\\?\")
+        .replace('/', "\\")
+        .trim_end_matches('\\')
+        .to_lowercase()
 }
 
 /// Whether `path` is `folder` or lies inside it.
 pub fn is_inside(path: &Path, folder: &Path) -> bool {
-    let (path, folder) = (
-        path.to_string_lossy().trim_start_matches(r"\\?\").to_lowercase(),
-        folder
-            .to_string_lossy()
-            .trim_start_matches(r"\\?\")
-            .trim_end_matches(['\\', '/'])
-            .to_lowercase(),
-    );
+    let (path, folder) = (normalized(path), normalized(folder));
     path == folder
         || path
             .strip_prefix(&folder)
-            .is_some_and(|rest| rest.starts_with(['\\', '/']))
+            .is_some_and(|rest| rest.starts_with('\\'))
 }
 
 /// Whether the app can create a file in `dir`, checked by creating and deleting a probe file.
@@ -251,8 +248,19 @@ pub fn check_folder_with(path: &Path, app_folders: &[&Path]) -> FolderCheck {
 pub fn install_check_folder(paths: State<'_, Paths>, path: String) -> IpcResult<FolderCheck> {
     let exe = std::env::current_exe().unwrap_or_default();
     let exe_folder = exe.parent().unwrap_or(Path::new(""));
-    let programs = programs_dir(&paths);
-    Ok(check_folder_with(Path::new(&path), &[exe_folder, &programs]))
+    Ok(check_notes_folder(Path::new(&path), exe_folder, &programs_dir(&paths)))
+}
+
+/// Checks a proposed notes folder against where the app lives. Anything inside the Programs folder is refused,
+/// since an update or an uninstall replaces that folder. Where a download sits is only the exe's own folder:
+/// an update swaps the exe file, never the folder around it, and setup usually moves the exe away. So only
+/// that folder itself is refused, and a folder beside or below the exe (`Downloads\OpenNote notes`, or a test
+/// profile next to the exe) is fine.
+pub fn check_notes_folder(path: &Path, exe_folder: &Path, programs: &Path) -> FolderCheck {
+    if is_local_path(path) && !exe_folder.as_os_str().is_empty() && same_folder(path, exe_folder) {
+        return FolderCheck::InsideAppFolder;
+    }
+    check_folder_with(path, &[programs])
 }
 
 /// The SHA-256 of a file.

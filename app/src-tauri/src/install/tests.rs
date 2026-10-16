@@ -240,3 +240,32 @@ fn removes_the_old_copy_after_a_move() {
     }
     assert!(!old.exists());
 }
+
+#[test]
+fn notes_may_sit_below_the_exe_but_not_in_its_folder_or_in_programs() {
+    let dir = tempfile::tempdir().expect("a temp folder");
+    let exe_folder = dir.path();
+    let programs = exe_folder.join("profile").join("Programs").join("OpenNote");
+    let notes = exe_folder.join("profile").join("Documents").join("OpenNote");
+    assert_eq!(check_notes_folder(&notes, exe_folder, &programs), FolderCheck::WillCreate);
+    assert_eq!(
+        check_notes_folder(&exe_folder.join("notes"), exe_folder, &programs),
+        FolderCheck::WillCreate
+    );
+    assert_eq!(check_notes_folder(exe_folder, exe_folder, &programs), FolderCheck::InsideAppFolder);
+    assert_eq!(
+        check_notes_folder(&programs.join("notes"), exe_folder, &programs),
+        FolderCheck::InsideAppFolder
+    );
+}
+
+#[test]
+fn folders_match_whichever_way_the_slashes_lean() {
+    // A profile folder given as `C:/x/profile` makes Programs `C:/x/profile\Programs\OpenNote`.
+    assert!(same_folder(
+        Path::new(r"C:/x/profile\Programs\OpenNote"),
+        Path::new(r"C:\x\profile\Programs\OpenNote\")
+    ));
+    assert!(is_inside(Path::new(r"C:\x\profile\Documents"), Path::new("C:/x/profile/")));
+    assert!(!is_inside(Path::new(r"C:\x\profiles"), Path::new("C:/x/profile")));
+}
