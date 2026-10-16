@@ -66,10 +66,11 @@ describe('a skewed four-sided outline', () => {
     return recognizeShape(densify(outline, 4), { extra: true, minSize: 1 })?.shape.kind ?? null;
   };
 
-  it('is a rectangle up to 14 degrees off square, a freeform polygon from 22, and left alone between', () => {
+  // Its sides are parallel, so past the rectangle's tolerance it is a parallelogram drawn on purpose (Beta 5 walk W2-2).
+  it('is a rectangle up to 14 degrees off square and a freeform polygon past that', () => {
     expect(kindAt(6)).toBe('rectangle');
     expect(kindAt(14)).toBe('rectangle');
-    expect(kindAt(18)).toBeNull();
+    expect(kindAt(18)).toBe('freeform');
     expect(kindAt(22)).toBe('freeform');
     expect(kindAt(40)).toBe('freeform');
   });
