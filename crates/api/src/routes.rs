@@ -83,7 +83,10 @@ struct Asking<'a> {
 
 impl Drop for Asking<'_> {
     fn drop(&mut self) {
-        self.open.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).remove(&self.grant);
+        self.open
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&self.grant);
     }
 }
 
@@ -562,7 +565,12 @@ impl Caller<'_> {
     fn page_place(&self, action: &str, id: &str) -> Result<Location, Refusal> {
         let place = self.place(action, id)?;
         if place.section_id.is_none() || place.section_id.as_deref() == Some(id) {
-            return Err(self.refused(action, Some(&place), "notFound", backend_refusal(BackendError::NotFound)));
+            return Err(self.refused(
+                action,
+                Some(&place),
+                "notFound",
+                backend_refusal(BackendError::NotFound),
+            ));
         }
         Ok(place)
     }
@@ -582,7 +590,11 @@ impl Caller<'_> {
                 action,
                 Some(place),
                 "busy",
-                refuse(429, "busy", "OpenNote is already asking about another change from this app. Try again."),
+                refuse(
+                    429,
+                    "busy",
+                    "OpenNote is already asking about another change from this app. Try again.",
+                ),
             ));
         }
         let _asking = Asking {

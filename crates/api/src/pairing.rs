@@ -196,7 +196,10 @@ mod tests {
         assert_eq!(pairing.redeem(&code, "ext", now), Err(CodeRefusal::NoCode));
 
         let (late, _) = pairing.new_code(Access::Read, Scope::All, now);
-        assert_eq!(pairing.redeem(&late, "ext", now + CODE_LIFETIME), Err(CodeRefusal::NoCode));
+        assert_eq!(
+            pairing.redeem(&late, "ext", now + CODE_LIFETIME),
+            Err(CodeRefusal::NoCode)
+        );
     }
 
     #[test]
@@ -205,9 +208,15 @@ mod tests {
         let now = Instant::now();
         let (code, _) = pairing.new_code(Access::Read, Scope::All, now);
         for _ in 0..CODE_TRIES {
-            assert_eq!(pairing.redeem("AAAA-AAAA", "https://guess.example", now), Err(CodeRefusal::Wrong));
+            assert_eq!(
+                pairing.redeem("AAAA-AAAA", "https://guess.example", now),
+                Err(CodeRefusal::Wrong)
+            );
         }
-        assert_eq!(pairing.redeem(&code, "https://guess.example", now), Err(CodeRefusal::NoCode));
+        assert_eq!(
+            pairing.redeem(&code, "https://guess.example", now),
+            Err(CodeRefusal::NoCode)
+        );
         assert!(pairing.redeem(&code, "chrome-extension://clipper", now).is_ok());
     }
 
@@ -220,7 +229,10 @@ mod tests {
             let sender = format!("https://s{}.guess.example", each / CODE_TRIES);
             assert_eq!(pairing.redeem("AAAA-AAAA", &sender, now), Err(CodeRefusal::Wrong));
         }
-        assert_eq!(pairing.redeem(&code, "chrome-extension://clipper", now), Err(CodeRefusal::NoCode));
+        assert_eq!(
+            pairing.redeem(&code, "chrome-extension://clipper", now),
+            Err(CodeRefusal::NoCode)
+        );
     }
 
     #[test]

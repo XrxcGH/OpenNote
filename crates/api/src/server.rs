@@ -460,10 +460,14 @@ mod tests {
     #[test]
     fn a_finished_job_gives_its_slot_back() {
         let active = Arc::new(AtomicUsize::new(1));
-        run_counted(&active, || {}, |work| {
-            work();
-            Ok(())
-        });
+        run_counted(
+            &active,
+            || {},
+            |work| {
+                work();
+                Ok(())
+            },
+        );
         assert_eq!(active.load(Ordering::SeqCst), 0);
     }
 }

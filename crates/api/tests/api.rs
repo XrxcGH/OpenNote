@@ -269,7 +269,11 @@ fn one_app_waits_for_one_change_question_at_a_time() {
             .collect();
         sends.into_iter().map(|send| send.join().expect("joins")).collect()
     });
-    assert_eq!(statuses, [403, 429, 429], "the first is asked and declined; the others are busy");
+    assert_eq!(
+        statuses,
+        [403, 429, 429],
+        "the first is asked and declined; the others are busy"
+    );
     assert_eq!(test.approver.asked().len(), asked + 1, "one question at a time");
 }
 
