@@ -387,7 +387,11 @@ impl Api {
             return Err(refuse(403, "origin", "Only a mail add-in pairs from a web page."));
         }
         let name = crate::grants::clean_name(&body.name);
-        match self.pairing.redeem(&body.code, Instant::now()) {
+        let sender = match origin {
+            Origin::Extension(text) | Origin::Web(text) => text.as_str(),
+            _ => "program",
+        };
+        match self.pairing.redeem(&body.code, sender, Instant::now()) {
             Ok(code) => {
                 let bound = match origin {
                     Origin::Extension(text) | Origin::Web(text) => Some(text.clone()),

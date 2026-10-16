@@ -33,7 +33,7 @@ The **Access log** lists every time an app read, added, or was refused, with the
 
 ## Pair the web clipper or a mail add-in
 
-A browser extension or a mail add-in pairs with a code instead of a question. In App permissions, choose **Make a pairing code**, then type the code into the extension or add-in. A code works once, for 5 minutes, and five wrong tries end it. A paired clipper or add-in can see notebook and section names, so you can pick where to save, and can add new pages. It can't read your notes.
+A browser extension or a mail add-in pairs with a code instead of a question. In App permissions, choose **Make a pairing code**, then type the code into the extension or add-in. A code works once, for 5 minutes. Five wrong tries from the same extension, add-in, or web page end it there. A paired clipper or add-in can see notebook and section names, so you can pick where to save, and can add new pages. It can't read your notes.
 
 ## Connect an AI assistant (MCP)
 
