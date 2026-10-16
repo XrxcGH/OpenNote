@@ -402,7 +402,6 @@ impl<S: PageSource> Indexer<S> {
         })();
         match result {
             Ok((held, generation)) if !held.is_empty() => {
-                self.source.forget_pages(&held);
                 self.stats.removed += held.len() as u64;
                 for page in &held {
                     self.failures.remove(page);
@@ -432,6 +431,8 @@ impl<S: PageSource> Indexer<S> {
         })();
         match result {
             Ok((held, generation)) if !held.is_empty() => {
+                // The section is encrypted now: its pages' words kept beside the index go too.
+                self.source.forget_pages(&held);
                 self.stats.removed += held.len() as u64;
                 self.emit(IndexEvent::Updated(IndexUpdate {
                     removed: held,

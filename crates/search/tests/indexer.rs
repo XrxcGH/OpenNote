@@ -279,10 +279,16 @@ fn closing_a_notebook_and_purging_a_section_remove_their_pages() {
     assert_eq!(rig.found("shared").len(), 5);
     rig.run([Job::PurgeSection { section: section_id(2) }]);
     assert_eq!(rig.found("shared").len(), 3);
+    // The purged section is encrypted: words kept beside the index, such as transcripts, go with its pages.
+    let mut forgotten = rig.source.world().forgotten.clone();
+    forgotten.sort();
+    assert_eq!(forgotten, [page_id(1), page_id(3)]);
     rig.run([Job::CloseNotebook {
         notebook: notebook_id(2),
     }]);
     assert_eq!(rig.found("shared").len(), 2);
+    // A closed notebook is only closed: its transcripts are still wanted when it opens again.
+    assert_eq!(rig.source.world().forgotten.len(), 2);
     rig.healthy();
 }
 
