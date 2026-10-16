@@ -109,6 +109,7 @@ export const platformApi = {
   ask: {
     connectTitle: 'Let {name} connect to OpenNote?',
     connectBody: 'A program on this PC calls itself “{name}” ({kind}). Allow it only if you started it.',
+    connectBodyNamed: 'A program on this PC calls itself “{name}”. Allow it only if you started it.',
     connectAllow: 'Allow',
     changeTitle: 'Allow this change?',
     changeBody: '{name} wants to {action}, in “{target}”.',
@@ -152,6 +153,8 @@ export const platformApi = {
     enabled: 'On',
     save: 'Save',
     badUrl: 'Use a web address that starts with https://, such as https://hooks.zapier.com/…',
+    localUrl:
+      'Use the service’s web address, such as https://hooks.zapier.com/…. OpenNote doesn’t send webhooks to this PC, an IP address, or a name only your network knows.',
     noEvents: 'Pick at least one thing to send.',
     saved: 'The webhook is saved.',
     dialogTitle: 'Webhook',

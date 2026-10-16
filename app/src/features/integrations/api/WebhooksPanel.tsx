@@ -13,16 +13,29 @@ import type { HookEvent, Webhook } from './types';
 
 const EVENTS: readonly HookEvent[] = ['pageCreated', 'pageChanged', 'tagAdded'];
 
-/** A web address starting with https:// and a host name, as the shell checks it again. */
-export function webhookUrlOk(url: string): boolean {
+/** Host names only this network knows, which OpenNote refuses as the shell does (crates/api/src/webhooks.rs). */
+const LOCAL_SUFFIXES = ['.local', '.localhost', '.internal', '.lan', '.home.arpa'];
+
+/**
+ * Why an address can't be a webhook, as the message to show: not an https address at all ('badUrl'), or an
+ * address on this PC or network, such as an IP address or printer.local ('localUrl'). `null` when it's fine. The
+ * shell checks the address again when it saves.
+ */
+export function webhookUrlProblem(url: string): 'badUrl' | 'localUrl' | null {
   const trimmed = url.trim();
-  if (!/^https:\/\//i.test(trimmed) || /\s/.test(trimmed) || trimmed.length > 2048) return false;
+  if (!/^https:\/\//i.test(trimmed) || /\s/.test(trimmed) || trimmed.length > 2048) return 'badUrl';
+  let parsed: URL;
   try {
-    const parsed = new URL(trimmed);
-    return parsed.protocol === 'https:' && parsed.hostname.includes('.') && !parsed.username && !parsed.password;
+    parsed = new URL(trimmed);
   } catch {
-    return false;
+    return 'badUrl';
   }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return 'badUrl';
+  const host = parsed.hostname.toLowerCase();
+  // The URL parser turns every IPv4 spelling into dotted decimal and keeps IPv6 in brackets.
+  const ip = /^\d+\.\d+\.\d+\.\d+$/.test(host) || host.startsWith('[');
+  if (ip || host === 'localhost' || LOCAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) return 'localUrl';
+  return host.includes('.') ? null : 'badUrl';
 }
 
 const blank = (): Webhook => ({
@@ -162,7 +175,8 @@ function WebhookDialog(props: {
   const id = useId();
   const change = (patch: Partial<Webhook>) => setHook((current) => ({ ...current, ...patch }));
   const save = async () => {
-    if (!webhookUrlOk(hook.url)) return setError(t('platformApi.webhooks.badUrl'));
+    const problem = webhookUrlProblem(hook.url);
+    if (problem) return setError(t(`platformApi.webhooks.${problem}`));
     if (hook.events.length === 0) return setError(t('platformApi.webhooks.noEvents'));
     if (hook.notebooks.kind === 'notebooks' && hook.notebooks.ids.length === 0) {
       return setError(t('platformApi.ask.pickNotebook'));
@@ -204,7 +218,11 @@ function WebhookDialog(props: {
             inputMode="url"
             spellCheck={false}
             value={hook.url}
-            aria-invalid={error === t('platformApi.webhooks.badUrl') ? true : undefined}
+            aria-invalid={
+              error === t('platformApi.webhooks.badUrl') || error === t('platformApi.webhooks.localUrl')
+                ? true
+                : undefined
+            }
             onChange={(event) => change({ url: event.target.value })}
           />
         </label>
