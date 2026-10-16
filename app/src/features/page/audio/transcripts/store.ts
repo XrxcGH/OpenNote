@@ -59,7 +59,9 @@ export function adoptTranscripts(page: OpenPage): void {
   adopted?.stop();
   // The page as it opened lacks what was saved since, such as a transcript just added: the changes held for this page
   // win, or a block that draws after its transcript was saved would find the store without it.
-  const base = new Map(transcriptsOf(page.initial.view).map((data): [string, TranscriptData] => [data.recording, data]));
+  const base = new Map(
+    transcriptsOf(page.initial.view).map((data): [string, TranscriptData] => [data.recording, data]),
+  );
   if (recentPage === page.id) for (const [recording, data] of recent) base.set(recording, data);
   transcripts.set(base);
   const stop = page.onFrame((frame) => {
