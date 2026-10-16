@@ -7,7 +7,7 @@ import { getSettings, settingsStore } from '../../../state/settings';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { DrawPens, DrawTools } from './DrawBar';
 import PenSettings from './PenSettings';
-import { deletePenSet, drawState, savePenSet, updateSlot } from './state';
+import { deletePenSet, drawState, MAX_PEN_SETS, savePenSet, setSlotTool, updateSlot } from './state';
 
 const toolProps = { tabIndex: -1, 'data-tool': '' } as const;
 const original = settingsStore.get();
@@ -74,9 +74,36 @@ describe('the Draw tab', () => {
     await updateSlot('p2', { width: 5 });
     await userEvent.click(screen.getByRole('button', { name: 'Width' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Drawing' }));
-    await expect.poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.width).toBe(2);
+    // The set keeps the width calligraphy took: the 0.7 mm preset nearest the pen's 0.5 mm.
+    await expect.poll(() => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.width).toBe(0.7);
     await deletePenSet(getSettings().ink.penSets?.[0].id ?? '');
     expect(getSettings().ink.penSets).toEqual([]);
+  });
+});
+
+describe('the pen library', () => {
+  const width = () => getSettings().ink.pens.find((pen) => pen.id === 'p2')?.width;
+
+  it('gives a pen type the nearest width it has, and the plain pen its own back (Beta 5 walk W2-9)', async () => {
+    await updateSlot('p2', { width: 0.5 });
+    await setSlotTool('p2', 'calligraphy');
+    expect(width()).toBe(0.7);
+    await setSlotTool('p2', 'dashed');
+    expect(width()).toBe(0.5);
+    await setSlotTool('p2', 'calligraphy');
+    await setSlotTool('p2', 'pen');
+    expect(width()).toBe(0.5);
+  });
+
+  it('refuses a new set when the library is full, and still replaces one by name (Beta 5 walk W2-8)', async () => {
+    for (let i = 0; i < MAX_PEN_SETS; i++) expect(await savePenSet(`Set ${i}`)).toBe(true);
+    expect(await savePenSet('One more')).toBe(false);
+    const names = getSettings().ink.penSets?.map((set) => set.name) ?? [];
+    expect(names).toHaveLength(MAX_PEN_SETS);
+    expect(names[0]).toBe('Set 0');
+    expect(new Set(getSettings().ink.penSets?.map((set) => set.id)).size).toBe(MAX_PEN_SETS);
+    expect(await savePenSet('Set 0')).toBe(true);
+    expect(getSettings().ink.penSets).toHaveLength(MAX_PEN_SETS);
   });
 });
 

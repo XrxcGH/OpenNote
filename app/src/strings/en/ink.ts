@@ -384,6 +384,7 @@ export const ink = {
     save: 'Save',
     setName: 'Name of the set',
     setNameMissing: 'Give the set a name.',
+    setsFull: 'You can keep {count} pen sets. Delete one to save another, or use the name of one to replace it.',
     deleteSet: 'Delete {name}',
     saved: 'Saved the set {name}',
     applied: 'Pen set applied',

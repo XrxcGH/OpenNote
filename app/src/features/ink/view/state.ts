@@ -58,6 +58,7 @@ export function styleOf(slot: PenSlot | undefined): PenStyle {
 
 /** Changes one pen slot in settings. */
 export function updateSlot(id: string, change: Partial<Pick<PenSlot, 'color' | 'width'>>): Promise<void> {
+  if (change.width !== undefined) chosenWidths.delete(id);
   const pens = penSlots().map((slot) => (slot.id === id ? { ...slot, ...change } : slot));
   return updateSettings({ ink: { pens } });
 }
@@ -65,11 +66,26 @@ export function updateSlot(id: string, change: Partial<Pick<PenSlot, 'color' | '
 /** The pens of the library (flag `ink.penLibrary`), in the order the Pen type menu lists them. */
 export const LIBRARY_PENS: readonly PenTool[] = ['pen', 'fountain', 'brush', 'calligraphy', 'dashed', 'dotted'];
 
-/** Changes a slot to another pen of the library. A width the new pen has no preset for becomes its default. */
+/**
+ * The width each slot was given before a pen type without that width took the nearest it has, so going back to a pen
+ * that has it restores it: 0.5 mm, calligraphy (0.7 mm), then the plain pen is 0.5 mm again (Beta 5 walk W2-9). A width
+ * the person picks forgets it. It lasts while the app runs.
+ */
+const chosenWidths = new Map<string, number>();
+
+const nearest = (presets: readonly number[], width: number): number =>
+  presets.reduce((best, preset) => (Math.abs(preset - width) < Math.abs(best - width) ? preset : best));
+
+/** Changes a slot to another pen of the library. A width the new pen has no preset for becomes its nearest preset. */
 export function setSlotTool(id: string, tool: PenTool): Promise<void> {
   const pens = penSlots().map((slot) => {
     if (slot.id !== id || slot.tool === 'highlighter') return slot;
-    const width = WIDTH_PRESETS_MM[tool].includes(slot.width) ? slot.width : DEFAULT_WIDTH_MM[tool];
+    const wanted = chosenWidths.get(id) ?? slot.width;
+    const presets = WIDTH_PRESETS_MM[tool];
+    const width =
+      presets.length === 0 ? DEFAULT_WIDTH_MM[tool] : presets.includes(wanted) ? wanted : nearest(presets, wanted);
+    if (width === wanted) chosenWidths.delete(id);
+    else chosenWidths.set(id, wanted);
     return { ...slot, tool, width, pressure: true };
   });
   return updateSettings({ ink: { pens } });
@@ -81,14 +97,30 @@ export function penSets(): readonly PenSet[] {
   return getSettings().ink.penSets ?? [];
 }
 
-/** Saves the pens now on the palette as a named set. A name already used replaces that set. */
-export function savePenSet(name: string): Promise<void> {
-  const trimmed = name.trim().slice(0, 40);
+const setName = (name: string) => name.trim().slice(0, 40);
+/** Tells apart sets saved in the same millisecond. */
+let setCount = 0;
+
+/** Whether saving under this name needs room the library has not got: it is a new name and the library is full. */
+export function penSetsFull(name: string): boolean {
+  const trimmed = setName(name);
+  return penSets().length >= MAX_PEN_SETS && !penSets().some((set) => set.name === trimmed);
+}
+
+/**
+ * Saves the pens now on the palette as a named set. A name already used replaces that set. A new name when the library
+ * is full saves nothing and resolves false, so no set is ever dropped without asking (Beta 5 walk W2-8).
+ */
+export async function savePenSet(name: string): Promise<boolean> {
+  if (penSetsFull(name)) return false;
+  const trimmed = setName(name);
   const kept = penSets().filter((set) => set.name !== trimmed);
   const existing = penSets().find((set) => set.name === trimmed);
-  const id = existing?.id ?? `set-${Date.now().toString(36)}`;
-  const next = [...kept, { id, name: trimmed, pens: penSlots().map((slot) => ({ ...slot })) }].slice(-MAX_PEN_SETS);
-  return updateSettings({ ink: { penSets: next } });
+  const id = existing?.id ?? `set-${Date.now().toString(36)}-${(setCount++).toString(36)}`;
+  await updateSettings({
+    ink: { penSets: [...kept, { id, name: trimmed, pens: penSlots().map((slot) => ({ ...slot })) }] },
+  });
+  return true;
 }
 
 /** Puts a saved set's pens on the palette. */
