@@ -31,6 +31,14 @@ describe('simplify', () => {
     expect(simplifyLatex(String.raw`2 \cdot 3x`)).toEqual({ ok: true, latex: '6x' });
   });
 
+  it('collects like terms (Beta 5 walk W2-10)', () => {
+    expect(simplifyLatex('2x+3x+x')).toEqual({ ok: true, latex: '6x' });
+    expect(simplifyLatex('x+x')).toEqual({ ok: true, latex: '2x' });
+    expect(simplifyLatex('2x+3+3x-1')).toEqual({ ok: true, latex: '5x+2' });
+    expect(simplifyLatex('x^2+2x-x^2')).toEqual({ ok: true, latex: '2x' });
+    expect(simplifyLatex('3y-3y+x')).toEqual({ ok: true, latex: 'x' });
+  });
+
   it('simplifies both sides of an equation', () => {
     expect(simplifyLatex('x+0=2+2')).toEqual({ ok: true, latex: 'x = 4' });
   });

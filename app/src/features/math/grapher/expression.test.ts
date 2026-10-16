@@ -179,7 +179,8 @@ describe('mistakes', () => {
   });
 
   it('says when a derivative is too large to work out', () => {
-    const result = differentiateExpression('x' + '*x'.repeat(150), {}, 2);
+    const product = '(x+1)' + Array.from({ length: 150 }, (_, i) => `*(x+${i + 2})`).join('');
+    const result = differentiateExpression(product, {}, 2);
     expect(result.ok ? null : result.error).toMatchObject({ message: /too large/, position: 0 });
   });
 

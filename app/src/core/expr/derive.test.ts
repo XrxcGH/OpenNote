@@ -70,11 +70,12 @@ describe('writing the derivative', () => {
   });
 
   it('stops a derivative that grows too large instead of building it', () => {
-    const product = 'x' + '*x'.repeat(150);
+    // Distinct factors, so collecting like terms cannot fold the product rule's terms away as it does for x*x*x.
+    const product = '(x+1)' + Array.from({ length: 150 }, (_, i) => `*(x+${i + 2})`).join('');
     const started = performance.now();
     expect(() => derivativeOf(product, 2)).toThrow(expect.objectContaining({ code: 'too-deep' }));
     expect(performance.now() - started).toBeLessThan(1500);
-    expect(formatExpression(derivativeOf('x*x*x*x'))).toBe('((x+x)*x+x*x)*x+x*x*x');
+    expect(formatExpression(derivativeOf('x*x*x*x'))).toBe('4*(x*x*x)');
   });
 
   it('differentiates at most ten times, and a count that is not a whole number no times', () => {
