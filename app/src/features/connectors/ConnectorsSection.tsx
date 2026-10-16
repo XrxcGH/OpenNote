@@ -62,28 +62,36 @@ export default function ConnectorsSection() {
       )}
       <TextField label={t('connectors.searchLabel')} value={query} onChange={setQuery} onCancel={() => setQuery('')} />
       {loaded && groups.length === 0 && <p role="status">{t('connectors.noMatches')}</p>}
-      {groups.map(({ group, items: members }) => (
-        <section key={group} className={styles.group} aria-labelledby={`${baseId}-${group}`}>
-          <h2 id={`${baseId}-${group}`}>{groupName(group)}</h2>
-          <ul className={styles.list} aria-label={groupName(group)}>
-            {members.map((info) => (
-              <ConnectorCard
-                key={info.id}
-                info={info}
-                offline={offline}
-                offlineNoticeId={noticeId}
-                error={errors[info.id]}
-                onConnect={(input) => connectTo(info.id, input)}
-                onCancel={() => void cancelSignIn(info.id)}
-                onDisconnect={() => void disconnect(info)}
-                onSetup={() => setUp(info)}
-                onOpenFolder={openFolder}
-                onSaveClient={(clientId, secret) => saveClient(info.id, clientId, secret)}
-              />
-            ))}
-          </ul>
-        </section>
-      ))}
+      {groups.map(({ group, items: members }) => {
+        const alone = members.length === 1 && members[0].name === groupName(group);
+        return (
+          <section
+            key={group}
+            className={styles.group}
+            {...(alone ? { 'aria-label': groupName(group) } : { 'aria-labelledby': `${baseId}-${group}` })}
+          >
+            {!alone && <h2 id={`${baseId}-${group}`}>{groupName(group)}</h2>}
+            <ul className={styles.list} aria-label={groupName(group)}>
+              {members.map((info) => (
+                <ConnectorCard
+                  key={info.id}
+                  info={info}
+                  alone={alone}
+                  offline={offline}
+                  offlineNoticeId={noticeId}
+                  error={errors[info.id]}
+                  onConnect={(input) => connectTo(info.id, input)}
+                  onCancel={() => void cancelSignIn(info.id)}
+                  onDisconnect={() => void disconnect(info)}
+                  onSetup={() => setUp(info)}
+                  onOpenFolder={openFolder}
+                  onSaveClient={(clientId, secret) => saveClient(info.id, clientId, secret)}
+                />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }

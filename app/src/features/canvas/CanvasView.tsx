@@ -50,7 +50,12 @@ function Pick({
   return (
     <label className={styles.pick}>
       <span>{label}</span>
-      <select className={styles.select} value={value} onChange={(event) => onChange(event.target.value)}>
+      <select
+        className={styles.select}
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.text}
