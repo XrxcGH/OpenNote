@@ -73,6 +73,8 @@ pub struct ParaSpec {
     pub tag: Option<TagSpec>,
     /// 1 to 6 for a heading style.
     pub heading: u8,
+    /// Gives every run one shared format object, as OneNote does for runs of the same format.
+    pub shared_style: bool,
 }
 
 /// A note tag to write.

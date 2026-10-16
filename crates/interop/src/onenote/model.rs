@@ -244,3 +244,38 @@ mod tests {
         assert_eq!(time32_ms(0), None);
     }
 }
+
+#[cfg(test)]
+mod work {
+    use super::*;
+    use crate::onenote::space::PARSES;
+    use crate::onenote::write::{section, PageSpec, ParaSpec, SectionSpec};
+
+    /// Runs that share one format object read it once, not once per run (R3-3).
+    #[test]
+    fn a_shared_run_format_is_read_once() {
+        let runs: Vec<(String, bool)> = (0..500).map(|i| (format!("r{i} "), true)).collect();
+        let spec = SectionSpec {
+            pages: vec![PageSpec {
+                title: "Runs".into(),
+                paragraphs: vec![ParaSpec {
+                    runs,
+                    shared_style: true,
+                    ..ParaSpec::default()
+                }],
+                ..PageSpec::default()
+            }],
+            ..SectionSpec::default()
+        };
+        let data = section(&spec);
+        PARSES.with(|n| n.set(0));
+        let read = read_section(&data).expect("the section reads");
+        let parses = PARSES.with(|n| n.get());
+        let Item::Text(para) = &read.pages[0].items[0] else {
+            panic!("a paragraph");
+        };
+        assert_eq!(para.runs.len(), 500);
+        assert!(para.runs.iter().all(|r| r.bold));
+        assert!(parses < 100, "{parses} property sets parsed");
+    }
+}

@@ -76,6 +76,8 @@ impl<'a> Space<'a> {
         let decl = self.objects.get(&id)?;
         Some(match &decl.data {
             Data::Props { blob, table } => {
+                #[cfg(test)]
+                PARSES.with(|n| n.set(n.get() + 1));
                 props::parse(blob, table).map(|props| Object::Props { jcid: decl.jcid, props })
             }
             Data::File(reference) => Ok(Object::File {
@@ -83,6 +85,12 @@ impl<'a> Space<'a> {
             }),
         })
     }
+}
+
+#[cfg(test)]
+thread_local! {
+    /// How many property sets this thread has parsed, for tests that bound the work of a read.
+    pub(crate) static PARSES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 /// A revision while its list is read.

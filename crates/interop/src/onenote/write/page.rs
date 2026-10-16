@@ -160,7 +160,10 @@ fn paragraph(s: &mut Space, para: &ParaSpec, kids: &[ExGuid]) -> ExGuid {
         if i + 1 < para.runs.len() {
             ends.extend_from_slice(&at.to_le_bytes());
         }
-        styles.push(s.add(jcid::PARAGRAPH_STYLE, Props::default().flag(prop::BOLD, *bold)));
+        match styles.first() {
+            Some(first) if para.shared_style => styles.push(*first),
+            _ => styles.push(s.add(jcid::PARAGRAPH_STYLE, Props::default().flag(prop::BOLD, *bold))),
+        }
     }
     let mut props = Props::default()
         .text(prop::RICH_EDIT_TEXT_UNICODE, &text)

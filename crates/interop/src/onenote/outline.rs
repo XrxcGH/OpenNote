@@ -4,7 +4,7 @@
 //! The walker visits each object once, stops at [`limits::DEPTH`] levels and [`limits::ITEMS`] items, and counts
 //! what it cannot read instead of failing the page.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use super::bytes::{utf16, ExGuid};
 use super::ids::{idx, jcid, prop};
@@ -22,6 +22,10 @@ pub(crate) struct Walker<'f, 'a> {
     space: &'f Space<'a>,
     seen: HashSet<ExGuid>,
     items: usize,
+    /// Shared style objects, read once each: run formats, heading levels, and note tag definitions.
+    formats: HashMap<ExGuid, Run>,
+    headings: HashMap<ExGuid, u8>,
+    definitions: HashMap<ExGuid, (String, Option<u64>)>,
     /// What could not be read.
     pub missed: Missed,
 }
@@ -33,6 +37,9 @@ impl<'f, 'a> Walker<'f, 'a> {
             space,
             seen: HashSet::new(),
             items: 0,
+            formats: HashMap::new(),
+            headings: HashMap::new(),
+            definitions: HashMap::new(),
             missed: Missed::default(),
         }
     }
@@ -268,8 +275,17 @@ impl<'f, 'a> Walker<'f, 'a> {
         }
     }
 
-    /// The format of a text run ([MS-ONE] 2.2.43). Style objects are shared, so they are read every time.
+    /// The format of a text run ([MS-ONE] 2.2.43). Style objects are shared, so each is read once and kept.
     fn run_format(&mut self, id: ExGuid) -> Run {
+        if let Some(run) = self.formats.get(&id) {
+            return run.clone();
+        }
+        let run = self.read_run_format(id);
+        self.formats.insert(id, run.clone());
+        run
+    }
+
+    fn read_run_format(&self, id: ExGuid) -> Run {
         let Some(Ok(Object::Props { props, .. })) = self.space.object(id) else {
             return Run::default();
         };
@@ -290,7 +306,16 @@ impl<'f, 'a> Walker<'f, 'a> {
         let Some(id) = text.objects(prop::PARAGRAPH_STYLE).first() else {
             return 0;
         };
-        let Some(Ok(Object::Props { props, .. })) = self.space.object(*id) else {
+        if let Some(level) = self.headings.get(id) {
+            return *level;
+        }
+        let level = self.read_heading(*id);
+        self.headings.insert(*id, level);
+        level
+    }
+
+    fn read_heading(&self, id: ExGuid) -> u8 {
+        let Some(Ok(Object::Props { props, .. })) = self.space.object(id) else {
             return 0;
         };
         let name = props
@@ -312,10 +337,16 @@ impl<'f, 'a> Walker<'f, 'a> {
             let mut shape = state.number(prop::NOTE_TAG_SHAPE);
             let mut label = String::new();
             if let Some(id) = state.objects(prop::NOTE_TAG_DEFINITION_OID).first() {
-                if let Some(Ok(Object::Props { props, .. })) = self.space.object(*id) {
-                    label = props.text(prop::NOTE_TAG_LABEL).unwrap_or_default();
-                    shape = shape.or(props.number(prop::NOTE_TAG_SHAPE));
-                }
+                let space = self.space;
+                let (name, defined) = self.definitions.entry(*id).or_insert_with(|| match space.object(*id) {
+                    Some(Ok(Object::Props { props, .. })) => (
+                        props.text(prop::NOTE_TAG_LABEL).unwrap_or_default(),
+                        props.number(prop::NOTE_TAG_SHAPE),
+                    ),
+                    _ => (String::new(), None),
+                });
+                label = name.clone();
+                shape = shape.or(*defined);
             }
             let checkable = shape.is_some_and(|s| CHECKABLE.contains(&s));
             tags.push(Tag {
