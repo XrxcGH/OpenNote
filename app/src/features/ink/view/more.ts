@@ -13,6 +13,7 @@ import { installLayers } from './layers';
 import { installPenFields, systemKeyboard } from './penFields';
 import { showLayers } from './LayersDialog';
 import { installInkLinks, selectionLinked, unlinkSelection } from './inkLinks';
+import { installLinkOpening } from './linkOpen';
 import { makeLinkFromSelection, showLinkList } from './linkDialogs';
 import { convertSelectionToTable } from './gridTable';
 import { convertSelection, tidySelection } from './handwriting';
@@ -109,6 +110,7 @@ export function installMore(context: MoreContext): () => void {
     installAnchoring(host, surfaces),
     installGroups(host, surface),
     installInkLinks(host),
+    installLinkOpening(host, surfaces),
     installLayers(host, surfaces),
     installPenFields(document, {
       enabled: () => isEnabled('ink.penFields') && inkPrefs.get().penFields,

@@ -78,3 +78,23 @@ test('makes lassoed writing a link to a web address, and lists it', async ({ pag
   await expect(list.getByRole('listitem')).toHaveCount(1);
   await expect(list.getByRole('listitem')).toContainText('https://example.com/notes');
 });
+
+test('opens a page link on writing when the writing is clicked with Select and type', async ({ page }) => {
+  await openPage(page);
+  await choose(page, 'Pen, Ink, 0.5 mm');
+  await draw(page, line([150, 350], [400, 380]));
+  await choose(page, 'Lasso select');
+  await draw(page, ellipse(275, 365, 220, 90));
+  const bar = page.getByRole('toolbar', { name: 'Selected ink and text' });
+  await bar.getByRole('button', { name: 'Make link' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Make link' });
+  await dialog.getByRole('textbox', { name: 'Page title' }).fill('Mitosis');
+  await dialog.getByRole('list', { name: 'Pages that match' }).getByRole('button', { name: 'Mitosis' }).click();
+  await dialog.getByRole('button', { name: 'Make link' }).click();
+  await expect(dialog).toBeHidden();
+  await page.keyboard.press('Escape');
+  await choose(page, 'Select and type');
+  const box = (await page.locator('[data-ink-overlay]').boundingBox())!;
+  await page.mouse.click(box.x + 275, box.y + 365);
+  await expect(page.getByRole('heading', { level: 1, name: 'Mitosis' })).toBeVisible();
+});
