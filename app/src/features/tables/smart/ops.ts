@@ -264,17 +264,28 @@ export function bracketNames(text: string, names: readonly string[]): string {
     .join('');
 }
 
-/** The problem with a formula typed for a whole column, in words, or null when it reads. */
-export function calculatedProblem(text: string, locale: Locale, names: readonly string[] = []): string | null {
+/**
+ * The problem with a formula typed for a whole column, in words, or null when it reads. `own` is the name of the column
+ * it goes in: a formula that reads that column would replace the values it reads with a loop (Beta 5 walk W2-12).
+ */
+export function calculatedProblem(
+  text: string,
+  locale: Locale,
+  names: readonly string[] = [],
+  own?: string,
+): string | null {
   const typed = bracketNames(text.trim().replace(/^=/, '').trim(), names);
   if (typed === '') return t('smart.calculated.empty');
+  const self = own?.trim() ?? '';
+  const reads = [...typed.matchAll(/\[([^\]]*)\]/g)].map((m) => m[1].trim().toLowerCase());
+  if (self && reads.includes(self.toLowerCase())) return t('smart.calculated.ownColumn', { column: self });
   const checked = checkFormulaInput(typed, locale);
   return typeof checked === 'string' ? null : t('smart.calculated.problem', { message: checked.message });
 }
 
 /** Puts one formula in every data cell of a column, so each row calculates from its own values. */
 export async function setCalculated(inst: SmartInstance, column: number, text: string): Promise<boolean> {
-  if (calculatedProblem(text, inst.locale, inst.model().names) !== null) return false;
+  if (calculatedProblem(text, inst.locale, inst.model().names, inst.model().names[column]) !== null) return false;
   const formula = `=${bracketNames(text.trim().replace(/^=/, '').trim(), inst.model().names)}`;
   const model = inst.model();
   const markdown = serializeCell(tableSchema.nodes.paragraph.create(null, tableSchema.text(formula)), inst.host.cache);

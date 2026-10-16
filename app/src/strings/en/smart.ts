@@ -272,6 +272,7 @@ export const smart = {
     confirm: 'Calculate',
     empty: 'Write a formula, such as [Price] * [Quantity].',
     problem: 'The formula cannot be read: {message}',
+    ownColumn: 'The formula uses {column}, the column it would fill. Put the caret in another column, or add one.',
     done: 'Every row in {column} is now calculated.',
     cleared: '{column} now holds plain values.',
     keywords: 'calculated column formula every row',
