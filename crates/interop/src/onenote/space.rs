@@ -414,6 +414,7 @@ mod tests {
             assert!(tables.iter().all(|t| Rc::ptr_eq(t, tables[0])), "one table per group");
         }
         let read = crate::onenote::read_section(&data).expect("the section reads");
-        assert_eq!(read.pages[0].title, "Shared");
+        let page = read.pages().next().expect("a page").expect("the page reads");
+        assert_eq!(page.title, "Shared");
     }
 }

@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use opennote_core::model::NotebookFile;
 use opennote_core::{NotebookId, PageId};
 
-use super::onenote_page::convert_page;
+use super::onenote_page::{convert_page, Budget};
 use crate::archive::safe_target;
 use crate::error::{InteropError, Result};
 use crate::onenote::{file_kind, is_cabinet, limits, read_section, Cabinet, FileKind};
@@ -122,9 +122,16 @@ fn convert_section(
     let onefiles = file.with_file_name(format!("{}_onefiles", stem(file)));
     let mut builder = SectionBuilder::new(env, name, env.clock.now());
     let mut levels: Vec<(u32, PageId)> = Vec::new();
-    for page in &section.pages {
+    let mut lost_pages = section.lost_pages;
+    let mut budget = Budget::new(limits::COPIED_BYTES);
+    for page in section.pages() {
         env.control.checkpoint()?;
-        let (imported, page_report) = match convert_page(page, name, &onefiles, env) {
+        let Ok(page) = page else {
+            lost_pages += 1;
+            continue;
+        };
+        let page = &page;
+        let (imported, page_report) = match convert_page(page, name, &onefiles, env, &mut budget) {
             Ok(done) => done,
             Err(InteropError::Canceled) => return Err(InteropError::Canceled),
             Err(error) => {
@@ -143,9 +150,9 @@ fn convert_section(
         sink.page(builder.id(), imported)?;
         report.add_page(page_report);
     }
-    if section.lost_pages > 0 {
+    if lost_pages > 0 {
         report.general.skipped(
-            format!("{name}: {} pages", section.lost_pages),
+            format!("{name}: {lost_pages} pages"),
             "They are damaged or password-protected.",
         );
     }

@@ -83,7 +83,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// The outlines, pictures, and files placed on the page, top to bottom.
-    pub(crate) fn page_children(&mut self, page: &PropSet<'a>) -> Vec<Item> {
+    pub(crate) fn page_children(&mut self, page: &PropSet<'a>) -> Vec<Item<'a>> {
         let mut placed: Vec<(f32, f32, ExGuid)> = Vec::new();
         for id in page.objects(prop::ELEMENT_CHILD_NODES) {
             let Some(object) = self.space.object(*id) else {
@@ -107,7 +107,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// An outline or outline group: its outline elements.
-    fn outline(&mut self, id: ExGuid, out: &mut Vec<Item>) {
+    fn outline(&mut self, id: ExGuid, out: &mut Vec<Item<'a>>) {
         let Some((kind, props)) = self.props(id) else {
             return;
         };
@@ -121,7 +121,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// An outline element ([MS-ONE] 2.2.21): its content, then its indented children.
-    fn element(&mut self, id: ExGuid, depth: usize, out: &mut Vec<Item>) {
+    fn element(&mut self, id: ExGuid, depth: usize, out: &mut Vec<Item<'a>>) {
         if depth > limits::DEPTH || self.items >= limits::ITEMS {
             self.missed.too_deep += 1;
             return;
@@ -167,7 +167,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// One piece of content: rich text, a picture, a table, a file, or an outline placed on the page.
-    fn content(&mut self, id: ExGuid, depth: usize, list: Option<ListKind>, out: &mut Vec<Item>) {
+    fn content(&mut self, id: ExGuid, depth: usize, list: Option<ListKind>, out: &mut Vec<Item<'a>>) {
         if self.items >= limits::ITEMS {
             self.missed.too_deep += 1;
             return;
@@ -202,13 +202,13 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// The bytes of the file data object a property points to ([MS-ONE] 2.1.5).
-    fn blob(&mut self, props: &PropSet<'a>, which: u32) -> Blob {
+    fn blob(&mut self, props: &PropSet<'a>, which: u32) -> Blob<'a> {
         let Some(id) = props.objects(which).first() else {
             return Blob::Missing;
         };
         match self.space.object(*id) {
             Some(Ok(Object::File { reference, .. })) => match self.file.file_data(&reference) {
-                FileData::Inside(bytes) => Blob::Inside(bytes.to_vec()),
+                FileData::Inside(bytes) => Blob::Inside(bytes),
                 FileData::Outside(name) => Blob::Outside(name),
                 FileData::Missing => Blob::Missing,
             },
@@ -217,7 +217,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// A table ([MS-ONE] 2.2.26 to 2.2.28): rows of cells, each a list of outline elements.
-    fn table(&mut self, table: &PropSet<'a>, depth: usize) -> Vec<Vec<Vec<Item>>> {
+    fn table(&mut self, table: &PropSet<'a>, depth: usize) -> Vec<Vec<Vec<Item<'a>>>> {
         let mut rows = Vec::new();
         for row_id in table.objects(prop::ELEMENT_CHILD_NODES) {
             let row = match self.props(*row_id) {

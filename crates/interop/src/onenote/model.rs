@@ -11,22 +11,31 @@ use super::outline::Walker;
 use super::props::PropSet;
 use super::space::{File, Object, Space};
 
-/// A section, read.
-#[derive(Debug, Default)]
-pub(crate) struct Section {
-    /// The pages, in the order of the section.
-    pub pages: Vec<Page>,
+/// A section, opened. Its pages are read one at a time by [`Section::pages`], so only one is in memory.
+pub(crate) struct Section<'a> {
+    file: Option<File<'a>>,
+    /// The object spaces of the pages, in the order of the section.
+    spaces: Vec<ExGuid>,
     /// Whether the section is password-protected, so no page could be read.
     pub encrypted: bool,
-    /// Pages that were damaged, or password-protected on their own, and left out.
+    /// Page series that were damaged and left out. A page that cannot be read is an error of [`Section::pages`].
     pub lost_pages: usize,
     /// Pages past [`limits::PAGES`], left out.
     pub too_many_pages: usize,
 }
 
+impl<'a> Section<'a> {
+    /// Reads the pages in order: each a page, or the damage that left it out.
+    pub(crate) fn pages(&self) -> impl Iterator<Item = Read<Page<'a>>> + '_ {
+        self.spaces
+            .iter()
+            .filter_map(|gosid| self.file.as_ref().map(|file| read_page(file, *gosid)))
+    }
+}
+
 /// A page, read.
 #[derive(Debug, Default)]
-pub(crate) struct Page {
+pub(crate) struct Page<'a> {
     /// The title: the page's title text, or the cached title of its metadata.
     pub title: String,
     /// When the page was created, in Unix milliseconds.
@@ -36,22 +45,22 @@ pub(crate) struct Page {
     /// 1 for a page, 2 and 3 for subpages ([MS-ONE] 2.3.74).
     pub level: u32,
     /// The content, top to bottom.
-    pub items: Vec<Item>,
+    pub items: Vec<Item<'a>>,
     /// What could not be read.
     pub missed: Missed,
 }
 
 /// A piece of page content.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Item {
+pub(crate) enum Item<'a> {
     /// A paragraph.
     Text(Paragraph),
     /// A table: rows of cells, each cell a list of items.
-    Table(Vec<Vec<Vec<Item>>>),
+    Table(Vec<Vec<Vec<Item<'a>>>>),
     /// A picture.
-    Picture(Attached),
+    Picture(Attached<'a>),
     /// An attached file.
-    File(Attached),
+    File(Attached<'a>),
 }
 
 /// A paragraph of an outline.
@@ -103,20 +112,20 @@ pub(crate) struct Tag {
 
 /// A picture or a file on a page.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Attached {
+pub(crate) struct Attached<'a> {
     /// The file name, when the page keeps one.
     pub name: String,
     /// The alternative text of a picture.
     pub alt: String,
     /// The bytes.
-    pub data: Blob,
+    pub data: Blob<'a>,
 }
 
 /// Where the bytes of a picture or file are.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Blob {
-    /// Read from the section file.
-    Inside(Vec<u8>),
+pub(crate) enum Blob<'a> {
+    /// In the section file: the bytes, borrowed, so a picture used many times is not copied each time.
+    Inside(&'a [u8]),
     /// In the onefiles folder beside the section file, under this name.
     Outside(String),
     /// Missing or unreadable.
@@ -135,14 +144,19 @@ pub(crate) struct Missed {
 }
 
 /// Reads a section file.
-pub(crate) fn read_section(data: &[u8]) -> Read<Section> {
+pub(crate) fn read_section(data: &[u8]) -> Read<Section<'_>> {
     let file = File::open(data)?;
     let root = file
         .space(file.root)
         .ok_or_else(|| Damage::new("the section's object space is missing"))??;
-    let mut section = Section::default();
+    let mut section = Section {
+        file: None,
+        spaces: Vec::new(),
+        encrypted: root.encrypted,
+        lost_pages: 0,
+        too_many_pages: 0,
+    };
     if root.encrypted {
-        section.encrypted = true;
         return Ok(section);
     }
     let node = root_props(&root, 1, jcid::SECTION)?;
@@ -155,16 +169,14 @@ pub(crate) fn read_section(data: &[u8]) -> Read<Section> {
             continue;
         }
         for gosid in props.spaces(prop::CHILD_GRAPH_SPACE_ELEMENT_NODES) {
-            if section.pages.len() >= limits::PAGES {
+            if section.spaces.len() >= limits::PAGES {
                 section.too_many_pages += 1;
                 continue;
             }
-            match read_page(&file, *gosid) {
-                Ok(page) => section.pages.push(page),
-                Err(_) => section.lost_pages += 1,
-            }
+            section.spaces.push(*gosid);
         }
     }
+    section.file = Some(file);
     Ok(section)
 }
 
@@ -180,7 +192,7 @@ fn root_props<'a>(space: &Space<'a>, role: u32, want: u32) -> Read<PropSet<'a>> 
     }
 }
 
-fn read_page(file: &File<'_>, gosid: ExGuid) -> Read<Page> {
+fn read_page<'a>(file: &File<'a>, gosid: ExGuid) -> Read<Page<'a>> {
     let space = file
         .space(gosid)
         .ok_or_else(|| Damage::new("a page's object space is missing"))??;
@@ -270,12 +282,38 @@ mod work {
         let data = section(&spec);
         PARSES.with(|n| n.set(0));
         let read = read_section(&data).expect("the section reads");
+        let page = read.pages().next().expect("a page").expect("the page reads");
         let parses = PARSES.with(|n| n.get());
-        let Item::Text(para) = &read.pages[0].items[0] else {
+        let Item::Text(para) = &page.items[0] else {
             panic!("a paragraph");
         };
         assert_eq!(para.runs.len(), 500);
         assert!(para.runs.iter().all(|r| r.bold));
         assert!(parses < 100, "{parses} property sets parsed");
+    }
+}
+
+#[cfg(test)]
+mod borrowed {
+    use super::*;
+
+    /// A picture's bytes are borrowed from the section file, not copied for each object (R3-2).
+    #[test]
+    fn pictures_borrow_their_bytes_from_the_file() {
+        let data = crate::onenote::write::sample_section();
+        let section = read_section(&data).expect("the section reads");
+        let page = section.pages().next().expect("a page").expect("the page reads");
+        let inside = page
+            .items
+            .iter()
+            .find_map(|item| match item {
+                Item::Picture(Attached {
+                    data: Blob::Inside(bytes),
+                    ..
+                }) => Some(*bytes),
+                _ => None,
+            })
+            .expect("a picture inside the file");
+        assert!(data.as_ptr_range().contains(&inside.as_ptr()));
     }
 }

@@ -165,7 +165,9 @@ pub fn sqlite(data: &[u8]) {
 /// A OneNote section file (A3-17), read by the format reader and by the importer; or a notebook package, when the
 /// input is a Cabinet file.
 pub fn onenote(data: &[u8]) {
-    let _ = crate::onenote::read_section(data);
+    if let Ok(section) = crate::onenote::read_section(data) {
+        section.pages().for_each(drop);
+    }
     if crate::onenote::is_cabinet(data) {
         let _ = crate::onenote::unpack_for_tests(data);
         run_file(import_onenote, "notes.onepkg", data);

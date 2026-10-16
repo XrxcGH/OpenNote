@@ -51,6 +51,9 @@ pub(crate) mod limits {
     pub(crate) const DEPTH: usize = 64;
     /// Pieces of content on one page.
     pub(crate) const ITEMS: usize = 100_000;
+    /// Bytes of pictures and files copied out of one section file and its onefiles folder. One picture placed
+    /// on many pages is copied for each page, so a small file could otherwise ask for terabytes.
+    pub(crate) const COPIED_BYTES: u64 = 2 << 30;
     /// Files in one notebook package.
     pub(crate) const CAB_FILES: usize = 20_000;
     /// Bytes of one notebook package, and bytes it unpacks to. A package is read whole and each folder is
