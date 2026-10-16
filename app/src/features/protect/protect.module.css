@@ -3,17 +3,23 @@
     display: contents;
   }
 
+  /* The page's scroll container fills the page region (position: absolute; inset: 0), so the banner floats over
+     its top edge, as the page's other chrome does, rather than sitting in the flow behind it. */
   .banner {
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline: var(--space-3);
+    z-index: var(--layer-page-chrome);
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-3);
     align-items: center;
-    margin: var(--space-2) var(--space-3);
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background: var(--color-surface-raised, var(--color-surface));
     color: var(--color-text);
+    box-shadow: var(--elevation-2);
   }
 
   .banner p {

@@ -73,6 +73,20 @@ describe('Lock entry', () => {
     expect(readingLock.get()).toBe(false);
   });
 
+  it('says the entry is locked when someone types into it, once for a burst of keys', async () => {
+    await renderApp();
+    const { mounted, viewport } = fakePage({ entryLock: LOCK });
+    const stop = attachEntryLock(mounted);
+    const key = (init: KeyboardEventInit) =>
+      viewport.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, ...init }));
+    key({ key: 'c', ctrlKey: true });
+    expect(screen.queryByText('This entry is locked. Unlock it to make changes.')).toBeNull();
+    key({ key: 'a' });
+    key({ key: 'b' });
+    expect(await screen.findAllByText('This entry is locked. Unlock it to make changes.')).toHaveLength(1);
+    stop();
+  });
+
   it('asks before locking and sends the lock with the PC name', async () => {
     setFakeShell((name) => (name === 'lock.device' ? { label: 'Lab PC' } : null));
     await renderApp();

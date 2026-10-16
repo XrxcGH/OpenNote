@@ -225,6 +225,33 @@ function Banner() {
   );
 }
 
+/** How long one "this entry is locked" note covers, so typing a word shows it once. */
+const REFUSED_EVERY_MS = 4000;
+
+/** Whether a key would change text: a printable character, Enter, Backspace, or Delete, with no shortcut key. */
+function typesText(event: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'altKey'>): boolean {
+  if (event.ctrlKey || event.metaKey || event.altKey) return false;
+  return event.key.length === 1 || ['Enter', 'Backspace', 'Delete'].includes(event.key);
+}
+
+/**
+ * Says the entry is locked when someone types into it, at most once every few seconds. The page is read-only, so
+ * the keys change nothing either way; this only keeps them from being ignored without a word.
+ */
+function noteTypingWhileLocked(mounted: MountedPage): () => void {
+  let last = 0;
+  const onKey = (event: KeyboardEvent) => {
+    if (!entryLockState.get()?.lock || !typesText(event)) return;
+    const now = Date.now();
+    if (now - last < REFUSED_EVERY_MS) return;
+    last = now;
+    showToast({ message: t('storage.lock.refused') });
+  };
+  const target = mounted.viewport.viewport;
+  target.addEventListener('keydown', onKey);
+  return () => target.removeEventListener('keydown', onKey);
+}
+
 /** Follows the lock of a freshly mounted page and shows its banner. The page's own hook calls this. */
 export function attachEntryLock(mounted: MountedPage): () => void {
   const view = mounted.page.initial.view;
@@ -236,7 +263,9 @@ export function attachEntryLock(mounted: MountedPage): () => void {
   mounted.viewport.viewport.before(host);
   let root: Root | null = createRoot(host);
   root.render(<Banner />);
+  const stopNoting = noteTypingWhileLocked(mounted);
   return () => {
+    stopNoting();
     if (attached === mounted) attached = null;
     if (entryLockState.get()?.pageId === mounted.page.id) {
       entryLockState.set(null);
