@@ -22,7 +22,7 @@ describe('the search panel', () => {
     await userEvent.click(archived);
     await waitFor(() => expect(archived.getAttribute('aria-checked')).toBe('true'));
     const scope = within(filters).getByRole('combobox', { name: 'Look in' });
-    for (const name of ['Recording transcripts', 'Image descriptions']) {
+    for (const name of ['Recording transcripts', 'Descriptions and text in images']) {
       expect(within(scope).getByRole('option', { name })).toBeTruthy();
     }
   });
