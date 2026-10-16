@@ -1,7 +1,7 @@
 // The Import notes and Export dialogs in the browser: the whole path with the web fake, keyboard focus, Cancel,
 // and the checks an assistive technology relies on.
 
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { executeCommand } from '../../commands/registry';
@@ -37,7 +37,8 @@ describe('Import notes', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Open notebook' }));
     expect(screen.queryByRole('dialog', { name: 'Import notes' })).toBeNull();
     const tree = screen.getByRole('tree', { name: 'Notebooks' });
-    expect(await within(tree).findByRole('treeitem', { name: 'Recipes' })).toBeTruthy();
+    // The notebook opens with its section listed under it, both named for the file.
+    await waitFor(() => expect(within(tree).getAllByRole('treeitem', { name: 'Recipes' })).toHaveLength(2));
   });
 
   it('offers the Sticky Notes of this PC only when the app is there', async () => {

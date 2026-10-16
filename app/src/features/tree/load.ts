@@ -72,7 +72,19 @@ export async function startTree(notes: NotesService): Promise<void> {
   if (bound === notes) return;
   unwatch?.();
   bound = notes;
-  unwatch = notes.watch(applyEvent);
+  const stopEvents = notes.watch(applyEvent);
+  // A notebook opened from outside the tree, such as Import's "Open notebook", lists its sections too.
+  let expanded = sessionStore.get().expanded;
+  const stopExpanded = sessionStore.subscribe(() => {
+    const next = sessionStore.get().expanded;
+    if (next === expanded) return;
+    expanded = next;
+    if (bound === notes) void loadExpanded();
+  });
+  unwatch = () => {
+    stopEvents();
+    stopExpanded();
+  };
   treeStore.set({ ...INITIAL_TREE, status: 'loading', saveStatus: notes.saveStatus() });
   try {
     const tree = await initialTree(notes);
@@ -102,6 +114,9 @@ async function listUntilSettled(notes: NotesService, parentId: NodeId | null, en
     if (list) treeStore.set((state) => withChildren(state, parentId, list));
     else treeStore.set((state) => withoutNodes(state, parentId ? [parentId] : []));
   }
+  // A listing can name a container that is already open but wasn't known, such as a notebook an import just
+  // added and opened, so its children load now rather than when it is toggled.
+  if (bound === notes) void loadExpanded();
 }
 
 /**
