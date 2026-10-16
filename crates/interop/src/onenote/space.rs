@@ -226,16 +226,27 @@ impl<'a> File<'a> {
     }
 
     /// Reads an object group ([MS-ONESTORE] 2.1.13) into a revision.
+    ///
+    /// The group is read in two passes. The first builds each global identification table (a new one starts at
+    /// every GlobalIdTableStart node) and notes the objects declared under it; the second resolves the objects
+    /// with their finished table, which they all share. A table entry after a declaration, which a well-formed
+    /// file never has, so joins the table instead of copying it once per object.
     fn read_group(&self, chunk: Chunk, revision: &mut Revision<'a>) -> Read<()> {
-        let mut table = Rc::new(IdTable::new());
+        enum Pending<'a> {
+            Props(&'a [u8]),
+            File(String),
+        }
+        let mut tables: Vec<IdTable> = vec![IdTable::new()];
+        let mut declared: Vec<(usize, u32, u32, Pending<'a>)> = Vec::new();
         for node in self.store.list(chunk)? {
+            let generation = tables.len() - 1;
             match node.id {
-                0x022 => table = Rc::new(IdTable::new()),
+                0x022 => tables.push(IdTable::new()),
                 0x024 => {
                     let mut r = node.data();
                     let index = r.u32()?;
                     let guid = r.guid()?;
-                    let entries = Rc::make_mut(&mut table);
+                    let entries = &mut tables[generation];
                     if entries.len() >= limits::TABLE_ENTRIES {
                         return Err(Damage::new("an identification table is too large"));
                     }
@@ -243,20 +254,16 @@ impl<'a> File<'a> {
                 }
                 0x0A4 | 0x0A5 | 0x0C4 | 0x0C5 => {
                     let (blob, mut r) = node.reference()?;
-                    let oid = resolve(r.u32()?, &table);
+                    let oid = r.u32()?;
                     let jcid = r.u32()?;
                     if let Some(blob) = blob {
                         let blob = blob.slice(self.store.data)?;
-                        let data = Data::Props {
-                            blob,
-                            table: Rc::clone(&table),
-                        };
-                        revision.objects.insert(oid, Decl { jcid, data });
+                        declared.push((generation, oid, jcid, Pending::Props(blob)));
                     }
                 }
                 0x072 | 0x073 => {
                     let mut r = node.data();
-                    let oid = resolve(r.u32()?, &table);
+                    let oid = r.u32()?;
                     let jcid = r.u32()?;
                     if node.id == 0x072 {
                         r.u8()?;
@@ -264,16 +271,22 @@ impl<'a> File<'a> {
                         r.u32()?;
                     }
                     let reference = r.storage_string()?;
-                    revision.objects.insert(
-                        oid,
-                        Decl {
-                            jcid,
-                            data: Data::File(reference),
-                        },
-                    );
+                    declared.push((generation, oid, jcid, Pending::File(reference)));
                 }
                 _ => {}
             }
+        }
+        let tables: Vec<Rc<IdTable>> = tables.into_iter().map(Rc::new).collect();
+        for (generation, oid, jcid, pending) in declared {
+            let table = &tables[generation];
+            let data = match pending {
+                Pending::Props(blob) => Data::Props {
+                    blob,
+                    table: Rc::clone(table),
+                },
+                Pending::File(reference) => Data::File(reference),
+            };
+            revision.objects.insert(resolve(oid, table), Decl { jcid, data });
         }
         Ok(())
     }
@@ -358,4 +371,41 @@ fn read_file_data(data: &[u8], chunk: Chunk) -> Read<&[u8]> {
     r.u64()?;
     let len = usize::try_from(len).map_err(|_| Damage::new("a stored file is too large"))?;
     r.bytes(len)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::onenote::write::{section, PageSpec, SectionSpec};
+
+    /// Every object of a group shares one identification table, so a table entry after each declaration does
+    /// not copy the table once per object (R3-1).
+    #[test]
+    fn objects_of_a_group_share_one_identification_table() {
+        let spec = SectionSpec {
+            pages: vec![PageSpec {
+                title: "Shared".into(),
+                ..PageSpec::default()
+            }],
+            interleaved_table: true,
+            ..SectionSpec::default()
+        };
+        let data = section(&spec);
+        let file = File::open(&data).expect("the section opens");
+        for gosid in file.spaces.keys() {
+            let space = file.space(*gosid).expect("the space exists").expect("the space reads");
+            let tables: Vec<&Rc<IdTable>> = space
+                .objects
+                .values()
+                .filter_map(|d| match &d.data {
+                    Data::Props { table, .. } => Some(table),
+                    Data::File(_) => None,
+                })
+                .collect();
+            assert!(tables.len() > 1);
+            assert!(tables.iter().all(|t| Rc::ptr_eq(t, tables[0])), "one table per group");
+        }
+        let read = crate::onenote::read_section(&data).expect("the section reads");
+        assert_eq!(read.pages[0].title, "Shared");
+    }
 }
