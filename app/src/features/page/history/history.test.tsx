@@ -73,6 +73,25 @@ describe('page history', () => {
     expect(document.activeElement?.textContent).toContain('A lost line here.');
   });
 
+  it('offers only a copy of an older version while the page is a locked entry', async () => {
+    const page = await renderPage({
+      fixture: textPageFixture('The quick fox.\n\nKept as is.'),
+      flags: { 'page.history': true },
+    });
+    withHistory(page, olderVersion(page, 'The slow fox.'));
+    const current = structuredClone(page.page.initial);
+    current.view = { ...current.view, entryLock: { lockedAt: '2026-10-01T10:00:00Z', by: 'Ada', hash: 'sha256:00' } };
+    vi.spyOn(page.page.history, 'open').mockImplementation((revision) =>
+      Promise.resolve(revision === 'r1' ? olderVersion(page, 'The slow fox.') : current),
+    );
+    openHistory('Biology');
+    const panel = await screen.findByRole('complementary', { name: 'Page history' });
+    const list = await within(panel).findByRole('list', { name: 'Versions' });
+    await userEvent.click((await within(list).findAllByRole('button'))[1]);
+    expect(await within(panel).findByRole('button', { name: 'Restore as a copy' })).toBeTruthy();
+    await expect.poll(() => within(panel).queryByRole('button', { name: 'Restore this version' })).toBeNull();
+  });
+
   it('restores one paragraph with one edit, and one table with one restore', async () => {
     const page = await renderPage({
       fixture: textPageFixture('The quick fox.\n\nKept as is.'),

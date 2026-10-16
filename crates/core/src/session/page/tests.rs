@@ -306,6 +306,46 @@ fn restoring_a_version_in_place_saves_the_current_state_first() {
 }
 
 #[test]
+fn a_locked_entry_refuses_a_version_restored_in_place_but_not_a_copy() {
+    let s = setup();
+    let c = client("main-1");
+    let handle = s.notebook.open_page(s.page, c.clone()).unwrap();
+    let first = handle.save_now().unwrap().revision;
+    let lock = TxnRequest {
+        page: s.page,
+        client: c.clone(),
+        client_seq: 1,
+        coalesce: None,
+        ui: None,
+        edits: vec![crate::ops::resolve::Edit::SetPage {
+            title: None,
+            tags: None,
+            view: Some(
+                serde_json::json!({"entryLock": {"lockedAt": "2026-10-01T10:00:00Z", "by": "Ada", "hash": "sha256:00"}}),
+            ),
+        }],
+    };
+    handle.apply(lock).unwrap();
+    handle.save_now().unwrap();
+    let refused = handle.restore_version(first, false);
+    assert!(
+        matches!(
+            refused,
+            Err(CoreError::Edit(EditError::ReadOnly(ReadOnlyReason::LockedEntry)))
+        ),
+        "{refused:?}"
+    );
+    assert!(
+        crate::ops::resolve::entry_lock::is_locked(&on_disk(&s)),
+        "the lock stays"
+    );
+    assert!(matches!(
+        handle.restore_version(first, true).unwrap(),
+        RestoreResult::Copied { .. }
+    ));
+}
+
+#[test]
 fn assets_import_and_read_back_by_range() {
     let s = setup();
     let handle = s.notebook.open_page(s.page, client("main-1")).unwrap();
