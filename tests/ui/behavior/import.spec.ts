@@ -39,7 +39,8 @@ test('imports an Evernote file after showing what will change', async ({ page })
   await expect(dialog).toHaveCount(0);
 
   const notebooks = page.getByRole('tree', { name: 'Notebooks' });
-  await expect(notebooks.getByRole('treeitem', { name: 'Recipes' })).toHaveCount(2);
+  // The sample's own Recipes notebook, the imported one, and the imported one's section, listed at once.
+  await expect(notebooks.getByRole('treeitem', { name: 'Recipes' })).toHaveCount(3);
   const pages = page.getByRole('tree', { name: 'Pages' });
   await expect(pages.getByRole('treeitem', { name: 'Sourdough' })).toBeVisible();
   await expect(pages.getByRole('treeitem', { name: 'Lentil soup' })).toBeVisible();
