@@ -108,6 +108,8 @@ test('shows the equation panel above the lines below it, and Tab reaches its but
     expect(hit).toBe(true);
   }
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Edit visually', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Simplify', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Solve', exact: true })).toBeFocused();

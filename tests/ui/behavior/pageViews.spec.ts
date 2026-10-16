@@ -30,7 +30,7 @@ test('pages with breaks show the sheets, and the infinite canvas takes them away
   const pages = toolbar(page).getByRole('button', { name: 'Pages with breaks' });
   const canvas = toolbar(page).getByRole('button', { name: 'Infinite canvas' });
   await expect(canvas).toHaveAttribute('aria-pressed', 'true');
-  await toolbar(page).getByRole('button', { name: 'Document flow' }).click();
+  await fromBar(page, 'Document flow');
   await pages.click();
   await expect(pages).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByText(/Sheet 1 of \d+/)).toBeVisible();
@@ -41,7 +41,7 @@ test('pages with breaks show the sheets, and the infinite canvas takes them away
 
 test('the paper menu changes the paper and the sheet count follows', async ({ page }) => {
   await openSamplerPage(page);
-  await toolbar(page).getByRole('button', { name: 'Document flow' }).click();
+  await fromBar(page, 'Document flow');
   await toolbar(page).getByRole('button', { name: 'Pages with breaks' }).click();
   const counter = page.getByText(/Sheet 1 of \d+/);
   await expect(counter).toBeVisible();

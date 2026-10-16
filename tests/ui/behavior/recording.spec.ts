@@ -108,6 +108,8 @@ test('trims the silence at the start, and removes a marked part', async ({ page 
   await trimmed.getByRole('button', { name: 'More' }).click();
   await page.getByRole('menuitem', { name: /^Start a part to remove here/ }).click();
   await trimmed.getByRole('button', { name: 'Forward 10 seconds' }).click();
+  // The menu lists the time where the player is, so wait for the player to get there.
+  await expect(trimmed.getByText(/^0:0[34] \/ 0:0[34]$/)).toBeVisible();
   await trimmed.getByRole('button', { name: 'More' }).click();
   await page.getByRole('menuitem', { name: /^Part ends at/ }).click();
   await page.getByRole('button', { name: 'Remove part' }).click();

@@ -21,7 +21,7 @@ export const mountedPageHooks: Registry<MountedPageHook> = createRegistry<Mounte
 /** The page view that is shown, or null. Set beside the other shown stores. */
 export const shownMounted = createStore<MountedPage | null>(null, 'shown mounted page');
 // An Undo toast belongs to the page it came from.
-shownMounted.subscribe(() => dismissActionToasts());
+shownMounted.subscribe(() => dismissActionToasts({ pageChange: true }));
 
 /** Runs every hook for a freshly mounted page view. Returns a function that detaches them all. */
 export function attachMountedPageHooks(mounted: MountedPage): () => void {

@@ -7,6 +7,16 @@
     gap: var(--space-7);
   }
 
+  /* Equal cards, at most --radio-columns to a row, wrapping together so no row is left with one card. */
+  .radioGrid {
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(max(7rem, calc((100% - (var(--radio-columns) - 1) * var(--space-5)) / var(--radio-columns))), 1fr)
+    );
+    gap: var(--space-5);
+  }
+
   .radioCard {
     display: grid;
     gap: var(--space-3);

@@ -201,6 +201,7 @@ function Backups() {
       </div>
       <RadioGroup
         label={t('qol.backup.every')}
+        columns={2}
         value={String(nearestSchedule(config.everyHours))}
         onChange={(value) => void save({ everyHours: Number(value) })}
       >

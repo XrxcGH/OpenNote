@@ -38,6 +38,8 @@ async function problems(page: Page): Promise<string[]> {
         const parent = node.parentElement;
         if (!parent || text.length < 3 || !/[A-Za-z]{3,}/.test(text) || !visible(parent)) continue;
         if (parent.closest(dataSelector) || parent.closest('[aria-hidden="true"], script, style')) continue;
+        // Math keys and a microphone's own name are not interface strings: they are marked translate="no".
+        if (parent.closest('[translate="no"]')) continue;
         if (dates.test(text)) continue;
         if (!text.includes('⟦') && !text.includes('⟧')) found.push(`No pseudo-locale markers: "${text.slice(0, 60)}"`);
       }

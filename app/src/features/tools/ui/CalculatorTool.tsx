@@ -197,7 +197,7 @@ function Keypad({ onKey }: PadProps) {
     <div className={styles.keys} role="group" aria-label={t('smart.tools.calculator.keypad')}>
       {KEYS.flat().map((key) => (
         <Button key={key} variant="secondary" onClick={() => onKey(key)}>
-          {key}
+          <span translate="no">{key}</span>
         </Button>
       ))}
     </div>

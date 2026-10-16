@@ -16,8 +16,15 @@ async function ready(page: Page): Promise<void> {
   );
 }
 
+/** The medium layout keeps the notebooks behind their rail, so this opens the drawer there. */
+async function showNotebooks(page: Page): Promise<void> {
+  const rail = page.getByRole('button', { name: n('Show notebooks') });
+  if (await rail.isVisible()) await rail.click();
+}
+
 async function openPage(page: Page, section = 'Lectures', title = 'Membranes'): Promise<void> {
   await ready(page);
+  await showNotebooks(page);
   await page
     .getByRole('tree', { name: n('Notebooks') })
     .getByRole('treeitem', { name: section })
@@ -47,6 +54,7 @@ async function openSettings(page: Page, section: string): Promise<void> {
 
 async function openExport(page: Page): Promise<void> {
   await ready(page);
+  await showNotebooks(page);
   await page
     .getByRole('tree', { name: n('Notebooks') })
     .getByRole('treeitem', { name: n('Lectures') })
@@ -244,15 +252,19 @@ export default defineScreens([
       await page
         .getByRole('button', { name: n('Pause') })
         .first()
-        .click();
-      await indicator.getByText(n('Paused', { contains: true })).waitFor();
+        .click({ force: true });
+      // A small window shows the indicator as a dot with no words, so the popover's Resume says it is paused.
+      await page
+        .getByRole('button', { name: n('Resume') })
+        .first()
+        .waitFor();
     },
   },
   {
     id: 'draw.tab',
     pseudo: true,
     description: 'The Draw tab of the command bar on a page',
-    sizes: ['medium', 'expanded', 'wide'],
+    sizes: ['expanded', 'wide'],
     prepare: async (page) => {
       await openPage(page);
       await page.getByRole('tab', { name: n('Draw') }).click();

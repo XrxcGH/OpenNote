@@ -64,6 +64,7 @@ function trashedToast(notes: NotesService, title: string): void {
       ? t('tree.trash.movedAnnounce', { title, shortcut })
       : t('tree.trash.movedAnnounceNoShortcut', { title }),
     action: { label: t('tree.trash.undo'), run: () => void (entry && undoEntry(notes, entry)) },
+    keepOnPageChange: true,
   });
 }
 

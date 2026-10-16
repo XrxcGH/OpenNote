@@ -1,7 +1,7 @@
 // A tool window (Phase 10): a small floating window with a title, a pin that keeps it above the others, a pop-out
 // button where the app can open a window of its own, and a close button. It moves with a drag or, from the
 // keyboard, with the arrow keys on its title. It never takes focus from the page by itself and never traps it.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { t } from '../../../strings/t';
 import { Button } from '../../../ui';
@@ -40,6 +40,22 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
   );
   const drag = useRef<{ x: number; y: number; place: Place } | null>(null);
   const frame = useRef<HTMLElement>(null);
+
+  // A smaller window pulls a tool back inside it, so no button ends up past the edge.
+  useEffect(() => {
+    const keepInside = () => {
+      const box = frame.current;
+      const width = box?.offsetWidth ?? tool.width;
+      const height = box?.offsetHeight ?? 0;
+      setPlace((now) => {
+        const x = clamp(now.x, 8, Math.max(8, window.innerWidth - width - 8));
+        const y = clamp(now.y, 0, Math.max(0, window.innerHeight - height - 8));
+        return x === now.x && y === now.y ? now : { x, y };
+      });
+    };
+    window.addEventListener('resize', keepInside);
+    return () => window.removeEventListener('resize', keepInside);
+  }, [tool.width]);
 
   const move = (next: Place) => {
     const width = frame.current?.offsetWidth ?? tool.width;

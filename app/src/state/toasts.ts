@@ -12,6 +12,8 @@ export interface ToastItem {
   readonly announce?: string;
   readonly action?: { label: string; run(): void | Promise<void> };
   readonly tone?: 'neutral' | 'danger';
+  /** Stays when the shown page changes, for an Undo that is about the page that just went, such as a delete. */
+  readonly keepOnPageChange?: boolean;
 }
 
 export const toastStore = createStore<{ current: ToastItem | null; queue: readonly ToastItem[] }>(
@@ -52,10 +54,11 @@ export function dismissToast(key: number): void {
  * Closes the toasts that offer an action, such as Undo. What they offer is only true for a moment: after the page
  * changes or the person undoes by keyboard, "Undo" would undo the wrong thing or nothing.
  */
-export function dismissActionToasts(): void {
+export function dismissActionToasts(options: { pageChange?: boolean } = {}): void {
+  const goes = (item: ToastItem) => item.action && !(options.pageChange && item.keepOnPageChange);
   toastStore.set((state) => {
-    const queue = state.queue.filter((item) => !item.action);
-    if (state.current?.action) return { current: queue[0] ?? null, queue: queue.slice(1) };
+    const queue = state.queue.filter((item) => !goes(item));
+    if (state.current && goes(state.current)) return { current: queue[0] ?? null, queue: queue.slice(1) };
     return { current: state.current, queue };
   });
 }

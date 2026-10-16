@@ -10,7 +10,13 @@ test('opens the phone code from the Insert tab and closes it with Done', async (
   await expect(page.getByText('Every kind of text')).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole('tab', { name: 'Insert' }).click();
-  await page.getByRole('button', { name: 'From phone' }).click();
+  // The bar shows what fits; the rest waits in More.
+  const fromPhone = page.getByRole('toolbar').getByRole('button', { name: 'From phone' });
+  if (await fromPhone.isVisible()) await fromPhone.click();
+  else {
+    await page.getByRole('toolbar').getByRole('button', { name: 'More' }).click();
+    await page.getByRole('menuitem', { name: 'From phone' }).click();
+  }
 
   const dialog = page.getByRole('dialog', { name: 'Add photos from your phone' });
   await expect(dialog).toBeVisible();

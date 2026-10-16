@@ -18,7 +18,11 @@ export default function IndicatorPanel({ onClose }: { onClose(): void }) {
   return (
     <div className={styles.panel}>
       <h2>{clock(ui.elapsedMs)}</h2>
-      {ui.source && <p className={styles.hint}>{ui.source}</p>}
+      {ui.source && (
+        <p className={styles.hint} translate="no">
+          {ui.source}
+        </p>
+      )}
       <Meter state={ui.meters.microphone} label={t('audio.indicator.meter')} />
       {ui.meters.systemAudio && <Meter state={ui.meters.systemAudio} label={t('audio.indicator.systemMeter')} />}
       {ui.warnings.map((warning, index) => (

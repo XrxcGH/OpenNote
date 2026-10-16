@@ -45,7 +45,7 @@ test('selected words are highlighted, sent to the notes, and listed as Markdown'
   await openMembranes(page);
   await insertPdf(page, 'lecture.pdf', ['Cell walls hold water']);
   await selectWords(page, 2, 3);
-  await page.keyboard.press('Control+Alt+KeyH');
+  await page.keyboard.press('Control+Shift+KeyH');
   const mark = page.getByRole('button', { name: 'Highlight: hold water' });
   await expect(mark).toBeVisible();
   await mark.click();

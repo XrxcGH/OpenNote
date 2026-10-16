@@ -44,6 +44,9 @@ function Card(props: { info: ConnectorInfo; offline?: boolean }) {
   );
 }
 
+/** The cards are list items, so they sit in a list that adds no look of its own. */
+const LIST = { display: 'contents' } as const;
+
 export default defineGallery([
   {
     id: 'connectors.card.states',
@@ -51,7 +54,7 @@ export default defineGallery([
     group: 'Connectors',
     description: 'Not connected, needing setup, connected, and needing to connect again.',
     render: () => (
-      <>
+      <ul style={LIST}>
         <Card info={microsoft} />
         <Card info={{ ...microsoft, state: { kind: 'needsSetup' } }} />
         <Card
@@ -62,7 +65,7 @@ export default defineGallery([
           }}
         />
         <Card info={{ ...microsoft, state: { kind: 'expired', account: 'sam@example.com' } }} />
-      </>
+      </ul>
     ),
   },
   {
@@ -73,7 +76,9 @@ export default defineGallery([
     render: () => (
       <>
         <p id="gallery-offline">Work offline is on. Connecting waits until it is off.</p>
-        <Card info={microsoft} offline />
+        <ul style={LIST}>
+          <Card info={microsoft} offline />
+        </ul>
       </>
     ),
   },

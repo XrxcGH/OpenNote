@@ -41,12 +41,13 @@ test.describe('what each size class shows', () => {
     await expect(page.getByRole('navigation', { name: 'Pages' })).toBeVisible();
   });
 
-  test('compact: one screen at a time, with the app bar and no title bar', async ({ page }) => {
+  test('compact: one screen at a time, with the app bar and only a thin caption bar', async ({ page }) => {
     await open(page, 'compact');
     await expect(page.getByRole('main')).toHaveCount(1);
     await expect(page.getByRole('navigation', { name: 'Notebooks' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Pages' })).toHaveCount(0);
-    await expect(page.getByRole('banner')).toHaveCount(0);
+    // Only a thin bar of the caption buttons stays above the app bar: no name and no breadcrumb.
+    await expect(page.getByRole('banner')).not.toContainText('OpenNote');
   });
 });
 

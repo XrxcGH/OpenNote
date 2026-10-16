@@ -26,6 +26,8 @@ export interface ToastSpec {
   announce?: string;
   action?: { label: string; run(): void | Promise<void> };
   tone?: 'neutral' | 'danger';
+  /** Stays when the shown page changes: for Undo of a delete, which is about the page that just went. */
+  keepOnPageChange?: boolean;
 }
 
 export function showToast(spec: ToastSpec): { dismiss(): void } {

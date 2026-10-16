@@ -117,7 +117,7 @@ export function Dialog(props: DialogProps) {
               {description}
             </p>
           )}
-          {children}
+          {children !== undefined && children !== null && <div className={styles.content}>{children}</div>}
           {actions.length > 0 && <DialogActions actions={actions} />}
         </dialog>
       </FocusScope>

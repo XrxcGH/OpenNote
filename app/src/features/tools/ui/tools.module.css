@@ -51,6 +51,7 @@
   .body {
     overflow: auto;
     padding: var(--space-4);
+    scroll-padding: var(--space-3);
   }
 
   .popped {

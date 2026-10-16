@@ -86,7 +86,7 @@ The file format is the most important long-term decision, because every future p
 
 Each phase lists what to build, how to test it, and when it is done. Time estimates are left out on purpose; the exit gates decide when to move on.
 
-Each phase below opens with a status note for beta 4 (0.1.0-beta.4). A note says what is built, what is not, and how it was checked. The plan's own wording is unchanged.
+Each phase below opens with a status note for beta 5 (0.1.0-beta.5). A note says what is built, what is not, and how it was checked. The plan's own wording is unchanged.
 
 How the beta branch was checked:
 
