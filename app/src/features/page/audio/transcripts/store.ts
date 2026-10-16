@@ -7,6 +7,7 @@ import { newId } from '../../../../editor/ids';
 import type { BlockId, BlockJson, Edit, NewBlock, OpenPage } from '../../../../services/pages/types';
 import { createStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
+import { shownPage } from '../../history/shown';
 import { shownLayer } from '../../mount';
 import { shownQueue } from '../../sync/shown';
 import { insertExtBlock } from '../blocks';
@@ -56,7 +57,11 @@ let adopted: { page: string; stop: () => void } | null = null;
 export function adoptTranscripts(page: OpenPage): void {
   if (adopted?.page === page.id) return;
   adopted?.stop();
-  transcripts.set(new Map(transcriptsOf(page.initial.view).map((data) => [data.recording, data])));
+  // The page as it opened lacks what was saved since, such as a transcript just added: the changes held for this page
+  // win, or a block that draws after its transcript was saved would find the store without it.
+  const base = new Map(transcriptsOf(page.initial.view).map((data): [string, TranscriptData] => [data.recording, data]));
+  if (recentPage === page.id) for (const [recording, data] of recent) base.set(recording, data);
+  transcripts.set(base);
   const stop = page.onFrame((frame) => {
     const changed = transcriptsOf(frame.page?.view);
     if (changed.length > 0) hold(changed);
@@ -64,7 +69,17 @@ export function adoptTranscripts(page: OpenPage): void {
   adopted = { page: page.id, stop };
 }
 
-function hold(changed: readonly TranscriptData[]): void {
+/** The changes held since the shown page opened, with the page they were for. */
+const recent = new Map<string, TranscriptData>();
+let recentPage: string | null = null;
+
+export function hold(changed: readonly TranscriptData[]): void {
+  const page = shownPage.get()?.id ?? null;
+  if (recentPage !== page) {
+    recent.clear();
+    recentPage = page;
+  }
+  for (const data of changed) recent.set(data.recording, data);
   transcripts.set(
     (held) => new Map([...held, ...changed.map((data): [string, TranscriptData] => [data.recording, data])]),
   );
