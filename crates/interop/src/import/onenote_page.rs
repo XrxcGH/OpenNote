@@ -50,11 +50,12 @@ impl Budget {
     }
 }
 
-/// Where a picture or file's bytes came from, so a page that places the same bytes again reuses its asset.
+/// Where a picture or file's bytes came from and how it is placed, so a page that places the same bytes the same
+/// way again reuses its asset.
 #[derive(PartialEq, Eq, Hash)]
 enum Source {
-    Inside(usize, usize),
-    Outside(String),
+    Inside { picture: bool, ptr: usize, len: usize },
+    Outside { picture: bool, name: String },
 }
 
 /// Converts a page and says what came over.
@@ -284,8 +285,15 @@ impl Attach<'_, '_, '_> {
     /// budget lasts.
     fn attach(&mut self, attached: &Attached<'_>, picture: bool) {
         let source = match &attached.data {
-            Blob::Inside(bytes) => Source::Inside(bytes.as_ptr() as usize, bytes.len()),
-            Blob::Outside(name) if is_onefiles_name(name) => Source::Outside(name.clone()),
+            Blob::Inside(bytes) => Source::Inside {
+                picture,
+                ptr: bytes.as_ptr() as usize,
+                len: bytes.len(),
+            },
+            Blob::Outside(name) if is_onefiles_name(name) => Source::Outside {
+                picture,
+                name: name.clone(),
+            },
             _ => {
                 self.counts.lost_data += 1;
                 return;
@@ -294,6 +302,17 @@ impl Attach<'_, '_, '_> {
         let (asset, shown) = match self.added.get(&source) {
             Some(known) => *known,
             None => {
+                // The budget is checked before the bytes are copied or read, so a page that places a large
+                // blob many more times than the budget allows does not copy it once per placement.
+                let len = match &attached.data {
+                    Blob::Inside(bytes) => Some(bytes.len() as u64),
+                    Blob::Outside(name) => std::fs::symlink_metadata(self.onefiles.join(name)).ok().map(|m| m.len()),
+                    Blob::Missing => None,
+                };
+                if len.is_some_and(|len| len > self.budget.left) {
+                    self.counts.over_budget += 1;
+                    return;
+                }
                 let bytes = match &attached.data {
                     Blob::Inside(bytes) => Some(bytes.to_vec()),
                     Blob::Outside(name) => read_capped(&self.onefiles.join(name), 256 << 20).ok(),
@@ -382,15 +401,17 @@ mod budget_tests {
         assert!(report.entries.iter().any(|e| e.what == "50 pictures"));
     }
 
-    /// Pictures past the section's budget are left out and reported (R3-2).
+    /// Pictures past the section's budget are left out and reported, however many times they are placed (R3-2).
     #[test]
     fn pictures_past_the_budget_are_left_out() {
         let test = TestEnv::new();
         let png = png_bytes();
         let mut budget = Budget::new(png.len() as u64 - 1);
         let (page, report) =
-            convert_page(&page_of(&png, 1), "S", Path::new("."), &test.env(), &mut budget).expect("the page converts");
+            convert_page(&page_of(&png, 50), "S", Path::new("."), &test.env(), &mut budget).expect("the page converts");
         assert!(page.asset_bytes.is_empty());
+        assert_eq!(budget.left, png.len() as u64 - 1, "nothing was taken");
+        assert!(report.entries.iter().any(|e| e.what == "50 pictures or files"), "{:?}", report.entries);
         assert!(report.entries.iter().any(|e| e
             .why
             .as_deref()
