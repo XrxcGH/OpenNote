@@ -405,13 +405,7 @@ impl Backend for CoreBackend {
     }
 
     fn read_page(&self, page: &str) -> Result<PageText, BackendError> {
-        let place = self.locate(page)?;
-        if place.locked {
-            return Err(BackendError::Locked);
-        }
-        if place.section_id.is_none() || place.notebook_id == place.id {
-            return Err(BackendError::NotFound);
-        }
+        let place = self.page_place(page)?;
         let json = self.run(|bridge| with_page(bridge, page, page_json))?;
         Ok(PageText {
             markdown: markdown::page_markdown(&place.title, &json),
@@ -514,10 +508,7 @@ impl Backend for CoreBackend {
     }
 
     fn append(&self, page: &str, markdown: &str, author: &str) -> Result<PageInfo, BackendError> {
-        let place = self.locate(page)?;
-        if place.locked {
-            return Err(BackendError::Locked);
-        }
+        let place = self.page_place(page)?;
         let label = format!("Changed via {author}");
         self.run(|bridge| {
             with_page(bridge, page, |handle| {
