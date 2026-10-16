@@ -13,13 +13,14 @@ use opennote_core::model::ReadOnlyReason;
 use opennote_core::ops::apply::OpsApplier;
 use opennote_core::ops::resolve::{Edit, NewBlock, TxnRequest};
 use opennote_core::session::core::{Core, CoreConfig, MemoryCaps};
+use opennote_core::session::events::CoreEvent;
 use opennote_core::session::notebook::{NodePlacement, ParentRef};
 use opennote_core::session::notes::{children_of, Protection};
 use opennote_core::store::fs::Fs;
 use opennote_core::store::layout::DataLayout;
 use opennote_core::store::sealed::{ProtectError, SealedFs, Secret};
 use opennote_core::store::std_fs::StdFs;
-use opennote_core::testing::fakes::{CollectingIndex, NullSink};
+use opennote_core::testing::fakes::{CollectingIndex, CollectingSink};
 use opennote_core::testing::sample::test_clock;
 use opennote_core::{CoreError, Limits, Timings};
 use serde_json::json;
@@ -81,9 +82,10 @@ struct Fixture {
     plain: opennote_core::id::SectionId,
     page: PageId,
     client: ClientId,
+    events: CollectingSink,
 }
 
-fn start() -> (tempfile::TempDir, Core, Arc<CollectingIndex>) {
+fn start() -> (tempfile::TempDir, Core, Arc<CollectingIndex>, CollectingSink) {
     let dir = tempfile::tempdir().unwrap();
     let data = dir.path().join("data");
     let timings = Timings::for_crash_tests();
@@ -104,13 +106,14 @@ fn start() -> (tempfile::TempDir, Core, Arc<CollectingIndex>) {
         timings,
         caps: MemoryCaps::default(),
     };
-    let core = Core::start(config, Arc::new(NullSink), Some(index.clone())).unwrap();
-    (dir, core, index)
+    let events = CollectingSink::default();
+    let core = Core::start(config, Arc::new(events.clone()), Some(index.clone())).unwrap();
+    (dir, core, index, events)
 }
 
 /// A notebook "Personal" with a section "Diary" holding a page with the secret, and a section "Shopping".
 fn fixture() -> Fixture {
-    let (dir, core, index) = start();
+    let (dir, core, index, events) = start();
     let notes = dir.path().join("notes");
     std::fs::create_dir_all(&notes).unwrap();
     let notebook = core.create_notebook(&notes, "Personal").unwrap();
@@ -138,6 +141,7 @@ fn fixture() -> Fixture {
         plain,
         page,
         client,
+        events,
     }
 }
 
@@ -154,6 +158,17 @@ fn edit_while_unlocked(f: &Fixture) {
     let hints_before = f.index.hints().len();
     let handle = notebook.open_page(f.page, f.client.clone()).unwrap();
     handle.apply(request(f.page, 1, vec![text(2, LATER)])).unwrap();
+    f.core.flush_journals(std::time::Duration::from_secs(5)).unwrap();
+    let degraded: Vec<CoreEvent> = f
+        .events
+        .events()
+        .into_iter()
+        .filter(|e| matches!(e, CoreEvent::JournalDegraded { .. }))
+        .collect();
+    assert!(
+        degraded.is_empty(),
+        "the in-memory journal takes the edit: {degraded:?}"
+    );
     handle.save_now().unwrap();
     for needle in [SECRET, LATER, "Plans 3381"] {
         assert_eq!(
