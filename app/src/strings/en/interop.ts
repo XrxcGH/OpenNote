@@ -23,6 +23,8 @@ export const interop = {
       word: 'Word and OpenDocument documents (.docx, .odt), including OneNote exports',
       web: 'Web pages (.html, .mht), text, and CSV files',
       office: 'Excel workbooks (.xlsx) and PowerPoint slides (.pptx)',
+      legacy: 'Older Office files: Word 97-2003 (.doc), RTF, Excel 97-2003 (.xls), Excel binary (.xlsb), and .ods',
+      oneNote: 'OneNote section files (.one) and notebook packages (.onepkg)',
       mail: 'Email files (.eml)',
       highlights: 'Kindle clippings and Readwise exports',
       other: 'Exports from Google Keep and Bear, and the Windows sticky notes app',

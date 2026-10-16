@@ -2,6 +2,7 @@
 // Cancel, and read the summary. Nothing is added until the person presses Import on the review.
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { isEnabled } from '../../app/flags';
 import { navigate } from '../../app/location';
 import type { InteropClient } from '../../platform/interop';
 import type { NotesService } from '../../services/notes/types';
@@ -55,6 +56,8 @@ function Choose({ flow, canceled, refocus }: { flow: ImportFlow; canceled: boole
         <li>{t('interop.import.sources.word')}</li>
         <li>{t('interop.import.sources.web')}</li>
         <li>{t('interop.import.sources.office')}</li>
+        {isEnabled('interop.legacyFormats') && <li>{t('interop.import.sources.legacy')}</li>}
+        {isEnabled('interop.oneNoteFiles') && <li>{t('interop.import.sources.oneNote')}</li>}
         <li>{t('interop.import.sources.mail')}</li>
         <li>{t('interop.import.sources.highlights')}</li>
         <li>{t('interop.import.sources.other')}</li>
