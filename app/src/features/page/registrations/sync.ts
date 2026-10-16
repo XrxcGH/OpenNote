@@ -5,11 +5,22 @@ import { dismissActionToasts } from '../../../state/toasts';
 import { registerPageCommand } from '../keys';
 import { shownQueue } from '../sync/shown';
 
+/**
+ * Whether Ctrl+Z means the shown page: focus is in the page, or on nothing at all. Focus falls to the body when an undo
+ * removes the focused block or a page tool closes, and the next Ctrl+Z must not undo a tree change such as the page's
+ * creation (Beta 5 walk W2-4, W2-5). Focus in the tree, a dialog, or any other field keeps its own undo.
+ */
+export function pageHasUndo(): boolean {
+  if (shownQueue.get() === null) return false;
+  const focused = typeof document === 'undefined' ? null : document.activeElement;
+  return !focused || focused === document.body || focused.closest('[data-scope="page"]') !== null;
+}
+
 registerPageCommand({
   id: 'page.undo',
   title: 'pageSync.undo',
   category: 'editing',
-  when: () => shownQueue.get() !== null,
+  when: pageHasUndo,
   run: () => {
     dismissActionToasts();
     return shownQueue.get()?.undo();
@@ -19,7 +30,7 @@ registerPageCommand({
   id: 'page.redo',
   title: 'pageSync.redo',
   category: 'editing',
-  when: () => shownQueue.get() !== null,
+  when: pageHasUndo,
   run: () => shownQueue.get()?.redo(),
 });
 
