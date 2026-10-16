@@ -249,7 +249,7 @@ pub fn install_check_folder(paths: State<'_, Paths>, path: String) -> IpcResult<
 }
 
 /// Checks a proposed notes folder against where the app lives. Anything inside the Programs folder is refused,
-/// since an update or an uninstall replaces that folder. Where a download sits is only the exe's own folder:
+/// since updating or uninstalling OpenNote replaces that folder. Where a download sits is only the exe's own folder:
 /// an update swaps the exe file, never the folder around it, and setup usually moves the exe away. So only
 /// that folder itself is refused, and a folder beside or below the exe (`Downloads\OpenNote notes`, or a test
 /// profile next to the exe) is fine.
