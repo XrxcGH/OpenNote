@@ -162,6 +162,12 @@ fn display(root: &Path, path: &Path) -> String {
         .replace('\\', "/")
 }
 
+/// Office files that a folder import of another kind leaves for an import of their own. A folder import reads one
+/// kind of file, so these are named in the report instead of left out without a word.
+const OFFICE_EXTENSIONS: [&str; 16] = [
+    "docx", "docm", "odt", "ott", "doc", "dot", "rtf", "xlsx", "xlsm", "xls", "xlt", "xlsb", "ods", "ots", "pptx", "pptm",
+];
+
 /// Finds the files with the extensions, in path order, each with the name of its section: the file name without
 /// its extension, after the folders above it.
 fn find_files(
@@ -203,6 +209,14 @@ fn find_files(
                 .map_or(shown.as_str(), |(stem, _)| stem)
                 .replace('/', " / ");
             found.push((path, section));
+        } else if path
+            .extension()
+            .is_some_and(|e| OFFICE_EXTENSIONS.iter().any(|x| e.eq_ignore_ascii_case(x)))
+        {
+            skipped.push((
+                display(root, &path),
+                "A folder import brings in one kind of file. Import this file by itself.".to_owned(),
+            ));
         }
     }
     Ok(())
