@@ -2,7 +2,7 @@
 // and after random table commands every row still has the first row's columns, in order.
 import * as fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
-import { applyTableOp } from '../commands/tables';
+import { applyTableOp, fitAddedColumn } from '../commands/tables';
 import type { TableOp } from '../commands/tables';
 import { createMarkdownCache } from '../markdown';
 import type { TableData } from '../schema/specs';
@@ -214,5 +214,27 @@ describe('the table commands on data', () => {
     const one = newTableData(1, 1, false);
     expect(applyTableOp(one, { row: 0, column: 0 }, { op: 'deleteRow' })).toBeNull();
     expect(applyTableOp(one, { row: 0, column: 0 }, { op: 'deleteColumn' })).toBeNull();
+  });
+});
+
+describe('a column added to a table that fits its page (Beta 5 walk W2-13)', () => {
+  const widths = (data: TableData) => data.columns.map((column) => column.width);
+
+  it('takes the room left, so the table still fits', () => {
+    const data = { ...newTableData(3, 3, true) };
+    const each = data.columns[0].width;
+    const added = applyTableOp(data, { row: 0, column: 2 }, { op: 'columnRight' })!;
+    const room = each * 3 + 143;
+    expect(widths(fitAddedColumn(data, added, room).data)).toEqual([each, each, each, 143]);
+  });
+
+  it('keeps its width when there is no usable room, or the table was already wider than the page', () => {
+    const data = { ...newTableData(3, 3, true) };
+    const each = data.columns[0].width;
+    const added = applyTableOp(data, { row: 0, column: 2 }, { op: 'columnRight' })!;
+    expect(fitAddedColumn(data, added, each * 3 + 40)).toBe(added);
+    expect(fitAddedColumn(data, added, each * 2)).toBe(added);
+    expect(fitAddedColumn(data, added, each * 10)).toBe(added);
+    expect(fitAddedColumn(data, added, 0)).toBe(added);
   });
 });

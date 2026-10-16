@@ -59,3 +59,10 @@ test('says what is wrong with a function and still draws the others', async ({ p
   await expect(page.getByRole('textbox', { name: 'Function 2' })).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByRole('application', { name: /^Graph of 2 functions/ })).toBeVisible();
 });
+
+test('inserts a graph from the Insert tab before the page is clicked into (Beta 5 walk W2-17)', async ({ page }) => {
+  await openSmart(page);
+  await page.getByRole('tab', { name: 'Insert' }).click();
+  await page.getByRole('toolbar', { name: 'Insert' }).getByRole('button', { name: 'Insert graph' }).click();
+  await expect(page.getByRole('application', { name: /^Graph of/ })).toBeVisible({ timeout: 20_000 });
+});

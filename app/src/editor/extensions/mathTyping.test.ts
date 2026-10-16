@@ -36,4 +36,14 @@ describe('typing math', () => {
     typeInto(mounted.editor, '$$x^2$$');
     expect(names(mounted)).toContain('mathBlock');
   });
+
+  it('carries on with text on a new line after display math', () => {
+    mounted = mountEditor('[]');
+    typeInto(mounted.editor, '$$x^2$$');
+    typeInto(mounted.editor, 'Cost $5 and $10 stays');
+    const doc = mounted.editor.state.doc;
+    expect(doc.child(0).type.name).toBe('mathBlock');
+    expect(doc.child(0).attrs.source).toBe('x^2');
+    expect(doc.child(1).textContent).toBe('Cost $5 and $10 stays');
+  });
 });

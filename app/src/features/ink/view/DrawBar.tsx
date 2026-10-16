@@ -19,6 +19,8 @@ import {
   deletePenSet,
   drawState,
   LIBRARY_PENS,
+  MAX_PEN_SETS,
+  penSetsFull,
   savePenSet,
   setSlotTool,
   styleOf,
@@ -135,10 +137,14 @@ export function DrawPens({ toolProps }: CommandBarComponentProps) {
         title: t('ink.penLibrary.saveSet'),
         field: { label: t('ink.penLibrary.setName'), value: '' },
         confirm: t('ink.penLibrary.save'),
-        validate: (text) => (text.trim() ? null : t('ink.penLibrary.setNameMissing')),
+        validate: (text) =>
+          !text.trim()
+            ? t('ink.penLibrary.setNameMissing')
+            : penSetsFull(text)
+              ? t('ink.penLibrary.setsFull', { count: MAX_PEN_SETS })
+              : null,
       });
-      if (answer) {
-        await savePenSet(answer.text);
+      if (answer && (await savePenSet(answer.text))) {
         announce(t('ink.penLibrary.saved', { name: answer.text.trim() }));
       }
     } else if (chosen.startsWith('apply:')) {

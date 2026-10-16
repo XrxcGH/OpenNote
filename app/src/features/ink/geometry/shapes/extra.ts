@@ -7,6 +7,7 @@ import { resample, simplify } from '../simplify';
 import type { Vec } from '../types';
 import { arrowCandidate, headBarbs } from './arrow';
 import { fitPolygon, pickCorners, polygonArea } from './corners';
+import { ELLIPSE_TOLERANCE, fitEllipse } from './ellipse';
 import { POLYGON_TOLERANCE } from './polygons';
 import type { Candidate } from './types';
 
@@ -95,10 +96,28 @@ const MIN_CORNER_TURN = 30 * DEGREES;
 const MIN_SIDE_SHARE = 0.07;
 /** One more corner is taken only when it cuts the fit error below this share of the fewer-cornered fit's. */
 const EXTRA_CORNER_GAIN = 0.4;
-/** ...and only when that fit is near exact, as for points a shape generated, never for a hand-drawn wobble. */
+/**
+ * ...and only when that fit is near exact, as for points a shape generated, or the fewer-cornered fit is loose, as when
+ * a hand-drawn house is read as four corners and the roof is cut off. A wobble on a well-fitted shape adds no corner.
+ */
 const EXACT_FIT = 0.1;
+const LOOSE_FIT = 0.3;
+const GOOD_FIT = 0.2;
 /** A four-cornered outline whose corners all turn within this of a right angle is a sloppy rectangle, not a new shape. */
 const NEAR_RIGHT_ANGLE = 22 * DEGREES;
+/**
+ * ...unless a corner is past the rectangle's own tolerance and two opposite sides are parallel within this: a narrow
+ * trapezoid or a slightly slanted parallelogram, drawn on purpose, which the rectangle turns down.
+ */
+const RECTANGLE_TOLERANCE = 15 * DEGREES;
+const PARALLEL = 4 * DEGREES;
+
+/** Whether two opposite sides of a four-cornered outline run within `PARALLEL` of each other. */
+function parallelPair(corners: readonly Vec[]): boolean {
+  const heading = (i: number) =>
+    Math.atan2(corners[(i + 1) % 4].y - corners[i].y, corners[(i + 1) % 4].x - corners[i].x);
+  return [0, 1].some((i) => Math.abs(Math.abs(turn(heading(i), heading(i + 2))) - Math.PI) < PARALLEL);
+}
 
 /** Whether the corners make a simple polygon: no side crosses another, every corner is sharp, no side is tiny. */
 function cleanPolygon(corners: readonly Vec[]): boolean {
@@ -107,6 +126,7 @@ function cleanPolygon(corners: readonly Vec[]): boolean {
   const perimeter = sides.reduce((s, d) => s + d, 0);
   if (sides.some((d) => d < MIN_SIDE_SHARE * perimeter)) return false;
   let nearRight = 0;
+  let pastRectangle = false;
   for (let i = 0; i < n; i++) {
     const a = corners[(i + n - 1) % n];
     const b = corners[i];
@@ -114,12 +134,13 @@ function cleanPolygon(corners: readonly Vec[]): boolean {
     const heading = Math.abs(turn(Math.atan2(b.y - a.y, b.x - a.x), Math.atan2(c.y - b.y, c.x - b.x)));
     if (heading < MIN_CORNER_TURN) return false;
     if (Math.abs(heading - Math.PI / 2) < NEAR_RIGHT_ANGLE) nearRight++;
+    if (Math.abs(heading - Math.PI / 2) >= RECTANGLE_TOLERANCE) pastRectangle = true;
     for (let j = i + 2; j < n; j++) {
       if (i === 0 && j === n - 1) continue;
       if (segmentsIntersect(corners[i], corners[(i + 1) % n], corners[j], corners[(j + 1) % n])) return false;
     }
   }
-  return !(n === 4 && nearRight === 4);
+  return !(n === 4 && nearRight === 4) || (pastRectangle && parallelPair(corners));
 }
 
 /**
@@ -128,13 +149,18 @@ function cleanPolygon(corners: readonly Vec[]): boolean {
  */
 function freeformCandidate(outline: readonly Vec[]): Candidate | null {
   let best: { corners: readonly Vec[]; error: number } | null = null;
+  // A round outline fits more corners ever better, so it never takes a corner for a loose fit alone.
+  const round = (fitEllipse(outline)?.error ?? Infinity) < ELLIPSE_TOLERANCE;
   for (let count = 4; count <= MAX_FREEFORM_CORNERS; count++) {
     const indices = pickCorners(outline, count);
     const fit = indices && fitPolygon(outline, indices);
     if (!fit || fit.error >= POLYGON_TOLERANCE || !cleanPolygon(fit.corners)) continue;
-    // The fewest corners that fit win, unless one more corner explains the outline far better: a house read back from
-    // exact points fits a four-sided shape loosely and a five-sided one perfectly, and the roof must keep its handle.
-    if (best && (fit.error >= EXTRA_CORNER_GAIN * best.error || fit.error >= EXACT_FIT * POLYGON_TOLERANCE)) break;
+    // The fewest corners that fit win, unless one more corner explains the outline far better: a house fits a
+    // four-sided shape loosely and a five-sided one well, and the roof must keep its handle.
+    const loose =
+      !round && best !== null && best.error > LOOSE_FIT * POLYGON_TOLERANCE && fit.error < GOOD_FIT * POLYGON_TOLERANCE;
+    if (best && (fit.error >= EXTRA_CORNER_GAIN * best.error || !(fit.error < EXACT_FIT * POLYGON_TOLERANCE || loose)))
+      break;
     best = { corners: fit.corners, error: fit.error };
   }
   return best && { shape: { kind: 'freeform', corners: best.corners }, ratio: best.error / POLYGON_TOLERANCE };

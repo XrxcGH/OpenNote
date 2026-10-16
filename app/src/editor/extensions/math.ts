@@ -445,7 +445,14 @@ export function mathBlockExtensions(host: EditorHost): Extensions {
             handler: ({ state, range, match }) => {
               const $from = state.doc.resolve(range.from);
               if ($from.parent.type.name !== 'paragraph' || match[1].trim() === '') return null;
-              state.tr.replaceWith($from.before(), $from.after(), type.create({ source: match[1].trim() }));
+              const block = type.create({ source: match[1].trim() });
+              const { tr } = state;
+              tr.replaceWith($from.before(), $from.after(), block);
+              // The caret goes on to a new line below, so what is typed next is text, not the equation, and Enter
+              // there does not open the equation editor (Beta 5 walk W2-11).
+              const after = $from.before() + block.nodeSize;
+              tr.insert(after, type.schema.nodes.paragraph.create());
+              tr.setSelection(TextSelection.create(tr.doc, after + 1));
             },
           }),
         ];

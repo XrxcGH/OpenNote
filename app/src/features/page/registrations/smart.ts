@@ -1,6 +1,7 @@
 // The expression-engine lane's registrations (Phases 7 and 10): equations, smart tables, charts, the grapher, and
 // the study tool windows. This file loads at start-up, so it holds only definitions; each command loads its
 // feature on first use.
+import type { Editor } from '@tiptap/core';
 import { chord } from '../../../commands/registry';
 import { commandBar, commands } from '../../../registries';
 import type { MessageKey } from '../../../strings/t';
@@ -10,12 +11,33 @@ import { announce } from '../../../ui';
 import type { IconName } from '../../../ui/icons';
 import { INSERT_EVENT } from '../../tools/flags';
 import { targetEditor } from '../formattingBar/target';
+import { shownMedia } from '../images/shown';
 import { slashItems } from '../registries';
 import { currentTable } from '../tables/current';
 import { tableExtras } from '../tables/extras';
 import type { SlashItemDef } from '../registries';
 
 const inEditor = () => targetEditor() !== null;
+
+/** The text blocks of the shown page, last one last. */
+const textBlocks = () =>
+  shownMedia
+    .get()
+    ?.layer.blocks()
+    .filter((block) => block.type === 'text') ?? [];
+
+/**
+ * The editor an equation or a graph goes in: the one with the caret, or else the end of the page's last text block, so
+ * the Insert tab offers them before the page is clicked into, as it does a table (Beta 5 walk W2-17).
+ */
+function insertTarget(): Editor | null {
+  const editor = targetEditor();
+  if (editor) return editor;
+  const last = textBlocks().at(-1);
+  const pool = shownMedia.get()?.pool;
+  return last && pool ? pool.mount(last.id, { kind: 'end' }, 'target') : null;
+}
+const canInsert = () => inEditor() || textBlocks().length > 0;
 
 interface Spec {
   id: `${string}.${string}`;
@@ -27,6 +49,8 @@ interface Spec {
   keys?: readonly string[];
   slash?: Pick<SlashItemDef, 'group' | 'order'>;
   bar?: { group: string; priority: number };
+  /** When it is offered; in an editor unless given. */
+  when?: () => boolean;
   run(): void | Promise<void>;
 }
 
@@ -39,7 +63,7 @@ function add(spec: Spec): void {
     icon: spec.icon,
     flag: spec.flag,
     ...(spec.keys ? { keys: spec.keys.map(chord), scope: 'editor' as const, allowInTextInput: true } : {}),
-    when: inEditor,
+    when: spec.when ?? inEditor,
     run: spec.run,
   });
   if (spec.slash) {
@@ -57,7 +81,7 @@ function add(spec: Spec): void {
 }
 
 async function insertEquation(display: boolean): Promise<void> {
-  const editor = targetEditor();
+  const editor = insertTarget();
   if (!editor) return;
   const { insertMath } = await import('../../math');
   if (insertMath(editor, display)) announce(t('smart.math.announceInserted'));
@@ -95,8 +119,9 @@ add({
   flag: 'math.grapher',
   slash: { group: 'advanced', order: 22 },
   bar: { group: 'math', priority: 38 },
+  when: canInsert,
   run: async () => {
-    const editor = targetEditor();
+    const editor = insertTarget();
     if (!editor) return;
     // Loaded here, not at start-up: the editor's code is not needed until a graph is.
     const { insertGraph } = await import('../../../editor/extensions/graphFence');
@@ -111,6 +136,7 @@ add({
   flag: 'math.latex',
   slash: { group: 'advanced', order: 20 },
   bar: { group: 'math', priority: 40 },
+  when: canInsert,
   run: () => insertEquation(true),
 });
 add({

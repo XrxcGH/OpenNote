@@ -114,6 +114,10 @@ export function installInk(host: InkHost): () => void {
       load: () => import('./PenSettings'),
     }),
   ];
+  const shapesOn = (): boolean => {
+    const shapes = getSettings().ink.shapes;
+    return shapes.inkToShape || shapes.hold;
+  };
   const defs: CommandDef[] = [
     tool('ink.select', 'ink.tools.select', 'select', 'ink.core'),
     tool('ink.pen', 'ink.tools.pen', 'pen', 'ink.core'),
@@ -126,8 +130,10 @@ export function installInk(host: InkHost): () => void {
       keywords: 'ink.shapes.keywords',
       category: 'editing',
       flag: 'ink.shapes',
-      checked: () => getSettings().ink.shapes.inkToShape,
-      run: () => updateSettings({ ink: { shapes: { inkToShape: !getSettings().ink.shapes.inkToShape } } }),
+      // One switch for every way ink becomes a shape: snapping on lift and snapping on a held pen. Off means freehand.
+      checked: () => shapesOn(),
+      // Turning it back on restores the default, hold to snap; snapping every stroke on lift stays a setting.
+      run: () => updateSettings({ ink: { shapes: shapesOn() ? { inkToShape: false, hold: false } : { hold: true } } }),
     },
   ];
   for (const def of defs) stops.push(commands.register(def));

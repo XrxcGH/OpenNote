@@ -2,7 +2,7 @@
 // the focused row of the tree that has focus, else what is open (see current.ts). The navigation keys belong to
 // TreeView; these are the keys with modifiers, which can be rebound.
 
-import { chord, defineCommand } from '../../commands/registry';
+import { chord, defineCommand, executeCommand } from '../../commands/registry';
 import type { CommandContext, CommandDef } from '../../commands/types';
 import type { ChipColor, NodeId } from '../../services/notes';
 import { dismissActionToasts } from '../../state/toasts';
@@ -20,6 +20,17 @@ import { deleteNode } from './remove';
 import { startRename } from './rename';
 import { treeStore } from './store';
 import { redo, undo } from './undo';
+
+/**
+ * Focus falls to nothing after an undo removes the focused block, or after Convert to table replaces the lasso's
+ * strokes. Ctrl+Z and Ctrl+Y then belong to the page shown, when there is one. They never undo a tree change, such as
+ * the page's own creation, behind the person's back (Beta 5 walk W2-4, W2-5). The page's command says if it can.
+ */
+async function toShownPage(id: 'page.undo' | 'page.redo', ctx: CommandContext): Promise<boolean> {
+  const focused = typeof document === 'undefined' ? null : document.activeElement;
+  if (ctx.source !== 'keyboard' || (focused && focused !== document.body)) return false;
+  return executeCommand(id, undefined, 'keyboard');
+}
 
 const creating = (id: string, kind: NewKind, def: Partial<CommandDef> & Pick<CommandDef, 'title'>) =>
   defineCommand({
@@ -177,6 +188,7 @@ const editCommands = [
     keys: [chord('Ctrl+Z')],
     scope: 'workspace',
     run: async (ctx) => {
+      if (await toShownPage('page.undo', ctx)) return;
       dismissActionToasts();
       if (!(await undo(ctx.notes))) announce(t('tree.undo.nothing'));
     },
@@ -188,6 +200,7 @@ const editCommands = [
     keys: [chord('Ctrl+Y'), chord('Ctrl+Shift+Z')],
     scope: 'workspace',
     run: async (ctx) => {
+      if (await toShownPage('page.redo', ctx)) return;
       if (!(await redo(ctx.notes))) announce(t('tree.undo.nothingToRedo'));
     },
   }),

@@ -96,6 +96,33 @@ fn ink_svg_lays_out_blocks_and_styles() {
 }
 
 #[test]
+fn ink_svg_leaves_out_hidden_layers() {
+    let mut page = sample_page();
+    let mut other = sample_stroke();
+    other.id = "01m3sa8wb93eknedj0qexh7af9".parse().unwrap();
+    page.ink.insert(Arc::new(other.clone()));
+    let mut assign = serde_json::Map::new();
+    assign.insert(other.id.to_string(), serde_json::json!("top"));
+    let layers = |base_hidden: bool, top_hidden: bool| {
+        serde_json::json!({
+            "order": ["base", "top"],
+            "layers": {
+                "base": { "name": "Ink", "hidden": base_hidden },
+                "top": { "name": "Notes", "hidden": top_hidden },
+            },
+            "assign": assign.clone(),
+        })
+    };
+    let paths = |page: &Page| text(render_ink_svg(page)).matches("<path ").count();
+    assert_eq!(paths(&page), 2);
+    page.view.extra.insert("inkLayers".to_owned(), layers(false, true));
+    assert_eq!(paths(&page), 1);
+    page.view.extra.insert("inkLayers".to_owned(), layers(true, false));
+    assert_eq!(paths(&page), 1);
+    page.view.extra.insert("inkLayers".to_owned(), layers(true, true));
+    assert_eq!(paths(&page), 0);
+}
+#[test]
 fn page_md_of_the_sample_page() {
     let md = text(render_page_md(&sample_page(), &NoLinks));
     let expected = "---

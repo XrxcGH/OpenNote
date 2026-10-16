@@ -7,7 +7,8 @@ import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import type { InkHost, InkSelection } from './host';
+import { followView } from './host';
+import type { InkHost, InkQueue, InkSelection } from './host';
 import type { InkSurface } from './surface';
 
 export interface ObjectGroup {
@@ -132,7 +133,7 @@ export const objectGroups = createStore<Groups>(new Map(), 'ink object groups');
 
 let adopted: { page: string; stop: () => void } | null = null;
 
-function adopt(page: OpenPage | null): void {
+function adopt(page: OpenPage | null, queue: InkQueue | null): void {
   if (adopted && adopted.page === page?.id) return;
   adopted?.stop();
   adopted = null;
@@ -140,9 +141,7 @@ function adopt(page: OpenPage | null): void {
   if (!page) return;
   objectGroups.set(groupsOf(page.initial.view));
   // A frame's page part holds the whole view, so the groups it holds are all the page has.
-  const stop = page.onFrame((frame) => {
-    if (frame.page?.view) objectGroups.set(groupsOf(frame.page.view));
-  });
+  const stop = followView(page, queue, (view) => objectGroups.set(groupsOf(view)));
   adopted = { page: page.id, stop };
 }
 
@@ -151,8 +150,8 @@ function adopt(page: OpenPage | null): void {
  * A selection that shrinks is left alone, so letting go of a group never selects it again.
  */
 export function installGroups(host: InkHost, surfaceOf: () => InkSurface | null): () => void {
-  adopt(host.page.get());
-  const stopPage = host.page.subscribe(() => adopt(host.page.get()));
+  adopt(host.page.get(), host.queue.get());
+  const stopPage = host.page.subscribe(() => adopt(host.page.get(), host.queue.get()));
   let before = host.selection.get();
   const stopSelection = host.selection.subscribe(() => {
     const now = host.selection.get();

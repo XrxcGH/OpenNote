@@ -1,7 +1,7 @@
 // What the ink view needs from the page view. Phase 4's seams live in features/page, which other features may not
 // import, so features/page/registrations/ink.ts hands them over when it installs the ink view. The types here are the
 // parts the ink view uses, so the page view's real objects fit them as they are.
-import type { BlockJson, EditBatch, OpenPage, TxnAck } from '../../../services/pages/types';
+import type { AppliedFrame, BlockJson, EditBatch, OpenPage, PageViewJson, TxnAck } from '../../../services/pages/types';
 import type { InkRecognition, InkStroke as IntelStroke, TidyOperation, TidyPlan } from '../../../services/intel';
 import type { PaperLattice } from '../../../core/paperLattice';
 import type { Sheets } from '../space';
@@ -51,6 +51,8 @@ export interface InkQueue {
   send(batch: EditBatch): Promise<TxnAck>;
   undo(): Promise<void>;
   redo(): Promise<void>;
+  /** Hears each undo and redo frame once it is applied. */
+  onStep?(listener: (frame: AppliedFrame) => void): () => void;
 }
 
 export interface InkBlockLayer {
@@ -124,4 +126,16 @@ export interface InkHost {
   readonly paper?: Watched<PaperLattice | null>;
   /** The sheets of a paginated page, so pushed content lands on the next sheet. Absent in the flow and freeform views. */
   sheets?(): Sheets | null;
+}
+
+/**
+ * Follows the page view through every change this window did not just send: another window's frames, and its own undo
+ * and redo. A store kept from the view, such as the groups, would otherwise miss an undone ungroup (Beta 5 walk W2-6).
+ */
+export function followView(page: OpenPage, queue: InkQueue | null, listener: (view: PageViewJson) => void): () => void {
+  const heard = (frame: AppliedFrame) => {
+    if (frame.page?.view) listener(frame.page.view);
+  };
+  const stops = [page.onFrame(heard), queue?.onStep?.(heard)];
+  return () => stops.forEach((stop) => stop?.());
 }

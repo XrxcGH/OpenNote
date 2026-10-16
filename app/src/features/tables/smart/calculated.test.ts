@@ -22,4 +22,10 @@ describe('bare column names', () => {
     expect(calculatedProblem('Price * Qty', EN_US, ['Price', 'Qty'])).toBeNull();
     expect(calculatedProblem('Price * Qty', EN_US)).not.toBeNull();
   });
+
+  it('refuses a formula that reads the column it fills (Beta 5 walk W2-12)', () => {
+    expect(calculatedProblem('Price * Qty', EN_US, ['Price', 'Qty', 'Total'], 'Price')).toMatch(/column it would fill/);
+    expect(calculatedProblem('[price] * 2', EN_US, ['Price'], 'Price')).toMatch(/column it would fill/);
+    expect(calculatedProblem('Price * Qty', EN_US, ['Price', 'Qty', 'Total'], 'Total')).toBeNull();
+  });
 });
