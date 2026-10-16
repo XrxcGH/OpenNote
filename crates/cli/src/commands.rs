@@ -137,6 +137,16 @@ fn sandbox(args: &Args) -> Result<Sandbox, CliError> {
 
 /// The text a command adds: its argument, the file, or standard input.
 fn text_of(args: &Args, from: usize, stdin: &mut dyn Read) -> Result<String, CliError> {
+    let text = read_text(args, from, stdin)?;
+    if text.trim().is_empty() {
+        return Err(CliError::Usage("There's no text to add.".into()));
+    }
+    Ok(text)
+}
+
+/// The text a command was given, which may be empty: a new page may start blank. A refused, missing, or too
+/// large file is still an error, so `new --file` never makes an empty page in its place.
+fn read_text(args: &Args, from: usize, stdin: &mut dyn Read) -> Result<String, CliError> {
     let text = if let Some(file) = &args.file {
         let file = &sandbox(args)?
             .check_read(file)
@@ -159,9 +169,6 @@ fn text_of(args: &Args, from: usize, stdin: &mut dyn Read) -> Result<String, Cli
     };
     if text.len() > MAX_TEXT {
         return Err(CliError::Usage("The text is larger than 2 MB.".into()));
-    }
-    if text.trim().is_empty() {
-        return Err(CliError::Usage("There's no text to add.".into()));
     }
     Ok(text)
 }
@@ -276,7 +283,7 @@ fn run_inner(
             if args.positional.get(1).is_none_or(|title| title.trim().is_empty()) {
                 return Err(CliError::Usage("Give the new page a title.".into()));
             }
-            Some(text_of(&args, 2, stdin).unwrap_or_default())
+            Some(read_text(&args, 2, stdin)?)
         }
         "append" => {
             need_id(&args, 0, "page")?;
@@ -451,8 +458,8 @@ fn run_inner(
             print(
                 out,
                 &args,
-                &json!({ "folder": folder.display().to_string(), "files": written }),
-                |out| writeln!(out, "Saved {} pages to {}.", written.len(), folder.display()),
+                &json!({ "folder": shown(&folder), "files": written }),
+                |out| writeln!(out, "Saved {} pages to {}.", written.len(), shown(&folder)),
             )
         }
         "commands" => {
@@ -532,13 +539,13 @@ fn run_inner(
                 .write_all(&png)
                 .map_err(|error| CliError::Io(format!("Can't write {}: {error}", file.display())))?;
             let summary = json!({
-                "file": file.display().to_string(),
+                "file": shown(&file),
                 "strokes": drawn["strokes"],
                 "width": drawn["width"],
                 "height": drawn["height"],
             });
             print(out, &args, &summary, |out| {
-                writeln!(out, "Saved {} strokes to {}.", drawn["strokes"], file.display())
+                writeln!(out, "Saved {} strokes to {}.", drawn["strokes"], shown(&file))
             })
         }
         "backup" => {
@@ -548,6 +555,19 @@ fn run_inner(
             })
         }
         _ => Err(CliError::Usage("Unknown command.".into())),
+    }
+}
+
+/// A path as the person would type it. The sandbox hands back canonical paths, which Windows spells with a
+/// `\\?\` prefix that means nothing to most people.
+fn shown(path: &Path) -> String {
+    let text = path.display().to_string();
+    if let Some(share) = text.strip_prefix(r"\\?\UNC\") {
+        return format!(r"\\{share}");
+    }
+    match text.strip_prefix(r"\\?\") {
+        Some(plain) => plain.to_owned(),
+        None => text,
     }
 }
 
@@ -640,5 +660,12 @@ mod tests {
         assert_eq!(export_name("CON", &mut taken), "CON_.md");
         assert_eq!(export_name("...", &mut taken), "Untitled page.md");
         assert_eq!(export_name("..\\..\\evil", &mut taken), "_.._evil.md");
+    }
+
+    #[test]
+    fn paths_are_shown_without_the_long_path_prefix() {
+        assert_eq!(shown(Path::new(r"\\?\C:\notes\r.png")), r"C:\notes\r.png");
+        assert_eq!(shown(Path::new(r"\\?\UNC\server\share\r.png")), r"\\server\share\r.png");
+        assert_eq!(shown(Path::new(r"C:\notes")), r"C:\notes");
     }
 }

@@ -161,6 +161,15 @@ fn bad_arguments_never_reach_opennote() {
         let result = run(&env, args, "");
         assert_eq!(result.code, 2, "{args:?}: {}", result.err);
     }
+    // A refused or missing file never becomes an empty page.
+    for args in [
+        &["new", "s-cells", "Gone", "--file", "no-such-file.txt"][..],
+        &["new", "s-cells", "Outside", "--file", r"C:\Windows\win.ini"],
+    ] {
+        let result = run(&env, args, "");
+        assert_ne!(result.code, 0, "{args:?}");
+        assert!(!result.err.is_empty(), "{args:?} says why");
+    }
     assert!(test.approver.asked().is_empty());
     let help = run(&env, &["--help"], "");
     assert_eq!(help.code, 0);
