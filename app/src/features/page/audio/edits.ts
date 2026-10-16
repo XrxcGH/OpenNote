@@ -13,7 +13,7 @@ import { shownLayer } from '../mount';
 import { shownQueue } from '../sync/shown';
 import { insertRecordingBlock, writeEntry } from './blocks';
 import { describeError, platformAudio } from './controller';
-import { clockNs } from './format';
+import { clockNs, lengthNs } from './format';
 import { moreClient } from './moreClient';
 import { closePlayback } from './playback';
 import { marksOf } from './stamps';
@@ -80,7 +80,7 @@ export async function splitRecording(
     await withTranscripts((module) => module.afterSplit(entry.id, two.id, positionNs, secondBlock));
     await shownOpenPage.get()?.saveNow();
     await deleteAudioFiles(dir, entry);
-    announce(t('audioMore.split.done', { first: clockNs(first.durationNs), second: clockNs(second.durationNs) }));
+    announce(t('audioMore.split.done', { first: lengthNs(first.durationNs), second: lengthNs(second.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
   }
@@ -98,7 +98,7 @@ export async function trimSilence(block: string, pageId: string, entry: Recordin
     // What was said later now starts earlier by the silence cut from the start.
     const head = firstCaptureNs(edited.entry) - firstCaptureNs(entry);
     if (head > 0) await withTranscripts((module) => module.afterTrim(entry.id, head));
-    announce(t('audio.announce.trimmed', { time: clockNs(edited.durationNs) }));
+    announce(t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
   }
@@ -141,7 +141,7 @@ export async function removePart(block: string, pageId: string, entry: Recording
     await replace(block, pageId, entry, edited.entry);
     // The removed words go from the transcript, and the page's saved versions, which could bring the part back, go.
     await purgeRemoved(pageId, entry.id, startNs, endNs);
-    announce(t('audio.announce.trimmed', { time: clockNs(edited.durationNs) }));
+    announce(t('audio.announce.trimmed', { time: lengthNs(edited.durationNs) }));
   } catch (error) {
     showToast({ message: describeError(error), tone: 'danger' });
   }

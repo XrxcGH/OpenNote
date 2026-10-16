@@ -60,7 +60,15 @@ export async function compressStored(stored: StoredRecording, quality: CompressQ
     await writeEntry(stored.page, block, withoutEnhanced(edited.entry), { track: 'finished', drop: old });
     await saved(stored.page);
     await deleteAudioFiles(dir, old);
-    const message = t('audioMore.storage.compressed', { size: bytesText(frees) });
+    // The dialog's size is an estimate for steady sound. The toast says what was really freed, when it can be read.
+    const now = await (
+      await moreClient()
+    )
+      .storageScan()
+      .then((all) => all.find((item) => item.entry.id === edited.entry.id)?.bytes)
+      .catch(() => undefined);
+    const freed = now === undefined ? frees : Math.max(0, stored.bytes - now);
+    const message = t('audioMore.storage.compressed', { size: bytesText(freed) });
     announce(message);
     showToast({ message });
     return true;

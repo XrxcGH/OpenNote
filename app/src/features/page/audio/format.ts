@@ -10,6 +10,13 @@ export function clock(totalMs: number): string {
 
 export const clockNs = (ns: number) => clock(ns / 1e6);
 
+/** How long something is: to the nearest second, and never 0:00 for a recording that has sound. */
+export function lengthClock(totalMs: number): string {
+  return clock(totalMs > 0 ? Math.max(1, Math.round(totalMs / 1000)) * 1000 : 0);
+}
+
+export const lengthNs = (ns: number) => lengthClock(ns / 1e6);
+
 /** Such as 640 KB or 12.3 MB. */
 export function bytesText(bytes: number): string {
   if (bytes < 1000 * 1000) return `${Math.max(1, Math.round(bytes / 1000))} KB`;

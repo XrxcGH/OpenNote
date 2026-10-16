@@ -6,7 +6,7 @@ import { announce, showToast } from '../../../ui';
 import { shownPage as shownOpenPage } from '../history/shown';
 import { insertRecordingBlock } from './blocks';
 import { describeError, platformAudio } from './controller';
-import { clockNs } from './format';
+import { lengthNs } from './format';
 import { hasHost, moreClient } from './moreClient';
 
 let reminded = false;
@@ -21,7 +21,7 @@ async function addOne(page: string, file: File): Promise<void> {
     const block = await insertRecordingBlock(entry, { track: 'finished' });
     await shownOpenPage.get()?.saveNow();
     void import('./transcripts/auto').then((auto) => auto.recordingSaved({ page, block, entry, label: file.name }));
-    const message = t('audioMore.files.done', { name: file.name, length: clockNs(made.durationNs) });
+    const message = t('audioMore.files.done', { name: file.name, length: lengthNs(made.durationNs) });
     showToast({ id: progress, message });
     announce(message);
   } catch (error) {

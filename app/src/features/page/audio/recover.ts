@@ -21,7 +21,7 @@ import { activeNs, recordingBlocks, removeBlock, writeEntry } from './blocks';
 import { platformAudio, runningRecording } from './controller';
 import { entriesOf, holdRecovery } from './entries';
 import { recordingIdOf } from './entry';
-import { clock } from './format';
+import { lengthClock } from './format';
 
 /** The host's refusal of the recording it is running now, in this window or another. */
 const RUNNING = 'audioRunning';
@@ -69,7 +69,7 @@ export async function recoverEntries(page: OpenPage, entries: readonly Recording
       const finished = await audio.host.recover(dir, entry);
       holdRecovery(entry.id, null);
       await writeEntry(page.id, block, finished.entry, { track: 'finished' });
-      const time = clock(activeNs(finished.entry) / 1e6);
+      const time = lengthClock(activeNs(finished.entry) / 1e6);
       announce(t('audio.announce.recovered', { time }));
       showToast({ message: t('audio.announce.recovered', { time }) });
     } catch (error) {
