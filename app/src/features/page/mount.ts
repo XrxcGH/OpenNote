@@ -227,7 +227,7 @@ export function mountPage(container: HTMLElement, page: OpenPage, options: Mount
   flow.setView(page.initial.view);
   const reading = opensInReading(page, options);
   flow.setReading(reading);
-  restoreView(page.id, viewport);
+  restoreView(page.id, viewport, () => flow.extent());
   const pool = createEditorPool();
   let objects: Objects | null = null;
   const host = createEditorHost({
