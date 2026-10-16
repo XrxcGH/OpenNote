@@ -11,12 +11,12 @@ import { announce, showToast } from '../../ui';
 import { colorNode, moveNodes, titleOf, trashNodes } from './actions';
 import { destinationsFor, loadDestinations } from './destinations';
 import type { Destination } from './destinations';
-import { toastError } from './errors';
+import { toastError, toastMoveError } from './errors';
 import { relist } from './load';
 import { clearMulti } from './multi';
 import { chooseDestination } from './MoveToDialog';
 import { showLocation } from './selection';
-import { ancestors, getNode, requestFocus, treeOf, treeStore } from './store';
+import { ancestors, getNode, isProtectedNode, requestFocus, treeOf, treeStore } from './store';
 import { recordUndo, undoEntry, undoStore } from './undo';
 
 /** "3 pages" or "2 sections", for the dialogs and the toasts. */
@@ -89,7 +89,9 @@ export async function moveSelection(notes: NotesService, nodes: readonly NodeSum
       { parentId: place.id, beforeId: null },
     );
   } catch (error) {
-    toastError(error, describeSelection(nodes));
+    const state = treeStore.get();
+    const guarded = isProtectedNode(state, place.id) || nodes.some((node) => isProtectedNode(state, node.id));
+    toastMoveError(error, describeSelection(nodes), guarded);
     return false;
   }
   clearMulti();

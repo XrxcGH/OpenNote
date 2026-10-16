@@ -168,6 +168,7 @@ export const tree = {
   errors: {
     invalidMove: '"{title}" can\'t go there, so it stayed where it was.',
     readOnly: '"{title}" is read-only, so nothing changed.',
+    protectedMove: 'Pages can’t move into or out of a password-protected section, so "{title}" stayed where it was.',
     unavailable: "The notes folder isn't available, so nothing changed. Check the drive and try again.",
     notFound: '"{title}" is gone, so nothing changed.',
     other: 'Couldn\'t change "{title}". Try again.',
