@@ -250,6 +250,47 @@ fn writes_need_the_access_and_the_persons_approval_and_land_in_page_history() {
 }
 
 #[test]
+fn one_app_waits_for_one_change_question_at_a_time() {
+    let test = TestApi::start();
+    let writer = pair(&test, allow(Access::ReadWrite, Scope::Notebooks(vec!["nb-bio".into()]))).expect("paired");
+    let asked = test.approver.asked().len();
+    test.approver.pause_each(std::time::Duration::from_millis(800));
+    let statuses: Vec<u16> = std::thread::scope(|scope| {
+        let sends: Vec<_> = (0..3)
+            .map(|each| {
+                let app = client(&test, Some(&writer));
+                scope.spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(each * 150));
+                    app.post("/v1/pages/p-mito/append", &json!({ "markdown": "More." }))
+                        .expect("an answer")
+                        .status
+                })
+            })
+            .collect();
+        sends.into_iter().map(|send| send.join().expect("joins")).collect()
+    });
+    assert_eq!(statuses, [403, 429, 429], "the first is asked and declined; the others are busy");
+    assert_eq!(test.approver.asked().len(), asked + 1, "one question at a time");
+}
+
+#[test]
+fn a_section_or_notebook_id_is_not_a_page_and_nobody_is_asked() {
+    let test = TestApi::start();
+    let writer = pair(&test, allow(Access::ReadWrite, Scope::Notebooks(vec!["nb-bio".into()]))).expect("paired");
+    let app = client(&test, Some(&writer));
+    let asked = test.approver.asked().len();
+    for id in ["s-cells", "nb-bio"] {
+        let append = app
+            .post(&format!("/v1/pages/{id}/append"), &json!({ "markdown": "x" }))
+            .expect("an answer");
+        assert_eq!(append.status, 404, "{id}");
+        let read = app.get(&format!("/v1/pages/{id}"), &[]).expect("an answer");
+        assert_eq!(read.status, 404, "{id}");
+    }
+    assert_eq!(test.approver.asked().len(), asked, "no question about a non-page");
+}
+
+#[test]
 fn bad_bodies_are_refused_before_anyone_is_asked() {
     let test = TestApi::start();
     let token = pair(&test, allow(Access::ReadWrite, Scope::All)).expect("paired");

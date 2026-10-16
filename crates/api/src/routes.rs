@@ -70,6 +70,21 @@ pub struct Api {
     /// token. It is made for each start and kept in the credential store for the `opennote` tool.
     proof_key: std::sync::RwLock<Vec<u8>>,
     notify: Notify,
+    /// The grants with a change question open. Each app waits for one answer at a time, so it can neither stack
+    /// questions on the person nor hold every request thread.
+    asking: std::sync::Mutex<std::collections::HashSet<String>>,
+}
+
+/// Closes a grant's open change question when the answer is in.
+struct Asking<'a> {
+    open: &'a std::sync::Mutex<std::collections::HashSet<String>>,
+    grant: String,
+}
+
+impl Drop for Asking<'_> {
+    fn drop(&mut self) {
+        self.open.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).remove(&self.grant);
+    }
 }
 
 /// A refused or failed request, already shaped as its response.
@@ -95,6 +110,7 @@ impl Api {
             pairing: Arc::default(),
             proof_key: std::sync::RwLock::new(proof_key),
             notify: Arc::new(|_| {}),
+            asking: std::sync::Mutex::default(),
         }
     }
 
@@ -538,11 +554,37 @@ impl Caller<'_> {
         Ok(place)
     }
 
+    /// Where a page is, refusing a notebook or section ID with 404 before anyone is asked about it.
+    fn page_place(&self, action: &str, id: &str) -> Result<Location, Refusal> {
+        let place = self.place(action, id)?;
+        if place.section_id.is_none() || place.section_id.as_deref() == Some(id) {
+            return Err(self.refused(action, Some(&place), "notFound", backend_refusal(BackendError::NotFound)));
+        }
+        Ok(place)
+    }
+
     /// Asks the person before a change, unless the grant says not to.
     fn approve(&self, action: &str, what: &str, place: &Location) -> Result<(), Refusal> {
         if !self.grant.ask_before_writes {
             return Ok(());
         }
+        let open = &self.api.asking;
+        if !open
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .insert(self.grant.id.clone())
+        {
+            return Err(self.refused(
+                action,
+                Some(place),
+                "busy",
+                refuse(429, "busy", "OpenNote is already asking about another change from this app. Try again."),
+            ));
+        }
+        let _asking = Asking {
+            open,
+            grant: self.grant.id.clone(),
+        };
         let question = ApprovalRequest {
             id: random_hex(8),
             app_name: self.grant.name.clone(),
@@ -599,7 +641,7 @@ impl Caller<'_> {
 
     fn read(&self, page: &str, format: Option<&str>) -> Result<Response, Refusal> {
         self.need("page.read", self.grant.access.can_read())?;
-        let place = self.place("page.read", page)?;
+        let place = self.page_place("page.read", page)?;
         let text = self.api.backend.read_page(page).map_err(backend_refusal)?;
         self.allowed("page.read", Some(&place));
         if format == Some("md") {
@@ -739,7 +781,7 @@ impl Caller<'_> {
         let body: MarkdownBody = json_body(request)?;
         let author = self.author(body.author.as_deref())?;
         let markdown = markdown_of(body)?;
-        let place = self.place("page.append", page)?;
+        let place = self.page_place("page.append", page)?;
         self.approve("page.append", "add to this page", &place)?;
         let changed = self
             .api

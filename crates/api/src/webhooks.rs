@@ -122,7 +122,18 @@ pub fn check_url(url: &str) -> Result<(), &'static str> {
     // A hook goes to a service on the internet. A typed IP address, or a name only this network knows, could point
     // the app at a router or another PC here instead.
     let lower = host.to_ascii_lowercase();
+    // A host whose last label is a number, in decimal or hex, is an IPv4 address to the URL standard and to the
+    // system resolver, written in a legacy form such as 0x7f.0.0.1.
+    let last = lower.rsplit('.').next().unwrap_or("");
+    let numeric = |label: &str| {
+        !label.is_empty()
+            && (label.bytes().all(|b| b.is_ascii_digit())
+                || label
+                    .strip_prefix("0x")
+                    .is_some_and(|hex| hex.bytes().all(|b| b.is_ascii_hexdigit())))
+    };
     if host.parse::<std::net::Ipv4Addr>().is_ok()
+        || numeric(last)
         || host.split('.').all(|label| label.bytes().all(|b| b.is_ascii_digit()))
         || [".local", ".localhost", ".internal", ".lan", ".home.arpa"]
             .iter()
@@ -625,6 +636,10 @@ mod tests {
             "https://127.0.0.1/",
             "https://printer.local/x",
             "https://nas.home.arpa/x",
+            "https://0x7f.0.0.1/hook",
+            "https://0x7f000001.0x1/",
+            "https://example.0X1f/",
+            "https://017700000001.017/",
         ] {
             assert!(check_url(bad).is_err(), "{bad}");
         }

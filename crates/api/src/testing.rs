@@ -326,9 +326,15 @@ impl Backend for MemoryBackend {
 pub struct ScriptedApprover {
     answers: Mutex<VecDeque<Decision>>,
     asked: Mutex<Vec<ApprovalRequest>>,
+    pause: Mutex<std::time::Duration>,
 }
 
 impl ScriptedApprover {
+    /// Makes each answer take this long, as a person would, so a test can send requests meanwhile.
+    pub fn pause_each(&self, pause: std::time::Duration) {
+        *lock(&self.pause) = pause;
+    }
+
     pub fn answer(&self, decision: Decision) {
         lock(&self.answers).push_back(decision);
     }
@@ -341,6 +347,8 @@ impl ScriptedApprover {
 impl Approver for ScriptedApprover {
     fn ask(&self, request: ApprovalRequest) -> Decision {
         lock(&self.asked).push(request);
+        let pause = *lock(&self.pause);
+        std::thread::sleep(pause);
         lock(&self.answers).pop_front().unwrap_or(Decision::Deny)
     }
 }
