@@ -24,6 +24,8 @@ pub struct World {
     pub faults: HashMap<PageId, Fault>,
     pub reads: Vec<PageId>,
     pub stamp_calls: usize,
+    /// Pages the indexer told the source to forget.
+    pub forgotten: Vec<PageId>,
     /// Revisions are never reused, as in the core.
     pub revisions: u64,
 }
@@ -77,6 +79,10 @@ impl PageSource for MemSource {
             })
             .collect();
         Ok(Some(stamps))
+    }
+
+    fn forget_pages(&mut self, pages: &[PageId]) {
+        self.0.lock().unwrap().forgotten.extend_from_slice(pages);
     }
 
     fn read(&mut self, notebook: NotebookId, page: PageId) -> Result<Option<PageDoc>, SourceError> {

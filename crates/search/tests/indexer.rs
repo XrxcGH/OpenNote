@@ -251,6 +251,8 @@ fn a_page_that_becomes_encrypted_leaves_the_index_and_the_file() {
     assert_eq!(rig.index.lock().unwrap().page_count().unwrap(), 1);
     let update = rig.updates().pop().unwrap();
     assert_eq!(update.removed, [page_id(1)]);
+    // Words kept beside the index, such as transcripts, are forgotten with the page.
+    assert_eq!(rig.source.world().forgotten, [page_id(1)]);
     // A save of a page in the locked section brings nothing back.
     rig.save(doc(1, "Quillon diary").text("zephyrine again").section(7));
     rig.run([reload(1)]);

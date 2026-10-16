@@ -72,4 +72,8 @@ pub trait PageSource: Send + 'static {
     /// Reads a page for the index. `Ok(None)` says the page is gone. A page in an encrypted section may be
     /// returned locked (see [`PageDoc::from_page`]) or not at all.
     fn read(&mut self, notebook: NotebookId, page: PageId) -> std::result::Result<Option<PageDoc>, SourceError>;
+
+    /// Tells the source that the index let go of these pages (their section became encrypted, or they are gone),
+    /// so it can forget anything it kept of their words outside the index, such as recognized media text.
+    fn forget_pages(&mut self, _pages: &[PageId]) {}
 }
