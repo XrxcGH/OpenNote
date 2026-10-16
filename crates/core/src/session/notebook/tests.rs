@@ -114,6 +114,28 @@ fn contract_page_moves_and_levels_go_through_the_flat_list() {
 }
 
 #[test]
+fn page_blocks_move_together_each_at_its_own_level() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let section = notebook.create_section("Lab", top()).unwrap();
+    let a = notebook.create_page_titled(section, in_section(section), "A").unwrap();
+    let b = notebook.create_page_titled(section, in_section(section), "B").unwrap();
+    let c = notebook.create_page_titled(section, in_section(section), "C").unwrap();
+    let d = notebook.create_page_titled(section, in_section(section), "D").unwrap();
+    notebook.set_page_level(&[b], 1).unwrap();
+    // B goes first at level 0 and D after it at level 1, before C.
+    notebook.move_page_blocks(&[(b, 0), (d, 1)], section, 1).unwrap();
+    assert_eq!(
+        page_titles(&notebook, section),
+        [("A".into(), 0), ("B".into(), 0), ("D".into(), 1), ("C".into(), 0)]
+    );
+    // A move that leaves a page too deep changes nothing.
+    assert!(notebook.move_page_blocks(&[(a, 2)], section, 3).is_err());
+    assert_eq!(page_titles(&notebook, section).len(), 4);
+    let _ = c;
+}
+
+#[test]
 fn a_page_moves_to_another_notebook_after_its_final_save() {
     let kit = CoreKit::new();
     let source = kit.notebook("Biology").unwrap();
@@ -307,4 +329,21 @@ fn a_page_that_cant_be_saved_doesnt_stop_the_backup() {
         "the shell can say which page is missing its edits"
     );
     assert!(report.copied_files > 0 && report.finished.is_some());
+}
+
+#[test]
+fn a_new_or_copied_page_gets_its_readable_copy_before_any_edit() {
+    let kit = CoreKit::new();
+    let notebook = kit.notebook("Biology").unwrap();
+    let section = notebook.create_section("Lab", top()).unwrap();
+    let page = notebook.create_page(section, in_section(section)).unwrap();
+    let copy = notebook.duplicate(page).unwrap();
+    kit.core.run_pending_work();
+    for id in [page, copy] {
+        let dir = notebook.inner.tree().store.page_dir(id).unwrap();
+        assert!(
+            crate::store::fs::Fs::metadata(&kit.fs, &dir.join("page.md")).is_ok(),
+            "page.md for {id}"
+        );
+    }
 }

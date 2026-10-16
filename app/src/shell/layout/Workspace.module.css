@@ -18,6 +18,17 @@
     overflow: hidden;
   }
 
+  /* Focus mode: only the title bar and the page. */
+  .workspace[data-focus] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: 'title' 'page';
+  }
+
+  .workspace[data-focus] :is(.commandBar, .notebooks, .pages, .appBar, .bottomBar) {
+    display: none;
+  }
+
   :global(:root[data-size-class='compact']) .workspace {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto minmax(0, 1fr) auto;
@@ -99,6 +110,11 @@
       /* The pool of light from the window at the top corner. */
         radial-gradient(ellipse 90% 80% at 100% 0%, var(--color-ambient-canvas-top), transparent 75%),
       var(--color-surface-sunken);
+  }
+
+  /* The linked pages pane (search/backlinks) is a sheet at the window's end: the page leaves room for it. */
+  :global(body[data-linked-pages]) .page {
+    margin-inline-end: calc(min(24rem, 90vw) + var(--space-4));
   }
 
   :global(:root[data-theme='dark']) .page {

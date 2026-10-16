@@ -2,8 +2,9 @@ import type { ReactElement } from 'react';
 import { cdp } from 'vitest/browser';
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderUi } from '../../test';
-import { drawn } from '../../test/drawing';
+import { along, drawn } from '../../test/drawing';
 import { Books, Candle, DeskScene, EmptyArt, Glint, InkStroke, Notebook, Plant, StarField, Window } from './index';
+import styles from './illustrations.module.css';
 
 const MOTIFS = {
   'Window by day': <Window sky="day" />,
@@ -226,14 +227,36 @@ describe('under a Windows contrast theme', () => {
     const shapes = [...container.querySelectorAll('path, circle')];
     const text = colorOf('CanvasText');
     expect(shapes.length).toBeGreaterThan(10);
-    for (const shape of shapes) {
+    // A star or a pen tip stays a solid dot: as an outline it would grow by half a line all round.
+    const dots = [...container.querySelectorAll(`.${styles.dot}, .${styles.spark}`)];
+    expect(dots.length).toBeGreaterThan(0);
+    for (const shape of shapes.filter((shape) => !dots.includes(shape))) {
       expect(getComputedStyle(shape).fill).toBe('none');
       expect(getComputedStyle(shape).stroke).toBe(text);
+    }
+    for (const dot of dots) {
+      expect(getComputedStyle(dot).fill).toBe(text);
+      expect(getComputedStyle(dot).stroke).toBe('none');
     }
     // A glow would be an outlined circle around each flame, so it goes.
     const halos = [...container.querySelectorAll('circle[fill^="url"]')];
     expect(halos.length).toBeGreaterThan(0);
     for (const halo of halos) expect(getComputedStyle(halo).display).toBe('none');
+  });
+
+  it("keeps the moon glint's stars as dots clear of the moon", async () => {
+    await emulate('active');
+    const { container } = renderUi(<Glint kind="moon" />);
+    const moon = container.querySelector('path') as SVGGeometryElement;
+    const text = colorOf('CanvasText');
+    for (const star of container.querySelectorAll<SVGCircleElement>('circle')) {
+      expect(getComputedStyle(star).fill).toBe(text);
+      expect(getComputedStyle(star).stroke).toBe('none');
+      // The star's edge stays more than half the moon's line clear of the moon's outline.
+      const c = { x: star.cx.baseVal.value, y: star.cy.baseVal.value };
+      const gap = Math.min(...along(moon).map((p) => Math.hypot(p.x - c.x, p.y - c.y))) - star.r.baseVal.value;
+      expect(gap).toBeGreaterThan(0.75);
+    }
   });
 
   it('hides the stars, which the evening theme otherwise shows', async () => {

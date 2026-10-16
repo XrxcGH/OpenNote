@@ -56,6 +56,9 @@ test('articles follow sound, including acronyms', () => {
   assert.equal(expectedArticle('URL'), 'a');
   assert.equal(expectedArticle('OneNote'), 'a');
   assert.equal(expectedArticle('x-axis'), 'an');
+  assert.equal(expectedArticle('usable'), 'a');
+  assert.equal(expectedArticle('https'), 'an');
+  assert.equal(expectedArticle('NAS'), 'a');
 });
 
 test('grammar catches articles, repeats and confusions', async () => {

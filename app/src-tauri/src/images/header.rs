@@ -31,6 +31,8 @@ pub fn sniff(bytes: &[u8]) -> ImageFormat {
         format
     } else if looks_like_svg(bytes) {
         ImageFormat::Svg
+    } else if opennote_metafile::is_metafile(bytes) {
+        ImageFormat::Metafile
     } else {
         ImageFormat::Other
     }
@@ -85,7 +87,7 @@ pub fn read(format: ImageFormat, bytes: &[u8]) -> Option<RawSize> {
         ImageFormat::Webp => webp(bytes),
         ImageFormat::Tiff => tiff(bytes, true),
         ImageFormat::Avif | ImageFormat::Heic => isobmff(bytes),
-        ImageFormat::Svg | ImageFormat::Other => None,
+        ImageFormat::Svg | ImageFormat::Metafile | ImageFormat::Other => None,
     }?;
     (size.width > 0 && size.height > 0).then_some(size)
 }

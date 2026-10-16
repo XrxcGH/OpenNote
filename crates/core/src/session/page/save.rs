@@ -53,6 +53,7 @@ impl PageSession {
         let mut retried = false;
         loop {
             let Some(snapshot) = self.snapshot()? else {
+                self.version_when_idle(why);
                 return Ok(None);
             };
             self.version_before(&snapshot);
@@ -165,6 +166,35 @@ impl PageSession {
             revision: outcome.revision.id,
             saved_at: outcome.revision.saved_at,
             confirmed,
+        }
+    }
+
+    /// A close or exit with nothing left to save still keeps a version when the page was edited since the last one:
+    /// the autosave usually saved the edits already, and without this only a page that was dirty at the end got one.
+    fn version_when_idle(&self, why: Why) {
+        let (reason, dir, bytes, page) = {
+            let st = self.state();
+            if !st.versions.edited || !st.versions.saved_once || st.dirty.is_some() {
+                return;
+            }
+            let reason = match why {
+                Why::Close => VersionReason::Closed,
+                Why::Exit => VersionReason::Exit,
+                _ => return,
+            };
+            (reason, st.dir.clone(), st.bytes.clone(), st.page.clone())
+        };
+        let version = VersionToWrite {
+            dir: &dir,
+            bytes: &bytes,
+            page: &page,
+            reason,
+            name: None,
+        };
+        if self.ctx.backend.write_version(version).is_ok() {
+            let mut st = self.state();
+            st.versions.last = Some(self.ctx.clock.monotonic());
+            st.versions.edited = st.dirty.is_some();
         }
     }
 

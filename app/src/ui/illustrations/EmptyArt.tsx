@@ -42,7 +42,8 @@ function Shelf() {
         className={`${styles.fillMoss} ${styles.moss}`}
         d="M90.2 35.6C86.6 32.6 86.8 28.6 90.2 26 93.6 28.6 93.8 32.6 90.2 35.6Z"
       />
-      <path className={styles.moss} d="M83 56.8C78.6 58.6 79.8 63.4 77 66 75.2 67.8 75.4 69.6 76.8 70.3" />
+      {/* The tendril leaves the pot over its top-left corner, (82.4, 56), never through its wall. */}
+      <path className={styles.moss} d="M82.2 55.8C78.4 57.8 79.8 63.4 77 66 75.2 67.8 75.4 69.6 76.8 70.3" />
       <path
         className={`${styles.fillMoss} ${styles.moss}`}
         d="M79.4 61.1Q78.4 57.3 74.9 59Q75.9 62.8 79.4 61.1ZM76.2 67.1Q76 63.5 72.5 64.5Q72.7 68.1 76.2 67.1Z"
@@ -56,9 +57,11 @@ export function EmptyArt({ kind, className }: ArtProps & { kind: EmptyKind }) {
   // Each drawing is cropped to its content, so there is no empty paper above it, and its shelf starts where the
   // sentence below it starts.
   const shelf = kind === 'notebooks';
-  const height = shelf ? 52 : 54;
+  // Shown at 1.6 px a unit and a whole number of pixels tall, so the sentence below starts on a pixel: the shelf
+  // drawing's box is 51.875 units tall and the others' 53.75, which leaves the same room under each shelf.
+  const height = shelf ? 83 : 86;
   return (
-    <Art width={176} height={height * 1.6} box={[110, height]} className={className}>
+    <Art width={176} height={height} box={[110, height / 1.6]} className={className}>
       <g transform={`translate(-5 ${shelf ? -22 : -20})`}>
         <path d={SHELF} />
         {shelf && <Shelf />}

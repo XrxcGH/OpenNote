@@ -1,0 +1,9 @@
+DeckCraft
+Copyright (c) 2026 ArtCraft Team and the DeckCraft contributors.
+Licensed under the MIT License or the Apache License, Version 2.0, at your option.
+OpenNote elects the Apache License, Version 2.0 (LICENSE-APACHE in this folder).
+
+This file keeps only the part of the upstream NOTICE that covers the vendored metafile crate.
+The upstream product's trademark paragraph, which refers to files outside this crate, and its list of
+bundled fonts and icons, none of which are in OpenNote, are left out. The upstream product's names
+and logos are not licensed and are not used in OpenNote.

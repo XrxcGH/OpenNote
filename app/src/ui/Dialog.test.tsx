@@ -74,6 +74,12 @@ describe('dialog rendering', () => {
     expect(layerStore.get().map((layer) => [layer.kind, layer.modal])).toEqual([['dialog', true]]);
   });
 
+  it('wraps a long unbroken string instead of scrolling sideways', () => {
+    const long = `opennote://page/${'a1b2c3d4'.repeat(40)}`;
+    const { dialog } = openHarness({ description: long });
+    expect(dialog.scrollWidth).toBeLessThanOrEqual(dialog.clientWidth);
+  });
+
   it('keeps the palette title for assistive technology only', () => {
     renderUi(<Dialog title="Command palette" size="palette" placement="top" onDismiss={() => {}} />);
     const title = screen.getByRole('heading', { name: 'Command palette' });

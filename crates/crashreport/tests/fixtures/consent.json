@@ -1,0 +1,22 @@
+[
+  {
+    "decidedUnix": null,
+    "decision": "unasked",
+    "wordingVersion": 0
+  },
+  {
+    "decidedUnix": 1790000000,
+    "decision": "declined",
+    "wordingVersion": 1
+  },
+  {
+    "decidedUnix": 1790000100,
+    "decision": "accepted",
+    "wordingVersion": 1
+  },
+  {
+    "decidedUnix": 1790000200,
+    "decision": "accepted",
+    "wordingVersion": 2
+  }
+]

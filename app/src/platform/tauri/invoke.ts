@@ -4,7 +4,10 @@
 
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 import { listen as tauriListen } from '@tauri-apps/api/event';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import type {
+  AttachmentSaved,
+  CaretMetrics,
   CaptionLayout,
   CaptionState,
   DeviceStatePatch,
@@ -27,12 +30,15 @@ import type {
 } from '../types';
 import type { ExitResult } from '../bindings/ExitResult';
 import type { ImportedAsset, PageRect } from '../../services/pages/types';
-import type { ClipboardFacts } from '../types';
+import type { IndexUpdate } from '../../services/search/types';
+import type { ClipboardFacts, PrinterInfo } from '../types';
+import type { IntelCommands } from '../../services/intel';
+import type { IntelChoiceCommands } from './intel';
 
 type None = Record<string, never>;
 
 /** Every app command: its arguments and what it returns. */
-export interface Commands {
+export interface Commands extends IntelCommands, IntelChoiceCommands {
   settings_update: { args: { patch: SettingsPatch }; result: Settings };
   settings_reset: { args: { section: SettingsSectionKey }; result: Settings };
   state_update: { args: { patch: DeviceStatePatch }; result: null };
@@ -47,6 +53,7 @@ export interface Commands {
   app_first_paint: { args: None; result: null };
   app_ready: { args: { timings: ReadyTimings }; result: null };
   app_exit_ready: { args: { result: ExitResult }; result: null };
+  app_close_anyway: { args: None; result: null };
   perf_mark: { args: { name: PerfMark; epochMs: number; detail?: string | null }; result: null };
   log_write: { args: { level: LogLevel; message: string }; result: null };
   install_status: { args: None; result: InstallStatus };
@@ -70,10 +77,17 @@ export interface Commands {
   page_redo: { args: { page: string; client: string }; result: ArrayBuffer };
   page_save_now: { args: { page: string }; result: null };
   page_close: { args: { page: string; client: string }; result: null };
+  // Phase 8: every search and link method, by name.
+  search_call: { args: { method: string; args: Record<string, unknown> }; result: unknown };
   clipboard_facts: { args: None; result: ClipboardFacts };
   clipboard_read: { args: None; result: ArrayBuffer };
   image_import_url: { args: { page: string; url: string }; result: ImportedAsset };
   image_import_clip: { args: { page: string; token: string }; result: ImportedAsset };
+  page_extras_caret: { args: None; result: CaretMetrics };
+  page_extras_link_title: { args: { url: string }; result: string | null };
+  attachment_open: { args: { page: string; asset: string; name: string }; result: 'app' | 'folder' };
+  attachment_applied: { args: { page: string; asset: string }; result: null };
+  attachment_thumbnail: { args: { page: string; asset: string; name: string; size: number }; result: ArrayBuffer };
   spell_languages: { args: None; result: { tag: string; name: string; isDefault: boolean }[] };
   spell_check: {
     args: { items: readonly { id: string; text: string }[]; languages: readonly string[] };
@@ -84,6 +98,15 @@ export interface Commands {
   spell_remove_word: { args: { word: string }; result: null };
   speech_voices: { args: None; result: { id: string; name: string; language: string }[] };
   speech_synthesize: { args: { text: string; voice: string }; result: ArrayBuffer };
+  print_prepare: { args: { job: string; input: unknown }; result: unknown };
+  print_render: {
+    args: { job: string; width: number; height: number; background: boolean; tagged?: boolean; outline?: boolean };
+    result: ArrayBuffer;
+  };
+  print_close: { args: { job: string }; result: null };
+  export_pick_save: { args: { suggested: string; label: string; extension: string }; result: string | null };
+  export_open: { args: { path: string; reveal: boolean }; result: null };
+  print_printers: { args: None; result: PrinterInfo[] };
 }
 
 /** A command that takes its input as a raw body with a JSON header, such as image_import. */
@@ -104,6 +127,8 @@ export interface Events {
   'window://forwarded-args': string[];
   'app://before-exit': ExitReason;
   'updater://status': UpdaterStatus;
+  'search:updated': IndexUpdate;
+  'attachment://saved': AttachmentSaved;
 }
 
 /** Any rejection as an IpcError. A command the shell doesn't have yet reads as code notImplemented. */
@@ -134,11 +159,20 @@ export function fire<C extends keyof Commands>(
   invoke(command, ...args).catch((error: IpcError) => console.debug(`${command}: ${error.message}`));
 }
 
-/** Listens for an event. The returned function stops listening, even before Tauri confirms the listener. */
-export function listen<E extends keyof Events>(event: E, handler: (payload: Events[E]) => void): Unsubscribe {
+/**
+ * Listens for an event. The returned function stops listening, even before Tauri confirms the listener. A plain
+ * listener hears the event whichever window Rust sends it to; `here` hears only what is sent to this window, for
+ * events that ask one window something, such as app://before-exit.
+ */
+export function listen<E extends keyof Events>(
+  event: E,
+  handler: (payload: Events[E]) => void,
+  here = false,
+): Unsubscribe {
   let stopped = false;
   let stop: Unsubscribe | null = null;
-  tauriListen<Events[E]>(event, ({ payload }) => handler(payload))
+  const options = here ? { target: getCurrentWebviewWindow().label } : undefined;
+  tauriListen<Events[E]>(event, ({ payload }) => handler(payload), options)
     .then((unlisten) => (stopped ? unlisten() : (stop = unlisten)))
     .catch((error: unknown) => console.debug(`${event}: ${String(error)}`));
   return () => {

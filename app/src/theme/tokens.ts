@@ -1007,6 +1007,7 @@ export const tokens = {
     "titleBar": 40,
     "titleBarTouch": 48,
     "captionButton": 46,
+    "captionGlyph": 10,
     "dragMin": 200,
     "rail": 48,
     "sidebarMin": 220,

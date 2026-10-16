@@ -9,7 +9,7 @@ import { textPageFixture } from '../test/fixtures';
 import { md } from '../test/builders';
 import { bindFacts, textSha256 } from './facts';
 import { orderBetween, ordersBetween } from './order';
-import { dataUrlBytes, runPaste, splitImages } from './pipeline';
+import { dataUrlBytes, imageSource, runPaste, splitImages } from './pipeline';
 import type { PasteRequest } from './pipeline';
 import { sanitizePaste } from './sanitize';
 
@@ -108,6 +108,21 @@ describe('the paste pipeline', () => {
     const file = new File([dataUrlBytes(PNG)!.bytes], 'shot.png', { type: 'image/png' });
     await runPaste(page.mounted, request({ files: [file] }), null);
     expect(edits(page.sent()).some((edit) => edit.edit === 'insertBlock' && edit.block.type === 'image')).toBe(true);
+  });
+});
+
+describe('web images in a paste', () => {
+  const remote = { kind: 'remote', src: 'https://example.com/a.png' } as never;
+  it('are only linked unless saving is on', async () => {
+    expect(await imageSource(remote, null, false)).toBeNull();
+    expect(await imageSource(remote, null, true)).toEqual({ kind: 'url', url: 'https://example.com/a.png' });
+  });
+  it('are not downloaded when the paste extras are off', async () => {
+    initFlags('dev', { 'page.editor': true, 'page.images': true, 'page.pasteExtras': false });
+    const { page } = await pageWith('Intro');
+    await runPaste(page.mounted, request({ html: '<p><img src="https://example.com/a.png" alt="Remote"></p>' }), null);
+    const all = edits(page.sent());
+    expect(all.some((edit) => edit.edit === 'insertBlock' && edit.block.type === 'image')).toBe(false);
   });
 });
 

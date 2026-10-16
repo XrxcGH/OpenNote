@@ -139,7 +139,7 @@ impl NotebookHandle {
             },
             NodeRef::Section(s) => NodeProps {
                 color: Some(store.section(s)?.file.color.clone()),
-                pinned: None,
+                pinned: Some(crate::model::is_pinned(&store.section(s)?.file.extra)),
                 styles: None,
             },
             NodeRef::Page(p) => {
@@ -216,7 +216,7 @@ impl NotebookHandle {
     }
 
     /// The pages a change to these nodes takes with it: a page's subpages, a section's pages, and a group's.
-    fn pages_under(&self, nodes: &[NodeRef]) -> Vec<PageId> {
+    pub(crate) fn pages_under(&self, nodes: &[NodeRef]) -> Vec<PageId> {
         let tree = self.inner.tree();
         let store = &tree.store;
         let mut pages = Vec::new();
@@ -245,7 +245,7 @@ impl NotebookHandle {
     }
 
     /// Closes the open pages among `pages` in every window, each with a final save (spec 12.2, step 1).
-    fn close_pages(&self, pages: &[PageId]) {
+    pub(crate) fn close_pages(&self, pages: &[PageId]) {
         let sessions: Vec<_> = self
             .inner
             .sessions()

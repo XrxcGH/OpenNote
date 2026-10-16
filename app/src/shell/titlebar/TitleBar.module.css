@@ -1,5 +1,6 @@
-/* The title bar and the compact app bar (ARCHITECTURE.md section 10). The window keeps its native frame for now
-   (ADR 0012), so the bar is an ordinary toolbar row below the native caption: no drag region, no caption buttons. */
+/* The title bar and the compact app bar (ARCHITECTURE.md section 10). By default the window keeps its native frame
+   (ADR 0012), so the bar is an ordinary toolbar row below the native caption. With shell.customFrame on (ADR 0017) it
+   is the caption: the title bar element and DragRegion drag, and the caption buttons end the row. */
 @layer components {
   .titleBar {
     display: flex;

@@ -1,0 +1,106 @@
+/*
+ * Drawn equations and the live preview in the source field (Phase 10). KaTeX's own style sheet sizes and spaces the
+ * drawing; these rules only place it in the text and in the editing field, on tokens.
+ */
+@layer components {
+  .drawn {
+    font-family: var(--font-reading);
+    color: var(--color-text-primary);
+  }
+
+  .invalid {
+    outline: 1px dashed var(--color-status-danger);
+    outline-offset: 2px;
+  }
+
+  .toggle {
+    min-block-size: var(--size-target-min);
+    margin-block-start: var(--space-1);
+    margin-inline-end: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: transparent;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .holderBlock {
+    margin-block-start: var(--space-2);
+  }
+
+  .holderInline {
+    position: absolute;
+    z-index: var(--layer-dropdown);
+    margin-block-start: var(--space-1);
+    min-inline-size: 16rem;
+    padding: var(--space-2);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  /* With the writing area open, the holder takes its place in the text, so the block grows to hold the area and
+     nothing clips it or lies over it. */
+  .holderPadOpen {
+    position: static;
+    display: block;
+    inline-size: min(100%, 42rem);
+  }
+
+  .preview {
+    padding: var(--space-2) var(--space-3);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    overflow-x: auto;
+  }
+
+  .problem {
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+  }
+
+  .problem:empty {
+    display: none;
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-block-start: var(--space-2);
+  }
+
+  .actions button {
+    min-block-size: var(--size-target-min);
+    padding-inline: var(--space-3);
+    font: inherit;
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .pad {
+    display: grid;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
+    color: var(--color-text-primary);
+  }
+
+  .padCanvas {
+    inline-size: 100%;
+    max-inline-size: 40rem;
+    aspect-ratio: 640 / 220;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+}

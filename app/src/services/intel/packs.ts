@@ -1,0 +1,32 @@
+// The translation packs the shell offers, with their real sizes, for the web preview's stand-in catalog. The shell's own
+// list is app/src-tauri/src/intel/catalog.rs, generated from the same Hugging Face listings; a test in the shell keeps
+// the two in step. Each row is the language it reads, the language it writes, and the bytes to download.
+export const PACKS: readonly (readonly [string, string, number])[] = [
+  ['en', 'es', 119006287],
+  ['es', 'en', 119006252],
+  ['en', 'fr', 112740751],
+  ['fr', 'en', 112740751],
+  ['en', 'de', 111148798],
+  ['de', 'en', 111148763],
+  ['en', 'it', 136103062],
+  ['it', 'en', 136494411],
+  ['en', 'nl', 121260434],
+  ['nl', 'en', 121260436],
+  ['en', 'ru', 117396377],
+  ['ru', 'en', 117396377],
+  ['en', 'zh', 119124592],
+  ['zh', 'en', 119124865],
+  ['en', 'ar', 117231802],
+  ['ar', 'en', 117250484],
+  ['en', 'hi', 116286658],
+  ['en', 'sv', 109387431],
+  ['sv', 'en', 109387431],
+  ['en', 'uk', 116155947],
+  ['uk', 'en', 116155947],
+  ['tr', 'en', 116181955],
+  ['pl', 'en', 117247101],
+  ['ja', 'en', 114330018],
+  ['ko', 'en', 119230568],
+  ['en', 'vi', 106274222],
+  ['vi', 'en', 106335896],
+];

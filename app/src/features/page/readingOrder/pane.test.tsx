@@ -89,3 +89,19 @@ describe('the Reading order pane', () => {
     expect(edits()).toContainEqual({ edit: 'setPage', view: { readingOrder: null } });
   });
 });
+
+describe('the Reading order pane after typing', () => {
+  it('names a text box by what was typed into it, not by what it opened with', async () => {
+    const { mounted } = await open();
+    const editor = mounted.pool.mount(FLOW, { kind: 'end' }, 'target');
+    expect(editor).toBeTruthy();
+    editor!.commands.focus('end');
+    editor!.commands.insertContent(' and typed');
+    render(<ReadingOrderPane mounted={mounted} onClose={() => undefined} />);
+    const list = screen.getByRole('listbox', { name: 'Blocks in reading order' });
+    const labels = within(list)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
+    expect(labels).toContain('Text: Flowing and typed');
+  });
+});

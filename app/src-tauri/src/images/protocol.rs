@@ -74,6 +74,8 @@ fn answer(app: &AppHandle, request: &Request<Vec<u8>>) -> Response<Vec<u8>> {
         .header(header::CACHE_CONTROL, "private, max-age=31536000, immutable")
         .header(header::ACCEPT_RANGES, "bytes")
         .header("X-Content-Type-Options", "nosniff")
+        // The page reads an image's pixels for text recognition (Phase 12), which is a cross-origin fetch.
+        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .header(
             header::CONTENT_SECURITY_POLICY,
             "default-src 'none'; style-src 'unsafe-inline'; sandbox",

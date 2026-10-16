@@ -39,6 +39,10 @@ pub fn settings_reset(
 }
 
 fn announce(window: &WebviewWindow, settings: &Settings) {
+    // How long history is kept reaches the core with every change (A4-13).
+    if let Some(pages) = window.try_state::<crate::core_bridge::CoreBridge>() {
+        pages.set_retention(settings.editing.history.keep);
+    }
     let payload = SettingsChanged {
         settings: settings.clone(),
         origin: window.label().to_owned(),

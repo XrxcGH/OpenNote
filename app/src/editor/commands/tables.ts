@@ -76,6 +76,25 @@ export function canApply(data: TableData, at: CellAt, op: TableOp): boolean {
 }
 
 /** The data after `op`, or null when it doesn't apply (moving the top row up, deleting the last column). */
+/** The narrowest a new column is made to keep a table inside its page. */
+const MIN_FITTED_COLUMN = 80;
+
+/**
+ * A column just added, narrowed so a table that fitted its page still does: four columns of 160 px in a 623 px page
+ * would hide the last column's right-aligned digits behind the scroll (Beta 5 walk W2-13). A table already wider than
+ * its page, or with too little room left for a usable column, keeps the width the column got.
+ */
+export function fitAddedColumn(before: TableData, change: TableChange, room: number): TableChange {
+  const total = (data: TableData) => data.columns.reduce((sum, column) => sum + column.width, 0);
+  const left = room - total(before);
+  if (room <= 0 || total(change.data) <= room || left < 0 || left < MIN_FITTED_COLUMN) return change;
+  const index = change.caret?.column ?? -1;
+  const columns = change.data.columns.map((column, i) =>
+    i === index ? { ...column, width: clampColumnWidth(Math.floor(left)) } : column,
+  );
+  return { ...change, data: { ...change.data, columns } };
+}
+
 export function applyTableOp(input: TableData, at: CellAt, op: TableOp): TableChange | null {
   const data = normalizeTableData(input);
   const { row, column } = clampCell(data, at);

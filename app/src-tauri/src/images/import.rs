@@ -85,6 +85,20 @@ pub fn check(bytes: Vec<u8>, name: &str, declared: &str, convert: bool) -> Resul
     if !generic && ImageFormat::from_mime(declared) != Some(probed.format) {
         return Err(unsupported());
     }
+    if probed.format == ImageFormat::Metafile {
+        // WebView2 cannot show a metafile, so the page keeps the drawing as SVG.
+        let svg = opennote_metafile::parse(&bytes)
+            .ok()
+            .and_then(|picture| opennote_metafile::to_svg(&picture))
+            .ok_or_else(unsupported)?;
+        return Ok(Checked {
+            name: name_for(name, ImageFormat::Svg),
+            mime: ImageFormat::Svg.mime(),
+            width: probed.width,
+            height: probed.height,
+            bytes: svg.into_bytes(),
+        });
+    }
     if probed.format.displayable() {
         return Ok(Checked {
             name: name_for(name, probed.format),
@@ -341,5 +355,54 @@ mod tests {
     fn names_are_percent_decoded() {
         assert_eq!(percent_decode("Fot%C3%B3%20%25.png"), "Fotó %.png");
         assert_eq!(percent_decode("100%"), "100%");
+    }
+
+    /// A small EMF: a 400 by 200 device-unit frame with one black rectangle.
+    fn emf() -> Vec<u8> {
+        let ints = |values: &[i32]| values.iter().flat_map(|v| v.to_le_bytes()).collect::<Vec<u8>>();
+        let record = |kind: u32, payload: &[u8]| {
+            let mut out = kind.to_le_bytes().to_vec();
+            out.extend(((8 + payload.len()) as u32).to_le_bytes());
+            out.extend(payload);
+            out
+        };
+        let mut body = record(37, &0x8000_0004u32.to_le_bytes());
+        body.extend(record(43, &ints(&[40, 20, 360, 180])));
+        body.extend(record(14, &[0; 12]));
+        let mut header = vec![0u8; 88];
+        header[0..4].copy_from_slice(&1u32.to_le_bytes());
+        header[4..8].copy_from_slice(&88u32.to_le_bytes());
+        header[8..24].copy_from_slice(&ints(&[0, 0, 399, 199]));
+        header[24..40].copy_from_slice(&ints(&[0, 0, 4000, 2000]));
+        header[40..44].copy_from_slice(&0x464D_4520u32.to_le_bytes());
+        header[44..48].copy_from_slice(&0x0001_0000u32.to_le_bytes());
+        header[48..52].copy_from_slice(&((88 + body.len()) as u32).to_le_bytes());
+        header[52..56].copy_from_slice(&3u32.to_le_bytes());
+        header[56..58].copy_from_slice(&1u16.to_le_bytes());
+        header[72..76].copy_from_slice(&400i32.to_le_bytes());
+        header[76..80].copy_from_slice(&200i32.to_le_bytes());
+        header[80..84].copy_from_slice(&40i32.to_le_bytes());
+        header[84..88].copy_from_slice(&20i32.to_le_bytes());
+        header.extend(body);
+        header
+    }
+
+    #[test]
+    fn a_metafile_becomes_an_svg_and_a_damaged_or_hostile_one_is_refused() {
+        let checked = check(emf(), "Chart.emf", "image/x-emf", false).unwrap();
+        assert_eq!((checked.mime, checked.name.as_str()), ("image/svg+xml", "Chart.svg"));
+        assert!(checked.width > 0 && checked.height > 0);
+        assert!(String::from_utf8(checked.bytes).unwrap().starts_with("<svg "));
+        let whole = emf();
+        assert!(check(whole[..60].to_vec(), "a.emf", "", false).is_err());
+        let mut bent = whole.clone();
+        bent[88..92].copy_from_slice(&u32::MAX.to_le_bytes());
+        let _ = check(bent, "a.emf", "", false);
+        // A frame of absurd size is refused, not drawn.
+        let mut huge = whole;
+        huge[24..40].copy_from_slice(&[
+            0xFF, 0xFF, 0xFF, 0x7F, 0, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0x7F,
+        ]);
+        let _ = check(huge, "a.emf", "", false);
     }
 }

@@ -80,6 +80,13 @@ class Layer implements PageBlockLayer {
     this.refresh();
   }
 
+  reorder(id: BlockId, order: string): void {
+    const entry = this.entries.get(id);
+    if (!entry || entry.block.order === order) return;
+    entry.block = { ...entry.block, order };
+    this.refresh();
+  }
+
   remove(id: BlockId): void {
     if (!this.entries.has(id)) return;
     this.drop(id);

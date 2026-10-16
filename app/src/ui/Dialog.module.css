@@ -26,11 +26,13 @@
     max-block-size: 100%;
     margin: 0;
     padding: var(--space-7);
-    overflow: auto;
+    overflow: hidden;
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-xl);
     background: var(--color-surface-raised);
     color: var(--color-text-primary);
+    /* A long link or folder path wraps instead of widening the dialog past its edge. */
+    overflow-wrap: anywhere;
     box-shadow: var(--elevation-3);
     transition:
       opacity var(--motion-duration-slow) var(--motion-easing-enter),
@@ -39,9 +41,28 @@
   }
 
   .dialog[open] {
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-5);
+  }
+
+  .dialog[open] > * {
+    flex: none;
+  }
+
+  /* The body scrolls on its own when the window is short, so the title and the buttons stay in view. The small
+     padding and matching negative margin keep a focus ring, or a hover area that hangs out, from being cut. */
+  .dialog[open] > .content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    flex: 0 1 auto;
+    gap: var(--space-5);
+    min-block-size: 0;
+    margin: calc(-1 * var(--space-5));
+    padding: var(--space-5);
+    scroll-padding: var(--space-5);
+    overflow: auto;
   }
 
   .dialog:focus-visible {
@@ -83,6 +104,7 @@
     align-self: start;
     justify-self: center;
     margin-block-start: max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar))));
+    max-block-size: calc(100% - max(0px, calc(var(--size-palette-top) - var(--title-bar-height, var(--size-title-bar)))));
   }
 
   .layer[data-placement='start'] {

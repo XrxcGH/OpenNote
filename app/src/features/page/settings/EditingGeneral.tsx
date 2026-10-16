@@ -43,11 +43,6 @@ export default function EditingGeneral() {
         <RadioCard<Bar> value="always" label={t('editor.general.formattingBarAlways')} />
         <RadioCard<Bar> value="never" label={t('editor.general.formattingBarNever')} />
       </RadioGroup>
-      <Switch
-        label={t('editor.general.dateLine')}
-        checked={editing.newPageDateTime}
-        onChange={(newPageDateTime) => set({ newPageDateTime })}
-      />
     </section>
   );
 }

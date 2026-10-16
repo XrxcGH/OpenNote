@@ -96,6 +96,33 @@ fn ink_svg_lays_out_blocks_and_styles() {
 }
 
 #[test]
+fn ink_svg_leaves_out_hidden_layers() {
+    let mut page = sample_page();
+    let mut other = sample_stroke();
+    other.id = "01m3sa8wb93eknedj0qexh7af9".parse().unwrap();
+    page.ink.insert(Arc::new(other.clone()));
+    let mut assign = serde_json::Map::new();
+    assign.insert(other.id.to_string(), serde_json::json!("top"));
+    let layers = |base_hidden: bool, top_hidden: bool| {
+        serde_json::json!({
+            "order": ["base", "top"],
+            "layers": {
+                "base": { "name": "Ink", "hidden": base_hidden },
+                "top": { "name": "Notes", "hidden": top_hidden },
+            },
+            "assign": assign.clone(),
+        })
+    };
+    let paths = |page: &Page| text(render_ink_svg(page)).matches("<path ").count();
+    assert_eq!(paths(&page), 2);
+    page.view.extra.insert("inkLayers".to_owned(), layers(false, true));
+    assert_eq!(paths(&page), 1);
+    page.view.extra.insert("inkLayers".to_owned(), layers(true, false));
+    assert_eq!(paths(&page), 1);
+    page.view.extra.insert("inkLayers".to_owned(), layers(true, true));
+    assert_eq!(paths(&page), 0);
+}
+#[test]
 fn page_md_of_the_sample_page() {
     let md = text(render_page_md(&sample_page(), &NoLinks));
     let expected = "---
@@ -169,6 +196,7 @@ fn page_node(id: &str, title: &str, level: u8, state: PageNodeState) -> PageNode
         order: OrderKey::parse("a0").unwrap(),
         level,
         pinned: false,
+        archived: false,
         color: None,
         created: Timestamp::EPOCH,
         modified: None,
@@ -188,6 +216,8 @@ fn section_node(id: &str, title: &str, group: GroupId, pages: Vec<PageNode>) -> 
         pages,
         access: Access::ReadWrite,
         encrypted: false,
+        archived: false,
+        pinned: false,
     }
 }
 
@@ -232,6 +262,7 @@ fn tree() -> NotebookTree {
         ],
         access: Access::ReadWrite,
         notices: Vec::new(),
+        archived: false,
     }
 }
 
@@ -273,4 +304,51 @@ fn readme_matches_spec_11_4() {
     assert!(readme.ends_with(&format!("\n\n{README_MARK}\n")));
     assert!(text(render_readme("")).starts_with("# Untitled\n"));
     assert!(text(render_readme("#1 [draft]")).starts_with("# \\#1 \\[draft\\]\n"));
+}
+
+#[test]
+fn page_md_lists_page_properties_in_its_front_matter() {
+    let mut page = sample_page();
+    let fields = serde_json::json!({ "fields": [
+        { "id": "f1", "name": "Status", "type": "choice", "value": "Draft", "options": ["Draft", "Done"] },
+        { "id": "f2", "name": "Due", "type": "date", "value": "2026-10-01" },
+        { "id": "f3", "name": "Rating", "type": "number", "value": 4.5 },
+        { "id": "f3b", "name": "Pages", "type": "number", "value": 12.0 },
+        { "id": "f4", "name": "Reviewed", "type": "checkbox", "value": true },
+        { "id": "f5", "name": "Related", "type": "page", "value": "01m3sa12426sg32pmtyffjaqcf", "label": "Week \"1\"" },
+        { "id": "f6", "name": "Course", "type": "text", "value": null },
+        { "id": "f7", "name": "Status", "type": "text", "value": "a second Status is left out" },
+        { "id": "f8", "name": "  ", "type": "text", "value": "no name" },
+        { "id": "f9", "name": "Line\nbreak", "type": "text", "value": 3 },
+        { "id": "f10", "name": "Unknown", "type": "mystery", "value": "left out" },
+        { "name": "No ID", "type": "text", "value": "left out" }
+    ]});
+    page.view.extra.insert("properties".to_owned(), fields);
+    let raw = text(render_page_md(&page, &NoLinks));
+    let md = zeroed(&raw);
+    let expected = "---
+title: \"Photosynthesis\"
+tags: [\"biology\", \"exam/unit-3\"]
+properties:
+  \"Status\": \"Draft\"
+  \"Due\": \"2026-10-01\"
+  \"Rating\": 4.5
+  \"Pages\": 12
+  \"Reviewed\": true
+  \"Related\": \"Week \\\"1\\\"\"
+  \"Course\": null
+  \"Line break\": null
+created: \"2026-09-30T14:03:22.114Z\"
+";
+    assert!(md.starts_with(expected), "{md}");
+    assert_eq!(
+        classify_readable(raw.as_bytes()),
+        ReadableState::Ours {
+            revision: page.revision.id
+        }
+    );
+    page.view
+        .extra
+        .insert("properties".to_owned(), serde_json::json!({ "fields": [] }));
+    assert!(!text(render_page_md(&page, &NoLinks)).contains("properties:"));
 }

@@ -5,6 +5,8 @@ import type { PageCommandId } from '../keys';
 import type { MessageKey } from '../../../strings/t';
 import { editingSettingsParts } from '../registries';
 import { shownQueue } from '../sync/shown';
+// Delete history for sections and notebooks, in the tree menus and the palette.
+import '../history/treeCommands';
 
 type HistoryChunk = typeof import('../history/chunk');
 let chunk: HistoryChunk | null = null;

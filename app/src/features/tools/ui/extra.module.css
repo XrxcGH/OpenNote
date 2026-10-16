@@ -1,0 +1,134 @@
+/*
+ * The unit converter and the reference tables (Productivity and study tools). Plain tables and fields on tokens.
+ * A family in the periodic table is told by a color and by its name in words, never by color alone.
+ */
+@layer components {
+  .field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .input {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .scroll {
+    overflow: auto;
+    max-block-size: 60vh;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+    vertical-align: middle;
+  }
+
+  .table thead th {
+    position: sticky;
+    inset-block-start: 0;
+    background: var(--color-surface-raised);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .hidden {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .dot {
+    display: inline-block;
+    inline-size: 0.75em;
+    block-size: 0.75em;
+    margin-inline-end: var(--space-2);
+    border-radius: 50%;
+    background: var(--color-text-muted);
+  }
+
+  .dot[data-group='alkali'] {
+    background: var(--color-accent-clay);
+  }
+
+  .dot[data-group='alkaline'] {
+    background: var(--color-accent-candle);
+  }
+
+  .dot[data-group='transition'] {
+    background: var(--color-accent-primary);
+  }
+
+  .dot[data-group='post'] {
+    background: var(--color-accent-dusk);
+  }
+
+  .dot[data-group='metalloid'] {
+    background: var(--color-status-warning);
+  }
+
+  .dot[data-group='nonmetal'] {
+    background: var(--color-status-success);
+  }
+
+  .dot[data-group='halogen'] {
+    background: var(--color-status-danger);
+  }
+
+  .dot[data-group='noble'] {
+    background: var(--color-accent-night);
+  }
+
+  .dot[data-group='lanthanide'] {
+    background: var(--color-text-link);
+  }
+
+  .dot[data-group='actinide'] {
+    background: var(--color-text-secondary);
+  }
+
+  .days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .days legend {
+    padding: 0;
+    margin-block-end: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .day {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--size-target-min);
+  }
+}

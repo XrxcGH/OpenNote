@@ -124,6 +124,37 @@ impl NotebookShared {
         }
     }
 
+    /// Queues the readable copies (`page.md`, `ink.svg`) of a page that was just created or copied, so its
+    /// folder is complete before the first edit. An encrypted section gets none.
+    pub(crate) fn queue_readable(&self, page: PageId) {
+        let (dir, encrypted) = {
+            let tree = self.tree();
+            let store = &tree.store;
+            let Some(section) = store.section_of(page) else { return };
+            let encrypted = store.section(section).map(|s| s.encrypted()).unwrap_or(true);
+            let Some(dir) = store.page_dir(page) else { return };
+            (dir, encrypted)
+        };
+        if encrypted {
+            return;
+        }
+        let me = self.me.clone();
+        let key = Some(format!("readable-new:{page}"));
+        self.ctx
+            .maintenance
+            .after(self.ctx.clock.as_ref(), std::time::Duration::ZERO, key, move || {
+                if let Some(notebook) = me.upgrade() {
+                    if notebook.check_open().is_err() {
+                        return;
+                    }
+                    if let Ok(loaded) = notebook.ctx.backend.load(&dir) {
+                        let links = notebook.links(&dir, &loaded.page);
+                        let _ = notebook.ctx.backend.write_readable(&dir, &loaded.page, &links);
+                    }
+                }
+            });
+    }
+
     /// Refreshes the title copy in `section.json` and the device-local cache after a save.
     pub(crate) fn refresh_title(&self, page: PageId, cached: CachedPage, encrypted: bool) {
         if self.check_open().is_err() {
@@ -248,6 +279,9 @@ impl NotebookShared {
         let mut tree = self.tree();
         let result = tree.store.add_copy(after, &page);
         drop(tree);
+        if let Ok(id) = &result {
+            self.queue_readable(*id);
+        }
         self.tree_changed();
         result
     }

@@ -29,6 +29,20 @@ pub struct InkSettings {
     pub zoom_box: ZoomBox,
     pub contrast_ink: ContrastInk,
     pub low_latency: LowLatency,
+    /// Named pen palettes the person saved (flag `ink.penLibrary`). Absent until the first one is saved.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(test, ts(optional))]
+    pub pen_sets: Option<Vec<PenSet>>,
+}
+
+/// A named palette of pens, saved so a person can switch between a writing set and a drawing set.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub struct PenSet {
+    pub id: String,
+    pub name: String,
+    pub pens: Vec<PenSlot>,
 }
 
 impl Default for InkSettings {
@@ -61,6 +75,7 @@ impl Default for InkSettings {
             zoom_box: ZoomBox::default(),
             contrast_ink: ContrastInk::KeepLegible,
             low_latency: LowLatency::Auto,
+            pen_sets: None,
         }
     }
 }
@@ -68,6 +83,8 @@ impl Default for InkSettings {
 impl InkSettings {
     /// The most pen slots the palette holds.
     pub const MAX_PENS: usize = 32;
+    /// The most pen sets a person can keep.
+    pub const MAX_PEN_SETS: usize = 12;
 
     pub fn check(&self, check: &mut Check) {
         let pens = &self.pens;
@@ -87,6 +104,33 @@ impl InkSettings {
                 validate::ink_color(&pen.color, highlighter),
                 "A pen's color isn't valid.",
             );
+        }
+        let sets = self.pen_sets.as_deref().unwrap_or_default();
+        check.that(
+            "ink.penSets",
+            sets.len() <= Self::MAX_PEN_SETS,
+            "There can be at most 12 pen sets.",
+        );
+        for (index, set) in sets.iter().enumerate() {
+            check.that(
+                "ink.penSets",
+                sets[..index].iter().all(|other| other.id != set.id),
+                "Two pen sets have the same id.",
+            );
+            check.chars("ink.penSets", &set.name, (1, 40));
+            check.that(
+                "ink.penSets",
+                (1..=Self::MAX_PENS).contains(&set.pens.len()),
+                "A pen set holds 1 to 32 pens.",
+            );
+            for pen in &set.pens {
+                check.range("ink.penSets", pen.width, (0.1, 20.0));
+                check.that(
+                    "ink.penSets",
+                    validate::ink_color(&pen.color, pen.tool == PenTool::Highlighter),
+                    "A pen set's color isn't valid.",
+                );
+            }
         }
         check.range(
             "ink.touch.palmGraceMs",
@@ -134,6 +178,16 @@ pub enum PenTool {
     Pen,
     Pencil,
     Highlighter,
+    /// Pen library (flag `ink.penLibrary`): width from pressure and speed.
+    Fountain,
+    /// Pen library: a soft brush that is thick when pressed or slow.
+    Brush,
+    /// Pen library: a flat nib held at a fixed angle.
+    Calligraphy,
+    /// Pen library: a line of dashes.
+    Dashed,
+    /// Pen library: a line of dots.
+    Dotted,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -143,6 +197,20 @@ pub enum Handedness {
     #[default]
     Right,
     Left,
+    /// Phase 5: the palm filter learns the writing hand from where the palm rests.
+    Auto,
+}
+
+/// Phase 5: when a finger draws while an ink tool is active.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(ts_rs::TS), ts(export, export_to = crate::BINDINGS))]
+pub enum FingerDraw {
+    /// Until a pen is seen on this device.
+    #[default]
+    Auto,
+    On,
+    Off,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -151,6 +219,8 @@ pub enum Handedness {
 pub struct TouchInk {
     /// Draw with a finger when no pen is near.
     pub draws: bool,
+    /// When a finger draws; it replaces `draws`, which older versions read.
+    pub finger: FingerDraw,
     /// How long a touch stroke waits for a pen before it's committed, 300 to 2,000 ms.
     pub palm_grace_ms: u32,
     pub two_finger_scroll_near_pen: bool,
@@ -160,6 +230,7 @@ impl Default for TouchInk {
     fn default() -> Self {
         Self {
             draws: false,
+            finger: FingerDraw::Auto,
             palm_grace_ms: 500,
             two_finger_scroll_near_pen: true,
         }

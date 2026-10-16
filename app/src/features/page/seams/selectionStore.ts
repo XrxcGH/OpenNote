@@ -8,6 +8,8 @@ import { announce } from '../../../ui';
 export interface PageSelection {
   readonly blocks: readonly BlockId[];
   readonly strokes: readonly string[];
+  /** The path the lasso drew, in page units, when a lasso made the selection. Export selection's exact mode uses it. */
+  readonly lasso?: readonly { readonly x: number; readonly y: number }[];
 }
 
 export const pageSelection = createStore<PageSelection>({ blocks: [], strokes: [] }, 'page selection');

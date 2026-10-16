@@ -18,7 +18,7 @@ export type NodeKind = 'notebook' | 'sectionGroup' | 'section' | 'page';
 export type ChipColor = 'ink' | 'indigo' | 'brick' | 'fern' | 'plum' | 'amber' | 'walnut';
 /** Subpage depth, as in OneNote. */
 export type PageLevel = 0 | 1 | 2;
-export type SaveStatus = 'saved' | 'saving' | 'offline' | 'error';
+export type SaveStatus = 'saved' | 'saving' | 'offline' | 'error' | 'stalled';
 
 /** Every chip color, in the tokens' order, for menus and for checking stored values. */
 // checks-disable-next-line brand-consistency: the same pen names as ChipColor, listed for use at run time
@@ -57,6 +57,20 @@ export interface NodeSummary {
   readonly modified: string;
   /** For example, written by a newer app version. */
   readonly readOnly: boolean;
+  /** A pinned page. Storage that keeps no pins leaves it out. */
+  readonly pinned?: boolean;
+  /** Hidden from the tree until Show archived. Storage that keeps no archive leaves it out. */
+  readonly archived?: boolean;
+  /**
+   * An encrypted section, or a page in one (spec 5.7). Nothing of it may be indexed or cached on this device
+   * (features/intel/protectedPages.ts). Storage without encryption leaves it out.
+   */
+  readonly encrypted?: boolean;
+  /**
+   * A password-protected section, or a page of one (ADR 0042): whether it is locked or open. Left out for the rest,
+   * and by storage that protects nothing.
+   */
+  readonly protected?: 'locked' | 'unlocked';
 }
 
 /** Where nodes go. `beforeId: null` means at the end of the parent's children. */

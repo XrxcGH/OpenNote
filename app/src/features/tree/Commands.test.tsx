@@ -100,6 +100,17 @@ describe('creating', () => {
     expect(row(pagesTree(), 'Spindle').getAttribute('aria-level')).toBe('2');
   });
 
+  it('adds a page with Ctrl+N while the caret is in text', async () => {
+    await renderTree();
+    await openLectures();
+    const text = document.body.appendChild(document.createElement('div'));
+    text.contentEditable = 'true';
+    text.focus();
+    await pressChord('Ctrl+N');
+    await screen.findByRole('textbox', { name: 'Rename Untitled page' });
+    text.remove();
+  });
+
   it('runs the page created hooks after a new page', async () => {
     const { pageCreated } = await import('../../registries');
     const seen: string[] = [];
@@ -281,6 +292,7 @@ describe('delete and Undo', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('context menu contents', () => {
   it('lists each kind in the design order, with Delete last', async () => {
     await renderTree();
@@ -292,6 +304,12 @@ describe('context menu contents', () => {
       'Color',
       'Move up',
       'Move down',
+      'Create shortcut',
+      'Check notebook',
+      'Archive',
+      'Delete notebook history',
+      'Export…',
+      'Share as a file…',
       'Delete',
     ]);
     await pressChord('Escape');
@@ -304,11 +322,32 @@ describe('context menu contents', () => {
       'Move up',
       'Move down',
       'Move to',
+      'Archive',
       'Delete',
     ]);
     await pressChord('Escape');
     await openMenuOn(notebooksTree, 'Labs');
-    expect(menuLabels()).toEqual(['New page', 'Rename', 'Color', 'Move up', 'Move down', 'Move to', 'Delete']);
+    expect(menuLabels()).toEqual([
+      'New page',
+      'Rename',
+      'Color',
+      'Move up',
+      'Move down',
+      'Move to',
+      'Open in new tab',
+      'Pin section',
+      'Duplicate',
+      'Copy to',
+      'Create shortcut',
+      'Check accessibility',
+      'Archive',
+      'Delete section history',
+      'Protect with password…',
+      'Make flashcards from this section',
+      'Export…',
+      'Share as a file…',
+      'Delete',
+    ]);
     await pressChord('Escape');
     await openLectures();
     await openMenuOn(pagesTree, 'Mitosis');
@@ -317,9 +356,22 @@ describe('context menu contents', () => {
       'New subpage',
       'Make subpage',
       'Rename',
+      'Color',
       'Move up',
       'Move down',
       'Move to',
+      'Open in new tab',
+      'Open in new window',
+      'Pin page',
+      'Duplicate',
+      'Copy to',
+      'Create shortcut',
+      'Check accessibility',
+      'Archive',
+      'Open in another editor',
+      'Copy link to this page',
+      'Export…',
+      'Share as a file…',
       'Delete',
     ]);
   });
@@ -383,5 +435,21 @@ describe('context menu actions', () => {
       )
       .toBe('Section, color Fern');
     await expectFocus(row(notebooksTree(), 'Labs'));
+  });
+
+  it('colors a page from its Color submenu', async () => {
+    await renderTree();
+    await openLectures();
+    await openMenuOn(pagesTree, 'Mitosis');
+    await userEvent.click(screen.getByRole('menuitem', { name: /^Color/ }));
+    const submenu = await screen.findByRole('menu', { name: 'Color' });
+    expect(within(submenu).getByRole('menuitemradio', { name: 'No color' }).getAttribute('aria-checked')).toBe('true');
+    await userEvent.click(within(submenu).getByRole('menuitemradio', { name: 'Plum' }));
+    await expect
+      .poll(
+        () => document.getElementById(row(pagesTree(), 'Mitosis').getAttribute('aria-describedby') ?? '')?.textContent,
+      )
+      .toMatch(/color Plum$/);
+    expect(row(pagesTree(), 'Mitosis').querySelector('[data-color="plum"]')).not.toBeNull();
   });
 });

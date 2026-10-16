@@ -6,6 +6,9 @@
 import { CaretDownIcon } from '@phosphor-icons/react/dist/csr/CaretDown';
 import { CaretRightIcon } from '@phosphor-icons/react/dist/csr/CaretRight';
 import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { LockSimpleIcon } from '@phosphor-icons/react/dist/csr/LockSimple';
+import { LockSimpleOpenIcon } from '@phosphor-icons/react/dist/csr/LockSimpleOpen';
+import { PushPinIcon } from '@phosphor-icons/react/dist/csr/PushPin';
 import { memo, useId, useRef } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
 import type { NodeSummary } from '../../services/notes';
@@ -22,12 +25,16 @@ export interface TreeRowProps {
   readonly tree: TreeId;
   readonly row: Row;
   readonly selected: boolean;
+  /** Part of a selection of several rows. */
+  readonly multi?: boolean;
   /** The roving row, with tabindex 0. */
   readonly focused: boolean;
   readonly renaming: Renaming | null;
   /** The row's top when the tree windows its rows. */
   readonly top?: number;
   onPress(row: Row, event: MouseEvent): void;
+  /** A press with a button other than the main one: the middle button opens a page row in a new tab. */
+  onAux(row: Row, event: MouseEvent): void;
   onToggle(row: Row): void;
   onRename(row: Row): void;
   onMore(row: Row, anchor: HTMLElement): void;
@@ -36,15 +43,33 @@ export interface TreeRowProps {
 /** "Section, color Fern", or "Subpage, Sep 28, 2026". */
 export function describeNode(node: NodeSummary): string {
   if (node.kind === 'page') {
-    return t('tree.describe.page', { level: String(node.pageLevel), date: formatDate(node.modified) });
+    const level = String(node.pageLevel);
+    const date = formatDate(node.modified);
+    const page = node.color
+      ? t('tree.describe.pageColored', { level, date, color: t(`tree.colors.${node.color}`) })
+      : t('tree.describe.page', { level, date });
+    return node.pinned ? `${page} ${t('qol.pin.describe')}` : page;
   }
-  if (!node.color) return t('tree.describe.kind', { kind: node.kind });
-  return t('tree.describe.colored', { kind: node.kind, color: t(`tree.colors.${node.color}`) });
+  const kind = node.color
+    ? t('tree.describe.colored', { kind: node.kind, color: t(`tree.colors.${node.color}`) })
+    : t('tree.describe.kind', { kind: node.kind });
+  const described = node.kind === 'section' && node.pinned ? `${kind}. ${t('qol.pin.describe')}` : kind;
+  if (node.kind !== 'section' || !node.protected) return described;
+  const state =
+    node.protected === 'locked' ? t('storage.sections.describeLocked') : t('storage.sections.describeUnlocked');
+  return `${described}, ${state}`;
+}
+
+/** The lock of a password-protected section (ADR 0042): closed while locked, open while unlocked. */
+function Protection({ node }: { node: NodeSummary }) {
+  if (node.kind !== 'section' || !node.protected) return null;
+  const Icon = node.protected === 'locked' ? LockSimpleIcon : LockSimpleOpenIcon;
+  return <Icon aria-hidden className={styles.pin} data-protected={node.protected} />;
 }
 
 function Chip({ node }: { node: NodeSummary }) {
-  if (node.kind === 'page') return null;
-  const shape = node.kind === 'section' ? styles.dot : styles.square;
+  if (node.kind === 'page' && !node.color) return null;
+  const shape = node.kind === 'section' || node.kind === 'page' ? styles.dot : styles.square;
   const name = node.color ? t(`tree.colors.${node.color}`) : undefined;
   return (
     <span aria-hidden="true" className={`${styles.chip} ${shape}`} data-color={node.color ?? 'none'} title={name} />
@@ -70,7 +95,7 @@ function Twisty({ row, onToggle }: { row: Row; onToggle(row: Row): void }) {
 }
 
 function TreeRowView(props: TreeRowProps) {
-  const { tree, row, selected, focused, renaming, top } = props;
+  const { tree, row, selected, multi, focused, renaming, top } = props;
   const { node } = row;
   const id = useId();
   const element = useRef<HTMLDivElement>(null);
@@ -84,6 +109,8 @@ function TreeRowView(props: TreeRowProps) {
       data-kind={node.kind}
       data-node-id={node.id}
       data-windowed={top === undefined ? undefined : ''}
+      data-multi={multi ? '' : undefined}
+      data-archived={node.archived ? '' : undefined}
       style={style}
       aria-level={row.level}
       aria-posinset={row.posinset}
@@ -94,6 +121,9 @@ function TreeRowView(props: TreeRowProps) {
       aria-describedby={`${id}-description`}
       tabIndex={focused ? 0 : -1}
       onClick={(event) => props.onPress(row, event)}
+      // Windows starts autoscroll on the middle button's press, so the press is the one to stop.
+      onMouseDown={(event) => event.button === 1 && node.kind === 'page' && event.preventDefault()}
+      onAuxClick={(event) => props.onAux(row, event)}
     >
       <Twisty row={row} onToggle={props.onToggle} />
       <Chip node={node} />
@@ -119,6 +149,8 @@ function TreeRowView(props: TreeRowProps) {
       <span id={`${id}-description`} hidden>
         {describeNode(node)}
       </span>
+      {node.pinned && !renaming && <PushPinIcon aria-hidden className={styles.pin} weight="fill" />}
+      {!renaming && <Protection node={node} />}
       <span className={styles.more}>
         <IconButton
           label={t('tree.menu.more', { title })}

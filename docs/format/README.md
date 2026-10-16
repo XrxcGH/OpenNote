@@ -1247,7 +1247,7 @@ Readers must check an asset's file name before using it. The name must be the as
 | `name` | required | The original file name. Shown for attachments and used by exports, never as a path |
 | `width`, `height` | none | Pixel size, for images. A writer reads it from the file's header when it knows the type, and otherwise takes the size its decoder measured, so a page can keep the picture's shape before the picture loads |
 | `created` | required | When the asset was added |
-| `state` | none | Reserved: `recording` while an audio file is still growing (Phase 9) |
+| `state` | none | Reserved: `recording` while an audio file is still growing (Phase 9). Such an entry may come before its file exists, and its `bytes` and `sha256` are not the file's yet, so checks of size and hash skip it |
 
 ### 10.3 Rules for assets
 
@@ -1822,7 +1822,7 @@ A writer that keeps a journal saves a page in this order. `R` is the revision on
 | S1 | Take a snapshot of the page, and note the last journal sequence number it includes |
 | S2 | Encode a new segment from the strokes and changes since the last save, or a compacted segment |
 | S3 | Write the segment with `create_durable` |
-| S4 | Check that every asset the snapshot refers to exists with its expected size |
+| S4 | Check that every asset the snapshot refers to exists with its expected size. An asset whose `state` is `recording` is still growing, so it is skipped (section 10.2) |
 | S5 | Serialize `page.json` with revision `R'`, whose parent is `R`. Parse the bytes back and compare them with the snapshot. Any difference stops the save before anything is replaced |
 | S6 | Append a `SaveBegin` record for `R'` to the journal, and flush it |
 | S7 | Check the fingerprint of `page.json` on disk again, immediately before S8. If it changed and its revision is not `R`, stop and handle the change (section 14.1) |

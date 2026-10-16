@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { defineConfig } from 'vite';
 import type { ConfigEnv, UserConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -38,6 +39,16 @@ export function viteConfig(env: Pick<ConfigEnv, 'mode' | 'command'>): UserConfig
       target: 'chrome130',
       // check-bundle.ts reads the manifest to find the start-up chunks.
       manifest: true,
+      // print.html is the hidden print window of a PDF export (ADR 0006); it loads beside the app, never at start-up.
+      // The component gallery (app/src/dev/gallery) is a further page, in test builds only. The shipped app has no
+      // gallery, and the bundle check never sees it.
+      rollupOptions: {
+        input: {
+          main: join(import.meta.dirname, 'index.html'),
+          print: join(import.meta.dirname, 'print.html'),
+          ...(env.mode === 'test' ? { gallery: join(import.meta.dirname, 'gallery.html') } : {}),
+        },
+      },
     },
   };
 }

@@ -26,13 +26,18 @@ use crate::session::page::save::Why;
 use crate::store::fs::Fs;
 use crate::store::history::Retention;
 use crate::store::layout::{DataLayout, NotebookLayout};
-use crate::store::notebook_store::{create_notebook, read_notebook_file, CanonicalFormats, TreeFormats};
+use crate::store::notebook_store::{
+    convert_to_notebook, create_notebook, read_notebook_file, CanonicalFormats, TreeFormats,
+};
+use crate::store::sealed::SealedFs;
 use crate::store::std_fs::StdFs;
 use crate::time::{Clock, SystemClock};
 
 pub(crate) mod ctx;
 pub(crate) mod device;
 mod library_api;
+mod protect_api;
+mod repair_api;
 #[cfg(test)]
 mod tests;
 
@@ -70,7 +75,11 @@ impl CoreConfig {
     /// `StdFs`, `CanonicalCodec`, `OpsApplier`, `SystemClock`, and the device from `device.json`.
     pub fn production(data_dir: PathBuf, app_version: String) -> Result<CoreConfig, CoreError> {
         let timings = Timings::default();
-        let fs: Arc<dyn Fs> = Arc::new(StdFs::new(&timings));
+        // Protected sections are sealed on disk and opened only in memory (ADR 0042).
+        let fs: Arc<dyn Fs> = Arc::new(SealedFs::new(
+            Arc::new(StdFs::new(&timings)),
+            DataLayout::new(&data_dir).journal_root(),
+        ));
         let clock: Arc<dyn Clock> = Arc::new(SystemClock::new());
         let device = device::load_or_create(fs.as_ref(), &DataLayout::new(&data_dir), clock.as_ref())?;
         Ok(CoreConfig {
@@ -322,6 +331,13 @@ impl Core {
         self.open_notebook(&dir)
     }
 
+    /// Turns an existing folder into a notebook where it is, then opens it. Nothing else in the folder changes.
+    pub fn convert_folder(&self, dir: &Path, title: &str) -> Result<NotebookHandle, CoreError> {
+        let env = self.inner.ctx.tree_env();
+        convert_to_notebook(&env, dir, title)?;
+        self.open_notebook(dir)
+    }
+
     /// Opens the notebook at `dir`: its lock, recovery, the scan, and the tree. A notebook already open
     /// returns the same handle. The notebook joins the library.
     pub fn open_notebook(&self, dir: &Path) -> Result<NotebookHandle, CoreError> {
@@ -398,6 +414,25 @@ impl Core {
             device::mark_stopped(ctx.fs.as_ref(), &ctx.data, ctx.clock.now());
         }
         Ok(report)
+    }
+
+    /// Saves every dirty page within `timeout`, for a backup while the app keeps running: unlike `flush_all`,
+    /// it leaves the journals open, writes no exit versions, and doesn't mark the device as stopped.
+    pub fn save_all(&self, timeout: Duration) -> FlushReport {
+        let deadline = Instant::now().checked_add(timeout);
+        let mut report = FlushReport::default();
+        for session in self.inner.ctx.live_sessions() {
+            if deadline.is_some_and(|d| Instant::now() >= d) {
+                report.timed_out = true;
+                break;
+            }
+            match session.save(Why::Now) {
+                Ok(Some(_)) => report.saved = report.saved.saturating_add(1),
+                Ok(None) => {}
+                Err(e) => report.failed.push((session.id, error_kind(&e))),
+            }
+        }
+        report
     }
 
     /// Stops the saver and maintenance threads and the journal, after `flush_all`.

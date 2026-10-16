@@ -1,0 +1,8 @@
+{
+  "kind": "failed",
+  "error": {
+    "code": "engine",
+    "message": "the engine failed: the test synthesizer was told to fail",
+    "feature": null
+  }
+}

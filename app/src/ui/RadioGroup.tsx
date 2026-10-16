@@ -2,7 +2,7 @@
 // With ignoreRepeat, a held arrow key moves one step, which the theme choices need for flash safety.
 
 import { createContext, useContext, useId, useRef } from 'react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import styles from './controls.module.css';
 
 export interface RadioGroupProps<V extends string> {
@@ -10,6 +10,8 @@ export interface RadioGroupProps<V extends string> {
   value: V;
   onChange(value: V, source: 'keyboard' | 'pointer'): void;
   ignoreRepeat?: boolean;
+  /** The most cards in a row. The cards share the width equally, and wrap together when the room is short. */
+  columns?: number;
   children: ReactNode;
 }
 
@@ -29,7 +31,14 @@ interface GroupState {
 const Group = createContext<GroupState | null>(null);
 const NEXT: Record<string, number> = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
 
-export function RadioGroup<V extends string>({ label, value, onChange, ignoreRepeat, children }: RadioGroupProps<V>) {
+export function RadioGroup<V extends string>({
+  label,
+  value,
+  onChange,
+  ignoreRepeat,
+  columns,
+  children,
+}: RadioGroupProps<V>) {
   const ref = useRef<HTMLDivElement>(null);
   const onKeyDown = (event: KeyboardEvent) => {
     const step = NEXT[event.key];
@@ -44,7 +53,14 @@ export function RadioGroup<V extends string>({ label, value, onChange, ignoreRep
   };
   const select = (next: string, source: 'keyboard' | 'pointer') => onChange(next as V, source);
   return (
-    <div role="radiogroup" aria-label={label} className={styles.radioGroup} ref={ref} onKeyDown={onKeyDown}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={columns ? styles.radioGrid : styles.radioGroup}
+      style={columns ? ({ '--radio-columns': columns } as CSSProperties) : undefined}
+      ref={ref}
+      onKeyDown={onKeyDown}
+    >
       <Group.Provider value={{ value, select }}>{children}</Group.Provider>
     </div>
   );

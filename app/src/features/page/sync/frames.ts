@@ -14,6 +14,8 @@ export interface FrameContext {
   replaceText(block: BlockId, change: Reparse | { full: PMNode }, markdown: string): void;
   /** In the block layer. */
   upsertBlock(block: BlockJson): void;
+  /** The order key the core chose for a block this view inserted or moved, so the layer sorts it as the core does. */
+  reorder(block: BlockId, order: string): void;
   removeBlock(block: BlockId): void;
   setPageFields(fields: NonNullable<AppliedFrame['page']>): void;
   restoreSelection(selection: UiSelection): void;

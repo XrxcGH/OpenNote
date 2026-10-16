@@ -4,7 +4,8 @@
 use std::path::{Path, PathBuf};
 
 use super::state::PageSession;
-use crate::error::{CoreError, EditError};
+use crate::error::{CoreError, EditError, FsErrorKind};
+use crate::format::ReadableState;
 use crate::id::{BlockId, RevisionId};
 use crate::model::Page;
 use crate::ops::resolve::{Edit, NewBlock};
@@ -34,10 +35,58 @@ impl PageSession {
         Ok(edited_copies(self.ctx.fs.as_ref(), &dir)?)
     }
 
+    /// Looks at the page's readable copies now, as a save would: a `page.md` or `ink.svg` that a person edited in
+    /// another program is kept aside in `.conflicts/`, and a fresh one is written. Returns the edited copies kept,
+    /// so the interface can offer to bring their text in. A page of an encrypted section has no readable copies.
+    pub(crate) fn collect_edited_copies(&self) -> Result<Vec<EditedCopy>, CoreError> {
+        let (dir, page, encrypted) = {
+            let st = self.state();
+            (st.dir.clone(), st.page.clone(), st.encrypted)
+        };
+        if encrypted {
+            return Ok(Vec::new());
+        }
+        if page.encryption.is_none() {
+            let notebook = self
+                .notebook
+                .upgrade()
+                .ok_or_else(|| CoreError::NotFound("the notebook".into()))?;
+            let links = notebook.links(&dir, &page);
+            self.ctx.backend.write_readable(&dir, &page, &links)?;
+        }
+        self.edited_copies()
+    }
+
+    /// The page's `page.md`, unless the page is encrypted.
+    pub(crate) fn page_md_path(&self) -> Option<PathBuf> {
+        let st = self.state();
+        (st.page.encryption.is_none() && !st.encrypted).then(|| st.dir.join(PAGE_MD))
+    }
+
     /// Plans how the text of an edited `page.md` comes into the page.
     pub(crate) fn plan_edited_import(&self, copy: &Path) -> Result<EditedImport, CoreError> {
         let kept = self.kept_copy(copy)?;
         let bytes = self.ctx.fs.read(&kept.path, self.ctx.limits.page_json_bytes)?;
+        self.plan_text_import(kept.path, bytes)
+    }
+
+    /// Plans how the text of the page's own `page.md` comes into the page, when a person or another program
+    /// edited it since OpenNote wrote it. `None` when the copy is OpenNote's own, missing, or damaged.
+    pub(crate) fn plan_readable_import(&self) -> Result<Option<EditedImport>, CoreError> {
+        let path = self.state().dir.join(PAGE_MD);
+        let bytes = match self.ctx.fs.read(&path, self.ctx.limits.page_json_bytes) {
+            Ok(bytes) => bytes,
+            Err(error) if error.kind == FsErrorKind::NotFound => return Ok(None),
+            Err(error) => return Err(error.into()),
+        };
+        if self.state().page.encryption.is_some() || self.ctx.codec.classify_readable(&bytes) != ReadableState::Edited {
+            return Ok(None);
+        }
+        let plan = self.plan_text_import(path, bytes)?;
+        Ok((!plan.edits.is_empty()).then_some(plan))
+    }
+
+    fn plan_text_import(&self, copy: PathBuf, bytes: Vec<u8>) -> Result<EditedImport, CoreError> {
         let text =
             String::from_utf8(bytes).map_err(|_| CoreError::Edit(EditError::Invalid("the copy is not text".into())))?;
         let (dir, current, saved, base_rev) = {
@@ -53,7 +102,7 @@ impl PageSession {
         let plan = plan_import(&base, &current, &text, &links);
         let edits = self.edits_for(&plan);
         Ok(EditedImport {
-            copy: kept.path,
+            copy,
             plan,
             edits,
             base_known,

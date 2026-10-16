@@ -1,0 +1,208 @@
+/*
+ * Smart tables (Phase 7): results drawn over cells, the data strip under a table, and charts. Colors are tokens, so
+ * a theme switch recolors everything. Chart series use the brand's pens through --chart-s0 to --chart-s6.
+ */
+@layer components {
+  .shown {
+    position: relative;
+  }
+
+  /* Transparent, not hidden: a hidden paragraph cannot be clicked, so the caret would land in the next cell. */
+  .shown > p {
+    color: transparent;
+  }
+
+  .shown::after {
+    content: attr(data-shown);
+    position: absolute;
+    inset-block: 0;
+    inset-inline: var(--space-3);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+
+  .number::after {
+    justify-content: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .error::after {
+    color: var(--color-status-danger);
+  }
+
+  .hiddenRow {
+    display: none;
+  }
+
+  .strip {
+    display: none;
+    font-family: var(--font-ui);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-5);
+    padding-block: var(--space-3);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .strip[data-active],
+  .strip[data-note] {
+    display: flex;
+  }
+
+  .address {
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+  }
+
+  .totals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .totals strong {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .charts {
+    display: grid;
+    font-family: var(--font-ui);
+    gap: var(--space-6);
+    margin-block-start: var(--space-4);
+  }
+
+  .chart {
+    margin: 0;
+    max-inline-size: 640px;
+    --chart-s0: var(--ink-indigo);
+    --chart-s1: var(--ink-amber);
+    --chart-s2: var(--ink-ink);
+    --chart-s3: var(--ink-fern);
+    --chart-s4: var(--ink-brick);
+    --chart-s5: var(--ink-walnut);
+    --chart-s6: var(--ink-plum);
+  }
+
+  .chartHead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-block-end: var(--space-2);
+  }
+
+  .chartTitle {
+    flex: 1;
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .chartBody svg {
+    max-inline-size: 100%;
+    block-size: auto;
+    overflow: visible;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+  }
+
+  .legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .notes {
+    margin: var(--space-2) 0 0;
+    font-size: var(--type-small-size);
+    color: var(--color-text-muted);
+  }
+
+  .reader {
+    border-radius: var(--radius-sm);
+  }
+
+  .reader:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .readout {
+    min-block-size: var(--type-small-line);
+    margin: 0;
+    font-size: var(--type-small-size);
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .describe {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .describeLabel {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .describeLabel textarea {
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .dataTable {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dataTable caption {
+    padding-block-end: var(--space-2);
+    text-align: start;
+    color: var(--color-text-secondary);
+  }
+
+  .dataTable th,
+  .dataTable td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+}

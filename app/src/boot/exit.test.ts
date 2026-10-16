@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { beforeExit } from '../registries';
 import { toastStore } from '../state/toasts';
 import { createTestPlatform } from '../test/platform';
-import { answerBeforeExit, installExitHandshake } from './exit';
+import { answerBeforeExit, installExitHandshake, joinExitHandshake } from './exit';
 
 const unregister: (() => void)[] = [];
 
@@ -74,6 +74,7 @@ describe('a refusal in the exit handshake', () => {
     const platform = createTestPlatform();
     const exitReady = vi.spyOn(platform.lifecycle, 'exitReady');
     const close = vi.spyOn(platform.window, 'close');
+    const retry = vi.spyOn(platform.lifecycle, 'closeAnyway');
     const closeAnyway = vi.fn();
     const answer = { ok: false, reason: 'errors.commandFailed', message: 'The disk is full.', closeAnyway } as const;
     unregister.push(beforeExit.register({ id: 'stuck', order: 10, run: () => Promise.resolve(answer) }));
@@ -85,7 +86,10 @@ describe('a refusal in the exit handshake', () => {
     expect(closeAnyway).not.toHaveBeenCalled();
     await toast?.action?.run();
     expect(closeAnyway).toHaveBeenCalledOnce();
-    expect(close).toHaveBeenCalledOnce();
+    // Rust repeats what this window refused: in a page window that was the app's exit, which closing only this
+    // window wouldn't repeat.
+    expect(retry).toHaveBeenCalledOnce();
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('shows no action when the refusing hook has no way out', async () => {
@@ -93,5 +97,35 @@ describe('a refusal in the exit handshake', () => {
     hook('first', 10, () => Promise.resolve({ ok: false, reason: 'errors.commandFailed' }));
     await answerBeforeExit(platform, 'close');
     expect(toastStore.get().current?.action).toBeUndefined();
+  });
+});
+
+// F3-3: only the main window answered, so a page window closed (or the app exited) with its last typing unsent.
+describe('the windows in the exit handshake', () => {
+  it('lets a page or quick capture window flush its pages before it or the app closes', async () => {
+    for (const kind of ['page', 'capture'] as const) {
+      const platform = createTestPlatform();
+      const exitReady = vi.spyOn(platform.lifecycle, 'exitReady');
+      const listening = vi.spyOn(platform.lifecycle, 'firstPaint');
+      const flush = hook(`page.flush.${kind}`, 10, () => Promise.resolve({ ok: true }));
+      const stop = joinExitHandshake(platform, kind);
+      expect(listening).toHaveBeenCalledOnce();
+      platform.lifecycle.requestExit('close');
+      await vi.waitFor(() => expect(exitReady).toHaveBeenCalledWith({ ok: true }));
+      expect(flush).toHaveBeenCalledWith('close');
+      stop?.();
+      unregister.splice(0).forEach((done) => done());
+    }
+  });
+
+  it('leaves the main window to report its own first paint, and a tool window out', () => {
+    const platform = createTestPlatform();
+    const listening = vi.spyOn(platform.lifecycle, 'firstPaint');
+    const listen = vi.spyOn(platform.lifecycle, 'onBeforeExit');
+    expect(joinExitHandshake(platform, 'tool')).toBeNull();
+    expect(listen).not.toHaveBeenCalled();
+    joinExitHandshake(platform, 'main')?.();
+    expect(listen).toHaveBeenCalledOnce();
+    expect(listening).not.toHaveBeenCalled();
   });
 });

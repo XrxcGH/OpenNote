@@ -192,6 +192,21 @@
     line-height: var(--type-small-line);
   }
 
+  .pin {
+    flex: none;
+    color: var(--color-text-muted);
+  }
+
+  /* A row in a selection of several, beside the open row. */
+  .row[data-multi] {
+    background: var(--color-surface-selected);
+  }
+
+  .row[data-archived] {
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
   .more {
     flex: none;
     opacity: 0;

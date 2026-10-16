@@ -162,6 +162,13 @@
     cursor: pointer;
   }
 
+  .moreHeading {
+    padding-inline: var(--space-4);
+    padding-block-start: var(--space-2);
+    color: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
   .moreItem:hover,
   .bottomButton:hover {
     background: var(--color-surface-hover);

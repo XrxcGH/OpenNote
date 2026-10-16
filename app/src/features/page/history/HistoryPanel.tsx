@@ -8,8 +8,9 @@ import { diffPages } from '../../../editor/diff/pageDiff';
 import type { PageDiff } from '../../../editor/diff/pageDiff';
 import type { OpenPage, VersionInfo } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
-import { announce, Button, confirm, IconButton, Switch, TextField } from '../../../ui';
+import { announce, Button, IconButton, Switch, TextField } from '../../../ui';
 import { historyAdmin } from './admin';
+import { deleteHistoryFor } from './deleteHistory';
 import { CompareView } from './CompareView';
 import type { CompareActions } from './CompareView';
 import styles from './history.module.css';
@@ -100,26 +101,23 @@ function NameForm({ page, version, onDone }: { page: OpenPage; version: VersionI
   );
 }
 
-async function deleteHistory(page: OpenPage, title: string): Promise<boolean> {
-  const admin = historyAdmin();
-  const notebook = admin?.notebookOf(page.id);
-  if (!admin || !notebook) return false;
-  const yes = await confirm({
-    title: t('history.delete.title', { name: title }),
-    body: t('history.delete.page'),
-    confirmLabel: t('history.delete.confirm'),
-    cancelLabel: t('history.delete.cancel'),
-    danger: true,
-  });
-  if (!yes) return false;
-  try {
-    await admin.deleteHistory(notebook, { kind: 'page', id: page.id }, true);
-    announce(t('history.delete.done'));
-    return true;
-  } catch {
-    announce(t('history.delete.failed'), 'assertive');
-    return false;
-  }
+/** Whether the current page is a locked entry, which takes an older version only as a copy (ADR 0041). */
+function useLockedEntry(page: OpenPage, current: string): boolean {
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void page.history
+      .open(current)
+      .then((json) => {
+        const lock = (json.view as { entryLock?: unknown } | undefined)?.entryLock;
+        if (live) setLocked(typeof lock === 'object' && lock !== null);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [page, current]);
+  return locked;
 }
 
 function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string; onBack(): void; onChanged(): void }) {
@@ -129,6 +127,7 @@ function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string
   const key = `${older} ${newer}`;
   const diff = result?.key === key ? result.diff : null;
   const [naming, setNaming] = useState(false);
+  const locked = useLockedEntry(page, versions[0].revision);
   useEffect(() => {
     let current = true;
     void Promise.all([page.history.open(older), page.history.open(newer)])
@@ -173,9 +172,11 @@ function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string
         </select>
       </label>
       <div className={styles.actions}>
-        <Button onClick={() => void restoreVersion(page, older, false).then((ok) => (ok ? onChanged() : undefined))}>
-          {t('history.restore.version')}
-        </Button>
+        {!locked && (
+          <Button onClick={() => void restoreVersion(page, older, false).then((ok) => (ok ? onChanged() : undefined))}>
+            {t('history.restore.version')}
+          </Button>
+        )}
         <Button onClick={() => void restoreVersion(page, older, true)}>{t('history.restore.copy')}</Button>
         <Button onClick={() => setNaming(true)}>{t('history.commands.nameVersion')}</Button>
       </div>
@@ -250,7 +251,9 @@ export function HistoryPanel({ page, title, onClose }: HistoryPanelProps) {
             {historyAdmin() && (
               <Button
                 variant="danger"
-                onClick={() => void deleteHistory(page, title).then((ok) => (ok ? reload() : undefined))}
+                onClick={() =>
+                  void deleteHistoryFor({ kind: 'page', id: page.id }, title).then((ok) => (ok ? reload() : undefined))
+                }
               >
                 {t('history.delete.action')}
               </Button>

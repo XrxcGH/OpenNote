@@ -1,0 +1,188 @@
+/*
+ * Board, calendar, gallery, and timeline views of a smart table (Further features, Phase 7). Cards are real
+ * buttons, lanes and days are drop targets, and nothing depends on color alone.
+ */
+@layer components {
+  .root {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-start: var(--space-3);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .field select,
+  .move {
+    min-block-size: var(--size-target-min);
+    padding-inline: var(--space-2);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  .board {
+    display: flex;
+    gap: var(--space-3);
+    overflow-x: auto;
+    padding-block-end: var(--space-2);
+  }
+
+  .lane {
+    display: grid;
+    flex: 0 0 14rem;
+    align-content: start;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-md);
+  }
+
+  .laneTitle {
+    margin: 0;
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .count {
+    color: var(--color-text-muted);
+    font-weight: normal;
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .cardButton {
+    display: grid;
+    gap: var(--space-1);
+    inline-size: 100%;
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    text-align: start;
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: grab;
+  }
+
+  .cardButton:focus-visible,
+  .nav:focus-visible,
+  .span:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  .fieldLine {
+    color: var(--color-text-secondary);
+  }
+
+  .move {
+    inline-size: 100%;
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .calendar {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--space-1);
+  }
+
+  .day {
+    display: grid;
+    align-content: start;
+    gap: var(--space-1);
+    min-block-size: 4.5rem;
+    padding: var(--space-1);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .day[data-outside] {
+    background: var(--color-surface-sunken);
+    color: var(--color-text-muted);
+  }
+
+  .dayNumber {
+    color: var(--color-text-secondary);
+  }
+
+  .nav {
+    min-block-size: var(--size-target-min);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .timeline {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bar {
+    display: grid;
+    grid-template-columns: 9rem minmax(8rem, 1fr) auto auto;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .barName {
+    overflow-wrap: anywhere;
+  }
+
+  .track {
+    position: relative;
+    block-size: 1.5rem;
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-sm);
+  }
+
+  .span {
+    position: absolute;
+    block-size: 100%;
+    min-inline-size: 0.5rem;
+    padding: 0;
+    background: var(--color-accent-primary);
+    border: 0;
+    border-radius: var(--radius-sm);
+  }
+}

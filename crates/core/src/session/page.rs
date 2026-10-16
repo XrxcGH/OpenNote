@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use crate::error::{CoreError, EditError};
 use crate::id::{AssetId, BlockId, ClientId, PageId, RevisionId, StrokeId};
 use crate::limits::Limits;
-use crate::model::{Asset, DeviceRef, Page, Rect, Revision, VersionEntry};
+use crate::model::{Asset, BlockData, DeviceRef, Page, Rect, Revision, VersionEntry};
 use crate::ops::resolve::{StrokeTxnMeta, TxnRequest};
 use crate::ops::AppliedChanges;
 use crate::order::OrderKey;
@@ -204,6 +204,13 @@ impl PageHandle {
         self.session.import_asset(source)
     }
 
+    /// Hands the page an asset whose file was written in its `assets` folder by something other than an import,
+    /// such as the recorder. The `addAsset` edit then puts it in the table, and replaces an entry that is still
+    /// marked as growing.
+    pub fn adopt_asset(&self, asset: Asset) {
+        self.session.adopt_asset(asset);
+    }
+
     /// Reads an asset, or a byte range of it.
     pub fn asset_bytes(&self, asset: AssetId, range: Option<Range<u64>>) -> Result<AssetBytes, CoreError> {
         self.session.asset_bytes(asset, range)
@@ -225,6 +232,11 @@ impl PageHandle {
     /// Whether the page has changes that aren't saved yet.
     pub fn has_unsaved(&self) -> bool {
         self.session.state().dirty.is_some()
+    }
+
+    /// The page's strokes as polylines in page coordinates, as `ink.svg` lays them out.
+    pub fn ink_lines(&self) -> Vec<crate::format::readable::InkLine> {
+        crate::format::readable::ink_lines(&self.session.state().page)
     }
 
     /// The page's saved versions, newest first.
@@ -254,10 +266,28 @@ impl PageHandle {
         self.session.edited_copies()
     }
 
+    /// The page's `page.md`, for "Open in another editor". `None` for a page of an encrypted section, which has
+    /// no readable copy.
+    pub fn page_md_path(&self) -> Option<PathBuf> {
+        self.session.page_md_path()
+    }
+
+    /// Keeps aside a readable copy a person edited in another program since the last save, as the next save
+    /// would, and returns the edited copies. The folder watcher calls it when `page.md` changes.
+    pub fn collect_edited_copies(&self) -> Result<Vec<crate::store::external::EditedCopy>, CoreError> {
+        self.session.collect_edited_copies()
+    }
+
     /// Plans how the text of an edited `page.md` comes into the page. Nothing changes until the interface sends
     /// the plan's edits as a request.
     pub fn plan_edited_import(&self, copy: &Path) -> Result<EditedImport, CoreError> {
         self.session.plan_edited_import(copy)
+    }
+
+    /// Plans how the text of the page's `page.md` comes into the page, when another program edited it since
+    /// OpenNote wrote it. Nothing changes until the interface sends the plan's edits as a request.
+    pub fn plan_readable_import(&self) -> Result<Option<EditedImport>, CoreError> {
+        self.session.plan_readable_import()
     }
 
     /// Deletes an edited copy, once its text is brought in or the person turns it down.
@@ -279,6 +309,28 @@ impl PageHandle {
     /// The page's open conflicts.
     pub fn conflicts(&self) -> Result<Vec<ConflictInfo>, CoreError> {
         self.session.conflicts()
+    }
+
+    /// The file blocks that show `asset`. The shell points them at a newer copy when an attachment edited in its own
+    /// app is saved back while the page isn't open in the interface.
+    pub fn file_blocks_of(&self, asset: AssetId) -> Vec<BlockId> {
+        let st = self.session.state();
+        st.page
+            .blocks
+            .iter()
+            .filter(|block| matches!(&block.data, BlockData::File(file) if file.asset == asset))
+            .map(|block| block.id)
+            .collect()
+    }
+
+    /// The page as it is now, as plain text, for a side-by-side view of a conflict.
+    pub fn text(&self) -> String {
+        self.session.current_text()
+    }
+
+    /// The other version of a conflict as plain text.
+    pub fn conflict_text(&self, rev: RevisionId) -> Result<String, CoreError> {
+        self.session.conflict_page(rev).map(|(_, _, page)| page.plain_text())
     }
 
     /// The other version of a conflict, read-only.

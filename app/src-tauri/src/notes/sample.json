@@ -1,0 +1,40 @@
+{
+  "folder": "",
+  "notebooks": [
+    { "id": "n-biology", "kind": "notebook", "title": "Biology 101", "color": "fern", "children": [
+      { "id": "s-lectures", "kind": "section", "title": "Lectures", "color": "fern", "children": [
+        { "id": "p-cell-structure", "kind": "page", "title": "Cell structure", "pageLevel": 0 },
+        { "id": "p-membranes", "kind": "page", "title": "Membranes", "pageLevel": 1 },
+        { "id": "p-mitosis", "kind": "page", "title": "Mitosis", "pageLevel": 0 },
+        { "id": "p-meiosis", "kind": "page", "title": "Meiosis", "pageLevel": 0 },
+        { "id": "p-photosynthesis", "kind": "page", "title": "Photosynthesis", "pageLevel": 0 }
+      ]},
+      { "id": "s-labs", "kind": "section", "title": "Labs", "color": "amber", "children": [
+        { "id": "p-photosynthesis-lab", "kind": "page", "title": "Photosynthesis lab", "pageLevel": 0 }
+      ]},
+      { "id": "g-exam-prep", "kind": "sectionGroup", "title": "Exam prep", "children": [
+        { "id": "s-midterm", "kind": "section", "title": "Midterm", "color": "plum", "children": [
+          { "id": "p-midterm-topics", "kind": "page", "title": "Topics to review", "pageLevel": 0 }
+        ]},
+        { "id": "s-final", "kind": "section", "title": "Final", "color": "indigo", "children": [] }
+      ]}
+    ]},
+    { "id": "n-work", "kind": "notebook", "title": "Work", "color": "brick", "children": [
+      { "id": "s-meetings", "kind": "section", "title": "Meetings", "color": "brick", "children": [
+        { "id": "p-weekly-sync", "kind": "page", "title": "Weekly sync", "pageLevel": 0 }
+      ]},
+      { "id": "s-projects", "kind": "section", "title": "Projects", "color": "walnut", "children": [
+        { "id": "p-roadmap", "kind": "page", "title": "Roadmap", "pageLevel": 0 }
+      ]}
+    ]},
+    { "id": "n-personal", "kind": "notebook", "title": "Personal", "color": "plum", "children": [
+      { "id": "s-journal", "kind": "section", "title": "Journal", "color": "plum", "children": [] }
+    ]},
+    { "id": "n-recipes", "kind": "notebook", "title": "Recipes", "color": "amber", "children": [
+      { "id": "s-baking", "kind": "section", "title": "Baking", "color": "amber", "children": [] }
+    ]},
+    { "id": "n-travel", "kind": "notebook", "title": "Travel", "color": "indigo", "children": [
+      { "id": "s-trips", "kind": "section", "title": "Trips", "color": "indigo", "children": [] }
+    ]}
+  ]
+}

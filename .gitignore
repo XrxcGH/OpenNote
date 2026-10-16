@@ -15,3 +15,13 @@ tests/e2e/logs/
 tests/ui/report/
 tests/ui/results/
 tests/perf/typing/results/
+extensions/dist/
+
+# The owner of a build keeps the connectors app registrations here (docs/CONNECTORS.md).
+/connectors.config.json
+tests/soak/results/
+tests/nvda/results/
+
+# Cross-check tools built from pinned upstream revisions (tests/crosscheck)
+tests/crosscheck/.tools/
+tests/crosscheck/.corpus/

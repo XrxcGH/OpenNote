@@ -5,10 +5,12 @@ import type { BlockId, Frame } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
 import type { PageBlockLayer } from '../blocks/blockLayer';
+import { imageHandle } from '../blocks/imageBlock';
 import { isFloating } from '../blocks/textBlock';
 import { frameValue } from '../objects/arrange';
 import { MIN_TEXT_WIDTH } from '../objects/objects';
 import type { Objects } from '../objects/objects';
+import { mountCropFields } from './cropFieldsMount';
 import styles from './sizePosition.module.css';
 
 type Field = 'x' | 'y' | 'w' | 'h';
@@ -66,6 +68,9 @@ export function openSizeAndPosition(
   apply.type = 'submit';
   apply.textContent = t('page.object.apply');
   form.append(apply);
+  // An image also gets its crop fields and "Reset crop", the keyboard way to crop.
+  const image = block.type === 'image' ? imageHandle(id) : null;
+  const unmountCrop = image ? mountCropFields(form, image, () => close()) : null;
   const box = view.element.getBoundingClientRect();
   const origin = container.getBoundingClientRect();
   form.style.insetInlineStart = `${Math.max(8, box.left - origin.left)}px`;
@@ -74,6 +79,7 @@ export function openSizeAndPosition(
 
   const close = () => {
     open = null;
+    unmountCrop?.();
     form.remove();
     doc.removeEventListener('pointerdown', onOutside, true);
     view.element.focus({ preventScroll: true });

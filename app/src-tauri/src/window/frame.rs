@@ -1,4 +1,4 @@
-//! The window frame (ARCHITECTURE.md sections 9.2 and 10.7): DWM frame colors, the system menu, and the
+//! The window frame (ARCHITECTURE.md sections 9.2 and 10.7): DWM frame colors and the
 //! subclass that hears about Windows settings changes, display changes, and the session ending. The frame follows
 //! the app's theme through `DWMWA_USE_IMMERSIVE_DARK_MODE` and the border color, never through Tauri's
 //! `setTheme`, which would also change WebView2's `prefers-color-scheme`.
@@ -9,7 +9,6 @@ use crate::{
     appearance::ThemeName,
     ipc::IpcResult,
     theme_tokens::{Rgb, BORDER_SUBTLE},
-    window::Point,
 };
 
 /// The window border color for a theme: `border.subtle`.
@@ -52,64 +51,6 @@ pub fn set_theme(window: &WebviewWindow, theme: ThemeName) -> IpcResult<()> {
 /// Other systems draw their own frames.
 #[cfg(not(windows))]
 pub fn set_theme(_window: &WebviewWindow, _theme: ThemeName) -> IpcResult<()> {
-    Ok(())
-}
-
-/// Opens the real system menu at `at` (physical pixels from the client area's corner), or at the window's top
-/// start corner when `at` is `None`, and runs the command the person picks (section 10.7).
-#[cfg(windows)]
-pub fn show_system_menu(window: &WebviewWindow, at: Option<Point>) -> IpcResult<()> {
-    use windows::Win32::{
-        Foundation::{LPARAM, POINT, RECT, WPARAM},
-        Graphics::Gdi::ClientToScreen,
-        UI::WindowsAndMessaging::{
-            GetSystemMenu, GetWindowRect, PostMessageW, SetForegroundWindow, TrackPopupMenuEx, TPM_LEFTALIGN,
-            TPM_RETURNCMD, TPM_TOPALIGN, WM_SYSCOMMAND,
-        },
-    };
-
-    let hwnd = window.hwnd()?;
-    // SAFETY: every handle and pointer below is this process's window or a local that outlives its call.
-    unsafe {
-        let menu = GetSystemMenu(hwnd, false);
-        if menu.is_invalid() {
-            return Ok(());
-        }
-        let mut corner = match at {
-            Some(point) => POINT {
-                x: point.x.round() as i32,
-                y: point.y.round() as i32,
-            },
-            None => POINT { x: 0, y: 0 },
-        };
-        if at.is_some() {
-            let _ = ClientToScreen(hwnd, &mut corner);
-        } else {
-            let mut rect = RECT::default();
-            GetWindowRect(hwnd, &mut rect)?;
-            corner = POINT {
-                x: rect.left,
-                y: rect.top,
-            };
-        }
-        let _ = SetForegroundWindow(hwnd);
-        let command = TrackPopupMenuEx(
-            menu,
-            (TPM_RETURNCMD | TPM_LEFTALIGN | TPM_TOPALIGN).0,
-            corner.x,
-            corner.y,
-            hwnd,
-            None,
-        );
-        if command.0 != 0 {
-            let _ = PostMessageW(Some(hwnd), WM_SYSCOMMAND, WPARAM(command.0 as usize), LPARAM(0));
-        }
-    }
-    Ok(())
-}
-
-#[cfg(not(windows))]
-pub fn show_system_menu(_window: &WebviewWindow, _at: Option<Point>) -> IpcResult<()> {
     Ok(())
 }
 

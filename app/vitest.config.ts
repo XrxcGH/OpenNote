@@ -32,6 +32,9 @@ export default defineConfig((env) =>
             name: 'components',
             include: ['src/**/*.test.tsx'],
             setupFiles: ['src/test/setup.ts'],
+            // The browser project's server port, so parallel runs (agents on one machine) each take their own:
+            // Vitest's own default when unset, and the CLI's --api doesn't reach an inline project.
+            api: { port: Number(process.env.OPENNOTE_VITEST_PORT) || 63315 },
             browser: {
               enabled: true,
               headless: true,

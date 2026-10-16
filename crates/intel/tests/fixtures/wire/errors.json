@@ -1,0 +1,27 @@
+[
+  {
+    "code": "disabled",
+    "message": "text recognition in images is turned off",
+    "feature": "ocr"
+  },
+  {
+    "code": "languageUnavailable",
+    "message": "no recognizer is installed for th",
+    "feature": null
+  },
+  {
+    "code": "voiceUnavailable",
+    "message": "no voice is installed on this computer",
+    "feature": null
+  },
+  {
+    "code": "imageTooLarge",
+    "message": "the image is 20000 by 1 pixels, and the limit is 10000 on each side and 32000000 in all",
+    "feature": null
+  },
+  {
+    "code": "canceled",
+    "message": "the job was canceled",
+    "feature": null
+  }
+]

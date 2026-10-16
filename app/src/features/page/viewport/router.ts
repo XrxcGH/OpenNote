@@ -26,7 +26,11 @@ export interface PointerToolDef {
   down(event: PointerEvent, ctx: RouterContext): 'claim' | 'watch';
   move?(events: readonly PointerEvent[], ctx: RouterContext): 'claim' | 'watch' | 'release';
   up?(event: PointerEvent, ctx: RouterContext): void;
-  cancel?(ctx: RouterContext): void;
+  /**
+   * Ends the tool's hold on a pointer. `event` is the pointer that ended, so a tool that holds several pointers
+   * ends only that one; without it (the router stopping), every pointer the tool holds ends.
+   */
+  cancel?(ctx: RouterContext, event?: PointerEvent): void;
 }
 
 const tools = new Map<string, PointerToolDef>();
@@ -97,7 +101,7 @@ export function createRouter(host: RouterHost): () => void {
     for (const tool of all()) {
       if (!tool.accepts(event, ctx)) continue;
       if (tool.down(event, ctx) === 'claim') {
-        entry.watchers.forEach((watcher) => watcher.cancel?.(ctx));
+        entry.watchers.forEach((watcher) => watcher.cancel?.(ctx, event));
         entry.watchers = [];
         entry.owner = tool;
         break;
@@ -123,7 +127,7 @@ export function createRouter(host: RouterHost): () => void {
       const verdict = watcher.move?.(events, ctx) ?? 'watch';
       if (verdict === 'release') entry.watchers.splice(entry.watchers.indexOf(watcher), 1);
       if (verdict !== 'claim') continue;
-      entry.watchers.filter((other) => other !== watcher).forEach((other) => other.cancel?.(ctx));
+      entry.watchers.filter((other) => other !== watcher).forEach((other) => other.cancel?.(ctx, event));
       entry.watchers = [];
       entry.owner = watcher;
       return claimEvent(event);
@@ -147,7 +151,7 @@ export function createRouter(host: RouterHost): () => void {
     if (!entry) return;
     routed.delete(event.pointerId);
     const ctx = context();
-    (entry.owner ? [entry.owner] : entry.watchers).forEach((tool) => tool.cancel?.(ctx));
+    (entry.owner ? [entry.owner] : entry.watchers).forEach((tool) => tool.cancel?.(ctx, event));
   };
 
   const lost = (event: PointerEvent) => {

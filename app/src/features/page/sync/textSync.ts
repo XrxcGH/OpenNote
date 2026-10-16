@@ -18,6 +18,7 @@ import { META_AUTO_CHANGE, META_COMMAND, META_HIGHLIGHT, META_REMOTE } from '../
 import type { TableData } from '../../../editor/schema/specs';
 import { PageServiceError } from '../../../services/pages/types';
 import type { BlockId, Edit, EditBatch, NewBlock, UiSelection } from '../../../services/pages/types';
+import { tagEdit } from './inlineTags';
 import { hasResyncListener, queueInternals, reportSendError } from './queue';
 import type { FlushReason, QueueInternals, SyncQueue } from './queue';
 
@@ -210,6 +211,10 @@ class Sync implements TextSyncHandle {
     const key = keyOf(content);
     if (this.insert ? isEmpty(content) : key === this.sent) return null;
     const edits = this.editsFor(content);
+    if (content.kind === 'text') {
+      const tag = tagEdit(this.internals.host.page, this.insert ? '' : this.sent, content.markdown);
+      if (tag) edits.push(tag);
+    }
     const typing = target !== null && !this.insert;
     this.sent = key;
     this.insert = null;

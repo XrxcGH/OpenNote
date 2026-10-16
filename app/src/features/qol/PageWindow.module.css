@@ -1,0 +1,8 @@
+@layer components {
+  .window {
+    block-size: 100vh;
+    overflow: auto;
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+  }
+}

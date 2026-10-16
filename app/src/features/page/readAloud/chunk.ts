@@ -8,6 +8,7 @@ import { osStore } from '../../../state/os';
 import { getSettings } from '../../../state/settings';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
+import { intelSpeechEngine } from '../../intel';
 import { shownPool } from '../pool/shown';
 import { shownViewport } from '../viewport/viewport';
 import { createWebSpeechEngine } from './engine';
@@ -19,8 +20,10 @@ import { readingSequence, scopedSequence } from './sequence';
 import styles from './readAloud.module.css';
 
 let engine: SpeechEngine | null = null;
+/** Whether the engine is the on-device one (Phase 12), which the person turns on in Settings. */
+let onDevice = false;
 let reader: Reader | null = null;
-let bar: { host: HTMLElement; root: Root } | null = null;
+let bar: { host: HTMLElement; root: Root; release(): void } | null = null;
 let stopWatching: (() => void) | null = null;
 
 /** The selection or caret inside the active editor, if any. */
@@ -39,7 +42,10 @@ function openSpeechSettings(): void {
 }
 
 function ensureReader(): Reader | null {
-  engine ??= createWebSpeechEngine();
+  const device = intelSpeechEngine();
+  if ((device !== null) !== onDevice) resetReadAloud();
+  onDevice = device !== null;
+  engine ??= device ?? createWebSpeechEngine();
   if (!engine) return null;
   reader ??= createReader(engine, {
     speakOptions: () => {
@@ -59,10 +65,34 @@ function showBar(current: Reader): void {
   if (!viewport || !parent || !engine) return;
   if (!bar || !bar.host.isConnected) {
     bar?.root.unmount();
+    bar?.release();
     const host = document.createElement('div');
     host.className = styles.host;
     parent.insertBefore(host, viewport.viewport);
-    bar = { host, root: createRoot(host) };
+    // The page's scroller fills its parent, so the bar sits over its top. The scroller starts under the bar instead,
+    // so the page title is not hidden by it.
+    const scroller = viewport.viewport;
+    const fit = () => {
+      scroller.style.insetBlockStart = `${host.offsetHeight}px`;
+    };
+    // In the next frame: changing the scroller from the observer would make the observer loop.
+    let frame = 0;
+    const later = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    };
+    const watch = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(later);
+    watch?.observe(host);
+    fit();
+    bar = {
+      host,
+      root: createRoot(host),
+      release: () => {
+        cancelAnimationFrame(frame);
+        watch?.disconnect();
+        scroller.style.insetBlockStart = '';
+      },
+    };
   }
   const voices = engine.voices.bind(engine);
   bar.root.render(
@@ -109,6 +139,7 @@ export function stopReadAloud(): void {
   reader?.stop();
   bar?.root.unmount();
   bar?.host.remove();
+  bar?.release();
   bar = null;
   if (hadFocus) shownPool.get()?.active()?.editor.view.focus();
 }

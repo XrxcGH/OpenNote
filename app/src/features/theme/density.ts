@@ -1,15 +1,19 @@
 // Density (ARCHITECTURE.md section 9.8): the size of buttons and rows. "Automatic" starts from the primary pointer,
-// then follows the last pointer used: a touch or pen pointerup switches to touch sizes, a mouse pointerup switches
-// back. It switches on pointerup only, never in the middle of a gesture. "Standard" and "Large" stay as chosen.
+// then follows the last pointer used. A touch pointerup switches to touch sizes. A pen does not, because the first
+// stroke would resize the ribbon and move the page under the pen. A mouse pointerup switches back.
+// It switches on pointerup only, never in the middle of a gesture. "Standard" and "Large" stay as chosen.
 // A switch keeps the focused row where it was, so a magnifier user doesn't lose the spot.
 
 import { setDensity } from '../../state/layout';
 import type { Density } from '../../state/layout';
 import { getSettings, settingsStore } from '../../state/settings';
 
-/** Touch and pen use touch sizes. */
+/** A touch this wide (CSS px) is a palm; ink/view/touch.ts uses the same width. */
+const PALM_PX = 28;
+
+/** Touch uses touch sizes. A pen is precise and leaves the sizes as they are. */
 function densityOf(pointerType: string): Density | null {
-  if (pointerType === 'touch' || pointerType === 'pen') return 'touch';
+  if (pointerType === 'touch') return 'touch';
   return pointerType === 'mouse' ? 'mouse' : null;
 }
 
@@ -52,6 +56,8 @@ export function installDensity(view: Window = window): () => void {
     keepFocusInPlace(view.document, () => setDensity(next));
   };
   const onPointerUp = (event: PointerEvent) => {
+    // A palm lifting while the pen writes is not a finger: it must not resize the ribbon mid-stroke.
+    if (event.pointerType === 'touch' && Math.max(event.width, event.height) >= PALM_PX) return;
     const seen = densityOf(event.pointerType);
     if (!seen || seen === automatic) return;
     automatic = seen;

@@ -1,0 +1,13 @@
+[package]
+name = "opennote-metafile"
+version = "0.1.0"
+description = "Reads Windows WMF, EMF and EMF+ pictures into paths, bitmaps and text, and writes them as SVG. Vendored from DeckCraft's metafile crate."
+edition = "2024"
+rust-version = "1.89"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+kurbo = { version = "0.13", default-features = false, features = ["std"] }
+thiserror = "2.0.21"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "bmp"] }

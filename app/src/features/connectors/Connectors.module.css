@@ -1,0 +1,171 @@
+/* The Connectors section of Settings, and its rows in Privacy. Tokens only (BRAND.md section 11). */
+@layer components {
+  .page {
+    display: grid;
+    gap: var(--space-5);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .page p,
+  .page ul,
+  .page h2,
+  .page h3 {
+    margin: 0;
+  }
+
+  .help {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .notice {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .group h2 {
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .head h3 {
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* The words say the state. The dot only repeats it, so color is never the only signal. */
+  .state {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    color: var(--color-text-secondary);
+  }
+
+  .state::before {
+    content: '';
+    inline-size: var(--space-2);
+    block-size: var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--color-text-muted);
+  }
+
+  .state[data-tone='good']::before {
+    background: var(--color-status-success);
+  }
+
+  .state[data-tone='warn']::before {
+    background: var(--color-status-warning);
+  }
+
+  .error {
+    color: var(--color-status-danger);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .form {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-app);
+  }
+
+  .details summary {
+    cursor: pointer;
+    color: var(--color-text-link);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .details summary:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .more {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-start: var(--space-3);
+  }
+
+  .more h4 {
+    margin: 0;
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .more ul {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding-inline-start: var(--space-6);
+  }
+
+  .mark {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  /* The Privacy section's rows, in the same shape as its own (features/diagnostics). */
+  .useRow {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .useTitle {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .useList {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}

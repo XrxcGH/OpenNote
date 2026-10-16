@@ -29,6 +29,7 @@ impl NotebookStore {
             sections,
             access: self.access(),
             notices: self.notices.clone(),
+            archived: crate::model::is_archived(&self.notebook.extra),
         }
     }
 
@@ -65,7 +66,7 @@ impl NotebookStore {
             .into_iter()
             .filter_map(|(i, level)| shown.get(i).map(|e| self.page_node(e, level)))
             .collect();
-        let access = if state.encrypted() {
+        let access = if state.locked() {
             Access::ReadOnly(ReadOnlyReason::Encrypted)
         } else {
             match (&self.read_only, &file.format.access) {
@@ -84,6 +85,8 @@ impl NotebookStore {
             pages,
             access,
             encrypted: state.encrypted(),
+            archived: crate::model::is_archived(&file.extra),
+            pinned: crate::model::is_pinned(&file.extra),
         }
     }
 
@@ -100,6 +103,7 @@ impl NotebookStore {
             order: entry.order.clone(),
             level,
             pinned: entry.pinned,
+            archived: crate::model::is_archived(&entry.extra),
             color: entry.color.clone(),
             created,
             modified: cached.map(|c| c.modified),

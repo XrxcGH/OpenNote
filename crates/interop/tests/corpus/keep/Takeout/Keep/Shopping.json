@@ -1,0 +1,15 @@
+{
+  "color": "YELLOW",
+  "isTrashed": false,
+  "isPinned": true,
+  "isArchived": false,
+  "listContent": [
+    { "text": "Milk", "isChecked": true },
+    { "text": "Eggs", "isChecked": false },
+    { "text": "Flour", "isChecked": false }
+  ],
+  "labels": [{ "name": "Home" }, { "name": "Weekly" }],
+  "userEditedTimestampUsec": 1790003600000000,
+  "createdTimestampUsec": 1790000000000000,
+  "title": "Shopping"
+}

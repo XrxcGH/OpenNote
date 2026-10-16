@@ -110,11 +110,15 @@ fn deleting_history_can_keep_the_named_versions() {
         handle.name_version(revision, name.map(str::to_owned), false).unwrap();
         saved.push(revision);
     }
-    assert_eq!(handle.history().unwrap().len(), 3);
+    assert_eq!(
+        handle.history().unwrap().len(),
+        4,
+        "the first edit also keeps the page as it was"
+    );
 
     let notebook = &real.notebook;
     let done = notebook.delete_history(HistoryScope::Page(real.page), true).unwrap();
-    assert_eq!((done.pages, done.versions), (1, 2));
+    assert_eq!((done.pages, done.versions), (1, 3));
     assert_eq!(names(&handle), [Some("Keep me".to_owned())]);
     let current = page_json(&handle);
     assert_eq!(block_ids(&current).len(), 3, "the page itself is untouched");
@@ -156,4 +160,66 @@ fn patch_cell(block: BlockId, text: &str) -> Edit {
         data: rows.as_object().cloned(),
         fallback: None,
     }
+}
+
+#[test]
+fn a_short_edit_session_leaves_a_version_to_restore() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let before = handle.history().unwrap().len();
+    let (_, block) = new_table(900, "x");
+    handle.apply(real.request(vec![insert(block)])).unwrap();
+    handle.save_now().unwrap();
+    assert!(
+        handle.history().unwrap().len() > before,
+        "the first edit keeps the page as it was"
+    );
+}
+
+#[test]
+fn deleting_a_page_from_trash_for_good_takes_its_history_with_it() {
+    let mut real = Real::new();
+    let handle = real.open();
+    let (_, block) = new_table(79, "Kept for now");
+    handle.apply(real.request(vec![insert(block)])).unwrap();
+    let saved = handle.save_now().unwrap();
+    handle
+        .name_version(saved.revision, Some("Named".into()), false)
+        .unwrap();
+    // The first edit kept the page as it was, and the named save is the second version.
+    assert_eq!(handle.history().unwrap().len(), 2);
+    handle.close(&real.client).unwrap();
+
+    let notebook = &real.notebook;
+    let page_dir = notebook
+        .path()
+        .join(real.section.to_string())
+        .join(real.page.to_string());
+    assert!(page_dir.join(".history").is_dir(), "the version is on disk");
+    let items = notebook
+        .delete(&[opennote_core::session::notebook::NodeRef::Page(real.page)])
+        .unwrap();
+    notebook.purge(items[0]).unwrap();
+
+    let leftovers: Vec<_> = walk(notebook.path())
+        .into_iter()
+        .filter(|path| path.to_string_lossy().contains(&real.page.to_string()))
+        .collect();
+    assert!(
+        leftovers.is_empty(),
+        "nothing of the page, its history included, is left: {leftovers:?}"
+    );
+    assert!(notebook.trash().unwrap().is_empty());
+}
+
+fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            out.extend(walk(&path));
+        }
+        out.push(path);
+    }
+    out
 }

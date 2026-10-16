@@ -1,7 +1,19 @@
 [workspace]
 members = [
   "app/src-tauri",
+  "crates/api",
+  "crates/cli",
   "crates/core",
+  "crates/crashreport",
+  "crates/diagnostics",
+  "crates/intel",
+  "crates/intel-engines",
+  "crates/llm-host",
+  "crates/interop",
+  "crates/media",
+  "crates/print",
+  "crates/third_party/metafile",
+  "crates/search",
   "crates/updater",
   "spikes/harness",
   "tests/crash",
@@ -9,8 +21,19 @@ members = [
   "tests/perf/frame-probe",
 ]
 # The fuzz crate needs a nightly toolchain, so it stays out of the workspace.
-exclude = ["crates/core/fuzz"]
+exclude = ["crates/core/fuzz", "crates/interop/fuzz"]
 resolver = "2"
+
+# SQLite is C code, so building it without optimization makes the search tests several times slower.
+[profile.dev.package.libsqlite3-sys]
+opt-level = 3
+
+# Argon2id fills 64 MiB for each password lock, which takes many seconds unoptimized.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
 
 # Versions the app and the updater crate share, so both always build against the same ones.
 [workspace.dependencies]

@@ -7,6 +7,7 @@ import type {
   BeforeExitHook,
   CommandBarItem,
   ContextMenuItem,
+  ExportInkSource,
   PageCreatedHook,
   PaletteProvider,
   SettingsSectionDef,
@@ -33,3 +34,5 @@ export const beforeExit = createRegistry<BeforeExitHook>('before-exit hooks');
 export const pageCreated = createRegistry<PageCreatedHook>('page created hooks');
 /** Tables that later phases add to the keyboard shortcut list (AMENDMENTS.md, Phase 5 P2-5). */
 export const shortcutListSections = createRegistry<ShortcutListSectionDef>('shortcut list sections');
+/** Phase 6's print and export read a page's ink from these; Phase 5's ink view registers the shown page's. */
+export const exportInkSources = createRegistry<ExportInkSource>('export ink sources');

@@ -1,0 +1,137 @@
+/*
+ * The function grapher (Phase 10). Everything is on tokens, so a theme switch recolors the plot with no redraw.
+ * Curves use the brand's pens, and the plot's paper is the page color.
+ */
+@layer components {
+  .graph {
+    display: grid;
+    gap: var(--space-3);
+    max-inline-size: 680px;
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    color: var(--color-text-primary);
+  }
+
+  .inputs {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .swatch {
+    inline-size: 12px;
+    block-size: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .input {
+    flex: 1;
+    min-inline-size: 12ch;
+    padding: var(--space-2) var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .input[aria-invalid='true'] {
+    border-color: var(--color-status-danger);
+  }
+
+  .problem {
+    flex-basis: 100%;
+    color: var(--color-status-danger);
+  }
+
+  .plot {
+    inline-size: 100%;
+    block-size: auto;
+    touch-action: none;
+    cursor: grab;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .plot:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .paper {
+    fill: var(--color-surface-page);
+  }
+
+  .gridMinor,
+  .gridMajor,
+  .axis,
+  .curve {
+    fill: none;
+  }
+
+  .gridMinor {
+    stroke: var(--color-border-subtle);
+    stroke-width: 0.5;
+  }
+
+  .gridMajor {
+    stroke: var(--color-border-subtle);
+    stroke-width: 1;
+  }
+
+  .axis {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1.5;
+  }
+
+  .label {
+    fill: var(--color-text-secondary);
+    font-size: 11px;
+  }
+
+  .curve {
+    stroke-width: 2.25;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .dot {
+    fill: var(--color-surface-page);
+    stroke: var(--color-text-primary);
+    stroke-width: 2;
+  }
+
+  .readout {
+    margin: 0;
+    min-block-size: var(--type-small-line);
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sliders {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .slider {
+    display: grid;
+    grid-template-columns: 2ch 1fr 7ch;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-mono);
+  }
+
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}

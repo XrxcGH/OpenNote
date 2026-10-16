@@ -131,3 +131,111 @@ describe('the title bar variants', () => {
     await expectNoAxeViolations(container);
   });
 });
+
+describe('the title bar with the custom frame (shell.customFrame, ADR 0017)', () => {
+  const customFrame = { flagOverrides: { 'shell.customFrame': true } };
+  const captionNames = ['Minimize', 'Maximize', 'Close'];
+
+  it('is the window caption: it drags, and it ends with the three caption buttons', async () => {
+    const { container } = await renderApp({ boot: customFrame });
+    const bar = banner();
+    expect(bar.getAttribute('data-app-region')).toBe('drag');
+    const buttons = within(bar).getByRole('group', { name: 'Window controls' });
+    expect(
+      within(buttons)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(captionNames);
+    // The buttons are the last thing in the bar, flush with its end edge, and the gap before them drags.
+    expect(bar.lastElementChild).toBe(buttons);
+    expect(bar.querySelector('[data-app-region="drag"]')).not.toBeNull();
+    await expectNoAxeViolations(container);
+  });
+
+  it('reports the Maximize button to the window so the frame switches', async () => {
+    const { platform } = await renderApp({ boot: customFrame });
+    await expect.poll(() => platform.window.calls.captionLayout.at(-1)).toBeTruthy();
+  });
+
+  it('closes and minimizes through the window client', async () => {
+    const { platform } = await renderApp({ boot: customFrame });
+    const minimize = vi.spyOn(platform.window, 'minimize');
+    const close = vi.spyOn(platform.window, 'close');
+    fireEvent.click(within(banner()).getByRole('button', { name: 'Minimize' }));
+    fireEvent.click(within(banner()).getByRole('button', { name: 'Close' }));
+    expect(minimize).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the narrowest medium window within its width, caption buttons included', async () => {
+    await setViewport(600, 700);
+    try {
+      await renderApp({ sizeClass: 'medium', boot: customFrame });
+      act(() => navigate(mitosis));
+      await screen.findByRole('list', { name: 'Current location' });
+      await expect.poll(() => overflowOf(banner())).toBe(0);
+      expect(within(banner()).getByRole('button', { name: 'Close' })).toBeTruthy();
+    } finally {
+      await setViewport(1280, 800);
+    }
+  });
+
+  it('gives setup the logo, the name, and the caption buttons', async () => {
+    await renderApp({
+      boot: { ...customFrame, firstRun: true, state: { setup: { status: 'notStarted' } } },
+    });
+    act(() => navigate({ view: 'setup', step: 'welcome' }));
+    // Setup's card has a header of its own, so the bar is found by its marker, not by its role.
+    const bar = () => document.querySelector<HTMLElement>('[data-title-bar][data-variant="setup"]') as HTMLElement;
+    await expect.poll(() => bar()).toBeTruthy();
+    expect(within(bar()).getByText('OpenNote')).toBeTruthy();
+    expect(
+      within(bar())
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(captionNames);
+    expect(bar().getAttribute('data-app-region')).toBe('drag');
+  });
+
+  it('gives the compact layout a thin bar of only the caption buttons above the app bar', async () => {
+    const { container } = await renderApp({ sizeClass: 'compact', boot: customFrame });
+    const bar = banner();
+    expect(
+      within(bar)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(captionNames);
+    expect(bar.getAttribute('data-app-region')).toBe('drag');
+    expect(screen.getByRole('navigation', { name: 'Current screen' })).toBeTruthy();
+    expect(bar.compareDocumentPosition(screen.getByRole('navigation', { name: 'Current screen' }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    await expectNoAxeViolations(container);
+  });
+
+  it('leaves the bar an ordinary row with the flag off', async () => {
+    await renderApp({ boot: { flagOverrides: { 'shell.customFrame': false } } });
+    expect(banner().getAttribute('data-app-region')).toBeNull();
+    expect(banner().querySelector('[data-app-region]')).toBeNull();
+  });
+});
+
+describe('the custom frame under a dialog', () => {
+  it('keeps the caption buttons and the drag area usable while a dialog is open', async () => {
+    const { platform } = await renderApp({ boot: { flagOverrides: { 'shell.customFrame': true } } });
+    const close = vi.spyOn(platform.window, 'close');
+    const answer = confirm({ title: 'Delete the notebook?', body: 'It moves to Trash.', confirmLabel: 'Delete' });
+    const dialog = await screen.findByRole('dialog');
+    // The rest of the bar is inert under the dialog, as the page is.
+    await expect.poll(() => banner().querySelector('[inert]')).not.toBeNull();
+    const caption = within(banner()).getByRole('group', { name: 'Window controls' });
+    expect(caption.closest('[inert]')).toBeNull();
+    const drag = banner().querySelectorAll('[data-app-region="drag"]');
+    expect(drag.length).toBeGreaterThan(0);
+    drag.forEach((element) => expect(element.closest('[inert]')).toBeNull());
+    fireEvent.click(within(caption).getByRole('button', { name: 'Close' }));
+    expect(close).toHaveBeenCalledTimes(1);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(await answer).toBe(false);
+  });
+});

@@ -12,7 +12,7 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { commandContext } from '../../../commands/registry';
 import { menuItemsFor } from '../../../commands/menus';
-import { applyTableOp, cellAt, cellTextPos } from '../../../editor/commands/tables';
+import { applyTableOp, cellAt, cellTextPos, fitAddedColumn } from '../../../editor/commands/tables';
 import type { CellAt, TableChange, TableOp } from '../../../editor/commands/tables';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { META_REMOTE } from '../../../editor/meta';
@@ -29,6 +29,8 @@ import type { StaticPool } from '../pool/pool';
 import { blockLaidOut } from '../seams/geometry';
 import { acceptRemoteText, attachTableSync } from '../sync';
 import type { TableSyncHandle } from '../sync';
+import { tableExtras } from '../tables/extras';
+import type { TableExtraHandle, TableExtraHost } from '../tables/extras';
 import { currentTable } from '../tables/current';
 import type { TableHandle } from '../tables/current';
 import type { InnerView } from '../tables/lazyView';
@@ -107,6 +109,8 @@ class TableView implements InnerView {
   private sync: TableSyncHandle | null = null;
   private toolbar: Root | null = null;
   private widthOpen = false;
+  private extras: TableExtraHandle[] = [];
+  private gone = false;
   private stopHandles = () => {};
   private stopActive = () => {};
 
@@ -176,19 +180,23 @@ class TableView implements InnerView {
     this.renderToolbar();
   }
 
-  private send(next: TableData, coalesce?: 'resize'): Promise<unknown> {
+  private send(next: TableData, coalesce?: 'resize', extra: Record<string, unknown> = {}): Promise<unknown> {
     const { header, columns, rows } = next;
     const block = this.current.id;
     return this.ctx.sync.send({
-      edits: [{ edit: 'patchBlock', block, data: { header, columns, rows } }],
+      edits: [{ edit: 'patchBlock', block, data: { header, columns, rows, ...extra } }],
       ...(coalesce ? { coalesce: { kind: coalesce, target: block } } : {}),
     });
   }
 
   private async run(op: TableOp): Promise<boolean> {
     if (this.sync) await this.sync.flush('command');
-    const change = applyTableOp(this.latest(), this.caretCell(), op);
-    if (!change) return false;
+    const before = this.latest();
+    const applied = applyTableOp(before, this.caretCell(), op);
+    if (!applied) return false;
+    const adds = op.op === 'columnLeft' || op.op === 'columnRight';
+    // The scroller is the page's width; its border takes a pixel on each side.
+    const change = adds ? fitAddedColumn(before, applied, this.scroller.clientWidth - 2) : applied;
     this.show(change.data, change.caret);
     this.editor?.commands.focus();
     this.ctx.host.announce(announcement(op, change));
@@ -294,6 +302,44 @@ class TableView implements InnerView {
       if (transaction.docChanged) this.afterTyping();
     });
     this.placeHandles();
+    this.attachExtras(editor);
+  }
+
+  /** What features that add to the table may do (see tables/extras.ts). */
+  private attachExtras(editor: Editor): void {
+    const block = this.current.id;
+    const host: TableExtraHost = {
+      block,
+      element: this.element,
+      editor,
+      cache: this.ctx.cache,
+      data: () => this.current.data,
+      table: () => this.latest(),
+      apply: async (change, extra) => {
+        if (this.sync) await this.sync.flush('command');
+        const next = change(this.latest());
+        if (!next) return false;
+        this.show(next, this.caretCell());
+        await this.send(next, undefined, extra);
+        return true;
+      },
+      patch: (data) => this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data }] }),
+      announce: (text) => this.ctx.host.announce(text),
+      flag: (id) => this.ctx.host.flag(id),
+    };
+    for (const def of tableExtras.list()) {
+      if (def.flag && !this.ctx.host.flag(def.flag)) continue;
+      void Promise.resolve(def.attach(host)).then(
+        (handle) => {
+          if (this.gone) handle.destroy();
+          else {
+            this.extras.push(handle);
+            handle.update(this.current);
+          }
+        },
+        (error) => console.error('table extra failed', def.id, error),
+      );
+    }
   }
 
   /** Keeps the data, the name, and the column edges in step with the editor's document. */
@@ -348,6 +394,7 @@ class TableView implements InnerView {
   update(next: BlockJson): void {
     this.current = next;
     placeBlock(this.element, next);
+    for (const extra of this.extras) extra.update(next);
     const incoming = normalizeTableData(next.data);
     if (sameTableData(incoming, this.latest())) return;
     const caret = this.editor ? this.caretCell() : null;
@@ -364,6 +411,9 @@ class TableView implements InnerView {
   }
 
   destroy(): void {
+    this.gone = true;
+    for (const extra of this.extras) extra.destroy();
+    this.extras = [];
     this.stopHandles();
     this.stopActive();
     this.setCurrent(false);

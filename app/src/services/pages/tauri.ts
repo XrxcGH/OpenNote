@@ -2,7 +2,9 @@
 // one onto a core command through the client in app/src/core/, which keeps one request in flight per page. The
 // core's `core:*` events become frames, external changes, and read-only notices for the page they name.
 import type { CoreClient, DecodedEnvelope, FrameInfo } from '../../core/client';
+import { coreBusy, pageClosed, watchSaveHealth } from './saveHealth';
 import type { ImagesClient, IpcError } from '../../platform/types';
+import { inkListeners } from './ink';
 import { PageServiceError } from './types';
 import type {
   AppliedFrame,
@@ -23,6 +25,7 @@ import type {
 function pageError(error: unknown): PageServiceError {
   if (error instanceof PageServiceError) return error;
   const ipc = error as Partial<IpcError>;
+  if (ipc.code === 'coreBusy') coreBusy();
   return new PageServiceError((ipc.code ?? 'invalid') as PageErrorCode, ipc.message ?? String(error));
 }
 
@@ -58,6 +61,12 @@ export function toFrame(info: FrameInfo): AppliedFrame {
     ui: (info.ui as AppliedFrame['ui']) ?? null,
     canUndo: info.canUndo,
     canRedo: info.canRedo,
+    ink: {
+      added: info.changes.strokesAdded ?? [],
+      removed: info.changes.strokesRemoved ?? [],
+      changed: info.changes.strokesChanged ?? [],
+      records: info.records ?? new Uint8Array(0),
+    },
   };
 }
 
@@ -236,11 +245,32 @@ function events(session: Session, frames: ReturnType<typeof listeners<AppliedFra
   };
 }
 
-export function createTauriPageService(client: CoreClient, images: ImagesClient): PageService {
+/**
+ * The first part of this window's client names. The core keeps one session per page and client name, and every
+ * window counts its opens from 1, so a page window or the quick capture window must not use the main window's
+ * names: two windows would share one session, its sequence numbers, and its undo. The main window keeps `main`;
+ * every other window takes a random name of its own, so a window opened again never finds the last one's session.
+ * The core takes lowercase letters, digits, and hyphens, at most 32 of them.
+ */
+export function clientPrefix(
+  windowLabel: string,
+  random: (bytes: Uint8Array<ArrayBuffer>) => Uint8Array = randomBytes,
+): string {
+  if (windowLabel === 'main') return 'main';
+  const letters = Array.from(random(new Uint8Array(8)), (byte) => (byte % 36).toString(36)).join('');
+  return `w${letters}`;
+}
+
+const randomBytes = (bytes: Uint8Array<ArrayBuffer>) => crypto.getRandomValues(bytes);
+
+/** The page service of one window. `prefix` names its clients; see {@link clientPrefix}. */
+export function createTauriPageService(client: CoreClient, images: ImagesClient, prefix = 'main'): PageService {
   let clients = 0;
+  // The title bar's status hears the saves of every open or closing page for as long as the service lives.
+  watchSaveHealth(client);
   return {
     async open(pageId, { viewport }): Promise<OpenPage> {
-      const name = `main-${++clients}`;
+      const name = `${prefix}-${++clients}`;
       const envelope = await client.pageOpen(pageId, name, viewport).catch(rejectAs);
       const { turn, numbered } = sequence(envelope.session.clientSeq, () =>
         client.pageOpen(pageId, name, null).then((again) => again.session.clientSeq),
@@ -258,7 +288,12 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
         external: listeners<ExternalChange>(),
       };
       const heard = events(session, listeners<AppliedFrame>());
-      const frame = (info: FrameInfo | null) => (info ? toFrame(info) : null);
+      const ink = inkListeners();
+      const frame = (info: FrameInfo | null) => {
+        const made = info ? toFrame(info) : null;
+        ink.emit(made?.ink);
+        return made;
+      };
       return {
         id: pageId,
         client: name,
@@ -266,17 +301,25 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
         readOnly: envelope.readOnly ? readOnlyInfo(envelope.session.readOnly ?? 'readOnly') : null,
         // Phase 3's core takes spliceText (P3-10); an older core would refuse it as invalid.
         supportsSplice: true,
+        ink: {
+          records: envelope.ink,
+          more: envelope.moreInk,
+          readAll: () => turn(() => client.pageReadStrokes(pageId, name)).catch(rejectAs),
+          onChange: ink.add,
+        },
         send: (batch) =>
-          numbered((clientSeq) =>
-            client.pageApply({
+          numbered((clientSeq) => {
+            const request = {
               page: pageId,
               client: name,
               clientSeq,
               coalesce: batch.coalesce ?? null,
               ui: batch.ui ?? null,
               edits: batch.edits,
-            }),
-          ).catch(rejectAs),
+            };
+            // Phase 5: new strokes go with page_add_strokes, after the batch's edits in the same transaction.
+            return batch.strokes ? client.pageAddStrokes(request, batch.strokes) : client.pageApply(request);
+          }).catch(rejectAs),
         undo: () => turn(() => client.pageUndo(pageId, name)).then(frame, rejectAs),
         redo: () => turn(() => client.pageRedo(pageId, name)).then(frame, rejectAs),
         saveNow: () => turn(() => client.pageSaveNow(pageId)).catch(rejectAs),
@@ -294,6 +337,7 @@ export function createTauriPageService(client: CoreClient, images: ImagesClient)
         onReadOnly: heard.onReadOnly,
         close: () => {
           heard.stop();
+          pageClosed(pageId);
           return turn(() => client.pageClose(pageId, name)).catch(rejectAs);
         },
       };

@@ -8,7 +8,9 @@ import { announce, showToast } from '../../../ui';
 import type { MountedPage } from '../mount';
 import { pageSelection, selectOnPage } from '../seams/selectionStore';
 import { assetTable } from './assets';
-import { FREEFORM_MAX_WIDTH, initialSize } from './geometry';
+import { offerActualSize, sizeFor, sizingFor } from '../qol/pasteSize';
+import type { Sizing } from '../qol/pasteSize';
+import { FREEFORM_MAX_WIDTH } from './geometry';
 import styles from './images.module.css';
 import type { ImportQueue, QueuedImage } from './importQueue';
 import { createImportQueue } from './importQueue';
@@ -23,6 +25,23 @@ export const IMAGE_TYPES = [
   'image/avif',
   'image/svg+xml',
 ] as const;
+/**
+ * Windows metafiles (EMF, WMF), which the shell draws into SVG, as import does. Windows often gives them no type or
+ * an unregistered one, so their file names count too; the shell checks the header either way.
+ */
+export const METAFILE_TYPES = [
+  'image/emf',
+  'image/x-emf',
+  'image/wmf',
+  'image/x-wmf',
+  'application/x-msmetafile',
+] as const;
+const METAFILE_NAME = /\.(emf|wmf)$/i;
+
+export function isMetafile(file: Pick<File, 'type' | 'name'>): boolean {
+  const type = file.type.toLowerCase();
+  return (METAFILE_TYPES as readonly string[]).includes(type) || METAFILE_NAME.test(file.name);
+}
 /** What the shell can convert when page.heicImport is on. */
 export const CONVERTIBLE_TYPES = ['image/heic', 'image/heif', 'image/tiff'] as const;
 const KEEP_BELOW = 24;
@@ -106,7 +125,33 @@ export function defaultPlacement(mounted: MountedPage): Placement {
   if (below) return { kind: 'point', x: below.x, y: below.y + below.h + KEEP_BELOW };
   const box = mounted.viewport.viewport.getBoundingClientRect();
   const corner = mounted.viewport.toWorld(box.left + 48, box.top + 48);
-  return { kind: 'point', x: Math.max(0, corner.x), y: Math.max(0, corner.y) };
+  const x = Math.max(0, corner.x);
+  return { kind: 'point', x, y: clearOfBlocks(mounted, x, Math.max(0, corner.y, belowTitle(mounted))) };
+}
+
+/** The size of a new block's footprint that must not land on a block already there (a file card, a small picture). */
+const FOOTPRINT = { w: 320, h: 96 };
+
+/** `y`, or the first y below the blocks that a block at `x`, `y` would cover, so a new block never hides one. */
+function clearOfBlocks(mounted: MountedPage, x: number, y: number): number {
+  const boxes = mounted.layer
+    .blocks()
+    .map((block) => mounted.layer.view(block.id)?.measure())
+    .filter((box): box is NonNullable<typeof box> => !!box && box.w > 0 && box.h > 0)
+    .sort((a, b) => a.y - b.y);
+  let top = y;
+  for (const box of boxes) {
+    const covers = box.x < x + FOOTPRINT.w && box.x + box.w > x && box.y < top + FOOTPRINT.h && box.y + box.h > top;
+    if (covers) top = box.y + box.h + KEEP_BELOW;
+  }
+  return top;
+}
+
+/** The first world y under the title band, so a new block never covers the page title. */
+function belowTitle(mounted: Pick<MountedPage, 'title' | 'viewport'>): number {
+  const band = mounted.title?.element.getBoundingClientRect();
+  if (!band || band.height === 0) return 0;
+  return mounted.viewport.toWorld(band.left, band.bottom).y + KEEP_BELOW;
 }
 
 export function isFlow(page: OpenPage): boolean {
@@ -124,6 +169,7 @@ export function imageEdits(
   mounted: Pick<MountedPage, 'viewport' | 'page'>,
   imported: readonly { asset: ImportedAsset; alt?: string }[],
   place: Placement,
+  sizing: Sizing = 'fit',
 ): { edits: Edit[]; blocks: BlockId[] } {
   const edits: Edit[] = [];
   const blocks: BlockId[] = [];
@@ -133,7 +179,10 @@ export function imageEdits(
   let y = floating ? place.y : 0;
   let after = place.kind === 'after' ? place.block : null;
   for (const { asset, alt } of imported) {
-    const size = initialSize({ width: asset.asset.width ?? 320, height: asset.asset.height ?? 240 }, { dpr, maxWidth });
+    const size = sizeFor(
+      { width: asset.asset.width ?? 320, height: asset.asset.height ?? 240 },
+      { dpr, maxWidth, sizing },
+    );
     const id = newId();
     const frame: Frame = floating ? { x: place.x, y, w: size.w, h: size.h } : { w: size.w };
     const block: NewBlock = { id, type: 'image', frame, data: { asset: asset.id, ...(alt ? { alt } : {}) } };
@@ -151,6 +200,7 @@ export async function insertImages(
   mounted: MountedPage,
   items: readonly (QueuedImage & { alt?: string })[],
   place: Placement = defaultPlacement(mounted),
+  choice: 'actual' | 'fit' | 'ask' = 'fit',
 ): Promise<BlockId[]> {
   if (items.length === 0) return [];
   const queue = importsFor(mounted);
@@ -170,9 +220,10 @@ export async function insertImages(
   if (imported.length === 0) return [];
   const table = assetTable(mounted.page);
   imported.forEach(({ asset }) => table.add(asset.id, asset.asset));
-  const { edits, blocks } = imageEdits(mounted, imported, place);
+  const { edits, blocks } = imageEdits(mounted, imported, place, sizingFor(choice));
   const ack = await mounted.sync.send({ edits });
   showInserted(mounted, edits, ack.orderKeys);
+  if (choice === 'ask') offerActualSize(mounted, blocks);
   selectOnPage({ blocks: blocks.slice(0, 1), strokes: [] });
   mounted.layer.view(blocks[0])?.element.focus({ preventScroll: false });
   announce(t('images.added', { count: blocks.length }));
@@ -196,7 +247,7 @@ export function showInserted(
 /** Image files from a list, and whether any other files were left out. */
 export function imageFiles(files: readonly File[], convert: boolean): { images: File[]; others: number } {
   const allowed = new Set<string>([...IMAGE_TYPES, ...(convert ? CONVERTIBLE_TYPES : [])]);
-  const images = files.filter((file) => allowed.has(file.type.toLowerCase()));
+  const images = files.filter((file) => allowed.has(file.type.toLowerCase()) || isMetafile(file));
   return { images, others: files.length - images.length };
 }
 
@@ -215,7 +266,7 @@ export function pickImages(mounted: MountedPage, convert: boolean): Promise<Bloc
   const input = document.createElement('input');
   input.type = 'file';
   input.multiple = true;
-  input.accept = [...IMAGE_TYPES, ...(convert ? CONVERTIBLE_TYPES : [])].join(',');
+  input.accept = [...IMAGE_TYPES, ...(convert ? CONVERTIBLE_TYPES : []), '.emf', '.wmf'].join(',');
   const place = defaultPlacement(mounted);
   return new Promise((resolve) => {
     input.addEventListener('change', () => {

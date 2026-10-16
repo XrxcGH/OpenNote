@@ -1,0 +1,141 @@
+/* The properties header: a fold button, and a list of fields below it. */
+@layer components {
+  .host {
+    position: fixed;
+    z-index: var(--layer-page-chrome);
+    inline-size: min(26rem, 92vw);
+    pointer-events: none;
+  }
+
+  .bar {
+    display: grid;
+    justify-items: end;
+    gap: var(--space-2);
+    pointer-events: none;
+  }
+
+  .fold,
+  .panel {
+    pointer-events: auto;
+  }
+
+  .fold {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-block-size: var(--size-chrome-hit);
+    padding-inline: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-pill);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+  }
+
+  .fold:focus-visible,
+  .input:focus-visible,
+  .nameInput:focus-visible,
+  .check:focus-visible,
+  .suggestion:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: var(--size-focus-ring-offset);
+  }
+
+  .count {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-regular);
+  }
+
+  .panel {
+    display: grid;
+    gap: var(--space-2);
+    inline-size: 100%;
+    max-block-size: 60vh;
+    overflow-y: auto;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(6rem, 9rem) minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .name {
+    display: inline-flex;
+    gap: var(--space-1);
+    align-items: center;
+    color: var(--color-text-secondary);
+  }
+
+  .nameInput,
+  .input {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-block-size: var(--size-chrome-hit);
+    padding-inline: var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-page);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: var(--type-small-size);
+  }
+
+  .nameInput {
+    border-color: transparent;
+    background: transparent;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .check {
+    inline-size: 1.2em;
+    block-size: 1.2em;
+    accent-color: var(--color-accent-primary);
+  }
+
+  .linkField {
+    position: relative;
+  }
+
+  .suggestions {
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .suggestion {
+    inline-size: 100%;
+    padding: var(--space-1) var(--space-2);
+    border: 0;
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .suggestion:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .adder {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+  }
+}

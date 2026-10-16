@@ -11,12 +11,12 @@ import { blockOf, moveNodes, setLevel, titleOf } from './actions';
 import { destinationsFor, loadDestinations } from './destinations';
 import type { Drop } from './drop';
 import type { Destination } from './destinations';
-import { toastError } from './errors';
+import { toastError, toastMoveError } from './errors';
 import { focusTargetAfterRemoval } from './focus';
 import { levelAfter, stepOf } from './moves';
 import { chooseDestination } from './MoveToDialog';
 import { showLocation } from './selection';
-import { notebookOf, requestFocus, treeOf, treeStore } from './store';
+import { isProtectedNode, notebookOf, requestFocus, treeOf, treeStore } from './store';
 import { undoEntry, undoStore } from './undo';
 
 /** Ctrl+Shift+Up and Down, and the menu's Move up and Move down. */
@@ -100,7 +100,10 @@ export async function moveToPlace(notes: NotesService, node: NodeSummary, placem
   try {
     await moveNodes(notes, [node.id], placement);
   } catch (error) {
-    toastError(error, titleOf(node));
+    const state = treeStore.get();
+    const guarded =
+      isProtectedNode(state, node.id) || (placement.parentId !== null && isProtectedNode(state, placement.parentId));
+    toastMoveError(error, titleOf(node), guarded);
     requestFocus(treeOf(node), node.id);
     return false;
   }

@@ -29,6 +29,11 @@ export interface SyncQueue {
   canUndo(): boolean;
   canRedo(): boolean;
   onUndoState(listener: (state: { canUndo: boolean; canRedo: boolean }) => void): () => void;
+  /**
+   * Hears each undo and redo frame once it is applied. Another window's frames come through the page's own onFrame;
+   * together they are every change to the page view this window did not just send, such as an ungroup undone.
+   */
+  onStep(listener: (frame: AppliedFrame) => void): () => void;
   /** Phase 5: flushes wait while a pen is down. */
   setFlushGate(gate: (() => Promise<void>) | null): void;
   appendToNextBatch(block: BlockId, edits: readonly Edit[]): void;
@@ -36,6 +41,11 @@ export interface SyncQueue {
   addFollowerMoves(block: BlockId, moves: readonly Edit[]): void;
   /** Whether a change hasn't reached the core yet, such as one it refused: the next flush sends it again. */
   hasUnsent(): boolean;
+  /**
+   * Sends edits made outside the editors, such as text brought in from another app (A2-1), as one request, and
+   * shows the result: the core's redo frame of the request is applied, so one undo takes it all back.
+   */
+  sendAndShow(batch: EditBatch): Promise<TxnAck>;
 }
 
 export interface SyncHost {
@@ -182,6 +192,7 @@ class Queue implements SyncQueue, QueueInternals {
   readonly mirror: Mirror;
   private readonly handles = new Set<Flushable>();
   private readonly listeners = new Set<(state: UndoState) => void>();
+  private readonly stepListeners = new Set<(frame: AppliedFrame) => void>();
   private readonly waiting = new Map<BlockId, Edit[]>();
   private gate: (() => Promise<void>) | null = null;
   private chain: Promise<unknown> = Promise.resolve();
@@ -197,6 +208,21 @@ class Queue implements SyncQueue, QueueInternals {
     await this.flushAll('command');
     const ack = await this.enqueue(() => batch, null);
     if (!ack) throw new PageServiceError('invalid', 'The batch was empty.', false);
+    return ack;
+  }
+
+  async sendAndShow(batch: EditBatch): Promise<TxnAck> {
+    const ack = await this.send(batch);
+    await this.drain();
+    // Undo and redo again in the core: the redo frame holds every changed block in full, which the editors apply.
+    // The editors still show the page from before, so the undo frame needs no applying.
+    const undone = await this.host.page.undo();
+    const redone = undone ? await this.host.page.redo() : null;
+    if (redone) {
+      await applyFrame(redone, this.host.frames, this.host.cache, 'remote');
+      this.mirror.applied(redone);
+      this.setState(redone);
+    }
     return ack;
   }
 
@@ -228,6 +254,11 @@ class Queue implements SyncQueue, QueueInternals {
   onUndoState(listener: (state: UndoState) => void): () => void {
     this.listeners.add(listener);
     return () => void this.listeners.delete(listener);
+  }
+
+  onStep(listener: (frame: AppliedFrame) => void): () => void {
+    this.stepListeners.add(listener);
+    return () => void this.stepListeners.delete(listener);
   }
 
   setFlushGate(gate: (() => Promise<void>) | null): void {
@@ -273,6 +304,9 @@ class Queue implements SyncQueue, QueueInternals {
     try {
       const ack = await this.host.page.send(batch);
       this.mirror.sent(batch, ack);
+      // A new text box shows with a stand-in key until its first change reaches the core, and blocks inserted
+      // after it must sort below it.
+      for (const [id, order] of Object.entries(ack.orderKeys)) this.host.frames.reorder(id, order);
       this.setState(ack);
       return ack;
     } catch (error) {
@@ -342,6 +376,7 @@ class Queue implements SyncQueue, QueueInternals {
     const { outsideFocus } = await applyFrame(frame, this.host.frames, this.host.cache, direction);
     this.mirror.applied(frame);
     this.setState(frame);
+    this.stepListeners.forEach((listener) => listener(frame));
     if (outsideFocus && said) this.host.announce(said);
   }
 

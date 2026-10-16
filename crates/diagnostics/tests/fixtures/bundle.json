@@ -1,0 +1,63 @@
+{
+  "createdUnix": 1790000000,
+  "redactions": {
+    "emails": 0,
+    "ids": 1,
+    "links": 1,
+    "names": 0,
+    "paths": 3,
+    "private": 0,
+    "quoted": 1,
+    "tokens": 0
+  },
+  "sections": [
+    {
+      "body": "It crashed when I opened a page.",
+      "id": "description",
+      "items": 32,
+      "redactions": {
+        "emails": 0,
+        "ids": 0,
+        "links": 0,
+        "names": 0,
+        "paths": 0,
+        "private": 0,
+        "quoted": 0,
+        "tokens": 0
+      },
+      "title": "What you wrote"
+    },
+    {
+      "body": "OpenNote: 1.0.0-beta.2\n",
+      "id": "system",
+      "items": 1,
+      "redactions": {
+        "emails": 0,
+        "ids": 0,
+        "links": 0,
+        "names": 0,
+        "paths": 0,
+        "private": 0,
+        "quoted": 0,
+        "tokens": 0
+      },
+      "title": "System"
+    },
+    {
+      "body": "== opennote.log\n",
+      "id": "logs",
+      "items": 0,
+      "redactions": {
+        "emails": 0,
+        "ids": 1,
+        "links": 1,
+        "names": 0,
+        "paths": 3,
+        "private": 0,
+        "quoted": 1,
+        "tokens": 0
+      },
+      "title": "Recent log lines"
+    }
+  ]
+}

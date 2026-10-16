@@ -12,7 +12,11 @@
 //! A group without strokes is written as `<g/>`. A stroke of one point repeats it, so its round cap shows.
 //! Stroke widths and opacity are rounded to 0.01. A transformed stroke is as wide as its nominal width times the
 //! square root of the absolute determinant of its transform (spec 11.3).
+//!
+//! Strokes on a hidden ink layer (ADR 0037: the page view's `inkLayers`) are left out, as hidden layers are not
+//! drawn, printed, or exported.
 
+use std::collections::HashSet;
 use std::fmt::Write as _;
 
 use super::{quoted, seal};
@@ -74,6 +78,29 @@ pub fn render_ink_svg(page: &Page) -> Vec<u8> {
     }
     out.push_str("</svg>\n");
     seal(out)
+}
+
+/// One stroke as a polyline in page coordinates, for drawing a page as a picture (the local API's `render_page`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct InkLine {
+    pub points: Vec<(f64, f64)>,
+    /// Red, green, blue, and alpha.
+    pub color: [u8; 4],
+    /// The width in page units, with the stroke's transform applied.
+    pub width: f64,
+}
+
+/// Every stroke of the page as [`InkLine`]s, laid out, and ordered as `ink.svg` lays them out.
+pub fn ink_lines(page: &Page) -> Vec<InkLine> {
+    layout(page)
+        .into_iter()
+        .flatten()
+        .map(|drawn| InkLine {
+            color: drawn.stroke.style.color,
+            width: f64::from(drawn.stroke.style.width) * drawn.stroke.transform.map_or(1.0, |t| t.width_scale()),
+            points: drawn.points,
+        })
+        .collect()
 }
 
 fn write_group(out: &mut String, strokes: &[DrawnStroke<'_>]) {
@@ -158,11 +185,44 @@ fn shift(strokes: &mut [DrawnStroke<'_>], dx: f64, dy: f64) {
 }
 
 /// The strokes of one ink block in block coordinates: highlighters first, each set by start time, then ID.
+/// The ink layers the page view hides, as `inkLayers` holds them: each layer's `hidden` flag, and `assign`, which
+/// puts a stroke on a layer other than the first (`base`). Returns whether a stroke is on a hidden layer.
+fn hidden_layers(page: &Page) -> impl Fn(&Stroke) -> bool + '_ {
+    const BASE: &str = "base";
+    let held = page.view.extra.get("inkLayers").and_then(|v| v.as_object());
+    let hidden: HashSet<&str> = held
+        .and_then(|h| h.get("layers"))
+        .and_then(|v| v.as_object())
+        .map(|layers| {
+            layers
+                .iter()
+                .filter(|(_, def)| def.get("hidden").and_then(serde_json::Value::as_bool) == Some(true))
+                .map(|(id, _)| id.as_str())
+                .collect()
+        })
+        .unwrap_or_default();
+    let assign = held.and_then(|h| h.get("assign")).and_then(|v| v.as_object());
+    move |stroke: &Stroke| {
+        if hidden.is_empty() {
+            return false;
+        }
+        let id = stroke.id.to_string();
+        let layer = assign
+            .and_then(|a| a.get(&id))
+            .and_then(|v| v.as_str())
+            .filter(|layer| *layer != BASE && held.and_then(|h| h.get("layers")).and_then(|l| l.get(*layer)).is_some())
+            .unwrap_or(BASE);
+        hidden.contains(layer)
+    }
+}
+
 fn block_strokes<'a>(page: &'a Page, block: &Block) -> Vec<DrawnStroke<'a>> {
+    let hides = hidden_layers(page);
     let (highlighters, others): (Vec<&Stroke>, Vec<&Stroke>) = page
         .ink
         .in_block(block.id)
         .map(|s| &**s)
+        .filter(|s| !hides(s))
         .partition(|s| s.is_highlighter());
     highlighters
         .into_iter()

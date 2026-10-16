@@ -10,6 +10,7 @@ import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
 import { isFloating } from '../blocks/textBlock';
+import { readingLock } from '../qol/stores';
 import type { Chrome } from '../chrome/chrome';
 import type { Point } from '../viewport/camera';
 import type { PointerToolDef, RouterContext } from '../viewport/router';
@@ -63,7 +64,7 @@ class ObjectsTool implements PointerToolDef {
   constructor(private readonly parts: ObjectsToolParts) {}
 
   accepts(event: PointerEvent, ctx: RouterContext): boolean {
-    if (ctx.activeTool !== 'select' || event.button !== 0) return false;
+    if (ctx.activeTool !== 'select' || event.button !== 0 || readingLock.get()) return false;
     if (handleOf(event)) return true;
     return event.pointerType !== 'touch' && emptyPage(event, this.parts.viewport.world);
   }
@@ -171,9 +172,11 @@ class ObjectsTool implements PointerToolDef {
       return this.parts.chrome.update();
     }
     const floating = press.blocks.some(isFloating);
-    for (const { id } of press.blocks) {
-      const element = this.parts.layer.view(id)?.element;
-      if (element) element.style.transform = floating ? `translate(${dx}px, ${dy}px)` : `translateY(${dy}px)`;
+    for (const block of press.blocks) {
+      const element = this.parts.layer.view(block.id)?.element;
+      // A text box on ruled paper moves from rule to rule while it is dragged.
+      const down = floating ? this.parts.objects.snapDelta(block, dy) : dy;
+      if (element) element.style.transform = floating ? `translate(${dx}px, ${down}px)` : `translateY(${dy}px)`;
     }
     if (!floating) this.parts.chrome.setDropLine(this.dropTarget(press)?.y ?? null);
     this.parts.chrome.update();

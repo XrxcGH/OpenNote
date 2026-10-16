@@ -149,3 +149,22 @@ export function listTrash(lib: Library): TrashedItem[] {
       pageCount: pageCount(lib, record),
     }));
 }
+
+/**
+ * Deletes listed Trash items for good, as the core service's `purgeFromTrash` does. A notebook keeps its record, as
+ * the core keeps a trashed notebook's folder until File Explorer, or Delete folder, removes it.
+ */
+export function purgeFromTrash(lib: Library, ids: readonly string[]): void {
+  lib.writable();
+  for (const id of new Set(ids)) {
+    const record =
+      lib.records.find((other) => other.ids[0] === id && isListed(lib, other)) ??
+      fail('not-found', `${id} isn't in Trash`);
+    if (lib.any(id).kind === 'notebook') continue;
+    for (const gone of record.ids.flatMap((root) => lib.subtree(root))) {
+      lib.trashed.delete(gone);
+      lib.nodes.delete(gone);
+    }
+    lib.records = lib.records.filter((other) => other !== record);
+  }
+}

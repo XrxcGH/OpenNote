@@ -35,7 +35,7 @@ use semver::Version;
 
 pub use config::{Channel, ChannelUrls, Config, Limits, UpdaterDirs};
 pub use error::UpdateError;
-pub use fetch::{Fetch, FetchError, FetchOutcome, Url};
+pub use fetch::{Fetch, FetchError, FetchOutcome, RangeOutcome, RangeSink, RangeStart, Url};
 pub use guard::{guard_on_start, GuardDecision};
 /// The public key type of `Config::trusted_keys`, so the app needn't depend on `minisign-verify` itself.
 pub use minisign_verify::PublicKey;
@@ -241,6 +241,31 @@ impl<F: Fetch, R: Replacer, C: Clock> Updater<F, R, C> {
     /// any earlier staged update, and `updates\state.json` records it.
     pub fn download(&self, offer: &Offer, progress: &dyn Fn(u64, u64)) -> Result<Staged, UpdateError> {
         let record = stage::download(&self.fetch, &self.config, offer, progress)?;
+        let staged = Staged {
+            version: offer.version.clone(),
+            path: PathBuf::from(&record.path),
+            sha256: record.sha256.clone(),
+            notes: record.notes.clone(),
+        };
+        self.change_state(|state| state.staged = Some(record))?;
+        Ok(staged)
+    }
+
+    /// Like [`Updater::download`], but a download that stopped partway (a dropped connection, a sleeping PC)
+    /// leaves its `.part` file, and the next call continues it with an HTTP range request when `resume` is on
+    /// (`updates.resume`). The whole file is still checked against the manifest's hash and signature before it
+    /// is staged.
+    pub fn download_resumable(
+        &self,
+        offer: &Offer,
+        progress: &dyn Fn(u64, u64),
+        resume: bool,
+    ) -> Result<Staged, UpdateError> {
+        let record = if resume {
+            stage::download_resumable(&self.fetch, &self.config, offer, progress)?
+        } else {
+            stage::download(&self.fetch, &self.config, offer, progress)?
+        };
         let staged = Staged {
             version: offer.version.clone(),
             path: PathBuf::from(&record.path),

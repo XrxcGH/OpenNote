@@ -11,7 +11,9 @@ export function Glint({ kind, className }: ArtProps & { kind: 'sun' | 'moon' }) 
       {kind === 'sun' ? (
         <>
           <path className={styles.sun} d="M3.2 12.4A4.8 4.8 0 0 1 12.8 12.4Z" />
-          <path className={styles.candle} d="M1.4 12.8H14.6M8 3.2V4.6M3 5.6l1 1M13 5.6l-1 1" />
+          {/* The horizon, then three rays, each from 7.8 to 9.2 out from the sun's middle, (8, 12.4), and pointing
+              straight out from it: one up, and two at 50 degrees above the horizon. */}
+          <path className={styles.candle} d="M1.4 12.8H14.6M8 4.6 8 3.2M3 6.4 2.1 5.3M13 6.4 13.9 5.3" />
         </>
       ) : (
         <>

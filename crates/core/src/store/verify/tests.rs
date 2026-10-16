@@ -6,6 +6,7 @@ use super::*;
 use crate::id::Id;
 use crate::model::{TrashItemFile, TrashOrigin};
 use crate::store::compact::CompactionPlan;
+use crate::store::layout::PAGE_MD;
 use crate::store::page_store::tests::Harness;
 use crate::testing::sample::{sample_notebook, sample_page, sample_section};
 
@@ -73,6 +74,22 @@ fn damaged_and_missing_files_are_problems() {
 }
 
 #[test]
+fn a_recording_that_is_still_growing_is_not_a_checksum_problem() {
+    let h = notebook();
+    let mut page = h.store.load(&h.dir).unwrap().page;
+    let mut audio = page.assets.values().next().unwrap().clone();
+    audio.id = "01m3sa43z1tp9rdr5e8df2jbxz".parse().unwrap();
+    audio.file = format!("{}-mic.ogg", audio.id);
+    audio.bytes = 0;
+    audio.extra.insert("state".into(), "recording".into());
+    page.assets.insert(audio.id, audio.clone());
+    h.fs.put(&NotebookLayout::asset_path(&h.dir, &audio).unwrap(), &[1u8; 300]);
+    h.fs.put(&NotebookLayout::page_json(&h.dir), &h.codec.write_page(&page));
+    let report = verify(&h);
+    assert!(report.is_clean(), "{:?}", report.problems);
+}
+
+#[test]
 fn the_tree_must_match_the_folders() {
     let h = notebook();
     let section_dir = h.dir.parent().unwrap().to_path_buf();
@@ -128,4 +145,76 @@ fn trash_items_must_hold_what_they_list() {
     assert_eq!(codes(&verify(&h)), ["trash.contentMissing"]);
     h.fs.put(&dir.join(ITEM_JSON), b"nonsense");
     assert_eq!(codes(&verify(&h)), ["trash.invalid"]);
+}
+
+/// Writes the sample page with its first text block's Markdown replaced.
+fn with_text(h: &Harness, markdown: &str) -> crate::model::Page {
+    let mut page = h.store.load(&h.dir).unwrap().page;
+    let mut text = page
+        .blocks
+        .iter()
+        .find(|b| matches!(b.data, crate::model::BlockData::Text(_)))
+        .map(|b| crate::model::Block::clone(b))
+        .unwrap();
+    if let crate::model::BlockData::Text(data) = &mut text.data {
+        data.markdown = markdown.into();
+        data.ids.clear();
+    }
+    page.blocks.replace(std::sync::Arc::new(text)).unwrap();
+    h.fs.put(&NotebookLayout::page_json(&h.dir), &h.codec.write_page(&page));
+    page
+}
+
+#[test]
+fn links_that_lead_nowhere_are_problems() {
+    let h = notebook();
+    let page = sample_page();
+    let asset = page.assets.keys().next().unwrap();
+    let gone = PageId(Id::from_parts(1_790_000_000_000, 77));
+    with_text(
+        &h,
+        &format!(
+            "[here](opennote:page/{}) [there](opennote:page/{gone}) ![a](asset:{asset}) ![b](asset:{})",
+            page.id,
+            Id::from_parts(5, 5)
+        ),
+    );
+    let report = verify(&h);
+    let broken: Vec<_> = report
+        .problems
+        .iter()
+        .filter(|(_, w)| w.code == "link.broken")
+        .map(|(_, w)| w.detail.clone())
+        .collect();
+    assert_eq!(broken.len(), 2, "{:?}", report.problems);
+    assert!(broken[0].contains(&gone.to_string()), "{broken:?}");
+    assert!(broken[1].starts_with("file "), "{broken:?}");
+}
+
+#[test]
+fn a_page_md_from_an_older_revision_or_edited_elsewhere_does_not_match() {
+    let h = notebook();
+    let page = h.store.load(&h.dir).unwrap().page;
+    h.store
+        .write_page_md(&h.dir, &page, &crate::testing::fakes::NoLinks)
+        .unwrap();
+    let report = verify(&h);
+    assert!(
+        report.is_clean(),
+        "a page.md of this revision matches: {:?}",
+        report.problems
+    );
+
+    let mut older = page.clone();
+    older.revision.id = crate::id::RevisionId(Id::from_parts(3, 3));
+    let md = h.dir.join(PAGE_MD);
+    h.fs.put(&md, &h.codec.render_page_md(&older, &crate::testing::fakes::NoLinks));
+    let report = verify(&h);
+    assert_eq!(codes(&report), ["page.mdMismatch"]);
+    assert_eq!(report.problems[0].1.detail, "stale");
+
+    h.fs.put(&md, b"# Light reactions\n\nTyped in another app.\n");
+    let report = verify(&h);
+    assert_eq!(codes(&report), ["page.mdMismatch"]);
+    assert_eq!(report.problems[0].1.detail, "edited");
 }

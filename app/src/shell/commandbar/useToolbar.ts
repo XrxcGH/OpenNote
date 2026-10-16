@@ -84,7 +84,16 @@ export function useOverflow(ref: RefObject<HTMLElement | null>, entries: readonl
   const widths = useRef(new Map<string, number>());
   const latest = useRef(entries);
   const density = useDensity();
-  const key = `${density} ${entries.map((entry) => entry.item.id).join(' ')}`;
+  // A font that arrives after the first measure changes every width, so each font load measures again.
+  const [fontLoads, setFontLoads] = useState(0);
+  useEffect(() => {
+    const fonts = typeof document === 'undefined' ? undefined : document.fonts;
+    if (!fonts?.addEventListener) return;
+    const again = () => setFontLoads((count) => count + 1);
+    fonts.addEventListener('loadingdone', again);
+    return () => fonts.removeEventListener('loadingdone', again);
+  }, []);
+  const key = `${density} ${fontLoads} ${entries.map((entry) => entry.item.id).join(' ')}`;
   const [measuredFor, setMeasuredFor] = useState(key);
   if (measuredFor !== key) {
     setMeasuredFor(key);

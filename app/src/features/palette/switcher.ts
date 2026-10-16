@@ -4,7 +4,7 @@
 
 import { getLocation, navigate } from '../../app/location';
 import { commandContext } from '../../commands/registry';
-import type { PaletteResult } from '../../registries/types';
+import type { PaletteProvider, PaletteResult } from '../../registries/types';
 import type { NodeId } from '../../services/notes/types';
 import { t } from '../../strings/t';
 import { announce, showToast } from '../../ui';
@@ -13,6 +13,19 @@ import { nodesProvider } from './nodes';
 export const CREATE_RESULT_ID = 'switcher:create';
 
 export const switcherProvider = nodesProvider({ id: 'app.switcher', pagesOnly: true });
+
+// Providers other features add to the quick switcher, such as page results from the search index.
+const extraProviders: PaletteProvider[] = [];
+
+/** Adds a provider to the quick switcher. The command palette reads providers from the registry. */
+export function addSwitcherProvider(provider: PaletteProvider): void {
+  extraProviders.push(provider);
+}
+
+/** The providers the quick switcher searches: the page list, then what other features added. */
+export function switcherProviders(): readonly PaletteProvider[] {
+  return [switcherProvider, ...extraProviders];
+}
 
 /** The section a new page would go in: the one open in the workspace, if any. */
 function currentSection(): { notebookId: NodeId | null; sectionId: NodeId } | null {

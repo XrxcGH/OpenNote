@@ -10,7 +10,7 @@ use crate::{
     args::{self, Args},
     boot,
     instance::{self, InstanceGuard, InstanceOutcome},
-    paths::{Paths, PROFILE_DIR_VAR},
+    paths::{self, Paths, PROFILE_DIR_VAR},
     perf,
     updater::{self, GuardOutcome},
     window::webview::{self, RuntimeCheck},
@@ -61,7 +61,13 @@ impl Steps for System {
     }
 
     fn resolve_paths(&self) -> std::io::Result<Paths> {
-        let paths = Paths::resolve(std::env::var_os(PROFILE_DIR_VAR).map(Into::into))?;
+        let program_dir = std::env::current_exe()
+            .ok()
+            .and_then(|exe| exe.parent().map(std::path::Path::to_path_buf));
+        let paths = Paths::resolve(paths::profile_override(
+            std::env::var_os(PROFILE_DIR_VAR).map(Into::into),
+            program_dir.as_deref(),
+        ))?;
         // Logging starts as soon as it has a folder, so the steps after this one are on record.
         let profile = std::env::var_os("USERPROFILE")
             .map(std::path::PathBuf::from)
@@ -94,6 +100,10 @@ pub fn run() -> EarlyOutcome {
     if let Some(marker) = updater::TEST_ENDPOINTS_MARKER {
         log::warn!("{marker}: this build accepts test update endpoints and a test key.");
     }
+    // `--uninstall` from Installed apps, and the copy that finishes it, never start the app.
+    if let Some(code) = crate::install::uninstall::run_from_args() {
+        return EarlyOutcome::Exit(code);
+    }
     run_with(&System)
 }
 
@@ -110,6 +120,9 @@ pub fn run_with(steps: &impl Steps) -> EarlyOutcome {
             return EarlyOutcome::Exit(EXIT_FAILURE);
         }
     };
+    // A "Share to OpenNote" launch saves what was shared first, because a second launch exits at the lock below.
+    // Any other launch returns at once.
+    crate::share::receive_launch(&paths);
     let instance = match steps.acquire_instance(&paths, &args) {
         InstanceOutcome::Owner(guard) => guard,
         InstanceOutcome::Forwarded => return EarlyOutcome::Exit(0),

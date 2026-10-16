@@ -1,0 +1,209 @@
+/* The parts of on-device intelligence that came after the first Settings section: models, the vocabulary, background
+   work, the setup step, search by meaning, ask your notes, and writing tools. Tokens only (BRAND.md section 14). */
+@layer components {
+  .stack {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .setupStep {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .setupTitle {
+    margin: 0;
+    font-size: var(--type-display-size);
+    line-height: var(--type-display-line);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .block {
+    display: grid;
+    gap: var(--space-3);
+    margin-block-start: var(--space-4);
+  }
+
+  .heading {
+    margin: 0;
+    font-size: var(--type-caption-size);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--type-caption-line);
+  }
+
+  .label {
+    color: var(--color-text-primary);
+    font-size: var(--type-small-size);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--type-small-line);
+  }
+
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .textarea,
+  .select {
+    box-sizing: border-box;
+    inline-size: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .select {
+    inline-size: auto;
+    min-block-size: var(--target-size);
+    padding-block: 0;
+  }
+
+  .textarea {
+    resize: vertical;
+    font-family: var(--font-mono);
+  }
+
+  .line {
+    margin: 0;
+  }
+
+  .marked {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: var(--type-body-line);
+  }
+
+  .changes,
+  .list {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .changes {
+    padding-inline-start: var(--space-4);
+    list-style: disc;
+  }
+
+  .item {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .itemHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  .meter {
+    inline-size: 100%;
+    block-size: var(--space-2);
+    accent-color: var(--color-accent-primary);
+  }
+
+  .choices {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .quote {
+    margin: 0;
+    padding: var(--space-3);
+    border-inline-start: 3px solid var(--color-border-control);
+    color: var(--color-text-secondary);
+  }
+
+  .added {
+    background: var(--color-accent-primary-subtle);
+    text-decoration: underline;
+  }
+
+  .removed {
+    color: var(--color-text-secondary);
+    text-decoration: line-through;
+  }
+
+  .sheet {
+    position: fixed;
+    inset-block: 3.5rem var(--space-4);
+    inset-inline-end: var(--space-4);
+    z-index: var(--layer-overlay);
+    inline-size: min(22rem, 90vw);
+    overflow: auto;
+    box-sizing: border-box;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-raised);
+    box-shadow: var(--elevation-2);
+  }
+
+  .linkButton {
+    inline-size: 100%;
+    box-sizing: border-box;
+    min-block-size: var(--target-size);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .linkButton:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .unsure {
+    text-decoration: underline wavy;
+    text-underline-offset: 3px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+}
+
+@layer forced {
+  @media (forced-colors: active) {
+    .textarea,
+    .select {
+      border-color: ButtonBorder;
+    }
+
+    .added {
+      background: Highlight;
+      color: HighlightText;
+    }
+  }
+}

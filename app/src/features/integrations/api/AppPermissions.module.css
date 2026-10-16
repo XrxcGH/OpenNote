@@ -1,0 +1,167 @@
+/* Settings, then App permissions, and the questions it asks. Tokens only (BRAND.md section 11). */
+@layer components {
+  .page {
+    display: grid;
+    gap: var(--space-5);
+    max-inline-size: var(--size-reading-measure);
+  }
+
+  .page p,
+  .page ul,
+  .page h2,
+  .page h3 {
+    margin: 0;
+  }
+
+  .help,
+  .meta,
+  .note {
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .note {
+    margin: 0;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .group h2 {
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    list-style: none;
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-raised);
+  }
+
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .head h3 {
+    font-size: var(--type-body-size);
+    font-weight: 600;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    justify-items: start;
+  }
+
+  .field input[type='text'],
+  .field input[type='url'],
+  .field input[type='password'],
+  .field select {
+    min-inline-size: min(100%, 22rem);
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-raised);
+    color: var(--color-text-primary);
+    font: inherit;
+  }
+
+  .fieldset {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .fieldset legend {
+    margin-block-end: var(--space-1);
+    padding: 0;
+  }
+
+  .choice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .notebookList {
+    display: grid;
+    gap: var(--space-1);
+    padding-inline-start: var(--space-5);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .code {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+  }
+
+  .codeText {
+    font-family: var(--font-mono);
+    font-size: var(--type-subtitle-size);
+    letter-spacing: 0.08em;
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+  }
+
+  .table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-small-size);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--space-1) var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .table th {
+    color: var(--color-text-secondary);
+    font-weight: 600;
+  }
+
+  .dialogBody {
+    display: grid;
+    gap: var(--space-4);
+    margin-block: var(--space-3);
+  }
+}
