@@ -155,9 +155,12 @@ export function pdfOf(block: Pick<BlockJson, 'type' | 'data'>): PdfPageData | nu
   return { file, page, pages };
 }
 
-/** A page picture to write on: a locked image from a PDF or a slide. */
+/**
+ * A page picture to write on: an image from a PDF or a slide. The core does not keep the `lock` an import asks for on
+ * a new block, so the PDF or slide marker in `data` is what says it is a page picture; a lock is not required.
+ */
 export function isPagePicture(block: Pick<BlockJson, 'type' | 'data' | 'lock'>): boolean {
-  if (block.type !== 'image' || !block.lock) return false;
+  if (block.type !== 'image') return false;
   return pdfOf(block) !== null || block.data.background === 'slide' || block.data.background === 'pdf';
 }
 

@@ -81,7 +81,8 @@ describe('PDF page data', () => {
     expect(wordsOf(block)).toEqual([[0, 0, 0.1, 0.1, 'ok']]);
     expect(lookOf(block)).toBe('invert');
     expect(lookOf({ data: { look: 'neon' } })).toBe('dim');
-    expect(isPagePicture({ type: 'image', data: { background: 'slide' } })).toBe(false);
+    expect(isPagePicture({ type: 'image', data: { background: 'slide' } })).toBe(true);
+    expect(isPagePicture({ type: 'image', data: { alt: 'x' } })).toBe(false);
     expect(isPagePicture({ type: 'image', lock: 'position', data: { background: 'slide' } })).toBe(true);
     expect(pdfOf({ type: 'text', data: { pdf: { file: 'a', page: 1, pages: 1 } } })).toBeNull();
   });

@@ -52,7 +52,7 @@ export const search = {
       image: 'Images',
       ink: 'Handwriting',
       transcript: 'Recording transcripts',
-      alt: 'Image descriptions',
+      alt: 'Descriptions and text in images',
     },
     saved: 'Saved searches',
     savedPick: 'Choose a saved search',

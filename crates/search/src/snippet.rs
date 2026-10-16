@@ -131,10 +131,17 @@ fn cut(block: &StoredBlock, found: &[Word], terms: &[Term]) -> Snippet {
     let first = matches.first().map_or(0, |(at, _)| *at);
     let start = first.saturating_sub(WORDS_BEFORE);
     let end = (start + WORDS_TOTAL).min(found.len());
-    let (from, to) = match (found.get(start), found.get(end.wrapping_sub(1))) {
+    let (mut from, mut to) = match (found.get(start), found.get(end.wrapping_sub(1))) {
         (Some(a), Some(b)) => (a.range.start, b.range.end),
         _ => (0, 0),
     };
+    // A snippet that reaches the block's start or end keeps the marks there, such as the `]]` that closes a link.
+    if start == 0 && to > 0 {
+        from = 0;
+    }
+    if end == found.len() && to > 0 {
+        to = block.text.trim_end().len().max(to);
+    }
     let lead = if start > 0 { ELLIPSIS } else { "" };
     let tail = if end < found.len() { ELLIPSIS } else { "" };
     let body = block.text[from..to].replace(['\n', '\r', '\t'], " ");

@@ -47,6 +47,8 @@ export interface PageViewport extends PageViewportApi {
   /** Zooms keeping `focus` (a client point) still, as part of `kind`. */
   zoomAt(zoom: number, focus: Point, kind: GestureKind): void;
   scrollTo(x: number, y: number): void;
+  /** Gives back room that a restored place made but the content does not fill: the world is `h` tall again. */
+  trimRoom(h: number): void;
 }
 
 export { shownViewport, usePageViewport } from './shown';
@@ -191,6 +193,14 @@ class Viewport implements PageViewport {
     const x = placeAlong(zoom, { start: target.x, length: target.w }, viewport.scrollLeft, rect.width, center);
     const y = placeAlong(zoom, { start: target.y, length: target.h }, viewport.scrollTop, rect.height, center);
     this.scrollTo(x, y);
+  }
+
+  trimRoom(h: number): void {
+    if (h >= this.content.h) return;
+    this.content = { w: this.content.w, h };
+    this.size = null;
+    this.resize();
+    this.scroll = { x: this.viewport.scrollLeft, y: this.viewport.scrollTop };
   }
 
   setContent(next: { w: number; h: number; floating?: boolean; narrower?: boolean }): void {

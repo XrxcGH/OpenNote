@@ -125,7 +125,26 @@ export function defaultPlacement(mounted: MountedPage): Placement {
   if (below) return { kind: 'point', x: below.x, y: below.y + below.h + KEEP_BELOW };
   const box = mounted.viewport.viewport.getBoundingClientRect();
   const corner = mounted.viewport.toWorld(box.left + 48, box.top + 48);
-  return { kind: 'point', x: Math.max(0, corner.x), y: Math.max(0, corner.y, belowTitle(mounted)) };
+  const x = Math.max(0, corner.x);
+  return { kind: 'point', x, y: clearOfBlocks(mounted, x, Math.max(0, corner.y, belowTitle(mounted))) };
+}
+
+/** The size of a new block's footprint that must not land on a block already there (a file card, a small picture). */
+const FOOTPRINT = { w: 320, h: 96 };
+
+/** `y`, or the first y below the blocks that a block at `x`, `y` would cover, so a new block never hides one. */
+function clearOfBlocks(mounted: MountedPage, x: number, y: number): number {
+  const boxes = mounted.layer
+    .blocks()
+    .map((block) => mounted.layer.view(block.id)?.measure())
+    .filter((box): box is NonNullable<typeof box> => !!box && box.w > 0 && box.h > 0)
+    .sort((a, b) => a.y - b.y);
+  let top = y;
+  for (const box of boxes) {
+    const covers = box.x < x + FOOTPRINT.w && box.x + box.w > x && box.y < top + FOOTPRINT.h && box.y + box.h > top;
+    if (covers) top = box.y + box.h + KEEP_BELOW;
+  }
+  return top;
 }
 
 /** The first world y under the title band, so a new block never covers the page title. */

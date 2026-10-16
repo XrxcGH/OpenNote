@@ -22,7 +22,7 @@ import styles from './block.module.css';
 import { activeNs, recordingIdOf } from './blocks';
 import { holdHint, recordingEntries, recoveryHolds } from './entries';
 import { addFlag, removeFlag } from './flagEdits';
-import { clock, clockNs } from './format';
+import { clock, clockNs, lengthNs } from './format';
 import { Meter } from './Meter';
 import { MoreMenu } from './MoreMenu';
 import { captureNow, openFor, playbackUi, seek, setSkipSilence, setSpeed } from './playback';
@@ -157,14 +157,30 @@ function Transport({ open }: { open: Open }) {
         max={Math.max(total, 1)}
         step={100_000_000}
         value={position}
-        aria-valuetext={t('audio.block.positionText', { position: clockNs(position), total: clockNs(total) })}
+        aria-valuetext={t('audio.block.positionText', { position: clockNs(position), total: lengthNs(total) })}
         onChange={(event) => {
           const to = Number(event.target.value);
           void open.whenOpen(() => seek(to));
         }}
+        onKeyDown={(event) => {
+          // A key moves by seconds, not by the slider's fine step: arrows 5 s, Page Up and Page Down 30 s.
+          const keys: Record<string, number> = {
+            ArrowRight: 5,
+            ArrowUp: 5,
+            ArrowLeft: -5,
+            ArrowDown: -5,
+            PageUp: 30,
+            PageDown: -30,
+          };
+          const seconds = keys[event.key];
+          if (seconds === undefined || event.altKey || event.ctrlKey || event.metaKey) return;
+          event.preventDefault();
+          const to = Math.min(Math.max(position + seconds * 1e9, 0), total);
+          void open.whenOpen(() => seek(to));
+        }}
       />
       <span className={styles.time} aria-hidden="true">
-        {clockNs(position)} / {clockNs(total)}
+        {position >= total ? lengthNs(total) : clockNs(position)} / {lengthNs(total)}
       </span>
     </>
   );

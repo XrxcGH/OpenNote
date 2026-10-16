@@ -17,6 +17,8 @@ export interface Flow {
   setReading(on: boolean): void;
   /** The zoom that fits the widest content, at least the flow column, to the viewport's width. */
   fitWidth(): number;
+  /** The content's size now, in page units. */
+  extent(): { w: number; h: number };
   /** Ruled paper: lays the page out in the paper's rule spacing (see rules.ts), or back to free layout with null. */
   setRules(grid: RuleGrid | null): void;
   /** The rules the page is laid out in, or null on plain paper. */
@@ -91,6 +93,10 @@ export function createFlow(viewport: PageViewport): Flow {
     fitWidth() {
       const { w } = contentExtent(viewport.world, flow);
       return fitWidthZoom(w + flow.offsetLeft, viewport.camera().viewport.w);
+    },
+    extent() {
+      const { w, h } = contentExtent(viewport.world, flow);
+      return { w, h };
     },
     setRules: ruled.set,
     rules: ruled.current,

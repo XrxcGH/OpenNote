@@ -27,6 +27,14 @@ describe('PDF highlights', () => {
     expect(highlightsOf(block)).toHaveLength(1);
   });
 
+  it('does not mark the same words twice', () => {
+    const first = addHighlight({ data: {} }, words, { from: 1, to: 2 }, 'moss');
+    const again = addHighlight({ data: first?.patch ?? {} }, words, { from: 2, to: 1 }, 'dusk');
+    const list = highlightsOf({ data: again?.patch ?? {} });
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ id: first?.highlight.id, color: 'dusk' });
+  });
+
   it('draws one box for each line it covers', () => {
     const lines = linesOf(words, 0, 3);
     expect(lines).toHaveLength(2);

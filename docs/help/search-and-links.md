@@ -11,7 +11,7 @@ Press Ctrl+Shift+F to open the search panel. A word you typed a minute ago is fo
 Text inside pictures is searchable too, after you turn on Search text in pictures. See [on-device intelligence](on-device-intelligence.md).
 
 Press Ctrl+O to jump to a page by name. Press Ctrl+K to search pages and commands together.
-Search leaves out archived pages unless you turn on Include archived. When a match is inside a heading, the result says "In" and the heading. Look in can narrow a search to Recording transcripts or Image descriptions.
+Search leaves out archived pages unless you turn on Include archived. When a match is inside a heading, the result says "In" and the heading. Look in can narrow a search to Recording transcripts or Descriptions and text in images (the words in a picture are searched with its description).
 
 ## Link pages
 

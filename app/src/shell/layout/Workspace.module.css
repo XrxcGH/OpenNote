@@ -112,6 +112,11 @@
       var(--color-surface-sunken);
   }
 
+  /* The linked pages pane (search/backlinks) is a sheet at the window's end: the page leaves room for it. */
+  :global(body[data-linked-pages]) .page {
+    margin-inline-end: calc(min(24rem, 90vw) + var(--space-4));
+  }
+
   :global(:root[data-theme='dark']) .page {
     background:
       /* The last of the sunset, low on the horizon. */

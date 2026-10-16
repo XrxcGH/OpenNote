@@ -6,7 +6,7 @@ import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, Dialog } from '../../../ui';
 import { describeError } from './controller';
-import { bytesText, clockNs } from './format';
+import { bytesText, lengthNs } from './format';
 import styles from './more.module.css';
 import { recordingChoices } from './state';
 import { compressStored, freedBy, removeStoredAudio, scanStorage } from './storage';
@@ -34,7 +34,7 @@ function Row({
           {t('audioMore.storage.where', { notebook: item.notebook, section: item.section })}
         </span>
         <span className={styles.help}>
-          {t('audioMore.storage.row', { length: clockNs(item.durationNs), size: bytesText(item.bytes) })}
+          {t('audioMore.storage.row', { length: lengthNs(item.durationNs), size: bytesText(item.bytes) })}
         </span>
       </div>
       <div className={styles.actions}>

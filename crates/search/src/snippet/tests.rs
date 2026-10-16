@@ -77,3 +77,10 @@ fn highlights_titles() {
     let ranges = highlights("Cell Division notes", &[term(&["divis"], true)]);
     assert_eq!((ranges.len(), ranges[0].clone()), (1, 5..13));
 }
+
+#[test]
+fn a_snippet_to_the_end_keeps_the_closing_marks() {
+    let found = best(&[block(1, "See also [[Alpha plan]]")], &[term(&["alpha", "plan"], false)]).unwrap();
+    assert_eq!(found.text, "See also [[Alpha plan]]");
+    assert_eq!(marked(&found), ["Alpha", "plan"]);
+}

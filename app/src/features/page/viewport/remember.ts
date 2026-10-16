@@ -8,7 +8,7 @@ import { clampZoom, zoomPercent } from './camera';
 import type { PageViewport } from './viewport';
 
 /** Zooms and scrolls to where the page was last shown. Call it before the blocks render. */
-export function restoreView(pageId: string, viewport: PageViewport): void {
+export function restoreView(pageId: string, viewport: PageViewport, content?: () => { h: number }): void {
   const saved = pageView(pageId);
   if (!saved) return;
   const zoom = clampZoom(saved.zoom);
@@ -20,6 +20,17 @@ export function restoreView(pageId: string, viewport: PageViewport): void {
   const w = Math.floor((saved.scrollX + (inside?.clientWidth || seen.w)) / zoom);
   viewport.setContent({ w, h: (saved.scrollY + seen.h) / zoom, floating: false });
   viewport.scrollTo(saved.scrollX, saved.scrollY);
+  // A page that is now shorter than where it was left (its text was cleared, or it was emptied) would open on blank
+  // space below its text. Once it has drawn, the room goes back and the view lands on what is there.
+  if (content && saved.scrollY > 0) {
+    const frames = viewport.sizer.ownerDocument.defaultView;
+    frames?.requestAnimationFrame(() =>
+      frames.requestAnimationFrame(() => {
+        const h = content().h;
+        if (saved.scrollY / zoom > h) viewport.trimRoom(h);
+      }),
+    );
+  }
 }
 
 /** Saves the page's place whenever the camera settles. Returns a function that stops. */

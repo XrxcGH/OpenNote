@@ -16,6 +16,7 @@ export function isLinkedPagesOpen(): boolean {
 export function closeLinkedPages(): void {
   root?.unmount();
   host?.remove();
+  delete document.body.dataset.linkedPages;
   root = null;
   host = null;
   if (opener?.isConnected) opener.focus();
@@ -32,6 +33,8 @@ export function toggleLinkedPages(): void {
   host = document.body.appendChild(document.createElement('div'));
   host.className = styles.sheet;
   host.dataset.region = 'linked-pages';
+  // The page makes room beside the pane, so its text stays in view and clickable.
+  document.body.dataset.linkedPages = '';
   root = createRoot(host);
   root.render(<LinkedPages onClose={closeLinkedPages} />);
 }

@@ -15,7 +15,7 @@ import { shownPage as shownOpenPage } from '../history/shown';
 import { playerStamp } from '../media/playhead';
 import { shownLayer } from '../mount';
 import { activeNs, insertRecordingBlock, removeBlock, writeEntry } from './blocks';
-import { clock } from './format';
+import { clock, lengthClock } from './format';
 import { IDLE, recordingChoices, recordingUi } from './state';
 
 /** The one host clock of the window: it learns the offset to the capture clock once and keeps it. */
@@ -243,7 +243,7 @@ export async function stopRecording(reason?: StopReason): Promise<void> {
     void import('./transcripts/auto').then((auto) =>
       auto.recordingSaved({ page: active.page, block: active.block, entry }),
     );
-    const time = clock(activeNs(entry) / 1e6);
+    const time = lengthClock(activeNs(entry) / 1e6);
     const message = stoppedMessage(reason, time);
     if (reason) showToast({ message, tone: 'danger' });
     else announce(message);

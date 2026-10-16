@@ -42,8 +42,12 @@
   }
 
   .canvas {
+    /* A fixed height that does not shrink: a replaced SVG in a column of the dialog kept its box taller than the
+       space it was given, so the Connections heading drew over it. */
+    display: block;
+    flex: none;
     inline-size: 100%;
-    max-block-size: 45vh;
+    block-size: min(45vh, 28rem);
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-md);
     background: var(--color-surface-sunken);

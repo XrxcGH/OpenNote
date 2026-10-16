@@ -22,6 +22,8 @@ import type { ConnectInput, ConnectorErrorCode, ConnectorInfo } from './types';
 
 export interface ConnectorCardProps {
   info: ConnectorInfo;
+  /** The card is alone in a group of the same name, so it is the heading itself. */
+  alone?: boolean;
   /** Work offline is on, so Connect and Reconnect wait. */
   offline: boolean;
   /** The element that says why, linked from the waiting buttons. */
@@ -177,6 +179,8 @@ function Details({ info }: { info: ConnectorInfo }) {
 export function ConnectorCard(props: ConnectorCardProps) {
   const { info, offline, offlineNoticeId, error, onConnect, onCancel, onDisconnect, onSetup, onOpenFolder } = props;
   const { onSaveClient } = props;
+  // A card that is alone in a group named the same is the group's own heading: no second heading above it.
+  const Title = props.alone ? 'h2' : 'h3';
   const headingId = useId();
   const formId = useId();
   const errorId = useId();
@@ -200,9 +204,9 @@ export function ConnectorCard(props: ConnectorCardProps) {
     <li>
       <article className={styles.card} aria-labelledby={headingId}>
         <div className={styles.head}>
-          <h3 id={headingId} translate="no">
+          <Title id={headingId} translate="no">
             {info.name}
-          </h3>
+          </Title>
           <p className={styles.state} data-tone={state.tone}>
             {state.text}
           </p>

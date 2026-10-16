@@ -10,13 +10,13 @@ import type { InnerView } from '../tables/lazyView';
 import { activeNs, dataOf } from './blocks';
 import { adoptPage, recordingEntries } from './entries';
 import styles from './block.module.css';
-import { clock } from './format';
+import { lengthClock } from './format';
 import { RecordingBlockView } from './RecordingBlock';
 
 function labelOf(block: BlockJson): string {
   const data = dataOf(block);
   return data && data.entry.state !== 'recording'
-    ? t('audio.block.label', { time: clock(activeNs(data.entry) / 1e6) })
+    ? t('audio.block.label', { time: lengthClock(activeNs(data.entry) / 1e6) })
     : t('audio.block.labelWhile');
 }
 
