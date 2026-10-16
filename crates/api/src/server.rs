@@ -162,14 +162,39 @@ fn serve<S: Read + Write + Send + 'static>(
         );
         return;
     }
-    let (api, active) = (api.clone(), active.clone());
-    let spawned = thread::Builder::new()
-        .name("opennote-api-request".into())
-        .spawn(move || {
-            answer(&api, &mut stream, transport);
-            active.fetch_sub(1, Ordering::SeqCst);
-        });
-    if spawned.is_err() {
+    let api = api.clone();
+    let job = move || answer(&api, &mut stream, transport);
+    run_counted(active, job, |work| {
+        thread::Builder::new()
+            .name("opennote-api-request".into())
+            .spawn(work)
+            .map(drop)
+    });
+}
+
+/// Gives back one connection slot when dropped, whether the work ran or never started.
+struct Slot(Arc<AtomicUsize>);
+
+impl Drop for Slot {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+/// Runs `job` through `spawn` holding the slot already counted in `active`. A failed spawn drops the job, and the
+/// slot with it, so the count never leaks.
+fn run_counted(
+    active: &Arc<AtomicUsize>,
+    job: impl FnOnce() + Send + 'static,
+    spawn: impl FnOnce(Box<dyn FnOnce() + Send>) -> io::Result<()>,
+) {
+    let slot = Slot(active.clone());
+    if spawn(Box::new(move || {
+        let _slot = slot;
+        job();
+    }))
+    .is_err()
+    {
         log::warn!("The local API couldn't start a thread for a request.");
     }
 }
@@ -419,4 +444,26 @@ pub fn connect_tcp(port: u16) -> io::Result<TcpStream> {
     stream.set_read_timeout(Some(Duration::from_secs(180)))?;
     stream.set_write_timeout(Some(READ_TIMEOUT))?;
     Ok(stream)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_failed_spawn_gives_its_slot_back() {
+        let active = Arc::new(AtomicUsize::new(1));
+        run_counted(&active, || {}, |_work| Err(io::Error::other("no threads")));
+        assert_eq!(active.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn a_finished_job_gives_its_slot_back() {
+        let active = Arc::new(AtomicUsize::new(1));
+        run_counted(&active, || {}, |work| {
+            work();
+            Ok(())
+        });
+        assert_eq!(active.load(Ordering::SeqCst), 0);
+    }
 }
