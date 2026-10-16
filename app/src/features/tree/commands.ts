@@ -22,9 +22,9 @@ import { treeStore } from './store';
 import { redo, undo } from './undo';
 
 /**
- * With focus on nothing, as after an undo removed the focused block or Convert to table replaced the lasso's strokes,
- * Ctrl+Z and Ctrl+Y belong to the page shown, when there is one: they never undo a tree change such as the page's own
- * creation behind the person's back (Beta 5 walk W2-4, W2-5). The page's command says whether it can take them.
+ * Focus falls to nothing after an undo removes the focused block, or after Convert to table replaces the lasso's
+ * strokes. Ctrl+Z and Ctrl+Y then belong to the page shown, when there is one. They never undo a tree change, such as
+ * the page's own creation, behind the person's back (Beta 5 walk W2-4, W2-5). The page's command says if it can.
  */
 async function toShownPage(id: 'page.undo' | 'page.redo', ctx: CommandContext): Promise<boolean> {
   const focused = typeof document === 'undefined' ? null : document.activeElement;

@@ -1,6 +1,7 @@
 // Tidies a tree without changing its value: folds sums, products, and powers of plain numbers, drops 0 and 1 where
-// they do nothing, moves signs outward, and collects like terms, so 2x + 3x + x is 6x. Like a computer algebra system, it takes names to stand for ordinary
-// numbers, so x*0 is 0 and x/x is 1. Division only folds when the quotient is whole, so 1/3 stays 1/3.
+// they do nothing, moves signs outward, and collects like terms, so 2x + 3x + x is 6x. Like a computer algebra system,
+// it takes names to stand for ordinary numbers, so x*0 is 0 and x/x is 1. Division only folds when the quotient is
+// whole, so 1/3 stays 1/3.
 
 import type { Node } from './ast';
 import { binary, mul, neg, num } from './build';
