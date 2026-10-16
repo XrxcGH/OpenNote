@@ -11,7 +11,7 @@ describe('excerpt', () => {
 
   it('cuts context before and after a match between words', () => {
     const text = 'one two three four five six seven';
-    expect(after(text, 9, 12)).toBe('three four\u2026');
+    expect(after(text, 8, 12)).toBe('three four\u2026');
     expect(before(text, 19, 9)).toBe('\u2026four ');
     expect(after(text, 28, 12)).toBe('seven');
     expect(before(text, 3, 9)).toBe('one');
