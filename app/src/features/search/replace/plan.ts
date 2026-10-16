@@ -2,6 +2,7 @@
 // after each match is replaced or left alone. Text blocks, table cells, and the descriptions of pictures and
 // drawings are changed. Nothing here writes; apply.ts does that from the matches the person kept.
 import type { BlockJson, PageJson } from '../../../services/pages/types';
+import { after as contextAfter, before as contextBefore } from '../../../core/excerpt';
 
 export interface ReplaceOptions {
   matchCase: boolean;
@@ -95,9 +96,9 @@ export function planPage(page: PageJson, find: string, options: ReplaceOptions):
           field,
           start,
           end,
-          before: text.slice(Math.max(0, start - CONTEXT), start),
+          before: contextBefore(text, start, CONTEXT),
           found: text.slice(start, end),
-          after: text.slice(end, end + CONTEXT),
+          after: contextAfter(text, end, CONTEXT),
         });
       }
     }

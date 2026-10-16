@@ -1,6 +1,7 @@
 // Ask your notes: a question box, the answer, and the pages and paragraphs it used as links. The answer can be wrong,
 // and the links are the check, so the screen says so and puts them beside the answer.
 import { useEffect, useId, useState } from 'react';
+import { excerpt } from '../../../core/excerpt';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, Dialog, TextField } from '../../../ui';
@@ -75,7 +76,7 @@ function Ask({ onClose }: { onClose(): void }) {
                     >
                       {`[${index + 1}] ${source.title || t('intelPlus.meaning.untitled')}`}
                     </Button>
-                    <blockquote className={styles.quote}>{source.text.slice(0, 220)}</blockquote>
+                    <blockquote className={styles.quote}>{excerpt(source.text, 220)}</blockquote>
                   </li>
                 ))}
               </ol>
