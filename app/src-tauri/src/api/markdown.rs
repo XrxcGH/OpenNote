@@ -23,6 +23,7 @@ fn block_markdown(block: &Value) -> Option<String> {
             None => "*[Picture]*".to_owned(),
         },
         "file" => "*[Attached file]*".to_owned(),
+        "table" => table_markdown(data)?,
         "ink" => {
             let strokes = data["strokeCount"].as_u64().unwrap_or(0);
             if strokes == 0 {
@@ -37,6 +38,42 @@ fn block_markdown(block: &Value) -> Option<String> {
     };
     let text = text.trim_end().to_owned();
     (!text.trim().is_empty()).then_some(text)
+}
+
+/// A table as a Markdown pipe table, so a reader through the API sees its cells. Without a header row, the
+/// table gets an empty one, because a pipe table needs one. `None` when it has no cells.
+fn table_markdown(data: &Value) -> Option<String> {
+    let columns: Vec<&str> = data["columns"]
+        .as_array()?
+        .iter()
+        .filter_map(|column| column["id"].as_str())
+        .collect();
+    let rows: Vec<Vec<String>> = data["rows"]
+        .as_array()?
+        .iter()
+        .map(|row| {
+            columns
+                .iter()
+                .map(|column| {
+                    let text = row["cells"][column]["markdown"].as_str().unwrap_or("");
+                    text.trim().replace('|', r"\|").replace("\r\n", "\n").replace('\n', "<br>")
+                })
+                .collect()
+        })
+        .collect();
+    if columns.is_empty() || rows.is_empty() {
+        return None;
+    }
+    let line = |cells: &[String]| format!("| {} |", cells.join(" | "));
+    let mut rows = rows.into_iter();
+    let header = if data["header"] == true {
+        rows.next().unwrap_or_default()
+    } else {
+        vec![String::new(); columns.len()]
+    };
+    let mut lines = vec![line(&header), line(&vec!["---".to_owned(); columns.len()])];
+    lines.extend(rows.map(|row| line(&row)));
+    Some(lines.join("\n"))
 }
 
 /// The page's title as a heading, then its blocks.
@@ -88,6 +125,29 @@ mod tests {
         );
         assert_eq!(last_block(&page).as_deref(), Some("b5"));
         assert_eq!(tags(&page), ["biology"]);
+    }
+
+    #[test]
+    fn tables_come_out_as_pipe_tables() {
+        let cell = |text: &str| json!({ "markdown": text });
+        let page = json!({ "blocks": [{ "id": "t", "type": "table", "order": "a0", "data": {
+            "header": true,
+            "columns": [{ "id": "c1" }, { "id": "c2" }],
+            "rows": [
+                { "id": "r1", "cells": { "c1": cell("Item"), "c2": cell("Cost") } },
+                { "id": "r2", "cells": { "c1": cell("Pens | ink"), "c2": cell("4") } },
+                { "id": "r3", "cells": { "c1": cell("Paper") } },
+            ],
+        } }] });
+        assert_eq!(
+            page_markdown("Budget", &page),
+            "# Budget\n\n| Item | Cost |\n| --- | --- |\n| Pens \\| ink | 4 |\n| Paper |  |"
+        );
+        let plain = json!({ "blocks": [{ "id": "t", "type": "table", "order": "a0", "data": {
+            "columns": [{ "id": "c1" }],
+            "rows": [{ "id": "r1", "cells": { "c1": cell("a") } }],
+        } }] });
+        assert_eq!(page_markdown("T", &plain), "# T\n\n|  |\n| --- |\n| a |");
     }
 
     #[test]
