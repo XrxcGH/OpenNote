@@ -41,7 +41,9 @@ function LiveBar() {
       <div className={styles.liveTop}>
         <span className={audioStyles.dot} data-live={!paused} aria-hidden="true" />
         <strong className={styles.time}>{clock(ui.elapsedMs)}</strong>
-        <span className={styles.source}>{ui.source}</span>
+        <span className={styles.source} translate="no">
+          {ui.source}
+        </span>
         <span className={styles.spacer} />
         <IconButton
           label={t(paused ? 'audio.commands.resume' : 'audio.commands.pause')}

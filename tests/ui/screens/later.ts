@@ -249,10 +249,11 @@ export default defineScreens([
       const indicator = page.getByTestId('recording-indicator');
       await indicator.waitFor();
       await indicator.click();
+      // The popover's own Pause, so the popover stays open whether or not the ribbon has its Pause yet.
       await page
+        .getByRole('dialog')
         .getByRole('button', { name: n('Pause') })
-        .first()
-        .click({ force: true });
+        .click();
       // A small window shows the indicator as a dot with no words, so the popover's Resume says it is paused.
       await page
         .getByRole('button', { name: n('Resume') })

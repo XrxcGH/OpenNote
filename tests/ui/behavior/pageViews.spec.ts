@@ -22,7 +22,7 @@ async function fromBar(page: Page, name: string) {
     return;
   }
   await toolbar(page).getByRole('button', { name: 'More' }).click();
-  await page.getByRole('menuitem', { name }).click();
+  await page.getByRole('menuitemcheckbox', { name }).or(page.getByRole('menuitem', { name })).click();
 }
 
 test('pages with breaks show the sheets, and the infinite canvas takes them away', async ({ page }) => {
@@ -56,6 +56,8 @@ test('the paper menu changes the paper and the sheet count follows', async ({ pa
 
 test('the background menu picks lined, grid, and dot paper', async ({ page }) => {
   await openSamplerPage(page);
+  // The free canvas has no paper, so the background menu is off until the page has its sheets.
+  await fromBar(page, 'Document flow');
   await toolbar(page).getByRole('button', { name: 'Background' }).click();
   await expect(page.getByRole('menuitemradio', { name: 'Plain' })).toBeVisible();
   await page.getByRole('menuitemradio', { name: 'Lined, college' }).click();

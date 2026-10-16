@@ -93,7 +93,7 @@ test('writes, formats, pastes, inserts, and undoes on a page', async ({ page }) 
   await page.getByRole('textbox', { name: 'Text' }).last().click();
   await keyboard.press('Control+End');
   await slash(page, 'table');
-  const table = page.getByRole('group', { name: 'Table', exact: true });
+  const table = page.getByRole('group', { name: /^Table(:|$)/ });
   await expect(table).toBeVisible();
   await keyboard.type('Head');
   await expect.poll(async () => JSON.stringify(await held(page))).toContain('table');

@@ -25,6 +25,10 @@ export default defineScreens([
     prepare: async (page) => {
       await page.getByRole('button', { name: 'Get started' }).click();
       await page.getByRole('heading', { level: 1, name: 'Choose your look' }).waitFor();
+      // The step moves focus to its first card after it mounts, and whether the ring shows depends on timing. Wait
+      // for the focus, then click the heading, so the picture never has the ring.
+      await page.waitForFunction(() => document.activeElement?.closest('form') !== null);
+      await page.getByRole('heading', { level: 1, name: 'Choose your look' }).click();
     },
   },
   {

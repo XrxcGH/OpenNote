@@ -47,10 +47,14 @@ function ModelRow(props: { model: ModelInfo; selected?: boolean; onSelect?: (id:
   return (
     <li className={styles.item} aria-labelledby={nameId}>
       <div className={styles.itemHead}>
-        <strong id={nameId}>{model.name}</strong>
+        <strong id={nameId} translate="no">
+          {model.name}
+        </strong>
         <span>{t('intelPlus.models.sizeOf', { size })}</span>
       </div>
-      <p className={styles.help}>{model.detail}</p>
+      <p className={styles.help} translate="no">
+        {model.detail}
+      </p>
       {(busy || model.state === 'partial') && (
         <progress
           className={styles.meter}

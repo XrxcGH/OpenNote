@@ -2,7 +2,7 @@
 // in OneDrive or Dropbox"): what it means, and for OneDrive the offer to always keep the folder on this device.
 // Setup shows it for the folder just chosen, and Settings for the folder in use.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { shellCall } from '../../platform/shellqol';
 import { t } from '../../strings/t';
 import { Button, showToast } from '../../ui';
@@ -34,6 +34,7 @@ export function useCloud(folder: string): CloudInfo | null {
 
 export function CloudNotice({ folder, info }: { folder: string; info: CloudInfo }) {
   const [pinned, setPinned] = useState(false);
+  const headingId = useId();
   const keep = async () => {
     try {
       const answer = await shellCall<{ ok: boolean } | null>('cloud.keepOnDevice', { path: folder });
@@ -44,8 +45,8 @@ export function CloudNotice({ folder, info }: { folder: string; info: CloudInfo 
     showToast({ message: t('qol.cloud.keepFailed'), tone: 'danger' });
   };
   return (
-    <section className={styles.block} aria-labelledby="cloud-notice">
-      <h2 id="cloud-notice">{t('qol.cloud.title', { service: info.name })}</h2>
+    <section className={styles.block} aria-labelledby={headingId}>
+      <h2 id={headingId}>{t('qol.cloud.title', { service: info.name })}</h2>
       <p>{t('qol.cloud.explain', { service: info.name })}</p>
       <p className={styles.help}>{t('qol.cloud.conflicts', { service: info.name })}</p>
       {info.canPin ? (

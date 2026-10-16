@@ -83,6 +83,9 @@ export default defineScreens([
     sizes: ['wide'],
     prepare: async (page) => {
       await openLectures(page);
+      // Whether the page tabs show afterward depends on whether the page's command chunks had loaded before the page
+      // went to the Trash, so wait for them first.
+      await page.locator('html[data-page-commands]').waitFor({ state: 'attached' });
       await tree(page, 'Pages').getByRole('treeitem', { name: 'Mitosis' }).focus();
       await page.keyboard.press('Delete');
       await page.getByRole('button', { name: 'Trash' }).click();

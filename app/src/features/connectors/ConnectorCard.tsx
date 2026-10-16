@@ -200,7 +200,9 @@ export function ConnectorCard(props: ConnectorCardProps) {
     <li>
       <article className={styles.card} aria-labelledby={headingId}>
         <div className={styles.head}>
-          <h3 id={headingId}>{info.name}</h3>
+          <h3 id={headingId} translate="no">
+            {info.name}
+          </h3>
           <p className={styles.state} data-tone={state.tone}>
             {state.text}
           </p>
