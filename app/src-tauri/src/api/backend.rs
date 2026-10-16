@@ -559,7 +559,7 @@ impl Backend for CoreBackend {
         })
     }
 
-    fn search(&self, text: &str, limit: usize) -> Result<Vec<SearchHit>, BackendError> {
+    fn search(&self, text: &str, notebooks: Option<&[String]>, limit: usize) -> Result<Vec<SearchHit>, BackendError> {
         #[allow(irrefutable_let_patterns)] // the test notes are a second kind in test builds only
         let Notes::App(app) = &self.notes
         else {
@@ -567,7 +567,10 @@ impl Backend for CoreBackend {
         };
         let bridge = app.state::<CoreBridge>();
         let found = bridge
-            .search_query(json!({ "text": text, "limit": limit.min(100) }))
+            .search_query(match notebooks {
+                Some(ids) => json!({ "text": text, "notebooks": ids, "limit": limit.min(100) }),
+                None => json!({ "text": text, "limit": limit.min(100) }),
+            })
             .map_err(from_ipc)?;
         let trees = self.run(|bridge| Ok(Self::trees(bridge)))?;
         let hits = found["hits"].as_array().cloned().unwrap_or_default();

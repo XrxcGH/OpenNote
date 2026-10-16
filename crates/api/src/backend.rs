@@ -183,7 +183,9 @@ pub trait Backend: Send + Sync {
     fn append_daily(&self, markdown: &str, author: &str) -> Result<PageInfo, BackendError>;
     /// The daily note's page, without making it: where [`Backend::append_daily`] would write.
     fn daily_target(&self) -> Result<Location, BackendError>;
-    fn search(&self, text: &str, limit: usize) -> Result<Vec<SearchHit>, BackendError>;
+    /// Pages that match `text`, best first. `notebooks` limits the search to those notebooks (`None` is every
+    /// notebook), so a grant's limit counts only hits it may see.
+    fn search(&self, text: &str, notebooks: Option<&[String]>, limit: usize) -> Result<Vec<SearchHit>, BackendError>;
     /// Runs a backup to the folder the person chose in Settings, and says where it went.
     fn backup(&self) -> Result<String, BackendError>;
 

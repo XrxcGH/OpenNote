@@ -300,11 +300,12 @@ impl Backend for MemoryBackend {
         self.locate("s-meet")
     }
 
-    fn search(&self, text: &str, limit: usize) -> Result<Vec<SearchHit>, BackendError> {
+    fn search(&self, text: &str, notebooks: Option<&[String]>, limit: usize) -> Result<Vec<SearchHit>, BackendError> {
         let needle = text.to_lowercase();
         // Like the real index, it finds text in a locked section too; the API must leave those hits out.
         Ok(lock(&self.pages)
             .iter()
+            .filter(|page| notebooks.is_none_or(|ids| ids.contains(&page.info.notebook_id)))
             .filter(|page| {
                 page.markdown.to_lowercase().contains(&needle) || page.info.title.to_lowercase().contains(&needle)
             })

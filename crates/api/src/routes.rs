@@ -681,7 +681,17 @@ impl Caller<'_> {
             .and_then(|limit| limit.parse::<usize>().ok())
             .unwrap_or(20)
             .clamp(1, MAX_SEARCH);
-        let hits = self.api.backend.search(text, limit * 3).map_err(backend_refusal)?;
+        // The search itself keeps to the grant's notebooks, so hits elsewhere don't use up the limit. Locked
+        // sections are still left out below, and fetching a few extra keeps the limit full despite them.
+        let notebooks = match &self.grant.notebooks {
+            Scope::All => None,
+            Scope::Notebooks(ids) => Some(ids.as_slice()),
+        };
+        let hits = if notebooks.is_some_and(<[String]>::is_empty) {
+            Vec::new()
+        } else {
+            self.api.backend.search(text, notebooks, limit * 3).map_err(backend_refusal)?
+        };
         let mut locked: HashMap<String, bool> = HashMap::new();
         let mut mine = Vec::new();
         for hit in hits {
