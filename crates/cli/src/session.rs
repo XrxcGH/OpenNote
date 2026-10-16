@@ -51,11 +51,12 @@ impl Env {
             Some(pipe) if cfg!(windows) && pipe_name_ok(&pipe) => Endpoint::Pipe(pipe),
             _ => Endpoint::Tcp(found.port),
         });
-        // The credential store's copy first, then the per-instance key file beside the discovery file.
-        let proof_key = secrets
-            .get(PROOF_TARGET)
-            .and_then(|hex| from_hex(&hex))
-            .or_else(|| folder.and_then(|folder| read_key_file(&folder.join(KEY_FILE))));
+        // The per-instance key file beside the discovery file first: it belongs to the listener that file names.
+        // The credential store holds one copy per Windows user, which the last OpenNote profile to start wrote,
+        // so with two profiles open it may be another listener's.
+        let proof_key = folder
+            .and_then(|folder| read_key_file(&folder.join(KEY_FILE)))
+            .or_else(|| secrets.get(PROOF_TARGET).and_then(|hex| from_hex(&hex)));
         Env {
             endpoint,
             proof_key,
