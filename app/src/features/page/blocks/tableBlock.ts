@@ -12,7 +12,7 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { commandContext } from '../../../commands/registry';
 import { menuItemsFor } from '../../../commands/menus';
-import { applyTableOp, cellAt, cellTextPos } from '../../../editor/commands/tables';
+import { applyTableOp, cellAt, cellTextPos, fitAddedColumn } from '../../../editor/commands/tables';
 import type { CellAt, TableChange, TableOp } from '../../../editor/commands/tables';
 import { createBlockEditor } from '../../../editor/extensions/kit';
 import { META_REMOTE } from '../../../editor/meta';
@@ -191,8 +191,12 @@ class TableView implements InnerView {
 
   private async run(op: TableOp): Promise<boolean> {
     if (this.sync) await this.sync.flush('command');
-    const change = applyTableOp(this.latest(), this.caretCell(), op);
-    if (!change) return false;
+    const before = this.latest();
+    const applied = applyTableOp(before, this.caretCell(), op);
+    if (!applied) return false;
+    const adds = op.op === 'columnLeft' || op.op === 'columnRight';
+    // The scroller is the page's width; its border takes a pixel on each side.
+    const change = adds ? fitAddedColumn(before, applied, this.scroller.clientWidth - 2) : applied;
     this.show(change.data, change.caret);
     this.editor?.commands.focus();
     this.ctx.host.announce(announcement(op, change));
