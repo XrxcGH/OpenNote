@@ -10,7 +10,8 @@ import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import type { InkHost } from './host';
+import { followView } from './host';
+import type { InkHost, InkQueue } from './host';
 import type { InkStroke } from '../model/types';
 import type { InkSurface } from './surface';
 
@@ -209,7 +210,7 @@ export const activeLayer = createStore<string>(BASE_LAYER, 'ink active layer');
 
 let adopted: { page: string; stop: () => void } | null = null;
 
-function adopt(page: OpenPage | null): void {
+function adopt(page: OpenPage | null, queue: InkQueue | null): void {
   if (adopted && adopted.page === page?.id) return;
   adopted?.stop();
   adopted = null;
@@ -217,9 +218,7 @@ function adopt(page: OpenPage | null): void {
   activeLayer.set(BASE_LAYER);
   if (!page) return;
   inkLayers.set(layersOf(page.initial.view));
-  const stop = page.onFrame((frame) => {
-    if (frame.page?.view) inkLayers.set(layersOf(frame.page.view));
-  });
+  const stop = followView(page, queue, (view) => inkLayers.set(layersOf(view)));
   adopted = { page: page.id, stop };
 }
 
@@ -259,12 +258,12 @@ export function installLayers(
   host: InkHost,
   surfaces: { get(): InkSurface | null; subscribe(l: () => void): () => void },
 ): () => void {
-  adopt(host.page.get());
+  adopt(host.page.get(), host.queue.get());
   const reapply = () => apply(surfaces.get());
   reapply();
   const stops = [
     host.page.subscribe(() => {
-      adopt(host.page.get());
+      adopt(host.page.get(), host.queue.get());
       reapply();
     }),
     surfaces.subscribe(reapply),

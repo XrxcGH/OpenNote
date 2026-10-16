@@ -8,7 +8,8 @@ import type { Edit, OpenPage } from '../../../services/pages/types';
 import { createStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import type { InkHost, InkSelection } from './host';
+import { followView } from './host';
+import type { InkHost, InkQueue, InkSelection } from './host';
 import type { InkSurface } from './surface';
 
 export type LinkTarget =
@@ -134,23 +135,21 @@ export const inkLinks = createStore<InkLinks>(new Map(), 'ink links');
 
 let adopted: { page: string; stop: () => void } | null = null;
 
-function adopt(page: OpenPage | null): void {
+function adopt(page: OpenPage | null, queue: InkQueue | null): void {
   if (adopted && adopted.page === page?.id) return;
   adopted?.stop();
   adopted = null;
   inkLinks.set(new Map());
   if (!page) return;
   inkLinks.set(linksOf(page.initial.view));
-  const stop = page.onFrame((frame) => {
-    if (frame.page?.view) inkLinks.set(linksOf(frame.page.view));
-  });
+  const stop = followView(page, queue, (view) => inkLinks.set(linksOf(view)));
   adopted = { page: page.id, stop };
 }
 
 /** Follows the shown page's links, including through an undo. */
 export function installInkLinks(host: InkHost): () => void {
-  adopt(host.page.get());
-  const stopPage = host.page.subscribe(() => adopt(host.page.get()));
+  adopt(host.page.get(), host.queue.get());
+  const stopPage = host.page.subscribe(() => adopt(host.page.get(), host.queue.get()));
   return () => {
     stopPage();
     adopted?.stop();
