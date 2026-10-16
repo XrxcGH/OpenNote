@@ -41,7 +41,5 @@ test('turns a rough rectangle into an exact one with Ink to shape, and keeps it 
   // Off turns every kind of snapping off, so the next rectangle keeps every point the pen drew.
   await press(page, 'Ink to shape', false);
   await draw(page, roughRectangle(400));
-  await expect
-    .poll(async () => (await heldStrokes(page)).map((s) => s.points > 5).sort())
-    .toEqual([false, true]);
+  await expect.poll(async () => (await heldStrokes(page)).map((s) => s.points > 5).sort()).toEqual([false, true]);
 });

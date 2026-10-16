@@ -133,8 +133,7 @@ export function installInk(host: InkHost): () => void {
       // One switch for every way ink becomes a shape: snapping on lift and snapping on a held pen. Off means freehand.
       checked: () => shapesOn(),
       // Turning it back on restores the default, hold to snap; snapping every stroke on lift stays a setting.
-      run: () =>
-        updateSettings({ ink: { shapes: shapesOn() ? { inkToShape: false, hold: false } : { hold: true } } }),
+      run: () => updateSettings({ ink: { shapes: shapesOn() ? { inkToShape: false, hold: false } : { hold: true } } }),
     },
   ];
   for (const def of defs) stops.push(commands.register(def));
