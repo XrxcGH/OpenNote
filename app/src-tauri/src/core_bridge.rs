@@ -645,13 +645,15 @@ impl CoreBridge {
 
     /// [`CoreBridge::shutdown`], waiting at most `timeout` for a command that holds the core. A command that
     /// never returns must not keep the window open with nothing to show for it: the exit goes on without the
-    /// final save, and the journals keep every edit for the next start (spec 20).
+    /// final save, and the journals keep every edit for the next start (spec 20), except those of pages in unlocked
+    /// protected sections, whose journals live only in memory (ADR 0042).
     pub fn shutdown_within(&self, timeout: Duration) {
         *self.relay.trees.lock().unwrap_or_else(PoisonError::into_inner) = None;
         let Some(state) = self.take_core_within(timeout) else {
             ::log::error!(
                 "The core is still busy at exit ({}), so OpenNote exits without a final save. \
-                 The journals keep the edits for the next start.",
+                 The journals keep the edits for the next start, except the unsaved edits of pages in \
+                 unlocked protected sections, whose journals are only in memory and are lost (ADR 0042).",
                 self.holder()
             );
             return;

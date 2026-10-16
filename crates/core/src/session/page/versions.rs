@@ -65,6 +65,10 @@ impl PageSession {
             let page = notebook.add_page_copy(self.id, version)?;
             return Ok(RestoreResult::Copied { page });
         }
+        // A locked entry keeps its content; only a copy of an older version may come back (ADR 0041).
+        if crate::ops::resolve::entry_lock::is_locked(&self.state().page) {
+            return Err(CoreError::Edit(EditError::ReadOnly(ReadOnlyReason::LockedEntry)));
+        }
         let revision = self.replace_content(version, VersionReason::BeforeRestore)?;
         Ok(RestoreResult::Restored { revision })
     }

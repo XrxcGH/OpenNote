@@ -43,6 +43,29 @@ impl AppendFile for MemAppend {
     }
 }
 
+impl SealedFs {
+    /// Writes a whole journal file in memory, as the journal thread does when it starts a generation. Memory is
+    /// as durable as the journal of a protected page gets (ADR 0042).
+    fn write_journal(&self, path: &Path, bytes: &[u8], create_new: bool) -> Result<Committed, FsError> {
+        let mut journals = self.journals();
+        if create_new && journals.contains_key(path) {
+            return Err(fs_error(FsErrorKind::AlreadyExists, path));
+        }
+        let file = journals.entry(path.to_path_buf()).or_default();
+        let mut held = file.bytes();
+        held.clear();
+        held.extend_from_slice(bytes);
+        Ok(Committed {
+            durability: Durability::Confirmed,
+            stamp: FileStamp {
+                len: u64::try_from(bytes.len()).unwrap_or(u64::MAX),
+                modified: 0,
+                file_id: 0,
+            },
+        })
+    }
+}
+
 /// Where a path goes.
 pub(super) enum Route {
     /// The real file system.
@@ -216,7 +239,7 @@ impl Fs for SealedFs {
         match self.route(path) {
             Route::Disk => self.inner.replace_durable(path, bytes),
             Route::Section(s, rel) => s.write(self.inner.as_ref(), &rel, bytes, false),
-            Route::Journal => Err(fs_error(FsErrorKind::Unsupported, path)),
+            Route::Journal => self.write_journal(path, bytes, false),
         }
     }
 
@@ -224,7 +247,7 @@ impl Fs for SealedFs {
         match self.route(path) {
             Route::Disk => self.inner.create_durable(path, bytes),
             Route::Section(s, rel) => s.write(self.inner.as_ref(), &rel, bytes, true),
-            Route::Journal => Err(fs_error(FsErrorKind::Unsupported, path)),
+            Route::Journal => self.write_journal(path, bytes, true),
         }
     }
 

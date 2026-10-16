@@ -101,6 +101,25 @@ function NameForm({ page, version, onDone }: { page: OpenPage; version: VersionI
   );
 }
 
+/** Whether the current page is a locked entry, which takes an older version only as a copy (ADR 0041). */
+function useLockedEntry(page: OpenPage, current: string): boolean {
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void page.history
+      .open(current)
+      .then((json) => {
+        const lock = (json.view as { entryLock?: unknown } | undefined)?.entryLock;
+        if (live) setLocked(typeof lock === 'object' && lock !== null);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [page, current]);
+  return locked;
+}
+
 function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string; onBack(): void; onChanged(): void }) {
   const { page, versions, older, onBack, onChanged } = props;
   const [newer, setNewer] = useState(versions[0].revision);
@@ -108,6 +127,7 @@ function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string
   const key = `${older} ${newer}`;
   const diff = result?.key === key ? result.diff : null;
   const [naming, setNaming] = useState(false);
+  const locked = useLockedEntry(page, versions[0].revision);
   useEffect(() => {
     let current = true;
     void Promise.all([page.history.open(older), page.history.open(newer)])
@@ -152,9 +172,11 @@ function Compare(props: { page: OpenPage; versions: VersionInfo[]; older: string
         </select>
       </label>
       <div className={styles.actions}>
-        <Button onClick={() => void restoreVersion(page, older, false).then((ok) => (ok ? onChanged() : undefined))}>
-          {t('history.restore.version')}
-        </Button>
+        {!locked && (
+          <Button onClick={() => void restoreVersion(page, older, false).then((ok) => (ok ? onChanged() : undefined))}>
+            {t('history.restore.version')}
+          </Button>
+        )}
         <Button onClick={() => void restoreVersion(page, older, true)}>{t('history.restore.copy')}</Button>
         <Button onClick={() => setNaming(true)}>{t('history.commands.nameVersion')}</Button>
       </div>
