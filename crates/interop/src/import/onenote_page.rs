@@ -306,7 +306,9 @@ impl Attach<'_, '_, '_> {
                 // blob many more times than the budget allows does not copy it once per placement.
                 let len = match &attached.data {
                     Blob::Inside(bytes) => Some(bytes.len() as u64),
-                    Blob::Outside(name) => std::fs::symlink_metadata(self.onefiles.join(name)).ok().map(|m| m.len()),
+                    Blob::Outside(name) => std::fs::symlink_metadata(self.onefiles.join(name))
+                        .ok()
+                        .map(|m| m.len()),
                     Blob::Missing => None,
                 };
                 if len.is_some_and(|len| len > self.budget.left) {
@@ -411,7 +413,11 @@ mod budget_tests {
             convert_page(&page_of(&png, 50), "S", Path::new("."), &test.env(), &mut budget).expect("the page converts");
         assert!(page.asset_bytes.is_empty());
         assert_eq!(budget.left, png.len() as u64 - 1, "nothing was taken");
-        assert!(report.entries.iter().any(|e| e.what == "50 pictures or files"), "{:?}", report.entries);
+        assert!(
+            report.entries.iter().any(|e| e.what == "50 pictures or files"),
+            "{:?}",
+            report.entries
+        );
         assert!(report.entries.iter().any(|e| e
             .why
             .as_deref()
