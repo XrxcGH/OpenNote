@@ -61,7 +61,12 @@ export function ApprovalDialog(props: { request: ApprovalRequest; onDecide(decis
   return (
     <Dialog
       title={t('platformApi.ask.connectTitle', { name: request.appName })}
-      description={t('platformApi.ask.connectBody', { name: request.appName, kind })}
+      description={
+        // The opennote command is named after its kind, so the kind would only repeat the name.
+        request.appName.trim().toLowerCase() === kind.toLowerCase()
+          ? t('platformApi.ask.connectBodyNamed', { name: request.appName })
+          : t('platformApi.ask.connectBody', { name: request.appName, kind })
+      }
       size="medium"
       initialFocus="leastDestructive"
       onDismiss={() => onDecide({ kind: 'deny' })}
@@ -71,9 +76,9 @@ export function ApprovalDialog(props: { request: ApprovalRequest; onDecide(decis
           id: 'allow',
           label: t('platformApi.ask.connectAllow'),
           variant: 'primary',
-          onPress: () => {
-            if (!noNotebook) onDecide({ kind: 'allow', access, notebooks: scope });
-          },
+          // With no notebook picked there is nothing to allow; the note below says so.
+          disabled: noNotebook,
+          onPress: () => onDecide({ kind: 'allow', access, notebooks: scope }),
         },
       ]}
     >

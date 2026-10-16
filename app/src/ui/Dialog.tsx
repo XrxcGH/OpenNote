@@ -25,6 +25,8 @@ export interface DialogAction {
   onPress(): void | Promise<void>;
   /** The choice that loses nothing, focused first in confirmations. */
   leastDestructive?: boolean;
+  /** Shown as unavailable and does nothing when pressed; it stays focusable, so the reason beside it is found. */
+  disabled?: boolean;
 }
 
 export interface DialogProps {
@@ -135,7 +137,10 @@ function DialogActions({ actions }: { actions: readonly DialogAction[] }) {
           variant={action.variant}
           data-least-destructive={action.leastDestructive ? 'true' : undefined}
           data-fill={action.variant === 'danger' ? '' : undefined}
-          onClick={() => void action.onPress()}
+          aria-disabled={action.disabled ? true : undefined}
+          onClick={() => {
+            if (!action.disabled) void action.onPress();
+          }}
         >
           {action.label}
         </Button>
