@@ -80,6 +80,8 @@ function Review({ flow, state }: { flow: ImportFlow; state: Extract<ImportState,
       <p className={styles.path} title={path}>
         {preview.detected.label}: {fileName(path)}
       </p>
+      {/* Nothing to import, but the check says why, such as a password to remove: show its reasons. */}
+      {empty && preview.losses.length > 0 && <LossList losses={preview.losses} />}
       {!empty && (
         <>
           <p>
