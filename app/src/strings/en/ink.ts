@@ -55,6 +55,7 @@ export const ink = {
       arc: 'Arc',
       curvedArrow: 'Curved arrow',
       doubleArrow: 'Double arrow',
+      freeform: 'Freeform shape',
     },
   },
   selection: {
