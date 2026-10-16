@@ -6,6 +6,7 @@
 import { useEffect, useId, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { isEnabled, useFlag } from '../../app/flags';
+import { isMainWindow } from '../../app/windowKind';
 import { getLocation, navigate } from '../../app/location';
 import type { CommandContext } from '../../commands/types';
 import { shellCall, shellHost } from '../../platform/shellqol';
@@ -362,8 +363,24 @@ let lastUse = Date.now();
 let idleMinutes = DEFAULT_IDLE;
 let lockOnLeave = true;
 
+// Use in any window counts: each window tells the others, at most every few seconds, so a pop-out in use keeps the
+// main window's idle clock fresh. Only the main window locks, so an untouched pop-out can't lock what is in use.
+const ACTIVITY = 'opennote.protect.activity';
+const TELL_EVERY = 5_000;
+const activity: BroadcastChannel | null =
+  typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(ACTIVITY);
+activity?.addEventListener('message', (event: MessageEvent<{ at?: unknown }>) => {
+  const at = event.data?.at;
+  if (typeof at === 'number' && Number.isFinite(at)) lastUse = Math.max(lastUse, at);
+});
+(activity as { unref?: () => void } | null)?.unref?.();
+let lastTold = 0;
+
 function touch(): void {
   lastUse = Date.now();
+  if (lastUse - lastTold < TELL_EVERY) return;
+  lastTold = lastUse;
+  activity?.postMessage({ at: lastUse });
 }
 
 /** Reads the two preferences. */
@@ -381,7 +398,7 @@ export async function loadPrefs(): Promise<{ idle: number; leave: boolean }> {
 
 /** Locks every unlocked section when nothing happened in OpenNote for the chosen time. Returns what it locked. */
 export async function lockIfIdle(now = Date.now()): Promise<NodeSummary[]> {
-  if (!idleMinutes || now - lastUse < idleMinutes * 60_000) return [];
+  if (!isMainWindow() || !idleMinutes || now - lastUse < idleMinutes * 60_000) return [];
   const open = unlockedSections();
   for (const section of open) await lockSection(section, t('storage.sections.lockedIdle', { title: titleOf(section) }));
   return open;
@@ -389,7 +406,7 @@ export async function lockIfIdle(now = Date.now()): Promise<NodeSummary[]> {
 
 /** Locks the section the person just left, when they choose that. */
 export async function lockLeft(previous: NodeId | null, next: NodeId | null): Promise<boolean> {
-  if (!lockOnLeave || !previous || previous === next) return false;
+  if (!isMainWindow() || !lockOnLeave || !previous || previous === next) return false;
   const section = getNode(previous);
   if (section?.kind !== 'section' || section.protected !== 'unlocked') return false;
   return lockSection(section);
@@ -414,7 +431,7 @@ function pruneRecents(): void {
 let started = false;
 let lastShielded = '';
 
-/** Starts the watchers, once, in every window. */
+/** Starts the watchers, once, in every window; only the main window locks (see `touch`). */
 export function startSectionLocks(): void {
   if (started || typeof window === 'undefined') return;
   started = true;

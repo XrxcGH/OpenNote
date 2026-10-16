@@ -157,6 +157,35 @@ describe('protected sections lock again', () => {
     expect(await lockIfIdle(Date.now() + 99 * 60_000)).toEqual([]);
   });
 
+  it('counts use in every window, and locks from the main window only', async () => {
+    await renderApp();
+    seed('unlocked');
+    const calls = shell((name) =>
+      name === 'prefs.get' ? { protectIdleMinutes: 5, protectLockOnLeave: true } : ok(name),
+    );
+    await loadPrefs();
+    // A pop-out page window in use tells the main window, which then keeps the section open.
+    const popOut = new BroadcastChannel('opennote.protect.activity');
+    const heard = new BroadcastChannel('opennote.protect.activity');
+    const delivered = new Promise((resolve) => heard.addEventListener('message', resolve, { once: true }));
+    const later = Date.now() + 60 * 60_000;
+    popOut.postMessage({ at: later });
+    await delivered;
+    popOut.close();
+    heard.close();
+    expect(await lockIfIdle(later + 60_000)).toEqual([]);
+    // A pop-out never locks on its own clock.
+    const scope = window as { __OPENNOTE_WINDOW__?: { kind: string } };
+    scope.__OPENNOTE_WINDOW__ = { kind: 'page' };
+    try {
+      expect(await lockIfIdle(later + 99 * 60_000)).toEqual([]);
+    } finally {
+      delete scope.__OPENNOTE_WINDOW__;
+    }
+    expect(calls.filter(([name]) => name === 'protect.lock')).toEqual([]);
+    expect((await lockIfIdle(later + 6 * 60_000)).map((s) => s.id)).toEqual([SECTION]);
+  });
+
   it('keeps protected pages out of recent pages', async () => {
     await renderApp();
     startSectionLocks();
