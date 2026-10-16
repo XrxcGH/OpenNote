@@ -294,7 +294,7 @@ fn general_entries<R: Read + Seek>(stats: &Stats, package: &Package<R>, cut: Cut
             "footnote, endnote, or comment mark",
             "footnote, endnote, and comment marks",
         ),
-        "The notes themselves are not imported.",
+        "The footnote and endnote text is not imported.",
     );
     report.skipped_count(
         stats.hidden_runs,

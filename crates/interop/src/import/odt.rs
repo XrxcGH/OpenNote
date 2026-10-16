@@ -97,7 +97,7 @@ pub(super) fn convert_parts<R: Read + Seek>(
     report.skipped_count(
         stats.notes,
         ("footnote or endnote", "footnotes and endnotes"),
-        "The notes themselves are not imported.",
+        "The footnote and endnote text is not imported.",
     );
     report.skipped_count(
         stats.drawings,

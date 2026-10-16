@@ -310,7 +310,7 @@ fn report_losses(report: &mut PageReport, losses: &Losses) {
     report.skipped_count(
         losses.notes,
         ("footnote or endnote", "footnotes and endnotes"),
-        "The notes themselves are not imported.",
+        "The footnote and endnote text is not imported.",
     );
     report.skipped_count(losses.comments, ("comment", "comments"), "Comments are not imported.");
     report.simplified_count(
