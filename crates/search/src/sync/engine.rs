@@ -299,6 +299,15 @@ impl<S: PageSource> Indexer<S> {
         if docs.is_empty() && gone.is_empty() {
             return;
         }
+        let released: Vec<PageId> = docs
+            .iter()
+            .filter(|doc| doc.locked)
+            .map(|doc| doc.page)
+            .chain(gone.iter().copied())
+            .collect();
+        if !released.is_empty() {
+            self.source.forget_pages(&released);
+        }
         let prepared = self.prepare_all(&mut docs);
         let mut update = IndexUpdate::default();
         let settle_now = self.config.settle.is_zero();
@@ -422,6 +431,8 @@ impl<S: PageSource> Indexer<S> {
         })();
         match result {
             Ok((held, generation)) if !held.is_empty() => {
+                // The section is encrypted now: its pages' words kept beside the index go too.
+                self.source.forget_pages(&held);
                 self.stats.removed += held.len() as u64;
                 self.emit(IndexEvent::Updated(IndexUpdate {
                     removed: held,

@@ -99,11 +99,13 @@ pub async fn study_zotero_run(command: String, calls: tauri::ipc::Channel<Zotero
         zotero_wp::run_for_page(
             &command,
             &mut |call| {
-                let _ = calls.send(ZoteroCall {
-                    txid: call.txid,
-                    method: call.method.clone(),
-                    args: call.args.clone(),
-                });
+                calls
+                    .send(ZoteroCall {
+                        txid: call.txid,
+                        method: call.method.clone(),
+                        args: call.args.clone(),
+                    })
+                    .is_ok()
             },
             zotero_wp::default_addr(),
         )
@@ -119,6 +121,12 @@ pub async fn study_zotero_run(command: String, calls: tauri::ipc::Channel<Zotero
             IpcError::new(codes::IO, reason)
         }
     })
+}
+
+/// Ends the Zotero command that waits for the page, as when the page's window closes or reloads.
+#[tauri::command]
+pub fn study_zotero_cancel() -> bool {
+    zotero_wp::abandon()
 }
 
 /// The page's answer to a Zotero call: `ok` with the value, or an error message in `value`.

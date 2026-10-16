@@ -271,7 +271,8 @@ impl Cloud {
     }
 
     /// Transcribes 16 kHz mono audio read from `read`, piece by piece. `progress` hears the fraction done after each
-    /// piece, and `canceled` is asked before each one.
+    /// piece, and `canceled`, `offline` and `safe_mode` are asked before each one, so turning either mode on stops
+    /// the pieces still to go.
     #[allow(clippy::too_many_arguments)]
     pub fn transcribe(
         &self,
@@ -279,12 +280,12 @@ impl Cloud {
         total_samples: Option<u64>,
         language: Option<&str>,
         prompt: &str,
-        offline: bool,
-        safe_mode: bool,
+        offline: &dyn Fn() -> bool,
+        safe_mode: &dyn Fn() -> bool,
         progress: &dyn Fn(f32),
         canceled: &dyn Fn() -> bool,
     ) -> Result<Vec<TranscriptLine>, CloudError> {
-        Cloud::check_allowed(offline, safe_mode)?;
+        Cloud::check_allowed(offline(), safe_mode())?;
         let key = self.key(CloudFeature::Transcription)?;
         let piece_len = PIECE_SECONDS * 16_000;
         let mut piece = vec![0.0_f32; piece_len];
@@ -295,6 +296,7 @@ impl Cloud {
             if canceled() {
                 return Err(CloudError::Canceled);
             }
+            Cloud::check_allowed(offline(), safe_mode())?;
             let mut filled = 0;
             while filled < piece_len {
                 let count = read(&mut piece[filled..]).map_err(|_| CloudError::Answer)?;
@@ -556,8 +558,8 @@ mod tests {
                 Some(total as u64),
                 Some("en-US"),
                 "ATP",
-                false,
-                false,
+                &|| false,
+                &|| false,
                 &|f| fractions.lock().unwrap().push(f),
                 &|| false,
             )
@@ -568,8 +570,39 @@ mod tests {
         assert_eq!(lines[1].text, "Hello.");
         assert_eq!(fake.sent.lock().unwrap().len(), 2);
         assert_eq!(fractions.lock().unwrap().last().copied(), Some(1.0));
-        let canceled = cloud.transcribe(&mut |_| Ok(0), None, None, "", false, false, &|_| {}, &|| true);
+        let canceled = cloud.transcribe(&mut |_| Ok(0), None, None, "", &|| false, &|| false, &|_| {}, &|| true);
         assert_eq!(canceled, Err(CloudError::Canceled));
+    }
+
+    #[test]
+    fn turning_on_safe_mode_or_offline_part_way_stops_the_pieces_still_to_go() {
+        for offline_mode in [false, true] {
+            let dir = tempfile::tempdir().unwrap();
+            let reply = json!({ "text": "x", "segments": [] });
+            let (cloud, fake) = cloud(dir.path(), 200, reply);
+            cloud.set_key(CloudFeature::Transcription, &key()).unwrap();
+            let mut left = 16_000 * PIECE_SECONDS * 3;
+            let mut read = |out: &mut [f32]| -> Result<usize, String> {
+                let count = out.len().min(left);
+                left -= count;
+                Ok(count)
+            };
+            // The mode turns on once the first piece has gone.
+            let on = || fake.sent.lock().unwrap().len() >= 1;
+            let result = cloud.transcribe(
+                &mut read,
+                None,
+                None,
+                "",
+                &|| offline_mode && on(),
+                &|| !offline_mode && on(),
+                &|_| {},
+                &|| false,
+            );
+            let expected = if offline_mode { CloudError::Offline } else { CloudError::SafeMode };
+            assert_eq!(result, Err(expected));
+            assert_eq!(fake.sent.lock().unwrap().len(), 1);
+        }
     }
 
     #[test]

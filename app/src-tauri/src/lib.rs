@@ -318,6 +318,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         study::study_cite_lookup,
         study::study_zotero_run,
         study::study_zotero_reply,
+        study::study_zotero_cancel,
         interop::commands::interop_pick,
         interop::commands::interop_detect,
         interop::commands::interop_local_sources,

@@ -244,13 +244,25 @@ pub fn run_session(
     }
 }
 
+/// How long a session waits for the page to answer one call. The page answers within moments; the person's time in
+/// Zotero's dialogs is spent between calls, not inside one.
+const ANSWER_WAIT: Duration = Duration::from_secs(60 * 5);
+
+/// The transaction number that stands for "the page gave up". Real calls count from 1.
+const ABANDON: u32 = 0;
+
 /// The page's answer to a call, waiting for the session that asked.
 type Pending = Mutex<Option<mpsc::Sender<(u32, Result<Value, String>)>>>;
 static PENDING: Pending = Mutex::new(None);
 
 /// Runs a command for the page: each call is handed to `send` (which delivers it to the page), and the session waits
-/// for [`reply`]. Only one command runs at a time.
-pub fn run_for_page(command: &str, send: &mut dyn FnMut(&Call), addr: SocketAddr) -> Result<Outcome, SessionError> {
+/// for [`reply`]. Only one command runs at a time. `send` says whether the page took the call; when it did not (the
+/// page's window is gone), or [`abandon`] is called, the session ends at once and frees the lock.
+pub fn run_for_page(
+    command: &str,
+    send: &mut dyn FnMut(&Call) -> bool,
+    addr: SocketAddr,
+) -> Result<Outcome, SessionError> {
     let (tx, rx) = mpsc::channel();
     {
         let mut slot = PENDING
@@ -261,19 +273,29 @@ pub fn run_for_page(command: &str, send: &mut dyn FnMut(&Call), addr: SocketAddr
         }
         *slot = Some(tx);
     }
+    let mut gone = false;
     let result = run_session(
         addr,
         command,
         Duration::from_secs(3),
         Duration::from_secs(60 * 60),
         &mut |call| {
-            send(call);
+            // Once the page is gone, Zotero is told each of its remaining calls failed, which ends its command.
+            let delivered = !gone && send(call);
             if call.method == "Document_complete" {
                 // Zotero waits for no answer to this one; the page still hears it and tidies up.
                 return Ok(Value::Null);
             }
+            if !delivered {
+                gone = true;
+                return Err("the page went away".into());
+            }
             loop {
-                match rx.recv_timeout(Duration::from_secs(60 * 30)) {
+                match rx.recv_timeout(ANSWER_WAIT) {
+                    Ok((ABANDON, _)) => {
+                        gone = true;
+                        return Err("the page gave up".into());
+                    }
                     Ok((txid, answer)) if txid == call.txid => return answer,
                     Ok(_) => {}
                     Err(_) => return Err("the page did not answer".into()),
@@ -294,6 +316,11 @@ pub fn reply(txid: u32, answer: Result<Value, String>) -> bool {
         .ok()
         .and_then(|slot| slot.as_ref().map(|tx| tx.send((txid, answer)).is_ok()))
         .unwrap_or(false)
+}
+
+/// Ends the session that waits for the page, as when the page's window closes. False when none is waiting.
+pub fn abandon() -> bool {
+    reply(ABANDON, Err("abandoned".into()))
 }
 
 /// Zotero's address on this computer.
@@ -506,7 +533,7 @@ mod tests {
         let outcome = run_for_page(
             "addEditCitation",
             &mut |call| {
-                let _ = call_tx.send(call.clone());
+                call_tx.send(call.clone()).is_ok()
             },
             addr,
         )
@@ -517,5 +544,41 @@ mod tests {
         assert_eq!(heard[1].2, json!({ "documentID": "opennote" }));
         assert!(outcome.completed);
         assert!(!reply(1, Ok(Value::Null)), "no session is waiting afterwards");
+        a_page_that_went_away_ends_the_session_and_frees_the_lock();
+    }
+
+    /// Run after the answering test, in order: the pending slot is shared by every session.
+    fn a_page_that_went_away_ends_the_session_and_frees_the_lock() {
+        let (addr, zotero) = pretend_zotero(vec![
+            json!({ "command": "Application.getActiveDocument", "arguments": [] }),
+            json!({ "command": "Document.complete", "arguments": ["opennote"] }),
+        ]);
+        let started = std::time::Instant::now();
+        let outcome = run_for_page("addEditCitation", &mut |_| false, addr).expect("session");
+        zotero.join().expect("zotero");
+        assert!(started.elapsed() < Duration::from_secs(20), "the session did not wait for a dead page");
+        assert_eq!(outcome.errors, 1);
+        assert!(PENDING.lock().unwrap().is_none(), "the lock is free");
+        // The page gives up while the session waits: the session ends, and the next command can start.
+        let (addr, zotero) = pretend_zotero(vec![
+            json!({ "command": "Application.getActiveDocument", "arguments": [] }),
+            json!({ "command": "Document.complete", "arguments": ["opennote"] }),
+        ]);
+        let outcome = run_for_page(
+            "addEditCitation",
+            &mut |_| {
+                std::thread::spawn(|| {
+                    while !abandon() {
+                        std::thread::sleep(Duration::from_millis(5));
+                    }
+                });
+                true
+            },
+            addr,
+        )
+        .expect("session");
+        zotero.join().expect("zotero");
+        assert_eq!(outcome.errors, 1);
+        assert!(PENDING.lock().unwrap().is_none());
     }
 }

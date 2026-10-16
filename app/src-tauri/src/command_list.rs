@@ -41,7 +41,7 @@ pub const APP_COMMANDS: &[&str] = &[
     "print_printers", "print_submit",
     "search_call", "shellqol_call",
     "tool_window_open", "tool_windows_reset", "study_anki_read", "study_anki_write", "study_zotero_items", "study_cite_lookup",
-    "study_zotero_run", "study_zotero_reply",
+    "study_zotero_run", "study_zotero_reply", "study_zotero_cancel",
     "interop_pick", "interop_detect", "interop_local_sources", "interop_preview", "interop_import", "interop_cancel",
     "interop_export", "interop_reveal", "interop_more",
     "intel_settings_get", "intel_settings_set", "intel_status", "intel_ocr_languages",

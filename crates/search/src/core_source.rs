@@ -143,6 +143,14 @@ impl PageSource for CorePageSource {
         Ok(Some(stamps))
     }
 
+    fn forget_pages(&mut self, pages: &[PageId]) {
+        if let Some(media) = &self.media {
+            for page in pages {
+                media.forget_page(*page);
+            }
+        }
+    }
+
     fn read(&mut self, notebook: NotebookId, page: PageId) -> Result<Option<PageDoc>, SourceError> {
         let Some(handle) = self.slot.notebook(notebook) else {
             return Err(SourceError::transient("the notebook is not open"));

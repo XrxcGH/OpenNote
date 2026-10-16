@@ -31,7 +31,12 @@ export async function tauriTransport(): Promise<Transport> {
     run(command, onCall) {
       const calls = new Channel<ZoteroCall>();
       calls.onmessage = onCall;
-      return invoke<Outcome>('study_zotero_run', { command, calls });
+      // A window that closes or reloads can no longer answer, so the shell stops waiting for it.
+      const abandon = () => void invoke('study_zotero_cancel').catch(() => undefined);
+      window.addEventListener('pagehide', abandon);
+      return invoke<Outcome>('study_zotero_run', { command, calls }).finally(() =>
+        window.removeEventListener('pagehide', abandon),
+      );
     },
     reply: (txid, ok, value) => invoke('study_zotero_reply', { txid, ok, value }),
   };

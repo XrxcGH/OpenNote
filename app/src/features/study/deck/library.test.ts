@@ -8,6 +8,8 @@ import type { Card } from './types';
 const shared = vi.hoisted(() => ({
   items: new Map<string, string>(),
   failPuts: false,
+  /** Makes the listing of stored names fail, as a stalled core does. */
+  failList: false,
   /** Fails the writes of the items this picks. */
   failPut: null as ((name: string) => boolean) | null,
   /** Holds deck writes until it resolves. */
@@ -34,7 +36,10 @@ vi.mock('../../intel', () => ({
         shared.items.set(name, text);
       },
       remove: (name) => Promise.resolve(void shared.items.delete(name)),
-      list: (prefix) => Promise.resolve([...shared.items.keys()].filter((name) => name.startsWith(prefix)).sort()),
+      list: (prefix) =>
+        shared.failList
+          ? Promise.reject(new Error('The store is stalled.'))
+          : Promise.resolve([...shared.items.keys()].filter((name) => name.startsWith(prefix)).sort()),
     };
   },
 }));
@@ -76,6 +81,7 @@ class MemoryStorage {
 beforeEach(() => {
   shared.items.clear();
   shared.failPuts = false;
+  shared.failList = false;
   shared.failPut = null;
   shared.gate = null;
   shared.web = false;
@@ -178,6 +184,22 @@ describe('decks in the device store', () => {
     await openWindow();
     expect(localStorage.getItem('opennote.study.decks')).not.toBeNull();
     expect(shared.toasts).toHaveLength(1);
+  });
+});
+
+describe('a failed read', () => {
+  it("never replaces a page deck's hand-typed cards with the page's inline cards", async () => {
+    const page = '01k6page000000000000000009';
+    const first = await openWindow();
+    first.putDeck({ id: first.pageDeckId(page), name: 'Page', cards: [card('typed')] });
+    await first.flushDecks();
+    shared.failList = true;
+    const next = await openWindow();
+    await next.syncInlineDeck(page, 'Page', [card('q', { origin: `inline:${page}:1` })]);
+    await next.flushDecks();
+    shared.failList = false;
+    const stored = JSON.parse(shared.items.get(deckName(first.pageDeckId(page))) ?? '{}');
+    expect(stored.deck.cards.map((one: Card) => one.id)).toEqual(['typed']);
   });
 });
 

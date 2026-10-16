@@ -94,8 +94,8 @@ fn start_cloud(app: &AppHandle, state: &IntelState, dir: &Path, request: &Transc
                 total,
                 choices.language.as_deref().filter(|tag| !tag.is_empty()),
                 &opennote_intel::wire::vocabulary_prompt(&choices.vocabulary),
-                crate::hardening::offline(),
-                crate::hardening::safe_mode(),
+                &crate::hardening::offline,
+                &crate::hardening::safe_mode,
                 &|fraction| send(&TranscribeUpdate::Progress { fraction }),
                 &|| stop.load(Ordering::Relaxed),
             );

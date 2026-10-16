@@ -348,6 +348,9 @@ async function migrate(store: DeckFiles): Promise<void> {
   }
 }
 
+/** False when the read of the store failed, so the decks in memory are not what the store holds. */
+let readTrusted = true;
+
 async function load(): Promise<void> {
   // Let the module finish loading first, so a change made right away is seen below.
   await Promise.resolve();
@@ -365,6 +368,7 @@ async function load(): Promise<void> {
       if (item) states[item.deck] = { ...states[item.deck], [item.card]: item.state };
     }
   } catch {
+    readTrusted = false;
     reportFailure('study.deck.loadFailed');
   }
   found = found.sort((a, b) => a.at - b.at);
@@ -461,6 +465,8 @@ export function recordReview(deckId: string, cardId: string, grade: Grade, now: 
 export const pageDeckId = (pageId: string): string => `page:${pageId}`;
 
 function syncNow(pageId: string, title: string, inline: readonly Card[]): void {
+  // A deck the failed read did not bring in may hold hand-typed cards that a write from here would erase.
+  if (!readTrusted) return;
   const id = pageDeckId(pageId);
   const deck = deckById(id);
   if (!deck && inline.length === 0) return;

@@ -77,8 +77,9 @@ impl ModelSpec {
 #[cfg(test)]
 pub const MAX_MODEL_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 
+/// Pinned to one commit, so the files cannot change under the checksums.
 #[cfg(test)]
-const SPEECH_HOST: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
+const SPEECH_HOST: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1";
 
 macro_rules! speech {
     ($id:literal, $name:literal, $detail:literal, $size:literal, $sha:literal, $file:literal) => {
@@ -91,7 +92,7 @@ macro_rules! speech {
                 file: $file,
                 size: $size,
                 digest: Digest::Sha256($sha),
-                url: concat!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/", $file),
+                url: concat!("https://huggingface.co/ggerganov/whisper.cpp/resolve/5359861c739e955e79d9a303bcbc70fb988958b1/", $file),
             }],
         }
     };

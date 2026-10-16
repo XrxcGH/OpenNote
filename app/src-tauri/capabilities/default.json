@@ -147,6 +147,7 @@
     "allow-study-zotero-items",
     "allow-study-cite-lookup",
     "allow-study-zotero-run",
+    "allow-study-zotero-cancel",
     "allow-study-zotero-reply",
     "allow-interop-pick",
     "allow-interop-detect",
