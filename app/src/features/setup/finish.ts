@@ -11,8 +11,8 @@ import { updateSettings } from '../../state/settings';
 import { DEFAULT_LOCATION } from '../../state/session';
 import { t } from '../../strings/t';
 import { showToast } from '../../ui';
-import { OPEN_AFTER_SETUP, completedBy, withCompleted } from './model';
-import { getHost, saveDone, setupContext, setupStore } from './runtime';
+import { OPEN_AFTER_SETUP, afterSetupCommands, completedBy, withCompleted } from './model';
+import { getHost, runAfterSetup, saveDone, setupContext, setupStore } from './runtime';
 
 const openAfter = (draft: SetupDraft): Location =>
   (draft[OPEN_AFTER_SETUP] as Location | undefined) ?? DEFAULT_LOCATION;
@@ -27,16 +27,23 @@ export async function finishSetup(steps: readonly SetupStepDef[], draft: SetupDr
     setup: { completedSteps: withCompleted(ctx.settings.setup.completedSteps, completedBy(steps, 'person')) },
   });
   const { record } = setupStore.get();
-  saveDone(withCompleted(record.completedSteps, completedBy(steps, 'device')));
+  const runAfter = afterSetupCommands(work);
+  const moving = work.storage?.moveApp === true;
+  // When the app moves, the new process runs these (runtime.ts); this one is about to end.
+  saveDone(withCompleted(record.completedSteps, completedBy(steps, 'device')), moving ? runAfter : []);
   await platform.state.flush();
   navigate(openAfter(work), { replace: true });
-  if (work.storage?.moveApp) {
+  if (!moving) runAfterSetup(runAfter);
+  if (moving) {
     // The opennote command's folder goes on PATH first: the move copies the command there, then the app restarts.
-    const cliOnPath = work.storage.cliOnPath === true;
+    const cliOnPath = work.storage?.cliOnPath === true;
     if (cliOnPath) await executeCommand('api.cliPathOnMove', { on: true }, 'menu').catch(() => false);
     await platform.install.moveToUserPrograms().catch(() => {
       if (cliOnPath) void executeCommand('api.cliPathOnMove', { on: false }, 'menu').catch(() => false);
       showToast({ message: t('setup.errors.move'), tone: 'danger' });
+      // The app stays, so the commands run here and the next start mustn't run them again.
+      saveDone(setupStore.get().record.completedSteps);
+      runAfterSetup(runAfter);
     });
   }
 }

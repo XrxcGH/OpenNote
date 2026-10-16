@@ -2,19 +2,17 @@
 // and menu items. Each screen loads when it is used, so start-up carries only this file.
 
 import { isEnabled } from '../../app/flags';
-import { commandContext, defineCommand, executeCommand } from '../../commands/registry';
+import { commandContext, defineCommand } from '../../commands/registry';
 import type { CommandDef } from '../../commands/types';
 import { commandBar, commands, settingsSections, setupSteps } from '../../registries';
 import { t } from '../../strings/t';
 import { showToast } from '../../ui';
 import { shownMounted } from '../page';
+import { RUN_AFTER_SETUP, afterSetupCommands } from '../setup';
 import { openPage, otherLinkReaders } from '../search';
 import { offerClip } from './clip/link';
 import { createSnipWatcher } from './snip/watch';
 import type { SnipWatcher } from './snip/watch';
-
-/** How long after setup finishes the import window opens, so the notebook and its view are on screen first. */
-const OPEN_IMPORT_AFTER_MS = 700;
 
 setupSteps.register({
   id: 'import',
@@ -24,8 +22,9 @@ setupSteps.register({
   isEnabled: (ctx) => ctx.firstRun && isEnabled('setup.import'),
   load: () => import('./setup/ImportStep'),
   commit(_ctx, draft) {
+    // Finishing setup opens the import window, or the next start does when setup moves the app (setup/runtime.ts).
     if ((draft.import as { after?: boolean } | undefined)?.after) {
-      setTimeout(() => void executeCommand('interop.import', undefined, 'menu'), OPEN_IMPORT_AFTER_MS);
+      draft[RUN_AFTER_SETUP] = [...afterSetupCommands(draft), 'interop.import'];
     }
     return Promise.resolve();
   },
