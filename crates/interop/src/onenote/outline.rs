@@ -4,7 +4,7 @@
 //! The walker visits each object once, stops at [`limits::DEPTH`] levels and [`limits::ITEMS`] items, and counts
 //! what it cannot read instead of failing the page.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use super::bytes::{utf16, ExGuid};
 use super::ids::{idx, jcid, prop};
@@ -22,6 +22,10 @@ pub(crate) struct Walker<'f, 'a> {
     space: &'f Space<'a>,
     seen: HashSet<ExGuid>,
     items: usize,
+    /// Shared style objects, read once each: run formats, heading levels, and note tag definitions.
+    formats: HashMap<ExGuid, Run>,
+    headings: HashMap<ExGuid, u8>,
+    definitions: HashMap<ExGuid, (String, Option<u64>)>,
     /// What could not be read.
     pub missed: Missed,
 }
@@ -33,6 +37,9 @@ impl<'f, 'a> Walker<'f, 'a> {
             space,
             seen: HashSet::new(),
             items: 0,
+            formats: HashMap::new(),
+            headings: HashMap::new(),
+            definitions: HashMap::new(),
             missed: Missed::default(),
         }
     }
@@ -76,7 +83,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// The outlines, pictures, and files placed on the page, top to bottom.
-    pub(crate) fn page_children(&mut self, page: &PropSet<'a>) -> Vec<Item> {
+    pub(crate) fn page_children(&mut self, page: &PropSet<'a>) -> Vec<Item<'a>> {
         let mut placed: Vec<(f32, f32, ExGuid)> = Vec::new();
         for id in page.objects(prop::ELEMENT_CHILD_NODES) {
             let Some(object) = self.space.object(*id) else {
@@ -100,7 +107,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// An outline or outline group: its outline elements.
-    fn outline(&mut self, id: ExGuid, out: &mut Vec<Item>) {
+    fn outline(&mut self, id: ExGuid, out: &mut Vec<Item<'a>>) {
         let Some((kind, props)) = self.props(id) else {
             return;
         };
@@ -114,7 +121,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// An outline element ([MS-ONE] 2.2.21): its content, then its indented children.
-    fn element(&mut self, id: ExGuid, depth: usize, out: &mut Vec<Item>) {
+    fn element(&mut self, id: ExGuid, depth: usize, out: &mut Vec<Item<'a>>) {
         if depth > limits::DEPTH || self.items >= limits::ITEMS {
             self.missed.too_deep += 1;
             return;
@@ -160,7 +167,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// One piece of content: rich text, a picture, a table, a file, or an outline placed on the page.
-    fn content(&mut self, id: ExGuid, depth: usize, list: Option<ListKind>, out: &mut Vec<Item>) {
+    fn content(&mut self, id: ExGuid, depth: usize, list: Option<ListKind>, out: &mut Vec<Item<'a>>) {
         if self.items >= limits::ITEMS {
             self.missed.too_deep += 1;
             return;
@@ -195,13 +202,13 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// The bytes of the file data object a property points to ([MS-ONE] 2.1.5).
-    fn blob(&mut self, props: &PropSet<'a>, which: u32) -> Blob {
+    fn blob(&mut self, props: &PropSet<'a>, which: u32) -> Blob<'a> {
         let Some(id) = props.objects(which).first() else {
             return Blob::Missing;
         };
         match self.space.object(*id) {
             Some(Ok(Object::File { reference, .. })) => match self.file.file_data(&reference) {
-                FileData::Inside(bytes) => Blob::Inside(bytes.to_vec()),
+                FileData::Inside(bytes) => Blob::Inside(bytes),
                 FileData::Outside(name) => Blob::Outside(name),
                 FileData::Missing => Blob::Missing,
             },
@@ -210,7 +217,7 @@ impl<'f, 'a> Walker<'f, 'a> {
     }
 
     /// A table ([MS-ONE] 2.2.26 to 2.2.28): rows of cells, each a list of outline elements.
-    fn table(&mut self, table: &PropSet<'a>, depth: usize) -> Vec<Vec<Vec<Item>>> {
+    fn table(&mut self, table: &PropSet<'a>, depth: usize) -> Vec<Vec<Vec<Item<'a>>>> {
         let mut rows = Vec::new();
         for row_id in table.objects(prop::ELEMENT_CHILD_NODES) {
             let row = match self.props(*row_id) {
@@ -268,8 +275,17 @@ impl<'f, 'a> Walker<'f, 'a> {
         }
     }
 
-    /// The format of a text run ([MS-ONE] 2.2.43). Style objects are shared, so they are read every time.
+    /// The format of a text run ([MS-ONE] 2.2.43). Style objects are shared, so each is read once and kept.
     fn run_format(&mut self, id: ExGuid) -> Run {
+        if let Some(run) = self.formats.get(&id) {
+            return run.clone();
+        }
+        let run = self.read_run_format(id);
+        self.formats.insert(id, run.clone());
+        run
+    }
+
+    fn read_run_format(&self, id: ExGuid) -> Run {
         let Some(Ok(Object::Props { props, .. })) = self.space.object(id) else {
             return Run::default();
         };
@@ -290,7 +306,16 @@ impl<'f, 'a> Walker<'f, 'a> {
         let Some(id) = text.objects(prop::PARAGRAPH_STYLE).first() else {
             return 0;
         };
-        let Some(Ok(Object::Props { props, .. })) = self.space.object(*id) else {
+        if let Some(level) = self.headings.get(id) {
+            return *level;
+        }
+        let level = self.read_heading(*id);
+        self.headings.insert(*id, level);
+        level
+    }
+
+    fn read_heading(&self, id: ExGuid) -> u8 {
+        let Some(Ok(Object::Props { props, .. })) = self.space.object(id) else {
             return 0;
         };
         let name = props
@@ -312,10 +337,16 @@ impl<'f, 'a> Walker<'f, 'a> {
             let mut shape = state.number(prop::NOTE_TAG_SHAPE);
             let mut label = String::new();
             if let Some(id) = state.objects(prop::NOTE_TAG_DEFINITION_OID).first() {
-                if let Some(Ok(Object::Props { props, .. })) = self.space.object(*id) {
-                    label = props.text(prop::NOTE_TAG_LABEL).unwrap_or_default();
-                    shape = shape.or(props.number(prop::NOTE_TAG_SHAPE));
-                }
+                let space = self.space;
+                let (name, defined) = self.definitions.entry(*id).or_insert_with(|| match space.object(*id) {
+                    Some(Ok(Object::Props { props, .. })) => (
+                        props.text(prop::NOTE_TAG_LABEL).unwrap_or_default(),
+                        props.number(prop::NOTE_TAG_SHAPE),
+                    ),
+                    _ => (String::new(), None),
+                });
+                label = name.clone();
+                shape = shape.or(*defined);
             }
             let checkable = shape.is_some_and(|s| CHECKABLE.contains(&s));
             tags.push(Tag {

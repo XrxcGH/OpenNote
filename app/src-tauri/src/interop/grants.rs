@@ -4,7 +4,7 @@
 
 use std::{
     collections::HashSet,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     sync::{Mutex, PoisonError},
 };
 
@@ -42,10 +42,21 @@ pub fn require(path: &str) -> IpcResult<PathBuf> {
     }
 }
 
+/// Whether `path` steps up or stays put anywhere (`..` or `.`), which `Path::ancestors` does not resolve, so
+/// `<granted>\..\elsewhere` would look inside the granted folder. A verbatim (`\\?\`) path keeps them as
+/// plain names, so those are refused too.
+fn has_dot_steps(path: &Path) -> bool {
+    path.components().any(|c| match c {
+        Component::ParentDir | Component::CurDir => true,
+        Component::Normal(name) => name == ".." || name == ".",
+        _ => false,
+    })
+}
+
 /// `path` or a folder it is inside was granted, as for what an export wrote into a chosen folder.
 pub fn require_within(path: &str) -> IpcResult<PathBuf> {
     let path = PathBuf::from(path);
-    if path.ancestors().any(is_granted) {
+    if !has_dot_steps(&path) && path.ancestors().any(is_granted) {
         Ok(path)
     } else {
         Err(IpcError::invalid(
@@ -69,5 +80,17 @@ mod tests {
         assert!(require(&inside.to_string_lossy()).is_err());
         assert!(require_within(&inside.to_string_lossy()).is_ok());
         assert!(require_within(&std::env::temp_dir().join("elsewhere").to_string_lossy()).is_err());
+    }
+
+    /// `..` under a granted folder does not reach outside it (R3-4).
+    #[test]
+    fn parent_steps_under_a_granted_folder_are_refused() {
+        let base = std::env::temp_dir().join("opennote-grants-dots");
+        grant(base.clone());
+        let escape = base.join("..").join("..").join("secret.docx");
+        assert!(require_within(&escape.to_string_lossy()).is_err());
+        let verbatim = format!(r"\\?\{}\..\secret.docx", base.display());
+        assert!(require_within(&verbatim).is_err());
+        assert!(require_within(&base.join("page.md").to_string_lossy()).is_ok());
     }
 }

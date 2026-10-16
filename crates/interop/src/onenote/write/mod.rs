@@ -33,6 +33,8 @@ pub struct SectionSpec {
     pub encrypted: bool,
     /// Adds a root node after the last committed one, as a write that never finished leaves.
     pub uncommitted_root: bool,
+    /// Repeats a global identification table entry after every object declaration, as a hostile file may.
+    pub interleaved_table: bool,
 }
 
 /// A page to write.
@@ -71,6 +73,8 @@ pub struct ParaSpec {
     pub tag: Option<TagSpec>,
     /// 1 to 6 for a heading style.
     pub heading: u8,
+    /// Gives every run one shared format object, as OneNote does for runs of the same format.
+    pub shared_style: bool,
 }
 
 /// A note tag to write.
@@ -174,7 +178,8 @@ pub fn section(spec: &SectionSpec) -> Vec<u8> {
     let mut layout = Layout::new();
     let mut root_nodes = Vec::new();
     for space in pages.iter().chain([&root]) {
-        let manifest = write_space(&mut layout, space, spec.encrypted && space.gosid == root.gosid);
+        let encrypted = spec.encrypted && space.gosid == root.gosid;
+        let manifest = write_space(&mut layout, space, encrypted, spec.interleaved_table);
         root_nodes.push(FileNode::pointing(0x008, manifest, exguid(space.gosid)));
     }
     root_nodes.push(FileNode::plain(0x004, exguid(root.gosid)));
@@ -209,7 +214,7 @@ pub fn section(spec: &SectionSpec) -> Vec<u8> {
 }
 
 /// Writes one object space: its object groups, its revision manifest list, and its object space manifest list.
-fn write_space(layout: &mut Layout, space: &Space, encrypted: bool) -> At {
+fn write_space(layout: &mut Layout, space: &Space, encrypted: bool, interleaved: bool) -> At {
     let mut revisions = vec![FileNode::plain(0x014, [exguid(space.gosid), vec![0; 4]].concat())];
     let mut dependent = ExGuid::ZERO;
     let mut n = 0;
@@ -233,7 +238,7 @@ fn write_space(layout: &mut Layout, space: &Space, encrypted: bool) -> At {
             vec![u8::from(encrypted) * 2, 0],
         ];
         revisions.push(FileNode::plain(0x01E, start.concat()));
-        let group_list = write_group(layout, group, objects);
+        let group_list = write_group(layout, group, objects, interleaved);
         revisions.push(FileNode::pointing(0x0B0, group_list, exguid(group)));
         for (role, id) in &space.roots {
             revisions.push(FileNode::plain(
@@ -257,7 +262,7 @@ fn write_space(layout: &mut Layout, space: &Space, encrypted: bool) -> At {
 }
 
 /// Writes an object group ([MS-ONESTORE] 2.1.13) with its global identification table.
-fn write_group(layout: &mut Layout, group: ExGuid, objects: &[(ExGuid, u32, Body)]) -> At {
+fn write_group(layout: &mut Layout, group: ExGuid, objects: &[(ExGuid, u32, Body)], interleaved: bool) -> At {
     let mut table: HashMap<Guid, u32> = HashMap::new();
     let mut order = Vec::new();
     for (id, _, body) in objects {
@@ -297,6 +302,12 @@ fn write_group(layout: &mut Layout, group: ExGuid, objects: &[(ExGuid, u32, Body
                 data.extend(storage_string(""));
                 nodes.push(FileNode::plain(0x072, data));
             }
+        }
+        if let Some(guid) = order.last().filter(|_| interleaved) {
+            nodes.push(FileNode::plain(
+                0x024,
+                [table[guid].to_le_bytes().to_vec(), guid.0.to_vec()].concat(),
+            ));
         }
     }
     nodes.push(FileNode::plain(0x0B8, Vec::new()));
