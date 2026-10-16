@@ -1,8 +1,9 @@
 /* Read aloud (ARCHITECTURE.md section 19): the bar above the page and the spoken word's highlight. */
 @layer components {
   .host {
-    position: sticky;
+    position: absolute;
     inset-block-start: 0;
+    inset-inline: 0;
     z-index: var(--layer-sticky);
   }
 
