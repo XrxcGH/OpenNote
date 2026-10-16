@@ -107,6 +107,15 @@ impl Resolver for GuardedResolver {
     }
 }
 
+/// The system resolver that keeps only public addresses, for any other request that must stay off the local
+/// network, such as a webhook delivery.
+pub(crate) fn public_resolver() -> impl Resolver {
+    GuardedResolver {
+        inner: DefaultResolver::default(),
+        policy: Policy { allow_loopback: false },
+    }
+}
+
 /// The certificate a test's local HTTPS server uses, which downloads in tests trust instead of the Windows store.
 #[cfg(test)]
 static TEST_ROOT: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();

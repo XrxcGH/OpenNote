@@ -23,8 +23,8 @@ const TIMEOUT: Duration = Duration::from_secs(15);
 /// The most a receiver's answer is read, since only its status matters.
 const MAX_ANSWER: u64 = 64 * 1024;
 
-/// Posts with `ureq`: HTTPS only, no proxy, no cookies, no redirects, so a delivery goes only to the address the
-/// person typed.
+/// Posts with `ureq`: HTTPS only, no proxy, no cookies, no redirects, and only to public addresses, so a delivery
+/// goes only to the address the person typed and never into the local network.
 pub struct HttpsPoster;
 
 fn agent() -> Agent {
@@ -33,7 +33,7 @@ fn agent() -> Agent {
         .provider(TlsProvider::NativeTls)
         .root_certs(RootCerts::PlatformVerifier)
         .build();
-    Agent::config_builder()
+    let config = Agent::config_builder()
         .tls_config(tls)
         .https_only(true)
         .proxy(None)
@@ -41,8 +41,13 @@ fn agent() -> Agent {
         .max_redirects_will_error(false)
         .http_status_as_error(false)
         .timeout_global(Some(TIMEOUT))
-        .build()
-        .into()
+        .build();
+    // A public host name can still point at a PC or router here: only public addresses are kept when it resolves.
+    Agent::with_parts(
+        config,
+        ureq::unversioned::transport::DefaultConnector::new(),
+        crate::images::web::public_resolver(),
+    )
 }
 
 impl Poster for HttpsPoster {
@@ -140,4 +145,16 @@ fn describe(backend: &CoreBackend, page: &str) -> Option<Saved> {
         tags: super::markdown::tags(&json),
         text: Some(markdown),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::agent;
+
+    #[test]
+    fn a_delivery_never_connects_to_a_local_address() {
+        // localhost resolves to loopback only, so the resolver refuses it before any connection is tried.
+        let error = agent().post("https://localhost:9/hook").send(&b"{}"[..]).unwrap_err();
+        assert!(matches!(error, ureq::Error::BadUri(_)), "{error:?}");
+    }
 }
