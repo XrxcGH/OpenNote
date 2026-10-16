@@ -378,11 +378,6 @@ export default function CanvasView({ onClose }: OverlayProps) {
                   return (
                     <g key={edge.id}>
                       <line x1={p.x} y1={p.y} x2={q.x} y2={q.y} markerEnd="url(#canvas-arrow)" />
-                      {edge.label && (
-                        <text x={(p.x + q.x) / 2} y={(p.y + q.y) / 2 - 4} textAnchor="middle">
-                          {edge.label}
-                        </text>
-                      )}
                     </g>
                   );
                 })}
@@ -444,6 +439,21 @@ export default function CanvasView({ onClose }: OverlayProps) {
                   </div>
                 );
               })}
+              {/* The labels sit over the cards, so a narrow gap between two cards does not hide them. */}
+              <svg className={styles.arrows} width={width} height={height} aria-hidden="true">
+                {canvas.edges.map((edge) => {
+                  const a = nodeOf(edge.fromNode);
+                  const b = nodeOf(edge.toNode);
+                  if (!a || !b || !edge.label) return null;
+                  const p = edgePoint(a, center(b));
+                  const q = edgePoint(b, center(a));
+                  return (
+                    <text key={edge.id} x={(p.x + q.x) / 2} y={(p.y + q.y) / 2 - 4} textAnchor="middle">
+                      {edge.label}
+                    </text>
+                  );
+                })}
+              </svg>
             </div>
           </div>
           <details className={styles.json}>
