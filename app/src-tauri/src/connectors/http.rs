@@ -65,6 +65,10 @@ pub struct HttpRequest {
     pub url: String,
     pub headers: Vec<(String, String)>,
     pub body: Option<Body>,
+    /// Whether a redirect is followed, on a pinned host only. When false the 3xx comes back with its `Location`, for
+    /// a step whose next address is on another service, such as a Canvas upload that answers with the confirm
+    /// address on the Canvas host.
+    pub follow_redirects: bool,
 }
 
 impl HttpRequest {
@@ -74,6 +78,7 @@ impl HttpRequest {
             url: url.into(),
             headers: Vec::new(),
             body: None,
+            follow_redirects: true,
         }
     }
 
@@ -200,7 +205,7 @@ impl Http for UreqHttp {
             // A 308 with no Location is "Resume Incomplete" of a chunked upload (Google), an answer and not a redirect.
             let redirect = matches!(status, 301 | 302 | 303 | 307 | 308)
                 && !(status == 308 && response.headers().get("location").is_none());
-            if redirect {
+            if redirect && request.follow_redirects {
                 let location = response
                     .headers()
                     .get("location")
@@ -219,11 +224,17 @@ impl Http for UreqHttp {
                 .get("content-type")
                 .and_then(|value| value.to_str().ok())
                 .map(str::to_owned);
+            // A redirect handed back unfollowed carries its target as a full address.
             let location = response
                 .headers()
                 .get("location")
                 .and_then(|value| value.to_str().ok())
-                .map(str::to_owned);
+                .map(
+                    |location| match Url::parse(&current).and_then(|base| base.join(location)) {
+                        Ok(full) if redirect => full.into(),
+                        _ => location.to_owned(),
+                    },
+                );
             let mut body = Vec::new();
             let limit = u64::try_from(max_bytes).unwrap_or(u64::MAX).saturating_add(1);
             response
@@ -290,6 +301,52 @@ mod tests {
         assert!(!HostPolicy::new(["graph.microsoft.com"]).allows("http://127.0.0.1:4555/token"));
         assert!(!policy.allows("http://localhost:4555/token"));
         assert!(!policy.allows("http://127.0.0.1.evil.example:4555/token"));
+    }
+
+    /// Answers one request on a local port with `answer`, and gives the address.
+    fn answer_once(answer: &'static str) -> String {
+        use std::{io::Write, net::TcpListener};
+        let listener = TcpListener::bind("127.0.0.1:0").expect("binds");
+        let address = format!(
+            "http://127.0.0.1:{}/upload",
+            listener.local_addr().expect("port").port()
+        );
+        std::thread::spawn(move || {
+            if let Ok((mut stream, _)) = listener.accept() {
+                let mut buffer = [0u8; 4096];
+                let _ = stream.read(&mut buffer);
+                let _ = stream.write_all(answer.as_bytes());
+            }
+        });
+        address
+    }
+
+    const MOVED: &str = concat!(
+        "HTTP/1.1 301 Moved\r\nLocation: https://canvas.example/api/v1/files/1/create_success\r\n",
+        "Content-Length: 0\r\nConnection: close\r\n\r\n"
+    );
+
+    #[test]
+    fn an_unfollowed_redirect_to_another_host_comes_back_with_its_location() {
+        let address = answer_once(MOVED);
+        let mut request = HttpRequest::new(Method::Post, address);
+        request.follow_redirects = false;
+        let response = UreqHttp::default()
+            .send(&HostPolicy::new(["127.0.0.1"]), &request, 1024)
+            .unwrap_or_else(|_| panic!("the 301 comes back"));
+        assert_eq!(response.status, 301);
+        assert_eq!(
+            response.location.as_deref(),
+            Some("https://canvas.example/api/v1/files/1/create_success")
+        );
+    }
+
+    #[test]
+    fn a_followed_redirect_to_another_host_is_refused() {
+        let address = answer_once(MOVED);
+        let request = HttpRequest::new(Method::Post, address);
+        let result = UreqHttp::default().send(&HostPolicy::new(["127.0.0.1"]), &request, 1024);
+        assert_eq!(result.err(), Some(HttpError::ForeignHost));
     }
 
     #[test]

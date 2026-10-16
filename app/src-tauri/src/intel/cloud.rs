@@ -255,6 +255,7 @@ impl Cloud {
         let request = HttpRequest::new(Method::Post, format!("{BASE}/chat/completions"))
             .header("Authorization", format!("Bearer {}", key.expose()));
         let request = HttpRequest {
+            follow_redirects: true,
             body: Some(Body::Bytes {
                 content_type: "application/json".to_owned(),
                 data: body.to_string().into_bytes(),
@@ -370,6 +371,7 @@ fn transcription_request(key: &Secret, samples: &[f32], language: Option<&str>, 
     data.extend_from_slice(&wav_16k(samples));
     data.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
     HttpRequest {
+        follow_redirects: true,
         body: Some(Body::Bytes {
             content_type: format!("multipart/form-data; boundary={boundary}"),
             data,

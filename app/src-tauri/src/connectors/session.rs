@@ -359,6 +359,7 @@ fn header_ok(name: &str, value: &str) -> bool {
 
 fn clone_request(request: &HttpRequest) -> HttpRequest {
     HttpRequest {
+        follow_redirects: true,
         method: request.method,
         url: request.url.clone(),
         headers: request.headers.clone(),

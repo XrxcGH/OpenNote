@@ -40,6 +40,7 @@ impl Http for Redirect {
         let host = url.host_str().ok_or(HttpError::ForeignHost)?;
         let query = url.query().map(|query| format!("?{query}")).unwrap_or_default();
         let moved = HttpRequest {
+            follow_redirects: request.follow_redirects,
             method: request.method,
             url: format!("{}/{host}{}{query}", self.base, url.path()),
             headers: request.headers.clone(),

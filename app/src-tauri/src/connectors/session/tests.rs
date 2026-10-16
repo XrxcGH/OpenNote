@@ -87,6 +87,7 @@ fn the_token_goes_in_the_header_or_the_form_as_the_service_wants() {
     };
     assert_eq!(fields, [("wstoken".to_owned(), "tok-123".to_owned())]);
     let bytes = HttpRequest {
+        follow_redirects: true,
         body: Some(Body::Bytes {
             content_type: "x".into(),
             data: vec![],

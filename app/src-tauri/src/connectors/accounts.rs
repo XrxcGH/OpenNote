@@ -361,6 +361,9 @@ fn transfer_public(connectors: &Connectors, root: &Path, args: &Value) -> IpcRes
     }
     let host = public_upload_host(&address).ok_or_else(|| invalid("url", "That upload address can't be used."))?;
     let mut http = HttpRequest::new(super::registry::Method::Post, address);
+    // Canvas answers a finished upload with a redirect to its own host, where the app confirms with the token, so
+    // the redirect comes back here instead of being followed off the upload host.
+    http.follow_redirects = false;
     http.body = Some(Body::Bytes {
         content_type,
         data: join_parts(root, &parts)?,
