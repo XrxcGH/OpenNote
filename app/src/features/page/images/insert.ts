@@ -25,6 +25,23 @@ export const IMAGE_TYPES = [
   'image/avif',
   'image/svg+xml',
 ] as const;
+/**
+ * Windows metafiles (EMF, WMF), which the shell draws into SVG, as import does. Windows often gives them no type or
+ * an unregistered one, so their file names count too; the shell checks the header either way.
+ */
+export const METAFILE_TYPES = [
+  'image/emf',
+  'image/x-emf',
+  'image/wmf',
+  'image/x-wmf',
+  'application/x-msmetafile',
+] as const;
+const METAFILE_NAME = /\.(emf|wmf)$/i;
+
+export function isMetafile(file: Pick<File, 'type' | 'name'>): boolean {
+  const type = file.type.toLowerCase();
+  return (METAFILE_TYPES as readonly string[]).includes(type) || METAFILE_NAME.test(file.name);
+}
 /** What the shell can convert when page.heicImport is on. */
 export const CONVERTIBLE_TYPES = ['image/heic', 'image/heif', 'image/tiff'] as const;
 const KEEP_BELOW = 24;
@@ -211,7 +228,7 @@ export function showInserted(
 /** Image files from a list, and whether any other files were left out. */
 export function imageFiles(files: readonly File[], convert: boolean): { images: File[]; others: number } {
   const allowed = new Set<string>([...IMAGE_TYPES, ...(convert ? CONVERTIBLE_TYPES : [])]);
-  const images = files.filter((file) => allowed.has(file.type.toLowerCase()));
+  const images = files.filter((file) => allowed.has(file.type.toLowerCase()) || isMetafile(file));
   return { images, others: files.length - images.length };
 }
 
@@ -230,7 +247,7 @@ export function pickImages(mounted: MountedPage, convert: boolean): Promise<Bloc
   const input = document.createElement('input');
   input.type = 'file';
   input.multiple = true;
-  input.accept = [...IMAGE_TYPES, ...(convert ? CONVERTIBLE_TYPES : [])].join(',');
+  input.accept = [...IMAGE_TYPES, ...(convert ? CONVERTIBLE_TYPES : []), '.emf', '.wmf'].join(',');
   const place = defaultPlacement(mounted);
   return new Promise((resolve) => {
     input.addEventListener('change', () => {
