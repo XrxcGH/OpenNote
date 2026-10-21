@@ -8,7 +8,7 @@ import { Button, TextField, announce } from '../../../ui';
 import { parseDateKey } from '../upcoming';
 import type { Exam, ExamTarget } from '../upcoming';
 import { useNodeChoices } from './nodeChoices';
-import { newId } from './upcomingShared';
+import { examWhen, newId } from './upcomingShared';
 import { examsStore, setExams } from './upcomingStores';
 import styles from './tools.module.css';
 import extra from './extra.module.css';
@@ -106,7 +106,7 @@ export function ExamForm() {
                 <span className={styles.note}> {t('study.exams.for', { place: exam.target.label })}</span>
               ) : null}
             </span>
-            <span className={styles.itemDue}>{exam.date}</span>
+            <span className={styles.itemDue}>{examWhen(exam)}</span>
             <Button
               variant="quiet"
               aria-label={t('study.exams.remove', { name: exam.name })}

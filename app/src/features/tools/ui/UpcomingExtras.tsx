@@ -23,6 +23,7 @@ import {
 import type { ClassSlot, Exam, UpcomingItem } from '../upcoming';
 import { dateIn } from '../upcoming/zone';
 import { disableReminders, enableReminders, remindersOn } from './notify';
+import { examWhen } from './upcomingShared';
 import { examsStore, setExams, setTimetable, timetableStore } from './upcomingStores';
 import styles from './tools.module.css';
 import extra from './extra.module.css';
@@ -199,7 +200,7 @@ export function Planner() {
           {exams.map((exam) => (
             <li key={exam.id} className={styles.item}>
               <span className={styles.itemTitle}>{exam.name}</span>
-              <span className={styles.itemDue}>{exam.date}</span>
+              <span className={styles.itemDue}>{examWhen(exam)}</span>
               <Button
                 variant="quiet"
                 aria-label={t('study.exams.remove', { name: exam.name })}

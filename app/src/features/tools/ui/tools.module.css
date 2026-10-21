@@ -241,15 +241,19 @@
 
   .item {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3);
   }
 
   .itemTitle {
-    flex: 1;
+    flex: 1 1 14ch;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
   }
 
   .itemDue {
+    white-space: nowrap;
     color: var(--color-text-secondary);
     font-size: var(--type-small-size);
     font-variant-numeric: tabular-nums;

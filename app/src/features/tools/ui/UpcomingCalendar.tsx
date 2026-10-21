@@ -165,14 +165,15 @@ export function UpcomingCalendar({ mode, items, selected, onSelect, onCheck, onO
         {rows.map((row) => (
           <div key={row[0].key} className={grid.row} role="row">
             {row.map((day) => {
-              const list = days.get(day.key) ?? [];
+              // Finished items (a repeating task's earlier rounds too) are not counted; the day's list still shows them.
+              const left = (days.get(day.key) ?? []).filter((item) => !item.done).length;
               return (
                 <Cell
                   key={day.key}
                   day={day}
                   selected={dateKey(selected) === day.key}
-                  count={list.length}
-                  open={list.filter((item) => !item.done).length}
+                  count={left}
+                  open={left}
                   onSelect={() => onSelect(day.date)}
                 />
               );
