@@ -117,6 +117,13 @@ describe('the title bar chip', () => {
     expect(chipReading(timers.views())).toEqual({ label: 'Tea', text: '1:30', count: 2 });
   });
 
+  it('shows the round of a focus timer, as its card does, not the whole session', () => {
+    const timers = createTimers(() => Date.now());
+    const focus = timers.add({ kind: 'focus', workMs: 25 * 60_000, breakMs: 5 * 60_000, cycles: 4 }, 'Focus');
+    timers.act(focus, 'start');
+    expect(chipReading(timers.views())).toEqual({ label: 'Focus', text: '25:00', count: 1 });
+  });
+
   it('counts up for a stopwatch when it is the only one running', () => {
     const timers = createTimers(() => Date.now());
     const watch = timers.add({ kind: 'stopwatch' }, 'Lap timer');

@@ -45,11 +45,13 @@ function TimerCard({ view, timers }: { view: TimerView; timers: Timers }) {
         {shown}
       </div>
       {phase ? <div className={styles.phase}>{phase}</div> : null}
-      <Switch
-        label={t('smart.tools.timers.notify', { name: view.label })}
-        checked={view.notify}
-        onChange={chooseNotify}
-      />
+      {view.kind === 'stopwatch' ? null : (
+        <Switch
+          label={t('smart.tools.timers.notify', { name: view.label })}
+          checked={view.notify}
+          onChange={chooseNotify}
+        />
+      )}
       {blocked ? <p className={styles.note}>{t('study.reminders.blocked')}</p> : null}
       <div className={styles.buttons}>
         {view.status === 'idle' ? <Button onClick={act('start')}>{t('smart.tools.timers.start')}</Button> : null}

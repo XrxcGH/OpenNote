@@ -9,7 +9,11 @@ One JSON file for each first letter in `data/en/` (and `_.json` for words that s
 word to its parts of speech, and each part of speech to its senses, the most common first:
 
 ```json
-{ "cause": [["n", [["a person or thing that makes something happen", ["reason", "source"], "Poor drainage was the cause."]]]] }
+{
+  "cause": [
+    ["n", [["a person or thing that makes something happen", ["reason", "source"], "Poor drainage was the cause."]]]
+  ]
+}
 ```
 
 A sense is `[definition, synonyms, example?]`. The chunk for a letter loads when a word starts with it (`data.ts`), so

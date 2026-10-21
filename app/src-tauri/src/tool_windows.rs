@@ -177,12 +177,38 @@ fn save_now(app: &AppHandle, tool: &str, window: &WebviewWindow) {
     }
 }
 
+/// Where a new window with no saved place goes so it does not cover another tool window: just right of the
+/// rightmost one open (or just left of the leftmost, if there is no room), at the same height. `None` when no
+/// other tool window is open or neither side has room; Windows then picks the place.
+fn beside_open_tools(app: &AppHandle, window: &WebviewWindow) -> Option<(i32, i32)> {
+    const GAP: i32 = 8;
+    let own = window.outer_size().ok()?;
+    let work = window.current_monitor().ok().flatten()?.work_area().clone();
+    let (left, right) = (work.position.x, work.position.x + edge(work.size.width));
+    let others: Vec<(i32, i32, i32)> = TOOLS
+        .iter()
+        .filter_map(|spec| app.get_webview_window(&label(spec)))
+        .filter(|other| other.label() != window.label())
+        .filter_map(|other| Some((other.outer_position().ok()?, other.outer_size().ok()?)))
+        .map(|(at, size)| (at.x, at.x + edge(size.width), at.y))
+        .collect();
+    let (min_x, _, _) = *others.iter().min_by_key(|one| one.0)?;
+    let (_, max_end, y) = *others.iter().max_by_key(|one| one.1)?;
+    let wide = edge(own.width);
+    if max_end + GAP + wide <= right {
+        return Some((max_end + GAP, y));
+    }
+    (min_x - GAP - wide >= left).then_some((min_x - GAP - wide, y))
+}
+
 /// Moves a new window to the place it had, if one is saved, and shows it.
 fn restore_and_show(app: &AppHandle, tool: &str, window: &WebviewWindow) {
     let saved = place::load(&places_file(app)).remove(tool);
     if let Some(open) = saved.and_then(|saved| place::opening(&saved, &monitors(app))) {
         let _ = window.set_size(PhysicalSize::new(open.size.0, open.size.1));
         let _ = window.set_position(PhysicalPosition::new(open.position.0, open.position.1));
+    } else if let Some((x, y)) = beside_open_tools(app, window) {
+        let _ = window.set_position(PhysicalPosition::new(x, y));
     }
     let _ = window.show();
 }

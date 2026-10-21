@@ -77,7 +77,26 @@ function Windows() {
   );
 }
 
+/** Brings a tool's own window forward when the app has one open. True when it did. */
+async function focusPopped(id: ToolId): Promise<boolean> {
+  try {
+    const { getAllWebviewWindows } = await import('@tauri-apps/api/webviewWindow');
+    if (!(await getAllWebviewWindows()).some((one) => one.label === `tool-${id}`)) return false;
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('tool_window_open', { tool: id, pinned: layer.get().pinned.includes(id) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Opens a tool: its own window is brought forward if it has one, otherwise it floats over the page. */
 export function openTool(id: ToolId): void {
+  if (canPopOut()) void focusPopped(id).then((found) => !found && dock(id));
+  else dock(id);
+}
+
+function dock(id: ToolId): void {
   if (!root) {
     const host = document.createElement('div');
     host.id = 'tool-windows';

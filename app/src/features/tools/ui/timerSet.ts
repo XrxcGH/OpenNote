@@ -31,7 +31,11 @@ export function chipReading(views: readonly TimerView[]): ChipReading | null {
   const first = [...counting].sort((a, b) => (a.leftMs ?? 0) - (b.leftMs ?? 0))[0] ?? running[0];
   return {
     label: first.label,
-    text: first.leftMs === null ? stopwatchText(first.elapsedMs) : clockText(first.leftMs),
+    // A focus timer's card counts the round it is in, so the chip says the same number.
+    text:
+      first.leftMs === null
+        ? stopwatchText(first.elapsedMs)
+        : clockText(first.focus ? first.focus.phaseLeftMs : first.leftMs),
     count: running.length,
   };
 }
