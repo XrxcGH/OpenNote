@@ -132,4 +132,16 @@ describe('printToPrinter', () => {
     submit.mockRejectedValueOnce({ code: 'spool', message: 'The printer is offline.' });
     await expect(printToPrinter(client, source(2), { print: {}, request })).rejects.toMatchObject({ code: 'spool' });
   });
+
+  it('ends the wait when stopped while the spooler still holds the job (a Save window left open)', async () => {
+    const client = createWebExports();
+    vi.spyOn(client, 'printSubmit').mockReturnValue(new Promise(() => undefined));
+    const request = toJobRequest(DEFAULT_PRINTER_FORM, [OFFICE], 'Notes');
+    if (!request) throw new Error('The request was not made.');
+    const stop = new AbortController();
+    const run = printToPrinter(client, source(2), { print: {}, request, signal: stop.signal });
+    await vi.waitFor(() => expect(client.printSubmit).toHaveBeenCalled());
+    stop.abort();
+    await expect(run).rejects.toMatchObject({ name: 'AbortError' });
+  });
 });

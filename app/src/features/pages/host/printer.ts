@@ -92,6 +92,21 @@ export interface PrintJobOptions {
  * stopped, a `TimeoutError` when a step takes too long, a `PdfCheckError` when the file doesn't match the plan, and
  * the shell's error when the spooler turns the job down. A stop after the job is handed over cannot recall it.
  */
+/**
+ * The spooler call cannot be called back once it is running: a printer that asks where to save (Microsoft Print to
+ * PDF) holds it open until its own window is answered. Stop must still work, so the wait ends at once with an
+ * AbortError; the job's late answer is ignored.
+ */
+function untilStopped<T>(work: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+  if (!signal) return work;
+  return new Promise<T>((resolve, reject) => {
+    const stop = () => reject(signal.reason instanceof Error ? signal.reason : new DOMException('Stopped', 'AbortError'));
+    if (signal.aborted) return stop();
+    signal.addEventListener('abort', stop, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener('abort', stop));
+  });
+}
+
 export async function printToPrinter(
   client: ExportsClient,
   source: PageSource,
@@ -108,9 +123,12 @@ export async function printToPrinter(
   const errors = result.problems.filter((problem) => problem.severity === 'error');
   if (errors.length > 0) throw new PdfCheckError(errors);
   options.signal?.throwIfAborted();
-  const receipt = await client.printSubmit(result.bytes, {
-    ...options.request,
-    title: options.request.title || t('pageViews.print.untitled'),
-  });
+  const receipt = await untilStopped(
+    client.printSubmit(result.bytes, {
+      ...options.request,
+      title: options.request.title || t('pageViews.print.untitled'),
+    }),
+    options.signal,
+  );
   return { receipt, sheets: result.prepared.printed };
 }
