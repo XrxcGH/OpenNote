@@ -80,4 +80,14 @@ describe('Announcer', () => {
     act(() => announce('Dark theme.'));
     await expectNoAxeViolations(document.body);
   });
+
+  it('empties the region after a while, but keeps the log', () => {
+    vi.useFakeTimers();
+    render(<Announcer />);
+    act(() => announce('No entry for beautiful.'));
+    expect(region('polite').textContent).toBe('No entry for beautiful.');
+    act(() => void vi.advanceTimersByTime(9000));
+    expect(region('polite').textContent).toBe('');
+    expect(announcements()).toContain('No entry for beautiful.');
+  });
 });
