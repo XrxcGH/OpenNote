@@ -32,6 +32,8 @@ export function ReferenceTool() {
   const prefixes = PREFIXES.filter((one) => matches(`${one.name} ${one.symbol} ${one.power}`, query));
   const greek = GREEK.filter((one) => matches(`${one.name} ${one.upper} ${one.lower}`, query));
 
+  const shown = { elements, constants, prefixes, greek }[tab].length;
+
   return (
     <div className={styles.tool}>
       <div className={styles.tabs} role="tablist" aria-label={t('study.reference.title')}>
@@ -44,7 +46,11 @@ export function ReferenceTool() {
             aria-selected={tab === one}
             aria-controls="reference-panel"
             className={styles.tab}
-            onClick={() => setTab(one)}
+            onClick={() => {
+              // A search is for the table it was typed in: another table starts with all of its rows.
+              setTab(one);
+              setQuery('');
+            }}
           >
             {t(`study.reference.tabs.${one}`)}
           </button>
@@ -52,6 +58,11 @@ export function ReferenceTool() {
       </div>
       <TextField label={t('study.reference.search')} value={query} onChange={setQuery} />
       <div id="reference-panel" role="tabpanel" aria-labelledby={`reference-tab-${tab}`} className={extra.scroll}>
+        {query.trim() !== '' && shown === 0 ? (
+          <p className={styles.empty} role="status">
+            {t('study.reference.noMatch', { query: query.trim() })}
+          </p>
+        ) : null}
         {tab === 'elements' ? <ElementsTable elements={elements} /> : null}
         {tab === 'constants' ? (
           <table className={extra.table}>

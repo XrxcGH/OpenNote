@@ -25,6 +25,15 @@ describe('the reference tables', () => {
     expect(screen.getByRole('columnheader', { name: 'Electron configuration' })).toBeTruthy();
   });
 
+  it('says when nothing matches, and starts another table with all its rows', async () => {
+    renderUi(<ReferenceTool />);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Search' }), 'zzz');
+    expect(screen.getByRole('status').textContent).toContain('zzz');
+    await userEvent.click(screen.getByRole('tab', { name: 'Constants' }));
+    expect((screen.getByRole('textbox', { name: 'Search' }) as HTMLInputElement).value).toBe('');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('shows no group for an element of the f-block, and says so in words', async () => {
     renderUi(<ReferenceTool />);
     await userEvent.fill(screen.getByRole('textbox', { name: 'Search' }), 'cerium');

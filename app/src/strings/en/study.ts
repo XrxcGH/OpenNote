@@ -421,6 +421,7 @@ export const study = {
     keywords: 'reference periodic table elements constants prefixes greek letters',
     tabs: { elements: 'Elements', constants: 'Constants', prefixes: 'Prefixes', greek: 'Greek' },
     search: 'Search',
+    noMatch: 'Nothing here matches "{query}".',
     number: 'Number',
     symbol: 'Symbol',
     name: 'Name',
