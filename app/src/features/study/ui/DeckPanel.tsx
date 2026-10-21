@@ -1,7 +1,7 @@
 // The Flashcards panel (Study tools): the deck list, one deck with its exam date and counts, review, card editing,
 // import, and the review step for generated cards. The tool window shows it with the whole list; the flashcard
 // block on a page shows it for one deck.
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useFlag } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { Button, announce, confirm } from '../../../ui';
@@ -281,13 +281,6 @@ export function DeckPanel({ deckId }: PanelProps) {
   const request = useStore(cardRequest, (current) => current);
   const canImport = useFlag('study.import');
   const wanted = useStore(importWanted, (current) => current);
-  // "Import cards" from the palette opens the window on the import view.
-  useEffect(() => {
-    if (!wanted || deckId) return;
-    importWanted.set(false);
-    setOpen(null);
-    setView('import');
-  }, [wanted, deckId]);
   const deck = decks.find((one) => one.id === open) ?? null;
   const back = deckId
     ? null
@@ -308,11 +301,13 @@ export function DeckPanel({ deckId }: PanelProps) {
       </div>
     );
   }
-  if (view === 'import' && !deckId && canImport) {
+  // "Import cards" from the palette asks for the import view (importWanted) before the window has a deck open.
+  if ((view === 'import' || wanted) && !deckId && canImport) {
     return (
       <div className={styles.root}>
         <ImportView
           onDone={(id) => {
+            importWanted.set(false);
             setOpen(id);
             setView('deck');
           }}
