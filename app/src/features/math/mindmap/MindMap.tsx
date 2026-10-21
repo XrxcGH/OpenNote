@@ -42,7 +42,15 @@ export function MindMap({ data, readOnly, onChange }: Props) {
   const [root, setRoot] = useState(incoming);
   const sent = useRef(JSON.stringify(incoming));
   const [focus, setFocus] = useState(incoming.id);
-  const [editing, setEditing] = useState<string | null>(null);
+  const [editingState, setEditingState] = useState<string | null>(null);
+  const editing = editingState;
+  // The branch being written, kept at once: the old field's blur arrives after Tab or Enter has moved on to a new
+  // branch, and must not close that one.
+  const editingNow = useRef<string | null>(null);
+  const setEditing = (id: string | null) => {
+    editingNow.current = id;
+    setEditingState(id);
+  };
   const [draft, setDraft] = useState('');
   const host = useRef<HTMLDivElement>(null);
 
@@ -129,7 +137,8 @@ export function MindMap({ data, readOnly, onChange }: Props) {
       build('child', id);
     } else if (event.key === 'Tab' || event.key === 'Escape') {
       if (event.key === 'Escape') event.preventDefault();
-      if (event.key === 'Tab') finish();
+      // Both keep what was typed: the field's blur would also do it, but only when the browser sends one.
+      finish();
       setEditing(null);
     }
   };
@@ -207,6 +216,7 @@ export function MindMap({ data, readOnly, onChange }: Props) {
               autoFocus
               onChange={(event) => setDraft(event.target.value)}
               onBlur={() => {
+                if (editingNow.current !== node.id) return;
                 finish();
                 setEditing(null);
               }}
