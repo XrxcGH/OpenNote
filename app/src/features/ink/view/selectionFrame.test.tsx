@@ -24,7 +24,7 @@ const host = {
 } as unknown as InkHost;
 const surface = {
   chrome,
-  parts: { viewport: { viewport: chrome } },
+  parts: { viewport: { viewport: chrome, world: chrome } },
   strokes: (ids: readonly string[]) => (ids.includes('s1') ? [stroke] : []),
   cameraNow: () => ({ zoom: 1, scrollX: 0, scrollY: 0 }),
   onChange: () => () => undefined,
@@ -51,5 +51,34 @@ describe('the lasso frame', () => {
     expect(chrome.querySelector('[data-ink-action="delete"]')).not.toBeNull();
     frame.stop();
     chrome.remove();
+  });
+});
+
+describe('the lasso bar and the page title', () => {
+  it('goes below a selection that sits under the title, so the bar does not cover it', () => {
+    document.body.append(chrome);
+    const low = makeStroke('low', [
+      { x: 10, y: 1000 },
+      { x: 60, y: 1030 },
+    ]);
+    const lowSurface = {
+      ...surface,
+      strokes: (ids: readonly string[]) => (ids.includes('low') ? [low] : []),
+    } as unknown as InkSurface;
+    const bar = () => chrome.querySelector<HTMLElement>('[data-ink-selection-bar]');
+    selection = { blocks: [], strokes: ['low'] };
+    const frame = attachSelectionFrame(host, lowSurface);
+    expect(bar()?.hasAttribute('data-below')).toBe(false);
+    const band = document.createElement('div');
+    band.style.cssText = 'position:absolute;inset-block-start:0;block-size:1010px';
+    const heading = document.createElement('h1');
+    heading.dataset.pageTitle = '';
+    band.append(heading);
+    chrome.append(band);
+    listeners.forEach((fn) => fn());
+    expect(bar()?.hasAttribute('data-below')).toBe(true);
+    frame.stop();
+    chrome.remove();
+    selection = { blocks: [], strokes: [] };
   });
 });

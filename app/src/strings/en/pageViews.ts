@@ -109,6 +109,8 @@ export const pageViews = {
       verify: 'Checking the file…',
       send: 'Sending to the printer…',
     },
+    sendHint: 'If a Save window asks where to put the file, it may be behind OpenNote. Answer it there, or press Stop.',
+    noGrayscale: "This printer can't print in black and white. Turn that option off and print again.",
     stop: 'Stop',
     printer: 'Printer',
     defaultPrinter: '{name} (default)',
@@ -126,6 +128,8 @@ export const pageViews = {
     paperHint:
       'The paper is {paper}, the size set in the page layout. To print on another size, change it there first.',
     grayscale: 'Print in black and white',
+    previousSheet: 'Previous sheet',
+    nextSheet: 'Next sheet',
     noPrinter: 'No printer is set up on this computer, so Print saves a PDF and opens it. You can print it from there.',
     sent: 'Sent to {printer}. It prints when the printer is ready.',
     printerRefused: 'The printer did not take the job. Check that it is on and has paper, then try again.',

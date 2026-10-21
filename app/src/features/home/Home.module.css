@@ -2,6 +2,8 @@
 @layer components {
   .home {
     max-inline-size: var(--size-reading-measure);
+    /* Narrower than the measure, the card keeps the desk showing on both sides instead of running to the edges. */
+    inline-size: calc(100% - 2 * var(--space-6));
     margin: var(--space-6) auto;
     padding: var(--space-6);
     border-radius: var(--radius-lg);

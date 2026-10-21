@@ -156,7 +156,11 @@ function reportFailure(error: unknown, platform: Platform): void {
   if (code === 'notImplemented') return void showToast({ message: t('pageViews.print.unavailable'), tone: 'danger' });
   if (code === 'spool' || code === 'noPrinter') {
     platform.log('error', `Printing failed: ${String((error as { message?: string }).message)}`);
-    return void showToast({ message: t('pageViews.print.printerRefused'), tone: 'danger' });
+    const grayscale = String((error as { message?: string }).message).includes('grayscale');
+    return void showToast({
+      message: t(grayscale ? 'pageViews.print.noGrayscale' : 'pageViews.print.printerRefused'),
+      tone: 'danger',
+    });
   }
   platform.log('error', `PDF export failed: ${error instanceof PdfCheckError ? error.message : String(error)}`);
   showToast({ message: t('pageViews.print.failed'), tone: 'danger' });
@@ -300,11 +304,11 @@ function PreviewPane({ preview, sheet, setSheet }: { preview: Preview; sheet: nu
       <SheetPreview result={result} sheet={shown} />
       <div className={styles.stepper}>
         <Button variant="quiet" disabled={shown === 0} onClick={() => setSheet(shown - 1)}>
-          {t('pageViews.slides.previous')}
+          {t('pageViews.print.previousSheet')}
         </Button>
         <span>{t('pageViews.status.sheetCount', { sheet: shown + 1, sheets: printed })}</span>
         <Button variant="quiet" disabled={shown >= printed - 1} onClick={() => setSheet(shown + 1)}>
-          {t('pageViews.slides.next')}
+          {t('pageViews.print.nextSheet')}
         </Button>
       </div>
       <p className={styles.hint}>{t('pageViews.print.sheetCount', { count: printed, paper: size })}</p>
@@ -322,6 +326,7 @@ function Progress({ working, printing }: { working: Working; printing: boolean }
       <p className={styles.hint}>
         {t(`pageViews.print.stage.${working.stage as 'prepare' | 'render' | 'verify' | 'send'}`)}
       </p>
+      {printing && working.stage === 'send' ? <p className={styles.hint}>{t('pageViews.print.sendHint')}</p> : null}
     </div>
   );
 }
@@ -376,7 +381,12 @@ function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
         <Switch label={t('pageViews.print.collate')} checked={form.collate} onChange={(v) => set('collate', v)} />
       ) : null}
       {canDuplex(printer) ? (
-        <RadioGroup label={t('pageViews.print.duplex')} value={form.duplex} onChange={(value) => set('duplex', value)}>
+        <RadioGroup
+          label={t('pageViews.print.duplex')}
+          columns={2}
+          value={form.duplex}
+          onChange={(value) => set('duplex', value)}
+        >
           {DUPLEX.map((choice) => (
             <RadioCard key={choice} value={choice} label={t(duplexKey[choice])} />
           ))}

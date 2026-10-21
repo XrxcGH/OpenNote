@@ -3,7 +3,8 @@
      page's content width, and never wider than the viewport, so nothing scrolls sideways at 320 CSS px. The flow
      isn't positioned, so floating blocks inside it sit at their frames in the world. */
   .flow {
-    --flow-margin: min(var(--size-flow-margin), calc(5cqi / var(--page-zoom, 1)));
+    /* Never less than a fold button's width, which hangs in the margin beside a heading. */
+    --flow-margin: max(var(--size-chrome-hit), min(var(--size-flow-margin), calc(5cqi / var(--page-zoom, 1))));
 
     margin-inline-start: var(--flow-margin);
     padding-block: var(--space-4) var(--space-8);
