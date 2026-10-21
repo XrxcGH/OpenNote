@@ -20,6 +20,7 @@ import { isProtectedNode, treeStore } from '../../tree';
 import { PANEL_TYPES, panelRenderer } from '../panels/kinds';
 import { blockRenderers, editingSettingsParts, slashItems } from '../registries';
 import type { SlashItemDef } from '../registries';
+import { liveBlock } from '../blocks/textBlock';
 import { shownPool } from '../pool/shown';
 import { shownQueue } from '../sync/shown';
 import { currentTable } from '../tables/current';
@@ -330,7 +331,8 @@ function watchText(
     const blocks = mounted.layer
       .blocks()
       .filter((block) => block.type === 'text')
-      .map((block) => ({ id: block.id, markdown: String(block.data.markdown ?? '') }));
+      // The layer's copy keeps the Markdown a block was opened with, not what was typed since.
+      .map((block) => ({ id: block.id, markdown: String(liveBlock(mounted.layer, block).data.markdown ?? '') }));
     const found = blocks.some((block) => test.test(block.markdown));
     if (!found && !had) return;
     const key = found ? JSON.stringify(blocks) : '';
