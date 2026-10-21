@@ -340,9 +340,10 @@ const ieee = {
               source.accessed ? `Accessed: ${source.accessed}.` : '',
             ]
           : [
-              italic(source.title) +
-                (source.type === 'recording' ? ' [Recording]' : '') +
-                part(source.edition, (v) => `, ${v} ed.`),
+              `${italic(source.title)}${source.type === 'recording' ? ' [Recording]' : ''}${part(
+                source.edition,
+                (v) => `, ${v} ed`,
+              )}.`,
               `${source.place ? `${source.place}: ` : ''}${source.publisher}${date ? `, ${date}` : ''}.`.replace(
                 /^[:,\s]+/,
                 '',

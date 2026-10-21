@@ -143,6 +143,17 @@ describe('styles', () => {
       'Smith, Jane Q., and Wei Lee. "Sleep and Memory in Students." *Journal of Learning*, vol. 12, no. 3, 2020, pp. 45–67.',
     );
   });
+  it('ends an IEEE book title with a period', () => {
+    const book = {
+      ...blankSource('book'),
+      title: 'Notes on Notes',
+      authors: [{ family: 'Lee', given: 'A' }],
+      year: '2018',
+      place: 'Boston',
+      publisher: 'Open Press',
+    };
+    expect(STYLES.ieee.reference(book, 1)).toBe('[1] A. Lee, *Notes on Notes*. Boston: Open Press, 2018.');
+  });
   it('write Chicago, Harvard, and IEEE', () => {
     expect(STYLES.chicago.inline(s)).toBe('(Smith and Lee 2020)');
     expect(STYLES.chicago.reference(s)).toContain('Smith, Jane Q., and Wei Lee. 2020. "Sleep and Memory in Students."');

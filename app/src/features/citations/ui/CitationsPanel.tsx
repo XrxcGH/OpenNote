@@ -155,6 +155,17 @@ function SourceForm({
   );
 }
 
+/** Draws the Markdown a style writes (titles between asterisks) with the titles in italics, not the asterisks. */
+function Marked({ text }: { text: string }) {
+  return (
+    <>
+      {text
+        .split(/(\*[^*]+\*)/)
+        .map((piece, index) => (/^\*[^*]+\*$/.test(piece) ? <em key={index}>{piece.slice(1, -1)}</em> : piece))}
+    </>
+  );
+}
+
 // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function CitationsPanel() {
   const location = useLocation();
@@ -320,7 +331,7 @@ export function CitationsPanel() {
         <>
           <h3 className={styles.heading}>{t('study.citations.bibliography')}</h3>
           <div className={styles.preview} aria-label={t('study.citations.bibliography')}>
-            {text}
+            <Marked text={text} />
           </div>
           <div className={styles.buttons}>
             <Button
