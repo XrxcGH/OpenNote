@@ -12,6 +12,9 @@ export interface CardRequest {
 
 export const cardRequest = createStore<CardRequest | null>(null, 'study card request');
 
+/** True when the palette asked for Import cards: the Flashcards window takes it and shows the import view. */
+export const importWanted = createStore<boolean>(false, 'study import wanted');
+
 /** Reads the text for cards and asks the Flashcards window to show what it found. */
 export function requestCards(text: string, source: string): CardRequest {
   const request = { source, candidates: generateCards(text) };

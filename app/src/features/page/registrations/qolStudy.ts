@@ -427,6 +427,22 @@ for (const [tool, flag, title, keywords, icon] of [
   });
 }
 
+// Import cards: opens the Flashcards window on its import view (CSV, text, or an Anki package).
+addCommand({
+  id: 'study.import',
+  title: 'study.io.import',
+  keywords: 'study.io.importKeywords',
+  category: 'general',
+  icon: 'Cards',
+  flag: 'study.import',
+  anywhere: true,
+  run: async () => {
+    const study = await import('../../study');
+    study.importWanted.set(true);
+    (await import('../../tools')).openTool('flashcards');
+  },
+});
+
 // The dictionary and thesaurus: open it from the palette, or look up the word selected on the page.
 addCommand({
   id: 'tools.dictionary',

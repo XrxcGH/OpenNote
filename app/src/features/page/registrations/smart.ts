@@ -297,15 +297,15 @@ for (const spec of TABLE_COMMANDS) {
 
 // Tool windows (Phase 10): timers, the calculator, and Upcoming open from the palette. A tool can hand an answer or a
 // graph to the page that is open, which takes it at the caret.
-for (const [tool, title, icon] of [
-  ['timers', 'smart.tools.openTimers', 'Timer'],
-  ['calculator', 'smart.tools.openCalculator', 'Calculator'],
-  ['upcoming', 'smart.tools.openUpcoming', 'CalendarCheck'],
+for (const [tool, title, icon, keywords] of [
+  ['timers', 'smart.tools.openTimers', 'Timer', 'smart.tools.keywords'],
+  ['calculator', 'smart.tools.openCalculator', 'Calculator', 'smart.tools.keywords'],
+  ['upcoming', 'smart.tools.openUpcoming', 'CalendarCheck', 'smart.tools.upcomingKeywords'],
 ] as const) {
   commands.register({
     id: `tools.${tool}`,
     title,
-    keywords: 'smart.tools.keywords',
+    keywords,
     category: 'general',
     icon,
     flag: 'tools.windows',

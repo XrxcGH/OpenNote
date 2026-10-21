@@ -1,7 +1,7 @@
 // The Flashcards panel (Study tools): the deck list, one deck with its exam date and counts, review, card editing,
 // import, and the review step for generated cards. The tool window shows it with the whole list; the flashcard
 // block on a page shows it for one deck.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFlag } from '../../../app/flags';
 import { t } from '../../../strings/t';
 import { Button, announce, confirm } from '../../../ui';
@@ -19,7 +19,7 @@ import {
   statesOf,
   statesStore,
 } from '../deck/library';
-import { cardRequest } from '../deck/request';
+import { cardRequest, importWanted } from '../deck/request';
 import { counts, dailyTarget } from '../deck/schedule';
 import type { Card, Deck } from '../deck/types';
 import { CardEditor } from './CardEditor';
@@ -280,6 +280,14 @@ export function DeckPanel({ deckId }: PanelProps) {
   const loaded = useStore(decksLoadedStore, (current) => current);
   const request = useStore(cardRequest, (current) => current);
   const canImport = useFlag('study.import');
+  const wanted = useStore(importWanted, (current) => current);
+  // "Import cards" from the palette opens the window on the import view.
+  useEffect(() => {
+    if (!wanted || deckId) return;
+    importWanted.set(false);
+    setOpen(null);
+    setView('import');
+  }, [wanted, deckId]);
   const deck = decks.find((one) => one.id === open) ?? null;
   const back = deckId
     ? null

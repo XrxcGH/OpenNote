@@ -41,3 +41,10 @@ describe('score', () => {
     );
   });
 });
+
+describe('scattered letters', () => {
+  it('do not match a long title, but still match initials', () => {
+    expect(score('anki', 'Ink drawn on text follows the words')).toBe(0);
+    expect(score('tdm', 'Toggle dark mode')).toBeGreaterThan(0);
+  });
+});

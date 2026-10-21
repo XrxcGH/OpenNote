@@ -41,6 +41,7 @@ export const smart = {
     openTimers: 'Open timers',
     openCalculator: 'Open calculator',
     openUpcoming: 'Open upcoming',
+    upcomingKeywords: 'upcoming due tasks exam exams timetable classes class schedule calendar deadline assignment ics',
     keywords: 'timer stopwatch pomodoro focus calculator scientific graphing upcoming due tasks study tool window',
     window: {
       close: 'Close {title}',
