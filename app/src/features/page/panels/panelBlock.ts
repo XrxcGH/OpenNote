@@ -26,6 +26,14 @@ export function createPanelInner(
     readOnly: ctx.page.readOnly !== null,
     patch: (data, fallback) => {
       const edit = { edit: 'patchBlock' as const, block: latest.id, data };
+      // The page core keeps the data, but nothing tells this view: draw the change now, as the table does.
+      const merged: Record<string, unknown> = { ...latest.data };
+      for (const [key, value] of Object.entries(data)) {
+        if (value === null) delete merged[key];
+        else merged[key] = value;
+      }
+      latest = { ...latest, data: merged } as BlockJson;
+      handle?.update(props());
       void ctx.sync.send({ edits: [fallback === undefined ? edit : { ...edit, fallback: { markdown: fallback } }] });
     },
     announce: (text) => ctx.host.announce(text),
