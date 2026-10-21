@@ -75,6 +75,14 @@
     padding-block-end: var(--space-1);
   }
 
+  /* A table at the very top of the flow has the page title above it, so its tools go below it instead of over the
+     title and the date. */
+  :global([data-layout]) > .wrapper:first-child .toolbarWrap {
+    inset-block-end: auto;
+    inset-block-start: 100%;
+    padding-block: var(--space-1) 0;
+  }
+
   .wrapper[data-current] .toolbarWrap {
     display: flex;
   }

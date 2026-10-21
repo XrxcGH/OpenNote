@@ -157,7 +157,10 @@ function reportFailure(error: unknown, platform: Platform): void {
   if (code === 'spool' || code === 'noPrinter') {
     platform.log('error', `Printing failed: ${String((error as { message?: string }).message)}`);
     const grayscale = String((error as { message?: string }).message).includes('grayscale');
-    return void showToast({ message: t(grayscale ? 'pageViews.print.noGrayscale' : 'pageViews.print.printerRefused'), tone: 'danger' });
+    return void showToast({
+      message: t(grayscale ? 'pageViews.print.noGrayscale' : 'pageViews.print.printerRefused'),
+      tone: 'danger',
+    });
   }
   platform.log('error', `PDF export failed: ${error instanceof PdfCheckError ? error.message : String(error)}`);
   showToast({ message: t('pageViews.print.failed'), tone: 'danger' });
@@ -382,7 +385,8 @@ function PrinterFields({ form, printers, paper, set }: PrinterFieldsProps) {
           label={t('pageViews.print.duplex')}
           columns={2}
           value={form.duplex}
-          onChange={(value) => set('duplex', value)}>
+          onChange={(value) => set('duplex', value)}
+        >
           {DUPLEX.map((choice) => (
             <RadioCard key={choice} value={choice} label={t(duplexKey[choice])} />
           ))}

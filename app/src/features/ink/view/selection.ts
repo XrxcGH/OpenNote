@@ -394,7 +394,7 @@ class FrameView implements SelectionFrame {
     });
     this.fitBar(left);
     const top = shown.minY * zoom - scrollY - 4;
-    this.bar.toggleAttribute('data-below', top < this.bar.offsetHeight + BAR_MARGIN);
+    this.bar.toggleAttribute('data-below', top < this.bar.offsetHeight + BAR_MARGIN + this.titleRoom());
     this.placeCrop(shown);
   }
 
@@ -461,6 +461,14 @@ class FrameView implements SelectionFrame {
     const over = left + this.bar.offsetWidth - (room - BAR_MARGIN);
     const shift = Math.max(Math.min(0, -over), BAR_MARGIN - left);
     this.bar.style.insetInlineStart = `${shift}px`;
+  }
+
+  /** How far the page's title band reaches down the view: a bar above the selection must not cover it. */
+  private titleRoom(): number {
+    const { viewport, world } = this.surface.parts.viewport;
+    const band = world.querySelector('[data-page-title]')?.parentElement;
+    if (!band) return 0;
+    return Math.max(0, band.getBoundingClientRect().bottom - viewport.getBoundingClientRect().top);
   }
 
   /** Blocks move with the ink: floating ones get a new frame; ones in the flow stay where the flow puts them. */

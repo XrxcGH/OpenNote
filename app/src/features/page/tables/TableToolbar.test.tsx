@@ -97,3 +97,18 @@ describe('the table cell editor', () => {
     expect(getComputedStyle(editor).whiteSpace).toBe('pre-wrap');
   });
 });
+
+describe('the toolbar of a table', () => {
+  it('goes below a table that opens the page, so it never covers the title', () => {
+    renderUi(
+      <div data-layout="" style={{ marginBlockStart: 200 }}>
+        <div className={styles.wrapper} data-current="" style={{ blockSize: 100 }}>
+          <TableToolbar {...props()} />
+        </div>
+      </div>,
+    );
+    const wrapper = toolbar().closest(`.${styles.wrapper}`);
+    if (!wrapper) throw new Error('The table is not on the page.');
+    expect(toolbar().getBoundingClientRect().top).toBeGreaterThanOrEqual(wrapper.getBoundingClientRect().bottom);
+  });
+});

@@ -109,8 +109,7 @@ export const pageViews = {
       verify: 'Checking the file…',
       send: 'Sending to the printer…',
     },
-    sendHint:
-      'If a Save window asks where to put the file, it may be behind OpenNote. Answer it there, or press Stop.',
+    sendHint: 'If a Save window asks where to put the file, it may be behind OpenNote. Answer it there, or press Stop.',
     noGrayscale: "This printer can't print in black and white. Turn that option off and print again.",
     stop: 'Stop',
     printer: 'Printer',

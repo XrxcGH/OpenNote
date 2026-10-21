@@ -100,7 +100,8 @@ export interface PrintJobOptions {
 function untilStopped<T>(work: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
   if (!signal) return work;
   return new Promise<T>((resolve, reject) => {
-    const stop = () => reject(signal.reason instanceof Error ? signal.reason : new DOMException('Stopped', 'AbortError'));
+    const stop = () =>
+      reject(signal.reason instanceof Error ? signal.reason : new DOMException('Stopped', 'AbortError'));
     if (signal.aborted) return stop();
     signal.addEventListener('abort', stop, { once: true });
     work.then(resolve, reject).finally(() => signal.removeEventListener('abort', stop));
