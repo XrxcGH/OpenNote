@@ -1,3 +1,4 @@
+/* eslint-disable */
 // Temporary: contact sheets of captured screenshots. Usage: node sheet.mjs <dir> <out> <cols> <cellW> file1 file2 ...
 import { chromium } from '@playwright/test';
 import { readFileSync } from 'node:fs';

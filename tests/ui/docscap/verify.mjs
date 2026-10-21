@@ -1,3 +1,4 @@
+/* eslint-disable */
 // Temporary: render every wireframe and check it is not blank.
 import { chromium } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
