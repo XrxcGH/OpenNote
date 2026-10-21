@@ -6,7 +6,7 @@ import type { BlockId, BlockJson } from '../../../services/pages/types';
 import { getDensity } from '../../../state/layout';
 import { t } from '../../../strings/t';
 import type { PageBlockLayer } from '../blocks/blockLayer';
-import { isFloating, liveBlock } from '../blocks/textBlock';
+import { hasGrip, isFloating, liveBlock } from '../blocks/textBlock';
 import type { PagePool } from '../pool/pool';
 import { pageSelection } from '../seams/selectionStore';
 import type { PageViewport } from '../viewport/viewport';
@@ -133,7 +133,7 @@ class ChromeLayer implements Chrome {
       const rect = element.getBoundingClientRect();
       const box = new DOMRect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height);
       this.mark(used, `outline:${block.id}`, styles.outline!, box).classList.toggle(styles.selected!, selected);
-      if (block.type !== 'text') continue;
+      if (!hasGrip(block)) continue;
       if (block.lock) {
         this.mark(used, `lock:${block.id}`, styles.lock!, box);
         continue;

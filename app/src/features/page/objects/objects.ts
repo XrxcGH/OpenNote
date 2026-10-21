@@ -7,7 +7,7 @@ import type { BlockId, BlockJson, Edit, EditBatch, Frame, OpenPage } from '../..
 import { t } from '../../../strings/t';
 import { announce, showToast } from '../../../ui';
 import type { PageBlockLayer } from '../blocks/blockLayer';
-import { isFloating } from '../blocks/textBlock';
+import { hasGrip, isFloating } from '../blocks/textBlock';
 import { snapY, stepY } from '../layout/rules';
 import type { RuleGrid } from '../layout/rules';
 import type { PagePool } from '../pool/pool';
@@ -158,7 +158,7 @@ export class Objects {
   widen(dw: number): void {
     const frames = new Map<BlockId, Frame>();
     for (const block of this.movable()) {
-      if (block.type !== 'text' || !isFloating(block)) continue;
+      if (!hasGrip(block) || !isFloating(block)) continue;
       const width = block.frame?.w ?? this.parts.layer.view(block.id)?.measure().w ?? MIN_TEXT_WIDTH;
       frames.set(block.id, { ...block.frame, w: frameValue(width + dw, MIN_TEXT_WIDTH) });
     }

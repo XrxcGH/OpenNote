@@ -86,6 +86,11 @@ export function isFloating(block: BlockJson): boolean {
   return block.frame?.x !== undefined && block.frame?.y !== undefined;
 }
 
+/** Whether a block is a text box or a panel (study tape, flashcards, a mind map...): the kinds that have a grip. */
+export function hasGrip(block: BlockJson): boolean {
+  return block.type === 'text' || block.type.startsWith('ext:');
+}
+
 /** Floating blocks sit at their frame; flowing ones stack in the column. */
 export function placeBlock(element: HTMLElement, block: BlockJson): void {
   const frame = block.frame;
