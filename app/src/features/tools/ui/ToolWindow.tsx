@@ -99,7 +99,13 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
       role="dialog"
       aria-modal="false"
       aria-label={title}
-      style={{ insetInlineStart: place.x, insetBlockStart: place.y, inlineSize: tool.width }}
+      style={{
+        insetInlineStart: place.x,
+        insetBlockStart: place.y,
+        inlineSize: tool.width,
+        // However far down it sits, the window ends inside the screen and its body scrolls.
+        maxBlockSize: `max(160px, calc(100vh - ${Math.max(0, place.y)}px - 8px))`,
+      }}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && !event.defaultPrevented) {
           event.stopPropagation();

@@ -49,6 +49,8 @@
   }
 
   .body {
+    flex: 1 1 auto;
+    min-block-size: 0;
     overflow: auto;
     padding: var(--space-4);
     scroll-padding: var(--space-3);
