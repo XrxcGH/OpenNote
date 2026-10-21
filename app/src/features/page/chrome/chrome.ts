@@ -60,6 +60,9 @@ class ChromeLayer implements Chrome {
   private readonly marks = new Map<string, HTMLElement>();
   private hovered: BlockId | null = null;
   private frame = 0;
+  /** The block elements with chrome, watched so a box that grows or shrinks (typing, a pasted block) is redrawn. */
+  private readonly watched = new Set<Element>();
+  private readonly sizes: ResizeObserver | null;
   private readonly stops: (() => void)[] = [];
 
   constructor(private readonly parts: ChromeParts) {
@@ -69,6 +72,7 @@ class ChromeLayer implements Chrome {
     this.dropLine = div(this.element, styles.dropLine);
     this.badge = div(this.element, styles.badge);
     this.marquee.hidden = this.dropLine.hidden = this.badge.hidden = true;
+    this.sizes = typeof ResizeObserver === 'function' ? new ResizeObserver(() => this.update()) : null;
     const world = parts.viewport.world;
     world.addEventListener('pointerover', this.onOver);
     world.addEventListener('pointerleave', this.onLeave);
@@ -108,6 +112,7 @@ class ChromeLayer implements Chrome {
 
   destroy(): void {
     cancelAnimationFrame(this.frame);
+    this.sizes?.disconnect();
     this.stops.forEach((stop) => stop());
     this.element.remove();
   }
@@ -127,9 +132,15 @@ class ChromeLayer implements Chrome {
     this.element.dataset.density = getDensity();
     const used = new Set<string>();
     const origin = this.element.getBoundingClientRect();
+    const seen = new Set<Element>();
     for (const { block, selected, editing } of this.shown()) {
       const element = this.parts.layer.view(block.id)?.element;
       if (!element) continue;
+      seen.add(element);
+      if (this.sizes && !this.watched.has(element)) {
+        this.watched.add(element);
+        this.sizes.observe(element);
+      }
       const rect = element.getBoundingClientRect();
       const box = new DOMRect(rect.left - origin.left, rect.top - origin.top, rect.width, rect.height);
       this.mark(used, `outline:${block.id}`, styles.outline!, box).classList.toggle(styles.selected!, selected);
@@ -140,6 +151,11 @@ class ChromeLayer implements Chrome {
       }
       this.handle(used, block, 'grip', box);
       if ((selected || editing) && isFloating(block)) this.handle(used, block, 'width', box);
+    }
+    for (const element of this.watched) {
+      if (seen.has(element)) continue;
+      this.watched.delete(element);
+      this.sizes?.unobserve(element);
     }
     for (const [key, element] of this.marks) {
       if (used.has(key)) continue;

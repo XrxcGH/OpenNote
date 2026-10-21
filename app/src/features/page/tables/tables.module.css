@@ -15,6 +15,11 @@
     padding-block: 1px;
   }
 
+  /* The cell editor, like the text editor, keeps spaces as typed; ProseMirror warns when it is left to wrap normally. */
+  .scroller > :global(.ProseMirror) {
+    white-space: pre-wrap;
+  }
+
   .table :global(table) {
     border-collapse: collapse;
     table-layout: fixed;

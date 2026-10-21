@@ -84,3 +84,16 @@ describe('the table toolbar', () => {
     expect(closeWidth).toHaveBeenLastCalledWith(null);
   });
 });
+
+describe('the table cell editor', () => {
+  it('keeps white space as typed, which ProseMirror checks for', () => {
+    const { container } = renderUi(
+      <div className={styles.scroller}>
+        <div className="ProseMirror" />
+      </div>,
+    );
+    const editor = container.querySelector('.ProseMirror');
+    if (!editor) throw new Error('The editor is not on the page.');
+    expect(getComputedStyle(editor).whiteSpace).toBe('pre-wrap');
+  });
+});
