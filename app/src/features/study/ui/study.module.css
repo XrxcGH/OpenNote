@@ -149,6 +149,9 @@
   .picture {
     position: relative;
     display: inline-block;
+    /* In a column the box would stretch to the pane and the masks (percentages) would float beside the picture. */
+    inline-size: fit-content;
+    align-self: flex-start;
     max-inline-size: 100%;
     line-height: 0;
   }
