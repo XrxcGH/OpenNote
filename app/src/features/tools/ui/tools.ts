@@ -2,7 +2,15 @@
 import type { MessageKey } from '../../../strings/t';
 
 export type ToolId =
-  'timers' | 'calculator' | 'upcoming' | 'flashcards' | 'converter' | 'reference' | 'dictionary' | 'citations';
+  | 'timers'
+  | 'calculator'
+  | 'upcoming'
+  | 'flashcards'
+  | 'converter'
+  | 'reference'
+  | 'dictionary'
+  | 'citations'
+  | 'symbols';
 
 export interface ToolDef {
   id: ToolId;
@@ -18,6 +26,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'converter', title: 'study.converter.title', width: 380 },
   { id: 'reference', title: 'study.reference.title', width: 480 },
   { id: 'dictionary', title: 'study.dictionary.title', width: 400 },
+  { id: 'symbols', title: 'study.symbols.title', width: 420 },
   { id: 'citations', title: 'study.citations.title', width: 440 },
 ];
 

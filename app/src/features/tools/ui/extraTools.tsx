@@ -5,6 +5,7 @@ import { DeckPanel } from '../../study';
 import { ConverterTool } from './ConverterTool';
 import { DictionaryTool } from './DictionaryTool';
 import { ReferenceTool } from './ReferenceTool';
+import { SymbolsTool } from './SymbolsTool';
 import type { ToolId } from './tools';
 
 export function ExtraToolBody({ tool }: { tool: ToolId }) {
@@ -13,5 +14,6 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
   if (tool === 'reference') return <ReferenceTool />;
   if (tool === 'citations') return <CitationsPanel />;
   if (tool === 'dictionary') return <DictionaryTool />;
+  if (tool === 'symbols') return <SymbolsTool />;
   return null;
 }

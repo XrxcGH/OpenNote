@@ -135,6 +135,7 @@ type ToolsQolFlagId =
   | 'tools.converter'
   | 'tools.reference'
   | 'tools.dictionary'
+  | 'tools.symbols'
   | 'tools.exams'
   | 'tools.timetable'
   | 'tools.dueDates'
