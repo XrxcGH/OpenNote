@@ -4,7 +4,9 @@
   .band {
     /* Positioned, so it paints above the sheets of pages with breaks, as the flow below it does. */
     position: relative;
-    padding: 24px var(--flow-margin, 48px) 0 var(--flow-start, 48px);
+    /* At its end it leaves room for the chips that float at the page's top end (search/properties/mount.tsx). */
+    padding: 24px max(var(--flow-margin, 48px), calc(var(--page-chip-room, 0px) / var(--page-zoom, 1))) 0
+      var(--flow-start, 48px);
     margin-block-end: 16px;
   }
 

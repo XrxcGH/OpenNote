@@ -186,3 +186,18 @@ test('a tool window wider than a phone-size window stays inside it', async ({ pa
   expect(box.x).toBeGreaterThanOrEqual(8);
   expect(box.x + box.width).toBeLessThanOrEqual(420 - 8);
 });
+
+test('a long title wraps before the Properties chip', async ({ page }) => {
+  await openMembranes(page, 1280);
+  const title = page.getByRole('textbox', { name: 'Page title' });
+  await title.click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('Membrane transport, signalling and the fluid mosaic model, part two');
+  const chip = (await page.getByRole('button', { name: /^Properties/ }).boundingBox())!;
+  const right = await page.evaluate(() => {
+    const range = document.createRange();
+    range.selectNodeContents(document.querySelector('[data-page-title]')!);
+    return Math.max(...[...range.getClientRects()].map((rect) => rect.right));
+  });
+  expect(right).toBeLessThanOrEqual(chip.x - 4);
+});
