@@ -220,9 +220,9 @@ function withControls(shape: Spline, change: (controls: Vec[]) => void): Spline 
 }
 
 /**
- * The curve after a handle is dragged to a page point. `n3` moves point 3 with its handles; `i3` and `o3` move its in
- * and out handle, and on a smooth point the other handle turns to stay on its line, keeping its length. `from` and
- * `to` move the ends of an open curve, for connectors.
+ * The curve after one of its handles is dragged to a page point. The ID names the handle: n3 is point 3, which moves
+ * with its handles. The handles i3 and o3 go into and out of it. On a smooth point the other handle turns to stay in
+ * line and keeps its length. For connectors, from and to are the ends of an open curve.
  */
 export function dragSpline(shape: Spline, id: string, to: Vec): Spline {
   const n = nodeCount(shape);

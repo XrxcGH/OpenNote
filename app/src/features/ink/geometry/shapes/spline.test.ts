@@ -40,7 +40,7 @@ const wave: Spline = {
   closed: false,
 };
 
-describe('curves', () => {
+describe('storing curves', () => {
   it('stores as exact samples and reads back with its handles, smooth where they line up', () => {
     const back = readSpline(stored(shapePoints(wave)));
     expect(back).not.toBeNull();
@@ -77,7 +77,9 @@ describe('curves', () => {
     expect(back).not.toBeNull();
     expect(close(back!.controls[1], { x: 130, y: -127 }, 0.3)).toBe(true);
   });
+});
 
+describe('dragging curves', () => {
   it('drags a point with its handles, and a handle of a smooth point turns the other one with it', () => {
     const moved = dragHandle(wave, 'n1', { x: 100, y: 50 });
     if (moved.kind !== 'spline') throw new Error('not a curve');
@@ -98,7 +100,9 @@ describe('curves', () => {
     expect(handlesOf(corner).map((h) => h.id)).toEqual(['n0', 'n1', 'n2', 'o0', 'i2']);
     expect(isSmooth(corner, 1)).toBe(false);
   });
+});
 
+describe('adding and removing curve points', () => {
   it('adds a point without changing the path, and takes one out', () => {
     const more = insertNode(wave, 0, 0.5);
     expect(nodeCount(more)).toBe(4);
@@ -119,7 +123,9 @@ describe('curves', () => {
     expect(node.out.y).toBeCloseTo(0, 9);
     expect(isSmooth(smooth, 1)).toBe(true);
   });
+});
 
+describe('making curves', () => {
   it('makes lines, arrows, and shapes into curves along the same path', () => {
     const line = toSpline({ kind: 'line', from: { x: 0, y: 0 }, to: { x: 90, y: 0 } })!;
     expect(segmentCount(line)).toBe(1);
@@ -160,7 +166,9 @@ describe('curves', () => {
     expect(nodeCount(box)).toBe(4);
     expect(readSpline(stored(shapePoints(box)))!.closed).toBe(true);
   });
+});
 
+describe('curve connectors and ink', () => {
   it('moves a curve connector’s ends', () => {
     const line = toSpline({ kind: 'line', from: { x: 0, y: 0 }, to: { x: 90, y: 0 } })!;
     const moved = moveEnd(line, 'end', { x: 120, y: 30 });
