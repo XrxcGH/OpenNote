@@ -139,8 +139,27 @@ export const LIMITS = {
   chars: 600,
   samples: 1200,
   keptUploads: 20,
-  keptBytes: 30 * 1024 * 1024,
+  /** All kept uploads together, as file bytes: well inside the store's 64 MB, so the style always saves. */
+  keptBytes: 16 * 1024 * 1024,
 } as const;
+
+/** The base64 length the kept-uploads cap allows. */
+const KEPT_CHARS = Math.ceil(LIMITS.keptBytes / 3) * 4;
+
+/**
+ * The kept uploads that fit the caps, newest first in priority: the oldest are let go to make room, and a file too
+ * large to keep on its own is never kept. `letGo` counts the ones left out.
+ */
+export function fitKept(list: readonly KeptUpload[]): { kept: KeptUpload[]; letGo: number } {
+  const kept: KeptUpload[] = [];
+  let chars = 0;
+  for (let i = list.length - 1; i >= 0 && kept.length < LIMITS.keptUploads; i--) {
+    if (chars + list[i].data.length > KEPT_CHARS) continue;
+    chars += list[i].data.length;
+    kept.unshift(list[i]);
+  }
+  return { kept, letGo: list.length - kept.length };
+}
 
 export const DEFAULT_HABITS: MathHabits = {
   scriptScale: 0.68,
@@ -326,7 +345,7 @@ function readKept(value: unknown): KeptUpload[] {
   for (const item of value.slice(0, LIMITS.keptUploads)) {
     if (!isObject(item) || typeof item.data !== 'string' || typeof item.name !== 'string') continue;
     bytes += item.data.length;
-    if (bytes > LIMITS.keptBytes * 1.4) break;
+    if (bytes > KEPT_CHARS) break;
     out.push({
       name: item.name.slice(0, 200),
       type: typeof item.type === 'string' ? item.type.slice(0, 100) : '',

@@ -7,6 +7,7 @@ import { userEvent } from 'vitest/browser';
 import { resetFakeShell } from '../../../../platform/shellqol';
 import { syntheticProgress } from '../../myhand/fixtures';
 import { MAX_UPLOAD_BYTES, UploadFailure, readUpload } from './extract';
+import type { UploadRead } from './extract';
 import { finishCalibration, loadStyle, resetStyleForTests, setProgressForTests, styleState } from './store';
 import { showUploads } from './Uploads';
 
@@ -38,17 +39,19 @@ function outline(path: [number, number][], width: number): string {
   return `${first} m ${rest.map((p) => `${p} l`).join(' ')} h f`;
 }
 
-/** A one-page PDF: a ruled line drawn as a stroke, and handwriting drawn as filled outlines. */
-function vectorPdf(): Uint8Array<ArrayBuffer> {
+/** A one-page PDF: a ruled line drawn as a stroke, and handwriting drawn as filled outlines on each line given. */
+function vectorPdf(lines: readonly number[] = [700]): Uint8Array<ArrayBuffer> {
   const strokes: [number, number][][] = [];
-  // Three upright marks and an arc, on a line at y = 700 (PDF y runs up).
-  for (let k = 0; k < 3; k++) strokes.push(Array.from({ length: 12 }, (_, i) => [100 + k * 20, 700 + i]));
-  strokes.push(
-    Array.from({ length: 16 }, (_, i) => [
-      170 + Math.cos((i / 15) * Math.PI) * 6,
-      705 + Math.sin((i / 15) * Math.PI) * 6,
-    ]),
-  );
+  // Three upright marks and an arc on each line (PDF y runs up).
+  for (const y of lines) {
+    for (let k = 0; k < 3; k++) strokes.push(Array.from({ length: 12 }, (_, i) => [100 + k * 20, y + i]));
+    strokes.push(
+      Array.from({ length: 16 }, (_, i) => [
+        170 + Math.cos((i / 15) * Math.PI) * 6,
+        y + 5 + Math.sin((i / 15) * Math.PI) * 6,
+      ]),
+    );
+  }
   const content = ['0.5 w 0 750 m 612 750 l S', ...strokes.map((s) => outline(s, 0.9))].join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
@@ -115,6 +118,38 @@ describe('reading uploads', () => {
     await expect(readUpload(big)).rejects.toMatchObject({ code: 'tooBig' });
     const damaged = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 9, 9, 9])], 'broken.pdf');
     await expect(readUpload(damaged)).rejects.toMatchObject({ code: 'unreadable' });
+  });
+
+  it('refuses a small picture that claims to be huge, before decoding it', async () => {
+    const be32 = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+    const header = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...be32(13), 0x49, 0x48, 0x44, 0x52];
+    const png = new Uint8Array([...header, ...be32(15000), ...be32(15000), 8, 6, 0, 0, 0]);
+    await expect(readUpload(new File([png], 'huge.png', { type: 'image/png' }))).rejects.toMatchObject({
+      code: 'tooManyPixels',
+    });
+  });
+
+  it('stops at a whole line when the symbol cap is reached, says where, and reads on from there', async () => {
+    const file = new File([vectorPdf([700, 600])], 'two.pdf', { type: 'application/pdf' });
+    const whole = await readUpload(file);
+    expect(whole.lines).toBe(2);
+    expect(whole.next).toBeUndefined();
+    const perLine = whole.symbols.filter((s) => s.line === 0).length;
+    const first: UploadRead = await readUpload(file, undefined, { maxSymbols: perLine + 1 });
+    expect(first.symbols).toHaveLength(perLine);
+    expect(first.next).toEqual({ page: 1, line: 1 });
+    expect(first.pages).toEqual({ first: 1, last: 1, total: 1 });
+    expect(first.dropped).toBe(0);
+    const rest = await readUpload(file, undefined, { start: first.next, maxSymbols: perLine + 1 });
+    expect(rest.next).toBeUndefined();
+    expect(first.symbols.length + rest.symbols.length).toBe(whole.symbols.length);
+  });
+
+  it('stops when the person cancels', async () => {
+    const stop = new AbortController();
+    stop.abort();
+    const file = new File([vectorPdf()], 'sheet.pdf', { type: 'application/pdf' });
+    await expect(readUpload(file, undefined, { signal: stop.signal })).rejects.toMatchObject({ code: 'stopped' });
   });
 });
 

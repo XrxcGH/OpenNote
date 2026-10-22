@@ -3,6 +3,7 @@
 // page is done, and only ever add to the style. The files are dropped once read, unless the person chose to keep
 // them, encrypted, with the style.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
@@ -10,11 +11,20 @@ import { announce, Button, Dialog, ProgressBar, TextField } from '../../../../ui
 import type { ConfirmedSymbol } from '../../myhand/metrics';
 import { measureHabits, measureLines } from '../../myhand/segment';
 import type { Labelled } from '../../myhand/segment';
+import { LIMITS } from '../../myhand/style';
 import type { HandPoint, KeptUpload } from '../../myhand/style';
 import type { Traced } from '../../myhand/trace';
 import type { InkPath } from '../../myhand/write';
-import { MAX_UPLOAD_BYTES, UploadFailure, base64Of, readSymbol, readUpload, startLabel } from './extract';
-import type { UploadSymbol } from './extract';
+import {
+  MAX_DECODE_PIXELS,
+  MAX_UPLOAD_BYTES,
+  UploadFailure,
+  base64Of,
+  readSymbol,
+  readUpload,
+  startLabel,
+} from './extract';
+import type { UploadRead, UploadStart, UploadSymbol } from './extract';
 import { InkDrawing } from './PenBox';
 import { addSymbols, styleState } from './store';
 import styles from './myhand.module.css';
@@ -118,53 +128,111 @@ function SymbolCard(props: { card: Card; n: number; count: number; onChange: (ne
 
 const sameCard = (a: Card, b: Card) => a.file === b.file && a.symbol.id === b.symbol.id;
 
-function problemText(error: unknown, name: string): string {
+/** The calm sentence for a file that gave nothing, or null when the person stopped the read themselves. */
+function problemText(error: unknown, name: string): string | null {
   const code = error instanceof UploadFailure ? error.code : 'unreadable';
-  if (code === 'tooBig') return t('myHand.uploads.tooBig', { name, size: MAX_UPLOAD_BYTES / 1024 / 1024 });
-  return code === 'nothing' ? t('myHand.uploads.nothing', { name }) : t('myHand.uploads.unreadable', { name });
+  switch (code) {
+    case 'stopped':
+      return null;
+    case 'tooBig':
+      return t('myHand.uploads.tooBig', { name, size: MAX_UPLOAD_BYTES / 1024 / 1024 });
+    case 'tooManyPixels':
+      return t('myHand.uploads.tooManyPixels', { name, megapixels: MAX_DECODE_PIXELS / 1_000_000 });
+    case 'slow':
+      return t('myHand.uploads.slow', { name });
+    case 'nothing':
+      return t('myHand.uploads.nothing', { name });
+    default:
+      return t('myHand.uploads.unreadable', { name });
+  }
+}
+
+/** What one read took from a file, and where the rest starts when there is more. */
+function summaryText(read: UploadRead, name: string): string {
+  const count = read.symbols.length;
+  const { first, last, total } = read.pages;
+  const parts = [
+    total === 1
+      ? t('myHand.uploads.summaryOne', { name, lines: read.lines, count })
+      : t('myHand.uploads.summary', { name, lines: read.lines, count, first, last, total }),
+  ];
+  if (read.dropped > 0) parts.push(t('myHand.uploads.dropped', { count: read.dropped }));
+  if (read.next)
+    parts.push(
+      total === 1
+        ? t('myHand.uploads.moreOne')
+        : t('myHand.uploads.moreFrom', { page: read.next.page, line: read.next.line + 1 }),
+    );
+  return parts.join(' ');
+}
+
+/** One file to read, from its start or from where an earlier read stopped. */
+interface Job {
+  readonly upload: File;
+  readonly start?: UploadStart;
 }
 
 /** Reads the uploads into cards, one file after another, and keeps the files when the person asked to. */
-function useUploadCards(files: readonly File[], keep: boolean) {
-  const [status, setStatus] = useState<string>(t('myHand.uploads.reading', { name: files[0]?.name ?? '' }));
+function useUploadCards(jobs: readonly Job[], keep: boolean) {
+  const [status, setStatus] = useState<string>(t('myHand.uploads.reading', { name: jobs[0]?.upload.name ?? '' }));
   const [errors, setErrors] = useState<string[]>([]);
+  const [notes, setNotes] = useState<string[]>([]);
+  const [more, setMore] = useState<Job[]>([]);
   const [cards, setCards] = useState<Card[] | null>(null);
   const kept = useRef<KeptUpload[]>([]);
   useEffect(() => {
-    let stopped = false;
+    const stop = new AbortController();
     void (async () => {
       const all: Card[] = [];
       const problems: string[] = [];
-      for (const [file, upload] of files.entries()) {
-        const name = upload.name;
+      const summary: string[] = [];
+      const rest: Job[] = [];
+      for (const [file, job] of jobs.entries()) {
+        const name = job.upload.name;
         setStatus(t('myHand.uploads.reading', { name }));
         try {
-          const read = await readUpload(upload, (page, pages) =>
-            setStatus(t('myHand.uploads.readingPage', { page, pages, name })),
+          const read = await readUpload(
+            job.upload,
+            (page, pages) => setStatus(t('myHand.uploads.readingPage', { page, pages, name })),
+            { start: job.start, signal: stop.signal },
           );
           for (const symbol of read.symbols)
             all.push({ symbol, file, label: startLabel(symbol), skipped: false, read: false });
-          if (keep)
-            kept.current.push({
-              name: name.slice(0, 200),
-              type: upload.type,
-              data: await base64Of(upload),
-              at: Date.now(),
-            });
+          summary.push(summaryText(read, name));
+          if (read.next) rest.push({ upload: job.upload, start: read.next });
+          // A file is kept once, with its first read; one too large to keep is let go, and the person is told.
+          if (keep && !job.start) {
+            if (job.upload.size > LIMITS.keptBytes)
+              summary.push(t('myHand.uploads.notKept', { name, size: LIMITS.keptBytes / 1024 / 1024 }));
+            else
+              kept.current.push({
+                name: name.slice(0, 200),
+                type: job.upload.type,
+                data: await base64Of(job.upload),
+                at: Date.now(),
+              });
+          }
         } catch (error) {
-          problems.push(problemText(error, name));
+          const problem = problemText(error, name);
+          if (problem) problems.push(problem);
         }
-        if (stopped) return;
+        if (stop.signal.aborted) return;
       }
       setErrors(problems);
+      setNotes(summary);
+      setMore(rest);
       setCards(all);
-      problems.forEach((problem) => announce(problem));
+      [...problems, ...(rest.length > 0 ? summary : [])].forEach((text) => announce(text));
     })();
-    return () => {
-      stopped = true;
-    };
-  }, [files, keep]);
-  return { status, errors, cards, setCards, kept };
+    return () => stop.abort();
+  }, [jobs, keep]);
+  /** The files to keep, once: they go with the first symbols added. */
+  const takeKept = () => {
+    const out = kept.current;
+    kept.current = [];
+    return out;
+  };
+  return { status, errors, notes, more, cards, setCards, takeKept };
 }
 
 /** The recognizer reads the cards on show, a page at a time, and asks once to be turned on. */
@@ -207,27 +275,71 @@ function useReading(
   return recognizer;
 }
 
+/** The cards on show, a page at a time. */
+function CardList(props: {
+  cards: Card[];
+  shown: number;
+  setCards: Dispatch<SetStateAction<Card[] | null>>;
+  more: () => void;
+}) {
+  const seen = props.cards.slice(0, props.shown);
+  return (
+    <>
+      <p className={styles.missing}>{t('myHand.uploads.shown', { shown: seen.length, count: props.cards.length })}</p>
+      <ul className={styles.symbols} aria-label={t('myHand.uploads.confirmTitle')}>
+        {seen.map((card, i) => (
+          <SymbolCard
+            key={`${card.file}:${card.symbol.id}`}
+            card={card}
+            n={i + 1}
+            count={props.cards.length}
+            onChange={(next) =>
+              props.setCards((list) => list && list.map((c) => (sameCard(c, card) ? { ...c, ...next } : c)))
+            }
+          />
+        ))}
+      </ul>
+      {props.shown < props.cards.length && (
+        <div className={styles.actions}>
+          <Button onClick={props.more}>{t('myHand.uploads.more')}</Button>
+        </div>
+      )}
+    </>
+  );
+}
+
 function UploadDialog(props: { files: readonly File[]; keep: boolean; done: () => void }) {
   const [shown, setShown] = useState(PAGE);
-  const { status, errors, cards, setCards, kept } = useUploadCards(props.files, props.keep);
+  const [jobs, setJobs] = useState<readonly Job[]>(() => props.files.map((upload) => ({ upload })));
+  const { status, errors, notes, more, cards, setCards, takeKept } = useUploadCards(jobs, props.keep);
   const recognizer = useReading(cards, shown, setCards);
   const hasStyle = useStore(styleState, (s) => s.doc.style !== null);
   // Only the symbols the person has been shown can be added: the rest wait for Show more.
   const seen = cards?.slice(0, shown) ?? [];
   const chosen = seen.filter((c) => !c.skipped && c.label.trim() !== '').length;
+  /** Adds the chosen symbols on show; false when that couldn't be done. */
+  const addSeen = async (): Promise<boolean> => {
+    const result = confirmed(seen);
+    if (!result) return false;
+    const added = await addSymbols(result.symbols, result.habits, takeKept());
+    if (!added) return false;
+    announce(t('myHand.uploads.added', { count: result.symbols.length }));
+    if (added.letGo > 0) announce(t('myHand.uploads.letGo', { count: added.letGo }));
+    return true;
+  };
   const add = async () => {
     if (!cards || chosen === 0) {
       announce(t('myHand.uploads.noneChosen'));
       return;
     }
-    const result = confirmed(seen);
-    if (!result) return;
-    if (await addSymbols(result.symbols, result.habits, kept.current)) {
-      announce(t('myHand.uploads.added', { count: result.symbols.length }));
-      props.done();
-    }
+    if (await addSeen()) props.done();
   };
-  const visible = seen;
+  const readOn = async () => {
+    if (chosen > 0 && !(await addSeen())) return;
+    setShown(PAGE);
+    setCards(null);
+    setJobs(more);
+  };
   return (
     <Dialog
       title={t('myHand.uploads.confirmTitle')}
@@ -257,31 +369,22 @@ function UploadDialog(props: { files: readonly File[]; keep: boolean; done: () =
             {error}
           </p>
         ))}
+        {cards &&
+          notes.map((note) => (
+            <p key={note} className={styles.missing} data-myhand-upload-note="">
+              {note}
+            </p>
+          ))}
+        {cards && more.length > 0 && shown >= cards.length && (
+          <div className={styles.actions}>
+            <Button onClick={readOn} disabled={!hasStyle}>
+              {chosen > 0 ? t('myHand.uploads.addAndReadOn', { count: chosen }) : t('myHand.uploads.readOn')}
+            </Button>
+          </div>
+        )}
         {recognizer === 'off' && <p className={styles.locked}>{t('myHand.uploads.recognizerOff')}</p>}
         {cards && cards.length > 0 && (
-          <>
-            <p className={styles.missing}>
-              {t('myHand.uploads.shown', { shown: visible.length, count: cards.length })}
-            </p>
-            <ul className={styles.symbols} aria-label={t('myHand.uploads.confirmTitle')}>
-              {visible.map((card, i) => (
-                <SymbolCard
-                  key={`${card.file}:${card.symbol.id}`}
-                  card={card}
-                  n={i + 1}
-                  count={cards.length}
-                  onChange={(next) =>
-                    setCards((list) => list && list.map((c) => (sameCard(c, card) ? { ...c, ...next } : c)))
-                  }
-                />
-              ))}
-            </ul>
-            {shown < cards.length && (
-              <div className={styles.actions}>
-                <Button onClick={() => setShown((n) => n + PAGE)}>{t('myHand.uploads.more')}</Button>
-              </div>
-            )}
-          </>
+          <CardList cards={cards} shown={shown} setCards={setCards} more={() => setShown((n) => n + PAGE)} />
         )}
       </div>
     </Dialog>

@@ -6,7 +6,7 @@ import { shellCall } from '../../../../platform/shellqol';
 import { createStore } from '../../../../state/store';
 import { buildStyle, isComplete, withSymbols } from '../../myhand/metrics';
 import type { ConfirmedSymbol } from '../../myhand/metrics';
-import { emptyDoc, parseDoc } from '../../myhand/style';
+import { emptyDoc, fitKept, parseDoc } from '../../myhand/style';
 import type { KeptUpload, MathHabits, Progress, RawSample, StyleDoc } from '../../myhand/style';
 
 export type StyleStatus = 'idle' | 'loading' | 'ready' | 'unreadable' | 'unavailable';
@@ -111,17 +111,22 @@ export function recalibrate(): Promise<void> {
   return persist({ ...current, progress: { samples: kept, step: 0 } });
 }
 
-/** Adds confirmed symbols from an upload, and the habits measured from them. Uploads never make a style. */
+/**
+ * Adds confirmed symbols from an upload, and the habits measured from them. Uploads never make a style. Kept files
+ * stay inside their own cap, so the style always fits the store: the oldest are let go first. Null without a style,
+ * otherwise how many kept files were let go.
+ */
 export async function addSymbols(
   symbols: readonly ConfirmedSymbol[],
   habits: MathHabits | null,
   keep: readonly KeptUpload[],
-): Promise<boolean> {
+): Promise<{ letGo: number } | null> {
   const current = doc();
-  if (!current.style) return false;
+  if (!current.style) return null;
   const style = withSymbols(habits ? { ...current.style, math: habits } : current.style, symbols, Date.now());
-  await persist({ ...current, style, kept: [...current.kept, ...keep].slice(-20) });
-  return true;
+  const { kept, letGo } = fitKept([...current.kept, ...keep]);
+  await persist({ ...current, style, kept });
+  return { letGo };
 }
 
 export function removeKept(at: number): Promise<void> {
