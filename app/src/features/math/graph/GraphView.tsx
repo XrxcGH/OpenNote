@@ -3,7 +3,6 @@
 // gives the value and the slope. Each letter a function uses besides x gets a slider. The graph's whole state is its
 // text (source.ts), so every change goes out as new text and undo, copy, and export follow from that.
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import { isEnabled } from '../../../app/flags';
 import type { KeyboardEvent, PointerEvent, RefObject, WheelEvent } from 'react';
 import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
