@@ -1,5 +1,12 @@
 /* The live caption strip. Colors come from Windows' caption settings when it has them, and from the theme otherwise. */
 @layer components {
+  .help {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
   .strip {
     position: fixed;
     inset-inline: var(--space-4);
