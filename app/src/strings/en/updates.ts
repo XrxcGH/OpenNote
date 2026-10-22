@@ -81,6 +81,11 @@ export const updates = {
     channelStableHelp: 'Tested releases.',
     channelBeta: 'Beta',
     channelBetaHelp: 'Early versions, every two weeks. You also get newer stable versions.',
+    resumeLabel: 'Resume downloads',
+    resumeHelp:
+      'A download that stops partway continues from the part already saved. The whole file is checked again before it installs.',
+    meteredLabel: 'Metered connection',
+    meteredHelp: 'In automatic mode, a download waits for a network without a data limit.',
     skipped: 'Version {version} is skipped.',
     previous: 'The previous version is kept, so you can go back to it.',
     safety: 'Updates never change your notes or settings. A backup is made before any file conversion.',
