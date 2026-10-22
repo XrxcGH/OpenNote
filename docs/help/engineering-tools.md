@@ -20,7 +20,8 @@ These tools are new in Beta, so check the answers against your own work while yo
 - Add pin, roller, and fixed supports, point loads, distributed loads, and moments from the toolbar. Drag them along the beam, or use the arrow keys. They snap to even steps of the length.
 - A positive load points down. A positive moment turns counterclockwise. A distributed load can change linearly from its start to its end, which gives a triangular or trapezoidal load.
 - Beside the beam are the reactions, the largest shear and bending moment and where they are, and the places where the shear is zero. Under it are the shear and bending moment diagrams, drawn with sagging moment above the line.
-- A beam with more supports than statics needs, such as a propped cantilever or a continuous beam, is solved too, assuming the same EI along its length. A beam its supports cannot hold says so.
+- A beam with more supports than statics needs, such as a propped cantilever or a continuous beam, is solved too, with the same EI along its length. To change that, add an EI segment and set how many times stiffer or softer that stretch is. A beam its supports cannot hold says so.
+- Hinge adds an internal hinge, as in a Gerber beam: the two sides turn freely there, so the bending moment at the hinge is zero.
 
 ## Trusses
 
@@ -34,7 +35,7 @@ These tools are new in Beta, so check the answers against your own work while yo
 
 - On the Insert tab, choose Insert circuit, or type `/circuit`. The circuit starts as a 12 V battery across two resistors in series, already solved.
 - Add resistors, voltage sources, current sources, grounds, and wires from the toolbar. With Place and move parts on, drag a part to move it on the grid. With Draw wires on, drag from one grid point to another to add a wire.
-- Terminals on the same grid point are joined. A wire joins its two ends and any terminal or wire end that lands along it, so a ground can sit anywhere on the bottom wire and a wire can tee into another. Two wires that only cross are not joined; to join them, end one wire at the crossing.
+- Terminals on the same grid point are joined. A wire joins its ends and any terminal or wire end along it, so a ground can sit anywhere on the bottom wire. Two wires that only cross are not joined; to join them, end one wire at the crossing.
 - Select a part to change its label and value. Type values with a prefix, such as 4.7k, 220 Ω, or 2 mA. Press R to turn a part, or choose Turn. A voltage source's + end is its long plate; a current source pushes current the way its arrow points.
 - Nodal analysis runs as you work. Each node's voltage shows in the drawing and in the table beside it, with every part's current, which way it flows, and the power it delivers or takes.
 - Without a ground, the circuit asks for one. A part of the circuit with no path to ground is called floating, and the circuit names its parts. A circuit with two sources fighting in parallel says it cannot be solved.

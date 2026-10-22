@@ -14,6 +14,7 @@ const beam = (length: number, supports: BeamSupport[], loads: BeamLoad[]): BeamM
 const pin = (x: number, id = `s${x}`): BeamSupport => ({ id, kind: 'pin', x });
 const roller = (x: number, id = `r${x}`): BeamSupport => ({ id, kind: 'roller', x });
 const fixed = (x: number, id = `f${x}`): BeamSupport => ({ id, kind: 'fixed', x });
+const hinge = (x: number, id = `h${x}`): BeamSupport => ({ id, kind: 'hinge', x });
 
 describe('beam solver: textbook cases', () => {
   it('1. simply supported, central point load: R = P/2, Mmax = PL/4', () => {
@@ -94,6 +95,52 @@ describe('beam solver: textbook cases', () => {
     expect(result.reactions.map((r) => r.force)).toEqual([1.5, 5, 1.5]);
     expect(result.moment(4)).toBe(-2);
   });
+});
+
+describe('beam solver: hinges and changing EI', () => {
+  it('10. Gerber beam: fixed end, hinge at 4 m, roller at 6 m, uniform 2 kN/m', () => {
+    // Right of the hinge, 2 m on a hinge and a roller: 2 kN each. Left, a 4 m cantilever with 8 kN of load and the
+    // hinge's 2 kN at its tip: 10 kN and 8·2 + 2·4 = 24 kN·m at the wall. The hinge carries no moment.
+    const result = solveBeam(
+      beam(6, [fixed(0), hinge(4), roller(6)], [{ id: 'w', kind: 'distributed', x1: 0, x2: 6, w1: 2, w2: 2 }]),
+    );
+    expect(result.status).toBe('determinate');
+    expect(result.reactions).toEqual([
+      { support: 'f0', x: 0, force: 10, moment: 24 },
+      { support: 'r6', x: 6, force: 2 },
+    ]);
+    expect(result.moment(4)).toBe(0);
+    expect(result.moment(0)).toBe(-24);
+  });
+
+  it('11. fixed-fixed beam with a hinge at midspan under a load there: two cantilevers sharing P', () => {
+    const result = solveBeam(beam(8, [fixed(0), hinge(4), fixed(8)], [{ id: 'p', kind: 'point', x: 4, value: 10 }]));
+    expect(result.status).toBe('indeterminate');
+    expect(result.reactions).toEqual([
+      { support: 'f0', x: 0, force: 5, moment: 20 },
+      { support: 'f8', x: 8, force: 5, moment: -20 },
+    ]);
+    expect(result.moment(4)).toBe(0);
+  });
+
+  it('12. two-span beam, load on span 1, span 2 three times as stiff (three-moment equation)', () => {
+    // M_B·2(L/I1 + L/(3 I1)) = −wL³/(4 I1), so M_B = −3wL²/32: −3 for w = 32, L = 1. R_A = 16 − 3 = 13, R_C = −3.
+    const model = beam(
+      2,
+      [pin(0), roller(1), roller(2)],
+      [{ id: 'w', kind: 'distributed', x1: 0, x2: 1, w1: 32, w2: 32 }],
+    );
+    const stiff = solveBeam({ ...model, segments: [{ id: 'e', x1: 1, x2: 2, factor: 3 }] });
+    expect(stiff.reactions.map((r) => r.force)).toEqual([13, 22, -3]);
+    expect(stiff.moment(1)).toBe(-3);
+    // The same beam with one EI: M_B = −wL²/16 = −2.
+    expect(solveBeam(model).moment(1)).toBe(-2);
+  });
+
+  it('says a hinge between two pins makes a mechanism', () => {
+    const loads: BeamLoad[] = [{ id: 'p', kind: 'point', x: 1, value: 1 }];
+    expect(solveBeam(beam(4, [pin(0), hinge(2), roller(4)], loads)).status).toBe('unstable');
+  });
 
   it('says when the supports cannot hold the beam', () => {
     expect(solveBeam(beam(4, [roller(2)], [{ id: 'p', kind: 'point', x: 1, value: 1 }])).status).toBe('unstable');
@@ -104,7 +151,7 @@ describe('beam solver: textbook cases', () => {
     const start = solveBeam(readBeam(starterBeam()));
     const total = start.reactions.reduce((sum, r) => sum + r.force, 0);
     expect(total).toBeCloseTo(10 + 12, 9);
-    expect(readBeam({ length: -3, supports: [{ kind: 'hinge' }], loads: [{ kind: 'point', x: 1 }] })).toMatchObject({
+    expect(readBeam({ length: -3, supports: [{ kind: 'spring' }], loads: [{ kind: 'point', x: 1 }] })).toMatchObject({
       length: 0.1,
       supports: [],
       loads: [{ kind: 'point', x: 1, value: 0 }],

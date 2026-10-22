@@ -86,6 +86,13 @@
     stroke-width: 2;
   }
 
+  /* An internal hinge on a beam: an open pin drawn over the beam. */
+  .hinge {
+    fill: var(--color-surface-page);
+    stroke: var(--color-text-primary);
+    stroke-width: 2;
+  }
+
   .load {
     stroke: var(--color-accent-primary);
     stroke-width: 2.5;

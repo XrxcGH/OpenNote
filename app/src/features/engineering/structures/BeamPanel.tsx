@@ -13,7 +13,7 @@ import { KeysHint } from '../canvas/KeysHint';
 import styles from '../canvas/canvas.module.css';
 import { SupportSymbol } from '../fbd/FbdPanel';
 import { readBeam, solveBeam } from './beam';
-import type { BeamLoad, BeamModel, BeamResult, BeamSample, BeamSupport, BeamSupportKind } from './beam';
+import type { BeamLoad, BeamModel, BeamResult, BeamSample, BeamSegment, BeamSupport, BeamSupportKind } from './beam';
 
 const COLUMNS = 16;
 const ROWS = 5;
@@ -29,11 +29,19 @@ export function beamStep(length: number): number {
   return nice * power;
 }
 
-type Item = { kind: 'support'; part: BeamSupport } | { kind: 'load'; part: BeamLoad };
+type Item =
+  { kind: 'support'; part: BeamSupport } | { kind: 'load'; part: BeamLoad } | { kind: 'segment'; part: BeamSegment };
+type Change = Partial<BeamSupport> | Partial<BeamLoad> | Partial<BeamSegment>;
 
 function itemName(item: Item, model: BeamModel): string {
   const at = (x: number) => q(x, model.lengthUnit);
   const perLength = `${model.forceUnit}/${model.lengthUnit}`;
+  if (item.kind === 'segment') {
+    const { factor, x1, x2 } = item.part;
+    return t('engineering.beam.partSegment', { factor: fmt(factor), from: at(x1), to: at(x2) });
+  }
+  if (item.kind === 'support' && item.part.kind === 'hinge')
+    return t('engineering.beam.partHinge', { x: at(item.part.x) });
   if (item.kind === 'support')
     return t('engineering.beam.partSupport', { kind: t(`engineering.beam.${item.part.kind}`), x: at(item.part.x) });
   const load = item.part;
@@ -70,7 +78,7 @@ export function beamFallback(model: BeamModel): string {
 }
 
 const newId = (model: BeamModel) => {
-  const used = new Set([...model.supports, ...model.loads].map((one) => one.id));
+  const used = new Set([...model.supports, ...model.loads, ...(model.segments ?? [])].map((one) => one.id));
   let n = used.size + 1;
   while (used.has(`p${n}`)) n++;
   return `p${n}`;
@@ -87,17 +95,22 @@ export function BeamPanel({ data, readOnly, patch, announce }: BlockProps) {
   const items: Item[] = [
     ...model.supports.map((part): Item => ({ kind: 'support', part })),
     ...model.loads.map((part): Item => ({ kind: 'load', part })),
+    ...(model.segments ?? []).map((part): Item => ({ kind: 'segment', part })),
   ];
   const current = items.find((item) => item.part.id === selected) ?? null;
 
-  const add = (what: BeamSupportKind | BeamLoad['kind']) => {
+  const add = (what: BeamSupportKind | BeamLoad['kind'] | 'segment') => {
     const id = newId(model);
     const mid = snapToStep(model.length / 2, step);
     let next: BeamModel;
     let item: Item;
-    if (what === 'pin' || what === 'roller' || what === 'fixed') {
+    if (what === 'segment') {
+      const part: BeamSegment = { id, x1: 0, x2: mid, factor: 2 };
+      next = { ...model, segments: [...(model.segments ?? []), part] };
+      item = { kind: 'segment', part };
+    } else if (what === 'pin' || what === 'roller' || what === 'fixed' || what === 'hinge') {
       const used = new Set(model.supports.map((s) => s.x));
-      const x = [0, model.length, mid].find((one) => !used.has(one)) ?? mid;
+      const x = what === 'hinge' ? mid : ([0, model.length, mid].find((one) => !used.has(one)) ?? mid);
       const part: BeamSupport = { id, kind: what, x: what === 'fixed' ? (used.has(0) ? model.length : 0) : x };
       next = { ...model, supports: [...model.supports, part] };
       item = { kind: 'support', part };
@@ -115,10 +128,13 @@ export function BeamPanel({ data, readOnly, patch, announce }: BlockProps) {
     requestAnimationFrame(() => drawing.current?.querySelector<SVGElement>(`[data-part="${id}"]`)?.focus());
   };
 
-  const update = (id: string, change: Partial<BeamSupport> | Partial<BeamLoad>): BeamModel => ({
+  const update = (id: string, change: Change): BeamModel => ({
     ...model,
     supports: model.supports.map((s) => (s.id === id ? ({ ...s, ...change } as BeamSupport) : s)),
     loads: model.loads.map((l) => (l.id === id ? ({ ...l, ...change } as BeamLoad) : l)),
+    ...(model.segments
+      ? { segments: model.segments.map((g) => (g.id === id ? ({ ...g, ...change } as BeamSegment) : g)) }
+      : {}),
   });
 
   const remove = (id: string) => {
@@ -127,6 +143,7 @@ export function BeamPanel({ data, readOnly, patch, announce }: BlockProps) {
       ...model,
       supports: model.supports.filter((s) => s.id !== id),
       loads: model.loads.filter((l) => l.id !== id),
+      ...(model.segments ? { segments: model.segments.filter((g) => g.id !== id) } : {}),
     });
     setSelected(null);
     if (item) announce(t('engineering.common.removed', { name: itemName(item, model) }));
@@ -135,14 +152,14 @@ export function BeamPanel({ data, readOnly, patch, announce }: BlockProps) {
   /** Moves an item so its reference point (x, or x1 for a distributed load) is at `x`. */
   const moved = (item: Item, x: number): BeamModel => {
     const on = clamp(snapToStep(x, step), 0, model.length);
-    if (item.kind === 'support' || item.part.kind !== 'distributed') return update(item.part.id, { x: on });
-    const span = item.part.x2 - item.part.x1;
+    const range = rangeOf(item);
+    if (!range) return update(item.part.id, { x: on });
+    const span = range.x2 - range.x1;
     const x1 = clamp(on, 0, model.length - span);
     return update(item.part.id, { x1, x2: x1 + span });
   };
 
-  const reference = (item: Item) =>
-    item.kind === 'support' ? item.part.x : item.part.kind === 'distributed' ? item.part.x1 : item.part.x;
+  const reference = itemStart;
 
   return (
     <div className={styles.root}>
@@ -151,9 +168,11 @@ export function BeamPanel({ data, readOnly, patch, announce }: BlockProps) {
           <Button onClick={() => add('pin')}>{t('engineering.beam.pin')}</Button>
           <Button onClick={() => add('roller')}>{t('engineering.beam.roller')}</Button>
           <Button onClick={() => add('fixed')}>{t('engineering.beam.fixed')}</Button>
+          <Button onClick={() => add('hinge')}>{t('engineering.beam.hinge')}</Button>
           <Button onClick={() => add('point')}>{t('engineering.beam.pointLoad')}</Button>
           <Button onClick={() => add('distributed')}>{t('engineering.beam.distributed')}</Button>
           <Button onClick={() => add('moment')}>{t('engineering.beam.moment')}</Button>
+          <Button onClick={() => add('segment')}>{t('engineering.beam.segment')}</Button>
           <NumberField
             label={t('engineering.beam.length')}
             value={model.length}
@@ -226,6 +245,20 @@ export function BeamPanel({ data, readOnly, patch, announce }: BlockProps) {
   );
 }
 
+/** An item's reference point: x, or the start of a distributed load or EI segment. */
+function itemStart(item: Item): number {
+  const range = rangeOf(item);
+  if (range) return range.x1;
+  return 'x' in item.part ? item.part.x : 0;
+}
+
+/** The stretch a distributed load or EI segment covers; null for things at one point. */
+function rangeOf(item: Item): { x1: number; x2: number } | null {
+  if (item.kind === 'segment') return item.part;
+  if (item.kind === 'load' && item.part.kind === 'distributed') return item.part;
+  return null;
+}
+
 const toCanvas = (x: number, length: number) => LEFT + (x / length) * SPAN;
 
 function BeamLine({ length, unit }: { length: number; unit: string }) {
@@ -261,8 +294,7 @@ function BeamItem({ item, model, selected, readOnly, onSelect, onDrag, onKey }: 
   const start = (event: ReactPointerEvent) => {
     onSelect();
     if (readOnly) return;
-    const origin =
-      item.kind === 'support' ? item.part.x : item.part.kind === 'distributed' ? item.part.x1 : item.part.x;
+    const origin = itemStart(item);
     let last = origin;
     view.drag(
       event,
@@ -295,6 +327,27 @@ function BeamItem({ item, model, selected, readOnly, onSelect, onDrag, onKey }: 
 function itemGlyph(item: Item, model: BeamModel, at: (x: number) => number, axis: number, scale: number): ReactNode {
   const L = model.length;
   const view = { scale };
+  if (item.kind === 'segment') {
+    const [left, right] = [at(item.part.x1), at(item.part.x2)];
+    return (
+      <>
+        <rect className={styles.halo} x={left} y={axis - 9} width={right - left} height={18} rx={3} />
+        <rect className={styles.loadFill} x={left} y={axis - 7} width={right - left} height={14} opacity={0.3} />
+        <text className={styles.label} x={left} y={axis + 22}>
+          {t('engineering.beam.segmentLabel', { factor: fmt(item.part.factor) })}
+        </text>
+      </>
+    );
+  }
+  if (item.kind === 'support' && item.part.kind === 'hinge') {
+    const x = at(item.part.x);
+    return (
+      <>
+        <circle className={styles.halo} cx={x} cy={axis} r={14} />
+        <circle className={styles.hinge} cx={x} cy={axis} r={6} />
+      </>
+    );
+  }
   if (item.kind === 'support') {
     const x = at(item.part.x);
     return item.part.kind === 'fixed' ? (
@@ -308,7 +361,7 @@ function itemGlyph(item: Item, model: BeamModel, at: (x: number) => number, axis
       <>
         <circle className={styles.halo} cx={x} cy={axis + 14} r={16} />
         <g transform={`translate(${x} ${axis + 5})`}>
-          <SupportSymbol kind={item.part.kind} />
+          <SupportSymbol kind={item.part.kind === 'roller' ? 'roller' : 'pin'} />
         </g>
       </>
     );
@@ -490,7 +543,7 @@ function BeamResults({ result, model }: { result: BeamResult; model: BeamModel }
 interface FieldsProps {
   item: Item;
   name: string;
-  onChange(change: Partial<BeamSupport> | Partial<BeamLoad>): void;
+  onChange(change: Change): void;
   onRemove(): void;
 }
 
@@ -499,10 +552,25 @@ function ItemFields({ item, name, onChange, onRemove }: FieldsProps) {
     <div className={styles.fields} role="group" aria-label={name}>
       {item.kind === 'support' ? (
         <NumberField label={t('engineering.beam.at')} value={item.part.x} onChange={(x) => onChange({ x })} />
+      ) : item.kind === 'segment' ? (
+        <>
+          <NumberField label={t('engineering.beam.start')} value={item.part.x1} onChange={(x1) => onChange({ x1 })} />
+          <NumberField label={t('engineering.beam.end')} value={item.part.x2} onChange={(x2) => onChange({ x2 })} />
+          <NumberField
+            label={t('engineering.beam.factor')}
+            value={item.part.factor}
+            min={0.01}
+            onChange={(factor) => onChange({ factor })}
+          />
+        </>
       ) : (
         <LoadFields load={item.part} onChange={onChange} />
       )}
       {item.kind === 'load' ? <p className={styles.hint}>{t('engineering.beam.loadHint')}</p> : null}
+      {item.kind === 'segment' ? <p className={styles.hint}>{t('engineering.beam.segmentHint')}</p> : null}
+      {item.kind === 'support' && item.part.kind === 'hinge' ? (
+        <p className={styles.hint}>{t('engineering.beam.hingeHint')}</p>
+      ) : null}
       <Button variant="danger" onClick={onRemove}>
         {t('engineering.common.removeSelected')}
       </Button>

@@ -76,6 +76,26 @@ function wirePoints(part: CircuitPart, anchors: ReadonlySet<string>): Pt[] {
   return out;
 }
 
+/**
+ * The parts touching a node with no path to ground through resistors and voltage sources: such a node has no defined
+ * voltage, so the circuit names these parts rather than calling the whole system singular.
+ */
+function floatingParts(elements: readonly CircuitPart[], ends: ReadonlyMap<string, number[]>): string[] {
+  const reached = new Set([0]);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const part of elements) {
+      if (part.kind === 'current') continue;
+      const [p, q] = ends.get(part.id)!;
+      if (reached.has(p) !== reached.has(q)) {
+        reached.add(p).add(q);
+        grew = true;
+      }
+    }
+  }
+  return elements.filter((part) => ends.get(part.id)!.some((node) => !reached.has(node))).map((part) => part.id);
+}
+
 export function solveCircuit(model: CircuitModel): CircuitResult {
   const joints = new Joints();
   const elements = model.parts.filter((p) => p.kind === 'resistor' || p.kind === 'voltage' || p.kind === 'current');
@@ -110,21 +130,8 @@ export function solveCircuit(model: CircuitModel): CircuitResult {
   }
   const n = numbers.size - 1;
 
-  // Nodes with no path to ground through resistors and voltage sources have no defined voltage; name their parts.
-  const reached = new Set([0]);
-  for (let grew = true; grew; ) {
-    grew = false;
-    for (const part of elements) {
-      if (part.kind === 'current') continue;
-      const [p, q] = ends.get(part.id)!;
-      if (reached.has(p) !== reached.has(q)) {
-        reached.add(p).add(q);
-        grew = true;
-      }
-    }
-  }
-  const floating = elements.filter((part) => ends.get(part.id)!.some((node) => !reached.has(node)));
-  if (floating.length > 0) return { ...empty('floating'), floating: floating.map((part) => part.id) };
+  const floating = floatingParts(elements, ends);
+  if (floating.length > 0) return { ...empty('floating'), floating };
 
   const sources = elements.filter((p) => p.kind === 'voltage');
   const size = n + sources.length;

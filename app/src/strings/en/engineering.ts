@@ -73,6 +73,16 @@ export const engineering = {
     pin: 'Pin',
     roller: 'Roller',
     fixed: 'Fixed',
+    hinge: 'Hinge',
+    hingeHint: 'An internal hinge lets the beam turn freely here, so the bending moment is zero at it.',
+    segment: 'EI segment',
+    segmentHint:
+      'Sets the bending stiffness EI over this stretch as a multiple of the rest of the beam. ' +
+      'It changes the answer only for statically indeterminate beams.',
+    segmentLabel: 'EI × {factor}',
+    factor: 'EI multiple',
+    partHinge: 'Hinge at {x}',
+    partSegment: 'EI × {factor} from {from} to {to}',
     start: 'Starts at',
     end: 'Ends at',
     w1: 'Load at start (per length)',
@@ -92,7 +102,8 @@ export const engineering = {
     maxMoment: 'Largest moment {moment} at {x}',
     zeroShear: 'Shear is zero at {list}.',
     determinate: 'Statically determinate.',
-    indeterminate: 'Statically indeterminate: solved assuming the same EI along the whole beam.',
+    indeterminate:
+      'Statically indeterminate: solved with the same EI along the beam, except where an EI segment sets it.',
     unstable: 'The supports cannot hold this beam. Add a support or make one fixed.',
     noSupports: 'Add supports to solve the beam.',
     diagramLabel: '{name} diagram: from {min} to {max}',

@@ -49,6 +49,17 @@ describe('BeamPanel', () => {
     fireEvent.keyDown(field, { key: 'Enter' });
     expect(last().loads.find((l) => l.id === 'p1')).toMatchObject({ value: 20 });
   });
+
+  it('adds a hinge and an EI segment from the toolbar', () => {
+    const { last } = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Hinge' }));
+    expect(last().supports.find((s) => s.kind === 'hinge')).toMatchObject({ x: 3 });
+    // A hinge between a pin and a roller turns the beam into a mechanism.
+    expect(results().getByText(/cannot hold/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'EI segment' }));
+    expect(last().segments).toEqual([expect.objectContaining({ x1: 0, x2: 3, factor: 2 })]);
+    expect(screen.getByRole('button', { name: 'EI × 2 from 0 m to 3 m' })).toBeTruthy();
+  });
 });
 
 describe('TrussPanel', () => {

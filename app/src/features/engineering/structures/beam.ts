@@ -1,15 +1,18 @@
 // The beam solver (item 7): reactions, and shear and bending moment along a straight beam with pin, roller, and fixed
 // supports under point loads, moments, and uniform or linearly varying distributed loads. Reactions come from the
 // stiffness method with Euler–Bernoulli beam elements (exact for these loads), so propped cantilevers and continuous
-// beams work too; a statically determinate beam's answer does not depend on EI. Shear and moment then follow from
-// statics, walking from the left end, in closed form.
+// beams work too; a statically determinate beam's answer does not depend on EI. An internal hinge releases the
+// rotation between its two sides, so it carries no moment, and stiffness segments scale EI over part of the beam for
+// indeterminate beams whose section changes. Shear and moment then follow from statics, walking from the left end, in
+// closed form.
 //
 // Signs follow Hibbeler and Gere. Loads and distributed loads point down when positive, and an applied moment turns
 // counterclockwise when positive. Reactions are positive up, and a fixed end's moment counterclockwise. Shear is
 // positive when the part left of a cut is pushed up, and moment is positive when the beam sags.
 import { clean, solveLinear, zeros } from '../linalg';
 
-export type BeamSupportKind = 'pin' | 'roller' | 'fixed';
+/** A hinge is not a support: it joins two parts of the beam so they turn freely, carrying no moment. */
+export type BeamSupportKind = 'pin' | 'roller' | 'fixed' | 'hinge';
 
 export interface BeamSupport {
   id: string;
@@ -22,10 +25,19 @@ export type BeamLoad =
   | { id: string; kind: 'moment'; x: number; value: number }
   | { id: string; kind: 'distributed'; x1: number; x2: number; w1: number; w2: number };
 
+/** EI between x1 and x2 is `factor` times the beam's EI elsewhere. Where segments overlap, the last one wins. */
+export interface BeamSegment {
+  id: string;
+  x1: number;
+  x2: number;
+  factor: number;
+}
+
 export interface BeamModel {
   length: number;
   supports: BeamSupport[];
   loads: BeamLoad[];
+  segments?: BeamSegment[];
   forceUnit: string;
   lengthUnit: string;
 }
@@ -127,20 +139,43 @@ export function tidyBeam(model: BeamModel): BeamModel {
         return x1 <= x2 ? { ...load, x1, x2 } : { ...load, x1: x2, x2: x1, w1: load.w2, w2: load.w1 };
       })
       .filter((load) => load.kind !== 'distributed' || load.x2 - load.x1 > EPS),
+    segments: (model.segments ?? [])
+      .map((seg) => ({ ...seg, x1: on(Math.min(seg.x1, seg.x2)), x2: on(Math.max(seg.x1, seg.x2)) }))
+      .filter((seg) => seg.x2 - seg.x1 > EPS && seg.factor > 0 && Number.isFinite(seg.factor)),
   };
+}
+
+/**
+ * Numbers the unknowns: each node has a deflection and a rotation, and an interior hinge gives the beam right of it a
+ * rotation of its own. A hinge at either end of the beam releases nothing, so it is ignored.
+ */
+function numberDofs(model: BeamModel, count: number, nodeOf: (x: number) => number) {
+  const hinged = new Set(
+    model.supports
+      .filter((s) => s.kind === 'hinge')
+      .map((s) => nodeOf(s.x))
+      .filter((n) => n > 0 && n < count - 1),
+  );
+  const index = [...Array(count).keys()];
+  const deflection = index.map((n) => 2 * n);
+  const turnLeft = index.map((n) => 2 * n + 1);
+  let size = count * 2;
+  const turnRight = index.map((n) => (hinged.has(n) ? size++ : turnLeft[n]));
+  return { hinged, deflection, turnLeft, turnRight, size };
 }
 
 export function solveBeam(input: BeamModel): BeamResult {
   const model = tidyBeam(input);
   const L = model.length;
-  const xs = [0, L, ...model.supports.map((s) => s.x)];
+  const segments = model.segments ?? [];
+  const xs = [0, L, ...model.supports.map((s) => s.x), ...segments.flatMap((seg) => [seg.x1, seg.x2])];
   for (const load of model.loads) {
     if (load.kind === 'distributed') xs.push(load.x1, load.x2);
     else xs.push(load.x);
   }
   const nodes = [...new Set(xs.map((x) => Number(x.toFixed(9))))].sort((a, b) => a - b);
   const nodeOf = (x: number) => nodes.findIndex((n) => Math.abs(n - x) < 1e-8);
-  const size = nodes.length * 2;
+  const { hinged, deflection, turnLeft, turnRight, size } = numberDofs(model, nodes.length, nodeOf);
   const K = zeros(size, size);
   const F = new Array<number>(size).fill(0);
 
@@ -148,8 +183,10 @@ export function solveBeam(input: BeamModel): BeamResult {
     const a = nodes[e];
     const l = nodes[e + 1] - a;
     const k = elementStiffness(l);
-    const dofs = [2 * e, 2 * e + 1, 2 * e + 2, 2 * e + 3];
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) K[dofs[i]][dofs[j]] += k[i][j];
+    const middle = a + l / 2;
+    const factor = segments.reduce((f, seg) => (seg.x1 <= middle && middle <= seg.x2 ? seg.factor : f), 1);
+    const dofs = [deflection[e], turnRight[e], deflection[e + 1], turnLeft[e + 1]];
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) K[dofs[i]][dofs[j]] += factor * k[i][j];
     for (const load of model.loads) {
       if (load.kind !== 'distributed' || a < load.x1 - EPS || a + l > load.x2 + EPS) continue;
       const slope = (load.w2 - load.w1) / (load.x2 - load.x1);
@@ -165,15 +202,16 @@ export function solveBeam(input: BeamModel): BeamResult {
     }
   }
   for (const load of model.loads) {
-    if (load.kind === 'point') F[2 * nodeOf(load.x)] -= load.value;
-    else if (load.kind === 'moment') F[2 * nodeOf(load.x) + 1] += load.value;
+    if (load.kind === 'point') F[deflection[nodeOf(load.x)]] -= load.value;
+    else if (load.kind === 'moment') F[turnLeft[nodeOf(load.x)]] += load.value;
   }
 
   const restrained = new Set<number>();
-  for (const support of model.supports) {
+  const holds = model.supports.filter((s) => s.kind !== 'hinge');
+  for (const support of holds) {
     const n = nodeOf(support.x);
-    restrained.add(2 * n);
-    if (support.kind === 'fixed') restrained.add(2 * n + 1);
+    restrained.add(deflection[n]);
+    if (support.kind === 'fixed') restrained.add(turnLeft[n]).add(turnRight[n]);
   }
 
   const statics = (reactions: BeamReaction[]): Statics => ({
@@ -189,7 +227,7 @@ export function solveBeam(input: BeamModel): BeamResult {
   });
 
   const empty = (status: BeamStatus): BeamResult => finish(status, [], statics([]), nodes, L);
-  if (model.supports.length === 0) return empty('none');
+  if (holds.length === 0) return empty('none');
 
   const free = [...Array(size).keys()].filter((i) => !restrained.has(i));
   const solution = solveLinear(
@@ -203,20 +241,23 @@ export function solveBeam(input: BeamModel): BeamResult {
 
   const seen = new Set<number>();
   const reactions: BeamReaction[] = [];
-  for (const support of model.supports) {
+  for (const support of holds) {
     const n = nodeOf(support.x);
     if (seen.has(n)) continue;
     seen.add(n);
-    const fixed = model.supports.some((s) => s.kind === 'fixed' && nodeOf(s.x) === n);
+    const fixed = holds.some((s) => s.kind === 'fixed' && nodeOf(s.x) === n);
+    const turning = hinged.has(n) ? reactionAt(turnLeft[n]) + reactionAt(turnRight[n]) : reactionAt(turnLeft[n]);
     reactions.push({
       support: support.id,
       x: nodes[n],
-      force: reactionAt(2 * n),
-      ...(fixed ? { moment: reactionAt(2 * n + 1) } : {}),
+      force: reactionAt(deflection[n]),
+      ...(fixed ? { moment: clean(turning) } : {}),
     });
   }
-  const unknowns = restrained.size;
-  return finish(unknowns > 2 ? 'indeterminate' : 'determinate', reactions, statics(reactions), nodes, L);
+  // Statics gives two equations for the whole beam and one more (zero moment) at each hinge.
+  const unknowns = restrained.size - [...hinged].filter((n) => restrained.has(turnRight[n])).length;
+  const equations = 2 + hinged.size;
+  return finish(unknowns > equations ? 'indeterminate' : 'determinate', reactions, statics(reactions), nodes, L);
 }
 
 function finish(status: BeamStatus, reactions: BeamReaction[], s: Statics, nodes: number[], L: number): BeamResult {
@@ -305,7 +346,7 @@ export function readBeam(raw: unknown): BeamModel {
   const supports: BeamSupport[] = [];
   for (const item of Array.isArray(data.supports) ? data.supports.slice(0, 50) : []) {
     const s = (item ?? {}) as Record<string, unknown>;
-    if (s.kind === 'pin' || s.kind === 'roller' || s.kind === 'fixed')
+    if (s.kind === 'pin' || s.kind === 'roller' || s.kind === 'fixed' || s.kind === 'hinge')
       supports.push({ id: str(s.id, `s${supports.length + 1}`), kind: s.kind, x: num(s.x, 0) });
   }
   const loads: BeamLoad[] = [];
@@ -317,10 +358,18 @@ export function readBeam(raw: unknown): BeamModel {
     else if (l.kind === 'distributed')
       loads.push({ id, kind: 'distributed', x1: num(l.x1, 0), x2: num(l.x2, 1), w1: num(l.w1, 1), w2: num(l.w2, 1) });
   }
+  const segments: BeamSegment[] = [];
+  for (const item of Array.isArray(data.segments) ? data.segments.slice(0, 50) : []) {
+    const g = (item ?? {}) as Record<string, unknown>;
+    const factor = num(g.factor, 1);
+    if (factor > 0)
+      segments.push({ id: str(g.id, `e${segments.length + 1}`), x1: num(g.x1, 0), x2: num(g.x2, 1), factor });
+  }
   return {
     length: Math.max(0.1, num(data.length, start.length)),
     supports,
     loads,
+    ...(segments.length > 0 ? { segments } : {}),
     forceUnit: str(data.forceUnit, 'kN'),
     lengthUnit: str(data.lengthUnit, 'm'),
   };
