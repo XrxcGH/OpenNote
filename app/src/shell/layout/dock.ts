@@ -1,5 +1,5 @@
-// The dock at the right edge of the page region. Panels that open beside the page (tool windows, the linked pages
-// pane, the sheets) sit between the command bar's line and the status line, and the page shrinks by their width, so
+// The dock at the right edge of the page region. Panels that open beside the page sit between the command bar's
+// line and the status line. These are tool windows, the linked pages pane, and the sheets. The page shrinks by their width, so
 // they never cover page text, the title, the Properties chip, or the scroll bar. --dock-inset-right is that width
 // (Workspace.module.css gives the page region a matching margin); a panel that overlays instead reports 0.
 

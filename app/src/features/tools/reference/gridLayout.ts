@@ -1,5 +1,6 @@
 // Where each element sits in the periodic table grid, and which element an arrow key moves to. The main table is
-// rows 1 to 7 and columns 1 to 18. The f-block (lanthanum to ytterbium and actinium to nobelium; lutetium and lawrencium are in group 3) sits in two rows
+// rows 1 to 7 and columns 1 to 18. The f-block (lanthanum to ytterbium and actinium to nobelium; lutetium and
+// lawrencium are in group 3) sits in two rows
 // below it, starting under column 3, as printed tables show it.
 import type { Element } from './data';
 

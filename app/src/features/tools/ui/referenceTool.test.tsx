@@ -15,6 +15,7 @@ const listen = (event: Event) => {
 window.addEventListener(INSERT_EVENT, listen);
 afterEach(() => inserted.splice(0));
 
+// checks-disable-next-line modifiability: one describe block of independent cases on the tables
 describe('the reference tables', () => {
   it('show the group number and electron configuration of an element', async () => {
     renderUi(<ReferenceTool />);

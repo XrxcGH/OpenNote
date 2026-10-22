@@ -13,7 +13,7 @@ export const video = {
     needsApp: 'Videos can be added in the OpenNote app.',
     working: 'Adding “{name}”…',
     done: 'Added the video “{name}”.',
-    notVideo: '“{name}” is not an mp4 or webm video, so it was not added.',
+    notVideo: '“{name}” is not an MP4 or webm video, so it was not added.',
     tooLarge: '“{name}” is larger than {limit} MB, so it was not added.',
     damaged: '“{name}” does not look like a real video file, so it was not added.',
     failed: '“{name}” could not be added.',
@@ -27,7 +27,8 @@ export const video = {
   block: {
     label: 'Video: {name}',
     player:
-      'Video {name}. Space plays or pauses. Left and right arrows skip 5 seconds. Up and down arrows change the volume. C turns captions on or off. F opens full screen.',
+      'Video {name}. Space plays or pauses. Left and right arrows skip 5 seconds. ' +
+      'Up and down arrows change the volume. C turns captions on or off. F opens full screen.',
     unavailable: 'This video can’t be shown. The file is unchanged.',
     unreadable: 'This browser can’t play “{name}”.',
     addCaptions: 'Add captions',

@@ -186,7 +186,8 @@ function videoHtml(video: NonNullable<(ExportBlock & { type: 'other' })['video']
   const track = captions ? cx.assetUrl(captions) : null;
   const name = escapeHtml(asset.name);
   const inner = track === null ? '' : `<track kind="captions" src="${escapeAttr(track)}" default=""${voidEnd(cx.xml)}`;
-  return `<figure class="video"><video controls preload="metadata" src="${escapeAttr(src)}" aria-label="${name}">${inner}</video><figcaption>${name}</figcaption></figure>`;
+  const player = `<video controls preload="metadata" src="${escapeAttr(src)}" aria-label="${name}">${inner}</video>`;
+  return `<figure class="video">${player}<figcaption>${name}</figcaption></figure>`;
 }
 
 /** A drawing the export made, such as a chart, as a figure that screen readers can name. */

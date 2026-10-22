@@ -56,7 +56,7 @@
   .cell:focus-visible {
     outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
     outline-offset: 1px;
-    z-index: 1;
+    z-index: var(--layer-sticky);
   }
 
   .number {

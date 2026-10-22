@@ -19,15 +19,15 @@ Tap a stamped word or stroke and the recording plays from that moment. You can c
 
 ## Tidy a recording
 
-| To do this | Do this |
-|---|---|
-| Cut dead air at the start or end | Choose Trim. |
-| Split a recording in two | Choose Split in the More menu. |
-| Remove a part you marked off the record | Remove it. The audio, the transcript, and the search index all lose it. |
-| Make a quiet voice clearer | Turn on Voice enhancement. |
-| Share the audio | Export the recording as an audio file. |
-| Share the lesson as a video | Choose Export as video in the More menu, or press Ctrl+K and choose Export the recording as a narrated video. |
-| Free up disk space | Open the recording storage list. Compress a recording, or remove its audio and keep the transcript. |
+| To do this                              | Do this                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Cut dead air at the start or end        | Choose Trim.                                                                                                  |
+| Split a recording in two                | Choose Split in the More menu.                                                                                |
+| Remove a part you marked off the record | Remove it. The audio, the transcript, and the search index all lose it.                                       |
+| Make a quiet voice clearer              | Turn on Voice enhancement.                                                                                    |
+| Share the audio                         | Export the recording as an audio file.                                                                        |
+| Share the lesson as a video             | Choose Export as video in the More menu, or press Ctrl+K and choose Export the recording as a narrated video. |
+| Free up disk space                      | Open the recording storage list. Compress a recording, or remove its audio and keep the transcript.           |
 
 Settings has a Recording section for the defaults.
 
@@ -64,8 +64,6 @@ To get a transcript and summary without asking each time, open Settings, then Re
 
 When a recording stops, or you drop an audio file on a page, its transcript is made in the background and placed after the recording, with a short summary at the top. It shows in the activity panel, where you can pause or stop it. A recording that already has a transcript keeps it.
 
-
-
 ## Videos, podcasts, and live embeds
 
 Paste a YouTube or Vimeo link, a podcast episode, or a Desmos, GeoGebra, Figma, Miro, or Lucidchart link into an empty text box, or press Ctrl+K and choose Insert video, podcast, or embed from link. The page keeps a card with the title and a saved picture. Nothing loads from the site until you press Play or Show the live view, so a page opens fast and works offline.
@@ -74,7 +72,7 @@ With a YouTube or Vimeo video playing, the notes you type are time-stamped to th
 
 ### Video files
 
-Drag an mp4 or webm file onto a page, paste one, or press Ctrl+K and choose Insert video file. The video becomes a block that plays right on the page. It is stored with the page, so it plays offline, goes with the page when you export it, and loads nothing from the internet. Files over 200 MB and other formats are refused, with a message that says why.
+Drag an MP4 or webm file onto a page, paste one, or press Ctrl+K and choose Insert video file. The video becomes a block that plays right on the page. It is stored with the page, so it plays offline, goes with the page when you export it, and loads nothing from the internet. Files over 200 MB and other formats are refused, with a message that says why.
 
 Click the video or Tab to it, then use the keyboard: Space or K plays and pauses, Left and Right skip 5 seconds (hold Shift for 10), Up and Down change the volume, M mutes, C turns captions on and off, and F opens full screen. Choose Add captions on the block to attach a WebVTT (.vtt) file. The YouTube and Vimeo players above work from the keyboard through their own controls once you press Play.
 

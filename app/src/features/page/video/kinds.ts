@@ -15,7 +15,7 @@ const TYPES: Record<string, VideoMime> = {
   'video/webm': 'video/webm',
 };
 
-/** The type a video file is stored with, or null when it isn't an mp4 or webm file. */
+/** The type a video file is stored with, or null when it isn't an MP4 or webm file. */
 export function videoMimeOf(file: Pick<File, 'name' | 'type'>): VideoMime | null {
   const name = file.name.toLowerCase();
   const byName: VideoMime | null = /\.(mp4|m4v)$/.test(name)
@@ -29,7 +29,7 @@ export function videoMimeOf(file: Pick<File, 'name' | 'type'>): VideoMime | null
   return TYPES[type] === byName ? byName : null;
 }
 
-/** Whether the first bytes are those of the format: an mp4 has `ftyp` at byte 4, a webm starts with an EBML header. */
+/** Whether the first bytes are those of the format: an MP4 has `ftyp` at byte 4, a webm starts with an EBML header. */
 export function bytesMatch(head: Uint8Array, mime: VideoMime): boolean {
   if (mime === 'video/webm') return head[0] === 0x1a && head[1] === 0x45 && head[2] === 0xdf && head[3] === 0xa3;
   return head.length >= 8 && String.fromCharCode(head[4] ?? 0, head[5] ?? 0, head[6] ?? 0, head[7] ?? 0) === 'ftyp';

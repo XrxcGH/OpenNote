@@ -142,6 +142,7 @@ test.describe('panels stay between the toolbar and the status line', () => {
   }
 });
 
+// checks-disable-next-line modifiability: one describe over the widths and schemes that share each case
 test.describe('a docked panel leaves the page alone', () => {
   for (const width of [1600, 2000] as const) {
     for (const scheme of ['light', 'dark'] as const) {

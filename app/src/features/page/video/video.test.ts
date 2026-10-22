@@ -42,7 +42,7 @@ describe('video files', () => {
     expect(isCaptionFile({ name: 'talk.srt', type: '' })).toBe(false);
     expect(isCaptionFile({ name: 'talk.vtt', type: 'application/zip' })).toBe(false);
     expect(isWebVtt('WEBVTT\n\n00:01.000 --> 00:02.000\nHi')).toBe(true);
-    expect(isWebVtt('﻿WEBVTT - title\n')).toBe(true);
+    expect(isWebVtt('\uFEFFWEBVTT - title\n')).toBe(true);
     expect(isWebVtt('WEBVTTX')).toBe(false);
     expect(isWebVtt('1\n00:00:01,000 --> 00:00:02,000')).toBe(false);
   });

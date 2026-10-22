@@ -391,6 +391,7 @@ export const study = {
     title: 'Unit converter',
     open: 'Open the unit converter',
     keywords:
+      // checks-disable-next-line length: a keyword list is one string the search matches against
       'unit converter convert length mass temperature volume speed force frequency density torque fuel economy mpg current voltage resistance',
     kind: 'Kind of unit',
     categories: {
@@ -428,6 +429,7 @@ export const study = {
     title: 'Reference tables',
     open: 'Open the reference tables',
     keywords:
+      // checks-disable-next-line length: a keyword list is one string the search matches against
       'reference periodic table elements units si constants codata formulas math physics chemistry molar mass balance equation prefixes greek letters',
     tabs: {
       elements: 'Elements',
@@ -454,6 +456,7 @@ export const study = {
     oxidation: 'Common oxidation states',
     isotopes: 'Isotopes (mass numbers)',
     unknown: 'Not known',
+    // checks-disable-next-line ui-voice: the rule reads each placeholder as a capitalized name
     temperature: '{kelvin} K ({celsius} °C)',
     familyFilter: 'Family',
     allFamilies: 'All families',

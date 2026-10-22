@@ -1,4 +1,4 @@
-// Physical facts about each element for the detail card: density, melting and boiling points, electronegativity,
+// Physical facts about each element for the detail card: density, melting point, boiling point, electronegativity,
 // common oxidation states, and isotopes. These are widely published measured values, rounded, from public references
 // such as the IUPAC Periodic Table of the Elements and NIST (see THIRD_PARTY_NOTICES.md). A "-" is a value that is not
 // known or does not apply: noble gases have no Pauling electronegativity to speak of, and the heaviest elements have
