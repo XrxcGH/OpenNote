@@ -9,6 +9,9 @@ describe('typed tags', () => {
   it('finds finished tags only, outside code', () => {
     expect(typedTags('Review \\#Todo and #a/b-c, #123 `#code` \\#last')).toEqual(['todo']);
     expect(typedTags('Review \\#todo ')).toEqual(['todo']);
+    // The editor writes a space that ends the text as `&#32;`; without that space the word is not finished.
+    expect(typedTags('Review \\#todo&#32;')).toEqual(['todo']);
+    expect(typedTags('Review \\#todo')).toEqual([]);
     expect(typedTags('Plan #exam/unit-3 now')).toEqual(['exam/unit-3']);
   });
 

@@ -5,7 +5,9 @@ import { fold } from '../../../services/search/text';
 import type { Edit, OpenPage } from '../../../services/pages/types';
 
 // A word start, an optional escape, `#`, and a tag that a space ends. Numbers alone (`#123`) are not tags.
-const TYPED = /(?:^|\s)\\?#([\p{L}\p{N}_/-]*\p{L}[\p{L}\p{N}_/-]*)(?=\s)/gu;
+// The editor writes a space that ends the text, or a second one in a row, as `&#32;`, so that counts as a space.
+const SPACE = String.raw`(?:\s|&#32;|&#160;|&nbsp;)`;
+const TYPED = new RegExp(String.raw`(?:^|${SPACE})\\?#([\p{L}\p{N}_/-]*\p{L}[\p{L}\p{N}_/-]*)(?=${SPACE})`, 'gu');
 
 /** The normal form of a tag: no empty parts, folded. Matches crates/search. */
 function normal(tag: string): string {
