@@ -12,7 +12,7 @@ import { TrussPanel } from './TrussPanel';
 
 afterEach(cleanup);
 
-const results = () => within(screen.getByRole('region', { name: 'Results' }));
+const results = () => within(screen.getByRole('group', { name: 'Results' }));
 
 describe('BeamPanel', () => {
   const setup = () => {

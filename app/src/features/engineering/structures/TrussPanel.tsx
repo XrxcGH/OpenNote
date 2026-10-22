@@ -417,11 +417,11 @@ function TrussResults({ model, result }: { model: TrussModel; result: TrussResul
   }[result.status];
   const label = (id: string) => model.joints.find((joint) => joint.id === id)?.label || id;
   return (
-    <section className={styles.results} aria-label={t('engineering.common.results')}>
+    <div className={styles.results} role="group" aria-label={t('engineering.common.results')}>
       {result.forces.size > 0 ? (
         <>
-          <h3>{t('engineering.truss.forces')}</h3>
           <table>
+            <caption>{t('engineering.truss.forces')}</caption>
             <tbody>
               {model.members.map((member) => {
                 const force = result.forces.get(member.id);
@@ -435,8 +435,8 @@ function TrussResults({ model, result }: { model: TrussModel; result: TrussResul
             </tbody>
           </table>
           <p className={styles.status}>{t('engineering.truss.legend')}</p>
-          <h4>{t('engineering.truss.reactions')}</h4>
           <table>
+            <caption>{t('engineering.truss.reactions')}</caption>
             <tbody>
               {result.reactions.map((reaction) => (
                 <tr key={`${reaction.joint}${reaction.component}`}>
@@ -451,7 +451,7 @@ function TrussResults({ model, result }: { model: TrussModel; result: TrussResul
       <p className={styles.status} aria-live="polite">
         {status}
       </p>
-    </section>
+    </div>
   );
 }
 

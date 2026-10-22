@@ -436,10 +436,10 @@ function BeamResults({ result, model }: { result: BeamResult; model: BeamModel }
     none: t('engineering.beam.noSupports'),
   }[result.status];
   return (
-    <section className={styles.results} aria-label={t('engineering.common.results')}>
-      <h3>{t('engineering.beam.reactions')}</h3>
+    <div className={styles.results} role="group" aria-label={t('engineering.common.results')}>
       {result.reactions.length > 0 ? (
         <table>
+          <caption>{t('engineering.beam.reactions')}</caption>
           <tbody>
             {result.reactions.flatMap((r) => {
               const support = model.supports.find((s) => s.id === r.support);
@@ -483,7 +483,7 @@ function BeamResults({ result, model }: { result: BeamResult; model: BeamModel }
       <p className={styles.status} aria-live="polite">
         {status}
       </p>
-    </section>
+    </div>
   );
 }
 

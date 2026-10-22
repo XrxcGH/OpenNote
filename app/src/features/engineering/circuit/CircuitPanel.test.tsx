@@ -14,7 +14,7 @@ function setup() {
   return { patch, last: () => patch.mock.calls.at(-1)![0].model as CircuitModel };
 }
 
-const results = () => within(screen.getByRole('region', { name: 'Results' }));
+const results = () => within(screen.getByRole('group', { name: 'Results' }));
 
 describe('CircuitPanel', () => {
   it('shows node voltages and branch currents for the starter divider', () => {

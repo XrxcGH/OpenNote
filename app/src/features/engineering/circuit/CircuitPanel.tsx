@@ -409,11 +409,11 @@ function CircuitResults({ model, result }: { model: CircuitModel; result: Circui
     badValue: t('engineering.circuit.badValue'),
   }[result.status];
   return (
-    <section className={styles.results} aria-label={t('engineering.common.results')}>
+    <div className={styles.results} role="group" aria-label={t('engineering.common.results')}>
       {result.status === 'solved' ? (
         <>
-          <h3>{t('engineering.circuit.nodes')}</h3>
           <table>
+            <caption>{t('engineering.circuit.nodes')}</caption>
             <tbody>
               {result.nodes.map((node) => (
                 <tr key={node.index}>
@@ -423,8 +423,8 @@ function CircuitResults({ model, result }: { model: CircuitModel; result: Circui
               ))}
             </tbody>
           </table>
-          <h4>{t('engineering.circuit.branches')}</h4>
           <table>
+            <caption>{t('engineering.circuit.branches')}</caption>
             <tbody>
               {result.branches.map((branch) => {
                 const part = model.parts.find((p) => p.id === branch.part)!;
@@ -457,7 +457,7 @@ function CircuitResults({ model, result }: { model: CircuitModel; result: Circui
       <p className={result.status === 'solved' ? styles.status : styles.problem} aria-live="polite">
         {status}
       </p>
-    </section>
+    </div>
   );
 }
 

@@ -144,10 +144,9 @@
     font-size: var(--type-small-size);
   }
 
-  .results h3,
-  .results h4 {
-    margin: 0;
-    font-size: var(--type-small-size);
+  .results caption {
+    padding-block-end: var(--space-1);
+    text-align: start;
     font-weight: 600;
   }
 

@@ -544,9 +544,9 @@ function Results({ model, result }: { model: FbdModel; result: FbdResult }) {
     unstable: t('engineering.fbd.unstable'),
   };
   return (
-    <section className={styles.results} aria-label={t('engineering.common.results')}>
-      <h3>{t('engineering.fbd.sums')}</h3>
+    <div className={styles.results} role="group" aria-label={t('engineering.common.results')}>
       <table>
+        <caption>{t('engineering.fbd.sums')}</caption>
         <tbody>
           <tr>
             <th scope="row">{t('engineering.fbd.sumFx')}</th>
@@ -570,8 +570,8 @@ function Results({ model, result }: { model: FbdModel; result: FbdResult }) {
       </p>
       {result.status === 'solved' ? (
         <>
-          <h4>{t('engineering.fbd.reactions')}</h4>
           <table>
+            <caption>{t('engineering.fbd.reactions')}</caption>
             <tbody>
               {result.reactions.map((reaction) => (
                 <tr key={reaction.name}>
@@ -586,7 +586,7 @@ function Results({ model, result }: { model: FbdModel; result: FbdResult }) {
       <p className={styles.status} aria-live="polite">
         {status[result.status]}
       </p>
-    </section>
+    </div>
   );
 }
 

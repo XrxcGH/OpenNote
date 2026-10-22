@@ -15,7 +15,7 @@ function setup(model: FbdModel = starterFbd()) {
   return { patch, announce };
 }
 
-const results = () => within(screen.getByRole('region', { name: 'Results' }));
+const results = () => within(screen.getByRole('group', { name: 'Results' }));
 const lastModel = (patch: ReturnType<typeof vi.fn>) => patch.mock.calls.at(-1)![0].model as FbdModel;
 
 describe('FbdPanel', () => {
