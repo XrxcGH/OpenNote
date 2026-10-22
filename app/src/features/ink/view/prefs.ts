@@ -9,6 +9,7 @@ import type { PenDevice } from '../../../platform/bindings/PenDevice';
 import { createStore } from '../../../state/store';
 import { BARREL_CHOICES, ERASER_END_CHOICES } from '../input/buttons';
 import type { PenAction, PenButtonSettings } from '../input/buttons';
+import type { UnitsChoice } from '../snap';
 
 export interface InkPrefs {
   /** The circle that shows where a hovering pen will land. */
@@ -21,6 +22,8 @@ export interface InkPrefs {
   readonly gridSnap: boolean;
   /** The grid's spacing in millimeters. */
   readonly gridMm: number;
+  /** The units the ruler, the measure, and the compass show: the region's own, centimeters, or inches. */
+  readonly rulerUnits: UnitsChoice;
   /** Lines, arrows, and shapes snap to the lines of ruled, grid, and dot paper. On unless the person turns it off. */
   readonly paperSnap: boolean;
   /** Whether the zoom writing box is open. */
@@ -55,6 +58,7 @@ const DEFAULTS: InkPrefs = {
   protractor: false,
   gridSnap: false,
   gridMm: 5,
+  rulerUnits: 'auto',
   paperSnap: true,
   zoomBox: false,
   penFields: false,
@@ -112,6 +116,7 @@ function load(): InkPrefs {
       protractor: raw.protractor === true,
       gridSnap: raw.gridSnap === true,
       gridMm: num(raw.gridMm, DEFAULTS.gridMm, 1, 50),
+      rulerUnits: raw.rulerUnits === 'metric' || raw.rulerUnits === 'imperial' ? raw.rulerUnits : 'auto',
       paperSnap: raw.paperSnap !== false,
       zoomBox: raw.zoomBox === true,
       penFields: raw.penFields === true,

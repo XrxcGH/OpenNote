@@ -33,6 +33,7 @@ export const INK_FLAGS: readonly FlagDef[] = [
   flag('ink.hover', 'Pen hover preview.', on),
   flag('ink.canvasLock', 'Canvas lock.', on),
   flag('ink.snapTools', 'Ruler, protractor, and snap to grid.', on),
+  flag('ink.geometry', 'A measuring ruler in centimeters or inches, the measure, and the geometry compass.', beta),
   flag('ink.paperSnap', 'Lines, arrows, and shapes snap to the lines of ruled, grid, and dot paper.', beta),
   flag('ink.replay', 'Ink replay.', on),
   flag(
