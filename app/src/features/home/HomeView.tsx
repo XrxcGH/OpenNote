@@ -8,7 +8,8 @@ import { useNotes } from '../../services/notes';
 import { sessionStore } from '../../state/session';
 import { useStore } from '../../state/store';
 import { t } from '../../strings/t';
-import { Button } from '../../ui';
+import { Button, DeskScene } from '../../ui';
+import { useResolvedTheme } from '../../theme/theme';
 import { locationOf, nodeIndex } from '../palette';
 import type { NodeEntry } from '../palette';
 import { readPrefs, writePrefs } from '../qol';
@@ -121,6 +122,7 @@ async function startToday(entries: readonly NodeEntry[]): Promise<void> {
 }
 
 export default function HomeView() {
+  const theme = useResolvedTheme();
   const entries = useEntries();
   const recentIds = useStore(sessionStore, (state) => state.recentPages);
   const [choice, setChoice] = useState<HomeChoice | undefined>(undefined);
@@ -204,6 +206,9 @@ export default function HomeView() {
           </div>
         </section>
       )}
+      <div className={styles.scene}>
+        <DeskScene sky={theme === 'dark' ? 'night' : 'day'} />
+      </div>
     </div>
   );
 }
