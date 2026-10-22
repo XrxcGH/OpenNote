@@ -94,7 +94,7 @@ impl Tally {
     }
 }
 
-//// Converts a page. The report gets what came over, what was simplified, and what was skipped.
+/// Converts a page. The report gets what came over, what was simplified, and what was skipped.
 pub fn page_to_blocks(page: &Page, resolver: &mut dyn Resolver, report: &mut PageReport) -> Vec<Block> {
     page_to_blocks_traced(page, resolver, report).0
 }

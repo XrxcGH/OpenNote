@@ -33,9 +33,9 @@ Smart tables and charts are built. They have been checked by automated tests onl
 
 ## Choices
 
-To pick a value from a short list, such as a status or a tag, click in a column, open the Data menu, choose Format, then Choice, pick one or Choice, pick several. The column starts with the values it already holds. Each value is a named, colored choice.
+To pick a value from a short list, such as a status or a tag, click in a column, open the Data menu, choose Format, then pick the format "Choice, pick one" or "Choice, pick several". The column starts with the values it already holds. Each value is a named, colored choice.
 
-Press Alt+Down in a cell, or choose Choose a value from the Data menu, to see the list. A column that picks several stays open after each choice, so you can pick more. Choose Done or press Escape to finish. You can still type in the cell. Text that is not one of the choices has a dashed outline and is kept.
+Press Alt+Down in a cell, or use Choose a value in the Data menu, to see the list. A column that picks several stays open after each choice, so you can pick more. Choose Done or press Escape to finish. You can still type in the cell. Text that is not one of the choices has a dashed outline and is kept.
 
 Choose Edit choices to add a choice, rename it, give it another color, move it up or down, or delete it. Renaming changes every cell that has it. Deleting a choice leaves the cells' text alone. A choice name cannot have a comma.
 

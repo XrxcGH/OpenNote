@@ -31,38 +31,100 @@ function problemText(drafts: readonly Draft[]): string | null {
   return t('smart.choice.problemMany', { max: MAX_CHOICES });
 }
 
-function Editor(props: { column: string; start: ChoiceEdit; finish(result: ChoiceEdit | null): void }) {
-  const { column, start, finish } = props;
+/** The rows being edited and the changes a person can make to them. */
+function useRows(start: ChoiceEdit) {
   const [rows, setRows] = useState<Row[]>(() => start.drafts.map((draft, key) => ({ ...draft, key })));
   const [next, setNext] = useState(start.drafts.length);
+  const label = (row: Row, at: number) => row.name || String(at + 1);
+  return {
+    rows,
+    change: (key: number, patch: Partial<Draft>) =>
+      setRows(rows.map((row) => (row.key === key ? { ...row, ...patch } : row))),
+    move(at: number, by: -1 | 1) {
+      const to = at + by;
+      if (to < 0 || to >= rows.length) return;
+      const moved = [...rows];
+      [moved[at], moved[to]] = [moved[to], moved[at]];
+      setRows(moved);
+      announce(t('smart.choice.moved', { name: label(moved[to], to), place: to + 1, count: moved.length }));
+    },
+    remove(at: number) {
+      announce(t('smart.choice.removed', { name: label(rows[at], at) }));
+      setRows(rows.filter((_, index) => index !== at));
+    },
+    add() {
+      setRows([...rows, { key: next, name: '', color: nextColor(rows.map((row) => row.color)) }]);
+      setNext(next + 1);
+    },
+  };
+}
+
+interface RowProps {
+  row: Row;
+  at: number;
+  count: number;
+  change(key: number, patch: Partial<Draft>): void;
+  move(at: number, by: -1 | 1): void;
+  remove(at: number): void;
+}
+
+/** One option: a swatch, its name, its color, and the buttons that move and delete it. */
+function OptionRow({ row, at, count, change, move, remove }: RowProps) {
+  const name = row.name || String(at + 1);
+  return (
+    <li className={styles.choiceRow}>
+      <span className={styles.choiceSwatch} data-color={row.color} aria-hidden="true" />
+      <TextField
+        label={t('smart.choice.nameLabel', { number: at + 1 })}
+        value={row.name}
+        onChange={(value) => change(row.key, { name: value })}
+      />
+      <label className={styles.choiceColor}>
+        <span>{t('smart.choice.colorLabel', { name })}</span>
+        <select value={row.color} onChange={(event) => change(row.key, { color: event.target.value as ChoiceColor })}>
+          {CHOICE_COLORS.map((color) => (
+            <option key={color} value={color}>
+              {colorName(color)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <Button
+        variant="quiet"
+        aria-label={t('smart.choice.moveUp', { name })}
+        disabled={at === 0}
+        onClick={() => move(at, -1)}
+      >
+        {t('smart.choice.up')}
+      </Button>
+      <Button
+        variant="quiet"
+        aria-label={t('smart.choice.moveDown', { name })}
+        disabled={at === count - 1}
+        onClick={() => move(at, 1)}
+      >
+        {t('smart.choice.down')}
+      </Button>
+      <Button variant="quiet" aria-label={t('smart.choice.remove', { name })} onClick={() => remove(at)}>
+        {t('smart.choice.delete')}
+      </Button>
+    </li>
+  );
+}
+
+function Editor(props: { column: string; start: ChoiceEdit; finish(result: ChoiceEdit | null): void }) {
+  const { column, start, finish } = props;
+  const edit = useRows(start);
+  const { rows } = edit;
   const [multi, setMulti] = useState(start.multi);
   const [problem, setProblem] = useState<string | null>(null);
-  const change = (key: number, patch: Partial<Draft>) => {
-    setRows(rows.map((row) => (row.key === key ? { ...row, ...patch } : row)));
-    setProblem(null);
-  };
-  const move = (at: number, by: -1 | 1) => {
-    const to = at + by;
-    if (to < 0 || to >= rows.length) return;
-    const moved = [...rows];
-    [moved[at], moved[to]] = [moved[to], moved[at]];
-    setRows(moved);
-    announce(t('smart.choice.moved', { name: moved[to].name || String(to + 1), place: to + 1, count: moved.length }));
-  };
-  const remove = (at: number) => {
-    const gone = rows[at];
-    setRows(rows.filter((_, index) => index !== at));
-    announce(t('smart.choice.removed', { name: gone.name || String(at + 1) }));
-  };
-  const add = () => {
-    setRows([...rows, { key: next, name: '', color: nextColor(rows.map((row) => row.color)) }]);
-    setNext(next + 1);
-    setProblem(null);
-  };
   const save = () => {
     const found = problemText(rows);
     if (found) setProblem(found);
-    else finish({ drafts: rows.map(({ name, color, was }) => ({ name, color, ...(was !== undefined ? { was } : {}) })), multi });
+    else {
+      const drafts = rows.map(({ name, color, was }) => ({ name, color, ...(was !== undefined ? { was } : {}) }));
+      finish({ drafts, multi });
+    }
   };
   return (
     <Dialog
@@ -75,54 +137,14 @@ function Editor(props: { column: string; start: ChoiceEdit; finish(result: Choic
       ]}
       onDismiss={() => finish(null)}
     >
-      <div className={styles.choiceEditor}>
+      <div className={styles.choiceEditor} onChange={() => setProblem(null)}>
         <Switch label={t('smart.choice.several')} checked={multi} onChange={setMulti} />
         <ol className={styles.choiceRows} aria-label={t('smart.choice.listLabel')}>
           {rows.map((row, at) => (
-            <li key={row.key} className={styles.choiceRow}>
-              <span className={styles.choiceSwatch} data-color={row.color} aria-hidden="true" />
-              <TextField
-                label={t('smart.choice.nameLabel', { number: at + 1 })}
-                value={row.name}
-                onChange={(name) => change(row.key, { name })}
-              />
-              <label className={styles.choiceColor}>
-                <span>{t('smart.choice.colorLabel', { name: row.name || String(at + 1) })}</span>
-                <select value={row.color} onChange={(event) => change(row.key, { color: event.target.value as ChoiceColor })}>
-                  {CHOICE_COLORS.map((color) => (
-                    <option key={color} value={color}>
-                      {colorName(color)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Button
-                variant="quiet"
-                aria-label={t('smart.choice.moveUp', { name: row.name || String(at + 1) })}
-                disabled={at === 0}
-                onClick={() => move(at, -1)}
-              >
-                {t('smart.choice.up')}
-              </Button>
-              <Button
-                variant="quiet"
-                aria-label={t('smart.choice.moveDown', { name: row.name || String(at + 1) })}
-                disabled={at === rows.length - 1}
-                onClick={() => move(at, 1)}
-              >
-                {t('smart.choice.down')}
-              </Button>
-              <Button
-                variant="quiet"
-                aria-label={t('smart.choice.remove', { name: row.name || String(at + 1) })}
-                onClick={() => remove(at)}
-              >
-                {t('smart.choice.delete')}
-              </Button>
-            </li>
+            <OptionRow key={row.key} row={row} at={at} count={rows.length} {...edit} />
           ))}
         </ol>
-        <Button variant="secondary" onClick={add} disabled={rows.length >= MAX_CHOICES}>
+        <Button variant="secondary" onClick={edit.add} disabled={rows.length >= MAX_CHOICES}>
           {t('smart.choice.add')}
         </Button>
         <p className={styles.choiceNote}>{t('smart.choice.removedNote')}</p>

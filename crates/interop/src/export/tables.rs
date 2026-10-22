@@ -80,7 +80,8 @@ fn choice_lists(page: &Page, id: Option<&BlockId>) -> Vec<ChoiceList> {
         .enumerate()
         .filter_map(|(column, one)| {
             let own = columns.get(one.id.to_string())?;
-            let single = own.get("type")?.as_str()? == "choice" && own.get("multi").and_then(|m| m.as_bool()) != Some(true);
+            let single =
+                own.get("type")?.as_str()? == "choice" && own.get("multi").and_then(|m| m.as_bool()) != Some(true);
             if !single {
                 return None;
             }
@@ -629,7 +630,10 @@ mod tests {
         page.blocks.replace(std::sync::Arc::new(changed)).expect("replaced");
         let mut report = PageReport::default();
         let (blocks, origins) = page_to_blocks_traced(&page, &mut Nothing, &mut report);
-        let at = blocks.iter().position(|b| matches!(b, Block::Table { .. })).expect("a table");
+        let at = blocks
+            .iter()
+            .position(|b| matches!(b, Block::Table { .. }))
+            .expect("a table");
         let lists = choice_lists(&page, origins.get(at));
         // The column that takes several has no list, and a name with a comma is left out.
         assert_eq!(
@@ -658,7 +662,10 @@ mod tests {
         };
         let xml = sheet_xml(&table);
         assert!(xml.contains("</sheetData><dataValidations count=\"1\">"), "{xml}");
-        assert!(xml.contains("type=\"list\"") && xml.contains("sqref=\"B2:B1048576\""), "{xml}");
+        assert!(
+            xml.contains("type=\"list\"") && xml.contains("sqref=\"B2:B1048576\""),
+            "{xml}"
+        );
         assert!(
             xml.contains("<formula1>&quot;To do,Say &quot;&quot;hi&quot;&quot; &amp; go,Done&quot;</formula1>"),
             "{xml}"

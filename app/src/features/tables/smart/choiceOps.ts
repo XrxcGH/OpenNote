@@ -111,9 +111,7 @@ export async function saveChoices(inst: SmartInstance, column: number, edit: Cho
   });
   const info: ChoiceInfo = { options, multi: edit.multi };
   const change =
-    renames.size > 0
-      ? rewriteColumn(inst, column, info, (name) => renames.get(name.toLowerCase()) ?? name)
-      : undefined;
+    renames.size > 0 ? rewriteColumn(inst, column, info, (name) => renames.get(name.toLowerCase()) ?? name) : undefined;
   await inst.commit(next, change);
   inst.host.announce(t('smart.choice.saved', { column: model.names[column], count: options.length }));
   return true;

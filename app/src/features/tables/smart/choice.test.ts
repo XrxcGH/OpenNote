@@ -6,25 +6,8 @@ import { createMarkdownCache } from '../../../editor/markdown';
 import { tableSchema } from '../../../editor/schema/schema';
 import type { TableData } from '../../../editor/schema/specs';
 import type { TableExtraHost } from '../../page';
-import {
-  EN_US,
-  choiceRank,
-  cleanChoiceName,
-  createTable,
-  filterIndices,
-  sortedIndices,
-  splitChoices,
-} from '../engine';
-import {
-  draftProblem,
-  nextColor,
-  optionsFromCells,
-  pick,
-  readCell,
-  renamesOf,
-  rewrite,
-  choiceOf,
-} from './choice';
+import { EN_US, choiceRank, cleanChoiceName, createTable, filterIndices, sortedIndices, splitChoices } from '../engine';
+import { draftProblem, nextColor, optionsFromCells, pick, readCell, renamesOf, rewrite, choiceOf } from './choice';
 import type { ChoiceInfo } from './choice';
 import { saveChoices, makeChoice, filterByChoice } from './choiceOps';
 import { CHOICE_COLORS, EMPTY_SMART, readOptions, readSmart, smartPatch, withColumn } from './data';
@@ -153,7 +136,9 @@ describe('stored choice columns', () => {
   });
 
   it('loads a page from before choice columns, and a text column with the choices an import gave it', () => {
-    const old = readSmart({ smart: { columns: { a: { type: 'text', choices: ['Done', 'Reading'] }, b: { type: 'number' } } } });
+    const old = readSmart({
+      smart: { columns: { a: { type: 'text', choices: ['Done', 'Reading'] }, b: { type: 'number' } } },
+    });
     expect(old.columns).toEqual({ a: { type: 'text', choices: ['Done', 'Reading'] }, b: { type: 'number' } });
     expect(choiceOf(old, 'a')).toBeNull();
   });
@@ -230,10 +215,22 @@ describe('picking and rewriting', () => {
 
   it('refuses empty, repeated, and too many names, and picks the least used color for a new option', () => {
     expect(draftProblem([{ name: ' ', color: 'ink' }])).toEqual({ kind: 'empty' });
-    expect(draftProblem([{ name: 'A', color: 'ink' }, { name: 'a', color: 'fern' }])).toEqual({ kind: 'taken', name: 'a' });
-    expect(draftProblem(Array.from({ length: 51 }, (_, i) => ({ name: `n${i}`, color: 'ink' as const })))).toEqual({ kind: 'many' });
+    expect(
+      draftProblem([
+        { name: 'A', color: 'ink' },
+        { name: 'a', color: 'fern' },
+      ]),
+    ).toEqual({ kind: 'taken', name: 'a' });
+    expect(draftProblem(Array.from({ length: 51 }, (_, i) => ({ name: `n${i}`, color: 'ink' as const })))).toEqual({
+      kind: 'many',
+    });
     expect(nextColor(['indigo', 'amber'])).toBe('ink');
-    expect(renamesOf([{ name: 'Open', color: 'ink', was: 'Todo' }, { name: 'Done', color: 'ink', was: 'Done' }]).get('todo')).toBe('Open');
+    expect(
+      renamesOf([
+        { name: 'Open', color: 'ink', was: 'Todo' },
+        { name: 'Done', color: 'ink', was: 'Done' },
+      ]).get('todo'),
+    ).toBe('Open');
   });
 });
 
@@ -339,18 +336,26 @@ describe('chips over cells', () => {
     });
     const smart = withChoice(true);
     const model = buildModel(
-      { header: true, columnIds: COLUMNS, texts: [['Tasks', 'Status'], ['A', 'Todo, Done, Odd'], ['B', '']] },
+      {
+        header: true,
+        columnIds: COLUMNS,
+        texts: [
+          ['Tasks', 'Status'],
+          ['A', 'Todo, Done, Odd'],
+          ['B', ''],
+        ],
+      },
       smart,
       EN_US,
     );
     const set = buildDecorations(doc, model, smart, EN_US, (typed) => typed);
-    const chips = set.find().filter((one) => (one as unknown as { type: { attrs: Record<string, string> } }).type.attrs['data-chip']);
+    const chips = set
+      .find()
+      .filter((one) => (one as unknown as { type: { attrs: Record<string, string> } }).type.attrs['data-chip']);
     const spans = chips.map((one) => doc.textBetween(one.from, one.to));
     expect(spans).toEqual(['Todo', 'Done', 'Odd']);
-    expect(chips.map((one) => (one as unknown as { type: { attrs: Record<string, string> } }).type.attrs['data-chip'])).toEqual([
-      'brick',
-      'fern',
-      'unknown',
-    ]);
+    expect(
+      chips.map((one) => (one as unknown as { type: { attrs: Record<string, string> } }).type.attrs['data-chip']),
+    ).toEqual(['brick', 'fern', 'unknown']);
   });
 });
