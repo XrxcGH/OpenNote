@@ -183,6 +183,11 @@
     font-family: var(--font-mono);
   }
 
+  /* The example is longer than the field at the body size, so it would be cut off. */
+  .expression::placeholder {
+    font-size: var(--type-small-size);
+  }
+
   .expression[aria-invalid='true'] {
     border-color: var(--color-status-danger);
   }

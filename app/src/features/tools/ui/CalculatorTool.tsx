@@ -83,7 +83,7 @@ export function CalculatorTool() {
           </button>
         ))}
       </div>
-      <div role="tabpanel" id={`calc-panel-${tab}`} aria-labelledby={`calc-tab-${tab}`}>
+      <div role="tabpanel" id={`calc-panel-${tab}`} aria-labelledby={`calc-tab-${tab}`} className={styles.tool}>
         {tab === 'scientific' ? <Scientific /> : <Graphing />}
       </div>
     </div>
