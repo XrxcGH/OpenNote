@@ -288,7 +288,7 @@ const TABLE_COMMANDS: readonly TableSpec[] = [
     title: 'smart.choice.choose',
     icon: 'ListChecks',
     flag: 'tables.choice',
-    keys: ['Alt+ArrowDown'],
+    keys: ['Alt+Down'],
     command: { run: 'chooseValue' },
   },
   {

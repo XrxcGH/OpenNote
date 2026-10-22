@@ -85,3 +85,25 @@ test('fills a formula down with its references moved', async ({ page }) => {
   await shown(page, 0, 0).click();
   await expect(shown(page, 3, 2)).toHaveAttribute('data-shown', '54');
 });
+
+test('makes a column of choices, picks one from the list, and renames it everywhere', async ({ page }) => {
+  await openSmart(page);
+  await fillSales(page);
+  await shown(page, 1, 0).click();
+  await page.getByRole('button', { name: 'Data' }).click();
+  await page.getByRole('menuitem', { name: 'Number format' }).click();
+  await page.getByRole('menuitemradio', { name: 'Choice, pick one' }).click();
+  // Jan, Feb, and Mar become options, each drawn as a chip over its text.
+  await expect(page.locator('table td [data-chip]')).toHaveCount(3);
+  await shown(page, 3, 0).click();
+  await page.keyboard.press('Alt+ArrowDown');
+  await page.getByRole('menuitemradio', { name: 'Feb' }).click();
+  await expect(shown(page, 3, 0)).toContainText('Feb');
+  await shown(page, 1, 0).click();
+  await page.getByRole('button', { name: 'Data' }).click();
+  await page.getByRole('menuitem', { name: 'Edit choices…' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('textbox', { name: 'Name of choice 1' }).fill('January');
+  await dialog.getByRole('button', { name: 'Save choices' }).click();
+  await expect(shown(page, 1, 0)).toContainText('January');
+});

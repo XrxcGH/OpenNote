@@ -157,7 +157,7 @@ export async function chooseValue(inst: SmartInstance, column?: number): Promise
     inst.host.announce(t('smart.choice.needCell'));
     return false;
   }
-  let again = false;
+  let again: boolean;
   let pending: Promise<unknown> = Promise.resolve();
   let changed = false;
   do {

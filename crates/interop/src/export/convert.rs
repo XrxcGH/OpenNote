@@ -94,14 +94,25 @@ impl Tally {
     }
 }
 
-/// Converts a page. The report gets what came over, what was simplified, and what was skipped.
+//// Converts a page. The report gets what came over, what was simplified, and what was skipped.
 pub fn page_to_blocks(page: &Page, resolver: &mut dyn Resolver, report: &mut PageReport) -> Vec<Block> {
+    page_to_blocks_traced(page, resolver, report).0
+}
+
+/// Converts a page like [`page_to_blocks`], and also says which page block each converted block came from, so an
+/// export can look at that block's own data, such as the choices of a table's columns.
+pub fn page_to_blocks_traced(
+    page: &Page,
+    resolver: &mut dyn Resolver,
+    report: &mut PageReport,
+) -> (Vec<Block>, Vec<opennote_core::BlockId>) {
     let mut convert = Convert {
         page,
         resolver,
         tally: Tally::default(),
     };
     let mut out = Vec::new();
+    let mut origins = Vec::new();
     for id in page.reading_order() {
         let Some(block) = page.blocks.get(id) else {
             continue;
@@ -109,10 +120,12 @@ pub fn page_to_blocks(page: &Page, resolver: &mut dyn Resolver, report: &mut Pag
         if block.is_floating() {
             convert.tally.floating += 1;
         }
+        let before = out.len();
         convert.block(block, &mut out);
+        origins.extend(std::iter::repeat_n(block.id, out.len() - before));
     }
     convert.tally.describe(report);
-    out
+    (out, origins)
 }
 
 struct Convert<'a> {

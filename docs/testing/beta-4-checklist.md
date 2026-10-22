@@ -217,7 +217,7 @@ Quality-of-life features (pages lane):
 
 ## 7. Smart tables and charts (Phase 7)
 
-1. Insert > Smart table. Format columns as number, currency, percent, date, or text (there is no separate choice type; Board groups rows by any column of repeating text); sort and filter.
+1. Insert > Smart table. Format columns as number, currency, percent, date, or text (Choice, pick one and Choice, pick several make a column of named, colored options; Board groups rows by a choice column's options or by any column of repeating text); sort and filter.
 2. Insert a chart from the table; change its type; edit a number: the chart updates.
 
 Quality-of-life features (tables lane):

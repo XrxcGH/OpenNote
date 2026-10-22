@@ -257,7 +257,7 @@ export function dataMenu(inst: SmartInstance): MenuItemSpec[] {
           {
             id: 'chooseValue',
             label: t('smart.choice.choose'),
-            shortcut: 'Alt+ArrowDown',
+            shortcut: 'Alt+Down',
             disabled: !inBody,
             separatorBefore: true,
             onSelect: run(() => chooseValue(inst, column)),

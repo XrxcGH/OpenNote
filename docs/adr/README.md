@@ -74,6 +74,7 @@ Accepted records aren't rewritten when plans change. Instead, write a new ADR fo
 | [0041](0041-stamped-entry-lock.md) | A stamped entry lock lives in the page view, and the core enforces it | Proposed | 2026-10-15 |
 | [0042](0042-protected-sections.md) | Protected sections are sealed file by file, and open only in memory | Proposed | 2026-10-15 |
 | [0046](0046-one-command-registry.md) | One command registry for the local API, the opennote command, and MCP, with read-back commands, file roots, a per-instance key, and authors in page history | Accepted | 2026-10-15 |
+| [0047](0047-choice-columns.md) | Choice columns keep their options in the column schema and their values as plain text | Proposed | 2026-10-21 |
 
 The numbers 0009, 0018, 0019, 0028, 0029, and 0031 to 0034 have no record. A number is never reused.
 
