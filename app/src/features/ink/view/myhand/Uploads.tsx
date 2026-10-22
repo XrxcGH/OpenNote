@@ -212,20 +212,22 @@ function UploadDialog(props: { files: readonly File[]; keep: boolean; done: () =
   const { status, errors, cards, setCards, kept } = useUploadCards(props.files, props.keep);
   const recognizer = useReading(cards, shown, setCards);
   const hasStyle = useStore(styleState, (s) => s.doc.style !== null);
-  const chosen = cards?.filter((c) => !c.skipped && c.label.trim() !== '').length ?? 0;
+  // Only the symbols the person has been shown can be added: the rest wait for Show more.
+  const seen = cards?.slice(0, shown) ?? [];
+  const chosen = seen.filter((c) => !c.skipped && c.label.trim() !== '').length;
   const add = async () => {
     if (!cards || chosen === 0) {
       announce(t('myHand.uploads.noneChosen'));
       return;
     }
-    const result = confirmed(cards);
+    const result = confirmed(seen);
     if (!result) return;
     if (await addSymbols(result.symbols, result.habits, kept.current)) {
       announce(t('myHand.uploads.added', { count: result.symbols.length }));
       props.done();
     }
   };
-  const visible = cards?.slice(0, shown) ?? [];
+  const visible = seen;
   return (
     <Dialog
       title={t('myHand.uploads.confirmTitle')}
