@@ -213,6 +213,7 @@
   }
 
   .tape {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -233,6 +234,16 @@
     color: var(--color-text-on-accent);
     background: var(--color-accent-clay);
     border-style: solid;
+  }
+
+  /* Uncovered, the strip is an outline over the words, so its own words are kept off the page; the label says it. */
+  .tape:not([data-hidden]) > span {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .tape:focus-visible {
