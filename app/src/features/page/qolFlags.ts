@@ -24,7 +24,8 @@ export type QolPageFlagId =
   | 'page.extractMerge'
   | 'page.extractUndo'
   | 'page.extractObjects'
-  | 'page.embeds';
+  | 'page.embeds'
+  | 'page.hashtags';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const building = { dev: true, nightly: true, beta: true, stable: false };
@@ -58,4 +59,5 @@ export const QOL_PAGE_FLAGS: readonly FlagDef[] = [
   flag('page.extractObjects', 'Extract a lasso of ink or selected blocks to a new page, leaving a link.'),
   flag('page.extractMerge', 'Extract to a new page, merge pages, and split at headings.'),
   flag('page.embeds', 'Page embeds, typed with ![[.'),
+  flag('page.hashtags', 'Typed #words that become tags, with a setting to turn it off.'),
 ];

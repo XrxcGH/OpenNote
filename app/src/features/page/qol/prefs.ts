@@ -28,6 +28,8 @@ export interface PageExtrasPrefs {
   wordCount: boolean;
   /** The template that new pages in a section start from, by section ID. */
   templateDefaults: Record<string, string>;
+  /** Turn a typed #word into one of the page's tags once a space or punctuation ends it. On by default. */
+  hashtags: boolean;
   /** A new page in a series carries the unfinished checkboxes of the last page forward. */
   seriesCarry: boolean;
   /** When a link title was last asked for (ISO 8601), for the Privacy panel. */
@@ -47,6 +49,7 @@ export const DEFAULT_PREFS: PageExtrasPrefs = {
   wordCount: true,
   templateDefaults: {},
   seriesCarry: true,
+  hashtags: true,
   linkTitleLastRan: null,
 };
 
@@ -87,6 +90,7 @@ export function cleanPrefs(raw: unknown): PageExtrasPrefs {
     wordCount: bool('wordCount'),
     templateDefaults: strings(found.templateDefaults),
     seriesCarry: bool('seriesCarry'),
+    hashtags: bool('hashtags'),
     linkTitleLastRan: typeof found.linkTitleLastRan === 'string' ? found.linkTitleLastRan.slice(0, 40) : null,
   };
 }

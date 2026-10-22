@@ -26,7 +26,7 @@ Open a page and look at its linked pages pane to see every page that links to it
 
 ## Tags and properties
 
-Type `#todo` and the tag is listed in the Tags pane and found by search. Tag a single line to see just those lines together. Pages can also carry properties, and a collection shows the pages that match.
+Type `#todo` followed by a space or punctuation, and the tag is listed in the Tags pane and found by search. Code, numbers like `#1`, words like `C#`, and web addresses are left alone. Press Ctrl+Z right after to keep it as plain text. To stop typed #words becoming tags, turn off "Turn typed #words into tags" in Settings, then Editing. Tag a single line to see just those lines together. Pages can also carry properties, and a collection shows the pages that match.
 
 ## Daily notes and the map
 

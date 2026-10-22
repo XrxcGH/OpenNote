@@ -18,6 +18,8 @@ import { META_AUTO_CHANGE, META_COMMAND, META_HIGHLIGHT, META_REMOTE } from '../
 import type { TableData } from '../../../editor/schema/specs';
 import { PageServiceError } from '../../../services/pages/types';
 import type { BlockId, Edit, EditBatch, NewBlock, UiSelection } from '../../../services/pages/types';
+import { isEnabled } from '../../../app/flags';
+import { pageExtrasPrefs } from '../qol/prefs';
 import { tagEdit } from './inlineTags';
 import { hasResyncListener, queueInternals, reportSendError } from './queue';
 import type { FlushReason, QueueInternals, SyncQueue } from './queue';
@@ -103,6 +105,8 @@ class Sync implements TextSyncHandle {
   private readonly internals: QueueInternals;
   private sent: string;
   private insert: PendingInsert | null;
+  /** The tag edit for the batch being built, which goes as a step of its own after the text. */
+  private tagNext: Edit | null = null;
   /** Whether batches carry the whole text instead of a splice. */
   private whole: boolean;
   private pending: Pending | null = null;
@@ -211,9 +215,10 @@ class Sync implements TextSyncHandle {
     const key = keyOf(content);
     if (this.insert ? isEmpty(content) : key === this.sent) return null;
     const edits = this.editsFor(content);
-    if (content.kind === 'text') {
-      const tag = tagEdit(this.internals.host.page, this.insert ? '' : this.sent, content.markdown);
-      if (tag) edits.push(tag);
+    // A typed #word becomes a tag in a step of its own, sent after the text, so Ctrl+Z leaves the plain #word.
+    this.tagNext = null;
+    if (content.kind === 'text' && isEnabled('page.hashtags') && pageExtrasPrefs.get().hashtags) {
+      this.tagNext = tagEdit(this.internals.host.page, this.insert ? '' : this.sent, content.markdown);
     }
     const typing = target !== null && !this.insert;
     this.sent = key;
@@ -227,9 +232,13 @@ class Sync implements TextSyncHandle {
   /** Puts the document in the chain as one batch. A refused batch leaves the text to send again. */
   private enqueue(doc: PMNode, selections: EditBatch['ui'], target: string | null): Promise<void> {
     let before = { sent: this.sent, insert: this.insert };
+    let tag: Edit | null = null;
     const build = () => {
       before = { sent: this.sent, insert: this.insert };
-      return this.build(doc, selections, target);
+      const batch = this.build(doc, selections, target);
+      tag = batch ? this.tagNext : null;
+      this.tagNext = null;
+      return batch;
     };
     const failed = (error: unknown) => {
       this.sent = before.sent;
@@ -245,10 +254,13 @@ class Sync implements TextSyncHandle {
       }
       this.keepUnsent();
     };
-    return this.internals.enqueue(build, this.block, failed).then(
-      () => undefined,
-      (error: unknown) => reportSendError(this.queue, error),
-    );
+    return this.internals
+      .enqueue(build, this.block, failed)
+      .then((ack) => (ack && tag ? this.internals.enqueue(() => ({ edits: [tag!] }), this.block) : null))
+      .then(
+        () => undefined,
+        (error: unknown) => reportSendError(this.queue, error),
+      );
   }
 
   /** Marks the text as not sent, so the next change, blur, page switch, or exit sends it again. */
