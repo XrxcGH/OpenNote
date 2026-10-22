@@ -136,7 +136,6 @@ const SAME_ISE = new RegExp(
     'bruis',
   ].join('|')})`,
 );
-/^(?:advertis|advis|compris|devis|disguis|exercis|premis|promis|revis|supervis|surpris|televis|wis|rais|prais|rise|arise|otherwis|likewis|clockwis|promis|expertis|franchis|merchandis|treatis|paradis|demis|improvis|apprais|enterpris|compromis|despis|excis|incis|concis|precis|precise|noise|poise|cruise|bruise|raise|praise|raisin|wise|rise)/;
 
 /** The dialect's spelling of an American word, or the word itself when it is spelled the same. */
 export function toDialectSpelling(word: string): string {

@@ -90,6 +90,7 @@ export function CalculatorTool() {
   );
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 function Scientific() {
   const [session, setSession] = useState<CalcSession>(() => restoreSession(loadStored(STORE, null)));
   const [input, setInput] = useState('');

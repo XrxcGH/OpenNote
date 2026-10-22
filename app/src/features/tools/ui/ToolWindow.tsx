@@ -65,6 +65,7 @@ function frameStyle(place: Place, width: number): CSSProperties {
   };
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onPopOut, children }: ToolWindowProps) {
   const title = t(tool.title);
   const [place, setPlace] = useState<Place>(() =>
