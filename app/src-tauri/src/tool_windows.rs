@@ -100,7 +100,7 @@ pub const TOOLS: &[Tool] = &[
         id: "solvers",
         title: "Math solvers",
         width: 600.0,
-        height: 760.0,
+        height: 720.0,
     },
 ];
 
