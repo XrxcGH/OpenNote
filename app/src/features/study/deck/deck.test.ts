@@ -85,6 +85,12 @@ describe('inline cards', () => {
       back: 'Paris',
     });
     expect(cardOfLine('1. [ ] Water is {{H2O}}')).toEqual({ kind: 'cloze', front: 'Water is {{H2O}}', back: '' });
+    // Braces as the editor stores them when typed.
+    expect(cardOfLine(String.raw`The \{\{heart}} pumps blood`)).toEqual({
+      kind: 'cloze',
+      front: 'The {{heart}} pumps blood',
+      back: '',
+    });
     expect(cardOfLine('just text')).toBeNull();
     expect(cardOfLine(' :: nothing')).toBeNull();
   });

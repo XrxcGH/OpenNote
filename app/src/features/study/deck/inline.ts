@@ -12,7 +12,8 @@ export const stripMarker = (line: string): string => line.replace(LIST_MARKER, '
 
 /** What a line makes, or null when it makes no card. */
 export function cardOfLine(line: string): Pick<Card, 'kind' | 'front' | 'back'> | null {
-  const text = stripMarker(line);
+  // The editor writes typed braces escaped (`\{\{word}}`), so the blanks are read with the escapes taken off.
+  const text = stripMarker(line).replace(/\\([{}])/g, '$1');
   const at = text.indexOf(SEPARATOR);
   if (at > 0) {
     const front = text.slice(0, at).trim();
