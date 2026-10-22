@@ -2,7 +2,7 @@
 // go to Rust as one raw body, with their paths and lengths in a percent-encoded header (paths may hold any letter),
 // so a PDF never becomes base64 text.
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
-import type { ExportsClient, PrintReceipt } from '../types';
+import type { ExportsClient, PrintReceipt, ReplaceReceipt } from '../types';
 import { invoke, toIpcError } from './invoke';
 
 export function createTauriExports(): ExportsClient {
@@ -43,20 +43,33 @@ export function createTauriExports(): ExportsClient {
     pickSave: (request) => invoke('export_pick_save', request),
     open: async (path, reveal) => void (await invoke('export_open', { path, reveal })),
     async write(path, files) {
-      const body = new Uint8Array(files.reduce((sum, file) => sum + file.bytes.length, 0));
-      let offset = 0;
-      for (const file of files) {
-        body.set(file.bytes, offset);
-        offset += file.bytes.length;
-      }
-      const parts = files.map((file, index) => ({ path: index === 0 ? '' : file.path, length: file.bytes.length }));
-      try {
-        await tauriInvoke('export_write', body, {
-          headers: { 'x-opennote-export': encodeURIComponent(JSON.stringify({ path, parts })) },
-        });
-      } catch (error) {
-        throw toIpcError(error);
-      }
+      await send('export_write', path, files);
     },
+    async replace(path, files) {
+      return send<ReplaceReceipt>('export_replace', path, files);
+    },
+    undoReplace: async (path) => void (await invoke('export_undo_replace', { path })),
   };
+}
+
+/** Sends the files as one raw body, with their paths and lengths in the header. */
+async function send<T = void>(
+  command: string,
+  path: string,
+  files: readonly { path: string; bytes: Uint8Array }[],
+): Promise<T> {
+  const body = new Uint8Array(files.reduce((sum, file) => sum + file.bytes.length, 0));
+  let offset = 0;
+  for (const file of files) {
+    body.set(file.bytes, offset);
+    offset += file.bytes.length;
+  }
+  const parts = files.map((file, index) => ({ path: index === 0 ? '' : file.path, length: file.bytes.length }));
+  try {
+    return await tauriInvoke<T>(command, body, {
+      headers: { 'x-opennote-export': encodeURIComponent(JSON.stringify({ path, parts })) },
+    });
+  } catch (error) {
+    throw toIpcError(error);
+  }
 }

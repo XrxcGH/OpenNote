@@ -87,7 +87,7 @@ Open Share, then Export, or press Ctrl+K and choose Export.
 - Pages, sections, and whole notebooks export as Markdown, Word, or a single HTML file.
 - Tables export as `.xlsx` or `.csv`. Pages export as a PowerPoint file.
 - Choose PDF files to export a section or a whole notebook as PDF. Each page is printed the same way as a page's own Export as PDF, into folders that follow your sections, with an `index.html` that links every file. A page that can't be printed is listed in the summary, and the rest still export. Cancel stops at once and keeps nothing.
-- A page's own Export and Print menu makes one PDF of that page.
+- A page's own Export and Print menu makes one PDF of that page. The first time you export a page's PDF, the Save window asks where. After that, the same dialog has an Update button that saves over that file without asking. The old file goes to the Recycle Bin first, and a Replaced notice with Undo puts it back. If the old file is on a network or removable drive, which has no Recycle Bin, OpenNote keeps a copy beside it as "Name (replaced).pdf" and tells you. Update remembers the file until you close OpenNote.
 - Lasso an area to export just that part.
 
 ## Open a Markdown or text file

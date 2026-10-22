@@ -59,6 +59,28 @@ describe('exportPdfFile', () => {
     expect(info.pages[0].height).toBeCloseTo(792, 0);
   });
 
+  it('replaces the earlier file without the Save dialog when given its path', async () => {
+    const replaces: string[] = [];
+    const picks: number[] = [];
+    const { client, writes } = recording({
+      async pickSave() {
+        picks.push(1);
+        return null;
+      },
+      async replace(path) {
+        replaces.push(path);
+        return { kept: 'recycled' };
+      },
+    });
+    const outcome = await exportPdfFile(client, source(2), { print: {}, replacePath: 'C:/Docs/Field notes.pdf' });
+    expect(outcome.status).toBe('saved');
+    if (outcome.status !== 'saved') return;
+    expect(outcome.replaced).toEqual({ kept: 'recycled' });
+    expect(replaces).toEqual(['C:/Docs/Field notes.pdf']);
+    expect(picks).toHaveLength(0);
+    expect(writes).toHaveLength(0);
+  });
+
   it('prints only the sheets asked for', async () => {
     const { client, writes } = recording();
     const outcome = await exportPdfFile(client, source(40), { print: { range: '2' } });

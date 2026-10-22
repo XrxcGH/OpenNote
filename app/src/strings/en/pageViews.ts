@@ -139,6 +139,14 @@ export const pageViews = {
     timedOut: 'The PDF took too long. Nothing was saved.',
     unavailable: 'Making a PDF needs the OpenNote app for Windows.',
     openFile: 'Show in folder',
+    update: 'Update {name}',
+    updateHint:
+      'Update replaces the file you saved earlier. The old one goes to the Recycle Bin first, and you can undo it.',
+    replaced: 'Replaced {name}.',
+    replacedBeside: "Replaced {name}. The old file couldn't go to the Recycle Bin, so it is kept beside it as {kept}.",
+    undo: 'Undo',
+    restored: 'Put {name} back.',
+    undoFailed: "The old file couldn't be put back.",
     problem: {
       pageCount: 'The file has a different number of pages than planned.',
       pageSize: 'A page is not the size of the sheet.',

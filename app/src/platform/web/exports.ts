@@ -48,9 +48,13 @@ export function createWebExports(): ExportsClient {
   const saved: SavedExport[] = [];
   const opened: { path: string; reveal: boolean }[] = [];
   const printed: PrintedJob[] = [];
+  const replaced: string[] = [];
+  const undone: string[] = [];
   const state = { cancelNext: false, failNext: false, noPrinters: false, printFailNext: false };
   registerTestHook('exportsSaved', () => saved);
   registerTestHook('exportsOpened', () => opened);
+  registerTestHook('exportsReplaced', () => replaced);
+  registerTestHook('exportsUndone', () => undone);
   registerTestHook('printJobs', () => printed);
   registerTestHook('printNoPrinters', () => void (state.noPrinters = true));
   registerTestHook('printFailNext', () => void (state.printFailNext = true));
@@ -126,6 +130,15 @@ export function createWebExports(): ExportsClient {
           text: file.bytes.length < 2_000_000 ? decoder.decode(file.bytes) : '',
         })),
       });
+    },
+    async replace(path, files) {
+      const again = saved.some((entry) => entry.path === path);
+      await this.write(path, files);
+      replaced.push(path);
+      return again ? { kept: 'recycled' } : { kept: 'nothing' };
+    },
+    async undoReplace(path) {
+      undone.push(path);
     },
     async open(path, reveal) {
       opened.push({ path, reveal });

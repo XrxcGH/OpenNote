@@ -66,7 +66,7 @@ impl ExportGrants {
         }
     }
 
-    fn was_written(&self, path: &Path) -> bool {
+    pub(crate) fn was_written(&self, path: &Path) -> bool {
         self.written.lock().map(|set| set.contains(path)).unwrap_or(false)
     }
 }
@@ -494,7 +494,7 @@ struct WriteHeader {
 }
 
 #[derive(Debug, Deserialize)]
-struct Part {
+pub(crate) struct Part {
     /// Relative to the main file's folder; empty for the main file itself.
     #[serde(default)]
     path: String,
@@ -617,7 +617,7 @@ fn open_file(_file: &Path, _reveal: bool) -> IpcResult<()> {
     Err(IpcError::not_implemented("export_open"))
 }
 
-fn write_parts(main: &Path, parts: &[Part], body: &[u8]) -> IpcResult<()> {
+pub(crate) fn write_parts(main: &Path, parts: &[Part], body: &[u8]) -> IpcResult<()> {
     let total = parts.iter().try_fold(0usize, |sum, part| sum.checked_add(part.length));
     if total != Some(body.len()) || body.len() > MAX_EXPORT_BYTES || parts.is_empty() {
         return Err(IpcError::invalid("parts", "The files don't add up to the data sent."));

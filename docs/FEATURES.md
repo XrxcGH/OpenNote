@@ -142,6 +142,7 @@ Presets, set per page, or as a notebook default:
 
 (Phase 6)
 
+- Export as PDF has an Update button once a page's PDF has been saved in this session. Update replaces that file without asking: the old file goes to the Recycle Bin first (or a copy stays beside it where there is no Bin), the new file is written whole, and a "Replaced, Undo" notice puts the old file back. Behind `pages.exportUpdate`, on in Beta. Status: Built, untested by hand.
 - Lasso any area, then choose "Export selection" to save it as PDF, PNG, SVG or `.docx`, or copy it as an image. Both sit on the lasso bar and in the selection's right-click menu, and pointing at either shows the crop as a dashed outline. Status: Built, untested by hand.
 - Palm lab (Settings > Pen and touch; Beta and dev builds): guided steps, a probe of what your pen and screen report, a labeled recording of the pen and hand, and a saved session file for the palm test corpus. Nothing is saved until you press Save. Status: Built, untested by hand.
 - Pen library: fountain, brush, calligraphy, dashed, and dotted pens, each with its own sizes and colors (Draw tab > Width), and named pen sets you can save and switch between (Draw tab > Width). Status: Built, untested by hand.

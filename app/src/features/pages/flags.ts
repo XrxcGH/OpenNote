@@ -35,5 +35,10 @@ export const PAGES_FLAGS: readonly FlagDef[] = [
     'A web page export plays its recordings and highlights the notes written while they ran.',
     on,
   ),
+  flag(
+    'pages.exportUpdate',
+    'Update replaces a PDF this session exported, after moving the old file to the Recycle Bin, with Undo.',
+    on,
+  ),
   flag('pages.syllables', 'Syllable marks in the reading view, drawn over the text without changing it.', on),
 ];

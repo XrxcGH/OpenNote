@@ -10,6 +10,7 @@ import { t } from '../../../strings/t';
 import { CheckFirstSwitch, checkBeforeOutput, reviewPages } from '../../a11yCheck';
 import { Button, Dialog, ProgressBar, RadioCard, RadioGroup, Switch, TextField, showToast } from '../../../ui';
 import { exportPdfFile, PdfCheckError, prepareInput } from '../host/exporter';
+import { lastExportPath, rememberExport, showReplaced } from '../host/reexport';
 import type { PdfOutcome } from '../host/exporter';
 import {
   canDuplex,
@@ -187,7 +188,7 @@ function useExport(
   const { source, platform, mode, close } = props;
   const [working, setWorking] = useState<Working | null>(null);
   const abort = useRef<AbortController | null>(null);
-  const run = async () => {
+  const run = async (replacePath?: string) => {
     const controller = new AbortController();
     abort.current = controller;
     const go = await checkBeforeOutput([source.pageId], () => reviewPages([source.pageId]));
@@ -217,11 +218,14 @@ function useExport(
         print: options,
         accessible,
         signal: controller.signal,
+        ...(replacePath ? { replacePath } : {}),
         onProgress: (progress) => setWorking({ stage: progress.stage, fraction: progress.fraction }),
       });
       if (outcome.status === 'canceled') return setWorking(null);
       close();
-      reportSaved(outcome, platform, accessible);
+      rememberExport(source.pageId, outcome.path);
+      if (outcome.replaced) showReplaced(platform.exports, outcome.path, outcome.replaced);
+      else reportSaved(outcome, platform, accessible);
       if (mode === 'print') await platform.exports.open(outcome.path, false).catch(() => undefined);
     } catch (error) {
       setWorking(null);
@@ -437,9 +441,27 @@ export function PrintDialog(props: PrintDialogProps) {
     disabled: printers === null,
     onPress: () => (preview.status === 'ready' && !rangeError && copiesOk && printers !== null ? run() : undefined),
   };
+  // Update writes over the PDF this session saved before, so there is no Save window the second time.
+  const earlier =
+    mode === 'export' && !printing && isEnabled('pages.exportUpdate') ? lastExportPath(source.pageId) : null;
+  const update = earlier
+    ? [
+        {
+          id: 'update',
+          label: t('pageViews.print.update', { name: earlier.split(/[\x5c/]/).pop() ?? earlier }),
+          variant: 'secondary' as const,
+          disabled: preview.status !== 'ready' || rangeError,
+          onPress: () => (preview.status === 'ready' && !rangeError ? run(earlier) : undefined),
+        },
+      ]
+    : [];
   const actions = working
     ? [{ id: 'stop', label: t('pageViews.print.stop'), variant: 'secondary' as const, onPress: stop }]
-    : [{ id: 'cancel', label: t('pageViews.print.cancel'), variant: 'secondary' as const, onPress: close }, go];
+    : [
+        { id: 'cancel', label: t('pageViews.print.cancel'), variant: 'secondary' as const, onPress: close },
+        ...update,
+        go,
+      ];
   return (
     <Dialog
       title={t(mode === 'print' ? 'pageViews.print.title' : 'pageViews.print.exportTitle')}
