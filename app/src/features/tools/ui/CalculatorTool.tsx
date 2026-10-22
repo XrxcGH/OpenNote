@@ -324,7 +324,8 @@ function useScientific(basic: boolean) {
     keep(done.session);
     const figured = sig && !basic ? sigFigCalculate(source.replace(/−/g, '-')) : null;
     if (figured?.ok) setAnswer({ text: figured.text, rule: ruleText(figured) });
-    else setAnswer({ text: basic ? formatNumber(value) : formatAnswer(value, source, format), value, expression: source });
+    else
+      setAnswer({ text: basic ? formatNumber(value) : formatAnswer(value, source, format), value, expression: source });
     setProblem('');
     setInput('');
   };

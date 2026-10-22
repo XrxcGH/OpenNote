@@ -261,7 +261,7 @@ export const CODATA: readonly Codata[] = [
   ),
   row('me', 'Electron mass', 'mₑ', 'm_\\mathrm{e}', '9.1093837139e-31', '28', 'kg', '\\mathrm{kg}', 'atomic', 'me', ''),
   row('mp', 'Proton mass', 'mₚ', 'm_\\mathrm{p}', '1.67262192595e-27', '52', 'kg', '\\mathrm{kg}', 'atomic', 'mp', ''),
-  row('mn', 'Neutron mass', 'mₙ', 'm_\\mathrm{n}', '1.67492750056e-27', '85', 'kg', '\\mathrm{kg}', 'atomic', 'mn', ''),
+  row('mn', 'Neutron mass', 'mₙ', 'm_\\mathrm{n}', '1.67492750056e-27', '85', 'kg', '\\mathrm{kg}', 'atomic', 'mneutron', ''),
   row(
     'u',
     'Atomic mass constant',

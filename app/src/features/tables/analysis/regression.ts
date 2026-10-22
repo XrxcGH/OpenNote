@@ -5,7 +5,7 @@ export type FitKind = 'polynomial' | 'exponential';
 
 export interface Fit {
   kind: FitKind;
-  /** Polynomial: c0 + c1 x + c2 x^2 and so on. Exponential: a e^(b x), so [a, b]. */
+  /** Polynomial: c0 + c1 x + c2 x^2 and so on. Exponential: a times e to the (b x), so [a, b]. */
   coefficients: number[];
   /** The degree of a polynomial fit; 0 for exponential. */
   degree: number;
@@ -56,7 +56,7 @@ export function polynomialFit(xs: readonly number[], ys: readonly number[], degr
   return { kind: 'polynomial', coefficients, degree, r2: r2Of(ys, xs.map(predict)), n, predict };
 }
 
-/** Fits y = a e^(b x) by a straight line through ln y. Every y must be above zero. */
+/** Fits the exponential y = a times e to the (b x) by a straight line through ln y. Every y must be above zero. */
 export function exponentialFit(xs: readonly number[], ys: readonly number[]): Fit | null {
   if (xs.length !== ys.length || xs.length < 2 || ys.some((y) => !(y > 0))) return null;
   const line = polynomialFit(xs, ys.map(Math.log), 1);

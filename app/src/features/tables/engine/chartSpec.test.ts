@@ -283,7 +283,7 @@ describe('two-click defaults', () => {
     const d = chartDefaults(table);
     expect(d?.aggregate).toBe('sum');
     expect(d?.choices[0]).toMatchObject({ kind: 'pie', recommended: true });
-    expect(d?.choices.map((c) => c.kind)).toEqual(['pie', 'bar', 'line', 'area', 'scatter']);
+    expect(d?.choices.map((c) => c.kind)).toEqual(['pie', 'bar', 'line', 'area', 'scatter', 'box']);
     expect(chartDefaults(readings())?.aggregate).toBe('none');
   });
 

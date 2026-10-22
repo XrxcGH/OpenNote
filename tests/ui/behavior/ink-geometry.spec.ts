@@ -116,6 +116,7 @@ function storedPoints(): Vec[][] {
   });
 }
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 test.describe('geometry tools', () => {
   test.use({ viewport: VIEWPORT });
 

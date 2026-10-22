@@ -60,7 +60,7 @@ export function VideoBlockView(props: {
             preload="metadata"
             playsInline
             crossOrigin="anonymous"
-            aria-label={t('video.block.player', { name: data.name })}
+            aria-label={`${t('video.block.player', { name: data.name })} ${t('video.block.playerKeys')}`}
             onKeyDown={onKeyDown}
             onKeyUp={onKeyUp}
             onError={() => setBroken(true)}

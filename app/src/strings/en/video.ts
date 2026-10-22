@@ -26,8 +26,9 @@ export const video = {
   },
   block: {
     label: 'Video: {name}',
-    player:
-      'Video {name}. Space plays or pauses. Left and right arrows skip 5 seconds. ' +
+    player: 'Video {name}.',
+    playerKeys:
+      'Space plays or pauses. Left and right arrows skip 5 seconds. ' +
       'Up and down arrows change the volume. C turns captions on or off. F opens full screen.',
     unavailable: 'This video can’t be shown. The file is unchanged.',
     unreadable: 'This browser can’t play “{name}”.',

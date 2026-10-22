@@ -294,7 +294,8 @@ export const ink = {
     title: 'Compass',
     keywords: 'compass circle arc radius center draw geometry construction',
     label:
-      'Compass. Arrow keys move the center, plus and minus open and close it, [ and ] sweep the pencil, and Enter draws the arc or a circle. Escape puts it away.',
+      'Compass. Arrow keys move the center. Plus and minus open and close it. ' +
+      '[ and ] sweep the pencil, and Enter draws the arc or a circle. Escape puts it away.',
     hintClosed: 'Drag out from the center to open',
     hintOpen: 'Sweep around to draw · drag from the center to resize',
     center: 'Center set',

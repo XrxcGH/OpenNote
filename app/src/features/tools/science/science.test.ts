@@ -192,7 +192,7 @@ describe('scientific constants', () => {
 
   it('is usable in the calculator and in lines of math', () => {
     expect(calculate('c')).toEqual({ ok: true, value: 299792458 });
-    expect(calculate('mn / mp')).toMatchObject({ ok: true });
+    expect(calculate('mneutron / mp')).toMatchObject({ ok: true });
     const [line] = evaluateNotes(['kB * 300 =']);
     expect(line.kind).toBe('result');
     for (const one of CODATA.filter((c) => c.calc !== '')) {

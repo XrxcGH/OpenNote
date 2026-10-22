@@ -1,7 +1,8 @@
-// The Pen and touch section of Settings (design 9.4): the writing hand the palm filter assumes, when a finger draws,
-// the gestures, what each pen's buttons do, each pen's pressure curve and steady pen, the hover circle, and the zoom
-// writing box, and the units the measuring ruler and the compass show. While a pen is near the screen a touch never
-// draws, whatever the choice.
+// The Pen and touch section of Settings (design 9.4).
+// It holds the writing hand the palm filter assumes, when a finger draws, and the gestures.
+// It also holds what each pen's buttons do, each pen's pressure curve and steady pen, and the hover circle.
+// The zoom writing box and the units the measuring ruler and the compass show are here too.
+// While a pen is near the screen a touch never draws, whatever the choice.
 import { useFlag } from '../../../app/flags';
 import type { BarrelAction } from '../../../platform/bindings/BarrelAction';
 import type { EraserEndAction } from '../../../platform/bindings/EraserEndAction';

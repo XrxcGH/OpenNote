@@ -70,6 +70,7 @@ const pen = (x: number, y: number, extra: Partial<PointerEvent> = {}) =>
     ...extra,
   }) as unknown as PointerEvent;
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('the geometry tools', () => {
   beforeEach(() => {
     setPrefs({ rulerUnits: 'metric', ruler: false, gridSnap: false });

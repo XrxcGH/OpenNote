@@ -105,6 +105,7 @@ describe('regression', () => {
   });
 });
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('matrices', () => {
   const a = [
     [2, 1],

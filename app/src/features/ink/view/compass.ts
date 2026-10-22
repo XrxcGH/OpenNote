@@ -1,11 +1,14 @@
-// The geometry compass on the page (snap/compass.ts has its geometry). While it is chosen it takes the pen, the mouse,
-// and a lone finger. A tap sets the center. A drag out from the center opens the compass, and the radius snaps to
-// whole spacings of the paper's lines or the grid when snapping is on. A sweep around the center draws an arc, and a
-// full turn a circle, which is saved as an ordinary shape stroke, so its handles edit it like any other circle or
-// arc. The keyboard does the same: arrow keys move the center, plus and minus open and close the compass, [ and ]
-// sweep the pencil around 15 degrees at a time (Shift, 1 degree), and Enter draws the arc swept, or a circle.
-// Once the compass is open, a press away from the center sweeps; a press on the needle changes the radius. A hint
-// under the needle says so.
+// The geometry compass on the page (snap/compass.ts has its geometry).
+// While it is chosen it takes the pen, the mouse, and a lone finger.
+//
+// - A tap sets the center.
+// - A drag out from the center opens the compass. The radius snaps to whole spacings of the paper's lines or the grid.
+// - A sweep around the center draws an arc, and a full turn draws a circle.
+//   Either is saved as an ordinary shape stroke, so its handles edit it like any other circle or arc.
+// - Arrow keys move the center, and plus and minus open and close the compass.
+// - [ and ] sweep the pencil 15 degrees at a time (Shift, 1 degree), and Enter draws the arc swept, or a circle.
+// - Once the compass is open, a press away from the center sweeps, and a press on the needle changes the radius.
+//   A hint under the needle says so.
 import { newId } from '../../../editor/ids';
 import { createStore } from '../../../state/store';
 import type { Store } from '../../../state/store';

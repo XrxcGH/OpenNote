@@ -41,7 +41,7 @@ export function toScreen(camera: InkCamera, p: Vec): Vec {
   return { x: p.x * camera.zoom - camera.scrollX, y: p.y * camera.zoom - camera.scrollY };
 }
 
-/** Decides, per pointer down, whether the measure or the compass takes a contact. */
+/** Decides, per pointer down, whether the measure, or the compass, takes a contact. */
 export function createContactRule(): { takes(event: PointerEvent): boolean; release(event: PointerEvent): void } {
   let penAt = -Infinity;
   const fingers = new Set<number>();

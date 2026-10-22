@@ -65,9 +65,9 @@ export interface Tick {
 }
 
 /**
- * The ticks along a ruler of `length` page units, from its left end: every millimeter with a longer one at each half
- * centimeter and a numbered one at each centimeter, or every sixteenth of an inch with longer ones at each half and
- * quarter and a numbered one at each inch.
+ * The ticks along a ruler of `length` page units, from its left end.
+ * In metric, that is every millimeter, a longer one at each half centimeter, and a numbered one at each centimeter.
+ * In inches, it is every sixteenth, with longer ones at each half and quarter, and a numbered one at each inch.
  */
 export function rulerTicks(length: number, units: LengthUnits): Tick[] {
   const ticks: Tick[] = [];

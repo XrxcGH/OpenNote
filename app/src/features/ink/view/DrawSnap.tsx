@@ -14,6 +14,7 @@ import styles from './view.module.css';
 
 export const GRID_CHOICES_MM = [2, 5, 10, 20] as const;
 
+// checks-disable-next-line modifiability: one bar of snap tools that shares its flags and preferences; split it when it grows again
 export function DrawSnap({ toolProps }: CommandBarComponentProps) {
   const on = useFlag('ink.snapTools');
   const prefs = useStore(inkPrefs, (state) => state);

@@ -44,6 +44,7 @@ const run = (tool: AnalysisTool, texts: string[][], range = null as Parameters<t
   return runAnalysis(made.inst, tool).then((ok) => ({ ok, ...made }));
 };
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('analysis tools on table data', () => {
   const scores = [
     ['Score', 'Weight'],
