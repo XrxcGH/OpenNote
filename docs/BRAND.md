@@ -210,8 +210,8 @@ The layout adapts to the window width, not the device type:
 |---|---|---|
 | Compact | under 600 | One pane at a time. Bottom toolbar. Freeform pages open in a single-column reading view, with a button to switch to the full canvas. |
 | Medium | 600 to 839 | Page list and page side by side. Notebooks in a slide-over drawer. |
-| Expanded | 840 to 1,199 | Notebook sidebar (272) and page. The page list opens as an overlay. |
-| Wide | 1,200 and up | Three panes: notebooks (272), pages (300), page (at least 480). |
+| Expanded | 840 to 1,199 | Notebook sidebar (220 to 256) and page. The page list opens as an overlay. |
+| Wide | 1,200 and up | Three panes: notebooks (14% of the window, 220 to 256), pages (16%, 240 to 280), page (at least 480). A pane someone resized keeps its width. |
 
 Button and row sizes follow the pointer by default. A touch or pen tap switches to the touch sizes, and a mouse click switches back, never in the middle of a gesture. People who want large targets with a mouse can choose Large in Settings, then Appearance. "Interface size" scales the sidebars, toolbars, and menus from 90% to 150% without changing the page zoom. The title bar is 40 tall, or 48 with touch sizes, and the Windows buttons are 46 wide.
 

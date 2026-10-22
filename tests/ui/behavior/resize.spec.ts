@@ -161,8 +161,8 @@ test.describe('the window', () => {
       expect(now.notebooks + now.pages + now.main, `columns at ${width}`).toBeLessThanOrEqual(now.window);
     }
     const back = await columns(page);
-    expect(back.notebooks).toBe(272);
-    expect(back.pages).toBe(300);
+    expect(back.notebooks).toBe(220);
+    expect(back.pages).toBe(240);
     await expect(splitter(page, 'notebooks')).toBeVisible();
     await expect(splitter(page, 'pages')).toBeVisible();
   });

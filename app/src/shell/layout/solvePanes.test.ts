@@ -1,7 +1,8 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { tokens } from '../../theme/tokens';
-import { clampPaneWidth, columnWidth, paneBounds, PANE_LIMITS, solvePanes } from './solvePanes';
+import { AUTO_PANE_WIDTH } from '../../state/session';
+import { chosenWidth, clampPaneWidth, columnWidth, paneBounds, PANE_LIMITS, solvePanes } from './solvePanes';
 import type { PaneLayout, PanePrefs } from './solvePanes';
 
 const RAIL = tokens.size.rail;
@@ -21,11 +22,11 @@ const anyPrefs = fc.record({
 });
 
 describe('solvePanes', () => {
-  it('lays out the wide class as three panes at their default widths', () => {
+  it('lays out the wide class as three panes at their automatic widths', () => {
     expect(solvePanes(1440, 'wide', prefs())).toEqual({
-      notebooks: { mode: 'pane', width: 272 },
-      pages: { mode: 'pane', width: 300 },
-      page: { width: 868 },
+      notebooks: { mode: 'pane', width: 220 },
+      pages: { mode: 'pane', width: 240 },
+      page: { width: 980 },
     });
   });
 
@@ -51,9 +52,9 @@ describe('solvePanes', () => {
 
   it('opens the expanded pages pane as an overlay beside the notebooks pane', () => {
     expect(solvePanes(1024, 'expanded', prefs())).toEqual({
-      notebooks: { mode: 'pane', width: 272 },
-      pages: { mode: 'overlay', width: 300 },
-      page: { width: 1024 - 272 - RAIL },
+      notebooks: { mode: 'pane', width: 220 },
+      pages: { mode: 'overlay', width: 240 },
+      page: { width: 1024 - 220 - RAIL },
     });
   });
 
@@ -64,11 +65,11 @@ describe('solvePanes', () => {
   it('puts the medium notebooks pane in a drawer and sizes the pages pane from the window', () => {
     expect(solvePanes(720, 'medium', prefs())).toEqual({
       notebooks: { mode: 'drawer', width: 320 },
-      pages: { mode: 'pane', width: 288 },
-      page: { width: 720 - RAIL - 288 },
+      pages: { mode: 'pane', width: 280 },
+      page: { width: 720 - RAIL - 280 },
     });
     expect(solvePanes(600, 'medium', prefs()).pages.width).toBe(240);
-    expect(solvePanes(830, 'medium', prefs()).pages.width).toBe(300);
+    expect(solvePanes(830, 'medium', prefs()).pages.width).toBe(280);
     expect(solvePanes(600, 'medium', prefs(272, 300, { pages: true })).pages).toEqual({ mode: 'rail', width: RAIL });
   });
 
@@ -91,9 +92,28 @@ describe('solvePanes', () => {
     expect(stored.notebooks.width).toBe(900);
   });
 
-  it('uses the default width for a stored width that is not a number', () => {
-    expect(clampPaneWidth('notebooks', Number.NaN)).toBe(272);
-    expect(clampPaneWidth('pages', Number.POSITIVE_INFINITY)).toBe(300);
+  it('uses the automatic width for a stored width that is not a number', () => {
+    expect(clampPaneWidth('notebooks', Number.NaN, 1600)).toBe(224);
+    expect(clampPaneWidth('pages', Number.POSITIVE_INFINITY, 1600)).toBe(256);
+  });
+
+  it('gives an unresized pane a width that follows the window, between its minimum and its default', () => {
+    for (const [window, notebooks, pages] of [
+      [1280, 220, 240],
+      [1600, 224, 256],
+      [2000, 256, 280],
+      [3000, 256, 280],
+    ]) {
+      const layout = solvePanes(window, 'wide', prefs(AUTO_PANE_WIDTH, AUTO_PANE_WIDTH));
+      expect([layout.notebooks.width, layout.pages.width]).toEqual([notebooks, pages]);
+    }
+  });
+
+  it('treats the old fixed defaults as automatic, and keeps any other width the person chose', () => {
+    expect(solvePanes(1600, 'wide', prefs(272, 300)).notebooks.width).toBe(224);
+    expect(solvePanes(1600, 'wide', prefs(310, 330)).pages.width).toBe(330);
+    expect(chosenWidth('notebooks', 272)).not.toBe(272);
+    expect(clampPaneWidth('notebooks', chosenWidth('notebooks', 272), 1600)).toBe(272);
   });
 });
 
@@ -171,7 +191,7 @@ describe('paneBounds', () => {
   it('lets a pane grow only as far as the page keeps 480', () => {
     expect(paneBounds('notebooks', 1200, 'wide', prefs())).toEqual({ min: 220, max: 400 });
     expect(paneBounds('notebooks', 1000, 'wide', prefs())).toEqual({ min: 220, max: 280 });
-    expect(paneBounds('pages', 1000, 'wide', prefs())).toEqual({ min: 240, max: 248 });
+    expect(paneBounds('pages', 1000, 'wide', prefs())).toEqual({ min: 240, max: 300 });
     expect(paneBounds('pages', 1024, 'expanded', prefs())).toEqual({ min: 240, max: 420 });
     expect(paneBounds('notebooks', 840, 'expanded', prefs())).toEqual({ min: 220, max: 312 });
   });

@@ -3,17 +3,17 @@
 
 import type { BootData, DeviceState, OsAppearance } from '../platform/types';
 import { DEFAULT_OS } from '../state/os';
+import { AUTO_PANE_WIDTH } from '../state/session';
 import { DEFAULT_SETTINGS } from '../state/settings';
 import { DEFAULT_UPDATER_STATUS } from '../state/updater';
-import { tokens } from '../theme/tokens';
 import { RUST_DEVICE_STATE_DEFAULTS } from './rustDefaults';
 
 export const DEFAULT_DEVICE_STATE: DeviceState = {
   stateVersion: 1,
   window: { placement: null, maximized: false },
   panes: {
-    notebooks: { width: tokens.size.sidebar, collapsed: false },
-    pages: { width: tokens.size.pageList, collapsed: false },
+    notebooks: { width: AUTO_PANE_WIDTH, collapsed: false },
+    pages: { width: AUTO_PANE_WIDTH, collapsed: false },
   },
   location: { view: 'workspace', notebookId: null, sectionId: null, pageId: null },
   expanded: [],

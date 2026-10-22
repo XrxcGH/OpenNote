@@ -78,8 +78,8 @@ test.describe('geometry', () => {
       const width = (selector: string) => document.querySelector(selector)?.getBoundingClientRect().width ?? 0;
       return [width('[data-region="notebooks"]'), width('[data-region="pages"]'), width('main')];
     });
-    expect(widths[0]).toBe(272);
-    expect(widths[1]).toBe(300);
+    expect(widths[0]).toBe(220);
+    expect(widths[1]).toBe(240);
     expect(widths[0] + widths[1] + widths[2]).toBeCloseTo(VIEWPORTS.wide.width, 0);
     expect(widths[2]).toBeGreaterThanOrEqual(480);
   });
