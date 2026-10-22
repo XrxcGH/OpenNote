@@ -29,14 +29,16 @@ const boxes = new Map<string, TapeBox>([
   ['b', { x: 0, y: 60, w: 300, h: 30 }],
 ]);
 
+const b = (n: number): string => '\\_'.repeat(n);
+
 describe('study tape in print and export', () => {
   it('finds the blocks that lie under a tape', () => {
     expect([...coveredBlocks(page, boxes)].sort()).toEqual(['a', 'c']);
   });
 
   it('turns words into blanks and keeps the structure', () => {
-    expect(blankText('Mitochondria make energy')).toBe('____________ ____ ______');
-    expect(blankText('## Heading one\n- [ ] do it')).toBe('## _______ ___\n- [ ] ___ ___');
+    expect(blankText('Mitochondria make energy')).toBe(b(12) + ' ' + b(4) + ' ' + b(6));
+    expect(blankText('## Heading one\n- [ ] do it')).toBe('## ' + b(7) + ' ' + b(3) + '\n- [ ] ' + b(3) + ' ' + b(3));
   });
 
   it('blanks what is covered, drops the tape, and ends with an answer key', () => {
@@ -48,6 +50,8 @@ describe('study tape in print and export', () => {
     expect(html).toContain('Answer key');
     expect(html).toContain('<li>Mitochondria make energy</li>');
     expect(html).toContain('<li>A cell diagram</li>');
+    expect(html).not.toContain('<hr');
+    expect(html).toContain('<section class="answer-key">');
   });
 
   it('leaves a page with nothing under a tape as it was', () => {

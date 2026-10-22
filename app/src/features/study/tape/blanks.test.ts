@@ -29,17 +29,19 @@ const page = {
   ],
 } as unknown as ExportPage;
 
+const b = (n: number): string => '\\_'.repeat(n);
+
 describe('study tape blanks', () => {
   it('blanks words but keeps marks', () => {
-    expect(blankText('The **cat**')).toBe('___ **___**');
-    expect(blankText('Extraordinarily long')).toBe('____________ ____');
+    expect(blankText('The **cat**')).toBe(b(3) + ' **' + b(3) + '**');
+    expect(blankText('Extraordinarily long')).toBe(b(12) + ' ' + b(4));
   });
   it('blanks covered blocks, drops tape, adds the key last', () => {
     expect(tapeIds(page)).toEqual(['t1']);
     const out = blankTape(page, new Map([['t1', ['a', 'i1']]]), labels, ['t1']);
     const ids = out.blocks.map((b) => b.id);
     expect(ids).toEqual(['a', 'b', 'i1', ANSWER_KEY_ID]);
-    expect(out.blocks[0]).toMatchObject({ markdown: expect.stringContaining('___') });
+    expect(out.blocks[0]).toMatchObject({ markdown: expect.stringContaining(b(3)) });
     expect(out.blocks[1]).toMatchObject({ markdown: 'Kept' });
     expect(out.blocks[2]).toMatchObject({ markdown: '(covered)' });
     const key = out.blocks[3] as { markdown: string };
