@@ -1,6 +1,6 @@
 // What a choice column does with text (Further features, Phase 7), apart from any editor so tests run it directly.
 // A cell keeps the names of its options as plain text. Picking, renaming, and removing an option are edits of that
-// text, and the display reads the same text back to find each option's color. See docs/adr/0047-choice-columns.md.
+// text, and the display reads the same text back to find each option's color. See docs/adr/0048-choice-columns.md.
 import { MAX_CHOICES, choiceIndex, cleanChoiceName, joinChoices, splitChoices } from '../engine';
 import { CHOICE_COLORS } from './data';
 import type { ChoiceColor, ChoiceOption, ColumnSmart, SmartData } from './data';

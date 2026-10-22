@@ -1,4 +1,4 @@
-# ADR 0047: Choice columns keep their options in the column schema and their values as plain text
+# ADR 0048: Choice columns keep their options in the column schema and their values as plain text
 
 - Status: Proposed
 - Date: 2026-10-21
