@@ -20,6 +20,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Typed notes](typed-notes.md): text, lists, checklists, the slash menu, templates, and find and replace.
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
+- [3D graphs, vectors, and motion](3d-graphs-vectors-and-motion.md): surfaces, curves, vectors, solids, and projectiles.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
 
 ## Draw and design pages

@@ -22,6 +22,8 @@ On a line of math, choose Graph this to plot it.
 
 Open Insert, then Graph. Type a function, such as `y = sin(x)`. Pan and zoom the graph with the mouse, the pen, or your fingers.
 
+A graph also takes parametric and polar curves and vector and slope fields, and a 3D graph plots surfaces. See [3D graphs, vectors, and motion](3d-graphs-vectors-and-motion.md).
+
 ## Diagrams and mind maps
 
 - Type Mermaid text and get a diagram.
