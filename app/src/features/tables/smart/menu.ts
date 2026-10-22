@@ -44,6 +44,7 @@ export const CHART_KINDS: readonly { kind: ChartKind; label: Parameters<typeof t
   { kind: 'area', label: 'smart.chart.kinds.area' },
   { kind: 'pie', label: 'smart.chart.kinds.pie' },
   { kind: 'scatter', label: 'smart.chart.kinds.scatter' },
+  { kind: 'box', label: 'smart.chart.kinds.box' },
 ];
 
 const run = (work: () => Promise<unknown>) => () => void work();
@@ -276,6 +277,22 @@ export const ANALYSIS_GROUPS: readonly {
   },
 ];
 
+const EQUATION_TOOLS = [
+  'linear',
+  'quadratic',
+  'cubic',
+  'exponential',
+  'determinant',
+  'inverse',
+  'transpose',
+  'multiply',
+  'rref',
+  'rank',
+  'eigenvalues',
+  'solve',
+  'boxPlot',
+] as const;
+
 function analyzeItem({ inst }: Ctx): MenuItemSpec {
   return {
     id: 'analyze',
@@ -289,7 +306,15 @@ function analyzeItem({ inst }: Ctx): MenuItemSpec {
         label: t(label),
         onSelect: run(() => runAnalysis(inst, tool)),
       })),
-    })),
+    })).concat({
+      id: 'analyze-equation',
+      label: t('tableMath.equation.menu'),
+      submenu: EQUATION_TOOLS.map((tool): MenuItemSpec => ({
+        id: `analyze-equation-${tool}`,
+        label: t(ANALYSIS_GROUPS.flatMap((g) => g.tools).find((one) => one.tool === tool)!.label),
+        onSelect: run(() => runAnalysis(inst, tool, 'equation')),
+      })),
+    }),
   };
 }
 

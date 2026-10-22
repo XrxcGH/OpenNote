@@ -8,7 +8,10 @@ export const tableMath = {
     menu: 'Statistics',
     summary: 'Summary statistics',
     histogram: 'Histogram',
-    boxPlot: 'Box plot summary',
+    boxPlot: 'Box plot with summary',
+  },
+  equation: {
+    menu: 'Insert as an equation',
   },
   fit: {
     menu: 'Regression',
@@ -32,12 +35,23 @@ export const tableMath = {
   commands: {
     summary: 'Table: Summary statistics of the selection',
     histogram: 'Table: Histogram of the selection',
-    boxPlot: 'Table: Box plot summary of the selection',
+    boxPlot: 'Table: Box plot of the selection',
     linear: 'Table: Linear fit of the selection',
     quadratic: 'Table: Quadratic fit of the selection',
     cubic: 'Table: Cubic fit of the selection',
     polynomial: 'Table: Polynomial fit of the selection',
     exponential: 'Table: Exponential fit of the selection',
+    linearEquation: 'Table: Linear fit of the selection as an equation',
+    quadraticEquation: 'Table: Quadratic fit of the selection as an equation',
+    cubicEquation: 'Table: Cubic fit of the selection as an equation',
+    exponentialEquation: 'Table: Exponential fit of the selection as an equation',
+    determinantEquation: 'Table: Determinant of the selection as an equation',
+    inverseEquation: 'Table: Inverse of the selection as an equation',
+    transposeEquation: 'Table: Transpose of the selection as an equation',
+    rrefEquation: 'Table: Row reduced form of the selection as an equation',
+    rankEquation: 'Table: Rank of the selection as an equation',
+    eigenvaluesEquation: 'Table: Eigenvalues of the selection as an equation',
+    solveEquation: 'Table: Solution of Ax = b as an equation',
     determinant: 'Table: Matrix determinant',
     inverse: 'Table: Matrix inverse',
     transpose: 'Table: Matrix transpose',
@@ -119,6 +133,7 @@ export const tableMath = {
     shape: 'The first matrix has {first} columns, so the second needs {first} rows, but {range} has {second}.',
   },
   problem: {
+    noEquation: 'This tool has no equation form. Use it to add a table instead.',
     noNumbers: 'Select cells that hold numbers first, or put the cursor in a table that has some.',
     notNumber: 'The cell at {address} is not a number. Matrix tools need numbers only.',
     needSquare: 'The selection must have as many rows as columns, but it has {rows} by {columns}.',
@@ -137,5 +152,6 @@ export const tableMath = {
   },
   done: {
     added: '{what} added below the table.',
+    equation: '{what} added below the table as an equation.',
   },
 } as const;

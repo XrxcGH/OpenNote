@@ -335,6 +335,7 @@ export const smart = {
       area: 'Area chart',
       pie: 'Pie chart',
       scatter: 'Scatter chart',
+      box: 'Box plot',
     },
     options: 'Chart options',
     remove: 'Remove chart',

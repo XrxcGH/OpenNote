@@ -46,7 +46,8 @@ export type AnalysisTool =
   | 'solve';
 
 type Problem = { key: MessageKey; params?: Record<string, string | number> };
-type Made = { grids: Grid[]; what: string } | Problem;
+/** `latex` is the same answer as a display equation, for the "as an equation" output. */
+type Made = { grids: Grid[]; what: string; latex?: string } | Problem;
 
 const isProblem = (made: Made): made is Problem => 'key' in made;
 const problem = (key: MessageKey, params?: Record<string, string | number>): Problem => ({
@@ -62,6 +63,27 @@ function fraction(value: number, locale: Locale): string {
   const f = asFraction(value);
   if (!f) return num(value, locale);
   return f.d === 1 ? String(f.n) : `${f.n}/${f.d}`;
+}
+
+/** A number for LaTeX: plain digits with no locale separators. */
+const tex = (value: number) => (Number.isFinite(value) ? String(Number(value.toPrecision(6))) : '0');
+const texMatrix = (m: Matrix) =>
+  `\\begin{bmatrix} ${m.map((row) => row.map(tex).join(' & ')).join(' \\ ')} \\end{bmatrix}`;
+
+function texFit(fit: Fit): string {
+  if (fit.kind === 'exponential') {
+    const [a, b] = fit.coefficients;
+    return `y = ${tex(a)}e^{${tex(b)}x}`;
+  }
+  const terms: string[] = [];
+  for (let power = fit.degree; power >= 0; power--) {
+    const c = fit.coefficients[power];
+    if (c === 0 && fit.degree > 0) continue;
+    const size = tex(Math.abs(c));
+    const body = power === 0 ? size : `${size === '1' ? '' : size}x${power === 1 ? '' : `^{${power}}`}`;
+    terms.push(terms.length === 0 ? `${c < 0 ? '-' : ''}${body}` : `${c < 0 ? '-' : '+'} ${body}`);
+  }
+  return `y = ${terms.join(' ') || '0'}`;
 }
 
 function matrixOf(block: Block): Matrix | Problem {
@@ -179,9 +201,18 @@ function boxOf(block: Block, locale: Locale): Made {
       box.outliers.length === 0 ? t('tableMath.label.none') : box.outliers.map(at).join(', '),
     ],
   ];
+  const title = t('tableMath.title.boxPlot', { column: block.names[index] });
+  const values = columnValues(block, index);
   return {
-    what: t('tableMath.title.boxPlot', { column: block.names[index] }),
+    what: title,
+    latex: `${tex(box.min)} \\le Q_1 = ${tex(box.q1)} \\le \\tilde{x} = ${tex(box.median)} \\le Q_3 = ${tex(box.q3)} \\le ${tex(box.max)}`,
     grids: [
+      {
+        head: [block.names[index], t('tableMath.label.value')],
+        rows: values.map((v) => [block.names[index], num(v, locale)]),
+        types: ['text', 'number'],
+        chart: { kind: 'box', x: 0, series: [1], title },
+      },
       { head: [t('tableMath.label.statistic'), t('tableMath.label.value')], rows: list.map(([k, v]) => [t(k), v]) },
     ],
   };
@@ -214,6 +245,7 @@ function fitOf(block: Block, locale: Locale, tool: AnalysisTool, degree: number)
   const equation = equationOf(fit, (v) => formatSix(v, locale));
   return {
     what: title,
+    latex: `${texFit(fit)}, \\quad r^{2} = ${tex(fit.r2)}`,
     grids: [
       {
         head: [t('tableMath.label.item'), t('tableMath.label.value')],
@@ -289,23 +321,37 @@ async function multiplyOf(inst: SmartInstance, first: Matrix, locale: Locale): P
   if ('key' in other) return other;
   const product = multiply(first, other);
   if (!product) return problem('tableMath.prompt.badRange');
-  return { what: t('tableMath.title.product'), grids: [asGrid(product, locale)] };
+  return { what: t('tableMath.title.product'), latex: `AB = ${texMatrix(product)}`, grids: [asGrid(product, locale)] };
 }
 
 function matrixTool(tool: AnalysisTool, matrix: Matrix, locale: Locale): Made {
   const rows = matrix.length;
   const columns = matrix[0].length;
-  const scalar = (label: MessageKey, text: string, what: MessageKey): Made => ({
+  const scalar = (label: MessageKey, text: string, what: MessageKey, latex?: string): Made => ({
     what: t(what),
+    ...(latex ? { latex } : {}),
     grids: [{ head: [t('tableMath.label.statistic'), t('tableMath.label.value')], rows: [[t(label), text]] }],
   });
   switch (tool) {
     case 'transpose':
-      return { what: t('tableMath.title.transpose'), grids: [asGrid(transpose(matrix), locale)] };
+      return {
+        what: t('tableMath.title.transpose'),
+        latex: `A^{T} = ${texMatrix(transpose(matrix))}`,
+        grids: [asGrid(transpose(matrix), locale)],
+      };
     case 'rank':
-      return scalar('tableMath.label.rank', String(rankOf(matrix)), 'tableMath.title.rank');
+      return scalar(
+        'tableMath.label.rank',
+        String(rankOf(matrix)),
+        'tableMath.title.rank',
+        `\\operatorname{rank}(A) = ${rankOf(matrix)}`,
+      );
     case 'rref':
-      return { what: t('tableMath.title.rref'), grids: [stepsGrid(matrix, locale)] };
+      return {
+        what: t('tableMath.title.rref'),
+        latex: `\\operatorname{rref}(A) = ${texMatrix(reduce(matrix).result)}`,
+        grids: [stepsGrid(matrix, locale)],
+      };
     case 'solve': {
       if (columns !== rows + 1) return problem('tableMath.problem.needSystem');
       const solution = solveSystem(matrix);
@@ -313,6 +359,7 @@ function matrixTool(tool: AnalysisTool, matrix: Matrix, locale: Locale): Made {
       if (solution.kind === 'infinite') return problem('tableMath.problem.manySolutions', { rank: solution.rank });
       return {
         what: t('tableMath.title.solve'),
+        latex: `x = ${texMatrix(solution.x.map((v) => [v]))}`,
         grids: [
           {
             head: [t('tableMath.label.unknown'), t('tableMath.label.value')],
@@ -327,12 +374,17 @@ function matrixTool(tool: AnalysisTool, matrix: Matrix, locale: Locale): Made {
   }
   if (!isSquare(matrix)) return problem('tableMath.problem.needSquare', { rows, columns });
   if (tool === 'determinant') {
-    return scalar('tableMath.label.determinant', num(determinant(matrix), locale), 'tableMath.title.determinant');
+    return scalar(
+      'tableMath.label.determinant',
+      num(determinant(matrix), locale),
+      'tableMath.title.determinant',
+      `\\det A = ${tex(determinant(matrix))}`,
+    );
   }
   if (tool === 'inverse') {
     const inv = inverse(matrix);
     return inv
-      ? { what: t('tableMath.title.inverse'), grids: [asGrid(inv, locale)] }
+      ? { what: t('tableMath.title.inverse'), latex: `A^{-1} = ${texMatrix(inv)}`, grids: [asGrid(inv, locale)] }
       : problem('tableMath.problem.singular');
   }
   if (rows > 8) return problem('tableMath.problem.tooBig');
@@ -341,6 +393,7 @@ function matrixTool(tool: AnalysisTool, matrix: Matrix, locale: Locale): Made {
   if (found.complex > 0) list.push([t('tableMath.label.complexEigenvalues'), String(found.complex)]);
   return {
     what: t('tableMath.title.eigenvalues'),
+    latex: found.real.length > 0 ? `\\lambda = ${found.real.map(tex).join(',\\; ')}` : undefined,
     grids: [{ head: [t('tableMath.label.statistic'), t('tableMath.label.value')], rows: list }],
   };
 }
@@ -361,7 +414,11 @@ async function askDegree(): Promise<number | null> {
 }
 
 /** Runs an Analyze tool on the selection of the table with focus. False when nothing was added. */
-export async function runAnalysis(inst: SmartInstance, tool: AnalysisTool): Promise<boolean> {
+export async function runAnalysis(
+  inst: SmartInstance,
+  tool: AnalysisTool,
+  output: 'table' | 'equation' = 'table',
+): Promise<boolean> {
   const { locale } = inst;
   const announce = (made: Problem) =>
     inst.host.announce((t as (key: MessageKey, params?: unknown) => string)(made.key, made.params));
@@ -394,6 +451,15 @@ export async function runAnalysis(inst: SmartInstance, tool: AnalysisTool): Prom
   if (isProblem(made)) {
     announce(made);
     return false;
+  }
+  if (output === 'equation') {
+    if (!made.latex) {
+      announce(problem('tableMath.problem.noEquation'));
+      return false;
+    }
+    const done = await inst.host.insertMath(made.latex);
+    inst.host.announce(done ? t('tableMath.done.equation', { what: made.what }) : t('tableMath.problem.nothing'));
+    return done;
   }
   // Each new table lands right below the one with focus, and takes focus, so the grids stack in order.
   let added = false;

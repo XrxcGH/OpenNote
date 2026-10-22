@@ -327,6 +327,7 @@ class TableView implements InnerView {
       announce: (text) => this.ctx.host.announce(text),
       flag: (id) => this.ctx.host.flag(id),
       insertTable: async (data) => (await import('../tables/insert')).insertTable(data as unknown as TableData),
+      insertMath: async (source) => (await import('../tables/insert')).insertMathBlock(source),
     };
     for (const def of tableExtras.list()) {
       if (def.flag && !this.ctx.host.flag(def.flag)) continue;

@@ -5,7 +5,7 @@
 import type { Locale } from '../locale';
 import type { Column, Table } from '../model';
 import { deriveChartData, type Aggregate, type ChartData, type ChartKind } from './data';
-import { areaLayer, barLayer, lineLayer, scatterLayer, type Build, type Layer } from './marks';
+import { areaLayer, barLayer, boxLayer, lineLayer, scatterLayer, type Build, type Layer } from './marks';
 import { MAX_SERIES, SLOTS, needsPatterns, patternDefs, slotColor, slotPaint } from './palette';
 import { pieSlices } from './pie';
 import type { ChartSpec, LegendEntry, PlotOptions, SeriesStyle } from './types';
@@ -95,6 +95,8 @@ function layerFor(kind: ChartKind, build: Build): Layer {
       return lineLayer(build);
     case 'area':
       return areaLayer(build);
+    case 'box':
+      return boxLayer(build);
     default:
       return scatterLayer(build);
   }
@@ -116,7 +118,14 @@ function plotOptions(
     nice: true,
     tickFormat: valueFormat(valueColumn, locale),
   };
-  const scaleType = kind === 'bar' ? 'band' : data.xKind === 'date' ? 'utc' : data.xKind === 'number' ? 'linear' : null;
+  const scaleType =
+    kind === 'bar' || kind === 'box'
+      ? 'band'
+      : data.xKind === 'date'
+        ? 'utc'
+        : data.xKind === 'number'
+          ? 'linear'
+          : null;
   const categories = { label: data.xName, ...(scaleType ? { type: scaleType } : {}) };
   const [x, y] = build.horizontal ? [values, categories] : [categories, values];
   return {

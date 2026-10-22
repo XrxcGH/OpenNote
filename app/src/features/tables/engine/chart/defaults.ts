@@ -8,7 +8,7 @@ import { MAX_SERIES } from './palette';
 import type { ChartConfig } from './spec';
 
 const NUMERIC = new Set(['number', 'currency', 'percent']);
-const KINDS: readonly ChartKind[] = ['bar', 'line', 'area', 'pie', 'scatter'];
+const KINDS: readonly ChartKind[] = ['bar', 'line', 'area', 'pie', 'scatter', 'box'];
 const PIE_SLICES = { min: 2, max: 7 };
 
 export type Unavailable = 'needs-number-column' | 'needs-number-x';

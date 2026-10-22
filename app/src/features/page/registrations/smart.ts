@@ -338,6 +338,28 @@ for (const tool of ANALYSIS_COMMANDS) {
   });
 }
 
+for (const tool of [
+  'linear',
+  'quadratic',
+  'cubic',
+  'exponential',
+  'determinant',
+  'inverse',
+  'transpose',
+  'rref',
+  'rank',
+  'eigenvalues',
+  'solve',
+] as const) {
+  TABLE_COMMANDS.push({
+    id: `table.analyze${tool[0].toUpperCase()}${tool.slice(1)}Equation`,
+    title: `tableMath.commands.${tool}Equation`,
+    icon: 'Sigma',
+    flag: 'tables.analysis',
+    command: { run: 'analyze', tool, output: 'equation' },
+  });
+}
+
 for (const spec of TABLE_COMMANDS) {
   const inTable = spec.id.startsWith('table.');
   commands.register({

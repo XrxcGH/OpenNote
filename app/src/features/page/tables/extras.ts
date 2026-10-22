@@ -30,6 +30,8 @@ export interface TableExtraHost {
   flag(id: FlagId): boolean;
   /** Adds a new table block after the one with focus, with `data` as its block data. Returns false when it cannot. */
   insertTable(data: Record<string, unknown>): Promise<boolean>;
+  /** Adds a new text block with one display equation (LaTeX source) after the block with focus. */
+  insertMath(source: string): Promise<boolean>;
 }
 
 export interface TableExtraHandle {

@@ -13,6 +13,7 @@ function setup(texts: string[][], range: { row0: number; row1: number; col0: num
   const model = buildModel({ header: true, columnIds, texts }, EMPTY_SMART, EN_US);
   const inserted: Record<string, unknown>[] = [];
   const announced: string[] = [];
+  const equations: string[] = [];
   const inst = {
     locale: EN_US,
     model: () => model,
@@ -20,13 +21,17 @@ function setup(texts: string[][], range: { row0: number; row1: number; col0: num
     host: {
       cache: createMarkdownCache(),
       announce: (text: string) => announced.push(text),
+      insertMath: vi.fn(async (source: string) => {
+        equations.push(source);
+        return true;
+      }),
       insertTable: vi.fn(async (data: Record<string, unknown>) => {
         inserted.push(data);
         return true;
       }),
     },
   } as unknown as SmartInstance;
-  return { inst, inserted, announced, model };
+  return { inst, inserted, announced, equations, model };
 }
 
 const cellText = (data: Record<string, unknown>) =>
@@ -167,5 +172,32 @@ describe('analysis tools on table data', () => {
     const block = readBlock(model, EN_US, { row0: 1, row1: 1, col0: 0, col1: 0 });
     expect(block?.rows).toHaveLength(4);
     expect(block?.cols).toEqual([0, 1]);
+  });
+
+  it('adds a box plot chart over the values, with the five numbers beside it', async () => {
+    const { ok, inserted } = await run('boxPlot', scores);
+    expect(ok).toBe(true);
+    const charts = (inserted[0].smart as { charts: { kind: string }[] }).charts;
+    expect(charts[0].kind).toBe('box');
+    expect(cellText(inserted[0]).length).toBe(5);
+  });
+
+  it('writes a result as an equation block when asked', async () => {
+    const made = setup([
+      ['a', 'b'],
+      ['1', '2'],
+      ['3', '4'],
+    ]);
+    expect(await runAnalysis(made.inst, 'determinant', 'equation')).toBe(true);
+    expect(made.equations).toEqual(['\\det A = -2']);
+    expect(made.inserted).toEqual([]);
+    expect(await runAnalysis(made.inst, 'inverse', 'equation')).toBe(true);
+    expect(made.equations[1]).toContain('A^{-1} = \\begin{bmatrix}');
+  });
+
+  it('says so when a tool has no equation form', async () => {
+    const made = setup(scores);
+    expect(await runAnalysis(made.inst, 'summary', 'equation')).toBe(false);
+    expect(made.equations).toEqual([]);
   });
 });

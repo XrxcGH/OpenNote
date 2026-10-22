@@ -25,7 +25,7 @@ export type SmartCommand =
   | { run: 'choice'; multi: boolean }
   | { run: 'chooseValue' }
   | { run: 'editChoices' }
-  | { run: 'analyze'; tool: AnalysisTool };
+  | { run: 'analyze'; tool: AnalysisTool; output?: 'equation' };
 
 /** Runs a command on the table with focus. False when there is none or the command had nothing to do. */
 export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
@@ -62,6 +62,6 @@ export async function runSmartCommand(command: SmartCommand): Promise<boolean> {
     case 'editChoices':
       return editChoices(inst, column);
     case 'analyze':
-      return runAnalysis(inst, command.tool);
+      return runAnalysis(inst, command.tool, command.output);
   }
 }

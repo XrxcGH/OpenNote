@@ -9,7 +9,7 @@ import type { Locale } from '../locale';
 import type { Column, Table } from '../model';
 import { isError, isNumber, round15 } from '../values';
 
-export type ChartKind = 'bar' | 'line' | 'area' | 'pie' | 'scatter';
+export type ChartKind = 'bar' | 'line' | 'area' | 'pie' | 'scatter' | 'box';
 export type Aggregate = 'none' | 'sum' | 'average' | 'count' | 'min' | 'max';
 export type XKind = 'text' | 'number' | 'date';
 
@@ -181,7 +181,7 @@ export function deriveChartData(
   locale: Locale,
 ): ChartData {
   const { kind } = options;
-  const labels = kind === 'bar' || kind === 'pie';
+  const labels = kind === 'bar' || kind === 'pie' || kind === 'box';
   const xColumn = table.columns[options.x];
   const xKind = xColumn && !labels ? xKindOf(xColumn) : 'text';
   const notes: ChartNote[] = [];
