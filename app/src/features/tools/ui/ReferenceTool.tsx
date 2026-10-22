@@ -7,15 +7,19 @@ import { Button, TextField } from '../../../ui';
 import type { ElementGroup } from '../reference/data';
 import { formatNumber } from '../calculator';
 import { ELEMENTS, ELEMENT_GROUPS, GREEK, PHYSICAL_CONSTANTS, PREFIXES, matches } from '../reference/data';
+import { searchSheet, countSheet, SHEET_SECTIONS } from '../reference/unitsSheet';
+import type { SheetSection } from '../reference/unitsSheet';
+import { ChemistryTab } from './ChemistryTab';
 import { ElementsGrid } from './ElementsGrid';
 import { ElementsTable } from './ElementsTable';
 import { InsertButton } from './InsertButton';
+import { UnitsSheet } from './UnitsSheet';
 import grid from './elements.module.css';
 import extra from './extra.module.css';
 import styles from './tools.module.css';
 
-type Tab = 'elements' | 'constants' | 'prefixes' | 'greek';
-const TABS: readonly Tab[] = ['elements', 'constants', 'prefixes', 'greek'];
+type Tab = 'elements' | 'units' | 'chemistry' | 'constants' | 'prefixes' | 'greek';
+const TABS: readonly Tab[] = ['elements', 'units', 'chemistry', 'constants', 'prefixes', 'greek'];
 
 // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ReferenceTool() {
@@ -23,6 +27,7 @@ export function ReferenceTool() {
   const [query, setQuery] = useState('');
   const [family, setFamily] = useState<ElementGroup | 'all'>('all');
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [section, setSection] = useState<SheetSection | 'all'>('all');
   const elements = useMemo(
     () =>
       ELEMENTS.filter(
@@ -39,7 +44,16 @@ export function ReferenceTool() {
   const prefixes = PREFIXES.filter((one) => matches(`${one.name} ${one.symbol} ${one.power}`, query));
   const greek = GREEK.filter((one) => matches(`${one.name} ${one.upper} ${one.lower}`, query));
 
-  const shown = { elements, constants, prefixes, greek }[tab].length;
+  const sheet = useMemo(() => searchSheet(query, section), [query, section]);
+  const shown = {
+    elements: elements.length,
+    units: countSheet(sheet),
+    chemistry: 0,
+    constants: constants.length,
+    prefixes: prefixes.length,
+    greek: greek.length,
+  }[tab];
+  const searchable = tab !== 'chemistry';
 
   return (
     <div className={styles.tool}>
@@ -58,13 +72,31 @@ export function ReferenceTool() {
               setTab(one);
               setQuery('');
               setFamily('all');
+              setSection('all');
             }}
           >
             {t(`study.reference.tabs.${one}`)}
           </button>
         ))}
       </div>
-      <TextField label={t('study.reference.search')} value={query} onChange={setQuery} />
+      {searchable ? <TextField label={t('study.reference.search')} value={query} onChange={setQuery} /> : null}
+      {tab === 'units' ? (
+        <label className={extra.field}>
+          {t('study.reference.units.section')}
+          <select
+            className={extra.input}
+            value={section}
+            onChange={(event) => setSection(event.target.value as SheetSection | 'all')}
+          >
+            <option value="all">{t('study.reference.units.allSections')}</option>
+            {SHEET_SECTIONS.map((one) => (
+              <option key={one} value={one}>
+                {t(`study.reference.units.sections.${one}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       {tab === 'elements' ? (
         <div className={grid.toolbar}>
           <label className={extra.field}>
@@ -92,11 +124,13 @@ export function ReferenceTool() {
         </div>
       ) : null}
       <div id="reference-panel" role="tabpanel" aria-labelledby={`reference-tab-${tab}`} className={extra.scroll}>
-        {query.trim() !== '' && shown === 0 ? (
+        {searchable && (query.trim() !== '' || (tab === 'units' && section !== 'all')) && shown === 0 ? (
           <p className={styles.empty} role="status">
             {t('study.reference.noMatch', { query: query.trim() })}
           </p>
         ) : null}
+        {tab === 'units' ? <UnitsSheet result={sheet} sections={SHEET_SECTIONS} /> : null}
+        {tab === 'chemistry' ? <ChemistryTab /> : null}
         {tab === 'elements' && view === 'grid' ? <ElementsGrid elements={elements} /> : null}
         {tab === 'elements' && view === 'list' ? <ElementsTable elements={elements} /> : null}
         {tab === 'constants' ? (

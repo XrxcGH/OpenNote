@@ -113,8 +113,53 @@ describe('the reference tables', () => {
     expect(inserted[0]).toMatch(/electronegativity 1\.83, oxidation states \+2, \+3$/);
   });
 
+  it('has a Units tab with searchable sections that insert', async () => {
+    renderUi(<ReferenceTool />);
+    await userEvent.click(screen.getByRole('tab', { name: 'Units' }));
+    expect(screen.getByRole('heading', { name: 'SI base units' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Fundamental constants (CODATA 2022)' })).toBeTruthy();
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Search' }), 'planck');
+    expect(screen.queryByRole('heading', { name: 'Math formulas' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Insert Planck constant into the page' }));
+    expect(inserted).toEqual(['h = 6.62607015 × 10⁻³⁴ J·s']);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Search' }), 'quadratic');
+    await userEvent.click(screen.getByRole('button', { name: 'Insert Quadratic formula into the page' }));
+    expect(inserted[1]).toBe('x = (−b ± √(b² − 4ac)) / (2a)');
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Search' }), '');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Section' }), 'Physics formulas');
+    expect(screen.queryByRole('heading', { name: 'Math formulas' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Physics formulas' })).toBeTruthy();
+  });
+
+  it('balances an equation and gives a molar mass on the Chemistry tab', async () => {
+    renderUi(<ReferenceTool />);
+    await userEvent.click(screen.getByRole('tab', { name: 'Chemistry' }));
+    // The tab opens on water, balanced.
+    expect(screen.getByText('Balanced: 2H₂ + O₂ → 2H₂O')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Insert the balanced equation into the page' }));
+    const equation = screen.getByRole('textbox', { name: 'Equation' });
+    await userEvent.fill(equation, 'C3H8 + O2 -> CO2 + H2O');
+    expect(screen.getByText('Balanced: C₃H₈ + 5O₂ → 3CO₂ + 4H₂O')).toBeTruthy();
+    await userEvent.fill(equation, 'H2 -> O2');
+    expect(screen.getByText(/cannot be balanced/)).toBeTruthy();
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Formula' }), 'H2O');
+    expect(screen.getByText('Molar mass of H₂O = 18.015 g/mol')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Insert the molar mass into the page' }));
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Formula' }), 'Xx');
+    expect(screen.getByText(/not an element symbol/)).toBeTruthy();
+    expect(inserted).toEqual(['2H₂ + O₂ → 2H₂O', 'Molar mass of H₂O = 18.015 g/mol']);
+  });
+
   it('has no axe violations', async () => {
     const { container } = renderUi(<ReferenceTool />);
+    await expectNoAxeViolations(container);
+  });
+
+  it('has no axe violations on the Units and Chemistry tabs', async () => {
+    const { container } = renderUi(<ReferenceTool />);
+    await userEvent.click(screen.getByRole('tab', { name: 'Units' }));
+    await expectNoAxeViolations(container);
+    await userEvent.click(screen.getByRole('tab', { name: 'Chemistry' }));
     await expectNoAxeViolations(container);
   });
 });
