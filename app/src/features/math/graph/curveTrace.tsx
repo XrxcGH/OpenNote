@@ -8,6 +8,7 @@ import { classifyLine, compileSpecial, curvePoint, DEFAULT_T } from '../grapher/
 import { toPixel } from '../grapher';
 import type { Viewport } from '../grapher';
 import styles from './graph.module.css';
+import { tidy } from '../space/vec';
 import { PENS, SIZE, show } from './parts';
 
 /** One lap of the dot, in milliseconds. */
@@ -125,7 +126,7 @@ export function CurveTraceControls(props: {
       </label>
       <p className={styles.readout}>
         {point
-          ? tr('graph3d.trace.point', { t: show(state.value), x: show(point.x), y: show(point.y) })
+          ? tr('graph3d.trace.point', { t: show(state.value), x: show(tidy(point.x)), y: show(tidy(point.y)) })
           : tr('graph3d.trace.undefined', { t: show(state.value) })}
       </p>
     </div>
