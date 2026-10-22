@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { CalculatorTool } from './CalculatorTool';
+import { PoppedTool } from './PoppedTool';
 import { TimersTool, clockText } from './TimersTool';
 import { ToolWindow } from './ToolWindow';
 import { UpcomingTool } from './UpcomingTool';
@@ -127,9 +128,96 @@ describe('the calculator', () => {
     const scientific = screen.getByRole('tab', { name: 'Scientific' });
     scientific.focus();
     fireEvent.keyDown(scientific, { key: 'ArrowRight' });
-    expect(screen.getByRole('tab', { name: 'Graphing' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'Graphing 2D' }).getAttribute('aria-selected')).toBe('true');
     expect(await screen.findByRole('application', { name: /Graph of 1 function/ })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 2D' }), { key: 'ArrowRight' });
+    expect(await screen.findByRole('application', { name: '3D graph of 1 function' })).toBeTruthy();
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Graphing 3D' }), { key: 'End' });
+    expect(screen.getByRole('tab', { name: 'Matrix' }).getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Matrix' }));
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Matrix' }), { key: 'ArrowRight' });
+    expect(screen.getByRole('tab', { name: 'Basic' }).getAttribute('aria-selected')).toBe('true');
   });
+
+  it('has every mode as a tab, in order', () => {
+    renderUi(<CalculatorTool />);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
+      'Basic',
+      'Scientific',
+      'Graphing 2D',
+      'Graphing 3D',
+      'Programmer',
+      'Statistics',
+      'Matrix',
+    ]);
+  });
+
+  it('adds up on the basic keypad, changes sign, and keeps the answer in history', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('basic'));
+    renderUi(<CalculatorTool />);
+    for (const key of ['1', '2', '+', '3']) await userEvent.click(screen.getByRole('button', { name: key }));
+    await userEvent.click(screen.getByRole('button', { name: 'Change sign' }));
+    expect((screen.getByRole('textbox', { name: 'Expression' }) as HTMLInputElement).value).toBe('-(12+3)');
+    await userEvent.click(screen.getByRole('button', { name: 'Equals' }));
+    expect(document.getElementById('calc-result')!.textContent).toBe('= -15');
+    expect(screen.getByRole('button', { name: 'Use -(12+3) again' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Insert answer into page' })).toBeTruthy();
+  });
+
+  it('works in hexadecimal on the programmer tab, with history, copy, and insert', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('programmer'));
+    renderUi(<CalculatorTool />);
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Base' }), '16');
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), 'FF + 1');
+    await userEvent.keyboard('{Enter}');
+    const bases = screen.getByLabelText('The answer in each base');
+    expect(bases.textContent).toContain('Decimal256');
+    expect(bases.textContent).toContain('Binary1 0000 0000');
+    expect(screen.getByRole('button', { name: 'Use FF + 1 again' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Insert answer into page' })).toBeTruthy();
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Base' }), '2');
+    expect((screen.getByRole('textbox', { name: 'Expression' }) as HTMLInputElement).value).toBe('100000000');
+  });
+
+  it('summarizes data and fits a line on the statistics tab', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('statistics'));
+    renderUi(<CalculatorTool />);
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Data' }), '1 3\n2 5\n3 7');
+    await userEvent.click(screen.getByRole('button', { name: 'Calculate' }));
+    const table = screen.getByRole('table', { name: 'Statistics of the data' });
+    expect(within(table).getByRole('row', { name: /Mean/ }).textContent).toBe('Mean2');
+    expect(within(table).getByRole('row', { name: /Line of best fit/ }).textContent).toContain('y = 2x + 1');
+    expect(screen.getByRole('button', { name: /Use 1 3/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy answer' })).toBeTruthy();
+  });
+
+  it('inverts and solves on the matrix tab, and explains a singular matrix', async () => {
+    localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify('matrix'));
+    renderUi(<CalculatorTool />);
+    await userEvent.click(screen.getByRole('button', { name: 'Solve A x = B' }));
+    const result = screen.getByRole('table', { name: 'Result matrix' });
+    expect(result.textContent).toBe('-44.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Determinant of A' }));
+    expect(screen.getByText('= -2')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Insert answer into page' })).toBeTruthy();
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Matrix A' }), '1 2\n2 4');
+    await userEvent.click(screen.getByRole('button', { name: 'Inverse of A' }));
+    expect(screen.getByText('A has no inverse, so this has no single answer.')).toBeTruthy();
+    expect(screen.getAllByRole('listitem').length).toBe(2);
+  });
+
+  for (const mode of ['basic', 'scientific', 'graphing', 'graphing3d', 'programmer', 'statistics', 'matrix']) {
+    it(`opens popped out on the ${mode} mode it was left on, with no axe violations`, async () => {
+      localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify(mode));
+      const { container } = renderUi(<PoppedTool tool="calculator" />);
+      const selected = await screen.findByRole('tab', { selected: true });
+      expect(selected.id).toBe(`calc-tab-${mode}`);
+      expect(container.querySelector(`#calc-panel-${mode}`)).not.toBeNull();
+      await screen.findByRole('tabpanel');
+      await expectNoAxeViolations(container);
+    });
+  }
 });
 
 describe('upcoming', () => {

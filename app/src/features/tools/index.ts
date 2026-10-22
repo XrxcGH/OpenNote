@@ -5,6 +5,8 @@ export * from './timers';
 export * from './calculator';
 export * from './upcoming';
 export { closeTool, openTool, openTools, resetToolWindows } from './ui/host';
+export { CALCULATOR_MODES, openCalculator } from './ui/calculatorMode';
+export type { CalculatorMode } from './ui/calculatorMode';
 export { PoppedTool } from './ui/PoppedTool';
 export { requestWord } from './dictionary/request';
 export { INSERT_EVENT } from './flags';

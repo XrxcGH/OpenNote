@@ -17,7 +17,7 @@ commands.register({
   title: 'mathTools.graph3d.insert',
   keywords: 'mathTools.graph3d.insertKeywords',
   category: 'insert',
-  icon: 'ChartLine',
+  icon: 'Cube',
   flag: 'math.graph3d',
   when: inEditor,
   run: async () => {
@@ -31,7 +31,7 @@ slashItems.register({
   id: 'insert.graph3d',
   title: 'mathTools.graph3d.insert',
   keywords: 'mathTools.graph3d.insertKeywords',
-  icon: 'ChartLine',
+  icon: 'Cube',
   flag: 'math.graph3d',
   command: 'insert.graph3d',
   group: 'advanced',
@@ -44,4 +44,26 @@ commandBar.register({
   command: 'insert.graph3d',
   flag: 'math.graph3d',
   priority: 37,
+});
+
+// The calculator opens on any of its modes from the palette, and from the Insert tab beside the equations.
+const MODES = ['basic', 'scientific', 'graphing', 'graphing3d', 'programmer', 'statistics', 'matrix'] as const;
+for (const mode of MODES) {
+  commands.register({
+    id: `tools.calculator.${mode}`,
+    title: `mathTools.calc.open.${mode}`,
+    keywords: 'mathTools.calc.openKeywords',
+    category: 'general',
+    icon: 'Calculator',
+    flag: 'math.calcModes',
+    run: async () => (await import('../../tools')).openCalculator(mode),
+  });
+}
+commandBar.register({
+  id: 'tools.calculator',
+  tab: 'insert',
+  group: 'math',
+  command: 'tools.calculator',
+  flag: 'tools.windows',
+  priority: 36,
 });
