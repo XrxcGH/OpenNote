@@ -70,6 +70,11 @@ describe('the class timetable', () => {
     expect(nextClass(slots, evening, ZONE)).toMatchObject({ slot: { name: 'Biology' }, date: day('2026-10-12') });
     expect(nextClass([], NOW, ZONE)).toBeNull();
   });
+  it('has no class before the day a calendar file starts it', () => {
+    const starts = [{ ...slots[0], from: '2026-10-26', days: [1, 3, 5] as ClassSlot['days'] }];
+    expect(classesOn(starts, day('2026-10-23'))).toEqual([]);
+    expect(classesOn(starts, day('2026-10-26'))).toHaveLength(1);
+  });
 });
 
 describe('a calendar file', () => {
@@ -84,6 +89,7 @@ describe('a calendar file', () => {
         start: '09:00',
         end: '09:50',
         room: 'Room 204',
+        from: '2026-10-05',
         source: 'fall.ics',
       },
     ]);
