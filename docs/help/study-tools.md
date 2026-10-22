@@ -45,7 +45,7 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 | Reference tables | Looks up the periodic table (with group, period, and electron configuration for each element), constants, metric prefixes, and Greek letters. |
 | Exam countdown | Counts the days to each exam. |
 | Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations that follow your chosen style (APA, MLA, Chicago, Vancouver, ACS, AMA, Turabian, and more), so changing the style updates them. A DOI or ISBN look-up happens only when you ask, and is listed in the Privacy panel. With Zotero running, it also adds, edits, and refreshes Zotero citations and bibliographies in the page. |
-| Dictionary and thesaurus | Meanings, synonyms, and examples, offline. Select a word and press the shortcut, or type in the window. Insert synonym replaces the selected word. Other languages are optional downloads. |
+| Dictionary and thesaurus | Meanings, synonyms, and examples, offline. Select a word and press the shortcut, or type in the window. Insert synonym replaces the selected word. The first time you open it, it asks whether to download the full dictionary (about 36 MB, from Open English WordNet and Moby Thesaurus II); until then a short starter list answers. Other languages are dictionary files you choose. |
 
 ![The timers window with a countdown running](../screens/tool-timer-light.png)
 

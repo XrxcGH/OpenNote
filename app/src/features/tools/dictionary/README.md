@@ -1,7 +1,7 @@
 # Dictionary and thesaurus
 
-The data and the look-up behind the Dictionary tool window (`ui/DictionaryTool.tsx`). Nothing here uses the network: a word
-is looked up in chunks kept in the app, and a dictionary for another language is a file the person chooses.
+The data and the look-up behind the Dictionary tool window (`ui/DictionaryTool.tsx`). A word is looked up in chunks kept
+on this device. The only network use is the optional full-dictionary download described below, which the person starts.
 
 ## How the data is kept
 
@@ -43,3 +43,22 @@ and the credits file), because the license asks for it:
 A dictionary file is JSON: `{ "format": "opennote-dictionary", "name": "Español", "language": "es", "entries": { ... } }`,
 with `entries` in the same shape as a chunk. `packs.ts` reads and checks it, and keeps it in the browser's own
 storage (IndexedDB) on this device. There is no download: the person chooses the file, so nothing is sent anywhere.
+
+## The optional full dictionary
+
+`full.ts` and `ui/FullDictionary.tsx` are the interface side of `app/src-tauri/src/dictionary/`. The first time the window
+opens it asks (size, sources, licenses) whether to download Open English WordNet 2025 (CC BY 4.0, GitHub release asset)
+for meanings and Moby Thesaurus II (public domain, Project Gutenberg ebook 3202) for related words. Nothing downloads
+before the person says so, and never while Work offline or safe mode is on.
+
+- The shell pins each file's URL, size, and SHA-256 (`dictionary/mod.rs`), opens only those addresses, resumes a partial
+  file, cuts off a server that sends more than the pinned size, and keeps a file only when the checksum matches.
+- It then builds an index of gzip chunks, one per first letter, in the same shape as the bundled chunks
+  (`en/<letter>.json.gz`, plus `thesaurus/<letter>.json.gz` for related words), and deletes the downloads. Look-ups read a
+  chunk through the `dictionary_call` command (`chunk`), so the app never loads the whole dictionary.
+- Installed words are layered over the 100-word starter list (`layered`), so the starter words work without it, and
+  Remove dictionary data returns to it.
+- Tests use a local mock server (`dictionary/tests.rs`). `OPENNOTE_DICT_REAL=<folder> cargo test -p opennote --lib
+real_data -- --ignored` builds the index from the real files.
+- The pinned values were taken on 2026-10-21. OEWN's digest is the one GitHub publishes for the release asset. Project
+  Gutenberg publishes none, so the Moby digest was computed once from the file as served.

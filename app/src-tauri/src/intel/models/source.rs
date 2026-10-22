@@ -14,14 +14,29 @@ pub trait Source: Send + Sync {
     fn open(&self, url: &str, from: u64) -> Result<Opened, String>;
 }
 
-/// Downloads over HTTPS with Windows' TLS stack, as the updater does. No cookies and no proxy settings are read.
-pub struct HttpSource;
+/// Downloads over HTTPS with Windows' TLS stack, as the updater does. No cookies and no proxy settings are read. It
+/// opens only addresses that start with one of its allowed prefixes.
+pub struct HttpSource {
+    allowed: &'static [&'static str],
+}
+
+impl HttpSource {
+    /// Allows only the addresses that start with one of `prefixes`.
+    pub const fn allowing(prefixes: &'static [&'static str]) -> HttpSource {
+        HttpSource { allowed: prefixes }
+    }
+
+    /// The model catalog's own host.
+    pub const fn models() -> HttpSource {
+        HttpSource::allowing(&["https://huggingface.co/"])
+    }
+}
 
 impl Source for HttpSource {
     fn open(&self, url: &str, from: u64) -> Result<Opened, String> {
         use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
         // Only the catalog's own addresses are ever opened.
-        if !url.starts_with("https://huggingface.co/") {
+        if !self.allowed.iter().any(|prefix| url.starts_with(prefix)) {
             return Err("That address is not one OpenNote downloads from.".to_owned());
         }
         let tls = TlsConfig::builder()

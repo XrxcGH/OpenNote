@@ -53,6 +53,9 @@ opennote-updater = { path = "../../crates/updater" }
 # Phase 10: Anki packages are zip files that hold a SQLite collection, with the same SQLite build as the search crate.
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 notify = "8.2.0"
+# The optional dictionary download (Open English WordNet) is read as XML, and its words are folded to a first letter.
+quick-xml = "0.42.0"
+unicode-normalization = "0.1.25"
 semver.workspace = true
 serde.workspace = true
 serde_json.workspace = true

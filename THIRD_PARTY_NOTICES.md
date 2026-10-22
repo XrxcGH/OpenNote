@@ -172,6 +172,17 @@ DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
+## Optional downloaded data
+
+The full dictionary and thesaurus is an optional download that the person starts from the Dictionary window. It is not part of the installer. Nothing is downloaded until they say so, and each file is checked against the size and SHA-256 pinned in `app/src-tauri/src/dictionary/mod.rs` before it is used.
+
+| Data | Used for | Source | License |
+|---|---|---|---|
+| Open English WordNet 2025 (`english-wordnet-2025.xml.gz`) | Meanings, examples, and synonyms in the Dictionary window | `https://github.com/globalwordnet/english-wordnet/releases/tag/2025-edition` | Creative Commons Attribution 4.0 International (CC BY 4.0), `https://creativecommons.org/licenses/by/4.0/`. Derived from Princeton WordNet (WordNet License, Princeton University). Converted on the device into a compact index; the downloaded file is deleted afterwards. |
+| Moby Thesaurus II (`mthesaur.txt`, Project Gutenberg ebook 3202) | Related words in the Dictionary window | `https://www.gutenberg.org/files/3202/files/mthesaur.txt` | Public domain, by grant from the author, Grady Ward, 2001. Converted on the device into a compact index; the downloaded file is deleted afterwards. |
+
+The Dictionary window shows the same credit. "Remove dictionary data" deletes the index.
+
 ## Software libraries
 
 The npm packages the interface imports and the Rust crates the app is built from each keep their own license. Their names, versions, licenses, and hashes are listed in the bill of materials (`OpenNote.sbom.cdx.json`) that comes with every release, and in `package-lock.json` and `Cargo.lock`.

@@ -2,6 +2,8 @@
 // dictionary file for another language.
 import { describe, expect, it } from 'vitest';
 import { englishLoader } from './data';
+import { errorCode, failureKey, indexLoaders, layered } from './full';
+import type { FullClient } from './full';
 import { chunkKey, cleanWord, lookupWord, synonymsOf } from './lookup';
 import { baseForms } from './morphy';
 import { MAX_PACK_BYTES, PACK_FORMAT, memoryPackStore, packLoader, readPackFile } from './packs';
@@ -144,5 +146,85 @@ describe('dictionary files for other languages', () => {
     expect(await store.get('p1')).not.toBeNull();
     await store.remove('p1');
     expect(await store.list()).toEqual([]);
+  });
+});
+
+describe('the full download', () => {
+  const full: FullClient = {
+    status: async () => {
+      throw new Error('not used');
+    },
+    start: async () => {
+      throw new Error('not used');
+    },
+    cancel: async () => {
+      throw new Error('not used');
+    },
+    remove: async () => {
+      throw new Error('not used');
+    },
+    chunk: async (set, key) =>
+      key === 'c' && set === 'thesaurus'
+        ? JSON.stringify({ cause: ['reason', 'Agent', 'cause', 'basis'] })
+        : key === 'c' && set === 'en'
+          ? JSON.stringify({ cause: [['n', [['why it happened', ['reason'], 'x']]]] })
+          : key === 'b'
+            ? 'not json'
+            : null,
+  };
+
+  it('adds related words that are neither the word nor one of its synonyms', async () => {
+    const { meanings, related } = indexLoaders(full);
+    const found = await lookupWord('cause', meanings, related);
+    expect(found?.synonyms).toEqual(['reason']);
+    expect(found?.related).toEqual(['Agent', 'basis']);
+    expect((await lookupWord('cause', meanings))?.related).toEqual([]);
+  });
+
+  it('reads a chunk once, and treats damaged text as no chunk', async () => {
+    let asked = 0;
+    const counting: FullClient = {
+      ...full,
+      chunk: (set, key) => {
+        asked += 1;
+        return full.chunk(set, key);
+      },
+    };
+    const { meanings } = indexLoaders(counting);
+    await meanings('c');
+    await meanings('c');
+    expect(asked).toBe(1);
+    expect(await meanings('b')).toBeNull();
+  });
+
+  it('keeps the starter words for a word the installed ones lack, and prefers the installed ones', async () => {
+    const installed: Chunk = { cause: [['n', [['installed meaning', []]]]] };
+    const merged = layered(async () => installed, englishLoader);
+    const found = await lookupWord('cause', merged);
+    expect(found?.meanings[0].senses[0].definition).toBe('installed meaning');
+    expect(
+      (
+        await lookupWord(
+          'analyze',
+          layered(async () => null, englishLoader),
+        )
+      )?.word,
+    ).toBe('analyze');
+    expect(
+      (
+        await lookupWord(
+          'evidence',
+          layered(async () => ({}), englishLoader),
+        )
+      )?.word,
+    ).toBe('evidence');
+  });
+
+  it('turns an error into a message key', () => {
+    expect(failureKey('checksum')).toBe('checksum');
+    expect(failureKey('surprise')).toBe('unknown');
+    expect(failureKey(null)).toBe('unknown');
+    expect(errorCode({ code: 'offline' })).toBe('offline');
+    expect(errorCode(new Error('x'))).toBe('unknown');
   });
 });
