@@ -14,6 +14,7 @@ pub mod command_list;
 pub mod connectors;
 pub mod core_bridge;
 pub mod deeplink;
+pub mod dictionary;
 pub mod early;
 pub mod events;
 pub mod hardening;
@@ -109,6 +110,7 @@ pub fn run(context: EarlyContext) {
     pages.set_retention(settings.editing.history.keep);
     let audio = audio::AudioState::new(&paths);
     let intel = intel::IntelState::new(&paths);
+    let dictionary = dictionary::DictionaryState::new(&paths);
     let connectors = connectors::Connectors::new(&paths);
     let local_api = api::ApiState::new(&paths);
     let share = share::ShareState {
@@ -130,6 +132,7 @@ pub fn run(context: EarlyContext) {
         .manage(page_export::ExportGrants::default())
         .manage(audio)
         .manage(intel)
+        .manage(dictionary)
         .manage(connectors)
         .manage(local_api)
         .manage(share)
@@ -353,6 +356,7 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_extras::attach::attachment_applied,
         page_extras::thumbnail::attachment_thumbnail,
         intel::intel_ext_call,
+        dictionary::dictionary_call,
         intel::transcribe::intel_transcribe,
         intel::transcribe::intel_transcribe_cancel,
         intel::stream::intel_stream_start,

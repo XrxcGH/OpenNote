@@ -183,6 +183,7 @@
     "allow-attachment-thumbnail",
     "allow-attachment-applied",
     "allow-intel-ext-call",
+    "allow-dictionary-call",
     "allow-intel-transcribe",
     "allow-intel-transcribe-cancel",
     "allow-intel-stream-start",

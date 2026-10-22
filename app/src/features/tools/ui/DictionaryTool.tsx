@@ -7,12 +7,16 @@ import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { Button, TextField, announce } from '../../../ui';
 import { englishLoader } from '../dictionary/data';
+import { indexLoaders, layered, shellFullClient } from '../dictionary/full';
+import type { FullClient } from '../dictionary/full';
 import { lookupWord } from '../dictionary/lookup';
 import { MAX_PACK_BYTES, browserPackStore, packLoader, readPackFile } from '../dictionary/packs';
 import type { PackInfo, PackStore } from '../dictionary/packs';
 import { wordRequest } from '../dictionary/request';
 import type { Lookup } from '../dictionary/types';
 import { INSERT_EVENT } from '../flags';
+import { FullDictionary } from './FullDictionary';
+import { RelatedWords } from './RelatedWords';
 import styles from './tools.module.css';
 import extra from './extra.module.css';
 
@@ -28,8 +32,14 @@ function insertIntoPage(text: string): boolean {
 let shared: PackStore | null = null;
 const packs = (): PackStore => (shared ??= browserPackStore());
 
+interface DictionaryToolProps {
+  store?: PackStore;
+  /** The shell's full-dictionary download. None in a browser. */
+  full?: FullClient | null;
+}
+
 // checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
-export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
+export function DictionaryTool({ store = packs(), full = shellFullClient() }: DictionaryToolProps) {
   const request = useStore(wordRequest, (current) => current);
   const [text, setText] = useState(request.word);
   const [language, setLanguage] = useState(ENGLISH);
@@ -37,6 +47,8 @@ export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
   const [found, setFound] = useState<Lookup | null>(null);
   const [searched, setSearched] = useState('');
   const [note, setNote] = useState('');
+  // The installed index's loaders, while the full dictionary is installed. A new set drops what was read before.
+  const [loaders, setLoaders] = useState<ReturnType<typeof indexLoaders> | null>(null);
   const handled = useRef(request.count);
 
   useEffect(() => {
@@ -69,11 +81,13 @@ export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
           setSearched('');
           return;
         }
-        const loader =
-          language === ENGLISH
+        const useFull = language === ENGLISH && loaders !== null;
+        const loader = useFull
+          ? layered(loaders.meanings, englishLoader)
+          : language === ENGLISH
             ? englishLoader
             : await store.get(language).then((pack) => (pack ? packLoader(pack) : englishLoader));
-        const result = await lookupWord(word, loader);
+        const result = await lookupWord(word, loader, useFull ? loaders.related : undefined);
         if (!current) return;
         setFound(result);
         setSearched(word);
@@ -88,7 +102,7 @@ export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
       current = false;
       clearTimeout(timer);
     };
-  }, [text, language, store, request.count]);
+  }, [text, language, store, request.count, loaders]);
 
   const replace = (synonym: string) => {
     const ok = insertIntoPage(synonym);
@@ -200,11 +214,18 @@ export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
           ) : null}
         </section>
       ) : null}
+      {found && found.related.length > 0 ? (
+        <RelatedWords words={found.related} onInsert={replace} onLookUp={setText} />
+      ) : null}
       {note ? (
         <p className={styles.note} role="status">
           {note}
         </p>
       ) : null}
+      <FullDictionary
+        client={full}
+        onChange={(installed) => setLoaders(installed && full ? indexLoaders(full) : null)}
+      />
       <details className={styles.group}>
         <summary>{t('study.dictionary.packs.summary')}</summary>
         <div className={styles.form}>
@@ -241,9 +262,15 @@ export function DictionaryTool({ store = packs() }: { store?: PackStore }) {
               </li>
             ))}
           </ul>
-          <p className={styles.note}>{t('study.dictionary.about')}</p>
+          <p className={styles.note}>
+            {t('study.dictionary.about')} {t('study.dictionary.aboutPacks')}
+          </p>
         </div>
       </details>
+      <p className={styles.note}>
+        {t('study.dictionary.creditMeanings')} {t('study.dictionary.creditRelated')}{' '}
+        {t('study.dictionary.creditStarter')}
+      </p>
     </div>
   );
 }

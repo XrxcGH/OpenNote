@@ -33,7 +33,7 @@ mod catalog;
 mod cloud;
 mod ext;
 mod llm;
-mod models;
+pub(crate) mod models;
 mod native;
 pub(crate) mod stream;
 pub(crate) mod transcribe;

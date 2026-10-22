@@ -18,6 +18,12 @@ export type Chunk = Readonly<Record<string, readonly PosEntry[]>>;
 /** Gives the chunk for a letter, or null when there is none. */
 export type ChunkLoader = (letter: string) => Promise<Chunk | null>;
 
+/** The related words of the full download's thesaurus (Moby), by root word. */
+export type RelatedChunk = Readonly<Record<string, readonly string[]>>;
+
+/** Gives the related-words chunk for a letter, or null when there is none. */
+export type RelatedLoader = (letter: string) => Promise<RelatedChunk | null>;
+
 export interface Meaning {
   pos: Pos;
   senses: readonly { definition: string; synonyms: readonly string[]; example: string | null }[];
@@ -31,4 +37,6 @@ export interface Lookup {
   meanings: readonly Meaning[];
   /** Every synonym of every sense, once each, with the most common senses first. */
   synonyms: readonly string[];
+  /** Words related to the word in the full download's thesaurus, without the synonyms above. Empty without it. */
+  related: readonly string[];
 }

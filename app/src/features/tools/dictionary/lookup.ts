@@ -2,7 +2,7 @@
 // an inflected form, by its base form. Nothing here touches the network or the page.
 import { baseForms } from './morphy';
 import { POS_LIST } from './types';
-import type { Chunk, ChunkLoader, Lookup, Meaning, PosEntry } from './types';
+import type { Chunk, ChunkLoader, Lookup, Meaning, PosEntry, RelatedLoader } from './types';
 
 /** The word without the marks around it: no spaces or punctuation at the ends, lowercase, one space between words. */
 export function cleanWord(text: string): string {
@@ -50,8 +50,20 @@ export function synonymsOf(word: string, meanings: readonly Meaning[]): string[]
   return out;
 }
 
-/** Looks the word up with the loader's data. Null when the dictionary does not have it. */
-export async function lookupWord(text: string, load: ChunkLoader): Promise<Lookup | null> {
+/** The related words of a word that are not the word or one of its synonyms. */
+async function relatedOf(word: string, synonyms: readonly string[], load: RelatedLoader | undefined) {
+  if (!load) return [];
+  const chunk = await load(chunkKey(word));
+  const list = chunk && Object.hasOwn(chunk, word) ? chunk[word] : [];
+  const skip = new Set([word, ...synonyms.map((synonym) => synonym.toLocaleLowerCase())]);
+  return list.filter((one) => !skip.has(one.toLocaleLowerCase()));
+}
+
+/**
+ * Looks the word up with the loader's data, and with the thesaurus's when there is one. Null when the dictionary does
+ * not have the word.
+ */
+export async function lookupWord(text: string, load: ChunkLoader, thesaurus?: RelatedLoader): Promise<Lookup | null> {
   const query = cleanWord(text);
   if (query === '') return null;
   const chunks = new Map<string, Chunk | null>();
@@ -70,7 +82,8 @@ export async function lookupWord(text: string, load: ChunkLoader): Promise<Looku
         : undefined;
       if (entries && entries.length > 0) {
         const meanings = meaningsOf(entries);
-        return { query, word: candidate, meanings, synonyms: synonymsOf(candidate, meanings) };
+        const synonyms = synonymsOf(candidate, meanings);
+        return { query, word: candidate, meanings, synonyms, related: await relatedOf(candidate, synonyms, thesaurus) };
       }
     }
   }
