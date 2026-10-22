@@ -3,11 +3,11 @@
 import { useFlag } from '../../../app/flags';
 import type { CommandBarComponentProps } from '../../../registries/types';
 import { t } from '../../../strings/t';
-import type { MessageKey } from '../../../strings/t';
 import { openMenu } from '../../../ui';
 import { LIBRARY } from '../geometry/shapes';
 import type { LibraryGroup } from '../geometry/shapes';
 import { viewContext } from './context';
+import { groupLabel, itemLabel } from './libraryLabels';
 import { addTextToShape, insertLibraryShape } from './shapeLibrary';
 import styles from './view.module.css';
 
@@ -15,19 +15,21 @@ const GROUPS: readonly LibraryGroup[] = ['basic', 'flowchart', 'network', 'entit
 
 export function DrawShapes({ toolProps }: CommandBarComponentProps) {
   const on = useFlag('ink.shapeTools');
+  const mechanics = useFlag('engineering.fbd');
   if (!on) return null;
+  const groups: readonly LibraryGroup[] = [...GROUPS, ...(mechanics ? (['mechanics'] as const) : [])];
 
   const open = async (anchor: HTMLElement) => {
     await openMenu({
       label: t('ink.library.menu'),
       anchor,
       returnFocus: anchor,
-      items: GROUPS.map((group) => ({
+      items: groups.map((group) => ({
         id: group,
-        label: t(`ink.library.groups.${group}` as MessageKey),
+        label: groupLabel(group),
         submenu: LIBRARY.filter((item) => item.group === group).map((item) => ({
           id: item.id,
-          label: t(`ink.library.${item.id}` as MessageKey),
+          label: itemLabel(item.id),
           onSelect: () => {
             const context = viewContext();
             const surface = context?.surface();

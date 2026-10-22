@@ -4,9 +4,10 @@
 
 import type { Vec } from '../types';
 import { headBarbs } from './arrow';
+import { ENGINEERING_BUILDERS, MECHANICS_SHAPES } from './engineering';
 import { polygonCorners, sampleArc, sampleEllipse, shapePoints, starCorners } from './generate';
 
-export type LibraryGroup = 'basic' | 'flowchart' | 'network' | 'entity';
+export type LibraryGroup = 'basic' | 'flowchart' | 'network' | 'entity' | 'mechanics';
 
 export interface LibraryItem {
   readonly id: string;
@@ -35,6 +36,7 @@ export const LIBRARY: readonly LibraryItem[] = [
   })),
   ...(['database', 'cloud', 'server', 'router'] as const).map((id) => ({ id, group: 'network' as const })),
   ...(['entity', 'weakEntity', 'relationship', 'attribute'] as const).map((id) => ({ id, group: 'entity' as const })),
+  ...MECHANICS_SHAPES.map((id) => ({ id, group: 'mechanics' as const })),
 ];
 
 const rect = (c: Vec, w: number, h: number): Vec[] => {
@@ -216,6 +218,7 @@ const BUILDERS: Readonly<Record<string, Builder>> = {
   cloud,
   server,
   router,
+  ...ENGINEERING_BUILDERS,
 };
 
 /** The polylines of a library shape, centered on `center` and about `size` wide and 0.62 times that tall. */

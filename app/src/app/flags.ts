@@ -22,6 +22,8 @@ import { SEARCH_FLAGS } from '../features/search/flags';
 import { QOL_FLAGS } from '../features/qol/flags';
 import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
+import { ENGINEERING_FLAGS } from '../features/engineering/flags';
+import type { EngineeringFlagId } from '../features/engineering/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -63,6 +65,7 @@ export type FlagId =
   | Phase13FlagId
   | QolFlagId
   | ProtectFlagId
+  | EngineeringFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
@@ -320,6 +323,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...PROTECT_FLAGS,
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
+  ...ENGINEERING_FLAGS,
 ];
 
 interface FlagState {

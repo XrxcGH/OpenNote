@@ -1,0 +1,246 @@
+/*
+ * The engineering diagrams (free-body, beam, truss, circuit): a quiet grid on the page surface, ink-colored parts,
+ * the accent for loads, and the focus ring for the selected part. Results sit beside the drawing and wrap below it
+ * on a narrow window. Everything is on tokens, so it follows light, dark, and high contrast.
+ */
+@layer components {
+  .root {
+    display: grid;
+    gap: var(--space-3);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-2);
+  }
+
+  .layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: var(--space-4);
+  }
+
+  .drawing {
+    flex: 1 1 420px;
+    min-inline-size: 0;
+    overflow-x: auto;
+  }
+
+  .canvas {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .paper {
+    fill: var(--color-surface-page);
+    stroke: var(--color-border-subtle);
+  }
+
+  .grid line {
+    stroke: var(--color-border-subtle);
+    stroke-width: 0.5;
+  }
+
+  .part {
+    cursor: grab;
+  }
+
+  .part:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .part:focus-visible .halo,
+  .selected .halo {
+    stroke: var(--color-focus-ring);
+    stroke-width: 3;
+    fill: none;
+  }
+
+  .halo {
+    stroke: transparent;
+    fill: transparent;
+    stroke-width: 12;
+  }
+
+  .ink {
+    stroke: var(--color-text-primary);
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .body {
+    fill: var(--color-surface-sunken);
+    stroke: var(--color-text-primary);
+    stroke-width: 2;
+  }
+
+  .load {
+    stroke: var(--color-accent-primary);
+    stroke-width: 2.5;
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  .loadFill {
+    fill: var(--color-accent-primary-subtle);
+    stroke: var(--color-accent-primary);
+  }
+
+  .reaction {
+    stroke: var(--color-accent-candle);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 5 3;
+  }
+
+  .tension {
+    stroke: var(--color-accent-dusk);
+  }
+
+  .compression {
+    stroke: var(--color-status-danger);
+  }
+
+  .label {
+    fill: var(--color-text-primary);
+    font-size: var(--type-small-size);
+    font-family: var(--font-ui);
+  }
+
+  .muted {
+    fill: var(--color-text-secondary);
+    font-size: var(--type-caption-size);
+  }
+
+  .origin {
+    stroke: var(--color-accent-candle);
+    stroke-width: 1.5;
+    fill: none;
+  }
+
+  .dot {
+    fill: var(--color-text-primary);
+  }
+
+  .results {
+    flex: 0 1 260px;
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    background: var(--color-surface-raised);
+    border-radius: var(--radius-md);
+    font-size: var(--type-small-size);
+  }
+
+  .results h3,
+  .results h4 {
+    margin: 0;
+    font-size: var(--type-small-size);
+    font-weight: 600;
+  }
+
+  .results table {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .results th,
+  .results td {
+    padding: 2px var(--space-2) 2px 0;
+    text-align: start;
+  }
+
+  .results td:last-child {
+    text-align: end;
+  }
+
+  .status {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+  }
+
+  .fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+  }
+
+  .field {
+    display: grid;
+    gap: 2px;
+    font-size: var(--type-small-size);
+  }
+
+  .field input,
+  .field select {
+    inline-size: 7em;
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-2);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .hint {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .figure {
+    margin: 0;
+  }
+
+  .plot {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+
+  .plot .axis {
+    stroke: var(--color-text-secondary);
+    stroke-width: 1;
+  }
+
+  .plot .area {
+    fill: var(--color-accent-primary-subtle);
+    stroke: var(--color-accent-primary);
+    stroke-width: 1.5;
+  }
+
+  @media (forced-colors: active) {
+    .load,
+    .reaction,
+    .tension,
+    .compression,
+    .ink {
+      stroke: CanvasText;
+    }
+
+    .part:focus-visible .halo,
+    .selected .halo {
+      stroke: Highlight;
+    }
+  }
+}

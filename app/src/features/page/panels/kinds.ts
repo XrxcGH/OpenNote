@@ -19,6 +19,7 @@ export const PANEL_TYPES = {
   quiz: 'ext:org.opennote/quiz',
   citation: 'ext:org.opennote/citation',
   bibliography: 'ext:org.opennote/bibliography',
+  fbd: 'ext:org.opennote/fbd',
 } as const;
 
 export type PanelType = (typeof PANEL_TYPES)[keyof typeof PANEL_TYPES];
