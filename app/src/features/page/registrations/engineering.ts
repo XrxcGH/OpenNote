@@ -36,6 +36,64 @@ addCommand({
   },
 });
 
+blockRenderers.register(
+  panelRenderer({
+    type: PANEL_TYPES.beam,
+    label: 'engineering.beam.block',
+    flag: 'engineering.structures',
+    load: async () => {
+      const { mountBeam } = await import('../../engineering');
+      return { mount: (container, props) => lazyHandle(mountBeam(container, props)) };
+    },
+  }),
+);
+
+blockRenderers.register(
+  panelRenderer({
+    type: PANEL_TYPES.truss,
+    label: 'engineering.truss.block',
+    flag: 'engineering.structures',
+    load: async () => {
+      const { mountTruss } = await import('../../engineering');
+      return { mount: (container, props) => lazyHandle(mountTruss(container, props)) };
+    },
+  }),
+);
+
+addCommand({
+  id: 'insert.beam',
+  title: 'engineering.beam.insert',
+  keywords: 'engineering.beam.insertKeywords',
+  icon: 'Ruler',
+  flag: 'engineering.structures',
+  slash: { group: 'advanced', order: 41 },
+  bar: { group: 'engineering', priority: 29 },
+  run: async () => {
+    const { beamStarter } = await import('../../engineering');
+    const { insertPanelBlock } = await import('../panels/insertPanel');
+    const { model, fallback } = await beamStarter();
+    const id = await insertPanelBlock(PANEL_TYPES.beam, { model }, fallback);
+    if (id) announce(t('engineering.beam.inserted'));
+  },
+});
+
+addCommand({
+  id: 'insert.truss',
+  title: 'engineering.truss.insert',
+  keywords: 'engineering.truss.insertKeywords',
+  icon: 'Bridge',
+  flag: 'engineering.structures',
+  slash: { group: 'advanced', order: 42 },
+  bar: { group: 'engineering', priority: 28 },
+  run: async () => {
+    const { trussStarter } = await import('../../engineering');
+    const { insertPanelBlock } = await import('../panels/insertPanel');
+    const { model, fallback } = await trussStarter();
+    const id = await insertPanelBlock(PANEL_TYPES.truss, { model }, fallback);
+    if (id) announce(t('engineering.truss.inserted'));
+  },
+});
+
 /** A block handle for a mount that finishes later: updates before then are kept and passed on. */
 function lazyHandle<P>(pending: Promise<{ update(props: P): void; destroy(): void }>) {
   let handle: { update(props: P): void; destroy(): void } | null = null;

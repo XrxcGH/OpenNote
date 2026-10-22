@@ -13,3 +13,19 @@ These tools are new in Beta, so check the answers against your own work while yo
 - When the supports give exactly three unknowns, OpenNote solves the reactions that hold the body in equilibrium and draws them as dashed arrows. With more unknowns it says the body is statically indeterminate; with fewer, or with supports that all push the same way, it says the body can move.
 - A positive moment turns counterclockwise. A roller's angle is the direction it pushes on the body: 90° is straight up.
 - The Draw tab's Shapes menu has a Mechanics group: pin, roller, and fixed supports, force and moment arrows, a distributed load, and a spring, drawn as ordinary ink you can move and resize.
+
+## Beams
+
+- Open Insert, then Beam solver, or type `/beam` on a new line. The beam starts on a pin and a roller with a point load and a uniform load.
+- Add pin, roller, and fixed supports, point loads, distributed loads, and moments from the toolbar. Drag them along the beam, or use the arrow keys. They snap to even steps of the length.
+- A positive load points down. A positive moment turns counterclockwise. A distributed load can change linearly from its start to its end, which gives a triangular or trapezoidal load.
+- Beside the beam are the reactions, the largest shear and bending moment and where they are, and the places where the shear is zero. Under it are the shear and bending moment diagrams, drawn with sagging moment above the line.
+- A beam with more supports than statics needs, such as a propped cantilever or a continuous beam, is solved too, assuming the same EI along its length. A beam its supports cannot hold says so.
+
+## Trusses
+
+- Open Insert, then Truss solver, or type `/truss`. The truss starts as a small Warren truss with one load.
+- With Add and move joints on, click an empty grid point to add a joint, and drag a joint to move it. With Draw members on, drag from one joint to another to join them. You can also select a joint and pick the other end under Add member to.
+- Give a joint a pin or a roller, and a load, in the fields under the drawing. A roller's angle is the direction it pushes.
+- Member forces show on the members and in the table beside them, with T for tension and C for compression. Blue members are in tension and red ones in compression. Zero-force members say so.
+- OpenNote counts members, reactions, and joints. It says when the truss can move, and solves a truss with redundant members assuming the same AE for every member.

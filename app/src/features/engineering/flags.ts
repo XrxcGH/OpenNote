@@ -1,7 +1,7 @@
 // Flags for the engineering tools: on through Beta while they are new, off in Stable until people have tried them.
 import type { FlagDef } from '../../app/flags';
 
-export type EngineeringFlagId = 'engineering.fbd';
+export type EngineeringFlagId = 'engineering.fbd' | 'engineering.structures';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const betaBuilds = { dev: true, nightly: true, beta: true, stable: false };
@@ -17,5 +17,9 @@ export const ENGINEERING_FLAGS: readonly FlagDef[] = [
   flag(
     'engineering.fbd',
     'The free-body diagram kit: forces, moments, and supports that snap together, with live sums.',
+  ),
+  flag(
+    'engineering.structures',
+    'The beam and truss solvers: reactions, shear and moment diagrams, and member forces.',
   ),
 ];
