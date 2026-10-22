@@ -190,7 +190,7 @@ export function findRoot(input: RootInput): RootResult {
   const report: Record<RootOutcome, Step> = {
     converged: step('rootConverged', root === null ? '' : `x ≈ ${numberText(root, 12)}`, {
       n: String(Math.max(0, rows.length - 1)),
-      order: order === null ? '' : numberText(order, 3),
+      order: order === null ? 'none' : numberText(order, 3),
     }),
     diverged: step('rootDiverged'),
     flat: step('rootFlat'),

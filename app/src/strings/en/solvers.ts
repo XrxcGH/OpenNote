@@ -56,6 +56,16 @@ export const solvers = {
     'fourier-term': 'The term {detail} does not match a pair in the table, so the transform is not shown.',
     'series-order': 'The order must be a whole number from 1 to 20.',
     'series-undefined': 'f or one of its derivatives is not defined at {detail}. Choose another center.',
+    'error-values': 'Give {detail} a number and an uncertainty of 0 or more.',
+    'error-undefined': 'The expression is not defined at these values.',
+    'unit-unknown': '"{detail}" is not a unit this checker knows. Write units such as kg, m/s^2, N, J, W, V, or Ω.',
+    'prob-parameters':
+      'Check the parameters: σ and the degrees of freedom must be above 0, n a whole number up to 10,000, and p from 0 to 1.',
+    'prob-region': 'The left end must be at or below the right end.',
+    'regression-points': 'Give at least two points with different x values.',
+    'matrix-size': 'Fill in every entry of a 2×2 or 3×3 matrix with a number.',
+    'projectile-input':
+      'Check the launch: speed above 0, an angle between −90° and 90° (above 0 from the ground), and a height, gravity, and drag of 0 or more.',
     unknown: "This couldn't be worked out. Check the input.",
   },
 } as const;
