@@ -12,8 +12,8 @@ import { createPartialEraseSession, createStrokeEraseSession } from '../edits/er
 import type { PartialEraseSession, StrokeEraseSession } from '../edits/eraseSession';
 import { eraserSkip, ERASE_ALL } from '../edits/filters';
 import type { EraserFilter } from '../edits/filters';
-import { applyReshape, pivotOf, recognizeShape, reshapeFor } from '../geometry/shapes';
-import type { ShapeMatch } from '../geometry/shapes';
+import { applyReshape, followEnd, followsEnd, pivotOf, recognizeShape, reshapeFor } from '../geometry/shapes';
+import type { Shape, ShapeMatch } from '../geometry/shapes';
 import type { InkPoint, Vec } from '../geometry/types';
 import { resolvePenAction, suppressContextMenu } from './../input/buttons';
 import type { PenAction } from '../input/buttons';
@@ -29,7 +29,7 @@ import { finishLasso, startLasso } from './lasso';
 import { shapePoints } from '../geometry/shapes';
 import { snapConnector } from './shapeEdit';
 import { SpaceGesture } from './space';
-import { applyHold, holdFor, snapShape } from '../snap';
+import { applyHold, holdFor, snapPoint, snapShape } from '../snap';
 import type { Hold } from '../snap';
 import { showProtractorAngle, snapToolsNow } from './snapTools';
 import { clearSnapMarks, paperSnapNow, showSnapMarks } from './paperSnap';
@@ -92,6 +92,10 @@ interface InkGesture {
     pivot?: Vec;
     /** The shape after the pen moved on without lifting, or null while it is as it snapped. */
     live?: Vec[] | null;
+    /** A held line or arrow whose far end followed the pen, exactly, or null while it is as it snapped. */
+    followed?: Shape | null;
+    /** Where the followed end landed on the paper's lines, for the ring that lingers once the pen lifts. */
+    marks?: Vec[];
   };
   last?: Vec;
 }
@@ -365,7 +369,12 @@ function step(g: InkGesture, surface: InkSurface, samples: RawSample[], predicte
     if (g.hold) {
       const zoom = surface.cameraNow().zoom;
       const hold = g.hold;
-      if (hold.shape && hold.snapAt && hold.pivot) {
+      if (hold.shape && hold.snapAt && followsEnd(hold.shape.shape)) {
+        // Keep holding a snapped line or arrow and move: its far end follows the pen, onto the paper's lines.
+        const moved = Math.hypot(last.x - hold.snapAt.x, last.y - hold.snapAt.y) * zoom > HOLD_SLOP_PX;
+        hold.followed = moved ? followPen(g, surface, hold.shape.shape, last) : null;
+        hold.live = hold.followed ? shapePoints(hold.followed) : null;
+      } else if (hold.shape && hold.snapAt && hold.pivot) {
         // Keep holding the snapped shape and move: it grows and turns with the pen until the pen lifts.
         const moved = Math.hypot(last.x - hold.snapAt.x, last.y - hold.snapAt.y) * zoom > HOLD_SLOP_PX;
         hold.live = moved
@@ -457,6 +466,20 @@ function toPaper(g: InkGesture, surface: InkSurface, match: ShapeMatch, linger =
 }
 
 /**
+ * A held line or arrow with its far end where the pen is. With the paper's lines on, the end snaps to the nearest line
+ * or crossing in reach and a ring shows it; otherwise it keeps to 15 degree steps near level and upright.
+ */
+function followPen(g: InkGesture, surface: InkSurface, shape: Shape, pen: Vec): Shape {
+  const snap = paperSnapNow(surface.cameraNow().zoom, g.alt);
+  if (!snap) return followEnd(shape, pen);
+  const hit = snapPoint(snap, pen);
+  const marks = hit.x || hit.y ? [hit.point] : [];
+  if (g.hold) g.hold.marks = marks;
+  showSnapMarks(surface, marks);
+  return followEnd(shape, hit.point, !(hit.x || hit.y));
+}
+
+/**
  * The points of a held shape the pen grew or turned, read back, and snapped to the paper's lines, so the preview and
  * its rings follow the lines while the pen moves, as the shape will when the pen lifts.
  */
@@ -498,6 +521,14 @@ async function finish(
     const held = g.hold?.shape ?? null;
     if (strokes.length === 1 && isEnabled('ink.shapes')) {
       const zoom = surface.cameraNow().zoom;
+      const followed = g.hold?.followed;
+      if (held && followed) {
+        // A line or arrow whose end followed the pen is already exact and on the paper: it is stored as it shows.
+        showSnapMarks(surface, g.hold?.marks ?? [], true);
+        const placed = snapConnector(followed, surface);
+        strokes = [asShape(strokes[0], { ...held, shape: placed, points: shapePoints(placed) })];
+        return store(strokes, surface, hooks);
+      }
       const found =
         (held && g.hold?.live ? { ...held, points: g.hold.live } : held) ??
         (shapes.inkToShape && g.style.tool !== 'highlighter'
@@ -517,11 +548,7 @@ async function finish(
         ];
       }
     }
-    const anchored = hooks.anchor(strokes, surface);
-    const pending = anchored ? surface.add(anchored.strokes, anchored.edits) : surface.add(strokes);
-    surface.clearLive();
-    if (await pending) hooks.after(anchored?.strokes ?? strokes, drawState.get().tool);
-    return;
+    return store(strokes, surface, hooks);
   }
   surface.clearLive();
   // The eraser can hand the pen back to the tool it came from, as soon as the pen lifts.
@@ -565,8 +592,17 @@ async function finish(
   }
 }
 
+/** Adds the finished strokes to the page, anchored to the text they were drawn on. */
+async function store(strokes: InkStroke[], surface: InkSurface, hooks: StrokeHooks): Promise<void> {
+  const anchored = hooks.anchor(strokes, surface);
+  const pending = anchored ? surface.add(anchored.strokes, anchored.edits) : surface.add(strokes);
+  surface.clearLive();
+  if (await pending) hooks.after(anchored?.strokes ?? strokes, drawState.get().tool);
+}
+
 function cancel(g: InkGesture, surface: InkSurface): void {
   surface.clearLive();
+  if (g.hold?.followed) clearSnapMarks(surface);
   if (g.erase) g.erase.cancel();
   if (g.partial) g.partial.cancel();
   g.space?.cancel();

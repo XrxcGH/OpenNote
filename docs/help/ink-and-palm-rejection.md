@@ -32,7 +32,7 @@ Open Settings, then Pen and touch, to change this.
 
 ## Shapes and gestures
 
-- Draw a rough shape and hold the pen still. It snaps to a clean circle, rectangle, triangle, star, or arrow. Keep holding to resize it before you lift. Uneven outlines with 4 to 7 corners, such as a trapezoid or a house, snap to a clean polygon you can reshape by its corner handles.
+- Draw a rough shape and hold the pen still. It snaps to a clean circle, rectangle, triangle, star, or arrow. Keep holding to resize it before you lift. A line or an arrow works differently: keep holding and move, and its far end follows the pen, so you can lay it to any point. On lined, grid, or dot paper the end snaps to the nearest line or crossing. If you drew the arrow's head before holding, it stays an arrow, and its head moves with the tip. Lift the pen to place it. Uneven outlines with 4 to 7 corners, such as a trapezoid or a house, snap to a clean polygon you can reshape by its corner handles.
 - Scribble over words to erase them. Circle something, then tap, to select it.
 - Double tap with two fingers to undo. Double tap with three to redo.
 - On typed text, the pen edits: strike through words to delete them, draw a short line between words to add a space or a long one to split the paragraph, and circle words to select them. With on-device handwriting recognition on, write in a gap between words, or where the cursor is, and a moment after you stop the words are typed in there. Each edit shows Undo, and each can be turned off: press Ctrl+K and type "pen edit".
