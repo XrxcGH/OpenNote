@@ -127,6 +127,14 @@ function buildFrame(doc: Document, actions: readonly [MessageKey, string, () => 
   return { frame, mover, bar };
 }
 
+/** Graph, for handwriting read as an equation: it opens a graph beside the selection. */
+function graphAction(): [MessageKey, string, () => void][] {
+  if (!isEnabled('math.graphPopup') || !isEnabled('intel.mathInk')) return [];
+  return [
+    ['mathTools.graphPopup.graph', 'graph', () => void executeCommand('math.graphHandwriting', undefined, 'menu')],
+  ];
+}
+
 class FrameView implements SelectionFrame {
   private readonly frame: HTMLDivElement;
   private readonly mover: HTMLButtonElement;
@@ -204,16 +212,7 @@ class FrameView implements SelectionFrame {
             ['ink.selection.copyImage', 'copyImage', () => void executeCommand('pages.copyImage', undefined, 'menu')],
           ] as [MessageKey, string, () => void][])
         : []),
-      // A handwritten equation can be graphed: its reading opens a graph beside the selection.
-      ...(isEnabled('math.graphPopup') && isEnabled('intel.mathInk')
-        ? ([
-            [
-              'mathTools.graphPopup.graph',
-              'graph',
-              () => void executeCommand('math.graphHandwriting', undefined, 'menu'),
-            ],
-          ] as [MessageKey, string, () => void][])
-        : []),
+      ...graphAction(),
     ]);
     ({ frame: this.frame, mover: this.mover, bar: this.bar } = parts);
     this.crop = surface.chrome.ownerDocument.createElement('div');

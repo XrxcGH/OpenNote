@@ -149,17 +149,24 @@ class MathView implements NodeView {
 
   /** Shows or hides the steps for what is in the field, under the panel's buttons. */
   private toggleSteps(button?: HTMLButtonElement): boolean {
+    void this.showSteps(button);
+    return Boolean(this.renderer?.steps && this.holder && this.field);
+  }
+
+  private async showSteps(button?: HTMLButtonElement): Promise<void> {
     const steps = this.renderer?.steps;
     const holder = this.holder;
     const field = this.field;
-    if (!steps || !holder || !field) return false;
+    if (!steps || !holder || !field) return;
     if (this.stepsList) {
       this.stepsList.remove();
       this.stepsList = null;
       button?.setAttribute('aria-expanded', 'false');
-      return true;
+      return;
     }
-    const view = steps(this.visual ? this.visual.value : field.value);
+    const view = await steps(this.visual ? this.visual.value : field.value);
+    // The equation may have closed while the steps were worked out.
+    if (this.holder !== holder || this.stepsList) return;
     const list = document.createElement('section');
     list.className = drawn.steps;
     list.dataset.mathSteps = '';
@@ -187,7 +194,6 @@ class MathView implements NodeView {
     holder.append(list);
     this.stepsList = list;
     button?.setAttribute('aria-expanded', 'true');
-    return true;
   }
 
   /** The equation is selected: it offers its graph, when it has one. */

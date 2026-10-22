@@ -104,7 +104,7 @@ export interface MathRenderer {
   /** A short answer shown beside an equation, such as "x = 4", when the page offers live answers. */
   live?(latex: string): string | null;
   /** Step-by-step working for a derivative or an integral, already in words, when the page offers it. */
-  steps?(latex: string): MathStepsView;
+  steps?(latex: string): Promise<MathStepsView>;
   /** The graph of an equation, when the page offers it: the graph block's text, and a popover that shows it. */
   graph?: {
     source(latex: string): string | null;

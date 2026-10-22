@@ -61,7 +61,7 @@ function selectionAnchor(): HTMLElement {
   return spot;
 }
 
-/** Reads the selected handwriting as math and opens its graph beside it, 2D or 3D, with Insert graph. */
+/** Reads the selected handwriting as math and opens its graph (2D or 3D) beside it, with Insert graph. */
 export async function graphHandwriting(): Promise<void> {
   const mounted = shownMedia.get();
   const ids = pageSelection.get().strokes;
@@ -80,5 +80,5 @@ export async function graphHandwriting(): Promise<void> {
     showToast({ message: t('mathTools.graphPopup.inkNone') });
     return;
   }
-  math.openGraphPopup({ source: graph.source, anchor: selectionAnchor(), equation: found.latex });
+  await math.openGraphPopup({ source: graph.source, anchor: selectionAnchor(), equation: found.latex });
 }

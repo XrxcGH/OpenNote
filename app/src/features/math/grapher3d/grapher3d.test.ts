@@ -13,16 +13,18 @@ import {
   usesXandY,
   zoomCamera,
 } from '.';
+import { tokens } from '../../../theme/tokens';
 import { readGraph, writeGraph } from '../graph/source';
 
 const SIZE = { width: 640, height: 360 };
+/** The export resolves design tokens to values; the test passes names, which the SVG writes as given. */
 const STYLE = {
-  paper: '#fff',
-  box: '#ccc',
-  axis: '#333',
-  text: '#555',
-  curves: ['#00f', '#f00'],
-  fontFamily: 'sans-serif',
+  paper: 'paper',
+  box: 'box',
+  axis: 'axis',
+  text: 'text',
+  curves: ['pen1', 'pen2'],
+  fontFamily: tokens.font.ui,
   labelSize: 12,
   title: '3D graph',
   description: 'A <test> & "quote"',

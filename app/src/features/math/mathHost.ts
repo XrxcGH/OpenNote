@@ -3,10 +3,8 @@
 import 'katex/dist/katex.min.css';
 import { isEnabled } from '../../app/flags';
 import type { MathRenderer } from '../../editor/host';
-import { liveSolveOn } from '../tools';
+import { liveSolveChosen } from '../../state/liveMath';
 import { graphOfLatex, liveAnswer, simplifyLatex, solveLatex } from './actions/actions';
-import { openGraphPopup } from './graph/GraphPopup';
-import { stepsLatex } from './actions/steps';
 import { t } from '../../strings/t';
 import type { MathStepsView } from '../../editor/host';
 import { renderLatex } from './latex/render';
@@ -28,14 +26,18 @@ export const mathRenderer: MathRenderer = {
       source: (latex: string) => of(latex)?.source ?? null,
       open: (latex: string, anchor: HTMLElement, insert: (source: string) => void) => {
         const found = of(latex);
-        if (found) openGraphPopup({ source: found.source, anchor, insert, equation: latex });
+        if (!found) return;
+        void import('./graph/GraphPopup').then((popup) =>
+          popup.openGraphPopup({ source: found.source, anchor, insert, equation: latex }),
+        );
       },
     };
   },
   get steps() {
     if (!isEnabled('math.steps')) return undefined;
-    return (latex: string): MathStepsView => {
-      const found = stepsLatex(latex);
+    // The steps load on first use, so equations without them never fetch their code.
+    return async (latex: string): Promise<MathStepsView> => {
+      const found = (await import('./actions/steps')).stepsLatex(latex);
       if (!found.ok) return { ok: false, message: t(`mathTools.steps.reasons.${found.reason}`) };
       return {
         ok: true,
@@ -46,7 +48,7 @@ export const mathRenderer: MathRenderer = {
     };
   },
   get live() {
-    return liveSolveOn() ? liveAnswer : undefined;
+    return isEnabled('math.liveSolve') && liveSolveChosen() ? liveAnswer : undefined;
   },
   get pen() {
     return isEnabled('intel.mathInk') ? penMath : undefined;

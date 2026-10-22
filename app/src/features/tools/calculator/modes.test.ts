@@ -13,7 +13,7 @@ import {
   solve,
   transpose,
   writeMatrix,
-} from './matrix';
+} from '../../../core/matrix';
 import { evaluateProgrammer, inBases, writeIn } from './programmer';
 import type { ProgrammerOptions } from './programmer';
 import { quantile, readData, regress, summarize } from './statistics';

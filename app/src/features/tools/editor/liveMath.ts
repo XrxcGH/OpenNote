@@ -1,34 +1,14 @@
-// The person's choices for live math, from Settings, then Editing: answers after the equals sign on page lines, and
-// solutions offered as an equation is written (on page lines and beside equations). Both are on until turned off.
-// They are kept in the browser's storage for the app, and every open editor follows a change at once.
+// Live math for the tools: the person's choices (state/liveMath.ts) with this build's flag, for the page lines'
+// answers and solutions and for the switches in Settings.
 import { isEnabled } from '../../../app/flags';
+import { chooseLineAnswers, chooseLiveSolve, lineAnswersChosen, liveSolveChosen } from '../../../state/liveMath';
 
-const ANSWERS = 'opennote.math.lineAnswers';
-const SOLVE = 'opennote.math.liveSolve';
-/** The event an open editor listens for to redraw its answers. */
-export const LIVE_MATH_EVENT = 'opennote:live-math';
-
-function read(key: string): boolean {
-  try {
-    return localStorage.getItem(key) !== 'off';
-  } catch {
-    return true;
-  }
-}
-
-function write(key: string, on: boolean): void {
-  try {
-    localStorage.setItem(key, on ? 'on' : 'off');
-  } catch {
-    // The choice lasts until the window closes.
-  }
-  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(LIVE_MATH_EVENT));
-}
+export { LIVE_MATH_EVENT } from '../../../state/liveMath';
 
 /** Answers after the equals sign on page lines. */
-export const lineAnswersOn = (): boolean => read(ANSWERS);
-export const setLineAnswersOn = (on: boolean): void => write(ANSWERS, on);
+export const lineAnswersOn = lineAnswersChosen;
+export const setLineAnswersOn = chooseLineAnswers;
 
 /** Solutions offered while an equation is written: built in this build, and not turned off. */
-export const liveSolveOn = (): boolean => isEnabled('math.liveSolve') && read(SOLVE);
-export const setLiveSolveOn = (on: boolean): void => write(SOLVE, on);
+export const liveSolveOn = (): boolean => isEnabled('math.liveSolve') && liveSolveChosen();
+export const setLiveSolveOn = chooseLiveSolve;

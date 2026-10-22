@@ -20,10 +20,9 @@ export const mathTools = {
       variable: 'The derivative of the variable itself is 1.',
       sum: 'Sum rule: work out each term on its own.',
       constantMultiple: 'Constant multiple rule: keep the constant and work out the rest.',
-      product:
-        'Product rule: the first times the derivative of the second, plus the second times the derivative of the first.',
+      product: "Product rule: the first times the second's derivative, plus the second times the first's derivative.",
       quotient:
-        'Quotient rule: the bottom times the derivative of the top, minus the top times the derivative of the bottom, over the bottom squared.',
+        "Quotient rule: bottom times top's derivative, minus top times bottom's derivative, over bottom squared.",
       power: 'Power rule: bring the power down and lower it by one (for integrals, raise it by one and divide).',
       chain: 'Chain rule: the derivative of the outside, times the derivative of the inside.',
       exponential: 'Exponential rule: a constant to a power of x.',

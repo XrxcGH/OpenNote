@@ -9,8 +9,14 @@ export { exportGraph, exportMath } from './exportRenderers';
 export { insertMath } from './insert';
 export { graphOfLatex, liveAnswer } from './actions/actions';
 export type { EquationGraph } from './actions/actions';
-export { closeGraphPopup, openGraphPopup } from './graph/GraphPopup';
-export type { GraphPopupOptions } from './graph/GraphPopup';
+import type { GraphPopupOptions } from './graph/GraphPopup';
+
+export type { GraphPopupOptions };
+
+/** Opens the graph beside an equation; its code loads on first use. */
+export async function openGraphPopup(options: GraphPopupOptions): Promise<void> {
+  (await import('./graph/GraphPopup')).openGraphPopup(options);
+}
 export { graphRenderer } from './graph/renderer';
 export { GraphView } from './graph/GraphView';
 export { graphPicture } from './graph/picture';

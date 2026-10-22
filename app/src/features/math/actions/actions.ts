@@ -12,8 +12,8 @@ import {
   fractions,
 } from '../../../core/expr';
 import type { Node } from '../../../core/expr';
-import { matrices } from '../../tools';
-import type { Matrix } from '../../tools';
+import * as matrices from '../../../core/matrix';
+import type { Matrix } from '../../../core/matrix';
 import { compileExpression } from '../grapher';
 import { Unsupported, latexToText, treeToLatex } from './convert';
 

@@ -26,7 +26,7 @@ import {
 } from '../calculator';
 import { isEnabled } from '../../../app/flags';
 import { INSERT_EVENT } from '../flags';
-import { MatrixMode, Programmer, Statistics } from './CalculatorModes';
+import { AnswerActions, MatrixMode, Programmer, Statistics } from './CalculatorModes';
 import { CALCULATOR_MODES, followCalculatorMode, saveCalculatorMode, savedCalculatorMode } from './calculatorMode';
 import type { CalculatorMode } from './calculatorMode';
 import { loadStored, saveStored, watchStored } from './storage';
@@ -280,12 +280,12 @@ function BasicKeypad({ onKey, onClear, onNegate, onBack, onEquals }: BasicPadPro
   );
 }
 
-/** Scientific mode, or with `basic` the four-function calculator, which shares its history. */
-function Scientific({ basic = false }: { basic?: boolean }) {
+/** The scientific and basic calculator's state: the session, what is typed, the answer, and how answers are written. */
+function useScientific(basic: boolean) {
   const [session, setSession] = useState<CalcSession>(() => restoreSession(loadStored(STORE, null)));
   const [input, setInput] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
-  const [format, setFormat] = useState<AnswerFormat>(() => restoreAnswerFormat(loadStored(FORMAT_STORE, null)));
+  const [format, setFormatState] = useState<AnswerFormat>(() => restoreAnswerFormat(loadStored(FORMAT_STORE, null)));
   const [problem, setProblem] = useState('');
   const field = useRef<HTMLInputElement>(null);
   useEffect(() => watchStored(STORE, () => setSession(restoreSession(loadStored(STORE, null)))), []);
@@ -294,31 +294,28 @@ function Scientific({ basic = false }: { basic?: boolean }) {
     setSession(next);
     saveStored(STORE, next);
   };
+  const convert = (source: string) => {
+    const converted = convertText(source);
+    if (!converted) return false;
+    if (converted.ok) {
+      const unit = parseConversion(source)?.to.trim() ?? '';
+      const text = unit === '' ? formatNumber(converted.value) : `${formatNumber(converted.value)} ${unit}`;
+      keep(recordConversion(session, source, converted.value, unit));
+      setAnswer({ text, note: t('smart.tools.calculator.converted', { input: source, value: text }) });
+      setProblem('');
+    } else setProblem(t('smart.tools.calculator.convertFailed'));
+    return true;
+  };
   const run = () => {
     const source = input.trim();
-    if (source === '') return;
-    const converted = convertText(source);
-    if (converted) {
-      if (converted.ok) {
-        const unit = parseConversion(source)?.to.trim() ?? '';
-        const text = unit === '' ? formatNumber(converted.value) : `${formatNumber(converted.value)} ${unit}`;
-        keep(recordConversion(session, source, converted.value, unit));
-        setAnswer({ text, note: t('smart.tools.calculator.converted', { input: source, value: text }) });
-        setProblem('');
-      } else setProblem(t('smart.tools.calculator.convertFailed'));
-      return;
-    }
+    if (source === '' || convert(source)) return;
     const done = submit(session, source.replace(/−/g, '-'));
-    if (done.result.ok) {
-      keep(done.session);
-      setAnswer({
-        text: basic ? formatNumber(done.result.value) : formatAnswer(done.result.value, source, format),
-        value: done.result.value,
-        expression: source,
-      });
-      setProblem('');
-      setInput('');
-    } else setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
+    if (!done.result.ok) return setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
+    const { value } = done.result;
+    keep(done.session);
+    setAnswer({ text: basic ? formatNumber(value) : formatAnswer(value, source, format), value, expression: source });
+    setProblem('');
+    setInput('');
   };
   const type = (piece: string) => {
     const element = field.current;
@@ -330,13 +327,24 @@ function Scientific({ basic = false }: { basic?: boolean }) {
       element?.setSelectionRange(start + piece.length, start + piece.length);
     });
   };
-  const copy = () => {
-    if (!answer) return;
-    void navigator.clipboard?.writeText(answer.text).then(
-      () => announce(t('smart.tools.calculator.copied')),
-      () => undefined,
-    );
+  const setFormat = (next: AnswerFormat) => {
+    setFormatState(next);
+    saveStored(FORMAT_STORE, next);
+    if (answer?.value !== undefined && answer.expression !== undefined)
+      setAnswer({ ...answer, text: formatAnswer(answer.value, answer.expression, next) });
   };
+  const clear = () => {
+    setInput('');
+    setAnswer(null);
+    setProblem('');
+  };
+  return { session, keep, input, setInput, answer, problem, field, run, type, format, setFormat, clear };
+}
+
+/** Scientific mode, or with `basic` the four-function calculator, which shares its history. */
+function Scientific({ basic = false }: { basic?: boolean }) {
+  const calc = useScientific(basic);
+  const { session, keep, input, setInput, answer, problem, field, run, type } = calc;
   return (
     <>
       <div className={styles.entry}>
@@ -368,43 +376,18 @@ function Scientific({ basic = false }: { basic?: boolean }) {
           <strong>{t('smart.tools.calculator.answer', { value: answer.text })}</strong>
         ) : null}
       </div>
-      {answer ? (
-        <div className={styles.buttons}>
-          <Button variant="quiet" onClick={copy}>
-            {t('smart.tools.calculator.copy')}
-          </Button>
-          <Button
-            variant="quiet"
-            onClick={() => insertIntoPage({ text: answer.text }) && announce(t('smart.tools.calculator.inserted'))}
-          >
-            {t('smart.tools.calculator.insert')}
-          </Button>
-        </div>
-      ) : null}
+      {answer ? <AnswerActions text={answer.text} /> : null}
       {basic ? (
         <BasicKeypad
           onKey={type}
-          onClear={() => {
-            setInput('');
-            setAnswer(null);
-            setProblem('');
-          }}
+          onClear={calc.clear}
           onNegate={() => setInput((old) => negate(old))}
           onBack={() => setInput((old) => old.slice(0, -1))}
           onEquals={run}
         />
       ) : (
         <>
-          <AnswerFormatBar
-            format={format}
-            typed={answer?.expression ?? input}
-            onChange={(next) => {
-              setFormat(next);
-              saveStored(FORMAT_STORE, next);
-              if (answer?.value !== undefined && answer.expression !== undefined)
-                setAnswer({ ...answer, text: formatAnswer(answer.value, answer.expression, next) });
-            }}
-          />
+          <AnswerFormatBar format={calc.format} typed={answer?.expression ?? input} onChange={calc.setFormat} />
           <Keypad onKey={type} />
           <MemoryBar session={session} onChange={keep} onRecall={() => type('m1')} />
         </>

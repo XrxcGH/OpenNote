@@ -1,5 +1,5 @@
 // Turns 3D samples into a flat picture: the box the plot sits in, its axes, a shaded face per surface cell, and a path
-// per curve, all in pixels and painted back to front. The camera turns around the vertical axis (yaw) and tilts
+// per curve. They are all in pixels, painted back to front. The camera turns around the vertical axis (yaw) and tilts
 // (pitch). `sceneToSvg3d` writes the same picture as a standalone SVG for export and print, where it stays vector.
 import type { Size } from '../grapher';
 import type { Point3, Sampled } from './plot';
@@ -268,6 +268,8 @@ export interface Svg3dStyle {
   readonly description: string;
 }
 
+const FACE_STROKE = 'stroke-width="0.5" stroke-opacity="0.6"';
+
 const escape = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -276,7 +278,8 @@ export function sceneToSvg3d(scene: Scene3d, style: Svg3dStyle): string {
   const { width, height } = scene.size;
   const color = (plot: number) => style.curves[plot % style.curves.length] ?? style.axis;
   const out: string[] = [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-labelledby="g3t g3d">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"` +
+      ' role="img" aria-labelledby="g3t g3d">',
     `<title id="g3t">${escape(style.title)}</title>`,
     `<desc id="g3d">${escape(style.description)}</desc>`,
     `<rect width="${width}" height="${height}" fill="${escape(style.paper)}"/>`,
@@ -286,17 +289,16 @@ export function sceneToSvg3d(scene: Scene3d, style: Svg3dStyle): string {
     out.push(`<path d="${line.d}" fill="none" stroke="${escape(stroke)}" stroke-width="1"/>`);
   }
   for (const face of scene.faces) {
-    out.push(
-      `<polygon points="${face.points}" fill="${escape(color(face.plot))}" fill-opacity="${faceOpacity(face.light)}" stroke="${escape(style.paper)}" stroke-width="0.5" stroke-opacity="0.6"/>`,
-    );
+    const fill = `fill="${escape(color(face.plot))}" fill-opacity="${faceOpacity(face.light)}"`;
+    out.push(`<polygon points="${face.points}" ${fill} stroke="${escape(style.paper)}" ${FACE_STROKE}/>`);
   }
   for (const line of scene.lines.filter((l) => l.kind === 'curve')) {
     out.push(`<path d="${line.d}" fill="none" stroke="${escape(color(line.plot))}" stroke-width="2.5"/>`);
   }
   for (const label of scene.labels) {
-    out.push(
-      `<text x="${label.x}" y="${label.y}" fill="${escape(style.text)}" font-family="${escape(style.fontFamily)}" font-size="${style.labelSize}" text-anchor="middle">${escape(label.text)}</text>`,
-    );
+    const font = `font-family="${escape(style.fontFamily)}" font-size="${style.labelSize}"`;
+    const at = `x="${label.x}" y="${label.y}" fill="${escape(style.text)}"`;
+    out.push(`<text ${at} ${font} text-anchor="middle">${escape(label.text)}</text>`);
   }
   out.push('</svg>');
   return out.join('');

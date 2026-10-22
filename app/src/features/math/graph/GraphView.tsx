@@ -2,7 +2,7 @@
 // the wheel, a drag, the keyboard, and the buttons. A readout follows the pointer (or Shift and the arrow keys) and
 // gives the value and the slope. Each letter a function uses besides x gets a slider. The graph's whole state is its
 // text (source.ts), so every change goes out as new text and undo, copy, and export follow from that.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { isEnabled } from '../../../app/flags';
 import type { KeyboardEvent, PointerEvent, RefObject, WheelEvent } from 'react';
 import { t } from '../../../strings/t';
@@ -17,7 +17,6 @@ import {
 } from '../grapher';
 import type { Viewport } from '../grapher';
 import styles from './graph.module.css';
-import { Graph3DView } from './Graph3DView';
 import { FunctionBoxes, PlotLayers, SIZE, Sliders, ZoomButtons, keyEffect, readoutText, traceAt } from './parts';
 import { readGraph, writeGraph } from './source';
 import type { GraphSource } from './source';
@@ -94,11 +93,16 @@ function usePlotInput({ svg, drag, view, live, editable, traceX, setTraceX, setL
   return { onPointerDown, onPointerMove, onPointerUp, onWheel, onKeyDown };
 }
 
+// The 3D grapher loads with the first 3D graph, so pages of 2D graphs never fetch it.
+const Graph3DView = lazy(() => import('./Graph3DView').then((loaded) => ({ default: loaded.Graph3DView })));
+
 /** A 2D or a 3D graph, whichever its text describes. */
 export function GraphView({ source, editable, onSource }: GraphViewProps) {
   const graph = useMemo(() => readGraph(source), [source]);
   return graph.three && isEnabled('math.graph3d') ? (
-    <Graph3DView graph={graph} editable={editable} onSource={onSource} />
+    <Suspense fallback={null}>
+      <Graph3DView graph={graph} editable={editable} onSource={onSource} />
+    </Suspense>
   ) : (
     <Graph2DView graph={graph} source={source} editable={editable} onSource={onSource} />
   );

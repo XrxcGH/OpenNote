@@ -178,7 +178,7 @@ class Integrator {
     return { rule, latex: `${this.int(latexOf(from))} = ${latexOf(to)} + C` };
   }
 
-  /** The slope of a linear expression a x + b, or null when it is not linear in x. */
+  /** The slope of a linear expression such as 3x + 1, or null when it is not linear in x. */
   private slope(node: Node): number | null {
     if (!this.has(node)) return null;
     try {

@@ -138,7 +138,9 @@ describe('the calculator', () => {
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Matrix' }), { key: 'ArrowRight' });
     expect(screen.getByRole('tab', { name: 'Basic' }).getAttribute('aria-selected')).toBe('true');
   });
+});
 
+describe('the calculator modes', () => {
   it('has every mode as a tab, in order', () => {
     renderUi(<CalculatorTool />);
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
@@ -206,7 +208,9 @@ describe('the calculator', () => {
     expect(screen.getByText('A has no inverse, so this has no single answer.')).toBeTruthy();
     expect(screen.getAllByRole('listitem').length).toBe(2);
   });
+});
 
+describe('the calculator popped out, and its answer format', () => {
   it('writes the answer in scientific notation to the fewest significant figures typed', async () => {
     renderUi(<CalculatorTool />);
     await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Notation' }), 'scientific');

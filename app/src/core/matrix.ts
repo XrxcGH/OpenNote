@@ -1,8 +1,8 @@
-// The matrix calculator and the linear algebra behind Solve for systems of equations: reading a matrix as typed,
+// Linear algebra for the calculator's Matrix mode and for Solve on systems of equations: reading a matrix as typed,
 // sums, products, the transpose, the determinant, the inverse, the rank, row-reduced echelon form, and solving
-// A x = b. Elimination picks the largest pivot in each column, which keeps rounding small, and answers are snapped to
+// Ax = b. Elimination picks the largest pivot in each column, which keeps rounding small, and answers are snapped to
 // 15 digits so 1/3 * 3 comes back as 1.
-import { snap } from '../../../core/expr';
+import { snap } from './expr';
 
 export type Matrix = number[][];
 

@@ -1,8 +1,8 @@
 // What a line of a 3D graph means, and its points. Three kinds of line draw in 3D:
 //
-//   z = sin(x) cos(y)            a surface over the x-y plane (f(x, y) = ... works too)
-//   (cos(t), sin(t), t / 5)      a curve, traced as t runs over its range
-//   (cos(u) sin(v), sin(u) sin(v), cos(v))   a surface traced by u and v
+// - `z = sin(x) cos(y)` is a surface over the x-y plane. `f(x, y) = ...` works too.
+// - `(cos(t), sin(t), t / 5)` is a curve, traced as t runs over its range.
+// - `(cos(u) sin(v), sin(u) sin(v), cos(v))` is a surface traced by u and v.
 //
 // Each part is compiled by the grapher's engine (grapher/evaluate.ts), so the text is never run as code and a bad
 // line can only give NaN, which leaves a gap. Nothing here touches the DOM.

@@ -89,14 +89,8 @@ export function Plot3dLayers({ scene }: { scene: Scene3d }) {
   );
 }
 
-export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
-  const [liveState, setLiveState] = useState<{ graph: GraphSource; camera: Camera } | null>(null);
-  const live = liveState?.graph === graph ? liveState.camera : null;
-  const camera = live ?? graph.camera ?? DEFAULT_CAMERA;
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const drag = useRef<{ x: number; y: number } | null>(null);
-  useEffect(() => () => clearTimeout(timer.current), []);
-
+/** The plot's samples and picture for a graph's text and a camera. Sampling waits for new text, not a new camera. */
+function usePlot(graph: GraphSource, camera: Camera) {
   const names = useMemo(() => {
     const found = new Set<string>(Object.keys(graph.params));
     for (const line of graph.functions) for (const name of plotParameters(line)) found.add(name);
@@ -116,42 +110,84 @@ export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
   );
   const bounds = useMemo(() => boundsOf(samples, domain), [samples, domain]);
   const scene = useMemo(() => buildScene3d(samples, camera, SIZE, bounds), [samples, camera, bounds]);
+  return { names, values, bounds, scene };
+}
 
-  const send = (next: Partial<GraphSource>) => onSource(writeGraph({ ...graph, three: true, camera, ...next }));
+/**
+ * The camera: the one the text saved, or the one being dragged. A drag shows at once and is saved when it ends; a
+ * key or a button is saved at once, and the wheel a moment after it stops.
+ */
+function useCamera(graph: GraphSource, editable: boolean, save: (camera: Camera) => void) {
+  const [liveState, setLiveState] = useState<{ graph: GraphSource; camera: Camera } | null>(null);
+  const live = liveState?.graph === graph ? liveState.camera : null;
+  const camera = live ?? graph.camera ?? DEFAULT_CAMERA;
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const drag = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
   const commit = (next: Camera, delay = 0) => {
     setLiveState({ graph, camera: next });
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => send({ camera: next }), delay);
+    timer.current = setTimeout(() => save(next), delay);
   };
+  const handlers = {
+    onPointerDown: (event: PointerEvent<SVGSVGElement>) => {
+      drag.current = { x: event.clientX, y: event.clientY };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    onPointerMove: (event: PointerEvent<SVGSVGElement>) => {
+      const from = drag.current;
+      if (!from) return;
+      drag.current = { x: event.clientX, y: event.clientY };
+      const turn = rotateCamera(camera, (event.clientX - from.x) * DRAG, (event.clientY - from.y) * DRAG);
+      setLiveState({ graph, camera: turn });
+    },
+    onPointerUp: () => {
+      if (drag.current && live) commit(live);
+      drag.current = null;
+    },
+    onWheel: (event: WheelEvent<SVGSVGElement>) => {
+      if (editable) commit(zoomCamera(camera, wheelZoomFactor(event.deltaY)), COMMIT_MS);
+    },
+    onKeyDown: (event: KeyboardEvent<SVGSVGElement>) => {
+      const next = cameraKey(event.key, camera);
+      if (!next) return;
+      commit(next);
+      event.preventDefault();
+    },
+  };
+  return { camera, commit, handlers };
+}
 
-  const onPointerDown = (event: PointerEvent<SVGSVGElement>) => {
-    drag.current = { x: event.clientX, y: event.clientY };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-  const onPointerMove = (event: PointerEvent<SVGSVGElement>) => {
-    const from = drag.current;
-    if (!from) return;
-    drag.current = { x: event.clientX, y: event.clientY };
-    setLiveState({
-      graph,
-      camera: rotateCamera(camera, (event.clientX - from.x) * DRAG, (event.clientY - from.y) * DRAG),
-    });
-  };
-  const onPointerUp = () => {
-    if (drag.current && live) commit(live);
-    drag.current = null;
-  };
-  const onWheel = (event: WheelEvent<SVGSVGElement>) => {
-    if (editable) commit(zoomCamera(camera, wheelZoomFactor(event.deltaY)), COMMIT_MS);
-  };
-  const onKeyDown = (event: KeyboardEvent<SVGSVGElement>) => {
-    const next = cameraKey(event.key, camera);
-    if (!next) return;
-    commit(next);
-    event.preventDefault();
-  };
+/** Buttons that turn, tilt, zoom, and reset, for a pointer or a screen reader. */
+function CameraButtons({ camera, onCamera }: { camera: Camera; onCamera(next: Camera): void }) {
+  const buttons: [string, Camera][] = [
+    [t('mathTools.graph3d.turnLeft'), rotateCamera(camera, -STEP, 0)],
+    [t('mathTools.graph3d.turnRight'), rotateCamera(camera, STEP, 0)],
+    [t('mathTools.graph3d.tiltUp'), rotateCamera(camera, 0, STEP)],
+    [t('mathTools.graph3d.tiltDown'), rotateCamera(camera, 0, -STEP)],
+    [t('smart.grapher.zoomIn'), zoomCamera(camera, 1.25)],
+    [t('smart.grapher.zoomOut'), zoomCamera(camera, 0.8)],
+    [t('smart.grapher.reset'), DEFAULT_CAMERA],
+  ];
+  return (
+    <div className={styles.buttons}>
+      {buttons.map(([label, next]) => (
+        <Button key={label} variant="quiet" onClick={() => onCamera(next)}>
+          {label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
+  const save = (next: Partial<GraphSource>, camera: Camera) =>
+    onSource(writeGraph({ ...graph, three: true, camera, ...next }));
+  const { camera, commit, handlers } = useCamera(graph, editable, (next) => save({}, next));
+  const send = (next: Partial<GraphSource>) => save(next, camera);
+  const { names, values, bounds, scene } = usePlot(graph, camera);
   const [x, y, z] = [bounds.x, bounds.y, bounds.z].map(([lo, hi]) => ({ lo: tickText(lo), hi: tickText(hi) }));
-
+  const degrees = (radians: number) => Math.round((radians * 180) / Math.PI);
   return (
     <div className={styles.graph} data-graph-3d="">
       <FunctionBoxes
@@ -169,12 +205,8 @@ export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
         aria-label={t('mathTools.graph3d.label', { count: graph.functions.length })}
         aria-roledescription={t('mathTools.graph3d.role')}
         aria-description={t('mathTools.graph3d.keys')}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onWheel={onWheel}
-        onKeyDown={onKeyDown}
+        {...handlers}
+        onPointerCancel={handlers.onPointerUp}
       >
         <Plot3dLayers scene={scene} />
       </svg>
@@ -186,8 +218,8 @@ export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
           yHi: y.hi,
           zLo: z.lo,
           zHi: z.hi,
-          turn: Math.round((camera.yaw * 180) / Math.PI),
-          tilt: Math.round((camera.pitch * 180) / Math.PI),
+          turn: degrees(camera.yaw),
+          tilt: degrees(camera.pitch),
         })}
       </p>
       <Sliders
@@ -196,29 +228,7 @@ export function Graph3DView({ graph, editable, onSource }: Graph3DViewProps) {
         editable={editable}
         onValue={(name, value) => send({ params: { ...graph.params, [name]: value } })}
       />
-      <div className={styles.buttons}>
-        <Button variant="quiet" onClick={() => commit(rotateCamera(camera, -STEP, 0))}>
-          {t('mathTools.graph3d.turnLeft')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit(rotateCamera(camera, STEP, 0))}>
-          {t('mathTools.graph3d.turnRight')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit(rotateCamera(camera, 0, STEP))}>
-          {t('mathTools.graph3d.tiltUp')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit(rotateCamera(camera, 0, -STEP))}>
-          {t('mathTools.graph3d.tiltDown')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit(zoomCamera(camera, 1.25))}>
-          {t('smart.grapher.zoomIn')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit(zoomCamera(camera, 0.8))}>
-          {t('smart.grapher.zoomOut')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit(DEFAULT_CAMERA)}>
-          {t('smart.grapher.reset')}
-        </Button>
-      </div>
+      <CameraButtons camera={camera} onCamera={(next) => commit(next)} />
     </div>
   );
 }

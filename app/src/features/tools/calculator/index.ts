@@ -29,8 +29,8 @@ export {
 export type { CalcSession, HistoryEntry } from './session';
 export type { AngleMode } from '../../../core/expr';
 export { calculatorUnits } from './unitSystem';
-export * as matrices from './matrix';
-export type { Matrix } from './matrix';
+export * as matrices from '../../../core/matrix';
+export type { Matrix } from '../../../core/matrix';
 export {
   DEFAULT_ANSWER_FORMAT,
   countSigFigs,

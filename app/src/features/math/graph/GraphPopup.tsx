@@ -6,7 +6,7 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { t } from '../../../strings/t';
 import { Button, Popover, announce } from '../../../ui';
-import { INSERT_EVENT } from '../../tools';
+import { INSERT_EVENT } from '../../tools/flags';
 import { GraphView } from './GraphView';
 import { graphPicture } from './picture';
 import styles from './graph.module.css';
