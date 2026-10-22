@@ -18,7 +18,7 @@
     scroll-padding-block-end: var(--toast-clearance);
   }
 
-  /* Where floating panels may go (shell/layout/chromeInsets.ts): below the title bar, the command bar and its line,
+  /* Where floating panels may go (shell/layout/chromeInsets.ts): below the title bar, the command bar, and its line,
      above the word count line and the compact bottom bar, with a gap to each. The two insets are measured at run
      time; these are their values before the first measure. */
   :root {

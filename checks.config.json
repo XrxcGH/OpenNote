@@ -17,7 +17,8 @@
     "app/src/services/intel/packs.ts",
     "crates/intel-engines/tests/fixtures/**",
     "app/src/features/ink/pens/golden/*.txt",
-    "crates/third_party/**"
+    "crates/third_party/**",
+    "app/src/theme/fonts/**"
   ],
   "rules": {
     "spelling": {

@@ -2,7 +2,7 @@
 // button where the app can open a window of its own, and a close button. It moves with a drag or, from the
 // keyboard, with the arrow keys on its title. It never takes focus from the page by itself and never traps it.
 import { useEffect, useRef, useState } from 'react';
-import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { t } from '../../../strings/t';
 import { tokens } from '../../../theme/tokens';
 import { chromeInsets } from '../../../shell/layout/chromeInsets';
@@ -38,22 +38,37 @@ const MIN_HEIGHT = 160;
 /** The lowest top a window can have and still keep MIN_HEIGHT above the status line, with the panel gap. */
 const lowest = () => Math.max(0, window.innerHeight - chromeInsets().bottom - 8 - MIN_HEIGHT);
 
+/**
+ * Where a window with no saved place opens: left of the ones already open, so none hides another, and with no room
+ * it cascades. It opens below the row of the page's chips, such as Properties, so it doesn't cover them.
+ */
+function firstPlace(width: number, index: number, taken: number): Place {
+  const right = window.innerWidth - width - 32 - taken;
+  const cascade = 16 + index * 28;
+  return {
+    x: Math.max(Math.min(cascade, window.innerWidth - width - 16), 16, right),
+    y: chromeInsets().top + CHIP_ROW + (right < cascade ? index * 28 : 0),
+  };
+}
+
+/**
+ * Never above the command bar's line, and however far down it sits, the window ends above the status line and its
+ * body scrolls (shell/layout/chromeInsets.ts). A window narrower than the tool keeps it inside, 16 px from each edge.
+ */
+function frameStyle(place: Place, width: number): CSSProperties {
+  const top = `max(${place.y}px, var(--panel-top))`;
+  return {
+    insetInlineStart: place.x,
+    insetBlockStart: top,
+    inlineSize: `min(${width}px, calc(100vw - 32px))`,
+    maxBlockSize: `max(${MIN_HEIGHT}px, calc(100vh - ${top} - var(--panel-bottom)))`,
+  };
+}
+
 export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onPopOut, children }: ToolWindowProps) {
   const title = t(tool.title);
   const [place, setPlace] = useState<Place>(() =>
-    loadStored<Place>(`place.${tool.id}`, {
-      // A new window opens left of the ones already open, so none hides another; with no room it cascades. It opens
-      // below the row of the page's chips, such as Properties, so it doesn't cover them.
-      x: Math.max(
-        Math.min(16 + index * 28, window.innerWidth - tool.width - 16),
-        16,
-        window.innerWidth - tool.width - 32 - taken,
-      ),
-      y:
-        chromeInsets().top +
-        CHIP_ROW +
-        (window.innerWidth - tool.width - 32 - taken < 16 + index * 28 ? index * 28 : 0),
-    }),
+    loadStored<Place>(`place.${tool.id}`, firstPlace(tool.width, index, taken)),
   );
   const drag = useRef<{ x: number; y: number; place: Place } | null>(null);
   const frame = useRef<HTMLElement>(null);
@@ -116,15 +131,7 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
       role="dialog"
       aria-modal="false"
       aria-label={title}
-      style={{
-        insetInlineStart: place.x,
-        // Never above the command bar's line, and however far down it sits, the window ends above the status line
-        // and its body scrolls (shell/layout/chromeInsets.ts).
-        insetBlockStart: `max(${place.y}px, var(--panel-top))`,
-        // A window narrower than the tool keeps it inside, 16 px from each edge.
-        inlineSize: `min(${tool.width}px, calc(100vw - 32px))`,
-        maxBlockSize: `max(${MIN_HEIGHT}px, calc(100vh - max(${place.y}px, var(--panel-top)) - var(--panel-bottom)))`,
-      }}
+      style={frameStyle(place, tool.width)}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && !event.defaultPrevented) {
           event.stopPropagation();
