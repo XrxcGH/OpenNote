@@ -21,7 +21,7 @@ export function restoreView(pageId: string, viewport: PageViewport, content?: ()
   viewport.setContent({ w, h: (saved.scrollY + seen.h) / zoom, floating: false });
   viewport.scrollTo(saved.scrollX, saved.scrollY);
   // A page that is now shorter than where it was left (its text was cleared, or it was emptied) would open on blank
-  // space below its text. Once it has drawn, the room goes back and the view lands on what is there.
+  // space below its text. Once it has drawn, the room goes back, and the view lands on what is there.
   if (content && saved.scrollY > 0) {
     const frames = viewport.sizer.ownerDocument.defaultView;
     frames?.requestAnimationFrame(() =>

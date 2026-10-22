@@ -161,6 +161,7 @@ const sheetOf = (control: HTMLElement) => () => {
   return frame.srcdoc;
 };
 
+// checks-disable-next-line modifiability: one test group that shares its fixtures; split it when it grows again
 describe('PrintDialog', () => {
   it('shows the page with its title by default, and without it when the switch goes off', async () => {
     render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);

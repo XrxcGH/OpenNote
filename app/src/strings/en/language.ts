@@ -12,7 +12,8 @@ export const language = {
   },
   dictionary: {
     english:
-      'The dictionary and thesaurus use English, with {name} spelling first. Spelling, handwriting and math recognition, text in pictures, and read aloud follow it too.',
+      'The dictionary and thesaurus use English, with {name} spelling first. ' +
+        'Spelling, handwriting and math recognition, text in pictures, and read aloud follow it too.',
     noPack:
       'There is no dictionary for {name} yet, so the English one stays available. Spelling, recognition, and read aloud still use {name}.',
   },

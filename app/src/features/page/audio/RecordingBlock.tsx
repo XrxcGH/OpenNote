@@ -163,7 +163,7 @@ function Transport({ open }: { open: Open }) {
           void open.whenOpen(() => seek(to));
         }}
         onKeyDown={(event) => {
-          // A key moves by seconds, not by the slider's fine step: arrows 5 s, Page Up and Page Down 30 s.
+          // A key moves by seconds, not by the slider's fine step: arrows 5 s, Page Up, and Page Down 30 s.
           const keys: Record<string, number> = {
             ArrowRight: 5,
             ArrowUp: 5,

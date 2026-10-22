@@ -21,7 +21,8 @@ export const spelling = {
     check: 'Check spelling',
     languages: 'Languages',
     languagesHint:
-      'With no choice here, spelling follows your language in Settings, Language. With several languages, a word is flagged only when every language flags it.',
+      'With no choice here, spelling follows your language in Settings, Language. ' +
+      'With several languages, a word is flagged only when every language flags it.',
     defaultLanguage: '{name} (your language)',
     ignoreUppercase: 'Ignore words in all capitals',
     ignoreWithDigits: 'Ignore words with numbers',

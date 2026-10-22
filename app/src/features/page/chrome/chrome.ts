@@ -205,7 +205,7 @@ class ChromeLayer implements Chrome {
 
   /**
    * A floating panel or picture that reaches into the grip's strip (a study tape laid over the top of a text box) must
-   * still take its presses, so the grip is cut around it: its centre is never under the grip.
+   * still take its presses, so the grip is cut around it: its center is never under the grip.
    */
   private gripHoles(block: BlockJson, area: DOMRect, origin: DOMRect): string {
     const holes: string[] = [];

@@ -410,6 +410,7 @@ mod tests {
     /// for 7, which no reader can follow, so the walk saw this as a refused drop.)
     #[test]
     fn a_placeable_wmf_becomes_an_svg() {
+        // checks-disable-next-line length: one WMF file as hex, kept on a line so the bytes read as one record
         let hex = "d7cdc69a0000000000 00c8006400a005000000001d52 0100090000031e000000010008000000000007000000fc02000000 00ff000000040000002d0100000700 00001b045a00be000a000a00030000000000";
         let digits: Vec<u8> = hex.bytes().filter(|b| !b.is_ascii_whitespace()).collect();
         let bytes: Vec<u8> = digits

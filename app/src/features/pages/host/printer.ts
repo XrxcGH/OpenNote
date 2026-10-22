@@ -55,8 +55,8 @@ export const PDF_PRINTER = 'Microsoft Print to PDF';
 
 /**
  * Whether the printer only turns the job into a PDF file. Sending it there would draw the page again through the
- * graphics driver (where Microsoft Print to PDF has crashed) behind a Save window the driver opens out of sight, so the
- * dialog saves the PDF it made instead, with the same Save window as Export as PDF.
+ * graphics driver, where Microsoft Print to PDF has crashed, behind a Save window the driver opens out of sight.
+ * So the dialog saves the PDF it made instead, with the same Save window as Export as PDF.
  */
 export const savesPdf = (printer: PrinterInfo | null): boolean => printer?.name === PDF_PRINTER;
 

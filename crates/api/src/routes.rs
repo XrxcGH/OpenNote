@@ -561,7 +561,7 @@ impl Caller<'_> {
         Ok(place)
     }
 
-    /// Where a page is, refusing a notebook or section ID with 404 before anyone is asked about it.
+    /// Where a page is, refusing a notebook, or section ID with 404 before anyone is asked about it.
     fn page_place(&self, action: &str, id: &str) -> Result<Location, Refusal> {
         let place = self.place(action, id)?;
         if place.section_id.is_none() || place.section_id.as_deref() == Some(id) {

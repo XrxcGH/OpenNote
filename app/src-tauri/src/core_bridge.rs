@@ -644,9 +644,9 @@ impl CoreBridge {
     }
 
     /// [`CoreBridge::shutdown`], waiting at most `timeout` for a command that holds the core. A command that
-    /// never returns must not keep the window open with nothing to show for it: the exit goes on without the
-    /// final save, and the journals keep every edit for the next start (spec 20), except those of pages in unlocked
-    /// protected sections, whose journals live only in memory (ADR 0042).
+    /// never returns must not keep the window open with nothing to show for it. The exit goes on without the
+    /// final save, and the journals keep every edit for the next start (spec 20). The exception is a page in an
+    /// unlocked protected section, whose journal lives only in memory (ADR 0042).
     pub fn shutdown_within(&self, timeout: Duration) {
         *self.relay.trees.lock().unwrap_or_else(PoisonError::into_inner) = None;
         let Some(state) = self.take_core_within(timeout) else {

@@ -7,6 +7,7 @@ const page = (tags: string[]) =>
 
 describe('typed tags', () => {
   it('finds finished tags only, outside code', () => {
+    // checks-disable-next-line brand-consistency: "#123" and "#a/b-c" are hashtag samples, not colors
     expect(typedTags('Review \\#Todo and #a/b-c, #123 `#code` \\#last')).toEqual(['todo', 'a/b-c']);
     expect(typedTags('Review \\#todo ')).toEqual(['todo']);
     // The editor writes a space that ends the text as `&#32;`; without that space the word is not finished.

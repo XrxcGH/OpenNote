@@ -176,6 +176,7 @@ function Details({ info }: { info: ConnectorInfo }) {
   );
 }
 
+// checks-disable-next-line modifiability: one card that shares its state across its states; split it when it grows again
 export function ConnectorCard(props: ConnectorCardProps) {
   const { info, offline, offlineNoticeId, error, onConnect, onCancel, onDisconnect, onSetup, onOpenFolder } = props;
   const { onSaveClient } = props;

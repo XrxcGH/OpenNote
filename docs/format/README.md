@@ -789,7 +789,7 @@ A smart table keeps what it adds beside its cells in the table block's `data.sma
 | `options` | list | The choices, in the order the person set them. Each is `{name, color}`: `name` is one line of up to 60 characters with no comma, unique without regard to case, and `color` is one of `indigo`, `amber`, `ink`, `fern`, `brick`, `walnut`, or `plum`. At most 50 |
 | `multi` | boolean | `true` when a cell may hold several choices. Defaults to `false` |
 
-A cell of a choice column stores the name of its choice as plain Markdown text, such as `Done`. With `multi`, it stores the names in the order of `options`, each separated by a comma and a space, such as `Todo, Done`. So a reader that does not know about choices sees the same words the app shows, and a name that is in no option is still kept as written. A reader that does not know `options` or `multi` ignores them. A page written before choice columns has neither field and loads unchanged. See [ADR 0047](../adr/0047-choice-columns.md).
+A cell of a choice column stores the name of its choice as plain Markdown text, such as `Done`. With `multi`, it stores the names in the order of `options`, each separated by a comma and a space, such as `Todo, Done`. So a reader that does not know about choices sees the same words the app shows, and a name that is in no option is still kept as written. A reader that does not know `options` or `multi` ignores them. A page written before choice columns has neither field and loads unchanged. See [ADR 0047](../adr/0048-choice-columns.md).
 
 ### 6.4 Reserved and extension types
 
@@ -939,7 +939,7 @@ The rules apply to text outside code spans, code blocks, link destinations, and 
 
 #### Typed hashtags
 
-A word that starts with `#` is always written with the `#` escaped, as in `\#biology`, whether or not the editor treats it as a tag. The text of a block is the same in both states of the editor's setting "Turn typed #words into tags".
+A word that starts with `#` is always written with the `#` escaped, as in `\#biology`, whether the editor treats it as a tag. The text of a block is the same in both states of the editor's setting "Turn typed #words into tags".
 
 - **Setting on.** When a typed `#word` is finished by a space or punctuation, the editor also adds the word to the page's `tags` (section 5.2), in the form of its normal tag (folded, with a `/` nesting it). Nothing in the text changes. The tag is its own change in the page's history, so one Undo leaves the plain `#word` in the text and removes the tag.
 - **Setting off.** The editor adds nothing to `tags`. The text is the same.

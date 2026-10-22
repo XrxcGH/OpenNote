@@ -172,7 +172,7 @@ fn serve<S: Read + Write + Send + 'static>(
     });
 }
 
-/// Gives back one connection slot when dropped, whether the work ran or never started.
+/// Gives back one connection slot when dropped, whether the work ran, or never started.
 struct Slot(Arc<AtomicUsize>);
 
 impl Drop for Slot {

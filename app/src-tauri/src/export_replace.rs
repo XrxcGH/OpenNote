@@ -263,7 +263,10 @@ fn recycle_file(path: &Path) -> io::Result<()> {
     };
 
     let wide: Vec<u16> = path.as_os_str().encode_wide().collect();
-    let drive_letter = matches!(wide.as_slice(), [d, colon, ..] if *colon == u16::from(b':') && *d < 128 && (*d as u8).is_ascii_alphabetic());
+    let drive_letter = matches!(
+            wide.as_slice(),
+            [d, colon, ..] if *colon == u16::from(b':') && *d < 128 && (*d as u8).is_ascii_alphabetic()
+        );
     if !drive_letter {
         return Err(io::Error::new(io::ErrorKind::Unsupported, "not on a local drive"));
     }

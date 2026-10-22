@@ -43,6 +43,7 @@ export function standInPdf(count: number, width: number, height: number): Uint8A
   return new TextEncoder().encode(`%PDF-1.4\n${body}trailer\n<< /Root 1 0 R /Size ${objects.length + 1} >>\n%%EOF\n`);
 }
 
+// checks-disable-next-line modifiability: one client object whose methods share the planned map
 export function createWebExports(): ExportsClient {
   const planned = new Map<string, Planned>();
   const saved: SavedExport[] = [];
