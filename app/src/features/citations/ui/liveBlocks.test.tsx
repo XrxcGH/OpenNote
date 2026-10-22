@@ -89,6 +89,18 @@ describe('a bibliography block', () => {
   });
 });
 
+describe('sources saved by another window', () => {
+  it('show in a block this window drew empty', async () => {
+    renderUi(<LiveBibliography notebook="other-nb" sources={null} />);
+    expect(screen.getByText('There are no sources to list.')).toBeTruthy();
+    // The Citations window, in a window of its own, saves its list.
+    const key = 'opennote.citations.sources.other-nb';
+    localStorage.setItem(key, JSON.stringify([smith]));
+    window.dispatchEvent(new StorageEvent('storage', { key }));
+    await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(1));
+  });
+});
+
 describe('entry text', () => {
   it('turns italics and bold into elements and never into markup', () => {
     const nodes = inlineNodes('A *Title* in **2020** <b>x</b>');
