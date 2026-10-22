@@ -85,7 +85,11 @@ function chip(view: EditorView, item: Found): HTMLElement {
     input.value = dateKey(item.due.date);
     input.className = styles.picker;
     input.setAttribute('aria-label', t('study.dueDates.open'));
-    button.after(input);
+    // Beside the page text, not in it: the editor removes a node it did not make, in the same frame.
+    const rect = button.getBoundingClientRect();
+    input.style.insetBlockStart = `${rect.bottom + 4}px`;
+    input.style.insetInlineStart = `${rect.left}px`;
+    button.ownerDocument.body.append(input);
     const done = () => input.remove();
     input.addEventListener('change', () => {
       replaceDate(view, item, input.value);

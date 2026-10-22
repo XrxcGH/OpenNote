@@ -37,7 +37,8 @@
   }
 
   .picker {
-    margin-inline-start: var(--space-2);
+    position: fixed;
+    z-index: var(--layer-dropdown);
     font: inherit;
     color: var(--color-text-primary);
     background: var(--color-surface-page);
