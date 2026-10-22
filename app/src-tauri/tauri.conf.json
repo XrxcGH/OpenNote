@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost 'self' opennote-asset: http://opennote-asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: http://opennote-asset.localhost blob: data:; media-src blob:; worker-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://embed.podcasts.apple.com https://open.spotify.com https://www.desmos.com https://www.geogebra.org https://www.figma.com https://miro.com https://lucid.app"
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost 'self' opennote-asset: http://opennote-asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' opennote-asset: http://opennote-asset.localhost blob: data:; media-src blob: opennote-asset: http://opennote-asset.localhost; worker-src 'self'; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://embed.podcasts.apple.com https://open.spotify.com https://www.desmos.com https://www.geogebra.org https://www.figma.com https://miro.com https://lucid.app"
     }
   },
   "bundle": {

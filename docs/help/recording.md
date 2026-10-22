@@ -72,6 +72,12 @@ Paste a YouTube or Vimeo link, a podcast episode, or a Desmos, GeoGebra, Figma, 
 
 With a YouTube or Vimeo video playing, the notes you type are time-stamped to the playhead, the same way they are during a recording. Hold Alt and click a note to jump back to its moment. Only these sites can be shown on a page. Any other link stays a normal link.
 
+### Video files
+
+Drag an mp4 or webm file onto a page, paste one, or press Ctrl+K and choose Insert video file. The video becomes a block that plays right on the page. It is stored with the page, so it plays offline, goes with the page when you export it, and loads nothing from the internet. Files over 200 MB and other formats are refused, with a message that says why.
+
+Click the video or Tab to it, then use the keyboard: Space or K plays and pauses, Left and Right skip 5 seconds (hold Shift for 10), Up and Down change the volume, M mutes, C turns captions on and off, and F opens full screen. Choose Add captions on the block to attach a WebVTT (.vtt) file. The YouTube and Vimeo players above work from the keyboard through their own controls once you press Play.
+
 ### Captions as a transcript
 
 Connect Google (for YouTube) or Vimeo in Settings, then Connectors. Open the page with the video, press Ctrl+K, and choose Add captions as a transcript. The captions are kept on the video's card, and a line in the transcript jumps the player to its time. YouTube lets only the owner of a video read its captions, so for other people's videos OpenNote says so and nothing is added.

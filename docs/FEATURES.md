@@ -63,6 +63,7 @@ Linked accounts (Phase 11):
 (Phase 9)
 
 - Paste a YouTube, Vimeo, or podcast link to embed a player. Notes taken while it plays are time-stamped to the video, like audio recordings. Status: Not built yet.
+- Video files (mp4 and webm, up to 200 MB) dropped, pasted, or chosen with Insert video file play in a block on the page, from the page's own files with no network. Space, the arrow keys, M, C, and F work on the focused video, and a .vtt file adds captions. The export writes a video element with its captions. Status: Built, untested by hand. Flag: page.localVideo (on in Beta).
 - Transcripts come from the platform's captions when available, or from on-device transcription of audio the person has the right to use. Status: Needs the owner. Captions need platform keys or sign-in. On-device transcription of a recording or a dropped audio file is built, untested by hand. The 64-bit build runs it with whisper.cpp, and the other builds use a pure Rust reader of the same model files. Needs the owner: judge real accuracy with a downloaded model, and the graphics card path on a PC with a Vulkan driver.
 - Recordings can be exported as audio or as a narrated video of the page, and uploaded to a linked YouTube account as private or unlisted. Status: Built, untested by hand. Export as audio is built. A narrated video is not built yet. YouTube upload needs the owner.
 

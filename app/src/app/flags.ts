@@ -382,4 +382,5 @@ type AccountsFlagId =
   | 'accounts.captions'
   | 'page.mediaEmbeds'
   | 'page.liveEmbeds'
+  | 'page.localVideo'
   | 'audio.exportVideo';

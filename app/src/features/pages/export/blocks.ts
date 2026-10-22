@@ -177,6 +177,18 @@ function otherHtml(block: ExportBlock & { type: 'other' }, cx: BlockContext): st
     : renderHtml(parseMarkdown(block.fallback), htmlOptions(cx));
 }
 
+/** A local video as a native player with its captions, or its name as a link when the file isn't kept. */
+function videoHtml(video: NonNullable<(ExportBlock & { type: 'other' })['video']>, cx: BlockContext): string {
+  const asset = own(cx.page.assets, video.asset);
+  const src = asset ? cx.assetUrl(asset) : null;
+  if (!asset || src === null) return '';
+  const captions = video.captions ? own(cx.page.assets, video.captions) : undefined;
+  const track = captions ? cx.assetUrl(captions) : null;
+  const name = escapeHtml(asset.name);
+  const inner = track === null ? '' : `<track kind="captions" src="${escapeAttr(track)}" default=""${voidEnd(cx.xml)}`;
+  return `<figure class="video"><video controls preload="metadata" src="${escapeAttr(src)}" aria-label="${name}">${inner}</video><figcaption>${name}</figcaption></figure>`;
+}
+
 /** A drawing the export made, such as a chart, as a figure that screen readers can name. */
 function figure(svg: string, alt: string): string {
   return `<figure class="chart" role="img" aria-label="${escapeAttr(alt)}">${svg}</figure>`;
@@ -208,6 +220,7 @@ export function renderBlock(block: ExportBlock, cx: BlockContext): string {
         return playerHtml(block.recording, recording, ENGLISH_PLAYER_LABELS);
       }
       if (block.svg !== undefined) return figure(block.svg, block.alt ?? '');
+      if (block.video !== undefined) return videoHtml(block.video, cx);
       return otherHtml(block, cx);
     }
   }

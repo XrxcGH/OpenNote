@@ -6,7 +6,7 @@ import type { FlagDef, FlagId } from '../../app/flags';
 
 export type AccountsFlagId = Extract<
   FlagId,
-  `accounts.${string}` | 'page.mediaEmbeds' | 'page.liveEmbeds' | 'audio.exportVideo'
+  `accounts.${string}` | 'page.mediaEmbeds' | 'page.liveEmbeds' | 'page.localVideo' | 'audio.exportVideo'
 >;
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
@@ -34,5 +34,6 @@ export const ACCOUNTS_FLAGS: readonly FlagDef[] = [
   flag('accounts.captions', 'Transcripts from YouTube and Vimeo captions.'),
   flag('page.mediaEmbeds', 'Player blocks for YouTube, Vimeo, and podcast links, with notes stamped to the playhead.'),
   flag('page.liveEmbeds', 'Live embeds for Desmos, GeoGebra, Figma, Miro, and Lucidchart.'),
+  flag('page.localVideo', 'Play mp4 and webm video files on a page, with captions from a .vtt file.'),
   flag('audio.exportVideo', 'Export a recording as a narrated video.'),
 ];

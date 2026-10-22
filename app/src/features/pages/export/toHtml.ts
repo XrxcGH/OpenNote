@@ -72,7 +72,9 @@ export function exportHtml(page: ExportPage, options: HtmlExportOptions = {}): H
   const lang = LANGUAGE.test(page.language) ? page.language : 'en';
   const origins = (options.imageOrigins ?? []).filter((origin) => ORIGIN.test(origin));
   const images = ['data:', 'file:', "'self'", ...origins].join(' ');
-  const script = player ? `; script-src 'sha256-${sha256Base64(PLAYER_SCRIPT)}'; media-src 'self' file:` : '';
+  const hasVideo = page.blocks.some((b) => b.type === 'other' && b.video !== undefined);
+  const media = player || hasVideo ? "; media-src 'self' file: data:" : '';
+  const script = (player ? `; script-src 'sha256-${sha256Base64(PLAYER_SCRIPT)}'` : '') + media;
   const csp = `default-src 'none'; img-src ${images}; style-src 'unsafe-inline'; font-src data: file: 'self'${script}`;
   const html = [
     '<!doctype html>',

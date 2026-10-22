@@ -97,6 +97,8 @@ export interface OtherBlock extends BlockBase {
   readonly fallback?: string;
   /** For a recording block: the recording it stands for. */
   readonly recording?: string;
+  /** For a local video block: the page assets with the video and, when there are some, its captions. */
+  readonly video?: { readonly asset: string; readonly captions?: string };
   /** A drawing the export made for the block, such as a chart, as SVG text. Set by the print job, never read from a file. */
   readonly svg?: string;
   /** The accessible name of `svg`. */
@@ -155,6 +157,8 @@ export interface ExportPage {
 
 /** The type of a block that holds a recording. */
 export const RECORDING_TYPE = 'ext:org.opennote/recording';
+/** The type of a block that holds a local video file. */
+export const VIDEO_TYPE = 'ext:org.opennote/video';
 
 const str = (v: Json | undefined, fallback = ''): string => (typeof v === 'string' ? v : fallback);
 const flag = (v: Json | undefined): boolean => v === true;
@@ -227,11 +231,19 @@ function readData(type: string, data: JsonObject, fallback: Json | undefined): B
   if (type === 'table' && Array.isArray(data.columns) && Array.isArray(data.rows)) return readTable(data);
   const text = isObject(fallback) && typeof fallback.markdown === 'string' ? fallback.markdown.trim() : '';
   const recording = type === RECORDING_TYPE && typeof data.recording === 'string' ? data.recording : undefined;
+  const video =
+    type === VIDEO_TYPE && typeof data.asset === 'string'
+      ? {
+          asset: data.asset,
+          ...(typeof data.captions === 'string' && data.captions !== '' ? { captions: data.captions } : {}),
+        }
+      : undefined;
   return {
     type: 'other',
     kind: type,
     ...(text === '' ? {} : { fallback: text }),
     ...(recording ? { recording } : {}),
+    ...(video ? { video } : {}),
   };
 }
 

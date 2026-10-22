@@ -38,6 +38,7 @@ import { interop } from './interop';
 import { moreInterop } from './moreInterop';
 import { intel } from './intel';
 import { pageExtras } from './pageExtras';
+import { video } from './video';
 import { study } from './study';
 import { qolSearch } from './qolSearch';
 import { intelPlus } from './intelPlus';
@@ -90,6 +91,7 @@ export const en = {
   moreInterop,
   intel,
   pageExtras,
+  video,
   study,
   qolSearch,
   intelPlus,
