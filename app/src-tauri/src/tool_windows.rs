@@ -96,6 +96,12 @@ pub const TOOLS: &[Tool] = &[
         width: 480.0,
         height: 640.0,
     },
+    Tool {
+        id: "solvers",
+        title: "Math solvers",
+        width: 600.0,
+        height: 760.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it

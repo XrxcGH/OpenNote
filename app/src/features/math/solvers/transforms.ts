@@ -18,7 +18,6 @@ import {
   namesIn,
   niceNumber,
   numText,
-  numberText,
   read,
   show,
   substitute,
@@ -31,7 +30,6 @@ import { cabs, cx, degree, pdiv, rationalOf, roots, seriesDivide, shiftC, type C
 import { step, type Step, type XY } from './steps';
 
 const { add, mul, div, pow, num, neg, name } = build;
-void substitute;
 
 export interface TransformResult {
   readonly steps: readonly Step[];

@@ -151,7 +151,8 @@ export function findRoot(input: RootInput): RootResult {
     }
   } else {
     let [a, b] = [Math.min(input.x0, input.x1 ?? input.x0), Math.max(input.x0, input.x1 ?? input.x0)];
-    let [fa, fb] = [f(a), f(b)];
+    let fa = f(a);
+    const fb = f(b);
     steps.push(
       step(
         'rootBisection',
@@ -181,7 +182,7 @@ export function findRoot(input: RootInput): RootResult {
           break;
         }
         if (Math.sign(fm) === Math.sign(fa)) [a, fa] = [mid, fm];
-        else [b, fb] = [mid, fm];
+        else b = mid;
       }
     }
   }

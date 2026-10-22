@@ -22,6 +22,8 @@ import { SEARCH_FLAGS } from '../features/search/flags';
 import { QOL_FLAGS } from '../features/qol/flags';
 import { PROTECT_FLAGS } from '../features/protect/flags';
 import type { ProtectFlagId } from '../features/protect/flags';
+import { SOLVER_FLAGS } from '../features/math/flags';
+import type { SolverFlagId } from '../features/math/flags';
 import { createStore, useStore } from '../state/store';
 
 export type { Channel } from '../platform/bindings/Channel';
@@ -63,6 +65,7 @@ export type FlagId =
   | Phase13FlagId
   | QolFlagId
   | ProtectFlagId
+  | SolverFlagId
   /** The Connectors section of Settings (features/connectors/flags.ts). */
   | 'connectors.page'
   /** The account and media features (features/accounts/flags.ts). */
@@ -318,6 +321,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...DIAGNOSTICS_FLAGS,
   ...QOL_FLAGS,
   ...PROTECT_FLAGS,
+  ...SOLVER_FLAGS,
   ...CONNECTORS_FLAGS,
   ...ACCOUNTS_FLAGS,
 ];

@@ -3,7 +3,7 @@
 // length, or a power with units. Units come from the calculator's unit engine, with the electrical units, force,
 // frequency, and amount of substance added here; in this checker C is the coulomb and F the farad.
 import { mathConstant, type Node } from '../../../core/expr';
-import { calculatorUnits } from '../../tools/calculator/unitSystem';
+import { calculatorUnits } from '../../tools';
 import { SolverError, compile, isConstant, read } from './expr';
 import { step, type Step } from './steps';
 
