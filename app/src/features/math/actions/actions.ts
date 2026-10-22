@@ -2,7 +2,15 @@
 // tidies the expression, and gives a plain fraction when it has no letters in it. Solve finds the real values of the
 // one letter that make an equation true, by looking for where its two sides meet, and says which it found. Neither
 // pretends: what they cannot read or cannot find, they say so.
-import { evaluateExact, formatExpression, freeNames, simplify, tryParse, fractions } from '../../../core/expr';
+import {
+  evaluateExact,
+  findRoots,
+  formatExpression,
+  freeNames,
+  simplify,
+  tryParse,
+  fractions,
+} from '../../../core/expr';
 import type { Node } from '../../../core/expr';
 import { compileExpression } from '../grapher';
 import { Unsupported, latexToText, treeToLatex } from './convert';
@@ -81,60 +89,6 @@ export function simplifyLatex(latex: string): ActionResult {
   return compact(next) === compact(latex) ? { ok: false, reason: 'unchanged' } : { ok: true, latex: next };
 }
 
-const RANGE = 1000;
-const STEPS = 20_000;
-const TOLERANCE = 1e-7;
-
-/** The values of x where `f` crosses or touches zero between -RANGE and RANGE, smallest first. */
-function roots(f: (x: number) => number): number[] {
-  const found: number[] = [];
-  const add = (x: number) => {
-    if (!found.some((other) => Math.abs(other - x) < 1e-6)) found.push(x);
-  };
-  const step = (2 * RANGE) / STEPS;
-  let previousX = -RANGE;
-  let previous = f(previousX);
-  let beforePrevious = NaN;
-  for (let i = 1; i <= STEPS; i += 1) {
-    const x = -RANGE + i * step;
-    const value = f(x);
-    if (Number.isFinite(previous) && Number.isFinite(value)) {
-      if (previous === 0) add(previousX);
-      else if (previous * value < 0) {
-        let [low, high] = [previousX, x];
-        for (let k = 0; k < 80; k += 1) {
-          const mid = (low + high) / 2;
-          if (f(mid) * f(low) <= 0) high = mid;
-          else low = mid;
-        }
-        const at = (low + high) / 2;
-        // A jump across a gap in the function, such as 1/x at 0, is not a root.
-        if (Math.abs(f(at)) < 1e-6 * (1 + Math.abs(previous) + Math.abs(value))) add(at);
-      } else if (
-        Number.isFinite(beforePrevious) &&
-        Math.abs(previous) < Math.abs(beforePrevious) &&
-        Math.abs(previous) <= Math.abs(value) &&
-        Math.abs(previous) < 1e-4
-      ) {
-        // The curve touches zero without crossing, as (x - 1)^2 does.
-        let [low, high] = [previousX - step, x];
-        for (let k = 0; k < 100; k += 1) {
-          const a = low + (high - low) / 3;
-          const b = high - (high - low) / 3;
-          if (Math.abs(f(a)) < Math.abs(f(b))) high = b;
-          else low = a;
-        }
-        const at = (low + high) / 2;
-        if (Math.abs(f(at)) < TOLERANCE) add(at);
-      }
-    }
-    beforePrevious = previous;
-    previousX = x;
-    previous = value;
-  }
-  return found.sort((a, b) => a - b);
-}
-
 /** A root as LaTeX: a whole number, a small fraction, or a number to six digits. */
 function rootLatex(value: number): string {
   const rounded = Math.round(value);
@@ -157,8 +111,42 @@ export function solveLatex(latex: string): ActionResult {
   const text = sides.right ? `(${source(sides.left)})-(${source(sides.right)})` : source(sides.left);
   const compiled = compileExpression(text);
   if (!compiled.ok) return unsupported;
-  const found = roots((x) => compiled.expression.evaluate(x));
+  const found = findRoots((x) => compiled.expression.evaluate(x));
   if (found.length === 0) return { ok: false, reason: 'none' };
   const answer = found.map((value) => `${name} = ${rootLatex(value)}`).join(',\\ ');
   return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad ${answer}` };
+}
+
+/** A root as plain text: a whole number, a small fraction, or a number to six digits. */
+function rootText(value: number): string {
+  return rootLatex(value).replace(/\\frac\{(\d+)\}\{(\d+)\}/, '$1/$2');
+}
+
+/**
+ * The short answer shown beside an equation as it is written: "x = 4" for an equation in one letter, or "= 5/6" for
+ * an expression with no letters. Null when there is nothing to show, so writing never brings up noise.
+ */
+export function liveAnswer(latex: string): string | null {
+  if (latex.trim() === '' || latex.length > 2000) return null;
+  const sides = parseLatex(latex);
+  if (!sides) return null;
+  const nodes = sides.right ? [sides.left, sides.right] : [sides.left];
+  const names = letters(...nodes);
+  if (names.length === 0) {
+    if (sides.right) return null;
+    const value = constantLatex(sides.left);
+    if (value === null) return null;
+    const text = value.replace(/^(-?)\\frac\{(\d+)\}\{(\d+)\}$/, '$1$2/$3');
+    const compact = (s: string) => s.replace(/\s+/g, '');
+    return compact(text) === compact(latex) ? null : `= ${text}`;
+  }
+  if (!sides.right || names.length !== 1) return null;
+  const [name] = names;
+  const source = (node: Node) =>
+    formatExpression(node).replace(new RegExp(`(?<![A-Za-z])${name}(?![A-Za-z])`, 'g'), 'x');
+  const compiled = compileExpression(`(${source(sides.left)})-(${source(sides.right)})`);
+  if (!compiled.ok) return null;
+  const found = findRoots((x) => compiled.expression.evaluate(x), { steps: 4000, limit: 4 });
+  if (found.length === 0) return null;
+  return found.map((value) => `${name} = ${rootText(value)}`).join(', ');
 }

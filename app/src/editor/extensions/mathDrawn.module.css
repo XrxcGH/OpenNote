@@ -8,6 +8,21 @@
     color: var(--color-text-primary);
   }
 
+  /* The live answer after an equation, such as "x = 4": the color of an answer on a page line. */
+  .answer {
+    margin-inline-start: var(--space-3);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-accent-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .answer::before {
+    content: '\21D2\00A0';
+    color: var(--color-text-secondary);
+  }
+
   .invalid {
     outline: 1px dashed var(--color-status-danger);
     outline-offset: 2px;

@@ -18,3 +18,5 @@ export { forgetPageItems, setPageItems } from './ui/upcomingStores';
 export { readUpcoming, setSourceItems, sourceItems, updateUpcomingItems } from './ui/upcomingMerge';
 export { homeUpcoming } from './ui/homeUpcoming';
 export { registerToolsEditor } from './editor/register';
+export { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn, setLineAnswersOn, setLiveSolveOn } from './editor/liveMath';
+export { default as LiveMathSetting } from './ui/LiveMathSetting';

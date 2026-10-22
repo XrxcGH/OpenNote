@@ -35,8 +35,16 @@ export async function convertToMath(): Promise<void> {
   const ack = await mounted.sync.send({ edits });
   // The page shows what this window inserted at the order the service gave it.
   showInserted(mounted, edits, ack.orderKeys);
+  // The handwriting's answer, such as x = 4, when live solving is on: what was written is checked at a glance.
+  const tools = await import('../../tools');
+  const answer = tools.liveSolveOn() ? (await import('../../math')).liveAnswer(found.latex) : null;
   showToast({
-    message: found.unread > 0 ? t('intelMore.math.unread', { count: found.unread }) : t('intelMore.math.inserted'),
+    message:
+      found.unread > 0
+        ? t('intelMore.math.unread', { count: found.unread })
+        : answer
+          ? t('mathTools.live.inkSolved', { answer })
+          : t('intelMore.math.inserted'),
     action: { label: t('intelMore.math.undo'), run: () => mounted.sync.undo() },
   });
 }

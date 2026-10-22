@@ -5,7 +5,7 @@ import { commandBar, commands } from '../../../registries';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
 import { targetEditor } from '../formattingBar/target';
-import { slashItems } from '../registries';
+import { editingSettingsParts, slashItems } from '../registries';
 
 const inEditor = () => targetEditor() !== null;
 
@@ -66,4 +66,13 @@ commandBar.register({
   command: 'tools.calculator',
   flag: 'tools.windows',
   priority: 36,
+});
+
+// Settings, then Editing: answers on page lines, and solutions offered while an equation is written.
+editingSettingsParts.register({
+  id: 'math.liveMath',
+  title: 'mathTools.live.title',
+  order: 41,
+  flag: 'math.notes',
+  load: () => import('../../tools').then((tools) => ({ default: tools.LiveMathSetting })),
 });

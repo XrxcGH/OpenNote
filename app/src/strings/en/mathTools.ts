@@ -3,6 +3,19 @@
 // (ARCHITECTURE.md section 19).
 
 export const mathTools = {
+  live: {
+    title: 'Live math',
+    answersLabel: 'Show answers after the equals sign on page lines',
+    answersHelp:
+      'Write rent = 1200 on one line and rent * 12 = on the next, and the answer appears after the equals sign.',
+    solveLabel: 'Suggest solutions as I write an equation',
+    solveHelp:
+      'Write 2x + 3 = 11 and x = 4 appears in gray. Press Tab to add it on a new line. Equations also show their answer beside them.',
+    ghost: 'Press Tab to add {answer} on a new line.',
+    added: '{answer} added.',
+    answer: 'Answer: {answer}.',
+    inkSolved: 'Equation added below the page. {answer}.',
+  },
   calc: {
     tabs: {
       basic: 'Basic',

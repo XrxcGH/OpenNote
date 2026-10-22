@@ -68,6 +68,8 @@ export { columnFromLetters, lettersFromColumn, readCell, readColumn } from './re
 export { sheetDialect } from './sheet';
 export type { SheetSyntax } from './sheet';
 export { simplify } from './simplify';
+export { findRoots, tidyRoot } from './solve';
+export type { RootOptions } from './solve';
 export type { AngleMode } from './trig';
 export { rejectUnknown, splitWords } from './words';
 export type { OnUnknown } from './words';

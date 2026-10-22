@@ -3,7 +3,8 @@
 import 'katex/dist/katex.min.css';
 import { isEnabled } from '../../app/flags';
 import type { MathRenderer } from '../../editor/host';
-import { simplifyLatex, solveLatex } from './actions/actions';
+import { liveSolveOn } from '../tools';
+import { liveAnswer, simplifyLatex, solveLatex } from './actions/actions';
 import { renderLatex } from './latex/render';
 import { penMath } from './visual/pen';
 import { visualMath } from './visual/field';
@@ -11,6 +12,9 @@ import { visualMath } from './visual/field';
 export const mathRenderer: MathRenderer = {
   get actions() {
     return isEnabled('math.actions') ? { simplify: simplifyLatex, solve: solveLatex } : undefined;
+  },
+  get live() {
+    return liveSolveOn() ? liveAnswer : undefined;
   },
   get pen() {
     return isEnabled('intel.mathInk') ? penMath : undefined;

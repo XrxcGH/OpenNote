@@ -41,6 +41,7 @@ type Field = HTMLInputElement | HTMLTextAreaElement | (HTMLElement & { value: st
 class MathView implements NodeView {
   dom: HTMLElement;
   private shown: HTMLElement;
+  private answer: HTMLElement | null = null;
   private field: Field | null = null;
   private visual: VisualMathField | null = null;
   private toggle: HTMLButtonElement | null = null;
@@ -98,6 +99,7 @@ class MathView implements NodeView {
     this.dom.classList.toggle(drawn.invalid, drawing !== null && !drawing.ok);
     if (drawing && !drawing.ok) this.dom.title = drawing.message;
     else this.dom.removeAttribute('title');
+    this.showAnswer(drawing?.ok ? (this.renderer?.live?.(source) ?? null) : null);
     if (drawing?.ok) {
       this.dom.setAttribute('role', 'math');
       this.shown.className = drawn.drawn;
@@ -109,6 +111,25 @@ class MathView implements NodeView {
     this.shown.textContent = this.display ? `$$\n${source}\n$$` : `$${source}$`;
   }
 
+  /** The live answer after the drawn equation, such as "x = 4", or none. */
+  private showAnswer(answer: string | null): void {
+    if (answer === null) {
+      this.answer?.remove();
+      this.answer = null;
+      this.dom.removeAttribute('aria-description');
+      return;
+    }
+    if (!this.answer) {
+      this.answer = document.createElement('span');
+      this.answer.className = drawn.answer;
+      this.answer.setAttribute('aria-hidden', 'true');
+      this.answer.dataset.mathAnswer = '';
+      this.dom.append(this.answer);
+    }
+    this.answer.textContent = answer;
+    this.dom.setAttribute('aria-description', t('mathTools.live.answer', { answer }));
+  }
+
   /** Opens the source field. */
   open(): void {
     if (this.field || !this.editor.isEditable) return;
@@ -118,6 +139,7 @@ class MathView implements NodeView {
     // the equation are seen and can be pressed (blocks.module.css).
     this.dom.setAttribute('data-math-editing', '');
     this.shown.hidden = true;
+    if (this.answer) this.answer.hidden = true;
     this.dom.append(field);
     if (this.renderer) this.addPreview(field);
     field.focus();
@@ -350,6 +372,7 @@ class MathView implements NodeView {
     this.holder?.remove();
     this.preview = this.problem = this.holder = null;
     this.shown.hidden = false;
+    if (this.answer) this.answer.hidden = false;
     const pos = this.getPos();
     if (pos === undefined) return;
     const { state } = this.editor;

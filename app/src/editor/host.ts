@@ -96,6 +96,8 @@ export interface MathRenderer {
     simplify(latex: string): MathActionResult;
     solve(latex: string): MathActionResult;
   };
+  /** A short answer shown beside an equation, such as "x = 4", when the page offers live answers. */
+  live?(latex: string): string | null;
 }
 
 /** The settings.editing defaults, for hosts in tests and before settings load. */

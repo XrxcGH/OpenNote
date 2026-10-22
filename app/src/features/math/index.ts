@@ -7,6 +7,7 @@ export * from './latex';
 export { mathRenderer } from './mathHost';
 export { exportGraph, exportMath } from './exportRenderers';
 export { insertMath } from './insert';
+export { liveAnswer } from './actions/actions';
 export { graphRenderer } from './graph/renderer';
 export { GraphView } from './graph/GraphView';
 export { graphPicture } from './graph/picture';
