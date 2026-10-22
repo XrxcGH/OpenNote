@@ -205,6 +205,7 @@ type Phase5FlagId =
   | 'ink.hover'
   | 'ink.canvasLock'
   | 'ink.snapTools'
+  | 'ink.geometry'
   | 'ink.paperSnap'
   | 'ink.replay'
   | 'ink.shapeTools'

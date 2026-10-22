@@ -1,6 +1,7 @@
 // The snap tools in the Draw tab: the ruler, the protractor, snap to grid, and the grid's spacing. On ruled, grid, or
 // dot paper the grid switch is "Snap to paper lines": shapes snap to the lines the paper draws, and the Draw tab's own
-// grid and its spacing are for plain paper.
+// grid and its spacing are for plain paper. With the geometry tools (flag ink.geometry) the group also holds the
+// measure, the compass, and the ruler's units.
 import { useFlag } from '../../../app/flags';
 import type { CommandBarComponentProps } from '../../../registries/types';
 import { useStore } from '../../../state/store';
@@ -8,6 +9,7 @@ import { t } from '../../../strings/t';
 import { announce, openMenu } from '../../../ui';
 import { hasPaperLines, paperNow } from './paperSnap';
 import { inkPrefs, setPrefs } from './prefs';
+import { geometryTool, setRulerUnits, toggleGeometryTool } from './snapTools';
 import styles from './view.module.css';
 
 export const GRID_CHOICES_MM = [2, 5, 10, 20] as const;
@@ -17,6 +19,8 @@ export function DrawSnap({ toolProps }: CommandBarComponentProps) {
   const prefs = useStore(inkPrefs, (state) => state);
   const lattice = useStore(paperNow, (state) => state);
   const paperOn = useFlag('ink.paperSnap');
+  const geometry = useFlag('ink.geometry');
+  const chosen = useStore(geometryTool, (state) => state);
   if (!on) return null;
   const lined = paperOn && hasPaperLines(lattice);
   const toggles = [
@@ -39,6 +43,26 @@ export function DrawSnap({ toolProps }: CommandBarComponentProps) {
           setPrefs({ gridMm: mm });
           announce(t('ink.snap.gridValue', { mm }));
         },
+      })),
+    });
+  };
+
+  const unitsMenu = async (anchor: HTMLElement) => {
+    const choices = [
+      ['auto', 'ink.snap.unitsAuto'],
+      ['metric', 'ink.snap.unitsMetric'],
+      ['imperial', 'ink.snap.unitsImperial'],
+    ] as const;
+    await openMenu({
+      label: t('ink.snap.units'),
+      anchor,
+      returnFocus: anchor,
+      items: choices.map(([id, label]) => ({
+        id,
+        label: t(label),
+        kind: 'radio' as const,
+        checked: prefs.rulerUnits === id,
+        onSelect: () => setRulerUnits(id),
       })),
     });
   };
@@ -70,6 +94,33 @@ export function DrawSnap({ toolProps }: CommandBarComponentProps) {
           onClick={(event) => void sizeMenu(event.currentTarget)}
         >
           {t('ink.snap.gridSize')}
+        </button>
+      )}
+      {geometry &&
+        (['measure', 'compass'] as const).map((which) => (
+          <button
+            key={which}
+            type="button"
+            {...toolProps}
+            className={styles.tool}
+            aria-pressed={chosen === which}
+            data-ink-geometry-tool={which}
+            title={t(which === 'measure' ? 'ink.measure.help' : 'ink.compass.label')}
+            onClick={() => toggleGeometryTool(which)}
+          >
+            {t(which === 'measure' ? 'ink.measure.title' : 'ink.compass.title')}
+          </button>
+        ))}
+      {geometry && (prefs.ruler || chosen !== 'none') && (
+        <button
+          type="button"
+          {...toolProps}
+          className={styles.tool}
+          aria-haspopup="menu"
+          data-ink-units=""
+          onClick={(event) => void unitsMenu(event.currentTarget)}
+        >
+          {t('ink.snap.units')}
         </button>
       )}
     </div>

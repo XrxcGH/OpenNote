@@ -8,6 +8,7 @@ import { expectNoAxeViolations, renderUi } from '../../../test';
 import { DrawSnap } from './DrawSnap';
 import { paperNow, paperSnapNow } from './paperSnap';
 import { inkPrefs, setPrefs } from './prefs';
+import { geometryTool } from './snapTools';
 
 const toolProps = { tabIndex: -1, 'data-tool': '' } as const;
 const original = inkPrefs.get();
@@ -60,5 +61,22 @@ describe('snapping in the Draw tab', () => {
     expect(snap.getAttribute('aria-pressed')).toBe('false');
     expect(paperSnapNow(1)).toBeNull();
     await expectNoAxeViolations(document.body);
+  });
+
+  it('offers the measure, the compass, and the ruler units, one tool at a time', async () => {
+    bar();
+    const measure = screen.getByRole('button', { name: 'Measure' });
+    const compass = screen.getByRole('button', { name: 'Compass' });
+    await userEvent.click(measure);
+    expect(measure.getAttribute('aria-pressed')).toBe('true');
+    await userEvent.click(compass);
+    expect(geometryTool.get()).toBe('compass');
+    expect(measure.getAttribute('aria-pressed')).toBe('false');
+    await userEvent.click(screen.getByRole('button', { name: 'Units' }));
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Units: inches' }));
+    expect(inkPrefs.get().rulerUnits).toBe('imperial');
+    await expectNoAxeViolations(document.body);
+    setPrefs({ rulerUnits: original.rulerUnits });
+    geometryTool.set('none');
   });
 });

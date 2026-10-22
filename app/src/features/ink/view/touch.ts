@@ -12,7 +12,7 @@ import { applyHold, holdFor } from '../snap';
 import { MIN_GLIDE_SPEED, glide } from '../input/touchNav';
 import type { Hold } from '../snap';
 import type { InkHost, InkPointerTool } from './host';
-import { snapToolsNow } from './snapTools';
+import { showRulerLength, snapToolsNow } from './snapTools';
 import { activeSlot, drawState, styleOf, writesInk } from './state';
 import type { DrawTool } from './state';
 import type { InkSurface } from './surface';
@@ -66,6 +66,8 @@ export class TouchTool {
   private readonly shown = new Map<number, TouchInk>();
   /** What the snap tools hold each touch stroke to. */
   private readonly holds = new Map<number, Hold>();
+  /** Where each touch line held to the ruler began, for the ruler's length readout. */
+  private readonly rulerFrom = new Map<number, { x: number; y: number }>();
   /** Where each live contact is, for the tap and long press the filter allows. */
   private readonly at = new Map<number, { x: number; y: number }>();
   private glideFrame = 0;
@@ -280,6 +282,7 @@ export class TouchTool {
     if (type === 'up' || type === 'cancel') {
       const hold = this.holds.get(id);
       this.holds.delete(id);
+      this.rulerFrom.delete(id);
       if (tools && hold) Object.assign(out, applyHold(tools, hold, out));
       return;
     }
@@ -290,6 +293,11 @@ export class TouchTool {
       this.holds.set(id, hold);
     }
     Object.assign(out, applyHold(tools, hold, out));
+    if (hold.kind === 'ruler') {
+      const from = this.rulerFrom.get(id) ?? { x: out.x, y: out.y };
+      this.rulerFrom.set(id, from);
+      showRulerLength(from, out);
+    }
   }
 
   private builder() {

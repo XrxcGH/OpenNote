@@ -7,6 +7,7 @@ import { getSettings, settingsStore } from '../../../state/settings';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { DrawPens, DrawTools } from './DrawBar';
 import PenSettings from './PenSettings';
+import { inkPrefs } from './prefs';
 import { deletePenSet, drawState, MAX_PEN_SETS, savePenSet, setSlotTool, updateSlot } from './state';
 
 const toolProps = { tabIndex: -1, 'data-tool': '' } as const;
@@ -122,6 +123,22 @@ describe('Settings, Pen and touch', () => {
     await expect.poll(() => getSettings().ink.touch).toMatchObject({ finger: 'on', draws: true });
     await userEvent.click(within(finger).getByRole('radio', { name: 'Never' }));
     await expect.poll(() => getSettings().ink.touch).toMatchObject({ finger: 'off', draws: false });
+    await expectNoAxeViolations(document.body);
+  });
+});
+
+describe('Settings, Pen and touch, ruler units', () => {
+  it('chooses the units the ruler, the measure, and the compass show', async () => {
+    renderUi(
+      <main>
+        <PenSettings />
+      </main>,
+    );
+    const units = screen.getByRole('radiogroup', { name: 'Ruler and compass units' });
+    await userEvent.click(within(units).getByRole('radio', { name: 'Inches' }));
+    await expect.poll(() => inkPrefs.get().rulerUnits).toBe('imperial');
+    await userEvent.click(within(units).getByRole('radio', { name: 'By region' }));
+    await expect.poll(() => inkPrefs.get().rulerUnits).toBe('auto');
     await expectNoAxeViolations(document.body);
   });
 });

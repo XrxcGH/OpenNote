@@ -38,7 +38,9 @@ import type { CurveEdit } from './curves';
 import { addTextToShape } from './shapeLibrary';
 import { insertSpaceByHeight } from './space';
 import { followPaper, hasPaperLines } from './paperSnap';
-import { installSnapTools } from './snapTools';
+import { geometryTool, installSnapTools, setRulerUnits, toggleGeometryTool } from './snapTools';
+import { installMeasure, measureSelection } from './measureTool';
+import { installCompass } from './compass';
 import { inkPrefs, setPrefs } from './prefs';
 import type { InkSurface } from './surface';
 
@@ -98,6 +100,17 @@ const snapCommand = (key: 'ruler' | 'protractor' | 'gridSnap' | 'paperSnap', tit
   ...(key === 'gridSnap' ? { when: () => !hasPaperLines() } : {}),
 });
 
+/** The ruler's units, as three choices in the command list. */
+const unitsCommand = (choice: 'auto' | 'metric' | 'imperial', title: MessageKey): CommandDef => ({
+  id: `ink.geometry.units.${choice}`,
+  title,
+  keywords: 'ink.snap.unitsKeywords',
+  category: 'view',
+  flag: 'ink.geometry',
+  checked: () => inkPrefs.get().rulerUnits === choice,
+  run: () => setRulerUnits(choice),
+});
+
 export function installMore(context: MoreContext): () => void {
   const { host, surface, surfaces } = context;
   setViewContext({ host, surface });
@@ -107,6 +120,8 @@ export function installMore(context: MoreContext): () => void {
     installCanvasLock(host),
     followPaper(host),
     installSnapTools(host, surfaces),
+    installMeasure(host, surfaces),
+    installCompass(host, surfaces),
     installShapeHandles(host, surfaces),
     () => setCurveCommand(null),
     installReplay(host, surfaces),
@@ -169,6 +184,38 @@ export function installMore(context: MoreContext): () => void {
     snapCommand('protractor', 'ink.snap.protractor'),
     snapCommand('gridSnap', 'ink.snap.grid'),
     snapCommand('paperSnap', 'ink.snap.paper'),
+    {
+      id: 'ink.geometry.measure',
+      title: 'ink.measure.title',
+      keywords: 'ink.measure.keywords',
+      category: 'view',
+      keys: [chord('Ctrl+Alt+Shift+M')],
+      flag: 'ink.geometry',
+      checked: () => geometryTool.get() === 'measure',
+      run: () => toggleGeometryTool('measure'),
+    },
+    {
+      id: 'ink.geometry.compass',
+      title: 'ink.compass.title',
+      keywords: 'ink.compass.keywords',
+      category: 'insert',
+      keys: [chord('Ctrl+Alt+Shift+C')],
+      flag: 'ink.geometry',
+      checked: () => geometryTool.get() === 'compass',
+      run: () => toggleGeometryTool('compass'),
+    },
+    {
+      id: 'ink.geometry.measureSelection',
+      title: 'ink.measure.lineTitle',
+      keywords: 'ink.measure.lineKeywords',
+      category: 'view',
+      flag: 'ink.geometry',
+      enabled: () => host.selection.get().strokes.length > 0,
+      run: () => void measureSelection(host, surface()),
+    },
+    unitsCommand('auto', 'ink.snap.unitsAuto'),
+    unitsCommand('metric', 'ink.snap.unitsMetric'),
+    unitsCommand('imperial', 'ink.snap.unitsImperial'),
     {
       id: 'ink.convertToTable',
       title: 'ink.gridTable.convert',
@@ -404,6 +451,23 @@ export function installMore(context: MoreContext): () => void {
     gestureCommand('threeFingerRedo'),
   ];
   for (const def of defs) stops.push(commands.register(def));
+  // The page's own menu offers the measure and the compass, and the length of the selected line.
+  for (const [order, command] of [
+    [60, 'ink.geometry.measure'],
+    [61, 'ink.geometry.compass'],
+    [62, 'ink.geometry.measureSelection'],
+  ] as const) {
+    stops.push(
+      contextMenus.register({
+        id: `page.canvas.${command}`,
+        menu: 'page.canvas',
+        command,
+        group: 'geometry',
+        order,
+        flag: 'ink.geometry',
+      }),
+    );
+  }
   // Selected text boxes and images offer Group and Ungroup in their own menu (features/page/chrome/menu.ts).
   for (const [order, command] of [
     [900, 'ink.group'],
@@ -440,7 +504,17 @@ export function installMore(context: MoreContext): () => void {
       presentation: 'component',
       Component: DrawSnap,
       // In More, each switch the group shows: on lined paper, Snap to paper lines in place of Snap to grid.
-      overflow: ['ink.snap.ruler', 'ink.snap.protractor', 'ink.snap.paperSnap', 'ink.snap.gridSnap'],
+      overflow: [
+        'ink.snap.ruler',
+        'ink.snap.protractor',
+        'ink.snap.paperSnap',
+        'ink.snap.gridSnap',
+        'ink.geometry.measure',
+        'ink.geometry.compass',
+        'ink.geometry.units.auto',
+        'ink.geometry.units.metric',
+        'ink.geometry.units.imperial',
+      ],
       flag: 'ink.snapTools',
     }),
     commandBar.register({

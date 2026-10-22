@@ -31,7 +31,7 @@ import { snapConnector } from './shapeEdit';
 import { SpaceGesture } from './space';
 import { applyHold, holdFor, snapPoint, snapShape } from '../snap';
 import type { Hold } from '../snap';
-import { showProtractorAngle, snapToolsNow } from './snapTools';
+import { showProtractorAngle, showRulerLength, snapToolsNow } from './snapTools';
 import { clearSnapMarks, paperSnapNow, showSnapMarks } from './paperSnap';
 import type { LassoGesture } from './lasso';
 import { createStrokeHooks, setStrokeHooks } from './strokeHooks';
@@ -78,6 +78,8 @@ interface InkGesture {
   space?: SpaceGesture;
   /** What the ruler, protractor, or grid holds this stroke to, set by its first sample. */
   snapHold?: Hold;
+  /** Where a line held to the ruler began, for the ruler's length readout. */
+  snapFrom?: Vec;
   /** Alt was held during the stroke, which keeps its shape off the paper's lines. */
   alt: boolean;
   radius: number;
@@ -136,6 +138,7 @@ function snapped(g: InkGesture, surface: InkSurface, sample: RawSample): RawSamp
   g.snapHold ??= holdFor(tools, sample);
   const at = applyHold(tools, g.snapHold, sample);
   if (g.snapHold.kind === 'protractor') showProtractorAngle(g.snapHold.origin, at);
+  else if (g.snapHold.kind === 'ruler') showRulerLength((g.snapFrom ??= at), at);
   return at.x === sample.x && at.y === sample.y ? sample : { ...sample, x: at.x, y: at.y };
 }
 

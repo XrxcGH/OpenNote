@@ -1,16 +1,34 @@
 // The snap tools on the page: a ruler, a protractor, and a grid, drawn in the page's chrome layer over the ink. Touch and
 // pen both move and turn them (a drag on the body moves, a drag on the round handle turns), and the keyboard does the
 // same: arrow keys move, [ and ] turn. The pen tool asks `snapToolsNow` for what a stroke should be held to.
+// With the geometry tools on (flag ink.geometry), the ruler is a measuring ruler: it shows centimeters or inches by
+// the units setting, and reads out the length of a line drawn along it. The measure and the compass (measureTool.ts,
+// compass.ts) take the pen while one of them is chosen; `snapMark` puts their points where the snap tools say.
 import { isEnabled } from '../../../app/flags';
 import { createStore } from '../../../state/store';
 import type { Store } from '../../../state/store';
 import { t } from '../../../strings/t';
 import { announce } from '../../../ui';
-import { DEFAULT_PROTRACTOR, DEFAULT_RULER, gridSize, protractorAngle, ANGLE_STEP_DEGREES } from '../snap';
-import type { Protractor, Ruler, SnapTools } from '../snap';
+import {
+  ANGLE_STEP_DEGREES,
+  DEFAULT_PROTRACTOR,
+  DEFAULT_RULER,
+  gridSize,
+  nearRulerEdge,
+  onRulerEdge,
+  protractorAngle,
+  resolveUnits,
+  roundedLength,
+  rulerTicks,
+  snapPoint,
+  snapToGrid,
+  unitStep,
+} from '../snap';
+import type { LengthUnits, Protractor, Ruler, SnapTools } from '../snap';
+import type { Vec } from '../geometry/types';
 import type { InkHost, InkPointerTool } from './host';
-import { hasPaperLines, paperNow } from './paperSnap';
-import { inkPrefs } from './prefs';
+import { hasPaperLines, paperNow, paperSnapNow } from './paperSnap';
+import { inkPrefs, setPrefs } from './prefs';
 import type { InkSurface } from './surface';
 
 interface Geometry {
@@ -51,6 +69,112 @@ export function snapToolsNow(zoom: number): SnapTools | null {
   };
 }
 
+/** The units the ruler, the measure, and the compass show now. */
+export function rulerUnitsNow(): LengthUnits {
+  return resolveUnits(inkPrefs.get().rulerUnits, globalThis.navigator?.language ?? 'en-US');
+}
+
+/** A length in page units as the ruler reads it, such as "4.3 cm" or "1.75 in". */
+export function formatLength(pageUnits: number, units: LengthUnits = rulerUnitsNow()): string {
+  const { value, unit } = roundedLength(pageUnits, units);
+  const text = unit === 'cm' ? value.toFixed(1) : String(Number(value.toFixed(4)));
+  return t(unit === 'cm' ? 'ink.measure.cm' : 'ink.measure.in', { value: text });
+}
+
+/** True when the measuring ruler, the measure, and the compass are available. */
+export const geometryOn = (): boolean => isEnabled('ink.snapTools') && isEnabled('ink.geometry');
+
+/**
+ * A point the measure or the compass marks, put where the snap tools say: on the ruler's edge when it is near it, else
+ * on the paper's lines or the Draw tab's grid when snapping is on. Alt keeps it off the lines, as it does for shapes.
+ */
+export function snapMark(p: Vec, zoom: number, alt = false): Vec {
+  const prefs = inkPrefs.get();
+  if (isEnabled('ink.snapTools') && prefs.ruler) {
+    const ruler = snapGeometry.get().ruler;
+    const edge = nearRulerEdge(ruler, p, REACH_PX / zoom);
+    if (edge !== null) return onRulerEdge(ruler, edge, p);
+  }
+  if (alt) return p;
+  const paper = paperSnapNow(zoom);
+  if (paper) return snapPoint(paper, p).point;
+  if (isEnabled('ink.snapTools') && overlayGridOn()) return snapToGrid(p, gridSize(prefs.gridMm));
+  return p;
+}
+
+/**
+ * A compass's radius in whole spacings of the paper's lines, or of the Draw tab's grid, when snapping is on, as boxes
+ * and ellipses keep whole spacings. Alt, or no lines and no grid, leaves it as dragged.
+ */
+export function snapRadius(radius: number, zoom: number, alt = false): number {
+  if (alt) return radius;
+  const paper = paperSnapNow(zoom);
+  const step = paper
+    ? paper.lattice.step
+    : isEnabled('ink.snapTools') && overlayGridOn()
+      ? gridSize(inkPrefs.get().gridMm)
+      : 0;
+  return step > 0 ? Math.max(step, Math.round(radius / step) * step) : radius;
+}
+
+/** Which of the measure and the compass has the pen, if either. */
+export type GeometryTool = 'none' | 'measure' | 'compass';
+export const geometryTool = createStore<GeometryTool>('none', 'ink geometry tool');
+
+/** Chooses the measure or the compass, or puts it away when it is already chosen. */
+export function toggleGeometryTool(which: Exclude<GeometryTool, 'none'>): void {
+  const next = geometryTool.get() === which ? 'none' : which;
+  geometryTool.set(next);
+  const label = t(which === 'measure' ? 'ink.measure.title' : 'ink.compass.title');
+  announce(t(next === 'none' ? 'ink.snap.off' : 'ink.snap.on', { tool: label }));
+}
+
+/** Chooses the ruler's units and says so. */
+export function setRulerUnits(choice: 'auto' | LengthUnits): void {
+  setPrefs({ rulerUnits: choice });
+  const name = t(rulerUnitsNow() === 'imperial' ? 'ink.snap.unitsNameImperial' : 'ink.snap.unitsNameMetric');
+  announce(t('ink.snap.unitsChosen', { units: name }));
+}
+
+const SVG = 'http://www.w3.org/2000/svg';
+
+/** The ruler's tick marks and numbers as SVG, in page units across its length from the left end. */
+function tickMarks(doc: Document, ruler: Ruler, units: LengthUnits): SVGSVGElement {
+  const svg = doc.createElementNS(SVG, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${ruler.length} ${ruler.width}`);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.dataset.inkTicks = units;
+  Object.assign(svg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'hidden' });
+  const mm = unitStep('metric');
+  const long = { minor: 2 * mm, mid: 3.4 * mm, major: 5 * mm };
+  const ticks = rulerTicks(ruler.length, units);
+  // Both long edges carry ticks, so a line drawn along either one can be read against them.
+  let path = '';
+  for (const tick of ticks) {
+    const h = long[tick.size];
+    path += `M${tick.at} 0V${h}M${tick.at} ${ruler.width}V${ruler.width - h}`;
+  }
+  const lines = doc.createElementNS(SVG, 'path');
+  lines.setAttribute('d', path);
+  lines.setAttribute('stroke', 'currentColor');
+  lines.setAttribute('stroke-width', '1');
+  lines.setAttribute('vector-effect', 'non-scaling-stroke');
+  svg.append(lines);
+  const label = (x: number, text: string, anchor: 'middle' | 'start', size: number) => {
+    const node = doc.createElementNS(SVG, 'text');
+    node.setAttribute('x', String(x));
+    node.setAttribute('y', String(long.major + 2.8 * mm));
+    node.setAttribute('text-anchor', anchor);
+    node.setAttribute('font-size', String(size * mm));
+    node.setAttribute('fill', 'currentColor');
+    node.textContent = text;
+    svg.append(node);
+  };
+  for (const tick of ticks) if (tick.label && tick.at > 0) label(tick.at, tick.label, 'middle', 2.6);
+  label(1.2 * mm, units === 'imperial' ? 'in' : 'cm', 'start', 2.2);
+  return svg;
+}
+
 type Which = 'ruler' | 'protractor';
 
 /** A widget moved to a place on the screen, turned about it, with its own anchor point `(ax, ay)` on that place. */
@@ -62,7 +186,7 @@ interface Widget {
   readonly which: Which;
   readonly element: HTMLDivElement;
   readonly handle: HTMLButtonElement;
-  readonly readout: HTMLOutputElement | null;
+  readonly readout: HTMLOutputElement;
 }
 
 interface Drag {
@@ -107,13 +231,23 @@ function make(doc: Document, which: Which): Widget {
     touchAction: 'none',
   });
   element.append(handle);
-  let readout: HTMLOutputElement | null = null;
-  if (which === 'protractor') {
-    readout = doc.createElement('output');
-    readout.setAttribute('aria-live', 'polite');
-    Object.assign(readout.style, { position: 'absolute', left: '50%', bottom: '4px', transform: 'translateX(-50%)' });
-    element.append(readout);
-  }
+  const readout = doc.createElement('output');
+  // The protractor's angle is read out as it is set. The ruler's length changes with every sample of a line, so it is
+  // shown and not spoken; the measure tool speaks its result once.
+  readout.setAttribute('aria-live', which === 'protractor' ? 'polite' : 'off');
+  readout.dataset.inkReadout = which;
+  Object.assign(readout.style, {
+    position: 'absolute',
+    left: '50%',
+    // On the ruler, below the numbers and clear of the long ticks.
+    ...(which === 'protractor'
+      ? { bottom: '4px', transform: 'translateX(-50%)' }
+      : { top: '66%', transform: 'translate(-50%, -50%)' }),
+    color: 'var(--color-text-primary)',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
+  });
+  element.append(readout);
   return { which, element, handle, readout };
 }
 
@@ -154,8 +288,33 @@ class SnapLayer {
   }
 
   readAngle(deg: number): void {
-    if (this.protractor.readout)
-      this.protractor.readout.textContent = t('ink.snap.angle', { degrees: Math.round(deg) });
+    this.protractor.readout.textContent = t('ink.snap.angle', { degrees: Math.round(deg) });
+  }
+
+  readLength(text: string): void {
+    this.ruler.readout.textContent = text;
+  }
+
+  /** The tick marks the ruler shows now, made again only when its length or units change. */
+  private ticks: SVGSVGElement | null = null;
+  private placeTicks(ruler: Ruler, show: boolean): void {
+    if (!show) {
+      this.ticks?.remove();
+      this.ticks = null;
+      return;
+    }
+    const units = rulerUnitsNow();
+    const key = `${units}:${ruler.length}:${ruler.width}`;
+    if (this.ticks?.dataset.inkKey === key) return;
+    this.ticks?.remove();
+    this.ticks = tickMarks(this.surface.chrome.ownerDocument, ruler, units);
+    this.ticks.dataset.inkKey = key;
+    this.ruler.element.prepend(this.ticks);
+    const name = t(units === 'imperial' ? 'ink.snap.unitsNameImperial' : 'ink.snap.unitsNameMetric');
+    this.ruler.element.setAttribute(
+      'aria-label',
+      `${t('ink.snap.rulerLabel')} ${t('ink.snap.ticks', { units: name })}`,
+    );
   }
 
   place(): void {
@@ -178,15 +337,21 @@ class SnapLayer {
     const rulerEl = this.ruler.element;
     const w = ruler.length * zoom;
     const h = ruler.width * zoom;
+    const measuring = on && geometryOn();
+    this.placeTicks(ruler, measuring && prefs.ruler);
+    this.ruler.readout.style.display = measuring ? '' : 'none';
     Object.assign(rulerEl.style, {
       display: on && prefs.ruler ? '' : 'none',
       width: `${w}px`,
       height: `${h}px`,
       transform: placement(ruler.cx * zoom - scrollX, ruler.cy * zoom - scrollY, ruler.angle, w / 2, h / 2),
-      backgroundImage: [
-        'linear-gradient(90deg, currentColor 1px, transparent 1px)',
-        'linear-gradient(90deg, currentColor 1px, transparent 1px)',
-      ].join(','),
+      // The measuring ruler draws its own ticks in centimeters or inches; the plain one shows millimeters.
+      backgroundImage: measuring
+        ? 'none'
+        : [
+            'linear-gradient(90deg, currentColor 1px, transparent 1px)',
+            'linear-gradient(90deg, currentColor 1px, transparent 1px)',
+          ].join(','),
       backgroundSize: `${mm}px 7px, ${mm * 10}px 14px`,
       backgroundRepeat: 'repeat-x',
       backgroundPosition: `${w % (mm * 10)}px 0, ${w % (mm * 10)}px 0`,
@@ -220,6 +385,8 @@ class SnapLayer {
     const widget = this.widgetOf(event.currentTarget);
     if (!widget) return;
     const fast = event.shiftKey ? 10 : 1;
+    // The measuring ruler moves a millimeter or a sixteenth of an inch at a time, so it can be set against a mark.
+    const step = geometryOn() ? unitStep(rulerUnitsNow()) : MOVE_STEP;
     const arrows: Record<string, [number, number]> = {
       ArrowLeft: [-1, 0],
       ArrowRight: [1, 0],
@@ -234,13 +401,14 @@ class SnapLayer {
     const g = snapGeometry.get();
     const part = g[widget.which];
     const moved = arrow
-      ? { ...part, cx: part.cx + arrow[0] * MOVE_STEP * fast, cy: part.cy + arrow[1] * MOVE_STEP * fast }
+      ? { ...part, cx: part.cx + arrow[0] * step * fast, cy: part.cy + arrow[1] * step * fast }
       : { ...part, angle: part.angle + turn * TURN_STEP * (event.shiftKey ? ANGLE_STEP_DEGREES : 1) };
     snapGeometry.set({ ...g, [widget.which]: moved });
   };
 
   destroy(): void {
     this.stops.forEach((stop) => stop());
+    this.ticks?.remove();
     this.ruler.element.remove();
     this.protractor.element.remove();
     this.grid.remove();
@@ -252,6 +420,12 @@ let shown: SnapLayer | null = null;
 /** Shows the angle a protractor-held line makes, in the readout at the protractor's center. */
 export function showProtractorAngle(origin: { x: number; y: number }, to: { x: number; y: number }): void {
   shown?.readAngle(protractorAngle(snapGeometry.get().protractor, origin, to));
+}
+
+/** Shows the length of a line drawn along the ruler's edge, from where it began, in the ruler's readout. */
+export function showRulerLength(from: Vec, to: Vec): void {
+  if (!geometryOn()) return;
+  shown?.readLength(t('ink.measure.along', { length: formatLength(Math.hypot(to.x - from.x, to.y - from.y)) }));
 }
 
 /** The pointer tool for the widgets: it claims a press on one, then moves or turns it as the pointer goes. */
