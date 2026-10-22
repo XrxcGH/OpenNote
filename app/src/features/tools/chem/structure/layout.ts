@@ -70,6 +70,7 @@ export function findRings(molecule: Molecule): number[][] {
 const polar = (angle: number, length = 1): Point => ({ x: Math.cos(angle) * length, y: Math.sin(angle) * length });
 const TURN = Math.PI / 3;
 
+// checks-disable-next-line modifiability: one layout pass whose steps share its tables; split it when it grows again
 export function layout(molecule: Molecule): Placed {
   const n = molecule.atoms.length;
   const positions: (Point | null)[] = Array.from({ length: n }, () => null);

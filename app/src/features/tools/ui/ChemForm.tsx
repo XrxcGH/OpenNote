@@ -48,6 +48,7 @@ export interface ChemFormProps {
   intro?: string;
 }
 
+// checks-disable-next-line modifiability: one form whose parts share its state; split it when it grows again
 export function ChemForm({ name, fields, solve, intro }: ChemFormProps) {
   const [values, setValues] = useState<Values>(() => {
     const first = typeof fields === 'function' ? fields({ text: {}, unit: {} }) : fields;

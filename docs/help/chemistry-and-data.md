@@ -2,7 +2,7 @@
 
 Balance equations, solve chemistry problems with steps, draw structures, and look up steam, gas, and material properties. Everything works offline and keeps your work on this computer.
 
-Open any of these from the Insert tab (Math group), with Ctrl+Alt+Y (calculators), Ctrl+Alt+X (structure drawer) or Ctrl+Alt+U (tables), or from the command palette (Ctrl+K): "Open the chemistry calculators", "Open the chemical structure drawer", or "Open the steam, gas, and materials tables". Each opens in a small window that you can move, pin, and pop out.
+Open any of these from the Insert tab (Math group). The shortcuts are Ctrl+Alt+Y for the calculators, Ctrl+Alt+Z for the structure drawer, and Ctrl+Alt+U for the tables. You can also use the command palette (Ctrl+K) and search for the chemistry calculators, the chemical structure drawer, or the steam, gas, and materials tables. Each opens in a small window that you can move, pin, and pop out.
 
 ## Chemistry calculators
 

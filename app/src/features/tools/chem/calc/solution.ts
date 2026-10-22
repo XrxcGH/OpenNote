@@ -68,6 +68,7 @@ export interface PhResult {
 
 export type Species = 'strongAcid' | 'strongBase' | 'weakAcid' | 'weakBase';
 
+// checks-disable-next-line length: one doc line that states the formula whole
 /** pH of a solution of one acid or base. `k` is Ka for a weak acid and Kb for a weak base; `n` is the number of H+ or OH- each unit gives (strong only). */
 export function phOf(kind: Species, c: number, k = 0, n = 1): PhResult | null {
   if (!(c > 0) || ((kind === 'weakAcid' || kind === 'weakBase') && !(k > 0))) return null;

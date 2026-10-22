@@ -60,6 +60,7 @@ export function convertThrough(
     steps: [
       `Balanced: ${result.balanced.text}`,
       `Moles of ${a.text}: ${sig(grams)} g ÷ ${sig(ma)} g/mol = ${sig(molesA)} mol`,
+      // checks-disable-next-line length: one step line of worked text, built from its parts
       `Mole ratio ${b.text}:${a.text} = ${b.coefficient}:${a.coefficient}, so ${sig(molesA)} × ${b.coefficient}/${a.coefficient} = ${sig(molesB)} mol ${b.text}`,
       `Mass of ${b.text}: ${sig(molesB)} mol × ${sig(mb)} g/mol = ${sig(out)} g`,
     ],
@@ -86,6 +87,7 @@ export function limitingReagent(equation: string, given: Record<string, number>)
     const moles = given[r.text] / mass;
     const possible = moles / r.coefficient;
     steps.push(
+      // checks-disable-next-line length: one step line of worked text, built from its parts
       `${r.text}: ${sig(given[r.text])} g ÷ ${sig(mass)} g/mol = ${sig(moles)} mol; ${sig(moles)} ÷ ${r.coefficient} = ${sig(possible)} reactions possible`,
     );
     if (possible < extent) {

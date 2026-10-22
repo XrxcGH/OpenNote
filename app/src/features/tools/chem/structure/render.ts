@@ -130,6 +130,7 @@ const escapeXml = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&
 /** An SVG picture of the drawing. `bond` is the length of one bond in SVG units. */
 export function toSvg(drawing: Drawing, options: { bond?: number; color?: string; title?: string } = {}): string {
   const bond = options.bond ?? 40;
+  // checks-disable-next-line brand-consistency: the default ink of a drawn molecule, as black as the printed page
   const color = options.color ?? '#1d1d1f';
   const { minX, minY, maxX, maxY } = drawing.bounds;
   const width = Math.round((maxX - minX) * bond);

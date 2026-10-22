@@ -161,6 +161,7 @@ const idealForm: Form = {
     });
     if (!out.ok) return bad(out.reason === 'count' ? 'chem.calc.oneEmpty' : 'chem.calc.positive');
     return ok(
+      // checks-disable-next-line length: one line of result text built from its parts
       `${t(`chem.f.${{ p: 'pressure', v: 'volume', n: 'moles', t: 'temperature' }[out.unknown]}` as MessageKey)} = ${sig(out.value)} ${out.unit}`,
       out.steps,
     );

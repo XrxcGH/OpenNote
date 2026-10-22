@@ -1,6 +1,6 @@
-// 3D graphs, parametric traces, and the math tool windows (mt3-graph-3d): a 3D graph block draws a surface, turns
-// from the keyboard, and keeps the turn in its text; a parametric graph traces its curve; and the Vectors, Solids
-// of revolution, and Projectile simulator windows open from the palette and put their results into the page.
+// 3D graphs, parametric traces, and the math tool windows (mt3-graph-3d). A 3D graph block draws a surface and turns
+// from the keyboard, keeping the turn in its text. A parametric graph traces its curve. The Vectors, Solids of
+// revolution, and Projectile simulator windows open from the palette and put their results into the page.
 
 import { expect, test } from '../fixtures';
 import { newLine, openSmart, runCommand } from './smart';

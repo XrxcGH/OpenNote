@@ -1,6 +1,6 @@
-// The chemical structure window: type a SMILES line or pick a starting structure, see the skeletal formula, and put it
-// on the page as editable ink (every bond its own shape, every atom label a text box), save it as an SVG, or insert its
-// formula. Nothing leaves the device.
+// The chemical structure window. Type an SMILES line or pick a starting structure, and the skeletal formula appears.
+// Put it on the page as editable ink: every bond is its own shape and every atom label a text box. You can also save
+// it as an SVG or insert its formula. Nothing leaves the device.
 import { useMemo, useState } from 'react';
 import { t } from '../../../strings/t';
 import type { MessageKey } from '../../../strings/t';
@@ -48,6 +48,7 @@ function Preview({ drawing, label }: { drawing: Drawing; label: string }) {
   );
 }
 
+// checks-disable-next-line modifiability: one window whose parts share its state; split it when it grows again
 export function StructureTool() {
   const [smiles, setSmiles] = useState(
     () => loadStored<{ smiles?: string }>(STORE, {}).smiles ?? 'CC(=O)Oc1ccccc1C(=O)O',

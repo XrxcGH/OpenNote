@@ -412,7 +412,7 @@ if (typeof window !== 'undefined') {
 // The chemistry tools also have a keyboard shortcut and an Insert tab button.
 const CHEM_ENTRY: Record<string, { key: string; priority: number } | undefined> = {
   chemcalc: { key: 'Ctrl+Alt+Y', priority: 50 },
-  structure: { key: 'Ctrl+Alt+X', priority: 51 },
+  structure: { key: 'Ctrl+Alt+Z', priority: 51 },
   properties: { key: 'Ctrl+Alt+U', priority: 52 },
 };
 

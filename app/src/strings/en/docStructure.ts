@@ -106,6 +106,7 @@ export const docStructure = {
     noPage: 'Open a page with a graph or diagram first.',
     none: 'This page has no graph or diagram to export.',
     source: 'Figure',
+    // checks-disable-next-line ui-voice: two placeholders side by side
     sourceChoice: '{kind} {number}: {preview}',
     kindGraph: 'Graph',
     kindDiagram: 'Diagram',

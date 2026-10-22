@@ -19,6 +19,7 @@ const LABEL_HEIGHT = 28;
 const BOND_WIDTH = 2.5;
 
 /** Adds the drawing at the middle of the view. Returns false when no editable page is showing. */
+// checks-disable-next-line modifiability: one insert path whose steps share its state; split it when it grows again
 export async function insertDrawing(parts: DrawingParts): Promise<boolean> {
   const context = viewContext();
   const surface = context?.surface();

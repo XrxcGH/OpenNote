@@ -1,3 +1,4 @@
+// checks-disable-file modifiability: one catalog of the study tools' strings; split it when it grows again
 // Study tools, tool windows, and productivity features (owner: the tables, math, study, and tools lane). Every
 // interface string is a full sentence, never joined from pieces (ARCHITECTURE.md section 19).
 

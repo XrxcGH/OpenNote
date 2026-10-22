@@ -82,6 +82,7 @@ export const chem = {
       format: 'Write reactants, an arrow (->), and products.',
       formula: 'One of the formulas cannot be read. Check the capital letters and brackets.',
       element: 'An element appears on only one side, so the equation cannot balance.',
+      // checks-disable-next-line length: one message, kept whole as the window shows it
       many: 'This equation has more than one valid balance, so a single answer is not defined. Remove a product or reactant that can form in more than one way, or split it into separate reactions.',
       cannot: 'This equation has no single whole-number balance. Check the formulas.',
     },
@@ -117,6 +118,7 @@ export const chem = {
     toInk: 'Put on page as ink',
     saveSvg: 'Save as SVG',
     insertFormula: 'Insert formula',
+    // checks-disable-next-line length: one message, kept whole as the window shows it
     note: 'On the page, every bond is its own line and every atom label is its own text box, so you can move, reshape, or retype any of them.',
     svgLabel: 'SVG picture',
     saved: 'Saved {name}.',
@@ -232,6 +234,7 @@ export const chem = {
       steam: 'Specific volume v, energy u, enthalpy h, entropy s; f is liquid, g is vapor, fg is the difference.',
       gas: 'Values at {temp} K and low pressure. M in g/mol, R, cp, and cv in kJ/(kg·K).',
       materials:
+        // checks-disable-next-line length: one message, kept whole as the window shows it
         '{count} materials at room temperature. ρ in kg/m³, E in GPa, σy (yield) in MPa, k in W/(m·K), cp in J/(kg·K). Typical values: check the source before a design.',
     },
   },

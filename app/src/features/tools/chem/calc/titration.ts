@@ -21,6 +21,7 @@ export interface Titration {
 export const equivalenceVolume = (t: Titration, ratio = 1) =>
   (t.concentration * t.volume * ratio) / t.titrantConcentration;
 
+// checks-disable-next-line length: one doc line that states the formula whole
 /** Unknown analyte concentration from the titrant used: Ca = Ct·Vt ÷ (Va × ratio), where ratio is analyte moles per titrant mole inverted. */
 export function unknownConcentration(titrantC: number, titrantV: number, analyteV: number, molesTitrantPerAnalyte = 1) {
   const c = (titrantC * titrantV) / (analyteV * molesTitrantPerAnalyte);

@@ -1,11 +1,11 @@
-// Reads SMILES text (the organic subset, brackets, branches, rings, double and triple bonds, aromatic atoms) into a
+// Reads SMILES text (the organic subset, brackets, branches, rings, double, and triple bonds, aromatic atoms) into a
 // molecule graph with implicit hydrogens counted. Aromatic rings are given alternating double bonds (Kekule form) so
 // they can be drawn as a ring with inner lines.
 
 export interface Atom {
   index: number;
   symbol: string;
-  /** Hydrogens attached, implicit or written in brackets. */
+  /** Hydrogens attached, implicit, or written in brackets. */
   hydrogens: number;
   charge: number;
   aromatic: boolean;
@@ -42,6 +42,7 @@ const AROMATIC = new Set(['b', 'c', 'n', 'o', 'p', 's']);
 
 export type ParseResult = { ok: true; molecule: Molecule } | { ok: false; reason: string; at: number };
 
+// checks-disable-next-line modifiability: one parser whose cases share its state; split it when it grows again
 export function parseSmiles(text: string): ParseResult {
   const atoms: Atom[] = [];
   const bonds: Bond[] = [];
