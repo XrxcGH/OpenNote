@@ -41,6 +41,16 @@ Choose Edit choices to add a choice, rename it, give it another color, move it u
 
 Sort orders rows by the order of the choices. Under Filter, Show only a choice shows just those rows. A board puts one lane on the screen for each choice. A formula reads a choice as its text, so `[Status] = "Done"` works. Export writes the names, and an Excel file gets a drop-down list for a column that picks one.
 
+## Analyze: statistics, regression, and matrices
+
+Select some cells, or just click in a table to use all of it, then open the Data menu and choose Analyze. Or press Ctrl+K and type "Table:". The answer is added as a new table below, so your data is never changed. Rows hidden by a filter are left out.
+
+- **Statistics** gives count, sum, mean, median, mode, standard deviation and variance (sample and population), minimum, maximum, and the quartiles for each column. Histogram adds a table of bins with a bar chart. Box plot summary lists the five numbers, the whiskers, and any outliers.
+- **Regression** fits two selected columns, x then y (one column uses 1, 2, 3 for x). Choose a linear, quadratic, cubic, any polynomial up to degree 6, or exponential fit. You get the equation, r², and a table of the points and the fitted values with a scatter chart.
+- **Matrix** treats the selected numbers as a matrix. Choose determinant, inverse, transpose, multiply by another range (type it, such as D1:E2), row reduce with steps, rank, eigenvalues, or Solve Ax = b. For Solve, select the coefficients with the answers in the last column. Eigenvalues are listed when real, for matrices up to 8 by 8.
+
+A number can have a unit, such as 12.5 kg. When all the numbers in a column share a unit, the statistics keep it. If they differ, nothing is added and you are told why.
+
 ## Saved views
 
 In the Data menu under a table, choose Saved views, then Save filters and sort as a view. Pick a view later to see the same rows in the same order. Each table keeps its own views.

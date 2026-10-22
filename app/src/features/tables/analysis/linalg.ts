@@ -128,10 +128,7 @@ export function reduce(m: Matrix): Reduction {
 
 export const rankOf = (m: Matrix): number => reduce(m).pivots.length;
 
-export type Solution =
-  | { kind: 'unique'; x: number[] }
-  | { kind: 'none' }
-  | { kind: 'infinite'; rank: number };
+export type Solution = { kind: 'unique'; x: number[] } | { kind: 'none' } | { kind: 'infinite'; rank: number };
 
 /** Solves A x = b for the augmented matrix [A | b]. */
 export function solveSystem(augmented: Matrix): Solution {

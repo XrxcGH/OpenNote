@@ -17,6 +17,8 @@ import {
   savedViewsOf,
   updateView,
 } from './savedViews';
+import type { AnalysisTool } from '../analysis/run';
+import { runAnalysis } from '../analysis/run';
 import type { ColumnSmart } from './data';
 import type { SmartInstance } from './ops';
 
@@ -233,6 +235,64 @@ function totalItem({ inst, column, own }: Ctx): MenuItemSpec {
   };
 }
 
+export const ANALYSIS_GROUPS: readonly {
+  id: string;
+  label: Parameters<typeof t>[0];
+  tools: readonly { tool: AnalysisTool; label: Parameters<typeof t>[0] }[];
+}[] = [
+  {
+    id: 'stats',
+    label: 'tableMath.stats.menu',
+    tools: [
+      { tool: 'summary', label: 'tableMath.stats.summary' },
+      { tool: 'histogram', label: 'tableMath.stats.histogram' },
+      { tool: 'boxPlot', label: 'tableMath.stats.boxPlot' },
+    ],
+  },
+  {
+    id: 'fit',
+    label: 'tableMath.fit.menu',
+    tools: [
+      { tool: 'linear', label: 'tableMath.fit.linear' },
+      { tool: 'quadratic', label: 'tableMath.fit.quadratic' },
+      { tool: 'cubic', label: 'tableMath.fit.cubic' },
+      { tool: 'polynomial', label: 'tableMath.fit.polynomial' },
+      { tool: 'exponential', label: 'tableMath.fit.exponential' },
+    ],
+  },
+  {
+    id: 'matrix',
+    label: 'tableMath.matrix.menu',
+    tools: [
+      { tool: 'determinant', label: 'tableMath.matrix.determinant' },
+      { tool: 'inverse', label: 'tableMath.matrix.inverse' },
+      { tool: 'transpose', label: 'tableMath.matrix.transpose' },
+      { tool: 'multiply', label: 'tableMath.matrix.multiply' },
+      { tool: 'rref', label: 'tableMath.matrix.rref' },
+      { tool: 'rank', label: 'tableMath.matrix.rank' },
+      { tool: 'eigenvalues', label: 'tableMath.matrix.eigenvalues' },
+      { tool: 'solve', label: 'tableMath.matrix.solve' },
+    ],
+  },
+];
+
+function analyzeItem({ inst }: Ctx): MenuItemSpec {
+  return {
+    id: 'analyze',
+    label: t('tableMath.menu'),
+    separatorBefore: true,
+    submenu: ANALYSIS_GROUPS.map((group): MenuItemSpec => ({
+      id: `analyze-${group.id}`,
+      label: t(group.label),
+      submenu: group.tools.map(({ tool, label }): MenuItemSpec => ({
+        id: `analyze-${tool}`,
+        label: t(label),
+        onSelect: run(() => runAnalysis(inst, tool)),
+      })),
+    })),
+  };
+}
+
 export function dataMenu(inst: SmartInstance): MenuItemSpec[] {
   const model = inst.model();
   const caret = inst.caret();
@@ -300,6 +360,7 @@ export function dataMenu(inst: SmartInstance): MenuItemSpec[] {
         onSelect: run(() => addChart(inst, kind)),
       })),
     },
+    ...(isEnabled('tables.analysis') ? [analyzeItem(ctx)] : []),
   ];
 }
 

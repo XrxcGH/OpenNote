@@ -326,6 +326,7 @@ class TableView implements InnerView {
       patch: (data) => this.ctx.sync.send({ edits: [{ edit: 'patchBlock', block, data }] }),
       announce: (text) => this.ctx.host.announce(text),
       flag: (id) => this.ctx.host.flag(id),
+      insertTable: async (data) => (await import('../tables/insert')).insertTable(data as unknown as TableData),
     };
     for (const def of tableExtras.list()) {
       if (def.flag && !this.ctx.host.flag(def.flag)) continue;

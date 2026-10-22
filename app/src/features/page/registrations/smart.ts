@@ -168,12 +168,12 @@ interface TableSpec {
   id: `table.${string}` | `insert.${string}`;
   title: MessageKey;
   icon: IconName;
-  flag?: 'tables.smart' | 'tables.charts' | 'tables.savedViews' | 'tables.choice';
+  flag?: 'tables.smart' | 'tables.charts' | 'tables.savedViews' | 'tables.choice' | 'tables.analysis';
   keys?: readonly string[];
   command: import('../../tables').SmartCommand;
 }
 
-const TABLE_COMMANDS: readonly TableSpec[] = [
+const TABLE_COMMANDS: TableSpec[] = [
   {
     id: 'table.sortAscending',
     title: 'smart.table.sortAscending',
@@ -309,12 +309,45 @@ const TABLE_COMMANDS: readonly TableSpec[] = [
   })),
 ];
 
+const ANALYSIS_COMMANDS = [
+  'summary',
+  'histogram',
+  'boxPlot',
+  'linear',
+  'quadratic',
+  'cubic',
+  'polynomial',
+  'exponential',
+  'determinant',
+  'inverse',
+  'transpose',
+  'multiply',
+  'rref',
+  'rank',
+  'eigenvalues',
+  'solve',
+] as const;
+
+for (const tool of ANALYSIS_COMMANDS) {
+  TABLE_COMMANDS.push({
+    id: `table.analyze${tool[0].toUpperCase()}${tool.slice(1)}`,
+    title: `tableMath.commands.${tool}`,
+    icon: tool === 'summary' || tool === 'histogram' || tool === 'boxPlot' ? 'ChartBar' : 'Sigma',
+    flag: 'tables.analysis',
+    command: { run: 'analyze', tool },
+  });
+}
+
 for (const spec of TABLE_COMMANDS) {
   const inTable = spec.id.startsWith('table.');
   commands.register({
     id: spec.id,
     title: spec.title,
-    keywords: spec.id.startsWith('insert.') ? 'smart.chart.insertKeywords' : 'smart.table.keywords',
+    keywords: spec.id.startsWith('insert.')
+      ? 'smart.chart.insertKeywords'
+      : spec.id.startsWith('table.analyze')
+        ? 'tableMath.keywords'
+        : 'smart.table.keywords',
     category: inTable ? 'table' : 'insert',
     icon: spec.icon,
     flag: spec.flag ?? 'tables.smart',

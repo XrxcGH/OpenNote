@@ -28,6 +28,8 @@ export interface TableExtraHost {
   patch(data: Record<string, unknown>): Promise<unknown>;
   announce(text: string): void;
   flag(id: FlagId): boolean;
+  /** Adds a new table block after the one with focus, with `data` as its block data. Returns false when it cannot. */
+  insertTable(data: Record<string, unknown>): Promise<boolean>;
 }
 
 export interface TableExtraHandle {

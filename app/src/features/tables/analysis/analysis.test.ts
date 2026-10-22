@@ -84,7 +84,10 @@ describe('regression', () => {
 
   it('fits an exponential and refuses non-positive y', () => {
     const xs = [0, 1, 2, 3];
-    const fit = exponentialFit(xs, xs.map((x) => 2 * Math.exp(0.5 * x)))!;
+    const fit = exponentialFit(
+      xs,
+      xs.map((x) => 2 * Math.exp(0.5 * x)),
+    )!;
     close(fit.coefficients[0], 2);
     close(fit.coefficients[1], 0.5);
     close(fit.r2, 1);
@@ -120,8 +123,20 @@ describe('matrices', () => {
       [0, 1],
     ]);
     expect(multiply([[1, 2]], [[1, 2]])).toBeNull();
-    expect(inverse([[1, 2], [2, 4]])).toBeNull();
-    close(determinant([[1, 2, 3], [4, 5, 6], [7, 8, 10]]), -3);
+    expect(
+      inverse([
+        [1, 2],
+        [2, 4],
+      ]),
+    ).toBeNull();
+    close(
+      determinant([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 10],
+      ]),
+      -3,
+    );
   });
 
   it('row reduces with steps and finds the rank', () => {
@@ -138,7 +153,12 @@ describe('matrices', () => {
     expect(pivots).toEqual([0, 1]);
     expect(steps.length).toBeGreaterThan(2);
     expect(steps[steps.length - 1].matrix).toEqual(result);
-    expect(rankOf([[1, 2], [2, 4]])).toBe(1);
+    expect(
+      rankOf([
+        [1, 2],
+        [2, 4],
+      ]),
+    ).toBe(1);
   });
 
   it('solves systems of every kind', () => {
@@ -151,19 +171,42 @@ describe('matrices', () => {
       close(unique.x[0], 2);
       close(unique.x[1], 1);
     }
-    expect(solveSystem([[1, 1, 2], [1, 1, 3]]).kind).toBe('none');
-    expect(solveSystem([[1, 1, 2], [2, 2, 4]]).kind).toBe('infinite');
+    expect(
+      solveSystem([
+        [1, 1, 2],
+        [1, 1, 3],
+      ]).kind,
+    ).toBe('none');
+    expect(
+      solveSystem([
+        [1, 1, 2],
+        [2, 2, 4],
+      ]).kind,
+    ).toBe('infinite');
   });
 
   it('finds real eigenvalues and counts complex ones', () => {
-    const real = eigenvalues([[2, 0], [0, 3]]);
+    const real = eigenvalues([
+      [2, 0],
+      [0, 3],
+    ]);
     expect(real.real.map((v) => Math.round(v * 1e6) / 1e6)).toEqual([2, 3]);
-    const twice = eigenvalues([[2, 1], [0, 2]]);
+    const twice = eigenvalues([
+      [2, 1],
+      [0, 2],
+    ]);
     expect(twice.real.length).toBe(2);
     close(twice.real[0], 2, 5);
-    const rotation = eigenvalues([[0, -1], [1, 0]]);
+    const rotation = eigenvalues([
+      [0, -1],
+      [1, 0],
+    ]);
     expect(rotation).toEqual({ real: [], complex: 2 });
-    const three = eigenvalues([[2, -1, 0], [-1, 2, -1], [0, -1, 2]]);
+    const three = eigenvalues([
+      [2, -1, 0],
+      [-1, 2, -1],
+      [0, -1, 2],
+    ]);
     close(three.real[0], 2 - Math.SQRT2, 6);
     close(three.real[2], 2 + Math.SQRT2, 6);
   });
