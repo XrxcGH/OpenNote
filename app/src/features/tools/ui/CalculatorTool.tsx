@@ -7,11 +7,14 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { t } from '../../../strings/t';
 import { Button, announce } from '../../../ui';
-import type { CalcSession } from '../calculator';
+import type { AnswerFormat, CalcSession } from '../calculator';
 import {
   clearHistory,
   convertText,
+  formatAnswer,
   formatNumber,
+  leastSigFigs,
+  restoreAnswerFormat,
   memoryClear,
   memoryStore,
   newSession,
@@ -69,6 +72,63 @@ export function negate(entry: string): string {
 interface Answer {
   text: string;
   note?: string;
+  /** The number and what was typed, so a change of notation rewrites the answer. */
+  value?: number;
+  expression?: string;
+}
+
+const FORMAT_STORE = 'calculator.format';
+const FIGURES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15];
+
+interface FormatBarProps {
+  format: AnswerFormat;
+  typed: string;
+  onChange(next: AnswerFormat): void;
+}
+
+/** How answers are written: normal, scientific, or engineering notation, and how many significant figures. */
+function AnswerFormatBar({ format, typed, onChange }: FormatBarProps) {
+  if (!isEnabled('math.steps')) return null;
+  const least = leastSigFigs(typed);
+  return (
+    <div className={own.options}>
+      <label className={styles.field}>
+        <span>{t('mathTools.format.notation')}</span>
+        <select
+          value={format.notation}
+          onChange={(event) => onChange({ ...format, notation: event.target.value as AnswerFormat['notation'] })}
+        >
+          <option value="auto">{t('mathTools.format.normal')}</option>
+          <option value="scientific">{t('mathTools.format.scientific')}</option>
+          <option value="engineering">{t('mathTools.format.engineering')}</option>
+        </select>
+      </label>
+      <label className={styles.field}>
+        <span>{t('mathTools.format.figures')}</span>
+        <select
+          value={String(format.figures)}
+          aria-describedby={least === null ? undefined : 'calc-figures-typed'}
+          onChange={(event) => {
+            const value = event.target.value;
+            onChange({ ...format, figures: value === 'auto' || value === 'match' ? value : Number(value) });
+          }}
+        >
+          <option value="auto">{t('mathTools.format.auto')}</option>
+          <option value="match">{t('mathTools.format.match')}</option>
+          {FIGURES.map((count) => (
+            <option key={count} value={count}>
+              {t('mathTools.format.count', { count })}
+            </option>
+          ))}
+        </select>
+      </label>
+      {least === null ? null : (
+        <p id="calc-figures-typed" className={styles.note}>
+          {t('mathTools.format.typed', { count: least })}
+        </p>
+      )}
+    </div>
+  );
 }
 
 type Mode = CalculatorMode;
@@ -225,6 +285,7 @@ function Scientific({ basic = false }: { basic?: boolean }) {
   const [session, setSession] = useState<CalcSession>(() => restoreSession(loadStored(STORE, null)));
   const [input, setInput] = useState('');
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const [format, setFormat] = useState<AnswerFormat>(() => restoreAnswerFormat(loadStored(FORMAT_STORE, null)));
   const [problem, setProblem] = useState('');
   const field = useRef<HTMLInputElement>(null);
   useEffect(() => watchStored(STORE, () => setSession(restoreSession(loadStored(STORE, null)))), []);
@@ -250,7 +311,11 @@ function Scientific({ basic = false }: { basic?: boolean }) {
     const done = submit(session, source.replace(/−/g, '-'));
     if (done.result.ok) {
       keep(done.session);
-      setAnswer({ text: formatNumber(done.result.value) });
+      setAnswer({
+        text: basic ? formatNumber(done.result.value) : formatAnswer(done.result.value, source, format),
+        value: done.result.value,
+        expression: source,
+      });
       setProblem('');
       setInput('');
     } else setProblem(t(`smart.tools.calculator.errors.${done.result.error.code}`));
@@ -330,6 +395,16 @@ function Scientific({ basic = false }: { basic?: boolean }) {
         />
       ) : (
         <>
+          <AnswerFormatBar
+            format={format}
+            typed={answer?.expression ?? input}
+            onChange={(next) => {
+              setFormat(next);
+              saveStored(FORMAT_STORE, next);
+              if (answer?.value !== undefined && answer.expression !== undefined)
+                setAnswer({ ...answer, text: formatAnswer(answer.value, answer.expression, next) });
+            }}
+          />
           <Keypad onKey={type} />
           <MemoryBar session={session} onChange={keep} onRecall={() => type('m1')} />
         </>

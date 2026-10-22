@@ -89,3 +89,20 @@ test('an equation in x and y opens a 3D graph from Alt+Shift+G', async ({ page }
   await page.keyboard.press('Escape');
   await expect(popup).toHaveCount(0);
 });
+
+test('the equation panel shows the steps of a derivative and solves a system', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await page.keyboard.press('Alt+=');
+  const field = page.getByRole('textbox', { name: 'Math source' });
+  await expect(field).toBeFocused();
+  await page.keyboard.insertText('x^3 + 2x');
+  await page.getByRole('button', { name: 'Steps' }).click();
+  const steps = page.locator('[data-math-steps]');
+  await expect(steps).toContainText('Steps for the derivative');
+  await expect(steps).toContainText('Power rule');
+  await expect(steps.locator('li')).toHaveCount(5);
+  await field.fill(String.raw`x + y = 3 \\ x - y = 1`);
+  await page.getByRole('button', { name: 'Solve' }).click();
+  await expect(field).toHaveValue(/x = 2,\\ y = 1$/);
+});

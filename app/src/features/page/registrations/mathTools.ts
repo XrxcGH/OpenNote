@@ -112,6 +112,21 @@ commands.register({
   when: inkSelected,
   run: async () => (await import('../intel/mathInk')).graphHandwriting(),
 });
+commands.register({
+  id: 'math.steps',
+  title: 'mathTools.steps.command',
+  keywords: 'mathTools.steps.keywords',
+  category: 'insert',
+  icon: 'ListNumbers',
+  flag: 'math.steps',
+  when: inEditor,
+  run: async () => {
+    const editor = targetEditor();
+    if (!editor) return;
+    const { runMathAction } = await import('../../../editor/extensions/math');
+    if (!runMathAction(editor, 'steps')) announce(t('mathTools.steps.noEquation'));
+  },
+});
 commandBar.register({
   id: 'math.graph',
   tab: 'insert',

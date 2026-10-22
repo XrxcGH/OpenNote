@@ -23,6 +23,31 @@
     color: var(--color-text-secondary);
   }
 
+  /* The steps of a derivative or an integral, under the equation panel's buttons. */
+  .steps {
+    flex-basis: 100%;
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+  }
+
+  .steps h4 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .steps ol {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding-inline-start: var(--space-5);
+  }
+
+  .stepRule {
+    display: block;
+    color: var(--color-text-secondary);
+  }
+
   /* The Graph button beside a selected equation. */
   .graphButton {
     display: inline-block;

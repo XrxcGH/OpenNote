@@ -6,6 +6,9 @@ import type { MathRenderer } from '../../editor/host';
 import { liveSolveOn } from '../tools';
 import { graphOfLatex, liveAnswer, simplifyLatex, solveLatex } from './actions/actions';
 import { openGraphPopup } from './graph/GraphPopup';
+import { stepsLatex } from './actions/steps';
+import { t } from '../../strings/t';
+import type { MathStepsView } from '../../editor/host';
 import { renderLatex } from './latex/render';
 import { penMath } from './visual/pen';
 import { visualMath } from './visual/field';
@@ -27,6 +30,19 @@ export const mathRenderer: MathRenderer = {
         const found = of(latex);
         if (found) openGraphPopup({ source: found.source, anchor, insert, equation: latex });
       },
+    };
+  },
+  get steps() {
+    if (!isEnabled('math.steps')) return undefined;
+    return (latex: string): MathStepsView => {
+      const found = stepsLatex(latex);
+      if (!found.ok) return { ok: false, message: t(`mathTools.steps.reasons.${found.reason}`) };
+      return {
+        ok: true,
+        title: t(found.kind === 'integral' ? 'mathTools.steps.integralTitle' : 'mathTools.steps.derivativeTitle'),
+        steps: found.steps.map((step) => ({ rule: t(`mathTools.steps.rules.${step.rule}`), latex: step.latex })),
+        result: found.result,
+      };
     };
   },
   get live() {

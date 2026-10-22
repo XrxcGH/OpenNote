@@ -40,12 +40,14 @@ function rememberMode(visual: boolean): void {
 type Field = HTMLInputElement | HTMLTextAreaElement | (HTMLElement & { value: string });
 
 /** What a command can do to an equation: Simplify, Solve, or open its graph. */
-export type MathActionKind = 'simplify' | 'solve' | 'graph';
+export type MathActionKind = 'simplify' | 'solve' | 'graph' | 'steps';
 
 class MathView implements NodeView {
   dom: HTMLElement;
   private shown: HTMLElement;
   private answer: HTMLElement | null = null;
+  /** The steps under the field, while they are shown. */
+  private stepsList: HTMLElement | null = null;
   /** The Graph button over a selected equation. */
   private graphButton: HTMLButtonElement | null = null;
   private field: Field | null = null;
@@ -143,6 +145,49 @@ class MathView implements NodeView {
     }
     this.answer.textContent = answer;
     this.dom.setAttribute('aria-description', t('mathTools.live.answer', { answer }));
+  }
+
+  /** Shows or hides the steps for what is in the field, under the panel's buttons. */
+  private toggleSteps(button?: HTMLButtonElement): boolean {
+    const steps = this.renderer?.steps;
+    const holder = this.holder;
+    const field = this.field;
+    if (!steps || !holder || !field) return false;
+    if (this.stepsList) {
+      this.stepsList.remove();
+      this.stepsList = null;
+      button?.setAttribute('aria-expanded', 'false');
+      return true;
+    }
+    const view = steps(this.visual ? this.visual.value : field.value);
+    const list = document.createElement('section');
+    list.className = drawn.steps;
+    list.dataset.mathSteps = '';
+    list.setAttribute('aria-live', 'polite');
+    if (!view.ok) {
+      list.textContent = view.message;
+    } else {
+      const heading = document.createElement('h4');
+      heading.textContent = view.title;
+      const items = document.createElement('ol');
+      for (const step of view.steps) {
+        const item = document.createElement('li');
+        const rule = document.createElement('span');
+        rule.className = drawn.stepRule;
+        rule.textContent = step.rule;
+        const math = document.createElement('span');
+        const drawing = this.draw(step.latex);
+        if (drawing?.ok) math.innerHTML = drawing.html;
+        else math.textContent = step.latex;
+        item.append(rule, math);
+        items.append(item);
+      }
+      list.append(heading, items);
+    }
+    holder.append(list);
+    this.stepsList = list;
+    button?.setAttribute('aria-expanded', 'true');
+    return true;
   }
 
   /** The equation is selected: it offers its graph, when it has one. */
@@ -359,6 +404,17 @@ class MathView implements NodeView {
       }
       holder.append(bar);
     }
+    if (this.renderer?.steps) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = drawn.toggle;
+      button.textContent = t('mathTools.steps.button');
+      button.setAttribute('aria-expanded', 'false');
+      // A press must not take focus from the field, or the field would close and save.
+      button.addEventListener('mousedown', (event) => event.preventDefault());
+      button.addEventListener('click', () => this.toggleSteps(button));
+      holder.append(button);
+    }
     const graph = this.renderer?.graph;
     if (graph) {
       const button = document.createElement('button');
@@ -400,6 +456,8 @@ class MathView implements NodeView {
   runAction(kind: MathActionKind): boolean {
     if (kind === 'graph') return this.openGraph();
     this.open();
+    if (kind === 'steps')
+      return this.toggleSteps(this.holder?.querySelector<HTMLButtonElement>('[aria-expanded]') ?? undefined);
     const actions = this.renderer?.actions;
     if (!this.field || !actions) return false;
     this.act(actions[kind]);
@@ -447,6 +505,7 @@ class MathView implements NodeView {
     field.remove();
     this.holder?.remove();
     this.preview = this.problem = this.holder = null;
+    this.stepsList = null;
     this.shown.hidden = false;
     if (this.answer) this.answer.hidden = false;
     const pos = this.getPos();

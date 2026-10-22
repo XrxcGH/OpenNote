@@ -207,6 +207,17 @@ describe('the calculator', () => {
     expect(screen.getAllByRole('listitem').length).toBe(2);
   });
 
+  it('writes the answer in scientific notation to the fewest significant figures typed', async () => {
+    renderUi(<CalculatorTool />);
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Notation' }), 'scientific');
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Significant figures' }), 'match');
+    await userEvent.fill(screen.getByRole('textbox', { name: 'Expression' }), '2.50 * 3100.');
+    await userEvent.keyboard('{Enter}');
+    expect(document.getElementById('calc-result')!.textContent).toMatch(/^= 7\.75.*3$/);
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Notation' }), 'auto');
+    expect(document.getElementById('calc-result')!.textContent).toBe('= 7750');
+  });
+
   for (const mode of ['basic', 'scientific', 'graphing', 'graphing3d', 'programmer', 'statistics', 'matrix']) {
     it(`opens popped out on the ${mode} mode it was left on, with no axe violations`, async () => {
       localStorage.setItem('opennote.tools.calculator.tab', JSON.stringify(mode));

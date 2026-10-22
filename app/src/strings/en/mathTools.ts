@@ -3,6 +3,50 @@
 // (ARCHITECTURE.md section 19).
 
 export const mathTools = {
+  steps: {
+    button: 'Steps',
+    command: 'Show steps for the equation',
+    keywords: 'steps derivative integral differentiate integrate working calculus show how',
+    derivativeTitle: 'Steps for the derivative',
+    integralTitle: 'Steps for the integral',
+    noEquation: 'Edit an equation first, then use this.',
+    reasons: {
+      unsupported: 'This uses math the steps cannot read yet.',
+      letters: 'Steps need an expression in one letter, such as x.',
+      notInTable: 'This integral is not in the table of rules. Give it limits to work out its value.',
+    },
+    rules: {
+      constant: 'Constant rule: a constant has no rate of change.',
+      variable: 'The derivative of the variable itself is 1.',
+      sum: 'Sum rule: work out each term on its own.',
+      constantMultiple: 'Constant multiple rule: keep the constant and work out the rest.',
+      product:
+        'Product rule: the first times the derivative of the second, plus the second times the derivative of the first.',
+      quotient:
+        'Quotient rule: the bottom times the derivative of the top, minus the top times the derivative of the bottom, over the bottom squared.',
+      power: 'Power rule: bring the power down and lower it by one (for integrals, raise it by one and divide).',
+      chain: 'Chain rule: the derivative of the outside, times the derivative of the inside.',
+      exponential: 'Exponential rule: a constant to a power of x.',
+      function: 'A function from the table of derivatives and integrals.',
+      logarithm: 'Logarithm rule: the derivative of ln u is the derivative of u over u.',
+      reciprocal: 'The integral of 1 over x is the natural log of the absolute value of x.',
+      linear: 'Linear inside: divide by the slope of the inside.',
+      evaluate: 'Evaluate the antiderivative at the upper limit, and subtract its value at the lower limit.',
+      numeric: "Not in the table of rules, so the value is worked out numerically with Simpson's rule.",
+      simplify: 'Put the parts together and simplify.',
+    },
+  },
+  format: {
+    notation: 'Notation',
+    normal: 'Normal',
+    scientific: 'Scientific',
+    engineering: 'Engineering',
+    figures: 'Significant figures',
+    auto: 'As needed',
+    match: 'Fewest typed',
+    count: '{count, plural, one {# figure} other {# figures}}',
+    typed: 'The fewest significant figures typed is {count}.',
+  },
   graphPopup: {
     graph: 'Graph',
     graphThis: 'Show a graph of this equation',

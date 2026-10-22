@@ -85,6 +85,11 @@ export interface PenMath {
   recognize(strokes: [number, number][][]): Promise<string | null>;
 }
 
+/** Steps for an equation: each rule in words with its LaTeX, and the result; or why there are none. */
+export type MathStepsView =
+  | { ok: true; title: string; steps: { rule: string; latex: string }[]; result: string }
+  | { ok: false; message: string };
+
 export interface MathRenderer {
   /** Handwriting to LaTeX, when the page offers it. */
   pen?: PenMath;
@@ -98,6 +103,8 @@ export interface MathRenderer {
   };
   /** A short answer shown beside an equation, such as "x = 4", when the page offers live answers. */
   live?(latex: string): string | null;
+  /** Step-by-step working for a derivative or an integral, already in words, when the page offers it. */
+  steps?(latex: string): MathStepsView;
   /** The graph of an equation, when the page offers it: the graph block's text, and a popover that shows it. */
   graph?: {
     source(latex: string): string | null;

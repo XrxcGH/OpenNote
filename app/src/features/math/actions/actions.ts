@@ -12,6 +12,8 @@ import {
   fractions,
 } from '../../../core/expr';
 import type { Node } from '../../../core/expr';
+import { matrices } from '../../tools';
+import type { Matrix } from '../../tools';
 import { compileExpression } from '../grapher';
 import { Unsupported, latexToText, treeToLatex } from './convert';
 
@@ -100,7 +102,114 @@ function rootLatex(value: number): string {
   return String(Number(value.toPrecision(6)));
 }
 
+/** The equations of a system: rows of cases, aligned, or a list split by \\ or semicolons. Null for one equation. */
+function equationsOf(latex: string): string[] | null {
+  const inner = latex
+    .replace(/\\begin\{(?:cases|aligned|align\*?|array)\}(?:\{[^}]*\})?/g, '')
+    .replace(/\\end\{(?:cases|aligned|align\*?|array)\}/g, '')
+    .replace(/&/g, '');
+  const parts = inner
+    .split(/\\\\|;/)
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+  return parts.length > 1 ? parts : null;
+}
+
+/**
+ * Solves a system of linear equations, such as x + y = 3 \\ x - y = 1, by elimination. Each equation must be linear
+ * in the letters, and there must be as many equations as letters.
+ */
+function solveSystem(latex: string, equations: readonly string[]): ActionResult {
+  const parsed = equations.map((one) => parseLatex(one));
+  if (parsed.some((one) => one === null || one.right === null)) return unsupported;
+  const sides = parsed as { left: Node; right: Node }[];
+  const names = letters(...sides.flatMap((one) => [one.left, one.right]));
+  if (names.length === 0 || names.length !== sides.length) return { ok: false, reason: 'letters' };
+  const others = names.filter((name) => name !== 'x');
+  const fns: ((values: Record<string, number>) => number)[] = [];
+  for (const one of sides) {
+    const compiled = compileExpression(`(${formatExpression(one.left)})-(${formatExpression(one.right)})`, {
+      parameters: others,
+    });
+    if (!compiled.ok) return unsupported;
+    fns.push((values: Record<string, number>) => compiled.expression.evaluate(values.x ?? 0, values));
+  }
+  const at = (values: Record<string, number>) => fns.map((f) => f(values));
+  const zero = Object.fromEntries(names.map((name) => [name, 0]));
+  const base = at(zero);
+  const a: Matrix = names.map(() => []);
+  names.forEach((name, j) => {
+    const unit = at({ ...zero, [name]: 1 });
+    unit.forEach((value, i) => (a[i][j] = value - base[i]));
+  });
+  const b: Matrix = base.map((value) => [-value]);
+  // A system that is not linear gives a different gap at another point than its coefficients predict.
+  const probe = Object.fromEntries(names.map((name, i) => [name, 1.7 + i * 0.9]));
+  const predicted = a.map((row, i) => row.reduce((sum, c, j) => sum + c * probe[names[j]], base[i]));
+  if (at(probe).some((value, i) => !(Math.abs(value - predicted[i]) < 1e-7 * (1 + Math.abs(value))))) {
+    return unsupported;
+  }
+  const solved = matrices.solve(a, b);
+  if (!solved.ok) return { ok: false, reason: 'none' };
+  const answer = names.map((name, i) => `${name} = ${rootLatex(solved.value[i][0])}`).join(',\\ ');
+  return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad ${answer}` };
+}
+
+const MATRIX = /^\s*(\\det\s*)?\\begin\{([pbv]?matrix)\}([\s\S]*?)\\end\{\2\}\s*(\^\s*\{?\s*(-1|T|\\top)\s*\}?)?\s*$/;
+
+/** A matrix written in LaTeX, solved: its determinant and inverse, or what its power or \\det asks for. */
+function solveMatrix(latex: string): ActionResult | null {
+  const found = MATRIX.exec(latex);
+  if (!found) return null;
+  // Each entry is a number, or a constant expression such as \frac{1}{2} or \sqrt{2}.
+  const entry = (cell: string): number => {
+    const node = parseOne(cell.trim());
+    if (!node || letters(node).length > 0) return NaN;
+    try {
+      const value = evaluateExact(node, { name: () => undefined });
+      return value.exact ? Number(value.value.n) / Number(value.value.d) : value.value;
+    } catch {
+      return NaN;
+    }
+  };
+  let m: Matrix;
+  try {
+    m = found[3]
+      .split(/\\\\/)
+      .map((row) => row.trim())
+      .filter((row) => row !== '')
+      .map((row) => row.split('&').map(entry));
+  } catch (error) {
+    if (error instanceof Unsupported) return unsupported;
+    throw error;
+  }
+  if (m.length === 0 || m.some((row) => row.length !== m[0].length || row.some((v) => !Number.isFinite(v)))) {
+    return unsupported;
+  }
+  const latexOf = (matrix: Matrix) =>
+    `\\begin{pmatrix}${matrix.map((row) => row.map(rootLatex).join(' & ')).join(' \\\\ ')}\\end{pmatrix}`;
+  const power = found[5];
+  if (power === 'T' || power === '\\top')
+    return { ok: true, latex: `${latex.trim()} = ${latexOf(matrices.transpose(m))}` };
+  const det = matrices.determinant(m);
+  if (found[1]) return det.ok ? { ok: true, latex: `${latex.trim()} = ${rootLatex(det.value)}` } : unsupported;
+  const inverse = matrices.inverse(m);
+  if (power === '-1')
+    return inverse.ok
+      ? { ok: true, latex: `${latex.trim()} = ${latexOf(inverse.value)}` }
+      : { ok: false, reason: 'none' };
+  if (!det.ok)
+    return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad \\operatorname{rank} = ${matrices.rank(m)}` };
+  const parts = [`\\det = ${rootLatex(det.value)}`];
+  if (inverse.ok) parts.push(`\\text{inverse} = ${latexOf(inverse.value)}`);
+  return { ok: true, latex: `${latex.trim()} \\quad\\Rightarrow\\quad ${parts.join(',\\ ')}` };
+}
+
 export function solveLatex(latex: string): ActionResult {
+  const matrix = solveMatrix(latex);
+  if (matrix) return matrix;
+  const system = equationsOf(latex);
+  if (system) return solveSystem(latex, system);
   const sides = parseLatex(latex);
   if (!sides) return unsupported;
   const names = letters(sides.left, ...(sides.right ? [sides.right] : []));
