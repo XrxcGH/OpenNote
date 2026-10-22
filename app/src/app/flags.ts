@@ -211,6 +211,7 @@ type Phase5FlagId =
   | 'ink.links'
   | 'ink.layers'
   | 'ink.penFields'
+  | 'ink.myHandwriting'
   | 'ink.delegatedTrail'
   | 'dev.penRecorder';
 

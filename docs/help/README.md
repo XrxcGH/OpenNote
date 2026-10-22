@@ -25,6 +25,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 ## Draw and design pages
 
 - [Ink and palm rejection](ink-and-palm-rejection.md): pens, erasers, shapes, gestures, and resting your hand on the screen.
+- [My handwriting](my-handwriting.md): teach OpenNote your handwriting, then write typed text and math in your own hand.
 - [Paper and page views](paper-and-page-views.md): flow, paginated, and canvas pages, lined paper, presets, slides, and print.
 
 ## Organize and find

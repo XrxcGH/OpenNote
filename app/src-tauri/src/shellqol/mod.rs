@@ -10,6 +10,7 @@ pub mod conflicts;
 pub mod dock;
 pub mod edits;
 pub mod external;
+pub mod handstyle;
 pub mod library;
 pub mod notes_move;
 pub mod notes_ops;
@@ -121,6 +122,7 @@ pub async fn shellqol_call(
                 "shortcut" => shortcuts::call(&app, bridge, &name, &args),
                 "external" => external::call(&app, &name, &args),
                 "prefs" => prefs::call(&app, &name, &args),
+                "handstyle" => handstyle::call(&app, &name, &args),
                 "trash" | "history" | "edits" | "source" | "storage" | "check" | "lock" => {
                     storage::call(&app, bridge, &name, &args)
                 }

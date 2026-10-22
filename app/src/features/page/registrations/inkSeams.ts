@@ -104,6 +104,84 @@ export function paragraph(block: string, pos: number): { start: number; text: st
   return { start, text: $pos.parent.textContent, caret: inside ? head - start : null };
 }
 
+type Run = { kind: 'text'; text: string } | { kind: 'math'; latex: string; display: boolean };
+const NEWLINE = '\n';
+
+/** The typed text the person has selected in the active text block, with its math, and where it sits. */
+let lastText: string | null = null;
+let tracking: (() => void) | null = null;
+
+/**
+ * Follows which text block was last active, so a command run from the palette or a menu, which takes focus from the
+ * text, still finds the selection the person made there.
+ */
+export function trackTextSelection(): void {
+  if (tracking) return;
+  const follow = () => {
+    tracking?.();
+    tracking =
+      shownPool.get()?.onActiveChange((block) => {
+        if (block) lastText = block;
+      }) ?? (() => undefined);
+  };
+  follow();
+  shownPool.subscribe(follow);
+}
+
+export function selection(): {
+  block: string;
+  from: number;
+  to: number;
+  runs: Run[];
+  start: { x: number; y: number };
+  rect: { x: number; y: number; w: number; h: number };
+  fontSize: number;
+} | null {
+  const pool = shownPool.get();
+  const last = lastText ? pool?.editor(lastText) : null;
+  const active = pool?.active() ?? (lastText && last ? { block: lastText, editor: last } : null);
+  if (!active) return null;
+  const { editor, block } = active;
+  const { from, to, empty } = editor.state.selection;
+  if (empty) return null;
+  const runs: Run[] = [];
+  const text = (value: string) => {
+    const last = runs[runs.length - 1];
+    if (last?.kind === 'text') last.text += value;
+    else runs.push({ kind: 'text', text: value });
+  };
+  let parent: unknown = null;
+  editor.state.doc.nodesBetween(from, to, (node, pos) => {
+    if (node.isTextblock) {
+      if (parent !== null) text(NEWLINE);
+      parent = node;
+      return true;
+    }
+    if (node.isText) {
+      const start = Math.max(from, pos) - pos;
+      const end = Math.min(to, pos + node.nodeSize) - pos;
+      text((node.text ?? '').slice(start, end));
+    } else if (node.type.name === 'mathInline')
+      runs.push({ kind: 'math', latex: String(node.attrs.source ?? ''), display: false });
+    else if (node.type.name === 'mathBlock')
+      runs.push({ kind: 'math', latex: String(node.attrs.source ?? ''), display: true });
+    else if (node.type.name === 'hardBreak') text(NEWLINE);
+    return true;
+  });
+  const coords = editor.view.coordsAtPos(from);
+  const box = (editor.view.dom.closest('[data-block-id]') ?? editor.view.dom).getBoundingClientRect();
+  const fontSize = Number.parseFloat(getComputedStyle(editor.view.dom).fontSize) || 16;
+  return {
+    block,
+    from,
+    to,
+    runs,
+    start: { x: coords.left, y: coords.top },
+    rect: { x: box.left, y: box.top, w: box.width, h: box.height },
+    fontSize,
+  };
+}
+
 export function remove(block: string, from: number, to: number): boolean {
   return editorOf(block)?.chain().deleteRange({ from, to }).run() ?? false;
 }

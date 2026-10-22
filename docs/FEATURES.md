@@ -9,6 +9,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Video and audio platforms](#video-and-audio-platforms)
 - [More integrations](#more-integrations)
 - [Handwriting to text](#handwriting-to-text)
+- [My handwriting](#my-handwriting)
 - [Shapes and lines](#shapes-and-lines)
 - [Transcripts and summaries](#transcripts-and-summaries)
 - [Study tools](#study-tools)
@@ -97,6 +98,16 @@ Linked accounts (Phase 11):
 - Unsure words are underlined; tapping one shows alternatives. Status: Built, untested by hand.
 - Any existing ink can be converted later with the lasso. Status: Built, untested by hand.
 - Handwriting and transcripts are read in the background so search finds them, and a hit is marked on the ink. Status: Built, untested by hand. Pages in locked sections are skipped.
+
+## My handwriting
+
+(Beta 5, behind `ink.myHandwriting`, on in Beta)
+
+- A calibration page learns the person's own handwriting from the pen: every letter, digit, and common punctuation mark and symbol three times each, then sentences that use them all, for spacing, x-height, cap height, ascenders and descenders, slant, baseline wobble, pressure, speed, and joins. Status: Built, untested by hand. Settings, My handwriting. It saves as the person writes, so it can be paused and resumed, any box can be redone, and a preview shows the style before it is made. Nothing else can start a style.
+- The style is kept only on this device, encrypted with XChaCha20-Poly1305 under a key in Windows Credential Manager, and is never synced, exported, indexed, logged, or put in a crash report. Status: Built and covered by cargo tests. Recalibrate and Delete my handwriting are in Settings; delete removes the key too. There is no signature capture.
+- Uploads of the person's own handwriting (scans, photos, PDFs) add math and science symbols and layout habits once the calibration page is done. Status: Built, untested by hand. A PDF's ink is read from its drawing as vectors (OneNote's exports draw each stroke as a filled outline, traced to its center line and width); pictures are traced from their pixels. Each symbol is shown to confirm, correct, or skip before it is added. Uploads are dropped after reading unless the person keeps them, encrypted, with the style. On two real homework exports from OneNote (13 pages), 98% of sampled outlines traced to a center line that redraws the original within 0.7 overlap (median 0.89).
+- Math and science, an optional pen section, takes Greek letters, operators, arrows, accents, and brackets small and tall. Status: Built, untested by hand.
+- Write in my handwriting turns selected typed text, and its math, into ordinary editable ink, which replaces the text or goes beside it. Type as handwriting writes live as the person types. Status: Built, untested by hand. The ink uses the current pen's color and width, sits on ruled, grid, or dot paper's lines, wraps at the text's width, varies letters, size, and angle within the person's own ranges, and joins letters where their sentences joined them. Typed math is laid out with fractions, scripts, roots, integrals and sums with limits, matrices, and aligned lines. Characters the person never wrote use a clean neutral hand and are listed so they can be added. The ink is not marked as generated in the file.
 
 ## Shapes and lines
 

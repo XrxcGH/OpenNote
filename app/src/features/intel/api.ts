@@ -44,6 +44,9 @@ export type { OnDeviceTranscribeRequest, OnDeviceTranscribeResult } from './tran
 export type { PageSummary, PageText } from './summary';
 export { MAX_STROKES as MAX_MATH_STROKES, readWith, recognizeMath } from './math/recognize';
 export type { MathResult } from './math/recognize';
+// My handwriting's uploads group traced strokes into symbols the same way the math reader does.
+export { groupStrokes } from './math/group';
+export type { Cluster as MathCluster, MathStroke } from './math/group';
 export { listen } from './stream/listen';
 export type { Listening, ListenOptions } from './stream/listen';
 export { withAnswerFallback, withWritingFallback } from './localModels/fallback';

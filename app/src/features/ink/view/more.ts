@@ -11,6 +11,7 @@ import { describeDrawing } from './describe';
 import { groupSelection, installGroups, selectionGrouped, ungroupSelection } from './groups';
 import { installLayers } from './layers';
 import { installPenFields, systemKeyboard } from './penFields';
+import { installMyHand } from './myhand/install';
 import { showLayers } from './LayersDialog';
 import { installInkLinks, selectionLinked, unlinkSelection } from './inkLinks';
 import { installLinkOpening } from './linkOpen';
@@ -112,6 +113,7 @@ export function installMore(context: MoreContext): () => void {
     installInkLinks(host),
     installLinkOpening(host, surfaces),
     installLayers(host, surfaces),
+    installMyHand(host, surface),
     installPenFields(document, {
       enabled: () => isEnabled('ink.penFields') && inkPrefs.get().penFields,
       keyboard: systemKeyboard,

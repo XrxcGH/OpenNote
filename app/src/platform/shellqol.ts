@@ -16,6 +16,15 @@ type Fake = (name: string, args: Record<string, unknown>) => unknown;
 
 /** The web host. It keeps the choices in memory; tests give it other answers with `setFakeShell`. */
 const memory: Record<string, unknown> = {};
+/** My handwriting's style, held in memory only, as the shell's encrypted file would hold it. */
+let handStyle: string | null = null;
+function answerHandStyle(name: string, args: Record<string, unknown>): unknown {
+  if (name === 'handstyle.load')
+    return handStyle === null ? { state: 'none' } : { state: 'ok', doc: JSON.parse(handStyle) };
+  if (name === 'handstyle.save') handStyle = JSON.stringify(args.doc ?? null);
+  else if (name === 'handstyle.delete') handStyle = null;
+  return { ok: true };
+}
 const memoryAnswer: Fake = (name, args) => {
   if (name === 'prefs.get') return { ...memory };
   if (name === 'prefs.set') {
@@ -25,6 +34,7 @@ const memoryAnswer: Fake = (name, args) => {
     }
     return { ...memory };
   }
+  if (name.startsWith('handstyle.')) return answerHandStyle(name, args);
   return answerProtect(name, args) ?? null;
 };
 let fake: Fake = memoryAnswer;
@@ -32,6 +42,7 @@ let fake: Fake = memoryAnswer;
 /** Puts the web host back as it started, for tests. */
 export function resetFakeShell(): void {
   for (const key of Object.keys(memory)) delete memory[key];
+  handStyle = null;
   fakeProtection.clear();
   fake = memoryAnswer;
 }

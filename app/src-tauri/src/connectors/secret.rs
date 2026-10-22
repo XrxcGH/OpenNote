@@ -4,6 +4,8 @@
 
 use std::fmt;
 
+use zeroize::Zeroize;
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct Secret(String);
 
@@ -19,6 +21,13 @@ impl Secret {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+}
+
+impl Drop for Secret {
+    /// The text is wiped when the secret goes, so it doesn't linger in freed memory.
+    fn drop(&mut self) {
+        self.0.zeroize();
     }
 }
 

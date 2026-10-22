@@ -47,6 +47,7 @@ import { platformApi } from './platformApi';
 import { pdf } from './pdf';
 import { intelSpeech } from './intelSpeech';
 import { intelMore } from './intelMore';
+import { myHand } from './myHand';
 
 export const en = {
   common,
@@ -96,4 +97,5 @@ export const en = {
   intelSpeech,
   intelMore,
   accounts,
+  myHand,
 } as const;

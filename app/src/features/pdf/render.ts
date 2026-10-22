@@ -22,7 +22,7 @@ type PdfDocument = Awaited<ReturnType<PdfJs['getDocument']>['promise']>;
 let loading: Promise<PdfJs> | null = null;
 
 /** pdf.js, loaded on first use with its worker, which is part of the app and not fetched from elsewhere. */
-function pdfjs(): Promise<PdfJs> {
+export function pdfjs(): Promise<PdfJs> {
   loading ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]).then(
     ([lib, worker]) => {
       lib.GlobalWorkerOptions.workerSrc = worker.default;
