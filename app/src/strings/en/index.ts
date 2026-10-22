@@ -57,6 +57,7 @@ import { solvers } from './solvers';
 import { graph3d } from './graph3d';
 import { engineering } from './engineering';
 import { chem } from './chem';
+import { docStructure } from './docStructure';
 
 export const en = {
   common,
@@ -116,4 +117,5 @@ export const en = {
   graph3d,
   engineering,
   chem,
+  docStructure,
 } as const;

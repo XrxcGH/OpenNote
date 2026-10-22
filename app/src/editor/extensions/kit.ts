@@ -25,6 +25,7 @@ import { keysExtensions } from './keys';
 import { listItemExtensions } from './listItem';
 import { graphFenceExtensions } from './graphFence';
 import { mathBlockExtensions, mathInlineExtensions } from './math';
+import { equationNumbersExtensions } from './equationNumbers';
 import { outlineExtensions } from './outline';
 import { slashExtensions } from './slash';
 import { spellingRangesExtensions } from './spellingRanges';
@@ -95,6 +96,7 @@ function textKit(host: EditorHost): Extensions {
     ...codeBlockExtensions(host),
     ...mathBlockExtensions(host),
     ...mathInlineExtensions(host),
+    ...equationNumbersExtensions(host),
     ...graphFenceExtensions(host),
     ...imageExtensions(host),
     ...markKit(host),

@@ -23,6 +23,8 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [Productivity and study tools](#productivity-and-study-tools)
 - [Math solvers](#math-solvers)
 
+- [Document structure](#document-structure)
+
 ## How to read the status
 
 Each feature carries one of four marks.
@@ -574,3 +576,15 @@ On in Beta and off in Stable. The [help page](help/engineering-tools.md) explain
 | Beam and truss solver | A beam block with pin, roller, and fixed supports, point loads, linearly varying distributed loads, and moments that slide along the beam. Reactions, the largest shear and moment, and zero-shear points show beside it, with shear and bending moment diagrams below. Internal hinges carry no moment, and EI segments change the stiffness over part of the beam. Indeterminate beams are solved by the stiffness method. A truss block takes joints, members, pin and roller supports, and joint loads, and gives each member's force as tension or compression, with determinacy in words. Tests check twelve beam and five truss textbook cases, including a Gerber beam and a two-span beam with unequal EI. | Built, untested by hand |
 | Circuit symbols and DC solver | A circuit block with resistors, voltage and current sources, grounds, and wires on a grid. Values take SI prefixes, such as 4.7k. Modified nodal analysis gives every node's voltage, every part's current and direction, and the power it delivers or takes, and says when a ground is missing, names the parts of a floating subcircuit, or says the circuit cannot be solved. Wires join at their ends and at T junctions, not where they only cross. The Draw tab's shapes gain a Circuit symbols group. Tests check five textbook circuits, including Alexander and Sadiku's Example 3.1. | Built, untested by hand |
 | Units and engineering notation in tables | A smart table column can carry a unit, such as kN, MPa, or N·m. Cells typed in another unit of the same kind convert to it, and a unit of the wrong kind is flagged. Totals and formulas add the converted values. The column can write values in engineering notation (12.5×10³) or with SI prefixes (12.5 kN). SI units with prefixes, US customary units, and compound units are known. | Built, untested by hand |
+
+## Document structure
+
+(Beta 5, math tools lane 3. Help: [Document structure](help/document-structure.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Equation numbers and references | A display equation with a label gets a number at its right edge, and an inline reference shows the number of the equation it names. Numbers follow the order on the page, so moving an equation renumbers the rest and the references follow. Click a reference to jump to its equation. Number this equation, Number all equations, Remove equation number, and Insert equation reference are in the palette and the Insert tab. PDF, HTML, Markdown, and Word exports write the numbers and the references in. | Built, untested by hand |
+| Formula sheet builder | Collects the display equations of this page, the selected pages, or the section into a new page laid out in one to four columns, grouped by heading, without repeats, so it fits one sheet. Optionally writes the sheet in My handwriting. | Built, untested by hand |
+| Practice mode | Shows a worked problem with its solution steps hidden. Space or Right Arrow shows the next step and then the answer, Left Arrow hides the last, Home starts over. Hidden steps are not in the window's text, so screen readers do not read them early. | Built, untested by hand |
+| Problem-set templates | Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates. | Built, untested by hand |
+| Figure exporter | Saves a graph or diagram from the page as an SVG or as a PNG at 72 to 600 DPI, numbered and captioned, with an optional source line. The PNG records its DPI. | Built, untested by hand |

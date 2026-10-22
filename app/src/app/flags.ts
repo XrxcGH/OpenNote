@@ -20,6 +20,8 @@ import { DIAGNOSTICS_FLAGS } from '../features/diagnostics/flags';
 import { ACCOUNTS_FLAGS } from '../features/accounts/flags';
 import { CONNECTORS_FLAGS } from '../features/connectors/flags';
 import { EXPR_FLAGS } from '../features/tools/flags';
+import { DOC_FLAGS } from '../features/docstructure/flags';
+import type { DocFlagId } from '../features/docstructure/flags';
 import { SEARCH_FLAGS } from '../features/search/flags';
 import { QOL_FLAGS } from '../features/qol/flags';
 import { PROTECT_FLAGS } from '../features/protect/flags';
@@ -62,6 +64,7 @@ export type FlagId =
   | Phase5FlagId
   | Phase6FlagId
   | ExprFlagId
+  | DocFlagId
   | Phase8FlagId
   | Phase9FlagId
   | IntelFlagId
@@ -326,6 +329,7 @@ export const FLAGS: readonly FlagDef[] = [
   ...INK_FLAGS,
   ...PAGES_FLAGS,
   ...EXPR_FLAGS,
+  ...DOC_FLAGS,
   ...SEARCH_FLAGS,
   ...AUDIO_FLAGS,
   ...INTEROP_FLAGS,

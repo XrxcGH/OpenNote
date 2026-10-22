@@ -15,13 +15,14 @@ import { DEFAULT_DOMAIN, plotParameters, samplePlot } from './grapher3d/plot';
 import { DEFAULT_CAMERA, boundsOf, buildScene3d, sceneToSvg3d, tickText } from './grapher3d/scene';
 import { exportSpace } from './space/render';
 import { is3dGraph } from './space/source3d';
+import { stripLabels } from '../../editor/equations';
 
 const SIZE = { width: 640, height: 360 };
 
 /** The MathML for some LaTeX, or null when KaTeX rejects it. */
 export function exportMath(latex: string, display: boolean): string | null {
   try {
-    return renderMarkup(latex, display, 'mathml');
+    return renderMarkup(stripLabels(latex), display, 'mathml');
   } catch {
     return null;
   }

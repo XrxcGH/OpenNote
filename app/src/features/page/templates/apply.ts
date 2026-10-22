@@ -16,6 +16,8 @@ import { shownMounted } from '../pagesApi';
 import { pageExtrasPrefs } from '../qol/prefs';
 import { byOrder } from '../readingOrder/order';
 import { pagesClient } from '../runtime';
+import { isEnabled } from '../../../app/flags';
+import { builtinBlocks, builtinInfos } from '../../docstructure';
 import { fromTemplate, pageLink, seriesBase, seriesBlocks } from './model';
 import type { Placeholders, TemplateCursor } from './model';
 import { newSeriesId, seriesIdInView, setSeries } from './seriesList';
@@ -46,11 +48,15 @@ export async function listTemplates(): Promise<TemplateInfo[]> {
   const { added, removed } = sessionTemplates();
   for (const [id, title] of added) found.set(id, title);
   for (const id of removed) found.delete(id);
-  return [...found].map(([id, title]) => ({ id, title: title.trim() || t('pageExtras.templates.untitled') }));
+  const own = [...found].map(([id, title]) => ({ id, title: title.trim() || t('pageExtras.templates.untitled') }));
+  // The problem set, Cornell notes, and lab report templates come with the app.
+  return isEnabled('doc.problemTemplates') ? [...builtinInfos(), ...own] : own;
 }
 
 /** The blocks of a page in reading order, read through a short visit by the page service. */
 export async function readBlocks(page: string): Promise<BlockJson[]> {
+  const built = builtinBlocks(page);
+  if (built) return built;
   const open = await pagesClient().open(page as PageId, { viewport: null });
   try {
     return [...open.initial.blocks].sort(byOrder);
@@ -124,7 +130,11 @@ export async function insertTemplate(mounted: MountedPage, template: string, tit
 }
 
 /** What the next page created by "New page" should become. */
-type Pending = { kind: 'template'; template: string } | { kind: 'series'; source: string };
+type Pending =
+  | { kind: 'template'; template: string }
+  | { kind: 'series'; source: string }
+  /** A page made from text, such as the formula sheet. */
+  | { kind: 'content'; title: string; blocks: NewBlock[] };
 let pending: Pending | null = null;
 
 /** Creates a page with the tree's own New page command, so it lands where New page puts it, then fills it. */
@@ -143,6 +153,10 @@ export async function onPageCreated(pageId: NodeId, ctx: CommandContext): Promis
   pending = null;
   const node = await ctx.notes.get(pageId);
   if (request?.kind === 'series') return void (await continueSeries(pageId, request.source, ctx));
+  if (request?.kind === 'content') {
+    await ctx.notes.rename(pageId, request.title).catch(() => undefined);
+    return void (await writeBlocks(pageId, request.blocks));
+  }
   const template =
     request?.kind === 'template'
       ? request.template

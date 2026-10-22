@@ -4,6 +4,10 @@ export { PageView } from './PageView';
 export { installPageZoom } from './zoom';
 export { installPages } from './runtime';
 export { mountedPageHooks, shownAssetUrl, shownMounted, snapshotShownPage } from './pagesApi';
+/** The editor that formatting commands act on (a light module). */
+export { targetEditor } from './formattingBar/target';
+/** Reading pages and making pages from templates or text loads when first used, so start-up stays small. */
+export const loadTemplates = () => import('./templates/apply');
 export type { MountedPage, MountedPageHook } from './pagesApi';
 export { shownQueue } from './sync/shown';
 export { shownStrokes } from './seams/inkStrokes';
