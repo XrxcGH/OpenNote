@@ -2,7 +2,6 @@
 // that a browser prints as shapes and text: an equation as MathML, which WebView2 lays out with its own math font and
 // tags for screen readers, and a graph as the standalone SVG the grapher writes. Neither needs a style sheet, so the
 // print document stays small. They use the light colors whatever theme the screen shows.
-import { isEnabled } from '../../app/flags';
 import { tokens } from '../../theme/tokens';
 import { t } from '../../strings/t';
 import { buildScene, defaultViewport, findParameters, sceneToSvg } from './grapher';
@@ -81,7 +80,8 @@ function export3d(graph: GraphSource): string {
 export function exportGraph(source: string): string | null {
   const graph = readGraph(source);
   if (graph.functions.length === 0) return null;
-  if (graph.three && isEnabled('math.graph3d')) return export3d(graph);
+  // The print bundle has no flags, so a 3D graph's text always prints as 3D.
+  if (graph.three) return export3d(graph);
   const view = graph.view ?? defaultViewport(SIZE);
   const params: Record<string, number> = {};
   for (const line of graph.functions) for (const name of findParameters(line)) params[name] = graph.params[name] ?? 1;
