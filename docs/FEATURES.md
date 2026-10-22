@@ -21,6 +21,7 @@ This spec lists what OpenNote does, beyond the basics in [DEVELOPMENT.md](DEVELO
 - [More quality-of-life features by phase](#more-quality-of-life-features-by-phase)
 - [Further features by phase](#further-features-by-phase)
 - [Productivity and study tools](#productivity-and-study-tools)
+- [Document structure](#document-structure)
 
 ## How to read the status
 
@@ -507,3 +508,15 @@ These tools help with time, tasks, and study. They need no account and work offl
 | Calendar files and course imports | Imports iCalendar files (`.ics`) from a calendar app or a school portal into the timetable and the Upcoming pane. They can hold timetables, exam dates, and assignment due dates. "Update from this file" reads a newer export without duplicating events. Importing a file doesn't use the internet. Assignments from Canvas, Moodle, and Google Classroom (see More integrations) also appear in Upcoming, linked to their course sections. | Built, untested by hand. The .ics import is built. Course imports from Canvas, Moodle, and Classroom need the owner. |
 | Citation helper | Keeps a list of sources for each notebook. The person types in a book, article, web page, or recording, or imports BibTeX and RIS files. A citation goes into the text in a chosen style, such as APA, MLA, or Chicago, and a bibliography block lists the sources. Changing the style updates every citation. Looking up a source by its digital object identifier (DOI) or International Standard Book Number (ISBN) runs only when asked, and the Privacy panel lists it. It works without Zotero, and Zotero sources appear in the same list when linked. | Built, untested by hand |
 | Zotero citations in the page | With Zotero running, Add or edit citation, Add or edit bibliography, Refresh, Unlink, and Document settings open Zotero's own windows, and the result goes into the text block that has the caret. Zotero's own styles and its bibliography are used, so OpenNote does not need to know them. The citations are text that keeps Zotero's code, so they can be edited and refreshed later, and they survive saving and copying. They work in one text block at a time, and the code stays inside OpenNote. Nothing is sent anywhere except to Zotero on this computer (its local integration address, port 23119). When Zotero is not running, the commands say so without changing anything. | Built, untested by hand against a real Zotero |
+
+## Document structure
+
+(Beta 5, math tools lane 3. Help: [Document structure](help/document-structure.md).)
+
+| Feature | What it does | Status |
+| --- | --- | --- |
+| Equation numbers and references | A display equation with a label gets a number at its right edge, and an inline reference shows the number of the equation it names. Numbers follow the order on the page, so moving an equation renumbers the rest and the references follow. Click a reference to jump to its equation. Number this equation, Number all equations, Remove equation number, and Insert equation reference are in the palette and the Insert tab. PDF, HTML, Markdown, and Word exports write the numbers and the references in. | Built, untested by hand |
+| Formula sheet builder | Collects the display equations of this page, the selected pages, or the section into a new page laid out in one to four columns, grouped by heading, without repeats, so it fits one sheet. Optionally writes the sheet in My handwriting. | Built, untested by hand |
+| Practice mode | Shows a worked problem with its solution steps hidden. Space or Right Arrow shows the next step and then the answer, Left Arrow hides the last, Home starts over. Hidden steps are not in the window's text, so screen readers do not read them early. | Built, untested by hand |
+| Problem-set templates | Problem set (Given, Find, Solution, Answer), Cornell notes, and Lab report in the new-page chooser, before the person's own templates. | Built, untested by hand |
+| Figure exporter | Saves a graph or diagram from the page as an SVG or as a PNG at 72 to 600 DPI, numbered and captioned, with an optional source line. The PNG records its DPI. | Built, untested by hand |

@@ -8,13 +8,14 @@ import { buildScene, defaultViewport, findParameters, sceneToSvg } from './graph
 import type { SvgStyle } from './grapher';
 import { renderMarkup } from './latex/engine';
 import { readGraph } from './graph/source';
+import { stripLabels } from '../../editor/equations';
 
 const SIZE = { width: 640, height: 360 };
 
 /** The MathML for some LaTeX, or null when KaTeX rejects it. */
 export function exportMath(latex: string, display: boolean): string | null {
   try {
-    return renderMarkup(latex, display, 'mathml');
+    return renderMarkup(stripLabels(latex), display, 'mathml');
   } catch {
     return null;
   }

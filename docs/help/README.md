@@ -21,6 +21,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
+- [Document structure](document-structure.md): equation numbers and references, formula sheets, practice mode, problem-set templates, and figure export.
 
 ## Draw and design pages
 

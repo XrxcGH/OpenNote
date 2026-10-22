@@ -5,6 +5,7 @@
 //! report of what came over, what was simplified, and what was skipped.
 
 mod convert;
+mod equations;
 mod files;
 mod names;
 mod pdf;

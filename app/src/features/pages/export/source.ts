@@ -4,6 +4,8 @@
 
 import { isObject, geometry, type Json, type JsonObject } from '../layout/json';
 import { readView, type PageViewSpec } from '../layout/view';
+import { numberMarkdown } from '../../../editor/equations';
+import { readingOrder } from './order';
 
 export interface Frame {
   readonly x?: number;
@@ -275,14 +277,15 @@ function readAssets(raw: Json | undefined): Record<string, ExportAsset> {
 /** Reads a page.json. `strokes` are the page's live strokes, decoded by the caller. `language` defaults to English. */
 export function readExportPage(raw: unknown, strokes: readonly ExportStroke[] = [], language = 'en'): ExportPage {
   const page: JsonObject = isObject(raw) ? raw : {};
+  const view = readView(page.view).view;
   return {
     id: str(page.id),
     title: str(page.title),
     tags: Array.isArray(page.tags) ? page.tags.filter((t): t is string => typeof t === 'string') : [],
     created: str(page.created),
     modified: str(page.modified),
-    view: readView(page.view).view,
-    blocks: readBlocks(page.blocks),
+    view,
+    blocks: withEquationNumbers(readBlocks(page.blocks), view.readingOrder),
     assets: readAssets(page.assets),
     strokes,
     language,
@@ -293,4 +296,16 @@ export function readExportPage(raw: unknown, strokes: readonly ExportStroke[] = 
 /** True when a block is positioned on the page: its frame has both `x` and `y` (format spec 6.2). */
 export function isFloating(block: ExportBlock): boolean {
   return block.frame?.x !== undefined && block.frame?.y !== undefined;
+}
+
+/** Gives the labeled display equations their numbers and resolves references, across the page's text in reading order. */
+function withEquationNumbers(blocks: ExportBlock[], preferred: readonly string[]): ExportBlock[] {
+  const texts = readingOrder(blocks, preferred).filter((b): b is TextBlock => b.type === 'text');
+  if (!texts.some((b) => b.markdown.includes('label{') || b.markdown.includes('eqref{'))) return blocks;
+  const numbered = numberMarkdown(texts.map((b) => b.markdown));
+  const changed = new Map(texts.map((b, i) => [b, numbered[i]]));
+  return blocks.map((b) => {
+    const markdown = changed.get(b as TextBlock);
+    return markdown === undefined || markdown === (b as TextBlock).markdown ? b : { ...b, markdown };
+  }) as ExportBlock[];
 }

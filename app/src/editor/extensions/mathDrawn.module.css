@@ -103,4 +103,36 @@
     border: 1px solid var(--color-border-control);
     border-radius: var(--radius-sm);
   }
+
+  /* Equation numbers (flag doc.equationNumbers): the number sits at the right of a numbered display equation, and a
+     reference shows the number it names in place of its source. */
+  :global([data-eq-number])::after {
+    content: '(' attr(data-eq-number) ')';
+    float: inline-end;
+    font-family: var(--font-reading);
+    color: var(--color-text-secondary);
+  }
+
+  :global([data-eq-duplicate])::after {
+    content: '(??)';
+    float: inline-end;
+    color: var(--color-status-danger);
+  }
+
+  :global([data-eq-ref]) {
+    font-size: 0;
+    cursor: pointer;
+  }
+
+  :global([data-eq-ref])::after {
+    content: attr(data-eq-ref);
+    font-size: var(--font-size-body, 1rem);
+    font-family: var(--font-reading);
+    color: var(--color-text-link, var(--color-accent-primary));
+    text-decoration: underline;
+  }
+
+  :global([data-eq-ref][data-eq-missing])::after {
+    color: var(--color-status-danger);
+  }
 }

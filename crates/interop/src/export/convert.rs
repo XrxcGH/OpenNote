@@ -106,10 +106,21 @@ pub fn page_to_blocks_traced(
     resolver: &mut dyn Resolver,
     report: &mut PageReport,
 ) -> (Vec<Block>, Vec<opennote_core::BlockId>) {
+    // Equation numbers run across the whole page, so the texts are numbered together, in reading order.
+    let order = page.reading_order();
+    let texts: Vec<(opennote_core::BlockId, &str)> = order
+        .iter()
+        .filter_map(|id| match &page.blocks.get(*id)?.data {
+            BlockData::Text(text) => Some((*id, &*text.markdown)),
+            _ => None,
+        })
+        .collect();
+    let numbered = super::equations::number_texts(&texts.iter().map(|(_, m)| *m).collect::<Vec<_>>());
     let mut convert = Convert {
         page,
         resolver,
         tally: Tally::default(),
+        numbered: texts.iter().map(|(id, _)| *id).zip(numbered).collect(),
     };
     let mut out = Vec::new();
     let mut origins = Vec::new();
@@ -132,6 +143,8 @@ struct Convert<'a> {
     page: &'a Page,
     resolver: &'a mut dyn Resolver,
     tally: Tally,
+    /// The text blocks with equation numbers and references written in, by block.
+    numbered: std::collections::HashMap<opennote_core::BlockId, String>,
 }
 
 impl Convert<'_> {
@@ -139,7 +152,8 @@ impl Convert<'_> {
         match &block.data {
             BlockData::Text(text) => {
                 self.tally.text += 1;
-                out.extend(self.markdown(&text.markdown));
+                let markdown = self.numbered.remove(&block.id).unwrap_or_else(|| text.markdown.to_string());
+                out.extend(self.markdown(&markdown));
             }
             BlockData::Image(image) => self.image(image, out),
             BlockData::File(file) => self.file(file, out),
