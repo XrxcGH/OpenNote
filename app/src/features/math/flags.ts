@@ -3,7 +3,12 @@
 // hand test before Stable. app/flags.ts joins this list to the others.
 import type { FlagDef } from '../../app/flags';
 
-export type MathToolsFlagId = 'math.calcModes' | 'math.graph3d' | 'math.liveSolve' | 'math.graphPopup' | 'math.steps' | 'math.solvers';
+export type MathToolsFlagId = 'math.calcModes' | 'math.graph3d' | 'math.liveSolve' | 'math.graphPopup' | 'math.steps' | 'math.solvers'
+  | 'math.curves'
+  | 'math.vectors'
+  | 'math.geometry3d'
+  | 'math.solids'
+  | 'math.projectile';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const beta = { dev: true, nightly: true, beta: true, stable: false };
@@ -26,4 +31,9 @@ export const MATH_TOOLS_FLAGS: readonly FlagDef[] = [
     // checks-disable-next-line length: one flag description, kept whole as the flags panel shows it
     'The Math solvers window: double and triple integrals, differential equations, Laplace and Fourier transforms, Taylor series, root finding, error propagation and units, probability and regression, eigenvalues, and projectiles.',
   ),
+  flag('math.curves', 'Parametric and polar curves with an animated trace, and vector and slope fields.'),
+  flag('math.vectors', 'The Vectors tool: dot and cross products, projections, and 3D vector plots.'),
+  flag('math.geometry3d', 'Lines and planes in 3D: distances, intersections, and angles, with a plot.'),
+  flag('math.solids', 'Solids of revolution: disk, washer, and shell volumes with steps and a 3D view.'),
+  flag('math.projectile', 'The projectile simulator: speed, angle, height, gravity, and drag, with a trajectory.'),
 ];

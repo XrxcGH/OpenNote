@@ -544,3 +544,16 @@ These tools help with time, tasks, and study. They need no account and work offl
 | Probability and regression | Normal, binomial, and Student t distributions: the probability below, above, between, or outside values with the area or bars shaded, and two-sided critical values. Linear regression with the line, R², and the working. Tested against reference values. | Built, untested by hand |
 | Eigenvalues and eigenvectors | For a 2×2 or 3×3 matrix: the characteristic polynomial, the eigenvalues (real or complex), the eigenvectors and their eigenspaces, whether the matrix can be diagonalized, and a picture of the grid and unit square (or the unit cube) before and after the matrix with the eigenvector lines. | Built, untested by hand |
 | Projectile simulator | Range, highest point, time of flight, and landing speed and angle for a launch from a height, worked in closed form, and with optional quadratic air resistance (from mass, drag coefficient, diameter, and air density) by Runge-Kutta. The path is drawn next to the no-drag path and can be played; with reduced motion it jumps to the end. Without drag, the simulation matches the closed form to within 1e-6. | Built, untested by hand |
+
+## 3D graphs, vectors, and motion
+
+These math tools are on in the Beta channel and off in Stable for now. [The help page](help/3d-graphs-vectors-and-motion.md) says how to use them.
+
+| Feature | What it does | Status |
+|---|---|---|
+| 3D graphs | A graph block that starts with `@3d` plots surfaces z = f(x, y), curves in space, vectors, points, lines, and planes in a box you turn with a drag or the arrow keys. Surface, Contour, and Both show the 3D view, the level curves from above, or both. The tangent plane at a chosen point comes with its equation. The picture saves as SVG or PNG and prints as a vector picture. Flag `math.graph3d`. | Built, untested by hand |
+| Parametric and polar curves | Graph blocks take `(x(t), y(t))`, `r = f(θ)`, vector fields `F = (P, Q)`, and slope fields `dy/dx = f(x, y)`. A dot traces the first curve with Play and a slider, and Play is hidden when Windows asks for fewer animations. Flag `math.curves`. | Built, untested by hand |
+| Vector tools | Dot and cross products, lengths, the angle, scalar and vector projections, the unit vector, the parallelogram's area, and the triple product, with a 3D plot. Flag `math.vectors`. | Built, untested by hand |
+| Lines and planes | Distances, intersections, and angles between points, lines, and planes in 3D, with a plot. Checked against worked examples from a calculus text. Flag `math.geometry3d`. | Built, untested by hand |
+| Solids of revolution | Turns the region between two curves about y = k or x = k. It gives the volume by disks, washers, or shells, with steps, an exact multiple of π when there is one, and a 3D view. Flag `math.solids`. | Built, untested by hand |
+| Projectile simulator | Speed, angle, height, gravity, and linear drag give the time of flight, range, highest point, and landing speed. Launch animates the flight, and Insert into page adds the values and a parametric graph. Flag `math.projectile`. | Built, untested by hand |

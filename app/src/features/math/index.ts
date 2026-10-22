@@ -46,3 +46,9 @@ export async function chooseSolverTab(tab: string): Promise<void> {
   if ((state.SOLVER_TABS as readonly string[]).includes(tab))
     state.chooseTab(tab as (typeof state.SOLVER_TABS)[number]);
 }
+
+export { Graph3DView } from './space/Graph3DView';
+export { VectorsTool } from './space/tools/VectorsTool';
+export { SolidsTool } from './space/tools/SolidsTool';
+export { ProjectileTool } from './space/tools/ProjectileTool';
+export { STARTER_3D, STARTER_CURVES } from './space/starters';

@@ -5,23 +5,19 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { isEnabled } from '../../../app/flags';
 import type { KeyboardEvent, PointerEvent, RefObject, WheelEvent } from 'react';
+import { isEnabled } from '../../../app/flags';
 import { t } from '../../../strings/t';
-import {
-  buildScene,
-  defaultViewport,
-  findParameters,
-  panByPixels,
-  toWorld,
-  wheelZoomFactor,
-  zoomAround,
-} from '../grapher';
+import { buildScene, defaultViewport, panByPixels, toWorld, wheelZoomFactor, zoomAround } from '../grapher';
 import type { Viewport } from '../grapher';
+import { lineParameters } from '../grapher/curves';
+import { CurveDot, CurveTraceControls, useCurveTrace } from './curveTrace';
 import styles from './graph.module.css';
 import { FunctionBoxes, PlotLayers, SIZE, Sliders, ZoomButtons, keyEffect, readoutText, traceAt } from './parts';
 import { readGraph, writeGraph } from './source';
 import type { GraphSource } from './source';
 
 const COMMIT_MS = 450;
+const NO_LINES: readonly string[] = [];
 
 export interface GraphViewProps {
   source: string;
@@ -33,7 +29,7 @@ export interface GraphViewProps {
 function useParameters(graph: GraphSource) {
   const names = useMemo(() => {
     const found = new Set<string>(Object.keys(graph.params));
-    for (const line of graph.functions) for (const name of findParameters(line)) found.add(name);
+    for (const line of graph.functions) for (const name of lineParameters(line)) found.add(name);
     return [...found];
   }, [graph]);
   const values = useMemo(
@@ -126,14 +122,16 @@ function Graph2DView({ graph, source, editable, onSource }: GraphViewProps & { g
       buildScene(
         view,
         SIZE,
-        graph.functions.map((line) => ({ source: line, params: values })),
+        graph.functions.map((line) => ({ source: line, params: values, ...(graph.t ? { t: graph.t } : {}) })),
       ),
-    [view, graph.functions, values],
+    [view, graph.functions, values, graph.t],
   );
   const trace = useMemo(
     () => traceAt(traceX, graph.functions, names, values),
     [traceX, graph.functions, names, values],
   );
+
+  const curveTrace = useCurveTrace(isEnabled('math.curves') ? graph.functions : NO_LINES, graph.t);
 
   const send = (next: Partial<GraphSource>, nextView: Viewport | null = view) =>
     onSource(writeGraph({ ...graph, ...next, view: nextView }));
@@ -180,10 +178,12 @@ function Graph2DView({ graph, source, editable, onSource }: GraphViewProps & { g
         onKeyDown={onKeyDown}
       >
         <PlotLayers scene={scene} trace={trace} />
+        <CurveDot state={curveTrace} functions={graph.functions} params={values} view={view} />
       </svg>
       <p className={styles.readout} aria-live="polite">
         {readoutText(trace)}
       </p>
+      <CurveTraceControls state={curveTrace} functions={graph.functions} params={values} />
       <Sliders
         names={names}
         values={values}

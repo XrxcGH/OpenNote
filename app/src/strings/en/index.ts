@@ -54,6 +54,7 @@ import { intelMore } from './intelMore';
 import { myHand } from './myHand';
 import { tableMath } from './tableMath';
 import { solvers } from './solvers';
+import { graph3d } from './graph3d';
 
 export const en = {
   common,
@@ -110,4 +111,5 @@ export const en = {
   tableMath,
   science,
   solvers,
+  graph3d,
 } as const;

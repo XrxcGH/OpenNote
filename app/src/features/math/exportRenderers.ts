@@ -2,15 +2,19 @@
 // that a browser prints as shapes and text: an equation as MathML, which WebView2 lays out with its own math font and
 // tags for screen readers, and a graph as the standalone SVG the grapher writes. Neither needs a style sheet, so the
 // print document stays small. They use the light colors whatever theme the screen shows.
+import { isEnabled } from '../../app/flags';
 import { tokens } from '../../theme/tokens';
 import { t } from '../../strings/t';
-import { buildScene, defaultViewport, findParameters, sceneToSvg } from './grapher';
+import { buildScene, defaultViewport, sceneToSvg } from './grapher';
+import { lineParameters } from './grapher/curves';
 import type { SvgStyle } from './grapher';
 import { renderMarkup } from './latex/engine';
 import { readGraph } from './graph/source';
 import type { GraphSource } from './graph/source';
 import { DEFAULT_DOMAIN, plotParameters, samplePlot } from './grapher3d/plot';
 import { DEFAULT_CAMERA, boundsOf, buildScene3d, sceneToSvg3d, tickText } from './grapher3d/scene';
+import { exportSpace } from './space/render';
+import { is3dGraph } from './space/source3d';
 
 const SIZE = { width: 640, height: 360 };
 
@@ -78,18 +82,19 @@ function export3d(graph: GraphSource): string {
 
 /** The graph a `graph` code block describes, as an SVG string. Null when the block plots nothing. */
 export function exportGraph(source: string): string | null {
+  if (is3dGraph(source) && isEnabled('math.graph3d')) return exportSpace(source);
   const graph = readGraph(source);
   if (graph.functions.length === 0) return null;
   // The print bundle has no flags, so a 3D graph's text always prints as 3D.
   if (graph.three) return export3d(graph);
   const view = graph.view ?? defaultViewport(SIZE);
   const params: Record<string, number> = {};
-  for (const line of graph.functions) for (const name of findParameters(line)) params[name] = graph.params[name] ?? 1;
+  for (const line of graph.functions) for (const name of lineParameters(line)) params[name] = graph.params[name] ?? 1;
   for (const [name, value] of Object.entries(graph.params)) params[name] = value;
   const scene = buildScene(
     view,
     SIZE,
-    graph.functions.map((line) => ({ source: line, params })),
+    graph.functions.map((line) => ({ source: line, params, ...(graph.t ? { t: graph.t } : {}) })),
   );
   const description = t('smart.grapher.exportDescription', {
     functions: graph.functions.join('; '),

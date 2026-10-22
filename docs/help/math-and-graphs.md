@@ -45,6 +45,8 @@ Open Insert, then 3D graph, for a surface such as `z = sin(x) cos(y)`. A curve s
 
 To graph handwriting, lasso it and choose Graph in the bar above the selection.
 
+A graph also takes parametric and polar curves and vector and slope fields, and a 3D graph plots surfaces. See [3D graphs, vectors, and motion](3d-graphs-vectors-and-motion.md).
+
 ## Diagrams and mind maps
 
 - Type Mermaid text and get a diagram.

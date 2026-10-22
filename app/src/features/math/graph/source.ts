@@ -6,8 +6,9 @@
 //   a = 2
 //   @view -10 10 -6 6
 //
-// A line "name = number" gives a slider's value. "@view" is the part of the plane in view. Every other line is a
-// function of x.
+// A line "name = number" gives a slider's value. "@view" is the part of the plane in view. "@t 0 2pi" is the range
+// of t (or θ) for parametric and polar curves. Every other line is a function of x, or one of the kinds in
+// grapher/curves.ts: (x(t), y(t)), r = f(θ), F = (P, Q), or dy/dx = f(x, y).
 //
 // A 3D graph is the same block: a line such as "z = sin(x) cos(y)" or "(cos(t), sin(t), t/5)" makes it 3D, and so
 // does "@3d". There "@view" is the x and y the surface covers, "@camera" is the turn, tilt (both in degrees), and
@@ -16,6 +17,7 @@ import type { Viewport } from '../grapher';
 import { isPlot3d } from '../grapher3d/plot';
 import type { Range } from '../grapher3d/plot';
 import type { Camera } from '../grapher3d/scene';
+import { readNumber } from '../space/vec';
 
 export type RangeLetter = 't' | 'u' | 'v';
 
@@ -28,20 +30,30 @@ export interface GraphSource {
   three?: boolean;
   camera?: Camera | null;
   ranges?: Partial<Record<RangeLetter, Range>>;
+  /** The range of t for parametric and polar curves, when the text gives one. */
+  t?: readonly [number, number] | null;
 }
 
+const T_RANGE = /^@t\s+(\S+)\s+(\S+)\s*$/;
 const VIEW = /^@view\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$/;
 const PARAM = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(-?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)\s*$/i;
-const RESERVED = new Set(['x', 'y', 'z', 'f']);
+// `r = 2` is a polar circle, not a slider.
+const RESERVED = new Set(['x', 'y', 'z', 'f', 'r']);
 const CAMERA = /^@camera\s+(\S+)\s+(\S+)\s+(\S+)\s*$/;
 const RANGE = /^@range\s+([tuv])\s+(\S+)\s+(\S+)\s*$/;
 const RADIANS = Math.PI / 180;
 
 export function readGraph(text: string): GraphSource {
-  const out: GraphSource = { functions: [], params: {}, view: null };
+  const out: GraphSource = { functions: [], params: {}, view: null, t: null };
   for (const raw of text.split('\n')) {
     const line = raw.trim();
     if (line === '' || line.startsWith('#')) continue;
+    const tRange = T_RANGE.exec(line);
+    if (tRange) {
+      const [from, to] = [readNumber(tRange[1]), readNumber(tRange[2])];
+      if (Number.isFinite(from) && Number.isFinite(to) && from < to) out.t = [from, to];
+      continue;
+    }
     const view = VIEW.exec(line);
     if (view) {
       const [xMin, xMax, yMin, yMax] = view.slice(1).map(Number);
@@ -100,5 +112,6 @@ export function writeGraph(graph: GraphSource): string {
   for (const [letter, range] of Object.entries(graph.ranges ?? {})) {
     if (range) lines.push(`@range ${letter} ${round(range.min)} ${round(range.max)}`);
   }
+  if (graph.t) lines.push(`@t ${round(graph.t[0])} ${round(graph.t[1])}`);
   return lines.join('\n');
 }

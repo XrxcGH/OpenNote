@@ -1,0 +1,150 @@
+/*
+ * The math tool windows of the mt3-graph-3d lane: vectors, lines and planes, solids of revolution, and the
+ * projectile simulator. Calm and quiet, on tokens, with every control at least the target size.
+ */
+@layer components {
+  .tool {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    font-family: var(--font-ui);
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+    color: var(--color-text-primary);
+  }
+
+  .tabs {
+    display: flex;
+    gap: var(--space-2);
+    border-block-end: 1px solid var(--color-border-subtle);
+  }
+
+  .tab {
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    color: var(--color-text-secondary);
+    background: none;
+    border: 0;
+    border-block-end: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    color: var(--color-text-primary);
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  .tab:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: calc(-1 * var(--size-focus-ring-width));
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    align-items: start;
+    gap: var(--space-3);
+  }
+
+  .number,
+  .select {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .number input,
+  .select select {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0;
+    min-block-size: var(--size-target-pointer);
+    padding: var(--space-1) var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .select select {
+    font-family: var(--font-ui);
+  }
+
+  .number small {
+    color: var(--color-text-secondary);
+  }
+
+  .results {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+  }
+
+  .result {
+    display: grid;
+    grid-template-columns: minmax(10ch, 1fr) 2fr;
+    gap: var(--space-3);
+  }
+
+  .result dt {
+    color: var(--color-text-secondary);
+  }
+
+  .result dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .list {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .answer {
+    margin: 0;
+    font-size: var(--type-body-size);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .problem {
+    margin: 0;
+    color: var(--color-status-danger);
+  }
+
+  .note {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .plot {
+    inline-size: 100%;
+    block-size: auto;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
+  .ball {
+    fill: var(--ink-brick);
+    stroke: var(--color-surface-page);
+    stroke-width: 2;
+  }
+}
