@@ -19,7 +19,8 @@ const memory: Record<string, unknown> = {};
 /** My handwriting's style, held in memory only, as the shell's encrypted file would hold it. */
 let handStyle: string | null = null;
 function answerHandStyle(name: string, args: Record<string, unknown>): unknown {
-  if (name === 'handstyle.load') return handStyle === null ? { state: 'none' } : { state: 'ok', doc: JSON.parse(handStyle) };
+  if (name === 'handstyle.load')
+    return handStyle === null ? { state: 'none' } : { state: 'ok', doc: JSON.parse(handStyle) };
   if (name === 'handstyle.save') handStyle = JSON.stringify(args.doc ?? null);
   else if (name === 'handstyle.delete') handStyle = null;
   return { ok: true };

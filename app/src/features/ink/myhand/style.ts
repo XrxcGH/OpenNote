@@ -228,7 +228,11 @@ function readGlyph(value: unknown): GlyphSample | null {
   if (!isObject(value)) return null;
   const strokes = readStrokes(value.strokes);
   if (!strokes) return null;
-  const glyph: GlyphSample = { strokes, width: finite(value.width, 0, 0, 100), source: value.source === 'upload' ? 'upload' : 'pen' };
+  const glyph: GlyphSample = {
+    strokes,
+    width: finite(value.width, 0, 0, 100),
+    source: value.source === 'upload' ? 'upload' : 'pen',
+  };
   return value.tall === true ? { ...glyph, tall: true } : glyph;
 }
 

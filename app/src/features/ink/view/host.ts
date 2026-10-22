@@ -91,6 +91,26 @@ export interface TextEditing {
   undo(block: string): Promise<void>;
   /** The paragraph at a position: where its text starts, its text, and the caret's offset in it when the caret is there. */
   paragraph?(block: string, pos: number): Promise<{ start: number; text: string; caret: number | null } | null>;
+  /** The typed text the person has selected, with its math, and where it sits. Null when nothing is selected. */
+  selection?(): Promise<SelectedText | null>;
+}
+
+/** A run of selected text: plain text, or the LaTeX of an equation. */
+export type SelectedRun =
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'math'; readonly latex: string; readonly display: boolean };
+
+export interface SelectedText {
+  readonly block: string;
+  readonly from: number;
+  readonly to: number;
+  readonly runs: readonly SelectedRun[];
+  /** The top left of the selection's first line, client px. */
+  readonly start: { readonly x: number; readonly y: number };
+  /** The text block's box, client px. */
+  readonly rect: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
+  /** The typed text's size, in page units. */
+  readonly fontSize: number;
 }
 
 /** The page view's seams, as features/page/registrations/ink.ts passes them. */

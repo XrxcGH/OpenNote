@@ -141,7 +141,8 @@ function charSamples(progress: Progress): CharSample[] {
   for (const [id, sample] of Object.entries(progress.samples)) {
     const parsed = parseSampleId(id);
     const box = boxOfStrokes(sample.strokes);
-    if (parsed && parsed.kind !== 'sentence' && box) out.push({ char: parsed.char, kind: parsed.kind, n: parsed.n, sample, box });
+    if (parsed && parsed.kind !== 'sentence' && box)
+      out.push({ char: parsed.char, kind: parsed.kind, n: parsed.n, sample, box });
   }
   return out;
 }
