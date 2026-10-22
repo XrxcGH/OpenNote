@@ -9,6 +9,7 @@ import { exportStrokes, readExportPage } from '../export';
 import { toBase64 } from './base64';
 import { createPrintSurface, newJobId, prepareInput } from './exporter';
 import type { PageSource } from './source';
+import { pageTitleOn } from '../../exportPrefs';
 import { exportPdf } from '../pdf';
 
 export interface BundleSection {
@@ -71,6 +72,8 @@ export async function drawBundle(options: DrawBundleOptions): Promise<DrawnBundl
   const total = options.sections.reduce((n, section) => n + section.pages.length, 0);
   let done = 0;
   let failed = 0;
+  // Each page starts with its title unless the person turned that off in the export dialog.
+  const title = pageTitleOn();
   try {
     for (const section of options.sections) {
       for (const entry of section.pages) {
@@ -81,7 +84,7 @@ export async function drawBundle(options: DrawBundleOptions): Promise<DrawnBundl
             (await options.shown?.(entry.ui)) ??
             (await sourceOf(options.pages, entry.ui, entry.title, options.notebook, section.title));
           const result = await exportPdf(createPrintSurface(options.exports, newJobId()), {
-            input: prepareInput({ ...source, title: entry.title }, {}),
+            input: prepareInput({ ...source, title: entry.title }, { title }),
             signal,
           });
           await more('pdf_stage', { job, page: entry.ui, data: toBase64(result.bytes) });

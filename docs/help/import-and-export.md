@@ -88,6 +88,7 @@ Open Share, then Export, or press Ctrl+K and choose Export.
 - Tables export as `.xlsx` or `.csv`. Pages export as a PowerPoint file.
 - Choose PDF files to export a section or a whole notebook as PDF. Each page is printed the same way as a page's own Export as PDF, into folders that follow your sections, with an `index.html` that links every file. A page that can't be printed is listed in the summary, and the rest still export. Cancel stops at once and keeps nothing.
 - A page's own Export and Print menu makes one PDF of that page.
+- Include the page title is on by default for PDF and Print. It puts the page's title and date at the top of the first sheet, in the same fonts as the title on screen, so the text below it may move down to the next sheet. The preview in the Export as PDF and Print dialogs shows the page both ways the moment you turn it off or on, before anything is saved or printed. The same switch is in the PDF files export of a section or notebook, where each page starts with its title. OpenNote remembers your choice. Picture (PNG) export is unchanged.
 - Lasso an area to export just that part.
 
 ## Open a Markdown or text file

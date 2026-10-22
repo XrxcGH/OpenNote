@@ -20,7 +20,7 @@ import type { BlockMeasure, Measure } from '../pagination/types';
 import { measureDocument, printDocument, type DocumentSetup } from './document';
 import { FlowMeasurer, settle, type UnitMeasure } from './dom';
 import { planPrint, type PrintOptions, type PrintPlan } from './sheets';
-import { pageUnits } from './units';
+import { pageUnits, withTitle } from './units';
 
 export interface PrepareInput {
   readonly page: ExportPage;
@@ -126,7 +126,8 @@ export async function preparePrint(doc: Document, input: PrepareInput): Promise<
     strokes: strokesByBlock(page.strokes),
     renderers,
   };
-  const units = pageUnits(readingOrder(page.blocks, page.view.readingOrder), cx);
+  const body = pageUnits(readingOrder(page.blocks, page.view.readingOrder), cx);
+  const units = input.print?.title ? withTitle(body, page, cx) : body;
   const setup: DocumentSetup = { page, layout, units, cx, theme: input.theme ?? lightTheme(), styles: input.styles };
   await showDocument(doc, measureDocument(setup));
   // On ruled paper the paginator places the cells the lines sit in, so every sheet starts on a rule.

@@ -19,7 +19,7 @@ import { bandBox, fillBand, fillTemplate } from './headerFooter';
 import { parsePageRange } from './range';
 import { chromiumPageFor, planPrint } from './sheets';
 import { measureCss, printCss } from './css';
-import { pageUnits } from './units';
+import { pageUnits, TITLE_UNIT, withTitle } from './units';
 
 describe('page ranges', () => {
   it('reads lists, spans, and open ends, and counts sheets from 1', () => {
@@ -327,5 +327,32 @@ describe('reading anchored ink', () => {
     const data = { role: 'anchored', anchor: { block: 'p', dy: 14 } };
     const page = readExportPage({ blocks: [{ id: 'hl', type: 'ink', order: 'a0', frame: { x: 1, y: 2 }, data }] });
     expect(page.blocks[0]).toMatchObject({ role: 'anchored', anchor: { block: 'p', dx: 0, dy: 14 } });
+  });
+});
+
+describe('the title unit', () => {
+  const page = lecturePage();
+  const cx: BlockContext = {
+    page,
+    labels: ENGLISH_LABELS,
+    assetUrl: () => null,
+    strokes: strokesByBlock(page.strokes),
+  };
+  const units = pageUnits(readingOrder(page.blocks, page.view.readingOrder), cx);
+
+  it('goes first, never splits, and keeps with what follows', () => {
+    const titled = withTitle(units, page, cx);
+    expect(titled.flow).toHaveLength(units.flow.length + 1);
+    expect(titled.flow[0].id).toBe(TITLE_UNIT);
+    expect(titled.flow[0].flow).toMatchObject({ kind: 'atom', heading: true });
+    expect(titled.flow[0].html).toContain('<h1 class="page-title">');
+    expect(titled.flow[0].html).toContain('class="page-date"');
+    expect(titled.floating).toBe(units.floating);
+  });
+
+  it('escapes the title and names an untitled page', () => {
+    const odd = { ...page, title: '<b>&' };
+    expect(withTitle(units, odd, cx).flow[0].html).toContain('&lt;b&gt;&amp;');
+    expect(withTitle(units, { ...page, title: '  ' }, cx).flow[0].html).toContain(ENGLISH_LABELS.untitled);
   });
 });

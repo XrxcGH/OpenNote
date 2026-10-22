@@ -101,3 +101,60 @@ describe('measuring lines', () => {
     }
   }, 120_000);
 });
+
+describe('the page title on the first sheet', () => {
+  const body = lines(
+    70,
+    (i) => `Paragraph ${i + 1}
+`,
+  );
+
+  async function prepared(title: boolean, page: ExportPage) {
+    const surface = await edgeSurface(browser, faces);
+    try {
+      const result = await surface.prepare({ page, assetUrls: {}, print: { title } });
+      const value = await surface.page.evaluate(() => {
+        const first = document.querySelector('section.sheet');
+        return {
+          titles: Array.from(document.querySelectorAll('section.sheet h1.page-title'), (h) => h.textContent),
+          dates: Array.from(document.querySelectorAll('section.sheet .page-date'), (h) => h.textContent),
+          first: first?.textContent,
+          paras: first?.querySelectorAll('p:not(.page-date)').length,
+        };
+      });
+      return { result, value };
+    } finally {
+      await surface.dispose();
+    }
+  }
+
+  it('prints the title and its date once, on the first sheet, and nothing when it is off', async () => {
+    const page = pageOf(
+      [
+        textBlock(
+          lines(
+            90,
+            (i) => `Paragraph ${i + 1}
+`,
+          ),
+        ),
+      ],
+      { title: 'Field notes' },
+    );
+    const on = await prepared(true, page);
+    expect(on.value.titles).toEqual(['Field notes']);
+    expect(on.value.dates).toHaveLength(1);
+    expect(on.value.first).toContain('Field notes');
+    const off = await prepared(false, page);
+    expect(off.value.titles).toEqual([]);
+    expect(off.value.dates).toEqual([]);
+  }, 120_000);
+
+  it('takes room from the first sheet, so content can move to a later sheet', async () => {
+    const page = pageOf([textBlock(body)], { title: 'Field notes' });
+    const on = await prepared(true, page);
+    const off = await prepared(false, page);
+    expect(on.result.sheets).toBeGreaterThanOrEqual(off.result.sheets);
+    expect(on.value.paras ?? 0).toBeLessThan(off.value.paras ?? 0);
+  }, 120_000);
+});

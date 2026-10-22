@@ -93,6 +93,9 @@ export const pageViews = {
     footer: 'Footer',
     headerHint: 'You can add the {title}, the {page} number, the number of {pages}, or the {date}.',
     paperPattern: 'Print the paper lines',
+    includeTitle: 'Include the page title',
+    includeTitleHelp:
+      'Puts the title and its date at the top of the first sheet. The preview shows the page both ways.',
     previewLabel: 'Preview of sheet {sheet}',
     previewing: 'Preparing the preview…',
     previewFailed: "The preview isn't available.",
