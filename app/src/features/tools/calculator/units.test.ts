@@ -96,8 +96,8 @@ describe('finding units', () => {
     expect(findUnit('constructor')).toBeNull();
   });
 
-  it('covers twelve categories with no repeated symbols', () => {
-    expect(UNIT_CATEGORIES).toHaveLength(12);
+  it('covers twenty categories with no repeated symbols', () => {
+    expect(UNIT_CATEGORIES).toHaveLength(20);
     const all = UNIT_CATEGORIES.flatMap((c) => unitsIn(c));
     expect(new Set(all).size).toBe(all.length);
     expect(unitsIn('temperature')).toEqual(['C', 'F', 'K', 'R']);
@@ -169,5 +169,65 @@ describe('conversion text', () => {
     expect(performance.now() - started).toBeLessThan(1000);
     expect(parseConversion(`5 km to mi${' '.repeat(2000)}`)).toBeNull();
     expect(parseConversion('5   km   to   mi  ')).toEqual({ value: 5, from: 'km', to: 'mi' });
+  });
+});
+
+describe('force, frequency, density, torque, fuel economy, and electrical units', () => {
+  it('converts force', () => {
+    expect(converted(1, 'kN', 'N')).toBe(1000);
+    expect(converted(1, 'lbf', 'N')).toBeCloseTo(4.4482216, 6);
+    expect(converted(1, 'kgf', 'N')).toBe(9.80665);
+  });
+  it('converts frequency, including rotations and radians', () => {
+    expect(converted(2.4, 'GHz', 'MHz')).toBe(2400);
+    expect(converted(60, 'rpm', 'Hz')).toBe(1);
+    expect(converted(2 * Math.PI, 'rad/s', 'Hz')).toBeCloseTo(1, 12);
+  });
+  it('converts density', () => {
+    expect(converted(1, 'g/cm³', 'kg/m³')).toBe(1000);
+    expect(converted(1, 'g/mL', 'kg/L')).toBe(1);
+    expect(converted(62.4, 'lb/ft³', 'kg/m³')).toBeCloseTo(999.55, 1);
+  });
+  it('converts torque', () => {
+    expect(converted(1, 'lbf·ft', 'N·m')).toBeCloseTo(1.3558179, 6);
+    expect(converted(12, 'lbf·in', 'lbf·ft')).toBeCloseTo(1, 6);
+  });
+  it('converts fuel economy through the reciprocal for liters per 100 km', () => {
+    expect(converted(30, 'mpg', 'L/100km')).toBeCloseTo(7.84, 2);
+    expect(converted(7.84, 'L/100km', 'mpg')).toBeCloseTo(30, 0);
+    expect(converted(10, 'km/L', 'L/100km')).toBe(10);
+    expect(converted(25, 'mpg', 'mpg UK')).toBeCloseTo(30.02, 1);
+    expect(convert(0, 'L/100km', 'mpg')).toEqual({ ok: false, reason: 'out-of-range' });
+    expect(convert(0, 'mpg', 'L/100km')).toEqual({ ok: false, reason: 'out-of-range' });
+    expect(converted(0, 'mpg', 'km/L')).toBe(0);
+  });
+  it('converts current, voltage, and resistance', () => {
+    expect(converted(250, 'mA', 'A')).toBe(0.25);
+    expect(converted(1.5, 'kV', 'V')).toBe(1500);
+    expect(converted(4.7, 'kΩ', 'Ω')).toBe(4700);
+    expect(converted(1, 'ohm', 'Ω')).toBe(1);
+  });
+  it('comes back to the start in every new category', () => {
+    for (const category of [
+      'force',
+      'frequency',
+      'density',
+      'torque',
+      'fuel',
+      'current',
+      'voltage',
+      'resistance',
+    ] as const) {
+      const ids = unitsIn(category);
+      for (const from of ids) {
+        for (const to of ids) {
+          const there = converted(7.25, from, to);
+          expect(converted(there, to, from)).toBeCloseTo(7.25, 8);
+        }
+      }
+    }
+  });
+  it('rejects mixing kinds', () => {
+    expect(convert(1, 'N', 'V')).toEqual({ ok: false, reason: 'different-kinds' });
   });
 });

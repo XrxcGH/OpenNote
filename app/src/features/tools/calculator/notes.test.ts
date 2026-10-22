@@ -81,9 +81,14 @@ describe('math in a note', () => {
   });
 });
 
+// Fuel economy and the electrical units are for the converter only: the engine has no electric current, and fuel
+// economy is not a product of the base dimensions.
+const CONVERTER_ONLY = new Set(['fuel', 'current', 'voltage', 'resistance']);
+const ENGINE_CATEGORIES = UNIT_CATEGORIES.filter((c) => !CONVERTER_ONLY.has(c));
+
 describe('the calculator unit table as a unit system', () => {
   it('gives every unit a dimension and a factor that agrees with the converter', () => {
-    for (const category of UNIT_CATEGORIES) {
+    for (const category of ENGINE_CATEGORIES) {
       const ids = unitsIn(category);
       for (const id of ids) {
         const def = calculatorUnits.find(id);
@@ -96,7 +101,7 @@ describe('the calculator unit table as a unit system', () => {
   });
 
   it('agrees with convert() for every pair of units in a category (not temperature)', () => {
-    for (const category of UNIT_CATEGORIES.filter((c) => c !== 'temperature')) {
+    for (const category of ENGINE_CATEGORIES.filter((c) => c !== 'temperature')) {
       const ids = unitsIn(category);
       const [first, ...rest] = ids;
       for (const id of rest) {

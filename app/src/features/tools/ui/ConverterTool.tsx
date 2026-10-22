@@ -36,6 +36,14 @@ const COMMON: Partial<Record<UnitCategory, readonly [string, string]>> = {
   power: ['hp', 'kW'],
   angle: ['deg', 'rad'],
   data: ['MB', 'GB'],
+  force: ['lbf', 'N'],
+  frequency: ['kHz', 'Hz'],
+  density: ['g/cm³', 'kg/m³'],
+  torque: ['lbf·ft', 'N·m'],
+  fuel: ['mpg', 'L/100km'],
+  current: ['mA', 'A'],
+  voltage: ['mV', 'V'],
+  resistance: ['kΩ', 'Ω'],
 };
 
 const FIRST: State = { category: 'length', from: 'mi', to: 'km', text: '1', side: 'from' };

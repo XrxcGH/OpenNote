@@ -16,7 +16,7 @@ function unitNamed(name: string): ConverterUnit | null {
 }
 
 /** The dimension of each category, and how many SI base units its base unit is (a liter is 0.001 cubic meters). */
-const CATEGORIES: Readonly<Record<UnitCategory, { dim: Dimension; si: number }>> = {
+const CATEGORIES: Readonly<Partial<Record<UnitCategory, { dim: Dimension; si: number }>>> = {
   length: { dim: [1, 0, 0, 0, 0], si: 1 },
   mass: { dim: [0, 1, 0, 0, 0], si: 1 },
   time: { dim: [0, 0, 1, 0, 0], si: 1 },
@@ -30,6 +30,12 @@ const CATEGORIES: Readonly<Record<UnitCategory, { dim: Dimension; si: number }>>
   // An angle has no dimension of its own: a radian is a ratio of lengths. The unit it is written in is kept for display.
   angle: { dim: [0, 0, 0, 0, 0], si: 1 },
   data: { dim: [0, 0, 0, 0, 1], si: 1 },
+  force: { dim: [1, 1, -2, 0, 0], si: 1 },
+  frequency: { dim: [0, 0, -1, 0, 0], si: 1 },
+  density: { dim: [-3, 1, 0, 0, 0], si: 1 },
+  torque: { dim: [2, 1, -2, 0, 0], si: 1 },
+  // Fuel economy is not a product of the base dimensions, and the engine has no electric current, so the units of
+  // those kinds (fuel, current, voltage, resistance) are for the converter only.
 };
 
 /** Kelvin from each scale is `value * factor + offset`. */
@@ -44,7 +50,9 @@ export const calculatorUnits: UnitSystem = {
   find(name: string): UnitDef | undefined {
     const unit = unitNamed(name);
     if (unit === null) return undefined;
-    const { dim, si } = CATEGORIES[unit.category];
+    const kind = CATEGORIES[unit.category];
+    if (kind === undefined) return undefined;
+    const { dim, si } = kind;
     if (unit.category === 'temperature') return { id: unit.id, dim, ...TEMPERATURE[unit.id] };
     return { id: unit.id, dim, factor: unit.factor * si };
   },

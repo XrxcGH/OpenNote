@@ -390,7 +390,7 @@ export const study = {
   converter: {
     title: 'Unit converter',
     open: 'Open the unit converter',
-    keywords: 'unit converter convert length mass temperature volume speed',
+    keywords: 'unit converter convert length mass temperature volume speed force frequency density torque fuel economy mpg current voltage resistance',
     kind: 'Kind of unit',
     categories: {
       length: 'Length',
@@ -405,6 +405,14 @@ export const study = {
       power: 'Power',
       angle: 'Angle',
       data: 'Data size',
+      force: 'Force',
+      frequency: 'Frequency',
+      density: 'Density',
+      torque: 'Torque',
+      fuel: 'Fuel economy',
+      current: 'Electric current',
+      voltage: 'Voltage',
+      resistance: 'Resistance',
     },
     from: 'From',
     to: 'To',

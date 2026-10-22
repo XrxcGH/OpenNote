@@ -41,7 +41,7 @@ Press Ctrl+K and choose one by name. Each opens in its own window, which remembe
 |---|---|
 | Timers | Countdowns that keep running while you write. A running timer shows in the title bar, and you can ask each timer to notify you when it finishes, even with the window closed. |
 | Calculator | Works out sums and unit conversions, and keeps a history. |
-| Unit converter | Converts length, mass, time, temperature, area, volume, speed, pressure, energy, power, angle, and data size. |
+| Unit converter | Converts length, mass, time, temperature, area, volume, speed, pressure, energy, power, angle, data size, force, frequency, density, torque, fuel economy, electric current, voltage, and resistance. |
 | Reference tables | Looks up the periodic table (with group, period, and electron configuration for each element), constants, metric prefixes, and Greek letters. |
 | Exam countdown | Counts the days to each exam. |
 | Citations | Keeps a list of sources from BibTeX, RIS, and Zotero, and inserts citations that follow your chosen style (APA, MLA, Chicago, Vancouver, ACS, AMA, Turabian, and more), so changing the style updates them. A DOI or ISBN look-up happens only when you ask, and is listed in the Privacy panel. With Zotero running, it also adds, edits, and refreshes Zotero citations and bibliographies in the page. |
