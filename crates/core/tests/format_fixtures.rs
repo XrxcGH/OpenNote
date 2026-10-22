@@ -260,6 +260,7 @@ const ESCAPE_TEXTS: &[&str] = &[
     "a == b",
     "Costs $5",
     "#biology and C#",
+    "Review #todo, then #exam/unit-3.",
     "snake_case and _draft",
     "[draft]",
     "AT&T and &amp;",

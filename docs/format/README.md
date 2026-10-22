@@ -928,6 +928,15 @@ The rules apply to text outside code spans, code blocks, link destinations, and 
 | `-` and `+` | First on a paragraph line | Lists, breaks, and setext headings |
 | `.` and `)` | After 1 to 9 digits that begin a paragraph line | Numbered lists |
 
+#### Typed hashtags
+
+A word that starts with `#` is always written with the `#` escaped, as in `\#biology`, whether or not the editor treats it as a tag. The text of a block is the same in both states of the editor's setting "Turn typed #words into tags".
+
+- **Setting on.** When a typed `#word` is finished by a space or punctuation, the editor also adds the word to the page's `tags` (section 5.2), in the form of its normal tag (folded, with a `/` nesting it). Nothing in the text changes. The tag is its own change in the page's history, so one Undo leaves the plain `#word` in the text and removes the tag.
+- **Setting off.** The editor adds nothing to `tags`. The text is the same.
+- **What counts.** The `#` is at the start of a word, the word has at least one letter, and it uses letters, digits, `_`, `-`, and `/`. A word of digits only (`#1`), a `#` after a letter (`C#`), and text inside code spans, code blocks, link destinations, and web addresses are not tags.
+- **Readers.** A reader treats `\#word` as the text `#word`, and shows the page's `tags` as the page's tags. A tool that reads old pages sees no change: the format does not change, and a page written with the setting off stays valid with it on.
+
 Two characters are written as numeric character references instead of escapes. A space that is first or last on a paragraph line is written `&#32;`, because CommonMark would drop it. A tab is always written `&#9;`.
 
 Every other character is written as itself. Text never contains `U+000D`: a line break inside a paragraph is always a hard break. `U+0000` is replaced with `U+FFFD`, as CommonMark requires.
@@ -2263,6 +2272,7 @@ The `page.md` in section 11.1 is exact. Its checksum, `d69a2039`, is the CRC-32 
 | `a == b` | `a \=\= b` |
 | `Costs $5` | `Costs \$5` |
 | `#biology and C#` | `\#biology and C#` |
+| `Review #todo, then #exam/unit-3.` | `Review \#todo, then \#exam/unit-3.` |
 | `snake_case and _draft` | `snake_case and \_draft` |
 | `[draft]` | `\[draft\]` |
 | `AT&T and &amp;` | `AT&T and \&amp;` |
@@ -2292,4 +2302,4 @@ The folder `docs/format/tools/` holds `read_opennote.py`, a reference reader wri
 
 | Version | Date | Changes |
 |---|---|---|
-| 1 | 2026 | First version |
+| 1 | 2026 | First version. Section 7.6 says how typed hashtags are written and when they become page tags |
