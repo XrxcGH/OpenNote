@@ -26,6 +26,7 @@ describe('the Settings page', () => {
     expect(links.map((link) => link.textContent)).toEqual([
       'General',
       'Appearance',
+      'Language',
       'Editing',
       'Recording',
       'On-device intelligence',

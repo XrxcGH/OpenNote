@@ -45,7 +45,7 @@ export interface IntelClient {
   /** Reads the text in an image, with a box for every word. Needs the `ocr` feature. */
   recognizeImage(image: ImagePixels, options?: { language?: string }): Promise<OcrResult>;
   /** Reads handwriting, and says which strokes made each word. Needs the `handwriting` feature. */
-  recognizeInk(strokes: InkStroke[], options?: { kind?: StrokeKind }): Promise<InkRecognition>;
+  recognizeInk(strokes: InkStroke[], options?: { kind?: StrokeKind; language?: string }): Promise<InkRecognition>;
   /**
    * Plans a tidy of handwriting that was already recognized: level the lines, even out the spacing, or wrap to a
    * width. Nothing changes until you apply the moves. Needs the `handwriting` feature.
@@ -87,7 +87,9 @@ export function createIntelClient(transport: IntelTransport): IntelClient {
         request: { source: pixelSource(image), ...withValue('language', options.language) },
       }),
     recognizeInk: (strokes, options = {}) =>
-      call('intel_ink_recognize', { request: { strokes, ...withValue('kind', options.kind) } }),
+      call('intel_ink_recognize', {
+        request: { strokes, ...withValue('kind', options.kind), ...withValue('language', options.language) },
+      }),
     tidyInk: (strokes, recognition, operation) =>
       call('intel_ink_tidy', { request: { strokes, recognition, operation } }),
     actionItems: (transcript) => call('intel_action_items', { request: { transcript } }),

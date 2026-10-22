@@ -124,6 +124,7 @@ const SHOTS: Shot[] = [
   ...[
     ['setup-welcome', 'Welcome to OpenNote'],
     ['setup-look', 'Choose your look'],
+    ['setup-language', 'Language and spelling'],
     ['setup-intelligence', 'On-device intelligence'],
     ['setup-keys-and-pen', 'Keys and pen'],
     ['setup-storage', 'Where to keep things'],

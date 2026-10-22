@@ -153,5 +153,8 @@
     },
     "contrastInk": "keepLegible",
     "lowLatency": "auto"
+  },
+  "language": {
+    "locale": "en-US"
   }
 }

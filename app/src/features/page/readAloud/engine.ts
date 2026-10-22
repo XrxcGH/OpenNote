@@ -2,6 +2,8 @@
 // voices send text to a cloud service, so they are never listed or used, even as a default. One utterance is one
 // paragraph, and word boundaries drive the highlight.
 
+import { voiceLanguage } from '../../../state/language';
+
 export interface SpeechVoice {
   /** The voice's URI, saved in settings.editing.readAloud.voice. */
   id: string;
@@ -48,9 +50,33 @@ function toVoice(voice: SpeechSynthesisVoice): SpeechVoice {
   return { id: voice.voiceURI, name: voice.name, language: voice.lang, isDefault: voice.default };
 }
 
+const tagOf = (tag: string) => tag.replace('_', '-').toLowerCase();
+
+/**
+ * The voice to speak with: the one chosen, else a voice for the chosen language (the same dialect first, then any
+ * dialect), else the default voice. Windows' own language never decides while a voice for the chosen one exists.
+ */
+export function pickVoice<V extends { voiceURI: string; lang: string; default: boolean }>(
+  voices: readonly V[],
+  id: string | null,
+  language: string,
+): V | null {
+  const wanted = tagOf(language);
+  const primary = wanted.split('-')[0];
+  return (
+    voices.find((voice) => voice.voiceURI === id) ??
+    voices.find((voice) => tagOf(voice.lang) === wanted) ??
+    voices.find((voice) => tagOf(voice.lang).split('-')[0] === primary) ??
+    voices.find((voice) => voice.default) ??
+    voices[0] ??
+    null
+  );
+}
+
 /** The Web Speech engine over `synth`, or null where the browser has none. */
 export function createWebSpeechEngine(
   synth: SpeechSynthesis | null = typeof speechSynthesis === 'undefined' ? null : speechSynthesis,
+  language: () => string = voiceLanguage,
 ): SpeechEngine | null {
   if (!synth) return null;
   const local = () => synth.getVoices().filter((voice) => voice.localService);
@@ -69,10 +95,7 @@ export function createWebSpeechEngine(
           synth.addEventListener('voiceschanged', done);
         });
 
-  const choose = (id: string | null): SpeechSynthesisVoice | null => {
-    const voices = local();
-    return voices.find((voice) => voice.voiceURI === id) ?? voices.find((voice) => voice.default) ?? voices[0] ?? null;
-  };
+  const choose = (id: string | null): SpeechSynthesisVoice | null => pickVoice(local(), id, language());
 
   return {
     async voices() {

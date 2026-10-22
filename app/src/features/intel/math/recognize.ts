@@ -4,6 +4,7 @@
 // limits, and matrices. Everything runs on this device. The ink is never changed; the person gets an equation beside it.
 import { isIntelError } from '../../../services/intel';
 import type { IntelClient } from '../../../services/intel';
+import { recognitionLanguage } from '../../../state/language';
 import { groupStrokes } from './group';
 import type { Cluster, MathStroke } from './group';
 import { layout } from './layout';
@@ -107,7 +108,7 @@ export function readWith(client: () => Promise<IntelClient>): ReadSymbol {
           key: stroke.key,
           points: stroke.points.map((p): [number, number] => [p[0], p[1]]),
         })),
-        { kind: 'writing' },
+        { kind: 'writing', language: recognitionLanguage() },
       );
       return result.lines[0]?.text.trim() || null;
     } catch (error) {

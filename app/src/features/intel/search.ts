@@ -5,6 +5,7 @@
 import { isEnabled } from '../../app/flags';
 import { isIntelError } from '../../services/intel';
 import type { InkStroke, Rect } from '../../services/intel';
+import { recognitionLanguage } from '../../state/language';
 import { readTextInImage } from './imageText';
 import type { ReadImageOptions } from './imageText';
 import { linesOf } from './ink';
@@ -57,7 +58,9 @@ export async function searchTextInImage(blob: Blob, options: ReadImageOptions = 
 export async function searchTextInInk(strokes: InkStroke[]): Promise<RecognizedText | null> {
   if (strokes.length === 0 || !(await searchTextReady('handwriting'))) return null;
   try {
-    const recognition = await (await intelClient()).recognizeInk(strokes, { kind: 'auto' });
+    const recognition = await (
+      await intelClient()
+    ).recognizeInk(strokes, { kind: 'auto', language: recognitionLanguage() });
     return {
       source: 'handwriting',
       text: linesOf(recognition).join('\n'),

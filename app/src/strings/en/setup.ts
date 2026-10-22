@@ -20,6 +20,7 @@ export const setup = {
   steps: {
     welcome: 'Welcome to OpenNote',
     look: 'Choose your look',
+    language: 'Language and spelling',
     storage: 'Where to keep things',
   },
   welcome: {

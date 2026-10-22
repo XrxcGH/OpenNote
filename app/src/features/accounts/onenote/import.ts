@@ -22,6 +22,7 @@ import type { PageBlock } from './html';
 import type { InkSpec } from './inkml';
 import { fetchPicture, listPages, listSections, pageHtml } from './graph';
 import type { GraphNotebook } from './graph';
+import { currentLocale } from '../../../state/language';
 
 interface PageState {
   node: string;
@@ -248,7 +249,7 @@ async function writeBlocks(
 
 /** The text of the Import report page. */
 export function reportMarkdown(reports: readonly NotebookReport[]): string[] {
-  const out: string[] = [t('accounts.onenote.report.intro', { date: new Date().toLocaleDateString() })];
+  const out: string[] = [t('accounts.onenote.report.intro', { date: new Date().toLocaleDateString(currentLocale()) })];
   for (const one of reports) {
     out.push(`## ${one.notebook}`);
     out.push(t('accounts.onenote.report.counts', { sections: one.sections, pages: one.pages, kept: one.kept }));

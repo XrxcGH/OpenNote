@@ -2,6 +2,7 @@
 import { t } from '../../../strings/t';
 import type { Repeat } from '../upcoming';
 import { longDay } from './upcomingShared';
+import { currentLocale } from '../../../state/language';
 
 export function repeatWords(repeat: Repeat): string {
   const count = repeat.every;
@@ -9,7 +10,7 @@ export function repeatWords(repeat: Repeat): string {
   if (repeat.unit === 'day') return t('study.repeat.when.day', { count });
   if (repeat.unit === 'week') {
     if (repeat.days && repeat.days.length > 0) {
-      const days = new Intl.ListFormat(undefined, { type: 'conjunction' }).format(repeat.days.map(longDay));
+      const days = new Intl.ListFormat(currentLocale(), { type: 'conjunction' }).format(repeat.days.map(longDay));
       return t('study.repeat.when.weekOn', { days });
     }
     return t('study.repeat.when.week', { count });

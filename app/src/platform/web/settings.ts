@@ -26,6 +26,10 @@ function invalidField(settings: Settings): IpcError | null {
   if (typeof scale !== 'number' || scale < 90 || scale > 150) {
     return { code: 'invalid', message: 'appearance.uiScale must be 90 to 150', field: 'appearance.uiScale' };
   }
+  const locale = settings.language?.locale;
+  if (typeof locale !== 'string' || !/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,3}$/.test(locale)) {
+    return { code: 'invalid', message: "language.locale isn't a language tag", field: 'language.locale' };
+  }
   return null;
 }
 

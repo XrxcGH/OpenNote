@@ -11,6 +11,7 @@ import { whenText } from './UpcomingList';
 import { longDay, useMinute, weekday, zone } from './upcomingShared';
 import grid from './calendar.module.css';
 import styles from './tools.module.css';
+import { currentLocale } from '../../../state/language';
 
 export type CalendarMode = 'week' | 'month';
 
@@ -25,17 +26,17 @@ export interface UpcomingCalendarProps {
 }
 
 const dayName = (date: CivilDate): string =>
-  new Date(date.year, date.month - 1, date.day).toLocaleDateString(undefined, {
+  new Date(date.year, date.month - 1, date.day).toLocaleDateString(currentLocale(), {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   });
 
 const shortDate = (date: CivilDate): string =>
-  new Date(date.year, date.month - 1, date.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  new Date(date.year, date.month - 1, date.day).toLocaleDateString(currentLocale(), { month: 'short', day: 'numeric' });
 
 const monthName = (date: CivilDate): string =>
-  new Date(date.year, date.month - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  new Date(date.year, date.month - 1, 1).toLocaleDateString(currentLocale(), { month: 'long', year: 'numeric' });
 
 /** Where an arrow key or Page key moves the chosen day, or null for a key the grid does not use. */
 export function movedBy(key: string, from: CivilDate, mode: CalendarMode): CivilDate | null {

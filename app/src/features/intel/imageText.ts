@@ -3,6 +3,7 @@
 // first, and the color is dropped, because recognition needs only the shapes of the letters.
 import { toIntelError } from '../../services/intel';
 import type { ImagePixels, IntelClient, OcrResult } from '../../services/intel';
+import { ocrLanguage } from '../../state/language';
 import { intelClient } from './runtime';
 
 /** The longest side sent for recognition. Windows reads ordinary text well below this, and a smaller image is faster. */
@@ -74,7 +75,7 @@ export function wordBoxes(result: Pick<OcrResult, 'lines'>, width: number, heigh
 }
 
 export interface ReadImageOptions {
-  /** A language tag, or the languages of the person's Windows profile. */
+  /** A language tag. The chosen language when left out; the Windows profile's languages if it has no OCR pack. */
   language?: string;
   client?: () => Promise<IntelClient>;
   decode?: (blob: Blob) => Promise<ImagePixels>;
@@ -85,7 +86,14 @@ export async function readTextInImage(blob: Blob, options: ReadImageOptions = {}
   try {
     const pixels = await (options.decode ?? pixelsFromBlob)(blob);
     const client = await (options.client ?? intelClient)();
-    return await client.recognizeImage(pixels, options.language ? { language: options.language } : {});
+    const language = options.language ?? ocrLanguage();
+    try {
+      return await client.recognizeImage(pixels, { language });
+    } catch (error) {
+      // No OCR pack for the chosen language: read in the Windows profile's languages rather than not at all.
+      if (options.language || toIntelError(error).code !== 'languageUnavailable') throw error;
+      return await client.recognizeImage(pixels, {});
+    }
   } catch (error) {
     throw toIntelError(error);
   }

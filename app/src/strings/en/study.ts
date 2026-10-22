@@ -225,7 +225,7 @@ export const study = {
     recordNamed: 'Record {name}',
     opened: 'Opened the page for {name}.',
     made: 'Made the page for {name} from the class template.',
-    sectionGone: 'The section for {name} is not there any more. Choose another in the timetable.',
+    sectionGone: 'The section for {name} is not there any more. Choose another in the class schedule.',
     recordStarted: 'Recording {name}.',
     recordBusy: 'A recording is already running, so a new one was not started.',
     recordWaited: 'The page for {name} did not open in time, so no recording was started.',
@@ -330,7 +330,7 @@ export const study = {
   calendar: {
     found: 'Found in {name}',
     kinds: {
-      classes: '{count, plural, one {# weekly class} other {# weekly classes}} for the timetable',
+      classes: '{count, plural, one {# weekly class} other {# weekly classes}} for the class schedule',
       exams: '{count, plural, one {# exam date} other {# exam dates}}',
       items: '{count, plural, one {# assignment or event} other {# assignments and events}}',
     },

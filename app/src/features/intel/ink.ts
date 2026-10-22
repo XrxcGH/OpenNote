@@ -1,6 +1,7 @@
 // Handwriting to text (Phase 12). The pen layer of Phase 5 owns the strokes, so it registers a source that turns
 // stroke IDs into points (each stroke's own transform already applied). This module asks the on-device recognizer to
 // read them. The ink stays ink: the words come back as text, and the caller adds them beside the strokes.
+import { recognitionLanguage } from '../../state/language';
 import type { IntelClient, InkRecognition, InkStroke } from '../../services/intel';
 import { askToTurnOn, intelClient, reportProblem } from './runtime';
 
@@ -58,7 +59,7 @@ export async function readHandwritingWords(
     const strokes = await source.strokes(ids);
     if (strokes.length === 0) return { lines: [] };
     const client = await (options.client ?? intelClient)();
-    return await client.recognizeInk(strokes, { kind: 'writing' });
+    return await client.recognizeInk(strokes, { kind: 'writing', language: recognitionLanguage() });
   } catch (error) {
     reportProblem(error, 'handwriting');
     return null;

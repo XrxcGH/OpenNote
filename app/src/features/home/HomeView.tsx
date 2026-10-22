@@ -18,12 +18,13 @@ import type { HomeChoice, HomeSectionId } from './layout';
 import { arrange, moved } from './layout';
 import { UpcomingSection } from './UpcomingSection';
 import styles from './Home.module.css';
+import { currentLocale } from '../../state/language';
 
 const RECENT_SHOWN = 8;
 
 /** The title today's note would have. */
 export function todayTitle(now: Date = new Date()): string {
-  return now.toLocaleDateString(undefined, { dateStyle: 'long' });
+  return now.toLocaleDateString(currentLocale(), { dateStyle: 'long' });
 }
 
 function PageLinks({ entries, empty }: { entries: readonly NodeEntry[]; empty: string }) {

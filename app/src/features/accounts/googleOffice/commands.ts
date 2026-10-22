@@ -13,6 +13,7 @@ import { sendTo } from '../sendto/commands';
 import type { SendFormat } from '../sendto/types';
 import { fetchDoc, recentDocs } from './import';
 import type { DriveDoc, OfficeKind } from './import';
+import { currentLocale } from '../../../state/language';
 
 export async function importFromGoogle(): Promise<void> {
   if (!(await isConnected('google'))) return tellNotConnected('Google');
@@ -42,7 +43,7 @@ export async function importFromGoogle(): Promise<void> {
     const choices: Choice<DriveDoc>[] = docs.map((doc) => ({
       id: doc.id,
       label: doc.name || t('accounts.googleOffice.untitled'),
-      detail: doc.modified ? new Date(doc.modified).toLocaleDateString() : undefined,
+      detail: doc.modified ? new Date(doc.modified).toLocaleDateString(currentLocale()) : undefined,
       value: doc,
     }));
     const doc = await pickOne<DriveDoc>({

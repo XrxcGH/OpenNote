@@ -11,6 +11,7 @@ import { palette } from './palette';
 import { shortcuts } from './shortcuts';
 import { settings } from './settings';
 import { setup } from './setup';
+import { language } from './language';
 import { theme } from './theme';
 import { updates } from './updates';
 import { errors } from './errors';
@@ -61,6 +62,7 @@ export const en = {
   shortcuts,
   settings,
   setup,
+  language,
   theme,
   updates,
   errors,

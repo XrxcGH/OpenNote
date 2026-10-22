@@ -140,6 +140,8 @@ export interface InkRecognition {
 export interface InkRequest {
   strokes: InkStroke[];
   kind?: StrokeKind;
+  /** A language tag, the chosen language. The recognizers Windows has installed decide what is read today. */
+  language?: string;
 }
 
 // Summaries and keywords

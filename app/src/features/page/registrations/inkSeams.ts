@@ -3,6 +3,7 @@
 // cannot import either, so registrations/ink.ts hands it these as lazy calls. Nothing here loads at start-up.
 import type { Editor } from '@tiptap/core';
 import type { InkRecognition, InkStroke, TidyOperation, TidyPlan } from '../../../services/intel';
+import { recognitionLanguage } from '../../../state/language';
 import { shownPool } from '../pool/shown';
 import { shownMedia } from '../images/shown';
 
@@ -14,7 +15,7 @@ export async function recognize(strokes: InkStroke[], ask = true): Promise<InkRe
   await api.loadIntel();
   if (ask ? !(await api.askToTurnOn('handwriting')) : !api.isOn('handwriting')) return null;
   try {
-    return await (await api.intelClient()).recognizeInk(strokes, { kind: 'writing' });
+    return await (await api.intelClient()).recognizeInk(strokes, { kind: 'writing', language: recognitionLanguage() });
   } catch (error) {
     api.reportProblem(error, 'handwriting');
     return null;

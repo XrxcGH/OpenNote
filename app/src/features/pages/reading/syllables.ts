@@ -2,6 +2,8 @@
 // and splits the consonants between them by the usual rules. It is right for most common words and wrong for some, so a
 // breaking dictionary can replace it later without changing the callers. Other languages are left whole.
 
+import { hyphenationLanguage } from '../../../state/language';
+
 export const SOFT_HYPHEN = '­';
 
 /** The shortest word that gets breaks, in letters. */
@@ -68,7 +70,7 @@ function breakBetween(w: string, a: Group, b: Group): number {
 }
 
 /** The syllables of a lowercase or mixed-case English word of letters. Anything else comes back whole. */
-export function syllables(word: string, language = 'en'): string[] {
+export function syllables(word: string, language = hyphenationLanguage()): string[] {
   if (!/^[A-Za-z]+$/.test(word) || !/^en(-|$)/i.test(language) || word.length < MIN_WORD) return [word];
   const w = word.toLowerCase();
   const groups = withoutSilentEnding(w, vowelGroups(w));
@@ -122,7 +124,7 @@ const SKIP = /[\d@/\\_#]/;
  * is left alone. Apply it to text nodes only, never to code.
  */
 export function breakText(text: string, options: BreakOptions = {}): string {
-  const { language = 'en', separator = SOFT_HYPHEN, minWord = MIN_WORD } = options;
+  const { language = hyphenationLanguage(), separator = SOFT_HYPHEN, minWord = MIN_WORD } = options;
   if (!/^en(-|$)/i.test(language)) return text;
   return text
     .split(/(\s+)/)

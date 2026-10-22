@@ -47,6 +47,8 @@ pub struct Settings {
     pub experimental: Experimental,
     pub editing: EditingSettings,
     pub ink: InkSettings,
+    #[cfg_attr(test, ts(inline))]
+    pub language: Language,
 }
 
 impl Default for Settings {
@@ -64,6 +66,7 @@ impl Default for Settings {
             experimental: Experimental::default(),
             editing: EditingSettings::default(),
             ink: InkSettings::default(),
+            language: Language::default(),
         }
     }
 }
@@ -98,7 +101,29 @@ impl Settings {
         }
         self.editing.check(&mut check);
         self.ink.check(&mut check);
+        check.that(
+            "language.locale",
+            validate::language_tag(&self.language.locale),
+            "The language isn't a language tag.",
+        );
         check.finish()
+    }
+}
+
+/// The language of spelling, recognition, the voice, and the dictionary. Setup asks once; Settings changes it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+pub struct Language {
+    /// A BCP 47 tag, such as `en-US`. The default is American English, whatever language Windows uses.
+    pub locale: String,
+}
+
+impl Default for Language {
+    fn default() -> Self {
+        Self {
+            locale: "en-US".to_owned(),
+        }
     }
 }
 
@@ -313,11 +338,12 @@ pub enum SettingsSectionKey {
     Experimental,
     Editing,
     Ink,
+    Language,
 }
 
 impl SettingsSectionKey {
     /// Every section, in the order of `settings.json`.
-    pub const ALL: [SettingsSectionKey; 10] = [
+    pub const ALL: [SettingsSectionKey; 11] = [
         Self::Appearance,
         Self::Storage,
         Self::Startup,
@@ -328,6 +354,7 @@ impl SettingsSectionKey {
         Self::Experimental,
         Self::Editing,
         Self::Ink,
+        Self::Language,
     ];
 
     /// The section's key in `settings.json`.
@@ -343,6 +370,7 @@ impl SettingsSectionKey {
             Self::Experimental => "experimental",
             Self::Editing => "editing",
             Self::Ink => "ink",
+            Self::Language => "language",
         }
     }
 }

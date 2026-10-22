@@ -11,6 +11,7 @@ import { dateKey, findDue, parseDateKey } from '../upcoming';
 import type { Due } from '../upcoming';
 import { datePart, dueCandidate, formatDue } from '../upcoming/pageDue';
 import styles from './editor.module.css';
+import { currentLocale } from '../../../state/language';
 
 const LEAF = '\u0000';
 const MAX_CHARS = 30_000;
@@ -26,9 +27,9 @@ interface Found {
 
 function dueText(due: Due): string {
   const day = new Date(due.date.year, due.date.month - 1, due.date.day);
-  const date = day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const date = day.toLocaleDateString(currentLocale(), { weekday: 'short', month: 'short', day: 'numeric' });
   if (!due.time) return date;
-  const time = new Date(2000, 0, 1, due.time.hour, due.time.minute).toLocaleTimeString(undefined, {
+  const time = new Date(2000, 0, 1, due.time.hour, due.time.minute).toLocaleTimeString(currentLocale(), {
     hour: 'numeric',
     minute: '2-digit',
   });
