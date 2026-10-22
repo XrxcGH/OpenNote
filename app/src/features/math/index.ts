@@ -18,3 +18,8 @@ export type { MapNode } from './mindmap/tree';
 export { mountDiagram } from './diagram/mount';
 export { STARTER_TEXT, fallbackOf } from './diagram/kind';
 export { drawDiagram } from './diagram/render';
+export { Graph3DView } from './space/Graph3DView';
+export { VectorsTool } from './space/tools/VectorsTool';
+export { SolidsTool } from './space/tools/SolidsTool';
+export { ProjectileTool } from './space/tools/ProjectileTool';
+export { STARTER_3D, STARTER_CURVES } from './space/starters';

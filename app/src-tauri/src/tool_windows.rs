@@ -96,6 +96,24 @@ pub const TOOLS: &[Tool] = &[
         width: 480.0,
         height: 640.0,
     },
+    Tool {
+        id: "vectors",
+        title: "Vectors",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "solids",
+        title: "Solids of revolution",
+        width: 560.0,
+        height: 720.0,
+    },
+    Tool {
+        id: "projectile",
+        title: "Projectile simulator",
+        width: 560.0,
+        height: 720.0,
+    },
 ];
 
 /// The tool with this name, or `None`. Nothing from the interface reaches a window label or a script unless it

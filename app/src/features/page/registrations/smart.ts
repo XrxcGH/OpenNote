@@ -30,14 +30,14 @@ const textBlocks = () =>
  * The editor an equation or a graph goes in: the one with the caret, or else the end of the page's last text block, so
  * the Insert tab offers them before the page is clicked into, as it does a table (Beta 5 walk W2-17).
  */
-function insertTarget(): Editor | null {
+export function insertTarget(): Editor | null {
   const editor = targetEditor();
   if (editor) return editor;
   const last = textBlocks().at(-1);
   const pool = shownMedia.get()?.pool;
   return last && pool ? pool.mount(last.id, { kind: 'end' }, 'target') : null;
 }
-const canInsert = () => inEditor() || textBlocks().length > 0;
+export const canInsert = () => inEditor() || textBlocks().length > 0;
 
 interface Spec {
   id: `${string}.${string}`;
