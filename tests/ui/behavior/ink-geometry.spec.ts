@@ -1,9 +1,12 @@
 // The measuring ruler, the measure, and the compass in the real interface, with pen input sent through the DevTools
 // Protocol on grid paper. The ruler switches its ticks between centimeters and inches. The measure shows a distance
 // and draws nothing. The compass's center and radius snap to the grid's crossings, and a full sweep stores one circle
-// whose points all lie at that radius from its center.
+// whose points all lie at that radius from its center, and a part sweep stores an arc. A line drawn along the ruler is
+// held straight to its edge and its length is read out. The ruler moves by drag and by keys, and the measure works from
+// the keyboard.
 import type { CDPSession, Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
+import { press } from '../paperSnap';
 
 /** Wide enough for the Draw tab to show its snap group. */
 const VIEWPORT = { width: 1920, height: 1000 };
@@ -170,5 +173,91 @@ test.describe('geometry tools', () => {
     for (const one of radii) expect(Math.abs(one - r)).toBeLessThan(0.5);
     // Opened from one grid crossing to another along a row, the radius is a whole number of squares.
     expect(Math.abs(r / STEP - Math.round(r / STEP))).toBeLessThan(0.05);
+  });
+  test('a line drawn along the ruler is straight and its length is read out', async ({ page }) => {
+    await openGrid(page);
+    const client = await page.context().newCDPSession(page);
+    await turnOn(page, 'Ruler');
+    await chooseUnits(page, 'Units: centimeters');
+    await press(page, 'Pen, Ink, 0.5 mm', true);
+    const before = (await page.evaluate(storedPoints)).length;
+    const box = (await page.locator('[data-ink-widget="ruler"]').boundingBox())!;
+    // Start just above the top edge, on the page, and wander up to 4 px either side of it.
+    const line = Array.from({ length: 31 }, (_, i) => ({ x: 700 + i * 10, y: box.y - 5 + 4 * Math.sin(i) }));
+    await pen(client, line);
+    await expect.poll(async () => (await page.evaluate(storedPoints)).length).toBe(before + 1);
+    const stroke = (await page.evaluate(storedPoints)).at(-1)!;
+    const ys = stroke.map((p) => p.y);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(0.1);
+    await expect(page.locator('[data-ink-readout="ruler"]')).toHaveText(/^[\d.]+ cm along the ruler$/);
+  });
+
+  test('the ruler moves by drag and by the arrow keys', async ({ page }) => {
+    await openGrid(page);
+    await turnOn(page, 'Ruler');
+    await chooseUnits(page, 'Units: centimeters');
+    const ruler = page.locator('[data-ink-widget="ruler"]');
+    const box = (await ruler.boundingBox())!;
+    const mid = { x: box.x + box.width / 3, y: box.y + box.height / 2 };
+    await page.mouse.move(mid.x, mid.y);
+    await page.mouse.down();
+    await page.mouse.move(mid.x + 60, mid.y + 40, { steps: 6 });
+    await page.mouse.up();
+    const moved = (await ruler.boundingBox())!;
+    expect(moved.x - box.x).toBeCloseTo(60, 0);
+    expect(moved.y - box.y).toBeCloseTo(40, 0);
+    // Ten presses move it 10 mm: a thirtieth of its 30 cm length.
+    await ruler.focus();
+    for (let i = 0; i < 10; i += 1) await page.keyboard.press('ArrowRight');
+    const keyed = (await ruler.boundingBox())!;
+    expect(keyed.x - moved.x).toBeCloseTo(moved.width / 30, 0);
+  });
+
+  test('the measure works from the keyboard', async ({ page }) => {
+    await openGrid(page);
+    await chooseUnits(page, 'Units: centimeters');
+    await turnOn(page, 'Measure');
+    const cursor = page.locator('[data-ink-measure-cursor]');
+    await expect(cursor).toBeFocused();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('Shift+ArrowRight');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('[data-ink-measure]')).toHaveText('2.0 cm at 0 degrees');
+  });
+
+  test('a part sweep of the compass stores an arc', async ({ page }) => {
+    await openGrid(page);
+    const client = await page.context().newCDPSession(page);
+    const before = (await page.evaluate(storedPoints)).length;
+    await turnOn(page, 'Compass');
+    await pen(client, [{ x: 803, y: 503 }]);
+    const needle = page.locator('[data-ink-compass]');
+    await expect(needle).toBeVisible();
+    await expect(page.locator('[data-ink-compass-hint]')).toHaveText('Drag out from the center to open');
+    const box = (await needle.boundingBox())!;
+    const c = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    await pen(client, [c, { x: c.x + 40, y: c.y }, { x: c.x + 82, y: c.y + 2 }]);
+    await expect(page.locator('[data-ink-compass-hint]')).toContainText('drag from the center to resize');
+    // A quarter turn, clockwise on the screen from the right.
+    const sweep = Array.from({ length: 11 }, (_, i) => {
+      const a = (i / 10) * (Math.PI / 2);
+      return { x: c.x + 80 * Math.cos(a), y: c.y + 80 * Math.sin(a) };
+    });
+    await pen(client, sweep);
+    await expect.poll(async () => (await page.evaluate(storedPoints)).length).toBe(before + 1);
+    const arc = (await page.evaluate(storedPoints)).at(-1)!;
+    // The circle through its ends and its middle: every point lies on it, and the ends are a quarter turn apart.
+    const [a, b, e] = [arc[0], arc[Math.floor(arc.length / 2)], arc.at(-1)!];
+    const d = 2 * (a.x * (b.y - e.y) + b.x * (e.y - a.y) + e.x * (a.y - b.y));
+    const sq = (p: Vec) => p.x * p.x + p.y * p.y;
+    const center = {
+      x: (sq(a) * (b.y - e.y) + sq(b) * (e.y - a.y) + sq(e) * (a.y - b.y)) / d,
+      y: (sq(a) * (e.x - b.x) + sq(b) * (a.x - e.x) + sq(e) * (b.x - a.x)) / d,
+    };
+    const r = Math.hypot(a.x - center.x, a.y - center.y);
+    for (const p of arc) expect(Math.abs(Math.hypot(p.x - center.x, p.y - center.y) - r)).toBeLessThan(0.5);
+    const turn = Math.abs(Math.atan2(e.y - center.y, e.x - center.x) - Math.atan2(a.y - center.y, a.x - center.x));
+    expect((turn * 180) / Math.PI).toBeCloseTo(90, -1);
   });
 });
