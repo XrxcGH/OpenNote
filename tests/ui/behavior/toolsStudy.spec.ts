@@ -88,3 +88,19 @@ test('study tape uncovers on a mouse click, then moves by dragging and by the ar
   await page.keyboard.press('ArrowRight');
   await expect.poll(async () => Math.round((await tape.boundingBox())!.x - moved.x)).toBe(16);
 });
+
+test('turns typed lines into cards, counting a line with a {{blank}}, and opens the deck', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await page.keyboard.type('Largest planet :: Jupiter');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('The {{heart}} pumps blood');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Boiling point of water :: 100 C');
+  await page.waitForTimeout(2500);
+  await runCommand(page, 'Open flashcards');
+  const window = page.getByRole('dialog', { name: 'Flashcards' });
+  await expect(window.getByText(/3 cards/)).toBeVisible();
+  await window.getByRole('button', { name: 'Smart notes' }).click();
+  await expect(window.getByRole('button', { name: /Back|All decks/ })).toBeVisible();
+});
