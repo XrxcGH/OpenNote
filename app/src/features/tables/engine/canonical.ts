@@ -22,6 +22,7 @@ export function parseCanonical(type: ColumnType, text: string): Value {
   if (error) return error;
   switch (type) {
     case 'text':
+    case 'choice':
       return text;
     case 'number':
     case 'currency':

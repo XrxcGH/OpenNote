@@ -67,6 +67,9 @@ export function buildModel(grid: Grid, smart: SmartData, locale: Locale): SmartM
       ...(own.decimals !== undefined ? { decimals: own.decimals } : {}),
       ...(own.currency ? { currency: own.currency } : {}),
       ...(own.total ? { total: own.total } : {}),
+      ...(type === 'choice'
+        ? { options: (own.options ?? []).map((option) => option.name), ...(own.multi ? { multi: true } : {}) }
+        : {}),
     };
   });
   const table = createTable(inits, body, locale);

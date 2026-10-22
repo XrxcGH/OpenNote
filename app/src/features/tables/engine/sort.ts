@@ -1,6 +1,7 @@
 // Multi-column sorting. Order follows Excel: numbers, then text, then booleans, then errors, then blanks. Blanks
 // stay last in both directions, ties keep their order, and text compares numerically ("Item 2" before "Item 10").
 
+import { choiceRank } from './choice';
 import type { Locale } from './locale';
 import type { Table } from './model';
 import { isError, type Value } from './values';
@@ -47,10 +48,13 @@ export function sortedIndices(
   if (active.length === 0) return indices;
   const text = collator(locale.tag);
   const columns = active.map((k) => {
-    const checkbox = table.columns[k.column].type === 'checkbox';
+    const column = table.columns[k.column];
+    const options = column.options ?? [];
     return table.rows.map((row) => {
       const v = row.cells[k.column].value;
-      return checkbox && v === null ? false : v;
+      // A choice sorts by the order of its options, the way the person set them, not by its letters.
+      if (column.type === 'choice') return typeof v === 'string' ? choiceRank(options, v) : v;
+      return column.type === 'checkbox' && v === null ? false : v;
     });
   });
   return indices.sort((i, j) => {

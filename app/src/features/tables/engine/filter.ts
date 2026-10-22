@@ -1,6 +1,7 @@
 // Filters. A condition's values are canonical cell text, so a filter means the same on every device. A condition with
 // an unknown operation or column is ignored, which shows more rows, never fewer.
 
+import { splitChoices } from './choice';
 import { parseCanonical, toCanonical } from './canonical';
 import { compareValues } from './formula/operators';
 import type { Column, Table } from './model';
@@ -11,6 +12,7 @@ import type { Locale } from './locale';
 export type FilterOp =
   | 'in'
   | 'contains'
+  | 'has'
   | 'eq'
   | 'ne'
   | 'lt'
@@ -54,6 +56,10 @@ function build(column: Column, cond: FilterCondition): Test | null {
     case 'contains': {
       const needle = (cond.value ?? '').toLowerCase();
       return (v) => canonical(v).toLowerCase().includes(needle);
+    }
+    case 'has': {
+      const wanted = (cond.value ?? '').trim().toLowerCase();
+      return (v) => splitChoices(canonical(v)).some((name) => name.toLowerCase() === wanted);
     }
     case 'eq':
       return (v) => compareValues(v, read(cond.value)) === 0 && !isError(v);

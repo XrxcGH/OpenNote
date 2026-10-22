@@ -168,7 +168,7 @@ interface TableSpec {
   id: `table.${string}` | `insert.${string}`;
   title: MessageKey;
   icon: IconName;
-  flag?: 'tables.smart' | 'tables.charts' | 'tables.savedViews';
+  flag?: 'tables.smart' | 'tables.charts' | 'tables.savedViews' | 'tables.choice';
   keys?: readonly string[];
   command: import('../../tables').SmartCommand;
 }
@@ -268,6 +268,35 @@ const TABLE_COMMANDS: readonly TableSpec[] = [
     icon: 'FunnelX',
     flag: 'tables.savedViews',
     command: { run: 'showAllRows' },
+  },
+  {
+    id: 'table.formatChoice',
+    title: 'smart.choice.formatOne',
+    icon: 'ListChecks',
+    flag: 'tables.choice',
+    command: { run: 'choice', multi: false },
+  },
+  {
+    id: 'table.formatChoices',
+    title: 'smart.choice.formatMany',
+    icon: 'ListChecks',
+    flag: 'tables.choice',
+    command: { run: 'choice', multi: true },
+  },
+  {
+    id: 'table.chooseValue',
+    title: 'smart.choice.choose',
+    icon: 'ListChecks',
+    flag: 'tables.choice',
+    keys: ['Alt+ArrowDown'],
+    command: { run: 'chooseValue' },
+  },
+  {
+    id: 'table.editChoices',
+    title: 'smart.choice.edit',
+    icon: 'ListChecks',
+    flag: 'tables.choice',
+    command: { run: 'editChoices' },
   },
   { id: 'table.totalSum', title: 'smart.table.totalKinds.sum', icon: 'Sigma', command: { run: 'total', total: 'sum' } },
   { id: 'table.totalNone', title: 'smart.table.totalNone', icon: 'Sigma', command: { run: 'total', total: null } },

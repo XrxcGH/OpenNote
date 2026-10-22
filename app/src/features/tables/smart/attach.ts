@@ -174,6 +174,7 @@ class SmartTable implements SmartInstance, TableExtraHandle {
       views: this.host.flag('tables.views')
         ? {
             model: shown,
+            smart,
             locale: this.locale,
             view: smart.view,
             choose: (view) => void chooseView(this, view),
