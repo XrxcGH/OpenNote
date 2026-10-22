@@ -13,8 +13,13 @@ export function mountProperties(mounted: MountedPage): () => void {
   const viewport = mounted.viewport.viewport;
   const place = () => {
     const rect = viewport.getBoundingClientRect();
-    host.style.insetBlockStart = `${Math.max(rect.top, 0) + 8}px`;
-    host.style.insetInlineEnd = `${Math.max(window.innerWidth - rect.right, 0) + 16}px`;
+    const top = Math.max(rect.top, 0) + 8;
+    host.style.insetBlockStart = `${top}px`;
+    host.style.setProperty('--host-top', `${top}px`);
+    const inset = Math.max(window.innerWidth - rect.right, 0) + 16;
+    host.style.insetInlineEnd = `${inset}px`;
+    // Never wider than the page area, so the chip and its panel stay inside it however narrow the page gets.
+    host.style.maxInlineSize = `${Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0) - 32)}px`;
   };
   place();
   const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
