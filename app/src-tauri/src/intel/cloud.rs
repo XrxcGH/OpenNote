@@ -599,7 +599,11 @@ mod tests {
                 &|_| {},
                 &|| false,
             );
-            let expected = if offline_mode { CloudError::Offline } else { CloudError::SafeMode };
+            let expected = if offline_mode {
+                CloudError::Offline
+            } else {
+                CloudError::SafeMode
+            };
             assert_eq!(result, Err(expected));
             assert_eq!(fake.sent.lock().unwrap().len(), 1);
         }

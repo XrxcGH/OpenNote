@@ -530,14 +530,8 @@ mod tests {
                 }
             }
         });
-        let outcome = run_for_page(
-            "addEditCitation",
-            &mut |call| {
-                call_tx.send(call.clone()).is_ok()
-            },
-            addr,
-        )
-        .expect("session");
+        let outcome =
+            run_for_page("addEditCitation", &mut |call| call_tx.send(call.clone()).is_ok(), addr).expect("session");
         drop(call_tx);
         page.join().expect("page");
         let heard = zotero.join().expect("zotero");
@@ -556,7 +550,10 @@ mod tests {
         let started = std::time::Instant::now();
         let outcome = run_for_page("addEditCitation", &mut |_| false, addr).expect("session");
         zotero.join().expect("zotero");
-        assert!(started.elapsed() < Duration::from_secs(20), "the session did not wait for a dead page");
+        assert!(
+            started.elapsed() < Duration::from_secs(20),
+            "the session did not wait for a dead page"
+        );
         assert_eq!(outcome.errors, 1);
         assert!(PENDING.lock().unwrap().is_none(), "the lock is free");
         // The page gives up while the session waits: the session ends, and the next command can start.
