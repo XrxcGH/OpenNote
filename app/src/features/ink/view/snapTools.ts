@@ -102,6 +102,21 @@ export function snapMark(p: Vec, zoom: number, alt = false): Vec {
   return p;
 }
 
+/**
+ * A compass's radius in whole spacings of the paper's lines, or of the Draw tab's grid, when snapping is on, as boxes
+ * and ellipses keep whole spacings. Alt, or no lines and no grid, leaves it as dragged.
+ */
+export function snapRadius(radius: number, zoom: number, alt = false): number {
+  if (alt) return radius;
+  const paper = paperSnapNow(zoom);
+  const step = paper
+    ? paper.lattice.step
+    : isEnabled('ink.snapTools') && overlayGridOn()
+      ? gridSize(inkPrefs.get().gridMm)
+      : 0;
+  return step > 0 ? Math.max(step, Math.round(radius / step) * step) : radius;
+}
+
 /** Which of the measure and the compass has the pen, if either. */
 export type GeometryTool = 'none' | 'measure' | 'compass';
 export const geometryTool = createStore<GeometryTool>('none', 'ink geometry tool');

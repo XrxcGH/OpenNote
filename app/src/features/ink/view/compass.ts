@@ -1,8 +1,9 @@
 // The geometry compass on the page (snap/compass.ts has its geometry). While it is chosen it takes the pen, the mouse,
-// and a lone finger. A tap sets the center. A drag out from the center opens the compass, and the radius snaps to the
-// paper's lines or the grid when snapping is on. A sweep around the center draws an arc, and a full turn a circle,
-// which is saved as an ordinary shape stroke, so its handles edit it like any other circle or arc. The keyboard does
-// the same: arrow keys move the center, plus and minus open and close the compass, and Enter draws a circle.
+// and a lone finger. A tap sets the center. A drag out from the center opens the compass, and the radius snaps to
+// whole spacings of the paper's lines or the grid when snapping is on. A sweep around the center draws an arc, and a
+// full turn a circle, which is saved as an ordinary shape stroke, so its handles edit it like any other circle or
+// arc. The keyboard does the same: arrow keys move the center, plus and minus open and close the compass, and Enter
+// draws a circle.
 import { newId } from '../../../editor/ids';
 import { createStore } from '../../../state/store';
 import type { Store } from '../../../state/store';
@@ -27,7 +28,7 @@ import {
 import type { CompassState, Sweep } from '../snap';
 import { createContactRule, geometryLayer, svgNode, toScreen } from './geometryLayer';
 import type { InkHost, InkPointerTool } from './host';
-import { formatLength, geometryOn, geometryTool, rulerUnitsNow, snapMark } from './snapTools';
+import { formatLength, geometryOn, geometryTool, rulerUnitsNow, snapMark, snapRadius } from './snapTools';
 import { activeSlot, drawState, styleOf } from './state';
 import type { InkSurface } from './surface';
 
@@ -227,13 +228,11 @@ class CompassLayer {
 function centerInView(surface: InkSurface): void {
   if (compassState.get().center) return;
   const camera = surface.cameraNow();
-  compassState.set({
-    center: {
-      x: (camera.scrollX + camera.viewport.w / 2) / camera.zoom,
-      y: (camera.scrollY + camera.viewport.h / 2) / camera.zoom,
-    },
-    radius: 0,
-  });
+  const middle = {
+    x: (camera.scrollX + camera.viewport.w / 2) / camera.zoom,
+    y: (camera.scrollY + camera.viewport.h / 2) / camera.zoom,
+  };
+  compassState.set({ center: snapMark(middle, camera.zoom), radius: 0 });
 }
 
 export function installCompass(host: InkHost, surfaces: Store<InkSurface | null>): () => void {
@@ -308,9 +307,8 @@ export function installCompass(host: InkHost, surfaces: Store<InkSurface | null>
         if (layer) layer.sweep = drag.sweep;
         layer?.draw();
       } else {
-        // The pencil's end snaps to the paper's lines, so the compass opens to whole squares on grid paper.
-        const pencil = snapMark(at, ctx.camera.zoom, last.altKey);
-        compassState.set({ ...state, radius: distance(state.center, pencil) });
+        // The radius snaps to whole spacings of the paper's lines or the grid, so it opens to whole squares.
+        compassState.set({ ...state, radius: snapRadius(distance(state.center, at), ctx.camera.zoom, last.altKey) });
       }
       return 'claim';
     },
