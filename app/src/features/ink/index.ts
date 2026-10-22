@@ -16,3 +16,5 @@ export { inkPrefs, setPrefs as setInkPrefs } from './view/prefs';
 export type { InkPrefs } from './view/prefs';
 // Imported PDF pages and slides get the locked bottom ink layer (ADR 0037).
 export { importedLayerEdit } from './view/layers';
+export { insertDrawing } from './view/insertDrawing';
+export type { DrawingParts } from './view/insertDrawing';

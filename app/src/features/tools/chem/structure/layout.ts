@@ -88,9 +88,9 @@ export function layout(molecule: Molecule): Placed {
     const radius = 1 / (2 * Math.sin(Math.PI / size));
     const have = ring.map((a, k) => ({ a, k })).filter((e) => positions[e.a] !== null);
     let center: Point;
-    let start = 0;
+    let start: number;
     let direction = 1;
-    let base = 0;
+    let base: number;
     if (have.length >= 2) {
       // Fused: find two neighbors in the ring that are placed, and build on the side away from the other atoms.
       const pair = have.find((e) => positions[ring[(e.k + 1) % size]] !== null) ?? have[0];

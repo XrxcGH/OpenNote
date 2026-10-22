@@ -414,6 +414,9 @@ for (const [tool, flag, title, keywords, icon] of [
   ['converter', 'tools.converter', 'study.converter.open', 'study.converter.keywords', 'Ruler'],
   ['reference', 'tools.reference', 'study.reference.open', 'study.reference.keywords', 'Atom'],
   ['citations', 'tools.citations', 'study.citations.open', 'study.citations.keywords', 'Quotes'],
+  ['chemcalc', 'tools.chemCalc', 'chem.calc.open', 'chem.calc.keywords', 'Flask'],
+  ['structure', 'tools.structure', 'chem.structure.open', 'chem.structure.keywords', 'Atom'],
+  ['properties', 'tools.properties', 'chem.data.open', 'chem.data.keywords', 'Table'],
 ] as const) {
   addCommand({
     id: `tools.${tool}`,

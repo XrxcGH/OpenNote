@@ -183,6 +183,16 @@ The full dictionary and thesaurus is an optional download that the person starts
 
 The Dictionary window shows the same credit. "Remove dictionary data" deletes the index.
 
+## Property table data
+
+The steam, ideal-gas, and materials tables in the Property tables window hold values, not code. Each row names its source in the window.
+
+| Data | Used for | Source | License |
+|---|---|---|---|
+| Saturated water, 40 temperature rows and 52 pressure rows | Steam tab | Computed once from the IAPWS-95 formulation of water (IAPWS R6-95, an international standard) with CoolProp 8.0.0 (https://github.com/CoolProp/CoolProp). Reference state: zero internal energy and entropy for saturated liquid at the triple point. CoolProp is used only to produce the numbers and is not shipped. | CoolProp is MIT licensed. Physical property values are facts and carry no copyright. |
+| Ideal-gas specific heats (17 gases, 250 to 1000 K) and molar masses | Ideal gases tab | Computed once from CoolProp 8.0.0 ideal-gas heat capacity functions. The gas constant is the CODATA 2018 value, 8.314462618 J/(mol K). | CoolProp is MIT licensed. Values are facts. |
+| Materials (32 rows) | Materials tab | Rounded typical values chosen to agree with the ranges in MIL-HDBK-5J (US Department of Defense), NIST standard reference data, the Wood Handbook FPL-GTR-190 (US Forest Products Laboratory), NASA technical reports, and the ACI 318 modulus relation for concrete. | The US Government sources are public domain. The ACI relation is a formula. Real stock varies, so the window tells people to check the source before a design. |
+
 ## Software libraries
 
 The npm packages the interface imports and the Rust crates the app is built from each keep their own license. Their names, versions, licenses, and hashes are listed in the bill of materials (`OpenNote.sbom.cdx.json`) that comes with every release, and in `package-lock.json` and `Cargo.lock`.

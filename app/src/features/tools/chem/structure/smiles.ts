@@ -130,7 +130,7 @@ export function parseSmiles(text: string): ParseResult {
       i = end + 1;
     } else {
       const two = source.slice(i, i + 2);
-      let symbol = '';
+      let symbol: string;
       if (two === 'Cl' || two === 'Br') symbol = two;
       else if (ORGANIC.has(c) || AROMATIC.has(c)) symbol = c;
       else return fail('atom', i);

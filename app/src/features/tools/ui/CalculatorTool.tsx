@@ -33,6 +33,8 @@ const FIRST_GRAPH = 'y = sin(x)';
 export interface InsertDetail {
   text?: string;
   graph?: string;
+  /** A table for the page: a header row, then rows of cell text. */
+  table?: { header: string[]; rows: string[][] };
   handled: boolean;
 }
 

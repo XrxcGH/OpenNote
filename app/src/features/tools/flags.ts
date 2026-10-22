@@ -45,6 +45,9 @@ export const EXPR_FLAGS: readonly FlagDef[] = [
   flag('tools.reminders', 'Windows notifications for due items and finished timers.'),
   flag('tools.citations', 'The citation helper with BibTeX, RIS, and Zotero.'),
   flag('tools.zotero', 'Zotero citations and bibliographies in the page, using the windows Zotero provides.'),
+  flag('tools.chemCalc', 'Chemistry calculators: balancing, stoichiometry, gas laws, dilution, pH, and titration.'),
+  flag('tools.structure', 'Chemical structure drawing: skeletal formulas as editable ink, with SVG export.'),
+  flag('tools.properties', 'Steam, ideal-gas, and materials property tables with sources.'),
 ];
 
 /**
