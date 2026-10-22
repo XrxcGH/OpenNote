@@ -14,6 +14,7 @@ import {
   isConstant,
   namesIn,
   niceNumber,
+  numText,
   numberText,
   read,
   show,
@@ -70,17 +71,6 @@ export interface OdeResult {
 }
 
 const { mul, div, add, sub, num, call } = build;
-
-/** A number as text the expression reader takes back, as a fraction when it is close to one. */
-export function numText(c: number): string {
-  const fraction = asFraction(c, 1000, 1e-10);
-  if (fraction) {
-    const [p, q] = fraction;
-    return q === 1 ? (p < 0 ? `(${p})` : `${p}`) : `(${p}/${q})`;
-  }
-  const text = String(Number(c.toPrecision(12)));
-  return c < 0 ? `(${text})` : text;
-}
 
 /** One RK4 run for y' = f(x, y) as a system, both ways from x0. */
 function rk4(

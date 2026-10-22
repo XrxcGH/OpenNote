@@ -278,6 +278,17 @@ function fractionText([p, q]: [number, number], unit: string): string {
   return q === 1 ? `${sign}${top}` : `${sign}${top}/${q}`;
 }
 
+/** A number as text the expression reader takes back, as a fraction when it is close to one. */
+export function numText(c: number): string {
+  const fraction = asFraction(c, 1000, 1e-10);
+  if (fraction) {
+    const [p, q] = fraction;
+    return q === 1 ? (p < 0 ? `(${p})` : `${p}`) : `(${p}/${q})`;
+  }
+  const text = String(Number(c.toPrecision(12)));
+  return c < 0 ? `(${text})` : text;
+}
+
 /** A number as a tree, as a fraction when it is close to one. */
 export function numberNode(x: number): Node {
   const fraction = asFraction(x, 10_000, 1e-12);

@@ -48,6 +48,12 @@ export const solvers = {
     'ode-coefficients': "The coefficients a, b, and c must be numbers, and a can't be 0.",
     'ode-forcing':
       'The right side must be a sum of polynomials, exponentials, sines, and cosines, such as 3x^2 + e^(2x) + sin(x).',
+    'laplace-term':
+      'The term {detail} is not in the table. Terms can be sums of t^n, e^(at), sin(bt), cos(bt), sinh(bt), and cosh(bt) multiplied together.',
+    'inverse-form': 'The transform must be a fraction of polynomials in s, times e^(−cs) for a delay.',
+    'inverse-improper':
+      'The top of the fraction must have a lower degree than the bottom. A higher one means impulses, which this solver leaves out.',
+    'fourier-term': 'The term {detail} does not match a pair in the table, so the transform is not shown.',
     unknown: "This couldn't be worked out. Check the input.",
   },
 } as const;
