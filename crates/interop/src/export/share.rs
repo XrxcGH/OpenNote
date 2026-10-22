@@ -109,12 +109,9 @@ pub fn export_share_with(
             "earlier version of a page",
             "earlier versions of pages",
         ));
-    } else {
-        inner.report.general.skipped(
-            "page history",
-            "A shared file holds the pages as they are now, not their earlier versions.",
-        );
     }
+    // Without the history option, or with no earlier versions to hold, there is nothing to report: nothing was asked for
+    // that the file left out.
     inner.report.general.simplified(
         "handwriting",
         "Handwriting is shared as a picture of each page's ink, which cannot be edited after opening.",
