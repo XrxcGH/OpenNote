@@ -368,6 +368,13 @@ export interface ExportsClient {
   /** Writes the file at a chosen path and any files beside it (paths relative to its folder). */
   write(path: string, files: readonly { path: string; bytes: Uint8Array }[]): Promise<void>;
   /**
+   * Replaces a file this session exported: the old file goes to the Recycle Bin first (or, where that can't take it,
+   * a copy stays beside it), then the new one is written whole. The receipt says where the old file went.
+   */
+  replace(path: string, files: readonly { path: string; bytes: Uint8Array }[]): Promise<ReplaceReceipt>;
+  /** Puts back the file the last `replace` at this path set aside, and removes the new one. */
+  undoReplace(path: string): Promise<void>;
+  /**
    * Puts a PNG, the picture of a selection, in a Word file and returns the file's bytes. `alt` is the selection's text,
    * which becomes the picture's description. The caller saves the bytes through the Save dialog.
    */
@@ -390,4 +397,11 @@ export interface SpeechClient {
     text: string,
     voice: string,
   ): Promise<{ wav: ArrayBuffer; boundaries: { ms: number; start: number; length: number }[] }>;
+}
+
+/** What `ExportsClient.replace` did with the old file: nothing to keep, the Recycle Bin, or a copy beside the new one. */
+export interface ReplaceReceipt {
+  readonly kept: 'nothing' | 'recycled' | 'beside';
+  /** The copy's file name when `kept` is `beside`. */
+  readonly keptAs?: string;
 }

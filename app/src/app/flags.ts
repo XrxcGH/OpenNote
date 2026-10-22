@@ -110,6 +110,7 @@ type Phase6FlagId =
   | 'pages.laser'
   | 'pages.slideMarks'
   | 'pages.exportPlayer'
+  | 'pages.exportUpdate'
   | 'pages.syllables';
 /** Smart tables, charts, math, and the study tool windows (Phases 7 and 10). */
 type ExprFlagId =

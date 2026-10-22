@@ -1,7 +1,7 @@
 // The export jobs the commands run: PDF through the hidden print window, and Markdown and HTML files. Each picks the
 // file with the Save dialog first, so nothing is made for a save the person cancels, then makes it, then writes it.
 // All of them take the platform's `exports` client, so the web platform runs the same code with its stand-ins.
-import type { ExportsClient } from '../../../platform/types';
+import type { ExportsClient, ReplaceReceipt } from '../../../platform/types';
 import { isEnabled } from '../../../app/flags';
 import { formatDate } from '../../../strings/format';
 import { t } from '../../../strings/t';
@@ -65,6 +65,8 @@ export interface PdfExportOptions {
   readonly accessible?: boolean;
   readonly signal?: AbortSignal;
   readonly onProgress?: (progress: PdfProgress) => void;
+  /** A path this session exported to: replaces that file instead of showing the Save dialog (host/reexport.ts). */
+  readonly replacePath?: string;
 }
 
 /** The input the print window prepares: the page, its assets, the light theme with the app's fonts, and the options. */
@@ -95,6 +97,8 @@ export type PdfOutcome =
       readonly name: string;
       readonly sheets: number;
       readonly problems: readonly PdfProblem[];
+      /** Set when the file replaced an earlier export: where the old file went. */
+      readonly replaced?: ReplaceReceipt;
     };
 
 /** What went wrong with a PDF the job made: the errors the check found. Nothing was saved. */
@@ -118,7 +122,9 @@ export async function exportPdfFile(
   options: PdfExportOptions,
 ): Promise<PdfOutcome> {
   const suggested = exportFileName(source.title || t('pageViews.print.untitled'), 'pdf');
-  const path = await client.pickSave({ suggested, label: t('pageViews.files.pdfLabel'), extension: 'pdf' });
+  const path =
+    options.replacePath ??
+    (await client.pickSave({ suggested, label: t('pageViews.files.pdfLabel'), extension: 'pdf' }));
   if (path === null) return { status: 'canceled' };
   const job = newJobId();
   const result: PdfExportResult = await exportPdf(createPrintSurface(client, job), {
@@ -132,13 +138,17 @@ export async function exportPdfFile(
   });
   const errors = result.problems.filter((problem) => problem.severity === 'error');
   if (errors.length > 0) throw new PdfCheckError(errors);
-  await client.write(path, [{ path: '', bytes: result.bytes }]);
+  const files = [{ path: '', bytes: result.bytes }];
+  let replaced: ReplaceReceipt | undefined;
+  if (options.replacePath) replaced = await client.replace(path, files);
+  else await client.write(path, files);
   return {
     status: 'saved',
     path,
     name: baseName(path),
     sheets: result.prepared.printed,
     problems: result.problems,
+    ...(replaced ? { replaced } : {}),
   };
 }
 

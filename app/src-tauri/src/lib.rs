@@ -30,6 +30,7 @@ pub mod log;
 pub mod notes;
 pub mod notes_snapshot;
 pub mod page_docx;
+pub mod export_replace;
 pub mod page_export;
 pub mod page_extras;
 pub mod paths;
@@ -130,6 +131,7 @@ pub fn run(context: EarlyContext) {
         .manage(clipboard::ClipTokens::default())
         .manage(spelling::SpellService)
         .manage(page_export::ExportGrants::default())
+        .manage(export_replace::ReplaceUndo::default())
         .manage(audio)
         .manage(intel)
         .manage(dictionary)
@@ -310,6 +312,8 @@ fn commands() -> impl Fn(Invoke) -> bool + Send + Sync + 'static {
         page_export::export_pick_save,
         page_export::export_write,
         page_export::export_open,
+        export_replace::export_replace,
+        export_replace::export_undo_replace,
         print_job::print_printers,
         print_job::print_submit,
         page_docx::export_selection_docx,

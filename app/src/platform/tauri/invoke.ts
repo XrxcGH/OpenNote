@@ -106,6 +106,7 @@ export interface Commands extends IntelCommands, IntelChoiceCommands {
   print_close: { args: { job: string }; result: null };
   export_pick_save: { args: { suggested: string; label: string; extension: string }; result: string | null };
   export_open: { args: { path: string; reveal: boolean }; result: null };
+  export_undo_replace: { args: { path: string }; result: null };
   print_printers: { args: None; result: PrinterInfo[] };
 }
 
