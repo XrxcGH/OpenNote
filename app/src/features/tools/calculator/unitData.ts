@@ -15,7 +15,15 @@ export type UnitCategory =
   | 'energy'
   | 'power'
   | 'angle'
-  | 'data';
+  | 'data'
+  | 'force'
+  | 'frequency'
+  | 'density'
+  | 'torque'
+  | 'fuel'
+  | 'current'
+  | 'voltage'
+  | 'resistance';
 
 export type UnitRow = readonly [symbol: string, factor: number, ...names: string[]];
 
@@ -156,6 +164,71 @@ export const UNIT_ROWS: Record<Exclude<UnitCategory, 'temperature'>, readonly Un
     ['GiB', 1073741824, 'gibibyte'],
     ['TiB', 1099511627776, 'tebibyte'],
     ['PiB', 1125899906842624, 'pebibyte'],
+  ],
+  force: [
+    ['dyn', 1e-5, 'dyne'],
+    ['mN', 0.001, 'millinewton'],
+    ['N', 1, 'newton'],
+    ['kN', 1000, 'kilonewton'],
+    ['ozf', 0.27801385095, 'ounce-force'],
+    ['lbf', 4.4482216152605, 'pound-force'],
+    ['kgf', 9.80665, 'kilogram-force'],
+  ],
+  frequency: [
+    ['mHz', 0.001, 'millihertz'],
+    ['Hz', 1, 'hertz'],
+    ['kHz', 1e3, 'kilohertz'],
+    ['MHz', 1e6, 'megahertz'],
+    ['GHz', 1e9, 'gigahertz'],
+    ['THz', 1e12, 'terahertz'],
+    ['rpm', 1 / 60, 'revolutions per minute'],
+    ['rad/s', 1 / (2 * Math.PI), 'radian per second'],
+  ],
+  density: [
+    ['kg/m³', 1, 'kg/m3', 'kilogram per cubic meter'],
+    ['g/L', 1, 'g/l', 'gram per liter'],
+    ['g/cm³', 1000, 'g/cm3', 'g/mL', 'gram per cubic centimeter'],
+    ['kg/L', 1000, 'kg/l', 'kilogram per liter'],
+    ['lb/ft³', 16.01846337396, 'lb/ft3', 'pound per cubic foot'],
+    ['lb/in³', 27679.9047102, 'lb/in3', 'pound per cubic inch'],
+    ['lb/gal', 119.8264273, 'pound per gallon'],
+    ['oz/in³', 1729.994044, 'oz/in3', 'ounce per cubic inch'],
+  ],
+  torque: [
+    ['dyn·cm', 1e-7, 'dyne centimeter'],
+    ['ozf·in', 0.00706155181, 'oz-in', 'ounce-force inch'],
+    ['mN·m', 0.001, 'millinewton meter'],
+    ['N·m', 1, 'Nm', 'N-m', 'newton meter', 'newton-meter'],
+    ['kN·m', 1000, 'kNm', 'kilonewton meter'],
+    ['lbf·in', 0.1129848290276, 'in-lb', 'pound-force inch'],
+    ['lbf·ft', 1.3558179483314, 'lb-ft', 'lbft', 'pound-force foot'],
+    ['kgf·m', 9.80665, 'kilogram-force meter'],
+  ],
+  fuel: [
+    ['L/100km', 1, 'l/100km', 'liters per 100 kilometers', 'litres per 100 kilometres'],
+    ['km/L', 1, 'km/l', 'kilometer per liter', 'kilometre per litre'],
+    ['mi/L', 1.609344, 'mile per liter'],
+    ['mpg', 0.425143707, 'mpg us', 'mile per gallon', 'miles per gallon'],
+    ['mpg UK', 0.354006189, 'mpg imp', 'imperial mile per gallon'],
+  ],
+  current: [
+    ['µA', 1e-6, 'uA', 'μA', 'microampere', 'microamp'],
+    ['mA', 0.001, 'milliampere', 'milliamp'],
+    ['A', 1, 'amp', 'ampere'],
+    ['kA', 1000, 'kiloampere', 'kiloamp'],
+  ],
+  voltage: [
+    ['µV', 1e-6, 'uV', 'μV', 'microvolt'],
+    ['mV', 0.001, 'millivolt'],
+    ['V', 1, 'volt'],
+    ['kV', 1000, 'kilovolt'],
+    ['MV', 1e6, 'megavolt'],
+  ],
+  resistance: [
+    ['mΩ', 0.001, 'milliohm', 'mohm'],
+    ['Ω', 1, 'ohm', 'Ohm'],
+    ['kΩ', 1000, 'kohm', 'kiloohm', 'kilohm'],
+    ['MΩ', 1e6, 'megohm', 'megaohm', 'Mohm'],
   ],
 };
 

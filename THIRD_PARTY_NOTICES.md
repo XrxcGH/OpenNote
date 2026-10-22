@@ -183,6 +183,19 @@ The full dictionary and thesaurus is an optional download that the person starts
 
 The Dictionary window shows the same credit. "Remove dictionary data" deletes the index.
 
+## Reference data
+
+The Reference tables and the chemistry tools carry small tables of measured facts. They are facts, not creative works, and are not under copyright. They are rounded values written out by hand from the public references below and are bundled in the app, so they work offline.
+
+| Data | Used for | Source |
+|---|---|---|
+| Element names, symbols, atomic numbers, standard atomic weights, and electron configurations (`app/src/features/tools/reference/data.ts`, `configuration.ts`) | The periodic table and the molar mass tool | IUPAC Commission on Isotopic Abundances and Atomic Weights, "Atomic weights of the elements", and the IUPAC Periodic Table of the Elements. Facts in the public domain. |
+| Density, melting and boiling points, Pauling electronegativity, common oxidation states, and isotope mass numbers (`app/src/features/tools/reference/elementDetails.ts`) | The element detail card | Measured physical constants from public references, including the NIST Chemistry WebBook and NIST Atomic Weights and Isotopic Compositions (National Institute of Standards and Technology, U.S. Department of Commerce, public domain), and IUPAC. Pauling's electronegativity scale is a published scale of values. Values for the heaviest elements are estimates or are left blank. |
+| Fundamental physical constants, 2022 CODATA recommended values (`app/src/features/tools/reference/unitsSheet.ts`) | The Units tab of the Reference tables | CODATA Task Group on Fundamental Constants, E. Tiesinga, P. J. Mohr, D. B. Newell, and B. N. Taylor, "CODATA recommended values of the fundamental physical constants: 2022", published by the National Institute of Standards and Technology (`https://physics.nist.gov/cuu/Constants/`). NIST data is a work of the U.S. government and is in the public domain. Constants with exact values since the 2019 SI redefinition are marked exact. |
+| SI base and derived units, and their definitions | The Units tab | The International System of Units (SI), 9th edition, Bureau International des Poids et Mesures (BIPM), and NIST Special Publication 330. Names and definitions of units are facts. |
+
+OpenNote's own wording for the formulas and unit descriptions is under the app's license.
+
 ## Software libraries
 
 The npm packages the interface imports and the Rust crates the app is built from each keep their own license. Their names, versions, licenses, and hashes are listed in the bill of materials (`OpenNote.sbom.cdx.json`) that comes with every release, and in `package-lock.json` and `Cargo.lock`.

@@ -16,7 +16,7 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'upcoming', title: 'smart.tools.upcoming.title', width: 380 },
   { id: 'flashcards', title: 'study.deck.tool', width: 420 },
   { id: 'converter', title: 'study.converter.title', width: 380 },
-  { id: 'reference', title: 'study.reference.title', width: 480 },
+  { id: 'reference', title: 'study.reference.title', width: 640 },
   { id: 'dictionary', title: 'study.dictionary.title', width: 400 },
   { id: 'citations', title: 'study.citations.title', width: 440 },
 ];

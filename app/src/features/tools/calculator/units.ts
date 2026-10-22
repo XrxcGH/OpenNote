@@ -1,4 +1,4 @@
-// Unit conversion for twelve categories. Months and years are averages (30.4375 and 365.25 days), "cal" is the
+// Unit conversion for twenty categories. Months and years are averages (30.4375 and 365.25 days), "cal" is the
 // thermochemical calorie, and "kB" is 1000 bytes while "KiB" is 1024. Temperature converts a reading, not a
 // difference, so converting 10 °C to kelvin gives 283.15 and not 10.
 
@@ -16,7 +16,7 @@ export interface UnitDef {
   factor: number;
 }
 
-export type ConvertFailure = 'unknown-unit' | 'different-kinds' | 'below-absolute-zero';
+export type ConvertFailure = 'unknown-unit' | 'different-kinds' | 'below-absolute-zero' | 'out-of-range';
 export type ConvertResult = { ok: true; value: number } | { ok: false; reason: ConvertFailure };
 
 export const UNIT_CATEGORIES: readonly UnitCategory[] = [
@@ -32,6 +32,14 @@ export const UNIT_CATEGORIES: readonly UnitCategory[] = [
   'power',
   'angle',
   'data',
+  'force',
+  'frequency',
+  'density',
+  'torque',
+  'fuel',
+  'current',
+  'voltage',
+  'resistance',
 ];
 
 function plurals(name: string): string[] {
@@ -98,6 +106,16 @@ function convertTemperature(value: number, from: string, to: string): ConvertRes
   return { ok: true, value: Math.abs(result) < 1e-11 * (Math.abs(value) + 300) ? 0 : snap(result) };
 }
 
+// Fuel economy is distance per volume in most units but volume per distance in liters per 100 km, so that one unit
+// converts through its reciprocal, and zero has none.
+const INVERSE = 'L/100km';
+
+function convertFuel(value: number, source: UnitDef, target: UnitDef): ConvertResult {
+  const perLiter = source.id === INVERSE ? 100 / value : value * source.factor;
+  const result = target.id === INVERSE ? 100 / perLiter : perLiter / target.factor;
+  return Number.isFinite(result) ? { ok: true, value: snap(result) } : { ok: false, reason: 'out-of-range' };
+}
+
 /** Converts a value between two units of the same category. */
 export function convert(value: number, from: string, to: string): ConvertResult {
   const source = findUnit(from);
@@ -105,6 +123,7 @@ export function convert(value: number, from: string, to: string): ConvertResult 
   if (!source || !target) return { ok: false, reason: 'unknown-unit' };
   if (source.category !== target.category) return { ok: false, reason: 'different-kinds' };
   if (source.category === 'temperature') return convertTemperature(value, source.id, target.id);
+  if (source.category === 'fuel') return convertFuel(value, source, target);
   return { ok: true, value: snap((value * source.factor) / target.factor) };
 }
 
