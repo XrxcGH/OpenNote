@@ -174,3 +174,15 @@ test.describe('the Properties chip', () => {
     });
   }
 });
+
+test('a tool window wider than a phone-size window stays inside it', async ({ page }) => {
+  await page.setViewportSize({ width: 420, height: 800 });
+  await page.goto('/?fixture=smart');
+  await page.getByRole('treeitem', { name: 'Lectures' }).first().click();
+  await page.getByRole('treeitem', { name: 'Membranes' }).first().click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Membranes' })).toBeVisible();
+  await openTool(page, 'Open citations');
+  const box = (await page.getByRole('dialog', { name: 'Citations' }).boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(8);
+  expect(box.x + box.width).toBeLessThanOrEqual(420 - 8);
+});

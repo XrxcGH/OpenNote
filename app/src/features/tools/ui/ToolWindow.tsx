@@ -44,7 +44,11 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
     loadStored<Place>(`place.${tool.id}`, {
       // A new window opens left of the ones already open, so none hides another; with no room it cascades. It opens
       // below the row of the page's chips, such as Properties, so it doesn't cover them.
-      x: Math.max(16 + index * 28, window.innerWidth - tool.width - 32 - taken),
+      x: Math.max(
+        Math.min(16 + index * 28, window.innerWidth - tool.width - 16),
+        16,
+        window.innerWidth - tool.width - 32 - taken,
+      ),
       y:
         chromeInsets().top +
         CHIP_ROW +
@@ -117,7 +121,8 @@ export function ToolWindow({ tool, index, taken = 0, pinned, onPin, onClose, onP
         // Never above the command bar's line, and however far down it sits, the window ends above the status line
         // and its body scrolls (shell/layout/chromeInsets.ts).
         insetBlockStart: `max(${place.y}px, var(--panel-top))`,
-        inlineSize: tool.width,
+        // A window narrower than the tool keeps it inside, 16 px from each edge.
+        inlineSize: `min(${tool.width}px, calc(100vw - 32px))`,
         maxBlockSize: `max(${MIN_HEIGHT}px, calc(100vh - max(${place.y}px, var(--panel-top)) - var(--panel-bottom)))`,
       }}
       onKeyDown={(event) => {
