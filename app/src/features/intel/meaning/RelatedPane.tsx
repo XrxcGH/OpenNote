@@ -4,6 +4,7 @@
 import { useEffect, useId } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
+import { setDockInset } from '../../../shell/layout/dock';
 import { useLocation } from '../../../app/location';
 import { useStore } from '../../../state/store';
 import { t } from '../../../strings/t';
@@ -65,6 +66,7 @@ export function closeRelatedPages(): void {
   host?.remove();
   root = null;
   host = null;
+  setDockInset(0, 'related');
   if (opener?.isConnected) opener.focus();
   opener = null;
 }
@@ -79,6 +81,8 @@ export function toggleRelatedPages(): void {
   host = document.body.appendChild(document.createElement('div'));
   host.className = styles.sheet ?? '';
   host.dataset['region'] = 'related-pages';
+  // The page leaves room for the sheet: its 22 rem, its 16 px gap to the window's edge, and 8 px of air.
+  setDockInset(352 + 24, 'related');
   root = createRoot(host);
   root.render(<Related onClose={closeRelatedPages} />);
 }

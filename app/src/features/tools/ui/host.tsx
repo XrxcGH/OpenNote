@@ -1,15 +1,17 @@
-// The tool windows (Phase 10), opened from the command palette. In the app they float over the page; "Open in its
+// The tool windows (Phase 10), opened from the command palette. In the app they dock beside the page; "Open in its
 // own window" moves one to a window of its own, where the app can make one. Opening a tool that is already open
 // brings it forward. The layer mounts on first use, so nothing here costs anything until a tool is opened.
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { createStore, useStore } from '../../../state/store';
 import { CalculatorTool } from './CalculatorTool';
 import { TimersTool } from './TimersTool';
 import { ExtraToolBody } from './extraTools';
-import { ToolWindow } from './ToolWindow';
+import { setDockInset } from '../../../shell/layout/dock';
+import { MIN_PANEL, ToolWindow } from './ToolWindow';
 import { UpcomingTool } from './UpcomingTool';
-import { forgetStored } from './storage';
+import { forgetStored, loadStored, saveStored } from './storage';
 import { TOOLS } from './tools';
 import type { ToolId } from './tools';
 
@@ -19,9 +21,11 @@ interface Layer {
   pinned: readonly ToolId[];
   /** Counts the times the windows were reset, so each draws again at its first place. */
   epoch: number;
+  /** The widths the person dragged panels to this session. */
+  widths: Readonly<Partial<Record<ToolId, number>>>;
 }
 
-const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0 }, 'tool windows');
+const layer = createStore<Layer>({ open: [], pinned: [], epoch: 0, widths: {} }, 'tool windows');
 let root: Root | null = null;
 
 export function ToolBody({ tool }: { tool: ToolId }) {
@@ -44,21 +48,49 @@ async function popOut(tool: ToolId, pinned: boolean): Promise<void> {
   }
 }
 
+/** The least width the page keeps beside docked panels. Below it the panels overlay the page from the right edge. */
+export const MIN_PAGE = 480;
+
+const widthOf = (state: Layer, id: ToolId): number =>
+  state.widths[id] ?? loadStored<number>(`width.${id}`, TOOLS.find((one) => one.id === id)!.width);
+
 function Windows() {
   const state = useStore(layer, (current) => current);
+  const [viewport, setViewport] = useState(window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setViewport(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const widths = state.open.map((id) => widthOf(state, id));
+  const total = widths.reduce((sum, one) => sum + one, 0);
+  // The page region's left edge does not move when panels dock, so it says how much room the panels may take.
+  const pageLeft = document.querySelector('main')?.getBoundingClientRect().left ?? 0;
+  const room = viewport - pageLeft - MIN_PAGE;
+  const overlay = total > Math.max(room, 0);
+  useLayoutEffect(() => {
+    setDockInset(overlay ? 0 : total);
+    return () => setDockInset(0);
+  }, [overlay, total]);
   return (
     <>
       {state.open.map((id, index) => {
         const tool = TOOLS.find((one) => one.id === id)!;
         const pinned = state.pinned.includes(id);
+        const right = widths.slice(index + 1).reduce((sum, one) => sum + one, 0);
+        const others = total - widths[index]!;
         return (
           <ToolWindow
             key={`${id}-${state.epoch}`}
             tool={tool}
-            index={index}
-            taken={state.open
-              .slice(0, index)
-              .reduce((sum, one) => sum + (TOOLS.find((def) => def.id === one)?.width ?? 0) + 16, 0)}
+            width={Math.min(widths[index]!, overlay ? viewport : widths[index]!)}
+            right={overlay ? Math.min(right, Math.max(0, viewport - MIN_PANEL)) : right}
+            overlay={overlay}
+            maxWidth={overlay ? viewport : Math.max(MIN_PANEL, room - others)}
+            onResize={(width) => {
+              saveStored(`width.${id}`, width);
+              layer.set((current) => ({ ...current, widths: { ...current.widths, [id]: width } }));
+            }}
             pinned={pinned}
             onPin={() =>
               layer.set((current) => ({
@@ -105,7 +137,11 @@ function dock(id: ToolId): void {
     root.render(<Windows />);
   }
   if (!layer.get().open.includes(id)) layer.set((current) => ({ ...current, open: [...current.open, id] }));
-  requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-tool="${id}"] [data-move]`)?.focus());
+  requestAnimationFrame(() =>
+    document
+      .querySelector<HTMLElement>(`[data-tool="${id}"] [data-move]`)
+      ?.focus({ focusVisible: false } as FocusOptions),
+  );
 }
 
 export function closeTool(id: ToolId): void {
@@ -121,8 +157,11 @@ export function closeTool(id: ToolId): void {
  * their own, which forget their saved size, place, and monitor.
  */
 export async function resetToolWindows(): Promise<void> {
-  for (const tool of TOOLS) forgetStored(`place.${tool.id}`);
-  layer.set((current) => ({ ...current, epoch: current.epoch + 1 }));
+  for (const tool of TOOLS) {
+    forgetStored(`place.${tool.id}`);
+    forgetStored(`width.${tool.id}`);
+  }
+  layer.set((current) => ({ ...current, epoch: current.epoch + 1, widths: {} }));
   if (!canPopOut()) return;
   try {
     const { invoke } = await import('@tauri-apps/api/core');

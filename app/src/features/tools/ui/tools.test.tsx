@@ -2,7 +2,7 @@
 // violations. Timers add, run, and pause. The calculator answers and explains a mistake in words. Upcoming reads a
 // due date from plain words and files the task under it.
 import { fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { CalculatorTool } from './CalculatorTool';
@@ -17,9 +17,21 @@ afterEach(() => localStorage.clear());
 
 const tool = (id: string) => TOOLS.find((one) => one.id === id)!;
 
+const onResize = vi.fn();
+
 function framed(id: 'timers' | 'calculator' | 'upcoming', body: React.ReactNode) {
   return (
-    <ToolWindow tool={tool(id)} index={0} pinned={false} onPin={() => undefined} onClose={() => undefined}>
+    <ToolWindow
+      tool={tool(id)}
+      width={tool(id).width}
+      right={0}
+      overlay={false}
+      maxWidth={800}
+      onResize={onResize}
+      pinned={false}
+      onPin={() => undefined}
+      onClose={() => undefined}
+    >
       {body}
     </ToolWindow>
   );
@@ -39,14 +51,13 @@ describe('the tool windows', () => {
     });
   }
 
-  it('name the window and move by keyboard from its title', () => {
+  it('name the window and resize by keyboard from its left edge', () => {
     renderUi(framed('timers', <TimersTool />));
     const dialog = screen.getByRole('dialog', { name: 'Timers' });
-    const header = within(dialog).getByLabelText(/^Move Timers/);
-    const before = dialog.getBoundingClientRect().left;
-    header.focus();
-    fireEvent.keyDown(header, { key: 'ArrowLeft' });
-    expect(Math.round(before - dialog.getBoundingClientRect().left)).toBe(16);
+    const edge = within(dialog).getByRole('separator', { name: /^Resize Timers/ });
+    edge.focus();
+    fireEvent.keyDown(edge, { key: 'ArrowLeft' });
+    expect(onResize).toHaveBeenLastCalledWith(tool('timers').width + 16);
   });
 });
 

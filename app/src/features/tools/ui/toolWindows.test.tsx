@@ -1,7 +1,7 @@
 /* eslint-disable opennote/feature-boundaries -- The shortcut editor's row list is what the test reads; the feature has no index. */
 // Every tool window has a command, so the shortcut editor lists it and a chosen shortcut opens it. "Reset tool
 // windows" puts the floating windows back where they first open.
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { chord } from '../../../commands/registry';
 import { commands } from '../../../registries';
@@ -37,20 +37,20 @@ describe('tool window shortcuts', () => {
 });
 
 describe('reset tool windows', () => {
-  it('forgets where a floating window was moved and draws it at its first place', async () => {
+  it('forgets the width a docked window was dragged to and draws it at its first width', async () => {
     await renderApp();
     openTool('timers');
     const dialog = await screen.findByRole('dialog', { name: 'Timers' });
-    const first = Math.round(dialog.getBoundingClientRect().left);
-    const header = dialog.querySelector<HTMLElement>('[data-move]')!;
-    header.focus();
-    fireEvent.keyDown(header, { key: 'ArrowLeft' });
-    expect(Math.round(dialog.getBoundingClientRect().left)).toBe(first - 16);
-    expect(loadStored('place.timers', null)).not.toBeNull();
+    const first = Math.round(dialog.getBoundingClientRect().width);
+    const edge = within(dialog).getByRole('separator');
+    edge.focus();
+    fireEvent.keyDown(edge, { key: 'ArrowRight' });
+    await waitFor(() => expect(Math.round(dialog.getBoundingClientRect().width)).toBe(first - 16));
+    expect(loadStored('width.timers', null)).not.toBeNull();
     await resetToolWindows();
     const again = await screen.findByRole('dialog', { name: 'Timers' });
-    expect(Math.round(again.getBoundingClientRect().left)).toBe(first);
-    expect(loadStored('place.timers', null)).toBeNull();
+    expect(Math.round(again.getBoundingClientRect().width)).toBe(first);
+    expect(loadStored('width.timers', null)).toBeNull();
   });
 
   it('is a command in the palette list', async () => {
