@@ -22,6 +22,22 @@ interface State {
   side: 'from' | 'to';
 }
 
+/** The pair each kind of unit opens on, so a change of kind does not land on nanometers and micrometers. */
+const COMMON: Partial<Record<UnitCategory, readonly [string, string]>> = {
+  length: ['mi', 'km'],
+  mass: ['lb', 'kg'],
+  time: ['min', 'h'],
+  temperature: ['F', 'C'],
+  area: ['ft²', 'm²'],
+  volume: ['gal', 'L'],
+  speed: ['mph', 'km/h'],
+  pressure: ['psi', 'kPa'],
+  energy: ['kcal', 'kJ'],
+  power: ['hp', 'kW'],
+  angle: ['deg', 'rad'],
+  data: ['MB', 'GB'],
+};
+
 const FIRST: State = { category: 'length', from: 'mi', to: 'km', text: '1', side: 'from' };
 
 /** The text the other box shows, or null when the typed text is not a number. */
@@ -53,7 +69,10 @@ export function ConverterTool() {
 
   const changeCategory = (category: UnitCategory) => {
     const list = unitsIn(category);
-    update({ ...state, category, from: list[0], to: list[1] ?? list[0] });
+    const common = COMMON[category];
+    const pair =
+      common && list.includes(common[0]) && list.includes(common[1]) ? common : [list[0], list[1] ?? list[0]];
+    update({ ...state, category, from: pair[0], to: pair[1] });
   };
 
   const insert = () => {
