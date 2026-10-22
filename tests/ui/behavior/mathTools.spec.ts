@@ -55,3 +55,37 @@ test('shows the answer beside an equation', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-math-answer]').last()).toHaveText('x = 4');
 });
+
+test('a selected equation offers Graph, which opens a graph beside it that Insert adds below', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await page.keyboard.press('Alt+=');
+  await expect(page.getByRole('textbox', { name: 'Math source' })).toBeFocused();
+  await page.keyboard.insertText('y = x^2');
+  await page.keyboard.press('Enter');
+  const equation = page.getByRole('math', { name: 'Math: y = x^2' });
+  await equation.click();
+  const graph = page.getByRole('button', { name: 'Show a graph of this equation' });
+  await expect(graph).toBeVisible();
+  const blocks = await page.locator('[data-graph]').count();
+  await graph.click();
+  const popup = page.locator('[data-graph-popup]');
+  await expect(popup.getByRole('application', { name: 'Graph of 1 function' })).toBeVisible();
+  await popup.getByRole('button', { name: 'Insert graph' }).click();
+  await expect(popup).toHaveCount(0);
+  await expect(page.locator('[data-graph]')).toHaveCount(blocks + 1);
+});
+
+test('an equation in x and y opens a 3D graph from Alt+Shift+G', async ({ page }) => {
+  await openSmart(page);
+  await newLine(page);
+  await page.keyboard.press('Alt+=');
+  await expect(page.getByRole('textbox', { name: 'Math source' })).toBeFocused();
+  await page.keyboard.insertText('z = x y');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Alt+Shift+G');
+  const popup = page.locator('[data-graph-popup]');
+  await expect(popup.getByRole('application', { name: '3D graph of 1 function' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(popup).toHaveCount(0);
+});

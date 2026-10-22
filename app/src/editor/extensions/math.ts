@@ -10,6 +10,7 @@ import type { NodeView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
 import type { EditorHost, MathActionResult, MathRenderer, VisualMathField } from '../host';
 import { META_COMMAND } from '../meta';
+import { GRAPH_LANGUAGE } from './graphFence';
 import { createPenPad } from './mathPen';
 import type { PenPad } from './mathPen';
 import { MathBlock, MathInline } from '../schema/nodes';
@@ -38,10 +39,15 @@ function rememberMode(visual: boolean): void {
 
 type Field = HTMLInputElement | HTMLTextAreaElement | (HTMLElement & { value: string });
 
+/** What a command can do to an equation: Simplify, Solve, or open its graph. */
+export type MathActionKind = 'simplify' | 'solve' | 'graph';
+
 class MathView implements NodeView {
   dom: HTMLElement;
   private shown: HTMLElement;
   private answer: HTMLElement | null = null;
+  /** The Graph button over a selected equation. */
+  private graphButton: HTMLButtonElement | null = null;
   private field: Field | null = null;
   private visual: VisualMathField | null = null;
   private toggle: HTMLButtonElement | null = null;
@@ -69,6 +75,15 @@ class MathView implements NodeView {
     this.shown = document.createElement('span');
     this.dom.append(this.shown);
     this.dom.addEventListener('dblclick', () => this.open());
+    // A click selects the whole equation, so it offers its graph; a double click goes on to open it.
+    this.dom.addEventListener('click', (event) => {
+      const pos = this.getPos();
+      if (this.field || pos === undefined || (event.target instanceof Node && this.graphButton?.contains(event.target)))
+        return;
+      const { state } = this.editor;
+      if (!(state.selection instanceof NodeSelection && state.selection.from === pos))
+        this.editor.view.dispatch(state.tr.setSelection(NodeSelection.create(state.doc, pos)));
+    });
     views.set(this.dom, this);
     this.render();
     host.math?.()?.then(
@@ -130,9 +145,55 @@ class MathView implements NodeView {
     this.dom.setAttribute('aria-description', t('mathTools.live.answer', { answer }));
   }
 
+  /** The equation is selected: it offers its graph, when it has one. */
+  selectNode(): void {
+    this.dom.classList.add('ProseMirror-selectednode');
+    const graph = this.renderer?.graph;
+    if (!graph || this.field || this.graphButton || graph.source(this.source()) === null) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = drawn.graphButton;
+    button.textContent = t('mathTools.graphPopup.graph');
+    button.setAttribute('aria-label', t('mathTools.graphPopup.graphThis'));
+    button.dataset.mathGraph = '';
+    button.addEventListener('mousedown', (event) => event.preventDefault());
+    button.addEventListener('click', () => this.openGraph());
+    this.graphButton = button;
+    this.dom.append(button);
+  }
+
+  deselectNode(): void {
+    this.dom.classList.remove('ProseMirror-selectednode');
+    this.graphButton?.remove();
+    this.graphButton = null;
+  }
+
+  /** Opens the graph of the equation beside it. False when the page offers no graph or the equation has none. */
+  openGraph(): boolean {
+    const graph = this.renderer?.graph;
+    const latex = this.field ? (this.visual ? this.visual.value : this.field.value) : this.source();
+    if (!graph || graph.source(latex) === null) return false;
+    graph.open(latex, this.dom, (source) => this.insertGraphAfter(source));
+    return true;
+  }
+
+  /** Puts a graph block after the block this equation is in, as one undo step. */
+  private insertGraphAfter(source: string): void {
+    const pos = this.getPos();
+    const type = this.editor.schema.nodes.codeBlock;
+    if (pos === undefined || !type || !this.editor.isEditable) return;
+    const { state } = this.editor;
+    const $pos = state.doc.resolve(pos);
+    const after = $pos.depth > 0 ? $pos.after(1) : pos + this.node.nodeSize;
+    const block = type.create({ language: GRAPH_LANGUAGE }, state.schema.text(source));
+    this.editor.view.dispatch(state.tr.insert(after, block).setMeta(META_COMMAND, true));
+  }
+
   /** Opens the source field. */
   open(): void {
     if (this.field || !this.editor.isEditable) return;
+    this.graphButton?.remove();
+    this.graphButton = null;
     const field = this.plainField(this.source());
     this.field = field;
     // The paragraph stops clipping its drawing while the equation is open, so the preview and actions that float under
@@ -298,6 +359,20 @@ class MathView implements NodeView {
       }
       holder.append(bar);
     }
+    const graph = this.renderer?.graph;
+    if (graph) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = drawn.toggle;
+      button.textContent = t('mathTools.graphPopup.graph');
+      button.setAttribute('aria-label', t('mathTools.graphPopup.graphThis'));
+      // A press must not take focus from the field, or the field would close and save.
+      button.addEventListener('mousedown', (event) => event.preventDefault());
+      button.addEventListener('click', () => {
+        if (!this.openGraph()) this.host.announce(t('mathTools.graphPopup.none'));
+      });
+      holder.append(button);
+    }
     this.preview = preview;
     this.problem = problem;
     this.holder = holder;
@@ -321,8 +396,9 @@ class MathView implements NodeView {
     return !this.gone && this.editor === editor && this.dom.isConnected;
   }
 
-  /** Opens the field if needed and runs Simplify or Solve on it, as the buttons in the panel do. */
-  runAction(kind: 'simplify' | 'solve'): boolean {
+  /** Opens the field if needed and runs Simplify or Solve on it, as the buttons in the panel do. Graph opens the graph. */
+  runAction(kind: MathActionKind): boolean {
+    if (kind === 'graph') return this.openGraph();
     this.open();
     const actions = this.renderer?.actions;
     if (!this.field || !actions) return false;
@@ -393,6 +469,8 @@ class MathView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
+    // The Graph button over a selected equation is pressed, not the equation.
+    if (this.graphButton && event.target instanceof Node && this.graphButton.contains(event.target)) return true;
     if (this.field === null) return false;
     // Keys and focus inside the field and its panel (Tab to Simplify and Solve, writing in the pen pad) are not the
     // editor's: it would take focus and close the equation.
@@ -433,7 +511,7 @@ function rememberClosed(view: MathView): void {
 }
 
 /** Simplify or Solve for the selected equation, the one just before the caret, or the one edited last. */
-export function runMathAction(editor: Editor, kind: 'simplify' | 'solve'): boolean {
+export function runMathAction(editor: Editor, kind: MathActionKind): boolean {
   const { selection } = editor.state;
   let pos: number | null = null;
   if (selection instanceof NodeSelection && selection.node.type.name.startsWith('math')) pos = selection.from;

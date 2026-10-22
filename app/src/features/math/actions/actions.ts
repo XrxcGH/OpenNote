@@ -150,3 +150,54 @@ export function liveAnswer(latex: string): string | null {
   if (found.length === 0) return null;
   return found.map((value) => `${name} = ${rootText(value)}`).join(', ');
 }
+
+/** What an equation graphs as: the text of a graph block, and whether it draws in 3D. */
+export interface EquationGraph {
+  source: string;
+  three: boolean;
+}
+
+/** The text of an expression with one letter renamed to x, as the grapher reads it. */
+function asX(node: Node, name: string): string {
+  const text = formatExpression(node);
+  return name === 'x' ? text : text.replace(new RegExp(`(?<![A-Za-z])${name}(?![A-Za-z])`, 'g'), 'x');
+}
+
+const isName = (node: Node, name: string) => node.type === 'name' && node.name === name;
+
+/**
+ * The graph of an equation, or null when it has nothing to draw. y = f(x) and an expression in x draw in 2D;
+ * z = f(x, y) and an expression in x and y draw in 3D. An equation in one letter, such as 2x + 3 = 11, draws both
+ * sides, so the answer is where they cross. Other letters become sliders.
+ */
+export function graphOfLatex(latex: string): EquationGraph | null {
+  if (latex.trim() === '' || latex.length > 2000) return null;
+  const at = topLevelEquals(latex);
+  const head = at < 0 ? '' : latex.slice(0, at).trim();
+  // f(x) = ... draws as y = ...
+  if (/^[A-Za-z]\s*(?:\\left)?\(\s*x\s*(?:\\right)?\)$/.test(head)) return graphOfLatex(`y = ${latex.slice(at + 1)}`);
+  const sides = parseLatex(latex);
+  if (!sides) return null;
+  const { left, right } = sides;
+  const lettersOf = (node: Node) => letters(node);
+  const plain = (node: Node) => formatExpression(node);
+  if (right) {
+    if (isName(left, 'y') && !lettersOf(right).includes('y')) {
+      return { source: `y = ${plain(right)}`, three: false };
+    }
+    if (isName(left, 'z') && !lettersOf(right).includes('z')) {
+      return { source: `z = ${plain(right)}`, three: true };
+    }
+    const all = letters(left, right);
+    if (all.length === 1) {
+      const [name] = all;
+      return { source: `y = ${asX(left, name)}\ny = ${asX(right, name)}`, three: false };
+    }
+    return null;
+  }
+  const all = lettersOf(left);
+  if (all.includes('x') && all.includes('y')) return { source: `z = ${plain(left)}`, three: true };
+  if (all.includes('x')) return { source: `y = ${plain(left)}`, three: false };
+  if (all.length === 1) return { source: `y = ${asX(left, all[0])}`, three: false };
+  return null;
+}

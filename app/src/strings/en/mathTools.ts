@@ -3,6 +3,20 @@
 // (ARCHITECTURE.md section 19).
 
 export const mathTools = {
+  graphPopup: {
+    graph: 'Graph',
+    graphThis: 'Show a graph of this equation',
+    label: 'Graph of {equation}',
+    close: 'Close graph',
+    none: 'This equation has nothing to graph.',
+    command: 'Graph equation',
+    commandKeywords: 'graph plot equation function 2d 3d surface show',
+    inkCommand: 'Graph handwritten equation',
+    inkKeywords: 'graph plot handwriting ink lasso equation math',
+    inkWorking: 'Reading the handwriting to graph it.',
+    inkNone: 'No equation that can be graphed was found in the handwriting.',
+    noEquation: 'Select an equation, or lasso a handwritten one, then use this.',
+  },
   live: {
     title: 'Live math',
     answersLabel: 'Show answers after the equals sign on page lines',

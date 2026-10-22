@@ -109,6 +109,16 @@
     stroke-width: 2;
   }
 
+  /* The graph beside an equation: wide enough for the plot, and never wider than the window. */
+  .popup {
+    display: grid;
+    gap: var(--space-3);
+    inline-size: min(560px, calc(100vw - 2 * var(--space-5)));
+    max-block-size: calc(100vh - 2 * var(--space-5));
+    overflow: auto;
+    padding: var(--space-3);
+  }
+
   .face {
     stroke: var(--color-surface-page);
     stroke-width: 0.5;

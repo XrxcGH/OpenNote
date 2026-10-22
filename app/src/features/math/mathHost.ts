@@ -4,7 +4,8 @@ import 'katex/dist/katex.min.css';
 import { isEnabled } from '../../app/flags';
 import type { MathRenderer } from '../../editor/host';
 import { liveSolveOn } from '../tools';
-import { liveAnswer, simplifyLatex, solveLatex } from './actions/actions';
+import { graphOfLatex, liveAnswer, simplifyLatex, solveLatex } from './actions/actions';
+import { openGraphPopup } from './graph/GraphPopup';
 import { renderLatex } from './latex/render';
 import { penMath } from './visual/pen';
 import { visualMath } from './visual/field';
@@ -12,6 +13,21 @@ import { visualMath } from './visual/field';
 export const mathRenderer: MathRenderer = {
   get actions() {
     return isEnabled('math.actions') ? { simplify: simplifyLatex, solve: solveLatex } : undefined;
+  },
+  get graph() {
+    if (!isEnabled('math.graphPopup')) return undefined;
+    // A 3D graph is offered only where 3D graphs are drawn.
+    const of = (latex: string) => {
+      const found = graphOfLatex(latex);
+      return found && (!found.three || isEnabled('math.graph3d')) ? found : null;
+    };
+    return {
+      source: (latex: string) => of(latex)?.source ?? null,
+      open: (latex: string, anchor: HTMLElement, insert: (source: string) => void) => {
+        const found = of(latex);
+        if (found) openGraphPopup({ source: found.source, anchor, insert, equation: latex });
+      },
+    };
   },
   get live() {
     return liveSolveOn() ? liveAnswer : undefined;

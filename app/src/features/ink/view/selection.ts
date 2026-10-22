@@ -204,6 +204,16 @@ class FrameView implements SelectionFrame {
             ['ink.selection.copyImage', 'copyImage', () => void executeCommand('pages.copyImage', undefined, 'menu')],
           ] as [MessageKey, string, () => void][])
         : []),
+      // A handwritten equation can be graphed: its reading opens a graph beside the selection.
+      ...(isEnabled('math.graphPopup') && isEnabled('intel.mathInk')
+        ? ([
+            [
+              'mathTools.graphPopup.graph',
+              'graph',
+              () => void executeCommand('math.graphHandwriting', undefined, 'menu'),
+            ],
+          ] as [MessageKey, string, () => void][])
+        : []),
     ]);
     ({ frame: this.frame, mover: this.mover, bar: this.bar } = parts);
     this.crop = surface.chrome.ownerDocument.createElement('div');
