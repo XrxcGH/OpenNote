@@ -15,6 +15,7 @@ import type { HandStyle } from '../../myhand/style';
 import { writeRuns } from '../../myhand/write';
 import type { Run, Written } from '../../myhand/write';
 import type { InkStroke } from '../../model/types';
+import { DEFAULT_WIDTH_MM, mmToPage } from '../../pens/tools';
 import type { InkHost, SelectedRun } from '../host';
 import { activeSlot, styleOf } from '../state';
 import type { InkSurface } from '../surface';
@@ -30,14 +31,17 @@ export async function currentStyle(): Promise<HandStyle | null> {
 /** Written paths as ordinary strokes in the current pen's color and width. */
 export function toStrokes(written: Written, surface: InkSurface, start = Date.now()): InkStroke[] {
   const pen = styleOf(activeSlot());
-  // A highlighter's wide, see-through line is no good for writing, so it writes with a pen's tool in its color.
-  const tool = pen.tool === 'highlighter' ? 'pen' : pen.tool;
+  // A highlighter's wide, see-through line is no good for writing, so it writes with a pen's tool and width in its
+  // color.
+  const highlighter = pen.tool === 'highlighter';
+  const tool = highlighter ? 'pen' : pen.tool;
+  const width = highlighter ? mmToPage(DEFAULT_WIDTH_MM.pen) : pen.width;
   return written.paths
     .filter((path) => path.length > 0)
     .map((path) => ({
       id: newId(),
       tool,
-      width: pen.width,
+      width,
       startTime: Math.round(start + path[0].time),
       points: path.map((p) => ({ x: p.x, y: p.y, pressure: p.pressure, time: Math.max(0, p.time - path[0].time) })),
       block: surface.layerFor(),

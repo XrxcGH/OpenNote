@@ -15,7 +15,11 @@ import { CalibrationDialog } from './Calibration';
 import MyHandSection from './MyHandSection';
 import { finishCalibration, loadStyle, resetStyleForTests, setProgressForTests, styleState } from './store';
 import { showUploads } from './Uploads';
-import { requestFor, writeSelection } from './writeInk';
+import { requestFor, toStrokes, writeSelection } from './writeInk';
+import type { Written } from '../../myhand/write';
+import { DEFAULT_WIDTH_MM, mmToPage } from '../../pens/tools';
+import { settingsStore } from '../../../../state/settings';
+import { drawState } from '../state';
 
 beforeEach(() => {
   resetFakeShell();
@@ -223,6 +227,24 @@ describe('Write in my handwriting', () => {
     expect(Math.min(...ys)).toBeGreaterThan(rule - ruled.step * 1.2);
     expect(Math.max(...xs)).toBeLessThan(605);
     expect(remove).toHaveBeenCalledWith('b1', 3, 40);
+  });
+
+  it('writes with a pen’s width, not a highlighter’s, when the current pen is a highlighter', () => {
+    const original = settingsStore.get();
+    const pens = original.settings.ink.pens.map((p, i) =>
+      i === 0 ? { ...p, tool: 'highlighter' as const, width: 8 } : p,
+    );
+    settingsStore.set({ ...original, settings: { ...original.settings, ink: { ...original.settings.ink, pens } } });
+    drawState.set({ tool: 'pen', previous: 'select', slot: pens[0].id });
+    try {
+      const written = { paths: [[{ x: 1, y: 2, pressure: 0.5, time: 0 }]] } as unknown as Written;
+      const [stroke] = toStrokes(written, { layerFor: () => 'layer-1' } as unknown as InkSurface);
+      expect(stroke.tool).toBe('pen');
+      expect(stroke.width).toBe(mmToPage(DEFAULT_WIDTH_MM.pen));
+    } finally {
+      settingsStore.set(original);
+      drawState.set({ tool: 'select', previous: 'select', slot: 'p1' });
+    }
   });
 
   it('puts the handwriting beside the text when asked, or below it when there is no room', () => {
