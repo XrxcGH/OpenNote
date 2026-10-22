@@ -2,6 +2,7 @@
 // ticks, and a path per curve. A screen view draws that data as React SVG, and `sceneToSvg` writes the same data
 // as a standalone SVG string for print and export, where every line stays vector.
 
+import { classifyLine, compileSpecial, DEFAULT_T, fieldPath, sampleCurve, type CurveKind } from './curves';
 import { compileExpression, type ExpressionProblem, type Params } from './evaluate';
 import { segmentsToPath, type PathOptions } from './path';
 import { sampleFunction, type SampleOptions } from './sample';
@@ -13,6 +14,8 @@ export interface CurveInput {
   readonly source: string;
   /** Values for the parameters the expression uses. */
   readonly params?: Params;
+  /** The range of t (or θ) for a parametric or polar curve. Default 0 to 2π. */
+  readonly t?: readonly [number, number];
 }
 
 export interface CurveLayer {
@@ -21,6 +24,8 @@ export interface CurveLayer {
   readonly d: string;
   /** Why the expression could not be drawn, or null. */
   readonly error: ExpressionProblem | null;
+  /** A function of x, a parametric or polar curve, or a vector or slope field (curves.ts). */
+  readonly kind?: CurveKind['kind'];
 }
 
 export interface GraphScene {
@@ -38,6 +43,21 @@ export interface SceneOptions {
 
 function buildCurve(input: CurveInput, view: Viewport, size: Size, options: SceneOptions): CurveLayer {
   const params = input.params ?? {};
+  const kind = classifyLine(input.source);
+  if (kind.kind !== 'function') {
+    const special = compileSpecial(input.source, params);
+    if (!special.ok) return { source: input.source, d: '', error: special.error, kind: kind.kind };
+    const d =
+      kind.kind === 'field' || kind.kind === 'slope'
+        ? fieldPath(kind, special.parts, view, size, params)
+        : segmentsToPath(
+            sampleCurve(kind, special.parts, input.t ?? DEFAULT_T, view, params),
+            view,
+            size,
+            options.path,
+          );
+    return { source: input.source, d, error: null, kind: kind.kind };
+  }
   const result = compileExpression(input.source, { parameters: Object.keys(params) });
   if (!result.ok) return { source: input.source, d: '', error: result.error };
   const { evaluate } = result.expression;
@@ -138,7 +158,7 @@ function curvesSvg(scene: GraphScene, style: SvgStyle): string {
     .map((curve, i) =>
       path(curve.d, {
         stroke: style.curves[i % style.curves.length] ?? style.axis,
-        'stroke-width': style.curveWidth,
+        'stroke-width': curve.kind === 'field' || curve.kind === 'slope' ? style.lineWidth * 1.25 : style.curveWidth,
         'stroke-linecap': 'round',
         'stroke-linejoin': 'round',
       }),

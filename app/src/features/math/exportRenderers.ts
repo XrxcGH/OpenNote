@@ -4,7 +4,8 @@
 // print document stays small. They use the light colors whatever theme the screen shows.
 import { tokens } from '../../theme/tokens';
 import { t } from '../../strings/t';
-import { buildScene, defaultViewport, findParameters, sceneToSvg } from './grapher';
+import { buildScene, defaultViewport, sceneToSvg } from './grapher';
+import { lineParameters } from './grapher/curves';
 import type { SvgStyle } from './grapher';
 import { renderMarkup } from './latex/engine';
 import { readGraph } from './graph/source';
@@ -43,12 +44,12 @@ export function exportGraph(source: string): string | null {
   if (graph.functions.length === 0) return null;
   const view = graph.view ?? defaultViewport(SIZE);
   const params: Record<string, number> = {};
-  for (const line of graph.functions) for (const name of findParameters(line)) params[name] = graph.params[name] ?? 1;
+  for (const line of graph.functions) for (const name of lineParameters(line)) params[name] = graph.params[name] ?? 1;
   for (const [name, value] of Object.entries(graph.params)) params[name] = value;
   const scene = buildScene(
     view,
     SIZE,
-    graph.functions.map((line) => ({ source: line, params })),
+    graph.functions.map((line) => ({ source: line, params, ...(graph.t ? { t: graph.t } : {}) })),
   );
   const description = t('smart.grapher.exportDescription', {
     functions: graph.functions.join('; '),

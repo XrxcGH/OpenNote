@@ -145,7 +145,7 @@ export function PlotLayers({ scene, trace }: { scene: GraphScene; trace: Trace |
         <path
           key={index}
           d={curve.d}
-          className={styles.curve}
+          className={curve.kind === 'field' || curve.kind === 'slope' ? styles.field : styles.curve}
           style={{ stroke: `var(${PENS[index % PENS.length]})` }}
         />
       ))}

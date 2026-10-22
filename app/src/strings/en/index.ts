@@ -48,6 +48,7 @@ import { pdf } from './pdf';
 import { intelSpeech } from './intelSpeech';
 import { intelMore } from './intelMore';
 import { myHand } from './myHand';
+import { graph3d } from './graph3d';
 
 export const en = {
   common,
@@ -98,4 +99,5 @@ export const en = {
   intelMore,
   accounts,
   myHand,
+  graph3d,
 } as const;
