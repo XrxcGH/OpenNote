@@ -45,7 +45,7 @@ function inlineTags(markdown: string): string[] {
   const out: string[] = [];
   markdown.split(/(`+[^`]*`+)/).forEach((part, at) => {
     if (at % 2 === 1) return;
-    for (const match of part.matchAll(/(?:^|\s)#([\p{L}\p{N}_/-]+)/gu)) {
+    for (const match of part.matchAll(/(?:^|\s)\\?#([\p{L}\p{N}_/-]+)/gu)) {
       if (/\p{L}/u.test(match[1])) out.push(match[1]);
     }
   });

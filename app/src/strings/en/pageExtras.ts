@@ -86,6 +86,9 @@ export const pageExtras = {
     doneCount: 'Show the done count beside checklists',
     wordCount: 'Show the word count under the page',
     seriesCarry: 'Carry unfinished checkboxes into the next page of a series',
+    hashtags: 'Turn typed #words into tags',
+    hashtagsHelp:
+      'Type #word and a space or punctuation, and the word becomes a tag of the page. Code, numbers like #1, and words like C# are left alone. Press Ctrl+Z right after to keep it as plain text.',
   },
   find: {
     openFind: 'Find on page',

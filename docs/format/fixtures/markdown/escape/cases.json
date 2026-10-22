@@ -42,6 +42,16 @@
     },
     {
       "atLineStart": true,
+      "escaped": "Review \\#todo, then \\#exam/unit-3.",
+      "text": "Review #todo, then #exam/unit-3."
+    },
+    {
+      "atLineStart": false,
+      "escaped": "Review \\#todo, then \\#exam/unit-3.",
+      "text": "Review #todo, then #exam/unit-3."
+    },
+    {
+      "atLineStart": true,
       "escaped": "snake_case and \\_draft",
       "text": "snake_case and _draft"
     },

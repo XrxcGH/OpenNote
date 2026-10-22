@@ -6,6 +6,7 @@ import { META_AUTO_CHANGE, META_COMMAND } from '../../../editor/meta';
 import { PageServiceError } from '../../../services/pages/types';
 import { t } from '../../../strings/t';
 import { showToast } from '../../../ui/toast';
+import { setPrefs } from '../qol/prefs';
 import { exitHook } from './queue';
 import { blockId, caretAtEnd, syncPage, syncRig } from './testSync';
 import type { SyncRig } from './testSync';
@@ -268,5 +269,28 @@ describe('a change the core refuses', () => {
     if (refused.ok) return;
     refused.closeAnyway?.();
     expect(await exit()).toEqual({ ok: true });
+  });
+});
+
+describe('typed hashtags', () => {
+  afterEach(() => setPrefs({ hashtags: true }));
+
+  it('sends the tag as its own step after the text, so one Undo leaves the plain #word', async () => {
+    const rig = await syncRig(syncPage(['']));
+    caretAtEnd(rig.editors.get(A)!);
+    rig.type(A, '#todo ');
+    await tick(300);
+    const kinds = rig.sent().map((batch) => batch.edits.map((edit) => edit.edit));
+    expect(kinds).toEqual([['spliceText'], ['setPage']]);
+    expect(rig.sent()[1]).toEqual({ edits: [{ edit: 'setPage', tags: ['todo'] }] });
+  });
+
+  it('adds no tag while the setting is off', async () => {
+    setPrefs({ hashtags: false });
+    const rig = await syncRig(syncPage(['']));
+    caretAtEnd(rig.editors.get(A)!);
+    rig.type(A, '#todo ');
+    await tick(300);
+    expect(rig.sent().flatMap((batch) => batch.edits.map((edit) => edit.edit))).toEqual(['spliceText']);
   });
 });

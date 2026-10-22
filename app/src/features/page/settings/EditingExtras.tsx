@@ -137,6 +137,7 @@ export default function EditingExtras() {
   const checklist = useFlag('page.checklistExtras');
   const words = useFlag('page.wordCount');
   const series = useFlag('page.series');
+  const hashtags = useFlag('page.hashtags');
   const prefs = usePrefs((value) => value);
   return (
     <section className={styles.part} aria-labelledby="editing-extras">
@@ -158,6 +159,16 @@ export default function EditingExtras() {
           checked={prefs.seriesCarry}
           onChange={(seriesCarry) => setPrefs({ seriesCarry })}
         />
+      )}
+      {hashtags && (
+        <>
+          <Switch
+            label={t('pageExtras.settings.hashtags')}
+            checked={prefs.hashtags}
+            onChange={(hashtags) => setPrefs({ hashtags })}
+          />
+          <p className={styles.help}>{t('pageExtras.settings.hashtagsHelp')}</p>
+        </>
       )}
       {words && (
         <Switch
