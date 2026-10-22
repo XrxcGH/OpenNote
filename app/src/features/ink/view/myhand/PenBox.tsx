@@ -95,7 +95,11 @@ function usePenStrokes(props: PenBoxProps, element: RefObject<HTMLDivElement | n
     if (event.pointerType === 'pen') pens.seen = true;
     if ((event.pointerType === 'touch' && pens.seen) || event.button !== 0 || live.current || !element.current) return;
     event.preventDefault();
-    element.current.setPointerCapture?.(event.pointerId);
+    try {
+      element.current.setPointerCapture(event.pointerId);
+    } catch {
+      // A pointer the browser no longer tracks can't be captured; the box still takes its points.
+    }
     element.current.focus({ preventScroll: true });
     // Times run from the sample's first stroke: a later stroke starts a moment after the last one ended.
     const last = sample?.strokes.at(-1);

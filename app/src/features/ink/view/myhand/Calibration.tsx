@@ -2,7 +2,7 @@
 // on its own, three times each, then sentences that use every letter and the punctuation, on calm ruled boxes, one
 // step at a time. Every box saves as it is written, so the person can stop and come back; a preview shows the style
 // before it is made.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useStore } from '../../../../state/store';
 import { t } from '../../../../strings/t';
@@ -96,10 +96,15 @@ export function StyleFacts({ style }: { style: HandStyle }) {
   );
 }
 
-function Sentences({ step }: { step: number }) {
+function Sentences({ step, focusId }: { step: number; focusId: string | null }) {
   const samples = useStore(styleState, (s) => s.doc.progress.samples);
+  const holder = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const n = focusId?.startsWith('sentence:') ? Number(focusId.split(':')[1]) : -1;
+    if (n >= 0) holder.current?.querySelector<HTMLElement>(`[data-myhand-box="${n}"]`)?.focus();
+  }, [focusId]);
   return (
-    <div className={styles.rows}>
+    <div className={styles.rows} ref={holder}>
       <p className={styles.lead}>{t('myHand.calibration.sentenceHint')}</p>
       {SENTENCES.map((text, n) => {
         const id = sentenceSampleId(n);
@@ -244,7 +249,7 @@ export function CalibrationDialog({ done }: { done: () => void }) {
             <SampleGrid key={group.id} rows={rowsOf(group.chars)} step={step} focusId={focusId} />
           </>
         )}
-        {id === 'sentences' && <Sentences step={step} />}
+        {id === 'sentences' && <Sentences step={step} focusId={focusId} />}
         {id === 'preview' && <Preview onFirstEmpty={firstEmpty} />}
       </div>
     </Dialog>

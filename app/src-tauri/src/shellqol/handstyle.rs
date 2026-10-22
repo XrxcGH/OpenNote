@@ -281,7 +281,7 @@ mod tests {
             );
         }
         assert_eq!(&store.load().expect("loaded").expect("some")[..], STYLE);
-        // The file is under the local folder, never beside the notes or the roaming settings.
+        // The file is under the local folder, never beside the notes, or the roaming settings.
         assert!(store.file().starts_with(dir.path().join(FOLDER)));
     }
 

@@ -105,8 +105,12 @@ function grayOf(
   const { data } = ctx.getImageData(0, 0, w, h);
   canvas.width = 0;
   const gray = new Uint8Array(w * h);
-  for (let i = 0; i < w * h; i++)
-    gray[i] = Math.round(data[i * 4] * 0.299 + data[i * 4 + 1] * 0.587 + data[i * 4 + 2] * 0.114);
+  // A see-through pixel reads as paper: each is laid over white.
+  for (let i = 0; i < w * h; i++) {
+    const lum = data[i * 4] * 0.299 + data[i * 4 + 1] * 0.587 + data[i * 4 + 2] * 0.114;
+    const alpha = data[i * 4 + 3] / 255;
+    gray[i] = Math.round(lum * alpha + 255 * (1 - alpha));
+  }
   return { gray, w, h, scale };
 }
 

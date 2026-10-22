@@ -37,52 +37,71 @@ export interface WrittenLine {
   readonly rect: Rect;
 }
 
-/** Strokes into lines: each stroke joins the line whose middle band it falls in, and small marks join the nearest. */
+interface Item {
+  readonly stroke: Traced;
+  readonly rect: Rect;
+}
+
+/** The middle part of a stroke's height, which the strokes beside it on its line share. */
+const core = (r: Rect, typical: number) => {
+  const h = heightOf(r);
+  const trim = h > typical ? (h - typical) / 2 : 0;
+  return { top: r.y0 + trim + h * 0.15, bottom: r.y1 - trim - h * 0.15 };
+};
+
+/** Joins strokes that sit side by side on one line: their middles overlap and nothing wide separates them. */
+function joinNeighbours(items: readonly Item[], typical: number): number[] {
+  const parent = items.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const order = items.map((_, i) => i).sort((a, b) => items[a].rect.x0 - items[b].rect.x0);
+  for (let a = 0; a < order.length; a++) {
+    const i = order[a];
+    const ci = core(items[i].rect, typical);
+    for (let b = a + 1; b < order.length; b++) {
+      const j = order[b];
+      // Sorted by left edge: once one starts too far right, the rest do too.
+      if (items[j].rect.x0 - items[i].rect.x1 > typical * 8) break;
+      const cj = core(items[j].rect, typical);
+      if (Math.min(ci.bottom, cj.bottom) - Math.max(ci.top, cj.top) > 0) parent[find(i)] = find(j);
+    }
+  }
+  return items.map((_, i) => find(i));
+}
+
+/**
+ * Strokes into lines. Strokes whose middles overlap and that stand near each other join, and those chains are the
+ * lines; small marks (dots, bars, accents) then join the line nearest them.
+ */
 export function splitLines(strokes: readonly Traced[]): WrittenLine[] {
-  const items = strokes.filter((s) => s.length > 0).map((stroke) => ({ stroke, rect: rectOf([stroke]) }));
+  const items: Item[] = strokes.filter((s) => s.length > 0).map((stroke) => ({ stroke, rect: rectOf([stroke]) }));
   if (items.length === 0) return [];
   const typical = median(items.map((i) => heightOf(i.rect)).filter((h) => h > 0)) || 1;
-  const big = items.filter((i) => heightOf(i.rect) >= typical * 0.35 || widthOf(i.rect) >= typical * 0.8);
-  const small = items.filter((i) => !big.includes(i));
-  big.sort((a, b) => (a.rect.y0 + a.rect.y1) / 2 - (b.rect.y0 + b.rect.y1) / 2);
-  const lines: { items: typeof items; mid: number; band: number }[] = [];
-  for (const item of big) {
-    const mid = (item.rect.y0 + item.rect.y1) / 2;
+  const isSmall = (i: Item) => heightOf(i.rect) < typical * 0.35 && widthOf(i.rect) < typical * 0.8;
+  const big = items.filter((i) => !isSmall(i));
+  const roots = joinNeighbours(big, typical);
+  const groups = new Map<number, Item[]>();
+  big.forEach((item, k) => groups.set(roots[k], [...(groups.get(roots[k]) ?? []), item]));
+  const lines = [...groups.values()].map((list) => ({ items: list, rect: rectOf(list.map((i) => i.stroke)) }));
+  for (const item of items.filter(isSmall)) {
+    const mx = (item.rect.x0 + item.rect.x1) / 2;
+    const my = (item.rect.y0 + item.rect.y1) / 2;
     let best: (typeof lines)[number] | null = null;
-    let bestD = Infinity;
+    let bestD = typical * 2.5;
     for (const line of lines) {
-      const d = Math.abs(mid - line.mid);
-      // Lines next to each other on the page overlap little, so a stroke that sits mostly between lines starts a new one.
-      if (
-        d < line.band * 0.55 &&
-        d < bestD &&
-        Math.abs(item.rect.x0 - Math.max(...line.items.map((i) => i.rect.x1))) < typical * 12
-      ) {
-        best = line;
-        bestD = d;
-      }
+      const dx = Math.max(0, line.rect.x0 - mx, mx - line.rect.x1);
+      const dy = Math.max(0, line.rect.y0 - my, my - line.rect.y1);
+      const d = Math.hypot(dx * 2, dy);
+      if (d < bestD) [best, bestD] = [line, d];
     }
-    if (best) {
-      best.items.push(item);
-      const mids = best.items.map((i) => (i.rect.y0 + i.rect.y1) / 2);
-      best.mid = median(mids);
-    } else lines.push({ items: [item], mid, band: Math.max(typical, heightOf(item.rect)) });
-  }
-  for (const item of small) {
-    const mid = (item.rect.y0 + item.rect.y1) / 2;
-    const near = lines.reduce<(typeof lines)[number] | null>(
-      (best, line) => (!best || Math.abs(line.mid - mid) < Math.abs(best.mid - mid) ? line : best),
-      null,
-    );
-    if (near && Math.abs(near.mid - mid) < typical * 1.5) near.items.push(item);
-    else lines.push({ items: [item], mid, band: typical });
+    if (best) best.items.push(item);
+    else lines.push({ items: [item], rect: item.rect });
   }
   return lines
-    .sort((a, b) => a.mid - b.mid)
     .map((line) => {
       const ordered = [...line.items].sort((a, b) => a.rect.x0 - b.rect.x0).map((i) => i.stroke);
       return { strokes: ordered, rect: rectOf(ordered) };
-    });
+    })
+    .sort((a, b) => a.rect.y0 + a.rect.y1 - (b.rect.y0 + b.rect.y1) || a.rect.x0 - b.rect.x0);
 }
 
 /** A symbol: strokes that belong together, as one character or mark. */
