@@ -8,10 +8,11 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 import type { NodeView } from '@tiptap/pm/view';
 import { t } from '../../strings/t';
-import type { EditorHost, MathActionResult, MathRenderer, VisualMathField } from '../host';
+import type { EditorHost, MathActionResult, MathRenderer, MathSuggestion, VisualMathField } from '../host';
 import { META_COMMAND } from '../meta';
 import { GRAPH_LANGUAGE } from './graphFence';
 import { createPenPad } from './mathPen';
+import { fillSuggestion, previewGhost, stepsPanel, suggestionButton } from './mathSteps';
 import type { PenPad } from './mathPen';
 import { MathBlock, MathInline } from '../schema/nodes';
 import styles from './content.module.css';
@@ -50,6 +51,11 @@ class MathView implements NodeView {
   private stepsList: HTMLElement | null = null;
   /** The Graph button over a selected equation. */
   private graphButton: HTMLButtonElement | null = null;
+  /** The answer offered after a closed equation that ends in "=", and the button that adds it. */
+  private offered: MathSuggestion | null = null;
+  private offeredButton: HTMLButtonElement | null = null;
+  /** The answer offered in the open field's preview, which Tab adds. */
+  private fieldOffer: MathSuggestion | null = null;
   private field: Field | null = null;
   private visual: VisualMathField | null = null;
   private toggle: HTMLButtonElement | null = null;
@@ -80,7 +86,12 @@ class MathView implements NodeView {
     // A click selects the whole equation, so it offers its graph; a double click goes on to open it.
     this.dom.addEventListener('click', (event) => {
       const pos = this.getPos();
-      if (this.field || pos === undefined || (event.target instanceof Node && this.graphButton?.contains(event.target)))
+      const target = event.target instanceof Node ? event.target : null;
+      if (
+        this.field ||
+        pos === undefined ||
+        (target && (this.graphButton?.contains(target) || this.offeredButton?.contains(target)))
+      )
         return;
       const { state } = this.editor;
       if (!(state.selection instanceof NodeSelection && state.selection.from === pos))
@@ -117,6 +128,7 @@ class MathView implements NodeView {
     if (drawing && !drawing.ok) this.dom.title = drawing.message;
     else this.dom.removeAttribute('title');
     this.showAnswer(drawing?.ok ? (this.renderer?.live?.(source) ?? null) : null);
+    this.offer(drawing?.ok ? source : '');
     if (drawing?.ok) {
       this.dom.setAttribute('role', 'math');
       this.shown.className = drawn.drawn;
@@ -147,6 +159,77 @@ class MathView implements NodeView {
     this.dom.setAttribute('aria-description', t('mathTools.live.answer', { answer }));
   }
 
+  /** Offers the answer to a calculus question that ends in "=", after the drawn equation. */
+  private offer(source: string): void {
+    const suggest = this.renderer?.suggest;
+    if (!suggest || !/=\s*$/.test(source)) {
+      this.showOffer(null);
+      return;
+    }
+    void suggest(source).then((found) => {
+      if (!this.gone && this.source() === source) this.showOffer(found);
+    });
+  }
+
+  private showOffer(found: MathSuggestion | null): void {
+    this.offered = found;
+    if (this.answer) this.answer.hidden = Boolean(found) || this.field !== null;
+    if (!found) {
+      this.offeredButton?.remove();
+      this.offeredButton = null;
+      return;
+    }
+    if (!this.offeredButton) {
+      this.offeredButton = suggestionButton(() => this.acceptOffer());
+      this.offeredButton.hidden = this.field !== null;
+      this.dom.append(this.offeredButton);
+    }
+    fillSuggestion(this.offeredButton, found, (latex) => this.drawHtml(latex));
+  }
+
+  /** Adds the offered answer after the equals sign, as one undo step. */
+  private acceptOffer(): void {
+    const found = this.offered;
+    const pos = this.getPos();
+    if (!found || pos === undefined || !this.editor.isEditable) return;
+    const source = `${this.source().trimEnd()} ${found.latex}`;
+    const tr = this.editor.state.tr.setNodeMarkup(pos, undefined, { ...this.node.attrs, source });
+    this.editor.view.dispatch(tr.setMeta(META_COMMAND, true));
+    this.host.announce(t('mathTools.live.accepted', { answer: found.text }));
+  }
+
+  private drawHtml(latex: string): string | null {
+    const drawing = this.draw(latex);
+    return drawing?.ok ? drawing.html : null;
+  }
+
+  /** Offers the answer in the open field's preview, for Tab to add. */
+  private offerInField(value: string): void {
+    const suggest = this.renderer?.suggest;
+    this.fieldOffer = null;
+    if (!suggest || !/=\s*$/.test(value)) return;
+    void suggest(value).then((found) => {
+      const { field, preview, problem } = this;
+      if (!found || !field || !preview || !problem || (this.visual ? this.visual.value : field.value) !== value) return;
+      this.fieldOffer = found;
+      preview.querySelector('[data-math-ghost]')?.remove();
+      preview.append(previewGhost(found, (latex) => this.drawHtml(latex)));
+      if (problem.textContent === '') problem.textContent = t('mathTools.live.suggestion', { answer: found.text });
+    });
+  }
+
+  /** Tab in the field adds the offered answer after the equals sign. */
+  private acceptFieldOffer(): void {
+    const found = this.fieldOffer;
+    const field = this.field;
+    if (!found || !field) return;
+    const value = `${(this.visual ? this.visual.value : field.value).trimEnd()} ${found.latex}`;
+    if (this.visual) this.visual.value = value;
+    else field.value = value;
+    this.showPreview();
+    this.host.announce(t('mathTools.live.accepted', { answer: found.text }));
+  }
+
   /** Shows or hides the steps for what is in the field, under the panel's buttons. */
   private toggleSteps(button?: HTMLButtonElement): boolean {
     void this.showSteps(button);
@@ -167,30 +250,11 @@ class MathView implements NodeView {
     const view = await steps(this.visual ? this.visual.value : field.value);
     // The equation may have closed while the steps were worked out.
     if (this.holder !== holder || this.stepsList) return;
-    const list = document.createElement('section');
-    list.className = drawn.steps;
-    list.dataset.mathSteps = '';
-    list.setAttribute('aria-live', 'polite');
-    if (!view.ok) {
-      list.textContent = view.message;
-    } else {
-      const heading = document.createElement('h4');
-      heading.textContent = view.title;
-      const items = document.createElement('ol');
-      for (const step of view.steps) {
-        const item = document.createElement('li');
-        const rule = document.createElement('span');
-        rule.className = drawn.stepRule;
-        rule.textContent = step.rule;
-        const math = document.createElement('span');
-        const drawing = this.draw(step.latex);
-        if (drawing?.ok) math.innerHTML = drawing.html;
-        else math.textContent = step.latex;
-        item.append(rule, math);
-        items.append(item);
-      }
-      list.append(heading, items);
-    }
+    const list = stepsPanel(
+      view,
+      (latex) => this.drawHtml(latex),
+      (block) => this.insertStepsAfter(block),
+    );
     holder.append(list);
     this.stepsList = list;
     button?.setAttribute('aria-expanded', 'true');
@@ -240,6 +304,18 @@ class MathView implements NodeView {
     this.editor.view.dispatch(state.tr.insert(after, block).setMeta(META_COMMAND, true));
   }
 
+  /** Puts the working as display math after the block this equation is in, as one undo step. */
+  private insertStepsAfter(block: string): void {
+    const pos = this.getPos();
+    const type = this.editor.schema.nodes.mathBlock;
+    if (pos === undefined || !type || !this.editor.isEditable) return;
+    const { state } = this.editor;
+    const $pos = state.doc.resolve(pos);
+    const after = $pos.depth > 0 ? $pos.after(1) : pos + this.node.nodeSize;
+    this.editor.view.dispatch(state.tr.insert(after, type.create({ source: block })).setMeta(META_COMMAND, true));
+    this.host.announce(t('mathTools.steps.inserted'));
+  }
+
   /** Opens the source field. */
   open(): void {
     if (this.field || !this.editor.isEditable) return;
@@ -252,6 +328,7 @@ class MathView implements NodeView {
     this.dom.setAttribute('data-math-editing', '');
     this.shown.hidden = true;
     if (this.answer) this.answer.hidden = true;
+    if (this.offeredButton) this.offeredButton.hidden = true;
     this.dom.append(field);
     if (this.renderer) this.addPreview(field);
     field.focus();
@@ -451,6 +528,8 @@ class MathView implements NodeView {
     preview.hidden = !drawing?.ok;
     if (drawing?.ok) preview.innerHTML = drawing.html;
     problem.textContent = drawing && !drawing.ok ? t('smart.math.problem', { message: drawing.message }) : '';
+    if (drawing?.ok) this.offerInField(this.visual ? this.visual.value : field.value);
+    else this.fieldOffer = null;
   }
 
   /** True while this equation is still on the page of that editor. */
@@ -492,6 +571,17 @@ class MathView implements NodeView {
     } else if (event.key === 'Enter' && !(this.display && event.shiftKey)) {
       event.preventDefault();
       this.close(true);
+    } else if (
+      event.key === 'Tab' &&
+      this.fieldOffer &&
+      !event.shiftKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey
+    ) {
+      // Tab adds the offered answer, as on a page line; with nothing offered it moves on to the panel's buttons.
+      event.preventDefault();
+      this.acceptFieldOffer();
     }
   }
 
@@ -513,7 +603,9 @@ class MathView implements NodeView {
     this.preview = this.problem = this.holder = null;
     this.stepsList = null;
     this.shown.hidden = false;
-    if (this.answer) this.answer.hidden = false;
+    if (this.answer) this.answer.hidden = this.offered !== null;
+    if (this.offeredButton) this.offeredButton.hidden = false;
+    this.fieldOffer = null;
     const pos = this.getPos();
     if (pos === undefined) return;
     const { state } = this.editor;
@@ -534,8 +626,9 @@ class MathView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    // The Graph button over a selected equation is pressed, not the equation.
-    if (this.graphButton && event.target instanceof Node && this.graphButton.contains(event.target)) return true;
+    // The Graph button over a selected equation, and the offered answer, are pressed, not the equation.
+    const pressed = event.target instanceof Node ? event.target : null;
+    if (pressed && (this.graphButton?.contains(pressed) || this.offeredButton?.contains(pressed))) return true;
     if (this.field === null) return false;
     // Keys and focus inside the field and its panel (Tab to Simplify and Solve, writing in the pen pad) are not the
     // editor's: it would take focus and close the equation.

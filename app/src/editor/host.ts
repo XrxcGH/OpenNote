@@ -85,10 +85,28 @@ export interface PenMath {
   recognize(strokes: [number, number][][]): Promise<string | null>;
 }
 
-/** Steps for an equation: each rule in words with its LaTeX, and the result; or why there are none. */
+/** One step of working: its rule's short name and sentence, its LaTeX, what it is applied with, and its inner steps. */
+export interface MathStep {
+  name: string;
+  rule: string;
+  latex: string;
+  note?: string;
+  children?: MathStep[];
+}
+
+/**
+ * Steps for an equation: each rule in words with its LaTeX, the result, and the working as one LaTeX block to put on
+ * the page; or why there are none, calmly, with any working that was still possible.
+ */
 export type MathStepsView =
-  | { ok: true; title: string; steps: { rule: string; latex: string }[]; result: string }
-  | { ok: false; message: string };
+  | { ok: true; title: string; steps: MathStep[]; result: string; block: string }
+  | { ok: false; message: string; steps?: MathStep[] };
+
+/** An answer offered after an equation that ends in "=": the LaTeX to add after it, and how it reads. */
+export interface MathSuggestion {
+  latex: string;
+  text: string;
+}
 
 export interface MathRenderer {
   /** Handwriting to LaTeX, when the page offers it. */
@@ -103,8 +121,13 @@ export interface MathRenderer {
   };
   /** A short answer shown beside an equation, such as "x = 4", when the page offers live answers. */
   live?(latex: string): string | null;
-  /** Step-by-step working for a derivative or an integral, already in words, when the page offers it. */
+  /** Step-by-step working for a derivative, an integral, a limit, or a sum, already in words, when the page offers it. */
   steps?(latex: string): Promise<MathStepsView>;
+  /**
+   * The answer to a derivative, integral, limit, or sum that ends in "=", offered as the equation is written, when the
+   * page offers live answers. Null when there is nothing to offer.
+   */
+  suggest?(latex: string): Promise<MathSuggestion | null>;
   /** The graph of an equation, when the page offers it: the graph block's text, and a popover that shows it. */
   graph?: {
     source(latex: string): string | null;

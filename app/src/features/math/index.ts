@@ -31,3 +31,7 @@ export type { MapNode } from './mindmap/tree';
 export { mountDiagram } from './diagram/mount';
 export { STARTER_TEXT, fallbackOf } from './diagram/kind';
 export { drawDiagram } from './diagram/render';
+export type { KnownFunction } from './calculus';
+
+/** The calculus tools: derivatives, integrals, limits, and sums. Their code loads on first use. */
+export const loadCalculus = () => import('./calculus');

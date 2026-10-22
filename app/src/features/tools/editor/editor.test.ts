@@ -43,6 +43,18 @@ describe('math on page lines', () => {
     expect(notesState(page, region, [], null).ghost).toBeNull();
     expect(notesState(doc('x^2 = 9'), region, [], 8).ghost?.text).toBe('x = -3 or x = 3');
   });
+  it('offers a calculus answer after the equals sign, using functions from earlier lines', async () => {
+    // f(x) = x^3 runs from 1 to 11, f'(x) = from 13 to 20, and d/dx(sin(x)) = from 22 to 36.
+    const page = doc('f(x) = x^3', "f'(x) =", 'd/dx(sin(x)) =');
+    notesState(page, region, [], 20);
+    await (await import('../../math')).loadCalculus();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const offered = notesState(page, region, [], 20);
+    expect(offered.ghost).toEqual({ at: 20, text: '3x^2', insert: '3x^2', sameLine: true });
+    // The caret line has the gray answer; the other calculus line shows its answer as a question line does.
+    expect(widgets(offered.set)).toBe(2);
+    expect(notesState(page, region, [], 36).ghost?.text).toBe('cos(x)');
+  });
   it('reads the region from the browser', () => {
     expect(['.', ',']).toContain(regionOfBrowser().decimal);
   });

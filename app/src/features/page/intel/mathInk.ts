@@ -11,6 +11,18 @@ import { pageSelection } from '../seams/selectionStore';
 
 const intel = () => import('../../intel').then((module) => module.loadApi());
 
+/**
+ * The answer to handwritten math: a derivative, integral, limit, or sum written ending in "=" (the equation added to
+ * the page offers it to add), or else the short answer such as x = 4.
+ */
+async function handwritingAnswer(latex: string): Promise<string | null> {
+  if (/=\s*$/.test(latex)) {
+    const offered = (await (await import('../../math')).loadCalculus()).suggestion(latex, { mode: 'latex' });
+    if (offered) return `= ${offered.text}`;
+  }
+  return (await import('../../math')).liveAnswer(latex);
+}
+
 /** Reads the selected handwriting as math and adds it to the page, below the last block. */
 export async function convertToMath(): Promise<void> {
   const mounted = shownMedia.get();
@@ -37,7 +49,7 @@ export async function convertToMath(): Promise<void> {
   showInserted(mounted, edits, ack.orderKeys);
   // The handwriting's answer, such as x = 4, when live solving is on: what was written is checked at a glance.
   const tools = await import('../../tools');
-  const answer = tools.liveSolveOn() ? (await import('../../math')).liveAnswer(found.latex) : null;
+  const answer = tools.liveSolveOn() ? await handwritingAnswer(found.latex) : null;
   showToast({
     message:
       found.unread > 0
