@@ -4,6 +4,7 @@
 // The keys go to a field of its own, named for screen readers; the page's text is never touched.
 import { t } from '../../../../strings/t';
 import { announce } from '../../../../ui';
+import { strokeBounds } from '../../geometry/bounds';
 import { placement } from '../../myhand/place';
 import type { HandStyle } from '../../myhand/style';
 import { writeText } from '../../myhand/write';
@@ -43,9 +44,7 @@ export class TypeMode {
     private readonly style: HandStyle,
     private readonly onStop: () => void,
   ) {
-    const viewport = host.viewport.get();
-    const camera = surface.cameraNow();
-    const at = viewport ? viewport.toWorld(camera.viewport.x + 64, camera.viewport.y + 64) : { x: 64, y: 64 };
+    const at = this.startPoint();
     this.place = this.placeAt(at);
     this.cursor = { x: this.place.startX ?? this.place.left, baseline: this.place.baseline };
     this.field = document.createElement('textarea');
@@ -70,6 +69,33 @@ export class TypeMode {
     this.field.focus();
     this.moveCaret();
     announce(t('myHand.type.on'));
+  }
+
+  /** Where writing starts: below the page's text and ink in view, at their left edge, or near the view's top left. */
+  private startPoint(): { x: number; y: number } {
+    const camera = this.surface.cameraNow();
+    const view = {
+      x0: camera.scrollX / camera.zoom,
+      y0: camera.scrollY / camera.zoom,
+      x1: (camera.scrollX + camera.viewport.w) / camera.zoom,
+      y1: (camera.scrollY + camera.viewport.h) / camera.zoom,
+    };
+    let bottom = -Infinity;
+    let left = Infinity;
+    const layer = this.host.layer.get();
+    for (const block of layer?.blocks() ?? []) {
+      if (block.type === 'ink') continue;
+      const box = layer?.view(block.id)?.measure();
+      if (!box || box.y > view.y1 || box.y + box.h < view.y0) continue;
+      bottom = Math.max(bottom, box.y + box.h);
+      left = Math.min(left, box.x);
+    }
+    for (const stroke of this.surface.query({ minX: view.x0, minY: view.y0, maxX: view.x1, maxY: view.y1 })) {
+      bottom = Math.max(bottom, strokeBounds(stroke).maxY);
+    }
+    const x = Number.isFinite(left) ? left : view.x0 + 64 / camera.zoom;
+    const y = Number.isFinite(bottom) ? bottom + 12 : view.y0 + 64 / camera.zoom;
+    return { x, y: Math.min(y, view.y1 - 48 / camera.zoom) };
   }
 
   private placeAt(at: { x: number; y: number }): Placement {
@@ -238,7 +264,7 @@ export class TypeMode {
       this.field.remove();
       this.caret.remove();
       announce(t('myHand.type.off'));
-      reportMissing([...this.missing]);
+      if (this.missing.size > 0) reportMissing([...this.missing]);
       this.onStop();
     });
   }

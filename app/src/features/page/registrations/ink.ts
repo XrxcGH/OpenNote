@@ -25,6 +25,7 @@ function start(): void {
   void seams
     .then(([{ installInk, shownStrokeReader }, router, selection]) => {
       setInkStrokeReader(shownStrokeReader);
+      void import('./inkSeams').then((seams) => seams.trackTextSelection());
       return installInk({
         registerPointerTool: router.registerPointerTool,
         setActiveTool: router.setActiveTool,

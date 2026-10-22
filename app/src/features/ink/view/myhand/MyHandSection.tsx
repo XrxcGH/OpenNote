@@ -20,7 +20,7 @@ function Uploads() {
   const input = useRef<HTMLInputElement>(null);
   return (
     <section aria-labelledby="myhand-uploads">
-      <h3 id="myhand-uploads">{t('myHand.uploads.title')}</h3>
+      <h2 id="myhand-uploads">{t('myHand.uploads.title')}</h2>
       <p className={styles.lead}>{t('myHand.uploads.intro')}</p>
       {!ready ? (
         <p className={styles.locked} data-myhand-locked="">
@@ -47,7 +47,7 @@ function Uploads() {
           </div>
           {kept.length > 0 && (
             <>
-              <h4>{t('myHand.uploads.kept')}</h4>
+              <h3>{t('myHand.uploads.kept')}</h3>
               <ul>
                 {kept.map((file, i) => (
                   <li key={`${file.name}:${file.at}`}>
@@ -97,8 +97,7 @@ export default function MyHandSection() {
     announce((await deleteStyle()) ? t('myHand.removed') : t('myHand.removeFailed'));
   };
   return (
-    <section aria-labelledby="myhand-settings" className={styles.page} data-myhand-section="">
-      <h2 id="myhand-settings">{t('myHand.section')}</h2>
+    <section aria-label={t('myHand.section')} className={styles.page} data-myhand-section="">
       <p className={styles.lead}>{t('myHand.intro')}</p>
       <p className={styles.lead}>{t('myHand.privacy')}</p>
       <p className={styles.lead}>{t('myHand.noSignature')}</p>
@@ -135,7 +134,7 @@ export default function MyHandSection() {
       </div>
       {style && missingMath.length > 0 && (
         <section aria-labelledby="myhand-missing">
-          <h3 id="myhand-missing">{t('myHand.missingTitle')}</h3>
+          <h2 id="myhand-missing">{t('myHand.missingTitle')}</h2>
           <p className={styles.missing}>{t('myHand.missing', { chars: missingMath.join(' ') })}</p>
           <Button variant="quiet" onClick={() => void showMathPen(missingMath)}>
             {t('myHand.addMissing')}

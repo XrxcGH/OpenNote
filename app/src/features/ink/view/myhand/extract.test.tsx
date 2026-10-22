@@ -39,7 +39,7 @@ function outline(path: [number, number][], width: number): string {
 }
 
 /** A one-page PDF: a ruled line drawn as a stroke, and handwriting drawn as filled outlines. */
-function vectorPdf(): Uint8Array {
+function vectorPdf(): Uint8Array<ArrayBuffer> {
   const strokes: [number, number][][] = [];
   // Three upright marks and an arc, on a line at y = 700 (PDF y runs up).
   for (let k = 0; k < 3; k++) strokes.push(Array.from({ length: 12 }, (_, i) => [100 + k * 20, 700 + i]));

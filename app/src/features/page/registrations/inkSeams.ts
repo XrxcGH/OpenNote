@@ -108,6 +108,26 @@ type Run = { kind: 'text'; text: string } | { kind: 'math'; latex: string; displ
 const NEWLINE = '\n';
 
 /** The typed text the person has selected in the active text block, with its math, and where it sits. */
+let lastText: string | null = null;
+let tracking: (() => void) | null = null;
+
+/**
+ * Follows which text block was last active, so a command run from the palette or a menu, which takes focus from the
+ * text, still finds the selection the person made there.
+ */
+export function trackTextSelection(): void {
+  if (tracking) return;
+  const follow = () => {
+    tracking?.();
+    tracking =
+      shownPool.get()?.onActiveChange((block) => {
+        if (block) lastText = block;
+      }) ?? (() => undefined);
+  };
+  follow();
+  shownPool.subscribe(follow);
+}
+
 export function selection(): {
   block: string;
   from: number;
@@ -117,7 +137,9 @@ export function selection(): {
   rect: { x: number; y: number; w: number; h: number };
   fontSize: number;
 } | null {
-  const active = shownPool.get()?.active();
+  const pool = shownPool.get();
+  const last = lastText ? pool?.editor(lastText) : null;
+  const active = pool?.active() ?? (lastText && last ? { block: lastText, editor: last } : null);
   if (!active) return null;
   const { editor, block } = active;
   const { from, to, empty } = editor.state.selection;
