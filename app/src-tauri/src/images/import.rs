@@ -417,7 +417,8 @@ mod tests {
             .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
             .collect();
         for declared in ["image/x-wmf", "image/wmf", "application/x-msmetafile", ""] {
-            let checked = check(bytes.clone(), "t.wmf", declared, false).unwrap_or_else(|e| panic!("{declared}: {e:?}"));
+            let checked =
+                check(bytes.clone(), "t.wmf", declared, false).unwrap_or_else(|e| panic!("{declared}: {e:?}"));
             assert_eq!(checked.mime, "image/svg+xml");
         }
     }

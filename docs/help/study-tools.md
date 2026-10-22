@@ -17,7 +17,7 @@ Open Insert, then Flashcards. A page can hold several decks.
 Open a deck and press Quiz, or insert a quiz block, to be asked a random set of the deck's cards. Type each answer and check it. If the check missed a good answer, press "I had it right". The end tells you how many were right and lists the cards to look at again. A quiz does not change when cards come back for review, and it keeps no score history.
 
 Study tape covers part of a page. Press it to show what is under it.
-To make a worksheet, turn on Turn study tape into blanks in the Print or PDF dialog, or from the command palette. What the tape covers then prints as blanks, and an answer key follows at the end. This applies to print, PDF, pictures, Markdown, and web pages. A tape is matched to the text and pictures that lie mostly under it.
+To make a worksheet, turn on Turn study tape into blanks in the Print or PDF dialog, or from the command palette. What the tape covers then prints as blanks, and an answer key follows at the end. This applies to print, PDF, pictures, Markdown, and web pages. A Word document or a shared file keeps the full text. A tape is matched to the text and pictures that lie mostly under it.
 
 ## Make cards from a section or a transcript
 
