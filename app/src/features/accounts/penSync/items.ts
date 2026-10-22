@@ -10,7 +10,16 @@ const PEN = 'pen:';
 const BAR = 'bar:';
 
 /** The bar choices that are kept in the ink preferences of the device. */
-export const PREF_KEYS = ['hover', 'ruler', 'protractor', 'gridSnap', 'gridMm', 'zoomBox', 'penEdit'] as const;
+export const PREF_KEYS = [
+  'hover',
+  'ruler',
+  'protractor',
+  'gridSnap',
+  'gridMm',
+  'rulerUnits',
+  'zoomBox',
+  'penEdit',
+] as const;
 export type PrefKey = (typeof PREF_KEYS)[number];
 
 export interface PenState {

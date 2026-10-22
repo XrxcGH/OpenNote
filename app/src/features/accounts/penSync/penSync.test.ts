@@ -21,6 +21,7 @@ const prefs = {
   protractor: false,
   gridSnap: false,
   gridMm: 5,
+  rulerUnits: 'auto',
   zoomBox: false,
   penEdit: { strike: true },
 };

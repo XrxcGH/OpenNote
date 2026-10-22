@@ -1,6 +1,7 @@
 // The Pen and touch section of Settings (design 9.4): the writing hand the palm filter assumes, when a finger draws,
 // the gestures, what each pen's buttons do, each pen's pressure curve and steady pen, the hover circle, and the zoom
-// writing box. While a pen is near the screen a touch never draws, whatever the choice.
+// writing box, and the units the measuring ruler and the compass show. While a pen is near the screen a touch never
+// draws, whatever the choice.
 import { useFlag } from '../../../app/flags';
 import type { BarrelAction } from '../../../platform/bindings/BarrelAction';
 import type { EraserEndAction } from '../../../platform/bindings/EraserEndAction';
@@ -15,7 +16,9 @@ import type { MessageKey } from '../../../strings/t';
 import { RadioCard, RadioGroup, Switch } from '../../../ui';
 import { CurvePreview } from './CurvePreview';
 import PalmLab from './PalmLab';
+import type { UnitsChoice } from '../snap';
 import { inkPrefs, penDevice, setPrefs, updatePen } from './prefs';
+import { setRulerUnits } from './snapTools';
 
 const BARRELS: readonly [BarrelAction, MessageKey][] = [
   ['lasso', 'ink.settings.barrelLasso'],
@@ -204,6 +207,18 @@ function PenChoices() {
   );
 }
 
+/** The ruler's, the measure's, and the compass's units, also in the Draw tab's Units menu. */
+function RulerUnits() {
+  const units = useStore(inkPrefs, (state) => state.rulerUnits);
+  return (
+    <RadioGroup<UnitsChoice> label={t('ink.settings.rulerUnits')} value={units} onChange={setRulerUnits}>
+      <RadioCard<UnitsChoice> value="auto" label={t('ink.settings.rulerUnitsAuto')} />
+      <RadioCard<UnitsChoice> value="metric" label={t('ink.settings.rulerUnitsMetric')} />
+      <RadioCard<UnitsChoice> value="imperial" label={t('ink.settings.rulerUnitsImperial')} />
+    </RadioGroup>
+  );
+}
+
 function ZoomBoxSettings() {
   const box = useSettings((settings) => settings.ink.zoomBox);
   return (
@@ -239,6 +254,9 @@ export default function PenSettings() {
   const anchoring = useFlag('ink.anchoring');
   const lab = useFlag('dev.penRecorder');
   const penFields = useFlag('ink.penFields');
+  const geometryFlag = useFlag('ink.geometry');
+  const snapFlag = useFlag('ink.snapTools');
+  const geometry = geometryFlag && snapFlag;
   const hovering = useStore(inkPrefs, (state) => state.hover);
   const fields = useStore(inkPrefs, (state) => state.penFields);
   return (
@@ -280,6 +298,7 @@ export default function PenSettings() {
       {hover && (
         <Switch label={t('ink.settings.hover')} checked={hovering} onChange={(on) => setPrefs({ hover: on })} />
       )}
+      {geometry && <RulerUnits />}
       <PenChoices />
       {zoomBox && <ZoomBoxSettings />}
       {lab && <PalmLab />}

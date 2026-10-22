@@ -20,7 +20,8 @@ export function unitsForLocale(locale: string): LengthUnits {
 }
 
 export function resolveUnits(choice: UnitsChoice, locale: string): LengthUnits {
-  return choice === 'auto' ? unitsForLocale(locale) : choice;
+  // A choice synced from another device is checked again here, so an unknown one reads as automatic.
+  return choice === 'metric' || choice === 'imperial' ? choice : unitsForLocale(locale);
 }
 
 /** A length in page units as a number in the units' main unit: centimeters or inches. */
