@@ -12,7 +12,11 @@ const pages = [
 describe('collecting formulas', () => {
   it('finds display equations with their topics and drops repeats and labels', () => {
     const found = collectFormulas(pages);
-    expect(found.map((f) => f.latex)).toEqual(['y = y_0 + v_0 t + \\tfrac12 a t^2', 'v = v_0 + a t', 'E_k = \\tfrac12 m v^2']);
+    expect(found.map((f) => f.latex)).toEqual([
+      'y = y_0 + v_0 t + \\tfrac12 a t^2',
+      'v = v_0 + a t',
+      'E_k = \\tfrac12 m v^2',
+    ]);
     expect(found.map((f) => f.topic)).toEqual(['Position', 'Position', 'Energy']);
   });
 

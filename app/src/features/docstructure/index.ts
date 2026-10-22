@@ -10,5 +10,7 @@ export const loadEquationCommands = () => import('./equationCommands');
 export const FormulaSheetTool = lazy(() =>
   import('./ui/FormulaSheetTool').then((module) => ({ default: module.FormulaSheetTool })),
 );
-export const PracticeTool = lazy(() => import('./ui/PracticeTool').then((module) => ({ default: module.PracticeTool })));
+export const PracticeTool = lazy(() =>
+  import('./ui/PracticeTool').then((module) => ({ default: module.PracticeTool })),
+);
 export const FigureTool = lazy(() => import('./ui/FigureTool').then((module) => ({ default: module.FigureTool })));

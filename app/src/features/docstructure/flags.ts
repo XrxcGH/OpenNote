@@ -3,11 +3,7 @@
 import type { FlagDef } from '../../app/flags';
 
 export type DocFlagId =
-  | 'doc.equationNumbers'
-  | 'doc.formulaSheet'
-  | 'doc.practice'
-  | 'doc.problemTemplates'
-  | 'doc.figureExport';
+  'doc.equationNumbers' | 'doc.formulaSheet' | 'doc.practice' | 'doc.problemTemplates' | 'doc.figureExport';
 
 const ISSUES = 'https://github.com/XrxcGH/OpenNote/issues?q=label%3Aflag%3A';
 const on = { dev: true, nightly: true, beta: true, stable: true };

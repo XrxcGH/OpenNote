@@ -19,32 +19,39 @@ export interface SheetPage {
 /** One line of LaTeX in a canonical form, so the same equation written twice counts once. */
 export const canonical = (latex: string): string => latex.replace(/\s+/g, ' ').trim();
 
+const HEADING = /^#{1,6}\s+(.*?)\s*#*\s*$/;
+
+/** Calls `found` with each display equation of a text and the topic in force there. Returns the topic at the end. */
+function scanText(text: string, start: string, found: (latex: string, topic: string) => void): string {
+  let topic = start;
+  let math: string[] | null = null;
+  for (const line of text.split('\n')) {
+    const heading = math === null ? HEADING.exec(line) : null;
+    if (heading) topic = heading[1];
+    if (line.trim() !== '$$') {
+      math?.push(line);
+    } else if (math === null) {
+      math = [];
+    } else {
+      found(canonical(stripLabels(math.join('\n'))), topic);
+      math = null;
+    }
+  }
+  return topic;
+}
+
 /** The display equations of some pages, in order, each with its nearest heading, and without repeats. */
 export function collectFormulas(pages: readonly SheetPage[]): Formula[] {
   const seen = new Set<string>();
   const out: Formula[] = [];
+  const add = (latex: string, topic: string) => {
+    if (latex === '' || seen.has(latex)) return;
+    seen.add(latex);
+    out.push({ latex, topic });
+  };
   for (const page of pages) {
     let topic = page.title.trim();
-    for (const text of page.texts) {
-      // Walk the text line by line so that headings set the topic for the equations after them.
-      const lines = text.split('\n');
-      let math: string[] | null = null;
-      for (const line of lines) {
-        const heading = /^#{1,6}\s+(.*?)\s*#*\s*$/.exec(line);
-        if (math === null && heading) topic = heading[1];
-        if (line.trim() === '$$') {
-          if (math === null) math = [];
-          else {
-            const latex = canonical(stripLabels(math.join('\n')));
-            math = null;
-            if (latex !== '' && !seen.has(latex)) {
-              seen.add(latex);
-              out.push({ latex, topic });
-            }
-          }
-        } else if (math !== null) math.push(line);
-      }
-    }
+    for (const text of page.texts) topic = scanText(text, topic, add);
   }
   return out;
 }
@@ -89,11 +96,14 @@ export function buildSheet(formulas: readonly Formula[], preferred?: number): Sh
     const f = kept[index];
     if (!f) return '';
     const previous = kept[index - 1];
-    const label = f.topic !== '' && (index === 0 || previous?.topic !== f.topic) ? `*${f.topic.replace(/[*_`$]/g, '')}* ` : '';
+    const label =
+      f.topic !== '' && (index === 0 || previous?.topic !== f.topic) ? `*${f.topic.replace(/[*_`$]/g, '')}* ` : '';
     return `${label}$${f.latex}$`;
   };
   return {
-    rows: Array.from({ length: rows }, (_row, r) => Array.from({ length: layout.columns }, (_col, c) => cell(c * rows + r))),
+    rows: Array.from({ length: rows }, (_row, r) =>
+      Array.from({ length: layout.columns }, (_col, c) => cell(c * rows + r)),
+    ),
     columns: layout.columns,
     overflow: layout.overflow,
     count: kept.length,

@@ -47,7 +47,7 @@ export function svgSize(svg: string): Size | null {
   return box ? { width: Number(box[1]), height: Number(box[2]) } : null;
 }
 
-/** The text broken into lines of at most `limit` characters, at spaces. A word longer than the limit has its own line. */
+/** The text broken at spaces into lines of at most `limit` characters. A longer word has a line of its own. */
 export function wrapCaption(text: string, limit: number): string[] {
   const lines: string[] = [];
   let line = '';
@@ -71,6 +71,14 @@ export function captionLines(options: FigureOptions, width: number): string[] {
   return lines;
 }
 
+/** One line of the caption block, set under a picture that is `top` units tall. The first line is bold. */
+function captionLine(line: string, index: number, top: number): string {
+  const y = top + PAD + (index + 1) * LINE - 6;
+  const weight = index === 0 ? ' font-weight="600"' : '';
+  const face = `font-family='${FONT}' font-size="${CAPTION_SIZE}" fill="#1c1b1a"${weight}`;
+  return `<text x="${PAD}" y="${y}" ${face}>${escapeXml(line)}</text>`;
+}
+
 /** A picture with its caption block under it, as one SVG. Null when the picture has no readable size. */
 export function captionedSvg(svg: string, options: FigureOptions): string | null {
   const size = svgSize(svg);
@@ -78,16 +86,12 @@ export function captionedSvg(svg: string, options: FigureOptions): string | null
   if (!size || !inner) return null;
   const lines = captionLines(options, size.width);
   const height = size.height + PAD + lines.length * LINE + PAD;
-  const nested = inner.replace(/<svg\b/i, '<svg x="0" y="0"').replace(/^<svg x="0" y="0"(?![^>]*xmlns)/i, (m) => `${m} xmlns="http://www.w3.org/2000/svg"`);
+  const nested = inner.replace(/<svg\b/i, '<svg x="0" y="0"');
   const title = `${options.label ?? 'Figure'} ${options.number}`;
-  const text = lines
-    .map(
-      (line, i) =>
-        `<text x="${PAD}" y="${size.height + PAD + (i + 1) * LINE - 6}" font-family='${FONT}' font-size="${CAPTION_SIZE}" fill="#1c1b1a"${i === 0 ? ' font-weight="600"' : ''}>${escapeXml(line)}</text>`,
-    )
-    .join('');
+  const text = lines.map((line, i) => captionLine(line, i, size.height)).join('');
+  const box = `width="${size.width}" height="${height}" viewBox="0 0 ${size.width} ${height}"`;
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${height}" viewBox="0 0 ${size.width} ${height}" role="img" aria-labelledby="figure-title figure-desc">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" ${box} role="img" aria-labelledby="figure-title figure-desc">`,
     `<title id="figure-title">${escapeXml(title)}</title>`,
     `<desc id="figure-desc">${escapeXml(options.caption)}</desc>`,
     `<rect width="${size.width}" height="${height}" fill="#ffffff"/>`,
@@ -120,7 +124,7 @@ function crc32(bytes: Uint8Array): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-/** PNG bytes with a pHYs chunk that says the picture is `dpi` dots per inch. Bytes that are not a PNG come back as given. */
+/** PNG bytes with a pHYs chunk that says the picture is `dpi` dots per inch. Other bytes come back as given. */
 export function withDpi(png: Uint8Array, dpi: number): Uint8Array {
   const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
   if (png.length < 33 || signature.some((b, i) => png[i] !== b)) return png;
@@ -131,7 +135,7 @@ export function withDpi(png: Uint8Array, dpi: number): Uint8Array {
   chunk.set([0x70, 0x48, 0x59, 0x73], 4); // "pHYs"
   view.setUint32(8, perMetre);
   view.setUint32(12, perMetre);
-  chunk[16] = 1; // metres
+  chunk[16] = 1; // meters
   view.setUint32(17, crc32(chunk.subarray(4, 17)));
   // IHDR is the first chunk: 8 signature bytes, then 4 length, 4 type, 13 data, 4 crc.
   const after = 33;
@@ -142,10 +146,10 @@ export function withDpi(png: Uint8Array, dpi: number): Uint8Array {
   return out;
 }
 
-/** The DPI a PNG says it has, or null when it has no pHYs chunk in metres. */
+/** The DPI a PNG says it has, or null when it has no pHYs chunk in meters. */
 export function readDpi(png: Uint8Array): number | null {
   const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
-  for (let at = 8; at + 12 <= png.length; ) {
+  for (let at = 8; at + 12 <= png.length;) {
     const length = view.getUint32(at);
     const type = String.fromCharCode(...png.subarray(at + 4, at + 8));
     if (type === 'pHYs' && png[at + 16] === 1) return Math.round(view.getUint32(at + 8) * 0.0254);

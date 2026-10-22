@@ -43,7 +43,9 @@ describe('figure captions', () => {
   });
 
   it('names the file from the number and caption', () => {
-    expect(figureFileName({ number: 4, caption: 'Pressure vs. volume!' }, 'png')).toBe('figure-4-Pressure-vs-volume.png');
+    expect(figureFileName({ number: 4, caption: 'Pressure vs. volume!' }, 'png')).toBe(
+      'figure-4-Pressure-vs-volume.png',
+    );
     expect(figureFileName({ number: 1, caption: '' }, 'svg')).toBe('figure-1.svg');
   });
 

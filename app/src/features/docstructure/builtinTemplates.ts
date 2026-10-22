@@ -51,7 +51,14 @@ const problem = (number: number, level: '#' | '##'): string[] => [
 function markdownOf(id: BuiltinId): string {
   const k = (key: Parameters<typeof t>[0]) => t(key);
   if (id === 'problem-set') {
-    return ['# {{title}}', '', `${t('docStructure.template.names')}: {{cursor}}`, '', ...problem(1, '##'), ...problem(2, '##')]
+    return [
+      '# {{title}}',
+      '',
+      `${t('docStructure.template.names')}: {{cursor}}`,
+      '',
+      ...problem(1, '##'),
+      ...problem(2, '##'),
+    ]
       .join('\n')
       .trimEnd();
   }

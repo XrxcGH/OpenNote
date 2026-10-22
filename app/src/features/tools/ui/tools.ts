@@ -2,8 +2,17 @@
 import type { MessageKey } from '../../../strings/t';
 
 export type ToolId =
-  'timers' | 'calculator' | 'upcoming' | 'flashcards' | 'converter' | 'reference' | 'dictionary' | 'citations'
-  | 'formulasheet' | 'practice' | 'figure';
+  | 'timers'
+  | 'calculator'
+  | 'upcoming'
+  | 'flashcards'
+  | 'converter'
+  | 'reference'
+  | 'dictionary'
+  | 'citations'
+  | 'formulasheet'
+  | 'practice'
+  | 'figure';
 
 export interface ToolDef {
   id: ToolId;

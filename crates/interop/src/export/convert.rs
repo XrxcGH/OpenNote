@@ -152,7 +152,10 @@ impl Convert<'_> {
         match &block.data {
             BlockData::Text(text) => {
                 self.tally.text += 1;
-                let markdown = self.numbered.remove(&block.id).unwrap_or_else(|| text.markdown.to_string());
+                let markdown = self
+                    .numbered
+                    .remove(&block.id)
+                    .unwrap_or_else(|| text.markdown.to_string());
                 out.extend(self.markdown(&markdown));
             }
             BlockData::Image(image) => self.image(image, out),

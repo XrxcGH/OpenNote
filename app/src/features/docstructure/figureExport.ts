@@ -1,3 +1,4 @@
+// checks-disable-file brand-consistency: the white of an exported picture, which must not follow the app theme
 // Drawing and saving a figure (flag doc.figureExport): the SVG of a graph or diagram from the page, the captioned
 // picture, and the PNG at the chosen DPI. The pure parts are in figure.ts.
 import { t } from '../../strings/t';

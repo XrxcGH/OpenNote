@@ -1,12 +1,27 @@
 // The document-structure tools' registrations: equation numbers and references, the formula sheet, practice mode, and
 // the figure exporter. This file loads at start-up, so it holds only definitions; each command loads its code when
 // first run. The new-page chooser's built-in templates are in templates/apply.ts.
+import type { Editor } from '@tiptap/core';
 import { loadEquationCommands } from '../../docstructure';
 import { targetEditor } from '../formattingBar/target';
 import { addCommand } from './qolStudy';
 
-const withEditor = async (run: (editor: NonNullable<ReturnType<typeof targetEditor>>) => unknown): Promise<void> => {
-  const editor = targetEditor();
+// The palette takes focus before these commands run, so the editor that had focus last is remembered here: the target
+// editor knows it only once it is watching, and this does not depend on when that starts.
+let lastEditor: Editor | null = null;
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'focusin',
+    () => {
+      const editor = targetEditor();
+      if (editor) lastEditor = editor;
+    },
+    true,
+  );
+}
+
+const withEditor = async (run: (editor: Editor) => unknown): Promise<void> => {
+  const editor = targetEditor() ?? (lastEditor && !lastEditor.isDestroyed && lastEditor.isEditable ? lastEditor : null);
   if (editor) await run(editor);
 };
 

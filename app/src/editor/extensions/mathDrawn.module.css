@@ -126,7 +126,7 @@
 
   :global([data-eq-ref])::after {
     content: attr(data-eq-ref);
-    font-size: var(--font-size-body, 1rem);
+    font-size: var(--type-body-size);
     font-family: var(--font-reading);
     color: var(--color-text-link, var(--color-accent-primary));
     text-decoration: underline;

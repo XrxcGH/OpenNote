@@ -4,7 +4,7 @@ Number your equations and refer to them, gather a formula sheet, practice a work
 
 ## Number equations and refer to them
 
-1. Put the caret on a display equation (the kind written between `$$` lines).
+1. Put the caret on or next to a display equation (the kind written between `$$` lines). The command acts on the one nearest the caret.
 2. Press Ctrl+K and choose **Number this equation**, or choose it from the Insert tab. The equation gets a number at its right edge.
 3. To number every display equation on the page, choose **Number all equations**. **Remove equation number** takes one off.
 4. To refer to a numbered equation, put the caret in your text, press Ctrl+K, and choose **Insert equation reference** (it is also in the Insert tab and the slash menu). Pick the equation. The reference shows its number, such as (2).

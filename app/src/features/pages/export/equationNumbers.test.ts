@@ -10,7 +10,12 @@ const page = readExportPage({
   blocks: [
     { id: 'b2', type: 'text', order: 'b', data: { markdown: '$$\nF = m a \\label{newton}\n$$' } },
     { id: 'b1', type: 'text', order: 'a', data: { markdown: 'Start from $\\eqref{newton}$ and $\\eqref{gone}$.' } },
-    { id: 'b3', type: 'text', order: 'c', data: { markdown: '$$\nE = m c^2 \\label{mass}\n$$\n\nSee $\\eqref{mass}$.' } },
+    {
+      id: 'b3',
+      type: 'text',
+      order: 'c',
+      data: { markdown: '$$\nE = m c^2 \\label{mass}\n$$\n\nSee $\\eqref{mass}$.' },
+    },
   ],
 });
 

@@ -1,6 +1,6 @@
-// The formula sheet builder (flag doc.formulaSheet): collects the display equations of the shown page, the pages selected
-// in the page list, or the whole section into a new page laid out as a table that fits one sheet. The sheet can then be
-// turned into the person's own writing with My handwriting.
+// The formula sheet builder (flag doc.formulaSheet): collects the display equations of the shown page, the selected
+// pages, or the whole section into a new page laid out as a table that fits one sheet. The sheet can then be turned
+// into the person's own writing with My handwriting.
 import { useState } from 'react';
 import { executeCommand } from '../../../commands/registry';
 import { newId } from '../../../editor/ids';
@@ -19,7 +19,7 @@ type Source = 'current' | 'selected' | 'section';
 
 async function gather(source: Source): Promise<SheetPage[]> {
   if (source === 'current') {
-    const page = shownPage();
+    const page = await shownPage();
     return page ? [page] : [];
   }
   const chosen = source === 'selected' ? selectedPages() : sectionPages();
@@ -77,7 +77,9 @@ export function FormulaSheetTool() {
       if (formulas.length === 0) return say(t('docStructure.sheet.noEquations'));
       const sheet = buildSheet(formulas, Number(columns) || undefined);
       const title = t('docStructure.sheet.pageTitle');
-      await (await loadTemplates()).newPageWith({ kind: 'content', title, blocks: [tableBlock(sheet.rows, sheet.columns)] });
+      await (
+        await loadTemplates()
+      ).newPageWith({ kind: 'content', title, blocks: [tableBlock(sheet.rows, sheet.columns)] });
       const done = t('docStructure.sheet.built', { count: sheet.count });
       const left = sheet.overflow > 0 ? ` ${t('docStructure.sheet.overflow', { count: sheet.overflow })}` : '';
       say(done + left);

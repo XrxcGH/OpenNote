@@ -24,7 +24,19 @@ function equationAt(editor: Editor): { pos: number; source: string } | null {
     }
   }
   const after = doc.nodeAt(selection.from);
-  return after?.type.name === 'mathBlock' ? { pos: selection.from, source: after.attrs.source as string } : null;
+  if (after?.type.name === 'mathBlock') return { pos: selection.from, source: after.attrs.source as string };
+  // Typing $$...$$ leaves the caret on the line below the equation, and a menu or the palette can move the caret, so
+  // the display equation nearest the caret counts too.
+  let nearest: { pos: number; source: string } | null = null;
+  let best = Infinity;
+  for (const b of numberingOf(doc).blocks) {
+    const distance = Math.min(Math.abs(b.pos - selection.from), Math.abs(b.pos + b.node.nodeSize - selection.from));
+    if (distance < best) {
+      best = distance;
+      nearest = { pos: b.pos, source: b.node.attrs.source as string };
+    }
+  }
+  return nearest;
 }
 
 const labelsIn = (editor: Editor): Set<string> =>
@@ -51,7 +63,10 @@ export function numberEquation(editor: Editor): boolean {
     announce(t('docStructure.eq.noEquation'));
     return false;
   }
-  if (labelOf(found.source) === null) setSource(editor, [{ pos: found.pos, source: withLabel(found.source, freeLabel(labelsIn(editor))) }]);
+  if (labelOf(found.source) === null) {
+    const source = withLabel(found.source, freeLabel(labelsIn(editor)));
+    setSource(editor, [{ pos: found.pos, source }]);
+  }
   const { blocks, numbering } = numberingOf(editor.state.doc);
   const index = blocks.findIndex((b) => b.pos === found.pos);
   const message = t('docStructure.eq.numbered', { number: numbering.numbers[index] ?? 0 });
@@ -116,7 +131,13 @@ function Picker(props: { choices: readonly Choice[]; done(key: string | null): v
       description={t('docStructure.eq.refDescription')}
       onDismiss={() => props.done(null)}
       actions={[
-        { id: 'cancel', label: t('common.cancel'), variant: 'secondary', leastDestructive: true, onPress: () => props.done(null) },
+        {
+          id: 'cancel',
+          label: t('common.cancel'),
+          variant: 'secondary',
+          leastDestructive: true,
+          onPress: () => props.done(null),
+        },
         { id: 'ok', label: t('docStructure.eq.refAction'), variant: 'primary', onPress: () => props.done(key) },
       ]}
     >
@@ -125,7 +146,10 @@ function Picker(props: { choices: readonly Choice[]; done(key: string | null): v
           <RadioCard<string>
             key={choice.key}
             value={choice.key}
-            label={t('docStructure.eq.refChoice', { number: choice.number, source: choice.source.replace(/\s+/g, ' ').slice(0, 60) })}
+            label={t('docStructure.eq.refChoice', {
+              number: choice.number,
+              source: choice.source.replace(/\s+/g, ' ').slice(0, 60),
+            })}
           />
         ))}
       </RadioGroup>

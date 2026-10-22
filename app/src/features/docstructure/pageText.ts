@@ -1,28 +1,31 @@
-// Reading the text of pages for the document-structure tools. The shown page is read from the editor's layer, so text
+// Reading the text of pages for the document-structure tools. The shown page is read as the page view holds it, so text
 // that was just typed counts; other pages are read through a short visit by the page service.
 import { getLocation } from '../../app/location';
 import { getNode, selectedNodes, treeStore } from '../tree';
 import type { SheetPage } from './formulaSheet';
-import { loadTemplates, shownMounted } from '../page';
+import { loadTemplates, shownMounted, snapshotShownPage } from '../page';
 import type { BlockJson } from '../../services/pages/types';
 
 const textsOf = (blocks: readonly Pick<BlockJson, 'type' | 'data'>[]): string[] =>
   blocks.filter((b) => b.type === 'text').map((b) => String(b.data.markdown ?? ''));
 
-/** The shown page's id, title, and text blocks, or null when no page is shown. */
-export function shownPage(): (SheetPage & { id: string }) | null {
+/** The shown page's id, title, and text blocks as they are now, typed text included, or null when no page is shown. */
+export async function shownPage(): Promise<(SheetPage & { id: string }) | null> {
   const mounted = shownMounted.get();
   if (!mounted) return null;
-  const node = getNode(mounted.page.id);
-  return { id: mounted.page.id, title: node?.title ?? mounted.page.initial.title ?? '', texts: textsOf(mounted.layer.blocks()) };
+  const title = getNode(mounted.page.id)?.title ?? mounted.page.initial.title ?? '';
+  const json = await snapshotShownPage(title);
+  if (!json) return null;
+  const blocks = [...json.blocks].sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0));
+  return { id: mounted.page.id, title, texts: textsOf(blocks) };
 }
 
 /** The shown page's text, joined, or an empty string. */
-export const shownMarkdown = (): string => shownPage()?.texts.join('\n\n') ?? '';
+export const shownMarkdown = async (): Promise<string> => (await shownPage())?.texts.join('\n\n') ?? '';
 
 /** One page's title and text blocks. The shown page is read live. */
 export async function pageTexts(id: string, title: string): Promise<SheetPage> {
-  const shown = shownPage();
+  const shown = await shownPage();
   if (shown?.id === id) return shown;
   return { title, texts: textsOf(await (await loadTemplates()).readBlocks(id)) };
 }

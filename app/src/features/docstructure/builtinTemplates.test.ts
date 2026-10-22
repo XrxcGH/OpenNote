@@ -46,7 +46,17 @@ describe('built-in templates', () => {
 
   it('writes a lab report with its sections in order', () => {
     const text = textOf('builtin:lab-report');
-    const order = ['Purpose', 'Hypothesis', 'Materials', 'Procedure', 'Data', 'Analysis', 'Uncertainty', 'Conclusion', 'References'];
+    const order = [
+      'Purpose',
+      'Hypothesis',
+      'Materials',
+      'Procedure',
+      'Data',
+      'Analysis',
+      'Uncertainty',
+      'Conclusion',
+      'References',
+    ];
     const at = order.map((name) => text.indexOf(`## ${name}`));
     expect(at.every((n) => n >= 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);

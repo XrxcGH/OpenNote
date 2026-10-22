@@ -1,11 +1,14 @@
 // Practice mode hides the steps of a worked problem and shows them one at a time, from the keyboard or the buttons.
 import { screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import { expectNoAxeViolations, renderUi } from '../../../test';
 import { shownMounted } from '../../page';
 import type { MountedPage } from '../../page';
 import { PracticeTool } from './PracticeTool';
+
+let current = '';
+vi.mock('../pageText', () => ({ shownMarkdown: () => Promise.resolve(current) }));
 
 const PAGE = `# Beam
 
@@ -22,14 +25,8 @@ Each support carries 5 kN.
 `;
 
 function show(markdown: string | null): void {
-  shownMounted.set(
-    markdown === null
-      ? null
-      : ({
-          page: { id: 'p1', initial: { title: 'Beam' } },
-          layer: { blocks: () => [{ type: 'text', data: { markdown } }] },
-        } as unknown as MountedPage),
-  );
+  current = markdown ?? '';
+  shownMounted.set(markdown === null ? null : ({ page: { id: 'p1' } } as unknown as MountedPage));
 }
 
 beforeEach(() => show(PAGE));

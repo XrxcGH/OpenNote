@@ -1,5 +1,5 @@
-// A small reader for the Markdown the document-structure tools show: paragraphs, headings, list lines, bold and italic,
-// and inline and display math drawn by the math renderer. It is not the page's editor; it only shows text.
+// A small reader for the Markdown the document-structure tools show: paragraphs, headings, list lines, emphasis, and
+// math drawn by the math renderer. It is not the page's editor; it only shows text.
 import { Fragment, useEffect, useState } from 'react';
 import type { MathRenderer } from '../../../editor/host';
 import { stripLabels } from '../../../editor/equations';
