@@ -12,6 +12,7 @@ export interface IntelHost {
 }
 
 const KEY = 'opennote.intel.choices';
+const INK_SCRIPT_KEY = 'opennote.preview.ink';
 
 function remembered(): Partial<IntelSettings> {
   try {
@@ -66,9 +67,33 @@ const storePersistence = {
   },
 };
 
+/**
+ * What scripted handwriting says in the web preview, for trying handwriting features without a recognizer: session
+ * storage may hold a list of { from, to, text }, and strokes whose middle lies between from and to (across the page)
+ * read as that text. Nothing is scripted unless the list is there.
+ */
+function scriptedInk(strokes: readonly { points: readonly (readonly [number, number])[] }[]): string | null {
+  try {
+    const script = JSON.parse(sessionStorage.getItem(INK_SCRIPT_KEY) ?? '[]') as {
+      from: number;
+      to: number;
+      text: string;
+    }[];
+    const xs = strokes.flatMap((stroke) => stroke.points.map((point) => point[0]));
+    const middle = (Math.min(...xs) + Math.max(...xs)) / 2;
+    return script.find((one) => middle >= one.from && middle <= one.to)?.text ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function webHost(): Promise<IntelHost> {
   const { createFakeIntelTransport } = await import('../services/intel/fake');
-  const transport = createFakeIntelTransport({ settings: remembered(), persistence: storePersistence });
+  const transport = createFakeIntelTransport({
+    settings: remembered(),
+    persistence: storePersistence,
+    readInk: scriptedInk,
+  });
   // A model "downloads" here in a few seconds without touching a network, so the screens can be tried in a browser.
   setInterval(() => transport.ext.tick(PREVIEW_BYTES_PER_TICK), PREVIEW_TICK_MS);
   const current = async () => {

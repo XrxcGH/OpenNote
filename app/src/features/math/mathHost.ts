@@ -6,7 +6,8 @@ import type { MathRenderer } from '../../editor/host';
 import { liveSolveChosen } from '../../state/liveMath';
 import { graphOfLatex, liveAnswer, simplifyLatex, solveLatex } from './actions/actions';
 import { t } from '../../strings/t';
-import type { MathStepsView } from '../../editor/host';
+import type { MathStep, MathStepsView, MathSuggestion } from '../../editor/host';
+import type { Step } from './calculus';
 import { renderLatex } from './latex/render';
 import { penMath } from './visual/pen';
 import { visualMath } from './visual/field';
@@ -37,15 +38,35 @@ export const mathRenderer: MathRenderer = {
     if (!isEnabled('math.steps')) return undefined;
     // The steps load on first use, so equations without them never fetch their code.
     return async (latex: string): Promise<MathStepsView> => {
-      const found = (await import('./actions/steps')).stepsLatex(latex);
-      if (!found.ok) return { ok: false, message: t(`mathTools.steps.reasons.${found.reason}`) };
+      const module = await import('./actions/steps');
+      const found = module.stepsLatex(latex);
+      const view = (step: Step): MathStep => ({
+        name: t(`mathTools.steps.names.${step.rule}`),
+        rule: t(`mathTools.steps.rules.${step.rule}`),
+        latex: step.latex,
+        ...(step.note ? { note: step.note } : {}),
+        ...(step.children ? { children: step.children.map(view) } : {}),
+      });
+      if (!found.ok) {
+        const message = t(`mathTools.steps.reasons.${found.reason}`);
+        return found.steps.length ? { ok: false, message, steps: found.steps.map(view) } : { ok: false, message };
+      }
+      const title = t(`mathTools.steps.${found.kind}Title`);
+      const name = (step: Step) => t(`mathTools.steps.names.${step.rule}`);
       return {
         ok: true,
-        title: t(found.kind === 'integral' ? 'mathTools.steps.integralTitle' : 'mathTools.steps.derivativeTitle'),
-        steps: found.steps.map((step) => ({ rule: t(`mathTools.steps.rules.${step.rule}`), latex: step.latex })),
+        title,
+        steps: found.steps.map(view),
         result: found.result,
+        block: module.stepsBlock(found.steps, name, found.result, title),
       };
     };
+  },
+  get suggest() {
+    if (!isEnabled('math.liveSolve') || !liveSolveChosen()) return undefined;
+    // Only a question that ends in "=" loads the calculus code.
+    return async (latex: string): Promise<MathSuggestion | null> =>
+      /=\s*$/.test(latex) ? (await import('./calculus')).suggestion(latex, { mode: 'latex' }) : null;
   },
   get live() {
     return isEnabled('math.liveSolve') && liveSolveChosen() ? liveAnswer : undefined;

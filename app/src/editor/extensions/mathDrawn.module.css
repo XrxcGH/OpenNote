@@ -48,6 +48,89 @@
     color: var(--color-text-secondary);
   }
 
+  .steps ol ol {
+    margin-block-start: var(--space-2);
+    padding-inline-start: var(--space-4);
+    border-inline-start: 1px solid var(--color-border-subtle);
+  }
+
+  .steps summary {
+    cursor: pointer;
+  }
+
+  /* The rule's name and the math sit on one line in a folded step's summary, after its marker. */
+  .steps summary .stepRule {
+    display: inline;
+    margin-inline-end: var(--space-2);
+  }
+
+  .stepMath {
+    display: inline-block;
+    max-inline-size: 100%;
+    vertical-align: middle;
+  }
+
+  .stepNote {
+    display: block;
+    color: var(--color-text-secondary);
+  }
+
+  .stepResult {
+    margin: var(--space-2) 0;
+    font-weight: 600;
+  }
+
+  /* The answer offered after an equation that ends in "=": gray like a page line's suggestion, and pressed to add it. */
+  .suggestion {
+    display: inline-block;
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-1);
+    font: inherit;
+    color: var(--color-text-secondary);
+    vertical-align: baseline;
+    background: transparent;
+    border: 1px dashed var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .suggestion[hidden] {
+    display: none;
+  }
+
+  .suggestionBlock {
+    display: table;
+    margin-inline: auto;
+    margin-block-end: var(--space-2);
+  }
+
+  .suggestion:hover {
+    color: var(--color-text-primary);
+    background: var(--color-surface-hover);
+  }
+
+  .suggestion:focus-visible {
+    outline: var(--size-focus-ring-width) solid var(--color-focus-ring);
+    outline-offset: 1px;
+  }
+
+  /* The same answer in the open field's preview, with the Tab key that adds it. */
+  .ghost {
+    margin-inline-start: var(--space-2);
+    color: var(--color-text-secondary);
+    user-select: none;
+  }
+
+  .ghostKey {
+    margin-inline-start: var(--space-2);
+    padding: 0 var(--space-1);
+    font-family: var(--font-ui);
+    font-size: var(--type-caption-size);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+  }
+
   /* The Graph button beside a selected equation. */
   .graphButton {
     display: inline-block;

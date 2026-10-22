@@ -1,7 +1,8 @@
 // The equation panel's Steps (derivatives and integrals) and Solve for systems of equations and matrices.
 import { describe, expect, it } from 'vitest';
 import { solveLatex } from './actions';
-import { derivativeSteps, integralSteps, stepsLatex } from './steps';
+import { stepsBlock, stepsLatex } from './steps';
+import type { Step } from './steps';
 
 const answer = (latex: string) => {
   const result = solveLatex(latex);
@@ -13,66 +14,98 @@ const answer = (latex: string) => {
     : result.reason;
 };
 
+const rules = (steps: readonly Step[]): string[] => steps.map((step) => step.rule);
+const inner = (latex: string): string[] => {
+  const result = stepsLatex(latex);
+  return result.ok ? rules(result.steps[0].children ?? []) : [];
+};
+
 describe('derivative steps', () => {
-  it('names the rules from the outside in and ends with the derivative', () => {
-    const result = derivativeSteps('x^3 + 2x');
+  it('names each rule, with the parts it needs folded inside, and ends with the derivative', () => {
+    const result = stepsLatex('x^3 + 2x');
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.kind).toBe('derivative');
-    expect(result.steps.map((step) => step.rule)).toEqual(['sum', 'power', 'constantMultiple', 'variable', 'simplify']);
-    expect(result.result).toBe(String.raw`3 \cdot x^{2}+2`);
+    expect(rules(result.steps)).toEqual(['sum']);
+    expect(inner('x^3 + 2x')).toEqual(['power', 'constantMultiple']);
+    expect(result.result).toBe('3x^{2} + 2');
     expect(result.steps[0].latex.startsWith(String.raw`\frac{d}{dx}\left[`)).toBe(true);
   });
 
   it('uses the product, quotient, and chain rules', () => {
-    const rules = (latex: string) => {
-      const result = derivativeSteps(latex);
-      return result.ok ? result.steps.map((step) => step.rule) : [];
+    const top = (latex: string) => {
+      const result = stepsLatex(latex);
+      return result.ok ? result.steps[0].rule : '';
     };
-    expect(rules(String.raw`x \sin(x)`)).toContain('product');
-    expect(rules(String.raw`\frac{x}{x+1}`)).toContain('quotient');
-    expect(rules(String.raw`\sin(x^2)`)).toEqual(['chain', 'power', 'simplify']);
-    expect(rules(String.raw`\frac{d}{dt} t^2`)).toEqual(['power', 'simplify']);
+    expect(top(String.raw`x \sin(x)`)).toBe('product');
+    expect(top(String.raw`\frac{x}{x+1}`)).toBe('quotient');
+    expect(top(String.raw`\sin(x^2)`)).toBe('chain');
+    expect(inner(String.raw`\sin(x^2)`)).toEqual(['trig', 'power']);
+    expect(top(String.raw`\frac{d}{dt} t^2`)).toBe('power');
   });
 
   it('works on the right side of y = and refuses what it cannot read', () => {
-    const result = derivativeSteps('y = x^2');
+    const result = stepsLatex('y = x^2');
     expect(result.ok && result.result).toBe('2x');
-    expect(derivativeSteps(String.raw`\sqrt[3]{x}`)).toEqual({ ok: false, reason: 'unsupported' });
-    expect(derivativeSteps('a + b')).toEqual({ ok: false, reason: 'letters' });
+    expect(stepsLatex(String.raw`\sqrt[3]{x}`)).toMatchObject({ ok: false, reason: 'unsupported' });
+    expect(stepsLatex('a + b')).toMatchObject({ ok: false, reason: 'letters' });
+  });
+
+  it('puts the working on the page as aligned LaTeX with each rule named', () => {
+    const result = stepsLatex(String.raw`\frac{d}{dx}\sin(x^2)`);
+    if (!result.ok) throw new Error('no steps');
+    const block = stepsBlock(result.steps, (step) => step.rule, result.result, 'Steps');
+    expect(block.startsWith(String.raw`\begin{aligned}`)).toBe(true);
+    expect(block).toContain(String.raw`\text{chain}`);
+    expect(block).toContain(String.raw`\quad \frac{d}{du}`);
+    expect(block.trim().endsWith(String.raw`\end{aligned}`)).toBe(true);
   });
 });
 
 describe('integral steps', () => {
   it('integrates sums, constant multiples, and powers', () => {
-    const result = integralSteps(String.raw`\int 3x^2 + 2\,dx`);
+    const result = stepsLatex(String.raw`\int 3x^2 + 2\,dx`);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.steps[0].rule).toBe('sum');
-    expect(result.steps.map((step) => step.rule)).toContain('power');
-    expect(result.result).toMatch(/\+ C$/);
+    expect(result.steps.at(-1)!.rule).toBe('constantOfIntegration');
+    expect(result.result).toBe('x^{3} + 2x + C');
   });
 
   it('knows 1/x, the usual functions, and linear insides', () => {
     const result = (latex: string) => {
-      const found = integralSteps(latex);
+      const found = stepsLatex(latex);
       return found.ok ? found.result : found.reason;
     };
-    expect(result(String.raw`\int \frac{1}{x}\,dx`)).toContain(String.raw`\ln`);
-    expect(result(String.raw`\int \cos(x)\,dx`)).toBe(String.raw`\sin\left(x\right) + C`);
-    expect(result(String.raw`\int \sin(2x)\,dx`)).toContain('cos');
-    expect(result(String.raw`\int e^{x}\,dx`)).toContain('exp');
+    expect(result(String.raw`\int \frac{1}{x}\,dx`)).toBe(String.raw`\ln\left|x\right| + C`);
+    expect(result(String.raw`\int \cos(x)\,dx`)).toBe(String.raw`\sin x + C`);
+    expect(result(String.raw`\int \sin(2x)\,dx`)).toBe(String.raw`-\frac{\cos\left(2x\right)}{2} + C`);
+    expect(result(String.raw`\int e^{x}\,dx`)).toBe('e^{x} + C');
     expect(result(String.raw`\int \tan(x)^{x}\,dx`)).toBe('notInTable');
   });
 
-  it("works out a definite integral from the antiderivative, or by Simpson's rule", () => {
-    const exact = integralSteps(String.raw`\int_0^3 x^2\,dx`);
+  it('works out a definite integral exactly, or numerically when there is no antiderivative', () => {
+    const exact = stepsLatex(String.raw`\int_0^3 x^2\,dx`);
     expect(exact.ok && exact.result).toBe('9');
     expect(exact.ok && exact.steps.at(-1)!.rule).toBe('evaluate');
-    const numeric = integralSteps(String.raw`\int_0^1 \sin(x^2)\,dx`);
+    const numeric = stepsLatex(String.raw`\int_0^1 \sin(x^2)\,dx`);
     expect(numeric.ok && numeric.steps[0].rule).toBe('numeric');
-    expect(numeric.ok && Number(numeric.result)).toBeCloseTo(0.3102683017, 8);
+    expect(numeric.ok && numeric.result).toBe(String.raw`\approx 0.310268`);
     expect(stepsLatex(String.raw`\int_0^{\pi} \sin(x)\,dx`)).toMatchObject({ ok: true, result: '2' });
+  });
+
+  it('names substitution, parts, partial fractions, and trig identities', () => {
+    const all = (steps: readonly Step[]): string[] => steps.flatMap((step) => [step.rule, ...all(step.children ?? [])]);
+    const top = (latex: string) => {
+      const result = stepsLatex(latex);
+      return result.ok ? result.steps[0].rule : result.reason;
+    };
+    const found = stepsLatex(String.raw`\int 2x\cos(x^{2})\,dx`);
+    expect(found.ok && all(found.steps)).toContain('substitution');
+    expect(top(String.raw`\int x e^{x}\,dx`)).toBe('parts');
+    expect(top(String.raw`\int \frac{1}{x^{2}-1}\,dx`)).toBe('partialFractions');
+    expect(top(String.raw`\int \sin^{2} x\,dx`)).toBe('powerReduction');
+    expect(top(String.raw`\int e^{x}\sin x\,dx`)).toBe('partsCyclic');
   });
 });
 

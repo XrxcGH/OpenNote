@@ -2,8 +2,13 @@
 // second line shows its answer after the equals sign. Units work as well (`5 mi in km =`). An equation such as
 // `y = x^2` gets a "Graph this" button that hands it to the grapher. The answers are drawn beside the text and are
 // never part of it, so the page's words and its Markdown stay as typed. The editor holds one block of text, so the
-// lines of that block share their variables. On the line being typed, an equation with one unknown such as
+// lines of that block share their variables.
+//
+// On the line being typed, an equation with one unknown such as
 // `2x + 3 = 11` shows its solution in gray, and Tab adds it as a line of its own (`x = 4`) that later lines can use.
+// Calculus works the same way: `d/dx(x^3) =`, `∫ x^2 dx =`, `lim_(x→0) sin(x)/x =`, and `Σ_(n=1)^10 n^2 =` show their
+// answer in gray on the line being typed, and Tab adds it after the equals sign. The calculus code loads the first
+// time a line looks like calculus, and f'(x) uses a function defined on an earlier line.
 import { Extension } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -18,6 +23,7 @@ import { announce } from '../../../ui';
 import { LIVE_MATH_EVENT, lineAnswersOn, liveSolveOn } from './liveMath';
 import { sigFigMode, watchSigFigMode } from '../science/mode';
 import { sigFigAnswers } from '../science/notes';
+import type { KnownFunction } from '../../math';
 import { joinScope, linesBefore, refreshOthers, scopeOf } from './pageScope';
 import type { Box } from './pageScope';
 import styles from './editor.module.css';
@@ -86,13 +92,13 @@ function graphWidget(equation: string): HTMLElement {
   return button;
 }
 
-function ghostWidget(answer: string): HTMLElement {
+function ghostWidget(answer: string, sameLine = false): HTMLElement {
   const span = document.createElement('span');
   span.className = styles.ghost;
   span.contentEditable = 'false';
   span.dataset.noteGhost = '';
   span.textContent = ` ${answer}`;
-  span.title = t('mathTools.live.ghost', { answer });
+  span.title = t(sameLine ? 'mathTools.live.calculusGhost' : 'mathTools.live.ghost', { answer });
   const key = document.createElement('kbd');
   key.className = styles.ghostKey;
   key.textContent = 'Tab';
@@ -106,6 +112,37 @@ export interface Ghost {
   text: string;
   /** The definition Tab adds, such as "x = 4", or the text itself when there are several answers. */
   insert: string;
+  /** True when Tab adds the answer after the equals sign on the same line, as for a derivative. */
+  sameLine?: boolean;
+}
+
+type Calculus = Awaited<ReturnType<typeof import('../../math').loadCalculus>>;
+let calculus: Calculus | null = null;
+let loadingCalculus = false;
+
+/** A line that looks like a calculus question: d/dx, ∂/∂x, ∫, int, lim, Σ, sum, or f'(x). */
+const CALCULUS = /^\s*(?:d[²³^\d]*\/d|∂|∫|int(?![a-z])|lim(?![a-z])|[Σ∑]|sum(?![a-z])|[a-zA-Z](?:'|′)+\s*\()/;
+
+/** Loads the calculus code once, then asks every page box to work out its lines again. */
+function loadCalculus(): void {
+  if (loadingCalculus) return;
+  loadingCalculus = true;
+  void import('../../math')
+    .then((math) => math.loadCalculus())
+    .then((module) => {
+      calculus = module;
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event(LIVE_MATH_EVENT));
+    });
+}
+
+/** The answer to a calculus line that ends in "=", or null. */
+function calculusAnswer(text: string, functions: ReadonlyMap<string, KnownFunction>): string | null {
+  if (!CALCULUS.test(text) || !text.trimEnd().endsWith('=')) return null;
+  if (!calculus) {
+    loadCalculus();
+    return null;
+  }
+  return calculus.suggestion(text, { mode: 'text', functions: (name) => functions.get(name) })?.text ?? null;
 }
 
 export interface NotesState {
@@ -145,9 +182,20 @@ export function notesState(
   const rounded = sigFigMode() ? sigFigAnswers(texts, all, region, before.length) : null;
   const found: Decoration[] = [];
   let ghost: Ghost | null = null;
+  const functions = new Map<string, KnownFunction>();
+  all.slice(0, before.length).forEach((result) => result.kind === 'function' && functions.set(result.name, result));
   results.forEach((result, index) => {
     const line = lines[index];
-    if (result.kind === 'solve') {
+    if (result.kind === 'function') functions.set(result.name, result);
+    const derived = result.kind === 'error' ? calculusAnswer(line.text, functions) : null;
+    if (derived !== null && index === solveAt) {
+      ghost = { at: line.end, text: derived, insert: derived, sameLine: true };
+      found.push(
+        Decoration.widget(line.end, () => ghostWidget(derived, true), { side: 1, key: `c${index}:${derived}` }),
+      );
+    } else if (derived !== null) {
+      found.push(Decoration.widget(line.end, () => answerWidget(derived), { side: 1, key: `a${index}:${derived}` }));
+    } else if (result.kind === 'solve') {
       ghost = { at: line.end, text: result.text, insert: result.text };
       found.push(
         Decoration.widget(line.end, () => ghostWidget(result.text), { side: 1, key: `s${index}:${result.text}` }),
@@ -174,11 +222,19 @@ export function notesDecorations(doc: PMNode, region: NotesRegion, before: reado
   return notesState(doc, region, before).set;
 }
 
-/** Adds the offered solution as a line of its own after its equation, with the caret at its end. */
+/**
+ * Adds the offered solution as a line of its own after its equation, with the caret at its end; or, for a calculus
+ * answer, after the equals sign on the same line.
+ */
 export function acceptGhost(view: EditorView, ghost: Ghost): boolean {
   const { state } = view;
   const $at = state.doc.resolve(ghost.at);
   if (!$at.parent.isTextblock || $at.parentOffset !== $at.parent.content.size) return false;
+  if (ghost.sameLine) {
+    const spaced = state.doc.textBetween(ghost.at - 1, ghost.at) === ' ' ? ghost.insert : ` ${ghost.insert}`;
+    view.dispatch(state.tr.insertText(spaced, ghost.at).scrollIntoView());
+    return true;
+  }
   const tr = state.tr.split(ghost.at).insertText(ghost.insert);
   view.dispatch(tr.scrollIntoView());
   return true;
