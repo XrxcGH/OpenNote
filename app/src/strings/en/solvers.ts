@@ -54,6 +54,8 @@ export const solvers = {
     'inverse-improper':
       'The top of the fraction must have a lower degree than the bottom. A higher one means impulses, which this solver leaves out.',
     'fourier-term': 'The term {detail} does not match a pair in the table, so the transform is not shown.',
+    'series-order': 'The order must be a whole number from 1 to 20.',
+    'series-undefined': 'f or one of its derivatives is not defined at {detail}. Choose another center.',
     unknown: "This couldn't be worked out. Check the input.",
   },
 } as const;
