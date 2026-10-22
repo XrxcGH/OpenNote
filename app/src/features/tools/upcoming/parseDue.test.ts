@@ -37,6 +37,7 @@ describe('named days', () => {
     'reads today, tomorrow, and weekdays',
     `
       today => 2026-10-01
+      yesterday => 2026-09-30
       tomorrow => 2026-10-02
       Tomorrow! => 2026-10-02
       day after tomorrow => 2026-10-03

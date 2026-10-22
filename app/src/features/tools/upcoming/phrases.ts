@@ -47,6 +47,7 @@ const nextSaturday = (c: PhraseContext) => addDays(c.today, (6 - dayOfWeek(c.tod
 
 const KEYWORDS = new Map<string, (c: PhraseContext) => CivilDate>([
   ['today', (c) => c.today],
+  ['yesterday', (c) => addDays(c.today, -1)],
   ['tomorrow', (c) => addDays(c.today, 1)],
   ['tmrw', (c) => addDays(c.today, 1)],
   ['day after tomorrow', (c) => addDays(c.today, 2)],
