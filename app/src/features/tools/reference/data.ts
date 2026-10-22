@@ -2,6 +2,7 @@
 // Greek letters. The data is plain and complete for what it lists, and works offline.
 import { CONSTANTS } from '../calculator';
 import { configurationOf, groupNumberOf, periodOf } from './configuration';
+import { detailsOf, type ElementDetails } from './elementDetails';
 
 export type ElementGroup =
   | 'alkali'
@@ -15,7 +16,7 @@ export type ElementGroup =
   | 'lanthanide'
   | 'actinide';
 
-export interface Element {
+export interface Element extends ElementDetails {
   number: number;
   symbol: string;
   name: string;
@@ -90,6 +91,7 @@ export const ELEMENTS: readonly Element[] = ROWS.split(/\|\n?/).map((row) => {
     period: periodOf(z),
     groupNumber: groupNumberOf(z),
     configuration: configurationOf(z),
+    ...detailsOf(z),
   };
 });
 

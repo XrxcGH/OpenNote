@@ -19,7 +19,7 @@ Import the core from `index.ts`. `flags.ts` holds the ink flags and `loadInkView
 | [snap](snap/README.md)                     | The ruler, the protractor, and snap to grid                                                                                                |
 | [space](space/README.md)                   | What moves when space is inserted                                                                                                          |
 | [zoombox](zoombox/README.md)               | The zoom writing box: strip and box coordinates, and moving the box along the line                                                         |
-| [myhand](myhand/README.md)                 | My handwriting: the calibration set, the stored style, the measures of a hand, the writer, math layout, and ink tracing |
+| [myhand](myhand/README.md)                 | My handwriting: the calibration set, the stored style, the measures of a hand, the writer, math layout, and ink tracing                    |
 | [engine/tiles](engine/tiles/README.md)     | The tile cache planner: which tiles to draw, invalidate, and give back                                                                     |
 | `view`                                     | The pointer tools, the ink overlay and its tiles, the lasso frame, the Draw tab, and Settings, Pen and touch                               |
 
