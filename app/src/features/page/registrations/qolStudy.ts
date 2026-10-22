@@ -589,6 +589,10 @@ async function setAllTape(hidden: boolean): Promise<void> {
   await queue.send({
     edits: tapes.map((block) => ({ edit: 'patchBlock' as const, block: block.id, data: { hidden } })),
   });
+  // The page core keeps the data but does not tell the views, so draw the change on each tape now.
+  for (const block of tapes) {
+    mounted.layer.view(block.id)?.update({ ...block, data: { ...block.data, hidden } });
+  }
   announce(t(hidden ? 'study.tape.allHidden' : 'study.tape.allShown'));
 }
 
