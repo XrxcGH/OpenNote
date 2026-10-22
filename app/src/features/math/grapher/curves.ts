@@ -1,9 +1,9 @@
 // The other kinds of line a graph block plots besides y = f(x):
 //
-//   (cos t, sin 2t)        a parametric curve in t, over the block's @t range (0 to 2π unless it says)
-//   r = 1 + cos θ          a polar curve; `theta` and `t` work for θ too
-//   F = (-y, x)            a vector field, drawn as arrows on a grid
-//   dy/dx = x - y          a slope field, drawn as short dashes
+// - A parametric curve in t, over the block's @t range (0 to 2π unless it says): `(cos t, sin 2t)`.
+// - A polar curve: `r = 1 + cos θ`. Typing `theta` or `t` for θ works too.
+// - A vector field, drawn as arrows on a grid: `F = (-y, x)`.
+// - A slope field, drawn as short dashes: `dy/dx = x - y`.
 //
 // Each is sampled into the same segments a function becomes, so print, export, and the screen draw them alike.
 import { compileMulti, greekWords, multiParameters, type MultiExpression } from '../space/multivar';

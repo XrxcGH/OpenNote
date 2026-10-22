@@ -1,5 +1,6 @@
 // Parametric, polar, vector field, and slope field lines in a graph block.
 import { describe, expect, it } from 'vitest';
+import { tokens } from '../../../theme/tokens';
 import { readGraph, writeGraph } from '../graph/source';
 import { classifyLine, compileSpecial, curvePoint, lineParameters, sampleCurve, splitTuple } from './curves';
 import { buildScene, sceneToSvg } from './scene';
@@ -78,13 +79,14 @@ describe('curve kinds', () => {
       expect(curve.d.length).toBeGreaterThan(20);
     }
     expect(scene.curves.map((curve) => curve.kind)).toEqual(['parametric', 'field', 'slope', 'polar']);
+    const c = tokens.color.light;
     const svg = sceneToSvg(scene, {
-      gridMinor: '#eee',
-      gridMajor: '#ddd',
-      axis: '#000',
-      text: '#333',
-      curves: ['#00f'],
-      fontFamily: 'sans-serif',
+      gridMinor: c.border.subtle,
+      gridMajor: c.border.control,
+      axis: c.text.primary,
+      text: c.text.secondary,
+      curves: [c.accent.primary],
+      fontFamily: tokens.font.ui,
       labelSize: 12,
       lineWidth: 1,
       curveWidth: 2,

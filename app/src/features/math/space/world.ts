@@ -1,4 +1,4 @@
-// Turns a 3D graph's text into geometry in graph units: faces of surfaces and planes, polylines of curves and lines,
+// Turns a 3D graph's text into geometry in graph units: faces of surfaces and planes, polylines of curves, and lines,
 // arrows, and dots, inside one box. Nothing here depends on the camera, so turning the view only projects again.
 import type { ExpressionProblem } from '../grapher/evaluate';
 import { DEFAULT_T } from '../grapher/curves';
@@ -159,35 +159,35 @@ function lightOf(points: readonly Vec3[], box: Box3): number {
 /** Surfaces are sampled on an n by n grid: fine enough to look smooth, coarse enough to turn without lag. */
 const GRID = 30;
 
-export function buildWorld(space: SpaceSource): World {
-  const items = space.items.map(readItem);
-  const params = space.params;
-  const names = Object.keys(params);
-  const range = space.range ?? DEFAULT_RANGE;
-  const problems: (ExpressionProblem | null)[] = items.map(() => null);
+/** What the builders add to: the marks so far, and each item's problem. */
+interface Parts {
+  faces: WorldFace[];
+  lines: WorldLine[];
+  arrows: WorldArrow[];
+  dots: WorldDot[];
+  problems: (ExpressionProblem | null)[];
+}
+
+/** Reads and samples the surfaces. A surface that cannot be read gets its problem instead. */
+function readSurfaces(items: readonly SpaceItem[], space: SpaceSource, range: readonly number[], parts: Parts) {
+  const names = Object.keys(space.params);
   const surfaces: Surface[] = [];
   items.forEach((item, index) => {
     if (item.kind !== 'surface') return;
     const read = compileMulti(item.source, VARS, names);
-    if (!read.ok) problems[index] = read.error;
-    else
-      surfaces.push({ index, expression: read.expression, grid: sampleSurface(read.expression, range, params, GRID) });
+    if (!read.ok) parts.problems[index] = read.error;
+    else {
+      const grid = sampleSurface(read.expression, range, space.params, GRID);
+      surfaces.push({ index, expression: read.expression, grid });
+    }
   });
+  return surfaces;
+}
 
-  // The box: x and y from the range; z from the surfaces, or from everything else when there is none.
-  const zs = surfaces.flatMap((s) => s.grid.z.flat());
-  const others = objectPoints(items, space);
-  for (const p of others) zs.push(p[2]);
-  const zRange = space.zRange ?? robustRange(zs) ?? [-3, 3];
-  const box: Box3 = fitBox(space, range, zRange, others, surfaces.length > 0);
-
-  const faces: WorldFace[] = [];
-  const lines: WorldLine[] = [];
-  const arrows: WorldArrow[] = [];
-  const dots: WorldDot[] = [];
+/** The faces of each surface's grid, leaving out cells that leave the box. */
+function surfaceFaces(surfaces: readonly Surface[], box: Box3, faces: WorldFace[]) {
   const zSpan = box.max[2] - box.min[2];
   const inside = (z: number) => Number.isFinite(z) && z >= box.min[2] - zSpan * 0.02 && z <= box.max[2] + zSpan * 0.02;
-
   for (const surface of surfaces) {
     const { xs, ys, z } = surface.grid;
     for (let j = 0; j < ys.length - 1; j++) {
@@ -205,64 +205,82 @@ export function buildWorld(space: SpaceSource): World {
       }
     }
   }
+}
 
-  const first = surfaces[0] ?? null;
-  const contours = first ? levelCurves(first.grid, contourLevels(box.min[2], box.max[2], 10)) : [];
-  if (first && space.show === 'both') {
-    for (const curve of contours) {
-      const tone = (curve.level - box.min[2]) / zSpan;
-      for (const [x1, y1, x2, y2] of curve.segments) {
-        const points: Vec3[] = [
-          [x1, y1, box.min[2]],
-          [x2, y2, box.min[2]],
-        ];
-        lines.push({ points, role: 'contour', series: first.index, tone });
-      }
+/** The level curves drawn on the floor of the box. */
+function floorContours(contours: readonly LevelCurve[], series: number, box: Box3, lines: WorldLine[]) {
+  const zSpan = box.max[2] - box.min[2];
+  for (const curve of contours) {
+    const tone = (curve.level - box.min[2]) / zSpan;
+    for (const [x1, y1, x2, y2] of curve.segments) {
+      const points: Vec3[] = [
+        [x1, y1, box.min[2]],
+        [x2, y2, box.min[2]],
+      ];
+      lines.push({ points, role: 'contour', series, tone });
     }
   }
+}
 
-  const tangent = first && space.tangent ? tangentAt(first, space, names) : null;
-  if (tangent && first) addTangent(tangent, range, box, faces, dots);
-
+/** A curve in space, sampled over the t range and broken where it is not defined. */
+function spaceCurve(item: Extract<SpaceItem, { kind: 'curve' }>, index: number, space: SpaceSource, parts: Parts) {
   const t = space.t ?? DEFAULT_T;
+  const compiled = item.parts.map((part) => compileMulti(part, ['t'], Object.keys(space.params)));
+  const bad = compiled.find((part) => !part.ok);
+  if (bad && !bad.ok) return void (parts.problems[index] = bad.error);
+  const run: Vec3[] = [];
+  for (let k = 0; k <= 400; k++) {
+    const tk = t[0] + ((t[1] - t[0]) * k) / 400;
+    const p = compiled.map((part) => (part.ok ? part.expression.evaluate({ ...space.params, t: tk }) : NaN));
+    if (p.every(Number.isFinite)) run.push([p[0], p[1], p[2]]);
+    else if (run.length > 1) parts.lines.push({ points: run.splice(0), role: 'curve', series: index });
+    else run.length = 0;
+  }
+  if (run.length > 1) parts.lines.push({ points: run, role: 'curve', series: index });
+}
+
+/** Curves, vectors, points, lines, and planes. */
+function addItems(items: readonly SpaceItem[], space: SpaceSource, box: Box3, parts: Parts) {
   items.forEach((item, index) => {
-    if (item.kind === 'curve') {
-      const parts = item.parts.map((part) => compileMulti(part, ['t'], names));
-      const bad = parts.find((part) => !part.ok);
-      if (bad && !bad.ok) return void (problems[index] = bad.error);
-      const run: Vec3[] = [];
-      for (let k = 0; k <= 400; k++) {
-        const tk = t[0] + ((t[1] - t[0]) * k) / 400;
-        const p = parts.map((part) => (part.ok ? part.expression.evaluate({ ...params, t: tk }) : NaN));
-        if (p.every(Number.isFinite)) run.push([p[0], p[1], p[2]]);
-        else if (run.length > 1) lines.push({ points: run.splice(0), role: 'curve', series: index });
-        else run.length = 0;
-      }
-      if (run.length > 1) lines.push({ points: run, role: 'curve', series: index });
-    } else if (item.kind === 'vector') {
-      arrows.push({ from: item.tail, to: add(item.tail, item.head), series: index });
-    } else if (item.kind === 'point') {
-      dots.push({ at: item.at, series: index, role: 'point' });
-    } else if (item.kind === 'line') {
+    if (item.kind === 'curve') spaceCurve(item, index, space, parts);
+    else if (item.kind === 'vector')
+      parts.arrows.push({ from: item.tail, to: add(item.tail, item.head), series: index });
+    else if (item.kind === 'point') parts.dots.push({ at: item.at, series: index, role: 'point' });
+    else if (item.kind === 'line') {
       const clipped = clipLineToBox(item.line, box);
-      if (clipped) lines.push({ points: clipped, role: 'line', series: index });
-    } else if (item.kind === 'plane') {
-      const polygon = planeInBox(item.plane, box);
-      fan(polygon, 'plane', index, box, faces);
-    } else if (item.kind === 'invalid') {
-      problems[index] = { message: item.message, position: 0, length: space.items[index].length };
+      if (clipped) parts.lines.push({ points: clipped, role: 'line', series: index });
+    } else if (item.kind === 'plane') fan(planeInBox(item.plane, box), 'plane', index, box, parts.faces);
+    else if (item.kind === 'invalid') {
+      parts.problems[index] = { message: item.message, position: 0, length: space.items[index].length };
     }
   });
+}
 
-  if (space.revolve) addSolid(space, names, box, faces, lines);
+export function buildWorld(space: SpaceSource): World {
+  const items = space.items.map(readItem);
+  const range = space.range ?? DEFAULT_RANGE;
+  const parts: Parts = { faces: [], lines: [], arrows: [], dots: [], problems: items.map(() => null) };
+  const surfaces = readSurfaces(items, space, range, parts);
+
+  // The box: x and y from the range; z from the surfaces, or from everything else when there is none.
+  const zs = surfaces.flatMap((s) => s.grid.z.flat());
+  const others = objectPoints(items, space);
+  for (const p of others) zs.push(p[2]);
+  const zRange = space.zRange ?? robustRange(zs) ?? [-3, 3];
+  const box: Box3 = fitBox(space, range, zRange, others, surfaces.length > 0);
+
+  surfaceFaces(surfaces, box, parts.faces);
+  const first = surfaces[0] ?? null;
+  const contours = first ? levelCurves(first.grid, contourLevels(box.min[2], box.max[2], 10)) : [];
+  if (first && space.show === 'both') floorContours(contours, first.index, box, parts.lines);
+  const tangent = first && space.tangent ? tangentAt(first, space, Object.keys(space.params)) : null;
+  if (tangent) addTangent(tangent, range, box, parts.faces, parts.dots);
+  addItems(items, space, box, parts);
+  if (space.revolve) addSolid(space, Object.keys(space.params), box, parts.faces, parts.lines);
 
   return {
     box,
-    faces,
-    lines,
-    arrows,
-    dots,
-    problems,
+    ...parts,
     kinds: items.map((item) => item.kind),
     tangent,
     contours,

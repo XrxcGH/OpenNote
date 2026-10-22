@@ -1,4 +1,4 @@
-// Projectile motion against textbook answers (Serway, Physics for Scientists and Engineers, chapter 4).
+// Projectile motion against textbook answers (Serway's physics text, chapter 4).
 import { describe, expect, it } from 'vitest';
 import { compileSpecial, sampleCurve } from '../grapher/curves';
 import { readGraph } from '../graph/source';

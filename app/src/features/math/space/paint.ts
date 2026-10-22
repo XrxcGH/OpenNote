@@ -54,7 +54,7 @@ export const screenPaint: Paint = {
 };
 
 function hex(name: string): string {
-  return tokens.ink.pens.find((pen) => pen.name === name)?.light ?? '#2F4F9A';
+  return (tokens.ink.pens.find((pen) => pen.name === name) ?? tokens.ink.pens[1]).light;
 }
 
 function mix(a: string, b: string, k: number): string {
@@ -75,7 +75,8 @@ export function exportPaint(): Paint {
   return {
     face(role, series, tone, light) {
       const [low, high, k] = stops(ramp(role, series), tone);
-      return mix('#000000', mix(hex(low), hex(high), k), light);
+      // Shade toward the darkest ink, as the screen shades toward black.
+      return mix(hex('Ink'), mix(hex(low), hex(high), k), light);
     },
     faceOpacity: (role) => OPACITY[role] ?? 1,
     stroke(role, series, tone) {

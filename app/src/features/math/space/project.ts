@@ -221,10 +221,11 @@ export function drawMarks(marks: readonly Mark[], paint: Paint): Drawn[] {
         y: to.y - head * Math.sin(angle - s * 0.4),
       });
       const stroke = paint.stroke('vector', mark.series);
+      const at = (p: Pixel) => p2(p).replace(',', ' ');
       out.push({
         tag: 'path',
         attrs: {
-          d: `M${p2(from).replace(',', ' ')}L${p2(to).replace(',', ' ')}M${p2(side(1)).replace(',', ' ')}L${p2(to).replace(',', ' ')}L${p2(side(-1)).replace(',', ' ')}`,
+          d: `M${at(from)}L${at(to)}M${at(side(1))}L${at(to)}L${at(side(-1))}`,
           stroke,
           fill: 'none',
           strokeWidth: WIDTH.vector!,

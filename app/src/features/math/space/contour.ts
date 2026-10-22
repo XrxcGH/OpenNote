@@ -29,7 +29,7 @@ export function contourLevels(min: number, max: number, count = 10): number[] {
   return levels;
 }
 
-/** The place between a and b where the value crosses `level`. */
+/** Where the value crosses `level` on the edge from `a` (value `za`) to `b` (value `zb`). */
 const cross = (level: number, a: number, b: number, za: number, zb: number) => a + ((level - za) / (zb - za)) * (b - a);
 
 /** The level curves of the grid at each level. */

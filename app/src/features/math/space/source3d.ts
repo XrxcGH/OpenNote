@@ -1,20 +1,15 @@
 // A 3D graph is a graph code block whose first line is "@3d". Its text is the whole graph, so it saves, undoes,
-// copies, and exports as text, and a reader without graphs still sees what it plots:
+// copies, and exports as text, and a reader without graphs still sees what it plots. Its lines:
 //
-//   @3d
-//   z = x^2 - y^2                    a surface
-//   (cos t, sin t, t/4)              a curve in space, over @t
-//   vector <1, 2, 3> at (0, 0, 1)    an arrow (from the origin without "at")
-//   point (1, -2, 4)
-//   line (1, -2, 4) + t<1, 3, -1>    also: line (1, 0, 0) to (0, 1, 2)
-//   plane 3x + 2y + 6z = 5
-//   a = 2                            a slider's value
-//   @range -2 2 -2 2                 x and y
-//   @zrange -4 4
-//   @tangent 1 0.5                   the tangent plane to the first surface there
-//   @show both                       surface, contour, or both
-//   @angle -55 25 1                  turn, tilt, and zoom
-//   @revolve sqrt(x); 0; 0; 4; y=0   a solid of revolution: outer; inner; from; to; axis
+// - A surface: `z = x^2 - y^2`. A curve in space over the @t range: `(cos t, sin t, t/4)`.
+// - An arrow: `vector <1, 2, 3> at (0, 0, 1)`. Without "at" it starts at the origin.
+// - A point: `point (1, -2, 4)`.
+// - A line: `line (1, -2, 4) + t<1, 3, -1>`, or through two points: `line (1, 0, 0) to (0, 1, 2)`.
+// - A plane: `plane 3x + 2y + 6z = 5`. A slider's value: `a = 2`.
+// - The box: `@range -2 2 -2 2` for x and y, and `@zrange -4 4` for z.
+// - The tangent plane to the first surface at x = 1, y = 0.5: `@tangent 1 0.5`.
+// - What shows: `@show both` (surface, contour, or both). The turn, tilt, and zoom: `@angle -55 25 1`.
+// - A solid of revolution: `@revolve sqrt(x); 0; 0; 4; y=0` (outer curve, inner curve, from, to, and axis).
 import { lineThrough, readPlane, type Line3, type Plane } from './geometry3d';
 import { splitTuple } from '../grapher/curves';
 import { readNumber, readVec, type Vec3 } from './vec';

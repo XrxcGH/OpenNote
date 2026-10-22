@@ -23,7 +23,7 @@ import {
   type SpaceSource,
 } from './source3d';
 import styles from './space.module.css';
-import { buildWorld } from './world';
+import { buildWorld, type World } from './world';
 
 export interface Graph3DViewProps {
   source: string;
@@ -85,128 +85,170 @@ async function savePicture(space: SpaceSource, format: 'svg' | 'png'): Promise<v
   }
 }
 
-export function Graph3DView({ source, editable, onSource }: Graph3DViewProps) {
-  const space = useMemo(() => readSpace(source), [source]);
-  const { names, values } = useParams(space);
-  const withValues = useMemo(() => ({ ...space, params: values }), [space, values]);
-  const world = useMemo(() => buildWorld(withValues), [withValues]);
+const TURNS: Record<string, [number, number]> = {
+  ArrowLeft: [-5, 0],
+  ArrowRight: [5, 0],
+  ArrowUp: [0, 5],
+  ArrowDown: [0, -5],
+};
+
+/** The camera a key gives, or null when the key is not for the view. */
+function keyCamera(key: string, camera: Camera): Camera | null {
+  const turn = TURNS[key];
+  if (turn) return { ...camera, azimuth: camera.azimuth + turn[0], elevation: camera.elevation + turn[1] };
+  if (key === '+' || key === '=') return { ...camera, zoom: camera.zoom * 1.2 };
+  if (key === '-') return { ...camera, zoom: camera.zoom / 1.2 };
+  return key === '0' ? DEFAULT_CAMERA : null;
+}
+
+/**
+ * The camera, and what a drag, the wheel, and the keys do to it. A turn being dragged belongs to the text it began
+ * from, so new text brings back its own camera. A finished turn goes out as text after `delay`.
+ */
+function useCamera(source: string, space: SpaceSource, editable: boolean, sendCamera: (next: Camera) => void) {
   const [liveState, setLiveState] = useState<{ source: string; camera: Camera } | null>(null);
   const live = liveState?.source === source ? liveState.camera : null;
   const camera = live ?? space.camera ?? DEFAULT_CAMERA;
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const drag = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => () => clearTimeout(timer.current), []);
+  const flat = space.show === 'contour';
 
-  const drawn = useMemo(() => spaceMarks({ ...withValues, camera }, world, screenPaint), [withValues, world, camera]);
-  const send = (next: Partial<SpaceSource>) =>
-    onSource(writeSpace({ ...space, camera: live ?? space.camera, ...next }));
   const commit = (next: Camera, delay = 0) => {
     const fixed = clampCamera(next);
     setLiveState({ source, camera: fixed });
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => send({ camera: fixed }), delay);
+    timer.current = setTimeout(() => sendCamera(fixed), delay);
   };
+  const handlers = {
+    onPointerDown: (event: PointerEvent<SVGSVGElement>) => {
+      if (flat) return;
+      drag.current = { x: event.clientX, y: event.clientY };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    onPointerMove: (event: PointerEvent<SVGSVGElement>) => {
+      const from = drag.current;
+      if (!from) return;
+      drag.current = { x: event.clientX, y: event.clientY };
+      const azimuth = camera.azimuth - (event.clientX - from.x) * 0.5;
+      const elevation = camera.elevation + (event.clientY - from.y) * 0.5;
+      setLiveState({ source, camera: clampCamera({ ...camera, azimuth, elevation }) });
+    },
+    onPointerUp: () => {
+      if (drag.current && live && editable) commit(live);
+      drag.current = null;
+    },
+    onWheel: (event: WheelEvent<SVGSVGElement>) => {
+      if (editable && !flat) commit({ ...camera, zoom: camera.zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1) }, COMMIT_MS);
+    },
+    onKeyDown: (event: KeyboardEvent<SVGSVGElement>) => {
+      const next = keyCamera(event.key, camera);
+      if (!next) return;
+      event.preventDefault();
+      commit(next);
+    },
+  };
+  return { camera, live, commit, handlers };
+}
 
-  const onPointerDown = (event: PointerEvent<SVGSVGElement>) => {
-    if (space.show === 'contour') return;
-    drag.current = { x: event.clientX, y: event.clientY };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-  const onPointerMove = (event: PointerEvent<SVGSVGElement>) => {
-    const from = drag.current;
-    if (!from) return;
-    drag.current = { x: event.clientX, y: event.clientY };
-    const next = {
-      ...camera,
-      azimuth: camera.azimuth - (event.clientX - from.x) * 0.5,
-      elevation: camera.elevation + (event.clientY - from.y) * 0.5,
-    };
-    setLiveState({ source, camera: clampCamera(next) });
-  };
-  const onPointerUp = () => {
-    if (drag.current && live && editable) commit(live);
-    drag.current = null;
-  };
-  const onWheel = (event: WheelEvent<SVGSVGElement>) => {
-    if (editable && space.show !== 'contour')
-      commit({ ...camera, zoom: camera.zoom * (event.deltaY < 0 ? 1.1 : 1 / 1.1) }, COMMIT_MS);
-  };
-  const onKeyDown = (event: KeyboardEvent<SVGSVGElement>) => {
-    const turns: Record<string, [number, number]> = {
-      ArrowLeft: [-5, 0],
-      ArrowRight: [5, 0],
-      ArrowUp: [0, 5],
-      ArrowDown: [0, -5],
-    };
-    let next: Camera | null = null;
-    if (turns[event.key])
-      next = {
-        ...camera,
-        azimuth: camera.azimuth + turns[event.key][0],
-        elevation: camera.elevation + turns[event.key][1],
-      };
-    else if (event.key === '+' || event.key === '=') next = { ...camera, zoom: camera.zoom * 1.2 };
-    else if (event.key === '-') next = { ...camera, zoom: camera.zoom / 1.2 };
-    else if (event.key === '0') next = DEFAULT_CAMERA;
-    if (!next) return;
-    event.preventDefault();
-    commit(next);
-  };
-
-  const editItem = (index: number, text: string) => {
+/** One text box per item, with the engine's complaint under a box it cannot read. */
+function ItemBoxes(props: { space: SpaceSource; world: World; editable: boolean; onItems(items: string[]): void }) {
+  const { space, world, editable, onItems } = props;
+  const edit = (index: number, text: string) => {
     const items = space.items.map((line, i) => (i === index ? text : line));
-    send({ items: text === '' ? items.filter((_, i) => i !== index) : items });
+    onItems(text === '' ? items.filter((_, i) => i !== index) : items);
   };
+  return (
+    <div className={styles.inputs}>
+      {space.items.map((line, index) => {
+        const problem = world.problems[index];
+        const message =
+          world.kinds[index] === 'invalid' && problem
+            ? t(`graph3d.invalid.${problem.message as 'vector'}`)
+            : problem?.message;
+        return (
+          <div key={index} className={styles.row}>
+            <input
+              className={styles.input}
+              value={line}
+              disabled={!editable}
+              aria-label={t('graph3d.view.item', { number: index + 1 })}
+              aria-invalid={problem ? true : undefined}
+              aria-describedby={problem ? `space-problem-${index}` : undefined}
+              spellCheck={false}
+              onChange={(event) => edit(index, event.target.value)}
+            />
+            {problem ? (
+              <span id={`space-problem-${index}`} className={styles.problem} role="status">
+                {message}
+              </span>
+            ) : null}
+          </div>
+        );
+      })}
+      {editable ? (
+        <Button variant="quiet" onClick={() => onItems([...space.items, 'z = x^2 + y^2'])}>
+          {t('graph3d.view.add')}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function ShowButtons(props: { show: SpaceShow; editable: boolean; onShow(next: SpaceShow): void }) {
+  const { show, editable, onShow } = props;
+  return (
+    <div className={styles.buttons} role="group" aria-label={t('graph3d.view.showLabel')}>
+      {SHOWS.map((one) => (
+        <Button key={one} variant="quiet" aria-pressed={show === one} disabled={!editable} onClick={() => onShow(one)}>
+          {t(`graph3d.view.show.${one}`)}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function ViewButtons(props: { camera: Camera; space: SpaceSource; commit(next: Camera): void }) {
+  const { camera, space, commit } = props;
+  return (
+    <div className={styles.buttons}>
+      <Button variant="quiet" onClick={() => commit({ ...camera, azimuth: camera.azimuth - 15 })}>
+        {t('graph3d.view.turnLeft')}
+      </Button>
+      <Button variant="quiet" onClick={() => commit({ ...camera, azimuth: camera.azimuth + 15 })}>
+        {t('graph3d.view.turnRight')}
+      </Button>
+      <Button variant="quiet" onClick={() => commit(DEFAULT_CAMERA)}>
+        {t('graph3d.view.reset')}
+      </Button>
+      <Button variant="quiet" onClick={() => void savePicture({ ...space, camera }, 'svg')}>
+        {t('graph3d.view.saveSvg')}
+      </Button>
+      <Button variant="quiet" onClick={() => void savePicture({ ...space, camera }, 'png')}>
+        {t('graph3d.view.savePng')}
+      </Button>
+    </div>
+  );
+}
+
+export function Graph3DView({ source, editable, onSource }: Graph3DViewProps) {
+  const space = useMemo(() => readSpace(source), [source]);
+  const { names, values } = useParams(space);
+  const withValues = useMemo(() => ({ ...space, params: values }), [space, values]);
+  const world = useMemo(() => buildWorld(withValues), [withValues]);
+  const { camera, live, commit, handlers } = useCamera(source, space, editable, (next) =>
+    onSource(writeSpace({ ...space, camera: next })),
+  );
+  // A change made during a turn keeps the turn.
+  const send = (next: Partial<SpaceSource>) =>
+    onSource(writeSpace({ ...space, camera: live ?? space.camera, ...next }));
+  const drawn = useMemo(() => spaceMarks({ ...withValues, camera }, world, screenPaint), [withValues, world, camera]);
   const description = describeSpace(withValues, world);
 
   return (
     <div className={styles.space}>
-      <div className={styles.inputs}>
-        {space.items.map((line, index) => {
-          const problem = world.problems[index];
-          const message =
-            world.kinds[index] === 'invalid' && problem
-              ? t(`graph3d.invalid.${problem.message as 'vector'}`)
-              : problem?.message;
-          return (
-            <div key={index} className={styles.row}>
-              <input
-                className={styles.input}
-                value={line}
-                disabled={!editable}
-                aria-label={t('graph3d.view.item', { number: index + 1 })}
-                aria-invalid={problem ? true : undefined}
-                aria-describedby={problem ? `space-problem-${index}` : undefined}
-                spellCheck={false}
-                onChange={(event) => editItem(index, event.target.value)}
-              />
-              {problem ? (
-                <span id={`space-problem-${index}`} className={styles.problem} role="status">
-                  {message}
-                </span>
-              ) : null}
-            </div>
-          );
-        })}
-        {editable ? (
-          <Button variant="quiet" onClick={() => send({ items: [...space.items, 'z = x^2 + y^2'] })}>
-            {t('graph3d.view.add')}
-          </Button>
-        ) : null}
-      </div>
-      <div className={styles.buttons} role="group" aria-label={t('graph3d.view.showLabel')}>
-        {SHOWS.map((show) => (
-          <Button
-            key={show}
-            variant="quiet"
-            aria-pressed={space.show === show}
-            disabled={!editable}
-            onClick={() => send({ show })}
-          >
-            {t(`graph3d.view.show.${show}`)}
-          </Button>
-        ))}
-      </div>
+      <ItemBoxes space={space} world={world} editable={editable} onItems={(items) => send({ items })} />
+      <ShowButtons show={space.show} editable={editable} onShow={(show) => send({ show })} />
       <svg
         className={styles.plot}
         viewBox={`0 0 ${SIZE_3D.width} ${SIZE_3D.height}`}
@@ -215,11 +257,7 @@ export function Graph3DView({ source, editable, onSource }: Graph3DViewProps) {
         aria-label={t('graph3d.view.label', { count: space.items.length })}
         aria-roledescription={t('graph3d.view.role')}
         aria-description={`${t('graph3d.view.keys')} ${description}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onWheel={onWheel}
-        onKeyDown={onKeyDown}
+        {...handlers}
       >
         <rect width={SIZE_3D.width} height={SIZE_3D.height} className={styles.paper} />
         {drawn.map((mark, index) => createElement(mark.tag, { key: index, ...mark.attrs }, mark.text))}
@@ -234,23 +272,7 @@ export function Graph3DView({ source, editable, onSource }: Graph3DViewProps) {
         editable={editable}
         onValue={(name, value) => send({ params: { ...space.params, [name]: value } })}
       />
-      <div className={styles.buttons}>
-        <Button variant="quiet" onClick={() => commit({ ...camera, azimuth: camera.azimuth - 15 })}>
-          {t('graph3d.view.turnLeft')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit({ ...camera, azimuth: camera.azimuth + 15 })}>
-          {t('graph3d.view.turnRight')}
-        </Button>
-        <Button variant="quiet" onClick={() => commit(DEFAULT_CAMERA)}>
-          {t('graph3d.view.reset')}
-        </Button>
-        <Button variant="quiet" onClick={() => void savePicture(withValues, 'svg')}>
-          {t('graph3d.view.saveSvg')}
-        </Button>
-        <Button variant="quiet" onClick={() => void savePicture(withValues, 'png')}>
-          {t('graph3d.view.savePng')}
-        </Button>
-      </div>
+      <ViewButtons camera={camera} space={withValues} commit={commit} />
     </div>
   );
 }

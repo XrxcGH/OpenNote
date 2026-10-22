@@ -195,8 +195,8 @@ fn save_now(app: &AppHandle, tool: &str, window: &WebviewWindow) {
     }
 }
 
-/// Where a new window with no saved place goes so it does not cover another tool window: just right of the
-/// rightmost one open (or just left of the leftmost, if there is no room), at the same height. `None` when no
+/// Where a new window with no saved place goes, so it does not cover another tool window. It goes just right of
+/// the rightmost one open, or just left of the leftmost if there is no room, at the same height. `None` when no
 /// other tool window is open or neither side has room; Windows then picks the place.
 fn beside_open_tools(app: &AppHandle, window: &WebviewWindow) -> Option<(i32, i32)> {
     const GAP: i32 = 8;

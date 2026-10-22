@@ -1,5 +1,5 @@
 // 3D graphs: the text, the geometry, tangent planes, level curves, vectors, and lines and planes, checked against
-// worked examples from a calculus text (Stewart, Calculus, chapters 12 and 14).
+// worked examples from a calculus text (Stewart, Calculus, chapters 12, and 14).
 import { describe, expect, it } from 'vitest';
 import { contourLevels, levelCurves } from './contour';
 import {
