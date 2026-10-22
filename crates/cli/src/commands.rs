@@ -151,12 +151,11 @@ fn read_text(args: &Args, from: usize, stdin: &mut dyn Read) -> Result<String, C
         let file = &sandbox(args)?
             .check_read(file)
             .map_err(|error| CliError::Usage(error.to_string()))?;
-        let size =
-            fs::metadata(file).map_err(|error| CliError::Io(format!("Can't read {}: {error}", file.display())))?;
+        let size = fs::metadata(file).map_err(|error| CliError::Io(format!("Can't read {}: {error}", shown(file))))?;
         if size.len() > MAX_TEXT as u64 {
             return Err(CliError::Usage("The file is larger than 2 MB.".into()));
         }
-        fs::read_to_string(file).map_err(|error| CliError::Io(format!("Can't read {}: {error}", file.display())))?
+        fs::read_to_string(file).map_err(|error| CliError::Io(format!("Can't read {}: {error}", shown(file))))?
     } else if args.positional.len() > from {
         args.positional[from..].join(" ")
     } else {
@@ -534,10 +533,10 @@ fn run_inner(
                 .write(true)
                 .create_new(true)
                 .open(&file)
-                .map_err(|error| CliError::Io(format!("Can't write {}: {error}", file.display())))?;
+                .map_err(|error| CliError::Io(format!("Can't write {}: {error}", shown(&file))))?;
             target
                 .write_all(&png)
-                .map_err(|error| CliError::Io(format!("Can't write {}: {error}", file.display())))?;
+                .map_err(|error| CliError::Io(format!("Can't write {}: {error}", shown(&file))))?;
             let summary = json!({
                 "file": shown(&file),
                 "strokes": drawn["strokes"],
@@ -581,7 +580,7 @@ fn with_author(args: &Args, mut body: Value) -> Value {
 
 /// Writes each exported page as a Markdown file in `folder`. Never overwrites a file that is already there.
 fn write_export(folder: &Path, exported: &Value) -> Result<Vec<String>, CliError> {
-    fs::create_dir_all(folder).map_err(|error| CliError::Io(format!("Can't make {}: {error}", folder.display())))?;
+    fs::create_dir_all(folder).map_err(|error| CliError::Io(format!("Can't make {}: {error}", shown(folder))))?;
     let mut taken = std::collections::HashSet::new();
     if let Ok(entries) = fs::read_dir(folder) {
         for entry in entries.flatten() {
@@ -596,9 +595,9 @@ fn write_export(folder: &Path, exported: &Value) -> Result<Vec<String>, CliError
             .write(true)
             .create_new(true)
             .open(&path)
-            .map_err(|error| CliError::Io(format!("Can't write {}: {error}", path.display())))?;
+            .map_err(|error| CliError::Io(format!("Can't write {}: {error}", shown(&path))))?;
         file.write_all(page["markdown"].as_str().unwrap_or_default().as_bytes())
-            .map_err(|error| CliError::Io(format!("Can't write {}: {error}", path.display())))?;
+            .map_err(|error| CliError::Io(format!("Can't write {}: {error}", shown(&path))))?;
         written.push(name);
     }
     Ok(written)

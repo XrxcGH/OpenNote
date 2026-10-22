@@ -169,6 +169,11 @@ fn bad_arguments_never_reach_opennote() {
         let result = run(&env, args, "");
         assert_ne!(result.code, 0, "{args:?}");
         assert!(!result.err.is_empty(), "{args:?} says why");
+        assert!(
+            !result.err.contains(r"\\?\"),
+            "{args:?} names a path plainly: {}",
+            result.err
+        );
     }
     assert!(test.approver.asked().is_empty());
     let help = run(&env, &["--help"], "");
