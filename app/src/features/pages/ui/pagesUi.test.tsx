@@ -152,7 +152,40 @@ function printSource(): PageSource {
   return { pageId: 'p1', title: 'Plans', notebook: 'Work', section: 'Notes', page, assetUrls: {} };
 }
 
+/** The document the preview in this switch's own dialog shows. Dialogs of earlier tests may still be in the page. */
+const sheetOf = (control: HTMLElement) => () => {
+  let layer: HTMLElement = control;
+  while (layer.parentElement && layer.parentElement !== document.body) layer = layer.parentElement;
+  const frame = layer.querySelector<HTMLIFrameElement>('iframe[title^="Preview of sheet"]');
+  if (!frame) throw new Error('No preview yet.');
+  return frame.srcdoc;
+};
+
 describe('PrintDialog', () => {
+  it('shows the page with its title by default, and without it when the switch goes off', async () => {
+    render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
+    const include = await screen.findByRole('switch', { name: 'Include the page title' });
+    const sheet = sheetOf(include);
+    expect(include.getAttribute('aria-checked')).toBe('true');
+    await waitFor(() => expect(sheet()).toContain('class="page-title"'), { timeout: 10_000 });
+    await userEvent.click(include);
+    await waitFor(() => expect(sheet()).not.toContain('class="page-title"'), { timeout: 10_000 });
+    expect(sheet()).toContain('class="sheet"');
+    expect(localStorage.getItem('opennote.export.pageTitle')).toBe('false');
+    await userEvent.click(include);
+    await waitFor(() => expect(sheet()).toContain('class="page-title"'), { timeout: 10_000 });
+  });
+
+  it('remembers that the title was turned off', async () => {
+    localStorage.setItem('opennote.export.pageTitle', 'false');
+    render(<PrintDialog source={printSource()} platform={createTestPlatform()} mode="export" close={vi.fn()} />);
+    const include = await screen.findByRole('switch', { name: 'Include the page title' });
+    expect(include.getAttribute('aria-checked')).toBe('false');
+    const sheet = sheetOf(include);
+    await waitFor(() => expect(sheet()).toContain('class="sheet"'), { timeout: 10_000 });
+    expect(sheet()).not.toContain('class="page-title"');
+  });
+
   it('sends the page to the chosen printer with the copies, both sides, and shrink to fit', async () => {
     const platform = createTestPlatform();
     const submit = vi.spyOn(platform.exports, 'printSubmit');

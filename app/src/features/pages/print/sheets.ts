@@ -21,6 +21,8 @@ export interface PrintOptions {
   readonly background?: boolean;
   /** Prints handwriting. Default true. */
   readonly ink?: boolean;
+  /** Puts the page title and its date at the top of the first sheet. Default false here; the dialogs start it on. */
+  readonly title?: boolean;
   readonly header?: BandTemplate;
   readonly footer?: BandTemplate;
   /** `sheet` numbers a printed sheet by its place on the page. `printed` counts from 1 through the sheets chosen. */

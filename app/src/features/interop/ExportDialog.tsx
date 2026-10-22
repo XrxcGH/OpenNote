@@ -11,6 +11,7 @@ import { Button, Dialog, RadioCard, RadioGroup, Switch, TextField, announce } fr
 import type { DialogAction } from '../../ui';
 import { createExportFlow } from './exportFlow';
 import { CheckFirstSwitch } from '../a11yCheck';
+import { pageTitleOn, setPageTitle } from '../exportPrefs';
 import { SendExtras } from './SendExtras';
 import { NO_SHARE_CHOICES } from './exportFlow';
 import type { DrawPdf, ExportFlow, ExportState } from './exportFlow';
@@ -140,6 +141,7 @@ function Options({
         </Button>
       </div>
       {state.format !== 'share' && <SendExtras flow={flow} folder={state.folder} />}
+      {state.format === 'pdf' && <PageTitleSwitch />}
       <CheckFirstSwitch />
       {state.error && (
         <p role="alert" className={styles.error}>
@@ -147,6 +149,23 @@ function Options({
         </p>
       )}
     </div>
+  );
+}
+
+/** Whether each page of a PDF export starts with its title. On until turned off, and remembered. */
+function PageTitleSwitch() {
+  const [on, setOn] = useState(pageTitleOn);
+  return (
+    <>
+      <Switch
+        label={t('pageViews.print.includeTitle')}
+        checked={on}
+        onChange={(value) => {
+          setPageTitle(value);
+          setOn(value);
+        }}
+      />
+    </>
   );
 }
 

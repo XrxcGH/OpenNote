@@ -4,9 +4,11 @@
 // units that never split.
 
 import { htmlOptions, renderBlock, type BlockContext } from '../export/blocks';
-import { isFloating, type ExportBlock, type TableBlock } from '../export/source';
+import { isFloating, type ExportBlock, type ExportPage, type TableBlock } from '../export/source';
 import { parseMarkdown, renderHtml } from '../export/markdown';
 import type { FlowBlock } from '../pagination/types';
+import { escapeHtml } from '../export/markdown';
+import { formatDate } from '../../../strings/format';
 
 export interface FlowUnit {
   /** Unique on the page: the block's ID, with `#n` for the nth element of a text block. */
@@ -75,4 +77,25 @@ export function pageUnits(ordered: readonly ExportBlock[], cx: BlockContext): Pa
     } else flow.push(...unitsOf(block, cx));
   }
   return { flow, floating };
+}
+
+/** The ID of the title unit. Block IDs are UUIDs, so this never collides with one. */
+export const TITLE_UNIT = 'page-title';
+
+/**
+ * The page's title and its date as the first unit of the flow, styled like the title band on the screen. It never
+ * splits, and it keeps with the first block after it, so the title never sits alone at the bottom of a sheet.
+ */
+export function titleUnit(page: ExportPage, cx: BlockContext): FlowUnit {
+  const title = page.title.trim() === '' ? cx.labels.untitled : page.title;
+  const date = page.created === '' ? '' : formatDate(page.created);
+  const html =
+    `<h1 class="page-title">${escapeHtml(title)}</h1>` +
+    (date === '' ? '' : `<p class="page-date">${escapeHtml(date)}</p>`);
+  return { id: TITLE_UNIT, block: TITLE_UNIT, flow: { id: TITLE_UNIT, kind: 'atom', heading: true }, html };
+}
+
+/** `units` with the page title in front. */
+export function withTitle(units: PageUnits, page: ExportPage, cx: BlockContext): PageUnits {
+  return { flow: [titleUnit(page, cx), ...units.flow], floating: units.floating };
 }

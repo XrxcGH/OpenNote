@@ -174,7 +174,7 @@ function ruledCss({ grid }: Ruled): string[] {
   return [
     `:root{--ruled:${grid.step}px;--ruled-lift:${ruleLift(grid.step)}px}`,
     `body{line-height:var(--ruled)}`,
-    `p,ul,ol,li,blockquote,pre,figure,table,details,.callout,.tags,h1,h2,h3,h4,h5,h6,.page-title{margin-top:0;margin-bottom:0}`,
+    `p,ul,ol,li,blockquote,pre,figure,table,details,.callout,.tags,.page-date,h1,h2,h3,h4,h5,h6,.page-title{margin-top:0;margin-bottom:0}`,
     `${lines}{${trim};padding-bottom:var(--ruled-lift)}`,
     `span,a,code,mark,em,strong,s,u,sub,sup,.link{line-height:0}`,
     // A checkbox is inline with its line's text, centered on the capitals.
@@ -217,6 +217,7 @@ export function documentCss(theme: DocTheme, notebookStyles: NotebookStyles = {}
     rule('p,ul,ol,figure,table,.callout,details', normal),
     rule('.page-title', title, 'font-weight:700;'),
     ...HEADINGS.map(([name, size, line]) => heading(name, size, line, name === 'h6' ? 600 : 700)),
+    `.page-date{margin:0 0 16px;color:var(--muted);font-family:${f.ui};font-size:14px;line-height:1.5}`,
     `.tags{margin:0 0 16px;color:var(--muted);font-family:${f.ui};font-size:14px;line-height:1.5}`,
     `ul,ol{padding-inline-start:1.5em}li{margin:0 0 4px}li>ul,li>ol{margin:4px 0 0}`,
     `ul.tasks{list-style:none;padding-inline-start:0}ul.tasks ul.tasks{padding-inline-start:1.5em}`,

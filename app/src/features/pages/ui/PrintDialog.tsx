@@ -24,6 +24,7 @@ import {
 } from '../host/printer';
 import type { DuplexChoice, PrinterForm } from '../host/printer';
 import type { PageSource } from '../host/source';
+import { pageTitleOn, setPageTitle } from '../../exportPrefs';
 import { parsePageRange } from '../print/range';
 import type { Parity } from '../print/range';
 import { preparePrint } from '../print/prepare';
@@ -50,6 +51,7 @@ function toOptions(form: Form): PrintOptions {
     range: form.range.trim() === '' ? undefined : form.range,
     parity: form.parity,
     background: form.background,
+    title: form.title,
     header: form.header.trim() === '' ? undefined : { center: form.header },
     footer: form.footer.trim() === '' ? undefined : { center: form.footer },
   };
@@ -61,6 +63,7 @@ interface Form {
   header: string;
   footer: string;
   background: boolean;
+  title: boolean;
   accessible: boolean;
 }
 
@@ -279,6 +282,12 @@ function Fields({ form, total, rangeError, set }: FieldsProps) {
       </div>
       <p className={styles.hint}>{t('pageViews.print.headerHint', fields)}</p>
       <Switch
+        label={t('pageViews.print.includeTitle')}
+        checked={form.title}
+        onChange={(value) => set('title', value)}
+      />
+      <p className={styles.hint}>{t('pageViews.print.includeTitleHelp')}</p>
+      <Switch
         label={t('pageViews.print.paperPattern')}
         checked={form.background}
         onChange={(value) => set('background', value)}
@@ -451,6 +460,7 @@ export function PrintDialog(props: PrintDialogProps) {
     header: '',
     footer: '',
     background: true,
+    title: pageTitleOn(),
     accessible: isEnabled('pages.accessiblePdf'),
   });
   const [sheet, setSheet] = useState(0);
@@ -469,6 +479,7 @@ export function PrintDialog(props: PrintDialogProps) {
   const rangeError = preview.status === 'ready' && parsePageRange(form.range, total, form.parity).error !== undefined;
   const set = <K extends keyof Form>(key: K, value: Form[K]) => {
     setSheet(0);
+    if (key === 'title') setPageTitle(value as boolean);
     setForm((before) => ({ ...before, [key]: value }));
   };
   const go = {
