@@ -5,6 +5,7 @@ import { createMemoryPageService } from '../../../services/pages/memory';
 import type { NewBlock } from '../../../services/pages/types';
 import { blockRenderers } from '../registries';
 import '../registrations/qolStudy';
+import '../registrations/codeCells';
 
 const ID = '01k6pane1000000000000000b1';
 
@@ -17,8 +18,8 @@ describe('panel block types', () => {
     .flatMap((def) => def.types);
 
   it('registers each panel block under an OpenNote extension type', () => {
-    // Mind map, flashcards, study tape, diagram, quiz, citation, and bibliography.
-    expect(types).toHaveLength(7);
+    // Mind map, flashcards, study tape, diagram, quiz, citation, bibliography, and code cell.
+    expect(types).toHaveLength(8);
     for (const type of types) expect(type).toMatch(/^ext:org\.opennote\//);
   });
 

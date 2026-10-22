@@ -125,6 +125,7 @@ type ToolsQolFlagId =
   | 'math.quickMath'
   | 'math.notes'
   | 'math.diagrams'
+  | 'math.codeCells'
   | 'math.mindmapExport'
   | 'math.mindmapPen'
   | 'math.mindMaps'

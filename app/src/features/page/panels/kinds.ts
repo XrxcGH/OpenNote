@@ -15,6 +15,7 @@ export const PANEL_TYPES = {
   tape: 'ext:org.opennote/tape',
   mindmap: 'ext:org.opennote/mindmap',
   diagram: 'ext:org.opennote/diagram',
+  codeCell: 'ext:org.opennote/codecell',
   collection: 'ext:org.opennote/collection',
   quiz: 'ext:org.opennote/quiz',
   citation: 'ext:org.opennote/citation',

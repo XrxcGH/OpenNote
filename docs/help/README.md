@@ -21,6 +21,7 @@ Every picture is a real screenshot. [The screens folder](../screens/README.md) h
 - [Moving between blocks](moving-between-blocks.md): the keys that move between text, images, tables, and code.
 - [Math and graphs](math-and-graphs.md): equations, quick math, the grapher, and diagrams.
 - [Tables and charts](tables-and-charts.md): smart tables, formulas, views, and charts.
+- [Code cells](code-cells.md): run short Python and JavaScript programs on a page, offline, in a sandbox.
 
 ## Draw and design pages
 

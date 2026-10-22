@@ -1,0 +1,83 @@
+/*
+ * A code cell (features/codecells): its bar, the code, and what the code printed, on tokens. Errors print in the
+ * danger color, and the output keeps the code's own spacing.
+ */
+@layer components {
+  .root {
+    display: grid;
+    gap: var(--space-3);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    font-size: var(--type-body-size);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: var(--space-3);
+  }
+
+  .bar button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-2);
+    font-size: var(--type-small-size);
+  }
+
+  .field select {
+    min-block-size: var(--size-target-pointer);
+    padding-inline: var(--space-3);
+    font: inherit;
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+  }
+
+  .source {
+    padding: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    color: var(--color-text-primary);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    resize: vertical;
+    tab-size: 4;
+  }
+
+  .help,
+  .status {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+  }
+
+  .status:empty {
+    display: none;
+  }
+
+  .output {
+    margin: 0;
+    max-block-size: 24rem;
+    overflow: auto;
+    padding: var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--type-small-size);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: var(--color-text-primary);
+    background: var(--color-surface-raised);
+    border-radius: var(--radius-md);
+  }
+
+  .err {
+    color: var(--color-status-danger);
+  }
+}
