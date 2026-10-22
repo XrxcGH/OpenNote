@@ -403,6 +403,7 @@ if (typeof window !== 'undefined') {
       event as CustomEvent<{
         text?: string;
         graph?: string;
+        table?: { header: string[]; rows: string[][] };
         math?: { source: string; display: boolean };
         picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
         handled: boolean;
@@ -420,7 +421,22 @@ if (typeof window !== 'undefined') {
     }
     const editor = targetEditor();
     if (!detail || !editor) return;
-    if (detail.text !== undefined) {
+    if (detail.table !== undefined) {
+      // Answered at once like a graph; the table is built and added when its code arrives.
+      const { header, rows } = detail.table;
+      detail.handled = true;
+      void Promise.all([import('../tables/insert'), import('../../../editor/table/mapping')]).then(
+        ([insert, mapping]) => {
+          const data = mapping.newTableData(header.length, rows.length + 1, true);
+          [header, ...rows].forEach((line, r) =>
+            line.forEach((text, c) => {
+              data.rows[r].cells[data.columns[c].id] = { markdown: text };
+            }),
+          );
+          return insert.insertTable(data);
+        },
+      );
+    } else if (detail.text !== undefined) {
       // A double-click selects the word and the space after it. The text replaces the word, and the space stays.
       const { from, to } = editor.state.selection;
       const selected = editor.state.doc.textBetween(from, to, ' ', ' ');

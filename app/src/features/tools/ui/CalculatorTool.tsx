@@ -50,6 +50,8 @@ export interface InsertDetail {
   picture?: { bytes: ArrayBuffer; name: string; alt: string; mime: string };
   /** An equation for the page: LaTeX source and whether it stands on its own line. */
   math?: { source: string; display: boolean };
+  /** A table for the page: a header row, then rows of cell text. */
+  table?: { header: string[]; rows: string[][] };
   handled: boolean;
 }
 

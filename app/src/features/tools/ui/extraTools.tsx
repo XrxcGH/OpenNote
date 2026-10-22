@@ -3,12 +3,15 @@
 import { lazy, Suspense } from 'react';
 import { CitationsPanel } from '../../citations';
 import { DeckPanel } from '../../study';
+import { ChemCalcTool } from './ChemCalcTool';
 import { ConstantsTool } from './ConstantsTool';
 import { ConverterTool } from './ConverterTool';
 import { DictionaryTool } from './DictionaryTool';
 import { LatexTool } from './LatexTool';
+import { PropertiesTool } from './PropertiesTool';
 import { ReferenceTool } from './ReferenceTool';
 import { SigFigsTool } from './SigFigsTool';
+import { StructureTool } from './StructureTool';
 import type { ToolId } from './tools';
 
 // The solvers are a large window of their own, so they load the first time it opens.
@@ -46,5 +49,8 @@ export function ExtraToolBody({ tool }: { tool: ToolId }) {
         <SolversTool />
       </Suspense>
     );
+  if (tool === 'chemcalc') return <ChemCalcTool />;
+  if (tool === 'structure') return <StructureTool />;
+  if (tool === 'properties') return <PropertiesTool />;
   return null;
 }

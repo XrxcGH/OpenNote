@@ -16,7 +16,10 @@ export type ToolId =
   | 'solvers'
   | 'vectors'
   | 'solids'
-  | 'projectile';
+  | 'projectile'
+  | 'chemcalc'
+  | 'structure'
+  | 'properties';
 
 export interface ToolDef {
   id: ToolId;
@@ -40,6 +43,9 @@ export const TOOLS: readonly ToolDef[] = [
   { id: 'vectors', title: 'graph3d.tools.vectors.title', width: 520 },
   { id: 'solids', title: 'graph3d.tools.solids.title', width: 520 },
   { id: 'projectile', title: 'graph3d.tools.projectile.title', width: 520 },
+  { id: 'chemcalc', title: 'chem.calc.title', width: 460 },
+  { id: 'structure', title: 'chem.structure.title', width: 420 },
+  { id: 'properties', title: 'chem.data.title', width: 560 },
 ];
 
 export const isToolId = (value: unknown): value is ToolId => TOOLS.some((tool) => tool.id === value);

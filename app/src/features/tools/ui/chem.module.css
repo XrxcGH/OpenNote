@@ -1,0 +1,109 @@
+/*
+ * The chemistry tool windows: calculator forms, the structure drawer, and the property tables. Plain fields, a result
+ * card, and a step list on tokens. Nothing here depends on color alone.
+ */
+@layer components {
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .wide {
+    grid-column: 1 / -1;
+  }
+
+  .withUnit {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-2);
+    align-items: end;
+  }
+
+  .result {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-inline-start: 4px solid var(--color-accent-primary);
+    border-radius: var(--radius-md);
+  }
+
+  .headline {
+    margin: 0;
+    font-size: var(--type-subtitle-size);
+    line-height: var(--type-subtitle-line);
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .steps {
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    color: var(--color-text-secondary);
+    font-size: var(--type-small-size);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .steps li {
+    overflow-wrap: anywhere;
+  }
+
+  .figure {
+    margin: 0;
+    padding: var(--space-3);
+    background: var(--color-surface-page);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    color: var(--color-text-primary);
+    overflow: auto;
+  }
+
+  .figure svg {
+    display: block;
+    max-inline-size: 100%;
+    block-size: auto;
+    margin-inline: auto;
+  }
+
+  .plot {
+    fill: none;
+    stroke: var(--color-accent-primary);
+    stroke-width: 2;
+  }
+
+  .axis {
+    stroke: var(--color-border-control);
+    stroke-width: 1;
+  }
+
+  .tick {
+    fill: var(--color-text-secondary);
+    font-size: 11px;
+  }
+
+  .tableWrap {
+    overflow: auto;
+    max-block-size: 50vh;
+  }
+
+  .numeric {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .source {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--type-small-size);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
