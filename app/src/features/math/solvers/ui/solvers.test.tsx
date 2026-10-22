@@ -1,5 +1,5 @@
-// The Math solvers window: every tab works its default problem with a graph and steps, the tabs follow the ARIA
-// pattern, a change of input works the problem again, the steps go into the page, and the palette opens a solver.
+// The Math solvers window. Every tab works its default problem with a graph and steps, and the tabs follow the ARIA
+// pattern. A change of input works the problem again, and the steps go into the page. The palette opens a solver.
 /* eslint-disable opennote/feature-boundaries -- The test reads the tool layer the window lives in. */
 import { screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';

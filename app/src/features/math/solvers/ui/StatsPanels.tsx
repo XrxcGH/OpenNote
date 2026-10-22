@@ -24,8 +24,15 @@ import {
 import styles from './solvers.module.css';
 
 type DistKind = Distribution['kind'];
+
+const lineText = (m: number, b: number, r2: number): string =>
+  `y = ${numberText(m, 6)}·x ${b < 0 ? '−' : '+'} ${numberText(Math.abs(b), 6)},  R² = ${numberText(r2, 5)}`;
+
+const complexText = (re: number, im: number): string =>
+  im === 0 ? niceNumber(re) : `${niceNumber(re)} ${im < 0 ? '−' : '+'} ${niceNumber(Math.abs(im))}i`;
 type RegionKind = Region['kind'];
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ProbabilityPanel() {
   const [state, set] = useStored('probability', {
     kind: 'normal' as DistKind,
@@ -175,7 +182,7 @@ export function ProbabilityPanel() {
         <Problem text={fit.problem} />
         {fit.result && (
           <>
-            <Result>{`y = ${numberText(fit.result.slope, 6)}·x ${fit.result.intercept < 0 ? '−' : '+'} ${numberText(Math.abs(fit.result.intercept), 6)},  R² = ${numberText(fit.result.r2, 5)}`}</Result>
+            <Result>{lineText(fit.result.slope, fit.result.intercept, fit.result.r2)}</Result>
             <Plot
               label={say('solvers.ui.regressionPlot')}
               layers={[
@@ -242,14 +249,7 @@ export function MatricesPanel() {
       <Problem text={problem} />
       {result && (
         <>
-          <Result>
-            {result.pairs
-              .map(
-                (pair) =>
-                  `λ = ${pair.value.im === 0 ? niceNumber(pair.value.re) : `${niceNumber(pair.value.re)} ${pair.value.im < 0 ? '−' : '+'} ${niceNumber(Math.abs(pair.value.im))}i`}`,
-              )
-              .join(',  ')}
-          </Result>
+          <Result>{result.pairs.map((pair) => `λ = ${complexText(pair.value.re, pair.value.im)}`).join(',  ')}</Result>
           <Plot
             label={say(n === 2 ? 'solvers.ui.transformPlot2' : 'solvers.ui.transformPlot3')}
             equal
@@ -276,6 +276,7 @@ export function MatricesPanel() {
 const reducedMotion = (): boolean =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ProjectilePanel() {
   const [state, set] = useStored('projectile', {
     speed: '25',

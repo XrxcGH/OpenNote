@@ -1,6 +1,7 @@
-// The matrix eigen visualizer: eigenvalues and eigenvectors of a 2×2 or 3×3 matrix, from the characteristic
-// polynomial, with the null space of A − λI for each real eigenvalue, and the data to draw what the matrix does: a
-// grid and the unit square (or the unit cube, seen at an angle) before and after, with the eigenvector lines.
+// The matrix eigen visualizer. For a 2×2 or 3×3 matrix it finds the eigenvalues from the characteristic polynomial,
+// and the eigenvectors from the null space of A − λI for each real eigenvalue. It also gives the data to draw what
+// the matrix does: a grid and the unit square (or the unit cube, seen at an angle) before and after, with the
+// eigenvector lines.
 import { SolverError, niceNumber } from './expr';
 import { determinant, nullSpace } from './linalg';
 import { cx, cabs, cmul, csub, roots, type Complex } from './polynomial';
@@ -178,7 +179,7 @@ function plot(A: readonly (readonly number[])[], pairs: readonly Eigenpair[]) {
     );
     return { before, after, eigenLines };
   }
-  // An oblique view: x to the right, y up, z toward the viewer and down to the left.
+  // An oblique view: x to the right, y up, and z toward the viewer, drawn down to the left.
   const view = (p: readonly number[]) => ({ x: p[0] - 0.5 * p[2], y: p[1] - 0.35 * p[2] });
   const corners = [0, 1].flatMap((x) => [0, 1].flatMap((y) => [0, 1].map((z) => [x, y, z])));
   const edges = corners.flatMap((a, i) =>

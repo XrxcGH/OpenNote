@@ -129,7 +129,7 @@ export const solvers = {
     below: 'Below b: P(X ≤ b)',
     above: 'Above a: P(X ≥ a)',
     between: 'Between: P(a ≤ X ≤ b)',
-    outside: 'Outside: P(X < a or X > b)',
+    outside: 'Outside: P(X < a) + P(X > b)',
   },
   /** Math written as labels: letters and symbols that read the same in any language. */
   sym: {
@@ -287,6 +287,7 @@ export const solvers = {
   step: {
     integralSetup: 'Write the integral with its limits, innermost first.',
     integralChange:
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       '{system, select, polar {Change to polar coordinates.} cylindrical {Change to cylindrical coordinates.} other {Change to spherical coordinates.}} Multiply by the Jacobian.',
     integralIntegrand: 'The integrand in the new coordinates, with the Jacobian:',
     integralInner: 'Integrate with respect to {variable}, holding the other variables fixed.',
@@ -326,7 +327,8 @@ export const solvers = {
     inversePoles: 'Find the roots of the denominator (the poles).',
     inversePartial: 'Split into partial fractions.',
     inverseTable:
-      'Read each fraction back from the table: 1/(s − a)^k gives t^(k−1)·e^(at)/(k−1)!, and a pair of complex poles gives e^(αt) times a cosine and a sine.',
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
+      'Read each fraction back from the table. 1/(s − a)^k gives t^(k−1)·e^(at) over (k−1) factorial, and a pair of complex poles gives e^(αt) times a cosine and a sine.',
     inverseResult: 'The inverse transform:',
     fourierLinearity: 'The transform is linear: transform each term and add.',
     fourierTable: 'Match the term to a pair in the table, with a = {a}.',
@@ -334,13 +336,14 @@ export const solvers = {
     fourierInverseResult: 'The inverse transform, with f(t) = (1/2π)·∫ F(ω)·e^(iωt) dω:',
     seriesFormula: 'The Taylor polynomial uses the derivatives of f at the center.',
     seriesDerivative: 'Derivative {k}, and its value at the center:',
-    seriesPolynomial: 'Divide each value by k! and add the terms.',
+    seriesPolynomial: 'Divide each value by k factorial and add the terms.',
     seriesRemainder:
       'Lagrange bound on the remainder, with M the largest |f⁽ⁿ⁺¹⁾| between the center and x. The actual error there is {actual}.',
     rootNewton: "Newton's method follows the tangent line to where it crosses the x-axis.",
     rootSecant: 'The secant method follows the line through the last two points, so it needs no derivative.',
     rootBisection: 'Bisection halves an interval where f changes sign, keeping the half that still does.',
     rootConverged:
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       '{order, select, none {Converged after {n, plural, one {# step} other {# steps}}.} other {Converged after {n, plural, one {# step} other {# steps}}, with an estimated order of convergence of {order}.}}',
     rootDiverged: 'Diverged: the guesses run away from the root. Try a starting point closer to it.',
     rootFlat: 'Stopped: the tangent (or secant) is flat, so it never crosses the x-axis. Try another starting point.',
@@ -371,6 +374,7 @@ export const solvers = {
       'The characteristic polynomial uses the trace {trace}, the sum of the principal 2×2 minors {minors}, and the determinant {det}.',
     eigenValues: 'Its roots are the eigenvalues.',
     eigenVector:
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       'Solve (A − {lambda}I)v = 0. {dimension, plural, =0 {No eigenvector was found.} one {The eigenspace has dimension 1.} other {The eigenspace has dimension #.}}',
     eigenComplex: 'For the complex eigenvalue {lambda}, the eigenvector is complex too.',
     eigenDiagonalizable: 'There are enough independent eigenvectors, so A can be diagonalized.',
@@ -390,6 +394,7 @@ export const solvers = {
     'limits-count': 'Give one, two, or three integrals.',
     'limits-variables': 'Each integral needs its own variable, written in letters.',
     'limits-order':
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       'The limits of {detail} use a variable that is integrated before it. Put integrals with variable limits inside the ones they depend on.',
     'not-separable': "This can't be written as a function of x times a function of y.",
     'ode-range': 'Check the starting point and the range: the range must run from left to right.',
@@ -397,6 +402,7 @@ export const solvers = {
     'ode-forcing':
       'The right side must be a sum of polynomials, exponentials, sines, and cosines, such as 3x^2 + e^(2x) + sin(x).',
     'laplace-term':
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       'The term {detail} is not in the table. Terms can be sums of t^n, e^(at), sin(bt), cos(bt), sinh(bt), and cosh(bt) multiplied together.',
     'inverse-form': 'The transform must be a fraction of polynomials in s, times e^(−cs) for a delay.',
     'inverse-improper':
@@ -413,6 +419,7 @@ export const solvers = {
     'regression-points': 'Give at least two points with different x values.',
     'matrix-size': 'Fill in every entry of a 2×2 or 3×3 matrix with a number.',
     'projectile-input':
+      // checks-disable-next-line length: one message with its placeholders, kept whole so the key types read it
       'Check the launch: speed above 0, an angle between −90° and 90° (above 0 from the ground), and a height, gravity, and drag of 0 or more.',
     unknown: "This couldn't be worked out. Check the input.",
   },

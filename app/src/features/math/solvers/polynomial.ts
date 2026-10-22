@@ -176,7 +176,7 @@ export function shiftC(p: Poly, z: Complex): Complex[] {
   return c;
 }
 
-/** The first `count` Taylor coefficients of a/b, given the coefficients of a and b. */
+/** The first `count` Taylor coefficients of the quotient p/q, given the coefficients of p and of q. */
 export function seriesDivide(a: readonly Complex[], b: readonly Complex[], count: number): Complex[] {
   const out: Complex[] = [];
   for (let k = 0; k < count; k += 1) {

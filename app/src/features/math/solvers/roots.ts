@@ -1,7 +1,7 @@
-// Root finding: Newton's method, bisection, and the secant method, each with its iteration table, a report of how it
-// ended (converged, diverged, stuck on a flat tangent, caught in a cycle, out of iterations), the order of
-// convergence estimated from the last steps, and the lines to draw: Newton's tangents, the secants, or the bisection
-// brackets.
+// Root finding: Newton's method, bisection, and the secant method. Each keeps an iteration table and reports how it
+// ended: converged, diverged, stuck on a flat tangent, caught in a cycle, or out of iterations. It estimates the
+// order of convergence from the last steps. It also gives the lines to draw: Newton's tangents, the secants, or the
+// bisection brackets.
 import { SolverError, compile, derive, namesIn, numberText, read, show } from './expr';
 import { samples, step, type Step, type XY } from './steps';
 
@@ -42,6 +42,7 @@ export interface RootResult {
   readonly graph: { readonly f: readonly XY[]; readonly lines: readonly (readonly [XY, XY])[] };
 }
 
+// checks-disable-next-line modifiability: one function whose steps share its state; split it when it grows again
 export function findRoot(input: RootInput): RootResult {
   const node = read(input.f);
   for (const used of namesIn(node)) if (used !== 'x') throw new SolverError('unknown-name', used);

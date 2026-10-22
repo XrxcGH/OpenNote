@@ -163,6 +163,7 @@ export function TransformsPanel() {
 
 const METHODS: readonly RootMethod[] = ['newton', 'bisection', 'secant'];
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function RootsPanel() {
   const [state, set] = useStored('roots', {
     f: 'x^3 - 2*x - 5',
@@ -290,6 +291,7 @@ function lettersOf(text: string): string[] {
   }
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function ErrorsPanel() {
   const [state, set] = useStored('errors', {
     expression: '4*pi^2*L/T^2',

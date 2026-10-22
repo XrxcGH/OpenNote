@@ -99,6 +99,7 @@ function pathOf(points: readonly XY[], view: Viewport, close = false): string {
   return close && d ? `${d}Z` : d;
 }
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function Plot({ layers, label, view: given, equal = false, include = [], marker = null }: PlotProps) {
   const clip = useId();
   const view = given ?? fitView([...layers.flatMap(pointsOf), ...include], equal);

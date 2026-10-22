@@ -39,15 +39,15 @@ export function describe(error: unknown): string {
 }
 
 /**
- * Runs a solver again only when its input changes, giving its result or the words for what went wrong. The input is
- * compared as JSON, so a fresh object with the same values does not run it again.
+ * Runs a solver again only when its input changes. It gives the result, or else the words for what went wrong. The
+ * input is compared as JSON, so a fresh object with the same values does not run it again.
  */
 export function useSolved<I, R>(input: I, run: (input: I) => R): { result: R | null; problem: string } {
   const key = JSON.stringify(input);
   return useMemo(() => attempt(() => run(input)), [key]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-/** Runs a solver, giving its result or the words for what went wrong. */
+/** Runs a solver. It gives the result, or else the words for what went wrong. */
 export function attempt<T>(run: () => T): { result: T | null; problem: string } {
   try {
     return { result: run(), problem: '' };

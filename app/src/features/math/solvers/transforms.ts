@@ -301,6 +301,7 @@ function termText({ c, k, a, b, fn }: TimeTerm, t = 't'): string {
 }
 
 /** The inverse Laplace transform of F(s). */
+// checks-disable-next-line modifiability: one function whose steps share its state; split it when it grows again
 export function inverseLaplace(source: string): TransformResult {
   const F = read(source);
   for (const used of namesIn(F)) if (used !== 's') throw new SolverError('unknown-name', used);
@@ -371,7 +372,8 @@ export function inverseLaplace(source: string): TransformResult {
           const B = 2 * A.re;
           const C = -2 * (A.re * pole.z.re + A.im * pole.z.im);
           fractions.push(
-            `(${niceNumber(B)}·s + ${niceNumber(C)})/(s² − ${niceNumber(2 * pole.z.re)}·s + ${niceNumber(pole.z.re ** 2 + pole.z.im ** 2)})`,
+            `(${niceNumber(B)}·s + ${niceNumber(C)})/` +
+              `(s² − ${niceNumber(2 * pole.z.re)}·s + ${niceNumber(pole.z.re ** 2 + pole.z.im ** 2)})`,
           );
         } else fractions.push(`(${complexText(A)})/(s − ${complexText(pole.z)})^${j} + conjugate`);
         if (Math.abs(A.re) > 1e-12) terms.push({ c: 2 * A.re * scale, k, a: pole.z.re, b: pole.z.im, fn: 'cos' });

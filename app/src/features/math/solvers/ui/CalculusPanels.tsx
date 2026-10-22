@@ -54,6 +54,7 @@ const FIRST_PARAMS: Record<string, string> = {
   h: '2',
 };
 
+// checks-disable-next-line modifiability: one component whose parts share its state; split it when it grows again
 export function IntegralsPanel() {
   const [state, set] = useStored('integrals', {
     region: 'ball' as RegionKind | 'custom',

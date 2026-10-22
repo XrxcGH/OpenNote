@@ -226,7 +226,7 @@ export function derive(node: Node, variable: string, order = 1): Node {
   }
 }
 
-/** True when the tree has no variables, only numbers and constants. */
+/** True when the tree has no variables: it has only numbers, constants, or both. */
 export const isConstant = (node: Node): boolean => namesIn(node).size === 0;
 
 /** The value of a tree with no variables. */

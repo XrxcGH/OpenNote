@@ -1,6 +1,6 @@
 /*
- * The Math solvers window (beta 5). Calm and quiet, on tokens: fields in rows that wrap, the answer in a raised
- * line, plots on the page color with the brand's pens, and worked steps as a numbered list with the math in mono.
+ * The Math solvers window (beta 5), calm and quiet, on tokens. Fields sit in rows that wrap, and the answer sits in
+ * a raised line. Plots use the page color with the brand's pens. Worked steps are a numbered list with mono math.
  * Every control is at least the target size, and nothing moves for a person who asks for reduced motion.
  */
 @layer components {

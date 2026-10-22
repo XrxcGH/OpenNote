@@ -1,8 +1,8 @@
-// The double and triple integral helper. A person gives a region (a preset such as a disk or a ball, or limits of
-// their own) and an integrand, picks rectangular, polar, cylindrical, or spherical coordinates, and gets the limits,
-// the change of variables with its Jacobian, each inner integral worked by hand where the rules allow, and the value.
-// Every answer is also found numerically, so a step the rules cannot do still ends in a number, and a symbolic answer
-// is checked against it.
+// The double and triple integral helper. A person gives a region and an integrand. The region is a preset, such as a
+// disk or a ball, or limits of their own. They pick rectangular, polar, cylindrical, or spherical coordinates. The
+// helper shows the limits and the change of variables with its Jacobian. It works each inner integral by hand where
+// the rules allow, and gives the value. Every answer is also found numerically, so a step the rules cannot do still
+// ends in a number, and a symbolic answer is checked against it.
 import { antiderivative, collect, definite, quadrature } from './integrate';
 import {
   SolverError,
@@ -155,7 +155,8 @@ export function solveIntegral(input: IntegralInput): IntegralResult {
     steps.push(
       step(
         'integralBounds',
-        `[${greekText(show(F))}] from ${letter(v)} = ${greekText(show(bounds[i][0]))} to ${greekText(show(bounds[i][1]))} = ${greekText(show(result))}`,
+        `[${greekText(show(F))}] from ${letter(v)} = ${greekText(show(bounds[i][0]))} ` +
+          `to ${greekText(show(bounds[i][1]))} = ${greekText(show(result))}`,
       ),
     );
     current = result;

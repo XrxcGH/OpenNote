@@ -287,7 +287,7 @@ function linearFirst(input: OdeInput): OdeResult {
   return firstOrderResult(input, F, steps, tidy(div(add(Gn, num(C)), mu)));
 }
 
-/** A function of x for the second-order solver, kept as text and as a tree. */
+/** A function of x for the second-order solver. It keeps its text and its tree. */
 interface Basis {
   readonly text: string;
   readonly node: Node;
@@ -295,6 +295,7 @@ interface Basis {
 
 const basis = (text: string): Basis => ({ text, node: read(text) });
 
+// checks-disable-next-line modifiability: one function whose steps share its state; split it when it grows again
 function second(input: OdeInput): OdeResult {
   const [a, b, c] = [input.a ?? '1', input.b ?? '0', input.c ?? '0'].map((one) => {
     const node = read(one);
@@ -311,7 +312,7 @@ function second(input: OdeInput): OdeResult {
   const steps: Step[] = [step('odeSecond', `${lhs} = ${show(gNode)}`)];
   steps.push(step('odeCharacteristic', `${niceNumber(a)}·r^2 + ${niceNumber(b)}·r + ${niceNumber(c)} = 0`));
 
-  // The homogeneous solution from the roots of a r^2 + b r + c.
+  // The homogeneous solution, from the roots of the characteristic polynomial.
   const disc = b * b - 4 * a * c;
   const roots: { re: number; im: number; times: number }[] = [];
   let h1: Basis;

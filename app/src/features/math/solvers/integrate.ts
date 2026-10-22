@@ -1,5 +1,5 @@
-// Integration for the solvers: antiderivatives the way a first calculus course finds them (the power rule, linear
-// substitution, integration by parts for a polynomial times an exponential or a sine), and a numeric rule for
+// Integration for the solvers. Antiderivatives are found the way a first calculus course finds them: the power rule,
+// linear substitution, and integration by parts for a polynomial times an exponential or a sine. A numeric rule does
 // everything else. `antiderivative` gives null rather than a wrong answer when no rule fits. The numeric rule is
 // tanh-sinh quadrature, which keeps full accuracy at endpoints where the integrand has a square root or a log.
 import { dependsOn } from '../../../core/expr';
@@ -235,7 +235,7 @@ function reciprocal(c: Node, g: Node, v: string): Node | null {
   return null;
 }
 
-/** ∫ p(v) g(v) dv by parts, over and over, for a polynomial p and a special g: Σ (-1)^k p^(k) G_(k+1). */
+/** ∫ p(v) g(v) dv by parts, repeated, for a polynomial p and a special g: Σ (-1)^k p^(k) G_(k+1). */
 function byParts(p: Node, g: { kind: Kind; arg: Node; a: Node }, v: string): Node | null {
   const poly = polyOf(p, v);
   if (!poly) return null;

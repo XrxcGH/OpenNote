@@ -77,7 +77,8 @@ export function propagate(expression: string, measured: readonly Measured[]): Pr
     steps.push(
       step(
         'errorPartial',
-        `∂f/∂${p.name} = ${p.partial} = ${numberText(p.partialValue)};  (${numberText(p.partialValue)} · ${numberText(sigma)})² = ${numberText(p.contribution ** 2)}`,
+        `∂f/∂${p.name} = ${p.partial} = ${numberText(p.partialValue)};  ` +
+          `(${numberText(p.partialValue)} · ${numberText(sigma)})² = ${numberText(p.contribution ** 2)}`,
         {
           name: p.name,
         },

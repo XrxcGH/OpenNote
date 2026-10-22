@@ -1,7 +1,7 @@
-// The unit consistency checker: give each letter in an equation a unit, and it finds the dimension of each side in
-// SI base units and flags every place the equation cannot be right, such as adding meters to seconds, a sine of a
-// length, or a power with units. Units come from the calculator's unit engine, with the electrical units, force,
-// frequency, and amount of substance added here; in this checker C is the coulomb and F the farad.
+// The unit consistency checker. Give each letter in an equation a unit, and it finds the dimension of each side in
+// SI base units. It flags every place the equation cannot be right, such as adding meters to seconds, a sine of a
+// length, or a power with units. Units come from the calculator's unit engine. The electrical units, force,
+// frequency, and amount of substance are added here, and in this checker C is the coulomb and F the farad.
 import { mathConstant, type Node } from '../../../core/expr';
 import { calculatorUnits } from '../../tools';
 import { SolverError, compile, isConstant, read } from './expr';
