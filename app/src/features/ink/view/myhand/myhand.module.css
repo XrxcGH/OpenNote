@@ -189,6 +189,17 @@
     inline-size: 100%;
   }
 
+  /* The field is 20 characters wide by itself; in a card one column wide it shrinks to the card instead of spilling. */
+  .symbol > div {
+    grid-template-columns: minmax(0, 1fr);
+    min-inline-size: 0;
+  }
+
+  .symbol input {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+
   .missing {
     font-size: var(--type-small-size);
     line-height: var(--type-small-line);

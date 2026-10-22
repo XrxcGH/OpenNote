@@ -162,6 +162,11 @@ describe('confirming symbols', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Confirm your symbols' });
     const fields = await within(dialog).findAllByRole('textbox', { name: 'What this symbol is' });
     expect(fields.length).toBeGreaterThanOrEqual(3);
+    // The field stays inside its card instead of spilling out of it (it is 20 characters wide by itself).
+    for (const field of fields.slice(0, 3)) {
+      const card = field.closest('li')!.getBoundingClientRect();
+      expect(field.getBoundingClientRect().right).toBeLessThanOrEqual(card.right + 0.5);
+    }
     await userEvent.fill(fields[0], 'l');
     await userEvent.fill(fields[1], 'l');
     await userEvent.fill(fields[2], '∫');
